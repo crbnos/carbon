@@ -84,6 +84,7 @@ import {
   LuImage,
   LuListChecks,
   LuListFilter,
+  LuPackageSearch,
   LuPause,
   LuPlay,
   LuTimer,
@@ -98,6 +99,7 @@ import { TrackingTypeIcon } from "~/components/Icons";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
 import { MaintenanceDispatch } from "~/components/JobOperation/components/MaintenanceDispatch";
+import { NeedMaterialModal } from "~/components/JobOperation/components/NeedMaterialModal";
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
@@ -574,6 +576,7 @@ export function AssemblyView({
 
   const issueModal = useDisclosure();
   const qualityModal = useDisclosure();
+  const needMaterialModal = useDisclosure();
   const completeModal = useDisclosure();
   const scrapModal = useDisclosure();
   const reworkModal = useDisclosure();
@@ -2818,6 +2821,22 @@ export function AssemblyView({
         onClose={qualityModal.onClose}
       />
 
+      <NeedMaterialModal
+        operationId={operationId}
+        materials={allMaterials.flatMap((material) =>
+          material.itemId
+            ? [
+                {
+                  itemId: material.itemId as string,
+                  label: (material.itemReadableId ?? material.itemId) as string
+                }
+              ]
+            : []
+        )}
+        isOpen={needMaterialModal.isOpen}
+        onClose={needMaterialModal.onClose}
+      />
+
       {operation && completeModal.openCount > 0 && (
         <QuantityModal
           key={`complete-${completeModal.openCount}`}
@@ -2960,6 +2979,14 @@ export function AssemblyView({
                 onClick={() => {
                   actionsSheet.onClose();
                   qualityModal.onOpen();
+                }}
+              />
+              <ActionSheetButton
+                icon={<LuPackageSearch className="size-4 shrink-0" />}
+                label={t`Need material`}
+                onClick={() => {
+                  actionsSheet.onClose();
+                  needMaterialModal.onOpen();
                 }}
               />
               {/* Manager-only override: record every remaining step for this unit at once.

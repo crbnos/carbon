@@ -20,6 +20,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { erpPosting } from "~/services/erp";
+import { buildLineFeedRows } from "~/services/line-feed";
 import type { SuggestedAllocationLot } from "./allocation";
 import {
   greedyFillAllocation,
@@ -727,4 +728,129 @@ export async function insertManualInventoryAdjustment(
   }
 
   return { data: result.data?.itemLedger ?? null, error: null };
+}
+
+/**
+ * The line feeder's queue for one location: open material requests, lineside
+ * shortages and outstanding transfer lines to a work center's storage unit,
+ * plus the names the cards show.
+ */
+export async function getLineFeed(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; locationId: string }
+) {
+  const { companyId, locationId } = args;
+
+  const [requests, shortages, transfers] = await Promise.all([
+    client
+      .from("materialRequest")
+      .select(
+        "*, item(readableIdWithRevision), workCenter(name), jobOperation(job(jobId))"
+      )
+      .eq("status", "Open")
+      .eq("locationId", locationId)
+      .eq("companyId", companyId),
+    client.rpc("get_line_feed_shortages", {
+      p_location_id: locationId,
+      p_company_id: companyId
+    }),
+    client
+      .from("stockTransferLine")
+      .select(
+        "id, itemId, outstandingQuantity, createdAt, toStorageUnitId, stockTransfer!inner(id, stockTransferId, status, locationId), toStorageUnit:storageUnit!stockTransferLine_toStorageUnitId_fkey!inner(name, workCenterId)"
+      )
+      .eq("companyId", companyId)
+      .eq("stockTransfer.locationId", locationId)
+      .in("stockTransfer.status", ["Released", "In Progress"])
+      .gt("outstandingQuantity", 0)
+      .not("toStorageUnit.workCenterId", "is", null)
+  ]);
+
+  const error = requests.error ?? shortages.error ?? transfers.error;
+  if (error) return { data: null, error };
+
+  const requestRows = requests.data ?? [];
+  const shortageRows = shortages.data ?? [];
+  const transferRows = transfers.data ?? [];
+
+  // One read each for the names the shortages and transfers do not carry.
+  const storageUnitIds = [
+    ...new Set(shortageRows.map((shortage) => shortage.storageUnitId))
+  ];
+  const workCenterIds = [
+    ...new Set(
+      [
+        ...shortageRows.map((shortage) => shortage.workCenterId),
+        ...transferRows.map((transfer) => transfer.toStorageUnit?.workCenterId)
+      ].filter((id): id is string => Boolean(id))
+    )
+  ];
+
+  const [storageUnits, workCenters] = await Promise.all([
+    storageUnitIds.length
+      ? client
+          .from("storageUnit")
+          .select("id, name")
+          .in("id", storageUnitIds)
+          .eq("companyId", companyId)
+      : Promise.resolve({ data: [], error: null }),
+    workCenterIds.length
+      ? client
+          .from("workCenter")
+          .select("id, name")
+          .in("id", workCenterIds)
+          .eq("companyId", companyId)
+      : Promise.resolve({ data: [], error: null })
+  ]);
+
+  const nameError = storageUnits.error ?? workCenters.error;
+  if (nameError) return { data: null, error: nameError };
+
+  const workCenterNames: Record<string, string> = {};
+  for (const workCenter of workCenters.data ?? []) {
+    workCenterNames[workCenter.id] = workCenter.name;
+  }
+  for (const request of requestRows) {
+    if (request.workCenterId && request.workCenter?.name) {
+      workCenterNames[request.workCenterId] = request.workCenter.name;
+    }
+  }
+
+  const storageUnitNames: Record<string, string> = {};
+  for (const storageUnit of storageUnits.data ?? []) {
+    storageUnitNames[storageUnit.id] = storageUnit.name;
+  }
+  for (const transfer of transferRows) {
+    if (transfer.toStorageUnitId && transfer.toStorageUnit?.name) {
+      storageUnitNames[transfer.toStorageUnitId] = transfer.toStorageUnit.name;
+    }
+  }
+
+  // The readable ids a card shows: the job a request came from, and the
+  // stock transfer a transfer line belongs to.
+  const jobReadableIds: Record<string, string> = {};
+  for (const request of requestRows) {
+    const jobId = request.jobOperation?.job?.jobId;
+    if (jobId) jobReadableIds[request.id] = jobId;
+  }
+  const stockTransferReadableIds: Record<string, string> = {};
+  for (const transfer of transferRows) {
+    stockTransferReadableIds[transfer.stockTransfer.id] =
+      transfer.stockTransfer.stockTransferId;
+  }
+
+  return {
+    data: {
+      rows: buildLineFeedRows({
+        requests: requestRows,
+        shortages: shortageRows,
+        transfers: transferRows
+      }),
+      workCenterNames,
+      storageUnitNames,
+      jobReadableIds,
+      stockTransferReadableIds
+    },
+    error: null
+  };
 }
