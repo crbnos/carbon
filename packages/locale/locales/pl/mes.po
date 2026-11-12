@@ -174,6 +174,9 @@ msgstr "{hour} h"
 msgid "{hours} h"
 msgstr "{hours} godz."
 
+msgid "{issued} of {required}"
+msgstr ""
+
 msgid "{label}, overdue"
 msgstr "{label}, po terminie"
 
@@ -2550,6 +2553,9 @@ msgstr "Skanuj {partName}"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Skanuj jednostkę śledzoną, aby dodać pierwszą kolumnę próby."
+
+msgid "Scan in these parts first"
+msgstr ""
 
 msgid "Scan or enter a serial"
 msgstr "Skanuj lub wprowadź numer seryjny"

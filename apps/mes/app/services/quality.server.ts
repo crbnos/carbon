@@ -16,7 +16,7 @@ import {
   getTrackedEntitiesForOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
-import { autoPrintFirstOperationLabel } from "~/services/printing.server";
+import { autoPrintOperationLabel } from "~/services/printing.server";
 import {
   getInspection,
   getInspectionMeasurements,
@@ -548,8 +548,8 @@ export async function postSerialCompletions(
   // Labels go out after the postings, so a slow print enqueue never delays
   // a unit's completion. Units completed before a failure still get theirs.
   for (const trackedEntityId of completedEntityIds) {
-    // Auto-print label on first operation only (entity was just minted)
-    await autoPrintFirstOperationLabel({
+    // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
+    await autoPrintOperationLabel({
       serviceRole,
       trackedEntityId,
       jobOperationId: args.jobOperationId,
@@ -603,8 +603,8 @@ export async function postBulkCompletion(
         message: response.error.message || "Failed to complete units"
       };
     }
-    // Auto-print label on first operation only (batch entity was just minted)
-    await autoPrintFirstOperationLabel({
+    // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
+    await autoPrintOperationLabel({
       serviceRole,
       trackedEntityId: state.batchTrackedEntityId,
       jobOperationId: state.jobOperationId,

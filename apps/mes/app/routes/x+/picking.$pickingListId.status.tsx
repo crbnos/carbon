@@ -5,6 +5,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { shouldPrintTravelers } from "@carbon/database/travelers";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -15,6 +16,7 @@ import {
   getUnresolvedPickingListLines,
   updatePickingListStatus
 } from "~/services/picking.service";
+import { autoPrintPickingListTravelers } from "~/services/printing.server";
 
 type PickingListStatus = (typeof pickingListStatus)[number];
 
@@ -40,7 +42,7 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
   // Reopening a closed picking list is ERP-only — MES may not unlock one.
   const current = await serviceRole
     .from("pickingList")
-    .select("status")
+    .select("status, locationId")
     .eq("id", pickingListId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -156,6 +158,16 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
 
   if (result.error) {
     return { success: false, message: "Failed to update picking list status" };
+  }
+
+  if (shouldPrintTravelers(current.data.status, status)) {
+    await autoPrintPickingListTravelers({
+      serviceRole,
+      pickingListId,
+      locationId: current.data.locationId,
+      companyId,
+      userId: effectiveUserId
+    });
   }
 
   return { success: true };
