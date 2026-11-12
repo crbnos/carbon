@@ -50,6 +50,7 @@
     "./datasets": "./src/datasets/index.ts",
     "./event": "./src/event.ts",
     "./machine-time": "./src/machine-time.ts",
+    "./material-request": "./src/material-request.ts",
     "./inspection-verdict": "./src/inspection-verdict.ts",
     "./quality": "./src/quality.ts",
     "./ratelimit": "./src/ratelimit.ts",

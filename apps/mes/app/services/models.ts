@@ -418,6 +418,12 @@ export const qualityIssueValidator = z.object({
   trackedEntityId: zfd.text(z.string().optional())
 });
 
+export const materialRequestValidator = z.object({
+  jobOperationId: z.string().min(1),
+  itemId: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional())
+});
+
 export const maintenanceDispatchIssueValidator = z.object({
   maintenanceDispatchItemId: z.string().min(1, {
     message: "Maintenance Dispatch Item is required"
