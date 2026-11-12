@@ -1833,8 +1833,8 @@ msgstr "Пока нет зарегистрированных ключей дос
 msgid "No photos yet"
 msgstr "Нет фото"
 
-msgid "No picking lists assigned"
-msgstr "Листы отбора не назначены"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "Принтер не настроен"

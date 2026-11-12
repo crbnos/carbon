@@ -1833,8 +1833,8 @@ msgstr "Noch keine Passkeys registriert."
 msgid "No photos yet"
 msgstr "Noch keine Fotos"
 
-msgid "No picking lists assigned"
-msgstr "Keine Kommissionierlisten zugewiesen"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "Kein Drucker konfiguriert"

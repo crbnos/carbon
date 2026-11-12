@@ -1833,8 +1833,8 @@ msgstr "Aucune clé d'accès enregistrée pour l'instant."
 msgid "No photos yet"
 msgstr "Aucune photo pour l'instant"
 
-msgid "No picking lists assigned"
-msgstr "Aucune liste de prélèvement assignée"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "Aucune imprimante configurée"

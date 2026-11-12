@@ -1833,8 +1833,8 @@ msgstr "등록된 패스키가 없습니다."
 msgid "No photos yet"
 msgstr "아직 사진이 없습니다"
 
-msgid "No picking lists assigned"
-msgstr "할당된 피킹 리스트가 없습니다"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "설정된 프린터가 없습니다"

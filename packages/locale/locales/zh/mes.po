@@ -1833,8 +1833,8 @@ msgstr "还未注册任何通行密钥。"
 msgid "No photos yet"
 msgstr "还未有照片"
 
-msgid "No picking lists assigned"
-msgstr "没有分配的拣货单"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "未配置打印机"

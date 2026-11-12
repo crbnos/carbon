@@ -1833,8 +1833,8 @@ msgstr "अभी तक कोई पासकी पंजीकृत नह�
 msgid "No photos yet"
 msgstr "अभी कोई फ़ोटो नहीं"
 
-msgid "No picking lists assigned"
-msgstr "कोई पिकिंग सूची असाइन नहीं की गई"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं किया गया"

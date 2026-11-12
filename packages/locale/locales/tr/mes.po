@@ -1833,8 +1833,8 @@ msgstr "Henüz hiçbir geçiş anahtarı kaydedilmedi."
 msgid "No photos yet"
 msgstr "Henüz fotoğraf yok"
 
-msgid "No picking lists assigned"
-msgstr "Atanmış toplama listesi yok"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "Yazıcı yapılandırılmadı"

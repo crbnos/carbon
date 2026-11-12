@@ -1833,8 +1833,8 @@ msgstr "登録済のパスキーはまだありません。"
 msgid "No photos yet"
 msgstr "写真がまだありません"
 
-msgid "No picking lists assigned"
-msgstr "ピッキングリストが割り当てられていません"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "プリンターが設定されていません"

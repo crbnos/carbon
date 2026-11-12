@@ -35,6 +35,10 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { erpPosting } from "~/services/erp";
 import { sanitize } from "~/utils/supabase";
+import {
+  requiredScanMessage,
+  unissuedTrackedMaterials
+} from "~/utils/trackedMaterials";
 import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
   batchStepRecordsValidator,
@@ -334,6 +338,178 @@ export async function isFirstOperationOfMakeMethod(
     .limit(1)
     .maybeSingle();
   return !priorDependency.error && !priorDependency.data;
+}
+
+/**
+ * Is this the last operation of its make method's routing? A material with no
+ * jobOperationId is consumed here. Mirrors isFirstOperationOfMakeMethod: "last"
+ * means no operation of the same make method depends on this one.
+ *
+ * Fails closed: an errored lookup reads as "not last".
+ */
+export async function isLastOperationOfMakeMethod(
+  client: SupabaseClient<Database>,
+  operationId: string,
+  jobMakeMethodId: string
+): Promise<boolean> {
+  const nextDependency = await client
+    .from("jobOperationDependency")
+    .select(
+      "operation:jobOperation!jobOperationDependency_operationId_fk!inner(jobMakeMethodId)"
+    )
+    .eq("dependsOnId", operationId)
+    .eq("operation.jobMakeMethodId", jobMakeMethodId)
+    .limit(1)
+    .maybeSingle();
+  return !nextDependency.error && !nextDependency.data;
+}
+
+const REQUIRED_SCAN_CHECK_FAILED = "Could not check the scanned parts";
+
+/**
+ * When the company requires tracked materials to be issued, the message that
+ * refuses completing `quantity` units of an operation whose serial or batch
+ * materials are not yet scanned in. `message` is null when completion may go
+ * ahead. A failed read refuses with a generic message rather than letting the
+ * unit through.
+ */
+export async function getRequiredScanShortfall(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    jobOperationId: string;
+    trackedEntityId?: string;
+    parentIsSerial: boolean;
+    quantity: number;
+  }
+): Promise<{ message: string | null; error: unknown | null }> {
+  const { companyId, jobOperationId, trackedEntityId, parentIsSerial } = args;
+
+  const settings = await client
+    .from("companySettings")
+    .select("requireTrackedMaterialsIssued")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) {
+    log.error("getRequiredScanShortfall: reading company settings failed", {
+      companyId,
+      jobOperationId,
+      error: settings.error
+    });
+    return { message: REQUIRED_SCAN_CHECK_FAILED, error: settings.error };
+  }
+  if (!settings.data?.requireTrackedMaterialsIssued) {
+    return { message: null, error: null };
+  }
+
+  const operation = await client
+    .from("jobOperation")
+    .select("jobMakeMethodId, quantityComplete")
+    .eq("id", jobOperationId)
+    .eq("companyId", companyId)
+    .single();
+  if (operation.error || !operation.data) {
+    log.error("getRequiredScanShortfall: reading the job operation failed", {
+      companyId,
+      jobOperationId,
+      error: operation.error
+    });
+    return {
+      message: REQUIRED_SCAN_CHECK_FAILED,
+      error: operation.error ?? new Error("Job operation not found")
+    };
+  }
+  const { jobMakeMethodId, quantityComplete } = operation.data;
+  // Materials belong to a make method; an operation outside one consumes none.
+  if (!jobMakeMethodId) return { message: null, error: null };
+
+  const [materials, isLastOperation, trackedInputs] = await Promise.all([
+    client
+      .from("jobMaterial")
+      .select(
+        "id, itemId, jobMakeMethodId, jobOperationId, requiresSerialTracking, requiresBatchTracking, quantity, quantityIssued"
+      )
+      .eq("jobMakeMethodId", jobMakeMethodId)
+      .eq("companyId", companyId)
+      .or("requiresSerialTracking.eq.true,requiresBatchTracking.eq.true"),
+    isLastOperationOfMakeMethod(client, jobOperationId, jobMakeMethodId),
+    parentIsSerial && trackedEntityId
+      ? getTrackedInputs(client, trackedEntityId)
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  if (materials.error || trackedInputs.error) {
+    const error = materials.error ?? trackedInputs.error;
+    log.error("getRequiredScanShortfall: reading tracked materials failed", {
+      companyId,
+      jobOperationId,
+      error
+    });
+    return { message: REQUIRED_SCAN_CHECK_FAILED, error };
+  }
+
+  // A serial unit counts only what was scanned into this unit; a batch parent
+  // counts everything issued to the operation so far.
+  const issuedToUnit = new Map<string, number>();
+  if (parentIsSerial) {
+    for (const input of trackedInputs.data ?? []) {
+      const materialId = (
+        input.activityAttributes as TrackedActivityAttributes
+      )?.["Job Material"];
+      if (typeof materialId !== "string") continue;
+      issuedToUnit.set(
+        materialId,
+        (issuedToUnit.get(materialId) ?? 0) + Number(input.quantity ?? 0)
+      );
+    }
+  }
+  const candidates = (materials.data ?? []).map((material) =>
+    parentIsSerial
+      ? { ...material, quantityIssued: issuedToUnit.get(material.id) ?? 0 }
+      : material
+  );
+  const unitsAfterCompletion = parentIsSerial
+    ? 1
+    : (quantityComplete ?? 0) + args.quantity;
+
+  const unissued = unissuedTrackedMaterials({
+    materials: candidates,
+    operationId: jobOperationId,
+    jobMakeMethodId,
+    isLastOperation,
+    unitsAfterCompletion
+  });
+  if (unissued.length === 0) return { message: null, error: null };
+
+  const items = await client
+    .from("item")
+    .select("id, readableId, readableIdWithRevision")
+    .in("id", Array.from(new Set(unissued.map((material) => material.itemId))))
+    .eq("companyId", companyId);
+  if (items.error) {
+    log.error("getRequiredScanShortfall: reading item ids failed", {
+      companyId,
+      jobOperationId,
+      error: items.error
+    });
+    return { message: REQUIRED_SCAN_CHECK_FAILED, error: items.error };
+  }
+  const readableIdById = new Map(
+    (items.data ?? []).map((item) => [
+      item.id,
+      item.readableIdWithRevision ?? item.readableId
+    ])
+  );
+
+  return {
+    message: requiredScanMessage(
+      unissued.map((material) => ({
+        itemReadableId: readableIdById.get(material.itemId) ?? material.itemId,
+        issued: material.quantityIssued ?? 0,
+        required: (material.quantity ?? 0) * unitsAfterCompletion
+      }))
+    ),
+    error: null
+  };
 }
 
 export async function getUpstreamOperations(
