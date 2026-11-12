@@ -8971,6 +8971,9 @@ msgstr "Each supplier's outside operations from every job go on one new purchase
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 
+msgid "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+msgstr "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+
 msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 msgstr "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 
@@ -17954,6 +17957,9 @@ msgstr "Post and send via Stripe"
 
 msgid "Post Comment"
 msgstr "Post Comment"
+
+msgid "Post Count"
+msgstr "Post Count"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"

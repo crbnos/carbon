@@ -8971,6 +8971,9 @@ msgstr "Her tedarikçinin her iş emrinden dış operasyonları yeni bir satın 
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "Her adetin adil değeri ve ekonomik ömrü, terimin çoğunluğunu kapsayıp kapsamadığını belirler. Değiştirmek için hücreyi tıklayın."
 
+msgid "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+msgstr "Her sapma muhasebeleştirme tarihinde stok düzeltmesi olarak kaydedilir. Kaydedilen sayım kesindir."
+
 msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 msgstr "Her hafta, yılın ISO 8601 haftasıyla başlıklandırılır: Hafta 44, Hafta 45, Hafta 46."
 
@@ -17954,6 +17957,9 @@ msgstr "Muhasebeleştir ve Stripe üzerinden gönder"
 
 msgid "Post Comment"
 msgstr "Yorum Yap"
+
+msgid "Post Count"
+msgstr "Sayımı kaydet"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"

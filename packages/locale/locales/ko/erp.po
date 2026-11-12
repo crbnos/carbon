@@ -8971,6 +8971,9 @@ msgstr "각 공급업체의 외주 공정은 모든 작업 지시에서 새로�
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "각 단위의 공정가액과 경제수명이 약관이 대부분을 포함하는지 결정합니다. 셀을 클릭하여 변경하세요."
 
+msgid "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+msgstr "각 차이는 전기일에 재고 조정으로 기록됩니다. 전기된 실사는 변경할 수 없습니다."
+
 msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 msgstr "각 주의 제목은 ISO 8601 연간 주차로 표시됩니다: 44주차, 45주차, 46주차."
 
@@ -17954,6 +17957,9 @@ msgstr "Stripe를 통해 전기 및 전송"
 
 msgid "Post Comment"
 msgstr "댓글 게시"
+
+msgid "Post Count"
+msgstr "재고 실사 전기"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"

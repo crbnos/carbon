@@ -110,6 +110,13 @@ Key service functions (verified):
   loader returns the authoritative effective quantity for the modal pre-fill). Corrections
   render as normal flat rows with an `isCorrection` badge — no nesting/expandable grouping.
   Inventory counts have NO count-level rectify; Posted is terminal.
+  An adjustment and a count post take an optional `postingDate` (default
+  company today): `resolveManualPostingDate` (`shared.service.ts`) refuses a
+  future date and, once the company has a cutover, one before it;
+  `getManualPostingPeriod` resolves a Posted journal's period for that date.
+  Before the cutover any earlier day is allowed (the journal is Provisional,
+  and Superseded at the enable when it falls before the cutover date), which
+  is how opening stock is loaded "as of" the trial balance date.
   A count of tracked units is grouped by (item, storage unit) (`inventoryCountGroups`
   view) and counted by scan, Add unit or CSV import. A unit counted in another bin
   posts as a move: 2 `Transfer` rows with `documentType` `Inventory Count`, no GL —

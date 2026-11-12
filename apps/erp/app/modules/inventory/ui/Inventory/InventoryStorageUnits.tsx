@@ -792,7 +792,8 @@ const InventoryStorageUnits = ({
                   isSerial && !isEditing ? "Positive Adjmt." : "Set Quantity",
                 trackedEntityId: selectedTrackedEntityId || nanoid(),
                 readableId: selectedReadableId || undefined,
-                expirationDate: defaultExpirationDate
+                expirationDate: defaultExpirationDate,
+                postingDate: companyToday
               }}
             >
               <ModalHeader>
@@ -893,6 +894,11 @@ const InventoryStorageUnits = ({
                     label={t`Unit of Measure`}
                     value={itemUnitOfMeasure?.label ?? ""}
                     isReadOnly
+                  />
+                  <DatePicker
+                    name="postingDate"
+                    label={t`Posting Date`}
+                    maxValue={parseDate(companyToday)}
                   />
                   <TextArea name="comment" label={t`Comment`} />
                 </VStack>

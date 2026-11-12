@@ -8971,6 +8971,9 @@ msgstr "Las operaciones externas de cada proveedor de cada orden de trabajo se c
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "El valor justo y vida económica de cada unidad deciden si el término cubre la mayor parte de ella. Haz clic en una celda para cambiarlo."
 
+msgid "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+msgstr "Cada desviación se registra como ajuste de inventario en la fecha de contabilización. Una vez registrado, es definitivo."
+
 msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 msgstr "Cada semana se encabeza con su semana del año ISO 8601: Semana 44, Semana 45, Semana 46."
 
@@ -17954,6 +17957,9 @@ msgstr "Contabilizar y enviar vía Stripe"
 
 msgid "Post Comment"
 msgstr "Publicar Comentario"
+
+msgid "Post Count"
+msgstr "Registrar recuento"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"

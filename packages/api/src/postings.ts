@@ -294,6 +294,9 @@ export const postInventoryAdjustmentInput = z
     originalStorageUnitId: z.string().optional().nullable(),
     expirationDate: z.string().optional().nullable(),
     comment: z.string().optional().nullable(),
+    // The day the movement is booked on (YYYY-MM-DD). Omitted: today. Never in
+    // the future, and never before the company's accounting cutover.
+    postingDate: z.string().optional().nullable(),
     // Required for Scrap (enforced below) — lands on the itemLedger row and
     // as a ScrapReason journal dimension. Unscrap
     // omits it: the reason is inherited from the original scrap movement.

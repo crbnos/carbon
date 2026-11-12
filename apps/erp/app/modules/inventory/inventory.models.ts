@@ -198,6 +198,11 @@ export const inventoryCountUnitValidator = z.object({
   )
 });
 
+// Post a confirmed count: the day its variances are booked on (today when blank).
+export const inventoryCountPostValidator = z.object({
+  postingDate: zfd.text(z.string().optional())
+});
+
 // A count results file: Item, Storage Unit, Serial / Batch, Counted Quantity.
 export const inventoryCountImportValidator = z.object({
   file: zfd.file()
@@ -241,6 +246,7 @@ export const inventoryAdjustmentValidator = z
     readableId: zfd.text(z.string().optional()),
     expirationDate: zfd.text(z.string().optional()),
     comment: zfd.text(z.string().optional()),
+    postingDate: zfd.text(z.string().optional()),
     // Required for Scrap (enforced below); lands on the itemLedger row and as
     // a ScrapReason journal dimension. Unscrap
     // omits it — the server function inherits the reason from the original scrap

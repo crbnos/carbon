@@ -8971,6 +8971,9 @@ msgstr "各仕入先の全製造指図からの外注工程は、1つの新規�
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "各個の公正価値と経済的耐用年数により、条件がほとんどをカバーするかどうかが決まります。セルをクリックして変更してください。"
 
+msgid "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+msgstr "各差異は転記日付で在庫調整として記帳されます。転記後は変更できません。"
+
 msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 msgstr "各週の見出しには ISO 8601 の年間週番号が表示されます: 週 44、週 45、週 46。"
 
@@ -17954,6 +17957,9 @@ msgstr "転記してStripeで送信"
 
 msgid "Post Comment"
 msgstr "コメントを投稿"
+
+msgid "Post Count"
+msgstr "棚卸を転記"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
