@@ -11984,6 +11984,9 @@ msgstr "ईमेल"
 msgid "Emails of the attendees (guests)"
 msgstr "प्रतिभागियों (मेहमानों) के ईमेल"
 
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
+
 msgid "Emoji"
 msgstr "इमोजी"
 
@@ -27220,6 +27223,9 @@ msgstr "आमंत्रण भेजें"
 
 msgid "Send Notifications"
 msgstr "सूचनाएं भेजें"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "अनुस्मारक भेजें"
