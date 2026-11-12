@@ -3094,6 +3094,9 @@ msgstr "В спецификации есть материалы с серийн�
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Эти позиции еще содержат материал для отбора. Завершение сейчас отметит список как частичный."
 
+msgid "This barcode matches more than one unit"
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "Эта серия не имеет рабочих инструкций."
 

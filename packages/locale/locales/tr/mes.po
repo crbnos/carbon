@@ -3094,6 +3094,9 @@ msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak veril
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Bu öğelerin hala seçilecek malzemesi var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 
+msgid "This barcode matches more than one unit"
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "Bu partinin iş talimatı yok."
 

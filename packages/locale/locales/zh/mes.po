@@ -3094,6 +3094,9 @@ msgstr "物料清单中有序列号或生产批次追踪的物料尚未完全领
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
 
+msgid "This barcode matches more than one unit"
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "此生产批次没有作业指导书。"
 

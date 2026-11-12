@@ -3094,6 +3094,9 @@ msgstr "부품표(BOM)에 완전히 발행되지 않은 시리얼 또는 배치 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
+msgid "This barcode matches more than one unit"
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "이 배치는 작업 표준서가 없습니다."
 

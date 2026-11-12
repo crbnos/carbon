@@ -3094,6 +3094,9 @@ msgstr "部品表にシリアルまたはバッチ追跡対象の材料が完全
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "これらの品目にはまだピッキングする材料があります。今、完了するとリストが一部としてマークされます。"
 
+msgid "This barcode matches more than one unit"
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "このバッチには作業手順書がありません。"
 

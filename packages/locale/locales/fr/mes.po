@@ -3094,6 +3094,9 @@ msgstr "Il existe des matériaux suivis par numéro de série ou par lot dans la
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Ces articles ont encore du matériel à prélever. L'arrêt maintenant marque la liste comme Partielle."
 
+msgid "This barcode matches more than one unit"
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "Ce lot de production n'a pas de modes opératoires."
 

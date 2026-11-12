@@ -3094,6 +3094,9 @@ msgstr "There are serial or batch tracked materials on the bill of material that
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "These items still have material to pick. Finishing now marks the list Partial."
 
+msgid "This barcode matches more than one unit"
+msgstr "This barcode matches more than one unit"
+
 msgid "This batch has no work instructions."
 msgstr "This batch has no work instructions."
 

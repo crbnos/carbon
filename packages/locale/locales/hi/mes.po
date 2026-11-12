@@ -3094,6 +3094,9 @@ msgstr "बिल ऑफ मेटेरियल पर सीरियल य�
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "इन आइटम के पास अभी भी चुनने के लिए सामग्री है। अभी समाप्त करने से सूची को आंशिक के रूप में चिह्नित किया जाता है।"
 
+msgid "This barcode matches more than one unit"
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "इस बैच के पास कोई कार्य निर्देश नहीं है।"
 
