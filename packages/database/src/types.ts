@@ -63017,6 +63017,7 @@ export type Database = {
           digitalQuoteRejectedBy: string | null
           digitalQuoteRejectedByEmail: string | null
           dueDate: string | null
+          emailOrderOnAcceptance: boolean
           estimatorId: string | null
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
@@ -63053,6 +63054,7 @@ export type Database = {
           digitalQuoteRejectedBy?: string | null
           digitalQuoteRejectedByEmail?: string | null
           dueDate?: string | null
+          emailOrderOnAcceptance?: boolean
           estimatorId?: string | null
           exchangeRate?: number | null
           exchangeRateUpdatedAt?: string | null
@@ -63089,6 +63091,7 @@ export type Database = {
           digitalQuoteRejectedBy?: string | null
           digitalQuoteRejectedByEmail?: string | null
           dueDate?: string | null
+          emailOrderOnAcceptance?: boolean
           estimatorId?: string | null
           exchangeRate?: number | null
           exchangeRateUpdatedAt?: string | null

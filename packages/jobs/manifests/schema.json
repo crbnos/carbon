@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261110211543",
+  "schemaVersion": "20261112030415",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-10T21:23:53.403Z",
+  "exportedAt": "2026-11-12T03:15:56.068Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -514,8 +514,8 @@
         "serviceLaborBillRate",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
-        "requirePromisedDateToFinalizePurchaseOrder",
-        "includeSupplierPartFiles"
+        "includeSupplierPartFiles",
+        "requirePromisedDateToFinalizePurchaseOrder"
       ]
     },
     {
@@ -632,7 +632,8 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "tags"
+        "tags",
+        "color"
       ]
     },
     {
@@ -991,6 +992,29 @@
         "customFields",
         "gainOnDisposalAccountId",
         "isConstructionInProgress"
+      ]
+    },
+    {
+      "name": "forceDeleteRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "documentReadableId",
+        "documentStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -2199,7 +2223,8 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "color"
       ]
     },
     {
@@ -3129,6 +3154,24 @@
       ]
     },
     {
+      "name": "methodCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "makeMethodId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "riskRegister",
       "rows": 0,
       "columns": [
@@ -4022,6 +4065,18 @@
       "columns": ["jobOperationToolId", "jobOperationStepId"]
     },
     {
+      "name": "jobOperationTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "jobOperationId",
+        "trackedEntityId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy"
+      ]
+    },
+    {
       "name": "location",
       "rows": 0,
       "columns": [
@@ -4304,7 +4359,8 @@
         "digitalQuoteRejectedByEmail",
         "opportunityId",
         "completedDate",
-        "customerEngineeringContactId"
+        "customerEngineeringContactId",
+        "emailOrderOnAcceptance"
       ]
     },
     {
@@ -5763,6 +5819,22 @@
       ]
     },
     {
+      "name": "methodCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "methodOperationStepId",
+        "methodCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "methodMaterial",
       "rows": 0,
       "columns": [
@@ -5786,7 +5858,8 @@
         "tags",
         "kit",
         "storageUnitIds",
-        "sourcingType"
+        "sourcingType",
+        "methodCorrectionId"
       ]
     },
     {
@@ -5826,7 +5899,8 @@
         "operationLeadTime",
         "operationUnitCost",
         "assemblyInstructionId",
-        "inspectionDocumentId"
+        "inspectionDocumentId",
+        "methodCorrectionId"
       ]
     },
     {
@@ -5967,6 +6041,22 @@
         "nonConformanceActionId",
         "nonConformanceInvestigationId",
         "assemblyInstructionStepId"
+      ]
+    },
+    {
+      "name": "jobCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobOperationStepId",
+        "jobCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -6760,6 +6850,27 @@
       ]
     },
     {
+      "name": "jobCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobId",
+        "jobMakeMethodId",
+        "methodCorrectionId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "definition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "jobMakeMethod",
       "rows": 0,
       "columns": [
@@ -6938,7 +7049,8 @@
         "completedAt",
         "companyId",
         "createdAt",
-        "updatedAt"
+        "updatedAt",
+        "jobCorrectionId"
       ]
     },
     {
@@ -7311,6 +7423,28 @@
       "name": "purchaseOrderFavorite",
       "rows": 0,
       "columns": ["purchaseOrderId", "userId"]
+    },
+    {
+      "name": "purchaseOrderForceDeleteRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderId",
+        "purchaseOrderReadableId",
+        "purchaseOrderStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
     },
     {
       "name": "purchaseOrderLine",
