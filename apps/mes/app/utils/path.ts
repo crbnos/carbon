@@ -22,9 +22,13 @@ export const path = {
     active: `${x}/active`,
     addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
       generatePath(`${x}/dispatch/${dispatchId}/add-and-issue`),
+    addAndIssueServiceJobItem: (jobId: string) =>
+      generatePath(`${x}/service/${jobId}/add-and-issue`),
     api: {
-      batchNumbers: (itemId: string) =>
-        generatePath(`${api}/batch-numbers?itemId=${itemId}`),
+      batchNumbers: (itemId: string, operationId?: string) =>
+        generatePath(
+          `${api}/batch-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
+        ),
       failureModes: `${api}/failure-modes`,
       loginVerifyCode: `${api}/login/verify-code`,
       modelArtifacts: (modelUploadId: string) =>
@@ -36,16 +40,19 @@ export const path = {
       pickedAllocation: (jobMaterialId: string) =>
         generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,
-      serialNumbers: (itemId: string) =>
-        generatePath(`${api}/serial-numbers?itemId=${itemId}`),
+      serialNumbers: (itemId: string, operationId?: string) =>
+        generatePath(
+          `${api}/serial-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
+        ),
       ssoCheck: `${api}/sso/check`,
       suggestedAllocation: (
         itemId: string,
         locationId: string,
-        quantity: number
+        quantity: number,
+        operationId?: string
       ) =>
         generatePath(
-          `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}`
+          `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}${operationId ? `&operationId=${operationId}` : ""}`
         ),
       systemStatus: `${api}/system-status`
     },
@@ -72,6 +79,7 @@ export const path = {
     erpAccountSecurity: `${ERP_URL}/x/account/security`,
     // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
     erpApi: `${x}/proxy/api`,
+    erpInspection: (id: string) => `${ERP_URL}/x/inspection/${id}`,
     file: {
       // The load-sheet route lives in ERP (like the traveler); MES links to it
       // cross-origin.
@@ -160,6 +168,9 @@ export const path = {
     inspectionSample: (id: string) =>
       generatePath(`${x}/inspection-lot/${id}/sample`),
     inspectionSteps: `${x}/steps/inspection`,
+    inspections: `${x}/inspections`,
+    inspectionVerdict: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/verdict`),
     inventoryAdjustment: `${x}/adjustment`,
     issue: `${x}/issue`,
     issueTrackedEntity: `${x}/issue-tracked-entity`,
@@ -180,10 +191,13 @@ export const path = {
     maintenanceDisplay: (workCenterId: string) =>
       generatePath(`${display}/${workCenterId}/maintenance`),
     maintenanceEvent: `${x}/maintenance-event`,
+    manualInspection: (id: string) =>
+      generatePath(`${x}/manual-inspection/${id}`),
     manualPrint: `${x}/print`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
     mfa: "/mfa",
     newMaintenanceDispatch: `${x}/dispatch/new`,
+    newServiceJob: `${x}/service/new`,
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
@@ -213,6 +227,11 @@ export const path = {
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
     scrapReasons: `${api}/scrap-reasons`,
+    service: `${x}/service`,
+    serviceJob: (id: string) => generatePath(`${x}/service/${id}`),
+    serviceJobDetail: (id: string) => `${getAppUrl()}${x}/service-job/${id}`,
+    serviceSettings: `${ERP_URL}/x/settings/service`,
+    serviceTime: `${x}/service-time`,
     setupRequired: "/setup-required",
     startOperation: (id: string) => generatePath(`${x}/start/${id}`),
     suggestion: `${x}/suggestion`,
@@ -220,6 +239,8 @@ export const path = {
       generatePath(`${x}/company/switch/${companyId}`),
     timeCardPage: `${x}/timecard`,
     timecard: `${api}/timecard`,
+    timesheet: `${x}/timesheet`,
+    triggerCorrection: `${x}/trigger-correction`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>

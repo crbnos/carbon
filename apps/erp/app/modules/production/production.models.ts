@@ -6,7 +6,10 @@ import type { Database } from "@carbon/database";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { plannedOrderValidator } from "../purchasing/purchasing.models";
+import {
+  isIsoDate,
+  plannedOrderValidator
+} from "../purchasing/purchasing.models";
 import {
   jsonInput,
   methodItemType,
@@ -79,7 +82,10 @@ export const planningActionType = [
   "Cancel",
   "Increase",
   "Decrease",
-  "Release"
+  "Release",
+  // Projects Phase 2b: move stock between owners (common and project stock).
+  "Transfer",
+  "Borrow"
 ] as const;
 
 export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
@@ -89,10 +95,15 @@ export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
 // transform (see apps/erp/test/job-complete-logic.test.ts).
 export {
   actionsOfTypes,
+  COMMON_SEGMENT_OPTION,
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM,
+  PLANNING_SEGMENT_COLUMN,
+  planningRowKey,
+  planningSegmentFilter,
   resolvePlanningActionScope,
+  resolvePlanningSegmentScope,
   withPlanningActions
 } from "./ui/Planning/planning-action-scope";
 
@@ -107,6 +118,131 @@ export function isJobEditableFromPlanning(
   status: Database["public"]["Enums"]["jobStatus"] | null | undefined
 ): boolean {
   return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
+}
+
+/**
+ * Whether the order's dates are real `YYYY-MM-DD` days or absent. The order
+ * validators take any text, and a date such as an ISO timestamp would make
+ * `parseDate` throw, failing the whole batch instead of this one order.
+ */
+export function planningOrderDatesAreValid(order: {
+  startDate?: string | null;
+  dueDate?: string | null;
+}): boolean {
+  return [order.startDate, order.dueDate].every(
+    (value) => !value || isIsoDate(value)
+  );
+}
+
+/** The `errors` line for an order `planningOrderDatesAreValid` refuses. */
+export function invalidOrderDateMessage(
+  itemReadableId: string,
+  count: number
+): string {
+  return count === 1
+    ? `1 order for ${itemReadableId} has an invalid date and was not created.`
+    : `${count} orders for ${itemReadableId} have an invalid date and were not created.`;
+}
+
+/**
+ * The day a suggested job or purchase order starts: its start (order-by)
+ * date, else its due date less the lead time, as `insertJob` fills it.
+ */
+export function planningOrderStart(
+  order: { startDate?: string | null; dueDate?: string | null },
+  leadTime: number
+): string | null {
+  if (order.startDate) return order.startDate;
+  return order.dueDate
+    ? parseDate(order.dueDate).subtract({ days: leadTime }).toString()
+    : null;
+}
+
+/**
+ * Whether the order starts before `today`, the location's `YYYY-MM-DD`.
+ * Planning's Make / Order refuses such an order, since nothing can start in
+ * the past.
+ */
+export function planningOrderStartsInPast(
+  order: { startDate?: string | null; dueDate?: string | null },
+  today: string,
+  leadTime: number
+): boolean {
+  const start = planningOrderStart(order, leadTime);
+  // ISO dates order as strings
+  return start !== null && start < today;
+}
+
+/**
+ * Sorts an item's suggested orders by what Make / Order does with each, by
+ * their place in `orders`: `invalid` has a date that is not a real day, `past`
+ * starts before `today`, and `placeable` is everything else. An order is in
+ * exactly one list.
+ */
+export function classifyPlanningOrders(
+  orders: { startDate?: string | null; dueDate?: string | null }[],
+  today: string,
+  leadTime: number
+): { invalid: number[]; past: number[]; placeable: number[] } {
+  const result = {
+    invalid: [] as number[],
+    past: [] as number[],
+    placeable: [] as number[]
+  };
+  orders.forEach((order, index) => {
+    if (!planningOrderDatesAreValid(order)) result.invalid.push(index);
+    else if (planningOrderStartsInPast(order, today, leadTime))
+      result.past.push(index);
+    else result.placeable.push(index);
+  });
+  return result;
+}
+
+/** A suggested order planning's Make / Order did not create because it
+ *  starts in the past: its item's row and its place in that row's orders. */
+export type RefusedPlanningOrder = {
+  itemId: string;
+  planningSegmentId: string;
+  index: number;
+};
+
+/** The `errors` line for an item's orders that start in the past. */
+function pastStartRefusalMessage(
+  itemReadableId: string,
+  count: number,
+  today: string
+): string {
+  return count === 1
+    ? `1 order for ${itemReadableId} starts before today (${today}) and was not created. Reschedule it from today.`
+    : `${count} orders for ${itemReadableId} start before today (${today}) and were not created. Reschedule them from today.`;
+}
+
+/** The failure of a Make / Order that placed nothing. */
+export function nothingOrderedMessage(
+  noun: "jobs" | "orders",
+  problems: string[],
+  onlyRefusals: boolean
+): string {
+  const shown = problems.slice(0, 3);
+  const more = problems.length - shown.length;
+  return onlyRefusals
+    ? `No ${noun} were created. ${shown.join(" ")}${more > 0 ? ` And ${more} more.` : ""}`
+    : `Failed to process any items. Errors: ${shown.join("; ")}${more > 0 ? ` and ${more} more...` : ""}`;
+}
+
+/** One message per item for the orders refused for starting in the past. */
+export function pastStartRefusalMessages(
+  refused: RefusedPlanningOrder[],
+  readableIdOf: (itemId: string) => string,
+  today: string
+): string[] {
+  const countByItem = new Map<string, number>();
+  for (const { itemId } of refused) {
+    countByItem.set(itemId, (countByItem.get(itemId) ?? 0) + 1);
+  }
+  return [...countByItem].map(([itemId, count]) =>
+    pastStartRefusalMessage(readableIdOf(itemId), count, today)
+  );
 }
 
 // The one definition lives in @carbon/utils, shared with the OEE sync.
@@ -318,7 +454,16 @@ const baseJobValidator = z.object({
   // either capitalised into a class, or its cost swept onto one asset that is
   // already under construction. At most one is set (DB CHECK, refined below).
   fixedAssetClassId: zfd.text(z.string().optional()),
-  fixedAssetId: zfd.text(z.string().optional())
+  fixedAssetId: zfd.text(z.string().optional()),
+  // The charge number. With consumeToProject the job's cost goes to the
+  // project at completion instead of into inventory (projects Phase 1a).
+  projectId: zfd.text(z.string().optional()),
+  projectElementId: zfd.text(z.string().optional()),
+  consumeToProject: zfd.checkbox(),
+  // Receive to project stock: the output enters the stock of the charge
+  // number's project (projects Phase 2a). The project must have project
+  // stock; the route action checks that (chargeNumberError).
+  receiveToProjectStock: zfd.checkbox()
 });
 
 export const bulkJobValidator = z
@@ -404,7 +549,51 @@ export const jobValidator = baseJobValidator
     message:
       "A job completes to a fixed-asset class or to one asset under construction, not both",
     path: ["fixedAssetId"]
-  });
+  })
+  .refine((data) => !data.consumeToProject || !!data.projectId, {
+    message: "Pick a charge number to consume the job to a project",
+    path: ["consumeToProject"]
+  })
+  .refine(
+    (data) =>
+      !data.consumeToProject || !(data.fixedAssetClassId || data.fixedAssetId),
+    {
+      message: "A job completes to a project or to a fixed asset, not both",
+      path: ["consumeToProject"]
+    }
+  )
+  .refine((data) => !data.receiveToProjectStock || !!data.projectId, {
+    message: "Pick a charge number to receive the job into project stock",
+    path: ["receiveToProjectStock"]
+  })
+  .refine((data) => !(data.receiveToProjectStock && data.consumeToProject), {
+    message:
+      "A job consumes to its project or receives into its stock, not both",
+    path: ["receiveToProjectStock"]
+  })
+  .refine(
+    (data) =>
+      !data.receiveToProjectStock ||
+      !(data.fixedAssetClassId || data.fixedAssetId),
+    {
+      message: "A job completes to project stock or to a fixed asset, not both",
+      path: ["receiveToProjectStock"]
+    }
+  );
+
+/**
+ * The job form field a `createJob` / `updateJobDetails` refusal belongs on:
+ * a refused charge number (`validation`, from `chargeNumberError`) on the
+ * Charge Number picker, a budget Block (`conflict`) on the quantity. Any other
+ * refusal has no field. `rule` (the item) is handled by the routes.
+ */
+export function jobFormRefusalField(
+  category: string | undefined
+): string | null {
+  if (category === "validation") return "projectId__projectElementId";
+  if (category === "conflict") return "quantity";
+  return null;
+}
 
 /**
  * The Make to Asset item rule, the same one `complete_job_to_inventory`
@@ -469,6 +658,16 @@ export const salesOrderToJobValidator = baseJobValidator
     quoteLineId: zfd.text(z.string().optional()),
     salesOrderId: zfd.text(z.string()),
     salesOrderLineId: zfd.text(z.string())
+  })
+  .refine((data) => !data.consumeToProject, {
+    message:
+      "A job for a sales order line ships to the customer and cannot consume to a project",
+    path: ["consumeToProject"]
+  })
+  .refine((data) => !data.receiveToProjectStock, {
+    message:
+      "A job for a sales order line ships from unassigned stock and cannot receive into project stock",
+    path: ["receiveToProjectStock"]
   })
   .refine(
     (data) => {
@@ -1133,6 +1332,8 @@ export const productionOrderValidator = z.object({
   existingReadableId: zfd.text(z.string().optional()),
   existingStatus: zfd.text(z.enum(jobStatus).optional()),
   isASAP: z.boolean().optional(),
+  // The Make action this suggestion came from, which Make settles
+  planningActionId: zfd.text(z.string().optional()),
   // Reorder-policy attribution, copied from the Make action (absent on a job
   // the planner added): the chart's order popover explains the suggestion
   // from it, as it does for a purchase order.
@@ -1829,6 +2030,13 @@ export const peopleAbsenceRangeValidator = z
 export const peopleMoveValidator = z.object({
   id: z.string().min(1, { message: "Assignment is required" }),
   workCenterId: z.string().min(1, { message: "Work center is required" })
+});
+
+// The matrix's drag: one assignment to another person and/or day, same station
+export const peopleMoveCellValidator = z.object({
+  id: z.string().min(1, { message: "Assignment is required" }),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  date: z.string().min(1, { message: "Date is required" })
 });
 
 // One atomic edit of a person's whole day: the given rows become the day's

@@ -6,7 +6,10 @@ import type { KyselyTx } from "@carbon/database/client";
 import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import { createMappingService } from "../../../core/external-mapping";
 import type { Accounting } from "../../../core/types";
-import { withTriggersDisabled } from "../../../core/utils";
+import {
+  contactsWithEmailFirst,
+  withTriggersDisabled
+} from "../../../core/utils";
 import type { Rillet, RilletCustomerWrite, RilletWriteOmit } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
 import {
@@ -208,6 +211,7 @@ export class RilletCustomerSyncer extends RilletEntitySyncer<
       ])
       .where("customer.id", "in", ids)
       .where("customer.companyId", "=", this.companyId)
+      .orderBy(contactsWithEmailFirst)
       .execute();
 
     return this.groupAndTransformRows(rows as CustomerRow[]);

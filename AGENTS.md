@@ -14,6 +14,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - A new record type copies its closest sibling — the record users would call the same kind of thing (lease ↔ rental agreement ↔ contract, sales order ↔ purchase order, RMA ↔ supplier return) — routes and UI file for file. Name the sibling in the spec and the plan. Ask before you deviate from it (see `.ai/lessons.md` → "A new record type copies its sibling's UI").
 - Enter plan mode for non-trivial tasks (3+ steps or architectural decisions).
 - Use subagents liberally to keep the main context window clean.
+- Only the main agent runs the heavy checks — the `erp` typecheck, `pnpm generate:mcp` and `pnpm check:manifest` — once, after its subagents finish. A subagent never runs them, nor raw `tsc` in `apps/erp`. Each can take up to ~10 GB, and a machine-wide lock (`packages/dev/bin/heavy-lock`) queues them one at a time across every worktree.
 - Run `pnpm run generate:types` after schema/migration changes, BEFORE typechecking.
 - Start every new source file with its SPDX license header — AGPL, or the commercial one under `packages/ee/` and in `.ee.` files. Run the fixer (`pnpm --filter @carbon/checks license-headers`) rather than hand-typing it. Moving a file into or out of `packages/ee/`, or adding/removing `.ee.` in its name, changes its license and so its header.
 - Resolve every merge or rebase conflict with the `resolving-merge-conflicts` skill (`.claude/skills/resolving-merge-conflicts/SKILL.md`): load it before touching a conflicted file. Its checks here are the scoped typecheck and tests, Biome, and `pnpm --filter @carbon/checks clobbers` when migrations are involved.
@@ -103,6 +104,11 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Inventory (lots, bins, adjustments) | `.claude/rules/inventory-system.md` + `modules/inventory/AGENTS.md` |
 | Production (work orders, scheduling, routings) | `.claude/rules/scheduling-data-structures.md` + `modules/production/AGENTS.md` |
 | MES (shop floor, job operations) | `.claude/rules/mes-job-operation-ui.md` |
+| Projects (elements, charge numbers, timesheets, project ledger) | `.claude/rules/projects-system.md` + `apps/erp/app/modules/projects/AGENTS.md` |
+| Project billing (T&M and Cost Plus contract lines, bill rates, billable items, funding) | `.claude/rules/project-billing.md` + `.claude/rules/projects-system.md` + `apps/erp/app/modules/sales/AGENTS.md` (Contracts) |
+| Service jobs (depot and field service, warranty, RMA service lines, customer assets, the dispatch grid) | `.claude/rules/service-jobs.md` + `apps/erp/app/modules/service/AGENTS.md` |
+| Government contracting (DCAA timekeeping, unallowable cost, labor distribution, CLIN funding) | `.claude/rules/government-contracting.md` + `.claude/rules/projects-system.md` |
+| Contract financing (progress payments, SF 1443, PBP, liquidation) | `.claude/rules/contract-financing.md` + `.claude/rules/government-contracting.md` |
 | Quality (inspections, NCRs, CAPAs) | `modules/quality/AGENTS.md` |
 | Sales (quotes, orders) | `.claude/rules/quote-discount-system.md` + `modules/sales/AGENTS.md` |
 | Accounting (GL, journal entries) | `.claude/rules/accounting-sync-handlers.md` + `modules/accounting/AGENTS.md` |
@@ -135,11 +141,12 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Docs content, glossary, in-app agent knowledge base | `.claude/rules/agent-knowledge-base.md` + `docs/content/AGENTS.md` |
 | **Integrations** | |
 | Ramp integration (charges, accounting-provider sync) | `.claude/rules/ramp-integration.md` |
-| Jira integration | `.claude/rules/jira-integration.md` |
-| Linear integration | `.claude/rules/linear-integration.md` |
+| Jira integration | `.claude/rules/jira-integration.md` + `.claude/rules/issue-sync.md` |
+| Linear integration | `.claude/rules/linear-integration.md` + `.claude/rules/issue-sync.md` |
 | OEE providers / machine monitoring (Sense, loaded operation, unattributed machine time) | `.claude/rules/oee-provider.md` + `apps/erp/app/modules/production/AGENTS.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
+| Shared dev containers (`crbn-shared`, database per worktree, pg_cron/pg_net forwarding, `--isolated`) | `.claude/rules/dev-shared-services.md` |
 | Client cache (`cachedClientLoader`, `useLoaderQuery`, `useAction`) | `.claude/rules/clientAction-patterns.md` + `packages/query/AGENTS.md` |
 | Realtime (broadcast, `handle.realtime`, live lists, change log) | `.claude/rules/realtime-system.md` + `packages/query/AGENTS.md` |
 | Service workers, offline page, app icon badge, installing the app | `.claude/rules/service-workers.md` |

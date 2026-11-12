@@ -68,6 +68,16 @@ jobs:
       - name: Lingui
         if: ${{ !cancelled() }}
         run: pnpm run lingui:check
+      # Validate the committed record before Catalog can restore or rewrite it.
+      - name: Manifest digest
+        if: ${{ !cancelled() }}
+        run: |
+          digest=apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json
+          if ! git cat-file -e "HEAD:$digest"; then
+            echo "::error::The API manifest digest must be committed. Run pnpm generate:mcp and commit $digest." >&2
+            exit 1
+          fi
+          pnpm run check:manifest
       - name: Catalog
         if: ${{ !cancelled() }}
         run: pnpm run check:workflow-catalog

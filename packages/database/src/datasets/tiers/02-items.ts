@@ -25,7 +25,9 @@ async function seedInspectionPlan(
   const rule = inspectionPlan(spec);
   const documentId = await insertId(ctx, "inspectionDocument", {
     partId: need(ctx.refs.items, spec.item).id,
-    drawingNumber: spec.drawingNumber,
+    name: spec.name,
+    // Receipts and jobs use it, so it is the plan's published version.
+    status: "Active",
     samplingPlanType: rule.type,
     samplingAql: rule.aql,
     samplingInspectionLevel: rule.inspectionLevel,
@@ -249,7 +251,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
 
   const inspectionPlanIds: Record<string, string> = {};
   for (const plan of data.inspectionPlans) {
-    ctx.log(`inspection plan ${plan.drawingNumber}`);
+    ctx.log(`inspection plan ${plan.name}`);
     inspectionPlanIds[plan.key] = await seedInspectionPlan(ctx, plan);
   }
 
@@ -348,11 +350,10 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     });
   }
 
-  // The active revision keeps the Design default: nothing in the app sets a
-  // revision to Production, and a Production revision locks its BOM/BOP with
-  // no way to unlock it but a change notice. The rungs share its readableId
-  // and stay out of ctx.refs.items so later tiers keep resolving the active
-  // revision.
+  // Every revision keeps the Design default: nothing in the app sets a
+  // revision status, and a Production revision locks its BOM/BOP. The rungs
+  // share the active revision's readableId and stay out of ctx.refs.items so
+  // later tiers keep resolving the active revision.
   ctx.log("revision ladder");
   const itemSpecs = allItemSpecs(data);
   for (const ladder of data.revisionLadder) {
@@ -366,14 +367,12 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       ...baseSpec,
       revision: ladder.obsoleteRevision,
       active: false,
-      revisionStatus: "Obsolete",
       description: `Rev ${ladder.obsoleteRevision} — superseded; kept for historical jobs`
     });
     await createItem(ctx, {
       ...baseSpec,
       revision: ladder.nextRevision,
       active: false,
-      revisionStatus: ladder.nextStatus,
       description: `Rev ${ladder.nextRevision} — in work, not yet released`
     });
   }

@@ -34,7 +34,8 @@ test("sends every template the ERP serves, with its subject, in one PATCH", asyn
   assert.equal(body.mailer_subjects_magic_link, "Your Carbon sign-in code");
   assert.match(body.mailer_templates_magic_link_content, /magic-link\.html/);
   assert.match(body.mailer_templates_email_change_content, /email-change\.html/);
-  assert.equal(Object.keys(body).length, 10);
+  assert.equal(body.mailer_otp_length, 6);
+  assert.equal(Object.keys(body).length, 11);
   assert.equal(calls[0]!.url, "https://app.example.com/templates/magic-link.html");
 });
 

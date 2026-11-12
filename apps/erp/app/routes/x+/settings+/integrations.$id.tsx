@@ -76,7 +76,7 @@ import { validationError, validator } from "@carbon/form";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { Badge } from "@carbon/react";
+import { Badge, useRouteDialog } from "@carbon/react";
 import {
   getConnectAccountStatus,
   isConnectAccountStillLinked
@@ -89,7 +89,6 @@ import {
   data,
   Link,
   useLoaderData,
-  useNavigate,
   useParams,
   useSearchParams
 } from "react-router";
@@ -1269,6 +1268,20 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // Fetch existing metadata so we merge form settings without
   // overwriting credentials and syncConfig
   const existing = await getIntegration(client, integrationId, companyId);
+
+  // A switched-off integration (`active: false` on its config) shows a
+  // disabled Install button; this refuses the same install posted directly. A
+  // company that already has it installed can still save and uninstall.
+  if (!integration.active && existing.data?.active !== true) {
+    throw redirect(
+      path.to.integrations,
+      await flash(
+        request,
+        error(null, `${integration.name} isn't available on this platform`)
+      )
+    );
+  }
+
   const existingMetadata =
     (existing.data?.metadata as Record<string, unknown>) ?? {};
 
@@ -1504,7 +1517,8 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     // Settings save on an already-installed integration: run `onUpdate` so
     // derived server state (e.g. accounting event subscriptions) converges
     // without a reinstall. Best-effort — the save is already persisted, so
-    // a hook failure is logged rather than surfaced as a save failure.
+    // a hook failure doesn't roll that back — just surface it as a flashed
+    // error, since a save can be the repair the user was told to make.
     const onUpdate = getIntegrationServerHooks(integrationId)?.onUpdate;
     if (onUpdate) {
       try {
@@ -1514,6 +1528,17 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
           integrationId,
           error: hookError
         });
+        await invalidateIntegrationHealthCache(integrationId, companyId);
+        throw redirect(
+          path.to.integrations,
+          await flash(
+            request,
+            error(
+              hookError,
+              `Saved ${integration.name} settings, but setup hook failed`
+            )
+          )
+        );
       }
     }
   }
@@ -1626,7 +1651,7 @@ export default function IntegrationRoute() {
     devices
   } = useLoaderData<typeof loader>();
 
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.integrations);
   const [searchParams] = useSearchParams();
   const { id: integrationId } = useParams();
 
@@ -1783,7 +1808,8 @@ export default function IntegrationRoute() {
             onActionStarted: mountActions.onActionStarted
           }
         : {})}
-      onClose={() => navigate(path.to.integrations)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

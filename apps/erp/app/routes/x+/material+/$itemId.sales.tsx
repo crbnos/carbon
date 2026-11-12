@@ -14,11 +14,13 @@ import { VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { useRouteData } from "~/hooks";
 import { itemUnitSalePriceValidator } from "~/modules/items/items.models";
 import {
   getItemUnitSalePrice,
   upsertItemUnitSalePrice
 } from "~/modules/items/items.service";
+import type { MaterialSummary } from "~/modules/items/types";
 import { ItemSalePriceForm } from "~/modules/items/ui/Item";
 import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -63,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -81,6 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updateMaterialUnitSalePrice = await upsertItemUnitSalePrice(client, {
     ...validation.data,
+    companyId,
     itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
@@ -111,9 +114,18 @@ export default function MaterialSalesRoute() {
     salesRuleLibrary,
     itemId
   } = useLoaderData<typeof loader>();
+  const materialData = useRouteData<{ materialSummary: MaterialSummary }>(
+    path.to.material(itemId)
+  );
+  const isSerialTracked =
+    materialData?.materialSummary?.itemTrackingType === "Serial";
 
   const initialValues = {
     ...materialUnitSalePrice,
+    laborWarrantyMonths:
+      materialUnitSalePrice?.laborWarrantyMonths ?? undefined,
+    partsWarrantyMonths:
+      materialUnitSalePrice?.partsWarrantyMonths ?? undefined,
     salesUnitOfMeasureCode: materialUnitSalePrice?.salesUnitOfMeasureCode ?? "",
     ...getCustomFields(materialUnitSalePrice.customFields),
     itemId: itemId
@@ -124,6 +136,7 @@ export default function MaterialSalesRoute() {
       <ItemSalePriceForm
         key={initialValues.itemId}
         initialValues={initialValues}
+        isSerialTracked={isSerialTracked}
       />
       <SalesRuleAssignmentsList
         itemId={itemId}

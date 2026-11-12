@@ -303,6 +303,7 @@ const PeriodSelector = ({
                     <Trans>Start Date</Trans>
                   </p>
                   <DatePicker
+                    aria-label={t`Start date`}
                     value={draftStart ? parseDate(draftStart) : null}
                     onChange={(value) => setDraftStart(value?.toString())}
                   />
@@ -316,6 +317,7 @@ const PeriodSelector = ({
                 )}
               </p>
               <DatePicker
+                aria-label={variant === "asOf" ? t`As of` : t`End date`}
                 value={draftEnd ? parseDate(draftEnd) : null}
                 onChange={(value) => setDraftEnd(value?.toString())}
               />

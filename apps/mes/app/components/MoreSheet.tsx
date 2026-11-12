@@ -23,7 +23,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { MouseEvent, ReactNode } from "react";
+import type { MouseEvent, ReactNode, RefObject } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -100,12 +100,15 @@ export function ToolSurface({
   description,
   body,
   footer,
+  initialFocusRef,
   wrap = (children) => children
 }: {
   surface: ReturnType<typeof useToolSurface>;
   description?: ReactNode;
   body: ReactNode;
   footer: ReactNode;
+  /** Modal: focus this on open instead of the primary (last) footer action. */
+  initialFocusRef?: RefObject<HTMLElement | null>;
   wrap?: (children: ReactNode) => ReactNode;
 }) {
   if (surface.inSheet) {
@@ -126,7 +129,13 @@ export function ToolSurface({
   if (!surface.isOpen) return null;
   return (
     <Modal open onOpenChange={(open) => !open && surface.close()}>
-      <ModalContent>
+      <ModalContent
+        onOpenAutoFocus={(event) => {
+          if (!initialFocusRef?.current) return;
+          event.preventDefault();
+          initialFocusRef.current.focus();
+        }}
+      >
         {wrap(
           <>
             <ModalHeader>
@@ -260,6 +269,7 @@ export function MoreSheet({
         <div className="px-2 pb-4">
           {/* Rail items read their expanded layout from this group. */}
           <MorePageContext.Provider value={page}>
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: delegated listener that closes the sheet after a link inside is activated; Enter on a link fires this click too */}
             <div
               data-state="expanded"
               onClick={closeOnLink}
@@ -335,39 +345,52 @@ export function MoreSheet({
                     )}
                   </>
                 )}
-                <div className="flex h-10 items-center gap-4 px-2 text-sm text-foreground/70">
-                  <span className="flex size-6 shrink-0 items-center justify-center [&>svg]:size-4">
-                    {user.mode === "dark" ? <LuMoon /> : <LuSun />}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate font-medium">
-                    <Trans>Appearance</Trans>
-                  </span>
-                  <div
-                    role="radiogroup"
-                    aria-label={t`Appearance`}
-                    className="flex shrink-0 rounded-lg bg-muted p-0.5"
-                  >
-                    {modeOptions.map((option) => {
-                      const selected = user.modePreference === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          role="radio"
-                          aria-checked={selected}
-                          onClick={() => user.onModeChange(option.value)}
-                          className={cn(
-                            "hit-area flex h-8 min-w-11 items-center justify-center rounded-md px-2 text-sm text-muted-foreground",
-                            selected &&
-                              "bg-background text-foreground shadow-button-base"
-                          )}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })}
+                {/* The account settings modal is the station's account, which
+                    a pinned-in operator never opens: they keep the mode picker. */}
+                {user.showingOperator ? (
+                  <div className="flex h-10 items-center gap-4 px-2 text-sm text-foreground/70">
+                    <span className="flex size-6 shrink-0 items-center justify-center [&>svg]:size-4">
+                      {user.mode === "dark" ? <LuMoon /> : <LuSun />}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      <Trans>Appearance</Trans>
+                    </span>
+                    <div
+                      role="radiogroup"
+                      aria-label={t`Appearance`}
+                      className="flex shrink-0 rounded-lg bg-muted p-0.5"
+                    >
+                      {modeOptions.map((option) => {
+                        const selected = user.modePreference === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => user.onModeChange(option.value)}
+                            className={cn(
+                              "hit-area flex h-8 min-w-11 items-center justify-center rounded-md px-2 text-sm text-muted-foreground",
+                              selected &&
+                                "bg-background text-foreground shadow-button-base"
+                            )}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <NavRailItem
+                    icon={user.mode === "dark" ? <LuMoon /> : <LuSun />}
+                    label={t`Appearance`}
+                    onClick={() => {
+                      onOpenChange(false);
+                      openAccountSettings("appearance");
+                    }}
+                  />
+                )}
                 {!user.isOperatorPinnedIn && (
                   <>
                     {consoleEnabled && (

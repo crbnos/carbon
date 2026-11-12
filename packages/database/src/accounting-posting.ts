@@ -73,6 +73,32 @@ export const CUSTOMER_DEPOSIT_DESCRIPTION = "Customer Deposit";
 export const CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION =
   "Customer Deposit (applied)";
 
+/** The supplier side of the same leg: a supplier payment that references a
+ *  purchase order is a prepayment, an ASSET on the supplier prepayment account
+ *  (1150), never an on-account debit inside payables. The same writer/reader
+ *  contract as the customer descriptions. */
+export const SUPPLIER_PREPAYMENT_DESCRIPTION = "Supplier Prepayment";
+export const SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION =
+  "Supplier Prepayment (applied)";
+
+/** The description a deposit's unapplied cash is booked with, by side. */
+export function depositDescription(isAR: boolean): string {
+  return isAR ? CUSTOMER_DEPOSIT_DESCRIPTION : SUPPLIER_PREPAYMENT_DESCRIPTION;
+}
+
+/** The description a deposit is released with, by side. */
+export function depositAppliedDescription(isAR: boolean): string {
+  return isAR
+    ? CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION
+    : SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION;
+}
+
+/** Both deposit descriptions: the prior-credit lookup reads either. */
+export const DEPOSIT_DESCRIPTIONS = [
+  CUSTOMER_DEPOSIT_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_DESCRIPTION
+] as const;
+
 /** The description the employee-payable control line of a posted reimbursement
  *  journal is written with, and the exact string a later payout reads back to
  *  find the carrying value that reimbursement was originally booked at.
@@ -94,7 +120,8 @@ export type AccountingPostingRole =
   | "Receivables"
   | "Payables"
   | "ShippingRevenue"
-  | "SalesRevenue";
+  | "SalesRevenue"
+  | "ServiceRevenue";
 
 /** Roles come from the original journal, never a mutable account name or default. */
 export function classifyAccountingPostingRole(
@@ -111,6 +138,10 @@ export function classifyAccountingPostingRole(
       return "ShippingRevenue";
     case "Sales Account":
       return "SalesRevenue";
+    // A service job line's revenue leg (`planServiceJobLine`). Its
+    // "Contract Assets" leg is not revenue and stays unclassified.
+    case "Service Revenue":
+      return "ServiceRevenue";
     default:
       return null;
   }

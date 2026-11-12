@@ -21,7 +21,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
@@ -41,11 +41,14 @@ import {
 import { maintenanceDispatchPriority } from "~/services/models";
 import { getWorkCentersByLocation } from "~/services/operations.service";
 import type { Handle } from "~/utils/handle";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   realtime: ["maintenanceDispatch"]
 };
+
+export const meta: MetaFunction = () => pageMeta("Maintenance");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});
@@ -238,7 +241,7 @@ function MaintenanceCard({ dispatch }: { dispatch: MaintenanceDispatch }) {
   }
   return (
     <Link to={path.to.maintenanceDetail(dispatch.id)}>
-      <Card className="hover:border-primary/50 transition-colors cursor-pointer p-0">
+      <Card className="cursor-pointer p-0">
         <CardHeader className="pb-2">
           <HStack className="justify-between">
             <HStack spacing={2}>
@@ -428,7 +431,7 @@ export default function MaintenanceRoute() {
       <MesAppBar title={<Trans>Maintenance</Trans>} />
       <MesQueueHeader title={<Trans>Maintenance</Trans>} />
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         <div className="w-full p-4">
           <VStack spacing={4}>
             <div className="w-full">
@@ -567,7 +570,7 @@ export default function MaintenanceRoute() {
             </div>
           </VStack>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

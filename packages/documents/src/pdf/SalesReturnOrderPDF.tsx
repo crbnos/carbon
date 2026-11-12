@@ -4,12 +4,12 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  resolveTemplate
+  documentValues,
+  resolveTemplate,
+  salesReturnOrderTexts,
+  type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
 import {
@@ -17,6 +17,8 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
+import { documentChrome } from "./blocks/documentChrome";
 import type {
   ReturnOrderAddress,
   SalesReturnOrderData,
@@ -26,9 +28,9 @@ import {
   buildSalesReturnOrderVars,
   salesReturnOrderBlockRegistry
 } from "./blocks/salesReturnOrder";
-import { Template } from "./components";
 
 interface SalesReturnOrderPDFProps extends PDF {
+  valueCollector?: ValueCollector;
   salesReturnOrder: Database["public"]["Views"]["salesReturnOrders"]["Row"];
   salesReturnOrderLines: SalesReturnOrderPdfLine[];
   /** Company location the goods return to (the header's `locationId`). */
@@ -48,6 +50,7 @@ interface SalesReturnOrderPDFProps extends PDF {
 }
 
 const SalesReturnOrderPDF = ({
+  valueCollector,
   company,
   companySettings,
   meta,
@@ -59,8 +62,7 @@ const SalesReturnOrderPDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {},
-  title = "Return Merchandise Authorization"
+  sections = {}
 }: SalesReturnOrderPDFProps) => {
   const currencyCode =
     salesReturnOrder.currencyCode ?? company.baseCurrencyCode;
@@ -69,15 +71,29 @@ const SalesReturnOrderPDF = ({
   // getRateFormatter. The total row stays on numberFormatter.
   const rateFormatter = getRateFormatter(locale, currencyDecimals);
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("salesReturnOrder", template);
+  const resolved = resolveTemplate("salesReturnOrder", template);
+  const { theme, settings, footerSectionId } = resolved;
 
-  const vars = buildSalesReturnOrderVars({
-    salesReturnOrder,
-    customerAddress,
-    company,
-    currencyCode
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildSalesReturnOrderVars({
+      salesReturnOrder,
+      salesReturnOrderLines,
+      customerAddress,
+      returnToAddress,
+      company,
+      currencyCode,
+      locale,
+      numberFormatter
+    })
+  );
+  const chrome = documentChrome({
+    texts: salesReturnOrderTexts.document,
+    template: resolved,
+    vars,
+    sections
   });
+  const { documentTitle, documentNumber, headerOptions } = chrome;
 
   const registration = resolveRegistrationLine({
     company,
@@ -86,11 +102,6 @@ const SalesReturnOrderPDF = ({
     settings,
     vars
   });
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const data: SalesReturnOrderData = {
     company,
@@ -106,54 +117,25 @@ const SalesReturnOrderPDF = ({
     currencyCode,
     numberFormatter,
     rateFormatter,
+    values,
     vars,
-    headerOptions
+    headerOptions,
+    documentTitle,
+    documentNumber
   };
 
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
-
   return (
-    <Template
-      theme={theme}
-      title={title}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "rma, return merchandise authorization",
-        subject: meta?.subject ?? "Return Merchandise Authorization"
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="rma, return merchandise authorization"
       footerDocumentId={salesReturnOrder?.salesReturnOrderId}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-    >
-      {visibleBlocks.map((block) => {
-        const render = salesReturnOrderBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={salesReturnOrderBlockRegistry}
+      data={data}
+    />
   );
 };
 

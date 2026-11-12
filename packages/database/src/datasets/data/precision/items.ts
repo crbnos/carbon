@@ -964,8 +964,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "MCH-FLANGE-SS",
     obsoleteRevision: "A",
-    nextRevision: "B",
-    nextStatus: "Prototype"
+    nextRevision: "B"
   }
 ];
 
@@ -974,7 +973,7 @@ export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   {
     key: "SHAFT-DR-RUNOUT",
     item: "MCH-SHAFT-DR",
-    drawingNumber: "MPW-2217 Rev B",
+    name: "MPW-2217 Rev B",
     aql: 1.0,
     features: [
       {

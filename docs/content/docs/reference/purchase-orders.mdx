@@ -11,6 +11,7 @@ Each purchase-order line tracks received and invoiced quantities independently. 
 
 <FieldTable>
   <Field name="Item" type="reference">What's being bought.</Field>
+  <Field name="Description" type="text">What the supplier reads on the PDF line. It can run over several lines, and the PDF prints all of them unless the purchase order template's **Item text** option is **Truncate to one line**.</Field>
   <Field name="Purchase quantity" type="number">Ordered quantity.</Field>
   <Field name="Quantity received" type="number">Received so far; `quantity to receive` is the remainder.</Field>
   <Field name="Quantity invoiced" type="number">Billed so far; `quantity to invoice` is the remainder.</Field>
@@ -40,23 +41,40 @@ The status is computed from the state of its lines, never set by hand.
 
 ## Dates
 
-The order and every line carry three dates: the <Term id="purchase-order-delivery-requested-date">Requested Date</Term>, the <Term id="purchase-order-delivery-promised-date">Promised Date</Term> and the <Term id="purchase-order-delivery-actual-date">Delivery Date</Term>.
+The order and every line each carry three dates. The order's are the <Term id="purchase-order-delivery-requested-date">Receipt Requested Date</Term>, the <Term id="purchase-order-delivery-promised-date">Receipt Promised Date</Term> and the <Term id="purchase-order-delivery-actual-date">Delivery Date</Term>. A line's are the <Term id="purchase-order-line-required-date">Required Date</Term>, the Promised Date and the Received Date. The PDF prints the line's Required Date in its **Required** column.
 
-The order's dates are set on the **Shipping** card and in the properties panel. A line's dates are set in the **Dates** section of the line page, and the order summary shows each line's promised date as a **Promised** pill you can change in place.
+The order's dates are set on the **Shipping** card and in the properties panel. A line's dates are set in the **Dates** section of the line page, and the order summary shows each item line's dates as **Required**, **Promised** and **Received** pills you can change in place, under the same rules as the line page. The summary has no date pills on a phone or for a G/L Account or Fixed Asset line; open the line page for those.
 
-A new line starts on the order's Requested and Promised dates. When you change an order date, every line whose date is empty or still the old order date takes the new one. A line you gave its own date keeps it.
+A new line starts on the order's Receipt Requested Date and Receipt Promised Date. When you change an order date, every line whose matching date is empty or still the old order date takes the new one. A line you gave its own date keeps it. Clearing an order date leaves the lines' dates as they are.
 
 <Callout type="info" title="The Delivery Date only reaches lines that received goods">
-The Delivery Date records when goods arrived, so a new order Delivery Date moves only lines with a quantity received. Posting a receipt also sets each received line's Delivery Date to the day of the receipt, which replaces a date you corrected by hand.
+The Delivery Date records when goods arrived, so a new order Delivery Date moves the Received Date only of lines with a quantity received. Posting a receipt also sets each received line's Received Date to the day of the receipt, which replaces a date you corrected by hand.
 </Callout>
 
 Each date locks at a different point:
 
-- **Requested Date** locks once the order is confirmed (from **"To Receive and Invoice"** onward).
-- **Promised Date** stays editable until the order is fully received (**"To Invoice"**, **"Completed"** or **"Closed"**). A line's promised date also locks when the line is received complete, and such a line keeps its requested and promised dates when the order's dates change.
-- **Delivery Date** can always be corrected.
+- **Receipt Requested Date** and a line's **Required Date** lock once the order is confirmed (from **"To Receive and Invoice"** onward).
+- **Receipt Promised Date** and a line's **Promised Date** stay editable until the order is fully received (**"To Invoice"**, **"Completed"** or **"Closed"**). A line's Promised Date also locks when the line is received complete, and such a line keeps its Required and Promised dates when the order's dates change.
+- **Delivery Date** and a line's **Received Date** can always be corrected.
 
-<Screenshot label="Purchase order line page: the Dates section with Requested Date disabled and Promised Date and Delivery Date editable on a To Receive order" caption="A confirmed order keeps the requested date and lets the promise move." />
+<Screenshot label="Purchase order line page: the Dates section with Required Date disabled and Promised Date and Received Date editable on a To Receive order" caption="A confirmed order keeps the required date and lets the promise move." />
+
+## Shipping details
+
+The **Shipping** card records how the goods travel: **Shipping Method**, **Tracking Number**, <Term id="purchase-order-delivery-shipped-date">Shipped Date</Term> and <Term id="purchase-order-delivery-expected-receipt-date">Expected Receipt Date</Term>. A supplier often gives these after you finalize, so you can edit them on a released order. The card locks while the order waits for approval, and when it is **"Completed"** or **"Closed"**.
+
+You enter the Expected Receipt Date by hand. It does not change planning, which uses the Promised Date. To record air, rail or sea, add each one as a shipping method under **Inventory → Shipping Methods**.
+
+## Requiring a promised date
+
+A company can refuse to finalize a purchase order that has no promised date. Turn on **Require a Promised Date to Finalize Purchase Orders** under **Settings → Purchasing**. It is off by default. A date on the order covers every line, and Comment lines need no date. **Mark as Planned** still works without a date.
+
+
+## Lines and search
+
+Each order with lines has an arrow at its left. Open it to see its lines: the part number and name, the part number the supplier uses, the description and the quantity. Every row starts closed.
+
+The search box on **Purchasing → Purchase Orders** also finds an order by a value on its lines: the part number or name, the supplier's part number, or the line description. It also matches the order number, the supplier, the supplier's reference, the tracking number and the job. Every word must match, and case, spaces and punctuation are ignored. While you search, each order with a matching line opens and shows the lines that matched.
 
 ## Related
 
@@ -96,11 +114,18 @@ The line is already fully received; there's nothing left to short-close. Reopen 
 ### "Receiving is already closed for this line" / "Receiving is not closed for this line"
 The close/reopen action was applied twice. The line is already in the requested state — refresh the page to see the current state.
 
-### "Cannot change the requested date of a confirmed purchase order."
-A line's Requested Date (`purchaseOrderLine.requiredDate`) locks at the same statuses as the order. Reopen the order to change it, or record the supplier's new date as the Promised Date.
+### "Cannot change the required date of a confirmed purchase order."
+A line's Required Date (`purchaseOrderLine.requiredDate`) locks at the same statuses as the order. Reopen the order to change it, or record the supplier's new date as the Promised Date.
 
 ### "Cannot change the promised date of a received line." / "…of a fully received purchase order." / "…of a closed purchase order."
 The line is received complete, the order is at "To Invoice" or "Completed", or the order was closed (a Closed order may still have lines with nothing received; reopen it to change the date). Line dates save one at a time through `updatePurchaseOrderLineDate`; the order's Receipt Promised Date through `updatePurchaseOrders`.
+
+### "Add a promised date before you finalize this purchase order."
+
+Your company requires a promised date to finalize. Set the **Promised Date** on the order, or on each line, then finalize again.
+
+### "The supplier contact has no email address"
+**Send Via** is set to **Email**, and the chosen supplier contact has no email address. Add an email to the contact, pick another contact, or set **Send Via** to **None**.
 
 ### "Failed to finalize purchase order"
 Generic wrapper. Common underlying causes: no PO number sequence configured for the company, or a PDF/email step failing (separate "Failed to generate PDF" / "Failed to send email" messages). Ask for the full error text and check the supplier contact's email if sending failed.

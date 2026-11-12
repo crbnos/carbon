@@ -36,8 +36,9 @@ import {
 } from "@carbon/database/journal-posting-status";
 import { toJson } from "@carbon/database/json";
 import type { AccountClass } from "@carbon/database/ledger";
-import { toStoredAmount } from "@carbon/database/ledger";
+import { debit, toStoredAmount } from "@carbon/database/ledger";
 import { assertBalanced, equals } from "@carbon/database/precision";
+import { withInspectionRelease } from "@carbon/database/quality";
 import {
   gte,
   inOrder,
@@ -46,8 +47,11 @@ import {
   selectRows,
   updateRowsById
 } from "@carbon/database/rows";
-import { getNextSequence } from "@carbon/database/sequence";
-import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
+import { getNextSequence, getNextSequences } from "@carbon/database/sequence";
+import {
+  findStorageObjectBuckets,
+  listStorageObjects
+} from "@carbon/database/storage-objects";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -57,7 +61,13 @@ import {
   getPurchaseOrderDisplayId,
   type PurchaseOrderApproval
 } from "@carbon/documents/pdf";
-import { getDocumentApproval } from "@carbon/ee/approvals.server";
+import {
+  getApprovalRuleByAmount,
+  getApproverUserIdsForRule,
+  getDocumentApproval,
+  isApprovalRequired,
+  rejectRequest
+} from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   getCompanyPrivateBucket,
@@ -70,6 +80,7 @@ import {
 import { isModelRawDownloadable } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import {
   addDays,
   addMonths,
@@ -78,8 +89,10 @@ import {
   buildJournalLineDimensionInserts,
   buildLesseeSchedule,
   datetime,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   escalatedLeasePayment,
+  escapeHTMLChars,
   getCompletionAfterQuantityChange,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
@@ -103,6 +116,7 @@ import {
   measureLesseeAsset,
   normalizeLesseeLegs,
   openEndedLeaseHorizon,
+  PO_EMAIL_ATTACHMENT_LIMIT_MB,
   paymentMonthIndex,
   remeasureLease,
   requireAffected,
@@ -126,16 +140,28 @@ import {
   createDocumentUploadUrl,
   upsertDocument
 } from "~/modules/documents/documents.service";
+import {
+  assertNoRejectedUntrackedLot,
+  removeUnpickedPutAways
+} from "~/modules/inventory/inventory.service";
 import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
+import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people/people.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
 import { getUser } from "~/modules/users/users.service";
+import {
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -146,17 +172,24 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
+import { planningSegmentFilter } from "../production/ui/Planning/planning-action-scope";
 import * as sharedPostings from "../shared/shared.service";
 import {
   allocateJournalLineIds,
+  attributesContain,
+  type BookAdjustmentArgs,
+  bookAdjustment,
   createAdjustmentJournal,
   currencyDecimals,
   cutLeasePaymentRows,
   fromServerFn,
+  getCurrentAccountingPeriod,
+  getDefaultPostingGroup,
   getSupplierPartPriceConverter,
   insertNegatedJournal,
   invokePosting,
   invokePostingOrThrow,
+  isContactEmailRequired,
   resolveAccountingPeriod,
   upsertExternalLink
 } from "../shared/shared.service";
@@ -172,6 +205,7 @@ import type {
   purchaseReturnOrderLineValidator,
   purchaseReturnOrderStatusType,
   purchasingRfqStatusType,
+  RequestQuoteLine,
   selectedLinesValidator,
   supplierBankAccountValidator,
   supplierContactValidator,
@@ -185,22 +219,54 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import {
+  exceedsApprovedAmount,
+  isPurchaseOrderAmendable,
+  isPurchaseOrderMissingPromisedDate,
   leaseDetailFields,
   leaseLineColumns,
   leaseLinePaymentFields,
   type leaseLineValidator,
   leasePaymentTermFields,
   leaseTermColumns,
+  orderItemSupplierFiles,
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
+  PURCHASE_ORDER_AMENDABLE_STATUSES,
+  PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS,
+  PURCHASE_ORDER_LINE_VERSION_COLUMNS,
   PURCHASE_ORDER_LOCKED_STATUSES,
+  PURCHASE_ORDER_RELEASED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
+  type PurchaseOrderForceDeleteBlockers,
+  type PurchaseOrderFundsIntent,
+  type PurchaseOrderLineDateField,
+  type PurchaseOrderLineIdentity,
   type PurchaseOrderLineReceivingIntent,
+  type PurchaseOrderVersion,
   planningLineCurrencyCode,
   planningQuantityChange,
+  planPurchaseOrderRestore,
+  planReceiptReversal,
+  purchaseOrderEditRefusal,
+  purchaseOrderForceDeleteNotificationId,
+  purchaseOrderForceDeletePendingReceiptMessage,
+  purchaseOrderForceDeleteUnsupportedReceiptMessage,
+  purchaseOrderForceDeleteUsedStockMessage,
+  purchaseOrderFundsRefusal,
+  purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateOfOrderDate,
+  purchaseOrderLineDateRefusal,
+  purchaseOrderLineDeleteRefusal,
+  purchaseOrderPromisedDateRefusal,
+  purchaseOrderStatusAfterReversal,
+  type ReceiptReceivedStock,
+  type ReceiptStockRemoval,
+  receivedAfterReceiptReversal,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
-  taxPairForQuantity
+  splitRfqFileAttachments,
+  taxPairForQuantity,
+  toPurchaseQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
 import type {
@@ -215,10 +281,10 @@ import type {
 // out orderCount and partCount (grouped counts), externalId (a subquery) and
 // embedding lets Postgres skip them.
 const SUPPLIERS_LIST_COLUMNS =
-  "id,readableId,name,supplierTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
+  "id,readableId,name,supplierTypeId,status,type,supplierStageId,stage,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
 
 const PURCHASE_ORDERS_LIST_COLUMNS =
-  "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
+  "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,shippedDate,expectedReceiptDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
 
 const logger = getLogger("erp", "purchasing-service");
 
@@ -620,15 +686,24 @@ export async function getPurchaseOrders(
   let query = client
     .from("purchaseOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
-    .select(PURCHASE_ORDERS_LIST_COLUMNS, {
+    .select(withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["purchaseOrderId", "supplierReference"], args.search)
-    );
+  // Every word must occur in the order or one of its lines. `searchPurchaseOrders`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchaseOrders",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.supplierId) {
@@ -687,13 +762,23 @@ export async function getPurchaseOrderApproval(
     withSignature?: boolean;
   }
 ): Promise<(PurchaseOrderApproval & { approvedById: string | null }) | null> {
-  const approval = await getDocumentApproval(
-    serviceRole,
-    "purchaseOrder",
-    purchaseOrderId,
-    companyId
-  );
-  if (!approval) return null;
+  const [approval, order] = await Promise.all([
+    getDocumentApproval(
+      serviceRole,
+      "purchaseOrder",
+      purchaseOrderId,
+      companyId
+    ),
+    serviceRole
+      .from("purchaseOrder")
+      .select("status")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  // A Rejected order (a first approval refused, or an edit's rejection that
+  // could not restore it) runs under no approval, whatever came before.
+  if (!approval || order.data?.status === "Rejected") return null;
   return {
     approvedBy: approval.approvedBy,
     approvedById: approval.approvedById,
@@ -828,11 +913,14 @@ export async function getPurchasingDocumentsAssignedToMe(
 
 // What the row's Order / Make button offers (the grid RPC's orderQuantity,
 // from MRP's open new-supply actions), then the part number so a page is
-// stable when many rows have nothing to order.
+// stable when many rows have nothing to order. An item has one row per
+// netting segment ('' is common, then each project with project stock), so
+// the segment breaks the tie between its rows before the id does.
 export const PURCHASING_PLANNING_PAGING: Paging = {
   defaultSorts: [
     { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
+    { column: "readableIdWithRevision", ascending: true },
+    { column: "planningSegmentId", ascending: true }
   ]
 };
 
@@ -852,6 +940,9 @@ export async function getPurchasingPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_purchasing_planning: same rows and projection, plus the
@@ -879,6 +970,10 @@ export async function getPurchasingPlanning(
     query = query.or(
       searchFilter(["name", "readableIdWithRevision"], args.search)
     );
+  }
+
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
   }
 
   query = setGenericQueryFilters(query, args, PURCHASING_PLANNING_PAGING);
@@ -933,6 +1028,16 @@ export async function getSupplierContact(
     .eq("id", supplierContactId);
   if (companyId) query = query.eq("companyId", companyId);
   return query.single();
+}
+
+/** Whether a supplier contact can be emailed. A failed read counts as no. */
+export async function supplierContactHasEmail(
+  client: SupabaseClient<Database>,
+  supplierContactId: string,
+  companyId: string
+) {
+  const row = await getSupplierContact(client, supplierContactId, companyId);
+  return !!row.data?.contact && isEmailableContact(row.data.contact);
 }
 
 export async function getSupplierContacts(
@@ -1051,7 +1156,7 @@ export async function getSupplierInteractionLineAttachments(
       const storagePath = `${companyId}/supplier-interaction-line/${lineId}/${doc.name}`;
       const { data, error } = await storage(client)
         .company(companyId)
-        .createSignedUrl(storagePath, 3600);
+        .createSignedUrl(storagePath, EMAIL_ATTACHMENT_URL_SECONDS);
       if (!data) {
         logger.error("Failed to create signed URL for attachment", {
           storagePath,
@@ -1184,13 +1289,20 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["supplierQuoteId", "supplierReference"], args.search)
-    );
+  // Every word must occur in the quote or one of its lines. `searchSupplierQuotes`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSupplierQuotes",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, SUPPLIER_QUOTES_PAGING);
@@ -1375,6 +1487,111 @@ export async function getSupplierType(
     .single();
 }
 
+export async function getSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStageId: string,
+  companyId: string
+) {
+  return client
+    .from("supplierStage")
+    .select("*")
+    .eq("id", supplierStageId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export const SUPPLIER_STAGES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
+export async function getSupplierStages(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("supplierStage")
+    .select("id, name, color", {
+      count: listCount(args)
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, SUPPLIER_STAGES_PAGING);
+  }
+
+  return query;
+}
+
+export async function getSupplierStagesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("supplierStage")
+    .select("id, name, color")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function deleteSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStageId: string,
+  companyId: string
+) {
+  return requireAffected(
+    client
+      .from("supplierStage")
+      .delete()
+      .eq("id", supplierStageId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
+}
+
+export async function insertSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStage: {
+    name: string;
+    color: string | null;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client.from("supplierStage").insert([supplierStage]).select("id");
+}
+
+export async function updateSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStage: {
+    id: string;
+    name: string;
+    /** Left out, the stage keeps its color; null clears it. */
+    color?: string | null;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const { id, companyId, name, color, updatedBy } = supplierStage;
+  return requireAffected(
+    client
+      .from("supplierStage")
+      .update({
+        name,
+        ...(color !== undefined && { color }),
+        updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
+}
+
 export const SUPPLIER_TYPES_PAGING: Paging = {
   defaultSorts: [{ column: "name", ascending: true }]
 };
@@ -1434,6 +1651,9 @@ export async function insertSupplierContact(
 ) {
   const { supplierId, companyId, supplierLocationId, contact } =
     supplierContact;
+  if (!hasContactNameOrEmail(contact)) {
+    return { data: null, error: ruleError(contactNameOrEmailMessage.message) };
+  }
   try {
     // One transaction: a contact with no supplier link is invisible in the app.
     const id = await withTransaction(db, async (trx) => {
@@ -1444,6 +1664,12 @@ export async function insertSupplierContact(
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Supplier not found";
+      if (
+        !contact.email?.trim() &&
+        (await isContactEmailRequired(trx, companyId, "supplier"))
+      ) {
+        return SUPPLIER_CONTACT_EMAIL_REQUIRED;
+      }
       if (supplierLocationId) {
         const location = await trx
           .selectFrom("supplierLocation")
@@ -1597,13 +1823,15 @@ export async function finalizePurchaseOrder(
 export async function sendSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string,
-  userId: string
+  userId: string,
+  sharedFilePaths?: string[]
 ) {
   // Send keeps status as Draft, just updates timestamp
   const quoteUpdate = await requireAffected(
     client
       .from("supplierQuote")
       .update({
+        ...(sharedFilePaths ? { sharedFilePaths } : {}),
         updatedAt: datetime.timestamp(),
         updatedBy: userId
       })
@@ -1714,7 +1942,9 @@ export async function submitPurchaseOrderForApproval(
     companyId,
     userId,
     amount,
-    orderDate
+    orderDate,
+    fromStatuses,
+    priorVersion
   }: {
     id: string;
     companyId: string;
@@ -1722,9 +1952,16 @@ export async function submitPurchaseOrderForApproval(
     amount: number;
     /** Today in the company's timezone: set only when the order has none. */
     orderDate: string;
+    /**
+     * Move the order only from these statuses. An order in another status is
+     * left alone and the call returns false (it changed since it was read).
+     */
+    fromStatuses?: readonly (typeof purchaseOrderStatusType)[number][];
+    /** The order as it was before the edit this request is for. */
+    priorVersion?: PurchaseOrderVersion;
   }
 ) {
-  const updated = await db
+  let update = db
     .updateTable("purchaseOrder")
     .set({
       status: "Needs Approval",
@@ -1733,9 +1970,11 @@ export async function submitPurchaseOrderForApproval(
       updatedAt: datetime.timestamp()
     })
     .where("id", "=", id)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
+    .where("companyId", "=", companyId);
+  if (fromStatuses) update = update.where("status", "in", [...fromStatuses]);
+  const updated = await update.executeTakeFirst();
   if (Number(updated.numUpdatedRows ?? 0) !== 1) {
+    if (fromStatuses) return false;
     throw new NotFoundError("Purchase order not found");
   }
 
@@ -1749,18 +1988,1040 @@ export async function submitPurchaseOrderForApproval(
     .executeTakeFirst();
   if (pending) return false;
 
-  await db
+  const request = await db
     .insertInto("approvalRequest")
     .values({
       documentType: "purchaseOrder",
       documentId: id,
       requestedBy: userId,
       amount,
+      hasPriorVersion: priorVersion !== undefined,
       companyId,
       createdBy: userId
     })
-    .execute();
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  if (priorVersion) {
+    await insertPurchaseOrderVersion(db, {
+      companyId,
+      userId,
+      approvalRequestId: request.id,
+      purchaseOrderId: id,
+      version: priorVersion
+    });
+  }
   return true;
+}
+
+/**
+ * Keeps an order's version with its approval request, as rows of
+ * `purchaseOrderVersion` (the exchange rate and the delivery) and
+ * `purchaseOrderLineVersion` (one per line, naming the live line). The rows
+ * carry the same foreign keys as the live rows, so a row they name that is
+ * deleted later is nulled here too, and a company restore renumbers the line
+ * references with the lines.
+ */
+async function insertPurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    approvalRequestId,
+    purchaseOrderId,
+    version
+  }: {
+    companyId: string;
+    userId: string;
+    approvalRequestId: string;
+    purchaseOrderId: string;
+    version: PurchaseOrderVersion;
+  }
+) {
+  const delivery: Record<string, unknown> = {};
+  for (const column of PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS) {
+    if (version.delivery && column in version.delivery) {
+      delivery[column] = version.delivery[column];
+    }
+  }
+  if ("customFields" in delivery) {
+    delivery.customFields = toJson(delivery.customFields);
+  }
+  // The delivery and line columns come from the version column lists, which
+  // are typed against the live tables; the version tables repeat them.
+  const header = await db
+    .insertInto("purchaseOrderVersion")
+    .values({
+      companyId,
+      approvalRequestId,
+      purchaseOrderId,
+      exchangeRate: version.exchangeRate,
+      hasDelivery: version.delivery !== null,
+      ...delivery,
+      createdBy: userId
+    } as never)
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  if (version.lines.length === 0) return;
+  await db
+    .insertInto("purchaseOrderLineVersion")
+    .values(
+      version.lines.map(({ id, ...line }) => {
+        const columns: Record<string, unknown> = {};
+        for (const column of PURCHASE_ORDER_LINE_VERSION_COLUMNS) {
+          if (column in line) columns[column] = line[column];
+        }
+        for (const json of ["customFields", "externalNotes", "internalNotes"]) {
+          if (json in columns) columns[json] = toJson(columns[json]);
+        }
+        return {
+          companyId,
+          purchaseOrderVersionId: header.id,
+          purchaseOrderLineId: id,
+          ...columns,
+          createdBy: userId
+        } as never;
+      })
+    )
+    .execute();
+}
+
+/**
+ * The version an approval request kept, read back from its rows into the
+ * shape `restorePurchaseOrderVersion` takes, or null when it kept none. A
+ * line whose live line is gone (`purchaseOrderLineId` nulled by its delete)
+ * gets an id no line has, so the restore plan finds the version no longer
+ * fits the order.
+ */
+export async function getKeptPurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  approvalRequestId: string
+): Promise<PurchaseOrderVersion | null> {
+  const header = await db
+    .selectFrom("purchaseOrderVersion")
+    .select([
+      "id",
+      "exchangeRate",
+      "hasDelivery",
+      ...PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS
+    ])
+    .where("approvalRequestId", "=", approvalRequestId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!header) return null;
+  const lines = await db
+    .selectFrom("purchaseOrderLineVersion")
+    .select(["purchaseOrderLineId", ...PURCHASE_ORDER_LINE_VERSION_COLUMNS])
+    .where("purchaseOrderVersionId", "=", header.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  const { id: _id, exchangeRate, hasDelivery, ...delivery } = header;
+  return {
+    exchangeRate: exchangeRate === null ? null : Number(exchangeRate),
+    delivery: hasDelivery ? delivery : null,
+    lines: lines.map(({ purchaseOrderLineId, ...line }) => ({
+      id: purchaseOrderLineId ?? "",
+      ...line
+    }))
+  };
+}
+
+/**
+ * Each released order as it is now, to keep with an approval request its
+ * edit raises (`priorVersion`): the header's exchange rate, the delivery and
+ * the lines, in three queries.
+ */
+export async function getPurchaseOrderVersions(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  purchaseOrderIds: string[]
+): Promise<Map<string, PurchaseOrderVersion>> {
+  const ids = [...new Set(purchaseOrderIds)];
+  const versions = new Map<string, PurchaseOrderVersion>();
+  if (ids.length === 0) return versions;
+  const [orders, deliveries, lines] = await Promise.all([
+    db
+      .selectFrom("purchaseOrder")
+      .select(["id", "exchangeRate"])
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("purchaseOrderDelivery")
+      .select(["id", ...PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS])
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("purchaseOrderLine")
+      .select(["id", "purchaseOrderId", ...PURCHASE_ORDER_LINE_VERSION_COLUMNS])
+      .where("purchaseOrderId", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute()
+  ]);
+  for (const order of orders) {
+    const delivery = deliveries.find((row) => row.id === order.id);
+    versions.set(order.id, {
+      exchangeRate:
+        order.exchangeRate === null ? null : Number(order.exchangeRate),
+      delivery: delivery ? omitKey(delivery, "id") : null,
+      lines: lines
+        .filter((line) => line.purchaseOrderId === order.id)
+        .map((line) => omitKey(line, "purchaseOrderId"))
+    });
+  }
+  return versions;
+}
+
+function omitKey<T extends Record<string, unknown>, K extends keyof T>(
+  row: T,
+  key: K
+): Omit<T, K> {
+  const { [key]: _omitted, ...rest } = row;
+  return rest;
+}
+
+/**
+ * Puts a rejected order back to the version its request kept, inside the
+ * rejection's transaction: the lines (`planPurchaseOrderRestore`), the
+ * delivery and the exchange rate, then the status its lines give, as at
+ * release. Returns false, changing nothing, when the order is not Rejected or
+ * the version no longer fits its lines.
+ */
+export async function restorePurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId,
+    version
+  }: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    version: PurchaseOrderVersion;
+  }
+): Promise<boolean> {
+  return withTransaction(db, async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseOrder")
+      .select("status")
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (order?.status !== "Rejected") return false;
+
+    const current = await trx
+      .selectFrom("purchaseOrderLine")
+      .select([
+        "id",
+        "purchaseQuantity",
+        "quantityReceived",
+        "quantityInvoiced",
+        "receivedComplete"
+      ])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    const plan = planPurchaseOrderRestore(version, current);
+    if (!plan.restorable) return false;
+
+    const stamp = { updatedBy: userId, updatedAt: datetime.timestamp() };
+    if (plan.deleteIds.length > 0) {
+      await trx
+        .deleteFrom("purchaseOrderLine")
+        .where("id", "in", plan.deleteIds)
+        .where("purchaseOrderId", "=", purchaseOrderId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await updateRowsById(
+      trx,
+      "purchaseOrderLine",
+      companyId,
+      plan.updates.map(({ id, data }) => ({
+        id,
+        data: { ...data, ...stamp } as never
+      }))
+    );
+    if (version.delivery) {
+      const delivery: Record<string, unknown> = {};
+      for (const column of PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS) {
+        if (column in version.delivery) {
+          delivery[column] = version.delivery[column];
+        }
+      }
+      await updateRowsById(trx, "purchaseOrderDelivery", companyId, [
+        { id: purchaseOrderId, data: { ...delivery, ...stamp } as never }
+      ]);
+    }
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const { status } = getPurchaseOrderStatus(lines);
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, exchangeRate: version.exchangeRate, ...stamp })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Rejected")
+      .execute();
+    return true;
+  });
+}
+
+/**
+ * Rejects a purchase order's pending request. When the request is for an
+ * edit of a released order (it kept a `priorVersion`), the order goes back
+ * to that version and to the status its lines give, in the same transaction:
+ * the version that was approved stays live. A first approval, or a version
+ * that no longer fits, leaves the order Rejected.
+ *
+ * `restored` says whether the order went back to its approved version;
+ * `versionKept` whether the request had one to go back to. A request with a
+ * version that was not restored leaves the order Rejected with the edit's
+ * values, which the caller tells the approver.
+ */
+export async function rejectPurchaseOrderApproval(
+  db: Kysely<KyselyDatabase>,
+  {
+    approvalRequestId,
+    purchaseOrderId,
+    companyId,
+    userId
+  }: {
+    approvalRequestId: string;
+    purchaseOrderId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<
+  | { data: { restored: boolean; versionKept: boolean }; error: null }
+  | { data: null; error: { message: string } }
+> {
+  class RejectionRefused extends Error {
+    constructor(readonly refusal: { message: string }) {
+      super(refusal.message);
+    }
+  }
+  try {
+    return await withTransaction(db, async (trx) => {
+      const rejected = await rejectRequest(trx, approvalRequestId, userId);
+      // Roll back whatever the rejection wrote before it failed.
+      if (rejected.error) throw new RejectionRefused(rejected.error);
+
+      const request = await trx
+        .selectFrom("approvalRequest")
+        .select("hasPriorVersion")
+        .where("id", "=", approvalRequestId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!request?.hasPriorVersion) {
+        return { data: { restored: false, versionKept: false }, error: null };
+      }
+      const version = await getKeptPurchaseOrderVersion(
+        trx,
+        companyId,
+        approvalRequestId
+      );
+      if (!version) {
+        logger.warn("A rejected approval kept no version rows", {
+          companyId,
+          purchaseOrderId,
+          approvalRequestId
+        });
+        return { data: { restored: false, versionKept: true }, error: null };
+      }
+      // The version's references are kept by the database (a deleted row is
+      // nulled, never dangling), so the restore fails only on a rule the live
+      // row refuses: a constraint, or a trigger. Such a version can never be
+      // written back; without the savepoint the failure would roll the
+      // rejection back too, and the order could never leave Needs Approval.
+      // With it, the rejection stands and the order stays Rejected, as for
+      // any version that no longer fits. Any other failure (a lock timeout, a
+      // lost connection) fails the rejection, so the approver can try again
+      // and the order is restored.
+      await sql`SAVEPOINT restore_purchase_order_version`.execute(trx);
+      let restored: boolean;
+      try {
+        restored = await restorePurchaseOrderVersion(trx, {
+          companyId,
+          userId,
+          purchaseOrderId,
+          version
+        });
+        await sql`RELEASE SAVEPOINT restore_purchase_order_version`.execute(
+          trx
+        );
+      } catch (error) {
+        if (!isUnrestorableVersionError(error)) throw error;
+        await sql`ROLLBACK TO SAVEPOINT restore_purchase_order_version`.execute(
+          trx
+        );
+        logger.warn("A rejected edit's version was refused by the live row", {
+          companyId,
+          purchaseOrderId,
+          approvalRequestId,
+          error
+        });
+        restored = false;
+      }
+      if (!restored) {
+        logger.warn(
+          "A rejected edit could not be undone; the order stays Rejected",
+          {
+            companyId,
+            purchaseOrderId,
+            approvalRequestId
+          }
+        );
+      }
+      return { data: { restored, versionKept: true }, error: null };
+    });
+  } catch (error) {
+    if (error instanceof RejectionRefused) {
+      return { data: null, error: error.refusal };
+    }
+    throw error;
+  }
+}
+
+/**
+ * A failure that means a stored version can never be written back: an
+ * integrity constraint (SQLSTATE class 23: a check, a not-null, a unique, a
+ * foreign key) or a rule a trigger raised (P0001). Not a lock timeout, a
+ * deadlock or a lost connection, which a retry gets past.
+ */
+function isUnrestorableVersionError(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code;
+  return (
+    typeof code === "string" && (code.startsWith("23") || code === "P0001")
+  );
+}
+
+export type PurchaseOrderApprovalState = {
+  id: string;
+  readableId: string | null;
+  status: (typeof purchaseOrderStatusType)[number] | null;
+  /** The `purchaseOrders` view's total: base currency, tax and shipping in. */
+  total: number;
+  /** The amount of the latest Approved request, or null when none exists. */
+  approvedAmount: number | null;
+  /** The `purchaseOrders` view's received quantity over the lines. */
+  receivedQuantity: number;
+};
+
+/**
+ * Each order's status, total and approved amount, in two queries. Pass the
+ * service role: `approvalRequest` has no API read policy.
+ */
+export async function getPurchaseOrderApprovalStates(
+  system: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderIds: string[]
+): Promise<
+  | { data: Map<string, PurchaseOrderApprovalState>; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const ids = [...new Set(purchaseOrderIds.filter(Boolean))];
+  const states = new Map<string, PurchaseOrderApprovalState>();
+  if (ids.length === 0) return { data: states, error: null };
+
+  const [orders, approved] = await Promise.all([
+    system
+      .from("purchaseOrders")
+      .select("id, purchaseOrderId, status, orderTotal, receivedQuantity")
+      .eq("companyId", companyId)
+      .in("id", ids),
+    // Paged: many orders at once (an invoice's) can hold more approved
+    // requests than one response returns, and a cut tail would read as
+    // "no approved amount".
+    fetchAllRecords(() =>
+      system
+        .from("approvalRequest")
+        .select("id, documentId, amount, decisionAt")
+        .eq("companyId", companyId)
+        .eq("documentType", "purchaseOrder")
+        .eq("status", "Approved")
+        .in("documentId", ids)
+        .order("decisionAt", { ascending: false })
+        .order("id")
+    )
+  ]);
+  if (orders.error) return { data: null, error: orders.error };
+  if (approved.error) return { data: null, error: approved.error };
+
+  const approvedAmountById = new Map<string, number | null>();
+  for (const request of approved.data ?? []) {
+    // Newest first: the first row per order is its latest approval. A latest
+    // approval with no amount approved no amount to hold the order to: null,
+    // never $0 (which would hold every such order) and never an older
+    // approval's amount.
+    if (approvedAmountById.has(request.documentId)) continue;
+    approvedAmountById.set(
+      request.documentId,
+      request.amount === null ? null : Number(request.amount)
+    );
+  }
+
+  for (const order of orders.data ?? []) {
+    if (!order.id) continue;
+    states.set(order.id, {
+      id: order.id,
+      readableId: order.purchaseOrderId ?? null,
+      status: order.status ?? null,
+      total: Number(order.orderTotal ?? 0),
+      approvedAmount: approvedAmountById.get(order.id) ?? null,
+      receivedQuantity: Number(order.receivedQuantity ?? 0)
+    });
+  }
+  return { data: states, error: null };
+}
+
+/**
+ * Why goods may not be received or invoiced against these orders, or null
+ * when every one is released (for an invoice, released or Closed) and within
+ * its approved amount. An id with no order is left to the caller's own
+ * not-found check.
+ */
+export async function getPurchaseOrderFundsRefusal(
+  system: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderIds: string[],
+  intent: PurchaseOrderFundsIntent
+): Promise<
+  { data: string | null; error: null } | { data: null; error: PostgrestError }
+> {
+  const states = await getPurchaseOrderApprovalStates(
+    system,
+    companyId,
+    purchaseOrderIds
+  );
+  if (states.error) return states;
+  for (const order of states.data.values()) {
+    // An order above its approved amount with no rule covering the new
+    // total is not waiting for anyone (`settlePurchaseOrderAmendment` raised
+    // no request), so nothing holds it.
+    const held =
+      exceedsApprovedAmount(order.total, order.approvedAmount) &&
+      (await isApprovalRequired(
+        system,
+        "purchaseOrder",
+        companyId,
+        order.total
+      ));
+    const refusal = purchaseOrderFundsRefusal(
+      held ? order : { ...order, approvedAmount: null },
+      intent
+    );
+    if (refusal) return { data: refusal, error: null };
+  }
+  return { data: null, error: null };
+}
+
+/**
+ * The funds gate as a service-function refusal: a `rule` error when goods may
+ * not be received or invoiced against these orders, else null. Every caller
+ * that moves goods or money against a purchase order runs it (receipts,
+ * invoices from an order, invoice posting), so the API and MCP get the same
+ * answer as the page.
+ */
+export async function purchaseOrderFundsGate(
+  ctx: ServiceContext,
+  purchaseOrderIds: string | null | undefined | (string | null | undefined)[],
+  {
+    intent,
+    purchaseOrderLineIds = []
+  }: {
+    intent: PurchaseOrderFundsIntent;
+    purchaseOrderLineIds?: (string | null | undefined)[];
+  }
+): Promise<CarbonError | null> {
+  const ids = (
+    Array.isArray(purchaseOrderIds) ? purchaseOrderIds : [purchaseOrderIds]
+  ).filter((id): id is string => Boolean(id));
+  const lineIds = purchaseOrderLineIds.filter((id): id is string =>
+    Boolean(id)
+  );
+  if (lineIds.length > 0) {
+    const lines = await ctx.asSystem.supabase
+      .from("purchaseOrderLine")
+      .select("purchaseOrderId")
+      .eq("companyId", ctx.company.id)
+      .in("id", lineIds);
+    if (lines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase order lines",
+        lines.error
+      );
+    }
+    for (const line of lines.data ?? []) ids.push(line.purchaseOrderId);
+  }
+  if (ids.length === 0) return null;
+  const funds = await getPurchaseOrderFundsRefusal(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    ids,
+    intent
+  );
+  if (funds.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order",
+      funds.error
+    );
+  }
+  return funds.data ? ctx.error("rule", funds.data) : null;
+}
+
+/**
+ * Read before an edit: the order's status, its total before the edit (the
+ * baseline `settlePurchaseOrderAmendment` compares against when the order has
+ * no approved request), and why the edit is refused, or null.
+ * `supplierId` / `currencyCode`: the values the edit would write, if any.
+ */
+export async function getPurchaseOrderEditRefusal(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderId: string,
+  edit: { supplierId?: string | null; currencyCode?: string | null } = {}
+): Promise<
+  | {
+      data: {
+        status: (typeof purchaseOrderStatusType)[number] | null;
+        total: number;
+        refusal: string | null;
+      } | null;
+      error: null;
+    }
+  | { data: null; error: PostgrestError }
+> {
+  const order = await client
+    .from("purchaseOrders")
+    .select("status, orderTotal, supplierId, currencyCode")
+    .eq("id", purchaseOrderId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (order.error) return { data: null, error: order.error };
+  if (!order.data) return { data: null, error: null };
+  const changesSupplierOrCurrency =
+    (edit.supplierId !== undefined &&
+      edit.supplierId !== order.data.supplierId) ||
+    (edit.currencyCode !== undefined &&
+      edit.currencyCode !== order.data.currencyCode);
+  return {
+    data: {
+      status: order.data.status,
+      total: Number(order.data.orderTotal ?? 0),
+      refusal: purchaseOrderEditRefusal(order.data.status, {
+        changesSupplierOrCurrency
+      })
+    },
+    error: null
+  };
+}
+
+/**
+ * Runs `run` while holding each order's edit lock, so two edits of one order
+ * run one after the other: the second reads the status the first left, and
+ * is refused if the first sent the order back to approval. Without it, an
+ * edit could pass the status check, then land on an order another edit had
+ * just sent to approval, and the pending request would not include it.
+ *
+ * The lock is a transaction-scoped advisory lock on a connection of its own.
+ * It holds no row locks, so the reads and writes `run` makes on other
+ * connections never wait on it. A caller that waits more than 5 seconds for
+ * the lock is refused as a conflict: shorter than the pool's 10-second
+ * connection timeout, so callers waiting for one order's lock give their
+ * connections back before the edit holding it runs out of time for one.
+ */
+export async function withPurchaseOrderEditLock<T>(
+  ctx: ServiceContext,
+  purchaseOrderIds: string[],
+  run: () => Promise<T>
+): Promise<T | CarbonError> {
+  class EditLockBusy extends Error {}
+  const keys = [...new Set(purchaseOrderIds)].map(
+    (id) => `purchase-order-edit:${ctx.company.id}:${id}`
+  );
+  try {
+    return await withTransaction(ctx.asSystem.pg, async (trx) => {
+      await sql`SET LOCAL lock_timeout = '5s'`.execute(trx);
+      try {
+        // Sorted by key, so two edits of the same orders cannot deadlock.
+        await sql`SELECT pg_advisory_xact_lock(k) FROM (SELECT DISTINCT hashtextextended(key, 0) AS k FROM unnest(${keys}::text[]) AS key ORDER BY k) AS locks`.execute(
+          trx
+        );
+      } catch (error) {
+        if ((error as { code?: unknown } | null)?.code === "55P03") {
+          throw new EditLockBusy();
+        }
+        throw error;
+      }
+      return run();
+    });
+  } catch (error) {
+    if (error instanceof EditLockBusy) {
+      return ctx.error(
+        "conflict",
+        "Another change to this purchase order is being saved. Try again in a moment."
+      );
+    }
+    throw error;
+  }
+}
+
+type AmendPurchaseOrderOptions = {
+  supplierId?: string | null;
+  currencyCode?: string | null;
+  line?: {
+    quantityReceived: number | null;
+    quantityInvoiced: number | null;
+    purchaseQuantity: number | null | undefined;
+    receivedComplete?: boolean;
+    /** The line's own identity fields, compared with `edit`'s. */
+    purchaseOrderLineType?: string | null;
+    itemId?: string | null;
+    assetId?: string | null;
+    purchaseUnitOfMeasureCode?: string | null;
+    conversionFactor?: number | null;
+    /** The line's own dates, compared with `dates`. */
+    requiredDate?: string | null;
+    promisedDate?: string | null;
+    receivedDate?: string | null;
+    /** The identity fields the edit writes. */
+    edit?: Partial<PurchaseOrderLineIdentity>;
+    /** The dates the edit writes, each under its own rule. */
+    dates?: Partial<Record<PurchaseOrderLineDateField, string | null>>;
+  };
+  /** False for an edit that cannot change the total. */
+  settle?: boolean;
+  restatesStatus?: boolean;
+};
+
+/**
+ * Runs one edit of a purchase order for a service function: refuses it as
+ * `purchaseOrderEditRefusal` says, runs `write`, then settles the approval
+ * (`settlePurchaseOrderAmendment`) when the order is released. A failed
+ * settle is logged, not returned: the edit is saved. When the order has an
+ * approved request, the funds gate then refuses to receive or invoice it
+ * above that amount; an order released with no request has no amount to hold
+ * it to, so it stays released until an edit settles again.
+ *
+ * `line`: the line the edit changes, with the quantity it writes (null for a
+ * delete), checked against what was received and invoiced. A released order
+ * never deletes a line (`purchaseOrderLineDeleteRefusal`).
+ * `restatesStatus`: the edit adds, changes or deletes a line, so a released
+ * order's status is derived from its lines again (`restatePurchaseOrderStatus`)
+ * before the approval is settled.
+ */
+export async function amendPurchaseOrder<T>(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  write: () => Promise<T>,
+  options: AmendPurchaseOrderOptions = {}
+): Promise<T | CarbonError> {
+  return withPurchaseOrderEditLock(ctx, [purchaseOrderId], () =>
+    amendLockedPurchaseOrder(ctx, purchaseOrderId, write, options)
+  );
+}
+
+/** `amendPurchaseOrder`'s body, run under the order's edit lock. */
+async function amendLockedPurchaseOrder<T>(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  write: () => Promise<T>,
+  {
+    supplierId,
+    currencyCode,
+    line,
+    settle = true,
+    restatesStatus = false
+  }: AmendPurchaseOrderOptions = {}
+): Promise<T | CarbonError> {
+  const gate = await getPurchaseOrderEditRefusal(
+    ctx.asCaller.supabase,
+    ctx.company.id,
+    purchaseOrderId,
+    { supplierId, currencyCode }
+  );
+  if (gate.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order",
+      gate.error
+    );
+  }
+  if (!gate.data) return ctx.error("notFound", "Purchase order not found");
+  if (gate.data.refusal) return ctx.error("rule", gate.data.refusal);
+  if (line) {
+    const lineRefusal =
+      (line.purchaseQuantity === null
+        ? purchaseOrderLineDeleteRefusal(gate.data.status)
+        : null) ??
+      purchaseOrderLineAmendRefusal(line, line.purchaseQuantity, line.edit);
+    if (lineRefusal) return ctx.error("rule", lineRefusal);
+    // A date the edit changes follows the same rule as the date routes. A
+    // date the edit leaves out is not a change.
+    for (const [field, value] of Object.entries(line.dates ?? {})) {
+      const dateField = field as PurchaseOrderLineDateField;
+      if (value === undefined) continue;
+      if ((value ?? null) === (line[dateField] ?? null)) continue;
+      const dateRefusal = purchaseOrderLineDateRefusal(dateField, {
+        status: gate.data.status,
+        receivedComplete: line.receivedComplete ?? false
+      });
+      if (dateRefusal) return ctx.error("rule", dateRefusal);
+    }
+  }
+
+  // The order before the edit: if the edit sends it back to approval, a
+  // rejection restores this version.
+  const settles = settle && isPurchaseOrderAmendable(gate.data.status);
+  let priorVersion: PurchaseOrderVersion | undefined;
+  if (settles) {
+    try {
+      priorVersion = (
+        await getPurchaseOrderVersions(ctx.asSystem.pg, ctx.company.id, [
+          purchaseOrderId
+        ])
+      ).get(purchaseOrderId);
+    } catch (error) {
+      return ctx.error("internal", "Failed to read the purchase order", error);
+    }
+  }
+
+  const result = await write();
+  if (result instanceof CarbonError) return result;
+
+  if (settles) {
+    try {
+      await settlePurchaseOrderAmendment(
+        ctx.asSystem.pg,
+        ctx.asSystem.supabase,
+        {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          purchaseOrderId,
+          previousTotal: gate.data.total,
+          priorVersion
+        }
+      );
+    } catch (error) {
+      logger.error(
+        "Failed to settle the approval of an edited purchase order",
+        {
+          companyId: ctx.company.id,
+          purchaseOrderId,
+          error
+        }
+      );
+    }
+  }
+  // After the settle: an edit that completes every line while taking the
+  // total above the approved amount would otherwise read as Completed, which
+  // the settle leaves alone. A restate is a no-op on an order sent back.
+  if (restatesStatus && isPurchaseOrderAmendable(gate.data.status)) {
+    try {
+      await restatePurchaseOrderStatus(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        purchaseOrderId
+      });
+    } catch (error) {
+      logger.error("Failed to restate the status of an edited purchase order", {
+        companyId: ctx.company.id,
+        purchaseOrderId,
+        error
+      });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Why `itemId` may not go on a purchase order line, or null: an item a
+ * change notice is still holding is a draft revision the supplier has never
+ * been shown. Read as the system, as the line routes did; nothing when the
+ * edit names no item.
+ */
+export async function unreleasedChangeOrderRefusal(
+  ctx: ServiceContext,
+  itemId: string | null | undefined
+): Promise<CarbonError | null> {
+  if (!itemId) return null;
+  const issue = await getUnreleasedChangeOrderIssue(ctx.asSystem.supabase, {
+    itemId,
+    companyId: ctx.company.id
+  });
+  return issue ? ctx.error("rule", `${issue} It cannot be purchased.`) : null;
+}
+
+/** The line an edit names, with what was received and invoiced on it. */
+export async function getPurchaseOrderLineForAmendment(
+  ctx: ServiceContext,
+  purchaseOrderLineId: string
+) {
+  return ctx.asCaller.supabase
+    .from("purchaseOrderLine")
+    .select(
+      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, requiredDate, promisedDate, receivedDate"
+    )
+    .eq("id", purchaseOrderLineId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+}
+
+/**
+ * After a line is added, changed or deleted on a released order, sets the
+ * order's status from its lines again (`getPurchaseOrderStatus`), as receipt
+ * and invoice posting do. Only an order still in an amendable status moves,
+ * and an order with no line to receive or invoice is left alone: with no
+ * lines the rule would call it Completed. Returns the status written, or null.
+ */
+export async function restatePurchaseOrderStatus(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId
+  }: { companyId: string; userId: string; purchaseOrderId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseOrder")
+      .select("status")
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order || !isPurchaseOrderAmendable(order.status)) return null;
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+    if (!lines.some((line) => line.purchaseOrderLineType !== "Comment")) {
+      return null;
+    }
+
+    const { status } = getPurchaseOrderStatus(lines);
+    if (status === order.status) return null;
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, updatedBy: userId, updatedAt: datetime.timestamp() })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...PURCHASE_ORDER_AMENDABLE_STATUSES])
+      .execute();
+    return status;
+  });
+}
+
+/**
+ * After an edit of a released order: when its new total is above what was
+ * approved (with no approved request, above its total before the edit) and an
+ * approval rule applies to the new total, send it back to Needs Approval with a request for the new total, and
+ * notify the rule's approvers. Returns whether it was sent back.
+ *
+ * The edit has already been written. If this fails, the order stays released
+ * above its approved amount. With an approved request,
+ * `getPurchaseOrderFundsRefusal` refuses to receive or invoice it until it is
+ * approved again; with none, nothing holds it back.
+ */
+export async function settlePurchaseOrderAmendment(
+  db: Kysely<KyselyDatabase>,
+  system: SupabaseClient<Database>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId,
+    previousTotal,
+    priorVersion
+  }: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    /** The total before the edit, from `getPurchaseOrderEditRefusal`. */
+    previousTotal: number;
+    /** The order before the edit (`getPurchaseOrderVersions`), kept on the request. */
+    priorVersion?: PurchaseOrderVersion;
+  }
+): Promise<{ resubmitted: boolean; amount: number }> {
+  const states = await getPurchaseOrderApprovalStates(system, companyId, [
+    purchaseOrderId
+  ]);
+  if (states.error) throw states.error;
+  const order = states.data.get(purchaseOrderId);
+  if (!order || !isPurchaseOrderAmendable(order.status)) {
+    return { resubmitted: false, amount: order?.total ?? 0 };
+  }
+  const amount = order.total;
+  // The approved amount, or, for an order released with no request, what it
+  // totalled before this edit: only an increase can need an approval.
+  if (!exceedsApprovedAmount(amount, order.approvedAmount ?? previousTotal)) {
+    return { resubmitted: false, amount };
+  }
+
+  // No planning bypass here: every caller is an edit by hand, and planning's
+  // own writes never come through it. The bypass covers only the order as
+  // planning sized it, at finalize.
+  if (!(await isApprovalRequired(system, "purchaseOrder", companyId, amount))) {
+    return { resubmitted: false, amount };
+  }
+
+  const orderDate = datetime
+    .today(await getCompanyTimeZone(system, companyId))
+    .toString();
+  const resubmitted = await db.transaction().execute((tx) =>
+    submitPurchaseOrderForApproval(tx, {
+      id: purchaseOrderId,
+      companyId,
+      userId,
+      amount,
+      orderDate,
+      fromStatuses: PURCHASE_ORDER_AMENDABLE_STATUSES,
+      priorVersion
+    })
+  );
+  if (!resubmitted) return { resubmitted: false, amount };
+
+  const rule = await getApprovalRuleByAmount(
+    system,
+    "purchaseOrder",
+    companyId,
+    amount
+  );
+  const approverIds = rule.data
+    ? await getApproverUserIdsForRule(system, rule.data)
+    : [];
+  if (approverIds.length > 0) {
+    await trigger("notify", {
+      event: NotificationEvent.ApprovalRequested,
+      companyId,
+      documentId: purchaseOrderId,
+      documentType: "purchaseOrder",
+      recipient: { type: "users", userIds: approverIds },
+      from: userId
+    }).catch((error) =>
+      logger.error("Failed to trigger approval notification", {
+        companyId,
+        purchaseOrderId,
+        error
+      })
+    );
+  }
+  return { resubmitted: true, amount };
 }
 
 /**
@@ -1809,11 +3070,58 @@ export async function updateSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
     contactId: string;
+    companyId: string;
     contact: z.infer<typeof supplierContactValidator>;
     supplierLocationId?: string;
     customFields?: Json;
   }
 ) {
+  if (!supplierContact.contact.email?.trim()) {
+    const [owner, settings] = await Promise.all([
+      client
+        .from("supplierContact")
+        .select("contact(firstName, lastName, email)")
+        .eq("contactId", supplierContact.contactId)
+        .eq("companyId", supplierContact.companyId)
+        .maybeSingle(),
+      client
+        .from("companySettings")
+        .select("requireSupplierContactEmail")
+        .eq("id", supplierContact.companyId)
+        .maybeSingle()
+    ]);
+    if (owner.error) return { data: null, error: owner.error };
+    if (settings.error) return { data: null, error: settings.error };
+    // A field left out of the update keeps the stored value; a blank one
+    // clears it.
+    const stored = owner.data?.contact;
+    const { contact } = supplierContact;
+    const merged = {
+      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
+      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+      email: "email" in contact ? contact.email : stored?.email
+    };
+    const email = merged.email;
+    if (
+      !hasContactNameOrEmail({
+        firstName: merged.firstName ?? undefined,
+        lastName: merged.lastName ?? undefined,
+        email: email ?? undefined
+      })
+    ) {
+      return {
+        data: null,
+        error: ruleError(contactNameOrEmailMessage.message)
+      };
+    }
+    if (settings.data?.requireSupplierContactEmail && !email?.trim()) {
+      return {
+        data: null,
+        error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED)
+      };
+    }
+  }
+
   if (supplierContact.customFields) {
     const customFieldUpdate = await client
       .from("supplierContact")
@@ -2325,6 +3633,17 @@ async function updatePurchaseOrderLineRestatingCompletion(
         Number(current.data.purchaseQuantity ?? 0),
         line.purchaseQuantity
       );
+    // The floor again, on this read: a receipt or invoice posted since the
+    // service function checked it can have raised it past the new quantity.
+    if (quantityChanged) {
+      const refusal = purchaseOrderLineAmendRefusal(
+        current.data,
+        line.purchaseQuantity
+      );
+      if (refusal) {
+        return { data: null, error: new InvalidInputError(refusal) };
+      }
+    }
 
     let update = client
       .from("purchaseOrderLine")
@@ -2368,6 +3687,8 @@ export async function upsertPurchaseOrderLine(
         companyId: string;
         createdBy: string;
         customFields?: Json;
+        /** Projects Phase 3: a line bought for a planning group (no project). */
+        planningGroupId?: string;
       })
     | (Omit<z.infer<typeof purchaseOrderLineValidator>, "id"> & {
         id: string;
@@ -3281,11 +4602,20 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("rfqId", `%${args.search}%`);
+  // Every word must occur in the RFQ or one of its lines. `searchPurchasingRfqs`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchasingRfqs",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, PURCHASING_RFQS_PAGING);
@@ -3564,6 +4894,202 @@ export async function upsertPurchasingRFQSuppliers(
     .from("purchasingRfqSupplier")
     .insert(suppliersToInsert)
     .select("id");
+}
+
+/**
+ * Why the company's promised date rule refuses this order, or null when the
+ * rule is off or the order passes.
+ */
+export async function requiredPromisedDateRefusal(
+  ctx: ServiceContext,
+  purchaseOrderId: string
+): Promise<string | null> {
+  const companyId = ctx.company.id;
+  const settings = await getCompanySettings(ctx.asSystem.supabase, companyId);
+  // Fails closed, as the planning approval bypass does: an unread setting may be on.
+  if (settings.error) {
+    logger.error("Failed to read the promised date rule", {
+      companyId,
+      purchaseOrderId,
+      error: settings.error
+    });
+    return "The promised date rule could not be checked. Try again.";
+  }
+  if (!settings.data?.requirePromisedDateToFinalizePurchaseOrder) return null;
+
+  const [lines, delivery] = await Promise.all([
+    ctx.asSystem.pg
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "promisedDate"])
+      .where("companyId", "=", companyId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .execute(),
+    ctx.asSystem.pg
+      .selectFrom("purchaseOrderDelivery")
+      .select("receiptPromisedDate")
+      .where("companyId", "=", companyId)
+      .where("id", "=", purchaseOrderId)
+      .executeTakeFirst()
+  ]);
+  return isPurchaseOrderMissingPromisedDate(
+    lines,
+    delivery?.receiptPromisedDate
+  )
+    ? "Add a promised date before you finalize this purchase order."
+    : null;
+}
+
+/**
+ * Creates Draft RFQs for `groups`, each with its suppliers and lines. A line's
+ * quantity comes in the inventory unit and goes out in the purchase unit: a
+ * single supplier's supplier part sets that unit, else the item's own unit. A
+ * service is always EA, 1:1. This runs without RLS, and the RFQ's item and
+ * location foreign keys do not include the company, so it checks them here.
+ */
+export async function insertRequestQuoteRfqs(
+  db: Kysely<KyselyDatabase>,
+  input: {
+    companyId: string;
+    userId: string;
+    rfqDate: string;
+    locationId?: string;
+    groups: { supplierIds: string[]; lines: RequestQuoteLine[] }[];
+  }
+) {
+  const { companyId, userId, rfqDate, locationId, groups } = input;
+  return withTransaction(db, async (trx) => {
+    const itemIds = [
+      ...new Set(groups.flatMap((g) => g.lines.map((l) => l.itemId)))
+    ];
+    const supplierIds = [...new Set(groups.flatMap((g) => g.supplierIds))];
+
+    const items = await trx
+      .selectFrom("item")
+      .select(["id", "name", "type", "unitOfMeasureCode"])
+      .where("companyId", "=", companyId)
+      .where("id", "in", itemIds)
+      .execute();
+    const suppliers = await trx
+      .selectFrom("supplier")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("id", "in", supplierIds)
+      .execute();
+    const location = locationId
+      ? await trx
+          .selectFrom("location")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("id", "=", locationId)
+          .executeTakeFirst()
+      : null;
+    if (
+      items.length !== itemIds.length ||
+      suppliers.length !== supplierIds.length ||
+      (locationId && !location)
+    ) {
+      throw new InvalidInputError("Item, supplier or location not found");
+    }
+
+    const supplierParts = await trx
+      .selectFrom("supplierPart")
+      .select([
+        "itemId",
+        "supplierId",
+        "supplierUnitOfMeasureCode",
+        "conversionFactor"
+      ])
+      .where("companyId", "=", companyId)
+      .where("itemId", "in", itemIds)
+      .where("supplierId", "in", supplierIds)
+      .execute();
+
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    const partByItemAndSupplier = new Map(
+      supplierParts.map((part) => [`${part.itemId}|${part.supplierId}`, part])
+    );
+
+    const rfqIds = await getNextSequences(
+      trx,
+      "purchasingRfq",
+      companyId,
+      groups.length
+    );
+    const created = await trx
+      .insertInto("purchasingRfq")
+      .values(
+        rfqIds.map((rfqId) => ({
+          rfqId,
+          rfqDate,
+          locationId,
+          employeeId: userId,
+          status: "Draft" as const,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        }))
+      )
+      .returning(["id", "rfqId"])
+      .execute();
+    const idByRfqId = new Map(created.map((rfq) => [rfq.rfqId, rfq.id]));
+    const rfqOf = groups.map((_, index) => {
+      const id = idByRfqId.get(rfqIds[index]!);
+      if (!id) throw new Error("RFQ not created");
+      return id;
+    });
+
+    await trx
+      .insertInto("purchasingRfqSupplier")
+      .values(
+        groups.flatMap((group, index) =>
+          group.supplierIds.map((supplierId) => ({
+            purchasingRfqId: rfqOf[index]!,
+            supplierId,
+            companyId,
+            createdBy: userId
+          }))
+        )
+      )
+      .execute();
+
+    await trx
+      .insertInto("purchasingRfqLine")
+      .values(
+        groups.flatMap((group, groupIndex) =>
+          group.lines.map((line, index) => {
+            const item = itemById.get(line.itemId);
+            const isService = item?.type === "Service";
+            const inventoryUnit = isService
+              ? EACH_UNIT_OF_MEASURE_CODE
+              : (item?.unitOfMeasureCode ?? EACH_UNIT_OF_MEASURE_CODE);
+            const part =
+              !isService && group.supplierIds.length === 1
+                ? partByItemAndSupplier.get(
+                    `${line.itemId}|${group.supplierIds[0]}`
+                  )
+                : undefined;
+            const factor = Number(part?.conversionFactor) || 1;
+            return {
+              purchasingRfqId: rfqOf[groupIndex]!,
+              itemId: line.itemId,
+              description: item?.name,
+              quantity: [toPurchaseQuantity(line.quantity, factor)],
+              purchaseUnitOfMeasureCode:
+                part?.supplierUnitOfMeasureCode ?? inventoryUnit,
+              inventoryUnitOfMeasureCode: inventoryUnit,
+              conversionFactor: factor,
+              order: index + 1,
+              companyId,
+              createdBy: userId,
+              updatedBy: userId
+            };
+          })
+        )
+      )
+      .execute();
+
+    return rfqOf.map((id, index) => ({ id, rfqId: rfqIds[index]! }));
+  });
 }
 
 export async function updatePurchasingRFQStatus(
@@ -3904,7 +5430,7 @@ export async function updatePurchaseOrderLineSchedule(
     const line = await client
       .from("purchaseOrderLine")
       .select(
-        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
+        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(currencyCode)"
       )
       .eq("id", args.lineId)
       .eq("companyId", args.companyId)
@@ -5813,8 +7339,9 @@ export async function getLeaseRelatedDocuments(
   // In groups of ids, so each `.in()` fits in the request URL.
   const [invoices, journals] = await Promise.all([
     fetchAllByIds(invoiceIds, (batch) =>
+      // The view, not the table: Paid and Overdue exist only in the view.
       client
-        .from("purchaseInvoice")
+        .from("purchaseInvoices")
         .select("id, invoiceId, status, dateIssued")
         .in("id", batch)
         .eq("companyId", companyId)
@@ -5835,9 +7362,12 @@ export async function getLeaseRelatedDocuments(
   return {
     data: {
       // Newest first. ISO dates sort as strings.
-      purchaseInvoices: invoices.data.sort((a, b) =>
-        (b.dateIssued ?? "").localeCompare(a.dateIssued ?? "")
-      ),
+      purchaseInvoices: (
+        invoices.data as Pick<
+          Database["public"]["Tables"]["purchaseInvoice"]["Row"],
+          "id" | "invoiceId" | "status" | "dateIssued"
+        >[]
+      ).sort((a, b) => (b.dateIssued ?? "").localeCompare(a.dateIssued ?? "")),
       journals: journals.data.sort((a, b) =>
         b.postingDate.localeCompare(a.postingDate)
       )
@@ -6176,13 +7706,23 @@ async function releaseLeasePayments(
  * lease payment rows it billed to Pending (see `releaseLeasePayments`).
  * Checked here under a row lock, because releasing a POSTED invoice's rows
  * would bill them twice. Throws on a missing or non-Draft invoice.
+ *
+ * `voided` is the Admin force delete: it also deletes a Voided invoice (the
+ * void already returned its lease rows), inside the caller's transaction,
+ * which has set `app.force_delete` so the database's Draft-only guard steps
+ * aside.
  */
 export async function deletePurchaseInvoiceReleasingLeases(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; invoiceId: string; userId: string }
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    invoiceId: string;
+    userId: string;
+    voided?: boolean;
+  }
 ): Promise<void> {
   const { companyId, invoiceId, userId } = args;
-  await db.transaction().execute(async (trx) => {
+  await withTransaction(db, async (trx) => {
     const invoice = await trx
       .selectFrom("purchaseInvoice")
       .select(["id", "status"])
@@ -6191,7 +7731,10 @@ export async function deletePurchaseInvoiceReleasingLeases(
       .forUpdate()
       .executeTakeFirst();
     if (!invoice) throw new Error("Purchase invoice not found");
-    if (invoice.status !== "Draft") {
+    if (
+      invoice.status !== "Draft" &&
+      !(args.voided && invoice.status === "Voided")
+    ) {
       throw new Error(
         `Cannot delete purchase invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
       );
@@ -6451,7 +7994,7 @@ export async function signedAttachments(
   const signed = await async.map(files, async (file) => {
     const { data, error } = await storage(client)
       .company(companyId)
-      .createSignedUrl(file.path, 3600);
+      .createSignedUrl(file.path, EMAIL_ATTACHMENT_URL_SECONDS);
     if (!data) {
       logger.error("Failed to create signed URL for attachment", {
         storagePath: file.path,
@@ -6463,6 +8006,15 @@ export async function signedAttachments(
   });
   return signed.flatMap((file) => (file ? [file] : []));
 }
+
+/** A file a supplier gets with an item: its model, or a file on its Files tab. */
+export type ItemSupplierFile = {
+  itemId: string;
+  filename: string;
+  bucket: string;
+  path: string;
+  size: number;
+};
 
 /**
  * The original CAD file of each item's model, found where the model's Download button
@@ -6476,15 +8028,7 @@ export async function getItemModelFiles(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   itemIds: string[]
-): Promise<
-  {
-    modelId: string;
-    filename: string;
-    bucket: string;
-    path: string;
-    size: number;
-  }[]
-> {
+): Promise<ItemSupplierFile[]> {
   if (itemIds.length === 0) return [];
   const items = await client
     .from("item")
@@ -6551,7 +8095,6 @@ export async function getItemModelFiles(
         [
           model.id,
           {
-            modelId: model.id,
             filename,
             bucket,
             path,
@@ -6561,18 +8104,139 @@ export async function getItemModelFiles(
       ] as const;
     })
   );
-  return modelIds.flatMap((id) => {
-    const file = byId.get(id);
-    return file ? [file] : [];
+  return itemIds.flatMap((itemId) => {
+    const modelId = modelByItem.get(itemId);
+    const file = modelId ? byId.get(modelId) : undefined;
+    return file ? [{ itemId, ...file }] : [];
   });
 }
 
-/** A signed link to a file `getOriginalModelFiles` found, valid `seconds`. */
-export async function signOriginalModelFile(
+/**
+ * Every file a supplier gets with each item, in item order: the model's
+ * original CAD file (`getItemModelFiles`), then each file on the item's Files
+ * tab (`${companyId}/parts/${itemId}`: drawings, other models, specs). With
+ * `onlyPaths`, just those of them (`orderItemSupplierFiles`).
+ */
+export async function getItemSupplierFiles(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemIds: string[],
+  onlyPaths?: string[]
+): Promise<ItemSupplierFile[]> {
+  const ids = [...new Set(itemIds)];
+  if (ids.length === 0) return [];
+  const bucket = getCompanyPrivateBucket(companyId);
+  const folderOf = (itemId: string) => `${companyId}/parts/${itemId}`;
+  const [models, partFiles] = await Promise.all([
+    getItemModelFiles(client, db, companyId, ids),
+    listStorageObjects(db, { bucket, folders: ids.map(folderOf) })
+  ]);
+  const itemByFolder = new Map(ids.map((id) => [folderOf(id), id]));
+  return orderItemSupplierFiles(
+    ids,
+    [
+      ...models,
+      ...partFiles.flatMap((file) => {
+        const itemId = itemByFolder.get(file.folder);
+        return itemId
+          ? [
+              {
+                itemId,
+                filename: file.name,
+                bucket,
+                path: file.path,
+                // Unknown size: sent as a link, never attached blind.
+                size: file.size ?? Number.POSITIVE_INFINITY
+              }
+            ]
+          : [];
+      })
+    ],
+    onlyPaths
+  );
+}
+
+/**
+ * The item files of a supplier email: attached in order while the email stays
+ * under the attachment limit (`documentBytes` already used by its documents),
+ * the rest as links in the body. Each file is signed once for 7 days, so an
+ * attachment still opens when the send job runs late or retries. A file that
+ * cannot be signed is named, so the supplier knows to ask for it. A file two
+ * lines share is sent once.
+ */
+export async function supplierFileEmailParts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  files: ItemSupplierFile[],
+  documentBytes: number
+): Promise<{
+  attachments: { filename: string; path: string }[];
+  html: string;
+  text: string;
+}> {
+  const unique = [
+    ...new Map(
+      files.map((file) => [`${file.bucket}/${file.path}`, file])
+    ).values()
+  ];
+  const signed = await async.map(unique, async (file) => ({
+    ...file,
+    url: await signItemFile(
+      client,
+      companyId,
+      file,
+      EMAIL_ATTACHMENT_URL_SECONDS
+    )
+  }));
+  const missing = signed.flatMap((file) => (file.url ? [] : [file.filename]));
+  const split = splitRfqFileAttachments(
+    signed.flatMap((file) => (file.url ? [{ ...file, url: file.url }] : [])),
+    PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024 * 1024 - documentBytes
+  );
+  const links = split.link;
+
+  const linksHtml = links.length
+    ? `<br><br>Files too large to attach (links valid for 7 days):<br>${links
+        .map(
+          (link) =>
+            `<a href="${escapeHTMLChars(link.url)}">${escapeHTMLChars(link.filename)}</a>`
+        )
+        .join("<br>")}`
+    : "";
+  const linksText = links.length
+    ? `\n\nFiles too large to attach (links valid for 7 days):\n${links
+        .map((link) => `${link.filename}: ${link.url}`)
+        .join("\n")}`
+    : "";
+  const missingHtml = missing.length
+    ? `<br><br>These files could not be included; reply to ask for them: ${missing
+        .map(escapeHTMLChars)
+        .join(", ")}`
+    : "";
+  const missingText = missing.length
+    ? `\n\nThese files could not be included; reply to ask for them: ${missing.join(", ")}`
+    : "";
+
+  return {
+    attachments: split.attach.map((file) => ({
+      filename: file.filename,
+      path: file.url
+    })),
+    html: linksHtml + missingHtml,
+    text: linksText + missingText
+  };
+}
+
+/** A signed link to a file `getItemSupplierFiles` found, valid `seconds`. */
+export async function signItemFile(
   client: SupabaseClient<Database>,
   companyId: string,
   file: { bucket: string; path: string },
-  seconds: number
+  seconds: number,
+  // A file name: the link downloads under it instead of opening inline (a
+  // cross-origin <a download> is ignored).
+  download?: string
 ): Promise<string | null> {
   const bucket =
     file.bucket === TEMP_STAGING_BUCKET
@@ -6580,14 +8244,19 @@ export async function signOriginalModelFile(
       : storage(client).company(companyId);
   const { data, error } = await bucket.createSignedUrl(file.path, seconds);
   if (!data) {
-    logger.error("Failed to sign a model file", {
+    logger.error("Failed to sign an item file", {
       companyId,
       storagePath: file.path,
       error
     });
     return null;
   }
-  return data.signedUrl;
+  if (!download) return data.signedUrl;
+  // Set here, not through createSignedUrl's `download` option: that encodes
+  // the name twice, so `A+B.pdf` would download as `A%2BB.pdf`.
+  const url = new URL(data.signedUrl);
+  url.searchParams.set("download", download);
+  return url.toString();
 }
 
 /** The statuses of records an edit is about to touch, for a lock check. */
@@ -6609,6 +8278,46 @@ export async function statusesOf(
     return ctx.error("internal", "Failed to read the records", rows.error);
   }
   return rows.data.map((row) => row.status);
+}
+
+/**
+ * Why a delivery write may not change the order's promised date, or null.
+ * A changed promised date follows the properties panel's rule: fixed once
+ * the order is fully received. A write that leaves the date out, or re-sends
+ * the stored one, changes nothing.
+ */
+export async function purchaseOrderPromisedDateChangeRefusal(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  receiptPromisedDate: string | undefined
+): Promise<CarbonError | null> {
+  if (receiptPromisedDate === undefined) return null;
+  const [statuses, stored] = await Promise.all([
+    statusesOf(ctx, "purchaseOrder", [purchaseOrderId]),
+    ctx.asCaller.supabase
+      .from("purchaseOrderDelivery")
+      .select("receiptPromisedDate")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle()
+  ]);
+  if (statuses instanceof CarbonError) return statuses;
+  if (stored.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order delivery",
+      stored.error
+    );
+  }
+  if (
+    (stored.data?.receiptPromisedDate ?? null) === (receiptPromisedDate || null)
+  ) {
+    return null;
+  }
+  const refusal = statuses
+    .map(purchaseOrderPromisedDateRefusal)
+    .find((message) => message !== null);
+  return refusal ? ctx.error("rule", refusal) : null;
 }
 
 /**
@@ -6858,6 +8567,992 @@ export async function cancelPendingApprovals(
     .execute();
 }
 
+/** The active Admins of the company (`isCompanyAdmin`, @carbon/ee), as user ids. */
+export async function getCompanyAdminIds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<string[]> {
+  const rows = await db
+    .selectFrom("employee")
+    .innerJoin("employeeType", (join) =>
+      join
+        .onRef("employeeType.id", "=", "employee.employeeTypeId")
+        .onRef("employeeType.companyId", "=", "employee.companyId")
+    )
+    .select("employee.id")
+    .where("employee.companyId", "=", companyId)
+    .where("employee.active", "=", true)
+    .where("employeeType.systemType", "=", "Admin")
+    .execute();
+  return rows.map((row) => row.id);
+}
+
+/**
+ * The documents that still name the order and keep a force delete from
+ * running (`purchaseOrderForceDeleteBlockerMessage`). Its receipts are not
+ * among them: the force delete reverses those
+ * (`planPurchaseOrderReceiptReversal`). Runs on the caller's connection, so
+ * the delete re-reads them inside its own transaction.
+ */
+export async function getPurchaseOrderForceDeleteBlockers(
+  db: Kysely<KyselyDatabase>,
+  { companyId, purchaseOrderId }: { companyId: string; purchaseOrderId: string }
+): Promise<PurchaseOrderForceDeleteBlockers> {
+  const [shipments, invoices, payments] = await Promise.all([
+    db
+      .selectFrom("shipment")
+      .select(["shipmentId as readableId", "status"])
+      .where("companyId", "=", companyId)
+      .where("sourceDocument", "=", "Purchase Order")
+      .where("sourceDocumentId", "=", purchaseOrderId)
+      .where("status", "<>", "Voided")
+      .orderBy("shipmentId")
+      .execute(),
+    db
+      .selectFrom("purchaseInvoice")
+      .select([
+        "purchaseInvoice.invoiceId as readableId",
+        "purchaseInvoice.status"
+      ])
+      .where("purchaseInvoice.companyId", "=", companyId)
+      .where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom("purchaseInvoiceLine")
+            .select("purchaseInvoiceLine.id")
+            .whereRef(
+              "purchaseInvoiceLine.invoiceId",
+              "=",
+              "purchaseInvoice.id"
+            )
+            .where((line) =>
+              line.or([
+                line(
+                  "purchaseInvoiceLine.purchaseOrderId",
+                  "=",
+                  purchaseOrderId
+                ),
+                line(
+                  "purchaseInvoiceLine.purchaseOrderLineId",
+                  "in",
+                  line
+                    .selectFrom("purchaseOrderLine")
+                    .select("purchaseOrderLine.id")
+                    .where(
+                      "purchaseOrderLine.purchaseOrderId",
+                      "=",
+                      purchaseOrderId
+                    )
+                )
+              ])
+            )
+        )
+      )
+      .orderBy("purchaseInvoice.invoiceId")
+      .execute(),
+    db
+      .selectFrom("payment")
+      .select(["paymentId as readableId", "status"])
+      .where("companyId", "=", companyId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("status", "<>", "Voided")
+      .orderBy("paymentId")
+      .execute()
+  ]);
+  return {
+    shipments: shipments.map((s) => ({ ...s, readableId: s.readableId ?? "" })),
+    invoices: invoices.map((i) => ({ ...i, readableId: i.readableId ?? "" })),
+    payments: payments.map((p) => ({ ...p, readableId: p.readableId ?? "" }))
+  };
+}
+
+/** A receipt of the order that a force delete reverses (or deletes). */
+export type PurchaseOrderForceDeleteReceipt = {
+  id: string;
+  readableId: string;
+  status: Database["public"]["Enums"]["receiptStatus"];
+  postingDate: string | null;
+};
+
+/**
+ * The order's receipts that are not Voided, by number. `lock` takes them FOR
+ * UPDATE, so a receipt cannot be posted or voided under the force delete.
+ */
+export async function getPurchaseOrderForceDeleteReceipts(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    purchaseOrderId,
+    lock = false
+  }: { companyId: string; purchaseOrderId: string; lock?: boolean }
+): Promise<PurchaseOrderForceDeleteReceipt[]> {
+  const query = db
+    .selectFrom("receipt")
+    .select(["id", "receiptId", "status", "postingDate"])
+    .where("companyId", "=", companyId)
+    .where("sourceDocument", "=", "Purchase Order")
+    .where("sourceDocumentId", "=", purchaseOrderId)
+    .where("status", "<>", "Voided")
+    .orderBy("receiptId");
+  const rows = await (lock ? query.forUpdate() : query).execute();
+  return rows.map((row) => ({
+    id: row.id,
+    readableId: row.receiptId ?? row.id,
+    status: row.status,
+    postingDate: row.postingDate ? String(row.postingDate) : null
+  }));
+}
+
+/**
+ * Plans taking back what the posted receipts put on hand, from the stock
+ * there is now (`planReceiptReversal`). Read-only: the request runs it to
+ * refuse early, the approval again inside its transaction before it books.
+ *
+ * `unsupported` names receipts it cannot reverse: one that issued its stock
+ * straight to a project, or received a fixed asset. Those reverse only
+ * through their own void.
+ */
+export async function planPurchaseOrderReceiptReversal(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    receipts
+  }: { companyId: string; receipts: PurchaseOrderForceDeleteReceipt[] }
+): Promise<{
+  removals: ReceiptStockRemoval[];
+  short: string[];
+  unsupported: string[];
+}> {
+  const posted = receipts.filter((receipt) => receipt.status === "Posted");
+  if (posted.length === 0) return { removals: [], short: [], unsupported: [] };
+  const receiptIds = posted.map((receipt) => receipt.id);
+
+  const [ledgerRows, assetLines] = await Promise.all([
+    db
+      .selectFrom("itemLedger")
+      .select([
+        "documentId",
+        "documentType",
+        "itemId",
+        "locationId",
+        "storageUnitId",
+        "trackedEntityId",
+        "projectId",
+        "quantity"
+      ])
+      .where("companyId", "=", companyId)
+      .where("documentId", "in", receiptIds)
+      .where("documentType", "in", ["Purchase Receipt", "Project Issue"])
+      .execute(),
+    db
+      .selectFrom("receiptFixedAssetLine")
+      .select("receiptId")
+      .where("companyId", "=", companyId)
+      .where("receiptId", "in", receiptIds)
+      .where("received", "=", true)
+      .execute()
+  ]);
+
+  const unsupportedIds = new Set([
+    ...assetLines.map((line) => line.receiptId),
+    ...ledgerRows
+      .filter((row) => row.documentType === "Project Issue")
+      .map((row) => row.documentId as string)
+  ]);
+
+  // What each receipt put on hand, net, per position.
+  const received = new Map<string, ReceiptReceivedStock>();
+  for (const receipt of posted) {
+    if (unsupportedIds.has(receipt.id)) continue;
+    for (const row of ledgerRows) {
+      if (row.documentId !== receipt.id) continue;
+      const position = {
+        itemId: row.itemId,
+        locationId: row.locationId ?? null,
+        storageUnitId: row.storageUnitId ?? null,
+        trackedEntityId: row.trackedEntityId ?? null,
+        projectId: row.projectId ?? null
+      };
+      const key = [receipt.id, ...Object.values(position)].join("|");
+      const entry = received.get(key) ?? {
+        ...position,
+        receiptId: receipt.id,
+        receiptReadableId: receipt.readableId,
+        quantity: 0
+      };
+      entry.quantity += Number(row.quantity);
+      received.set(key, entry);
+    }
+  }
+
+  const receivedRows = [...received.values()];
+  const itemIds = [...new Set(receivedRows.map((row) => row.itemId))];
+  const locationIds = [
+    ...new Set(receivedRows.flatMap((row) => row.locationId ?? []))
+  ];
+  const withoutLocation = receivedRows.some((row) => row.locationId === null);
+  const onHand =
+    itemIds.length === 0
+      ? []
+      : await db
+          .selectFrom("itemLedger")
+          .select([
+            "itemId",
+            "locationId",
+            "storageUnitId",
+            "trackedEntityId",
+            "projectId",
+            (eb) => eb.fn.sum<number>("quantity").as("quantity")
+          ])
+          .where("companyId", "=", companyId)
+          .where("itemId", "in", itemIds)
+          .where((eb) =>
+            eb.or([
+              ...(locationIds.length > 0
+                ? [eb("locationId", "in", locationIds)]
+                : []),
+              ...(withoutLocation ? [eb("locationId", "is", null)] : [])
+            ])
+          )
+          .groupBy([
+            "itemId",
+            "locationId",
+            "storageUnitId",
+            "trackedEntityId",
+            "projectId"
+          ])
+          .execute();
+
+  const plan = planReceiptReversal(
+    receivedRows,
+    onHand.map((row) => ({
+      itemId: row.itemId,
+      locationId: row.locationId ?? null,
+      storageUnitId: row.storageUnitId ?? null,
+      trackedEntityId: row.trackedEntityId ?? null,
+      projectId: row.projectId ?? null,
+      quantity: Number(row.quantity ?? 0)
+    }))
+  );
+  return {
+    ...plan,
+    unsupported: posted
+      .filter((receipt) => unsupportedIds.has(receipt.id))
+      .map((receipt) => receipt.readableId)
+  };
+}
+
+/**
+ * Why the order's receipts keep a force delete from going ahead (`refusal`),
+ * else the plan that reverses them. Refused for one
+ * still being posted, or one whose stock was since used or moved to another
+ * location (`planPurchaseOrderReceiptReversal`). After step 1's voids
+ * (`afterVoid`), a posted receipt left that an adjustment cannot stand in for
+ * is refused too.
+ */
+export async function forceDeleteReceiptRefusal(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    receipts,
+    afterVoid = false
+  }: {
+    companyId: string;
+    receipts: PurchaseOrderForceDeleteReceipt[];
+    afterVoid?: boolean;
+  }
+): Promise<
+  | { refusal: string; plan: null }
+  | {
+      refusal: null;
+      plan: Awaited<ReturnType<typeof planPurchaseOrderReceiptReversal>>;
+    }
+> {
+  const pending = receipts.filter((receipt) => receipt.status === "Pending");
+  if (pending.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeletePendingReceiptMessage(
+        pending.map((receipt) => receipt.readableId)
+      ),
+      plan: null
+    };
+  }
+  const plan = await planPurchaseOrderReceiptReversal(db, {
+    companyId,
+    receipts
+  });
+  if (plan.short.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeleteUsedStockMessage(plan.short),
+      plan: null
+    };
+  }
+  if (afterVoid && plan.unsupported.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeleteUnsupportedReceiptMessage(
+        plan.unsupported
+      ),
+      plan: null
+    };
+  }
+  return { refusal: null, plan };
+}
+
+/**
+ * Gives back to the order what a receipt reversed by adjustment had received,
+ * as the receipt's void does: each line's `quantityReceived` drops by what
+ * the receipt received (in the purchase unit, never below 0) and
+ * `receivedComplete` follows. The order's status is set again from its lines
+ * while it is released. For a receipt force deleted on its own; a purchase
+ * order force delete deletes the order instead.
+ */
+export async function restorePurchaseOrderReceived(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    receiptId,
+    purchaseOrderId
+  }: {
+    companyId: string;
+    userId: string;
+    receiptId: string;
+    purchaseOrderId: string;
+  }
+): Promise<void> {
+  await withTransaction(db, async (trx) => {
+    const [receiptLines, orderLines] = await Promise.all([
+      trx
+        .selectFrom("receiptLine")
+        .select(["lineId", "receivedQuantity", "conversionFactor"])
+        .where("companyId", "=", companyId)
+        .where("receiptId", "=", receiptId)
+        .execute(),
+      trx
+        .selectFrom("purchaseOrderLine")
+        .select([
+          "id",
+          "purchaseOrderLineType",
+          "purchaseQuantity",
+          "quantityReceived",
+          "quantityInvoiced"
+        ])
+        .where("companyId", "=", companyId)
+        .where("purchaseOrderId", "=", purchaseOrderId)
+        .forUpdate()
+        .execute()
+    ]);
+    const updates = receivedAfterReceiptReversal(
+      orderLines.map((line) => ({
+        ...line,
+        purchaseQuantity: Number(line.purchaseQuantity ?? 0),
+        quantityReceived: Number(line.quantityReceived ?? 0)
+      })),
+      receiptLines.map((line) => ({
+        ...line,
+        receivedQuantity: Number(line.receivedQuantity ?? 0),
+        conversionFactor: Number(line.conversionFactor ?? 1)
+      }))
+    );
+    const ids = Object.keys(updates);
+    if (ids.length === 0) return;
+    const now = datetime.timestamp();
+    await updateRowsById(
+      trx,
+      "purchaseOrderLine",
+      companyId,
+      ids.map((id) => ({
+        id,
+        data: { ...updates[id], updatedBy: userId, updatedAt: now }
+      }))
+    );
+
+    const status = purchaseOrderStatusAfterReversal(
+      orderLines.map((line) => ({
+        purchaseOrderLineType: line.purchaseOrderLineType,
+        purchaseQuantity: Number(line.purchaseQuantity ?? 0),
+        quantityInvoiced: Number(line.quantityInvoiced ?? 0),
+        quantityReceived:
+          updates[line.id]?.quantityReceived ??
+          Number(line.quantityReceived ?? 0)
+      }))
+    );
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, updatedBy: userId, updatedAt: now })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
+      .execute();
+  });
+}
+
+/**
+ * The accounting an adjust-out reversal posts with, resolved before the
+ * transaction opens (`getCurrentAccountingPeriod` commits its own short
+ * transaction), as `postInventoryAdjustment` does.
+ */
+export type ForceDeleteReversalAccounting = {
+  today: string;
+  cutoverDate: string | null;
+  goodsReceivedNotInvoicedAccount: string;
+  accounting: Omit<
+    NonNullable<BookAdjustmentArgs["accounting"]>,
+    "description"
+  >;
+};
+
+export async function resolveForceDeleteReversalAccounting(
+  db: Kysely<KyselyDatabase>,
+  { companyId, userId }: { companyId: string; userId: string }
+): Promise<ForceDeleteReversalAccounting> {
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+  const postingStatus = await journalPostingStatus(db, companyId);
+  const cutoverDate = await readAccountingCutoverDate(db, companyId);
+  const accountDefaults = await getDefaultPostingGroup(db, companyId);
+  if (accountDefaults.error || !accountDefaults.data) {
+    throw new Error("Error getting account defaults");
+  }
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const dimensions = await db
+    .selectFrom("dimension")
+    .select(["id", "entityType"])
+    .where("companyGroupId", "=", company.companyGroupId as string)
+    .where("active", "=", true)
+    .where("entityType", "in", ["Item", "ItemPostingGroup", "Location"])
+    .execute();
+  const dimensionMap: Record<string, string> = {};
+  for (const dim of dimensions) {
+    if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+  }
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getCurrentAccountingPeriod(companyId, db, today)
+      : null;
+  return {
+    today,
+    cutoverDate: cutoverDate ? String(cutoverDate) : null,
+    goodsReceivedNotInvoicedAccount:
+      accountDefaults.data.goodsReceivedNotInvoicedAccount,
+    accounting: {
+      postingStatus,
+      accountingPeriodId,
+      accountDefaults: {
+        rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+        finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+        inventoryAdjustmentVarianceAccount:
+          accountDefaults.data.inventoryAdjustmentVarianceAccount
+      },
+      userId,
+      dimensions: dimensionMap
+    }
+  };
+}
+
+/**
+ * Reverses receipts the void refused by adjusting their stock out
+ * (`planPurchaseOrderReceiptReversal`'s removals), inside the force delete's
+ * transaction, and marks them Voided.
+ *
+ * The offset is the account the receipt credited: Goods Received Not
+ * Invoiced, so the accrual it opened closes. A receipt from before the
+ * accounting cutover posted no ledger journal, and its stock came in through
+ * the opening balance, so its removal is a write-down to the inventory
+ * adjustment variance account. The receipt's serials and batches go to zero,
+ * as its void sets them.
+ */
+export async function reverseReceiptsByAdjustment(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    purchaseOrderReadableId: string;
+    receipts: PurchaseOrderForceDeleteReceipt[];
+    removals: ReceiptStockRemoval[];
+    reversal: ForceDeleteReversalAccounting;
+  }
+): Promise<void> {
+  const { companyId, userId, receipts, removals, reversal } = args;
+  if (receipts.length === 0) return;
+  await withTransaction(db, async (trx) => {
+    const itemIds = [...new Set(removals.map((removal) => removal.itemId))];
+    const [items, itemCosts] =
+      itemIds.length === 0
+        ? [[], []]
+        : await Promise.all([
+            trx
+              .selectFrom("item")
+              .select(["id", "itemTrackingType", "replenishmentSystem"])
+              .where("companyId", "=", companyId)
+              .where("id", "in", itemIds)
+              .execute(),
+            trx
+              .selectFrom("itemCost")
+              .select([
+                "itemId",
+                "costingMethod",
+                "unitCost",
+                "standardCost",
+                "itemPostingGroupId"
+              ])
+              .where("companyId", "=", companyId)
+              .where("itemId", "in", itemIds)
+              .execute()
+          ]);
+
+    // What the void does before it moves stock, for every receipt first: their
+    // Put Aways go (refused when one has picked stock), a rejected lot refuses,
+    // and their open inspections are cancelled. Stock held for any of their
+    // inspections cannot move, so no receipt's stock moves until all of them
+    // have released theirs.
+    for (const receipt of receipts) {
+      await removeUnpickedPutAways(trx, companyId, receipt.id);
+      await assertNoRejectedUntrackedLot(trx, companyId, receipt.id);
+      await withInspectionRelease(trx, () =>
+        trx
+          .updateTable("inspection")
+          .set({
+            status: "Cancelled",
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("companyId", "=", companyId)
+          .where("sourceDocument", "=", "Receipt")
+          .where("sourceDocumentId", "=", receipt.id)
+          .where("status", "in", ["Pending", "In Progress"])
+          .execute()
+      );
+    }
+
+    for (const receipt of receipts) {
+      const beforeCutover = isBeforeCutover(
+        receipt.postingDate ?? reversal.today,
+        reversal.cutoverDate
+      );
+      const description = `Force delete of ${args.purchaseOrderReadableId}: reverses ${receipt.readableId}`;
+      for (const removal of removals) {
+        if (removal.receiptId !== receipt.id) continue;
+        const item = items.find((row) => row.id === removal.itemId);
+        const itemCost = itemCosts.find((row) => row.itemId === removal.itemId);
+        if (!item || !itemCost) {
+          throw new Error(`Item ${removal.itemId} has no item or cost record`);
+        }
+        await bookAdjustment(trx, {
+          ledger: {
+            postingDate: reversal.today,
+            itemId: removal.itemId,
+            quantity: -removal.quantity,
+            locationId: removal.locationId,
+            storageUnitId: removal.storageUnitId,
+            trackedEntityId: removal.trackedEntityId,
+            entryType: "Negative Adjmt.",
+            documentId: receipt.id,
+            comment: description,
+            projectId: removal.projectId,
+            companyId,
+            createdBy: userId
+          },
+          item: {
+            itemTrackingType: item.itemTrackingType,
+            replenishmentSystem: item.replenishmentSystem,
+            itemPostingGroupId: itemCost.itemPostingGroupId
+          },
+          itemCost: {
+            costingMethod: itemCost.costingMethod,
+            unitCost:
+              itemCost.unitCost === null ? null : Number(itemCost.unitCost),
+            standardCost:
+              itemCost.standardCost === null
+                ? null
+                : Number(itemCost.standardCost)
+          },
+          accounting: {
+            ...reversal.accounting,
+            offsetAccount: beforeCutover
+              ? null
+              : reversal.goodsReceivedNotInvoicedAccount,
+            // GR/IR is a liability: the reversal debits it, closing the
+            // accrual the receipt opened.
+            offsetAccountType: beforeCutover ? "expense" : "liability",
+            offsetDescription: beforeCutover
+              ? "Inventory Adjustment Variance Account"
+              : "Goods Received Not Invoiced Account",
+            description
+          }
+        });
+      }
+
+      // Stock leaves at its carrying value, which can differ from what the
+      // receipt booked (other layers, an average cost that moved). GR/IR is
+      // cleared at exactly the receipt's amount; the difference is a cost
+      // variance.
+      if (!beforeCutover) {
+        await trueUpGoodsReceivedNotInvoiced(trx, {
+          companyId,
+          receiptId: receipt.id,
+          reversal,
+          description
+        });
+      }
+
+      // The receipt's serials and batches, as its void leaves them.
+      const entities = await trx
+        .selectFrom("trackedEntity")
+        .select(["id", "quantity", "status"])
+        .where("companyId", "=", companyId)
+        .where(attributesContain({ Receipt: receipt.id }))
+        .execute();
+      if (entities.length > 0) {
+        const activity = await trx
+          .insertInto("trackedActivity")
+          .values({
+            type: "Void Receipt",
+            sourceDocument: "Receipt",
+            sourceDocumentId: receipt.id,
+            sourceDocumentReadableId: receipt.readableId,
+            attributes: {
+              "Purchase Order": args.purchaseOrderId,
+              Receipt: receipt.id,
+              Employee: userId
+            },
+            companyId,
+            createdBy: userId,
+            createdAt: reversal.today
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        for (const entity of entities) {
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              quantity: 0,
+              status:
+                entity.status === "Scrapped" || entity.status === "Rejected"
+                  ? entity.status
+                  : "Consumed"
+            })
+            .where("id", "=", entity.id)
+            .where("companyId", "=", companyId)
+            .execute();
+          await trx
+            .insertInto("trackedActivityInput")
+            .values({
+              trackedActivityId: activity.id,
+              trackedEntityId: entity.id,
+              quantity: Number(entity.quantity ?? 0),
+              companyId,
+              createdBy: userId,
+              createdAt: reversal.today
+            })
+            .execute();
+        }
+      }
+
+      await trx
+        .updateTable("receipt")
+        .set({
+          status: "Voided",
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", receipt.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      await sql`SELECT public.refresh_receipt_inspection_status(${receipt.id})`.execute(
+        trx
+      );
+    }
+  });
+}
+
+/**
+ * Clears what a reversed receipt left on Goods Received Not Invoiced: its own
+ * GR/IR lines and the reversal's net to zero, the difference against the
+ * inventory adjustment variance account. Signed by each account's type
+ * (GR/IR a liability, the variance an expense) and checked as balanced.
+ */
+async function trueUpGoodsReceivedNotInvoiced(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    receiptId: string;
+    reversal: ForceDeleteReversalAccounting;
+    description: string;
+  }
+): Promise<void> {
+  const { companyId, receiptId, reversal } = args;
+  const grir = reversal.goodsReceivedNotInvoicedAccount;
+  const net = await trx
+    .selectFrom("journalLine")
+    .select((eb) => eb.fn.sum<number>("amount").as("amount"))
+    .where("companyId", "=", companyId)
+    .where("documentId", "=", receiptId)
+    .where("accountId", "=", grir)
+    .executeTakeFirst();
+  // Stored by natural sign: a liability's credit is positive.
+  const grirNet = round(Number(net?.amount ?? 0));
+  if (Math.abs(grirNet) < EPSILON) return;
+
+  const lines = [
+    {
+      accountId: grir,
+      description: "Goods Received Not Invoiced Account",
+      amount: round(-grirNet)
+    },
+    {
+      accountId:
+        reversal.accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
+      description: "Inventory Adjustment Variance Account",
+      amount: round(-grirNet)
+    }
+  ];
+  // Debits = credits: each stored amount times its account's debit sign.
+  assertBalanced(
+    round(
+      lines[0]!.amount * debit("liability", 1) +
+        lines[1]!.amount * debit("expense", 1)
+    ),
+    0,
+    EPSILON,
+    "Force delete GR/IR true-up"
+  );
+
+  const journalId = await createAdjustmentJournal(trx, {
+    companyId,
+    accountingPeriodId: reversal.accounting.accountingPeriodId,
+    status: reversal.accounting.postingStatus,
+    description: args.description,
+    postingDate: reversal.today,
+    userId: reversal.accounting.userId
+  });
+  const journalLineReference = nanoid();
+  await trx
+    .insertInto("journalLine")
+    .values(
+      lines.map((line) => ({
+        ...line,
+        journalId,
+        quantity: 0,
+        documentType: "Receipt" as const,
+        documentId: receiptId,
+        journalLineReference,
+        companyId
+      }))
+    )
+    .execute();
+}
+
+export type PurchaseOrderForceDeleteRequest = {
+  id: string;
+  /** Pending, or Approving while an Admin's approval runs. */
+  status: string;
+  /** An Approving claim older than ten minutes: it may be approved again. */
+  claimExpired: boolean;
+  reason: string;
+  requestedBy: string;
+  requestedAt: string;
+  purchaseOrderStatus: string;
+};
+
+/** The order's Pending force delete request, or null. */
+/**
+ * Claims a Pending purchase order force delete for `userId`'s approval
+ * (Approving), as `claimForceDeleteRequest` does for documents: its receipt
+ * voids commit on their own, so a cancel or reject cannot run meanwhile.
+ */
+export async function claimPurchaseOrderForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<boolean> {
+  const claimed = await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({
+      status: "Approving",
+      decidedBy: userId,
+      decidedAt: sql`now()`,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("requestedBy", "<>", userId)
+    .where((eb) =>
+      eb.or([
+        eb("status", "=", "Pending"),
+        eb.and([
+          eb("status", "=", "Approving"),
+          eb.or([
+            eb("decidedBy", "=", userId),
+            eb("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+          ])
+        ])
+      ])
+    )
+    .returning("id")
+    .executeTakeFirst();
+  return !!claimed;
+}
+
+/** Gives back a purchase order force delete claim left for ten minutes. */
+export async function releaseExpiredPurchaseOrderForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  { companyId, requestId }: { companyId: string; requestId: string }
+): Promise<void> {
+  await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({ status: "Pending", decidedBy: null, decidedAt: null })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+    .execute();
+}
+
+/** Gives a purchase order force delete claim back (Pending). */
+export async function releasePurchaseOrderForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<void> {
+  await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({
+      status: "Pending",
+      decidedBy: null,
+      decidedAt: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedBy", "=", userId)
+    .execute();
+}
+
+export async function getPendingPurchaseOrderForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  { companyId, purchaseOrderId }: { companyId: string; purchaseOrderId: string }
+): Promise<PurchaseOrderForceDeleteRequest | null> {
+  const request = await db
+    .selectFrom("purchaseOrderForceDeleteRequest")
+    .select([
+      "id",
+      "status",
+      "reason",
+      "requestedBy",
+      "requestedAt",
+      "purchaseOrderStatus",
+      sql<boolean>`coalesce("decidedAt" < now() - interval '10 minutes', false)`.as(
+        "claimExpired"
+      )
+    ])
+    .where("companyId", "=", companyId)
+    .where("purchaseOrderId", "=", purchaseOrderId)
+    .where("status", "in", ["Pending", "Approving"])
+    .executeTakeFirst();
+  return request
+    ? { ...request, requestedAt: String(request.requestedAt) }
+    : null;
+}
+
+/**
+ * Tells about a force delete: `Requested` goes to every Admin but the one who
+ * asked; `Approved` / `Rejected` go to the one who asked. The notice names
+ * the order and the request (`purchaseOrderForceDeleteNotificationId`), so its
+ * content and link still work once the order is deleted. Never throws.
+ */
+export async function notifyForceDelete(
+  ctx: ServiceContext,
+  {
+    event,
+    purchaseOrderId,
+    requestId,
+    requestedBy
+  }: {
+    event: "Requested" | "Approved" | "Rejected";
+    purchaseOrderId: string;
+    requestId: string;
+    requestedBy: string;
+  }
+) {
+  const companyId = ctx.company.id;
+  try {
+    const userIds =
+      event === "Requested"
+        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+            (id) => id !== requestedBy
+          )
+        : requestedBy === ctx.auditUserId
+          ? []
+          : [requestedBy];
+    if (userIds.length === 0) return;
+    await trigger("notify", {
+      event:
+        event === "Requested"
+          ? NotificationEvent.ApprovalRequested
+          : event === "Approved"
+            ? NotificationEvent.ApprovalApproved
+            : NotificationEvent.ApprovalRejected,
+      companyId,
+      documentId: purchaseOrderForceDeleteNotificationId(
+        purchaseOrderId,
+        requestId
+      ),
+      documentType: "purchaseOrderForceDelete",
+      recipient: { type: "users", userIds },
+      from: ctx.auditUserId
+    });
+  } catch (e) {
+    logger.error("Failed to notify about a purchase order force delete", {
+      error: e
+    });
+  }
+}
+
+/** Best-effort: a failed audit write never undoes the override. */
+export async function auditForceDelete(
+  ctx: ServiceContext,
+  entry: {
+    purchaseOrderId: string;
+    requestId: string;
+    operation: "INSERT" | "UPDATE" | "DELETE";
+    diff: Record<string, { old: unknown; new: unknown }>;
+  }
+) {
+  try {
+    await insertAuditLogEntries(ctx.asSystem.supabase, ctx.company.id, [
+      {
+        tableName: "purchaseOrderForceDeleteRequest",
+        entityType: "purchaseOrder",
+        entityId: entry.purchaseOrderId,
+        recordId: entry.requestId,
+        operation: entry.operation,
+        actorId: ctx.auditUserId,
+        diff: entry.diff
+      }
+    ]);
+  } catch (err) {
+    logger.warn("audit write skipped for a purchase order force delete", {
+      error: err
+    });
+  }
+}
+
 /** A file's size as the documents table stores it: whole kilobytes. */
 export function kilobytes(file: Buffer): number {
   return Math.round(file.byteLength / 1024);
@@ -6963,6 +9658,8 @@ export async function purchaseOrderEmail(
   if (!paymentTerms.data) throw new Error("Failed to get payment terms");
   const supplierEmail = contact.data.contact.email;
   if (!supplierEmail) return null;
+  // Never send one supplier's order to another supplier's contact.
+  if (contact.data.supplierId !== purchaseOrder.data.supplierId) return null;
 
   // Same decimals the PDF of this order uses.
   const currency = purchaseOrder.data.currencyCode
@@ -7090,6 +9787,11 @@ export async function releaseApprovedPurchaseOrder(
           attachments: attachment ? [attachment] : undefined,
           companyId: ctx.company.id
         });
+      } else {
+        logger.warn(
+          "Purchase order not emailed after approval: the supplier contact has no email",
+          { purchaseOrderId, supplierContactId: supplierContact }
+        );
       }
     } catch (err) {
       logger.error("Failed to send email after approval", { error: err });
@@ -7101,31 +9803,24 @@ export async function releaseApprovedPurchaseOrder(
 
 // ── Purchasing planning ─────────────────────────────────────────────────────
 
-/**
- * The date the supplier promised for a PO line: the line's own, else its
- * order's delivery date — the same COALESCE the `openPurchaseOrderLines` view
- * gives MRP. MRP dates the line by this ahead of the required date, so a
- * planning date change (which writes the required date) cannot move it.
- */
-export function promisedDateOf(line: {
-  promisedDate: string | null;
-  receiptPromisedDate: string | null | undefined;
-}): string | null {
-  return line.promisedDate ?? line.receiptPromisedDate ?? null;
-}
-
 /** Sums forecasts that land on the same (item, location, period). */
 export function deduplicateForecasts<
   T extends {
     itemId: string;
     locationId: string;
     periodId: string;
+    planningSegmentId: string;
     forecastQuantity: number;
   }
 >(forecasts: T[]): T[] {
   const map = new Map<string, T>();
   for (const forecast of forecasts) {
-    const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
+    const key = [
+      forecast.itemId,
+      forecast.locationId,
+      forecast.periodId,
+      forecast.planningSegmentId
+    ].join("\u001f");
     const existing = map.get(key);
     if (existing) {
       existing.forecastQuantity += forecast.forecastQuantity;
@@ -7397,7 +10092,9 @@ export async function finalizeSupplierQuote(
   return { success: true };
 }
 export const finalizePurchasingRfqInput = z.object({
-  rfqId: z.string()
+  rfqId: z.string(),
+  // The part files each new supplier quote is shared with.
+  sharedFilePaths: z.array(z.string()).default([])
 });
 
 const ITEM_TYPES = [
@@ -7429,7 +10126,7 @@ export async function finalizePurchasingRfq(
   ctx: ServiceContext,
   raw: z.input<typeof finalizePurchasingRfqInput>
 ) {
-  const { rfqId } = finalizePurchasingRfqInput.parse(raw);
+  const { rfqId, sharedFilePaths } = finalizePurchasingRfqInput.parse(raw);
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
@@ -7499,6 +10196,7 @@ export async function finalizePurchasingRfq(
           exchangeRateUpdatedAt: now,
           quotedDate: now,
           supplierQuoteType: "Purchase",
+          sharedFilePaths,
           companyId,
           createdBy: userId,
           updatedBy: userId

@@ -1,3 +1,4 @@
+---
 paths:
   - "packages/database/src/precision.ts"
   - "packages/utils/src/format.ts"
@@ -9,6 +10,7 @@ paths:
   - "packages/ee/src/accounting/providers/xero/serialize.ts"
   - "apps/erp/app/components/Form/TaxFields.tsx"
   - "apps/erp/app/hooks/useCurrencies.ts"
+---
 
 # Numeric Precision & Formatting
 
@@ -142,9 +144,11 @@ is module-private so the two percent kinds can never drift apart):
 | Kind | Digits | Notes |
 |---|---|---|
 | Percent / rate | min 0, max 3 | "5%", "6.25%", "6.255%" |
+| Progress | min 0, max 0 | "13%" — the figure beside a progress bar or a progress headline (budget used, work done). Display only, never an input; `usePercentFormatter("progress")` |
 | Percent points | min 0, max 3 | the same rate typed bare in a field already labelled "%" — `6.25`, caller divides by 100 |
 | Exchange rate | min 0, max 5 | "1.0852", "0.00781" — a plain multiplier, not a percent and not a currency. Intl's decimal default caps at 3, which truncates a stored rate on blur |
 | Quantity | min 0, max 5 | "3", "4.33333", "0.00125" — no "<0.01" placeholder |
+| Measurement | min 0, max 20, no grouping | an inspection reading, never rounded: "0.0000004", "100000000000000.5". `MEASUREMENT_FORMAT` / `INPUT_FORMAT.measurement`; the grids write readings and limits with `formatReading` (`inspection-entry.ts`). At the quantity scale a typed 0.0000004 committed as 0 |
 | Money (settlement) | max = min = `currency.decimalPlaces` | "$300.00", "$3.50", "$0.00", "¥63", "BHD 0.563" — what someone PAYS: an invoice total, line amount, payment, tax amount. A currency cannot settle a fraction of its smallest unit, so its decimals are both floor and CEILING; a stored 300.33323 displays "$300.33" and storage keeps the rest. PADDED, because fixed-width money is the accounting convention |
 | Rate (per-unit price/cost) | min = `currency.decimalPlaces`, max = `SCALE` | "$300.00", "$3.50" — pads exactly like money, so a price column stays aligned — but the currency's decimals are only its FLOOR. Above them it carries the storage scale: "$0.164", "$0.00123", "$12.34567". A price is what you MULTIPLY BY, not what you settle, and a 2-decimal ceiling silently turned a real $0.00123 fastener price into $0.00 ([#1203](https://github.com/crbnos/carbon/issues/1203)). Every ERP splits these — Xero settles at 2 and takes 4 on `UnitAmount` (opt-in `unitdp=4`), QuickBooks Desktop shows 5 in the Rate column, SAP reaches sub-cent prices with a price unit (per 100/1000) — and none of them widens settlement values. `INPUT_STEP.rate` is the scale step, since `money`'s cent step would snap away exactly the digits this keeps |
 | ↳ trailing-zero preference | min 0 when set | `companySettings.showCurrencyTrailingZeros` (default true) turned OFF drops the non-significant zeros — "$300", "$3.5". DISPLAY and IN-APP only, and it covers EDITABLE fields too: `useCurrencyFormatter` and `MotionMoney` read it once via `useCurrencyMinDecimals`, and `~/components/Form`'s `Number`/`NumberControlled` wrappers (`CurrencyNumber.tsx`) apply it to any `style: "currency"` `formatOptions` — never a call site, which is why the ~80 `INPUT_FORMAT.money/price(...)` calls still pass two arguments. Overriding the MINIMUM is safe on an input even though `formatOptions` is part of the storage round-trip: react-aria commits `parse(format(x))` and only the MAXIMUM can change that. Documents render through the pure `formatMoney` and stay padded — a customer-facing invoice is where fixed-width money matters most. A PUBLIC page is not automatically settings-free: `useCompanySettings` reads `useRouteData(authenticatedRoot)`, which matches on the PATHNAME `/x` and so returns nothing under `/share/**`, so the quote share page passes its own service-role `companySettings` down through `CompanySettingsProvider` (`useCompanySettings.tsx`). Any other public route that wants the preference must do the same — the fallback is silent, and reads as "padded on purpose" rather than "never wired up" |

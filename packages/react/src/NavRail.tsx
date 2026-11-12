@@ -6,7 +6,12 @@
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Slot, Slottable } from "@radix-ui/react-slot";
-import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  CSSProperties,
+  MouseEvent,
+  ReactNode
+} from "react";
 import {
   createContext,
   forwardRef,
@@ -22,6 +27,7 @@ import { Link, useLocation } from "react-router";
 import { Avatar } from "./Avatar";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
 import { useMode } from "./hooks/useMode";
+import { useShellThemeStyle } from "./hooks/useThemeStyle";
 import { IconButton } from "./IconButton";
 import { PrefetchLink } from "./PrefetchLink";
 import { Separator } from "./Separator";
@@ -30,6 +36,7 @@ import { useSidebar } from "./Sidebar";
 import { SHORTCUTS } from "./shortcuts";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 import { VStack } from "./VStack";
 
 const focusRingClasses = [
@@ -95,8 +102,12 @@ export function NavRail({
   /** Ignore hover, e.g. while a modal owns the pointer. */
   disableHover?: boolean;
 }) {
+  const { t } = useLingui();
   const { open, isMobile, openMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
+  // Desktop rail only: the mobile drawer keeps the normal colors.
+  const themeStyle = useShellThemeStyle();
+  const railMode = useMode();
   const [hovered, setHovered] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const hoverCardRef = useRef<HTMLSpanElement>(null);
@@ -193,8 +204,13 @@ export function NavRail({
 
   const content = (
     <NavRailHoldContext.Provider value={hold}>
-      <VStack spacing={1} className="flex flex-col justify-between h-full px-2">
-        <VStack spacing={1}>
+      <VStack spacing={1} className="flex flex-col justify-between h-full">
+        {/* Only the list scrolls, so the footer stays in view. A color theme makes
+            the rail transparent, so nothing can paint over a scrolling list. */}
+        <VStack
+          spacing={1}
+          className="min-h-0 flex-1 px-2 pb-1 overflow-x-hidden overflow-y-auto hide-scrollbar scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+        >
           {header ? (
             // As tall as the app's top bar (ERP `--topbar-height`, MES
             // `--header-height`) and as far down: the rail's padding plus the
@@ -206,7 +222,11 @@ export function NavRail({
           ) : null}
           {children}
         </VStack>
-        {footer ? <VStack spacing={1}>{footer}</VStack> : null}
+        {footer ? (
+          <VStack spacing={1} className="shrink-0 px-2">
+            {footer}
+          </VStack>
+        ) : null}
       </VStack>
     </NavRailHoldContext.Provider>
   );
@@ -226,7 +246,9 @@ export function NavRail({
             <Trans>Navigation</Trans>
           </DrawerTitle>
           <NavRailHoldContext.Provider value={hold}>
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too */}
             <nav
+              aria-label={t`Main`}
               data-state="expanded"
               onClick={closeOnLink}
               className="group min-h-0 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
@@ -243,6 +265,7 @@ export function NavRail({
               />
             </nav>
             {footer ? (
+              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too
               <div
                 data-state="expanded"
                 onClick={closeOnLink}
@@ -269,19 +292,21 @@ export function NavRail({
       className={cn(
         "sticky top-0 h-svh z-50 hidden md:block shrink-0",
         "w-14 data-[state=expanded]:w-[15rem]",
-        "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        "transition-[width] duration-200 ease-out motion-reduce:transition-none"
       )}
     >
       <nav
         ref={navRef}
+        aria-label={t`Main`}
         data-state={state}
         data-sliding-hover=""
+        style={themeStyle?.rail[railMode] as CSSProperties | undefined}
         className={cn(
           "absolute inset-y-0 left-0 bg-background py-2 group",
           "w-14 data-[state=expanded]:w-[15rem]",
-          "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+          "transition-[width] duration-200 ease-out motion-reduce:transition-none",
           "flex flex-col justify-between",
-          "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+          "hide-scrollbar overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
         onPointerDown={(event) => {
           lastPointerType.current = event.pointerType;
@@ -328,7 +353,7 @@ export function NavRail({
           className={cn(
             "pointer-events-none absolute left-2 right-2 top-0 h-10 rounded-md opacity-0",
             "bg-active/60 data-[tone=accent]:bg-accent",
-            "transition-[transform,opacity,background-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+            "transition-[transform,opacity,background-color] duration-150 ease-out motion-reduce:transition-none"
           )}
         />
         {content}
@@ -352,6 +377,27 @@ type NavRailItemProps = Omit<
   children?: ReactNode;
 };
 
+// The theme's `ease-out` token; WAAPI can't read a CSS variable.
+const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
+const ICON_PULSE: Keyframe[] = [
+  { transform: "scale(1)", easing: EASE_OUT },
+  { transform: "scale(0.85)", offset: 0.35, easing: EASE_OUT },
+  { transform: "scale(1)" }
+];
+
+/**
+ * Dips a nav row's icon on click. Without `icon`, the row's first `<svg>`.
+ */
+export function pulseNavIcon(
+  event: MouseEvent<HTMLElement>,
+  icon: Element | null = event.currentTarget.querySelector("svg")
+) {
+  // `detail` is 0 for a click made with the keyboard: no motion for those.
+  if (!icon || event.detail === 0) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  icon.animate(ICON_PULSE, { duration: 200 });
+}
+
 /**
  * One rail entry. A `<button>` by default; with `asChild` the child element
  * becomes the item, so a `Link` or a Radix trigger keeps its own semantics.
@@ -372,6 +418,7 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
+    const iconRef = useRef<HTMLSpanElement>(null);
 
     useNavRailHold(props);
 
@@ -382,6 +429,10 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
         aria-label={label}
         data-nav-item=""
         {...props}
+        onClick={(event) => {
+          pulseNavIcon(event, iconRef.current);
+          props.onClick?.(event);
+        }}
         className={cn(
           navRailItemClasses,
           isActive
@@ -394,7 +445,10 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
       >
         {/* A 16px icon centred in this 24px box sits where a `left-3 top-3`
             icon would; the box also fits an `Avatar size="xs"`. */}
-        <span className="absolute left-2 top-2 flex size-6 items-center justify-center [&>svg]:size-4">
+        <span
+          ref={iconRef}
+          className="absolute left-2 top-2 flex size-6 items-center justify-center [&>svg]:size-4"
+        >
           {icon}
         </span>
         {tag ? (
@@ -476,11 +530,13 @@ type NavRailSwitcherProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   "children"
 > & {
-  /** The company's logo for each colour mode; its initials stand in for none. */
+  /** The company's logo for each color mode; its initials stand in for none. */
   logoLight?: string | null;
   logoDark?: string | null;
   /** Also the accessible name unless `aria-label` is given. */
   label: string;
+  /** A second line under the name, e.g. the current location. */
+  sublabel?: string | null;
   /** After the name, e.g. chevrons for a menu or an arrow for a link out. */
   trailing?: ReactNode;
   asChild?: boolean;
@@ -501,6 +557,7 @@ export const NavRailSwitcher = forwardRef<
       logoLight,
       logoDark,
       label,
+      sublabel,
       trailing,
       asChild = false,
       className,
@@ -510,7 +567,13 @@ export const NavRailSwitcher = forwardRef<
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
-    const logo = useMode() === "dark" ? logoDark : logoLight;
+    // The rail sits on the frame, so the frame's tone picks the logo. Phones
+    // have no frame.
+    const mode = useMode();
+    const { isPhone } = useViewport();
+    const frameTone = useShellThemeStyle()?.tone;
+    const tone = isPhone ? mode : (frameTone ?? mode);
+    const logo = tone === "dark" ? logoDark : logoLight;
     // Its menu is a portal: without the hold, the rail collapses under it.
     useNavRailHold(props);
 
@@ -518,7 +581,9 @@ export const NavRailSwitcher = forwardRef<
       <Comp
         ref={ref}
         type={asChild ? undefined : "button"}
-        aria-label={label}
+        aria-label={sublabel ? `${label}, ${sublabel}` : label}
+        // The text truncates in the rail: the full text is one hover away.
+        title={sublabel ? `${label}\n${sublabel}` : label}
         {...props}
         className={cn(
           "relative flex h-10 shrink-0 items-center rounded-md select-none",
@@ -545,7 +610,14 @@ export const NavRailSwitcher = forwardRef<
             "md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100"
           )}
         >
-          <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+          <span className="flex min-w-0 flex-1 flex-col text-left">
+            <span className="truncate leading-tight">{label}</span>
+            {sublabel ? (
+              <span className="truncate text-xs font-normal leading-tight text-muted-foreground">
+                {sublabel}
+              </span>
+            ) : null}
+          </span>
           {trailing ? (
             <span className="flex shrink-0 text-muted-foreground [&>svg]:size-3.5">
               {trailing}
@@ -606,7 +678,7 @@ export function NavRailGroup({
           aria-hidden
           className="absolute inset-x-0 top-1/2 mx-auto h-px w-6 bg-border opacity-100 transition-opacity duration-200 group-data-[state=expanded]:opacity-0"
         />
-        <span className="absolute inset-0 flex items-center px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
+        <span className="absolute inset-0 flex items-center px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
           {label}
         </span>
       </div>

@@ -319,6 +319,7 @@ export default function LeaseLiabilitiesRoute() {
 
   const datePicker = (
     label: ReactNode,
+    ariaLabel: string,
     value: string,
     onChange: (value: string) => void
   ) => (
@@ -328,6 +329,7 @@ export default function LeaseLiabilitiesRoute() {
       </span>
       <DatePicker
         size="sm"
+        aria-label={ariaLabel}
         value={parseDate(value)}
         onChange={(next) => onChange(next?.toString() ?? value)}
       />
@@ -489,8 +491,11 @@ export default function LeaseLiabilitiesRoute() {
           columns={columns}
           count={displayRows.length}
           title={t`Lease Liabilities`}
-          primaryAction={datePicker(<Trans>As of:</Trans>, asOf, (value) =>
-            setParams({ asOf: value })
+          primaryAction={datePicker(
+            <Trans>As of:</Trans>,
+            t`As of date`,
+            asOf,
+            (value) => setParams({ asOf: value })
           )}
           withPagination={false}
           withSearch={false}
@@ -564,10 +569,10 @@ export default function LeaseLiabilitiesRoute() {
                 </Trans>
               </CardDescription>
               <HStack className="pt-2 flex-wrap">
-                {datePicker(<Trans>From:</Trans>, from, (value) =>
+                {datePicker(<Trans>From:</Trans>, t`From date`, from, (value) =>
                   setParams({ from: value })
                 )}
-                {datePicker(<Trans>To:</Trans>, to, (value) =>
+                {datePicker(<Trans>To:</Trans>, t`To date`, to, (value) =>
                   setParams({ to: value })
                 )}
               </HStack>

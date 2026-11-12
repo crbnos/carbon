@@ -30,6 +30,8 @@ type TemplateProps = PropsWithChildren<{
   footerContent?: JSONContent | null;
   /** Document theme — drives the block palette (headings, body text). */
   theme?: DocumentTheme;
+  /** The footer's page words, from the template's document texts. */
+  footerText?: { pageLabel: string; ofLabel: string };
 }>;
 
 const Template = ({
@@ -45,15 +47,20 @@ const Template = ({
   headerContent,
   footerContent,
   theme = DEFAULT_THEME,
+  footerText,
   children
 }: TemplateProps) => {
-  const docStyle = useMemo(() => ({ tw: makeDocTw(theme), theme }), [theme]);
+  const safeFontFamily = getSafeFontFamily(fontFamily);
+  const docStyle = useMemo(
+    // The stack's first entry is the body font itself; the rest are fallbacks.
+    () => ({ tw: makeDocTw(theme), theme, fontFamily: safeFontFamily[0] }),
+    [theme, safeFontFamily]
+  );
   const hasHeader =
     headerContent &&
     typeof headerContent === "object" &&
     Array.isArray(headerContent.content) &&
     headerContent.content.length > 0;
-  const safeFontFamily = getSafeFontFamily(fontFamily);
 
   const styles = StyleSheet.create({
     body: {
@@ -92,6 +99,8 @@ const Template = ({
               showPageNumbers={showPageNumbers}
               pageNumberFormat={pageNumberFormat}
               showRegistrationLine={showRegistrationLine}
+              pageLabel={footerText?.pageLabel}
+              ofLabel={footerText?.ofLabel}
             />
           ) : null}
         </DocStyleProvider>

@@ -7,10 +7,15 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useNavigate, useParams } from "react-router";
-import { customerContactValidator } from "~/modules/sales/sales.models";
+import { data, useParams } from "react-router";
+import { useCompanySettings } from "~/hooks";
+import {
+  CUSTOMER_CONTACT_EMAIL_REQUIRED,
+  customerContactValidator
+} from "~/modules/sales/sales.models";
 import { insertCustomerContact } from "~/modules/sales/sales.service";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
@@ -65,6 +70,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       customFields: setCustomFields(formData)
     }
   );
+  if (
+    createCustomerContact.error?.message === CUSTOMER_CONTACT_EMAIL_REQUIRED
+  ) {
+    return validationError({
+      fieldErrors: { email: CUSTOMER_CONTACT_EMAIL_REQUIRED }
+    });
+  }
+
   if (createCustomerContact.error) {
     return modal
       ? data(
@@ -97,9 +110,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function CustomerContactsNewRoute() {
-  const navigate = useNavigate();
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
+  const dialog = useRouteDialog(path.to.customerContacts(customerId));
+  const companySettings = useCompanySettings();
 
   const initialValues = {
     firstName: "",
@@ -109,9 +123,11 @@ export default function CustomerContactsNewRoute() {
 
   return (
     <CustomerContactForm
+      requireEmail={!!companySettings?.requireCustomerContactEmail}
       customerId={customerId}
       initialValues={initialValues}
-      onClose={() => navigate(path.to.customerContacts(customerId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

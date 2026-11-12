@@ -21,7 +21,10 @@ export const approvalDocumentType = [
   "purchaseOrder",
   "qualityDocument",
   "supplier",
-  "changeOrder"
+  "projectChangeRequest",
+  "changeOrder",
+  "purchaseOrderForceDelete",
+  "documentForceDelete"
 ] as const;
 
 export type ApprovalDocumentType =
@@ -31,8 +34,20 @@ export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
   purchaseOrder: "Purchase Order",
   qualityDocument: "Quality Document",
   supplier: "Supplier",
-  changeOrder: "Change Notice"
+  projectChangeRequest: "Project change request",
+  changeOrder: "Change Notice",
+  purchaseOrderForceDelete: "Purchase Order Force Delete",
+  documentForceDelete: "Force Delete"
 };
+
+/**
+ * Document types approved by the company's Admins (other than the one who
+ * asked) instead of an approval rule's groups. No rule is configured for them.
+ */
+export const adminApprovedDocumentTypes: ApprovalDocumentType[] = [
+  "purchaseOrderForceDelete",
+  "documentForceDelete"
+];
 
 export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
   "purchaseOrder"

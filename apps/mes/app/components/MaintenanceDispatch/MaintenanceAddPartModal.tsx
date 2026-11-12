@@ -35,6 +35,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
   LuCheck,
@@ -62,12 +63,49 @@ interface ItemDetails {
 export function MaintenanceAddPartModal({
   dispatchId,
   itemOptions,
-  onClose
+  open = true,
+  onClose,
+  action,
+  title
+}: {
+  dispatchId: string;
+  itemOptions: ItemOption[];
+  open?: boolean;
+  onClose: () => void;
+  /** Where the part posts; a dispatch's add-and-issue route by default. */
+  action?: string;
+  title?: ReactNode;
+}) {
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <MaintenanceAddPartBody
+          dispatchId={dispatchId}
+          itemOptions={itemOptions}
+          onClose={onClose}
+          action={action}
+          title={title}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function MaintenanceAddPartBody({
+  dispatchId,
+  itemOptions,
+  onClose,
+  action,
+  title
 }: {
   dispatchId: string;
   itemOptions: ItemOption[];
   onClose: () => void;
+  action?: string;
+  title?: ReactNode;
 }) {
+  const submitTo =
+    action ?? path.to.addAndIssueMaintenanceDispatchItem(dispatchId);
   const { t } = useLingui();
   const fetcher = useFetcher<{ success: boolean; message: string }>();
   const { carbon } = useCarbon();
@@ -239,7 +277,7 @@ export function MaintenanceAddPartModal({
 
       fetcher.submit(JSON.stringify(payload), {
         method: "post",
-        action: path.to.addAndIssueMaintenanceDispatchItem(dispatchId),
+        action: submitTo,
         encType: "application/json"
       });
     } else if (trackingType === "Batch") {
@@ -268,7 +306,7 @@ export function MaintenanceAddPartModal({
 
       fetcher.submit(JSON.stringify(payload), {
         method: "post",
-        action: path.to.addAndIssueMaintenanceDispatchItem(dispatchId),
+        action: submitTo,
         encType: "application/json"
       });
     } else {
@@ -286,7 +324,7 @@ export function MaintenanceAddPartModal({
 
       fetcher.submit(JSON.stringify(payload), {
         method: "post",
-        action: path.to.addAndIssueMaintenanceDispatchItem(dispatchId),
+        action: submitTo,
         encType: "application/json"
       });
     }
@@ -298,7 +336,7 @@ export function MaintenanceAddPartModal({
     selectedBatches,
     validateSerialNumber,
     validateBatch,
-    dispatchId,
+    submitTo,
     fetcher,
     t
   ]);
@@ -315,157 +353,99 @@ export function MaintenanceAddPartModal({
   }, [fetcher.data, onClose]);
 
   return (
-    <Modal open onOpenChange={onClose}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Add Spare Part</Trans>
-          </ModalTitle>
-          <ModalDescription>
-            <Trans>Select an item and specify the quantity to issue</Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          <div className="flex flex-col gap-4">
-            {/* Item Selection */}
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                <Trans>Item</Trans>
-              </label>
-              <ComboboxBase
-                placeholder={t`Select an item...`}
-                value={selectedItemId}
-                onChange={handleItemChange}
-                options={itemOptions}
-              />
-            </div>
+    <>
+      <ModalHeader>
+        <ModalTitle>{title ?? <Trans>Add Spare Part</Trans>}</ModalTitle>
+        <ModalDescription>
+          <Trans>Select an item and specify the quantity to issue</Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <div className="flex flex-col gap-4">
+          {/* Item Selection */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              <Trans>Item</Trans>
+            </label>
+            <ComboboxBase
+              placeholder={t`Select an item...`}
+              aria-label={t`Item`}
+              value={selectedItemId}
+              onChange={handleItemChange}
+              options={itemOptions}
+            />
+          </div>
 
-            {isLoadingItem && (
-              <div className="text-sm text-muted-foreground">
-                <Trans>Loading item details...</Trans>
+          {isLoadingItem && (
+            <div className="text-sm text-muted-foreground">
+              <Trans>Loading item details...</Trans>
+            </div>
+          )}
+
+          {/* Inventory Item - Simple Quantity */}
+          {itemDetails &&
+            (itemDetails.itemTrackingType === "Inventory" ||
+              !itemDetails.itemTrackingType) && (
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  <Trans>Quantity</Trans>
+                </label>
+                <NumberField
+                  aria-label={t`Quantity`}
+                  value={quantity}
+                  onChange={(value) => setQuantity(value)}
+                  minValue={1}
+                >
+                  <NumberInputGroup>
+                    <NumberInput name="quantity" />
+                    <NumberInputStepper>
+                      <NumberIncrementStepper>
+                        <LuChevronUp />
+                      </NumberIncrementStepper>
+                      <NumberDecrementStepper>
+                        <LuChevronDown />
+                      </NumberDecrementStepper>
+                    </NumberInputStepper>
+                  </NumberInputGroup>
+                </NumberField>
               </div>
             )}
 
-            {/* Inventory Item - Simple Quantity */}
-            {itemDetails &&
-              (itemDetails.itemTrackingType === "Inventory" ||
-                !itemDetails.itemTrackingType) && (
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    <Trans>Quantity</Trans>
-                  </label>
-                  <NumberField
-                    value={quantity}
-                    onChange={(value) => setQuantity(value)}
-                    minValue={1}
-                  >
-                    <NumberInputGroup>
-                      <NumberInput name="quantity" />
-                      <NumberInputStepper>
-                        <NumberIncrementStepper>
-                          <LuChevronUp />
-                        </NumberIncrementStepper>
-                        <NumberDecrementStepper>
-                          <LuChevronDown />
-                        </NumberDecrementStepper>
-                      </NumberInputStepper>
-                    </NumberInputGroup>
-                  </NumberField>
-                </div>
-              )}
-
-            {/* Serial Tracked Item */}
-            {itemDetails && itemDetails.itemTrackingType === "Serial" && (
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="scan">
-                    <LuQrCode className="mr-2" />
-                    <Trans>Scan</Trans>
-                  </TabsTrigger>
-                  <TabsTrigger value="select">
-                    <LuList className="mr-2" />
-                    <Trans>Select</Trans>
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="scan">
-                  <div className="flex flex-col gap-4">
-                    {selectedSerialNumbers.map((sn, index) => (
-                      <div
-                        key={`${index}-scan`}
-                        className="flex flex-col gap-1"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            <InputGroup>
-                              <Input
-                                placeholder={t`Serial Number ${index + 1}`}
-                                value={sn.id}
-                                onChange={(e) => {
-                                  const newValue = e.target.value;
-                                  setSelectedSerialNumbers((prev) => {
-                                    const updated = [...prev];
-                                    updated[index] = { index, id: newValue };
-                                    return updated;
-                                  });
-                                }}
-                                onBlur={(e) => {
-                                  const error = validateSerialNumber(
-                                    e.target.value,
-                                    index
-                                  );
-                                  setSerialErrors((prev) => {
-                                    const newErrors = { ...prev };
-                                    if (error) {
-                                      newErrors[index] = error;
-                                    } else {
-                                      delete newErrors[index];
-                                    }
-                                    return newErrors;
-                                  });
-                                }}
-                                className={cn(
-                                  serialErrors[index] && "border-destructive"
-                                )}
-                              />
-                              <InputRightElement className="pl-2">
-                                {!serialErrors[index] && sn.id ? (
-                                  <LuCheck className="text-emerald-500" />
-                                ) : (
-                                  <LuQrCode />
-                                )}
-                              </InputRightElement>
-                            </InputGroup>
-                          </div>
-                        </div>
-                        {serialErrors[index] && (
-                          <span className="text-xs text-destructive">
-                            {serialErrors[index]}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-                <TabsContent value="select">
-                  <div className="flex flex-col gap-4">
-                    {selectedSerialNumbers.map((sn, index) => (
-                      <div
-                        key={`${index}-select`}
-                        className="flex flex-col gap-1"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            <ComboboxBase
-                              placeholder={t`Select Serial ${index + 1}`}
+          {/* Serial Tracked Item */}
+          {itemDetails && itemDetails.itemTrackingType === "Serial" && (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="scan">
+                  <LuQrCode className="mr-2" />
+                  <Trans>Scan</Trans>
+                </TabsTrigger>
+                <TabsTrigger value="select">
+                  <LuList className="mr-2" />
+                  <Trans>Select</Trans>
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="scan">
+                <div className="flex flex-col gap-4">
+                  {selectedSerialNumbers.map((sn, index) => (
+                    <div key={`${index}-scan`} className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <InputGroup>
+                            <Input
+                              placeholder={t`Serial Number ${index + 1}`}
+                              aria-label={t`Serial number ${index + 1}`}
                               value={sn.id}
-                              onChange={(value) => {
+                              onChange={(e) => {
+                                const newValue = e.target.value;
                                 setSelectedSerialNumbers((prev) => {
                                   const updated = [...prev];
-                                  updated[index] = { index, id: value };
+                                  updated[index] = { index, id: newValue };
                                   return updated;
                                 });
+                              }}
+                              onBlur={(e) => {
                                 const error = validateSerialNumber(
-                                  value,
+                                  e.target.value,
                                   index
                                 );
                                 setSerialErrors((prev) => {
@@ -478,146 +458,113 @@ export function MaintenanceAddPartModal({
                                   return newErrors;
                                 });
                               }}
-                              options={serialOptions}
+                              className={cn(
+                                serialErrors[index] && "border-destructive"
+                              )}
                             />
-                          </div>
+                            <InputRightElement className="pl-2">
+                              {!serialErrors[index] && sn.id ? (
+                                <LuCheck className="text-emerald-500" />
+                              ) : (
+                                <LuQrCode />
+                              )}
+                            </InputRightElement>
+                          </InputGroup>
                         </div>
-                        {serialErrors[index] && (
-                          <span className="text-xs text-destructive">
-                            {serialErrors[index]}
-                          </span>
-                        )}
                       </div>
-                    ))}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            )}
+                      {serialErrors[index] && (
+                        <span role="alert" className="text-xs text-destructive">
+                          {serialErrors[index]}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+              <TabsContent value="select">
+                <div className="flex flex-col gap-4">
+                  {selectedSerialNumbers.map((sn, index) => (
+                    <div
+                      key={`${index}-select`}
+                      className="flex flex-col gap-1"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <ComboboxBase
+                            placeholder={t`Select Serial ${index + 1}`}
+                            aria-label={t`Serial number ${index + 1}`}
+                            value={sn.id}
+                            onChange={(value) => {
+                              setSelectedSerialNumbers((prev) => {
+                                const updated = [...prev];
+                                updated[index] = { index, id: value };
+                                return updated;
+                              });
+                              const error = validateSerialNumber(value, index);
+                              setSerialErrors((prev) => {
+                                const newErrors = { ...prev };
+                                if (error) {
+                                  newErrors[index] = error;
+                                } else {
+                                  delete newErrors[index];
+                                }
+                                return newErrors;
+                              });
+                            }}
+                            options={serialOptions}
+                          />
+                        </div>
+                      </div>
+                      {serialErrors[index] && (
+                        <span role="alert" className="text-xs text-destructive">
+                          {serialErrors[index]}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
 
-            {/* Batch Tracked Item */}
-            {itemDetails && itemDetails.itemTrackingType === "Batch" && (
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="scan">
-                    <LuQrCode className="mr-2" />
-                    <Trans>Scan</Trans>
-                  </TabsTrigger>
-                  <TabsTrigger value="select">
-                    <LuList className="mr-2" />
-                    <Trans>Select</Trans>
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="scan">
-                  <div className="flex flex-col gap-4">
-                    {selectedBatches.map((batch, index) => (
-                      <div
-                        key={`${index}-scan`}
-                        className="flex flex-col gap-1"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            <InputGroup>
-                              <Input
-                                placeholder={t`Batch Number ${index + 1}`}
-                                value={batch.id}
-                                onChange={(e) => {
-                                  const newValue = e.target.value;
-                                  setSelectedBatches((prev) => {
-                                    const updated = [...prev];
-                                    updated[index] = {
-                                      ...batch,
-                                      id: newValue
-                                    };
-                                    return updated;
-                                  });
-                                }}
-                                onBlur={(e) => {
-                                  const error = validateBatch(
-                                    e.target.value,
-                                    batch.quantity,
-                                    index
-                                  );
-                                  setBatchErrors((prev) => {
-                                    const newErrors = { ...prev };
-                                    if (error) {
-                                      newErrors[index] = error;
-                                    } else {
-                                      delete newErrors[index];
-                                    }
-                                    return newErrors;
-                                  });
-                                }}
-                                className={cn(
-                                  batchErrors[index] && "border-destructive"
-                                )}
-                              />
-                              <InputRightElement className="pl-2">
-                                {!batchErrors[index] && batch.id ? (
-                                  <LuCheck className="text-emerald-500" />
-                                ) : (
-                                  <LuQrCode />
-                                )}
-                              </InputRightElement>
-                            </InputGroup>
-                          </div>
-                          <div className="w-20">
-                            <NumberField
-                              value={batch.quantity}
-                              onChange={(value) => {
+          {/* Batch Tracked Item */}
+          {itemDetails && itemDetails.itemTrackingType === "Batch" && (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="scan">
+                  <LuQrCode className="mr-2" />
+                  <Trans>Scan</Trans>
+                </TabsTrigger>
+                <TabsTrigger value="select">
+                  <LuList className="mr-2" />
+                  <Trans>Select</Trans>
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="scan">
+                <div className="flex flex-col gap-4">
+                  {selectedBatches.map((batch, index) => (
+                    <div key={`${index}-scan`} className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <InputGroup>
+                            <Input
+                              placeholder={t`Batch Number ${index + 1}`}
+                              aria-label={t`Batch number ${index + 1}`}
+                              value={batch.id}
+                              onChange={(e) => {
+                                const newValue = e.target.value;
                                 setSelectedBatches((prev) => {
                                   const updated = [...prev];
                                   updated[index] = {
                                     ...batch,
-                                    quantity: value
+                                    id: newValue
                                   };
                                   return updated;
                                 });
                               }}
-                              minValue={1}
-                            >
-                              <NumberInputGroup className="relative">
-                                <NumberInput name="quantity" />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper>
-                                    <LuChevronUp />
-                                  </NumberIncrementStepper>
-                                  <NumberDecrementStepper>
-                                    <LuChevronDown />
-                                  </NumberDecrementStepper>
-                                </NumberInputStepper>
-                              </NumberInputGroup>
-                            </NumberField>
-                          </div>
-                        </div>
-                        {batchErrors[index] && (
-                          <span className="text-xs text-destructive">
-                            {batchErrors[index]}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-                <TabsContent value="select">
-                  <div className="flex flex-col gap-4">
-                    {selectedBatches.map((batch, index) => (
-                      <div
-                        key={`${index}-select`}
-                        className="flex flex-col gap-1"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            <ComboboxBase
-                              placeholder={t`Select Batch ${index + 1}`}
-                              value={batch.id}
-                              onChange={(value) => {
-                                setSelectedBatches((prev) => {
-                                  const updated = [...prev];
-                                  updated[index] = { ...batch, id: value };
-                                  return updated;
-                                });
+                              onBlur={(e) => {
                                 const error = validateBatch(
-                                  value,
+                                  e.target.value,
                                   batch.quantity,
                                   index
                                 );
@@ -631,64 +578,150 @@ export function MaintenanceAddPartModal({
                                   return newErrors;
                                 });
                               }}
-                              options={batchOptions}
+                              className={cn(
+                                batchErrors[index] && "border-destructive"
+                              )}
                             />
-                          </div>
-                          <div className="w-20">
-                            <NumberField
-                              value={batch.quantity}
-                              onChange={(value) => {
-                                setSelectedBatches((prev) => {
-                                  const updated = [...prev];
-                                  updated[index] = {
-                                    ...batch,
-                                    quantity: value
-                                  };
-                                  return updated;
-                                });
-                              }}
-                              minValue={1}
-                            >
-                              <NumberInputGroup>
-                                <NumberInput name="quantity" />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper />
-                                  <NumberDecrementStepper />
-                                </NumberInputStepper>
-                              </NumberInputGroup>
-                            </NumberField>
-                          </div>
+                            <InputRightElement className="pl-2">
+                              {!batchErrors[index] && batch.id ? (
+                                <LuCheck className="text-emerald-500" />
+                              ) : (
+                                <LuQrCode />
+                              )}
+                            </InputRightElement>
+                          </InputGroup>
                         </div>
-                        {batchErrors[index] && (
-                          <span className="text-xs text-destructive">
-                            {batchErrors[index]}
-                          </span>
-                        )}
+                        <div className="w-20">
+                          <NumberField
+                            aria-label={t`Quantity ${index + 1}`}
+                            value={batch.quantity}
+                            onChange={(value) => {
+                              setSelectedBatches((prev) => {
+                                const updated = [...prev];
+                                updated[index] = {
+                                  ...batch,
+                                  quantity: value
+                                };
+                                return updated;
+                              });
+                            }}
+                            minValue={1}
+                          >
+                            <NumberInputGroup className="relative">
+                              <NumberInput name="quantity" />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper>
+                                  <LuChevronUp />
+                                </NumberIncrementStepper>
+                                <NumberDecrementStepper>
+                                  <LuChevronDown />
+                                </NumberDecrementStepper>
+                              </NumberInputStepper>
+                            </NumberInputGroup>
+                          </NumberField>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            )}
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            isLoading={fetcher.state !== "idle"}
-            isDisabled={
-              fetcher.state !== "idle" || !selectedItemId || isLoadingItem
-            }
-          >
-            <Trans>Add & Issue</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+                      {batchErrors[index] && (
+                        <span role="alert" className="text-xs text-destructive">
+                          {batchErrors[index]}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+              <TabsContent value="select">
+                <div className="flex flex-col gap-4">
+                  {selectedBatches.map((batch, index) => (
+                    <div
+                      key={`${index}-select`}
+                      className="flex flex-col gap-1"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <ComboboxBase
+                            placeholder={t`Select Batch ${index + 1}`}
+                            aria-label={t`Batch number ${index + 1}`}
+                            value={batch.id}
+                            onChange={(value) => {
+                              setSelectedBatches((prev) => {
+                                const updated = [...prev];
+                                updated[index] = { ...batch, id: value };
+                                return updated;
+                              });
+                              const error = validateBatch(
+                                value,
+                                batch.quantity,
+                                index
+                              );
+                              setBatchErrors((prev) => {
+                                const newErrors = { ...prev };
+                                if (error) {
+                                  newErrors[index] = error;
+                                } else {
+                                  delete newErrors[index];
+                                }
+                                return newErrors;
+                              });
+                            }}
+                            options={batchOptions}
+                          />
+                        </div>
+                        <div className="w-20">
+                          <NumberField
+                            aria-label={t`Quantity ${index + 1}`}
+                            value={batch.quantity}
+                            onChange={(value) => {
+                              setSelectedBatches((prev) => {
+                                const updated = [...prev];
+                                updated[index] = {
+                                  ...batch,
+                                  quantity: value
+                                };
+                                return updated;
+                              });
+                            }}
+                            minValue={1}
+                          >
+                            <NumberInputGroup>
+                              <NumberInput name="quantity" />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper />
+                                <NumberDecrementStepper />
+                              </NumberInputStepper>
+                            </NumberInputGroup>
+                          </NumberField>
+                        </div>
+                      </div>
+                      {batchErrors[index] && (
+                        <span role="alert" className="text-xs text-destructive">
+                          {batchErrors[index]}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          variant="primary"
+          onClick={handleSubmit}
+          isLoading={fetcher.state !== "idle"}
+          isDisabled={
+            fetcher.state !== "idle" || !selectedItemId || isLoadingItem
+          }
+        >
+          <Trans>Add & Issue</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 }
 

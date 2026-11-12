@@ -27,8 +27,10 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import TextStyle from "@tiptap/extension-text-style";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useOptionalFormControlContext } from "../Form/FormControl";
+import { useFormControl } from "../Form/useFormControl";
 import { Separator } from "../Separator";
+import { toast } from "../Toast";
 import { cn } from "../utils/cn";
 import { usePhoneAutoFocus, useViewport } from "../Viewport";
 import { ColorSelector } from "./components/ColorSelector";
@@ -57,6 +59,12 @@ interface MentionConfig {
 
 interface EditorProp {
   className?: string;
+  /**
+   * The accessible name of the editable area ("Notes", "Description"). Inside
+   * a FormControl it defaults to the FormControl's label; otherwise it is
+   * "Rich text", with the placeholder text as its description.
+   */
+  label?: string;
   /** Focus the editor when it mounts. */
   autoFocus?: boolean;
   initialValue?: JSONContent;
@@ -86,6 +94,8 @@ interface EditorProp {
    * options as the bubble menu — no new capabilities.
    */
   toolbar?: boolean;
+  /** The body's placeholder; "Press '/' for commands" when unset. */
+  placeholder?: string;
   toolbarClassName?: string;
   /**
    * Full-screen "document" mode. When provided, the editor's first block is a
@@ -111,6 +121,7 @@ const defaultOnUpload = async (file: File) => {
 
 const Editor = ({
   className,
+  label,
   autoFocus,
   initialValue,
   onChange,
@@ -119,6 +130,7 @@ const Editor = ({
   mentions,
   highlightTokens,
   toolbar,
+  placeholder,
   toolbarClassName,
   title
 }: EditorProp) => {
@@ -126,18 +138,25 @@ const Editor = ({
   const { isPhone } = useViewport();
   const phoneAutoFocus = usePhoneAutoFocus(autoFocus);
   const titleMode = !!title;
+  const field = useOptionalFormControlContext();
+  const { ariaProps } = useFormControl({});
   const titlePlaceholder = title?.placeholder ?? "Untitled";
   // The editor reads its extensions only once on mount, so the placeholder
   // reads the current (translated) text through a ref. Phones have no "/" key
   // to press, so the body text differs there.
+  const bodyPlaceholder =
+    placeholder || (isPhone ? t`Write a note…` : t`Press '/' for commands`);
   const placeholderTextRef = useRef<(node: any) => string>(() => "");
   placeholderTextRef.current = (node) => {
     if (node.type.name === "heading") {
       const level = node.attrs.level;
       return t`Heading ${level}`;
     }
-    return isPhone ? t`Write a note…` : t`Press '/' for commands`;
+    return bodyPlaceholder;
   };
+  // A placeholder is a hint, not a name: an unlabelled editor is "Rich text",
+  // described by the hint.
+  const accessibleName = label || field?.labelText || t`Rich text`;
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
@@ -291,9 +310,10 @@ const Editor = ({
           initialContent: initialContentRef.current
         })}
         extensions={extensions}
-        // tiptap focuses on mount when `autofocus` is undefined (desktop
-        // today); phones get `false`.
-        autofocus={phoneAutoFocus}
+        // tiptap focuses on mount when `autofocus` is undefined, so every
+        // notes card took focus on page load (from the page's heading, for a
+        // screen reader). Only a caller that asks for it gets focus; phones never.
+        autofocus={phoneAutoFocus ?? false}
         editorProps={{
           handleDOMEvents: {
             keydown: (_view, event) => handleCommandNavigation(event)
@@ -301,7 +321,18 @@ const Editor = ({
           handlePaste: (view, event) => handleImagePaste(view, event, uploadFn),
           handleDrop: (view, event, _slice, moved) =>
             handleImageDrop(view, event, moved, uploadFn),
+          // The contenteditable is a multi-line text box: give it the role
+          // (TipTap sets none), a name, and the field's description.
           attributes: {
+            role: "textbox",
+            "aria-label": accessibleName,
+            "aria-multiline": "true",
+            "aria-description": bodyPlaceholder,
+            ...(ariaProps["aria-describedby"] && {
+              "aria-describedby": ariaProps["aria-describedby"]
+            }),
+            ...(ariaProps["aria-invalid"] && { "aria-invalid": "true" }),
+            ...(ariaProps["aria-required"] && { "aria-required": "true" }),
             class: cn(
               "prose dark:prose-invert focus:outline-none max-w-full",
               // Flush toolbar: pad the content, not the toolbar, and leave a

@@ -49,6 +49,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
@@ -207,7 +208,7 @@ const PurchaseOrdersTable = memo(
         },
         {
           accessorKey: "receiptRequestedDate",
-          header: t`Requested Date`,
+          header: t`Receipt Requested Date`,
           cell: (item) => (
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
@@ -220,7 +221,7 @@ const PurchaseOrdersTable = memo(
         },
         {
           accessorKey: "receiptPromisedDate",
-          header: t`Promised Date`,
+          header: t`Receipt Promised Date`,
           cell: ({ row }) => {
             const isReceivedOnTime =
               row.original.deliveryDate &&
@@ -250,6 +251,32 @@ const PurchaseOrdersTable = memo(
               </span>
             );
           },
+          meta: {
+            filter: {
+              type: "dateRange"
+            },
+            icon: <LuCalendar />
+          }
+        },
+        {
+          accessorKey: "shippedDate",
+          header: t`Shipped Date`,
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
+          meta: {
+            filter: {
+              type: "dateRange"
+            },
+            icon: <LuCalendar />
+          }
+        },
+        {
+          accessorKey: "expectedReceiptDate",
+          header: t`Expected Receipt Date`,
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             filter: {
               type: "dateRange"
@@ -327,7 +354,12 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "dropShipment",
           header: t`Drop Shipment`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => (
+            <Checkbox
+              aria-label={t`Drop Shipment`}
+              isChecked={item.getValue<boolean>()}
+            />
+          ),
           meta: {
             filter: {
               type: "static",
@@ -520,12 +552,17 @@ const PurchaseOrdersTable = memo(
       [deletePurchaseOrderModal, edit, fetcher, permissions, receive]
     );
 
+    const lineItemRows =
+      useLineItemRows<PurchaseOrderListItem>("purchase-orders");
+
     return (
       <>
         <Table<PurchaseOrderListItem>
+          getRowLabel={(row) => row.purchaseOrderId ?? undefined}
           count={count}
           columns={columns}
           data={data}
+          {...lineItemRows}
           infinite={infinite}
           defaultColumnPinning={{
             left: ["purchaseOrderId"]
@@ -558,11 +595,9 @@ const PurchaseOrdersTable = memo(
             text={`Are you sure you want to delete ${selectedPurchaseOrder.purchaseOrderId!}? This cannot be undone.`}
             onCancel={() => {
               deletePurchaseOrderModal.onClose();
-              setSelectedPurchaseOrder(null);
             }}
             onSubmit={() => {
               deletePurchaseOrderModal.onClose();
-              setSelectedPurchaseOrder(null);
             }}
           />
         )}

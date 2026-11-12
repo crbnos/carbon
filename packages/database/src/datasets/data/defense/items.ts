@@ -1146,8 +1146,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "ANT-BLADE-01",
     obsoleteRevision: "A",
-    nextRevision: "B",
-    nextStatus: "Prototype"
+    nextRevision: "B"
   }
 ];
 
@@ -1156,7 +1155,7 @@ export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   {
     key: "PDB-PCB-FPT",
     item: "PCB-PDB-R1",
-    drawingNumber: "HUS-PDB-200 Rev D",
+    name: "HUS-PDB-200 Rev D",
     aql: 1.0,
     features: [
       {

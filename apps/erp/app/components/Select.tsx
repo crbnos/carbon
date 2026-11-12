@@ -47,6 +47,7 @@ const Select = forwardRef<HTMLButtonElement, SelectProps>(
     ref
   ) => {
     const { t } = useLingui();
+    const fieldName = props["aria-label"];
     return (
       <HStack spacing={1}>
         <SelectBase
@@ -74,7 +75,7 @@ const Select = forwardRef<HTMLButtonElement, SelectProps>(
         {isClearable && !isReadOnly && value && (
           <IconButton
             variant="ghost"
-            aria-label={t`Clear`}
+            aria-label={fieldName ? t`Clear ${fieldName}` : t`Clear`}
             icon={<LuX />}
             onClick={() => onChange("")}
             size={size === "sm" ? "md" : size}

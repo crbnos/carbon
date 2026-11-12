@@ -192,7 +192,6 @@ const JobsTable = memo((props: JobsTableProps) => {
   };
 
   const onDeleteCancel = () => {
-    setSelectedJob(null);
     deleteModal.onClose();
   };
 
@@ -821,6 +820,7 @@ const JobsTable = memo((props: JobsTableProps) => {
   return (
     <>
       <Table<JobRow>
+        getRowLabel={(row) => row.jobId ?? undefined}
         data={data}
         defaultColumnVisibility={defaultColumnVisibility}
         defaultColumnPinning={{

@@ -35,10 +35,12 @@ import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
   JOB_LOCKED_MESSAGE,
+  jobFormRefusalField,
   jobValidator
 } from "~/modules/production/production.models";
 import {
   getJob,
+  getJobCorrections,
   getJobDocumentsWithItemId,
   getJobMakeMethodById,
   getJobMaterialsByMethodId,
@@ -56,6 +58,7 @@ import {
   JobNotes,
   JobRiskRegister
 } from "~/modules/production/ui/Jobs";
+import JobCorrections from "~/modules/production/ui/Jobs/JobCorrections";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import {
@@ -100,6 +103,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       materials: [],
       operations: [],
       makeMethod: null,
+      corrections: [],
       files: Promise.resolve([] as StorageItem[]),
       productionData: Promise.resolve({
         quantities: [],
@@ -112,10 +116,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const methodId = rootMethod.data.id;
 
-  const [materials, operations, makeMethod] = await Promise.all([
+  const [materials, operations, makeMethod, corrections] = await Promise.all([
     getJobMaterialsByMethodId(client, methodId),
     getJobOperationsByMethodId(client, methodId),
-    getJobMakeMethodById(client, methodId, companyId)
+    getJobMakeMethodById(client, methodId, companyId),
+    getJobCorrections(client, methodId, companyId)
   ]);
 
   return {
@@ -140,6 +145,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workInstruction: o.workInstruction as JSONContent
       })) ?? [],
     makeMethod: makeMethod.data ?? null,
+    corrections: corrections.data ?? [],
     files: getJobDocumentsWithItemId(
       client,
       companyId,
@@ -173,8 +179,16 @@ export async function action(args: ActionFunctionArgs) {
   ) {
     return validationError({ fieldErrors: { itemId: result.error.message } });
   }
+  // The charge number is refused, or the project's budget blocks the save.
+  const field = jobFormRefusalField(result.error?.category);
+  if (result.error && field) {
+    return validationError({ fieldErrors: { [field]: result.error.message } });
+  }
+  // A budget warning saves the job; the flash says by how much it runs over.
   return respond(args.request, result).redirect(path.to.job(jobId), {
-    message: "Updated job"
+    message: result.data?.budgetNote
+      ? `Updated job. ${result.data.budgetNote}`
+      : "Updated job"
   });
 }
 
@@ -187,7 +201,8 @@ export default function JobDetailsRoute() {
     makeMethod,
     productionData,
     tags,
-    files
+    files,
+    corrections
   } = useLoaderData<typeof loader>();
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
@@ -240,6 +255,10 @@ export default function JobDetailsRoute() {
               materials={materials}
               // @ts-expect-error
               operations={operations}
+            />
+            <JobCorrections
+              key={`corrections:${methodId}`}
+              corrections={corrections}
             />
           </>
         )}

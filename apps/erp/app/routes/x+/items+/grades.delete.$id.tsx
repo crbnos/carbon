@@ -5,7 +5,7 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -73,19 +73,18 @@ export default function DeleteMaterialGradeRoute() {
   if (!id) throw new Error("id not found");
 
   const { materialGrade } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const { t } = useLingui();
 
   if (!materialGrade) return null;
-
-  const onCancel = () => closeRoute();
 
   return (
     <ConfirmDelete
       action={path.to.deleteMaterialGrade(id)}
       name={materialGrade.name}
       text={t`Are you sure you want to delete the material grade: ${materialGrade.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

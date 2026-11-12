@@ -77,18 +77,21 @@ import {
   quoteLineStatusType,
   quoteLineValidator
 } from "../../sales.models";
+import { methodTakesConfiguration } from "../../sales.utils";
 import type { Quotation, QuotationLine } from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";
 
 type QuoteLineFormProps = {
   initialValues: z.infer<typeof quoteLineValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const QuoteLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: QuoteLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -176,7 +179,7 @@ const QuoteLineForm = ({
       // Clearing the item must also clear its configuration — otherwise a
       // configured Part's stale parameters/values remain submittable after
       // switching to a different item type.
-      setRequiresConfiguration(false);
+      setItemRequiresConfiguration(false);
       setIsConfigured(false);
       setConfigurationParameters(null);
       setConfigurationValues("");
@@ -184,7 +187,10 @@ const QuoteLineForm = ({
   };
 
   const configurationDisclosure = useDisclosure();
-  const [requiresConfiguration, setRequiresConfiguration] = useState(false);
+  const [itemRequiresConfiguration, setItemRequiresConfiguration] =
+    useState(false);
+  const requiresConfiguration =
+    itemRequiresConfiguration && methodTakesConfiguration(itemData.methodType);
   const [isConfigured, setIsConfigured] = useState(false);
   const [configurationParameters, setConfigurationParameters] = useState<{
     parameters: ConfigurationParameter[];
@@ -293,7 +299,7 @@ const QuoteLineForm = ({
 
     setItemData(newItemData);
     if (itemReplenishment.data?.requiresConfiguration) {
-      setRequiresConfiguration(true);
+      setItemRequiresConfiguration(true);
       const [parameters, groups] = await Promise.all([
         carbon
           .from("configurationParameter")
@@ -320,7 +326,7 @@ const QuoteLineForm = ({
         groups: groups.data ?? []
       });
     } else {
-      setRequiresConfiguration(false);
+      setItemRequiresConfiguration(false);
       setConfigurationParameters(null);
     }
   };
@@ -331,6 +337,7 @@ const QuoteLineForm = ({
     <>
       <ModalCardProvider type={type}>
         <ModalCard
+          open={open}
           onClose={onClose}
           defaultCollapsed={false}
           isCollapsible={isEditing}
@@ -620,28 +627,27 @@ const QuoteLineForm = ({
         </ModalCard>
       </ModalCardProvider>
       <rules.ViolationModal />
-      {isEditing && deleteDisclosure.isOpen && (
+      {isEditing && (
         <DeleteQuoteLine
+          isOpen={deleteDisclosure.isOpen}
           line={initialValues as QuotationLine}
           onCancel={deleteDisclosure.onClose}
         />
       )}
-      {requiresConfiguration &&
-        configurationDisclosure.isOpen &&
-        configurationParameters && (
-          <ConfiguratorModal
-            open
-            initialValues={configurationValues || {}}
-            groups={configurationParameters.groups ?? []}
-            parameters={configurationParameters.parameters ?? []}
-            onClose={configurationDisclosure.onClose}
-            onSubmit={(config: Record<string, any>) => {
-              setConfigurationValues(config);
-              setIsConfigured(true);
-              configurationDisclosure.onClose();
-            }}
-          />
-        )}
+      {requiresConfiguration && configurationParameters && (
+        <ConfiguratorModal
+          open={configurationDisclosure.isOpen}
+          initialValues={configurationValues || {}}
+          groups={configurationParameters.groups ?? []}
+          parameters={configurationParameters.parameters ?? []}
+          onClose={configurationDisclosure.onClose}
+          onSubmit={(config: Record<string, any>) => {
+            setConfigurationValues(config);
+            setIsConfigured(true);
+            configurationDisclosure.onClose();
+          }}
+        />
+      )}
     </>
   );
 };

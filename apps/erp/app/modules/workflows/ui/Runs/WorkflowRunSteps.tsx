@@ -180,6 +180,7 @@ function StepRow({
   return (
     <div className="border-b border-border/50">
       <button
+        aria-expanded={hasDetail ? expanded : undefined}
         type="button"
         className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left max-md:flex-wrap max-md:gap-y-1"
         onClick={() => hasDetail && setToggled(!expanded)}
@@ -389,7 +390,7 @@ export function WorkflowRunSteps({
       {compacted && (
         <div className="px-4 py-2 text-xs text-muted-foreground border-b border-border/50">
           <Trans>
-            Values in this run have been summarised. Full detail is kept for 7
+            Values in this run have been summarized. Full detail is kept for 7
             days.
           </Trans>
         </div>

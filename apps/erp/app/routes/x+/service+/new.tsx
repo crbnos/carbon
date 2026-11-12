@@ -17,8 +17,11 @@ import { ServiceForm } from "~/modules/items/ui/Services";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 import { SERVICE_RULE_ERROR_CODE } from "~/utils/supabase";
+
+export const meta = newRecordMeta("Service");
 
 export const handle: Handle = {
   breadcrumb: msg`Services`,

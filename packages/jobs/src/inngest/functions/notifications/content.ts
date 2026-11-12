@@ -399,7 +399,9 @@ async function buildEventContent(
     case NotificationEvent.JobAssignment: {
       const job = await client
         .from("job")
-        .select("*, customer(name), item(readableId, name)")
+        .select(
+          "*, customer!job_customerId_fkey(name), item!job_itemId_fkey(readableId, name)"
+        )
         .eq("id", documentId)
         .eq("companyId", opts.companyId)
         .single();
@@ -427,7 +429,9 @@ async function buildEventContent(
     case NotificationEvent.JobCompleted: {
       const completedJob = await client
         .from("job")
-        .select("*, customer(name), item(readableId, name)")
+        .select(
+          "*, customer!job_customerId_fkey(name), item!job_itemId_fkey(readableId, name)"
+        )
         .eq("id", documentId)
         .eq("companyId", opts.companyId)
         .single();
@@ -1271,6 +1275,136 @@ async function buildEventContent(
         };
       }
 
+      if (opts.documentType === "documentForceDelete") {
+        // The document id is "<documentType>:<documentId>:<requestId>": the
+        // request outlives the document, so it is read by its own id.
+        const requestId = documentId.split(":").pop() ?? documentId;
+        const request = await client
+          .from("forceDeleteRequest")
+          .select("documentType, documentReadableId, documentStatus, reason")
+          .eq("id", requestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        const fallback =
+          outcome === "requested"
+            ? "A force delete requires your approval"
+            : `Your force delete was ${outcome}`;
+        if (request.error || !request.data) {
+          console.error(
+            "Failed to retrieve force delete request for approval notification",
+            request.error
+          );
+          return { description: fallback, details: [] };
+        }
+
+        const label = {
+          purchaseInvoice: "purchase invoice",
+          salesInvoice: "sales invoice",
+          receipt: "receipt",
+          payment: "payment"
+        }[request.data.documentType];
+        const readableId = request.data.documentReadableId;
+        return {
+          description:
+            outcome === "requested"
+              ? `Force delete of ${label} ${readableId} requires your approval`
+              : outcome === "approved"
+                ? `Force delete of ${label} ${readableId} was approved: it was deleted`
+                : `Force delete of ${label} ${readableId} was rejected`,
+          reference: readableId,
+          details: buildDetails([
+            { label: "Reason", value: request.data.reason },
+            {
+              label: "Status when requested",
+              value: request.data.documentStatus
+            }
+          ])
+        };
+      }
+
+      if (opts.documentType === "purchaseOrderForceDelete") {
+        // The document id is "<purchaseOrderId>:<requestId>": the request
+        // outlives the order, so it is read by its own id.
+        const requestId = documentId.split(":").pop() ?? documentId;
+        const request = await client
+          .from("purchaseOrderForceDeleteRequest")
+          .select(
+            "purchaseOrderId, purchaseOrderReadableId, purchaseOrderStatus, reason"
+          )
+          .eq("id", requestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        const fallback =
+          outcome === "requested"
+            ? "A purchase order force delete requires your approval"
+            : `Your purchase order force delete was ${outcome}`;
+        if (request.error || !request.data) {
+          console.error(
+            "Failed to retrieve force delete request for approval notification",
+            request.error
+          );
+          return { description: fallback, details: [] };
+        }
+
+        const order = request.data.purchaseOrderId
+          ? await client
+              .from("purchaseOrder")
+              .select("supplier(name)")
+              .eq("id", request.data.purchaseOrderId)
+              .eq("companyId", opts.companyId)
+              .maybeSingle()
+          : null;
+        const readableId = request.data.purchaseOrderReadableId;
+        return {
+          description:
+            outcome === "requested"
+              ? `Force delete of purchase order ${readableId} requires your approval`
+              : outcome === "approved"
+                ? `Force delete of purchase order ${readableId} was approved: the order was deleted`
+                : `Force delete of purchase order ${readableId} was rejected`,
+          reference: readableId,
+          details: buildDetails([
+            { label: "Reason", value: request.data.reason },
+            { label: "Supplier", value: order?.data?.supplier?.name },
+            {
+              label: "Status when requested",
+              value: request.data.purchaseOrderStatus
+            }
+          ])
+        };
+      }
+
+      if (opts.documentType === "projectChangeRequest") {
+        // The document id is "<projectId>:<changeRequestId>", so the link can
+        // open the page; a bare change request id reads too.
+        const changeRequestId = documentId.split(":").pop() ?? documentId;
+        const cr = await client
+          .from("projectChangeRequest")
+          .select("readableId, title, status")
+          .eq("id", changeRequestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        if (cr.error || !cr.data) {
+          console.error(
+            "Failed to retrieve change request for approval notification",
+            cr.error
+          );
+          return {
+            description: `Project change request ${docPhrase}`,
+            details: []
+          };
+        }
+
+        return {
+          description: `${cr.data.readableId}: ${cr.data.title} ${docPhrase}`,
+          reference: cr.data.readableId,
+          details: buildDetails([{ label: "Status", value: cr.data.status }])
+        };
+      }
+
       if (opts.documentType === "changeOrder") {
         const co = await client
           .from("changeOrder")
@@ -1454,6 +1588,34 @@ async function buildEventContent(
           ? `Recurring invoicing: ${opts.body}`
           : "Recurring invoicing",
         details: []
+      };
+    }
+
+    // Payload-carried: the recurring-billing job sends the notice as `title`
+    // and the funding figures as `body`; documentId is the contract.
+    case NotificationEvent.ContractFundingThreshold: {
+      return {
+        description: opts?.title ?? "Contract funding notice",
+        details: opts?.body ? [{ label: "Funding", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried: the daily missing-time check sends the text as `body`;
+    // documentId is the missed date, so there is nothing to read.
+    case NotificationEvent.TimesheetMissing: {
+      return {
+        description: opts?.body ?? "No time entered",
+        details: []
+      };
+    }
+
+    // Payload-carried: the timesheet budget check sends "Budget exceeded on
+    // <project>" as `title` and the overruns as `body`; documentId is the
+    // project.
+    case NotificationEvent.ProjectBudgetExceeded: {
+      return {
+        description: opts?.title ?? "Budget exceeded",
+        details: opts?.body ? [{ label: "Overrun", value: opts.body }] : []
       };
     }
 

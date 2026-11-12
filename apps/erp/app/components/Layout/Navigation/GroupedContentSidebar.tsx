@@ -4,6 +4,7 @@
 
 import {
   Button,
+  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,7 @@ import {
   IconButton,
   MENU_ITEM_SHORTCUTS,
   PrefetchLink,
+  pulseNavIcon,
   Subheading,
   useDebounce,
   VStack
@@ -29,8 +31,11 @@ import {
 } from "react-icons/lu";
 import { useSubmit } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
+import { useDrawerItem } from "~/hooks";
+import { useSubmoduleLayout } from "~/hooks/useModules";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
+import { arrangedGroups } from "~/utils/submodule-visibility";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
 import {
   SheetNavGroup,
@@ -40,16 +45,28 @@ import {
 
 type GroupedRoute = RouteGroup["routes"][number];
 
+const matchesFilteredRoute = (to: string, pathname: string, search: string) => {
+  const [toPath, toSearch] = to.split("?");
+  if (pathname !== toPath) return false;
+  const current = new URLSearchParams(search);
+  return [...new URLSearchParams(toSearch)].every(([key, value]) =>
+    current.getAll(key).includes(value)
+  );
+};
+
 const matchesRoute = (
   route: GroupedRoute,
   pathname: string,
-  exactMatch: boolean
+  exactMatch: boolean,
+  search = ""
 ) =>
   route.isActive
     ? route.isActive(pathname)
-    : exactMatch
-      ? pathname === route.to
-      : pathname.includes(route.to);
+    : route.to.includes("?")
+      ? matchesFilteredRoute(route.to, pathname, search)
+      : exactMatch
+        ? pathname === route.to
+        : pathname.includes(route.to);
 
 const GroupedContentSidebar = ({
   groups,
@@ -65,6 +82,9 @@ const GroupedContentSidebar = ({
     )
   );
   const submit = useSubmit();
+  const submoduleLayout = useSubmoduleLayout();
+  // The compact title reads `groups`, so it still names a hidden page.
+  const shownGroups = arrangedGroups(groups, submoduleLayout);
 
   const [expandedViews, setExpandedViews] = useState<Record<string, boolean>>(
     () =>
@@ -81,12 +101,13 @@ const GroupedContentSidebar = ({
       )
   );
 
-  const [selectedView, setSelectedView] = useState<{
+  const deleteView = useDrawerItem<{
     id: string;
     name: string;
     to: string;
     sortOrder: number;
-  } | null>(null);
+  }>();
+  const selectedView = deleteView.item;
 
   const toggleViews = (routeName: string) => {
     setExpandedViews((prev) => ({
@@ -100,14 +121,25 @@ const GroupedContentSidebar = ({
   const isViewActive = (view: { id: string }) =>
     search.includes(`view=${view.id}`);
   // While a saved view is open (view= in the URL), it holds the highlight.
+  const filteredSiblingActive = groups.some((group) =>
+    group.routes.some(
+      (route) =>
+        route.to.includes("?") &&
+        !route.isActive &&
+        matchesRoute(route, location.pathname, exactMatch, location.search)
+    )
+  );
   const isActive = (route: GroupedRoute) =>
-    matchesRoute(route, location.pathname, exactMatch) &&
+    matchesRoute(route, location.pathname, exactMatch, location.search) &&
+    (route.to.includes("?") ||
+      !(filteredSiblingActive && route.to === location.pathname)) &&
     (Boolean(route.isActive) || exactMatch || !search.includes("view="));
 
   if (presentation === "title") {
     // Compact app bar title: the item the switcher sheet below ticks.
     for (const route of groups.flatMap((group) => group.routes)) {
-      if (!matchesRoute(route, location.pathname, exactMatch)) continue;
+      if (!matchesRoute(route, location.pathname, exactMatch, location.search))
+        continue;
       const view = route.views?.find(isViewActive);
       if (view) return <>{view.name}</>;
       if (isActive(route)) return <>{route.name}</>;
@@ -120,7 +152,7 @@ const GroupedContentSidebar = ({
     // them stays on desktop.
     return (
       <div className="flex flex-col">
-        {groups.map((group) => (
+        {shownGroups.map((group) => (
           <SheetNavGroup key={group.name} title={group.name}>
             {group.routes.map((route) => {
               const views = [...(route.views ?? [])].sort(
@@ -132,7 +164,9 @@ const GroupedContentSidebar = ({
                     to={route.to + (route.q ? `?q=${route.q}` : "")}
                     icon={route.icon}
                     label={route.name}
+                    count={route.count}
                     isActive={isActive(route)}
+                    restoreRememberedTable
                   />
                   {views.map((view) => (
                     <SheetNavRow
@@ -152,11 +186,85 @@ const GroupedContentSidebar = ({
     );
   }
 
+  const renderRoute = (route: GroupedRoute) => {
+    const active = isActive(route);
+
+    const hasViews = route.views && route.views.length > 0;
+    const isExpanded = expandedViews[route.name];
+
+    if (hasViews && !(route.name in expandedViews)) {
+      setExpandedViews((prev) => ({
+        ...prev,
+        [route.name]: true
+      }));
+    }
+
+    return (
+      <div className="w-full flex flex-col" key={route.name}>
+        <div className="flex items-center gap-x-0.5 relative" data-nav-item="">
+          <Button
+            asChild
+            leftIcon={route.icon}
+            variant={active ? "active" : "ghost"}
+            aria-current={active ? "page" : undefined}
+            onClick={(event) => pulseNavIcon(event)}
+            className={cn(
+              "justify-start flex-grow truncate active:scale-100",
+              active
+                ? "shadow-none dark:shadow-button-base"
+                : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
+            )}
+          >
+            <PrefetchLink
+              to={route.to + (route.q ? `?q=${route.q}` : "")}
+              state={{ restoreRememberedTable: true }}
+            >
+              <span className="truncate">{route.name}</span>
+              {route.count !== undefined && route.count > 0 && (
+                <Count
+                  count={route.count}
+                  className={cn("ml-auto", hasViews && "mr-7")}
+                />
+              )}
+            </PrefetchLink>
+          </Button>
+          {hasViews && (
+            <IconButton
+              aria-label={t`Toggle views`}
+              aria-expanded={!!isExpanded}
+              icon={isExpanded ? <LuChevronDown /> : <LuChevronRight />}
+              variant="ghost"
+              size="sm"
+              onClick={() => toggleViews(route.name)}
+              className="absolute right-1 flex-shrink-0 text-foreground/70 hover:text-foreground"
+            />
+          )}
+        </div>
+        {hasViews && isExpanded && (
+          <ViewsReorderGroup
+            views={route.views ?? []}
+            isViewActive={isViewActive}
+            onReorder={(updates) => {
+              const formData = new FormData();
+              formData.append("updates", JSON.stringify(updates));
+              submit(formData, {
+                action: path.to.saveViewOrder,
+                method: "post",
+                navigate: false
+              });
+            }}
+            onDelete={deleteView.open}
+          />
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <SidebarLinks>
         <VStack>
-          {groups.map((group) => (
+          {shownGroups.map((group) => (
             <VStack
               key={group.name}
               className="border-b border-border p-2 pb-4 space-y-0.5"
@@ -164,88 +272,19 @@ const GroupedContentSidebar = ({
               <Subheading as="h4" variant="light" className="pl-4 py-1">
                 {group.name}
               </Subheading>
-              {group.routes.map((route) => {
-                const active = isActive(route);
-
-                const hasViews = route.views && route.views.length > 0;
-                const isExpanded = expandedViews[route.name];
-
-                if (hasViews && !(route.name in expandedViews)) {
-                  setExpandedViews((prev) => ({
-                    ...prev,
-                    [route.name]: true
-                  }));
-                }
-
-                return (
-                  <div className="w-full flex flex-col" key={route.name}>
-                    <div
-                      className="flex items-center gap-x-0.5 relative"
-                      data-nav-item=""
-                    >
-                      <Button
-                        asChild
-                        leftIcon={route.icon}
-                        variant={active ? "active" : "ghost"}
-                        className={cn(
-                          "justify-start flex-grow truncate",
-                          active
-                            ? "shadow-none dark:shadow-button-base"
-                            : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
-                        )}
-                      >
-                        <PrefetchLink
-                          to={route.to + (route.q ? `?q=${route.q}` : "")}
-                        >
-                          {route.name}
-                        </PrefetchLink>
-                      </Button>
-                      {hasViews && (
-                        <IconButton
-                          aria-label={t`Toggle views`}
-                          icon={
-                            isExpanded ? <LuChevronDown /> : <LuChevronRight />
-                          }
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleViews(route.name)}
-                          className="absolute right-1 flex-shrink-0 text-foreground/70 hover:text-foreground"
-                        />
-                      )}
-                    </div>
-                    {hasViews && isExpanded && (
-                      <ViewsReorderGroup
-                        views={route.views ?? []}
-                        isViewActive={isViewActive}
-                        onReorder={(updates) => {
-                          const formData = new FormData();
-                          formData.append("updates", JSON.stringify(updates));
-                          submit(formData, {
-                            action: path.to.saveViewOrder,
-                            method: "post",
-                            navigate: false
-                          });
-                        }}
-                        onDelete={(view) => setSelectedView(view)}
-                      />
-                    )}
-                  </div>
-                );
-              })}
+              {group.routes.map(renderRoute)}
             </VStack>
           ))}
         </VStack>
       </SidebarLinks>
       {selectedView && (
         <ConfirmDelete
-          isOpen={!!selectedView}
+          isOpen={deleteView.isOpen}
           action={path.to.deleteSavedView(selectedView.id)}
           name={selectedView.name}
           text={t`Are you sure you want to delete the view "${selectedView.name}"?`}
-          onCancel={() => setSelectedView(null)}
-          onSubmit={() => {
-            setSelectedView(null);
-          }}
+          onCancel={deleteView.close}
+          onSubmit={deleteView.close}
         />
       )}
     </>
@@ -318,6 +357,7 @@ const ViewsReorderGroup = ({
               <Button
                 asChild
                 variant={active ? "active" : "ghost"}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "justify-start text-sm pl-7 pr-7 truncate flex-grow !shadow-none",
                   active

@@ -22,6 +22,7 @@ import { inventoryCountPostValidator } from "~/modules/inventory/inventory.model
 import { path } from "~/utils/path";
 
 type InventoryCountPostModalProps = {
+  open?: boolean;
   inventoryCountId: string;
   // The page's post fetcher, so a refusal and the invalid lines reach the page.
   fetcher: FetcherWithComponents<unknown>;
@@ -30,6 +31,7 @@ type InventoryCountPostModalProps = {
 
 /** Post a confirmed count on the day its variances are booked. */
 const InventoryCountPostModal = ({
+  open = true,
   inventoryCountId,
   fetcher,
   onClose
@@ -39,7 +41,7 @@ const InventoryCountPostModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

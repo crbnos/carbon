@@ -9,7 +9,7 @@ import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { pluckUnique, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getInventoryCount,
@@ -32,6 +32,7 @@ import { getTagsList } from "~/modules/shared/shared.service";
 import { toPage } from "~/utils/cursor";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/load.server";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -48,6 +49,9 @@ export const handle: Handle = {
   ),
   module: "inventory"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.inventoryCount?.inventoryCountId, "Inventory Count");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

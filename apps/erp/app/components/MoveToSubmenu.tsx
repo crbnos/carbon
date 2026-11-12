@@ -77,6 +77,7 @@ export function MoveToMenu({ getTargets, onMove }: MoveToProps) {
           size="sm"
           // Keeps a drag sensor on the card from taking the tap.
           onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent>

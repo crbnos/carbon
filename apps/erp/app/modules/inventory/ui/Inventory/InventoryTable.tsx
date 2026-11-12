@@ -8,6 +8,7 @@ import {
   Checkbox,
   Combobox,
   HStack,
+  NonNettableBadge,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -17,7 +18,7 @@ import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo } from "react";
+import { Fragment, memo, useCallback, useMemo } from "react";
 import {
   LuBlocks,
   LuBookMarked,
@@ -57,6 +58,7 @@ import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useMrpScheduleDescription, useUrlParams } from "~/hooks";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import {
   itemReorderingPolicies,
   itemReplenishmentSystems
@@ -82,6 +84,10 @@ type InventoryTableProps = {
   tags: string[];
   storageTypes: { id: string; name: string }[];
   storageUnits: { id: string; name: string }[];
+  /** The projects that keep project stock (Projects Phase 2a). */
+  stockOwners?: { id: string; identifier: string | null; name: string }[];
+  /** The stock owner filter: "common", a project id, or null for all. */
+  stockOwner?: string | null;
 };
 
 const InventoryTable = memo(
@@ -94,9 +100,11 @@ const InventoryTable = memo(
     substances,
     tags,
     storageTypes,
-    storageUnits
+    storageUnits,
+    stockOwners = [],
+    stockOwner = null
   }: InventoryTableProps) => {
-    const [params] = useUrlParams();
+    const [params, setParams] = useUrlParams();
     const { t } = useLingui();
 
     const translateReplenishment = useCallback(
@@ -107,6 +115,7 @@ const InventoryTable = memo(
 
     const locations = useLocations();
     const unitOfMeasures = useUnitOfMeasure();
+    const nonNettable = useNonNettableStorageUnits();
     const storageUnitNameById = useMemo(
       () => new Map(storageUnits.map((s) => [s.id, s.name])),
       [storageUnits]
@@ -544,10 +553,10 @@ const InventoryTable = memo(
             return (
               <HStack spacing={0} className="gap-1">
                 {ids.map((id) => (
-                  <Enumerable
-                    key={id}
-                    value={storageUnitNameById.get(id) ?? id}
-                  />
+                  <Fragment key={id}>
+                    <Enumerable value={storageUnitNameById.get(id) ?? id} />
+                    {nonNettable.has(id) && <NonNettableBadge />}
+                  </Fragment>
                 ))}
               </HStack>
             );
@@ -605,7 +614,15 @@ const InventoryTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const itemId = item.row.original.readableIdWithRevision;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${itemId}`}
+              />
+            );
+          },
           meta: {
             filter: {
               type: "static",
@@ -630,6 +647,7 @@ const InventoryTable = memo(
       tags,
       storageTypes,
       storageUnitNameById,
+      nonNettable,
       unitOfMeasures,
       t,
       translateReplenishment
@@ -680,6 +698,7 @@ const InventoryTable = memo(
         primaryAction={
           <div className="flex items-center gap-2">
             <Combobox
+              aria-label={t`Location`}
               asButton
               size="sm"
               value={locationId}
@@ -689,6 +708,29 @@ const InventoryTable = memo(
                 window.location.href = getLocationPath(selected);
               }}
             />
+            {stockOwners.length > 0 && (
+              <Combobox
+                asButton
+                size="sm"
+                aria-label={t`Stock owner`}
+                value={stockOwner ?? ALL_STOCK_OWNERS}
+                options={[
+                  { value: ALL_STOCK_OWNERS, label: t`All stock owners` },
+                  { value: "common", label: t`Unassigned stock` },
+                  ...stockOwners.map((project) => ({
+                    value: project.id,
+                    label: project.identifier
+                      ? `${project.identifier} — ${project.name}`
+                      : project.name
+                  }))
+                ]}
+                onChange={(selected) =>
+                  setParams({
+                    project: selected === ALL_STOCK_OWNERS ? null : selected
+                  })
+                }
+              />
+            )}
             <mrpFetcher.Form method="post" action={path.to.api.mrp(locationId)}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -718,6 +760,9 @@ const InventoryTable = memo(
 InventoryTable.displayName = "InventoryTable";
 
 export default InventoryTable;
+
+/** The stock owner filter's value for every stripe (no `project` param). */
+const ALL_STOCK_OWNERS = "all";
 
 function getLocationPath(locationId: string) {
   return `${path.to.inventory}?location=${locationId}`;

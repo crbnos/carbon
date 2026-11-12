@@ -30,7 +30,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { Confirm } from "~/components/Modals";
@@ -45,6 +45,7 @@ import {
 } from "~/modules/resources/ui";
 import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "training-detail");
@@ -56,6 +57,9 @@ export const handle: Handle = {
   ),
   module: "resources"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.training?.name, "Training");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -186,6 +190,7 @@ function TrainingContent() {
       : null;
   const [chosenType, setChosenType] = useState<ContentType>("write");
   const [switchTo, setSwitchTo] = useState<ContentType | null>(null);
+  const [isSwitchOpen, setIsSwitchOpen] = useState(false);
   const contentType = savedType ?? chosenType;
 
   return (
@@ -206,8 +211,10 @@ function TrainingContent() {
             disabled={!canEdit}
             onValueChange={(value) => {
               if (!isContentType(value) || value === contentType) return;
-              if (savedType) setSwitchTo(value);
-              else setChosenType(value);
+              if (savedType) {
+                setSwitchTo(value);
+                setIsSwitchOpen(true);
+              } else setChosenType(value);
             }}
           >
             <ToggleGroupItem size="sm" value="write">
@@ -242,6 +249,7 @@ function TrainingContent() {
         ) : canEdit ? (
           // Flush toolbar: pad the text, not the panel.
           <Editor
+            label={t`Training content`}
             toolbar
             toolbarClassName="static bg-transparent px-4"
             className="w-full [&_.ProseMirror]:min-h-[240px] [&_.ProseMirror]:px-6 [&_.ProseMirror]:py-4 max-md:[&_.ProseMirror]:px-4"
@@ -282,10 +290,11 @@ function TrainingContent() {
           }
           confirmText={savedType === "pdf" ? t`Remove PDF` : t`Remove Video`}
           confirmVariant="destructive"
-          onCancel={() => setSwitchTo(null)}
+          isOpen={isSwitchOpen}
+          onCancel={() => setIsSwitchOpen(false)}
           onSubmit={() => {
             setChosenType(switchTo);
-            setSwitchTo(null);
+            setIsSwitchOpen(false);
           }}
         >
           <input type="hidden" name="ids" value={id} />

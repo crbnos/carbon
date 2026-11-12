@@ -6,9 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   accountValidator,
   groupAccountValidator
@@ -139,8 +140,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditChartOfAccountsRoute() {
   const { account, groupAccounts } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.chartOfAccounts);
+  const dialog = useRouteDialog(path.to.chartOfAccounts);
 
   if (account?.isGroup) {
     const groupInitialValues = {
@@ -157,7 +157,8 @@ export default function EditChartOfAccountsRoute() {
         key={account.id}
         initialValues={groupInitialValues}
         groupAccounts={groupAccounts}
-        onClose={onClose}
+        open={dialog.open}
+        onClose={dialog.close}
       />
     );
   }
@@ -172,6 +173,9 @@ export default function EditChartOfAccountsRoute() {
     class: account?.class ?? "Asset",
     incomeBalance: account?.incomeBalance ?? "Balance Sheet",
     consolidatedRate: account?.consolidatedRate ?? "Average",
+    allowability: account?.allowability ?? "Allowable",
+    unallowableReason: account?.unallowableReason ?? undefined,
+    elementOfCost: account?.elementOfCost ?? undefined,
     ...getCustomFields(account?.customFields)
   };
 
@@ -180,7 +184,8 @@ export default function EditChartOfAccountsRoute() {
       key={initialValues.id}
       initialValues={initialValues}
       groupAccounts={groupAccounts}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

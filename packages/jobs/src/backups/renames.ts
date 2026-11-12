@@ -33,7 +33,13 @@ export const TABLE_RENAMES: Record<string, string | null> = {
   // used — so a pre-rename backup carries only their empty shells. The
   // readable-id / parent column moved with them (cardTransactionId → chargeId).
   cardTransaction: "charge",
-  cardTransactionLine: "chargeLine"
+  cardTransactionLine: "chargeLine",
+  // Dropped 2026-10-23 with the old field-service module (service orders,
+  // visits and installed components; 20261023065804). Service jobs replace
+  // it with new tables; nothing carries over.
+  serviceOrder: null,
+  serviceVisit: null,
+  customerAssetComponent: null
 };
 
 /**
@@ -59,7 +65,9 @@ export const LIVE_COLUMN_RENAMES: Record<string, Record<string, string>> = {
   // part's own currency, which every pre-rename price was (the base currency;
   // a NULL currencyCode reads as base).
   supplierPart: { unitPrice: "supplierUnitPrice" },
-  supplierPartPrice: { unitPrice: "supplierUnitPrice" }
+  supplierPartPrice: { unitPrice: "supplierUnitPrice" },
+  // 2026-11 (inspection plan name): the column named the plan, not a drawing.
+  inspectionDocument: { drawingNumber: "name" }
 };
 
 /** A live table's column list under its CURRENT column names. */

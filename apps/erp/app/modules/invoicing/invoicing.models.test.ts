@@ -7,9 +7,11 @@ import {
   invoiceSettlementValidator,
   isInvoicePayable,
   memoValidator,
+  paymentJournalDifference,
   paymentValidator,
   purchaseInvoiceSupplierChange,
-  salesInvoiceCustomerChange
+  salesInvoiceCustomerChange,
+  salesInvoiceLineValidator
 } from "./invoicing.models";
 
 describe("paymentValidator", () => {
@@ -183,5 +185,81 @@ describe("invoice party change", () => {
       invoiceSupplierLocationId: null,
       ...eur
     });
+  });
+});
+
+describe("salesInvoiceLineValidator: a Service line with no item", () => {
+  // A service job's labor line, as the line form posts it: no item, method
+  // or location.
+  const labor = {
+    invoiceId: "inv1",
+    invoiceLineType: "Service",
+    description: "Labor",
+    quantity: 3,
+    unitPrice: 95
+  };
+
+  it("accepts an edit of an existing line", () => {
+    expect(
+      salesInvoiceLineValidator.safeParse({ ...labor, id: "line1" }).success
+    ).toBe(true);
+  });
+
+  it("refuses a new line: a new Service line needs an item", () => {
+    const r = salesInvoiceLineValidator.safeParse(labor);
+    expect(r.success).toBe(false);
+    expect(r.error?.issues.map((issue) => issue.path)).toContainEqual([
+      "itemId"
+    ]);
+  });
+
+  it("refuses the type Labor: old Labor lines save as Service", () => {
+    expect(
+      salesInvoiceLineValidator.safeParse({
+        ...labor,
+        id: "line1",
+        invoiceLineType: "Labor"
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("paymentJournalDifference", () => {
+  const line = (
+    accountId: string,
+    description: string,
+    amount: number,
+    documentLineReference: string | null = null
+  ) => ({ accountId, description, amount, documentLineReference });
+
+  it("is what unapplying one invoice changes", () => {
+    const before = [
+      line("bank", "Bank / Cash", 100),
+      line("ar", "Accounts Receivable", 70, "inv1"),
+      line("ar", "Accounts Receivable", 30, "inv2")
+    ];
+    const after = [
+      line("bank", "Bank / Cash", 100),
+      line("ar", "Accounts Receivable", 30, "inv2"),
+      line("ar", "Accounts Receivable (on-account credit)", 70)
+    ];
+    expect(paymentJournalDifference(before, after)).toEqual([
+      line("ar", "Accounts Receivable (on-account credit)", 70),
+      line("ar", "Accounts Receivable", -70, "inv1")
+    ]);
+  });
+
+  it("ignores the line references a rebuild draws again", () => {
+    expect(
+      paymentJournalDifference(
+        [{ ...line("bank", "Bank / Cash", 10), journalLineReference: "a" }],
+        [{ ...line("bank", "Bank / Cash", 10), journalLineReference: "b" }]
+      )
+    ).toEqual([]);
+  });
+
+  it("is empty when nothing changed", () => {
+    const lines = [line("bank", "Bank / Cash", 10)];
+    expect(paymentJournalDifference(lines, lines)).toEqual([]);
   });
 });

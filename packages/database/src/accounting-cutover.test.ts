@@ -12,12 +12,14 @@ import {
   MIGRATION_CLEARING_DESCRIPTION,
   type MigrationClearingAccount,
   migrationClearingByAccount,
+  migrationReconciliationBlockers,
   type OpenItem,
   type OpeningJournalLine,
   planInventoryReset,
   type RecostEvent,
   type RecostLayer,
   recostOutbound,
+  splitOpeningLayersByStripe,
   type TrialBalanceLine,
   unitCostAtCutover
 } from "./accounting-cutover.ts";
@@ -613,6 +615,99 @@ describe("recostOutbound", () => {
     expect(result.remainingById.get("opening")).toBe(2);
     expect(result.remainingById.get("unit-layer")).toBe(0);
   });
+
+  it("moves a re-costed transfer's new cost onto the layer it opened in the other stripe", () => {
+    // Pool "item-a" is common stock, "item-a:p1" a project stripe.
+    const result = recostOutbound(
+      [
+        layer("opening", 2, 20),
+        layer("receipt", 5, 75),
+        ship("transfer-out", 3, 30),
+        {
+          layer: {
+            id: "transfer-in",
+            itemId: "item-a:p1",
+            quantity: 3,
+            cost: 30,
+            remainingQuantity: 3,
+            trackedEntityId: null,
+            children: []
+          },
+          costOf: "transfer-out"
+        },
+        {
+          outbound: {
+            costLedgerId: "issue",
+            itemId: "item-a:p1",
+            quantity: 1,
+            cost: 10,
+            trackedEntityIds: []
+          }
+        }
+      ],
+      new Map([
+        ["item-a", "FIFO" as const],
+        ["item-a:p1", "FIFO" as const]
+      ]),
+      new Map([
+        ["item-a", 0],
+        ["item-a:p1", 0]
+      ])
+    );
+
+    // 2 × 10 + 1 × 15 leaves common stock; the stripe's layer holds 35 for
+    // 3 units, and an issue from the stripe takes one of them.
+    expect(result.movements).toEqual([
+      { costLedgerId: "transfer-out", newCost: 35, delta: 5 },
+      { costLedgerId: "issue", newCost: 11.66667, delta: 1.66667 }
+    ]);
+    expect(result.layerCostById).toEqual(new Map([["transfer-in", 35]]));
+    expect(result.remainingById.get("transfer-in")).toBe(2);
+    expect(result.remainingById.get("receipt")).toBe(4);
+  });
+});
+
+describe("splitOpeningLayersByStripe", () => {
+  it("gives each project stripe its on-hand and common stock the rest", () => {
+    expect(
+      splitOpeningLayersByStripe(
+        [{ itemId: "item-a", quantity: 10, cost: 100 }],
+        [
+          { itemId: "item-a", projectId: "p2", quantity: 3 },
+          { itemId: "item-a", projectId: "p1", quantity: 2 }
+        ]
+      )
+    ).toEqual([
+      { itemId: "item-a", projectId: "p1", quantity: 2, cost: 20 },
+      { itemId: "item-a", projectId: "p2", quantity: 3, cost: 30 },
+      { itemId: "item-a", projectId: null, quantity: 5, cost: 50 }
+    ]);
+  });
+
+  it("keeps an item with no project stock as one common layer", () => {
+    expect(
+      splitOpeningLayersByStripe(
+        [{ itemId: "item-a", quantity: 4, cost: 10 }],
+        [{ itemId: "item-b", projectId: "p1", quantity: 2 }]
+      )
+    ).toEqual([{ itemId: "item-a", projectId: null, quantity: 4, cost: 10 }]);
+  });
+
+  it("puts the rounding residual on the last stripe when no common stock is left", () => {
+    // 3 units for 10.00: 1 + 2 at 3.33333 each.
+    const layers = splitOpeningLayersByStripe(
+      [{ itemId: "item-a", quantity: 3, cost: 10 }],
+      [
+        { itemId: "item-a", projectId: "p1", quantity: 1 },
+        { itemId: "item-a", projectId: "p2", quantity: 2 }
+      ]
+    );
+    expect(layers.map((layer) => layer.projectId)).toEqual(["p1", "p2"]);
+    expect(layers.reduce((sum, layer) => sum + layer.cost, 0)).toBeCloseTo(
+      10,
+      10
+    );
+  });
 });
 
 describe("unitCostAtCutover", () => {
@@ -648,4 +743,36 @@ describe("cutover constants", () => {
   it("dates the opening journal the day before the cutover", () => {
     expect(dayBeforeCutover("2026-03-01")).toBe("2026-02-28");
   });
+});
+
+it("requires advance balances to reconcile even when other differences offset them", () => {
+  const rows = [
+    { accountId: "prepayments", trialBalance: 100, carbon: 0, difference: 100 },
+    { accountId: AP, trialBalance: -100, carbon: 0, difference: -100 },
+    {
+      accountId: "historical-prepayments",
+      trialBalance: 50,
+      carbon: 40,
+      difference: 10
+    }
+  ];
+  expect(
+    migrationReconciliationBlockers(
+      rows,
+      new Set(["prepayments", "historical-prepayments"])
+    )
+  ).toEqual([rows[0], rows[2]]);
+  expect(
+    migrationReconciliationBlockers(
+      [
+        {
+          accountId: "prepayments",
+          trialBalance: 100,
+          carbon: 100,
+          difference: 0
+        }
+      ],
+      new Set(["prepayments"])
+    )
+  ).toEqual([]);
 });

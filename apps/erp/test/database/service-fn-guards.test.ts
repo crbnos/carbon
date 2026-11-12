@@ -37,6 +37,8 @@ const ids = {
   releasedStockTransfer: `${prefix}-st-released`,
   draftStockTransfer: `${prefix}-st-draft`,
   draftStockTransferLine: `${prefix}-stl-draft`,
+  binA: `${prefix}-bin-a`,
+  binB: `${prefix}-bin-b`,
   postedCount: `${prefix}-count`
 };
 
@@ -184,6 +186,18 @@ beforeAll(async () => {
         transfer(ids.shippingTransfer, "To Ship"),
         transfer(ids.draftTransfer, "Draft")
       ])
+      .execute();
+    await trx
+      .insertInto("storageUnit")
+      .values(
+        [ids.binA, ids.binB].map((id) => ({
+          id,
+          name: id,
+          locationId: ids.plant,
+          companyId,
+          createdBy
+        }))
+      )
       .execute();
     await trx
       .insertInto("stockTransfer")
@@ -365,6 +379,8 @@ describeLocal("published operations hold their routes' checks", () => {
     const result = await inventory.createStockTransferLine(ctx(), {
       stockTransferId: ids.releasedStockTransfer,
       itemId: ids.serial,
+      fromStorageUnitId: ids.binA,
+      toStorageUnitId: ids.binB,
       quantity: 1,
       requiresBatchTracking: false,
       requiresSerialTracking: true
@@ -385,6 +401,8 @@ describeLocal("published operations hold their routes' checks", () => {
       id: ids.draftStockTransferLine,
       stockTransferId: ids.draftStockTransfer,
       itemId: ids.serial,
+      fromStorageUnitId: ids.binA,
+      toStorageUnitId: ids.binB,
       quantity: 1,
       pickedQuantity: 1,
       requiresBatchTracking: false,

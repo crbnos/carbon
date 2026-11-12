@@ -31,6 +31,7 @@ import type { DownloadProps } from "../Download";
 import type { ColumnFilter } from "../Filter/types";
 import { InfiniteStatus } from "../InfiniteStatus";
 import { RowLimitNote } from "../RowLimitNote";
+import { rowLabelOf } from "../SyntheticColumns";
 import { CompactEmpty, CompactLoading, CompactNoResults } from "./CompactEmpty";
 import { CompactRow } from "./CompactRow";
 import { CompactToolbar } from "./CompactToolbar";
@@ -89,6 +90,8 @@ export type CompactListProps<T> = {
   isTableEmpty: boolean;
   hasFilters: boolean;
   clearFilters: () => void;
+  hasRememberedChanges: boolean;
+  onResetRememberedState: () => void;
   csvExport?: DownloadProps;
   importCSV?: { table: keyof typeof fieldMappings; label: string }[];
   renderContextMenu?: (row: T) => JSX.Element | null;
@@ -140,6 +143,8 @@ export function CompactList<T>({
   isTableEmpty,
   hasFilters,
   clearFilters,
+  hasRememberedChanges,
+  onResetRememberedState,
   csvExport,
   importCSV,
   renderContextMenu,
@@ -307,7 +312,9 @@ export function CompactList<T>({
           : undefined
       }
       // Like desktop: a genuinely empty list has no toolbar.
-      hideControls={isTableEmpty}
+      hideControls={isTableEmpty && !hasRememberedChanges}
+      hasRememberedChanges={hasRememberedChanges}
+      onResetRememberedState={onResetRememberedState}
     />
   );
 
@@ -375,7 +382,8 @@ export function CompactList<T>({
           selecting
             ? {
                 selected: row.getIsSelected(),
-                onToggle: () => row.toggleSelected()
+                onToggle: () => row.toggleSelected(),
+                label: rowLabelOf(row, table.options.meta?.getRowLabel)
               }
             : undefined
         }

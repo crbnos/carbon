@@ -50,7 +50,9 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
     "memoId",
     "salesInvoiceLineId"
   ],
+  demandForecast: ["planningSegmentId"],
   document: ["sourceDocumentId"],
+  documentEdit: ["documentId"],
   documentExtraction: ["sourceDocumentId"],
   documentTemplate: ["footerSectionId", "headerSectionId"],
   enforcementRule: ["filteredItemGroupIds"],
@@ -62,6 +64,8 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   ],
   externalIntegrationMapping: ["entityId"],
   externalLink: ["documentId"],
+  indirectExpenseStatement: ["dimensionValueId"],
+  indirectPoolAccount: ["dimensionValueId"],
   inspection: ["sourceDocumentId", "sourceDocumentLineId"],
   intercompanyEliminationLine: ["accountId", "itemId", "journalLineId"],
   intercompanyTransaction: ["documentId"],
@@ -72,7 +76,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
     "trackedEntityId"
   ],
   itemLedger: ["correctionOfItemLedgerId", "documentId", "documentLineId"],
-  itemStockQuantities: ["itemId", "locationId"],
+  itemStockQuantities: ["itemId", "locationId", "projectId"],
   job: ["modelUploadId", "quoteLineId"],
   jobMaterial: ["substitutedFromItemId"],
   jobOperation: ["operationSupplierProcessId"],
@@ -90,9 +94,31 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   notification: ["documentId"],
   notificationDelivery: ["documentId"],
   periodCloseTask: ["evidenceJournalId"],
+  planningAction: [
+    "fromProjectId",
+    "planningSegmentId",
+    "projectBorrowId",
+    "projectStockTransferId",
+    "toProjectId"
+  ],
   pricingRule: ["customerIds", "customerTypeIds", "itemIds"],
   printJob: ["sourceDocumentId"],
   printerRoute: ["templateId"],
+  projectChangeRequestComment: ["targetId"],
+  projectChangeRequestItem: ["targetId"],
+  projectChangeRequestView: ["targetId"],
+  projectLedger: [
+    "documentId",
+    "documentLineId",
+    "itemId",
+    "jobId",
+    "journalLineId",
+    "laborCategoryId",
+    "supplierId"
+  ],
+  projectBillableItem: ["voidedSalesInvoiceId"],
+  projectPeg: ["demandSourceId", "itemLedgerId", "parentPegId", "supplyId"],
+  projectStockTransfer: ["planningActionId"],
   purchaseInvoiceLine: ["assetId", "serviceId"],
   purchaseOrderLine: ["locationId"],
   receipt: ["sourceDocumentId"],
@@ -108,9 +134,22 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   storageUnit: ["storageTypeIds"],
   supplierLedger: ["documentId"],
   supplierPartPrice: ["sourceDocumentId"],
+  timesheetEntryRevision: ["timesheetEntryId"],
   trackedActivity: ["sourceDocumentId"],
   trackedEntity: ["sourceDocumentId"],
   trainingAssignment: ["groupIds"],
   workCenterLoad: ["jobOperationId"],
   workflowRun: ["causedByRunId", "rootRunId", "triggerRecordId"]
+} satisfies IdRefColumns;
+
+/**
+ * The ID_REF_COLUMNS that only ever hold a tenant row's id. On a foreign
+ * restore a value with no new id is a row the backup doesn't carry (a job
+ * operation deleted after its inspection), so it is nulled, as a nullable FK
+ * into a missing row is. Kept verbatim, `inspection.sourceDocumentLineId`
+ * collides with the source company's live inspection on the cross-company
+ * `inspection_sourceDocumentLineId_key`.
+ */
+export const ROW_ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
+  inspection: ["sourceDocumentLineId"]
 } satisfies IdRefColumns;

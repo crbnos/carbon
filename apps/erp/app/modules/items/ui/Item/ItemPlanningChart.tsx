@@ -56,6 +56,7 @@ import {
 } from "recharts";
 import { DateTime, Empty, Hyperlink } from "~/components";
 import { useQuantityFormatter } from "~/hooks";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
@@ -171,6 +172,11 @@ export const ItemPlanningChart = ({
   timeFenceDate?: string | null;
 }) => {
   const { t } = useLingui();
+  const [planningTab, setPlanningTab] = usePersistentPageTab(
+    "supply-demand",
+    ["all", "supply", "demand"],
+    "all"
+  );
   const forecastFetcher = useLoaderQuery<typeof forecastLoader>(
     path.to.api.itemForecast(itemId, locationId)
   );
@@ -405,6 +411,27 @@ export const ItemPlanningChart = ({
     safetyStockValue
   ]);
 
+  // The chart is pointer-only (values live in its tooltip): a text summary of
+  // the projection; the per-order rows are the supply and demand list below.
+  const chartSummary = useMemo(() => {
+    const data = chartData.data;
+    if (data.length === 0) return t`Supply and demand chart: no data.`;
+    const start = numberFormatter.format(
+      forecastFetcher.data?.quantityNettable ?? 0
+    );
+    const end = numberFormatter.format(data[data.length - 1].Projection);
+    const lowest = numberFormatter.format(
+      Math.min(...data.map((d) => d.Projection))
+    );
+    const weeks = data.length;
+    return t`Supply and demand chart over ${weeks} weeks: projected on hand starts at ${start}, ends at ${end}, lowest ${lowest}.`;
+  }, [
+    chartData.data,
+    forecastFetcher.data?.quantityNettable,
+    numberFormatter,
+    t
+  ]);
+
   const combinedSupplyAndDemand = useMemo(() => {
     const periods = forecastFetcher.data?.periods ?? [];
 
@@ -586,7 +613,14 @@ export const ItemPlanningChart = ({
           />
           <div className="w-full h-[360px]">
             <Loading isLoading={isFetching}>
-              <ChartContainer config={chartConfig} className="w-full h-full">
+              {/* Not role="img": the legend inside holds series toggles. */}
+              <p className="sr-only">{chartSummary}</p>
+              <ChartContainer
+                config={chartConfig}
+                role="group"
+                aria-label={t`Projected on hand by week`}
+                className="w-full h-full"
+              >
                 <ComposedChart data={chartData.data} stackOffset="sign">
                   <defs>
                     <linearGradient
@@ -803,7 +837,11 @@ export const ItemPlanningChart = ({
           </div>
         </CardContent>
       </Card>
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs
+        value={planningTab}
+        onValueChange={setPlanningTab}
+        className="w-full"
+      >
         <Card className={cn(compact && "border-none p-0 dark:shadow-none")}>
           <HStack className="w-full justify-between">
             <CardHeader>
@@ -902,6 +940,7 @@ export const ItemPlanningChart = ({
 
             <div className="relative w-full mb-4">
               <Input
+                aria-label={t`Search supply and demand`}
                 placeholder={t`Search`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

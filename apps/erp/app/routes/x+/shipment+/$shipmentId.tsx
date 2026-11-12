@@ -9,7 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
@@ -25,6 +25,7 @@ import {
   ShipmentHeader
 } from "~/modules/inventory/ui/Shipments";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -38,6 +39,9 @@ export const handle: Handle = {
   ),
   module: "inventory"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.shipment?.shipmentId, "Shipment");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -153,9 +157,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // A contract delivery's typed serials, by line: the `shipmentLines` view
+  // predates `shipmentLine.serialNumber`.
+  let serialNumberByLineId: Record<string, string | null> = {};
+  if (shipment.data.sourceDocument === "Customer Contract") {
+    const serials = await client
+      .from("shipmentLine")
+      .select("id, serialNumber")
+      .eq("shipmentId", shipmentId)
+      .eq("companyId", companyId);
+    serialNumberByLineId = Object.fromEntries(
+      (serials.data ?? []).map((line) => [line.id, line.serialNumber])
+    );
+  }
+
   return {
     shipment: shipment.data,
     shipmentLines: shipmentLines.data ?? [],
+    serialNumberByLineId,
     fixedAssetLines,
     rentalLines,
     shipmentLineTracking: shipmentLineTracking.data ?? [],

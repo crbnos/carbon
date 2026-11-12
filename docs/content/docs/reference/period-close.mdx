@@ -19,7 +19,7 @@ A period's **close status** (`periodCloseStatus`) advances in one direction unle
 
 A period must be **Locked before it can be Closed** — closing an Open period is refused with *"Period must be locked before closing."* The transitions live in `accounting.service.ts` (`lockAccountingPeriod`, `unlockAccountingPeriod`, `closeAccountingPeriod`, `reopenAccountingPeriod`), each rejecting a move from the wrong starting state.
 
-<Callout type="note" title="Locking is stricter than closing for one specific thing">
+<Callout type="note" title="Locked periods still allow accounting adjustments">
 A **Locked** period still accepts *accounting adjustments* — a manual journal posted with an accounting-adjustment intent goes through. It only blocks *operational* documents. A **Closed** period blocks everything, including reversals into it. Lock when operations are done for the month but the accountants aren't; close when the books are final.
 </Callout>
 
@@ -37,36 +37,49 @@ A database trigger (`check_accounting_period_open`) is the hard backstop underne
 
 ## The close checklist
 
-Closing runs through a persisted checklist — a company-level template of task definitions (`periodCloseTaskDefinition`) plus per-period instances (`periodCloseTask`) materialized the first time you open a period's close screen. Nine system tasks seed with every company (they can be deactivated but never deleted). Each task has a **type** (`Auto`, `Action`, or `Manual`) and Auto tasks carry a **severity**.
+Closing runs through a persisted checklist — a company-level template of task definitions (`periodCloseTaskDefinition`) plus per-period instances (`periodCloseTask`) materialized the first time you open a period's close screen. Fifteen system tasks seed with every company: twelve Auto checks and three Action tasks. They can be deactivated but never deleted. All fifteen are required by default. Each task has a **type** (`Auto`, `Action`, or `Manual`) and Auto tasks carry a **severity**.
 
 <FieldTable>
   <Field name="Auto" type="Task type">A readiness evaluator the system runs live — the task shows Done when the check passes, Open when it fails. You don't tick these; they reflect real state.</Field>
-  <Field name="Action" type="Task type">A task whose completion *is* a lifecycle transition. "Lock the period" is an Action task: its button drives the Open→Locked flip, and its Done state is read from the period's close status, not a stored tick.</Field>
-  <Field name="Manual" type="Task type">A human sign-off (e.g. "Review financial statements") you mark Done yourself.</Field>
+  <Field name="Action" type="Task type">A task that calls for an action or review. "Lock the period" drives the Open→Locked flip, and its Done state is read from the period's close status. The other seeded Action tasks, "Review negative on-hand inventory" and "Review financial statements", are marked Done after review.</Field>
+  <Field name="Manual" type="Task type">A custom human sign-off you mark Done yourself. No Manual task is included in the default template.</Field>
 </FieldTable>
 
 Auto tasks fail *closed*: an Auto task whose evaluator can't be found is treated as failing, not silently passed, so the close stays gated and the reason stays visible.
 
 ### Severities gate differently
 
-An Auto task's **severity** (`periodCloseTaskSeverity`) decides whether a failing check blocks the close or merely warns:
+An Auto task's **severity** (`periodCloseTaskSeverity`) decides whether an issue must be resolved or can be acknowledged by skipping the task:
 
 <FieldTable>
-  <Field name="Blocker">A failing Blocker check hard-stops the close. You cannot close the period until it passes (or the task is skipped, which Blockers disallow).</Field>
-  <Field name="Warning">A failing Warning check surfaces the issue but doesn't stop the close. You can proceed, or skip the task with a reason.</Field>
+  <Field name="Blocker">A failing Blocker check stops the close. It must pass; Blocker tasks cannot be skipped.</Field>
+  <Field name="Warning">A Warning can be skipped with a reason. If its task is required and still Open, it stops the close until the check passes or you skip it. Every seeded Warning task is required.</Field>
 </FieldTable>
 
 The seeded checks, from `computePeriodReadiness`:
 
 | Check | Severity | Fails when |
 | --- | --- | --- |
-| Post pending operational documents | Blocker | Un-posted receipts/shipments/invoices dated in this period exist. |
+| Post pending operational documents | Blocker | Unposted receipts, shipments, invoices, payments or memos would post into this period. |
 | Post or re-date draft journal entries | Blocker | Draft journal entries are dated in this period. |
 | Trial balance in balance for the period | Blocker | Any posted journal has unequal debits and credits. |
-| Post depreciation runs covering the period | Warning | A draft depreciation run ends in this period. |
+| Post depreciation runs covering the period | Warning | Depreciation is due for this period or a Draft depreciation run ends in it. |
+| Recognize revenue for the period | Warning | Revenue is due by period end or is held in a Draft recognition run. |
+| Post lease journals | Warning | Lease or rental entries are due by period end or are held in a Draft lease run. |
+| Compute burden for the period | Warning | Government Contracting is enabled, active indirect pools apply to projects, and burden has not been computed for the period. |
+| Close earned value for the period | Warning | Government Contracting is enabled and projects with work packages lack an earned value snapshot for the period. |
 | Match & eliminate intercompany transactions | Warning | Unmatched intercompany transactions involve this company. |
+| External GL sync complete | Blocker | A posted journal lacks a completed, excluded or skipped sync disposition for an enabled accounting integration. It passes when no integration has sync enabled. |
+| Timesheets complete | Warning | In DCAA timekeeping mode, entries remain unposted or scheduled work days have no time entered. It passes in Standard mode. |
+| Invoice shipped sales orders | Warning | A sales order shipment posted in this period has net shipped quantity not covered by cumulative posted invoice quantity by period end. Partial invoicing leaves the task Open. Posted uninvoiced returns reduce the quantity to bill, except returns for service or warranty. Those returns do not reduce it, so the warning may remain Open after they post. Invoice coverage applies to the oldest shipments first. |
 
-A seventh seeded Auto task, **Review negative on-hand inventory** (Warning), has no live evaluator yet, so it fails closed and stays a standing Warning you resolve by skipping with a reason. The remaining three seeded tasks are the two Action steps (**Lock the period**, **Close the period**) and one Manual step (**Review financial statements**).
+The remaining three seeded tasks are **Lock the period**, **Review negative on-hand inventory** and **Review financial statements**, all Actions. **Close Period** is the final close action, not a seeded checklist task. Checks that do not apply to the company pass automatically. A run preview error keeps the affected run check Open.
+
+### Reviewing uninvoiced shipments
+
+The shipment check compares quantities as of period end. A new sales invoice posts with today's date, even if you entered an earlier **Date Issued** on its draft. Invoicing after period end therefore does not clear an earlier period's warning.
+
+Review the timing difference and any required accounting adjustment. If the warning remains after that review, skip the task with a reason documenting the treatment. An adjustment does not change the shipment or invoice quantities used by this check.
 
 ### Completing and skipping tasks
 

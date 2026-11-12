@@ -239,6 +239,7 @@ const QuoteBillOfMaterial = ({
   // Deletes and reorders: a failure is toasted.
   const fetcher = useAction();
   const permissions = usePermissions();
+  const { t } = useLingui();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -518,6 +519,7 @@ const QuoteBillOfMaterial = ({
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Materials`}
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
@@ -872,6 +874,7 @@ function MaterialForm({
                   : "Default Storage Unit")}
             </Badge>
             <IconButton
+              aria-expanded={sourceDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 sourceDisclosure.isOpen ? "Collapse Source" : "Expand Source"
@@ -937,6 +940,7 @@ function MaterialForm({
                 : "First Operation"}
             </Badge>
             <IconButton
+              aria-expanded={backflushDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 backflushDisclosure.isOpen
@@ -978,16 +982,7 @@ function MaterialForm({
           />
         </div>
       </div>
-      <motion.div
-        className="flex flex-1 items-center justify-end w-full pt-2"
-        initial={{ opacity: 0, filter: "blur(4px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{
-          type: "spring",
-          bounce: 0,
-          duration: 0.25
-        }}
-      >
+      <div className="flex flex-1 items-center justify-end w-full pt-2">
         <motion.div
           layout
           className="flex items-center justify-between gap-2 w-full"
@@ -1036,7 +1031,7 @@ function MaterialForm({
             <Trans>Save</Trans>
           </Submit>
         </motion.div>
-      </motion.div>
+      </div>
     </ValidatedForm>
   );
 }

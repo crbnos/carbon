@@ -48,23 +48,13 @@ import { SearchEmptyState } from "~/components/Layout/Topbar/Search/SearchEmptyS
 import { SearchFilterChips } from "~/components/Layout/Topbar/Search/SearchFilterChips";
 import type { EntityTypeFilter } from "~/components/Layout/Topbar/Search/types";
 import { useModules, useSettingsModule, useUser } from "~/hooks";
-import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
-import useDocumentsSubmodules from "~/modules/documents/ui/useDocumentsSubmodules";
-import useInventorySubmodules from "~/modules/inventory/ui/useInventorySubmodules";
-import useInvoicingSubmodules from "~/modules/invoicing/ui/useInvoicingSubmodules";
-import useItemsSubmodules from "~/modules/items/ui/useItemsSubmodules";
-import usePeopleSubmodules from "~/modules/people/ui/usePeopleSubmodules";
-import useProductionSubmodules from "~/modules/production/ui/useProductionSubmodules";
-import usePurchasingSubmodules from "~/modules/purchasing/ui/usePurchasingSubmodules";
-import useQualitySubmodules from "~/modules/quality/ui/useQualitySubmodules";
-import useResourcesSubmodules from "~/modules/resources/ui/useResourcesSubmodules";
-import useSalesSubmodules from "~/modules/sales/ui/useSalesSubmodules";
+import { useModuleSubmodules } from "~/hooks/useModuleSubmodules";
+import { useSubmoduleLayout } from "~/hooks/useModules";
 import useSettingsSubmodules from "~/modules/settings/ui/useSettingsSubmodules";
-import useUsersSubmodules from "~/modules/users/ui/useUsersSubmodules";
-import useWorkflowsSubmodules from "~/modules/workflows/ui/useWorkflowsSubmodules";
 import type { SearchResponse } from "~/routes/api+/search";
 import { useUIStore } from "~/stores/ui";
-import type { Authenticated, Route } from "~/types";
+import type { Route } from "~/types";
+import { orderedGroups, submoduleKey } from "~/utils/submodule-visibility";
 
 type RecentSearch = Route & {
   entityType?: string;
@@ -235,7 +225,8 @@ export const SearchModal = () => {
       }}
     >
       <ModalContent
-        className="rounded-lg p-0 h-[520px] max-w-2xl overflow-hidden dark:shadow-button max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none max-md:max-w-none max-md:pt-4"
+        data-instant=""
+        className="rounded-lg p-0 h-[520px] max-w-2xl overflow-hidden md:dark:shadow-button max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none"
         withCloseButton={false}
         // Sheets keep focus off their fields on phones; search is the
         // exception, since typing is the only thing it is opened for.
@@ -252,6 +243,7 @@ export const SearchModal = () => {
           <div className="contents max-md:flex max-md:items-center max-md:border-b max-md:border-border max-md:pr-1 max-md:[&>[cmdk-input-wrapper]]:flex-1 max-md:[&>[cmdk-input-wrapper]]:border-b-0">
             <CommandInput
               ref={inputRef}
+              aria-label={t`Search Carbon`}
               placeholder={t`Search across your workspace...`}
               value={input}
               onValueChange={onInputChange}
@@ -271,7 +263,10 @@ export const SearchModal = () => {
           />
 
           {/* Results */}
-          <CommandList className="flex-1 max-h-none overflow-y-auto px-2 py-2">
+          <CommandList
+            aria-label={t`Results`}
+            className="flex-1 max-h-none overflow-y-auto px-2 py-2"
+          >
             {/* Recent Searches */}
             {visibleRecentResults.length > 0 && (
               <>
@@ -338,10 +333,14 @@ export const SearchModal = () => {
                         )}
                         <button
                           type="button"
+                          aria-label={t`Remove ${result.name} from recent searches`}
                           onClick={(e) => removeRecentSearch(result.to, e)}
-                          className="flex-shrink-0 p-1 rounded hover:bg-muted md:opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="flex-shrink-0 p-1 rounded hover:bg-muted md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                         >
-                          <LuX className="w-4 h-4 text-muted-foreground" />
+                          <LuX
+                            className="w-4 h-4 text-muted-foreground"
+                            aria-hidden
+                          />
                         </button>
                       </CommandItem>
                     );
@@ -393,7 +392,7 @@ export const SearchModal = () => {
                           {item.name}
                         </span>
                       </span>
-                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity" />
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -446,7 +445,7 @@ export const SearchModal = () => {
                         </span>
                       )}
                     </VStack>
-                    <LuChevronRight className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <LuChevronRight className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity" />
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -568,48 +567,9 @@ type NavigationItem = {
 function useNavigationItems(): NavigationItem[] {
   const modules = useModules();
   const settingsModule = useSettingsModule();
-  const items = useItemsSubmodules();
-  const production = useProductionSubmodules();
-  const inventory = useInventorySubmodules();
-  const sales = useSalesSubmodules();
-  const purchasing = usePurchasingSubmodules();
-  const documents = useDocumentsSubmodules();
-  const accounting = useAccountingSubmodules();
-  const invoicing = useInvoicingSubmodules();
-  const users = useUsersSubmodules();
+  const submodules = useModuleSubmodules();
   const settings = useSettingsSubmodules();
-  const people = usePeopleSubmodules();
-  const quality = useQualitySubmodules();
-  const resources = useResourcesSubmodules();
-  const workflows = useWorkflowsSubmodules();
-  const groupedSubmodules: Record<
-    string,
-    {
-      groups: {
-        routes: Authenticated<Route>[];
-        name: string;
-        icon?: any;
-      }[];
-    }
-  > = {
-    items,
-    inventory,
-    sales,
-    purchasing,
-    quality,
-    accounting,
-    invoicing,
-    people,
-    production,
-    resources,
-    settings,
-    users,
-    workflows
-  };
-
-  const ungroupedSubmodules: Record<string, { links: Route[] }> = {
-    documents
-  };
+  const submoduleLayout = useSubmoduleLayout();
 
   // Settings is pinned out of `useModules()`, but its submodules should still be
   // reachable from search (e.g. "Settings › API Keys"), so append it explicitly.
@@ -618,29 +578,21 @@ function useNavigationItems(): NavigationItem[] {
     : modules;
 
   return searchableModules.reduce<NavigationItem[]>((acc, module) => {
-    const moduleName = module.name.toLowerCase();
+    const groups =
+      module.key === "settings" ? settings.groups : submodules[module.key];
 
-    if (moduleName in groupedSubmodules) {
-      for (const route of groupedSubmodules[moduleName].groups.flatMap(
-        (group) => group.routes
-      )) {
-        acc.push({
-          module: module.name,
-          moduleIcon: module.icon,
-          name: route.name,
-          to: route.to,
-          iconElement: route.icon
-        });
-      }
-    } else if (moduleName in ungroupedSubmodules) {
-      for (const link of ungroupedSubmodules[moduleName].links) {
-        acc.push({
-          module: module.name,
-          moduleIcon: module.icon,
-          name: link.name,
-          to: link.to
-        });
-      }
+    for (const route of orderedGroups(
+      groups ?? [],
+      submoduleLayout.order
+    ).flatMap((group) => group.routes)) {
+      if (submoduleLayout.hidden.has(submoduleKey(route))) continue;
+      acc.push({
+        module: module.name,
+        moduleIcon: module.icon,
+        name: route.name,
+        to: route.to,
+        iconElement: route.icon
+      });
     }
 
     return acc;

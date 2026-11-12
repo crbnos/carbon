@@ -104,6 +104,8 @@ export type PlanMachineTimeResult = {
   currentStateAt: string | null;
   /** `changedAt` of the last consumed change; null when nothing was consumed. */
   appliedThrough: string | null;
+  /** When the change still waiting to last the minimum began; null when none is. */
+  pendingSince: string | null;
 };
 
 type Interval = { startTime: string; endTime: string };
@@ -576,6 +578,7 @@ export function planMachineTime(
     writes,
     currentState: state,
     currentStateAt: stateAt,
-    appliedThrough
+    appliedThrough,
+    pendingSince: pending?.changedAt ?? null
   };
 }

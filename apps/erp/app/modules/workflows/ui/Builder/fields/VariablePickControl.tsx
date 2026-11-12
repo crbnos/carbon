@@ -31,12 +31,24 @@ export function VariablePickControl({
   isReadOnly?: boolean;
 }) {
   const { t } = useLingui();
+  // With no chip the inner button is the control; with a chip the box itself is.
+  const isBoxControl = !!chip && !isReadOnly;
 
   return (
     // The whole box opens the menu, chip or not — clicking a select's own text is how
     // anyone expects to reopen it. The chip's clear button stops the click itself.
+    // biome-ignore lint/a11y/noStaticElementInteractions: role is dynamic — "button" when a chip is shown (the box is the control), "presentation" otherwise (the inner <button> is the control)
     <div
+      role={isBoxControl ? "button" : "presentation"}
+      tabIndex={isBoxControl ? 0 : undefined}
       onClick={isReadOnly ? undefined : onOpen}
+      onKeyDown={(e) => {
+        if (!isBoxControl || e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
       className={cn(
         "flex h-10 w-full min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
         hasIssue && "border-destructive"

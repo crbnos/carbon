@@ -6,6 +6,7 @@ import { Hidden, ValidatedForm } from "@carbon/form";
 import {
   cn,
   hasOpenDialog,
+  isBareKeyForAnotherControl,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -16,8 +17,15 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AnimatePresence, motion } from "motion/react";
-import type { ComponentProps, ReactNode } from "react";
-import { forwardRef, useCallback, useMemo, useRef, useState } from "react";
+import type { ComponentProps, MouseEvent, ReactNode } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { FaPause, FaPlay } from "react-icons/fa6";
 import {
   LuEllipsisVertical,
@@ -144,7 +152,7 @@ export function IconButtonWithTooltip({
       tooltip={tooltip}
       disabled={disabled}
       className={cn(
-        "size-12 shrink-0 text-lg lg:size-[8dvh] lg:group-data-[collapsed=true]/dock:size-12 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-30 text-accent-foreground group-hover:text-accent-foreground/80",
+        "size-12 shrink-0 text-lg lg:size-[8dvh] lg:group-data-[collapsed=true]/dock:size-12 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:accent transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-30 text-accent-foreground group-hover:text-accent-foreground/80",
         variant === "success" &&
           "bg-emerald-500 !text-white hover:bg-emerald-600 hover:text-white",
         variant === "destructive" &&
@@ -192,6 +200,7 @@ export function WorkTypeToggle({
     <ToggleGroup
       value={value}
       type="single"
+      aria-label={t`Time type`}
       onValueChange={onChange}
       disabled={!!value && count <= 1}
       className={cn(
@@ -209,7 +218,7 @@ export function WorkTypeToggle({
           className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5"
           value="Setup"
           size="lg"
-          aria-label={t`Toggle setup`}
+          aria-label={active.setup ? t`Setup, timer running` : t`Setup`}
         >
           <LuTimer className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
           <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
@@ -225,7 +234,7 @@ export function WorkTypeToggle({
           className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5"
           value="Labor"
           size="lg"
-          aria-label={t`Toggle labor`}
+          aria-label={active.labor ? t`Labor, timer running` : t`Labor`}
         >
           <LuHardHat className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
           <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
@@ -241,7 +250,7 @@ export function WorkTypeToggle({
           className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5"
           value="Machine"
           size="lg"
-          aria-label={t`Toggle machine`}
+          aria-label={active.machine ? t`Machine, timer running` : t`Machine`}
         >
           <LuHammer className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
           <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
@@ -286,10 +295,20 @@ export function StartStopButton({
   // be paused.
   startDisabled?: boolean;
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher<ProductionEvent>();
+  // Names the timer the button runs: "Start Labor", not just "Start".
+  const workTypeLabel = {
+    Setup: t`Setup`,
+    Labor: t`Labor`,
+    Machine: t`Machine`
+  }[eventType];
 
   // Space = Start/Pause, the most-pressed button in MES. Inert in inputs
-  // (hook default) and under any open dialog. AssemblyView owns its own Space
+  // (hook default), under any open dialog, and while focus is on another
+  // control that acts on Space itself (a button, a switch, a role="button"
+  // file name or thumbnail) — otherwise one press would both activate that
+  // control and start/pause the timer. AssemblyView owns its own Space
   // handling on a separate route (assembly.$operationId) — the two never
   // co-mount. Ref-click so a disabled button stays a native no-op.
   const startStopRef = useRef<HTMLButtonElement>(null);
@@ -299,9 +318,26 @@ export function StartStopButton({
       event.preventDefault();
       startStopRef.current?.click();
     },
-    guard: () => !hasOpenDialog(),
+    guard: (event) =>
+      !hasOpenDialog() &&
+      !isBareKeyForAnotherControl(event, startStopRef.current),
     disabled: fetcher.state !== "idle"
   });
+
+  // Start and Pause are different elements (and both disable mid-submit), so
+  // toggling drops keyboard focus to <body>. Remember that the button had
+  // focus when it was pressed and put it back on its replacement once the
+  // submission settles.
+  const refocusAfterSubmitRef = useRef(false);
+  const rememberFocus = (event: MouseEvent<HTMLButtonElement>) => {
+    refocusAfterSubmitRef.current =
+      document.activeElement === event.currentTarget;
+  };
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !refocusAfterSubmitRef.current) return;
+    refocusAfterSubmitRef.current = false;
+    startStopRef.current?.focus();
+  }, [fetcher.state]);
 
   const isActive = useMemo(() => {
     if (fetcher.formData?.get("action") === "End") {
@@ -377,14 +413,18 @@ export function StartStopButton({
       {isActive ? (
         <PauseButton
           ref={startStopRef}
+          workType={workTypeLabel}
           disabled={fetcher.state !== "idle"}
           type="submit"
+          onClick={rememberFocus}
         />
       ) : (
         <PlayButton
           ref={startStopRef}
+          workType={workTypeLabel}
           disabled={startDisabled || fetcher.state !== "idle"}
           type="submit"
+          onClick={rememberFocus}
         />
       )}
     </ValidatedForm>
@@ -393,20 +433,21 @@ export function StartStopButton({
 
 export const PauseButton = forwardRef<
   HTMLButtonElement,
-  ComponentProps<"button">
->(({ className, ...props }, ref) => {
+  // The translated work type the timer runs, so the name says which timer.
+  ComponentProps<"button"> & { workType?: string }
+>(({ className, workType, ...props }, ref) => {
   const { t } = useLingui();
   return (
     <ButtonWithTooltip
       ref={ref}
       {...props}
-      tooltip={t`Pause`}
+      tooltip={workType ? t`Pause ${workType}` : t`Pause`}
       className={cn(
-        "group size-14 text-2xl lg:size-24 lg:text-4xl lg:tall:size-32 lg:group-data-[collapsed=true]/dock:!size-14 lg:group-data-[collapsed=true]/dock:!text-2xl shrink-0 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 border-b-4 border-red-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white",
+        "group size-14 text-2xl lg:size-24 lg:text-4xl lg:tall:size-32 lg:group-data-[collapsed=true]/dock:!size-14 lg:group-data-[collapsed=true]/dock:!text-2xl shrink-0 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:bg-red-600 transition-[color,background-color,transform] text-accent disabled:bg-muted disabled:text-muted-foreground/80 border-b-4 border-red-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white",
         className
       )}
     >
-      <FaPause className="group-hover:scale-110" />
+      <FaPause />
     </ButtonWithTooltip>
   );
 });
@@ -414,20 +455,21 @@ PauseButton.displayName = "PauseButton";
 
 export const PlayButton = forwardRef<
   HTMLButtonElement,
-  ComponentProps<"button">
->(({ className, ...props }, ref) => {
+  // The translated work type the timer runs, so the name says which timer.
+  ComponentProps<"button"> & { workType?: string }
+>(({ className, workType, ...props }, ref) => {
   const { t } = useLingui();
   return (
     <ButtonWithTooltip
       ref={ref}
       {...props}
-      tooltip={t`Start`}
+      tooltip={workType ? t`Start ${workType}` : t`Start`}
       className={cn(
-        "group size-14 text-2xl lg:size-24 lg:text-4xl lg:tall:size-32 lg:group-data-[collapsed=true]/dock:!size-14 lg:group-data-[collapsed=true]/dock:!text-2xl shrink-0 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white",
+        "group size-14 text-2xl lg:size-24 lg:text-4xl lg:tall:size-32 lg:group-data-[collapsed=true]/dock:!size-14 lg:group-data-[collapsed=true]/dock:!text-2xl shrink-0 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:bg-emerald-600 transition-[color,background-color,transform] text-accent disabled:bg-muted disabled:text-muted-foreground/80 border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white",
         className
       )}
     >
-      <FaPlay className="group-hover:scale-110" />
+      <FaPlay />
     </ButtonWithTooltip>
   );
 });
@@ -452,25 +494,13 @@ export function FloatingActionMenu({ items }: { items: FABItem[] }) {
         {isOpen && (
           <motion.div
             className="flex flex-row lg:flex-col items-center gap-2 mb-2"
-            initial="closed"
-            animate="open"
-            exit="closed"
-            variants={{
-              open: { transition: { staggerChildren: 0.06 } },
-              closed: {
-                transition: { staggerChildren: 0.03, staggerDirection: -1 }
-              }
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
           >
             {items.map((item) => (
-              <motion.div
-                key={item.label}
-                variants={{
-                  open: { opacity: 1, scale: 1, filter: "blur(0px)" },
-                  closed: { opacity: 0, scale: 0.25, filter: "blur(4px)" }
-                }}
-                transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-              >
+              <div key={item.label}>
                 <IconButtonWithTooltip
                   icon={item.icon}
                   tooltip={item.label}
@@ -481,7 +511,7 @@ export function FloatingActionMenu({ items }: { items: FABItem[] }) {
                     setIsOpen(false);
                   }}
                 />
-              </motion.div>
+              </div>
             ))}
           </motion.div>
         )}
@@ -496,31 +526,13 @@ export function FloatingActionMenu({ items }: { items: FABItem[] }) {
             : "bg-accent text-accent-foreground hover:bg-accent/80"
         )}
       >
-        <AnimatePresence mode="wait" initial={false}>
+        <span className="flex items-center justify-center">
           {isOpen ? (
-            <motion.span
-              key="close"
-              initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-              className="flex items-center justify-center"
-            >
-              <LuX className="size-5" />
-            </motion.span>
+            <LuX className="size-5" />
           ) : (
-            <motion.span
-              key="menu"
-              initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-              className="flex items-center justify-center"
-            >
-              <LuEllipsisVertical className="size-5" />
-            </motion.span>
+            <LuEllipsisVertical className="size-5" />
           )}
-        </AnimatePresence>
+        </span>
       </button>
     </div>
   );

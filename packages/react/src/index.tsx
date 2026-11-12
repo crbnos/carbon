@@ -182,6 +182,7 @@ import {
   FormHelperText,
   FormLabel
 } from "./Form";
+import { useFormControl, useInlineTriggerLabel } from "./Form/useFormControl";
 import { Heading } from "./Heading";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { HStack } from "./HStack";
@@ -210,6 +211,16 @@ import {
   InputOTPSeparator,
   InputOTPSlot
 } from "./InputOTP";
+import type {
+  InspectionParameter,
+  InspectionPlanTab
+} from "./InspectionPlanPanes";
+import {
+  hasWorkInstruction,
+  InspectionPlanInstructions,
+  InspectionPlanParameters,
+  InspectionPlanTabs
+} from "./InspectionPlanPanes";
 import { Kbd } from "./Kbd";
 import { Label } from "./Label";
 import { LabelWithHelp } from "./LabelWithHelp";
@@ -278,9 +289,11 @@ import {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
-  navRailItemClasses
+  navRailItemClasses,
+  pulseNavIcon
 } from "./NavRail";
 import { NavSheet } from "./NavSheet";
+import { NonNettableBadge } from "./NonNettableBadge";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -357,6 +370,12 @@ import {
   SidebarTrigger,
   useSidebar
 } from "./Sidebar";
+import type {
+  SignatureContext,
+  SignaturePadHandle,
+  SignaturePadProps
+} from "./SignaturePad";
+import { createSignatureDrawing, SignaturePad } from "./SignaturePad";
 import { Skeleton } from "./Skeleton";
 import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
@@ -396,9 +415,13 @@ import {
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
-import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
+import {
+  afterDialogCloses,
+  hasOpenDialog,
+  isInsideTopmostDialog
+} from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
-import { isEditableTarget } from "./utils/keyboard";
+import { isBareKeyForAnotherControl, isEditableTarget } from "./utils/keyboard";
 import {
   getValidChildren,
   optionLabelText,
@@ -411,7 +434,9 @@ export * from "./Acknowledge";
 export * from "./ColorPicker";
 export * from "./hooks";
 export * from "./ImageZoomViewer";
+export * from "./InlineTrigger";
 export * from "./RecordOutlet";
+export { useReportUnsavedChanges } from "./RouteDialogScope";
 export type {
   ActionPresentation,
   AvatarProps,
@@ -427,6 +452,8 @@ export type {
   DateTimeProps,
   ExpiredEntityPolicy,
   InputProps,
+  InspectionParameter,
+  InspectionPlanTab,
   JSONContent,
   MenuItemShortcut,
   Modifier,
@@ -438,6 +465,9 @@ export type {
   ShortcutHelpEntry,
   ShortcutInput,
   ShortcutKeyMapEntry,
+  SignatureContext,
+  SignaturePadHandle,
+  SignaturePadProps,
   SubheadingProps,
   TextareaProps,
   TrackedEntityOption,
@@ -464,6 +494,7 @@ export {
   AvatarGroup,
   AvatarGroupList,
   AvatarOverflowIndicator,
+  afterDialogCloses,
   Badge,
   BadgeCloseButton,
   BarProgress,
@@ -534,6 +565,7 @@ export {
   CreatableMultiSelect,
   cn,
   copyToClipboard,
+  createSignatureDrawing,
   DatePicker,
   DateRangePicker,
   DateTime,
@@ -594,6 +626,7 @@ export {
   HStack,
   HTML,
   hasOpenDialog,
+  hasWorkInstruction,
   IconButton,
   Input,
   InputGroup,
@@ -605,6 +638,10 @@ export {
   InputOTPSlot,
   InputRightAddon,
   InputRightElement,
+  InspectionPlanInstructions,
+  InspectionPlanParameters,
+  InspectionPlanTabs,
+  isBareKeyForAnotherControl,
   isEditableTarget,
   isInsideTopmostDialog,
   isRichTextEmpty,
@@ -669,6 +706,7 @@ export {
   NavRailLink,
   NavRailSwitcher,
   NavSheet,
+  NonNettableBadge,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,
@@ -689,6 +727,7 @@ export {
   PrefetchLink,
   Progress,
   PulsingDot,
+  pulseNavIcon,
   RadioGroup,
   RadioGroupButton,
   RadioGroupItem,
@@ -738,6 +777,7 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  SignaturePad,
   Skeleton,
   Slider,
   Spinner,
@@ -780,6 +820,8 @@ export {
   toastError,
   useBotProtection,
   useEnumerableAsText,
+  useFormControl,
+  useInlineTriggerLabel,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,

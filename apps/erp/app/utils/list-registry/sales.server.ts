@@ -75,11 +75,22 @@ export const customersList = searchList({
   service: getCustomers
 });
 
+// Service contracts and project contracts share one query; each billing
+// basis is its own list.
 export const contractsList = searchList({
   key: "contracts",
   permission: { view: "sales" },
   paging: CONTRACTS_PAGING,
-  service: getContracts
+  service: getContracts,
+  params: { billingBasis: () => "Schedule" }
+});
+
+export const projectContractsList = searchList({
+  key: "project-contracts",
+  permission: { view: "sales" },
+  paging: CONTRACTS_PAGING,
+  service: getContracts,
+  params: { billingBasis: () => "Project" }
 });
 
 export const rentalAgreementsList = searchList({
@@ -185,6 +196,7 @@ export const salesLists: Record<string, ListDefinition> = {
   [salesReturnOrdersList.key]: salesReturnOrdersList,
   [customersList.key]: customersList,
   [contractsList.key]: contractsList,
+  [projectContractsList.key]: projectContractsList,
   [rentalAgreementsList.key]: rentalAgreementsList,
   [priceListList.key]: priceListList,
   [pricingRulesList.key]: pricingRulesList,

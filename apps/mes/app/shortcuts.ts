@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ShortcutInput } from "@carbon/react";
-import { SHORTCUTS } from "@carbon/react";
+import { KeyboardKeys, SHORTCUTS } from "@carbon/react";
 
 /**
  * Single source of truth for every MES key combo (shared combos come from
@@ -23,8 +23,16 @@ export const MES_NAV_SHORTCUTS = {
   recent: "alt+4",
   jobs: "alt+5",
   maintenance: "alt+6",
-  picking: "alt+7"
+  picking: "alt+7",
+  service: "alt+8",
+  inspections: "alt+9"
 } as const satisfies Record<string, ShortcutInput>;
 
 /** Start/Pause the job operation (the big round button). */
 export const START_STOP_SHORTCUT: ShortcutInput = "space";
+
+/** Close the operator picker even while its search or PIN input is focused. */
+export const DISMISS_PIN_OVERLAY_SHORTCUT: ShortcutInput = {
+  key: KeyboardKeys.Escape,
+  enabledOnInputElements: true
+};

@@ -31,12 +31,17 @@ const pages = [ImportCSVPage.UploadCSV, ImportCSVPage.FieldMappings] as const;
 
 type ImportCSVModalProps = {
   table: keyof typeof fieldMappings;
+  open?: boolean;
   onClose: () => void;
 };
 
 const formId = "import-csv-modal";
 
-export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
+export const ImportCSVModal = ({
+  table,
+  open = true,
+  onClose
+}: ImportCSVModalProps) => {
   // A failed import is toasted by `useAction`.
   const fetcher = useAction<typeof action>({
     onSuccess: (result) => {
@@ -104,14 +109,14 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
   // A reload drops the same state, and there is nowhere to persist it to yet,
   // so the browser's own prompt is the only guard available for that path.
   useEffect(() => {
-    if (!hasImportInProgress) return;
+    if (!open || !hasImportInProgress) return;
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", warnBeforeUnload);
     return () => window.removeEventListener("beforeunload", warnBeforeUnload);
-  }, [hasImportInProgress]);
+  }, [open, hasImportInProgress]);
 
   // if the file upload is successful, set the page to field-mapping
   useEffect(() => {
@@ -134,6 +139,7 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
         added={imported.added}
         warnings={imported.warnings}
         columns={fileColumns}
+        open={open}
         onClose={onClose}
       />
     );
@@ -141,7 +147,7 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           requestClose();
@@ -204,12 +210,14 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
           </AnimatedSizeContainer>
         </div>
       </ModalContent>
-      {isConfirmingDiscard && (
-        <ConfirmDiscardImport
-          onCancel={() => setIsConfirmingDiscard(false)}
-          onDiscard={onClose}
-        />
-      )}
+      <ConfirmDiscardImport
+        open={isConfirmingDiscard}
+        onCancel={() => setIsConfirmingDiscard(false)}
+        onDiscard={() => {
+          setIsConfirmingDiscard(false);
+          onClose();
+        }}
+      />
     </Modal>
   );
 };

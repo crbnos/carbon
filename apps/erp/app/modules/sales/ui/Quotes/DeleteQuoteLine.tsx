@@ -11,9 +11,11 @@ import { path } from "~/utils/path";
 import type { QuotationLine } from "../../types";
 
 export default function DeleteQuoteLine({
+  isOpen,
   line,
   onCancel
 }: {
+  isOpen?: boolean;
   line: QuotationLine;
   onCancel: () => void;
 }) {
@@ -28,6 +30,7 @@ export default function DeleteQuoteLine({
   return (
     <ConfirmDelete
       action={path.to.deleteQuoteLine(quoteId, line.id)}
+      isOpen={isOpen}
       name={itemReadableId ?? "this line"}
       text={t`Are you sure you want to delete the line: ${itemReadableId}? This cannot be undone.`}
       onCancel={onCancel}

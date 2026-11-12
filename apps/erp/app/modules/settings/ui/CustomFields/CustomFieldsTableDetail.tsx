@@ -151,7 +151,6 @@ const CustomFieldCategoryDetail = ({
   };
 
   const onDeleteCancel = () => {
-    setSelectedCustomField(undefined);
     deleteModal.onClose();
   };
 
@@ -198,6 +197,7 @@ const CustomFieldCategoryDetail = ({
                 className="space-y-2 w-full"
               >
                 {sortOrder.map((sortId) => {
+                  const fieldName = fieldMap[sortId]?.name;
                   return (
                     <Reorder.Item
                       key={sortId}
@@ -227,7 +227,9 @@ const CustomFieldCategoryDetail = ({
                         >
                           {fieldMap[sortId]?.dataType?.label ?? "Unknown"}
                         </Button>
-                        <ActionMenu>{renderContextMenu(sortId)}</ActionMenu>
+                        <ActionMenu label={t`Actions for ${fieldName}`}>
+                          {renderContextMenu(sortId)}
+                        </ActionMenu>
                       </HStack>
                     </Reorder.Item>
                   );

@@ -6,7 +6,9 @@
 // because this package's tests never cache, so an edit under scripts/ is seen.
 import { describe, expect, it } from "vitest";
 import {
+  CONSTANTS_HEADER,
   sortRelationships,
+  splitConstants,
   stripPerTenantTables,
   validateDatabaseUrl
 } from "../../../scripts/lib/generate-db-types";
@@ -57,6 +59,43 @@ describe("stripPerTenantTables", () => {
     expect(stripPerTenantTables(source)).toBe(
       [table("searchIndexRegistry"), table("auditLogArchive")].join("\n")
     );
+  });
+
+  it("drops Storage's iceberg tables, which only single-tenant Storage creates", () => {
+    const source = [
+      table("buckets_analytics"),
+      table("iceberg_namespaces"),
+      table("iceberg_tables"),
+      table("objects")
+    ].join("\n");
+    expect(stripPerTenantTables(source)).toBe(
+      [table("buckets_analytics"), table("objects")].join("\n")
+    );
+  });
+});
+
+describe("splitConstants", () => {
+  const declarations = [
+    "export type Database = {",
+    '  public: { Enums: { status: "Draft" | "Done" } }',
+    "}",
+    ""
+  ].join("\n");
+  const constants = [
+    "export const Constants = {",
+    '  public: { Enums: { status: ["Draft", "Done"] } },',
+    "} as const"
+  ].join("\n");
+
+  it("moves the Constants block into its own file and leaves only declarations", () => {
+    const split = splitConstants(`${declarations}\n${constants}\n\n`);
+    expect(split.types).toBe(declarations);
+    expect(split.types).not.toContain("export const");
+    expect(split.constants).toBe(`${CONSTANTS_HEADER}${constants}\n`);
+  });
+
+  it("refuses output with no Constants block", () => {
+    expect(() => splitConstants(declarations)).toThrow(/no Constants block/);
   });
 });
 

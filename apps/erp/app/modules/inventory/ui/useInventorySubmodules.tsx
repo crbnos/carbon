@@ -8,10 +8,12 @@ import {
   LuArrowRightLeft,
   LuClipboardCheck,
   LuClipboardList,
+  LuClipboardX,
   LuHandCoins,
   LuListChecks,
   LuNetwork,
-  LuPackageSearch,
+  LuPackageCheck,
+  LuPackageMinus,
   LuQrCode,
   LuScanQrCode,
   LuShieldCheck,
@@ -25,6 +27,14 @@ import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
+import type { receiptInspectionStatusType } from "../inventory.models";
+
+const receiptsByInspectionStatus = (
+  statuses: (typeof receiptInspectionStatusType)[number][]
+) =>
+  `${path.to.receipts}?filter=${encodeURIComponent(
+    `inspectionStatus:in:${statuses.join(",")}`
+  )}`;
 
 export default function useInventorySubmodules() {
   const permissions = usePermissions();
@@ -56,6 +66,11 @@ export default function useInventorySubmodules() {
           table: "inventoryCount"
         },
         {
+          name: t`Issue to Project`,
+          to: path.to.projectIssue,
+          icon: <LuPackageMinus />
+        },
+        {
           name: t`Kanbans`,
           to: path.to.kanbans,
           role: "employee",
@@ -67,17 +82,31 @@ export default function useInventorySubmodules() {
       name: t`Shipping & Receiving`,
       routes: [
         {
-          name: t`Receiving`,
-          to: path.to.receiving,
-          icon: <LuPackageSearch />,
-          // Open purchase order lines are only readable with purchasing view.
-          permission: "purchasing"
-        },
-        {
           name: t`Receipts`,
           to: path.to.receipts,
           icon: <LuHandCoins />,
           table: "receipt"
+        },
+        {
+          name: t`Pending inspection`,
+          to: receiptsByInspectionStatus([
+            "Pending Inspection",
+            "Inspection In Progress"
+          ]),
+          icon: <LuClipboardCheck />
+        },
+        {
+          name: t`Ready for putaway`,
+          to: receiptsByInspectionStatus([
+            "Inspection Passed",
+            "Partially Passed"
+          ]),
+          icon: <LuPackageCheck />
+        },
+        {
+          name: t`Inspection failed`,
+          to: receiptsByInspectionStatus(["Inspection Failed"]),
+          icon: <LuClipboardX />
         },
         {
           name: t`Shipments`,

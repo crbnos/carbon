@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
 import type {
-  getJobByOperationId,
+  getJob,
   getJobMakeMethod,
   getJobMaterialsByOperationId,
   getJobOperationById,
@@ -45,9 +45,7 @@ export type Location = NonNullable<
   Awaited<ReturnType<typeof getLocationsByCompany>>["data"]
 >[number];
 
-export type Job = NonNullable<
-  Awaited<ReturnType<typeof getJobByOperationId>>["data"]
->;
+export type Job = NonNullable<Awaited<ReturnType<typeof getJob>>["data"]>;
 
 export type JobMaterial = NonNullable<
   Awaited<ReturnType<typeof getJobMaterialsByOperationId>>
@@ -102,7 +100,10 @@ export type StorageItem = FileObject & {
 
 export type TrackedEntity = NonNullable<
   Awaited<ReturnType<typeof getTrackedEntitiesByMakeMethodId>>["data"]
->[number];
+>[number] & {
+  /** Set by `getTrackedEntitiesForOperation`; false = the operation applies to other units. */
+  inOperationScope?: boolean;
+};
 
 export type TrackedInput = NonNullable<
   Awaited<ReturnType<typeof getTrackedInputs>>["data"]

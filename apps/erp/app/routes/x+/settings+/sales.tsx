@@ -82,6 +82,10 @@ const salesSettingsForm = z.discriminatedUnion("intent", [
     "requireCustomerContactAndLocationToggle",
     "requireCustomerContactAndLocation"
   ),
+  settingsToggle(
+    "requireCustomerContactEmailToggle",
+    "requireCustomerContactEmail"
+  ),
   settingsToggle("showCustomerReadableIdToggle", "showCustomerReadableId"),
   digitalQuoteValidator
     .extend({ intent: z.literal("digitalQuote") })
@@ -139,6 +143,12 @@ export default function SalesSettingsRoute() {
             ? t`Customer contact requirement enabled`
             : t`Customer contact requirement disabled`
         );
+      } else if (data.requireCustomerContactEmail !== undefined) {
+        toast.success(
+          data.requireCustomerContactEmail
+            ? t`Customer contact email required`
+            : t`Customer contact email optional`
+        );
       } else if (data.showCustomerReadableId !== undefined) {
         toast.success(
           data.showCustomerReadableId
@@ -154,6 +164,25 @@ export default function SalesSettingsRoute() {
     "requireCustomerContactAndLocationToggle",
     (companySettings as { requireCustomerContactAndLocation?: boolean })
       .requireCustomerContactAndLocation ?? false
+  );
+
+  const requireCustomerContactEmail = useSavedToggle(
+    toggleFetcher,
+    "requireCustomerContactEmailToggle",
+    companySettings.requireCustomerContactEmail ?? false
+  );
+
+  const handleRequireCustomerContactEmailToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "requireCustomerContactEmailToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
   );
 
   const handleRequireCustomerContactToggle = useCallback(
@@ -241,8 +270,43 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require a Customer Contact and Location`}
                 checked={requireCustomerContactAndLocation}
                 onCheckedChange={handleRequireCustomerContactToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Require an Email on Customer Contacts</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Every customer contact must have an email address. A contact
+                with no email cannot be saved or imported. Existing contacts are
+                not changed until they are next edited.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requireCustomerContactEmail ? (
+                    <Trans>An email is required on customer contacts</Trans>
+                  ) : (
+                    <Trans>An email is optional on customer contacts</Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                aria-label={t`Require an Email on Customer Contacts`}
+                checked={requireCustomerContactEmail}
+                onCheckedChange={handleRequireCustomerContactEmailToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
@@ -290,6 +354,7 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Show Customer IDs`}
                 checked={showCustomerReadableIdEnabled}
                 onCheckedChange={handleShowCustomerReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -558,7 +623,7 @@ function CategoryMarkupsCard({
       >
         <input type="hidden" name="intent" value="categoryMarkups" />
         <CardHeader>
-          <CardTitle>
+          <CardTitle id="quote-markups-title">
             <Trans>Quote Markups</Trans>
           </CardTitle>
           <CardDescription>
@@ -580,10 +645,16 @@ function CategoryMarkupsCard({
                 )}
               >
                 <VStack spacing={0} className="flex flex-1">
-                  <span className="text-sm font-medium">
+                  <span
+                    id={`${key}-markup-label`}
+                    className="text-sm font-medium"
+                  >
                     {categoryLabels[key].label}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span
+                    id={`${key}-markup-description`}
+                    className="text-xs text-muted-foreground"
+                  >
                     {categoryLabels[key].description}
                   </span>
                 </VStack>
@@ -591,6 +662,8 @@ function CategoryMarkupsCard({
                   <Number
                     name={key}
                     label=""
+                    aria-labelledby={`${key}-markup-label quote-markups-title`}
+                    aria-describedby={`${key}-markup-description`}
                     formatOptions={INPUT_FORMAT.percent}
                     minValue={0}
                   />

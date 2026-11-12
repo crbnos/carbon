@@ -33,11 +33,29 @@ type RevisionFormProps = {
 };
 
 const RevisionForm = ({
+  open = true,
+  onClose,
+  ...props
+}: RevisionFormProps) => (
+  <ModalDrawerProvider type="modal">
+    <ModalDrawer
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose?.();
+      }}
+    >
+      <ModalDrawerContent>
+        <RevisionFormBody onClose={onClose} {...props} />
+      </ModalDrawerContent>
+    </ModalDrawer>
+  </ModalDrawerProvider>
+);
+
+const RevisionFormBody = ({
   initialValues,
   hasSizesInsteadOfRevisions = false,
-  open = true,
   onClose
-}: RevisionFormProps) => {
+}: Omit<RevisionFormProps, "open">) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<
@@ -75,89 +93,76 @@ const RevisionForm = ({
   }, [fetcher.data]);
 
   return (
-    <ModalDrawerProvider type="modal">
-      <ModalDrawer
-        open={open}
-        onOpenChange={(open) => {
-          if (!open) onClose?.();
-        }}
-      >
-        <ModalDrawerContent>
-          <ValidatedForm
-            validator={revisionValidator}
-            method="post"
-            action={
-              isEditing
-                ? path.to.revision(initialValues.id!)
-                : openChangeNotice && initialValues.copyFromId
-                  ? path.to.newChangeNoticeFromItem(initialValues.copyFromId)
-                  : path.to.newRevision
-            }
-            defaultValues={initialValues}
-            fetcher={fetcher}
-            className="flex flex-col h-full"
-          >
-            <ModalDrawerHeader>
-              <ModalDrawerTitle>
-                {isEditing
-                  ? hasSizesInsteadOfRevisions
-                    ? t`Edit Size`
-                    : t`Edit Revision`
-                  : hasSizesInsteadOfRevisions
-                    ? t`New Size`
-                    : t`New Revision`}
-              </ModalDrawerTitle>
-              {!isEditing && (
-                <ModalDrawerDescription>
-                  {hasSizesInsteadOfRevisions
-                    ? t`A new size will be created using a copy of the current size`
-                    : t`A new revision will be created using a copy of the current revision`}
-                </ModalDrawerDescription>
-              )}
-            </ModalDrawerHeader>
-            <ModalDrawerBody>
-              <Hidden name="id" />
-              <Hidden name="type" />
-              <Hidden name="copyFromId" />
+    <ValidatedForm
+      validator={revisionValidator}
+      method="post"
+      action={
+        isEditing
+          ? path.to.revision(initialValues.id!)
+          : openChangeNotice && initialValues.copyFromId
+            ? path.to.newChangeNoticeFromItem(initialValues.copyFromId)
+            : path.to.newRevision
+      }
+      defaultValues={initialValues}
+      fetcher={fetcher}
+      className="flex flex-col h-full"
+    >
+      <ModalDrawerHeader>
+        <ModalDrawerTitle>
+          {isEditing
+            ? hasSizesInsteadOfRevisions
+              ? t`Edit Size`
+              : t`Edit Revision`
+            : hasSizesInsteadOfRevisions
+              ? t`New Size`
+              : t`New Revision`}
+        </ModalDrawerTitle>
+        {!isEditing && (
+          <ModalDrawerDescription>
+            {hasSizesInsteadOfRevisions
+              ? t`A new size will be created using a copy of the current size`
+              : t`A new revision will be created using a copy of the current revision`}
+          </ModalDrawerDescription>
+        )}
+      </ModalDrawerHeader>
+      <ModalDrawerBody>
+        <Hidden name="id" />
+        <Hidden name="type" />
+        <Hidden name="copyFromId" />
 
-              <VStack spacing={4}>
-                <Input
-                  name="revision"
-                  label={hasSizesInsteadOfRevisions ? t`Size` : t`Revision`}
-                  helperText={
-                    hasSizesInsteadOfRevisions
-                      ? t`The size of the part`
-                      : t`The revision number of the part`
-                  }
-                />
-                {canOpenChangeNotice && (
-                  <Boolean
-                    name="openChangeNotice"
-                    label={t`Open a change notice`}
-                    description={t`Create a change notice for the new revision and open it`}
-                    bordered
-                    onChange={setOpenChangeNotice}
-                  />
-                )}
-                {openChangeNotice && (
-                  <Hidden name="changeType" value="Revision" />
-                )}
-              </VStack>
-            </ModalDrawerBody>
-            <ModalDrawerFooter>
-              <HStack>
-                <Submit
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle" || isDisabled}
-                >
-                  <Trans>Save</Trans>
-                </Submit>
-              </HStack>
-            </ModalDrawerFooter>
-          </ValidatedForm>
-        </ModalDrawerContent>
-      </ModalDrawer>
-    </ModalDrawerProvider>
+        <VStack spacing={4}>
+          <Input
+            name="revision"
+            label={hasSizesInsteadOfRevisions ? t`Size` : t`Revision`}
+            helperText={
+              hasSizesInsteadOfRevisions
+                ? t`The size of the part`
+                : t`The revision number of the part`
+            }
+          />
+          {canOpenChangeNotice && (
+            <Boolean
+              name="openChangeNotice"
+              label={t`Open a change notice`}
+              description={t`Create a change notice for the new revision and open it`}
+              bordered
+              onChange={setOpenChangeNotice}
+            />
+          )}
+          {openChangeNotice && <Hidden name="changeType" value="Revision" />}
+        </VStack>
+      </ModalDrawerBody>
+      <ModalDrawerFooter>
+        <HStack>
+          <Submit
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle" || isDisabled}
+          >
+            <Trans>Save</Trans>
+          </Submit>
+        </HStack>
+      </ModalDrawerFooter>
+    </ValidatedForm>
   );
 };
 

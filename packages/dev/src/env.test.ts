@@ -2,8 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "pathe";
 import { describe, expect, it } from "vitest";
-import { forcedKeys, omitForcedKeys, renderEnv } from "./env.js";
+import { renderEnv, writeEnv } from "./env.js";
 import type { JwtCreds, PortMap } from "./worktree.js";
 
 const ports: PortMap = {
@@ -15,7 +18,8 @@ const ports: PortMap = {
   PORT_ERP: 54005,
   PORT_MES: 54006,
   PORT_ASSEMBLER: 54007,
-  PORT_EMAIL: 54008
+  PORT_EMAIL: 54008,
+  PORT_POOLER: 54009
 };
 
 const jwt: JwtCreds = {
@@ -30,7 +34,9 @@ const base = (overrides: Partial<Parameters<typeof renderEnv>[0]> = {}) =>
     ports,
     redisDb: 0,
     jwt,
-    portless: false,
+    prefix: null,
+    mode: "isolated",
+    database: "postgres",
     ...overrides
   });
 
@@ -56,7 +62,7 @@ describe("renderEnv", () => {
       ]
     }
   ])("writes the app URLs for portless=$portless", ({ portless, expected }) => {
-    const out = base({ slug: "feat-x", portless, branchPrefix: "feat-x" });
+    const out = base({ slug: "feat-x", prefix: portless ? "feat-x" : null });
     expect(out).toContain("CARBON_WORKTREE=feat-x");
     for (const line of expected) expect(out).toContain(line);
     if (!portless) expect(out).not.toContain("PORTLESS_TLD");
@@ -93,40 +99,100 @@ describe("renderEnv", () => {
     expect(out).toMatch(/REDIS_URL=redis:\/\/localhost:\d+\/7/);
     expect(out.endsWith("\n")).toBe(true);
   });
+
+  it("points shared mode at the shared containers and the worktree database", () => {
+    const out = base({ mode: "shared", database: "wt_s" });
+    for (const line of [
+      "PORT_DB=54322",
+      "PORT_POOLER=54329",
+      "PORT_INBUCKET=54324",
+      "SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:54322/wt_s",
+      "SUPABASE_DB_POOLER_URL=postgresql://postgres:postgres@localhost:54329/wt_s",
+      "DB_HOST=carbon-postgres",
+      "DB_NAME=wt_s",
+      "STORAGE_HOST=carbon-storage",
+      "STORAGE_TENANT=wt_s",
+      "SMTP_HOST=carbon-inbucket"
+    ]) {
+      expect(out).toContain(line);
+    }
+    expect(out).toMatch(/^SLOT_NAME_SUFFIX=[0-9a-f]{8}$/m);
+    expect(out).not.toContain("PORT_DB=54000");
+  });
+
+  it("keeps the slot's ports and private hosts in isolated mode", () => {
+    const out = base({ mode: "isolated" });
+    for (const line of [
+      "PORT_DB=54000",
+      "SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:54000/postgres",
+      "DB_HOST=local-postgres",
+      "DB_NAME=postgres",
+      "SLOT_NAME_SUFFIX=",
+      "STORAGE_HOST=local-storage",
+      "STORAGE_TENANT=stub",
+      "SMTP_HOST=local-inbucket"
+    ]) {
+      expect(out.split("\n")).toContain(line);
+    }
+  });
+
+  it("gives Envoy the public API URL for Storage's resumable-upload URLs", () => {
+    const out = base();
+    const url = new URL(out.match(/^SUPABASE_URL=(.*)$/m)![1]!);
+    expect(out).toContain(`STORAGE_PUBLIC_HOST=${url.host}`);
+    expect(out).toContain(`STORAGE_PUBLIC_PROTO=${url.protocol.slice(0, -1)}`);
+    expect(out).toMatch(/^STORAGE_PUBLIC_PORT=\d+$/m);
+  });
+
+  it("points the apps' pool at the pooler, and skips it for a slot without one", () => {
+    expect(base()).toContain(
+      "SUPABASE_DB_POOLER_URL=postgresql://postgres:postgres@localhost:54009/postgres"
+    );
+    const { PORT_POOLER: _, ...older } = ports;
+    expect(base({ ports: older as PortMap }).split("\n")).toContain(
+      "SUPABASE_DB_POOLER_URL="
+    );
+  });
 });
 
 describe("#force escape hatch", () => {
-  it("collects keys marked with a trailing #force comment", () => {
+  const write = (dotEnv: string, content: string) => {
+    const dir = mkdtempSync(join(tmpdir(), "crbn-env-"));
+    try {
+      writeFileSync(join(dir, ".env"), dotEnv);
+      writeEnv(dir, content);
+      return readFileSync(join(dir, ".env.local"), "utf8");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it("leaves out of .env.local the keys .env pins with a trailing #force", () => {
     const dotEnv = [
-      "OPENAI_API_KEY=sk-123",
       "ASSEMBLER_SERVICE_URL=https://xxx.execute-api.us-east-1.amazonaws.com #force",
       "ASSEMBLER_SERVICE_API_KEY=abc  # FORCE",
       'ONSHAPE_V2_OAUTH_REDIRECT_URL="https://tunnel.example/oauth" #force',
       "# a comment mentioning force",
       "NOT_FORCED=1 # forceful suffix means nothing"
     ].join("\n");
-    expect(forcedKeys(dotEnv)).toEqual(
-      new Set([
-        "ASSEMBLER_SERVICE_URL",
-        "ASSEMBLER_SERVICE_API_KEY",
-        "ONSHAPE_V2_OAUTH_REDIRECT_URL"
-      ])
+    const out = write(
+      dotEnv,
+      [
+        "ASSEMBLER_SERVICE_URL=https://assembler.s.dev",
+        "ASSEMBLER_SERVICE_API_KEY=dev-local-key",
+        "ONSHAPE_V2_OAUTH_REDIRECT_URL=https://erp.s.dev/oauth",
+        "NOT_FORCED=2"
+      ].join("\n")
     );
+    expect(out.split("\n")).toEqual([
+      "# ASSEMBLER_SERVICE_URL omitted — #force'd in .env",
+      "# ASSEMBLER_SERVICE_API_KEY omitted — #force'd in .env",
+      "# ONSHAPE_V2_OAUTH_REDIRECT_URL omitted — #force'd in .env",
+      "NOT_FORCED=2"
+    ]);
   });
 
-  it("omits forced keys from the generated .env.local content", () => {
-    const dotEnv = "ASSEMBLER_SERVICE_URL=https://remote #force\n";
-    const content = [
-      "ASSEMBLER_SERVICE_URL=https://assembler.s.dev",
-      "ASSEMBLER_SERVICE_API_KEY=dev-local-key"
-    ].join("\n");
-    const out = omitForcedKeys(content, dotEnv);
-    expect(out).not.toContain("ASSEMBLER_SERVICE_URL=");
-    expect(out).toContain("ASSEMBLER_SERVICE_API_KEY=dev-local-key");
-  });
-
-  it("leaves the content untouched when nothing is forced", () => {
-    const content = "A=1\nB=2";
-    expect(omitForcedKeys(content, "A=1\nB=2")).toBe(content);
+  it("writes the content as it is when nothing is forced", () => {
+    expect(write("A=1\nB=2", "A=3\nB=4")).toBe("A=3\nB=4");
   });
 });

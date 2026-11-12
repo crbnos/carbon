@@ -92,6 +92,8 @@ const ShipmentLines = () => {
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
     shipmentLineTracking: ShipmentLineTracking[];
+    /** A contract delivery: each line's typed serial. */
+    serialNumberByLineId?: Record<string, string | null>;
     fixedAssetLines: {
       id: string;
       salesOrderLineId: string;
@@ -213,7 +215,7 @@ const ShipmentLines = () => {
         }
       | {
           lineId: string;
-          field: "storageUnitId";
+          field: "storageUnitId" | "serialNumber";
           value: string;
         }) => {
       const formData = new FormData();
@@ -273,6 +275,9 @@ const ShipmentLines = () => {
                         key={line.id}
                         line={line}
                         shipment={routeData?.shipment}
+                        serialNumber={
+                          routeData?.serialNumberByLineId?.[line.id!] ?? null
+                        }
                         hasTrackingLabel={
                           routeData?.shipmentLineTracking?.some((t) => {
                             const attributes =
@@ -380,8 +385,11 @@ function ShipmentFixedAssetLineItem({
   isReadOnly: boolean;
   className?: string;
 }) {
+  const { t } = useLingui();
   const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
+  const assetName =
+    line.assetName ?? line.assetReadableId ?? line.description ?? "";
 
   const updateField = (field: string, value: string) => {
     const formData = new FormData();
@@ -402,6 +410,7 @@ function ShipmentFixedAssetLineItem({
       )}
     >
       <Checkbox
+        aria-label={t`Shipped: ${assetName}`}
         isChecked={line.shipped}
         disabled={isReadOnly}
         onCheckedChange={(checked) =>
@@ -420,6 +429,7 @@ function ShipmentFixedAssetLineItem({
       </VStack>
       <Input
         placeholder="Serial Number"
+        aria-label={t`Serial number for ${line.assetName ?? line.assetReadableId ?? line.description ?? ""}`}
         value={serialNumber}
         isDisabled={isReadOnly}
         className="w-48 max-md:w-full"
@@ -474,6 +484,7 @@ function ShipmentRentalLineItem({
 function ShipmentLineItem({
   line,
   shipment,
+  serialNumber,
   className,
   hasTrackingLabel,
   isReadOnly,
@@ -484,6 +495,8 @@ function ShipmentLineItem({
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
+  /** A contract delivery line's typed serial. */
+  serialNumber?: string | null;
   className?: string;
   hasTrackingLabel: boolean;
   isReadOnly: boolean;
@@ -504,13 +517,17 @@ function ShipmentLineItem({
       }
     | {
         lineId: string;
-        field: "storageUnitId";
+        field: "storageUnitId" | "serialNumber";
         value: string;
       }) => Promise<void>;
 }) {
   const { t } = useLingui();
   const [items] = useItems();
+  // A contract delivery moves no stock: no storage unit, and the serial is
+  // typed (the job consumed the part to the project, so no tracked entity).
+  const isContractDelivery = shipment?.sourceDocument === "Customer Contract";
   const item = items.find((p) => p.id === line.itemId);
+  const itemName = item?.readableIdWithRevision ?? line.itemId ?? "";
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -533,7 +550,7 @@ function ShipmentLineItem({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
-                aria-label={t`Line options`}
+                aria-label={t`Line options for ${itemName}`}
                 variant="secondary"
                 icon={<LuEllipsisVertical />}
                 size="sm"
@@ -619,6 +636,7 @@ function ShipmentLineItem({
                 )}
               </div>
               <NumberField
+                aria-label={t`Shipped quantity for ${itemName}`}
                 value={line.shippedQuantity || 0}
                 onChange={(value) => {
                   // Default to 0 if value is NaN, null, or undefined
@@ -700,7 +718,30 @@ function ShipmentLineItem({
               </span>
             </VStack>
           )}
+          {isContractDelivery && (
+            <VStack spacing={1}>
+              <label className="text-xs text-muted-foreground">
+                <Trans>Serial Number</Trans>
+              </label>
+              <Input
+                size="sm"
+                className="min-w-[160px]"
+                defaultValue={serialNumber ?? ""}
+                isReadOnly={isReadOnly}
+                onBlur={(event) => {
+                  const value = event.target.value.trim();
+                  if (value === (serialNumber ?? "")) return;
+                  onUpdate({
+                    lineId: line.id!,
+                    field: "serialNumber",
+                    value
+                  });
+                }}
+              />
+            </VStack>
+          )}
           {!isJobFulfillment &&
+            !isContractDelivery &&
             shipment?.sourceDocument !== "Purchase Order" && (
               <StorageUnit
                 locationId={line.locationId}
@@ -738,26 +779,30 @@ function ShipmentLineItem({
           onSerialNumbersChange={onSerialNumbersChange}
         />
       )}
-      {splitDisclosure.isOpen && (
-        <SplitShipmentLineModal line={line} onClose={splitDisclosure.onClose} />
-      )}
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          name="Shipment Line"
-          text="Are you sure you want to delete this shipment line?"
-          action={path.to.shipmentLineDelete(line.id!)}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <SplitShipmentLineModal
+        open={splitDisclosure.isOpen}
+        line={line}
+        onClose={splitDisclosure.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteDisclosure.isOpen}
+        name="Shipment Line"
+        text="Are you sure you want to delete this shipment line?"
+        action={path.to.shipmentLineDelete(line.id!)}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </div>
   );
 }
 
 // The statuses lines.tracking accepts for this shipment's source: On Hold
-// returned stock on a sales return, Available or Rejected units on a supplier
-// return, Available stock otherwise.
-function isShippable(shipment: Shipment | undefined, status: unknown) {
+// returned stock or an Available serviced unit on a sales return, Available
+// or Rejected units on a supplier return, Available stock otherwise.
+export function isShippable(
+  shipment: Pick<Shipment, "sourceDocument"> | undefined,
+  status: unknown
+) {
   return isShippableEntityStatus(shipment?.sourceDocument, status as string);
 }
 
@@ -785,6 +830,8 @@ function BatchForm({
   }) => Promise<void>;
 }) {
   const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   // A refused assignment (wrong item, not available) is toasted.
   const assign = useAction();
   const [values, setValues] = useState<{
@@ -1027,6 +1074,7 @@ function BatchForm({
             <InputGroup isDisabled={isReadOnly}>
               <Input
                 placeholder={t`Batch number`}
+                aria-label={t`Batch number for ${itemReadableId}`}
                 value={values.number}
                 onChange={(e) => {
                   setValues({
@@ -1130,6 +1178,8 @@ function SerialForm({
   ) => void;
 }) {
   const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   const [errors, setErrors] = useState<Record<number, string>>({});
   const { data: serialNumbersData } = useSerialNumbers(
     line.itemId!,
@@ -1357,6 +1407,7 @@ function SerialForm({
               <InputGroup isDisabled={isReadOnly}>
                 <Input
                   placeholder={t`Serial Number ${index + 1}`}
+                  aria-label={t`Serial number ${index + 1} for ${itemReadableId}`}
                   value={serialNumber.id}
                   onChange={(e) => {
                     const newValue = e.target.value;
@@ -1459,52 +1510,61 @@ function SerialForm({
   );
 }
 
+type SplitShipmentLineModalProps = {
+  line: ShipmentLine;
+  open: boolean;
+  onClose: () => void;
+};
+
 function SplitShipmentLineModal({
+  open,
+  onClose,
+  ...props
+}: SplitShipmentLineModalProps) {
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <SplitShipmentLineBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function SplitShipmentLineBody({
   line,
   onClose
-}: {
-  line: ShipmentLine;
-  onClose: () => void;
-}) {
+}: Omit<SplitShipmentLineModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useAction<typeof shipmentLinesSplitAction>({
     onSuccess: onClose
   });
   return (
-    <Modal open onOpenChange={onClose}>
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.shipmentLineSplit}
-          validator={splitValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>Split Shipment Line</ModalTitle>
-            <ModalDescription>
-              Select the quantity that you'd like to split into a new line.
-            </ModalDescription>
-          </ModalHeader>
+    <ValidatedForm
+      method="post"
+      action={path.to.shipmentLineSplit}
+      validator={splitValidator}
+      fetcher={fetcher}
+    >
+      <ModalHeader>
+        <ModalTitle>Split Shipment Line</ModalTitle>
+        <ModalDescription>
+          Select the quantity that you'd like to split into a new line.
+        </ModalDescription>
+      </ModalHeader>
 
-          <ModalBody>
-            <input type="hidden" name="documentId" value={line.shipmentId!} />
-            <input type="hidden" name="documentLineId" value={line.id!} />
-            <input
-              type="hidden"
-              name="locationId"
-              value={line.locationId ?? ""}
-            />
-            <Number name="quantity" label={t`Quantity`} minValue={0.0001} />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit>Split Line</Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalBody>
+        <input type="hidden" name="documentId" value={line.shipmentId!} />
+        <input type="hidden" name="documentLineId" value={line.id!} />
+        <input type="hidden" name="locationId" value={line.locationId ?? ""} />
+        <Number name="quantity" label={t`Quantity`} minValue={0.0001} />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit>Split Line</Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 
@@ -1525,6 +1585,7 @@ function StorageUnit({
     locationId ?? undefined,
     itemId ?? undefined
   );
+  const { t } = useLingui();
 
   if (!locationId) return null;
 
@@ -1535,6 +1596,7 @@ function StorageUnit({
       </label>
       <div className="py-1">
         <Combobox
+          aria-label={t`Storage unit`}
           value={storageUnitId ?? undefined}
           onChange={(newValue) => {
             onChange(newValue);

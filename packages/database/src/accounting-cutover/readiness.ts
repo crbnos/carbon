@@ -17,6 +17,7 @@ import {
   type CutoverDb,
   getAccounts,
   getCompany,
+  isFeatureAccountDefault,
   OPENING_BALANCE_SOURCE
 } from "./shared";
 
@@ -116,7 +117,9 @@ export async function getActivationReadiness(
   // account-defaults: every account column set, to an active account; the
   // Migration Clearing account an Equity posting account, since the opening
   // journal signs its lines as equity. A default with a fallback
-  // (DEFAULT_FALLBACKS) may stay empty: every posting uses the fallback.
+  // (DEFAULT_FALLBACKS) may stay empty: every posting uses the fallback. A
+  // feature default (FEATURE_ACCOUNT_DEFAULTS) may stay empty: its postings
+  // refuse rather than write a stand-in line.
   const emptyDefaults: ActivationCheckItem[] = [];
   let clearingIsWrongKind = false;
   if (defaults) {
@@ -129,7 +132,12 @@ export async function getActivationReadiness(
     );
     for (const column of ACCOUNT_DEFAULT_COLUMNS) {
       const accountId = defaults[column];
-      if (!accountId && hasDefaultFallback(column)) continue;
+      if (
+        !accountId &&
+        (hasDefaultFallback(column) || isFeatureAccountDefault(column))
+      ) {
+        continue;
+      }
       const account = accountId ? accounts.get(accountId) : undefined;
       if (!account || !account.active) {
         emptyDefaults.push({

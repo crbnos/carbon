@@ -5,9 +5,9 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
-import { useRouteData } from "@carbon/react";
+import { useRouteData, useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { supplierPartFormValidator } from "~/modules/items/items.models";
 import type { MaterialSummary } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
@@ -46,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const purchasingHistory = await client
     .from("purchaseOrderLine")
     .select(
-      "id, purchaseQuantity, supplierUnitPrice, purchaseOrderId, purchaseOrder!inner(purchaseOrderId, supplierId, orderDate, currencyCode)"
+      "id, purchaseQuantity, supplierUnitPrice, purchaseOrderId, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(purchaseOrderId, supplierId, orderDate, currencyCode)"
     )
     .eq("itemId", supplierPart.itemId)
     .eq("purchaseOrder.supplierId", supplierPart.supplierId)
@@ -94,8 +94,7 @@ export default function EditMaterialSupplierRoute() {
     path.to.material(itemId)
   );
 
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.materialPurchasing(itemId));
+  const dialog = useRouteDialog(path.to.materialPurchasing(itemId));
 
   const initialValues = {
     id: supplierPart.id,
@@ -118,7 +117,8 @@ export default function EditMaterialSupplierRoute() {
       unitOfMeasureCode={routeData?.materialSummary?.unitOfMeasureCode ?? ""}
       priceBreaks={priceBreaks}
       purchasingHistory={purchasingHistory}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

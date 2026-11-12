@@ -13,12 +13,15 @@ import {
 import {
   assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
-  hasRevenueComponent,
+  hasSalesRevenueComponent,
+  hasServiceRevenueComponent,
+  isServiceRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
   loadSalesInvoices,
   requirePostedSalesAccountId,
+  requirePostedServiceRevenueAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
 import {
@@ -93,19 +96,24 @@ export function deriveCarbonInvoiceStatus(
 export function buildQboInvoiceLines(args: {
   document: SalesDocumentComponents;
   salesItemRemoteId: string | null;
+  /** The item for the Service Revenue account; a service job's components. */
+  serviceItemRemoteId: string | null;
   shippingItemRemoteId: string | null;
   lineTaxCodeRefs: ReadonlyMap<string, Qbo.Ref>;
 }): Array<Omit<Qbo.InvoiceLine, "Id">> {
   return args.document.components.map((component) => {
     const shipping =
       component.kind === "LineShipping" || component.kind === "HeaderShipping";
-    // Every line references one of TWO synthetic items standing for the posted
-    // revenue ACCOUNT, not the Carbon item — a QBO item's account IS the line's
-    // account (no per-line override), and Carbon posts all merchandise revenue
-    // to one account, so per-item items bought no GL fidelity.
+    // Every line references a synthetic item standing for the posted revenue
+    // ACCOUNT, not the Carbon item — a QBO item's account IS the line's
+    // account (no per-line override). Carbon posts all merchandise revenue to
+    // one account and all service job revenue to one, so per-item items
+    // bought no GL fidelity.
     const itemId = shipping
       ? args.shippingItemRemoteId
-      : args.salesItemRemoteId;
+      : isServiceRevenueComponent(component)
+        ? args.serviceItemRemoteId
+        : args.salesItemRemoteId;
     if (!itemId)
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
@@ -357,8 +365,13 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     // write: a QBO Customer created for an invoice that is then refused is a
     // counterparty in the customer's books that nothing in Carbon asked for.
     assertNoAssetDisposalComponents(document);
-    const salesRevenueAccountId = hasRevenueComponent(document.components)
+    const salesRevenueAccountId = hasSalesRevenueComponent(document.components)
       ? requirePostedSalesAccountId(local)
+      : null;
+    const serviceRevenueAccountId = hasServiceRevenueComponent(
+      document.components
+    )
+      ? requirePostedServiceRevenueAccountId(local)
       : null;
     // Tax, account, component and currency preflight finishes before any
     // dependency writes.
@@ -369,6 +382,13 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     const salesItemRemoteId = salesRevenueAccountId
       ? await (await this.getShippingItemSyncer()).ensureSalesItem({
           revenueAccountId: salesRevenueAccountId
+        })
+      : null;
+    // A second synthetic item when the Service Revenue account differs; the
+    // same item when the posting fell back to the Sales account.
+    const serviceItemRemoteId = serviceRevenueAccountId
+      ? await (await this.getShippingItemSyncer()).ensureSalesItem({
+          revenueAccountId: serviceRevenueAccountId
         })
       : null;
     const shippingItemRemoteId = shippingAccountId
@@ -400,6 +420,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       Line: buildQboInvoiceLines({
         document,
         salesItemRemoteId,
+        serviceItemRemoteId,
         shippingItemRemoteId,
         lineTaxCodeRefs: tax.lineTaxCodeRefs
       })

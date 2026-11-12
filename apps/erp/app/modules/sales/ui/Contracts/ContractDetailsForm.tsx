@@ -93,11 +93,13 @@ const ContractDetailsForm = ({
   // customer and the start month.
   const [isNameTyped, setIsNameTyped] = useState(!!initialValues.name);
   const [startDate, setStartDate] = useState(initialValues.startDate);
+  // Optional in the validator only for a project contract, which has its
+  // own form; a service contract always arrives with both.
   const [duration, setDuration] = useState<ContractDuration>(
-    initialValues.duration
+    initialValues.duration ?? "12"
   );
   const [renewal, setRenewal] = useState<ContractRenewal>(
-    initialValues.renewal
+    initialValues.renewal ?? "End"
   );
   const [contractType, setContractType] = useState<ContractType>(
     initialValues.contractType ?? "New Sales"

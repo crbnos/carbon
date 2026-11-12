@@ -133,6 +133,7 @@ export function BatchOutputLots({
 
       {merge ? (
         <Input
+          aria-label={t`Output lot number`}
           size="sm"
           value={value.outputLotNumber}
           onChange={(e) =>
@@ -153,6 +154,7 @@ export function BatchOutputLots({
                   {c.jobReadableId}
                 </span>
                 <Input
+                  aria-label={t`Lot number for ${c.jobReadableId}`}
                   size="sm"
                   value={value.lotNumbers[c.id] ?? c.lotNumber ?? ""}
                   onChange={(e) =>

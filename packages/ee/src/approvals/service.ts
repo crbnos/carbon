@@ -3,7 +3,11 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  withTransaction
+} from "@carbon/database/client";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import {
@@ -14,7 +18,10 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "../entitlements.server";
 import { companyHasFeature } from "../plan.server";
-import type { approvalDocumentType } from "./models";
+import {
+  adminApprovedDocumentTypes,
+  type approvalDocumentType
+} from "./models";
 import type {
   ApprovalFilters,
   ApprovalRequestForApproveCheck,
@@ -33,6 +40,40 @@ type GenericQueryFilters = {
 };
 
 const logger = getLogger("ee", "approvals");
+
+/** Admin-approved types delete or change records the ERP owns: the ERP decides them. */
+const ADMIN_APPROVED_DECISION_ERROR =
+  "This request is approved or rejected on its document, not here";
+
+/**
+ * Whether the user is an active employee of the company whose employee type
+ * is the company's Admin type (`employeeType.systemType = 'Admin'`). The
+ * approvers of `adminApprovedDocumentTypes`.
+ */
+export async function isCompanyAdmin(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string
+): Promise<boolean> {
+  const adminTypes = await client
+    .from("employeeType")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("systemType", "Admin");
+  if (adminTypes.error || !adminTypes.data?.length) return false;
+  const employee = await client
+    .from("employee")
+    .select("id")
+    .eq("id", userId)
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .in(
+      "employeeTypeId",
+      adminTypes.data.map((type) => type.id)
+    )
+    .maybeSingle();
+  return !employee.error && !!employee.data;
+}
 
 export async function approveRequest(
   db: Kysely<KyselyDatabase>,
@@ -62,6 +103,9 @@ export async function approveRequest(
   // Kysely bypasses RLS: every document write below is also pinned to the
   // request's own company so a foreign id can never be approved into state.
   const { documentType, documentId, companyId } = approvalRequest;
+  if (adminApprovedDocumentTypes.includes(documentType)) {
+    return { error: { message: ADMIN_APPROVED_DECISION_ERROR }, data: null };
+  }
   const now = new Date().toISOString();
 
   // The approver's signature on file now is the one the document prints from
@@ -177,6 +221,30 @@ export async function approveRequest(
         if (!supplierUpdate) {
           throw new Error("Failed to update supplier status");
         }
+      } else if (documentType === "projectChangeRequest") {
+        // Only the status moves here. The ERP route applies the change
+        // request after this returns; project logic stays out of ee.
+        const changeRequestUpdate = await trx
+          .updateTable("projectChangeRequest")
+          .set({
+            status: "Approved",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "In Review")
+          .returning(["id"])
+          .executeTakeFirst();
+
+        if (!changeRequestUpdate) {
+          throw new Error(
+            "Failed to update change request status - it may no longer be 'In Review'"
+          );
+        }
       } else if (documentType === "changeOrder") {
         // Approval is the gate on Engineering Complete -> Implementation, so
         // approving performs that transition (only from the gated stage).
@@ -239,6 +307,9 @@ export async function canApproveRequest(
   approvalRequest: ApprovalRequestForApproveCheck,
   userId: string
 ): Promise<boolean> {
+  if (adminApprovedDocumentTypes.includes(approvalRequest.documentType)) {
+    return isCompanyAdmin(client, approvalRequest.companyId, userId);
+  }
   const rules = await getApprovalRulesForApprover(
     client,
     approvalRequest.documentType,
@@ -297,6 +368,9 @@ export async function canApproveRequestInWindow(
   approvalRequest: ApprovalRequestForApproveCheck,
   userId: string
 ): Promise<boolean> {
+  if (adminApprovedDocumentTypes.includes(approvalRequest.documentType)) {
+    return isCompanyAdmin(client, approvalRequest.companyId, userId);
+  }
   const rule = await getApprovalRuleByAmount(
     client,
     approvalRequest.documentType,
@@ -796,6 +870,9 @@ export async function getDocumentApproval(
     .eq("documentId", documentId)
     .eq("companyId", companyId)
     .neq("status", "Cancelled")
+    // A rejected edit (it kept the version it changed) leaves the document on
+    // the approval before it, so it does not replace that approval.
+    .or("status.neq.Rejected,hasPriorVersion.eq.false")
     .order("requestedAt", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -870,6 +947,13 @@ export async function getPendingApprovalsForApprover(
     feature: "APPROVAL_RULES"
   });
   const canApprovePromises = pendingWithReadableFields.map(async (approval) => {
+    // An Admin-approved request needs an Admin other than the one who asked.
+    if (
+      adminApprovedDocumentTypes.includes(approval.documentType) &&
+      approval.requestedBy === userId
+    ) {
+      return null;
+    }
     const approvalCheck = {
       amount: approval.amount,
       documentType: approval.documentType,
@@ -968,6 +1052,11 @@ export async function isApprovalRequired(
   return config.data.enabled;
 }
 
+/**
+ * Rejects a pending request and sets its document's rejected status. Joins
+ * the transaction `db` already is, so a caller can undo what the request was
+ * for in the same commit.
+ */
 export async function rejectRequest(
   db: Kysely<KyselyDatabase>,
   id: string,
@@ -994,10 +1083,13 @@ export async function rejectRequest(
 
   // Pinned to the request's own company — see approveRequest.
   const { documentType, documentId, companyId } = approvalRequest;
+  if (adminApprovedDocumentTypes.includes(documentType)) {
+    return { error: { message: ADMIN_APPROVED_DECISION_ERROR }, data: null };
+  }
   const now = new Date().toISOString();
 
   try {
-    const result = await db.transaction().execute(async (trx) => {
+    const result = await withTransaction(db, async (trx) => {
       // 1. Update approval request to "Rejected"
       const updatedApproval = await trx
         .updateTable("approvalRequest")
@@ -1052,6 +1144,30 @@ export async function rejectRequest(
 
         if (!supplierUpdate) {
           throw new Error("Failed to update supplier status");
+        }
+      }
+
+      if (documentType === "projectChangeRequest") {
+        const changeRequestUpdate = await trx
+          .updateTable("projectChangeRequest")
+          .set({
+            status: "Rejected",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "In Review")
+          .returning(["id"])
+          .executeTakeFirst();
+
+        if (!changeRequestUpdate) {
+          throw new Error(
+            "Failed to update change request status - it may no longer be 'In Review'"
+          );
         }
       }
 

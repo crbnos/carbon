@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import {
   ensureFont,
   getQuoteDisplayId,
@@ -12,12 +12,14 @@ import {
 } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
-  resolveTemplate,
+  type DocumentEdit,
   templateShowsThumbnails,
-  toDocumentTemplate
+  type ValueCollector
 } from "@carbon/documents/template";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -30,7 +32,6 @@ import {
   getAccountsReceivableBillingAddress,
   getCompany,
   getCompanySettings,
-  getDocumentTemplate,
   resolveSections
 } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
@@ -65,12 +66,15 @@ type PdfArgs = {
   companyGroupId: string;
   /** The reader's locale, for numbers and dates. */
   locale: string;
+  /** Draft edits to preview; omitted, the saved ones are read. */
+  edit?: DocumentEdit | null;
+  valueCollector?: ValueCollector;
 };
 
 /** The quote as a PDF response. */
 export async function renderQuotePdf(
   client: SupabaseClient<Database>,
-  { id, companyId, companyGroupId, locale }: PdfArgs
+  { id, companyId, companyGroupId, locale, edit, valueCollector }: PdfArgs
 ): Promise<Response> {
   const [
     company,
@@ -85,7 +89,8 @@ export async function renderQuotePdf(
     paymentTerms,
     terms,
     shippingMethods,
-    documentTemplate
+    templateConfig,
+    timeZone
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
@@ -99,7 +104,12 @@ export async function renderQuotePdf(
     getPaymentTermsList(client, companyId),
     getSalesTerms(client, companyId),
     getShippingMethodsList(client, companyId),
-    getDocumentTemplate(client, companyId, "quote")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "quote", documentId: id },
+      edit
+    ),
+    getCompanyTimeZone(client, companyId)
   ]);
 
   if (company.error) {
@@ -132,7 +142,6 @@ export async function renderQuotePdf(
     throw new Error("Failed to load quote");
   }
 
-  const templateConfig = toDocumentTemplate(documentTemplate.data, "quote");
   const showThumbnails = templateShowsThumbnails(templateConfig, "quote");
 
   let thumbnails: Record<string, string | null> = {};
@@ -184,16 +193,17 @@ export async function renderQuotePdf(
     currencyDecimals = currency.data?.decimalPlaces ?? null;
   }
 
-  const resolved = resolveTemplate("quote", templateConfig);
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   const stream = await renderToStream(
     <QuotePDF
+      valueCollector={valueCollector}
+      printDate={datetime.today(timeZone).toString()}
       company={company.data as any}
       companySettings={companySettings.data}
       locale={locale}
@@ -240,7 +250,7 @@ export async function renderQuotePdf(
 /** The sales order as a PDF response. */
 export async function renderSalesOrderPdf(
   client: SupabaseClient<Database>,
-  { id, companyId, companyGroupId, locale }: PdfArgs
+  { id, companyId, companyGroupId, locale, edit, valueCollector }: PdfArgs
 ): Promise<Response> {
   const [
     company,
@@ -252,7 +262,7 @@ export async function renderSalesOrderPdf(
     terms,
     paymentTerms,
     shippingMethods,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
@@ -263,7 +273,11 @@ export async function renderSalesOrderPdf(
     getSalesTerms(client, companyId),
     getPaymentTermsList(client, companyId),
     getShippingMethodsList(client, companyId),
-    getDocumentTemplate(client, companyId, "salesOrder")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "salesOrder", documentId: id },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -304,10 +318,6 @@ export async function renderSalesOrderPdf(
     throw new Error("Failed to load sales order");
   }
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "salesOrder"
-  );
   const showThumbnails = templateShowsThumbnails(templateConfig, "salesOrder");
 
   let thumbnails: Record<string, string | null> = {};
@@ -344,13 +354,12 @@ export async function renderSalesOrderPdf(
       }, {}) ?? {};
   }
 
-  const resolved = resolveTemplate("salesOrder", templateConfig);
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
@@ -365,6 +374,7 @@ export async function renderSalesOrderPdf(
 
   const stream = await renderToStream(
     <SalesOrderPDF
+      valueCollector={valueCollector}
       company={company.data as any}
       companySettings={companySettings.data}
       locale={locale}
@@ -385,7 +395,6 @@ export async function renderSalesOrderPdf(
       terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
       paymentTerms={paymentTerms.data ?? []}
       shippingMethods={shippingMethods.data ?? []}
-      title="Sales Order"
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}
@@ -413,7 +422,7 @@ export async function renderSalesOrderPdf(
 /** The sales return order (RMA) as a PDF response. */
 export async function renderSalesReturnOrderPdf(
   client: SupabaseClient<Database>,
-  { id, companyId, companyGroupId, locale }: PdfArgs
+  { id, companyId, companyGroupId, locale, edit, valueCollector }: PdfArgs
 ): Promise<Response> {
   const [
     company,
@@ -421,14 +430,18 @@ export async function renderSalesReturnOrderPdf(
     salesReturnOrder,
     salesReturnOrderLines,
     terms,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
     getSalesReturnOrder(client, id),
     getSalesReturnOrderLines(client, id, companyId),
     getSalesTerms(client, companyId),
-    getDocumentTemplate(client, companyId, "salesReturnOrder")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "salesReturnOrder", documentId: id },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -529,17 +542,12 @@ export async function renderSalesReturnOrderPdf(
       }
     : null;
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "salesReturnOrder"
-  );
-  const resolved = resolveTemplate("salesReturnOrder", templateConfig);
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
@@ -547,6 +555,7 @@ export async function renderSalesReturnOrderPdf(
 
   const stream = await renderToStream(
     <SalesReturnOrderPDF
+      valueCollector={valueCollector}
       company={company.data as any}
       companySettings={companySettings.data}
       locale={locale}
@@ -561,7 +570,6 @@ export async function renderSalesReturnOrderPdf(
       returnToAddress={returnToAddress}
       customerAddress={customerAddress}
       terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
-      title="Return Merchandise Authorization"
       template={templateConfig}
       sections={sections}
     />

@@ -4,7 +4,7 @@
 #   ./scripts/backup.sh                # -> ./backups/carbon-<timestamp>/
 #   BACKUP_DIR=/mnt/backups ./scripts/backup.sh
 #
-# Restore (DB):  gunzip -c db.sql.gz | docker exec -i <pg> psql -U postgres postgres
+# Restore (DB):  gunzip -c db.sql.gz | docker exec -i <pg> psql -U supabase_admin postgres
 # Restore (storage): untar into the `<stack>_storage` volume with a helper container.
 #
 # Run from cron for regular backups, and ship ./backups offsite (S3/Spaces/rclone)
@@ -23,7 +23,8 @@ mkdir -p "$BACKUP_DIR"
 log() { printf '\033[0;36m[backup]\033[0m %s\n' "$*"; }
 
 # ── Postgres logical dump (password read from the in-container secret) ────────
-PG_CID="$(docker ps -q -f "name=${STACK_NAME}_postgres" | head -1)"
+# Exact service label: a name filter for ${STACK_NAME}_postgres also matches ${STACK_NAME}_postgrest.
+PG_CID="$(docker ps -q -f "label=com.docker.swarm.service.name=${STACK_NAME}_postgres" | head -1)"
 [ -n "$PG_CID" ] || { echo "postgres task not running"; exit 1; }
 
 log "Dumping database -> db.sql.gz"

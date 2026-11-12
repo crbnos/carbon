@@ -101,6 +101,13 @@ Manufacturing teams often run planning, production, quality and accounting in se
 
 Carbon puts ERP, MRP, MES and QMS in **one Postgres database you can inspect, own and extend**. Engineering, planning, production, quality and accounting update the same data, without synchronization jobs between separate product databases.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/where-carbon-fits-dark.webp" />
+    <img alt="Where Carbon fits: your sales tools (CRM and quoting, online store, customer portal) send orders in, and your factory (machines and robots, sensors and testing, your own software) gets work out, both through the Carbon API. In the middle, Carbon plans, runs and tracks the work: orders, planning, scheduling, shop floor, quality and inventory, all on one shared Postgres database. Analytics sees across all three." src=".github/assets/readme/where-carbon-fits-light.webp" width="900" />
+  </picture>
+</p>
+
 Carbon is an open-source alternative to [NetSuite](https://carbon.ms/compare/netsuite), [Epicor](https://carbon.ms/compare/epicor), [SAP Business One](https://carbon.ms/compare/sap-business-one), [Plex](https://carbon.ms/compare/plex), [Odoo](https://carbon.ms/compare/odoo) and [ERPNext](https://carbon.ms/compare/erpnext). It supports complex assembly, contract manufacturing, configure-to-order and high-mix, low-volume production. See [all comparisons](https://carbon.ms/compare).
 
 <br />
@@ -173,16 +180,20 @@ API keys and MCP are included with Business and Enterprise plans. Using them in 
 ERP and MES are React Router apps over a single Postgres database. Permissions (row-level security), computed totals and change events live in the database itself; background work runs through Inngest, which calls back into the ERP to execute jobs. The [architecture guide](https://docs.carbon.ms/docs/building/architecture) follows one click all the way down.
 
 <a href="https://docs.carbon.ms/docs/building/architecture">
-  <img alt="How Carbon fits together: shop floor, office and customers reach the MES and ERP, which read and write Postgres; subscribed writes queue Inngest jobs that run back in the ERP" src=".github/assets/readme/architecture.png" width="720" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/architecture-dark.webp" />
+    <img alt="How Carbon works: 1, shop floor staff, office staff, customers and suppliers, and your code and AI use Carbon; 2, inside Carbon, the MES for the shop floor and the ERP for the office, the API and MCP, both save to one shared database that decides who can see what and keeps totals correct, and screens update live; 3, after each save, background jobs send email and Slack, sync accounting, call webhooks, run workflows and sync Linear and Jira, plus search and the audit log." src=".github/assets/readme/architecture-light.webp" width="900" />
+  </picture>
 </a>
 
 ## Building E2E Systems
 
 Carbon is intended to be the core of a bespoke end-to-end manufacturing system. We provide an `apps/starter` and allow you to build a custom sales and shop-floor engine with Carbon at the center.
 
-![Carbon Functionality](https://github.com/user-attachments/assets/d73b3297-afb4-4bd4-a381-61b31a78aa38)
-
-![Carbon Architecture](https://github.com/user-attachments/assets/e5532a5f-609c-4404-8706-aa9bd59e180b)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/build-on-carbon-dark.webp" />
+  <img alt="Build on Carbon: 1, you connect your own app and scripts through the API, AI agents through MCP and reports through the Data API; 2, Carbon gives every way in the same permissions as the person or API key and the same actions the Carbon app uses, on one shared database; 3, Carbon tells others through webhooks, workflows and integrations such as Onshape, SolidWorks, Slack, Xero and Jira." src=".github/assets/readme/build-on-carbon-light.webp" width="900" />
+</picture>
 
 <br />
 
@@ -265,7 +276,7 @@ carbon
 
 ## Local Development
 
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/), [Node.js](https://nodejs.org) 22 and [pnpm](https://pnpm.io) (via Corepack). On Windows, use WSL or Git Bash.
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/), [Node.js](https://nodejs.org) 24.22.1+ and [pnpm](https://pnpm.io) (via Corepack). On Windows, use WSL or Git Bash.
 
 ```bash
 git clone https://github.com/crbnos/carbon.git && cd carbon

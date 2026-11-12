@@ -263,35 +263,31 @@ const InventoryCountDetails = ({
         />
       </div>
 
-      {importModal.isOpen && (
-        <InventoryCountImport
-          inventoryCountId={inventoryCount.id!}
-          onClose={importModal.onClose}
-        />
-      )}
-      {confirmModal.isOpen && (
-        <InventoryCountConfirmModal
-          inventoryCountId={inventoryCount.id!}
-          summary={summary}
-          isLoading={revalidator.state !== "idle"}
-          onClose={confirmModal.onClose}
-        />
-      )}
+      <InventoryCountImport
+        open={importModal.isOpen}
+        inventoryCountId={inventoryCount.id!}
+        onClose={importModal.onClose}
+      />
+      <InventoryCountConfirmModal
+        open={confirmModal.isOpen}
+        inventoryCountId={inventoryCount.id!}
+        summary={summary}
+        isLoading={revalidator.state !== "idle"}
+        onClose={confirmModal.onClose}
+      />
 
-      {postModal.isOpen && (
-        <InventoryCountPostModal
-          inventoryCountId={inventoryCount.id!}
-          fetcher={postFetcher}
-          onClose={postModal.onClose}
-        />
-      )}
+      <InventoryCountPostModal
+        open={postModal.isOpen}
+        inventoryCountId={inventoryCount.id!}
+        fetcher={postFetcher}
+        onClose={postModal.onClose}
+      />
 
-      {historyModal.isOpen && (
-        <InventoryCountHistory
-          movements={movements}
-          onClose={historyModal.onClose}
-        />
-      )}
+      <InventoryCountHistory
+        open={historyModal.isOpen}
+        movements={movements}
+        onClose={historyModal.onClose}
+      />
 
       <Modal
         open={notesModal.isOpen}

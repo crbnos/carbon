@@ -2,10 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isChangeNoticeLocked } from "@carbon/database/change-notice";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { nonConformancePriority } from "../quality/quality.models";
+import type { DiffEntry, DiffStatus } from "../shared/diff";
 import {
   methodItemType,
   methodOperationOrders,
@@ -484,6 +486,8 @@ export const methodMaterialValidator = z.object({
   }),
   itemId: z.string().optional(),
   methodOperationId: zfd.text(z.string().optional()),
+  // Set on create only: a material belongs to a correction for life.
+  methodCorrectionId: zfd.text(z.string().nullish()),
   // description: z.string().min(1, { message: "Description is required" }),
   quantity: zfd.numeric(z.number().min(0)),
   unitOfMeasureCode: z
@@ -552,7 +556,9 @@ export const methodOperationValidator = z
     operationSupplierProcessId: zfd.text(z.string().optional()),
     operationMinimumCost: zfd.numeric(z.number().min(0).optional()),
     operationUnitCost: zfd.numeric(z.number().min(0).optional()),
-    operationLeadTime: zfd.numeric(z.number().min(0).optional())
+    operationLeadTime: zfd.numeric(z.number().min(0).optional()),
+    // Set on create only: an operation belongs to a correction for life.
+    methodCorrectionId: zfd.text(z.string().nullish())
   })
   .refine(
     (data) => {
@@ -641,6 +647,57 @@ export const methodOperationValidator = z
     }
   );
 
+export const correctionReturnTo = ["Re-inspect", "Continue"] as const;
+export const correctionMeasurementConditions = [
+  "Below Minimum",
+  "Above Maximum"
+] as const;
+
+/**
+ * The `listValue` that maps a failed Inspection step. An Inspection records
+ * pass or fail, not a list value; MES matches this when the operator records
+ * a fail (`inspectionFailedResult` in `apps/mes/app/services/models.ts`).
+ */
+export const inspectionFailedResult = "Failed";
+
+/** A correction: a rework-only routing on a make method. */
+export const methodCorrectionValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  makeMethodId: z.string().min(1, { message: "Make method is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  description: zfd.text(z.string().optional()),
+  returnTo: z.enum(correctionReturnTo, {
+    error: "Return rule is required"
+  }),
+  maxAttempts: zfd.numeric(
+    z
+      .number()
+      .int({ message: "Attempts must be a whole number" })
+      .positive({ message: "Attempts must be at least 1" })
+      .optional()
+  ),
+  order: zfd.numeric(z.number().min(0).optional())
+});
+
+/**
+ * Maps one step result to a correction, or clears the mapping when
+ * `methodCorrectionId` is empty. Exactly one of `listValue` (List / Inspection
+ * steps) and `measurementCondition` (Measurement steps) names the result.
+ */
+export const methodCorrectionTriggerValidator = z
+  .object({
+    methodOperationStepId: z.string().min(1, { message: "Step is required" }),
+    methodCorrectionId: zfd.text(z.string().optional()),
+    listValue: zfd.text(z.string().optional()),
+    measurementCondition: zfd.text(
+      z.enum(correctionMeasurementConditions).optional()
+    )
+  })
+  .refine((data) => !data.listValue !== !data.measurementCondition, {
+    message: "Choose a list value or a measurement condition",
+    path: ["listValue"]
+  });
+
 export const itemCostValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   itemPostingGroupId: zfd.text(z.string().optional()),
@@ -689,7 +746,10 @@ export const itemPlanningValidator = z
     planningHorizonDays: zfd.numeric(z.number().int().min(0).optional()),
     // the ownership ladder's leaf override (spec §P1.3): this item at this
     // location; empty = inherit item group → location → company default
-    responsibleEmployee: zfd.text(z.string().optional())
+    responsibleEmployee: zfd.text(z.string().optional()),
+    // Projects Phase 2b: whether a project segment may draw this item's
+    // common true surplus at this location (MRP emits a Transfer action).
+    allowCommonSupplyForProjects: zfd.checkbox()
     // critical: zfd.checkbox(),
   })
   .refine(
@@ -849,9 +909,21 @@ export const itemPurchasingValidator = z.object({
   // purchasingBlocked: zfd.checkbox(),
 });
 
+const warrantyMonths = zfd.numeric(
+  z
+    .number()
+    .int({ message: "Enter whole months" })
+    .min(0, { message: "Enter 0 or more months" })
+    .optional()
+);
+
 export const itemUnitSalePriceValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
-  unitSalePrice: zfd.numeric(z.number().min(0))
+  unitSalePrice: zfd.numeric(z.number().min(0)),
+  /** Months of labor warranty a shipped serial gets; sets its asset's end date. */
+  laborWarrantyMonths: warrantyMonths,
+  /** Months of parts warranty a shipped serial gets. */
+  partsWarrantyMonths: warrantyMonths
   // currencyCode: z.string().min(1, { message: "Currency is required" }),
   // salesUnitOfMeasureCode: z
   //   .string()
@@ -1084,10 +1156,29 @@ export const toolFields = itemValidator.merge(
 
 export const toolValidator = applyStorageAndShelfLifeRefines(toolFields);
 
+/**
+ * The message for a unit of measure whose name or code another unit has. The
+ * units of the other measurement system exist inactive, so a user who types
+ * Inch in a metric company finds it this way.
+ */
+export const UNIT_OF_MEASURE_TAKEN =
+  "Another unit of measure has this name or code. If it is turned off, turn it on in the list instead.";
+
 export const unitOfMeasureValidator = z.object({
   id: zfd.text(z.string().optional()),
   code: z.string().trim().min(1, { message: "Code is required" }).max(10),
-  name: z.string().trim().min(1, { message: "Name is required" }).max(50)
+  name: z.string().trim().min(1, { message: "Name is required" }).max(50),
+  active: zfd.checkbox()
+});
+
+/** Activate or Deactivate on the Units of Measure list: the selected units. */
+export const unitsOfMeasureActiveValidator = z.object({
+  ids: zfd.repeatable(
+    z.array(z.string().min(1)).min(1, { message: "Select at least one unit" })
+  ),
+  active: zfd
+    .text(z.enum(["true", "false"]))
+    .transform((value) => value === "true")
 });
 
 export const itemRevisionStatus = [
@@ -1231,13 +1322,8 @@ export function isChangeNoticeOpen(status: string | null | undefined): boolean {
   return changeNoticeOpenStatuses.some((s) => s === status);
 }
 
-// Locked once closed — Done (released, part of the audit trail) or Cancelled
-// (abandoned). Reopen a Cancelled CO to Draft to edit it again.
-export function isChangeNoticeLocked(
-  status: string | null | undefined
-): boolean {
-  return status === "Done" || status === "Cancelled";
-}
+// isChangeNoticeLocked lives in @carbon/database so the issue sync can share it.
+export { isChangeNoticeLocked };
 
 // Engineering content — affected items, BOM/BOP drafts, cutover, reason/description.
 // Frozen from Implementation onward: what is being implemented must not shift underneath.
@@ -1370,15 +1456,11 @@ export const changeNoticeRequiredActionValidator = z.object({
 // Diff types (Q5 git-style) — one shape reused for the pre-release "tips"
 // (staged-vs-live) and the post-release revision redline (oldRev-vs-newRev).
 // -----------------------------------------------------------------------------
-export type MethodDiffStatus = "added" | "removed" | "modified" | "unchanged";
+// The generic engine lives in `../shared/diff`; these names stay for the
+// change-notice callers.
+export type MethodDiffStatus = DiffStatus;
 
-export type MethodDiffEntry<T> = {
-  status: MethodDiffStatus;
-  before: T | null;
-  after: T | null;
-  // Field-level changes for a "modified" entry: { field: { before, after } }.
-  changedFields?: Record<string, { before: unknown; after: unknown }>;
-};
+export type MethodDiffEntry<T> = DiffEntry<T>;
 
 // One operation's child-level diff (steps / parameters / tools), each bucket
 // classified added/removed/modified/unchanged. Defined here (not in

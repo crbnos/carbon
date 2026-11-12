@@ -190,7 +190,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 
 // Lot of 2 at AQL 1.0 / level II → code letter A, n = 2.
 const BARE_BOARD_PLAN = {
-  drawingNumber: "PCB-BARE-4L Fab Dwg Rev B",
+  name: "PCB-BARE-4L Fab Dwg Rev B",
   aql: 1.0,
   features: [
     {
@@ -218,7 +218,7 @@ export const INSPECTIONS: InspectionSpec[] = [
     ref: "insp:gear-set",
     receipt: "receipt:short",
     item: "GBX-HD-80",
-    drawingNumber: "TQ-HD80-100 Rev B",
+    name: "TQ-HD80-100 Rev B",
     aql: 1.0,
     features: [
       {
@@ -340,6 +340,27 @@ export const INSPECTIONS: InspectionSpec[] = [
         ]
       }
     ]
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-hold",
+    status: "Pending",
+    trackedEntities: ["LOT-ENC-2609"],
+    workCenter: "Inspection Bench",
+    assignee: "self",
+    notes:
+      "In-house accuracy check of the held encoder lot while the calibration certificate is chased.",
+    samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-duplicate",
+    status: "Cancelled",
+    trackedEntities: ["LOT-ENC-2609"],
+    workCenter: "Inspection Bench",
+    notes:
+      "Opened twice for the same hold; cancelled in favour of the open inspection.",
+    samples: []
   }
 ];
 
@@ -396,6 +417,7 @@ export const GAUGES: GaugeSpec[] = [
     key: "gauge-blocks",
     gaugeType: "Gauge Block",
     description: "Grade 0 steel gauge block set, 87 pc — metrology lab master",
+    manufacturer: "Mitutoyo",
     modelNumber: "GBS-87-0",
     serialNumber: "RB-21-0381",
     role: "Master",
@@ -424,6 +446,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Dial Indicator",
     description:
       "0.001 mm digital dial indicator — new unit for the gearbox bench lost-motion fixture",
+    manufacturer: "Starrett",
     modelNumber: "DI-12.7D",
     serialNumber: "DI25-30917",
     role: "Standard",
@@ -436,6 +459,7 @@ export const GAUGES: GaugeSpec[] = [
     key: "bore-gauge",
     gaugeType: "Bore Gauge",
     description: "35–60 mm dial bore gauge — retired after failed calibration",
+    manufacturer: "Mahr",
     modelNumber: "BG-60",
     serialNumber: "BG18-11746",
     role: "Standard",

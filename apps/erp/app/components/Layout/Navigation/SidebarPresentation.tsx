@@ -46,19 +46,26 @@ export function SheetNavRow({
   icon,
   label,
   isActive,
-  inset = false
+  count,
+  inset = false,
+  restoreRememberedTable = false
 }: {
   to: string;
   icon?: ReactNode;
   label: ReactNode;
   isActive: boolean;
+  /** Items waiting, shown at the right of the row when above 0. */
+  count?: number;
   inset?: boolean;
+  restoreRememberedTable?: boolean;
 }) {
+  const shownCount = count !== undefined && count > 0 ? count : null;
   const style = useContext(SheetNavStyleContext);
   if (style === "menu") {
     return (
       <PrefetchLink
         to={to}
+        state={restoreRememberedTable ? { restoreRememberedTable: true } : null}
         aria-current={isActive ? "page" : undefined}
         className={cn(dockMenuRowClassName, inset && "pl-12 text-sm")}
       >
@@ -68,12 +75,18 @@ export function SheetNavRow({
           </span>
         ) : null}
         <span className="min-w-0 flex-1 truncate">{label}</span>
+        {shownCount !== null && (
+          <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
+            {shownCount}
+          </span>
+        )}
       </PrefetchLink>
     );
   }
   return (
     <PrefetchLink
       to={to}
+      state={restoreRememberedTable ? { restoreRememberedTable: true } : null}
       aria-current={isActive ? "page" : undefined}
       className={cn(
         sheetRowClassName,
@@ -84,6 +97,7 @@ export function SheetNavRow({
       <SheetRowContent
         icon={icon}
         label={label}
+        detail={shownCount}
         trailing={isActive ? "check" : null}
       />
     </PrefetchLink>

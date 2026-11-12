@@ -9,6 +9,7 @@ import type { RunType } from "@carbon/database/run-type";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   HStack,
@@ -16,10 +17,12 @@ import {
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import { useMemo } from "react";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
-import { DateTime, Hyperlink } from "~/components";
+import { DateTime, Hyperlink, JournalPreview } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { useAccounts } from "~/components/Form/Account";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { revenueScheduleTypes } from "~/modules/accounting/accounting.models";
@@ -39,8 +42,11 @@ import {
   type RunRentalAgreement,
   type RunSalesInvoice
 } from "~/modules/accounting/ui/RevenueRecognition";
+import ProjectRevenueProgress from "~/modules/accounting/ui/RevenueRecognition/ProjectRevenueProgress.ee";
+import { summarizeRunJournal } from "~/modules/accounting/ui/RevenueRecognition/runJournal";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 type RunBreadcrumbData = { run?: { runId: string; type: RunType } | null };
@@ -57,6 +63,12 @@ export const handle: Handle = {
   },
   module: "accounting"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    data?.run?.runId,
+    data?.run?.type === "Lease" ? "Lease Run" : "Revenue Recognition Run"
+  );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -210,6 +222,8 @@ export default function RevenueRecognitionRunDetailRoute() {
     Deferral: t`Deferrals`,
     Accrual: t`Accruals`,
     Interest: t`Interest`,
+    "Cost Relief": t`Cost Relief`,
+    "Loss Provision": t`Loss Provisions`,
     Amortization: t`Amortization`
   };
 
@@ -222,6 +236,25 @@ export default function RevenueRecognitionRunDetailRoute() {
 
   const totalAmount = lines.reduce((sum, line) => sum + Number(line.amount), 0);
   const lineCount = lines.length;
+
+  // What posting a Draft run will write, by account. An account the user
+  // cannot see is shown by its id.
+  const accounts = useAccounts();
+  const showJournal = run.status === "Draft" && lineCount > 0;
+  const journalRows = useMemo(() => {
+    if (!showJournal) return [];
+    const labels = new Map(
+      accounts.map((account) => [
+        account.id,
+        `${account.number} ${account.name}`
+      ])
+    );
+    return summarizeRunJournal(lines).map((row) => ({
+      account: labels.get(row.accountId) ?? row.accountId,
+      debit: row.debit,
+      credit: row.credit
+    }));
+  }, [showJournal, lines, accounts]);
 
   return (
     <DocumentPage
@@ -261,6 +294,28 @@ export default function RevenueRecognitionRunDetailRoute() {
           </dd>
         </div>
       </dl>
+
+      {showJournal && journalRows.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Journal</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>What posting this run will write, by account.</Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <JournalPreview
+              rows={journalRows}
+              currencyCode={company.baseCurrencyCode}
+              total
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      <ProjectRevenueProgress lines={lines} />
 
       {sections.length === 0 ? (
         <Card>
@@ -317,9 +372,15 @@ export default function RevenueRecognitionRunDetailRoute() {
                           line.schedule?.salesInvoiceLineId ??
                           line.schedule?.rentalAgreementLineId ??
                           line.schedule?.leaseId;
+                        const contract = line.schedule?.contractLine?.contract;
                         const source = sourceLineId
                           ? sources[sourceLineId]
-                          : undefined;
+                          : contract
+                            ? {
+                                label: contract.customerContractId,
+                                to: path.to.contractDetails(contract.id)
+                              }
+                            : undefined;
                         return (
                           <div
                             key={line.id}

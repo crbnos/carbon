@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { round } from "@carbon/utils";
+import { parseAbsolute } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
@@ -112,6 +114,12 @@ export const convertEntityValidator = z.object({
   newRevision: z.string(),
   quantity: z.coerce.number().positive().default(1)
 });
+
+/**
+ * The trigger `listValue` that maps a failed Inspection step; the ERP writes it
+ * (`inspectionFailedResult` in the items module's models).
+ */
+export const inspectionFailedResult = "Failed";
 
 export const stepRecordValidator = z.object({
   index: zfd.numeric(z.number()),
@@ -244,6 +252,11 @@ export const baseQuantityValidator = finishValidator.extend({
 
 export const nonScrapQuantityValidator = baseQuantityValidator;
 
+// The completed quantity the page showed; the route skips a stale completion.
+export const completeQuantityValidator = nonScrapQuantityValidator.extend({
+  expectedQuantityComplete: zfd.numeric(z.number().min(0).optional())
+});
+
 export const scrapQuantityValidator = baseQuantityValidator.extend({
   scrapReasonId: zfd.text(z.string()),
   notes: zfd.text(z.string().optional())
@@ -312,6 +325,18 @@ export const triggerReworkValidator = z.object({
   inspectionId: zfd.text(z.string().optional())
 });
 
+/** A disposition rework target naming a correction instead of an operation. */
+export const CORRECTION_TARGET_PREFIX = "correction:";
+
+export const triggerCorrectionValidator = z.object({
+  jobId: z.string().min(1),
+  triggeredAtJobOperationId: z.string().min(1),
+  jobCorrectionId: z.string().min(1, { message: "Choose a correction" }),
+  reason: z.string().min(1),
+  quantity: zfd.numeric(z.number().positive().default(1)),
+  trackedEntityId: zfd.text(z.string().optional())
+});
+
 export const maintenanceDispatchValidator = z.object({
   workCenterId: z.string().min(1, { message: "Work Center is required" }),
   priority: z.enum(maintenanceDispatchPriority, {
@@ -328,6 +353,47 @@ export const maintenanceDispatchValidator = z.object({
   content: zfd.text(z.string().optional()),
   actualStartTime: zfd.text(z.string().optional()),
   actualEndTime: zfd.text(z.string().optional())
+});
+
+export const serviceWorkSites = [
+  "Depot",
+  "Customer Site"
+] as const satisfies readonly Database["public"]["Enums"]["serviceWorkSite"][];
+
+export const serviceCoverages = [
+  "Billable",
+  "Warranty",
+  "Contract"
+] as const satisfies readonly Database["public"]["Enums"]["serviceCoverage"][];
+
+/**
+ * A job a technician opens on the floor or on site: the unit (a customer
+ * asset) or only its customer, the problem, where the work happens, and who
+ * pays. It opens In Progress with the technician's clock running.
+ */
+export const serviceJobNewValidator = z.object({
+  customerAssetId: zfd.text(z.string().optional()),
+  customerId: z.string().min(1, { message: "Customer is required" }),
+  problem: z.string().trim().min(1, { message: "Problem is required" }),
+  workSite: z.enum(serviceWorkSites, { error: "Work site is required" }),
+  coverage: z.enum(serviceCoverages, { error: "Coverage is required" })
+});
+
+/**
+ * My Time: a service job's total hours for one day. The job takes the
+ * difference from the day's clock time as its manual entry.
+ */
+export const serviceDayHoursValidator = z.object({
+  serviceJobId: z.string().min(1, { message: "Job is required" }),
+  entryDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date is required" }),
+  hours: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Hours cannot be negative" })
+      .max(24, { message: "A day has 24 hours" })
+  )
 });
 
 export const qualityIssuePriority = [
@@ -384,6 +450,17 @@ export const inspectionSampleValidator = z.object({
     error: "Status is required"
   }),
   notes: zfd.text(z.string().optional())
+});
+
+// A receipt or manual lot's verdict: no production outcome rides on it, so it
+// is only Accept or Reject, with the reason a Reject needs when nothing failed.
+export const inspectionVerdictValidator = z.object({
+  decision: z.enum(["Accept", "Reject"], {
+    error: "Decision is required"
+  }),
+  reason: zfd.text(z.string().optional()),
+  // A reject opens an NCR unless the inspector turns it off, as in the ERP.
+  createNcr: zfd.checkbox()
 });
 
 // One decision surface for closing an inspection lot: the verdict carries its
@@ -484,7 +561,67 @@ export const inspectionGaugeValidator = z.object({
 });
 
 // The "Forgot to Clock Out?" prompt: the clock-out is the time being set.
-export const setClockOutValidator = z.object({
-  intent: z.literal("clockOut"),
-  clockOut: z.string().min(1, { message: "Clock out is required" })
+/** "Forgot to clock out?": the time must be after the open entry's clock in. */
+export const setClockOutValidator = z
+  .object({
+    intent: z.literal("clockOut"),
+    clockIn: zfd.text(z.string().optional()),
+    clockOut: z.string().min(1, { message: "Clock out is required" })
+  })
+  .superRefine((data, ctx) => {
+    if (data.clockIn && !isAfterInstant(data.clockOut, data.clockIn)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["clockOut"],
+        message: "Clock out must be after you clocked in"
+      });
+    }
+  });
+
+/** True when instant `a` is after instant `b` (both ISO timestamps). */
+function isAfterInstant(a: string, b: string) {
+  try {
+    return parseAbsolute(a, "UTC").compare(parseAbsolute(b, "UTC")) > 0;
+  } catch {
+    return true;
+  }
+}
+
+type RdActivityRole = Database["public"]["Enums"]["rdActivityRole"];
+
+/** One cell of the MES timesheet. Zero hours deletes the Draft entry. */
+export const timesheetCellValidator = z.object({
+  entryDate: z.string().min(1, { message: "Date is required" }),
+  projectId: z.string().min(1, { message: "Project is required" }),
+  projectElementId: zfd.text(z.string().optional()),
+  laborCategoryId: z.string().min(1, { message: "Labor category is required" }),
+  hours: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Hours cannot be negative" })
+      .max(24, { message: "A day has 24 hours" })
+  ),
+  // DCAA mode: the reason for a late entry, and for a change to a saved one,
+  // as in the ERP's cell validator.
+  lateReason: zfd.text(z.string().trim().optional()),
+  reason: zfd.text(z.string().trim().optional()),
+  // R&D tax: the row's work location and research role, part of the cell's
+  // key. A field that is not sent takes its default in save-timesheet-entry;
+  // an empty one is none.
+  workLocationId: z.string().optional(),
+  rdActivityRole: z
+    .union([
+      z.enum([
+        "Direct Research",
+        "Direct Supervision",
+        "Direct Support",
+        "Not Qualified"
+      ] satisfies [RdActivityRole, ...RdActivityRole[]]),
+      z.literal("")
+    ])
+    .optional(),
+  // Shop time (DCAA): the row's job and job operation, part of the cell's
+  // key. An empty one is none; a field that is not sent matches any.
+  jobId: z.string().optional(),
+  jobOperationId: z.string().optional()
 });

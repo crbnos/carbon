@@ -186,10 +186,13 @@ const cellClassName =
  */
 export function RecordPhoneChrome({
   menu,
-  copyValue
+  copyValue,
+  menuLabel
 }: {
   menu?: ReactNode;
   copyValue?: string;
+  /** The ⋯ trigger's name ("Actions for SO-000123"); RecordHeader passes it. */
+  menuLabel?: string;
 }) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
@@ -216,7 +219,7 @@ export function RecordPhoneChrome({
             <DropdownMenuTrigger asChild>
               <IconButton
                 className="order-last"
-                aria-label={t`More options`}
+                aria-label={menuLabel ?? t`More options`}
                 icon={<LuEllipsis />}
                 variant="ghost"
                 size="lg"
@@ -268,6 +271,9 @@ type RecordHeaderProps = {
   copyValue?: string;
   /** The ⋯ menu items: desktop beside the title, phones in the app bar. */
   menu?: ReactNode;
+  /** The ⋯ trigger's name. Defaults to "Actions for {copyValue}" (or the
+   *  title, when it is text), so it differs from other menus on the page. */
+  menuLabel?: string;
   /** Status badges: desktop after the ⋯, phones in the hero. */
   status?: ReactNode;
   /** Phones: a line under the hero title. */
@@ -278,6 +284,12 @@ type RecordHeaderProps = {
   aside?: ReactNode;
   /** The record's actions, each in a RecordAction. */
   actions?: ReactNode;
+  /**
+   * Desktop: where the copy button and the ⋯ menu sit. `title` (the
+   * default) puts both beside the title; `end` puts the copy button after
+   * the status and the ⋯ menu at the right end, after the actions.
+   */
+  toolsPlacement?: "title" | "end";
 };
 
 /**
@@ -291,22 +303,52 @@ export function RecordHeader({
   titleTo,
   copyValue,
   menu,
+  menuLabel,
   status,
   subtitle,
   onToggleExplorer,
   onToggleProperties,
   aside,
-  actions
+  actions,
+  toolsPlacement = "title"
 }: RecordHeaderProps) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
+  const recordName =
+    copyValue || (typeof title === "string" ? title.trim() : "");
+  const resolvedMenuLabel =
+    menuLabel ?? (recordName ? t`Actions for ${recordName}` : t`More options`);
   // An editable title is a control (a name input), not a heading.
   const heading = titleInHero ? (
     title
   ) : (
-    <Heading size="h4" className="flex items-center gap-2">
+    // The page's one h1: the phone hero takes over while this row is hidden.
+    <Heading as="h1" size="h4" className="flex items-center gap-2">
       {title}
     </Heading>
+  );
+
+  const copy = copyValue ? <Copy text={copyValue} /> : null;
+  const menuButton = (
+    <>
+      {menu ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label={resolvedMenuLabel}
+              icon={<LuEllipsisVertical />}
+              variant="secondary"
+              size="sm"
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align={toolsPlacement === "end" ? "end" : undefined}
+          >
+            {menu}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+    </>
   );
 
   return (
@@ -316,7 +358,11 @@ export function RecordHeader({
         subtitle={subtitle}
         status={status}
       />
-      <RecordPhoneChrome menu={menu} copyValue={copyValue} />
+      <RecordPhoneChrome
+        menu={menu}
+        copyValue={copyValue}
+        menuLabel={resolvedMenuLabel}
+      />
       <div
         className={cn(
           "flex flex-shrink-0 items-center justify-between gap-x-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide max-md:hidden",
@@ -338,25 +384,19 @@ export function RecordHeader({
           ) : (
             heading
           )}
-          {copyValue ? <Copy text={copyValue} /> : null}
-          {menu ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>{menu}</DropdownMenuContent>
-            </DropdownMenu>
+          {toolsPlacement === "title" ? (
+            <>
+              {copy}
+              {menuButton}
+            </>
           ) : null}
           {status}
+          {toolsPlacement === "end" ? copy : null}
         </HStack>
         <HStack>
           {aside}
           {actions}
+          {toolsPlacement === "end" ? menuButton : null}
           {onToggleProperties ? (
             <IconButton
               aria-label={t`Toggle Properties`}

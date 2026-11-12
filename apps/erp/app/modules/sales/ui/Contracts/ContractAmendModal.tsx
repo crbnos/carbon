@@ -40,6 +40,7 @@ import {
   LuCircleAlert,
   LuCircleStop,
   LuPlus,
+  LuReceipt,
   LuTrash,
   LuTriangleAlert,
   LuUndo2
@@ -54,6 +55,7 @@ import {
   EditableText
 } from "~/components/Editable";
 import {
+  BillingElement,
   DatePicker,
   Hidden,
   Select,
@@ -66,21 +68,37 @@ import {
   useCompanyToday,
   useCurrencyDecimals,
   useDateFormatter,
+  useDrawerItem,
   usePercentFormatter,
   usePermissions,
   useQuantityFormatter
 } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import type { ContractAmendmentPreview } from "~/modules/sales/sales.service";
-import { useServices } from "~/stores";
+import { type Item, useItems } from "~/stores";
 import {
   type contractAmendmentChangeValidator,
   contractAmendmentEffects,
+  contractBillingMethods,
+  contractBillingMethodsFor,
+  contractLineBillingFormValues,
+  contractLineBillingTermsValidator,
   contractRateUnits,
+  contractRevenueMethods,
+  contractRevenueMethodsFor,
   contractRevenueTypes,
   customerContractAmendmentValidator,
-  customerContractTypes
+  customerContractTypes,
+  isProjectBillingMethod,
+  newContractLineBillingValues
 } from "../../sales.models";
+import {
+  ContractLineBillingFields,
+  ProjectRevenueUpgrade,
+  useBillingMethodLabels
+} from "./ContractLineBillingFields";
 import ContractMoney from "./ContractMoney";
+import ContractProject from "./ContractProject";
 import type {
   Contract,
   ContractLine,
@@ -93,6 +111,7 @@ type Effect = (typeof contractAmendmentEffects)[number];
 type RateUnit = (typeof contractRateUnits)[number];
 type RevenueType = (typeof contractRevenueTypes)[number];
 type AmendmentChange = z.infer<typeof contractAmendmentChangeValidator>;
+type BillingTerms = z.infer<typeof contractLineBillingTermsValidator>;
 
 /** A line as the amendment grid edits it: an open line of the contract, or
  *  one the amendment adds (`isNew`). Percentages in percent points, as the
@@ -103,6 +122,8 @@ type AmendRow = {
   itemId: string;
   name: string;
   readableId: string | null;
+  /** A Part: a project contract's deliverable (a prototype CLIN). */
+  isPart: boolean;
   description: string;
   revenueType: RevenueType;
   quantity: number;
@@ -111,6 +132,9 @@ type AmendRow = {
   discountPercent: number;
   taxPercent: number;
   end: boolean;
+  /** How the line bills. An existing Time & Materials or Cost Plus line
+   *  cannot change through Amend (plan decision P9), only end. */
+  billing: BillingTerms;
 };
 
 type PreviewResponse = {
@@ -121,6 +145,7 @@ type PreviewResponse = {
 type ContractAmendModalProps = Pick<ContractRouteData, "lines"> & {
   contract: Contract;
   action: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -130,6 +155,7 @@ const toRow = (line: ContractLine): AmendRow => ({
   itemId: line.itemId,
   name: line.item?.name ?? line.itemId,
   readableId: line.item?.readableIdWithRevision ?? null,
+  isPart: line.item?.type === "Part",
   description: line.description ?? "",
   revenueType: line.revenueType,
   quantity: Number(line.quantity),
@@ -137,8 +163,17 @@ const toRow = (line: ContractLine): AmendRow => ({
   rateUnit: line.rateUnit,
   discountPercent: round(Number(line.discountPercent) * 100),
   taxPercent: round(Number(line.taxPercent) * 100),
-  end: false
+  end: false,
+  billing: {
+    ...contractLineBillingFormValues(line),
+    revenueMethod: line.revenueMethod,
+    projectId: line.projectId ?? undefined
+  }
 });
+
+/** A Time & Materials or Cost Plus row: no quantity, rate or schedule. */
+const isBillingRow = (row: AmendRow) =>
+  isProjectBillingMethod(row.billing.billingMethod);
 
 const isValidNumber = (value: number, min = 0) =>
   Number.isFinite(value) && value >= min;
@@ -164,11 +199,28 @@ const localSave = () =>
  *  runs and rolls back on the server — so the adjustments and the next
  *  invoices are seen before saving. */
 const ContractAmendModal = ({
+  open = true,
+  onClose,
+  ...props
+}: ContractAmendModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent size="xxlarge">
+      <ContractAmendBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const ContractAmendBody = ({
   contract,
   lines,
   action,
   onClose
-}: ContractAmendModalProps) => {
+}: Omit<ContractAmendModalProps, "open">) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const today = useCompanyToday();
@@ -178,10 +230,18 @@ const ContractAmendModal = ({
   const percent = usePercentFormatter();
   const fetcher = useFetcher<{}>();
   const previewFetcher = useFetcher<PreviewResponse>();
-  const addServices = useDisclosure();
+  const addLines = useDisclosure();
 
   const id = contract.id!;
   const { currencyCode } = contract;
+  // A service contract bills every line on its schedule: no billing method.
+  // A project contract's lines are One-time, quantity 1 unless they name a
+  // Part — then the quantity is the units to deliver (as `upsertContractLine`).
+  const isProject = contract.billingBasis === "Project";
+  const hasQuantity = useCallback(
+    (row: AmendRow) => (isProject ? row.isPart : !isBillingRow(row)),
+    [isProject]
+  );
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
   // A line that has already ended cannot be amended; a replaced line has.
@@ -245,8 +305,8 @@ const ContractAmendModal = ({
     [updateRow, contract.billingFrequency]
   );
 
-  const addRows = (itemIds: string[], services: AddableService[]) => {
-    const byId = new Map(services.map((item) => [item.id, item]));
+  const addRows = (itemIds: string[], items: AddableItem[]) => {
+    const byId = new Map(items.map((item) => [item.id, item]));
     setRows((prev) => [
       ...prev,
       ...itemIds.map((itemId, index) => {
@@ -257,14 +317,23 @@ const ContractAmendModal = ({
           itemId,
           name: item?.name ?? itemId,
           readableId: item?.readableIdWithRevision ?? null,
+          isPart: item?.type === "Part",
           description: "",
-          revenueType: "Recurring" as const,
+          // A project contract line is One-time.
+          revenueType: isProject
+            ? ("One-time" as const)
+            : ("Recurring" as const),
           quantity: 1,
           rate: 0,
-          rateUnit: contract.billingFrequency ?? "Month",
+          rateUnit: isProject ? null : (contract.billingFrequency ?? "Month"),
           discountPercent: 0,
           taxPercent: 0,
-          end: false
+          end: false,
+          billing: {
+            ...newContractLineBillingValues,
+            revenueMethod: "Daily" as const,
+            projectId: contract.projectId ?? undefined
+          }
         };
       })
     ]);
@@ -276,24 +345,29 @@ const ContractAmendModal = ({
     () =>
       rows.flatMap((row): AmendmentChange[] => {
         if (row.isNew) {
+          const billing = isBillingRow(row);
           return [
             {
               op: "add",
               line: {
-                revenueType: row.revenueType,
+                ...row.billing,
+                // A billing line is One-time at quantity 1 and rate 0, and
+                // every project line is One-time; a Part line keeps its
+                // quantity (and a Fixed one its rate), as `upsertContractLine`.
+                revenueType:
+                  billing || isProject ? "One-time" : row.revenueType,
                 itemId: row.itemId,
                 description: row.description || undefined,
-                quantity: row.quantity,
-                rate: row.rate,
+                quantity: hasQuantity(row) ? row.quantity : 1,
+                rate: billing ? 0 : row.rate,
                 rateUnit:
-                  row.revenueType === "Recurring"
+                  !billing && row.revenueType === "Recurring"
                     ? (row.rateUnit ?? undefined)
                     : undefined,
-                discountPercent: row.discountPercent,
+                discountPercent: billing ? 0 : row.discountPercent,
                 taxPercent: row.taxPercent,
                 // The server starts it on the effective date when that is later.
-                startDate: amendmentDate,
-                revenueMethod: "Daily"
+                startDate: amendmentDate
               }
             }
           ];
@@ -320,7 +394,7 @@ const ContractAmendModal = ({
           ? [{ op: "change", lineId: row.id, ...change }]
           : [];
       }),
-    [rows, originals, amendmentDate]
+    [rows, originals, amendmentDate, hasQuantity, isProject]
   );
   const changedIds = useMemo(
     () =>
@@ -343,8 +417,33 @@ const ContractAmendModal = ({
           isValidNumber(row.rate) &&
           isValidNumber(row.discountPercent) &&
           isValidNumber(row.taxPercent) &&
-          (row.revenueType === "One-time" || !!row.rateUnit))
+          (isBillingRow(row) ||
+            row.revenueType === "One-time" ||
+            !!row.rateUnit) &&
+          (!row.isNew ||
+            contractLineBillingTermsValidator.safeParse(row.billing).success))
     );
+  // Cost Plus and Percent Complete are commercial: the route refuses them
+  // without `PROJECT_REVENUE`, so Amend is disabled and the terms say why.
+  const { isGated: projectRevenueGated } = usePlanGate({
+    feature: "PROJECT_REVENUE"
+  });
+  const needsUpgrade =
+    projectRevenueGated &&
+    rows.some(
+      (row) =>
+        row.isNew &&
+        (row.billing.billingMethod === "Cost Plus" ||
+          row.billing.revenueMethod === "Percent Complete")
+    );
+  const {
+    item: editingTerms,
+    isOpen: isEditingTerms,
+    key: editingTermsKey,
+    open: openTerms,
+    close: closeTerms
+  } = useDrawerItem<AmendRow>();
+  const billingLabels = useBillingMethodLabels(contract.billingBasis);
   const hasChanges = changes.length > 0;
   const changesJson = JSON.stringify(changes);
 
@@ -401,6 +500,7 @@ const ContractAmendModal = ({
   // (an ended line, or a type an existing line cannot change).
   const display = useMemo<
     Record<
+      | "billingMethod"
       | "description"
       | "revenueType"
       | "quantity"
@@ -412,21 +512,47 @@ const ContractAmendModal = ({
     >
   >(
     () => ({
+      billingMethod: (row) =>
+        row.isNew &&
+        isBillingRow(row) &&
+        !contractLineBillingTermsValidator.safeParse(row.billing).success ? (
+          <span className="truncate text-amber-600 dark:text-amber-400">
+            {billingLabels[row.billing.billingMethod]} ·{" "}
+            <Trans>Set terms</Trans>
+          </span>
+        ) : (
+          <span className="truncate">
+            {billingLabels[row.billing.billingMethod]}
+          </span>
+        ),
       description: (row) =>
         row.description ? (
           <span className="truncate">{row.description}</span>
         ) : (
           <span className="truncate text-muted-foreground">{row.name}</span>
         ),
-      revenueType: (row) => revenueTypeLabels[row.revenueType],
-      quantity: (row) => (
-        <span className="tabular-nums">{formatQuantity(row.quantity)}</span>
-      ),
-      rate: (row) => (
-        <ContractMoney value={row.rate} currencyCode={currencyCode} rate />
-      ),
+      revenueType: (row) =>
+        isBillingRow(row) ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          revenueTypeLabels[row.revenueType]
+        ),
+      quantity: (row) =>
+        hasQuantity(row) ? (
+          <span className="tabular-nums">{formatQuantity(row.quantity)}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+      rate: (row) =>
+        isBillingRow(row) ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <ContractMoney value={row.rate} currencyCode={currencyCode} rate />
+        ),
       rateUnit: (row) =>
-        row.revenueType === "Recurring" && row.rateUnit ? (
+        !isBillingRow(row) &&
+        row.revenueType === "Recurring" &&
+        row.rateUnit ? (
           rateUnitLabels[row.rateUnit]
         ) : (
           <span className="text-muted-foreground">—</span>
@@ -448,7 +574,15 @@ const ContractAmendModal = ({
           <span className="text-muted-foreground">—</span>
         )
     }),
-    [currencyCode, formatQuantity, percent, rateUnitLabels, revenueTypeLabels]
+    [
+      currencyCode,
+      formatQuantity,
+      percent,
+      rateUnitLabels,
+      revenueTypeLabels,
+      billingLabels,
+      hasQuantity
+    ]
   );
 
   const columns = useMemo<ColumnDef<AmendRow>[]>(() => {
@@ -466,7 +600,7 @@ const ContractAmendModal = ({
     return [
       {
         accessorKey: "name",
-        header: t`Service`,
+        header: isProject ? t`Item` : t`Service`,
         cell: ({ row }) => (
           <div
             className={cn(
@@ -489,6 +623,15 @@ const ContractAmendModal = ({
         header: t`Description`,
         cell: cell("description")
       },
+      ...(isProject
+        ? [
+            {
+              id: "billingMethod",
+              header: t`Billing`,
+              cell: cell("billingMethod")
+            }
+          ]
+        : []),
       {
         accessorKey: "revenueType",
         header: t`Revenue Type`,
@@ -518,7 +661,7 @@ const ContractAmendModal = ({
         }
       }
     ];
-  }, [t, display, changedIds]);
+  }, [t, display, changedIds, isProject]);
 
   const editableComponents = useMemo(() => {
     // An ended line, and a type an existing line cannot change, read as they
@@ -544,8 +687,12 @@ const ContractAmendModal = ({
         ) : (
           editor(props)
         );
-    const never = () => false;
-    const existing = (row: AmendRow) => !row.isNew;
+    // An existing billing line only ends (P9); any billing line has no
+    // quantity, rate, rate unit or discount.
+    const never = (row: AmendRow) => !row.isNew && isBillingRow(row);
+    // Every project contract line is One-time.
+    const existing = (row: AmendRow) =>
+      !row.isNew || isBillingRow(row) || isProject;
     const percentField = {
       minValue: 0,
       maxValue: 100,
@@ -571,7 +718,7 @@ const ContractAmendModal = ({
       ),
       quantity: unless(
         "quantity",
-        never,
+        (row) => never(row) || !hasQuantity(row),
         EditableNumber<AmendRow>(onCellEdit, {
           minValue: 0,
           step: INPUT_STEP.quantity,
@@ -580,7 +727,7 @@ const ContractAmendModal = ({
       ),
       rate: unless(
         "rate",
-        never,
+        isBillingRow,
         EditableNumber<AmendRow>(onCellEdit, {
           minValue: 0,
           step: INPUT_STEP.rate,
@@ -589,7 +736,8 @@ const ContractAmendModal = ({
       ),
       rateUnit: unless(
         "rateUnit",
-        (row) => !row.isNew || row.revenueType !== "Recurring",
+        (row) =>
+          !row.isNew || isBillingRow(row) || row.revenueType !== "Recurring",
         EditableList<AmendRow>(
           onCellEdit,
           contractRateUnits.map((value) => ({
@@ -600,7 +748,7 @@ const ContractAmendModal = ({
       ),
       discountPercent: unless(
         "discountPercent",
-        never,
+        isBillingRow,
         EditableNumber<AmendRow>(onCellEdit, percentField)
       ),
       taxPercent: unless(
@@ -615,21 +763,29 @@ const ContractAmendModal = ({
     currencyCode,
     currencyDecimals,
     revenueTypeLabels,
-    rateUnitLabels
+    rateUnitLabels,
+    hasQuantity,
+    isProject
   ]);
 
   const renderRowMenu = useCallback(
     (row: AmendRow) =>
       row.isNew ? (
-        <MenuItem
-          destructive
-          onClick={() =>
-            setRows((prev) => prev.filter((other) => other.id !== row.id))
-          }
-        >
-          <MenuIcon icon={<LuTrash />} />
-          <Trans>Remove Line</Trans>
-        </MenuItem>
+        <>
+          <MenuItem onClick={() => openTerms(row)}>
+            <MenuIcon icon={<LuReceipt />} />
+            <Trans>Billing Terms</Trans>
+          </MenuItem>
+          <MenuItem
+            destructive
+            onClick={() =>
+              setRows((prev) => prev.filter((other) => other.id !== row.id))
+            }
+          >
+            <MenuIcon icon={<LuTrash />} />
+            <Trans>Remove Line</Trans>
+          </MenuItem>
+        </>
       ) : row.end ? (
         <MenuItem onClick={() => updateRow(row.id, { end: false })}>
           <MenuIcon icon={<LuUndo2 />} />
@@ -648,7 +804,7 @@ const ContractAmendModal = ({
           <Trans>End Line</Trans>
         </MenuItem>
       ),
-    [originals, updateRow]
+    [originals, updateRow, openTerms]
   );
 
   const gridColumns = useMemo(
@@ -660,218 +816,436 @@ const ContractAmendModal = ({
     `${formatDate(start)} – ${formatDate(end)}`;
 
   return (
+    <>
+      <ValidatedForm
+        validator={customerContractAmendmentValidator}
+        method="post"
+        action={action}
+        fetcher={fetcher}
+        defaultValues={{
+          customerContractId: id,
+          amendmentDate: today,
+          effect: "Change Date"
+        }}
+        onSubmit={onClose}
+      >
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>Amend {contract.customerContractId}</Trans>
+          </ModalTitle>
+          <ModalDescription>
+            <Trans>
+              Change, add or end lines from a date. Periods already invoiced
+              past it are adjusted on the next invoice.
+            </Trans>
+          </ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          <Hidden name="intent" value="save" />
+          <Hidden name="customerContractId" value={id} />
+          <Hidden name="changes" value={changesJson} />
+          <VStack spacing={4}>
+            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
+              <DatePicker
+                name="amendmentDate"
+                label={t`Change Date`}
+                onChange={(date) => setAmendmentDate(date ?? "")}
+              />
+              <Select
+                name="effect"
+                label={t`Takes Effect`}
+                options={contractAmendmentEffects.map((value) => ({
+                  value,
+                  label: effectLabels[value]
+                }))}
+                onChange={(option) => {
+                  const next = contractAmendmentEffects.find(
+                    (value) => value === option?.value
+                  );
+                  if (next) setEffect(next);
+                }}
+              />
+            </div>
+
+            {rows.length === 0 ? (
+              <div className="flex w-full items-center justify-center rounded-lg border border-dashed border-border px-6 py-10 text-sm text-muted-foreground">
+                {isProject ? (
+                  <Trans>No open lines. Add a line to amend.</Trans>
+                ) : (
+                  <Trans>No open lines. Add a service to amend.</Trans>
+                )}
+              </div>
+            ) : (
+              // Enter commits a cell; it must not submit the amendment.
+              // biome-ignore lint/a11y/noStaticElementInteractions: keydown-only wrapper that stops Enter in a grid cell from submitting the form; the grid's own cells are the controls
+              <div
+                className="w-full overflow-hidden rounded-lg border border-border"
+                style={{
+                  height: setupGridHeight(
+                    rows.length,
+                    rows.some(
+                      (row) => row.readableId && row.readableId !== row.name
+                    )
+                      ? 53
+                      : 49
+                  )
+                }}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === "Enter" &&
+                    !event.metaKey &&
+                    !event.ctrlKey &&
+                    event.target instanceof HTMLInputElement
+                  ) {
+                    event.preventDefault();
+                  }
+                }}
+              >
+                <Grid<AmendRow>
+                  compact
+                  columns={gridColumns}
+                  data={rows}
+                  count={rows.length}
+                  editableComponents={editableComponents}
+                  withInlineEditing
+                  forceEditMode
+                  withPagination={false}
+                  withSearch={false}
+                  withSimpleSorting={false}
+                  withSidebarTrigger={false}
+                  withColumnOrdering={false}
+                  withCsvExport={false}
+                  sort={null}
+                />
+              </div>
+            )}
+            <div className="w-full">
+              <Button
+                variant="secondary"
+                leftIcon={<LuPlus />}
+                onClick={addLines.onOpen}
+              >
+                {isProject ? (
+                  <Trans>Add Lines</Trans>
+                ) : (
+                  <Trans>Add Services</Trans>
+                )}
+              </Button>
+            </div>
+
+            {previewKey && (
+              <VStack
+                spacing={3}
+                className={cn(
+                  "w-full border-t border-border pt-4",
+                  isPreviewing && "opacity-60"
+                )}
+              >
+                {isRefused ? (
+                  <Alert variant="destructive">
+                    <LuCircleAlert className="h-4 w-4" />
+                    <AlertTitle>
+                      <Trans>This amendment cannot be made</Trans>
+                    </AlertTitle>
+                    <AlertDescription>{previewError}</AlertDescription>
+                  </Alert>
+                ) : preview ? (
+                  <AmendmentPreview
+                    preview={preview}
+                    currencyCode={currencyCode}
+                    nameOf={nameOf}
+                    period={period}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>Previewing the amendment…</Trans>
+                  </p>
+                )}
+              </VStack>
+            )}
+
+            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2 border-t border-border pt-4">
+              <SelectControlled
+                name="contractType"
+                label={t`Contract Type`}
+                helperText={t`Suggested from the change in recurring value`}
+                value={contractType}
+                options={customerContractTypes.map((value) => ({
+                  value,
+                  label: labels.contractType[value]
+                }))}
+                onChange={(option) => {
+                  const next = customerContractTypes.find(
+                    (value) => value === option?.value
+                  );
+                  if (next) setChosenType(next);
+                }}
+              />
+              <TextArea name="reason" label={t`Reason`} />
+            </div>
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          {needsUpgrade && (
+            <div className="mr-auto">
+              <Trans>Cost Plus and Percent Complete need an upgrade.</Trans>
+            </div>
+          )}
+          <Submit
+            isDisabled={
+              !hasChanges ||
+              !isValid ||
+              isRefused ||
+              needsUpgrade ||
+              !permissions.can("update", "sales")
+            }
+          >
+            <Trans>Amend</Trans>
+          </Submit>
+        </ModalFooter>
+      </ValidatedForm>
+      <AddServicesModal
+        open={addLines.isOpen}
+        withParts={isProject}
+        onAdd={addRows}
+        onClose={addLines.onClose}
+      />
+      {/* Outside the amendment's form: a form inside another form's React
+          tree would bubble its submit to the outer one. */}
+      {editingTerms && (
+        <BillingTermsModal
+          key={editingTermsKey}
+          open={isEditingTerms}
+          name={editingTerms.description || editingTerms.name}
+          terms={editingTerms.billing}
+          currencyCode={currencyCode}
+          billingBasis={contract.billingBasis}
+          isGated={projectRevenueGated}
+          onSave={(billing) => {
+            updateRow(editingTerms.id, { billing });
+            closeTerms();
+          }}
+          onClose={closeTerms}
+        />
+      )}
+    </>
+  );
+};
+
+/** How an added line bills: Fixed (priced in the grid), or Time & Materials
+ *  or Cost Plus from a project's billing element. Saved into the amendment's
+ *  local state; nothing posts until Amend. */
+const BillingTermsModal = ({
+  open = true,
+  name,
+  terms,
+  currencyCode,
+  billingBasis,
+  isGated,
+  onSave,
+  onClose
+}: {
+  open?: boolean;
+  name: string;
+  terms: BillingTerms;
+  currencyCode: string;
+  billingBasis: Contract["billingBasis"];
+  isGated: boolean;
+  onSave: (terms: BillingTerms) => void;
+  onClose: () => void;
+}) => {
+  const { t } = useLingui();
+  const billingLabels = useBillingMethodLabels(billingBasis);
+  const [billingMethod, setBillingMethod] = useState(terms.billingMethod);
+  const [revenueMethod, setRevenueMethod] = useState(terms.revenueMethod);
+  const [projectId, setProjectId] = useState(terms.projectId ?? "");
+  const revenueMethodLabels: Record<
+    (typeof contractRevenueMethods)[number],
+    string
+  > = {
+    Daily: t`Daily`,
+    "Even Period": t`Even Period`,
+    "Right to Invoice": t`Right to Invoice`,
+    "Percent Complete": t`Percent Complete`
+  };
+  const isBilling = isProjectBillingMethod(billingMethod);
+  const showUpgrade =
+    isGated &&
+    (billingMethod === "Cost Plus" || revenueMethod === "Percent Complete");
+
+  return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <ModalContent size="xxlarge">
+      <ModalContent size="large">
         <ValidatedForm
-          validator={customerContractAmendmentValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={{
-            customerContractId: id,
-            amendmentDate: today,
-            effect: "Change Date"
+          validator={contractLineBillingTermsValidator}
+          defaultValues={terms}
+          onSubmit={(data, event) => {
+            event.preventDefault();
+            onSave(data);
           }}
-          onSubmit={onClose}
         >
           <ModalHeader>
             <ModalTitle>
-              <Trans>Amend {contract.customerContractId}</Trans>
+              <Trans>Billing Terms</Trans>
             </ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Change, add or end lines from a date. Periods already invoiced
-                past it are adjusted on the next invoice.
-              </Trans>
-            </ModalDescription>
+            <ModalDescription>{name}</ModalDescription>
           </ModalHeader>
           <ModalBody>
-            <Hidden name="intent" value="save" />
-            <Hidden name="customerContractId" value={id} />
-            <Hidden name="changes" value={changesJson} />
             <VStack spacing={4}>
               <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
-                <DatePicker
-                  name="amendmentDate"
-                  label={t`Change Date`}
-                  onChange={(date) => setAmendmentDate(date ?? "")}
-                />
-                <Select
-                  name="effect"
-                  label={t`Takes Effect`}
-                  options={contractAmendmentEffects.map((value) => ({
-                    value,
-                    label: effectLabels[value]
-                  }))}
-                  onChange={(option) => {
-                    const next = contractAmendmentEffects.find(
-                      (value) => value === option?.value
-                    );
-                    if (next) setEffect(next);
-                  }}
-                />
-              </div>
-
-              {rows.length === 0 ? (
-                <div className="flex w-full items-center justify-center rounded-lg border border-dashed border-border px-6 py-10 text-sm text-muted-foreground">
-                  <Trans>No open lines. Add a service to amend.</Trans>
-                </div>
-              ) : (
-                // Enter commits a cell; it must not submit the amendment.
-                <div
-                  className="w-full overflow-hidden rounded-lg border border-border"
-                  style={{
-                    height: setupGridHeight(
-                      rows.length,
-                      rows.some(
-                        (row) => row.readableId && row.readableId !== row.name
-                      )
-                        ? 53
-                        : 49
-                    )
-                  }}
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === "Enter" &&
-                      !event.metaKey &&
-                      !event.ctrlKey &&
-                      event.target instanceof HTMLInputElement
-                    ) {
-                      event.preventDefault();
-                    }
-                  }}
-                >
-                  <Grid<AmendRow>
-                    compact
-                    columns={gridColumns}
-                    data={rows}
-                    count={rows.length}
-                    editableComponents={editableComponents}
-                    withInlineEditing
-                    forceEditMode
-                    withPagination={false}
-                    withSearch={false}
-                    withSimpleSorting={false}
-                    withSidebarTrigger={false}
-                    withColumnOrdering={false}
-                    withCsvExport={false}
-                    sort={null}
+                {billingBasis === "Project" ? (
+                  <Select
+                    name="billingMethod"
+                    label={t`Billing Method`}
+                    termId="billing-method"
+                    options={contractBillingMethodsFor("Project").map(
+                      (value) => ({
+                        value,
+                        label: billingLabels[value]
+                      })
+                    )}
+                    onChange={(option) => {
+                      const next = contractBillingMethods.find(
+                        (value) => value === option?.value
+                      );
+                      if (!next) return;
+                      setBillingMethod(next);
+                      const allowed = contractRevenueMethodsFor(
+                        billingBasis,
+                        next
+                      );
+                      if (!allowed.includes(revenueMethod)) {
+                        setRevenueMethod(allowed[0]);
+                      }
+                    }}
                   />
-                </div>
-              )}
-              <div className="w-full">
-                <Button
-                  variant="secondary"
-                  leftIcon={<LuPlus />}
-                  onClick={addServices.onOpen}
-                >
-                  <Trans>Add Services</Trans>
-                </Button>
-              </div>
-
-              {previewKey && (
-                <VStack
-                  spacing={3}
-                  className={cn(
-                    "w-full border-t border-border pt-4",
-                    isPreviewing && "opacity-60"
-                  )}
-                >
-                  {isRefused ? (
-                    <Alert variant="destructive">
-                      <LuCircleAlert className="h-4 w-4" />
-                      <AlertTitle>
-                        <Trans>This amendment cannot be made</Trans>
-                      </AlertTitle>
-                      <AlertDescription>{previewError}</AlertDescription>
-                    </Alert>
-                  ) : preview ? (
-                    <AmendmentPreview
-                      preview={preview}
-                      currencyCode={currencyCode}
-                      nameOf={nameOf}
-                      period={period}
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      <Trans>Previewing the amendment…</Trans>
-                    </p>
-                  )}
-                </VStack>
-              )}
-
-              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2 border-t border-border pt-4">
+                ) : (
+                  // A service contract bills every line on its schedule.
+                  <Hidden name="billingMethod" />
+                )}
                 <SelectControlled
-                  name="contractType"
-                  label={t`Contract Type`}
-                  helperText={t`Suggested from the change in recurring value`}
-                  value={contractType}
-                  options={customerContractTypes.map((value) => ({
+                  name="revenueMethod"
+                  label={t`Revenue Method`}
+                  termId="revenue-method"
+                  value={revenueMethod}
+                  options={contractRevenueMethodsFor(
+                    billingBasis,
+                    billingMethod
+                  ).map((value) => ({
                     value,
-                    label: labels.contractType[value]
+                    label: revenueMethodLabels[value]
                   }))}
                   onChange={(option) => {
-                    const next = customerContractTypes.find(
+                    const next = contractRevenueMethods.find(
                       (value) => value === option?.value
                     );
-                    if (next) setChosenType(next);
+                    if (next) setRevenueMethod(next);
                   }}
                 />
-                <TextArea name="reason" label={t`Reason`} />
+                <ContractProject
+                  name="projectId"
+                  label={t`Project`}
+                  onChange={(option) => setProjectId(option?.value ?? "")}
+                />
+                {isBilling ? (
+                  <ContractLineBillingFields
+                    billingMethod={billingMethod}
+                    projectId={projectId}
+                    currencyCode={currencyCode}
+                  />
+                ) : (
+                  revenueMethod === "Percent Complete" && (
+                    <BillingElementField projectId={projectId} />
+                  )
+                )}
               </div>
+              {showUpgrade && <ProjectRevenueUpgrade />}
             </VStack>
           </ModalBody>
           <ModalFooter>
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <Submit
-              isDisabled={
-                !hasChanges ||
-                !isValid ||
-                isRefused ||
-                !permissions.can("update", "sales")
-              }
-            >
-              <Trans>Amend</Trans>
+            <Submit isDisabled={showUpgrade}>
+              <Trans>Save</Trans>
             </Submit>
           </ModalFooter>
         </ValidatedForm>
       </ModalContent>
-      {addServices.isOpen && (
-        <AddServicesModal onAdd={addRows} onClose={addServices.onClose} />
-      )}
     </Modal>
   );
 };
 
-type AddableService = {
-  id: string;
-  name: string;
-  readableIdWithRevision: string;
+/** The element whose cost measures a Fixed line's Percent Complete. */
+const BillingElementField = ({ projectId }: { projectId: string }) => {
+  const { t } = useLingui();
+  return (
+    <BillingElement
+      name="projectElementId"
+      projectId={projectId}
+      helperText={t`Progress is this element's cost against its estimate at completion`}
+    />
+  );
+};
+
+type AddableItem = Pick<
+  Item,
+  "id" | "name" | "readableIdWithRevision" | "type"
+>;
+
+type AddServicesModalProps = {
+  open?: boolean;
+  withParts: boolean;
+  onAdd: (itemIds: string[], items: AddableItem[]) => void;
+  onClose: () => void;
 };
 
 /** Pick several services at once, as the setup wizard's Add Services does;
- *  each becomes a new recurring line in the grid, priced there. */
+ *  each becomes a new recurring line in the grid, priced there. With
+ *  `withParts` (a project contract) it offers parts too, each a One-time
+ *  line. */
 const AddServicesModal = ({
+  open = true,
+  onClose,
+  ...props
+}: AddServicesModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent>
+      <AddServicesBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const AddServicesBody = ({
+  withParts,
   onAdd,
   onClose
-}: {
-  onAdd: (itemIds: string[], services: AddableService[]) => void;
-  onClose: () => void;
-}) => {
+}: Omit<AddServicesModalProps, "open">) => {
   const { t } = useLingui();
-  const services = useServices();
+  const [items] = useItems();
   const [itemIds, setItemIds] = useState<string[]>([]);
 
   const active = useMemo(
-    () => services.filter((item) => item.active),
-    [services]
+    () =>
+      items.filter(
+        (item) =>
+          item.active &&
+          (item.type === "Service" || (withParts && item.type === "Part"))
+      ),
+    [items, withParts]
   );
   const options = useMemo(
     () =>
@@ -884,48 +1258,48 @@ const AddServicesModal = ({
   );
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Add Services</Trans>
-          </ModalTitle>
-          <ModalDescription>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          {withParts ? <Trans>Add Lines</Trans> : <Trans>Add Services</Trans>}
+        </ModalTitle>
+        <ModalDescription>
+          {withParts ? (
+            <Trans>
+              Each is added as a one-time line from the change date, to be
+              priced in the grid.
+            </Trans>
+          ) : (
             <Trans>
               Each is added as a recurring line from the change date, to be
               priced in the grid.
             </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          <MultiSelect
-            aria-label={t`Services`}
-            value={itemIds}
-            options={options}
-            onChange={setItemIds}
-          />
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            isDisabled={itemIds.length === 0}
-            onClick={() => {
-              onAdd(itemIds, active);
-              onClose();
-            }}
-          >
-            <Trans>Add</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          )}
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <MultiSelect
+          aria-label={withParts ? t`Items` : t`Services`}
+          value={itemIds}
+          options={options}
+          onChange={setItemIds}
+        />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          isDisabled={itemIds.length === 0}
+          onClick={() => {
+            onAdd(itemIds, active);
+            onClose();
+          }}
+        >
+          <Trans>Add</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 };
 

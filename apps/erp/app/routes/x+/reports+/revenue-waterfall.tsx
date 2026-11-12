@@ -82,6 +82,8 @@ export default function RevenueWaterfallRoute() {
       Deferral: t`Deferral`,
       Accrual: t`Accrual`,
       Interest: t`Interest`,
+      "Cost Relief": t`Cost Relief`,
+      "Loss Provision": t`Loss Provision`,
       Amortization: t`Amortization`
     }),
     [t]
@@ -165,6 +167,7 @@ export default function RevenueWaterfallRoute() {
       </span>
       <DatePicker
         size="sm"
+        aria-label={t`As of date`}
         value={parseDate(asOf)}
         onChange={(value) => setParams({ asOf: value?.toString() ?? asOf })}
       />

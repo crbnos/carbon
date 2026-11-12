@@ -19,11 +19,21 @@ import type {
   IssueResult,
   issueInput,
   PostProductionEventResult,
+  PostServiceJobResult,
+  PostTimesheetResult,
   postInventoryAdjustmentInput,
   postMaintenanceEventInput,
   postPickingInput,
   postProductionEventInput,
+  postServiceJobInput,
+  postTimesheetInput,
   recalculateInput,
+  rejectInspectionInput,
+  SaveTimesheetEntryResult,
+  SubmitTimesheetWeekResult,
+  saveTimesheetEntryInput,
+  submitTimesheetWeekInput,
+  triggerCorrectionInput,
   triggerReworkInput
 } from "./postings";
 
@@ -91,6 +101,12 @@ export type LeaseInvoiceGenerationResult = {
   failures: { leaseId: string; error: string }[];
 };
 
+export type PostProjectBurdenResult = {
+  success: true;
+  journalId: string | null;
+  projectLedgerIds: string[];
+};
+
 export type KanbanReplenishOutcome =
   | {
       kanbanId: string;
@@ -151,6 +167,10 @@ export type PostingContract = {
     input: { asOf: string };
     output: ContractInvoiceGenerationResult;
   };
+  "create-project-billing-invoices": {
+    input: { asOf: string; customerContractId?: string };
+    output: ContractInvoiceGenerationResult;
+  };
   "create-lease-invoices": {
     input: { asOf: string };
     output: LeaseInvoiceGenerationResult;
@@ -158,6 +178,25 @@ export type PostingContract = {
   "propose-revenue-recognition-run": {
     input: { periodEnd: string; type?: "Revenue Recognition" | "Lease" };
     output: { id: string; runId: string; lineCount: number } | null;
+  };
+  "post-project-burden": {
+    input: {
+      indirectRateRunId: string;
+      accountingPeriodId: string;
+      /** YYYY-MM-DD, the period end. */
+      postingDate: string;
+      postApplied: boolean;
+      rows: {
+        projectId: string;
+        projectElementId: string | null;
+        indirectPoolId: string;
+        indirectRateType: "Provisional" | "Actual" | "Final";
+        burdenFiscalYear: number;
+        amount: number;
+        unallowable: boolean;
+      }[];
+    };
+    output: PostProjectBurdenResult;
   };
   issue: { input: z.input<typeof issueInput>; output: IssueResult };
   "post-picking": {
@@ -172,6 +211,10 @@ export type PostingContract = {
     input: z.input<typeof postMaintenanceEventInput>;
     output: { success: boolean; journalIds: string[] };
   };
+  "post-service-job": {
+    input: z.input<typeof postServiceJobInput>;
+    output: PostServiceJobResult;
+  };
   "post-inventory-adjustment": {
     input: z.input<typeof postInventoryAdjustmentInput>;
     output: { success: boolean; itemLedger: { id: string } | null };
@@ -185,6 +228,14 @@ export type PostingContract = {
     input: z.input<typeof recalculateInput>;
     output: { success: boolean };
   };
+  "trigger-correction": {
+    input: z.input<typeof triggerCorrectionInput>;
+    output: {
+      success: boolean;
+      reworkId: string;
+      operationIds: string[];
+    };
+  };
   "trigger-rework": {
     input: z.input<typeof triggerReworkInput>;
     output: {
@@ -193,6 +244,22 @@ export type PostingContract = {
       clonedOperationIds: string[];
       operationsCloned: number;
     };
+  };
+  "reject-inspection": {
+    input: z.input<typeof rejectInspectionInput>;
+    output: { id: string; issueId: string | null };
+  };
+  "save-timesheet-entry": {
+    input: z.input<typeof saveTimesheetEntryInput>;
+    output: SaveTimesheetEntryResult;
+  };
+  "submit-timesheet-week": {
+    input: z.input<typeof submitTimesheetWeekInput>;
+    output: SubmitTimesheetWeekResult;
+  };
+  "post-timesheet": {
+    input: z.input<typeof postTimesheetInput>;
+    output: PostTimesheetResult;
   };
 };
 

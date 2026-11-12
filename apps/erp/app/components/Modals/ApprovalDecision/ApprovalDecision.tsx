@@ -27,6 +27,7 @@ type ApprovalDecisionProps = {
   /** What this decision does to the document. */
   description: ReactNode;
   fetcher: FetcherWithComponents<unknown>;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -37,6 +38,7 @@ const ApprovalDecision = ({
   title,
   description,
   fetcher,
+  open = true,
   onClose
 }: ApprovalDecisionProps) => {
   const { t } = useLingui();
@@ -44,7 +46,7 @@ const ApprovalDecision = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

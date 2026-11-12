@@ -3,7 +3,7 @@ title: Financial statement reports
 description: "The Balance Sheet, Income Statement, and Trial Balance built from posted journals by account class."
 ---
 
-Three reports read the posted [general ledger](/docs/reference/accounting). The **Balance Sheet** shows cumulative assets, liabilities, and equity at each selected period end. The **Income Statement** shows revenue and expense activity by period. The **Trial Balance** shows beginning and ending balances plus net debit or credit movement for one date range. All three use the same balance engine.
+Three reports read the posted [general ledger](/docs/reference/accounting). The **Balance Sheet** shows cumulative assets, liabilities, and equity at each selected period end. The **Income Statement** shows revenue and expense activity by period. The **Trial Balance** shows each account's beginning and ending balances plus its debits and credits for one date range. All three use the same balance engine.
 
 The reports are under Accounting and require `accounting` view permission. They are available after the company [sets up accounting](/docs/reference/accounting#setting-up-accounting). Before that, every posting writes a *Provisional* journal, and the reports count only Posted and Reversed journals.
 
@@ -12,12 +12,12 @@ The reports are under Accounting and require `accounting` view permission. They 
 <FieldTable>
   <Field name="Balance Sheet">Shows one column per selected month, quarter, or fiscal year. Each value is cumulative through that period's end. Carbon appends a computed **"Net Income"** equity line so the sheet ties.</Field>
   <Field name="Income Statement">Shows Revenue and Expense activity within each selected period.</Field>
-  <Field name="Trial Balance">Shows one selected date range. **Beginning** is the cumulative balance before the range, **Ending** is cumulative through the end date, and **Debits** or **Credits** show net movement on the normal side when positive and the opposite side when negative.</Field>
+  <Field name="Trial Balance">Lists every posting account (no group accounts) by account number for one selected date range. **Beginning** is the cumulative balance before the range and **Ending** is cumulative through the end date. Both are debit-signed: a debit balance is positive and a credit balance is negative, whatever the account's class. **Debits** and **Credits** are every debit and every credit the account took in the range, so they tie to the General Ledger. Revenue and Expense accounts show only the current fiscal year: profit from earlier fiscal years is shown in Retained Earnings, as if each year had been closed. When the range crosses a fiscal year end, a **Year-End Close** column shows what moved to Retained Earnings at that year end. With no search filter, the **Total** row ties out: Beginning, Year-End Close and Ending total zero, and Debits equal Credits. With a search filter, it adds up only the matching accounts. With more than one company selected, Debits and Credits show net movement and no year is closed.</Field>
 </FieldTable>
 
 <Screenshot label="Balance Sheet report with monthly columns for the selected date range" caption="Each column shows cumulative account balances through that period's end." ratio="wide" />
 
-The Balance Sheet and Income Statement divide the selected range into monthly, quarterly, or yearly columns. The Balance Sheet reads each column's cumulative ending balance; the Income Statement reads activity within each column. The Trial Balance keeps the selected range as one period and derives its beginning balance, net debit or credit movement, and ending balance.
+The Balance Sheet and Income Statement divide the selected range into monthly, quarterly, or yearly columns. The Balance Sheet reads each column's cumulative ending balance; the Income Statement reads activity within each column. The Trial Balance keeps the selected range as one period and shows each account's beginning balance, its debits and credits, and its ending balance.
 
 Each account's `incomeBalance` value selects **Balance Sheet** or **Income Statement**. Asset, Liability, and Equity accounts belong to the Balance Sheet; Revenue and Expense accounts belong to the Income Statement.
 
@@ -32,7 +32,7 @@ Every report starts from a single balance function that reads the posted ledger 
 <FieldTable>
   <Field name="balance">All-time cumulative balance, no date bound. The running total of every posted line on the account.</Field>
   <Field name="balanceAtDate">Cumulative balance from inception up to the report's **end date**. This is the *as-of* figure the Balance Sheet shows.</Field>
-  <Field name="netChange">Activity *within* the start-to-end window only. The Income Statement shows this movement by period, and the Trial Balance places its net value in the debit or credit column.</Field>
+  <Field name="netChange">Activity *within* the start-to-end window only. The Income Statement shows this movement by period. The Trial Balance reads the gross debits and credits of the same lines instead.</Field>
 </FieldTable>
 
 Group (heading) accounts don't hold postings; their totals roll up from their children. Because a debit and a credit are stored with opposite signs, the roll-up is **sign-aware by account class**. Asset and Revenue accounts add to their parent; Liability, Equity, and Expense subtract.
@@ -50,11 +50,11 @@ Carbon closes the gap by summing every Income Statement leaf account and showing
 All three reports use a start and end date and default to the trailing six months:
 
 - The **Balance Sheet** and **Income Statement** can group the range into monthly, quarterly, or yearly columns. A Balance Sheet value remains an as-of figure because each column is cumulative through that column's end date.
-- The **Trial Balance** keeps the range as one period and shows its beginning balance, net debit or credit activity, and ending balance. Fiscal presets follow the company's fiscal start month from [fiscal year settings](/docs/reference/period-close).
+- The **Trial Balance** keeps the range as one period and shows its beginning balance, debits, credits, and ending balance. Fiscal presets follow the company's fiscal start month from [fiscal year settings](/docs/reference/period-close).
 
 These pickers slice by **posting date**, not by the [accounting period](/docs/reference/period-close) a journal landed in, so a report window can span open and closed periods freely. Closing a period doesn't change what a report shows; it just snapshots balances so the reads stay fast.
 
-Alongside the date picker, a company selector lets you view a single company or roll several together (multi-company consolidation, with currency translation when a **"Show translated"** toggle is on), and an account search filters the tree by name or number.
+Alongside the date picker, a company selector lets you view a single company or roll several together (multi-company consolidation, with currency translation when a **"Show translated"** toggle is on), and an account search filters the accounts by name or number.
 
 ## What the reports do not slice
 
@@ -64,11 +64,11 @@ The core statements do not support dimension filtering.
 Journal lines can carry <Term id="reporting-dimension">reporting dimensions</Term> (location, department, cost center, and custom axes), but the Balance Sheet, Income Statement, and Trial Balance **do not** offer a dimension filter. They aggregate every posting on an account regardless of its dimension tags. To analyze the ledger by dimension, use the [dimensions](/docs/reference/dimensions) tooling, not these three statements.
 </Callout>
 
-The account ledger drawer (the drill-down you get by clicking an account on any of these reports) lists that account's individual posted lines for the same window, so a report figure always traces back to the transactions that make it up.
+The account ledger drawer (the drill-down you get by clicking an account on any of these reports) lists that account's individual posted lines for the same window, so a report figure always traces back to the transactions that make it up. From a one-company Trial Balance, the drawer's Opening and Closing match the row. When the range crosses a fiscal year end, a **Year-End Close** figure shows the amount that no posted line carries.
 
 ## General Ledger
 
-The **General Ledger** report lists every posted journal line in a date range, one row per line: posting date, journal entry, account, description, the debit or credit, source, document type, and the customer or supplier and invoice number of the document it was posted from. A payment line names the invoice it settles; the supplier's own invoice number is a hidden column you can show. Open it from **Accounting → Reports → General Ledger**. It reads the same Posted and Reversed journals as the statements, so its lines for an account and range add up to that account's Trial Balance movement.
+The **General Ledger** report lists every posted journal line in a date range, one row per line: posting date, journal entry, account, description, the debit or credit, source, document type, and the customer or supplier and invoice number of the document it was posted from. A payment line names the invoice it settles; the supplier's own invoice number is a hidden column you can show. Each active [dimension](/docs/reference/dimensions) has its own column, showing the value's name — the customer or supplier name, the part number, the department — and the Download includes the same columns. Open it from **Accounting → Reports → General Ledger**. It reads the same Posted and Reversed journals as the statements, so its lines for an account and range add up to that account's Trial Balance movement.
 
 - It shows one company at a time, in that company's base currency. The company selector has no "All Companies" option here.
 - The period picker sets the range and defaults to the trailing six months, as the Trial Balance does.

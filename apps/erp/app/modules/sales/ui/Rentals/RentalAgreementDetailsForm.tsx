@@ -13,7 +13,6 @@ import type { z } from "zod";
 import {
   Currency,
   Customer,
-  CustomerContact,
   CustomerLocation,
   CustomFormFields,
   DatePicker,
@@ -26,6 +25,9 @@ import {
 import { SetupBody, SetupFooter, SetupSection } from "~/components/Setup";
 import { usePermissions } from "~/hooks";
 import { rentalAgreementValidator } from "../../sales.models";
+import RentalContactsEditor, {
+  type RentalContactsValue
+} from "./RentalContactsEditor";
 
 type RentalAgreementDetailsValues = z.infer<typeof rentalAgreementValidator>;
 
@@ -80,9 +82,10 @@ const RentalAgreementDetailsForm = ({
   const [customerLocationId, setCustomerLocationId] = useState(
     initialValues.customerLocationId
   );
-  const [customerContactId, setCustomerContactId] = useState(
-    initialValues.customerContactId
-  );
+  const [contacts, setContacts] = useState<RentalContactsValue>({
+    primaryId: initialValues.customerContactId,
+    contacts: initialValues.contacts ?? []
+  });
   const [currencyCode, setCurrencyCode] = useState(initialValues.currencyCode);
   const [startDate, setStartDate] = useState(initialValues.startDate);
   const [endDate, setEndDate] = useState(initialValues.endDate);
@@ -101,7 +104,8 @@ const RentalAgreementDetailsForm = ({
     setCustomerId(next);
     latestCustomerId.current = next;
     setCustomerLocationId(undefined);
-    setCustomerContactId(undefined);
+    // Contacts belong to one customer.
+    setContacts({ primaryId: undefined, contacts: [] });
     if (!next || !carbon) return;
 
     const { data, error } = await carbon
@@ -119,7 +123,10 @@ const RentalAgreementDetailsForm = ({
       return;
     }
     if (data.currencyCode) setCurrencyCode(data.currencyCode);
-    setCustomerContactId(data.salesContactId ?? undefined);
+    setContacts({
+      primaryId: data.salesContactId ?? undefined,
+      contacts: []
+    });
     setCustomerLocationId(
       data.customerShipping?.[0]?.shippingCustomerLocationId ?? undefined
     );
@@ -166,20 +173,27 @@ const RentalAgreementDetailsForm = ({
               value={customerLocationId}
               onChange={(location) => setCustomerLocationId(location?.id)}
             />
-            <CustomerContact
-              name="customerContactId"
-              label={t`Customer Contact`}
-              helperText={t`Receives the invoice email`}
-              customer={customerId}
-              value={customerContactId}
-              onChange={(contact) => setCustomerContactId(contact?.id)}
-            />
             <Location
               name="locationId"
               label={t`Shipping Location`}
               helperText={t`Where the units ship from`}
             />
           </div>
+          <input
+            type="hidden"
+            name="customerContactId"
+            value={contacts.primaryId ?? ""}
+          />
+          <input
+            type="hidden"
+            name="contacts"
+            value={JSON.stringify(contacts.contacts)}
+          />
+          <RentalContactsEditor
+            customerId={customerId}
+            value={contacts}
+            onChange={setContacts}
+          />
         </SetupSection>
 
         <SetupSection

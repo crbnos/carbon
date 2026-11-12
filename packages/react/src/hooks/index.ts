@@ -25,13 +25,24 @@ import useMount from "./useMount";
 import { useNProgress } from "./useNProgress";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import useOutsideClick from "./useOutsideClick";
+import { usePaneResize } from "./usePaneResize";
 import { usePlan } from "./usePlan";
 import { useRevalidator } from "./useRevalidator";
 import { useRouteData } from "./useRouteData";
+import { useRouteDialog } from "./useRouteDialog";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
 import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
 import { useShortcutSequence } from "./useShortcutSequence";
 import { useThemePreview } from "./useThemePreview";
+import {
+  setThemePreview,
+  ThemeStyleProvider,
+  useSavedThemeValue,
+  useShellThemeStyle,
+  useThemeContent,
+  useThemeStyle,
+  useThemeValue
+} from "./useThemeStyle";
 import useThrottle from "./useThrottle";
 import { useDensityScale, useUiScale } from "./useUiScale";
 import { useUrlParams } from "./useUrlParams";
@@ -39,6 +50,8 @@ import { useUrlParams } from "./useUrlParams";
 export type { Shortcut, ShortcutDefinition };
 export {
   getSystemMode,
+  setThemePreview,
+  ThemeStyleProvider,
   useCloseRoute,
   useDebounce,
   useDensityScale,
@@ -60,14 +73,21 @@ export {
   useOptimisticLocation,
   useOptimisticMode,
   useOutsideClick,
+  usePaneResize,
   usePlan,
   useRevalidator,
   useRouteData,
+  useRouteDialog,
+  useSavedThemeValue,
   useScanPending,
+  useShellThemeStyle,
   useShortcutKeyMap,
   useShortcutKeys,
   useShortcutSequence,
+  useThemeContent,
   useThemePreview,
+  useThemeStyle,
+  useThemeValue,
   useThrottle,
   useUiScale,
   useUrlParams

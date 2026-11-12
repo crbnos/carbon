@@ -5,6 +5,7 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBan,
+  LuFolderKanban,
   LuGlobe,
   LuKeyRound,
   LuList,
@@ -49,23 +50,6 @@ export default function useSalesSubmodules() {
       ]
     },
     {
-      name: t`Quoting`,
-      routes: [
-        {
-          name: t`RFQs`,
-          to: path.to.salesRfqs,
-          icon: <RiProgress2Line />,
-          table: "salesRfq"
-        },
-        {
-          name: t`Quotes`,
-          to: path.to.quotes,
-          icon: <RiProgress4Line />,
-          table: "quote"
-        }
-      ]
-    },
-    {
       name: t`Orders`,
       routes: [
         {
@@ -83,12 +67,35 @@ export default function useSalesSubmodules() {
       ]
     },
     {
+      name: t`Quoting`,
+      routes: [
+        {
+          name: t`RFQs`,
+          to: path.to.salesRfqs,
+          icon: <RiProgress2Line />,
+          table: "salesRfq"
+        },
+        {
+          name: t`Quotes`,
+          to: path.to.quotes,
+          icon: <RiProgress4Line />,
+          table: "quote"
+        }
+      ]
+    },
+    {
       name: t`Agreements`,
       routes: [
         {
           name: t`Service Contracts`,
           to: path.to.contracts,
           icon: <LuSection />,
+          table: "customerContract"
+        },
+        {
+          name: t`Project Contracts`,
+          to: path.to.projectContracts,
+          icon: <LuFolderKanban />,
           table: "customerContract"
         },
         {

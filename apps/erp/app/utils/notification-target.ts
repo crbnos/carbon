@@ -47,6 +47,51 @@ export function notificationTarget(
     case NotificationEvent.ApprovalRequested:
       // Approvals started with purchase orders, so a notification without a
       // document type is one.
+      if (documentType === "purchaseOrderForceDelete") {
+        // "<purchaseOrderId>:<requestId>". An approved force delete deleted
+        // the order, so its notice opens the order list.
+        const [purchaseOrderId] = documentId.split(":");
+        return page(
+          purchaseOrderId && event !== NotificationEvent.ApprovalApproved
+            ? path.to.purchaseOrderDetails(purchaseOrderId)
+            : path.to.purchaseOrders
+        );
+      }
+      if (documentType === "documentForceDelete") {
+        // "<documentType>:<documentId>:<requestId>". An approved force delete
+        // deleted the document, so its notice opens the document's list.
+        const [type, id] = documentId.split(":");
+        const deleted = event === NotificationEvent.ApprovalApproved || !id;
+        switch (type) {
+          case "purchaseInvoice":
+            return page(
+              deleted
+                ? path.to.invoicingPurchasing
+                : path.to.purchaseInvoiceDetails(id)
+            );
+          case "salesInvoice":
+            return page(
+              deleted ? path.to.invoicingSales : path.to.salesInvoiceDetails(id)
+            );
+          case "receipt":
+            return page(
+              deleted ? path.to.receipts : path.to.receiptDetails(id)
+            );
+          case "payment":
+            return page(deleted ? path.to.payments : path.to.payment(id));
+          default:
+            return null;
+        }
+      }
+      if (documentType === "projectChangeRequest") {
+        // "<projectId>:<changeRequestId>"
+        const [projectId, changeRequestId] = documentId.split(":");
+        return page(
+          projectId && changeRequestId
+            ? path.to.projectChangeRequest(projectId, changeRequestId)
+            : path.to.projects
+        );
+      }
       return page(
         documentType === "qualityDocument"
           ? path.to.qualityDocument(documentId)
@@ -105,6 +150,13 @@ export function notificationTarget(
       );
     case NotificationEvent.LeaseCriticalDate:
       return page(path.to.leaseDetails(documentId));
+    case NotificationEvent.ContractFundingThreshold:
+      return page(path.to.contractDetails(documentId));
+    case NotificationEvent.TimesheetMissing:
+      // documentId is the missed date; the timesheet opens on the current week.
+      return page(path.to.timesheet);
+    case NotificationEvent.ProjectBudgetExceeded:
+      return page(path.to.projectCosts(documentId));
     case NotificationEvent.JobAssignment:
     case NotificationEvent.JobCompleted:
     case NotificationEvent.JobsProjectedLate:

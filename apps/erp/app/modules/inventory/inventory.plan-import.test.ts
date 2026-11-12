@@ -404,3 +404,46 @@ describe("review fixes", () => {
     });
   });
 });
+
+describe("an untracked item held by two owners in one bin", () => {
+  const owners: CountImportLine[] = [
+    { id: "common", systemQuantity: 10 },
+    { id: "project", systemQuantity: 4 }
+  ].map((line) => ({
+    ...line,
+    itemId: "inv",
+    storageUnitId: "A1",
+    trackedEntityId: null,
+    readableId: null,
+    foundDuringCount: false,
+    unnumberedSince: null,
+    assignedReadableId: null
+  }));
+  const plan = (quantity: number | null) =>
+    planInventoryCountImport({
+      rows: [
+        {
+          line: 2,
+          item: "INV",
+          storageUnit: "A1",
+          code: "",
+          quantity
+        }
+      ],
+      items,
+      storageUnits,
+      entities: [],
+      lines: owners
+    });
+
+  it("spreads the row over both lines, so neither owner reads as short", () => {
+    const result = plan(14);
+    if ("errors" in result) throw new Error("expected a plan");
+    expect(result.updates).toEqual(
+      expect.arrayContaining([
+        { lineId: "common", countedQuantity: 10 },
+        { lineId: "project", countedQuantity: 4 }
+      ])
+    );
+  });
+});

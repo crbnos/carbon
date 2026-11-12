@@ -114,6 +114,7 @@ async function fetchLoader<T>(
     queryFn: () => Promise<T>;
     staleTime: number;
     gcTime: number;
+    retry?: (failures: number, error: unknown) => boolean;
   }
 ): Promise<T> {
   const before = loaderInvalidations();
@@ -130,6 +131,10 @@ async function fetchLoader<T>(
 
 /** A read the server answered and refused: asking again changes nothing. */
 export class LoaderRequestError extends Error {}
+
+/** Up to 3 tries, except for a refusal (a 403, an expired session). */
+export const loaderRetry = (failures: number, error: unknown) =>
+  !(error instanceof LoaderRequestError) && failures < 3;
 
 const fetchJson = async <T>(url: string): Promise<T> => {
   const res = await fetch(url);
@@ -163,7 +168,10 @@ export const loaderQuery = <T>(
       : loaderQueryKey(url),
   queryFn: () => fetchJson<T>(url),
   staleTime: options?.staleTime ?? RefreshRate.Low,
-  gcTime: LOADER_GC_TIME
+  // No collection timer on the server: each render's QueryClient goes with its
+  // request, and a 30-minute timer would keep it, and the render, alive.
+  gcTime:
+    typeof window === "undefined" ? Number.POSITIVE_INFINITY : LOADER_GC_TIME
 });
 
 /**
@@ -179,4 +187,17 @@ export async function cachedApiQuery<T>(
   const cache = getClientCache();
   if (!cache) return fetchJson<T>(url);
   return fetchLoader(cache, loaderQuery<T>(url, options));
+}
+
+/**
+ * Starts the read a `useLoaderQuery` of `url` is about to make (a press before
+ * its click), with the same retries: the component joins this read when it
+ * mounts, so it must not fail faster than the component's own would.
+ */
+export function prefetchLoaderQuery(url: string): void {
+  const cache = getClientCache();
+  if (!cache) return;
+  fetchLoader(cache, { ...loaderQuery(url), retry: loaderRetry }).catch(() => {
+    // The component reads again and shows the error.
+  });
 }

@@ -33,6 +33,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
@@ -274,6 +275,8 @@ const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
     );
   }, [deleteSalesRFQModal, navigate, permissions]);
 
+  const lineItemRows = useLineItemRows<SalesRFQ>("sales-rfqs");
+
   return (
     <>
       <Table<SalesRFQ>
@@ -281,6 +284,7 @@ const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
         infinite={infinite}
         columns={columns}
         data={data}
+        {...lineItemRows}
         defaultColumnPinning={{
           left: ["rfqId"]
         }}
@@ -307,11 +311,9 @@ const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
           text={t`Are you sure you want to delete ${selectedSalesRFQ.rfqId!}? This cannot be undone.`}
           onCancel={() => {
             deleteSalesRFQModal.onClose();
-            setSelectedSalesRFQ(null);
           }}
           onSubmit={() => {
             deleteSalesRFQModal.onClose();
-            setSelectedSalesRFQ(null);
           }}
         />
       )}

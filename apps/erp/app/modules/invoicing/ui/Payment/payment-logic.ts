@@ -96,9 +96,12 @@ export type OpenInvoice = {
   remainingDocument: number;
   status: string | null;
   // The documents the invoice bills: a customer deposit funds only invoices of
-  // its own rental agreement or sales order.
+  // its own rental agreement, sales order or contract; a supplier prepayment
+  // only invoices of its own purchase order.
   rentalAgreementIds?: string[];
   salesOrderIds?: string[];
+  customerContractIds?: string[];
+  purchaseOrderIds?: string[];
 };
 
 export type ExistingApplication = {
@@ -128,6 +131,8 @@ export type ApplyRow = {
   remainingDocument: number;
   rentalAgreementIds?: string[];
   salesOrderIds?: string[];
+  customerContractIds?: string[];
+  purchaseOrderIds?: string[];
   checked: boolean;
   appliedAmount: number;
   discountAmount: number;
@@ -241,7 +246,9 @@ export function fundingRequests(rows: ApplyRow[]): FundingRequest[] {
       discountAmount: r.discountAmount,
       writeOffAmount: r.writeOffAmount,
       rentalAgreementIds: r.rentalAgreementIds,
-      salesOrderIds: r.salesOrderIds
+      salesOrderIds: r.salesOrderIds,
+      customerContractIds: r.customerContractIds,
+      purchaseOrderIds: r.purchaseOrderIds
     }));
 }
 
@@ -378,7 +385,9 @@ export function autoApplyRows(
     discountAmount: 0,
     writeOffAmount: 0,
     rentalAgreementIds: r.rentalAgreementIds,
-    salesOrderIds: r.salesOrderIds
+    salesOrderIds: r.salesOrderIds,
+    customerContractIds: r.customerContractIds,
+    purchaseOrderIds: r.purchaseOrderIds
   }));
   const result = allocatePaymentFunding({
     currentPayment,
@@ -621,6 +630,7 @@ export function aggregateApplications(splits: PaymentApplication[]) {
       a.targetPurchaseInvoiceId ??
       a.targetMemoId ??
       a.targetReimbursementId ??
+      a.targetPaymentId ??
       a.id;
     const existing = byInvoice.get(id);
     if (!existing) {
@@ -656,7 +666,11 @@ export function unappliedPaymentCash(
   return (
     paymentTotal -
     splits.reduce(
-      (s, a) => s + (a.sourcePaymentId ? 0 : Number(a.sourceAmount ?? 0)),
+      (s, a) =>
+        s +
+        (a.sourcePaymentId && !a.targetPaymentId
+          ? 0
+          : Number(a.sourceAmount ?? 0)),
       0
     )
   );

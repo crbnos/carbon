@@ -25,7 +25,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useRef, useState } from "react";
+import { type RefObject, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import {
   finishValidator,
@@ -61,6 +61,8 @@ export function QuantityModal({
   trackedEntityId,
   trackedEntityReadableId,
   type,
+  returnFocusRef,
+  open = true,
   onClose
 }: {
   allStepsRecorded?: boolean;
@@ -76,9 +78,20 @@ export function QuantityModal({
   // confirmation so the operator knows exactly which unit is being scrapped.
   trackedEntityReadableId?: string;
   type: "scrap" | "rework" | "complete" | "finish";
+  // Where focus goes on close when the control that opened the modal is gone
+  // (an item in a sheet that closed as the modal opened).
+  returnFocusRef?: RefObject<HTMLElement | null>;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  // The modal opens from state, not a DialogTrigger, so Radix has no trigger
+  // to return focus to and it falls to <body>. Remember the opener instead.
+  const [opener] = useState(() =>
+    typeof document === "undefined"
+      ? null
+      : (document.activeElement as HTMLElement | null)
+  );
   // The action's redirect keeps the page the operation was opened from.
   const fetcher = useAction<ProductionQuantity>({
     onSettled: () => {
@@ -159,14 +172,23 @@ export function QuantityModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
         }
       }}
     >
-      <ModalContent>
+      <ModalContent
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          const target =
+            opener?.isConnected && opener !== document.body
+              ? opener
+              : returnFocusRef?.current;
+          target?.focus();
+        }}
+      >
         <ValidatedForm
           action={actionMap[type]}
           method="post"

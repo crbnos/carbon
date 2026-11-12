@@ -106,7 +106,6 @@ export function IssueAssociationsTree({
   };
 
   const onDeleteCancel = () => {
-    setSelectedChild(null);
     deleteDisclosure.onClose();
   };
 
@@ -119,6 +118,7 @@ export function IssueAssociationsTree({
               <LuSearch className="h-4 w-4" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search associations`}
               placeholder={t`Search...`}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
@@ -150,7 +150,7 @@ export function IssueAssociationsTree({
             ))}
         </VStack>
       </VStack>
-      {deleteDisclosure.isOpen && selectedChild?.id && (
+      {selectedChild?.id && (
         <ConfirmDelete
           action={path.to.deleteIssueAssociation(
             nonConformanceId,
@@ -200,6 +200,8 @@ export function IssueAssociationItem({
     <>
       <div className="flex h-8 items-center overflow-hidden rounded-sm px-2 gap-2 text-sm w-full hover:bg-accent">
         <button
+          aria-expanded={isExpanded}
+          type="button"
           className="flex flex-grow cursor-pointer items-center overflow-hidden font-medium"
           onClick={(e) => {
             e.stopPropagation();
@@ -281,7 +283,7 @@ export function IssueAssociationItem({
                         icon={<LuEllipsisVertical />}
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                        className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/association:opacity-100 group-focus-within/association:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
                       />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
@@ -303,7 +305,7 @@ export function IssueAssociationItem({
           )}
         </div>
       )}
-      {newAssociationModal.isOpen && !node.readOnly && (
+      {!node.readOnly && (
         <NewAssociationModal
           open={newAssociationModal.isOpen}
           onClose={newAssociationModal.onClose}
@@ -521,7 +523,7 @@ function NewPurchaseOrderLineAssociation({ items }: { items?: string[] }) {
 
     let query = carbon
       .from("purchaseOrderLine")
-      .select("id, itemId, item(name)")
+      .select("id, itemId, item!purchaseOrderLine_itemId_fkey(name)")
       .eq("purchaseOrderId", purchaseOrderId);
 
     if (items) {
@@ -1187,19 +1189,41 @@ function NewInspectionAssociation() {
   );
 }
 
-function NewAssociationModal({
-  open,
-  onClose,
-  type,
-  name,
-  items
-}: {
+type NewAssociationModalProps = {
   open: boolean;
   onClose: () => void;
   type: IssueAssociationKey;
   name: string;
   items?: string[];
-}) {
+};
+
+function NewAssociationModal({
+  open,
+  onClose,
+  ...props
+}: NewAssociationModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <NewAssociationBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function NewAssociationBody({
+  onClose,
+  type,
+  name,
+  items
+}: Omit<NewAssociationModalProps, "open">) {
   const { id } = useParams();
   if (!id) throw new Error("No issue ID found");
 
@@ -1237,39 +1261,28 @@ function NewAssociationModal({
   }
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+    <ValidatedForm
+      method="post"
+      action={path.to.newIssueAssociation(id)}
+      validator={issueAssociationValidator}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.newIssueAssociation(id)}
-          validator={issueAssociationValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>New {name}</ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="type" value={type} />
-            <VStack spacing={4}>{renderFields(type)}</VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Add</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>New {name}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="type" value={type} />
+        <VStack spacing={4}>{renderFields(type)}</VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit>
+          <Trans>Add</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

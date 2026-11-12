@@ -46,6 +46,7 @@ import {
   useOptimisticAssignment
 } from "~/components";
 import {
+  ChargeNumber,
   Customer,
   Item,
   JobSalesOrderLine,
@@ -67,6 +68,7 @@ import {
   deadlineTypes,
   isJobLocked
 } from "../../production.models";
+import type { JobProjectCharge } from "../../production.service";
 import type { Job } from "../../types";
 import { getDeadlineIcon } from "./Deadline";
 
@@ -77,6 +79,7 @@ const JobProperties = () => {
 
   const routeData = useRouteData<{
     job: Job;
+    projectCharge?: JobProjectCharge | null;
     tags: { name: string }[];
     trackedEntities: Promise<PostgrestResponse<TrackedEntity>>;
   }>(path.to.job(jobId));
@@ -114,6 +117,24 @@ const JobProperties = () => {
     },
 
     [jobId, routeData?.job]
+  );
+
+  const currentChargeNumber = routeData?.projectCharge?.projectId
+    ? `${routeData.projectCharge.projectId}|${routeData.projectCharge.projectElementId ?? ""}`
+    : "";
+  const onUpdateChargeNumber = useCallback(
+    (value: string | null) => {
+      if ((value ?? "") === currentChargeNumber) return;
+      const formData = new FormData();
+      formData.append("ids", jobId);
+      formData.append("field", "chargeNumber");
+      formData.append("value", value ?? "");
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateJob
+      });
+    },
+    [jobId, currentChargeNumber, fetcher.submit]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -335,7 +356,7 @@ const JobProperties = () => {
               </Badge>
             </Hyperlink>
             <Button
-              className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200"
+              className="group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 md:opacity-0 transition-opacity duration-150"
               variant="ghost"
               size="sm"
               leftIcon={<LuUnlink2 className="w-3 h-3" />}
@@ -561,6 +582,34 @@ const JobProperties = () => {
 
       <ValidatedForm
         defaultValues={{
+          projectId: routeData?.projectCharge?.projectId ?? undefined,
+          projectElementId:
+            routeData?.projectCharge?.projectElementId ?? undefined
+        }}
+        validator={z.object({
+          projectId: zfd.text(z.string().optional()),
+          projectElementId: zfd.text(z.string().optional())
+        })}
+        className="w-full"
+      >
+        {/* Chosen before release: issued material and labor carry it. */}
+        <ChargeNumber
+          label={t`Charge Number`}
+          inline
+          isOptional
+          isReadOnly={
+            isDisabled ||
+            (routeData?.job?.status !== "Draft" &&
+              routeData?.job?.status !== "Planned")
+          }
+          onChange={(row) => {
+            onUpdateChargeNumber(row?.value ?? null);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
           unitOfMeasureCode: routeData?.job?.unitOfMeasureCode ?? undefined
         }}
         validator={z.object({
@@ -636,47 +685,45 @@ const JobProperties = () => {
         onUpdate={onUpdateCustomFields}
       />
 
-      {unlinkDisclosure.isOpen && (
-        <Modal
-          open={unlinkDisclosure.isOpen}
-          onOpenChange={(open) => {
-            if (!open) unlinkDisclosure.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Unlink job from sales order?</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  This will remove {routeData?.job?.jobId}'s link to{" "}
-                  {routeData?.job?.salesOrderReadableId}. The job will no longer
-                  appear under the sales order and shipments won't find it.
-                </Trans>
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={unlinkDisclosure.onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                variant="destructive"
-                leftIcon={<LuUnlink2 className="w-3 h-3" />}
-                onClick={() => {
-                  onUpdate("salesOrderLineId", null);
-                  unlinkDisclosure.onClose();
-                }}
-              >
-                <Trans>Unlink</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={unlinkDisclosure.isOpen}
+        onOpenChange={(open) => {
+          if (!open) unlinkDisclosure.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Unlink job from sales order?</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                This will remove {routeData?.job?.jobId}'s link to{" "}
+                {routeData?.job?.salesOrderReadableId}. The job will no longer
+                appear under the sales order and shipments won't find it.
+              </Trans>
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={unlinkDisclosure.onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              variant="destructive"
+              leftIcon={<LuUnlink2 className="w-3 h-3" />}
+              onClick={() => {
+                onUpdate("salesOrderLineId", null);
+                unlinkDisclosure.onClose();
+              }}
+            >
+              <Trans>Unlink</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </VStack>
   );
 };

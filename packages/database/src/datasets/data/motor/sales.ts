@@ -8,11 +8,14 @@
 
 import type {
   ContractSpec,
+  CustomerAssetSpec,
   PriceBreak,
+  RentalAgreementSpec,
   SalesData,
   SalesOpportunitySpec,
   SalesReturnSpec,
   SalesStatusOrderSpec,
+  ServiceJobSpec,
   StaggeredDeliverySpec
 } from "../../types.ts";
 
@@ -960,6 +963,26 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
     dateOffset: -1,
     salesOrder: "so:halcyon-seals",
     lines: [{ item: "SEAL-VR-45", quantity: 4, unitPrice: 6 }]
+  },
+  {
+    // A unit back for repair: MTR-9000-S013, the "expired" customer asset.
+    // Received, so its service job (SERVICE_JOBS "motor-repair") is open and
+    // the RMA is In Progress.
+    key: "motor-repair",
+    status: "In Progress",
+    customer: "Wabash Industrial Supply",
+    returnReason: "Defective",
+    dateOffset: -3,
+    lines: [
+      {
+        item: "MTR-9000",
+        quantity: 1,
+        unitPrice: 4850,
+        returnType: "Return for Service",
+        asset: "expired",
+        problem: "The motor trips on over-temperature at 70% of rated load."
+      }
+    ]
   }
 ];
 
@@ -1009,6 +1032,261 @@ export const CONTRACTS: ContractSpec[] = [
         discountPercent: 10,
         startOffset: -60,
         revenueMethod: "Even Period"
+      }
+    ]
+  }
+];
+
+// Field service: three units at customers (one in warranty, one whose
+// labor warranty has ended, one expired).
+export const CUSTOMER_ASSETS: CustomerAssetSpec[] = [
+  {
+    key: "in-warranty",
+    item: "MTR-9000",
+    serial: "MTR-9000-S011",
+    customer: "Ridgeline Drive Systems",
+    shippedOffset: -120,
+    laborWarrantyEndOffset: 245,
+    partsWarrantyEndOffset: 610
+  },
+  {
+    key: "labor-ended",
+    item: "MTR-9000",
+    serial: "MTR-9000-S012",
+    customer: "Cardinal Motorworks",
+    shippedOffset: -500,
+    laborWarrantyEndOffset: -135,
+    partsWarrantyEndOffset: 230
+  },
+  {
+    key: "expired",
+    item: "MTR-9000",
+    serial: "MTR-9000-S013",
+    customer: "Wabash Industrial Supply",
+    shippedOffset: -900,
+    laborWarrantyEndOffset: -535,
+    partsWarrantyEndOffset: -170
+  }
+];
+
+// Service jobs: one per status the job page and the RMA show. The Open job is
+// the one the "motor-repair" RMA receipt created; Completed and Invoiced carry
+// their completion journal (tier 09), and Invoiced its Draft invoice. No parts:
+// an issued part needs the issue posting's ledger, cost and journal rows.
+export const SERVICE_JOBS: ServiceJobSpec[] = [
+  {
+    key: "motor-repair",
+    status: "Open",
+    coverage: "Billable",
+    workSite: "Depot",
+    priority: "High",
+    asset: "expired",
+    salesReturnLine: { salesReturn: "motor-repair", line: 1 },
+    problem: "The motor trips on over-temperature at 70% of rated load.",
+    time: [],
+    charges: [],
+    assignments: [
+      { weekday: 2, plannedHours: 3 },
+      { weekday: 3, plannedHours: 2 }
+    ]
+  },
+  {
+    key: "estimate",
+    status: "Awaiting Approval",
+    coverage: "Billable",
+    workSite: "Customer Site",
+    priority: "Medium",
+    asset: "labor-ended",
+    openedWorkdaysBack: 6,
+    dueOffset: 10,
+    problem: "The drive end bearing runs hot and noisy.",
+    findings:
+      "The drive end bearing is worn. The shaft and the housing measure in specification.",
+    repairable: true,
+    estimate: {
+      status: "Sent",
+      sentWorkdaysBack: 3,
+      lines: [
+        { quantity: 6, unitPrice: 135 },
+        {
+          item: "Dynamometer Certification",
+          description: "Dynamometer run and certificate after the repair",
+          quantity: 1,
+          unitPrice: 1850
+        }
+      ]
+    },
+    time: [
+      {
+        workdaysBack: 4,
+        hours: 3,
+        note: "On-site vibration and temperature survey"
+      }
+    ],
+    charges: []
+  },
+  {
+    key: "on-site",
+    status: "In Progress",
+    coverage: "Warranty",
+    workSite: "Customer Site",
+    priority: "High",
+    asset: "in-warranty",
+    openedWorkdaysBack: 3,
+    dueOffset: 4,
+    problem: "The encoder signal drops out at high speed.",
+    findings:
+      "The encoder connector is not fully latched and moves with vibration.",
+    repairable: true,
+    time: [
+      {
+        workdaysBack: 2,
+        hours: 3.5,
+        clock: { start: "08:00:00", end: "11:30:00" },
+        note: "Captured the encoder signal on a scope through the speed range"
+      },
+      {
+        workdaysBack: 1,
+        hours: 4,
+        note: "Re-seated and secured the encoder connector"
+      }
+    ],
+    charges: [],
+    assignments: [
+      {
+        weekday: 0,
+        plannedHours: 4,
+        note: "Bring a spare encoder connector and latch kit"
+      },
+      { weekday: 1, plannedHours: 3 }
+    ]
+  },
+  {
+    key: "warranty-repair",
+    status: "Completed",
+    coverage: "Warranty",
+    workSite: "Depot",
+    priority: "Medium",
+    asset: "in-warranty",
+    openedWorkdaysBack: 30,
+    problem:
+      "The motor vibrates above the acceptance limit after installation.",
+    findings: "The rotor balance is out of tolerance from the factory.",
+    resolution:
+      "Re-balanced the rotor to G2.5 and confirmed vibration within limits on the test stand.",
+    repairable: true,
+    time: [
+      { workdaysBack: 28, hours: 5 },
+      { workdaysBack: 27, hours: 3.5 }
+    ],
+    charges: [],
+    completedWorkdaysBack: 27
+  },
+  {
+    key: "invoiced",
+    status: "Invoiced",
+    coverage: "Billable",
+    workSite: "Customer Site",
+    priority: "Medium",
+    asset: "labor-ended",
+    openedWorkdaysBack: 18,
+    problem: "The motor brake does not release on start.",
+    findings: "The brake air gap is too large after wear.",
+    resolution:
+      "Set the brake air gap to specification and ran 50 start-stop cycles.",
+    repairable: true,
+    estimate: {
+      status: "Accepted",
+      sentWorkdaysBack: 16,
+      respondedWorkdaysBack: 15,
+      respondedBy: "Wes Talbot",
+      lines: [
+        { quantity: 8, unitPrice: 135 },
+        {
+          item: "Dynamometer Certification",
+          description: "Dynamometer run and certificate after the repair",
+          quantity: 1,
+          unitPrice: 1850
+        }
+      ]
+    },
+    time: [
+      { workdaysBack: 14, hours: 4 },
+      { workdaysBack: 13, hours: 3.5 },
+      {
+        workdaysBack: 13,
+        hours: 1,
+        billable: false,
+        note: "Travel to site, not billed"
+      }
+    ],
+    charges: [
+      {
+        item: "Dynamometer Certification",
+        description: "Dynamometer run and certificate after the repair",
+        quantity: 1,
+        unitPrice: 1850
+      }
+    ],
+    completedWorkdaysBack: 12,
+    invoiceWorkdaysBack: 11
+  }
+];
+
+// Rental agreements over the fleet units (accounting FIXED_ASSETS "fleet-*").
+// The Active one is open-ended, so every line classifies as a Rental.
+export const RENTAL_AGREEMENTS: RentalAgreementSpec[] = [
+  {
+    key: "active",
+    customer: "Wabash Industrial Supply",
+    primaryContact: "Boone",
+    contacts: [{ contact: "Castellano", role: "Site contact" }],
+    status: "Active",
+    startOffset: -45,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-1",
+        rateUnit: "Month",
+        rate: 210,
+        fairValue: 2670,
+        economicLifeMonths: 60,
+        deliveredOffset: -40
+      },
+      {
+        fixedAsset: "fleet-2",
+        rateUnit: "Month",
+        rate: 210,
+        fairValue: 2670,
+        economicLifeMonths: 60
+      }
+    ],
+    charges: [
+      {
+        line: 1,
+        description: "Freight and alignment check",
+        amount: 180,
+        dateOffset: -40
+      }
+    ]
+  },
+  {
+    key: "draft",
+    customer: "Ridgeline Drive Systems",
+    primaryContact: "Raghavan",
+    status: "Draft",
+    startOffset: 14,
+    endOffset: 379,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-3",
+        rateUnit: "Month",
+        rate: 135,
+        fairValue: 1620,
+        economicLifeMonths: 60
       }
     ]
   }
@@ -1064,5 +1342,9 @@ export const motorSales: SalesData = {
       accountNumber: "DEMO-6179-8843",
       isPrimary: true
     }
-  ]
+  ],
+  customerAssets: CUSTOMER_ASSETS,
+  serviceLaborRates: { cost: 58, bill: 135 },
+  serviceJobs: SERVICE_JOBS,
+  rentalAgreements: RENTAL_AGREEMENTS
 };

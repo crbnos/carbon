@@ -52,12 +52,14 @@ import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
 type SalesRFQLineFormProps = {
   initialValues: z.infer<typeof salesRfqLineValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const SalesRFQLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: SalesRFQLineFormProps) => {
   const { t } = useLingui();
@@ -195,6 +197,7 @@ const SalesRFQLineForm = ({
     <>
       <ModalCardProvider type={type}>
         <ModalCard
+          open={open}
           onClose={onClose}
           isCollapsible={isEditing}
           defaultCollapsed={false}
@@ -368,8 +371,9 @@ const SalesRFQLineForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
-      {isEditing && deleteDisclosure.isOpen && (
+      {isEditing && (
         <DeleteSalesRFQLine
+          isOpen={deleteDisclosure.isOpen}
           line={initialValues as SalesRFQLine}
           onCancel={deleteDisclosure.onClose}
         />

@@ -5,10 +5,11 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { forwardRef } from "react";
 import { Link } from "react-router";
+import { pulseNavIcon } from "./NavRail";
 import { cn } from "./utils/cn";
 
 const tabBarItemClassName =
-  "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[0.65625rem] font-medium leading-none outline-none transition-transform active:scale-[0.98] focus-visible:ring-[3px] focus-visible:ring-ring/50";
+  "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[0.65625rem] font-medium leading-none outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
 /** The phone bottom tab bar. Hidden at md and up. */
 export function TabBar({
@@ -50,6 +51,8 @@ type TabBarItemProps = {
 export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
   (props, ref) => {
     const { icon, label, isActive = false, count, pill = false } = props;
+    // The badge is hidden; the count joins the name ("Inbox, 3", not "3Inbox").
+    const accessibleName = count ? `${label}, ${count}` : undefined;
     const content = (
       <>
         <span
@@ -62,7 +65,10 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
         >
           {icon}
           {count ? (
-            <span className="absolute -top-1 left-1/2 ml-1 h-4 min-w-4 rounded-full bg-primary px-1 text-center text-[0.625rem] font-medium leading-4 text-primary-foreground tabular-nums">
+            <span
+              aria-hidden
+              className="absolute -top-1 left-1/2 ml-1 h-4 min-w-4 rounded-full bg-primary px-1 text-center text-[0.625rem] font-medium leading-4 text-primary-foreground tabular-nums"
+            >
               {count}
             </span>
           ) : null}
@@ -84,6 +90,8 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
           to={props.to}
           className={tabBarItemClassName}
           aria-current={isActive ? "page" : undefined}
+          aria-label={accessibleName}
+          onClick={(event) => pulseNavIcon(event)}
         >
           {content}
         </Link>
@@ -103,7 +111,12 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
       <button
         ref={ref}
         type="button"
+        aria-label={accessibleName}
         {...buttonProps}
+        onClick={(event) => {
+          pulseNavIcon(event);
+          buttonProps.onClick?.(event);
+        }}
         className={tabBarItemClassName}
       >
         {content}

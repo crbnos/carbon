@@ -10,8 +10,7 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-  HStack,
-  IconButton,
+  InlineTrigger,
   LabelWithHelp,
   NumberDecrementStepper,
   NumberField,
@@ -19,19 +18,17 @@ import {
   NumberInput,
   NumberInputGroup,
   NumberInputStepper,
+  reactNodeToString,
+  useInlineTriggerLabel,
   VStack
 } from "@carbon/react";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ReactNode } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
-import {
-  LuChevronDown,
-  LuChevronUp,
-  LuPlus,
-  LuSettings2
-} from "react-icons/lu";
+import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 type FormNumberProps = NumberFieldProps & {
   name: string;
@@ -100,37 +97,43 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
       setControlValue(newValue);
       onChange?.(newValue);
     };
+    const hasValue = value !== undefined && !isNaN(value);
+    // "Edit Quantity", not a bare "Edit": the label is a sibling span, so it
+    // does not name the button.
+    const inlineTriggerLabel = useInlineTriggerLabel(
+      hasValue,
+      reactNodeToString(label).trim()
+    );
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
+    const inlineField = useInlineField({
+      inline,
+      label,
+      isEmpty: !hasValue,
+      isReadOnly: isReadOnly || isDisabled
+    });
 
     return inlineMode ? (
       <VStack>
-        {label && (
+        {label && inlineField.showLabel && (
           <span className="text-xs text-muted-foreground">{label}</span>
         )}
-        <HStack spacing={0} className="w-full justify-between">
-          {value !== undefined && (
-            <span className="flex flex-grow line-clamp-1 items-center">
-              {rest.formatOptions && !isNaN(value)
-                ? formatter.format(value)
-                : value}
-            </span>
-          )}
-          <IconButton
-            icon={
-              value !== undefined && !isNaN(value) ? (
-                <LuSettings2 />
-              ) : (
-                <LuPlus />
-              )
+        <div className="flex w-full">
+          <InlineTrigger
+            isEmpty={!hasValue}
+            placeholder={inlineField.placeholder}
+            // The field and its value: "Edit Quantity: 12".
+            aria-label={
+              hasValue
+                ? `${inlineTriggerLabel}: ${rest.formatOptions ? formatter.format(value) : value}`
+                : inlineTriggerLabel
             }
-            aria-label={value !== undefined && !isNaN(value) ? "Edit" : "Add"}
-            size="sm"
-            variant="secondary"
             isDisabled={isReadOnly || isDisabled}
             onClick={() => setInlineMode(false)}
-          />
-        </HStack>
+          >
+            {hasValue && rest.formatOptions ? formatter.format(value) : value}
+          </InlineTrigger>
+        </div>
       </VStack>
     ) : (
       <FormControl

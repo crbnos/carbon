@@ -3,11 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-
+import type { ReceiptReceivedStock } from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderBulkDeletable,
+  isPurchaseOrderForceDeleteConfirmed,
   isPurchaseOrderLocked,
+  isPurchaseOrderMissingPromisedDate,
   isPurchaseOrderPromisedDateEditable,
   leaseDetailsValidator,
   leaseDurationOf,
@@ -20,14 +22,26 @@ import {
   leaseTerminateValidator,
   leaseValidator,
   lockedReturnLineField,
+  orderItemSupplierFiles,
   PURCHASE_ORDER_LOCKED_STATUSES,
+  planReceiptReversal,
   purchaseOrderDeleteRefusal,
+  purchaseOrderForceDeleteApprovalRefusal,
+  purchaseOrderForceDeleteBlockerMessage,
+  purchaseOrderForceDeleteNotificationId,
+  purchaseOrderForceDeleteRequestValidator,
+  purchaseOrderForceDeleteUsedStockMessage,
+  purchaseOrderForceDeleteWithdrawRefusal,
   purchaseOrderLineDateRefusal,
+  purchaseOrderStatusAfterReversal,
   purchaseOrderStatusType,
   purchaseOrderValidator,
+  receivedAfterReceiptReversal,
   resolveLeaseDates,
   shortClosePurchaseOrderLineRefusal,
-  splitRfqModelAttachments,
+  splitRfqFileAttachments,
+  supplierContactEmailRequiredValidator,
+  supplierContactValidator,
   supplierQuoteValidator
 } from "./purchasing.models";
 
@@ -631,11 +645,54 @@ describe("lockedReturnLineField", () => {
   });
 });
 
-describe("splitRfqModelAttachments", () => {
+describe("orderItemSupplierFiles", () => {
+  const file = (itemId: string, path: string) => ({ itemId, path });
+
+  it("orders by first appearance of each item, keeping each item's order", () => {
+    const files = [
+      file("b", "b/model.step"),
+      file("a", "a/model.step"),
+      file("b", "b/drawing.pdf"),
+      file("a", "a/drawing.pdf")
+    ];
+    expect(
+      orderItemSupplierFiles(["a", "b", "a"], files).map((f) => f.path)
+    ).toEqual([
+      "a/model.step",
+      "a/drawing.pdf",
+      "b/model.step",
+      "b/drawing.pdf"
+    ]);
+  });
+
+  it("keeps only the ticked paths of the items asked for", () => {
+    const files = [
+      file("a", "a/model.step"),
+      file("a", "a/drawing.pdf"),
+      file("c", "c/drawing.pdf")
+    ];
+    expect(
+      orderItemSupplierFiles(["a"], files, [
+        "a/drawing.pdf",
+        // Another item's file, or any other path, is never shared.
+        "c/drawing.pdf",
+        "other-company/secret.pdf"
+      ]).map((f) => f.path)
+    ).toEqual(["a/drawing.pdf"]);
+  });
+
+  it("shares nothing when nothing is ticked", () => {
+    expect(
+      orderItemSupplierFiles(["a"], [file("a", "a/model.step")], [])
+    ).toEqual([]);
+  });
+});
+
+describe("splitRfqFileAttachments", () => {
   const model = (id: string, size: number) => ({ id, size });
 
   it("attaches what fits in line order and links the rest", () => {
-    const { attach, link } = splitRfqModelAttachments(
+    const { attach, link } = splitRfqFileAttachments(
       [model("a", 10), model("big", 30), model("b", 5)],
       20
     );
@@ -644,7 +701,7 @@ describe("splitRfqModelAttachments", () => {
   });
 
   it("links every model when documents already use the budget", () => {
-    const { attach, link } = splitRfqModelAttachments([model("a", 1)], -5);
+    const { attach, link } = splitRfqFileAttachments([model("a", 1)], -5);
     expect(attach).toEqual([]);
     expect(link.map((m) => m.id)).toEqual(["a"]);
   });
@@ -682,12 +739,14 @@ describe("purchaseOrderLineDateRefusal", () => {
         null
     );
 
-  it("fixes the required date once the order is released", () => {
+  it("fixes the required date while in approval and once complete", () => {
     expect(editable("requiredDate")).toEqual([
       "Draft",
       "Planned",
-      "Needs Approval",
       "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
       "Rejected"
     ]);
   });
@@ -712,5 +771,398 @@ describe("purchaseOrderLineDateRefusal", () => {
     expect(editable("receivedDate", true)).toEqual([
       ...purchaseOrderStatusType
     ]);
+  });
+});
+
+describe("supplierContactValidator", () => {
+  it("accepts a contact with a name and no email", () => {
+    const result = supplierContactValidator.safeParse({ firstName: "Test" });
+    expect(result.success).toBe(true);
+  });
+  it("turns an empty email into undefined", () => {
+    const result = supplierContactValidator.safeParse({
+      firstName: "Test",
+      email: ""
+    });
+    expect(result.success && result.data.email).toBe(undefined);
+  });
+  it("refuses a contact with no name and no email", () => {
+    const result = supplierContactValidator.safeParse({});
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["firstName"]);
+  });
+  it("refuses an invalid email", () => {
+    const result = supplierContactValidator.safeParse({
+      firstName: "Test",
+      email: "not-an-email"
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("supplierContactEmailRequiredValidator", () => {
+  it("refuses a contact with a name and no email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["email"]);
+  });
+  it("accepts a contact with an email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test",
+      email: "test@example.com"
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("isPurchaseOrderMissingPromisedDate", () => {
+  const line = (promisedDate: string | null, type = "Part") => ({
+    purchaseOrderLineType: type,
+    promisedDate
+  });
+
+  it("finds a line with no date on an order with no date", () => {
+    expect(
+      isPurchaseOrderMissingPromisedDate([line("2026-12-01"), line(null)], null)
+    ).toBe(true);
+  });
+
+  it("lets the order's date cover every line", () => {
+    expect(
+      isPurchaseOrderMissingPromisedDate([line(null), line(null)], "2026-12-01")
+    ).toBe(false);
+  });
+
+  it("accepts lines that each have a date", () => {
+    expect(isPurchaseOrderMissingPromisedDate([line("2026-12-01")], null)).toBe(
+      false
+    );
+  });
+
+  it("skips Comment lines", () => {
+    expect(
+      isPurchaseOrderMissingPromisedDate(
+        [line("2026-12-01"), line(null, "Comment")],
+        null
+      )
+    ).toBe(false);
+  });
+});
+
+describe("purchase order force delete", () => {
+  const noBlockers = {
+    shipments: [],
+    invoices: [],
+    payments: []
+  };
+
+  it("names the order and the request in its notifications", () => {
+    expect(purchaseOrderForceDeleteNotificationId("po_1", "pofd_2")).toBe(
+      "po_1:pofd_2"
+    );
+  });
+
+  describe("purchaseOrderForceDeleteBlockerMessage", () => {
+    it("allows an order nothing else names", () => {
+      expect(purchaseOrderForceDeleteBlockerMessage(noBlockers)).toBeNull();
+    });
+
+    it("names every document that still holds the order", () => {
+      const message = purchaseOrderForceDeleteBlockerMessage({
+        shipments: [{ readableId: "SHP000002", status: "Draft" }],
+        invoices: [{ readableId: "PI000003", status: "Voided" }],
+        payments: [{ readableId: "PAY000004", status: "Posted" }]
+      });
+      expect(message).toContain("SHP000002 (Draft)");
+      expect(message).toContain("PI000003 (Voided)");
+      expect(message).toContain("PAY000004 (Posted)");
+    });
+  });
+
+  describe("planReceiptReversal", () => {
+    const at = {
+      itemId: "item-1",
+      locationId: "loc-1",
+      trackedEntityId: null,
+      projectId: null
+    };
+    const received = (
+      quantity: number,
+      over: Partial<ReceiptReceivedStock> = {}
+    ): ReceiptReceivedStock => ({
+      ...at,
+      storageUnitId: "bin-a",
+      receiptId: "rec-1",
+      receiptReadableId: "RE000001",
+      quantity,
+      ...over
+    });
+
+    it("takes the stock back from the bin it was received into", () => {
+      const plan = planReceiptReversal(
+        [received(4)],
+        [
+          { ...at, storageUnitId: "bin-a", quantity: 10 },
+          { ...at, storageUnitId: "bin-b", quantity: 50 }
+        ]
+      );
+      expect(plan.short).toEqual([]);
+      expect(plan.removals).toEqual([
+        { ...at, storageUnitId: "bin-a", receiptId: "rec-1", quantity: 4 }
+      ]);
+    });
+
+    it("follows stock put away into other bins, the fullest first", () => {
+      const plan = planReceiptReversal(
+        [received(10)],
+        [
+          { ...at, storageUnitId: "bin-a", quantity: 2 },
+          { ...at, storageUnitId: "bin-b", quantity: 3 },
+          { ...at, storageUnitId: "bin-c", quantity: 7 }
+        ]
+      );
+      expect(plan.short).toEqual([]);
+      expect(plan.removals.map((r) => [r.storageUnitId, r.quantity])).toEqual([
+        ["bin-a", 2],
+        ["bin-c", 7],
+        ["bin-b", 1]
+      ]);
+    });
+
+    it("takes a serial wherever it now is, and only that serial", () => {
+      const plan = planReceiptReversal(
+        [received(1, { trackedEntityId: "sn-1" })],
+        [
+          { ...at, storageUnitId: "bin-a", quantity: 5 },
+          {
+            ...at,
+            storageUnitId: "bin-z",
+            trackedEntityId: "sn-1",
+            quantity: 1
+          }
+        ]
+      );
+      expect(plan.removals).toEqual([
+        {
+          ...at,
+          storageUnitId: "bin-z",
+          trackedEntityId: "sn-1",
+          receiptId: "rec-1",
+          quantity: 1
+        }
+      ]);
+    });
+
+    it("never draws on another stripe or location", () => {
+      const plan = planReceiptReversal(
+        [received(3)],
+        [
+          { ...at, storageUnitId: "bin-a", projectId: "proj-1", quantity: 9 },
+          { ...at, locationId: "loc-2", storageUnitId: "bin-a", quantity: 9 }
+        ]
+      );
+      expect(plan.short).toEqual(["RE000001"]);
+      expect(plan.removals).toEqual([]);
+    });
+
+    it("refuses a receipt whose stock was used, and books none of it", () => {
+      const plan = planReceiptReversal(
+        [received(4)],
+        [{ ...at, storageUnitId: "bin-a", quantity: 1 }]
+      );
+      expect(plan.short).toEqual(["RE000001"]);
+      expect(plan.removals).toEqual([]);
+    });
+
+    it("does not let two receipts count the same units", () => {
+      const plan = planReceiptReversal(
+        [
+          received(3),
+          received(3, { receiptId: "rec-2", receiptReadableId: "RE000002" })
+        ],
+        [{ ...at, storageUnitId: "bin-a", quantity: 4 }]
+      );
+      expect(plan.short).toEqual(["RE000002"]);
+      expect(plan.removals.map((r) => r.receiptId)).toEqual(["rec-1"]);
+    });
+
+    it("names the receipts whose stock was used", () => {
+      expect(
+        purchaseOrderForceDeleteUsedStockMessage(["RE000001", "RE000002"])
+      ).toContain("RE000001, RE000002");
+    });
+  });
+
+  describe("purchaseOrderForceDeleteApprovalRefusal", () => {
+    const base = {
+      status: "Pending",
+      requestedBy: "requester",
+      userId: "admin-1",
+      isAdmin: true
+    };
+
+    it("lets another Admin approve", () => {
+      expect(purchaseOrderForceDeleteApprovalRefusal(base)).toBeNull();
+    });
+
+    it("refuses a non-Admin", () => {
+      expect(
+        purchaseOrderForceDeleteApprovalRefusal({ ...base, isAdmin: false })
+      ).toMatch(/Only an Admin/);
+    });
+
+    it("refuses the Admin who asked", () => {
+      expect(
+        purchaseOrderForceDeleteApprovalRefusal({
+          ...base,
+          userId: "requester"
+        })
+      ).toMatch(/another Admin must approve/);
+    });
+
+    it.each(["Executed", "Rejected", "Cancelled"])(
+      "refuses a %s request",
+      (status) => {
+        expect(
+          purchaseOrderForceDeleteApprovalRefusal({ ...base, status })
+        ).toMatch(status.toLowerCase());
+      }
+    );
+  });
+
+  describe("purchaseOrderForceDeleteWithdrawRefusal", () => {
+    const base = {
+      status: "Pending",
+      requestedBy: "requester",
+      userId: "admin-1",
+      isAdmin: true
+    };
+
+    it("lets any Admin reject, the requester included", () => {
+      expect(
+        purchaseOrderForceDeleteWithdrawRefusal({ ...base, intent: "reject" })
+      ).toBeNull();
+      expect(
+        purchaseOrderForceDeleteWithdrawRefusal({
+          ...base,
+          intent: "reject",
+          userId: "requester"
+        })
+      ).toBeNull();
+    });
+
+    it("lets only the requester cancel", () => {
+      expect(
+        purchaseOrderForceDeleteWithdrawRefusal({ ...base, intent: "cancel" })
+      ).toMatch(/Only the Admin who asked/);
+      expect(
+        purchaseOrderForceDeleteWithdrawRefusal({
+          ...base,
+          intent: "cancel",
+          userId: "requester"
+        })
+      ).toBeNull();
+    });
+
+    it("refuses a non-Admin", () => {
+      expect(
+        purchaseOrderForceDeleteWithdrawRefusal({
+          ...base,
+          intent: "reject",
+          isAdmin: false
+        })
+      ).toMatch(/Only an Admin/);
+    });
+  });
+
+  describe("isPurchaseOrderForceDeleteConfirmed", () => {
+    it("matches the order number, ignoring case and spaces", () => {
+      expect(
+        isPurchaseOrderForceDeleteConfirmed(" po000123 ", "PO000123")
+      ).toBe(true);
+    });
+
+    it("refuses another number or an empty confirmation", () => {
+      expect(isPurchaseOrderForceDeleteConfirmed("PO000124", "PO000123")).toBe(
+        false
+      );
+      expect(isPurchaseOrderForceDeleteConfirmed("", "")).toBe(false);
+    });
+  });
+
+  describe("purchaseOrderForceDeleteRequestValidator", () => {
+    it("needs a reason of at least ten characters", () => {
+      expect(
+        purchaseOrderForceDeleteRequestValidator.safeParse({
+          intent: "request",
+          reason: "typo",
+          confirmation: "PO000123"
+        }).success
+      ).toBe(false);
+      expect(
+        purchaseOrderForceDeleteRequestValidator.safeParse({
+          intent: "request",
+          reason: "Wrong supplier and lines entered",
+          confirmation: "PO000123"
+        }).success
+      ).toBe(true);
+    });
+  });
+});
+
+describe("receipt reversal: order quantities", () => {
+  it("takes what the receipt received off each line, in the purchase unit", () => {
+    expect(
+      receivedAfterReceiptReversal(
+        [
+          { id: "l1", purchaseQuantity: 10, quantityReceived: 10 },
+          { id: "l2", purchaseQuantity: 4, quantityReceived: 4 }
+        ],
+        [
+          { lineId: "l1", receivedQuantity: 12, conversionFactor: 2 },
+          { lineId: "l1", receivedQuantity: 4, conversionFactor: 2 },
+          { lineId: null, receivedQuantity: 9, conversionFactor: 1 }
+        ]
+      )
+    ).toEqual({ l1: { quantityReceived: 2, receivedComplete: false } });
+  });
+
+  it("never goes below zero", () => {
+    expect(
+      receivedAfterReceiptReversal(
+        [{ id: "l1", purchaseQuantity: 5, quantityReceived: 1 }],
+        [{ lineId: "l1", receivedQuantity: 3, conversionFactor: 1 }]
+      )
+    ).toEqual({ l1: { quantityReceived: 0, receivedComplete: false } });
+  });
+
+  it("projects the order status from received and invoiced lines", () => {
+    const line = (
+      purchaseOrderLineType: string,
+      quantityReceived: number,
+      quantityInvoiced: number
+    ) => ({
+      purchaseOrderLineType,
+      purchaseQuantity: 5,
+      quantityReceived,
+      quantityInvoiced
+    });
+    expect(purchaseOrderStatusAfterReversal([line("Part", 5, 5)])).toBe(
+      "Completed"
+    );
+    expect(purchaseOrderStatusAfterReversal([line("Part", 0, 5)])).toBe(
+      "To Receive"
+    );
+    expect(purchaseOrderStatusAfterReversal([line("Part", 5, 0)])).toBe(
+      "To Invoice"
+    );
+    expect(
+      purchaseOrderStatusAfterReversal([
+        line("Part", 0, 0),
+        line("Service", 0, 5)
+      ])
+    ).toBe("To Receive and Invoice");
   });
 });

@@ -10,7 +10,11 @@ import { getLogger } from "@carbon/logger";
 import { ScrollArea } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { data, useLoaderData, useNavigate, useParams } from "react-router";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
 import {
@@ -20,6 +24,7 @@ import {
 } from "~/modules/quality/quality.service";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id");
@@ -31,6 +36,9 @@ export const handle: Handle = {
   ),
   module: "quality"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.workflow?.name, "Issue Workflow");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

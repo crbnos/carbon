@@ -912,8 +912,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "ANT-PATCH-01",
     obsoleteRevision: "A",
-    nextRevision: "B",
-    nextStatus: "Prototype"
+    nextRevision: "B"
   }
 ];
 
@@ -922,7 +921,7 @@ export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   {
     key: "EPS-PCB-FPT",
     item: "PCB-EPS-R1",
-    drawingNumber: "EPS-CTL-200 Rev D",
+    name: "EPS-CTL-200 Rev D",
     aql: 1.0,
     features: [
       {

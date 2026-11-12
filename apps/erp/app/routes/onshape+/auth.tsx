@@ -2,18 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { getUserScopedClient } from "@carbon/auth/client.server";
-import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { requireAuthSession } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { PANEL_SESSION_MESSAGE } from "@carbon/ee";
 import { createPanelSession } from "@carbon/ee/onshape/panel-session.server";
 import { getLogger } from "@carbon/logger";
-import { requiresItarEntityCertification } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanySettings } from "~/modules/settings/settings.service";
-import { getItarCertificationStatus } from "~/modules/users/users.service";
+import { getOnshapePanelAccountGate } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export const config = {
@@ -42,30 +38,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const client = await getUserScopedClient(userId);
-  const [companySettings, itar] = await Promise.all([
-    getCompanySettings(client, companyId),
-    CONTROLLED_ENVIRONMENT
-      ? getItarCertificationStatus(client, companyId, userId)
-      : Promise.resolve({ entityCertified: true, userCertified: true })
-  ]);
-
-  const itarBlocked =
-    CONTROLLED_ENVIRONMENT &&
-    ((requiresItarEntityCertification(authSession.email) &&
-      !itar.entityCertified) ||
-      !itar.userCertified);
-  const mfaRequired =
-    (CONTROLLED_ENVIRONMENT || companySettings.data?.requireMfa === true) &&
-    !authSession.ssoProviderId;
-  if (
-    itarBlocked ||
-    (mfaRequired && !(await userHasVerifiedTotpFactor(userId)))
-  ) {
+  const gate = await getOnshapePanelAccountGate(client, {
+    companyId,
+    userId,
+    email: authSession.email,
+    ssoProviderId: authSession.ssoProviderId
+  });
+  if (gate === "setup-required") {
     return page(
       "Finish setting up your Carbon account, then sign in to the panel again.",
       403,
       { href: path.to.authenticatedRoot, label: "Open Carbon" }
     );
+  }
+  if (gate === "unavailable") {
+    logger.error("Could not read the company settings for the Onshape panel", {
+      companyId,
+      userId
+    });
+    return page("Carbon couldn't sign you in. Try again in a moment.", 503);
   }
 
   const token = await createPanelSession(authSession);

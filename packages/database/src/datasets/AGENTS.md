@@ -1,7 +1,7 @@
 # datasets — industry demo data + the engine that inserts it
 
 Fills a company with one industry's worth of a working ERP + MES: items, BOMs, customers,
-quotes, orders, returns, jobs, picking, inspections, non-conformances, gauges, change orders,
+quotes, orders, returns, rental agreements, jobs, picking, inspections, non-conformances, gauges, change orders,
 maintenance, training, timecards, posted journals, payments, accounting periods, workflows and
 their run history, sales/storage rules, approvals, customer portals and a busy shop floor —
 every user-reachable status of the major documents included. Two callers share every line of
@@ -162,7 +162,7 @@ goes in the index.
 
 `db:check:datasets` runs `validateDataset` first with no database (it still blocks when the
 stack is down), then applies each dataset to a scratch company, asserts the `COVERAGE_FLOORS`
-row counts, and rolls back. On failure it prints the violation list or the error plus the last
+row counts (plus that dataset's `DATASET_COVERAGE_FLOORS`), and rolls back. On failure it prints the violation list or the error plus the last
 12 tier log lines.
 
 After a real seed, diff the printed `Seeded row counts` block against
