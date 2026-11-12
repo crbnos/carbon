@@ -120,6 +120,8 @@ jobs:
       - *node
       - *node-modules
       - *install
+      - name: Create empty local environment file
+        run: touch .env
       - name: Run portal tests against a migrated local stack
         run: >-
           packages/dev/bin/crbn up --no-portless --no-apps --minimal --volumes
