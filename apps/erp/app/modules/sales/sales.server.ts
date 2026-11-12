@@ -86,6 +86,7 @@ import {
   customerContractFundingValidator,
   customerContractTypes,
   customerContractValidator,
+  deliveryDateCheckValidator,
   invoiceAutomations,
   isQuoteLocked,
   isSalesOrderLocked,
@@ -1310,6 +1311,9 @@ export const convertQuote = defineServiceFn({
     }
     const salesOrderId = convert.data.convertedId;
 
+    // Flags each new line whose promised date fails the check; never stops.
+    await service.checkConvertedSalesOrderDeliveryDates(ctx, salesOrderId);
+
     await service.recordSalesRuleOutcome(serviceRole, {
       companyId,
       userId,
@@ -1657,6 +1661,7 @@ export const acceptDigitalQuote = defineServiceFn({
 
     const salesOrderId = convert.data?.convertedId;
     if (salesOrderId) {
+      await service.checkConvertedSalesOrderDeliveryDates(ctx, salesOrderId);
       // The order stands without its PDF or its email.
       const pdf = await service
         .attachSalesOrderPdf(ctx, {
@@ -2234,6 +2239,89 @@ export const updateSalesOrderDetails = defineServiceFn({
     return { salesOrderId: id };
   }
 });
+/**
+ * Check whether a sales order line can ship by its promised date.
+ *
+ * @remarks
+ * Reads the line as the form holds it, before a save, and writes nothing. The
+ * check level comes from the item at the line's location, else the company
+ * (Settings → Sales). Inside the item's cumulative lead time it checks free
+ * stock by week and, at the Capacity level, the shop's schedule. The result
+ * is null when the line is not checked: no item, a Service or Comment line, a
+ * level of None, or a Make to Order line whose job already holds its date.
+ *
+ * @param salesOrderLineId - The line being edited; empty for a new line.
+ * @param promisedDate - The date to check, as YYYY-MM-DD.
+ * @returns The check level and, when the line is checked, its status, the
+ * earliest date and the reason.
+ * @mcp read
+ */
+export const checkSalesOrderLineDeliveryDate = defineServiceFn({
+  input: deliveryDateCheckValidator.extend({ salesOrderId: z.string() }),
+  permission: { view: "sales" },
+
+  async run(ctx, input) {
+    const refused = await refuseUnlessOwned(ctx, "salesOrder", {
+      id: input.salesOrderId
+    });
+    if (refused) return refused;
+
+    const order = await service.getSalesOrder(
+      ctx.asSystem.supabase,
+      input.salesOrderId
+    );
+    if (order.error || !order.data) {
+      return ctx.error("notFound", "Failed to load sales order", order.error);
+    }
+
+    let quantitySent = 0;
+    let hasOpenJob = false;
+    if (input.salesOrderLineId) {
+      const existing = await service.getSalesOrderLine(
+        ctx.asSystem.supabase,
+        input.salesOrderLineId
+      );
+      if (
+        existing.error ||
+        existing.data.companyId !== ctx.company.id ||
+        existing.data.salesOrderId !== input.salesOrderId
+      ) {
+        return ctx.error(
+          "notFound",
+          "Failed to load sales order line",
+          existing.error
+        );
+      }
+      quantitySent = existing.data.quantitySent ?? 0;
+      hasOpenJob = (
+        await service.salesOrderLinesWithOpenJobs(ctx, [input.salesOrderLineId])
+      ).has(input.salesOrderLineId);
+    }
+
+    const key = input.salesOrderLineId ?? "new";
+    const locationId = input.locationId || order.data.locationId || null;
+    const { results, controls } = await service.runDeliveryDateCheck(ctx, [
+      {
+        key,
+        salesOrderLineId: input.salesOrderLineId ?? null,
+        salesOrderLineType: input.salesOrderLineType,
+        itemId: input.itemId,
+        locationId,
+        methodType: input.methodType,
+        quantity: input.saleQuantity - quantitySent,
+        promisedDate: input.promisedDate,
+        hasOpenJob
+      }
+    ]);
+    return {
+      control: locationId
+        ? (controls.get(`${input.itemId}:${locationId}`) ?? "None")
+        : "None",
+      result: results.get(key) ?? null
+    };
+  }
+});
+
 const salesOrderLineInput = salesOrderLineValidator.safeExtend({
   customFields: customFieldValues.optional(),
   acknowledged: z.boolean().default(false)
@@ -2254,7 +2342,16 @@ export const createSalesOrderLine = defineServiceFn({
   input: salesOrderLineInput,
   permission: { create: "sales" },
 
-  async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
+  async run(
+    ctx,
+    {
+      id: _id,
+      acknowledged,
+      customFields,
+      deliveryDateOverrideReason,
+      ...input
+    }
+  ) {
     const companyId = ctx.company.id;
     const line = service.withLineTarget(input);
     const locked = await service.unlockedSalesOrder(
@@ -2309,6 +2406,11 @@ export const createSalesOrderLine = defineServiceFn({
       "acknowledged",
       gate.check
     );
+    await service.recordSalesOrderLineDeliveryDate(ctx, {
+      salesOrderId: line.salesOrderId,
+      salesOrderLineId: created.data.id,
+      overrideReason: deliveryDateOverrideReason
+    });
     return { salesOrderLineId: created.data.id };
   }
 });
@@ -2326,7 +2428,10 @@ export const updateSalesOrderLine = defineServiceFn({
   input: salesOrderLineInput.safeExtend({ id: z.string() }),
   permission: { create: "sales" },
 
-  async run(ctx, { id, acknowledged, customFields, ...input }) {
+  async run(
+    ctx,
+    { id, acknowledged, customFields, deliveryDateOverrideReason, ...input }
+  ) {
     const line = service.withLineTarget(input);
     // The line must be on the order whose lock state is checked.
     const refused = await refuseUnlessOwned(ctx, "salesOrderLine", {
@@ -2375,6 +2480,11 @@ export const updateSalesOrderLine = defineServiceFn({
       "acknowledged",
       gate.check
     );
+    await service.recordSalesOrderLineDeliveryDate(ctx, {
+      salesOrderId: line.salesOrderId,
+      salesOrderLineId: id,
+      overrideReason: deliveryDateOverrideReason
+    });
     return { salesOrderLineId: id };
   }
 });

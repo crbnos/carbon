@@ -2272,6 +2272,9 @@ msgstr "A sales order is deleted"
 msgid "A sales order line contains order details for a particular item"
 msgstr "A sales order line contains order details for a particular item"
 
+msgid "A sales order line keeps a date it cannot meet"
+msgstr "A sales order line keeps a date it cannot meet"
+
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 
@@ -6467,6 +6470,9 @@ msgstr "Cap the indirect rates a Cost Plus line bills, and bill burden at provis
 msgid "Capacity"
 msgstr "Capacity"
 
+msgid "Capacity — free stock, then the shop's schedule"
+msgstr "Capacity — free stock, then the shop's schedule"
+
 msgid "Capacity reservation"
 msgstr "Capacity reservation"
 
@@ -6888,6 +6894,9 @@ msgstr "Chart of Accounts"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check"
+msgstr "Check"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Check operations on the left to build the batch."
 
@@ -6908,6 +6917,9 @@ msgstr "Checking Stripe for this customer…"
 
 msgid "Checking the batch's jobs..."
 msgstr "Checking the batch's jobs..."
+
+msgid "Checking the delivery date…"
+msgstr "Checking the delivery date…"
 
 msgid "Checking the Stripe customer link…"
 msgstr "Checking the Stripe customer link…"
@@ -9628,6 +9640,18 @@ msgstr "Date issued"
 msgid "Date Issued"
 msgstr "Date Issued"
 
+msgid "Date kept"
+msgstr "Date kept"
+
+msgid "Date kept. Earliest delivery date: {earliest}."
+msgstr "Date kept. Earliest delivery date: {earliest}."
+
+msgid "Date not confirmed"
+msgstr "Date not confirmed"
+
+msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgstr "Date not confirmed. Earliest delivery date: {earliest}."
+
 msgid "Date paid"
 msgstr "Date paid"
 
@@ -10494,6 +10518,12 @@ msgstr "Delivery Country"
 
 msgid "Delivery Date"
 msgstr "Delivery Date"
+
+msgid "Delivery Date Check"
+msgstr "Delivery Date Check"
+
+msgid "Delivery date check updated"
+msgstr "Delivery date check updated"
 
 msgid "Delivery Location"
 msgstr "Delivery Location"
@@ -11977,6 +12007,9 @@ msgstr "Email notifications are not included in your company's current plan; ema
 
 msgid "Email notifications not configured"
 msgstr "Email notifications not configured"
+
+msgid "Email order on acceptance"
+msgstr "Email order on acceptance"
 
 msgid "Email recipients"
 msgstr "Email recipients"
@@ -14892,6 +14925,9 @@ msgstr "How often this gauge must be recalibrated; combined with Last Calibratio
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "How planning sizes the orders that replenish this item here."
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "How strictly each material property must match for operations to share a batch on this process."
 
@@ -16701,6 +16737,9 @@ msgstr "Lead time"
 msgid "Lead Time"
 msgstr "Lead Time"
 
+msgid "Lead Time — the lead time through the BOM"
+msgstr "Lead Time — the lead time through the BOM"
+
 msgid "Lead time (days)"
 msgstr "Lead time (days)"
 
@@ -16830,6 +16869,9 @@ msgstr "Leave empty to pick a color from the name"
 
 msgid "Leave empty to use the account default"
 msgstr "Leave empty to use the account default"
+
+msgid "Leave empty to use the level in Settings → Sales."
+msgstr "Leave empty to use the level in Settings → Sales."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Leave empty, or enter 0, to show everything MRP plans."
@@ -20429,6 +20471,9 @@ msgstr "Non-working days that scheduling and capacity respect"
 msgid "None"
 msgstr "None"
 
+msgid "None — no check"
+msgstr "None — no check"
+
 msgid "None available"
 msgstr "None available"
 
@@ -20984,6 +21029,9 @@ msgstr "Only {0} {unitOfMeasure} here"
 msgid "Only {available} available"
 msgstr "Only {available} available"
 
+msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+msgstr "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+
 msgid "Only {quantity} in batches there"
 msgstr "Only {quantity} in batches there"
 
@@ -21447,6 +21495,9 @@ msgstr "Optional fixed rate used when translating equity balances per IAS 21 (in
 
 msgid "Optional pages & sections"
 msgstr "Optional pages & sections"
+
+msgid "Optional. Saving keeps the date and records who kept it."
+msgstr "Optional. Saving keeps the date and records who kept it."
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Optional. Stops new purchase suggestions after this date."
@@ -22575,6 +22626,9 @@ msgstr "Planning"
 
 msgid "Planning action"
 msgstr "Planning action"
+
+msgid "Planning and sales"
+msgstr "Planning and sales"
 
 msgid "Planning group"
 msgstr "Planning group"
@@ -24193,6 +24247,9 @@ msgstr "Reason for Change"
 msgid "Reason for declining (Optional)"
 msgstr "Reason for declining (Optional)"
 
+msgid "Reason for keeping this date"
+msgstr "Reason for keeping this date"
+
 msgid "Reason for late entry"
 msgstr "Reason for late entry"
 
@@ -25089,6 +25146,9 @@ msgstr "Reorder Quantity"
 
 msgid "Reorder Quantity:"
 msgstr "Reorder Quantity:"
+
+msgid "Reordering"
+msgstr "Reordering"
 
 msgid "Reordering policy"
 msgstr "Reordering policy"
@@ -28737,6 +28797,9 @@ msgstr "Still Owed"
 msgid "Stock"
 msgstr "Stock"
 
+msgid "Stock — free stock, then the lead time"
+msgstr "Stock — free stock, then the lead time"
+
 msgid "Stock and planning"
 msgstr "Stock and planning"
 
@@ -30633,6 +30696,9 @@ msgstr "The last day to give renewal or termination notice"
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 
+msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
+msgstr "The lead time is {days} days. The earliest delivery date is {earliest}."
+
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
 msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
@@ -31139,6 +31205,9 @@ msgstr "The services this contract bills: one-time fees and recurring charges. C
 msgid "The shelves and bins where stock physically sits"
 msgstr "The shelves and bins where stock physically sits"
 
+msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+msgstr "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "The shop supplies and consumables you keep on hand"
 
@@ -31608,6 +31677,9 @@ msgstr "This customer type's rate"
 
 msgid "This customer's rate"
 msgstr "This customer's rate"
+
+msgid "This date cannot be met"
+msgstr "This date cannot be met"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "This department has no work centers at {locationName}. Pick another department or location."
@@ -33426,6 +33498,9 @@ msgstr "Use ... to get the next part ID"
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
+msgid "Use {earliest}"
+msgstr "Use {earliest}"
+
 msgid "Use a different account"
 msgstr "Use a different account"
 
@@ -34434,6 +34509,9 @@ msgstr "When replying to a thread, also make the message visible to everyone in 
 msgid "When serial numbers are assigned"
 msgstr "When serial numbers are assigned"
 
+msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+msgstr "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 
@@ -34676,6 +34754,9 @@ msgstr "Who owns MRP planning actions. Locations inherit the company default; it
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Who owns the lease here: they get the invoice digest and the date reminders."
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Who receives the invoices, where, and on what terms."

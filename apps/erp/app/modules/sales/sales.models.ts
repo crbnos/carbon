@@ -1025,6 +1025,11 @@ export const salesOrderLineValidator = z
     ),
     modelUploadId: zfd.text(z.string().optional()),
     promisedDate: zfd.text(z.string().optional()),
+    // The customer's wish, kept apart from the date the company promises.
+    requestedDate: zfd.text(z.string().optional()),
+    // Why the user keeps a promised date the delivery date check fails. Not a
+    // line column on its own: the save records it with who kept the date.
+    deliveryDateOverrideReason: zfd.text(z.string().max(500).optional()),
     saleQuantity: zfd.numeric(z.number().optional()),
     serviceId: zfd.text(z.string().optional()),
     serviceStartDate: zfd.text(z.string().optional()),
@@ -1211,6 +1216,18 @@ export const quoteLeadTimeValidator = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional()
     .nullable()
+});
+
+// A sales order line's delivery date check — a JSON body (not FormData), so
+// plain zod. The fields are the line's as the form holds them before a save.
+export const deliveryDateCheckValidator = z.object({
+  salesOrderLineId: z.string().optional().nullable(),
+  salesOrderLineType: z.enum(salesOrderLineType),
+  itemId: z.string().min(1),
+  locationId: z.string().optional().nullable(),
+  methodType: z.enum(methodType),
+  saleQuantity: z.number().positive(),
+  promisedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 });
 
 // Sales Order Locked Status

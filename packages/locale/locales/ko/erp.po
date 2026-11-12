@@ -2272,6 +2272,9 @@ msgstr "수주가 삭제됨"
 msgid "A sales order line contains order details for a particular item"
 msgstr "수주 라인은 특정 품목에 대한 주문 세부 정보를 포함합니다"
 
+msgid "A sales order line keeps a date it cannot meet"
+msgstr "수주 라인이 맞출 수 없는 날짜를 유지하고 있습니다"
+
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "주문 고객의 헤더 주소와 다른 고객 및 위치로 직접 배송되는 판매 주문입니다. 배송 목적지가 헤더 주소를 무시합니다."
 
@@ -6467,6 +6470,9 @@ msgstr "코스트 플러스 라인이 청구하는 간접비율을 한정하고,
 msgid "Capacity"
 msgstr "용량"
 
+msgid "Capacity — free stock, then the shop's schedule"
+msgstr "생산 능력 — 가용 재고, 다음은 현장 일정"
+
 msgid "Capacity reservation"
 msgstr "용량 예약"
 
@@ -6888,6 +6894,9 @@ msgstr "계정과목표"
 msgid "Chat"
 msgstr "채팅"
 
+msgid "Check"
+msgstr "점검"
+
 msgid "Check operations on the left to build the batch."
 msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
 
@@ -6908,6 +6917,9 @@ msgstr "이 고객의 Stripe 확인 중…"
 
 msgid "Checking the batch's jobs..."
 msgstr "배치의 작업 지시 확인 중..."
+
+msgid "Checking the delivery date…"
+msgstr "납기일을 점검하는 중…"
 
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe 고객 연결 확인 중…"
@@ -9628,6 +9640,18 @@ msgstr "발행일"
 msgid "Date Issued"
 msgstr "발행일"
 
+msgid "Date kept"
+msgstr "날짜 유지됨"
+
+msgid "Date kept. Earliest delivery date: {earliest}."
+msgstr "날짜 유지됨. 가장 빠른 납기일: {earliest}."
+
+msgid "Date not confirmed"
+msgstr "날짜 미확정"
+
+msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgstr "날짜 미확정. 가장 빠른 납기일: {earliest}."
+
 msgid "Date paid"
 msgstr "결제일"
 
@@ -10494,6 +10518,12 @@ msgstr "배송지 국가"
 
 msgid "Delivery Date"
 msgstr "납기일"
+
+msgid "Delivery Date Check"
+msgstr "납기일 점검"
+
+msgid "Delivery date check updated"
+msgstr "납기일 점검 업데이트됨"
 
 msgid "Delivery Location"
 msgstr "배송지"
@@ -11977,6 +12007,9 @@ msgstr "이메일 알림은 회사의 현재 요금제에 포함되어 있지 �
 
 msgid "Email notifications not configured"
 msgstr "이메일 알림이 설정되지 않음"
+
+msgid "Email order on acceptance"
+msgstr ""
 
 msgid "Email recipients"
 msgstr "이메일 수신자"
@@ -14892,6 +14925,9 @@ msgstr "이 계측기를 재교정해야 하는 빈도입니다. 마지막 교�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "이 유지보수가 반복되는 빈도입니다 — 매일, 매주, 매월, 순환 실사 시; 매일을 선택하면 요일 선택 옵션이 표시되고 나머지는 더 간단한 간격 계산을 사용합니다."
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "여기서 이 품목을 보충하는 주문의 규모를 계획이 어떻게 산정하는지."
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "이 공정에서 공정이 배치를 공유하기 위해 각 자재 속성이 얼마나 엄격하게 일치해야 하는지"
 
@@ -16701,6 +16737,9 @@ msgstr "리드타임"
 msgid "Lead Time"
 msgstr "리드타임"
 
+msgid "Lead Time — the lead time through the BOM"
+msgstr "리드타임 — BOM을 통한 리드타임"
+
 msgid "Lead time (days)"
 msgstr "리드타임(일)"
 
@@ -16830,6 +16869,9 @@ msgstr "비워 두면 이름에서 색상을 자동으로 고릅니다"
 
 msgid "Leave empty to use the account default"
 msgstr "계정 기본값을 사용하려면 비워두세요."
+
+msgid "Leave empty to use the level in Settings → Sales."
+msgstr "비워 두면 설정 → 영업의 수준을 사용합니다."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "MRP가 계획한 모든 것을 표시하려면 공란으로 두거나 0을 입력하세요."
@@ -20429,6 +20471,9 @@ msgstr "일정 및 용량 계산에 반영되는 비근무일"
 msgid "None"
 msgstr "없음"
 
+msgid "None — no check"
+msgstr "없음 — 점검 안 함"
+
 msgid "None available"
 msgstr "사용 가능한 항목 없음"
 
@@ -20984,6 +21029,9 @@ msgstr "여기에는 {0} {unitOfMeasure}만 있습니다."
 msgid "Only {available} available"
 msgstr "{available}개만 가용합니다"
 
+msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+msgstr "{promised}까지 가용 재고는 {free}뿐입니다. 가장 빠른 납기일은 {earliest}입니다."
+
 msgid "Only {quantity} in batches there"
 msgstr "여기에서 배치로 관리되는 수량은 {quantity}뿐입니다."
 
@@ -21447,6 +21495,9 @@ msgstr "IAS 21에 따라 자본 잔액을 환산할 때 사용하는 선택적 �
 
 msgid "Optional pages & sections"
 msgstr "선택적 페이지 및 섹션"
+
+msgid "Optional. Saving keeps the date and records who kept it."
+msgstr "선택 사항. 저장하면 날짜가 유지되고, 유지한 사람이 기록됩니다."
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "선택사항. 이 날짜 이후로 새로운 구매 제안을 중단합니다."
@@ -22575,6 +22626,9 @@ msgstr "계획"
 
 msgid "Planning action"
 msgstr "계획 조치"
+
+msgid "Planning and sales"
+msgstr "계획 및 영업"
 
 msgid "Planning group"
 msgstr "계획 그룹"
@@ -24193,6 +24247,9 @@ msgstr "변경 이유"
 msgid "Reason for declining (Optional)"
 msgstr "거절 사유(선택 사항)"
 
+msgid "Reason for keeping this date"
+msgstr "이 날짜를 유지하는 이유"
+
 msgid "Reason for late entry"
 msgstr "늦은 입력 사유"
 
@@ -25089,6 +25146,9 @@ msgstr "재주문 수량"
 
 msgid "Reorder Quantity:"
 msgstr "재주문 수량:"
+
+msgid "Reordering"
+msgstr "재발주"
 
 msgid "Reordering policy"
 msgstr "재주문 정책"
@@ -28737,6 +28797,9 @@ msgstr "여전히 대금이 남음"
 msgid "Stock"
 msgstr "재고"
 
+msgid "Stock — free stock, then the lead time"
+msgstr "재고 — 가용 재고, 다음은 리드타임"
+
 msgid "Stock and planning"
 msgstr "재고 및 계획"
 
@@ -30633,6 +30696,9 @@ msgstr "갱신 또는 종료 통지를 제공할 마지막 날"
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "공급업체의 리드타임을 고려할 때, 필요일까지 도착하도록 이 PO를 발주해야 하는 최종 일자입니다."
 
+msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
+msgstr "리드타임은 {days}일입니다. 가장 빠른 납기일은 {earliest}입니다."
+
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
 msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
@@ -31139,6 +31205,9 @@ msgstr "이 계약이 청구하는 서비스: 일회성 수수료 및 반복 요
 msgid "The shelves and bins where stock physically sits"
 msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
 
+msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+msgstr "현장에서는 {promised}까지 완료할 수 없습니다. 가장 빠른 납기일은 {earliest}입니다."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "보유하고 있는 공장 소모품 및 소모재"
 
@@ -31608,6 +31677,9 @@ msgstr "이 고객 유형의 요금"
 
 msgid "This customer's rate"
 msgstr "이 고객의 요금"
+
+msgid "This date cannot be met"
+msgstr "이 날짜는 맞출 수 없습니다"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "이 부서는 {locationName}에 작업장이 없습니다. 다른 부서 또는 사업장을 선택하세요."
@@ -33426,6 +33498,9 @@ msgstr "다음 품목 ID를 가져오려면 ...을(를) 사용하세요"
 msgid "Use ... to get the next tool ID"
 msgstr "다음 공구 ID를 가져오려면 ...을(를) 사용하세요"
 
+msgid "Use {earliest}"
+msgstr "{earliest} 사용"
+
 msgid "Use a different account"
 msgstr "다른 계정 사용"
 
@@ -34434,11 +34509,14 @@ msgstr "스레드에 회신할 때 채널의 모든 사람이 메시지를 볼 �
 msgid "When serial numbers are assigned"
 msgstr "시리얼 번호가 할당될 때"
 
+msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+msgstr "누군가 수주 라인을 추가하거나 변경하면, 약속일을 맞출 수 있는지 점검합니다. 점검은 날짜가 품목의 BOM을 통한 리드타임보다 가까울 때만 실행됩니다. 경고를 표시하고 가장 빠른 날짜를 보여주며, 저장을 막지는 않습니다. 품목의 계획 탭에서 자체 수준을 설정할 수 있습니다."
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다. 공급업체는 RFQ 포털에서 이 날짜를 확인하며, Carbon은 이 날짜 이후의 지연 응답을 받지 않습니다(설정 가능)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "구매 담당자가 물품을 요청한 날짜입니다. 공급업체는 입고 약속일에 다른 날짜를 약속할 수 있으며, 납기일에도 다른 날짜를 다시 설정할 수 있습니다."
+msgstr "구매 담당자가 물품을 요청한 날짜. 공급업체는 입고 약속일에 다른 날짜를 약속하고, 납기일에 또 다른 날짜를 기록할 수 있습니다."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "구매 담당자가 이 라인의 물품을 하역장에서 받기를 원하는 날짜입니다. 새 라인은 주문의 입고 요청일로 시작되며, 계획은 이 날짜를 재고 가용성과 외주 공정 일정 계산에 사용합니다."
@@ -34676,6 +34754,9 @@ msgstr "MRP 계획 조치를 누가 소유하는가. 사업장은 회사 기본�
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "여기서 리스를 소유한 사람: 그들은 송장 요약과 날짜 알림을 받습니다."
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "여기서 이 품목의 조치 담당자, 계획이 얼마나 앞을 내다보는지, 그리고 수주가 약속일을 어떻게 확인하는지."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "송장을 수령하는 대상, 수령처 및 결제 조건"

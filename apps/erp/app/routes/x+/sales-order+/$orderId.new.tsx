@@ -66,6 +66,7 @@ export default function NewSalesOrderLineRoute() {
       salesOrderData?.salesOrder?.receiptPromisedDate ??
       salesOrderData?.salesOrder?.receiptRequestedDate ??
       "",
+    requestedDate: salesOrderData?.salesOrder?.receiptRequestedDate ?? "",
     serviceStartDate: "",
     serviceEndDate: "",
     shippingCost: 0

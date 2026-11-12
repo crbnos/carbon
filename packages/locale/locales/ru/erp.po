@@ -2272,6 +2272,9 @@ msgstr "Заказ покупателя удален"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Строка заказа покупателя содержит детали заказа для конкретной номенклатуры"
 
+msgid "A sales order line keeps a date it cannot meet"
+msgstr "Строка заказа покупателя сохраняет дату, которую невозможно выдержать"
+
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "Заказ на продажу, отправленный напрямую другому клиенту и в другое место, чем адрес клиента в заголовке заказа; пункт назначения отправки переопределяет адрес в заголовке."
 
@@ -6467,6 +6470,9 @@ msgstr "Ограничить косвенные ставки, которые в�
 msgid "Capacity"
 msgstr "Емкость"
 
+msgid "Capacity — free stock, then the shop's schedule"
+msgstr "Мощность — свободный запас, затем график цеха"
+
 msgid "Capacity reservation"
 msgstr "Резервирование мощности"
 
@@ -6888,6 +6894,9 @@ msgstr "План счетов"
 msgid "Chat"
 msgstr "Чат"
 
+msgid "Check"
+msgstr "Проверка"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Отметьте операции слева, чтобы создать пакет."
 
@@ -6908,6 +6917,9 @@ msgstr "Проверка Stripe для этого покупателя…"
 
 msgid "Checking the batch's jobs..."
 msgstr "Проверка производственных заказов серии..."
+
+msgid "Checking the delivery date…"
+msgstr "Проверяем дату поставки…"
 
 msgid "Checking the Stripe customer link…"
 msgstr "Проверка связи с клиентом Stripe…"
@@ -9628,6 +9640,18 @@ msgstr "Дата выдачи"
 msgid "Date Issued"
 msgstr "Дата выпуска"
 
+msgid "Date kept"
+msgstr "Дата соблюдена"
+
+msgid "Date kept. Earliest delivery date: {earliest}."
+msgstr "Дата соблюдена. Ближайшая дата поставки: {earliest}."
+
+msgid "Date not confirmed"
+msgstr "Дата не подтверждена"
+
+msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgstr "Дата не подтверждена. Ближайшая дата поставки: {earliest}."
+
 msgid "Date paid"
 msgstr "Дата оплаты"
 
@@ -10494,6 +10518,12 @@ msgstr "Страна поставки"
 
 msgid "Delivery Date"
 msgstr "Дата поставки"
+
+msgid "Delivery Date Check"
+msgstr "Проверка даты поставки"
+
+msgid "Delivery date check updated"
+msgstr "Проверка даты поставки обновлена"
 
 msgid "Delivery Location"
 msgstr "Место доставки"
@@ -11977,6 +12007,9 @@ msgstr "Уведомления по электронной почте не вк�
 
 msgid "Email notifications not configured"
 msgstr "Уведомления по электронной почте не настроены"
+
+msgid "Email order on acceptance"
+msgstr ""
 
 msgid "Email recipients"
 msgstr "Получатели e-mail"
@@ -14892,6 +14925,9 @@ msgstr "Как часто это средство измерения должн�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Как часто это техобслуживание повторяется — Ежедневно, Еженедельно, Ежемесячно, На циклический пересчет; выбор «Ежедневно» показывает селектор дня недели, остальные используют более простую математику интервалов."
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "Как планирование определяет размер заказов на пополнение этой номенклатуры здесь."
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Насколько строго должны совпадать свойства материала для размещения операций в одной серии на этом процессе."
 
@@ -16701,6 +16737,9 @@ msgstr "Срок поставки"
 msgid "Lead Time"
 msgstr "Срок поставки"
 
+msgid "Lead Time — the lead time through the BOM"
+msgstr "Срок поставки — суммарный срок по BOM"
+
 msgid "Lead time (days)"
 msgstr "Срок поставки (дни)"
 
@@ -16830,6 +16869,9 @@ msgstr "Оставьте пустым, чтобы выбрать цвет по �
 
 msgid "Leave empty to use the account default"
 msgstr "Оставьте пустым, чтобы использовать значение по умолчанию учетной записи"
+
+msgid "Leave empty to use the level in Settings → Sales."
+msgstr "Оставьте поле пустым, чтобы использовать уровень из Настройки → Продажи."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Оставьте пусто или введите 0, чтобы показать все, что планирует MRP."
@@ -20429,6 +20471,9 @@ msgstr "Нерабочие дни, которые учитываются при 
 msgid "None"
 msgstr "Нет"
 
+msgid "None — no check"
+msgstr "Нет — без проверки"
+
 msgid "None available"
 msgstr "Нет доступных"
 
@@ -20984,6 +21029,9 @@ msgstr "Здесь только {0} {unitOfMeasure}"
 msgid "Only {available} available"
 msgstr "Доступно только {available}"
 
+msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+msgstr "К {promised} свободно только {free}. Ближайшая дата поставки: {earliest}."
+
 msgid "Only {quantity} in batches there"
 msgstr "Там только {quantity} в сериях"
 
@@ -21447,6 +21495,9 @@ msgstr "Дополнительный фиксированный курс, исп
 
 msgid "Optional pages & sections"
 msgstr "Дополнительные страницы и разделы"
+
+msgid "Optional. Saving keeps the date and records who kept it."
+msgstr "Необязательно. Сохранение оставит дату и запишет, кто её оставил."
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Опционально. Останавливает новые предложения по закупкам после этой даты."
@@ -22575,6 +22626,9 @@ msgstr "Планирование"
 
 msgid "Planning action"
 msgstr "Действие планирования"
+
+msgid "Planning and sales"
+msgstr "Планирование и продажи"
 
 msgid "Planning group"
 msgstr "Группа планирования"
@@ -24193,6 +24247,9 @@ msgstr "Причина изменения"
 msgid "Reason for declining (Optional)"
 msgstr "Причина отказа (Необязательно)"
 
+msgid "Reason for keeping this date"
+msgstr "Причина сохранения этой даты"
+
 msgid "Reason for late entry"
 msgstr "Причина позднего ввода"
 
@@ -25089,6 +25146,9 @@ msgstr "Количество переупорядочивания"
 
 msgid "Reorder Quantity:"
 msgstr "Количество переупорядочивания:"
+
+msgid "Reordering"
+msgstr "Пополнение"
 
 msgid "Reordering policy"
 msgstr "Политика пополнения"
@@ -28737,6 +28797,9 @@ msgstr "Все еще задолжено"
 msgid "Stock"
 msgstr "Запас"
 
+msgid "Stock — free stock, then the lead time"
+msgstr "Запас — свободный запас, затем срок поставки"
+
 msgid "Stock and planning"
 msgstr "Запас и планирование"
 
@@ -30633,6 +30696,9 @@ msgstr "Последний день для подачи уведомления �
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Самая поздняя дата размещения этого заказа поставщику, чтобы он прибыл к нужной дате, с учетом срока поставки поставщика."
 
+msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
+msgstr "Срок поставки составляет {days} дн. Ближайшая дата поставки: {earliest}."
+
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
 msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
@@ -31139,6 +31205,9 @@ msgstr "Услуги, которые выставляет этот контра�
 msgid "The shelves and bins where stock physically sits"
 msgstr "Полки и ячейки, где физически располагается запас."
 
+msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+msgstr "Цех не может выполнить это к {promised}. Ближайшая дата поставки: {earliest}."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Расходные материалы и товары, которые вы держите под рукой"
 
@@ -31608,6 +31677,9 @@ msgstr "Ставка этого типа покупателя"
 
 msgid "This customer's rate"
 msgstr "Ставка этого покупателя"
+
+msgid "This date cannot be met"
+msgstr "Эта дата не может быть выдержана"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "Этот отдел не имеет рабочих центров на {locationName}. Выберите другой отдел или площадку."
@@ -33426,6 +33498,9 @@ msgstr "Используйте ... для получения следующег�
 msgid "Use ... to get the next tool ID"
 msgstr "Используйте ... для получения следующего ID инструмента"
 
+msgid "Use {earliest}"
+msgstr "Использовать {earliest}"
+
 msgid "Use a different account"
 msgstr "Использовать другую учетную запись"
 
@@ -34434,11 +34509,14 @@ msgstr "При ответе в теме сделайте сообщение ви
 msgid "When serial numbers are assigned"
 msgstr "Когда назначаются серийные номера"
 
+msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+msgstr "Когда кто-то добавляет или меняет строку заказа покупателя, проверяется, можно ли выдержать подтвержденную дату. Проверка выполняется, только если дата ближе, чем срок поставки номенклатуры по BOM. Она предупреждает и показывает ближайшую дату; сохранение она никогда не останавливает. На вкладке «Планирование» номенклатуры можно задать собственный уровень."
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "Когда закупщик запросил товары; поставщик может подтвердить другую дату в поле «Подтвержденная дата поступления», а затем указать еще одну дату в поле «Дата поставки»."
+msgstr "Когда покупатель запросил товар; поставщик может подтвердить другую дату в поле «Подтвержденная дата поступления», а затем указать другую дату в поле «Дата поставки»."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "Дата, к которой закупщику нужны товары этой строки на складе приемки. Новая строка получает дату из поля «Запрошенная дата поступления» заказа; планирование использует эту дату для проверки доступности запасов и планирования внешней обработки."
@@ -34676,6 +34754,9 @@ msgstr "Кто владеет действиями планирования MRP.
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Кто владеет арендой здесь: они получают краткое изложение счета-фактуры и напоминания по датам."
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "Кто отвечает за действия по этой номенклатуре здесь, на какой срок вперёд смотрит планирование и как заказ покупателя проверяет подтвержденную дату."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Кто получает счета-фактуры, где и на каких условиях."

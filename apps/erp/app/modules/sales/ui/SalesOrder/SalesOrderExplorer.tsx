@@ -18,14 +18,19 @@ import {
   InputLeftElement,
   MENU_ITEM_SHORTCUTS,
   PrefetchLink,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
   useMount,
   VStack
 } from "@carbon/react";
-import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { distinctItemText, formatDate, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { Suspense, useState } from "react";
 import {
+  LuCalendarX,
   LuChevronDown,
   LuChevronRight,
   LuCirclePlus,
@@ -151,6 +156,7 @@ export default function SalesOrderExplorer() {
       salesOrderData?.salesOrder?.receiptPromisedDate ??
       salesOrderData?.salesOrder?.receiptRequestedDate ??
       "",
+    requestedDate: salesOrderData?.salesOrder?.receiptRequestedDate ?? "",
     shippingCost: 0
   };
 
@@ -322,6 +328,41 @@ type SalesOrderLineItemProps = {
   onDelete: (line: SalesOrderLine) => void;
 };
 
+/**
+ * A calendar mark on a line whose promised date failed the delivery date
+ * check: amber while nobody has confirmed it (a converted line), muted once a
+ * user saved the line and kept the date.
+ */
+function DeliveryDateFlag({ line }: { line: SalesOrderLine }) {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  if (line.deliveryDateStatus !== "Missed") return null;
+  const earliest = formatDate(line.earliestDeliveryDate, undefined, locale);
+  const kept = Boolean(line.deliveryDateOverriddenBy);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={cn(
+            "shrink-0",
+            kept ? "text-muted-foreground" : "text-amber-500"
+          )}
+        >
+          <LuCalendarX
+            className="h-3.5 w-3.5"
+            aria-label={kept ? t`Date kept` : t`Date not confirmed`}
+          />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        {kept
+          ? t`Date kept. Earliest delivery date: ${earliest}.`
+          : t`Date not confirmed. Earliest delivery date: ${earliest}.`}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function SalesOrderLineItem({
   line,
   isDisabled,
@@ -378,11 +419,14 @@ function SalesOrderLineItem({
             />
 
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.salesOrderLineType === "Fixed Asset"
-                  ? (line as any).assetReadableId || "Fixed Asset"
-                  : getItemReadableId(items, line.itemId)}
-              </span>
+              <HStack spacing={1} className="min-w-0">
+                <span className="font-semibold line-clamp-1">
+                  {line.salesOrderLineType === "Fixed Asset"
+                    ? (line as any).assetReadableId || "Fixed Asset"
+                    : getItemReadableId(items, line.itemId)}
+                </span>
+                <DeliveryDateFlag line={line} />
+              </HStack>
               {secondaryText && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">
                   {secondaryText}

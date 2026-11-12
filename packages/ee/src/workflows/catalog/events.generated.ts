@@ -644,6 +644,14 @@ export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = {
     permission: "inventory",
     match: { table: "receipt", operation: "UPDATE", field: "supplierId" }
   },
+  "sales.deliveryDateOverridden": {
+    outputs: {
+      salesOrder: { kind: "entity", of: "salesOrder" },
+      overriddenBy: { kind: "entity", of: "user" }
+    },
+    permission: "sales",
+    match: { moment: "sales.deliveryDateOverridden" }
+  },
   "sales.quoteAccepted": {
     outputs: {
       quote: { kind: "entity", of: "quote" },
@@ -1186,7 +1194,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     digitalQuoteRejectedByEmail: { kind: "primitive", of: "string" },
     opportunityId: { kind: "primitive", of: "string" },
     completedDate: { kind: "primitive", of: "date" },
-    customerEngineeringContactId: { kind: "primitive", of: "string" }
+    customerEngineeringContactId: { kind: "primitive", of: "string" },
+    emailOrderOnAcceptance: { kind: "primitive", of: "boolean" }
   },
   receipt: {
     id: { kind: "primitive", of: "string" },

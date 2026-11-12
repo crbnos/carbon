@@ -87,6 +87,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { plmReleaseControl } from "~/modules/items/items.models";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
+import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import {
   invalidateCompanyTimeZone,
   invokePosting,
@@ -717,7 +718,9 @@ export const updateResourcesSettings = defineServiceFn({
  * contact and location, whether every customer contact needs an email, whether customer readable ids show, the digital quote
  * (on or off, who is notified, and whether accepting one asks for a purchase
  * order), who is notified when an RFQ is ready and when a sales rule is
- * broken, and the default markup per cost category on a quote line.
+ * broken, the default markup per cost category on a quote line, and the
+ * level of the delivery date check a sales order line runs (an item's
+ * Planning tab can override it per location).
  *
  * @mcp
  */
@@ -731,6 +734,7 @@ export const updateSalesSettings = defineServiceFn({
     digitalQuoteIncludesPurchaseOrders: z.boolean().optional(),
     rfqReadyNotificationGroup: notificationGroup.optional(),
     salesRuleNotificationGroup: notificationGroup.optional(),
+    deliveryDateControl: z.enum(deliveryDateControlTypes).optional(),
     quoteLineCategoryMarkups: z
       .object({
         materialCost: z.number().min(0),

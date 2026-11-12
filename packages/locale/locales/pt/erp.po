@@ -2272,6 +2272,9 @@ msgstr "Um pedido de venda é excluído"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Uma linha de pedido de venda contém detalhes do pedido para um item específico"
 
+msgid "A sales order line keeps a date it cannot meet"
+msgstr "Uma linha do pedido de venda mantém uma data que não pode ser cumprida"
+
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "Um pedido de venda enviado diretamente para um cliente e local diferentes do endereço de cabeçalho do cliente solicitante; o destino da remessa substitui o do cabeçalho."
 
@@ -6467,6 +6470,9 @@ msgstr "Limitar as alíquotas indiretas que uma linha de Custo Mais cobra, e cob
 msgid "Capacity"
 msgstr "Capacidade"
 
+msgid "Capacity — free stock, then the shop's schedule"
+msgstr "Capacidade — estoque livre, depois a programação do chão de fábrica"
+
 msgid "Capacity reservation"
 msgstr "Reserva de capacidade"
 
@@ -6888,6 +6894,9 @@ msgstr "Plano de Contas"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check"
+msgstr "Verificação"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Verifique as operações à esquerda para construir o lote."
 
@@ -6908,6 +6917,9 @@ msgstr "Verificando Stripe para este cliente…"
 
 msgid "Checking the batch's jobs..."
 msgstr "Verificando as ordens de produção do lote de produção..."
+
+msgid "Checking the delivery date…"
+msgstr "Verificando a data de entrega…"
 
 msgid "Checking the Stripe customer link…"
 msgstr "Verificando a conexão do cliente no Stripe…"
@@ -9628,6 +9640,18 @@ msgstr "Data de emissão"
 msgid "Date Issued"
 msgstr "Data de Emissão"
 
+msgid "Date kept"
+msgstr "Data mantida"
+
+msgid "Date kept. Earliest delivery date: {earliest}."
+msgstr "Data mantida. Data de entrega mais próxima: {earliest}."
+
+msgid "Date not confirmed"
+msgstr "Data não confirmada"
+
+msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgstr "Data não confirmada. Data de entrega mais próxima: {earliest}."
+
 msgid "Date paid"
 msgstr "Data de pagamento"
 
@@ -10494,6 +10518,12 @@ msgstr "País de Entrega"
 
 msgid "Delivery Date"
 msgstr "Data de Entrega"
+
+msgid "Delivery Date Check"
+msgstr "Verificação da data de entrega"
+
+msgid "Delivery date check updated"
+msgstr "Verificação da data de entrega atualizada"
 
 msgid "Delivery Location"
 msgstr "Local de Entrega"
@@ -11977,6 +12007,9 @@ msgstr "As notificações por email não estão incluídas no plano atual da sua
 
 msgid "Email notifications not configured"
 msgstr "Notificações de email não configuradas"
+
+msgid "Email order on acceptance"
+msgstr ""
 
 msgid "Email recipients"
 msgstr "Destinatários de e-mail"
@@ -14892,6 +14925,9 @@ msgstr "Com que frequência este instrumento de medição deve ser recalibrado; 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Com que frequência esta manutenção se repete — Diário, Semanal, Mensal, Na Contagem cíclica; Diário revela o seletor de dia da semana, os outros usam cálculo de intervalo mais simples."
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "Como o planejamento dimensiona os pedidos que reabastecem este item aqui."
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Quão rigorosamente cada propriedade do material deve coincidir para operações compartilharem um lote de produção neste processo."
 
@@ -16701,6 +16737,9 @@ msgstr "Lead time"
 msgid "Lead Time"
 msgstr "Lead Time"
 
+msgid "Lead Time — the lead time through the BOM"
+msgstr "Lead time — o lead time pela BOM"
+
 msgid "Lead time (days)"
 msgstr "Lead time (dias)"
 
@@ -16830,6 +16869,9 @@ msgstr "Deixe em branco para escolher uma cor pelo nome"
 
 msgid "Leave empty to use the account default"
 msgstr "Deixe vazio para usar o padrão da conta"
+
+msgid "Leave empty to use the level in Settings → Sales."
+msgstr "Deixe em branco para usar o nível em Configurações → Vendas."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Deixe vazio ou digite 0 para mostrar tudo que o MRP planeja."
@@ -20429,6 +20471,9 @@ msgstr "Dias não úteis que o agendamento e a capacidade respeitam"
 msgid "None"
 msgstr "Nenhum"
 
+msgid "None — no check"
+msgstr "Nenhuma — sem verificação"
+
 msgid "None available"
 msgstr "Nenhuma disponível"
 
@@ -20984,6 +21029,9 @@ msgstr "Somente {0} {unitOfMeasure} aqui"
 msgid "Only {available} available"
 msgstr "Apenas {available} disponível"
 
+msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+msgstr "Somente {free} estão disponíveis até {promised}. A data de entrega mais próxima é {earliest}."
+
 msgid "Only {quantity} in batches there"
 msgstr "Apenas {quantity} em lotes de produção ali"
 
@@ -21447,6 +21495,9 @@ msgstr "Taxa fixa opcional usada ao traduzir saldos de patrimônio líquido de a
 
 msgid "Optional pages & sections"
 msgstr "Páginas e seções opcionais"
+
+msgid "Optional. Saving keeps the date and records who kept it."
+msgstr "Opcional. Ao salvar, a data é mantida e fica registrado quem a manteve."
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Opcional. Interrompe novas sugestões de compra após esta data."
@@ -22575,6 +22626,9 @@ msgstr "Planejamento"
 
 msgid "Planning action"
 msgstr "Ação de planejamento"
+
+msgid "Planning and sales"
+msgstr "Planejamento e vendas"
 
 msgid "Planning group"
 msgstr "Grupo de Planejamento"
@@ -24193,6 +24247,9 @@ msgstr "Motivo da Mudança"
 msgid "Reason for declining (Optional)"
 msgstr "Motivo da recusa (Opcional)"
 
+msgid "Reason for keeping this date"
+msgstr "Motivo para manter esta data"
+
 msgid "Reason for late entry"
 msgstr "Motivo da entrada atrasada"
 
@@ -25089,6 +25146,9 @@ msgstr "Quantidade de Reabastecimento"
 
 msgid "Reorder Quantity:"
 msgstr "Quantidade de Recompra:"
+
+msgid "Reordering"
+msgstr "Reposição"
 
 msgid "Reordering policy"
 msgstr "Política de ressuprimento"
@@ -28737,6 +28797,9 @@ msgstr "Ainda devido"
 msgid "Stock"
 msgstr "Estoque"
 
+msgid "Stock — free stock, then the lead time"
+msgstr "Estoque — estoque livre, depois o lead time"
+
 msgid "Stock and planning"
 msgstr "Estoque e planejamento"
 
@@ -30633,6 +30696,9 @@ msgstr "O último dia para dar aviso de renovação ou encerramento"
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "A data limite para colocar este pedido de compra para que chegue até a data necessária, considerando o lead time do fornecedor."
 
+msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
+msgstr "O lead time é de {days} dias. A data de entrega mais próxima é {earliest}."
+
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
 msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
@@ -31139,6 +31205,9 @@ msgstr "Os serviços que este contrato fatura: taxas únicas e cobranças recorr
 msgid "The shelves and bins where stock physically sits"
 msgstr "As prateleiras e compartimentos onde o estoque fica fisicamente"
 
+msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+msgstr "O chão de fábrica não consegue concluir isto até {promised}. A data de entrega mais próxima é {earliest}."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Os suprimentos de loja e consumíveis que você mantém à mão"
 
@@ -31608,6 +31677,9 @@ msgstr "A taxa deste tipo de cliente"
 
 msgid "This customer's rate"
 msgstr "A taxa deste cliente"
+
+msgid "This date cannot be met"
+msgstr "Esta data não pode ser cumprida"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "Este departamento não tem centros de trabalho em {locationName}. Escolha outro departamento ou local."
@@ -33426,6 +33498,9 @@ msgstr "Use ... to get the next part ID"
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
+msgid "Use {earliest}"
+msgstr "Usar {earliest}"
+
 msgid "Use a different account"
 msgstr "Use uma conta diferente"
 
@@ -34434,11 +34509,14 @@ msgstr "Ao responder a um tópico, também tornar a mensagem visível para todos
 msgid "When serial numbers are assigned"
 msgstr "Quando os números de série forem atribuídos"
 
+msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+msgstr "Quando alguém adiciona ou altera uma linha do pedido de venda, verifique se a data prometida pode ser cumprida. A verificação só roda quando a data fica antes do lead time do item, calculado pela BOM. Ela avisa e mostra a data mais próxima; nunca impede o salvamento. A aba Planejamento do item pode definir o próprio nível."
+
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Quando se espera que os fornecedores respondam; os fornecedores veem esta data no portal RFQ e a Carbon para de aceitar respostas tardias depois dela (configurável)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "Quando o comprador solicitou as mercadorias; o fornecedor pode prometer outra data na Data prometida de recebimento e registrar outra data depois, na Data de entrega."
+msgstr "Quando o comprador pediu as mercadorias; o fornecedor pode prometer outra data na Data prometida de recebimento e, depois, registrar outra data na Data de entrega."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "Quando o comprador precisa das mercadorias desta linha na doca. Uma nova linha começa com a Data solicitada de recebimento do pedido; o planejamento usa esta data para a disponibilidade de estoque e o agendamento de processamento externo."
@@ -34676,6 +34754,9 @@ msgstr "Quem é o proprietário das ações de Planejamento de MRP. Locais herda
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Quem é proprietário do aluguel aqui: ele recebe o resumo da fatura e os lembretes de data."
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "Quem é responsável pelas ações deste item aqui, até onde o planejamento olha à frente e como um pedido de venda verifica sua data prometida."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Quem recebe as faturas, aonde e em que condições."

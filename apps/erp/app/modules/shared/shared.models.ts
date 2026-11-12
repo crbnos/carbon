@@ -93,6 +93,14 @@ export const methodType = [
   "Make to Order"
 ] as const;
 
+// Delivery date check levels (companySettings / itemPlanning.deliveryDateControl).
+export const deliveryDateControlTypes = [
+  "None",
+  "Lead Time",
+  "Stock",
+  "Capacity"
+] as const;
+
 export const sourcingType = [
   "Specified",
   "Drop Ship",

@@ -37,6 +37,14 @@ export const WORKFLOW_MOMENTS = {
     permission: "sales",
     outputs: { quote: t.entity("quote"), salesOrder: t.entity("salesOrder") }
   },
+  "sales.deliveryDateOverridden": {
+    label: "A sales order line keeps a date it cannot meet",
+    permission: "sales",
+    outputs: {
+      salesOrder: t.entity("salesOrder"),
+      overriddenBy: t.entity("user")
+    }
+  },
   "inventory.receiptPosted": {
     label: "A receipt is posted",
     permission: "inventory",

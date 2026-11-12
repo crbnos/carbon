@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261112030415",
+  "schemaVersion": "20261112042417",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-12T03:15:56.068Z",
+  "exportedAt": "2026-11-12T04:30:19.680Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -515,6 +515,7 @@
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
         "includeSupplierPartFiles",
+        "deliveryDateControl",
         "requirePromisedDateToFinalizePurchaseOrder"
       ]
     },
@@ -3931,7 +3932,8 @@
         "minimumReserveQuantity",
         "responsibleEmployee",
         "planningHorizonDays",
-        "allowCommonSupplyForProjects"
+        "allowCommonSupplyForProjects",
+        "deliveryDateControl"
       ]
     },
     {
@@ -5623,10 +5625,10 @@
         "sourceDocumentId",
         "sourceDocumentLineId",
         "sourceDocumentReadableId",
-        "workCenterId",
-        "assignee",
         "storageUnitId",
-        "acceptedQuantity"
+        "acceptedQuantity",
+        "workCenterId",
+        "assignee"
       ]
     },
     {
@@ -8084,7 +8086,15 @@
         "configuration",
         "serviceStartDate",
         "serviceEndDate",
-        "salesReturnOrderLineId"
+        "salesReturnOrderLineId",
+        "requestedDate",
+        "deliveryDateStatus",
+        "deliveryDateConstraint",
+        "earliestDeliveryDate",
+        "deliveryDateCheckedAt",
+        "deliveryDateOverriddenBy",
+        "deliveryDateOverriddenAt",
+        "deliveryDateOverrideReason"
       ]
     },
     {
