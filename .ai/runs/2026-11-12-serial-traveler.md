@@ -26,6 +26,8 @@ Approval mode: the user decided at each gate. The grill resolutions live in the 
   - Tasks 1–5 applied to the local database after the reset; types regenerated; authz migration `20261112182502_serial-traveler-authz.sql` written.
   - Phase A done: Tasks 1–6 committed (`5e6299b948`; test `traveler-target.test.sql`).
   - Phase B done: Tasks 7–15 committed. Task 13 reads candidate parent units with 2 batched reads (the plan's per-candidate read broke the N+1 rule).
+  - Phase C done to Task 29 (2026-11-12): dataset `motor-line` validates with 0 violations; `db:check:datasets` passes for all 6 datasets. Plan gaps fixed during execution: Task 23a (`Dataset.assetIndustryId`, so a dev-only dataset reuses the motor CAD assets) and the bearing batch properties in Task 25.
+  - Paused before Task 30 (`db:seed:dev`): waiting for the user's approval.
   - Incident: the untracked spec, plan and run record files disappeared from `.ai/` during execution, cause not found. The plan was rebuilt from the scratch drafts, the spec and this record from the session. They are now committed to the branch.
   - Incident 2: the run record was deleted again and the plan's progress reverted to its committed state, during Phase B. Cause not found; the pre-commit hook does no stash or clean. From now on the plan progress and this record are committed after each update.
 
