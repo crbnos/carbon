@@ -223,9 +223,10 @@ URL strings in links, redirects, and form actions.
 
 A theme may carry **colors** (`Theme.colors`): the 16 presets in
 `presetThemes` and any `custom:<base>:<highlight>:<g|s>` name. Such a theme
-keeps the default accent and also colors the app frame (the `NavRail` and the
-gutter around the content card), the ERP module sidebar, and lightly the page,
-solid or gradient (`packages/utils/src/theme-colors.ts`). It is stored in the
+takes its accent (buttons, focus rings) from its highlight (`themeAccent`) and
+also colors the app frame (the `NavRail` and the gutter around the content
+card), the ERP module sidebar, and lightly the page, solid or gradient
+(`packages/utils/src/theme-colors.ts`). It is stored in the
 same `theme` cookie as every theme. `useThemeStyle` (`@carbon/react`) reads the
 theme to render (`useThemeValue`: a preview, a pending pick, the root loader)
 and paints the ERP and MES `SidebarProvider`; the shell passes the same style

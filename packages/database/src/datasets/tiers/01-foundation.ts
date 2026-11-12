@@ -390,36 +390,45 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
     ctx.refs.contacts[`${cc.customer}:${cc.lastName}`] = contactId;
 
-    const addrId = await insertId(
-      ctx,
-      "address",
-      partyAddress(
-        data,
-        data.customers.find((c) => c.name === cc.customer)?.address,
-        "See parent"
-      )
-    );
-    const locId = await insertId(ctx, "customerLocation", {
-      customerId,
-      addressId: addrId,
-      name: "Billing"
-    });
-    ctx.refs.misc[`cloc:${cc.customer}`] = locId;
+    let locId: string;
+    if (cc.sharesLocation) {
+      locId = need(ctx.refs.misc, `cloc:${cc.customer}`, "customer location");
+    } else {
+      const addrId = await insertId(
+        ctx,
+        "address",
+        partyAddress(
+          data,
+          data.customers.find((c) => c.name === cc.customer)?.address,
+          "See parent"
+        )
+      );
+      locId = await insertId(ctx, "customerLocation", {
+        customerId,
+        addressId: addrId,
+        name: "Billing"
+      });
+      ctx.refs.misc[`cloc:${cc.customer}`] = locId;
+    }
 
-    await insertId(ctx, "customerContact", {
-      customerId,
-      contactId,
-      customerLocationId: locId
-    });
+    ctx.refs.contacts[`cc:${cc.customer}:${cc.lastName}`] = await insertId(
+      ctx,
+      "customerContact",
+      { customerId, contactId, customerLocationId: locId }
+    );
   }
 
   // ── Suppliers ─────────────────────────────────────────────────────────────
   ctx.log("suppliers");
   for (const s of data.suppliers) {
     const typeId = need(ctx.refs.misc, `stype:${s.type}`, "supplier type");
+    const stageId = s.stage
+      ? await bootstrapIdByName(ctx, "supplierStage", s.stage)
+      : null;
     const supId = await insertId(ctx, "supplier", {
       name: s.name,
       supplierTypeId: typeId,
+      supplierStageId: stageId,
       phone: s.phone,
       website: s.website,
       currencyCode: s.currencyCode ?? "USD",

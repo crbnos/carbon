@@ -363,6 +363,22 @@ function transactionalBlocks(): DocumentBlock[] {
 }
 
 /**
+ * Lets the line table's item text wrap onto as many lines as it needs, for a
+ * document whose line description must print in full rather than end in an
+ * ellipsis.
+ */
+function withWrappedLineItems(blocks: DocumentBlock[]): DocumentBlock[] {
+  return blocks.map((block) =>
+    block.type === "lineItems"
+      ? {
+          ...block,
+          options: { ...DEFAULT_LINE_ITEMS_OPTIONS, textOverflow: "wrap" }
+        }
+      : block
+  );
+}
+
+/**
  * Layout for a return document (RMA / supplier return): transactional chrome
  * but no summary block — the line-items table carries its own total row.
  */
@@ -482,16 +498,8 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "salesInvoice",
       // An invoice line's description is the whole story of what is billed —
-      // a rental or contract period, its days and rate — so it wraps rather
-      // than losing its end to an ellipsis.
-      blocks: transactionalBlocks().map((block) =>
-        block.type === "lineItems"
-          ? {
-              ...block,
-              options: { ...DEFAULT_LINE_ITEMS_OPTIONS, textOverflow: "wrap" }
-            }
-          : block
-      ),
+      // a rental or contract period, its days and rate.
+      blocks: withWrappedLineItems(transactionalBlocks()),
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,
@@ -518,10 +526,12 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
     purchaseOrder: {
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "purchaseOrder",
-      blocks: [
+      // A purchase order line's description is what the supplier makes or
+      // ships to: dimensions, finish, certificates.
+      blocks: withWrappedLineItems([
         ...transactionalBlocks(),
         { id: "approval", type: "approval", visible: true }
-      ],
+      ]),
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,

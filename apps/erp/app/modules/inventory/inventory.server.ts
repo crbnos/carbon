@@ -1047,7 +1047,9 @@ export const setReceiptLineBatch = defineServiceFn({
  * `index` is the unit's position on the line, from 0. An empty serial number
  * clears the position. A serial number the line's item already uses at another
  * position, or that belongs to an existing unit with stock movements, is
- * refused and the position is cleared.
+ * refused and the position is cleared. `properties` are the line's batch
+ * properties, keyed by `batchProperty` id; without them the unit keeps the
+ * properties it (or another unit on the line) already has.
  *
  * @mcp
  */
@@ -1057,7 +1059,8 @@ export const setReceiptLineSerial = defineServiceFn({
     receiptLineId: z.string(),
     serialNumber: z.string(),
     index: z.number().int().min(0),
-    expiryDate: z.string().optional()
+    expiryDate: z.string().optional(),
+    properties: z.record(z.string(), z.unknown()).optional()
   }),
   permission: { create: "inventory" },
 
@@ -1077,7 +1080,8 @@ export const setReceiptLineSerial = defineServiceFn({
         receiptId: input.receiptId,
         itemId: line.itemId ?? "",
         serialNumber: input.serialNumber.trim(),
-        expiryDate: input.expiryDate
+        expiryDate: input.expiryDate,
+        properties: input.properties
       });
     } catch (error) {
       // The position shows a value that did not save; empty it so its
@@ -1118,6 +1122,65 @@ export const setReceiptLineSerial = defineServiceFn({
       }
     }
     return { receiptLineId: input.receiptLineId, index: input.index };
+  }
+});
+
+/**
+ * Set the batch properties of every serial on a serial-tracked receipt line.
+ *
+ * @remarks
+ * `properties` is keyed by `batchProperty` id; keys that are not one of the
+ * item's batch properties are ignored. Every unit on the line takes the same
+ * values, and a serial entered later copies them from a unit already on the
+ * line. The values are stored on the units, so the line must be
+ * serial-tracked and have at least one serial number entered. Only a Draft
+ * receipt's serials change.
+ *
+ * @mcp
+ */
+export const setReceiptLineSerialProperties = defineServiceFn({
+  input: z.object({
+    receiptId: z.string(),
+    receiptLineId: z.string(),
+    properties: z.record(z.string(), z.unknown())
+  }),
+  permission: { create: "inventory" },
+
+  async run(ctx, input) {
+    const line = await service.receiptLineOf(ctx, input);
+    if (line instanceof Error) return line;
+
+    let saved: Awaited<ReturnType<typeof service.saveReceiptSerialProperties>>;
+    try {
+      saved = await service.saveReceiptSerialProperties(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        receiptId: input.receiptId,
+        receiptLineId: input.receiptLineId,
+        itemId: line.itemId ?? "",
+        properties: input.properties
+      });
+    } catch (error) {
+      return ctx.error("internal", "Failed to update tracking", error);
+    }
+    if (!saved.ok) {
+      switch (saved.reason) {
+        case "notFound":
+          return ctx.error("notFound", RECEIPT_NOT_FOUND);
+        case "locked":
+          return ctx.error("rule", RECEIPT_LOCKED);
+        case "notSerial":
+          return ctx.error(
+            "rule",
+            "Serial properties can only be set on a serial-tracked line"
+          );
+        case "noUnits":
+          return ctx.error(
+            "rule",
+            "Enter a serial number first. The properties are saved on the line's serials."
+          );
+      }
+    }
+    return { receiptLineId: input.receiptLineId };
   }
 });
 /**

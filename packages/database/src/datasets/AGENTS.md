@@ -1,7 +1,7 @@
 # datasets — industry demo data + the engine that inserts it
 
 Fills a company with one industry's worth of a working ERP + MES: items, BOMs, customers,
-quotes, orders, returns, jobs, picking, inspections, non-conformances, gauges, change orders,
+quotes, orders, returns, rental agreements, jobs, picking, inspections, non-conformances, gauges, change orders,
 maintenance, training, timecards, posted journals, payments, accounting periods, workflows and
 their run history, sales/storage rules, approvals, customer portals and a busy shop floor —
 every user-reachable status of the major documents included. Two callers share every line of

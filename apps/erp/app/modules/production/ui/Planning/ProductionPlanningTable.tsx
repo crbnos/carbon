@@ -23,7 +23,7 @@ import { distinctItemText } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBookMarked,
   LuCircleCheck,
@@ -67,8 +67,10 @@ import {
   usePlanningActionTypeOptions
 } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
+  draftsOfRefusedOrders,
   openNewSupplyActions,
-  productionOrdersFromActions
+  productionOrdersFromActions,
+  withoutRowDraft
 } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import {
   PLANNING_SEGMENT_COLUMN,
@@ -80,6 +82,7 @@ import {
   planningColumns
 } from "~/modules/production/ui/Planning/planningColumns";
 import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
+import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
 import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import type { action as mrpAction } from "~/routes/api+/mrp";
@@ -206,12 +209,25 @@ const ProductionPlanningTable = ({
   );
   // Create Jobs: the order's created jobs, and the parts it skipped. A refusal
   // is toasted by useAction.
+  const pastStartToast = usePastStartToast();
+  const submittedRows = useRef<
+    { id: string; planningSegmentId: string; orders: ProductionOrder[] }[]
+  >([]);
   const bulkUpdateFetcher = useAction<typeof bulkUpdateAction>({
     onSuccess: (result) => {
       const data = "data" in result ? result.data : null;
       if (!data || !("jobs" in data)) return;
-      // The drafts became jobs; the next open re-seeds from the new split.
-      setOrdersMap({});
+      // A refused late order stays a draft as it was sent; every other row
+      // re-seeds from the suggestions, which keep what was not ordered.
+      setOrdersMap(
+        draftsOfRefusedOrders(submittedRows.current, data.refusedOrders)
+      );
+      const refusedCount = data.refusedOrders.length;
+      if (refusedCount > 0) {
+        toast.error(pastStartToast(data.jobs.length, refusedCount));
+      }
+      const problems = [...data.warnings, ...data.errors];
+      if (problems.length > 0) toast.error(problems.join(" · "));
       const { jobs, alreadyPlannedItemCount, noDemandItemCount } = data;
 
       const skipped: string[] = [];
@@ -376,6 +392,7 @@ const ProductionPlanningTable = ({
           }),
         action: action
       };
+      submittedRows.current = payload.items;
       bulkUpdateFetcher.submit(payload, {
         method: "post",
         action: path.to.bulkUpdateProductionPlanning,
@@ -430,15 +447,10 @@ const ProductionPlanningTable = ({
     []
   );
 
-  // Planning a Draft job re-runs MRP: the item's draft list is stale, so the
-  // drawer re-seeds from the new suggestions.
+  // After a Draft job is planned (MRP re-runs) or an order is placed, the
+  // row's draft is stale: drop it so the drawer re-seeds.
   const dropOrders = useCallback((item: ProductionPlanningItem) => {
-    if (!item.id) return;
-    setOrdersMap((prev) => {
-      if (!(item.id! in prev)) return prev;
-      const { [item.id!]: _dropped, ...rest } = prev;
-      return rest;
-    });
+    if (item.id) setOrdersMap((prev) => withoutRowDraft(prev, item));
   }, []);
 
   // The drawer's own Planning Horizon control: the same on-screen override as

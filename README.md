@@ -101,6 +101,13 @@ Manufacturing teams often run planning, production, quality and accounting in se
 
 Carbon puts ERP, MRP, MES and QMS in **one Postgres database you can inspect, own and extend**. Engineering, planning, production, quality and accounting update the same data, without synchronization jobs between separate product databases.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/one-database-dark.webp" />
+    <img alt="Why one database: in the usual setup, planning, production, quality and accounting each keep their own copy of the data and are joined by re-keying and connectors; in Carbon, sales, engineering, planning, production, quality, inventory and accounting all read and write the same Postgres database" src=".github/assets/readme/one-database-light.webp" width="900" />
+  </picture>
+</p>
+
 Carbon is an open-source alternative to [NetSuite](https://carbon.ms/compare/netsuite), [Epicor](https://carbon.ms/compare/epicor), [SAP Business One](https://carbon.ms/compare/sap-business-one), [Plex](https://carbon.ms/compare/plex), [Odoo](https://carbon.ms/compare/odoo) and [ERPNext](https://carbon.ms/compare/erpnext). It supports complex assembly, contract manufacturing, configure-to-order and high-mix, low-volume production. See [all comparisons](https://carbon.ms/compare).
 
 <br />
@@ -173,16 +180,20 @@ API keys and MCP are included with Business and Enterprise plans. Using them in 
 ERP and MES are React Router apps over a single Postgres database. Permissions (row-level security), computed totals and change events live in the database itself; background work runs through Inngest, which calls back into the ERP to execute jobs. The [architecture guide](https://docs.carbon.ms/docs/building/architecture) follows one click all the way down.
 
 <a href="https://docs.carbon.ms/docs/building/architecture">
-  <img alt="How Carbon fits together: shop floor, office and customers reach the MES and ERP, which read and write Postgres; subscribed writes queue Inngest jobs that run back in the ERP" src=".github/assets/readme/architecture.png" width="720" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/architecture-dark.webp" />
+    <img alt="How Carbon fits together: shop floor staff use the MES; office staff, customers, suppliers, your code and AI agents reach the ERP. Both apps check permissions and write to Postgres, which enforces row-level security, computes totals in views and queues change events in the same transaction. After commit, Inngest calls the ERP back to run jobs that update search, the audit log, webhooks, workflows, accounting sync, Linear and Jira, email and Slack. Realtime pushes live updates to screens." src=".github/assets/readme/architecture-light.webp" width="900" />
+  </picture>
 </a>
 
 ## Building E2E Systems
 
 Carbon is intended to be the core of a bespoke end-to-end manufacturing system. We provide an `apps/starter` and allow you to build a custom sales and shop-floor engine with Carbon at the center.
 
-![Carbon Functionality](https://github.com/user-attachments/assets/d73b3297-afb4-4bd4-a381-61b31a78aa38)
-
-![Carbon Architecture](https://github.com/user-attachments/assets/e5532a5f-609c-4404-8706-aa9bd59e180b)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/build-on-carbon-dark.webp" />
+  <img alt="Ways to build on Carbon: your own app (from apps/starter), scripts and other systems use the Carbon API, AI agents use the MCP server, and reports use the Data API. All of them get the same permissions as the signed-in user or API key. The API and MCP run the same operations the ERP uses; the Data API goes straight to tables and views. On a change, Carbon calls out through webhooks, workflows and integrations." src=".github/assets/readme/build-on-carbon-light.webp" width="900" />
+</picture>
 
 <br />
 

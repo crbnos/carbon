@@ -190,7 +190,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 
 // Lot of 2 at AQL 1.0 / level II → code letter A, n = 2.
 const BARE_BOARD_PLAN = {
-  drawingNumber: "PCB-BARE-4L Fab Dwg Rev B",
+  name: "PCB-BARE-4L Fab Dwg Rev B",
   aql: 1.0,
   features: [
     {
@@ -218,7 +218,7 @@ export const INSPECTIONS: InspectionSpec[] = [
     ref: "insp:gear-set",
     receipt: "receipt:short",
     item: "GBX-HD-80",
-    drawingNumber: "TQ-HD80-100 Rev B",
+    name: "TQ-HD80-100 Rev B",
     aql: 1.0,
     features: [
       {
@@ -340,6 +340,27 @@ export const INSPECTIONS: InspectionSpec[] = [
         ]
       }
     ]
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-hold",
+    status: "Pending",
+    trackedEntities: ["LOT-ENC-2609"],
+    workCenter: "Inspection Bench",
+    assignee: "self",
+    notes:
+      "In-house accuracy check of the held encoder lot while the calibration certificate is chased.",
+    samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-duplicate",
+    status: "Cancelled",
+    trackedEntities: ["LOT-ENC-2609"],
+    workCenter: "Inspection Bench",
+    notes:
+      "Opened twice for the same hold; cancelled in favour of the open inspection.",
+    samples: []
   }
 ];
 

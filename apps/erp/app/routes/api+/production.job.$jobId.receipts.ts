@@ -13,7 +13,7 @@ import { getDatabaseClient } from "~/services/database.server";
  * quantity and the received units come from one statement, so the dialog never
  * pairs values from different moments. Read past RLS: itemLedger is hidden from
  * users without inventory or accounting view, and the dialog would otherwise
- * offer received units again.
+ * offer received units again, or miss units issued before the job was received.
  *
  * A query failure throws rather than answering `null`: the dialog's fallback is
  * to lock the quantity, and a permanent failure that looks like a transient one
@@ -37,7 +37,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     receipts: {
       quantityReceivedToInventory: job.quantityReceivedToInventory ?? 0,
-      trackedEntityIds: job.trackedEntityIds
+      trackedEntityIds: job.trackedEntityIds,
+      issuedTrackedEntityIds: job.issuedTrackedEntityIds
     }
   };
 }

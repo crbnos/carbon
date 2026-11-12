@@ -296,8 +296,10 @@ operation of the same name in `projects.server.ts`.
   `ui/RdTax/useRdTaxLabels.ts`; the element page's type pickers use `PropertySelect`
   (`ui/Element/PropertyFields.tsx`).
 - `getPlanningSegmentOwners`, `moveActionPegsToSupply` — the planning routes'
-  Apply in a group segment: the owner of each segment, and one transaction that moves an
-  action's pegs onto the PO line or job it created.
+  Apply in a group segment: the owner of each segment, and one transaction that splits an
+  action's pegs across the PO lines or jobs that answered it, by quantity
+  (`planPegTransfer`, `peg-transfer-plan.ts`); what they do not cover stays on an action
+  still open for a remainder.
 
 ## UI Layout
 The screens open in layers (`.claude/rules/projects-system.md` → *Information architecture*;

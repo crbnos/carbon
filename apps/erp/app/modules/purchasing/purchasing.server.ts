@@ -2,14 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError, raisedMessage } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import {
   type Database,
   fetchAllByIds,
   getCompanyTimeZone,
   type Json
 } from "@carbon/database";
+import { assertPostingStatusUnchanged } from "@carbon/database/journal-posting-status";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -26,7 +28,8 @@ import {
   getApproverUserIdsForRule,
   getLatestApprovalRequestForDocument,
   getLowerTierApproverUserIds,
-  isApprovalRequired
+  isApprovalRequired,
+  isCompanyAdmin
 } from "@carbon/ee/approvals.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
@@ -37,9 +40,11 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import {
   applyRate,
+  colorNames,
   datetime,
   deriveRate,
   groupBy,
+  isUniqueViolation,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   requireAffected,
   SCALE,
@@ -53,6 +58,18 @@ import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  postReceipt,
+  RECEIPT_VOID_STOCK_MOVED_ERROR
+} from "~/modules/inventory/inventory.service";
+import { getMethodTreeArray } from "~/modules/items/items.service";
+import {
+  classifyPlanningOrders,
+  invalidOrderDateMessage,
+  nothingOrderedMessage,
+  pastStartRefusalMessages,
+  type RefusedPlanningOrder
+} from "~/modules/production/production.models";
+import {
   assignPlanningActions,
   dismissPlanningActions,
   getPlanningActionsByIds,
@@ -60,6 +77,7 @@ import {
   runMRP,
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
+import { pegMovesForSettledActions } from "~/modules/projects/peg-transfer-plan";
 import {
   applyTransferPlanningActions,
   checkProjectBudget,
@@ -73,6 +91,7 @@ import {
 import { incoterms, optionalTiptapDoc } from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
+  INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
   invokePosting,
   isActiveCompanyEmployee,
   refuseUnlessOwned
@@ -82,11 +101,15 @@ import { ERP_URL, path } from "~/utils/path";
 import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
+  findMergeablePlanningLine,
   findPlanningPurchaseOrder,
+  getRfqLinesFromMethod,
+  groupRequestQuoteLines,
   isIsoDate,
   isPurchaseOrderAmendable,
   isPurchaseOrderDateField,
   isPurchaseOrderEditableFromPlanning,
+  isPurchaseOrderForceDeleteConfirmed,
   isPurchaseOrderLocked,
   isPurchaseReturnOrderLocked,
   isRfqLocked,
@@ -96,11 +119,16 @@ import {
   leasePurchaseValidator,
   leaseTerminateValidator,
   lockedReturnLineField,
+  PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH,
   PURCHASE_ORDER_REOPEN_STATUSES,
   plannedOrderValidator,
   planningPurchaseOrderWeek,
+  promisedDateOf,
   purchaseOrderDeleteRefusal,
   purchaseOrderEditRefusal,
+  purchaseOrderForceDeleteApprovalRefusal,
+  purchaseOrderForceDeleteBlockerMessage,
+  purchaseOrderForceDeleteWithdrawRefusal,
   purchaseOrderLineDateFields,
   purchaseOrderLineDateRefusal,
   purchaseOrderLineReceivingIntents,
@@ -109,6 +137,8 @@ import {
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
+  type RfqLineFromMethod,
+  requestQuoteValidator,
   selectedLineSchema,
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
@@ -2157,6 +2187,8 @@ export const updatePurchaseOrderDelivery = defineServiceFn({
     shippingMethodId: z.string().optional(),
     trackingNumber: z.string(),
     deliveryDate: z.string().optional(),
+    shippedDate: z.string().optional(),
+    expectedReceiptDate: z.string().optional(),
     receiptRequestedDate: z.string().optional(),
     receiptPromisedDate: z.string().optional(),
     dropShipment: z.boolean(),
@@ -2377,6 +2409,590 @@ export const deletePurchaseOrders = defineServiceFn({
     if (removed instanceof CarbonError) return removed;
     const deleted = (removed.data ?? []).map((order) => order.id);
     return { purchaseOrderIds: deleted, skipped: ids.length - deleted.length };
+  }
+});
+
+const NOT_ADMIN_FORCE_DELETE =
+  "Only an Admin can force delete a purchase order";
+
+/**
+ * Ask to force delete a purchase order.
+ *
+ * @remarks
+ * An Admin override for an order the normal delete refuses (a released
+ * order, or one in approval the caller did not request). The caller must be
+ * an Admin, give a reason and type the order's number. Nothing is deleted
+ * here: the request and its `approvalRequest` (type
+ * `purchaseOrderForceDelete`) are opened, and the other Admins are notified.
+ * Another Admin approves it with `decidePurchaseOrderForceDelete`, which also
+ * reverses the order's receipts. Refused while a shipment, invoice or
+ * prepayment still names the order (`purchaseOrderForceDeleteBlockerMessage`),
+ * while a receipt is being posted, or when stock a receipt brought in was
+ * since used (it cannot be un-received). One open request per order.
+ *
+ * @returns `requestId`, the new request.
+ */
+export const requestPurchaseOrderForceDelete = defineServiceFn({
+  input: z.object({
+    purchaseOrderId: z.string().min(1),
+    reason: z
+      .string()
+      .trim()
+      .min(PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH),
+    confirmation: z.string()
+  }),
+  permission: { delete: "purchasing" },
+
+  async run(ctx, { purchaseOrderId, reason, confirmation }) {
+    const db = ctx.asSystem.pg;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    if (!(await isCompanyAdmin(ctx.asSystem.supabase, companyId, userId))) {
+      return ctx.error("forbidden", NOT_ADMIN_FORCE_DELETE);
+    }
+
+    const order = await db
+      .selectFrom("purchaseOrder")
+      .select(["id", "purchaseOrderId", "status"])
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!order) return ctx.error("notFound", "Purchase order not found");
+
+    if (
+      !isPurchaseOrderForceDeleteConfirmed(confirmation, order.purchaseOrderId)
+    ) {
+      return ctx.error(
+        "validation",
+        `Type ${order.purchaseOrderId} to confirm the force delete`
+      );
+    }
+
+    const blocked = purchaseOrderForceDeleteBlockerMessage(
+      await service.getPurchaseOrderForceDeleteBlockers(db, {
+        companyId,
+        purchaseOrderId
+      })
+    );
+    if (blocked) return ctx.error("rule", blocked);
+
+    // What approving would refuse anyway, refused now.
+    const receipts = await service.getPurchaseOrderForceDeleteReceipts(db, {
+      companyId,
+      purchaseOrderId
+    });
+    const { refusal: receiptRefusal } = await service.forceDeleteReceiptRefusal(
+      db,
+      {
+        companyId,
+        receipts
+      }
+    );
+    if (receiptRefusal) return ctx.error("rule", receiptRefusal);
+
+    let requestId: string;
+    try {
+      const opened = await ctx.transaction(async (tx) => {
+        const request = await tx.asSystem.pg
+          .insertInto("purchaseOrderForceDeleteRequest")
+          .values({
+            companyId,
+            purchaseOrderId,
+            purchaseOrderReadableId: order.purchaseOrderId,
+            purchaseOrderStatus: order.status,
+            reason,
+            requestedBy: userId,
+            createdBy: userId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await tx.asSystem.pg
+          .insertInto("approvalRequest")
+          .values({
+            documentType: "purchaseOrderForceDelete",
+            documentId: request.id,
+            companyId,
+            requestedBy: userId,
+            createdBy: userId
+          })
+          .execute();
+        return request;
+      });
+      if (!opened.data) {
+        return ctx.error("internal", "Failed to request the force delete");
+      }
+      requestId = opened.data.id;
+    } catch (err) {
+      return isUniqueViolation(err)
+        ? ctx.error(
+            "conflict",
+            "A force delete of this purchase order is already waiting for approval"
+          )
+        : ctx.error("internal", "Failed to request the force delete", err);
+    }
+
+    await service.auditForceDelete(ctx, {
+      purchaseOrderId,
+      requestId,
+      operation: "INSERT",
+      diff: {
+        status: { old: null, new: "Pending" },
+        reason: { old: null, new: reason },
+        purchaseOrderStatus: { old: null, new: order.status }
+      }
+    });
+    await service.notifyForceDelete(ctx, {
+      event: "Requested",
+      purchaseOrderId,
+      requestId,
+      requestedBy: userId
+    });
+
+    return { requestId };
+  }
+});
+
+/**
+ * Approve or reject a purchase order force delete.
+ *
+ * @remarks
+ * Admins only, and never the Admin who asked. Approving reverses the order's
+ * receipts, then deletes the order:
+ *
+ * 1. Each posted receipt is voided (`postReceipt`), which reverses it exactly
+ *    at its own cost. A void refused because the stock was put away into
+ *    another bin, or because the receipt predates the accounting cutover, is
+ *    left for step 2; any other refusal stops the approval. Each void commits
+ *    on its own: if a later step refuses, those receipts stay voided and the
+ *    request stays Pending, so approving again picks up where it stopped.
+ * 2. One transaction: the request, its approval, the order and its receipts
+ *    are locked; the receipts left are reversed by adjusting their stock out
+ *    (`reverseReceiptsByAdjustment`) and Draft receipts are deleted; the
+ *    shipments, invoices and prepayments are read again (one posted since the
+ *    request refuses the approval); the approval and request are marked
+ *    Approved / Executed, the order's pending approval requests cancelled and
+ *    the order and its lines deleted.
+ *
+ * Rejecting marks both Rejected. The requester is notified either way.
+ *
+ * @returns `status`: Executed (the order was deleted) or Rejected.
+ */
+export const decidePurchaseOrderForceDelete = defineServiceFn({
+  input: z.object({
+    requestId: z.string().min(1),
+    decision: z.enum(["approve", "reject"]),
+    notes: z.string().optional()
+  }),
+  permission: { delete: "purchasing" },
+
+  async run(ctx, { requestId, decision, notes }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const isAdmin = await isCompanyAdmin(
+      ctx.asSystem.supabase,
+      companyId,
+      userId
+    );
+    // A claim an approval left for ten minutes is given back first.
+    if (decision === "reject")
+      await service.releaseExpiredPurchaseOrderForceDeleteClaim(
+        ctx.asSystem.pg,
+        {
+          companyId,
+          requestId
+        }
+      );
+    if (!isAdmin) return ctx.error("forbidden", NOT_ADMIN_FORCE_DELETE);
+
+    // Step 1 (approve): void the receipts, each in its own posting. Checked
+    // first, so a caller who may not decide this request voids nothing; the
+    // transaction below checks again under lock.
+    let reversal: service.ForceDeleteReversalAccounting | null = null;
+    const system = ctx.asSystem.pg;
+    // Approving claims the request first (Approving), so a cancel or reject
+    // cannot run while the receipt voids commit; a refusal or failure after
+    // the claim gives it back (Pending).
+    const release = async () => {
+      if (decision !== "approve") return;
+      await service.releasePurchaseOrderForceDeleteClaim(system, {
+        companyId,
+        requestId,
+        userId
+      });
+    };
+    if (decision === "approve") {
+      const claimed = await service.claimPurchaseOrderForceDeleteRequest(
+        system,
+        { companyId, requestId, userId }
+      );
+      const pending = await system
+        .selectFrom("purchaseOrderForceDeleteRequest")
+        .select(["status", "requestedBy", "purchaseOrderId"])
+        .where("id", "=", requestId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!pending) {
+        return ctx.error("notFound", "Force delete request not found");
+      }
+      if (!claimed) {
+        return ctx.error(
+          "rule",
+          purchaseOrderForceDeleteApprovalRefusal({
+            status: pending.status,
+            requestedBy: pending.requestedBy,
+            userId,
+            isAdmin
+          }) ?? "This force delete request can no longer be approved"
+        );
+      }
+
+      try {
+        if (pending.purchaseOrderId) {
+          const receipts = await service.getPurchaseOrderForceDeleteReceipts(
+            system,
+            { companyId, purchaseOrderId: pending.purchaseOrderId }
+          );
+          for (const receipt of receipts) {
+            if (receipt.status !== "Posted") continue;
+            const voided = await invokePosting(
+              ctx,
+              "post-receipt",
+              { type: "void" as const, receiptId: receipt.id },
+              postReceipt
+            );
+            if (!voided.error) continue;
+            // Reversed by adjusting the stock out, in step 2.
+            if (
+              voided.error.status < 500 &&
+              (voided.error.message === INVENTORY_VOID_BEFORE_CUTOVER_ERROR ||
+                voided.error.message === RECEIPT_VOID_STOCK_MOVED_ERROR)
+            ) {
+              continue;
+            }
+            await release();
+            return voided.error.status < 500
+              ? ctx.error(
+                  "rule",
+                  `${receipt.readableId} could not be reversed: ${voided.error.message}`
+                )
+              : ctx.error(
+                  "internal",
+                  `Failed to reverse ${receipt.readableId}`,
+                  voided.error
+                );
+          }
+        }
+        reversal = await service.resolveForceDeleteReversalAccounting(system, {
+          companyId,
+          userId
+        });
+      } catch (error) {
+        await release();
+        throw error;
+      }
+    }
+
+    const settled = await ctx
+      .transaction(async (tx) => {
+        const db = tx.asSystem.pg;
+        const request = await db
+          .selectFrom("purchaseOrderForceDeleteRequest")
+          .select([
+            "id",
+            "status",
+            "requestedBy",
+            "purchaseOrderId",
+            "purchaseOrderReadableId",
+            "decidedBy"
+          ])
+          .where("id", "=", requestId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!request) {
+          return ctx.error("notFound", "Force delete request not found");
+        }
+        if (decision === "approve") {
+          if (request.status !== "Approving" || request.decidedBy !== userId) {
+            return ctx.error(
+              "conflict",
+              "This force delete request is no longer being approved by you"
+            );
+          }
+        } else {
+          const refusal = purchaseOrderForceDeleteApprovalRefusal({
+            status: request.status,
+            requestedBy: request.requestedBy,
+            userId,
+            isAdmin
+          });
+          if (refusal) return ctx.error("rule", refusal);
+        }
+
+        const approval = await db
+          .selectFrom("approvalRequest")
+          .select("id")
+          .where("documentType", "=", "purchaseOrderForceDelete")
+          .where("documentId", "=", requestId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Pending")
+          .forUpdate()
+          .executeTakeFirst();
+        if (!approval) {
+          return ctx.error(
+            "conflict",
+            "This force delete request is no longer waiting for approval"
+          );
+        }
+
+        const now = datetime.timestamp();
+        const decided = decision === "approve" ? "Approved" : "Rejected";
+        if (decision === "approve") {
+          const purchaseOrderId = request.purchaseOrderId;
+          const order = purchaseOrderId
+            ? await db
+                .selectFrom("purchaseOrder")
+                .select("id")
+                .where("id", "=", purchaseOrderId)
+                .where("companyId", "=", companyId)
+                .forUpdate()
+                .executeTakeFirst()
+            : undefined;
+          if (!purchaseOrderId || !order) {
+            return ctx.error(
+              "conflict",
+              "This purchase order no longer exists"
+            );
+          }
+
+          // Step 2: reverse what the void left, and delete the drafts.
+          if (!reversal)
+            throw new Error("Force delete accounting not resolved");
+          await assertPostingStatusUnchanged(
+            db,
+            companyId,
+            reversal.accounting.postingStatus
+          );
+          const receipts = await service.getPurchaseOrderForceDeleteReceipts(
+            db,
+            {
+              companyId,
+              purchaseOrderId,
+              lock: true
+            }
+          );
+          const reversible = await service.forceDeleteReceiptRefusal(db, {
+            companyId,
+            receipts,
+            afterVoid: true
+          });
+          if (reversible.refusal !== null) {
+            return ctx.error("rule", reversible.refusal);
+          }
+          const plan = reversible.plan;
+          try {
+            await service.reverseReceiptsByAdjustment(db, {
+              companyId,
+              userId,
+              purchaseOrderId,
+              purchaseOrderReadableId: request.purchaseOrderReadableId,
+              receipts: receipts.filter(
+                (receipt) => receipt.status === "Posted"
+              ),
+              removals: plan.removals,
+              reversal
+            });
+          } catch (error) {
+            // A stock rule raised by the database (held stock, a picked Put
+            // Away): a refusal in words for the person, as the void gives it.
+            const raised = raisedMessage(error);
+            if (raised) {
+              return ctx.error("rule", `Cannot force delete: ${raised}`);
+            }
+            if (error instanceof InvalidInputError) {
+              return ctx.error("rule", error.message);
+            }
+            throw error;
+          }
+          const drafts = receipts.filter(
+            (receipt) => receipt.status === "Draft"
+          );
+          if (drafts.length > 0) {
+            await db
+              .deleteFrom("receipt")
+              .where("companyId", "=", companyId)
+              .where(
+                "id",
+                "in",
+                drafts.map((receipt) => receipt.id)
+              )
+              .where("status", "=", "Draft")
+              .execute();
+          }
+
+          const blocked = purchaseOrderForceDeleteBlockerMessage(
+            await service.getPurchaseOrderForceDeleteBlockers(db, {
+              companyId,
+              purchaseOrderId
+            })
+          );
+          if (blocked) return ctx.error("rule", blocked);
+        }
+
+        await db
+          .updateTable("approvalRequest")
+          .set({
+            status: decided,
+            decisionBy: userId,
+            decisionAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", approval.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        await db
+          .updateTable("purchaseOrderForceDeleteRequest")
+          .set({
+            status: decision === "approve" ? "Executed" : "Rejected",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", requestId)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        if (decision === "approve" && request.purchaseOrderId) {
+          await service.cancelPendingApprovals(db, {
+            companyId,
+            userId,
+            purchaseOrderIds: [request.purchaseOrderId]
+          });
+          await db
+            .deleteFrom("purchaseOrder")
+            .where("id", "=", request.purchaseOrderId)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+        return request;
+      })
+      .catch(async (error: unknown) => {
+        await release();
+        throw error;
+      });
+    if (settled.error) {
+      await release();
+      return settled.error;
+    }
+    const request = settled.data;
+    const status = decision === "approve" ? "Executed" : "Rejected";
+    // Read before the delete, so it still names the order.
+    const purchaseOrderId = request.purchaseOrderId ?? "";
+
+    await service.auditForceDelete(ctx, {
+      purchaseOrderId: purchaseOrderId || request.purchaseOrderReadableId,
+      requestId,
+      operation: status === "Executed" ? "DELETE" : "UPDATE",
+      diff: { status: { old: "Pending", new: status } }
+    });
+    await service.notifyForceDelete(ctx, {
+      event: decision === "approve" ? "Approved" : "Rejected",
+      purchaseOrderId,
+      requestId,
+      requestedBy: request.requestedBy
+    });
+
+    return {
+      requestId,
+      status,
+      purchaseOrderReadableId: request.purchaseOrderReadableId
+    };
+  }
+});
+
+/**
+ * Cancel a purchase order force delete.
+ *
+ * @remarks
+ * Only the Admin who asked, while it is Pending; its approval request is
+ * cancelled with it. Other Admins reject it instead.
+ */
+export const cancelPurchaseOrderForceDelete = defineServiceFn({
+  input: z.object({ requestId: z.string().min(1) }),
+  permission: { delete: "purchasing" },
+
+  async run(ctx, { requestId }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const isAdmin = await isCompanyAdmin(
+      ctx.asSystem.supabase,
+      companyId,
+      userId
+    );
+    // A claim an approval left for ten minutes is given back first.
+    await service.releaseExpiredPurchaseOrderForceDeleteClaim(ctx.asSystem.pg, {
+      companyId,
+      requestId
+    });
+
+    const settled = await ctx.transaction(async (tx) => {
+      const db = tx.asSystem.pg;
+      const request = await db
+        .selectFrom("purchaseOrderForceDeleteRequest")
+        .select(["id", "status", "requestedBy", "purchaseOrderId"])
+        .where("id", "=", requestId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!request) {
+        return ctx.error("notFound", "Force delete request not found");
+      }
+      const refusal = purchaseOrderForceDeleteWithdrawRefusal({
+        intent: "cancel",
+        status: request.status,
+        requestedBy: request.requestedBy,
+        userId,
+        isAdmin
+      });
+      if (refusal) return ctx.error(isAdmin ? "rule" : "forbidden", refusal);
+
+      const now = datetime.timestamp();
+      await db
+        .updateTable("purchaseOrderForceDeleteRequest")
+        .set({
+          status: "Cancelled",
+          decidedBy: userId,
+          decidedAt: now,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", requestId)
+        .where("companyId", "=", companyId)
+        .execute();
+      await db
+        .updateTable("approvalRequest")
+        .set({ status: "Cancelled", updatedBy: userId, updatedAt: now })
+        .where("documentType", "=", "purchaseOrderForceDelete")
+        .where("documentId", "=", requestId)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Pending")
+        .execute();
+      return request;
+    });
+    if (settled.error) return settled.error;
+
+    await service.auditForceDelete(ctx, {
+      purchaseOrderId: settled.data.purchaseOrderId ?? requestId,
+      requestId,
+      operation: "UPDATE",
+      diff: { status: { old: "Pending", new: "Cancelled" } }
+    });
+    return { requestId, status: "Cancelled" as const };
   }
 });
 
@@ -2687,6 +3303,12 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
     );
     if (contactRule) return ctx.error("rule", contactRule);
 
+    const promisedDateRule = await service.requiredPromisedDateRefusal(
+      ctx,
+      purchaseOrderId
+    );
+    if (promisedDateRule) return ctx.error("rule", promisedDateRule);
+
     if (
       purchaseOrder.data.supplierId &&
       (await isApprovalRequired(system, "supplier", companyId))
@@ -2990,6 +3612,15 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       );
     }
 
+    // The date can be cleared while the order waits for approval.
+    if (decision === "Approved") {
+      const promisedDateRule = await service.requiredPromisedDateRefusal(
+        ctx,
+        purchaseOrderId
+      );
+      if (promisedDateRule) return ctx.error("rule", promisedDateRule);
+    }
+
     if (
       decision === "Approved" &&
       input.notification === "Email" &&
@@ -3206,7 +3837,13 @@ export const confirmReturnOrder = defineServiceFn({
  * order already has on the same date adds to that line. The quantity is
  * raised to the supplier part's minimum; the price is the supplier part's,
  * converted at today's rate (refused for a currency with no rate); the tax is
- * the supplier's. An item whose purchasing is blocked is skipped. The orders
+ * the supplier's. An item whose purchasing is blocked is skipped. An order
+ * with a date that is not a real `YYYY-MM-DD` day is named in `errors`. An
+ * order that starts (its order date, else its due date less the item's lead
+ * time) before the location's today is refused and listed in `refusedOrders`
+ * (item, segment and its index in the item's `orders`); the item's other
+ * orders are still placed. An order joins an existing line only
+ * when the line has the same conversion factor. The orders
  * raised keep their planning approval bypass, the supply forecast is
  * recorded, and the Order suggestions they answer are settled.
  *
@@ -3253,7 +3890,7 @@ export const orderPlannedPurchases = defineServiceFn({
     }
 
     const supplierIds = new Set<string>();
-    const itemIds = new Set<string>();
+    const itemIds = new Set(itemsToOrder.map((item) => item.id));
     const periodIds = new Set<string>();
     const allSupplyForecasts: Array<{
       itemId: string;
@@ -3284,12 +3921,99 @@ export const orderPlannedPurchases = defineServiceFn({
       periodId: string;
       planningSegmentId: string;
       purchaseOrderLineId: string;
+      quantity: number;
+      dueDate: string | null;
+      planningActionId?: string;
     }[] = [];
 
+    // Weeks are counted from the location's today, as the planning grid's are.
+    const asOf = datetime.today(
+      await getLocationTimeZone(client, locationId, companyId)
+    );
+    const today = asOf.toString();
+    const refusedOrders: RefusedPlanningOrder[] = [];
+    const invalidCountByItem = new Map<string, number>();
+
+    // Whether purchasing is blocked, and the lead time an order with no order
+    // date is dated by, for every item ordered, in one read.
+    const purchasingRows = await client
+      .from("itemReplenishment")
+      .select("itemId, purchasingBlocked, leadTime")
+      .in(
+        "itemId",
+        itemsToOrder.map((item) => item.id)
+      )
+      .eq("companyId", companyId);
+    const purchasingByItem = new Map(
+      (purchasingRows.data ?? []).map((row) => [row.itemId, row])
+    );
+
+    // Every id comes from the caller and the writes bypass RLS: the location
+    // and items must be this company's (supplyForecast upserts on
+    // (itemId, locationId, periodId, planningSegmentId) alone).
+    const location = await refuseUnlessOwned(ctx, "location", {
+      id: locationId
+    });
+    if (location) return location;
+    const ownedItems = await client
+      .from("item")
+      .select("id, readableId, readableIdWithRevision")
+      .in("id", Array.from(itemIds))
+      .eq("companyId", companyId);
+    if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
+      logger.error("Planning order references records outside company", {
+        companyId,
+        userId,
+        locationId,
+        itemIds: Array.from(itemIds),
+        error: ownedItems.error
+      });
+      return ctx.error("notFound", "Item not found");
+    }
+    const readableIdByItem = new Map(
+      ownedItems.data.map((item) => [
+        item.id,
+        item.readableIdWithRevision ?? item.readableId
+      ])
+    );
+    const readableIdOf = (itemId: string) =>
+      readableIdByItem.get(itemId) ?? itemId;
     for (const item of itemsToOrder) {
-      itemIds.add(item.id);
+      // Nothing of such an item can be placed, so no PO is raised for it.
+      const replenishment = purchasingByItem.get(item.id);
+      if (purchasingRows.error || !replenishment) {
+        errors.push(
+          `Failed to retrieve purchasing data for ${readableIdOf(item.id)}: ${
+            purchasingRows.error?.message ?? "No replenishment record"
+          }`
+        );
+        continue;
+      }
+      if (replenishment.purchasingBlocked) {
+        errors.push(`Purchasing is blocked for ${readableIdOf(item.id)}`);
+        continue;
+      }
+      const { invalid, past, placeable } = classifyPlanningOrders(
+        item.orders,
+        today,
+        replenishment.leadTime
+      );
+      if (invalid.length > 0) {
+        invalidCountByItem.set(
+          item.id,
+          (invalidCountByItem.get(item.id) ?? 0) + invalid.length
+        );
+      }
+      refusedOrders.push(
+        ...past.map((index) => ({
+          itemId: item.id,
+          planningSegmentId: item.planningSegmentId,
+          index
+        }))
+      );
       let itemHasUsableOrder = false;
-      for (const order of item.orders) {
+      for (const index of placeable) {
+        const order = item.orders[index]!;
         if (order.supplierId) supplierIds.add(order.supplierId);
         if (order.periodId) periodIds.add(order.periodId);
         if (order.supplierId && order.periodId) {
@@ -3304,34 +4028,20 @@ export const orderPlannedPurchases = defineServiceFn({
           itemHasUsableOrder = true;
         }
       }
-      if (!itemHasUsableOrder) {
+      if (placeable.length > 0 && !itemHasUsableOrder) {
         errors.push(
-          `Item ${item.id} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
+          `${readableIdOf(item.id)} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
         );
       }
     }
 
-    // Every id comes from the caller and the writes bypass RLS: the location
-    // and items must be this company's (supplyForecast upserts on
-    // (itemId, locationId, periodId, planningSegmentId) alone).
-    const location = await refuseUnlessOwned(ctx, "location", {
-      id: locationId
-    });
-    if (location) return location;
-    const ownedItems = await client
-      .from("item")
-      .select("id")
-      .in("id", Array.from(itemIds))
-      .eq("companyId", companyId);
-    if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
-      logger.error("Planning order references records outside company", {
-        companyId,
-        userId,
-        locationId,
-        itemIds: Array.from(itemIds),
-        error: ownedItems.error
-      });
-      return ctx.error("notFound", "Item not found");
+    const pastStartErrors = pastStartRefusalMessages(
+      refusedOrders,
+      readableIdOf,
+      today
+    );
+    for (const [itemId, count] of invalidCountByItem) {
+      errors.push(invalidOrderDateMessage(readableIdOf(itemId), count));
     }
 
     // An order in a project segment is charged to that project: the PO
@@ -3419,21 +4129,6 @@ export const orderPlannedPurchases = defineServiceFn({
     // Readable ids too, so the client can present a clickable toast.
     const poCache = new Map<string, { id: string; readableId: string }>();
 
-    // Whether purchasing is blocked, for every item ordered, in one read.
-    const purchasingRows = await client
-      .from("itemReplenishment")
-      .select("itemId, purchasingBlocked")
-      .in("itemId", Array.from(itemIds))
-      .eq("companyId", companyId);
-    const purchasingByItem = new Map(
-      (purchasingRows.data ?? []).map((row) => [row.itemId, row])
-    );
-
-    // Weeks are counted from the location's today, as the planning grid's are.
-    const asOf = datetime.today(
-      await getLocationTimeZone(client, locationId, companyId)
-    );
-
     // Every open PO an order may join, with its lines, in one read: the
     // suppliers' Draft / Planned purchase orders at this location, oldest
     // first. The lines tell which weeks a PO already covers, and which line a
@@ -3441,7 +4136,7 @@ export const orderPlannedPurchases = defineServiceFn({
     const openPurchaseOrders = await client
       .from("purchaseOrder")
       .select(
-        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, planningGroupId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
+        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, planningGroupId, requiredDate, purchaseQuantity, conversionFactor, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
       )
       .eq("companyId", companyId)
       .in("supplierId", Array.from(ordersBySupplier.keys()))
@@ -3551,22 +4246,6 @@ export const orderPlannedPurchases = defineServiceFn({
             (sp) => sp.itemId === itemId && sp.supplierId === supplierId
           );
 
-          const purchasingError =
-            purchasingRows.error ??
-            (purchasingByItem.has(itemId)
-              ? null
-              : { message: "No replenishment record" });
-          if (purchasingError) {
-            errors.push(
-              `Failed to retrieve purchasing data for item ${itemId}: ${purchasingError.message}`
-            );
-            continue;
-          }
-          if (purchasingByItem.get(itemId)?.purchasingBlocked) {
-            errors.push(`Purchasing is blocked for item ${itemId}`);
-            continue;
-          }
-
           const minimumOrderQuantity = supplierPart?.minimumOrderQuantity ?? 0;
           const adjustedQuantity =
             minimumOrderQuantity > 0 && order.quantity < minimumOrderQuantity
@@ -3580,12 +4259,10 @@ export const orderPlannedPurchases = defineServiceFn({
           const requiredDate = order.dueDate ?? null;
           const isGroupSegment =
             segments.planningGroupIds.has(planningSegmentId);
-          const existing = purchaseOrder.purchaseOrderLine.find(
-            (line) =>
-              line.itemId === itemId &&
-              line.requiredDate === requiredDate &&
-              (line.planningGroupId ?? line.projectId ?? "") ===
-                planningSegmentId
+          const conversionFactor = supplierPart?.conversionFactor ?? 1;
+          const existing = findMergeablePlanningLine(
+            purchaseOrder.purchaseOrderLine,
+            { itemId, requiredDate, planningSegmentId, conversionFactor }
           );
           let purchaseOrderLineId = existing?.id;
 
@@ -3611,7 +4288,7 @@ export const orderPlannedPurchases = defineServiceFn({
               .eq("companyId", companyId);
             if (updateLine.error) {
               errors.push(
-                `Failed to update PO line for item ${itemId}: ${updateLine.error.message}`
+                `Failed to update PO line for ${readableIdOf(itemId)}: ${updateLine.error.message}`
               );
               continue;
             }
@@ -3666,7 +4343,7 @@ export const orderPlannedPurchases = defineServiceFn({
                 supplierPart?.supplierUnitOfMeasureCode ??
                 order.unitOfMeasureCode,
               inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
-              conversionFactor: supplierPart?.conversionFactor ?? 1,
+              conversionFactor,
               supplierUnitPrice,
               exchangeRate: purchaseOrder.exchangeRate,
               taxPercent,
@@ -3685,7 +4362,7 @@ export const orderPlannedPurchases = defineServiceFn({
             });
             if (createLine.error) {
               errors.push(
-                `Failed to create PO line for item ${itemId}: ${createLine.error.message}`
+                `Failed to create PO line for ${readableIdOf(itemId)}: ${createLine.error.message}`
               );
               continue;
             }
@@ -3697,6 +4374,7 @@ export const orderPlannedPurchases = defineServiceFn({
               planningGroupId: isGroupSegment ? planningSegmentId : null,
               requiredDate,
               purchaseQuantity: adjustedQuantity,
+              conversionFactor,
               supplierUnitPrice,
               supplierShippingCost: 0,
               taxPercent,
@@ -3709,14 +4387,16 @@ export const orderPlannedPurchases = defineServiceFn({
             itemId,
             periodId: order.periodId,
             planningSegmentId,
-            purchaseOrderLineId: purchaseOrderLineId!
+            purchaseOrderLineId: purchaseOrderLineId!,
+            quantity: adjustedQuantity * conversionFactor,
+            dueDate: order.dueDate ?? null,
+            planningActionId: order.planningActionId
           });
           allSupplyForecasts.push({
             itemId,
             locationId,
             sourceType: "Purchase Order",
-            forecastQuantity:
-              order.quantity * (supplierPart?.conversionFactor ?? 1),
+            forecastQuantity: adjustedQuantity * conversionFactor,
             periodId: order.periodId,
             planningSegmentId,
             companyId,
@@ -3725,6 +4405,45 @@ export const orderPlannedPurchases = defineServiceFn({
           });
         }
       }
+    }
+
+    // Settled as soon as the lines exist, to keep short the window in which an
+    // MRP run could net a line and the settle then take it off again.
+    const warnings: string[] = [];
+    const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
+      companyId,
+      locationId,
+      userId,
+      type: "Order",
+      ordered
+    });
+    if (settled.error) {
+      // The PO lines stand; the suggestions clear on the next MRP run.
+      logger.error("Failed to settle ordered planning actions", {
+        companyId,
+        locationId,
+        error: settled.error
+      });
+      warnings.push(
+        "The orders were placed, but their suggestions were not updated. Recalculate before ordering them again."
+      );
+    } else if (segments.planningGroupIds.size > 0) {
+      // A grouped Order's pegs move to the PO lines that answered it. A
+      // failure leaves them on the action; the next MRP run re-pegs.
+      await moveActionPegsToSupply(ctx.asSystem.pg, {
+        companyId,
+        userId,
+        moves: pegMovesForSettledActions(
+          settled.data ?? [],
+          ordered.map((entry) => ({
+            supplyId: entry.purchaseOrderLineId,
+            quantity: entry.quantity,
+            dueDate: entry.dueDate
+          })),
+          "Purchase Order Line",
+          segments.planningGroupIds
+        )
+      });
     }
 
     if (allSupplyForecasts.length > 0) {
@@ -3737,7 +4456,7 @@ export const orderPlannedPurchases = defineServiceFn({
       if (forecasts.error) {
         const message = `Failed to insert supply forecasts: ${forecasts.error.message}`;
         logger.error(message, { companyId, locationId });
-        errors.push(message);
+        warnings.push(message);
       }
     }
 
@@ -3757,85 +4476,33 @@ export const orderPlannedPurchases = defineServiceFn({
       }
     }
 
-    const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
-      companyId,
-      locationId,
-      userId,
-      type: "Order",
-      ordered
-    });
-    if (settled.error) {
-      // The PO lines stand; the suggestions clear on the next MRP run.
-      logger.error("Failed to settle ordered planning actions", {
-        companyId,
-        locationId,
-        error: settled.error
-      });
-    } else if (segments.planningGroupIds.size > 0) {
-      // A grouped Order's pegs move to the PO line it created. A
-      // failure leaves them on the action; the next MRP run re-pegs.
-      const lineByOrder = new Map<string, string>();
-      for (const entry of ordered) {
-        const key = [
-          entry.itemId,
-          entry.periodId,
-          entry.planningSegmentId
-        ].join("\u0000");
-        if (!lineByOrder.has(key)) {
-          lineByOrder.set(key, entry.purchaseOrderLineId);
-        }
-      }
-      const moves = (settled.data ?? []).flatMap((action) => {
-        if (!segments.planningGroupIds.has(action.planningSegmentId)) {
-          return [];
-        }
-        const supplyId = lineByOrder.get(
-          [action.itemId, action.periodId, action.planningSegmentId].join(
-            "\u0000"
-          )
-        );
-        return supplyId
-          ? [
-              {
-                planningActionId: action.id,
-                supplyType: "Purchase Order Line" as const,
-                supplyId
-              }
-            ]
-          : [];
-      });
-      await moveActionPegsToSupply(ctx.asSystem.pg, {
-        companyId,
-        userId,
-        moves
-      });
-    }
-
-    if (errors.length > 0 && processedItems === 0) {
-      logger.error("Failed to process any planning orders", {
-        companyId,
-        locationId,
-        itemIds: Array.from(itemIds),
-        supplierIds: Array.from(supplierIds),
-        periodIds: Array.from(periodIds),
-        errors
-      });
+    const problems = [...errors, ...pastStartErrors];
+    if (processedItems === 0) {
+      if (problems.length > 0)
+        logger.error("Failed to process any planning orders", {
+          companyId,
+          locationId,
+          itemIds: Array.from(itemIds),
+          supplierIds: Array.from(supplierIds),
+          periodIds: Array.from(periodIds),
+          errors
+        });
       return ctx.error(
         "rule",
-        `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
-          errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
-        }`
+        problems.length === 0
+          ? "There were no orders to place"
+          : nothingOrderedMessage("orders", problems, errors.length === 0)
       );
     }
 
     return {
       message:
-        processedItems === itemsToOrder.length
-          ? `Successfully processed all ${processedItems} items`
-          : `Processed ${processedItems} of ${itemsToOrder.length} items. ${
-              errors.length
-            } errors occurred: ${errors.slice(0, 2).join("; ")}${
-              errors.length > 2 ? "..." : ""
+        problems.length === 0
+          ? `Successfully processed ${processedItems} orders`
+          : `Processed ${processedItems} orders. ${
+              problems.length
+            } errors occurred: ${problems.slice(0, 2).join("; ")}${
+              problems.length > 2 ? "..." : ""
             }`,
       processedItems,
       totalItems: itemsToOrder.length,
@@ -3843,6 +4510,8 @@ export const orderPlannedPurchases = defineServiceFn({
       purchaseOrders: Array.from(
         new Map(Array.from(poCache.values()).map((po) => [po.id, po])).values()
       ),
+      refusedOrders,
+      warnings,
       errors: errors.length > 0 ? errors : undefined
     };
   }
@@ -3915,7 +4584,7 @@ export const updatePlanningPurchaseOrderLine = defineServiceFn({
     }
     if (
       line.field === "dueDate" &&
-      service.promisedDateOf({
+      promisedDateOf({
         promisedDate: target.data.promisedDate,
         receiptPromisedDate:
           target.data.purchaseOrder?.purchaseOrderDelivery?.receiptPromisedDate
@@ -4146,7 +4815,7 @@ export const applyPlanningActions = defineServiceFn({
       }
       const datePromised =
         (row.type === "Expedite" || row.type === "Defer") &&
-        service.promisedDateOf(line) !== null;
+        promisedDateOf(line) !== null;
       if (
         !isPurchaseOrderEditableFromPlanning(line.purchaseOrderStatus) ||
         datePromised
@@ -6227,6 +6896,7 @@ export const createSupplier = defineServiceFn({
       .enum(["Active", "Inactive", "Pending", "Rejected"])
       .nullable()
       .optional(),
+    supplierStageId: z.string().optional(),
     supplierTypeId: z.string().optional(),
     accountManagerId: z.string().optional(),
     currencyCode: z.string().optional(),
@@ -6267,6 +6937,7 @@ export const updateSupplier = defineServiceFn({
         .enum(["Active", "Inactive", "Pending", "Rejected"])
         .nullable()
         .optional(),
+      supplierStageId: z.string().optional(),
       supplierTypeId: z.string().optional(),
       accountManagerId: z.string().optional(),
       currencyCode: z.string().optional(),
@@ -7700,5 +8371,286 @@ export const getLeaseRelatedDocuments = defineServiceFn({
         ctx.company.id
       )
     );
+  }
+});
+
+/**
+ * Get a supplier stage
+ *
+ * @mcp read
+ */
+export const getSupplierStage = defineServiceFn({
+  input: z.object({ supplierStageId: z.string() }),
+  permission: { view: "purchasing" },
+  async run(ctx, { supplierStageId }) {
+    return unwrap(
+      ctx,
+      await service.getSupplierStage(
+        ctx.asCaller.supabase,
+        supplierStageId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get supplier stages
+ *
+ * @mcp read
+ */
+export const getSupplierStages = defineServiceFn({
+  input: z.object({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "purchasing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getSupplierStages(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get supplier stages list
+ *
+ * @mcp read
+ */
+export const getSupplierStagesList = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "purchasing" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getSupplierStagesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Create a supplier stage
+ *
+ * @mcp
+ */
+export const createSupplierStage = defineServiceFn({
+  input: z.object({
+    name: z.string().trim().min(1),
+    color: z.enum(colorNames).nullish()
+  }),
+  permission: { create: "purchasing" },
+  async run(ctx, { name, color }) {
+    return unwrap(
+      ctx,
+      await service.insertSupplierStage(ctx.asCaller.supabase, {
+        name,
+        color: color ?? null,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Update a supplier stage
+ *
+ * @param color - A badge color. Leave out to keep the stage's color; null clears it.
+ *
+ * @mcp
+ */
+export const updateSupplierStage = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    name: z.string().trim().min(1),
+    color: z.enum(colorNames).nullish()
+  }),
+  permission: { update: "purchasing" },
+  async run(ctx, { id, name, color }) {
+    return unwrap(
+      ctx,
+      await service.updateSupplierStage(ctx.asCaller.supabase, {
+        id,
+        name,
+        color,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Delete a supplier stage. Its suppliers keep their Supplier Status and lose the stage.
+ *
+ * @mcp destructive
+ */
+export const deleteSupplierStage = defineServiceFn({
+  input: z.object({ supplierStageId: z.string() }),
+  permission: { delete: "purchasing" },
+  async run(ctx, { supplierStageId }) {
+    return unwrap(
+      ctx,
+      await service.deleteSupplierStage(
+        ctx.asCaller.supabase,
+        supplierStageId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * The parts an item's Request Quote offers: the item, and the parts to buy for
+ * one of it from its Active make method, or its latest version without one.
+ * Each has a supplier to start from: the preferred supplier, else the only
+ * supplier with a supplier part. Not published: it needs two modules, which
+ * the tool manifest cannot express.
+ */
+export const getRequestQuoteRows = defineServiceFn({
+  input: z.object({ itemId: z.string().min(1) }),
+  // The Bill of Material is read as the caller, and parts_view guards it.
+  permission: { view: ["purchasing", "parts"] },
+
+  async run(ctx, { itemId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const item = await client
+      .from("item")
+      .select("id, readableIdWithRevision, name, replenishmentSystem")
+      .eq("id", itemId)
+      .eq("companyId", companyId)
+      .single();
+    if (item.error) return ctx.error("notFound", "Item not found");
+
+    const methods = await client
+      .from("makeMethod")
+      .select("id, status, version")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .order("version", { ascending: false });
+    if (methods.error) {
+      return ctx.error("internal", "Failed to read the methods", methods.error);
+    }
+    const method =
+      methods.data.find((m) => m.status === "Active") ?? methods.data[0];
+
+    let lines: RfqLineFromMethod[] = [];
+    if (method) {
+      const tree = await getMethodTreeArray(client, method.id);
+      if (tree.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the Bill of Material",
+          tree.error
+        );
+      }
+      lines = getRfqLinesFromMethod(
+        tree.data ?? [],
+        method.id,
+        item.data.readableIdWithRevision ?? ""
+      );
+    }
+
+    const itemIds = [itemId, ...lines.map((line) => line.itemId)];
+    const [replenishment, supplierParts] = await Promise.all([
+      fetchAllByIds(itemIds, (batch) =>
+        client
+          .from("itemReplenishment")
+          .select("itemId, preferredSupplierId")
+          .in("itemId", batch)
+          .eq("companyId", companyId)
+          .order("itemId")
+      ),
+      fetchAllByIds(itemIds, (batch) =>
+        client
+          .from("supplierPart")
+          .select("itemId, supplierId")
+          .in("itemId", batch)
+          .eq("companyId", companyId)
+          .order("id")
+      )
+    ]);
+    if (replenishment.error || supplierParts.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the suppliers",
+        replenishment.error ?? supplierParts.error
+      );
+    }
+
+    const preferred = new Map(
+      replenishment.data.map((r) => [r.itemId, r.preferredSupplierId])
+    );
+    const suppliersOf = new Map<string, string[]>();
+    for (const { itemId, supplierId } of supplierParts.data) {
+      suppliersOf.set(itemId, [...(suppliersOf.get(itemId) ?? []), supplierId]);
+    }
+    const defaultSupplierId = (id: string) => {
+      const supplierIds = suppliersOf.get(id);
+      return (
+        preferred.get(id) ??
+        (supplierIds?.length === 1 ? supplierIds[0] : null) ??
+        null
+      );
+    };
+
+    return {
+      item: {
+        id: item.data.id,
+        readableId: item.data.readableIdWithRevision ?? "",
+        name: item.data.name,
+        replenishmentSystem: item.data.replenishmentSystem,
+        defaultSupplierId: defaultSupplierId(itemId)
+      },
+      rows: lines.map((line) => ({
+        ...line,
+        defaultSupplierId: defaultSupplierId(line.itemId)
+      }))
+    };
+  }
+});
+
+/**
+ * Creates the Draft RFQs for an item or its Bill of Material, one per set of
+ * suppliers, in one transaction. Nothing goes to a supplier until each RFQ is
+ * finalized.
+ *
+ * @returns `rfqs`, the id and number of each new RFQ.
+ *
+ * @mcp
+ */
+export const requestQuoteFromItem = defineServiceFn({
+  input: requestQuoteValidator,
+  permission: { create: "purchasing" },
+
+  async run(ctx, { locationId, lines }) {
+    const companyId = ctx.company.id;
+    const rfqDate = datetime
+      .today(await getCompanyTimeZone(ctx.asSystem.supabase, companyId))
+      .toString();
+    // `run` turns the building block's not-found refusal into a 400 with its message.
+    const rfqs = await run(ctx, "requestQuoteFromItem", () =>
+      service.insertRequestQuoteRfqs(ctx.asSystem.pg, {
+        companyId,
+        userId: ctx.auditUserId,
+        rfqDate,
+        locationId,
+        groups: groupRequestQuoteLines(lines)
+      })
+    );
+    if (rfqs instanceof CarbonError) return rfqs;
+    return { rfqs };
   }
 });
