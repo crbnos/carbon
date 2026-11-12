@@ -108,7 +108,7 @@ const DocumentCreateForm = () => {
   }
 
   return (
-    <File leftIcon={<LuUpload />} onChange={uploadFile}>
+    <File variant="primary" leftIcon={<LuUpload />} onChange={uploadFile}>
       <Trans>Upload</Trans>
     </File>
   );
