@@ -149,25 +149,32 @@ export function travelerScanAction({
   targetTrackedEntityId,
   targetStatus,
   targetJobMakeMethodId,
+  targetInProduction,
   operationJobMakeMethodId
 }: {
   scannedStatus: string | null;
   targetTrackedEntityId: string | null;
   targetStatus: string | null;
   targetJobMakeMethodId: string | null;
+  /** The target unit's own job still has open operations for it. */
+  targetInProduction: boolean;
   operationJobMakeMethodId: string | null;
 }):
   | { kind: "issue" }
   | { kind: "open"; trackedEntityId: string }
   | { kind: "navigate" } {
-  if (scannedStatus === "Available") return { kind: "issue" };
+  // A unit of this operation's own make method opens here, whatever its
+  // status: a serial unit turns Available after any completed operation.
   if (
     targetTrackedEntityId &&
-    targetStatus === "Reserved" &&
+    (targetStatus === "Reserved" || targetStatus === "Available") &&
     operationJobMakeMethodId &&
     targetJobMakeMethodId === operationJobMakeMethodId
   ) {
     return { kind: "open", trackedEntityId: targetTrackedEntityId };
   }
+  // A unit still being built elsewhere is never issued: open its own work.
+  if (targetInProduction) return { kind: "navigate" };
+  if (scannedStatus === "Available") return { kind: "issue" };
   return { kind: "navigate" };
 }

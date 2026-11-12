@@ -164,6 +164,7 @@ describe("travelerScanAction", () => {
     targetTrackedEntityId: "te_engine",
     targetStatus: "Reserved",
     targetJobMakeMethodId: "jmm_engine",
+    targetInProduction: false,
     operationJobMakeMethodId: "jmm_engine"
   };
 
@@ -189,6 +190,31 @@ describe("travelerScanAction", () => {
   it("navigates for a unit inside another job", () => {
     expect(
       travelerScanAction({ ...base, targetJobMakeMethodId: "jmm_other" })
+    ).toEqual({ kind: "navigate" });
+  });
+
+  it("opens this job's own unit after a completed operation made it Available", () => {
+    expect(
+      travelerScanAction({
+        ...base,
+        scannedStatus: "Available",
+        targetTrackedEntityId: "te_engine",
+        targetStatus: "Available",
+        targetInProduction: true
+      })
+    ).toEqual({ kind: "open", trackedEntityId: "te_engine" });
+  });
+
+  it("never issues a unit that is still in production in another job", () => {
+    expect(
+      travelerScanAction({
+        ...base,
+        scannedStatus: "Available",
+        targetTrackedEntityId: "te_chamber",
+        targetStatus: "Available",
+        targetJobMakeMethodId: "jmm_chamber",
+        targetInProduction: true
+      })
     ).toEqual({ kind: "navigate" });
   });
 });

@@ -101,7 +101,20 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     : null;
   const rows = (active?.data ?? []).map(makeDurations);
 
-  if (entity.status === "Reserved") {
+  // A serial unit turns Available after ANY completed operation, so a unit
+  // whose own make method still has open operations for it is in production.
+  const ownOpen = target.jobMakeMethodId
+    ? rows.filter(
+        (row) =>
+          row.jobMakeMethodId === target.jobMakeMethodId &&
+          isSerialEntityIncompleteForOperation(entity, row.id)
+      )
+    : [];
+
+  if (
+    entity.status === "Reserved" ||
+    (entity.status === "Available" && ownOpen.length > 0)
+  ) {
     const open = rows.filter(
       (row) =>
         (!target.jobMakeMethodId ||

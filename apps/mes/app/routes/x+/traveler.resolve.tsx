@@ -7,7 +7,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   findTrackedEntityByCode,
-  getTravelerTarget
+  getTravelerTarget,
+  isUnitInProduction
 } from "~/services/traveler.server";
 import { parseTravelerCode } from "~/utils/traveler";
 
@@ -34,11 +35,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companyId
   });
 
+  const targetInProduction = await isUnitInProduction(serviceRole, {
+    companyId,
+    trackedEntityId: target?.trackedEntityId,
+    jobMakeMethodId: target?.jobMakeMethodId
+  });
+
   return {
     status: "found" as const,
     trackedEntityId: result.entity.id,
     scannedStatus: result.entity.status,
     scannedItemId: result.entity.itemId,
-    target
+    target,
+    targetInProduction
   };
 }

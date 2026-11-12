@@ -67,6 +67,7 @@ export function useTravelerScan({
       targetTrackedEntityId: result.target?.trackedEntityId ?? null,
       targetStatus: result.target?.status ?? null,
       targetJobMakeMethodId: result.target?.jobMakeMethodId ?? null,
+      targetInProduction: result.targetInProduction ?? false,
       operationJobMakeMethodId: jobMakeMethodId ?? null
     });
 
