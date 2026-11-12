@@ -58,12 +58,12 @@ const ItemQualityView = ({
 
   const usageSlots: Record<
     (typeof inspectionDocumentUsages)[number],
-    { label: string; helperText?: string }
+    { label: string; help?: string }
   > = {
     Receipt: { label: t`Receipt` },
     "First Article": {
       label: t`First Article`,
-      helperText: t`Used for first article inspections of this part. Supersedes the part's only plan.`
+      help: t`Used for first article inspections of this part. Supersedes the part's only plan.`
     }
   };
 
@@ -157,12 +157,16 @@ const ItemQualityView = ({
                       <InspectionDocument
                         name="inspectionDocumentId"
                         label={usageSlots[usage].label}
-                        helperText={usageSlots[usage].helperText}
+                        help={usageSlots[usage].help}
                         itemId={itemId}
                         isOptional
                       />
                     </div>
-                    <Submit isDisabled={!canUpdate} variant="secondary">
+                    <Submit
+                      isDisabled={!canUpdate}
+                      variant="secondary"
+                      className="h-10 max-md:h-11"
+                    >
                       <Trans>Save</Trans>
                     </Submit>
                   </HStack>

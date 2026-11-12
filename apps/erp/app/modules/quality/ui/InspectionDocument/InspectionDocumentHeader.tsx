@@ -129,7 +129,7 @@ export default function InspectionDocumentHeader({
           borderless
           value={title}
           placeholder={t`Untitled Diagram`}
-          className="field-sizing-content w-auto min-w-[6rem] max-w-[28rem] font-semibold text-base truncate"
+          className="field-sizing-content w-auto min-w-8 max-w-[28rem] font-semibold text-base truncate"
           readOnly={!canUpdate}
           onChange={(e) => onTitleChange(e.target.value)}
         />
@@ -138,7 +138,7 @@ export default function InspectionDocumentHeader({
           borderless
           value={drawingRevision}
           placeholder={t`Drawing revision`}
-          className="field-sizing-content min-w-[6rem] max-w-[12rem] text-sm text-muted-foreground truncate"
+          className="field-sizing-content w-auto min-w-8 max-w-[12rem] text-sm text-muted-foreground truncate"
           readOnly={!canUpdate}
           onChange={(e) => onDrawingRevisionChange(e.target.value)}
         />
@@ -146,7 +146,7 @@ export default function InspectionDocumentHeader({
           <DropdownMenuTrigger asChild>
             <IconButton
               type="button"
-              variant="outline"
+              variant="secondary"
               size="sm"
               aria-label={t`More actions`}
               icon={<LuEllipsisVertical />}
