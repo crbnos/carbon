@@ -14,7 +14,11 @@ import { hasPermission } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json, Tables } from "@carbon/database";
-import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import {
+  fetchAllByIds,
+  fetchAllFromTable,
+  getCompanyTimeZone
+} from "@carbon/database";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import {
   type Kysely,
@@ -201,6 +205,14 @@ import {
   contactNameOrEmailMessage,
   hasContactNameOrEmail
 } from "~/types/validators";
+import {
+  buildKeysetFilter,
+  type Cursor,
+  cursorMatchesSorts,
+  decodeCursor,
+  type KeysetSort,
+  toPage
+} from "~/utils/cursor";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
@@ -458,6 +470,26 @@ export async function findCustomerPortalOrderByMarker(
     .where("customerId", "=", customerId)
     .where(sql<boolean>`"salesOrder"."customFields" @> ${marker}::jsonb`)
     .executeTakeFirst();
+}
+
+/** Keep an accepted, unquoted PO's submitted lines available while staff map its Draft order. */
+export async function getAcceptedCustomerPortalPoForOrder(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  customerId: string,
+  salesOrderId: string
+) {
+  return client
+    .from("customerPortalSubmission")
+    .select("id,poNumber,lines")
+    .eq("companyId", companyId)
+    .eq("customerId", customerId)
+    .eq("salesOrderId", salesOrderId)
+    .eq("submissionType", "PO")
+    .eq("status", "Accepted")
+    .is("quoteId", null)
+    .limit(1)
+    .maybeSingle();
 }
 
 export async function copyQuoteLine(
@@ -1634,6 +1666,28 @@ export async function getActiveCustomerPortal(
 
 type PortalScope = { companyId: string; customerId: string };
 
+export type CustomerPortalSection =
+  | "orders"
+  | "quotes"
+  | "invoices"
+  | "shipments";
+export type CustomerPortalPageRequest = {
+  section: CustomerPortalSection;
+  after?: string | null;
+  afterRequests?: string | null;
+  orderSalesOrderIds?: string[];
+};
+
+const PORTAL_PAGE_SIZE = 50;
+const PORTAL_KEYSET: KeysetSort[] = [{ column: "createdAt", ascending: false }];
+const PORTAL_SORT = { defaultSorts: PORTAL_KEYSET };
+
+function portalCursorFilter(cursor: Cursor) {
+  return cursorMatchesSorts(cursor, PORTAL_KEYSET)
+    ? buildKeysetFilter(PORTAL_KEYSET, cursor, "id")
+    : "and(id.is.null,id.not.is.null)";
+}
+
 export type CustomerPortalDocumentType =
   | "quote"
   | "invoice"
@@ -1669,138 +1723,340 @@ function portalPdf(
 /** The customer-facing document lists behind an already validated portal link. */
 export async function getCustomerPortalOverview(
   client: SupabaseClient<Database>,
-  { companyId, customerId }: PortalScope
+  { companyId, customerId }: PortalScope,
+  page: CustomerPortalPageRequest
 ) {
-  const [orders, quotes, invoices, pendingPos, rfqSubmissions, releases] =
-    await Promise.all([
-      client
-        .from("salesOrder")
-        .select(
-          "id,salesOrderId,customerReference,orderDate,status,opportunityId"
-        )
-        .eq("companyId", companyId)
-        .eq("customerId", customerId)
-        .not(
-          "status",
-          "in",
-          `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
-        )
-        .order("orderDate", { ascending: false }),
-      client
-        .from("quote")
-        .select(
-          "id,quoteId,revisionId,customerReference,expirationDate,status,opportunityId"
-        )
-        .eq("companyId", companyId)
-        .eq("customerId", customerId)
-        .in("status", ["Sent", "Ordered", "Partial"])
-        .order("createdAt", { ascending: false }),
-      client
-        .from("salesInvoice")
-        .select(
-          "id,invoiceId,dateIssued,dateDue,status,totalAmount,currencyCode,customerReference,opportunityId,postingDate"
-        )
-        .eq("companyId", companyId)
-        .eq("customerId", customerId)
-        .in("status", ["Submitted", "Paid", "Partially Paid", "Overdue"])
-        .not("postingDate", "is", null)
-        .order("dateIssued", { ascending: false }),
-      client
-        .from("customerPortalSubmission")
-        .select("id,poNumber,quoteId,requestedDelivery,createdAt,status")
-        .eq("companyId", companyId)
-        .eq("customerId", customerId)
-        .eq("submissionType", "PO")
-        .eq("status", "Pending")
-        .order("createdAt", { ascending: false }),
-      client
-        .from("customerPortalSubmission")
-        .select("id,salesRfqId,createdAt,status")
-        .eq("companyId", companyId)
-        .eq("customerId", customerId)
-        .eq("submissionType", "RFQ")
-        .order("createdAt", { ascending: false }),
-      client
-        .from("customerPortalDocument")
-        .select(
-          "id,documentType,title,salesOrderId,shipmentId,documentPath,createdAt"
-        )
-        .eq("companyId", companyId)
-        .eq("customerId", customerId)
-        .order("createdAt", { ascending: false })
-    ]);
-  const firstError =
-    orders.error ??
-    quotes.error ??
-    invoices.error ??
-    pendingPos.error ??
-    rfqSubmissions.error ??
-    releases.error;
-  if (firstError) return { data: null, error: firstError };
+  const section = page.section;
+  const cursor = decodeCursor(page.after ?? null);
+  const requestCursor = decodeCursor(page.afterRequests ?? null);
+  const pagingArgs = { limit: PORTAL_PAGE_SIZE, cursor };
+  const requestPagingArgs = { limit: PORTAL_PAGE_SIZE, cursor: requestCursor };
 
-  const orderRows = orders.data ?? [];
-  const quoteRows = quotes.data ?? [];
-  const invoiceRows = invoices.data ?? [];
-  const orderIds = orderRows.map((row) => row.id);
-  const shipments = orderIds.length
-    ? await client
-        .from("shipment")
-        .select(
-          "id,shipmentId,sourceDocumentId,postingDate,trackingNumber,status,customerId"
+  // Keep the PO picker small even when another tab is open. A quote selected
+  // from an older Quotes page is passed directly to the form.
+  const quoteChoices = await client
+    .from("quote")
+    .select("id,quoteId,status")
+    .eq("companyId", companyId)
+    .eq("customerId", customerId)
+    .eq("status", "Sent")
+    .order("createdAt", { ascending: false })
+    .order("id")
+    .limit(PORTAL_PAGE_SIZE);
+  if (quoteChoices.error) return { data: null, error: quoteChoices.error };
+
+  const orderSalesOrderIds = [...new Set(page.orderSalesOrderIds ?? [])];
+  const orders =
+    section === "orders" && orderSalesOrderIds.length
+      ? await fetchAllByIds<
+          Pick<
+            Tables<"salesOrder">,
+            | "id"
+            | "salesOrderId"
+            | "customerReference"
+            | "orderDate"
+            | "status"
+            | "opportunityId"
+          >
+        >(orderSalesOrderIds, (batch) =>
+          client
+            .from("salesOrder")
+            .select(
+              "id,salesOrderId,customerReference,orderDate,status,opportunityId"
+            )
+            .eq("companyId", companyId)
+            .eq("customerId", customerId)
+            .not(
+              "status",
+              "in",
+              `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((status) => `"${status}"`).join(",")})`
+            )
+            .in("salesOrderId", batch)
+            .order("id")
         )
-        .eq("companyId", companyId)
-        .eq("customerId", customerId)
-        .eq("sourceDocument", "Sales Order")
-        .in("sourceDocumentId", orderIds)
-        .eq("status", "Posted")
-        .order("postingDate", { ascending: false })
-    : null;
+      : null;
+  if (orders?.error) return { data: null, error: orders.error };
+
+  const quoteQuery = client
+    .from("quote")
+    .select(
+      "id,quoteId,revisionId,customerReference,expirationDate,status,opportunityId,createdAt"
+    )
+    .eq("companyId", companyId)
+    .eq("customerId", customerId)
+    .in("status", ["Sent", "Ordered", "Partial"]);
+  const quotes =
+    section === "quotes"
+      ? await (cursor ? quoteQuery.or(portalCursorFilter(cursor)) : quoteQuery)
+          .order("createdAt", { ascending: false })
+          .order("id")
+          .limit(PORTAL_PAGE_SIZE + 1)
+      : null;
+  if (quotes?.error) return { data: null, error: quotes.error };
+  const quotePage = toPage(quotes?.data ?? [], pagingArgs, PORTAL_SORT);
+
+  const invoiceQuery = client
+    .from("salesInvoice")
+    .select(
+      "id,invoiceId,dateIssued,dateDue,status,totalAmount,currencyCode,customerReference,opportunityId,postingDate,createdAt"
+    )
+    .eq("companyId", companyId)
+    .eq("customerId", customerId)
+    .in("status", ["Submitted", "Paid", "Partially Paid", "Overdue"])
+    .not("postingDate", "is", null);
+  const invoices =
+    section === "invoices"
+      ? await (cursor
+          ? invoiceQuery.or(portalCursorFilter(cursor))
+          : invoiceQuery
+        )
+          .order("createdAt", { ascending: false })
+          .order("id")
+          .limit(PORTAL_PAGE_SIZE + 1)
+      : null;
+  if (invoices?.error) return { data: null, error: invoices.error };
+  const invoicePage = toPage(invoices?.data ?? [], pagingArgs, PORTAL_SORT);
+
+  const pendingQuery = client
+    .from("customerPortalSubmission")
+    .select("id,poNumber,quoteId,requestedDelivery,createdAt,status")
+    .eq("companyId", companyId)
+    .eq("customerId", customerId)
+    .eq("submissionType", "PO")
+    .eq("status", "Pending");
+  const pendingPos =
+    section === "orders"
+      ? await (cursor
+          ? pendingQuery.or(portalCursorFilter(cursor))
+          : pendingQuery
+        )
+          .order("createdAt", { ascending: false })
+          .order("id")
+          .limit(PORTAL_PAGE_SIZE + 1)
+      : null;
+  if (pendingPos?.error) return { data: null, error: pendingPos.error };
+  const pendingPage = toPage(pendingPos?.data ?? [], pagingArgs, PORTAL_SORT);
+
+  const requestQuery = client
+    .from("customerPortalSubmission")
+    .select("id,salesRfqId,createdAt,status")
+    .eq("companyId", companyId)
+    .eq("customerId", customerId)
+    .eq("submissionType", "RFQ");
+  const rfqSubmissions =
+    section === "quotes"
+      ? await (requestCursor
+          ? requestQuery.or(portalCursorFilter(requestCursor))
+          : requestQuery
+        )
+          .order("createdAt", { ascending: false })
+          .order("id")
+          .limit(PORTAL_PAGE_SIZE + 1)
+      : null;
+  if (rfqSubmissions?.error) return { data: null, error: rfqSubmissions.error };
+  const requestPage = toPage(
+    rfqSubmissions?.data ?? [],
+    requestPagingArgs,
+    PORTAL_SORT
+  );
+
+  const shipmentQuery = client
+    .from("shipment")
+    .select(
+      "id,shipmentId,sourceDocumentId,postingDate,trackingNumber,status,customerId,createdAt"
+    )
+    .eq("companyId", companyId)
+    .eq("customerId", customerId)
+    .eq("sourceDocument", "Sales Order")
+    .eq("status", "Posted");
+  const shipments =
+    section === "shipments"
+      ? await (cursor
+          ? shipmentQuery.or(portalCursorFilter(cursor))
+          : shipmentQuery
+        )
+          .order("createdAt", { ascending: false })
+          .order("id")
+          .limit(PORTAL_PAGE_SIZE + 1)
+      : null;
   if (shipments?.error) return { data: null, error: shipments.error };
-  const shipmentRows = shipments?.data ?? [];
+  const shipmentPage = toPage(shipments?.data ?? [], pagingArgs, PORTAL_SORT);
 
-  const rfqIds = (rfqSubmissions.data ?? [])
-    .map((row) => row.salesRfqId)
-    .filter((id): id is string => !!id);
+  // Shipments need their source order to validate opportunity-scoped files.
+  const shipmentOrderIds = [
+    ...new Set(
+      shipmentPage.rows
+        .map((row) => row.sourceDocumentId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const shipmentOrders = shipmentOrderIds.length
+    ? await fetchAllByIds<
+        Pick<
+          Tables<"salesOrder">,
+          | "id"
+          | "salesOrderId"
+          | "customerReference"
+          | "orderDate"
+          | "status"
+          | "opportunityId"
+        >
+      >(shipmentOrderIds, (batch) =>
+        client
+          .from("salesOrder")
+          .select(
+            "id,salesOrderId,customerReference,orderDate,status,opportunityId"
+          )
+          .eq("companyId", companyId)
+          .eq("customerId", customerId)
+          .not(
+            "status",
+            "in",
+            `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((status) => `"${status}"`).join(",")})`
+          )
+          .in("id", batch)
+          .order("id")
+      )
+    : null;
+  if (shipmentOrders?.error) return { data: null, error: shipmentOrders.error };
+
+  const visibleOrderRows = orders?.data ?? [];
+  const orderRows = [...visibleOrderRows, ...(shipmentOrders?.data ?? [])];
+  const quoteRows = quotePage.rows;
+  const invoiceRows = invoicePage.rows;
+  const shipmentRows = shipmentPage.rows;
+  const orderIds = orderRows.map((row) => row.id);
+  const shipmentIds = shipmentRows.map((row) => row.id);
+
+  const orderReleases =
+    section === "orders" && orderIds.length
+      ? await fetchAllByIds<
+          Pick<
+            Tables<"customerPortalDocument">,
+            | "id"
+            | "documentType"
+            | "title"
+            | "salesOrderId"
+            | "shipmentId"
+            | "documentPath"
+            | "createdAt"
+          >
+        >(orderIds, (batch) =>
+          client
+            .from("customerPortalDocument")
+            .select(
+              "id,documentType,title,salesOrderId,shipmentId,documentPath,createdAt"
+            )
+            .eq("companyId", companyId)
+            .eq("customerId", customerId)
+            .in("salesOrderId", batch)
+            .order("id")
+        )
+      : null;
+  if (orderReleases?.error) return { data: null, error: orderReleases.error };
+  const shipmentReleases =
+    section === "shipments" && shipmentIds.length
+      ? await fetchAllByIds<
+          Pick<
+            Tables<"customerPortalDocument">,
+            | "id"
+            | "documentType"
+            | "title"
+            | "salesOrderId"
+            | "shipmentId"
+            | "documentPath"
+            | "createdAt"
+          >
+        >(shipmentIds, (batch) =>
+          client
+            .from("customerPortalDocument")
+            .select(
+              "id,documentType,title,salesOrderId,shipmentId,documentPath,createdAt"
+            )
+            .eq("companyId", companyId)
+            .eq("customerId", customerId)
+            .in("shipmentId", batch)
+            .order("id")
+        )
+      : null;
+  if (shipmentReleases?.error)
+    return { data: null, error: shipmentReleases.error };
+  const releases = [
+    ...(orderReleases?.data ?? []),
+    ...(shipmentReleases?.data ?? [])
+  ];
+  const rfqIds = [
+    ...new Set(
+      requestPage.rows
+        .map((row) => row.salesRfqId)
+        .filter((id): id is string => !!id)
+    )
+  ];
   const rfqs = rfqIds.length
-    ? await client
-        .from("salesRfq")
-        .select("id,rfqId,customerReference,status")
-        .eq("companyId", companyId)
-        .eq("customerId", customerId)
-        .in("id", rfqIds)
+    ? await fetchAllByIds<
+        Pick<
+          Tables<"salesRfq">,
+          "id" | "rfqId" | "customerReference" | "status"
+        >
+      >(rfqIds, (batch) =>
+        client
+          .from("salesRfq")
+          .select("id,rfqId,customerReference,status")
+          .eq("companyId", companyId)
+          .eq("customerId", customerId)
+          .in("id", batch)
+          .order("id")
+      )
     : null;
   if (rfqs?.error) return { data: null, error: rfqs.error };
   const rfqById = new Map((rfqs?.data ?? []).map((row) => [row.id, row]));
 
   const sourceIds = [
-    ...orderIds,
-    ...quoteRows.map((row) => row.id),
-    ...invoiceRows.map((row) => row.id),
-    ...shipmentRows.map((row) => row.id)
+    ...new Set([
+      ...orderIds,
+      ...quoteRows.map((row) => row.id),
+      ...invoiceRows.map((row) => row.id),
+      ...shipmentRows.map((row) => row.id)
+    ])
   ];
   const documents = sourceIds.length
-    ? await client
-        .from("document")
-        .select("name,path,sourceDocument,sourceDocumentId")
-        .eq("companyId", companyId)
-        .eq("active", true)
-        .eq("type", "PDF")
-        .in("sourceDocumentId", sourceIds)
-        .in("sourceDocument", [
-          "Quote",
-          "Sales Order",
-          "Sales Invoice",
-          "Shipment"
-        ])
-        .order("createdAt", { ascending: false })
+    ? await fetchAllByIds<PortalDocumentRow>(sourceIds, (batch) =>
+        client
+          .from("document")
+          .select("name,path,sourceDocument,sourceDocumentId")
+          .eq("companyId", companyId)
+          .eq("active", true)
+          .eq("type", "PDF")
+          .in("sourceDocumentId", batch)
+          .in("sourceDocument", [
+            "Quote",
+            "Sales Order",
+            "Sales Invoice",
+            "Shipment"
+          ])
+          .order("createdAt", { ascending: false })
+          .order("path")
+      )
     : null;
   if (documents?.error) return { data: null, error: documents.error };
   const documentRows = documents?.data ?? [];
+  const documentsBySource = new Map<string, PortalDocumentRow[]>();
+  for (const document of documentRows) {
+    if (!document.sourceDocument || !document.sourceDocumentId) continue;
+    const key = `${document.sourceDocument}:${document.sourceDocumentId}`;
+    const related = documentsBySource.get(key) ?? [];
+    related.push(document);
+    documentsBySource.set(key, related);
+  }
+  const documentsFor = (
+    sourceDocument: NonNullable<PortalDocumentRow["sourceDocument"]>,
+    sourceDocumentId: string
+  ) => documentsBySource.get(`${sourceDocument}:${sourceDocumentId}`) ?? [];
   const orderById = new Map(orderRows.map((row) => [row.id, row]));
 
   const visibleQuotes = quoteRows.flatMap((row) => {
     const pdf = portalPdf(
-      documentRows,
+      documentsFor("Quote", row.id),
       "Quote",
       row.id,
       row.opportunityId
@@ -1827,7 +2083,7 @@ export async function getCustomerPortalOverview(
       ? `${companyId}/opportunity/${row.opportunityId}/`
       : `${companyId}/sales-invoice/${row.id}/`;
     const pdf = portalPdf(
-      documentRows,
+      documentsFor("Sales Invoice", row.id),
       "Sales Invoice",
       row.id,
       folder,
@@ -1854,7 +2110,7 @@ export async function getCustomerPortalOverview(
       ? orderById.get(row.sourceDocumentId)
       : null;
     const pdf = portalPdf(
-      documentRows,
+      documentsFor("Shipment", row.id),
       "Shipment",
       row.id,
       order?.opportunityId
@@ -1879,14 +2135,22 @@ export async function getCustomerPortalOverview(
 
   return {
     data: {
-      orders: orderRows.map((row) => ({
+      quoteOptions: quoteChoices.data ?? [],
+      nextCursor: {
+        orders: pendingPage.nextCursor,
+        quotes: quotePage.nextCursor,
+        requests: requestPage.nextCursor,
+        invoices: invoicePage.nextCursor,
+        shipments: shipmentPage.nextCursor
+      },
+      orders: visibleOrderRows.map((row) => ({
         id: row.id,
         salesOrderId: row.salesOrderId,
         customerReference: row.customerReference,
         orderDate: row.orderDate,
         status: row.status,
         hasAcknowledgement: !!portalPdf(
-          documentRows,
+          documentsFor("Sales Order", row.id),
           "Sales Order",
           row.id,
           row.opportunityId
@@ -1898,7 +2162,7 @@ export async function getCustomerPortalOverview(
       quotes: visibleQuotes,
       invoices: visibleInvoices,
       shipments: visibleShipments,
-      rfqs: (rfqSubmissions.data ?? []).map((row) => {
+      rfqs: requestPage.rows.map((row) => {
         const rfq = row.salesRfqId ? rfqById.get(row.salesRfqId) : null;
         return {
           id: row.id,
@@ -1909,8 +2173,8 @@ export async function getCustomerPortalOverview(
           createdAt: row.createdAt
         };
       }),
-      pendingPos: pendingPos.data ?? [],
-      releasedDocuments: (releases.data ?? []).flatMap((row) => {
+      pendingPos: pendingPage.rows,
+      releasedDocuments: releases.flatMap((row) => {
         const sourceDocument = row.salesOrderId ? "Sales Order" : "Shipment";
         const sourceId = row.salesOrderId ?? row.shipmentId;
         const order = row.salesOrderId
@@ -1919,7 +2183,7 @@ export async function getCustomerPortalOverview(
               shipmentById.get(row.shipmentId ?? "")?.sourceDocumentId ?? ""
             );
         if (!sourceId || !order?.opportunityId) return [];
-        const attached = documentRows.find(
+        const attached = documentsFor(sourceDocument, sourceId).find(
           (document) =>
             document.sourceDocument === sourceDocument &&
             document.sourceDocumentId === sourceId &&
@@ -2187,47 +2451,73 @@ export async function getCustomerPortalReleaseOptions(
   { companyId, customerId }: PortalScope
 ) {
   const [orders, shipments, releases] = await Promise.all([
-    client
-      .from("salesOrder")
-      .select("id,salesOrderId,opportunityId")
-      .eq("companyId", companyId)
-      .eq("customerId", customerId)
-      .not(
-        "status",
-        "in",
-        `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
-      ),
-    client
-      .from("shipment")
-      .select("id,shipmentId,sourceDocumentId")
-      .eq("companyId", companyId)
-      .eq("customerId", customerId)
-      .eq("sourceDocument", "Sales Order")
-      .eq("status", "Posted"),
-    client
-      .from("customerPortalDocument")
-      .select("id,title,documentType,createdAt")
-      .eq("companyId", companyId)
-      .eq("customerId", customerId)
-      .order("createdAt", { ascending: false })
+    fetchAllFromTable<
+      Pick<Tables<"salesOrder">, "id" | "salesOrderId" | "opportunityId">
+    >(client, "salesOrder", "id,salesOrderId,opportunityId", (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .not(
+          "status",
+          "in",
+          `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
+        )
+        .order("id")
+    ),
+    fetchAllFromTable<
+      Pick<Tables<"shipment">, "id" | "shipmentId" | "sourceDocumentId">
+    >(client, "shipment", "id,shipmentId,sourceDocumentId", (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .eq("sourceDocument", "Sales Order")
+        .eq("status", "Posted")
+        .order("id")
+    ),
+    fetchAllFromTable<
+      Pick<
+        Tables<"customerPortalDocument">,
+        "id" | "title" | "documentType" | "createdAt"
+      >
+    >(
+      client,
+      "customerPortalDocument",
+      "id,title,documentType,createdAt",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("customerId", customerId)
+          .order("createdAt", { ascending: false })
+          .order("id")
+    )
   ]);
   const firstError = orders.error ?? shipments.error ?? releases.error;
   if (firstError) return { data: null, error: firstError };
   const orderById = new Map((orders.data ?? []).map((row) => [row.id, row]));
   const sources = [
-    ...(orders.data ?? []).map((row) => row.id),
-    ...(shipments.data ?? []).map((row) => row.id)
+    ...new Set([
+      ...(orders.data ?? []).map((row) => row.id),
+      ...(shipments.data ?? []).map((row) => row.id)
+    ])
   ];
   const documents = sources.length
-    ? await client
-        .from("document")
-        .select("id,name,path,sourceDocument,sourceDocumentId")
-        .eq("companyId", companyId)
-        .eq("active", true)
-        .eq("type", "PDF")
-        .in("sourceDocument", ["Sales Order", "Shipment"])
-        .in("sourceDocumentId", sources)
-        .order("createdAt", { ascending: false })
+    ? await fetchAllByIds<
+        Pick<
+          Tables<"document">,
+          "id" | "name" | "path" | "sourceDocument" | "sourceDocumentId"
+        >
+      >(sources, (batch) =>
+        client
+          .from("document")
+          .select("id,name,path,sourceDocument,sourceDocumentId")
+          .eq("companyId", companyId)
+          .eq("active", true)
+          .eq("type", "PDF")
+          .in("sourceDocument", ["Sales Order", "Shipment"])
+          .in("sourceDocumentId", batch)
+          .order("createdAt", { ascending: false })
+          .order("id")
+      )
     : null;
   if (documents?.error) return { data: null, error: documents.error };
   const shipmentById = new Map(
@@ -7821,6 +8111,13 @@ function matchingPortalSubmission<T extends { requestFingerprint: string }>(
   return { ...existing, duplicate: true as const };
 }
 
+function portalTextDocument(text: string) {
+  return toJson({
+    type: "doc",
+    content: [{ type: "paragraph", content: [{ type: "text", text }] }]
+  });
+}
+
 export async function insertCustomerPortalRfqSubmission(
   db: Kysely<KyselyDatabase>,
   args: PortalSubmissionBase & {
@@ -7872,17 +8169,7 @@ export async function insertCustomerPortalRfqSubmission(
         .returning("id")
         .executeTakeFirstOrThrow();
       const rfqId = await getNextSequence(trx, "salesRfq", args.companyId);
-      const notes = args.notes
-        ? toJson({
-            type: "doc",
-            content: [
-              {
-                type: "paragraph",
-                content: [{ type: "text", text: args.notes }]
-              }
-            ]
-          })
-        : null;
+      const notes = args.notes ? portalTextDocument(args.notes) : null;
       const rfq = await trx
         .insertInto("salesRfq")
         .values({
@@ -7912,6 +8199,9 @@ export async function insertCustomerPortalRfqSubmission(
             order: index + 1,
             companyId: args.companyId,
             createdBy: args.createdBy,
+            externalNotes: line.delivery
+              ? portalTextDocument(`Requested delivery: ${line.delivery}`)
+              : toJson({}),
             customFields: toJson({})
           }))
         )

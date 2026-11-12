@@ -3,8 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Button } from "@carbon/react";
+import { Link } from "react-router";
 
 export type CustomerPortalOverview = {
+  quoteOptions: { id: string; quoteId: string; status: string | null }[];
+  nextCursor: {
+    orders: string | null;
+    quotes: string | null;
+    requests: string | null;
+    invoices: string | null;
+    shipments: string | null;
+  };
   rfqs: {
     id: string;
     salesRfqId: string | null;
@@ -112,6 +121,42 @@ function Row({ children }: { children: React.ReactNode }) {
   );
 }
 
+function RecordsPager({
+  search,
+  after,
+  next,
+  cursorKey,
+  label
+}: {
+  search: string;
+  after: string | null;
+  next: string | null;
+  cursorKey: "after" | "afterRequests";
+  label: string;
+}) {
+  if (!after && !next) return null;
+  const href = (cursor: string | null) => {
+    const query = new URLSearchParams(search);
+    if (cursor) query.set(cursorKey, cursor);
+    else query.delete(cursorKey);
+    return `?${query.toString()}`;
+  };
+  return (
+    <div className="flex gap-2 border-t p-4">
+      {after && (
+        <Button variant="secondary" size="sm" asChild>
+          <Link to={href(null)}>Newest {label}</Link>
+        </Button>
+      )}
+      {next && (
+        <Button variant="secondary" size="sm" asChild>
+          <Link to={href(next)}>Older {label}</Link>
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export function CustomerPortalPendingOrders({
   pendingPos
 }: {
@@ -150,15 +195,26 @@ export function CustomerPortalRecords({
   portalId,
   overview,
   section,
+  after,
+  afterRequests,
+  search,
   onOrderQuote
 }: {
   portalId: string;
   overview: CustomerPortalOverview;
   section: "quotes" | "invoices" | "shipments";
+  after: string | null;
+  afterRequests: string | null;
+  search: string;
   onOrderQuote?: (quoteId: string) => void;
 }) {
   if (section === "quotes") {
-    if (!overview.quotes.length && !overview.rfqs.length)
+    if (
+      !overview.quotes.length &&
+      !overview.rfqs.length &&
+      !after &&
+      !afterRequests
+    )
       return <Empty>No quotes or requests are available yet.</Empty>;
     return (
       <section
@@ -168,6 +224,7 @@ export function CustomerPortalRecords({
         <h2 className="border-b px-4 py-3 font-semibold">
           Quotes and requests
         </h2>
+        <h3 className="bg-muted/30 px-4 py-2 text-sm font-medium">Requests</h3>
         {overview.rfqs.map((rfq) => (
           <Row key={rfq.id}>
             <div>
@@ -185,6 +242,16 @@ export function CustomerPortalRecords({
             <div />
           </Row>
         ))}
+        <RecordsPager
+          search={search}
+          after={afterRequests}
+          next={overview.nextCursor.requests}
+          cursorKey="afterRequests"
+          label="requests"
+        />
+        <h3 className="border-t bg-muted/30 px-4 py-2 text-sm font-medium">
+          Issued quotes
+        </h3>
         {overview.quotes.map((quote) => (
           <Row key={quote.id}>
             <div>
@@ -222,12 +289,19 @@ export function CustomerPortalRecords({
             </div>
           </Row>
         ))}
+        <RecordsPager
+          search={search}
+          after={after}
+          next={overview.nextCursor.quotes}
+          cursorKey="after"
+          label="quotes"
+        />
       </section>
     );
   }
 
   if (section === "invoices") {
-    if (!overview.invoices.length)
+    if (!overview.invoices.length && !after)
       return <Empty>No invoices are available yet.</Empty>;
     return (
       <section
@@ -265,11 +339,18 @@ export function CustomerPortalRecords({
             </div>
           </Row>
         ))}
+        <RecordsPager
+          search={search}
+          after={after}
+          next={overview.nextCursor.invoices}
+          cursorKey="after"
+          label="invoices"
+        />
       </section>
     );
   }
 
-  if (!overview.shipments.length)
+  if (!overview.shipments.length && !after)
     return <Empty>No packing slips are available yet.</Empty>;
   return (
     <section
@@ -318,6 +399,13 @@ export function CustomerPortalRecords({
           </div>
         </Row>
       ))}
+      <RecordsPager
+        search={search}
+        after={after}
+        next={overview.nextCursor.shipments}
+        cursorKey="after"
+        label="packing slips"
+      />
     </section>
   );
 }

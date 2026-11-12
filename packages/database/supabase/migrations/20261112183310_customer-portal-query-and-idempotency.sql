@@ -1,15 +1,11 @@
 -- Match the portal's customer history and staff review queries, and make
 -- repeated submission keys reject a different request body.
-ALTER TABLE "salesOrderLine"
-  ADD CONSTRAINT "salesOrderLine_portalLateReason_check"
-    CHECK ("portalLateReason" IS NULL OR "portalLateReason" IN
-      ('Production', 'Supplier', 'Export licence', 'Your change'));
 
 DROP INDEX IF EXISTS "customerPortalSubmission_companyId_idx";
 DROP INDEX IF EXISTS "customerPortalSubmission_customerId_idx";
 CREATE INDEX "customerPortalSubmission_customer_history_idx"
   ON "customerPortalSubmission"
-  ("companyId", "customerId", "submissionType", "createdAt" DESC);
+  ("companyId", "customerId", "submissionType", "createdAt" DESC, "id");
 CREATE INDEX "customerPortalSubmission_pending_po_idx"
   ON "customerPortalSubmission" ("companyId", "createdAt", "id")
   WHERE "submissionType" = 'PO' AND "status" = 'Pending';

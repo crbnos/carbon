@@ -12,7 +12,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerPortalDocument" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerPortalDocument" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "SELECT" ON "public"."customerPortalDocument" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
 CREATE POLICY "INSERT" ON "public"."customerPortalDocument" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerPortalDocument" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerPortalDocument" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));
@@ -27,7 +27,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerPortalSubmission" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerPortalSubmission" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "SELECT" ON "public"."customerPortalSubmission" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
 CREATE POLICY "INSERT" ON "public"."customerPortalSubmission" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerPortalSubmission" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerPortalSubmission" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));

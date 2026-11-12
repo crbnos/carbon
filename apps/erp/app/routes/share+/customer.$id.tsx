@@ -11,7 +11,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { LuBookMarked, LuImage, LuShield, LuShieldCheck } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { Link, useLoaderData, useLocation } from "react-router";
 import {
   BreadcrumbItem,
   BreadcrumbLink,
@@ -23,6 +23,7 @@ import {
 import { getJobOperationAttachments } from "~/modules/production/production.service";
 import { salesOrderStatusType } from "~/modules/sales/sales.models";
 import {
+  type CustomerPortalSection,
   getActiveCustomerPortal,
   getCustomerPortalOverview,
   getExternalSalesOrderLines
@@ -84,22 +85,27 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
   const { sorts, filters } = getGenericQueryFilters(searchParams);
+  const requestedSection = searchParams.get("section");
+  const section: CustomerPortalSection =
+    requestedSection === "quotes" ||
+    requestedSection === "invoices" ||
+    requestedSection === "shipments"
+      ? requestedSection
+      : "orders";
 
-  const [company, salesOrderLines, overview] = await Promise.all([
+  const [company, salesOrderLines] = await Promise.all([
     getCompany(serviceRole, customer.data.companyId),
-    getExternalSalesOrderLines(serviceRole, customer.data.customerId, {
-      search,
-      // A single-load list: the RPC returns no row id for a cursor to follow.
-      limit: SINGLE_LOAD_LIMIT,
-      offset: 0,
-      sorts,
-      filters,
-      hiddenStatuses: CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES
-    }),
-    getCustomerPortalOverview(serviceRole, {
-      companyId: customer.data.companyId,
-      customerId: customer.data.customerId
-    })
+    section === "orders"
+      ? getExternalSalesOrderLines(serviceRole, customer.data.customerId, {
+          search,
+          // A single-load list: the RPC returns no row id for a cursor to follow.
+          limit: SINGLE_LOAD_LIMIT,
+          offset: 0,
+          sorts,
+          filters,
+          hiddenStatuses: CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES
+        })
+      : Promise.resolve({ data: [], count: 0, error: null })
   ]);
 
   if (salesOrderLines.error) {
@@ -108,7 +114,22 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     });
     throw new Error("Sales order lines not found");
   }
-  if (overview.error) {
+  const overview = await getCustomerPortalOverview(
+    serviceRole,
+    {
+      companyId: customer.data.companyId,
+      customerId: customer.data.customerId
+    },
+    {
+      section,
+      after: searchParams.get("after"),
+      afterRequests: searchParams.get("afterRequests"),
+      orderSalesOrderIds: (salesOrderLines.data ?? [])
+        .map((line) => line.salesOrderId)
+        .filter((id): id is string => !!id)
+    }
+  );
+  if (overview.error || !overview.data) {
     logger.error("Customer portal overview not found", {
       error: overview.error
     });
@@ -129,17 +150,23 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }, {});
 
   // Up to 1,000 lines: the thumbnails download a few at a time.
-  const [thumbnailList, jobOperationAttachments] = await Promise.all([
-    async.map(
-      Object.entries(thumbnailPaths ?? {}),
-      async ([id, path]) =>
-        path
-          ? { id, data: await getBase64ImageFromSupabase(serviceRole, path) }
-          : null,
-      { concurrency: THUMBNAIL_CONCURRENCY }
-    ),
-    getJobOperationAttachments(serviceRole, jobOperationIds ?? [])
-  ]);
+  const [thumbnailList, jobOperationAttachments] =
+    section === "orders"
+      ? await Promise.all([
+          async.map(
+            Object.entries(thumbnailPaths ?? {}),
+            async ([id, path]) =>
+              path
+                ? {
+                    id,
+                    data: await getBase64ImageFromSupabase(serviceRole, path)
+                  }
+                : null,
+            { concurrency: THUMBNAIL_CONCURRENCY }
+          ),
+          getJobOperationAttachments(serviceRole, jobOperationIds ?? [])
+        ])
+      : [[], {}];
   const thumbnails = thumbnailList.reduce<Record<string, string | null>>(
     (acc, thumbnail) => {
       if (thumbnail) {
@@ -162,6 +189,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     customer: customer.data,
     company: company.data,
     portalOverview: overview.data,
+    section,
+    after: searchParams.get("after"),
+    afterRequests: searchParams.get("afterRequests"),
     salesOrderLines: salesOrderLines.data ?? [],
     isTruncated: (salesOrderLines.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,
     jobOperationAttachments: servedAttachments,
@@ -176,6 +206,9 @@ export default function CustomerPortal() {
     customer,
     company,
     portalOverview,
+    section,
+    after,
+    afterRequests,
     salesOrderLines,
     isTruncated,
     thumbnails,
@@ -183,15 +216,23 @@ export default function CustomerPortal() {
   } = useLoaderData<typeof loader>();
 
   const formatter = useNumberFormatter(SCALE_FORMAT);
-  const [section, setSection] = useState<
-    "orders" | "quotes" | "invoices" | "shipments"
-  >("orders");
+  const location = useLocation();
   const [openForm, setOpenForm] = useState<
     { type: "rfq" } | { type: "po"; quoteId?: string } | null
   >(null);
 
   function openRequest(form: "rfq" | "po", quoteId?: string) {
     setOpenForm(form === "rfq" ? { type: "rfq" } : { type: "po", quoteId });
+  }
+
+  function pageUrl(next: string | null, nextRequests = afterRequests) {
+    const query = new URLSearchParams(location.search);
+    query.set("section", section);
+    if (next) query.set("after", next);
+    else query.delete("after");
+    if (nextRequests) query.set("afterRequests", nextRequests);
+    else query.delete("afterRequests");
+    return `?${query.toString()}`;
   }
 
   const columns = useMemo<ColumnDef<(typeof salesOrderLines)[number]>[]>(() => {
@@ -493,7 +534,16 @@ export default function CustomerPortal() {
           <CustomerPortalSubmissionForms
             key={`${openForm.type}:${openForm.type === "po" ? (openForm.quoteId ?? "") : ""}`}
             portalId={customer.id}
-            quotes={portalOverview.quotes}
+            quotes={[
+              ...portalOverview.quoteOptions,
+              ...portalOverview.quotes.filter(
+                (quote) =>
+                  quote.status === "Sent" &&
+                  !portalOverview.quoteOptions.some(
+                    (choice) => choice.id === quote.id
+                  )
+              )
+            ]}
             initialForm={openForm.type}
             initialQuoteId={
               openForm.type === "po" ? openForm.quoteId : undefined
@@ -507,36 +557,59 @@ export default function CustomerPortal() {
         >
           {(
             [
-              [
-                "orders",
-                "Orders",
-                salesOrderLines.length + portalOverview.pendingPos.length
-              ],
-              [
-                "quotes",
-                "Quotes",
-                portalOverview.quotes.length + portalOverview.rfqs.length
-              ],
-              ["invoices", "Invoices", portalOverview.invoices.length],
-              ["shipments", "Packing slips", portalOverview.shipments.length]
+              ["orders", "Orders"],
+              ["quotes", "Quotes"],
+              ["invoices", "Invoices"],
+              ["shipments", "Packing slips"]
             ] as const
-          ).map(([key, label, total]) => (
-            <Button
-              key={key}
-              type="button"
-              variant={section === key ? "active" : "ghost"}
-              aria-current={section === key ? "page" : undefined}
-              onClick={() => setSection(key)}
-            >
-              {label} <span className="ml-1 text-xs opacity-70">{total}</span>
-            </Button>
-          ))}
+          ).map(([key, label]) => {
+            const loaded =
+              key === "orders"
+                ? salesOrderLines.length + portalOverview.pendingPos.length
+                : key === "quotes"
+                  ? portalOverview.quotes.length + portalOverview.rfqs.length
+                  : portalOverview[key].length;
+            const total = section === key ? `${loaded} shown` : null;
+            return (
+              <Button
+                key={key}
+                variant={section === key ? "active" : "ghost"}
+                aria-current={section === key ? "page" : undefined}
+                asChild
+              >
+                <Link to={`?section=${key}`}>
+                  {label}
+                  {total && (
+                    <span className="ml-1 text-xs opacity-70">{total}</span>
+                  )}
+                </Link>
+              </Button>
+            );
+          })}
         </nav>
         {section === "orders" ? (
           <div className="flex min-h-[560px] flex-col gap-4">
             <CustomerPortalPendingOrders
               pendingPos={portalOverview.pendingPos}
             />
+            {(after || portalOverview.nextCursor.orders) && (
+              <div className="flex gap-2">
+                {after && (
+                  <Button variant="secondary" asChild>
+                    <Link to={pageUrl(null)}>
+                      Newest pending purchase orders
+                    </Link>
+                  </Button>
+                )}
+                {portalOverview.nextCursor.orders && (
+                  <Button variant="secondary" asChild>
+                    <Link to={pageUrl(portalOverview.nextCursor.orders)}>
+                      Older pending purchase orders
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            )}
             <div className="flex min-h-[480px] flex-1 overflow-hidden rounded-lg border">
               <Table<(typeof salesOrderLines)[number]>
                 data={salesOrderLines}
@@ -557,6 +630,9 @@ export default function CustomerPortal() {
             portalId={customer.id}
             overview={portalOverview}
             section={section}
+            after={after}
+            afterRequests={afterRequests}
+            search={location.search}
             onOrderQuote={(quoteId) => openRequest("po", quoteId)}
           />
         )}

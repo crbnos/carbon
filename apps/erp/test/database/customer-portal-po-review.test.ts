@@ -3,8 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect } from "vitest";
+import { toJson } from "@carbon/database/json";
 import {
   findCustomerPortalOrderByMarker,
+  getAcceptedCustomerPortalPoForOrder,
   insertCustomerPortalDraftOrder,
   withLockedCustomerPortalPoSubmission
 } from "../../app/modules/sales/sales.service";
@@ -61,7 +63,7 @@ databaseTest("a portal PO review sees the first decision on retry", async () => 
   }
 });
 
-postgrestTest("an interrupted Draft PO order rolls back its header, payment and shipment", async (client) => {
+postgrestTest("an interrupted Draft PO rolls back, and staff can read its submitted lines", async (client) => {
   const f = await alwaysPostFixture();
   try {
     await f.db.insertInto("sequence").values({
@@ -103,6 +105,52 @@ postgrestTest("an interrupted Draft PO order rolls back its header, payment and 
     expect(order).toEqual({ id: created.id, status: "Draft" });
     expect(payment?.id).toBe(created.id);
     expect(shipment?.id).toBe(created.id);
+
+    const portalId = crypto.randomUUID();
+    await f.db.insertInto("externalLink").values({
+      id: portalId,
+      documentType: "Customer",
+      documentId: f.customerId,
+      customerId: f.customerId,
+      companyId: f.companyId
+    }).execute();
+    const requestedLines = [{
+      partNumber: "PART-100",
+      description: "Customer drawing",
+      quantity: 12,
+      unitOfMeasureCode: "EA",
+      unitPrice: 25
+    }];
+    const submission = await f.db.insertInto("customerPortalSubmission").values({
+      companyId: f.companyId,
+      portalId,
+      customerId: f.customerId,
+      submissionType: "PO",
+      idempotencyKey: crypto.randomUUID(),
+      requestFingerprint: "a".repeat(64),
+      status: "Accepted",
+      salesOrderId: created.id,
+      lines: toJson(requestedLines),
+      createdBy: USER
+    }).returning("id").executeTakeFirstOrThrow();
+    const accepted = await getAcceptedCustomerPortalPoForOrder(
+      client,
+      f.companyId,
+      f.customerId,
+      created.id
+    );
+    expect(accepted.error).toBeNull();
+    expect(accepted.data).toMatchObject({
+      id: submission.id,
+      lines: requestedLines
+    });
+    const otherCustomer = await getAcceptedCustomerPortalPoForOrder(
+      client,
+      f.companyId,
+      "another-customer",
+      created.id
+    );
+    expect(otherCustomer.data).toBeNull();
   } finally {
     await f.cleanup();
   }

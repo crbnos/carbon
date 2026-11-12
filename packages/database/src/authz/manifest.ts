@@ -482,8 +482,8 @@ export const manifest = {
     create: false,
     delete: false
   }),
-  customerPortalDocument: company("sales"),
-  customerPortalSubmission: company("sales"),
+  customerPortalDocument: company("sales", { read: "sales_view" }),
+  customerPortalSubmission: company("sales", { read: "sales_view" }),
   customerShipping: company("sales", {
     read: "sales_view",
     create: false,

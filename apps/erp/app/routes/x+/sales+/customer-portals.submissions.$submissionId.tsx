@@ -17,20 +17,13 @@ import {
   useLoaderData,
   useNavigation
 } from "react-router";
+import { customerPortalPoLinesValidator } from "~/modules/sales/sales.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Review portal PO`,
   to: path.to.customerPortalSubmissions
-};
-
-type SubmittedLine = {
-  partNumber: string;
-  description?: string;
-  quantity: number;
-  unitPrice?: number;
-  unitOfMeasureCode?: string;
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -96,16 +89,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     quantities.push(price.quantity);
     linePrices.set(price.quoteLineId, quantities);
   }
-  const lines = Array.isArray(submission.lines)
-    ? submission.lines.filter(
-        (line): line is SubmittedLine =>
-          typeof line === "object" &&
-          line !== null &&
-          !Array.isArray(line) &&
-          typeof line.partNumber === "string" &&
-          typeof line.quantity === "number"
-      )
-    : [];
+  const lines =
+    customerPortalPoLinesValidator.safeParse(submission.lines).data ?? [];
   const documents = Array.isArray(submission.documentPaths)
     ? submission.documentPaths.filter(
         (documentPath): documentPath is string =>

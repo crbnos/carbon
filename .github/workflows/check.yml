@@ -110,6 +110,28 @@ jobs:
       - *install
       - run: pnpm test
 
+  portal-database-test:
+    name: Portal database tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - *checkout
+      - *pnpm
+      - *node
+      - *node-modules
+      - *install
+      - name: Run portal tests against a migrated local stack
+        run: >-
+          packages/dev/bin/crbn up --no-portless --no-apps --minimal --volumes
+          --run 'test -n "$SUPABASE_DB_URL" && test -n "$PORT_API" &&
+          test -f apps/erp/.env.local && pnpm --filter erp exec vitest run
+          test/database/customer-portal.test.ts
+          test/database/customer-portal-documents.test.ts
+          test/database/customer-portal-po-review.test.ts
+          test/database/customer-portal-submissions.test.ts
+          app/modules/sales/sales.portal-pagination.test.ts
+          app/routes/share+/lib/customer-submission.server.test.ts'
+
   edge-functions:
     name: Edge Functions
     runs-on: ubuntu-latest
@@ -141,7 +163,7 @@ jobs:
   # forks: their token cannot edit the PR.
   label:
     name: Label
-    needs: [lint, typecheck, test, edge-functions]
+    needs: [lint, typecheck, test, portal-database-test, edge-functions]
     if: >-
       !cancelled() &&
       github.event.pull_request.head.repo.full_name == github.repository

@@ -116,11 +116,18 @@ describe("customer portal submissions", () => {
     const rfq = await f.db.selectFrom("salesRfq").select(["id", "customerId", "status", "expirationDate", "opportunityId"])
       .where("id", "=", first.salesRfqId!).executeTakeFirstOrThrow();
     expect(rfq).toMatchObject({ customerId: f.customerId, status: "Draft", expirationDate: f.today, opportunityId: args.opportunityId });
-    const lines = await f.db.selectFrom("salesRfqLine").select(["customerPartId", "quantity"])
+    const lines = await f.db.selectFrom("salesRfqLine").select(["customerPartId", "quantity", "externalNotes"])
       .where("salesRfqId", "=", rfq.id).orderBy("order").execute();
     expect(lines).toEqual([
-      { customerPartId: "TTJ-300", quantity: [250] },
-      { customerPartId: "TTJ-200", quantity: [100] }
+      {
+        customerPartId: "TTJ-300",
+        quantity: [250],
+        externalNotes: {
+          type: "doc",
+          content: [{ type: "paragraph", content: [{ type: "text", text: "Requested delivery: Q2" }] }]
+        }
+      },
+      { customerPartId: "TTJ-200", quantity: [100], externalNotes: {} }
     ]);
     expect(await findCustomerPortalSubmission(f.db, args)).toMatchObject({ id: first.id, salesRfqId: rfq.id, submissionType: "RFQ" });
   });

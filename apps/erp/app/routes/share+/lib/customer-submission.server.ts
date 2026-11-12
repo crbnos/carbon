@@ -23,6 +23,48 @@ const limiter = new Ratelimit({
   prefix: "@carbon/customer-portal-submission"
 });
 
+class SubmissionTooLargeError extends Error {}
+
+/** Cap actual bytes before the multipart parser can buffer an unbounded body. */
+async function limitedFormData(request: Request, maxBytes: number) {
+  if (!request.body) return request.formData();
+
+  const reader = request.body.getReader();
+  let size = 0;
+  let exceeded = false;
+  const body = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      const { done, value } = await reader.read();
+      if (done) return controller.close();
+      size += value.byteLength;
+      if (size > maxBytes) {
+        exceeded = true;
+        controller.error(new SubmissionTooLargeError());
+        void reader.cancel().catch(() => undefined);
+        return;
+      }
+      controller.enqueue(value);
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    }
+  });
+  const headers = new Headers(request.headers);
+  headers.delete("content-length");
+  const bounded = new Request(request.url, {
+    method: request.method,
+    headers,
+    body,
+    duplex: "half"
+  } as RequestInit);
+  try {
+    return await bounded.formData();
+  } catch (error) {
+    if (exceeded) throw new SubmissionTooLargeError();
+    throw error;
+  }
+}
+
 function failure(status: number, code: string, message: string) {
   return data(
     { success: false, code, message },
@@ -56,8 +98,9 @@ export async function handleCustomerPortalSubmission(
       "Please wait before sending another request"
     );
 
-  const maxBytes = submissionType === "rfq" ? 55 : 11;
-  if (Number(request.headers.get("content-length")) > maxBytes * 1024 * 1024)
+  const maxBytes = (submissionType === "rfq" ? 55 : 11) * 1024 * 1024;
+  const length = request.headers.get("content-length");
+  if (length !== null && Number(length) > maxBytes)
     return failure(413, "payload_too_large", "Attachments are too large");
 
   const scope = await customerPortalSubmissionContext(portalId);
@@ -66,9 +109,11 @@ export async function handleCustomerPortalSubmission(
   let form: FormData;
   let lines: unknown;
   try {
-    form = await request.formData();
+    form = await limitedFormData(request, maxBytes);
     lines = JSON.parse(String(form.get("lines") ?? "[]"));
-  } catch {
+  } catch (error) {
+    if (error instanceof SubmissionTooLargeError)
+      return failure(413, "payload_too_large", "Attachments are too large");
     return failure(400, "invalid_request", "Invalid form data or line items");
   }
 

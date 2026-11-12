@@ -1216,18 +1216,20 @@ export const customerPortalRfqValidator = portalSubmissionBase.extend({
   files: z.array(portalSubmissionFile).max(5)
 });
 
+export const customerPortalPoLinesValidator = z
+  .array(
+    portalSubmissionLine.extend({
+      unitPrice: z.number().nonnegative().max(1_000_000_000).optional()
+    })
+  )
+  .max(50);
+
 export const customerPortalPoValidator = portalSubmissionBase
   .extend({
     poNumber: z.string().trim().min(1).max(120),
     quoteId: z.string().trim().min(1).max(120).optional(),
     requestedDelivery: portalDate,
-    lines: z
-      .array(
-        portalSubmissionLine.extend({
-          unitPrice: z.number().nonnegative().max(1_000_000_000).optional()
-        })
-      )
-      .max(50),
+    lines: customerPortalPoLinesValidator,
     file: portalSubmissionFile
   })
   .refine((input) => !!input.quoteId || input.lines.length > 0, {
