@@ -5,7 +5,10 @@
 import { useCarbon } from "@carbon/auth";
 import type { StandardFieldId } from "@carbon/ee";
 import { everyPushTargets } from "@carbon/ee";
-import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
+import {
+  ONSHAPE_PANEL_INTEGRATION_IDS,
+  ONSHAPE_V2_INTEGRATION_ID
+} from "@carbon/ee/onshape/integration-id";
 import {
   Badge,
   Button,
@@ -40,10 +43,13 @@ type ExternalSourceMapping = {
 /** Self-loading `onshape-v2` link card; renders nothing without a link. */
 export function ExternalSourceCard({
   itemId,
-  canDetach
+  canDetach,
+  onshapeOrigin
 }: {
   itemId: string;
   canDetach: boolean;
+  /** `getOnshapePanelOrigin`: a Government tenant has its own host. */
+  onshapeOrigin: string;
 }) {
   const { carbon } = useCarbon();
   const { company } = useUser();
@@ -94,7 +100,10 @@ export function ExternalSourceCard({
         .from("companyIntegration")
         .select("metadata")
         .eq("companyId", company.id)
-        .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+        .in("id", [...ONSHAPE_PANEL_INTEGRATION_IDS])
+        .order("active", { ascending: false })
+        .order("updatedAt", { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (cancelled) return;
       if (!integration.data) {
@@ -138,8 +147,8 @@ export function ExternalSourceCard({
   const onshapeUrl = !meta.documentId
     ? null
     : meta.wvId && meta.elementId
-      ? `https://cad.onshape.com/documents/${meta.documentId}/${meta.wv ?? "w"}/${meta.wvId}/e/${meta.elementId}`
-      : `https://cad.onshape.com/documents/${meta.documentId}`;
+      ? `${onshapeOrigin}/documents/${meta.documentId}/${meta.wv ?? "w"}/${meta.wvId}/e/${meta.elementId}`
+      : `${onshapeOrigin}/documents/${meta.documentId}`;
   const pushedAt = meta.pushedAt ?? mapping.lastSyncedAt;
   const lastPushed = pushedAt ? formatDateTime(pushedAt) : null;
   // All a push can change: the card cannot tell which ones a push brings.

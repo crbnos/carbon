@@ -1684,6 +1684,12 @@ msgstr "已关闭的项目不再接受费用且无法重新打开。仅在该项
 msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 msgstr "颜色决定强调色。渐变和纯色主题还会为导航栏、侧边栏和页面着色。"
 
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+msgstr "一家公司一次只能连接一个 Onshape 面板。请卸载 Onshape V2 Government，然后连接 Onshape V2。"
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
+msgstr "一家公司一次只能连接一个 Onshape 面板。请卸载 Onshape V2，然后连接 Onshape V2 Government。"
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "一家公司一次只能连接一个 Onshape。请卸载 Onshape Government，然后连接 Onshape。"
 
@@ -8642,6 +8648,9 @@ msgstr "无法完成 Onshape 连接"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "无法完成 Onshape Government 连接"
 
+msgid "Couldn't complete the Onshape V2 Government connection"
+msgstr "无法完成 Onshape V2 Government 连接"
+
 msgid "Couldn't confirm the account"
 msgstr "无法确认帐户"
 
@@ -8674,6 +8683,9 @@ msgstr "无法保存 Onshape 连接"
 
 msgid "Couldn't save the Onshape Government connection"
 msgstr "无法保存 Onshape Government 连接"
+
+msgid "Couldn't save the Onshape V2 Government connection"
+msgstr "无法保存 Onshape V2 Government 连接"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "无法保存 Ramp 连接"
@@ -21074,6 +21086,24 @@ msgstr "Onshape 拒绝了授权"
 msgid "Onshape Status"
 msgstr "Onshape 状态"
 
+msgid "Onshape V2 Government denied the connection"
+msgstr "Onshape V2 Government 拒绝了连接"
+
+msgid "Onshape V2 Government didn't return an authorization code"
+msgstr "Onshape V2 Government 未返回授权码"
+
+msgid "Onshape V2 Government is already connected"
+msgstr "Onshape V2 Government 已连接"
+
+msgid "Onshape V2 Government isn't configured"
+msgstr "Onshape V2 Government 未配置"
+
+msgid "Onshape V2 Government rejected the authorization"
+msgstr "Onshape V2 Government 拒绝了授权"
+
+msgid "Onshape V2 is already connected"
+msgstr "Onshape V2 已连接"
+
 msgid "Onshape version"
 msgstr "Onshape 版本"
 
@@ -21260,6 +21290,9 @@ msgstr "在结转日期打开账簿。启用会计是单向的。"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "打开 Onshape Government 集成并保存其设置以重新连接。"
+
+msgid "Open the Onshape V2 Government integration and save its settings to connect again."
+msgstr "打开 Onshape V2 Government 集成并保存其设置以重新连接。"
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "打开 Ramp 集成，然后重新连接以完成配置。"
@@ -30829,6 +30862,9 @@ msgstr "Onshape连接已过期"
 
 msgid "The Onshape Government connection expired"
 msgstr "Onshape Government 连接已过期"
+
+msgid "The Onshape V2 Government connection expired"
+msgstr "Onshape V2 Government 连接已过期"
 
 #. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."

@@ -43,6 +43,11 @@ export const SECRET_KEYS: Record<string, string[]> = {
     "credentials.refreshToken"
   ],
   "onshape-v2": ["credentials.accessToken", "credentials.refreshToken"],
+  "onshape-v2-government": [
+    "clientSecret",
+    "credentials.accessToken",
+    "credentials.refreshToken"
+  ],
   xero: ["credentials.accessToken", "credentials.refreshToken"],
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
   ramp: [

@@ -22,6 +22,7 @@ const INTEGRATION_IDS = [
   "linear",
   "onshape",
   "onshape-government",
+  "onshape-v2-government",
   "paperless-parts",
   "email",
   "sage",

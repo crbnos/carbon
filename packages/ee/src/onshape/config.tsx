@@ -2,8 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
-import { type SVGProps, useEffect, useState } from "react";
+import { getAppUrl, ONSHAPE_CLIENT_ID } from "@carbon/auth";
+import type { SVGProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
 import { beginOAuthPopup } from "../oauth-popup";
@@ -108,6 +108,47 @@ const onshapeUrlSchema = z
     return url;
   });
 
+/** Settings for an Onshape integration on the customer's private OAuth app. */
+export const customerAppSettings = [
+  {
+    name: "baseUrl",
+    label: "Onshape URL",
+    description:
+      "The address your team signs in to Onshape Government at. Each Enterprise has its own.",
+    group: "Connection",
+    type: "text" as const,
+    required: true,
+    value: ""
+  },
+  {
+    name: "clientId",
+    label: "Client ID",
+    description: "Shown on the private OAuth application in Onshape.",
+    group: "Connection",
+    type: "text" as const,
+    required: true,
+    value: ""
+  },
+  {
+    name: "clientSecret",
+    label: "Client secret",
+    description:
+      "Onshape shows it once, when the application is created. Stored encrypted; leave empty to keep the saved one.",
+    group: "Connection",
+    type: "secret" as const,
+    required: true,
+    value: ""
+  }
+];
+
+export const customerAppSettingsSchema = z.object({
+  baseUrl: onshapeUrlSchema,
+  clientId: z.string().trim().min(1),
+  // Empty keeps the vaulted secret; the settings save requires one on a
+  // fresh install.
+  clientSecret: z.string()
+});
+
 /**
  * Onshape Government (ITAR / FedRAMP) has no public App Store, so Carbon's
  * public app cannot be installed there. The customer's Enterprise admin creates
@@ -140,54 +181,17 @@ export const OnshapeGovernment = defineIntegration({
         "Every API call counts toward your Enterprise's yearly Onshape API limit."
     }
   ],
-  settings: [
-    {
-      name: "baseUrl",
-      label: "Onshape URL",
-      description:
-        "The address your team signs in to Onshape Government at. Each Enterprise has its own.",
-      group: "Connection",
-      type: "text" as const,
-      required: true,
-      value: ""
-    },
-    {
-      name: "clientId",
-      label: "Client ID",
-      description: "Shown on the private OAuth application in Onshape.",
-      group: "Connection",
-      type: "text" as const,
-      required: true,
-      value: ""
-    },
-    {
-      name: "clientSecret",
-      label: "Client secret",
-      description:
-        "Onshape shows it once, when the application is created. Stored encrypted; leave empty to keep the saved one.",
-      group: "Connection",
-      type: "secret" as const,
-      required: true,
-      value: ""
-    },
-    { ...assetSyncSetting, group: "Sync" }
-  ],
-  schema: z.object({
-    baseUrl: onshapeUrlSchema,
-    clientId: z.string().trim().min(1),
-    // Empty keeps the vaulted secret; the settings save requires one on a
-    // fresh install.
-    clientSecret: z.string(),
+  settings: [...customerAppSettings, { ...assetSyncSetting, group: "Sync" }],
+  schema: customerAppSettingsSchema.extend({
     assetSyncEnabled: assetSyncEnabledSchema
   }),
   actions: [backfillAction]
 });
 
 function GovernmentSetupInstructions() {
-  // The callback is this Carbon instance's own address. Read after mount so the
-  // server render and the first client render agree.
-  const [origin, setOrigin] = useState("");
-  useEffect(() => setOrigin(window.location.origin), []);
+  // The address the OAuth redirect is built on, which an alias the admin
+  // browses through may not be.
+  const origin = getAppUrl();
   const callbackUrl = `${origin}${ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH}`;
   const launchUrl = `${origin}/x/settings/integrations/${ONSHAPE_GOVERNMENT_INTEGRATION_ID}`;
 

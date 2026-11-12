@@ -12,11 +12,12 @@ import {
   ONSHAPE_V2_OAUTH_REDIRECT_URL
 } from "@carbon/env";
 import {
+  isOnshapeCustomerAppIntegrationId,
   normalizeOnshapeUrl,
+  ONSHAPE_CUSTOMER_APP_CALLBACK_PATHS,
   ONSHAPE_DEFAULT_BASE_URL,
   ONSHAPE_DEFAULT_OAUTH_URL,
-  ONSHAPE_GOVERNMENT_INTEGRATION_ID,
-  ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH
+  type OnshapeCustomerAppIntegrationId
 } from "./connection";
 import {
   ONSHAPE_V2_INTEGRATION_ID,
@@ -50,8 +51,11 @@ export type OnshapeOAuthConfig = {
 // authorization with `invalid_scope`.
 export const ONSHAPE_OAUTH_SCOPES = ["OAuth2Read", "OAuth2Write"];
 
-export function getOnshapeGovernmentRedirectUri(origin = getAppUrl()) {
-  return `${origin}${ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH}`;
+export function getOnshapeCustomerAppRedirectUri(
+  integrationId: OnshapeCustomerAppIntegrationId,
+  origin = getAppUrl()
+) {
+  return `${origin}${ONSHAPE_CUSTOMER_APP_CALLBACK_PATHS[integrationId]}`;
 }
 
 function oauthEndpoints(oauthUrl: string) {
@@ -70,7 +74,7 @@ export function getOnshapeOAuthConfig(
   integrationId: OnshapeOAuthIntegrationId,
   metadata: Record<string, unknown> | null | undefined
 ): OnshapeOAuthConfig | null {
-  if (integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID) {
+  if (isOnshapeCustomerAppIntegrationId(integrationId)) {
     const clientId = metadata?.clientId;
     const clientSecret = metadata?.clientSecret;
     const baseUrl = normalizeOnshapeUrl(metadata?.baseUrl);
@@ -86,7 +90,7 @@ export function getOnshapeOAuthConfig(
     return {
       clientId: clientId.trim(),
       clientSecret: clientSecret.trim(),
-      redirectUri: getOnshapeGovernmentRedirectUri(),
+      redirectUri: getOnshapeCustomerAppRedirectUri(integrationId),
       baseUrl,
       // A Government tenant serves OAuth from its own address.
       ...oauthEndpoints(baseUrl)

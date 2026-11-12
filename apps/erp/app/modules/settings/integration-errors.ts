@@ -22,8 +22,8 @@ type IntegrationErrorMessage = {
 };
 
 /**
- * Shared by `onshape` and `onshape-v2`: one OAuth app, one callback handler.
- * `onshape-v2` never answers `connection-conflict`.
+ * Shared by `onshape` and `onshape-v2`: one callback handler. Each names the
+ * connection that conflicts with it in its own `connection-conflict` copy.
  */
 const onshapeErrors = {
   // `invalid_scope` means the OAuth application isn't granted a scope we asked
@@ -108,7 +108,13 @@ export const integrationErrors = {
     }
   },
   onshape: onshapeErrors,
-  "onshape-v2": onshapeErrors,
+  "onshape-v2": {
+    ...onshapeErrors,
+    "connection-conflict": {
+      title: msg`Onshape V2 Government is already connected`,
+      description: msg`A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2.`
+    }
+  },
   // A Government customer's private OAuth app. Same codes as `onshape` — the two
   // share one callback handler — but the fixes live in the customer's own
   // Enterprise settings and in the Carbon integration settings, not in Carbon's
@@ -149,6 +155,45 @@ export const integrationErrors = {
     "connection-conflict": {
       title: msg`Onshape is already connected`,
       description: msg`A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government.`
+    }
+  },
+  // As `onshape-government`; the conflict is the other panel connection.
+  "onshape-v2-government": {
+    "write-permission": {
+      title: msg`Onshape V2 Government denied the connection`,
+      description: msg`In your Enterprise settings under Developer, edit the private OAuth application's permissions to include "Application can write to your documents", then save the integration settings again.`
+    },
+    denied: {
+      title: msg`Onshape V2 Government denied the connection`,
+      description: msg`The authorization was refused in Onshape. Save the integration settings to try again.`
+    },
+    "invalid-state": {
+      title: msg`The Onshape V2 Government connection expired`,
+      description: msg`Open the Onshape V2 Government integration and save its settings to connect again.`
+    },
+    "invalid-response": {
+      title: msg`Onshape V2 Government didn't return an authorization code`,
+      description: msg`The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again.`
+    },
+    "not-configured": {
+      title: msg`Onshape V2 Government isn't configured`,
+      description: msg`Enter the Onshape URL, client ID and client secret of your private OAuth application, then save.`
+    },
+    "token-exchange": {
+      title: msg`Onshape V2 Government rejected the authorization`,
+      description: msg`Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again.`
+    },
+    "save-failed": {
+      title: msg`Couldn't save the Onshape V2 Government connection`,
+      description: msg`Onshape authorized the connection but saving it failed. Save the integration settings to try again.`
+    },
+    unexpected: {
+      title: msg`Couldn't complete the Onshape V2 Government connection`,
+      description: msg`An unexpected error occurred while connecting to Onshape. Save the integration settings to try again.`
+    },
+    "connection-conflict": {
+      title: msg`Onshape V2 is already connected`,
+      description: msg`A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government.`
     }
   },
   // Workflow integration connections (Google Calendar and friends). One shared

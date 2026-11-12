@@ -26,6 +26,7 @@ import {
   releasedRevisionsByPartNumber
 } from "../panel/status";
 import { selectInBatches } from "./batched-filter";
+import { getOnshapePanelIntegration } from "./connection";
 import { ONSHAPE_V2_INTEGRATION_ID } from "./integration-id";
 
 // The plan and apply routes reach the panel's pure helpers through this barrel.
@@ -50,12 +51,7 @@ export async function loadPlanOptions(
       .select("code, name")
       .eq("companyId", companyId)
       .order("name"),
-    client
-      .from("companyIntegration")
-      .select("metadata")
-      .eq("id", ONSHAPE_V2_INTEGRATION_ID)
-      .eq("companyId", companyId)
-      .maybeSingle()
+    getOnshapePanelIntegration(client, companyId)
   ]);
   return {
     unitsOfMeasure: (units.data ?? []).map((unit) => ({
@@ -75,15 +71,10 @@ export async function loadStandardSources(
   client: Client,
   companyId: string
 ): Promise<StandardSources> {
-  const integration = await client
-    .from("companyIntegration")
-    .select("metadata")
-    .eq("id", ONSHAPE_V2_INTEGRATION_ID)
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const integration = await getOnshapePanelIntegration(client, companyId);
   if (integration.error) {
     throw new Error(
-      `Failed to read the Onshape property map: ${integration.error.message}`
+      `Failed to read the Onshape property map: ${integration.error}`
     );
   }
   return standardSources(parsePropertyMap(integration.data?.metadata));
@@ -443,15 +434,10 @@ export async function loadPlanMapping(
   companyId: string,
   readableIds: string[]
 ): Promise<PlanMappingContext> {
-  const integration = await client
-    .from("companyIntegration")
-    .select("metadata")
-    .eq("id", ONSHAPE_V2_INTEGRATION_ID)
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const integration = await getOnshapePanelIntegration(client, companyId);
   if (integration.error) {
     throw new Error(
-      `Failed to read the Onshape property map: ${integration.error.message}`
+      `Failed to read the Onshape property map: ${integration.error}`
     );
   }
   const metadata = integration.data?.metadata;

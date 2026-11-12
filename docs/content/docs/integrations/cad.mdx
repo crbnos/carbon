@@ -1,7 +1,7 @@
 ---
 title: CAD
 plan: Business
-description: Sync CAD data from Onshape and Onshape Government into Carbon, or push it from inside Onshape.
+description: Sync CAD data from Onshape and Onshape Government into Carbon, or push it from inside Onshape and Onshape Government.
 ---
 
 ## Two Onshape integrations
@@ -16,9 +16,10 @@ neither, and disconnecting one never affects the other.
 | **Onshape** | `onshape` | Pull | Carbon lists documents and pulls models. With **Sync released assets** on, a webhook attaches released drawings and CAD models to Carbon items that already exist, matched by part number. It never creates items. |
 | **Onshape V2** | `onshape-v2` | Push | A Carbon panel inside Onshape. You push parts, assemblies and releases from the CAD document when they are ready. Carbon never pulls on its own. |
 
-**Onshape Government** is a third, pull-only variant of **Onshape** for the ITAR and
+**Onshape Government** is a pull-only variant of **Onshape** for the ITAR and
 FedRAMP edition, connected through a private OAuth app your Enterprise owns; see
-[Onshape Government](#onshape-government).
+[Onshape Government](#onshape-government). **Onshape V2 Government** is the same for
+the panel: see [Onshape V2 Government](#onshape-v2-government).
 
 **Onshape V2** is the one to use for the panel. If the Carbon icon appears in
 Onshape but the panel reports that nothing is connected, the company connected
@@ -189,6 +190,60 @@ leave it off if your allowance is tight.
 </Callout>
 
 A company can connect to only one Onshape environment. Disconnect the current integration before connecting the other.
+
+## Onshape V2 Government
+
+**Onshape V2 Government** puts the Carbon panel inside Onshape Government. Onshape Government has no public App
+Store, so the **Onshape V2** application cannot be installed there: your Enterprise creates a **private OAuth app**
+that carries the panel extension, and enters its client in Carbon. After connection, the panel works as
+described in [The Carbon panel in Onshape](#the-carbon-panel-in-onshape).
+
+<Steps>
+  <Step>
+  ### Create the private app in Onshape
+
+  An Enterprise admin opens **Enterprise settings → Developer → OAuth applications** and creates a new OAuth
+  application. Choose **Integrated Cloud App** as the type and leave the OAuth URL empty. Set the redirect URL to
+  `https://<your Carbon address>/api/integrations/onshape-v2-government/oauth`. Grant read access to profile
+  information, read access to documents, and write access to documents. Onshape shows the client secret only
+  once, so copy it immediately. Carbon support can help create the app if given a seat in your Enterprise.
+  </Step>
+  <Step>
+  ### Add the panel extension
+
+  On the application's **Extensions** tab, add two extensions with location **Element right panel**: one with
+  context **Inside part studio** and one with **Inside assembly**. Both use the action URL from
+  [Add an extension for the panel](#add-an-extension-for-the-panel), with your Carbon address as the host.
+  </Step>
+  <Step>
+  ### Give users the panel
+
+  Add the users or teams who should see the panel to the application in Enterprise settings. They see the
+  Carbon icon without subscribing in an App Store. Light users cannot be added.
+  </Step>
+  <Step>
+  ### Enter it in Carbon and approve
+
+  Open **Onshape V2 Government** under **Settings → Integrations**. Enter your Onshape URL and the app's client ID
+  and client secret, then save. Approve the connection in your Onshape tenant and return to Carbon. The drawer
+  shows the redirect URL and the action URL for your Carbon instance.
+  </Step>
+</Steps>
+
+| Setting | What it controls |
+| --- | --- |
+| Onshape URL | The address your team signs in to Onshape Government at. The panel loads only inside Onshape at this address. |
+| Client ID / Client secret | The private OAuth app from your Enterprise. The secret is stored encrypted. Leave it empty to keep the saved one, or enter it again to reconnect. |
+
+The property map and the push defaults are on the panel's **Fields** page, as with **Onshape V2**. A company
+connects one panel integration at a time: uninstall **Onshape V2** before connecting **Onshape V2 Government**,
+or the other way round. Either can run beside **Onshape** or **Onshape Government**.
+
+<Callout type="warn">
+A private app's API calls count toward your Enterprise's **yearly Onshape API limit**. Every review in the panel
+reads Onshape, and a push exports a STEP model and drawings for each changed part and assembly, so an assembly
+push can use many calls.
+</Callout>
 
 ## Import a bill of materials from Onshape
 

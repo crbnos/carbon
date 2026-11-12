@@ -5,10 +5,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { resolveIntegrationSecrets } from "../integrations/secrets";
-import {
-  getConflictingOnshapeIntegration,
-  isOnshapeIntegrationId
-} from "./lib/connection";
+import { getConflictingOnshapeConnection } from "./lib/connection";
 import type { OnshapeOAuthIntegrationId } from "./lib/integration-id";
 import {
   getOnshapeAuthorizeUrl,
@@ -59,9 +56,9 @@ export type OnshapeAuthorizationStart =
   | { ok: false; reason: "not-configured" | "connection-conflict" };
 
 /**
- * Refuses a sync connection while the other one is active; the panel's grant
- * sits beside either. The state is bound to this browser, user, company and
- * integration, so a callback URL carrying another account's code is refused.
+ * Refuses a connection while the other one of its kind (sync or panel) is
+ * active. The state is bound to this browser, user, company and integration,
+ * so a callback URL carrying another account's code is refused.
  */
 export async function beginOnshapeAuthorization(
   request: Request,
@@ -71,14 +68,12 @@ export async function beginOnshapeAuthorization(
     companyId: string;
   }
 ): Promise<OnshapeAuthorizationStart> {
-  if (isOnshapeIntegrationId(params.integrationId)) {
-    const conflict = await getConflictingOnshapeIntegration(
-      getCarbonServiceRole(),
-      params.companyId,
-      params.integrationId
-    );
-    if (conflict) return { ok: false, reason: "connection-conflict" };
-  }
+  const conflict = await getConflictingOnshapeConnection(
+    getCarbonServiceRole(),
+    params.companyId,
+    params.integrationId
+  );
+  if (conflict) return { ok: false, reason: "connection-conflict" };
 
   const config = await loadOnshapeOAuthConfig(
     params.companyId,
