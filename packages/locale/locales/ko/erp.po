@@ -6546,6 +6546,12 @@ msgstr "Carbon은 AI를 사용하여 {0}개의 매핑되지 않은 계정 각각
 msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 msgstr "회계를 활성화할 때 Carbon는 오늘의 계정 및 원가로 해당 전표를 작성합니다."
 
+msgid "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+msgstr ""
+
+msgid "CARBON_LICENSE is not set."
+msgstr ""
+
 msgid "Carbon-only"
 msgstr "Carbon 전용"
 
@@ -30689,6 +30695,12 @@ msgstr "판매유형 리스에서 임대인의 자산: 리스료와 보증되지
 msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
 msgstr ""
 
+msgid "The license could not be checked. Carbon tries again in a minute."
+msgstr ""
+
+msgid "The license could not be verified."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "고객을 추적하는 생애주기 단계"
 
@@ -31771,6 +31783,18 @@ msgstr "이 리스는 개방형입니다: 통지를 통해 종료될 수 있으�
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 msgstr "이 리스는 회계 설정 전에 시작되었습니다. 활성화하면 {0}에 기초 잔액을 전기합니다(또는 그 이후의 첫 미결 기간의 시작): 해당 날짜 기준의 각 자산의 사용권 자산, 그 상각액 및 리스 부채, 이익잉여금과의 차이. 이전 월은 전기됨으로 표시됩니다."
 
+msgid "This license has ended, and its grace period is over."
+msgstr ""
+
+msgid "This license was issued after the server's current time. Check the server clock."
+msgstr ""
+
+msgid "This license was not signed by Carbon, or its signing key is no longer valid."
+msgstr ""
+
+msgid "This license was revoked."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "이 라인은 일정 계획을 위한 라우팅이 없습니다."
 
@@ -31970,6 +31994,9 @@ msgstr "이 버전은 게시됨입니다."
 
 msgid "This version is published. Create a new version to edit."
 msgstr "이 버전은 게시됨입니다. 편집하려면 새 버전을 생성하세요."
+
+msgid "This version of Carbon cannot check the license's signing keys. Update Carbon."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "이 버전의 정의를 읽을 수 없습니다."

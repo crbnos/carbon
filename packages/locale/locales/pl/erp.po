@@ -6546,6 +6546,12 @@ msgstr "Carbon będzie używać AI do zgadnięcia konta dostawcy dla każdego z 
 msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 msgstr "Carbon zapisuje ich dowody księgowe, gdy włączysz księgowość, z dzisiejszymi kontami i kosztami."
 
+msgid "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+msgstr ""
+
+msgid "CARBON_LICENSE is not set."
+msgstr ""
+
 msgid "Carbon-only"
 msgstr "Tylko dla Carbon"
 
@@ -30689,6 +30695,12 @@ msgstr "Aktywo leasingodawcy w leasingu finansowym: bieżąca wartość płatno�
 msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
 msgstr ""
 
+msgid "The license could not be checked. Carbon tries again in a minute."
+msgstr ""
+
+msgid "The license could not be verified."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Etapy cyklu życia, przez które śledzisz klientów"
 
@@ -31771,6 +31783,18 @@ msgstr "Ta dzierżawa jest otwarta: może być rozwiązana na zawiadomienie, dla
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 msgstr "Ten leasing rozpoczął się przed skonfiguraniem księgowości. Aktywacja go zaksięguje saldo otwarcia na {0} (lub początek pierwszego okresu otwartego po nim): prawo do użytkowania każdego aktywa, jego amortyzacja i zobowiązanie z tytułu leasingu na tę datę, z różnicą na zyski zatrzymane. Miesiące przed tym są oznaczone jako zaksięgowane."
 
+msgid "This license has ended, and its grace period is over."
+msgstr ""
+
+msgid "This license was issued after the server's current time. Check the server clock."
+msgstr ""
+
+msgid "This license was not signed by Carbon, or its signing key is no longer valid."
+msgstr ""
+
+msgid "This license was revoked."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "Ta pozycja nie ma przypisanej marszruty do zaplanowania."
 
@@ -31970,6 +31994,9 @@ msgstr "Ta wersja jest opublikowana"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Ta wersja jest opublikowana. Utwórz nową wersję, aby edytować."
+
+msgid "This version of Carbon cannot check the license's signing keys. Update Carbon."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "Definicję tej wersji nie można było odczytać."

@@ -6546,6 +6546,12 @@ msgstr "Carbonはあなたの{0}個のマップされていないアカウント
 msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 msgstr "会計を有効にするとき、Carbonは今日のアカウントとコストを使用してそれらの仕訳を作成します。"
 
+msgid "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+msgstr ""
+
+msgid "CARBON_LICENSE is not set."
+msgstr ""
+
 msgid "Carbon-only"
 msgstr "Carbon専用"
 
@@ -30689,6 +30695,12 @@ msgstr "売却型リースのリース会社資産：リース支払いおよび
 msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
 msgstr ""
 
+msgid "The license could not be checked. Carbon tries again in a minute."
+msgstr ""
+
+msgid "The license could not be verified."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "得意先を追跡するライフサイクルステージ。"
 
@@ -31771,6 +31783,18 @@ msgstr "このリースは期限を定めません。予告で終了できるた
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 msgstr "このリースは会計の設定前に開始されました。これを有効化すると、{0}に開始残高を転記します（またはその後の最初のオープン期間の開始）：各資産の使用権資産、その減価償却およびリース債務が、利益剰余金への差額と共に転記されます。それより前の月は転記済としてマークされます。"
 
+msgid "This license has ended, and its grace period is over."
+msgstr ""
+
+msgid "This license was issued after the server's current time. Check the server clock."
+msgstr ""
+
+msgid "This license was not signed by Carbon, or its signing key is no longer valid."
+msgstr ""
+
+msgid "This license was revoked."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "この明細にはスケジュール対象の工順がありません。"
 
@@ -31970,6 +31994,9 @@ msgstr "このバージョンは公開済です"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
+
+msgid "This version of Carbon cannot check the license's signing keys. Update Carbon."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"

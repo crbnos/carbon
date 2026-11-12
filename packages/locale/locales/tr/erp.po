@@ -6546,6 +6546,12 @@ msgstr "Carbon, {0} eşleştirilmemiş hesaplarınızın her biri için bir sağ
 msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 msgstr "Carbon, muhasebe'yi etkinleştirdiğinizde, bugünün hesapları ve maliyetleriyle bunların muhasebe fişlerini yazar."
 
+msgid "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+msgstr ""
+
+msgid "CARBON_LICENSE is not set."
+msgstr ""
+
 msgid "Carbon-only"
 msgstr "Yalnızca Carbon"
 
@@ -30689,6 +30695,12 @@ msgstr "Satış türü kiralama üzerinde kiraya verenin varlığı: kira ödeme
 msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
 msgstr ""
 
+msgid "The license could not be checked. Carbon tries again in a minute."
+msgstr ""
+
+msgid "The license could not be verified."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Müşterileri takip ettiğiniz yaşam döngüsü aşamaları"
 
@@ -31771,6 +31783,18 @@ msgstr "Bu kiralama açık uçlu: fesih bildirimi ile sona erdirilebilir, bu ned
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 msgstr "Bu kiralama, muhasebe ayarlanmadan önce başlamıştır. Etkinleştirmek, {0} tarihinde (veya sonrasındaki ilk açık dönemin başlangıcında) açılış bakiyesini muhasebeleştirir: her varlığın kullanım hakkı varlığı, amortismanı ve o tarihteki kiralama yükümlülüğü, fark dağıtılmamış kârlarla. Öncesi aylar muhasebeleştirilmiş olarak işaretlenir."
 
+msgid "This license has ended, and its grace period is over."
+msgstr ""
+
+msgid "This license was issued after the server's current time. Check the server clock."
+msgstr ""
+
+msgid "This license was not signed by Carbon, or its signing key is no longer valid."
+msgstr ""
+
+msgid "This license was revoked."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "Bu satırın zamanlama için bir rotası yok."
 
@@ -31970,6 +31994,9 @@ msgstr "Bu sürüm yayınlandı"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Bu sürüm yayınlandı. Düzenlemek için yeni bir sürüm oluşturun."
+
+msgid "This version of Carbon cannot check the license's signing keys. Update Carbon."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "Bu sürümün tanımı okunamadı."

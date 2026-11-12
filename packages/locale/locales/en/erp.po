@@ -6546,6 +6546,12 @@ msgstr "Carbon will use AI to guess a provider account for each of your {0} unma
 msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 msgstr "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 
+msgid "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+msgstr "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+
+msgid "CARBON_LICENSE is not set."
+msgstr "CARBON_LICENSE is not set."
+
 msgid "Carbon-only"
 msgstr "Carbon-only"
 
@@ -30689,6 +30695,12 @@ msgstr "The lessor's asset on a sales-type lease: the present value of the lease
 msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
 msgstr "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
 
+msgid "The license could not be checked. Carbon tries again in a minute."
+msgstr "The license could not be checked. Carbon tries again in a minute."
+
+msgid "The license could not be verified."
+msgstr "The license could not be verified."
+
 msgid "The lifecycle stages you track customers through"
 msgstr "The lifecycle stages you track customers through"
 
@@ -31771,6 +31783,18 @@ msgstr "This lease is open-ended: it can be ended on notice, so its term is shor
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 msgstr "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 
+msgid "This license has ended, and its grace period is over."
+msgstr "This license has ended, and its grace period is over."
+
+msgid "This license was issued after the server's current time. Check the server clock."
+msgstr "This license was issued after the server's current time. Check the server clock."
+
+msgid "This license was not signed by Carbon, or its signing key is no longer valid."
+msgstr "This license was not signed by Carbon, or its signing key is no longer valid."
+
+msgid "This license was revoked."
+msgstr "This license was revoked."
+
 msgid "This line has no routing to schedule."
 msgstr "This line has no routing to schedule."
 
@@ -31970,6 +31994,9 @@ msgstr "This version is published"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "This version is published. Create a new version to edit."
+
+msgid "This version of Carbon cannot check the license's signing keys. Update Carbon."
+msgstr "This version of Carbon cannot check the license's signing keys. Update Carbon."
 
 msgid "This version's definition could not be read."
 msgstr "This version's definition could not be read."

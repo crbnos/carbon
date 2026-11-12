@@ -6546,6 +6546,12 @@ msgstr "Carbon将使用AI为您的{0}个未映射账户各猜测一个供应商�
 msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 msgstr "启用会计时，Carbon将使用今天的账户和成本编写其凭证。"
 
+msgid "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+msgstr ""
+
+msgid "CARBON_LICENSE is not set."
+msgstr ""
+
 msgid "Carbon-only"
 msgstr "仅限Carbon"
 
@@ -30689,6 +30695,12 @@ msgstr "销售型租赁中出租人的资产：租赁付款和无保障残值的
 msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
 msgstr ""
 
+msgid "The license could not be checked. Carbon tries again in a minute."
+msgstr ""
+
+msgid "The license could not be verified."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "您跟踪客户所经历的生命周期阶段"
 
@@ -31771,6 +31783,18 @@ msgstr "该租赁为无期限租赁：可随时终止，因此其期限较短，
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 msgstr "该租赁在会计设置前开始。激活它在 {0}（或之后的第一个未结期间的开始）过账期初余额：每项资产的使用权资产、其摊销和该日期的租赁负债，差额计入未分配利润。前面的月份标记为已过账。"
 
+msgid "This license has ended, and its grace period is over."
+msgstr ""
+
+msgid "This license was issued after the server's current time. Check the server clock."
+msgstr ""
+
+msgid "This license was not signed by Carbon, or its signing key is no longer valid."
+msgstr ""
+
+msgid "This license was revoked."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "此行没有要排程的工艺路线。"
 
@@ -31970,6 +31994,9 @@ msgstr "此版本已发布"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "此版本已发布。创建新版本进行编辑。"
+
+msgid "This version of Carbon cannot check the license's signing keys. Update Carbon."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "无法读取此版本的定义。"

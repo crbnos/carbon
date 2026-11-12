@@ -6546,6 +6546,12 @@ msgstr "Carbon utilisera l'IA pour deviner un compte fournisseur pour chacun de 
 msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 msgstr "Quand vous activez la Comptabilité, Carbon écrit leurs écritures avec les comptes et coûts d'aujourd'hui."
 
+msgid "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+msgstr ""
+
+msgid "CARBON_LICENSE is not set."
+msgstr ""
+
 msgid "Carbon-only"
 msgstr "Carbone uniquement"
 
@@ -30689,6 +30695,12 @@ msgstr "L'actif du bailleur dans un contrat de location-financement : la valeur 
 msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
 msgstr ""
 
+msgid "The license could not be checked. Carbon tries again in a minute."
+msgstr ""
+
+msgid "The license could not be verified."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Les étapes du cycle de vie que vous suivez pour vos clients"
 
@@ -31771,6 +31783,18 @@ msgstr "Ce bail est sans date d'expiration : il peut être résilié sur préavi
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 msgstr "Cette location a commencé avant la mise en place de la comptabilité. L'activer comptabilise un solde d'ouverture le {0} (ou le début de la première période ouverte après) : le droit d'utilisation de chaque immobilisation, son amortissement et son passif de location à cette date, avec la différence au report à nouveau. Les mois antérieurs sont marqués comme comptabilisés."
 
+msgid "This license has ended, and its grace period is over."
+msgstr ""
+
+msgid "This license was issued after the server's current time. Check the server clock."
+msgstr ""
+
+msgid "This license was not signed by Carbon, or its signing key is no longer valid."
+msgstr ""
+
+msgid "This license was revoked."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "Cette ligne n'a pas de gamme à planifier."
 
@@ -31970,6 +31994,9 @@ msgstr "Cette version est publiée"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Cette version est publiée. Créez une nouvelle version à modifier."
+
+msgid "This version of Carbon cannot check the license's signing keys. Update Carbon."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "La définition de cette version n'a pas pu être lue."

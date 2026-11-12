@@ -75,6 +75,31 @@ export default function LicenseRoute() {
   const statusColor =
     status === "active" ? "green" : status === "expired" ? "orange" : "red";
 
+  const malformed = t`CARBON_LICENSE is not a valid license. Check that it was copied in full.`;
+  const untrusted = t`This license was not signed by Carbon, or its signing key is no longer valid.`;
+  const reasons: Record<string, string> = {
+    missing: t`CARBON_LICENSE is not set.`,
+    revoked: t`This license was revoked.`,
+    unavailable: t`The license could not be checked. Carbon tries again in a minute.`,
+    ERR_LICENSE_TERMINATED: t`This license has ended, and its grace period is over.`,
+    ERR_LICENSE_FROM_FUTURE: t`This license was issued after the server's current time. Check the server clock.`,
+    ERR_LICENSE_STRING: malformed,
+    ERR_KEYSTRING_CHECKSUM: malformed,
+    ERR_LICENSE_SCHEMA: malformed,
+    ERR_ENVELOPE_SCHEMA: malformed,
+    ERR_SEAL_VERSION: malformed,
+    ERR_SEAL_AUTH: malformed,
+    ERR_LICENSE_SIG: untrusted,
+    ERR_LICENSE_KID_UNKNOWN: untrusted,
+    ERR_LICENSE_KID_STATUS: untrusted
+  };
+  const reason =
+    error &&
+    (reasons[error] ??
+      (error.startsWith("ERR_MANIFEST_")
+        ? t`This version of Carbon cannot check the license's signing keys. Update Carbon.`
+        : t`The license could not be verified.`));
+
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <SettingsPage className="gap-4">
@@ -100,7 +125,12 @@ export default function LicenseRoute() {
               </Field>
               <Field label={<Trans>Plan</Trans>}>{plan ?? "—"}</Field>
               {kind === "floor" && (
-                <Field label={<Trans>Reason</Trans>}>{error}</Field>
+                <Field label={<Trans>Reason</Trans>}>
+                  {reason}
+                  {error?.startsWith("ERR_") && (
+                    <div className="font-mono text-xs">{error}</div>
+                  )}
+                </Field>
               )}
               {licence && (
                 <>

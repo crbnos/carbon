@@ -6546,6 +6546,12 @@ msgstr "कार्बन आपके {0} असंगत खातों म�
 msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 msgstr "जब आप लेखांकन सक्षम करते हैं तो Carbon उनकी जर्नल आज के खातों और लागतों के साथ लिखता है।"
 
+msgid "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+msgstr ""
+
+msgid "CARBON_LICENSE is not set."
+msgstr ""
+
 msgid "Carbon-only"
 msgstr "कार्बन-केवल"
 
@@ -30689,6 +30695,12 @@ msgstr "बिक्री-प्रकार पट्टे पर पट्�
 msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
 msgstr ""
 
+msgid "The license could not be checked. Carbon tries again in a minute."
+msgstr ""
+
+msgid "The license could not be verified."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "जीवनचक्र के चरण जिन्हें आप ग्राहकों के माध्यम से ट्रैक करते हैं"
 
@@ -31771,6 +31783,18 @@ msgstr "यह पट्टा खुला है: इसे नोटिस �
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 msgstr "यह पट्टा लेखांकन सेटअप से पहले शुरू हुआ। इसे सक्रिय करने से {0} पर एक प्रारंभिक शेष राशि पोस्ट की जाती है (या इसके बाद की पहली खुली अवधि की शुरुआत): प्रत्येक संपत्ति का उपयोग अधिकार, उसका परिशोधन और पट्टे की देयता उस तिथि तक, प्रतिधारित आय के लिए अंतर के साथ। इससे पहले के महीनों को पोस्ट किया गया के रूप में चिह्नित किया जाता है।"
 
+msgid "This license has ended, and its grace period is over."
+msgstr ""
+
+msgid "This license was issued after the server's current time. Check the server clock."
+msgstr ""
+
+msgid "This license was not signed by Carbon, or its signing key is no longer valid."
+msgstr ""
+
+msgid "This license was revoked."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "इस पंक्ति के पास शेड्यूल करने के लिए कोई रूटिंग नहीं है।"
 
@@ -31970,6 +31994,9 @@ msgstr "यह संस्करण प्रकाशित है"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "यह संस्करण प्रकाशित है। संपादित करने के लिए एक नया संस्करण बनाएँ।"
+
+msgid "This version of Carbon cannot check the license's signing keys. Update Carbon."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "इस version की परिभाषा को पढ़ा नहीं जा सका।"
