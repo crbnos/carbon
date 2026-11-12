@@ -169,7 +169,11 @@ export async function addBomLine(
   componentItem: ItemRef,
   quantity: number,
   order: number,
-  opts: { methodType?: MethodType; kit?: boolean } = {}
+  opts: {
+    methodType?: MethodType;
+    kit?: boolean;
+    methodOperationId?: string;
+  } = {}
 ): Promise<string> {
   const methodType =
     opts.methodType ??
@@ -184,6 +188,7 @@ export async function addBomLine(
     methodType,
     materialMakeMethodId: isSubassembly ? componentItem.makeMethodId : null,
     kit: opts.kit ?? false,
+    methodOperationId: opts.methodOperationId ?? null,
     quantity,
     order
   });

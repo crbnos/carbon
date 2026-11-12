@@ -257,19 +257,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
 
   for (const method of data.methods) {
     const mm = needMM(i, method.readableId);
-    for (const line of method.bom) {
-      await addBomLine(
-        ctx,
-        mm,
-        needItem(line.component),
-        line.quantity,
-        line.order,
-        {
-          methodType: line.methodType,
-          kit: line.kit
-        }
-      );
-    }
+    const opIdByOrder: Record<string, string> = {};
     for (const op of method.bop) {
       const operationId = await addBopOperation(
         ctx,
@@ -299,6 +287,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
             : undefined
         }
       );
+      opIdByOrder[String(op.order)] = operationId;
       for (const tool of op.tools ?? []) {
         await insertRow(ctx, "methodOperationTool", {
           operationId,
@@ -313,6 +302,23 @@ export async function runTier2(ctx: Ctx): Promise<void> {
           value: parameter.value
         });
       }
+    }
+    for (const line of method.bom) {
+      await addBomLine(
+        ctx,
+        mm,
+        needItem(line.component),
+        line.quantity,
+        line.order,
+        {
+          methodType: line.methodType,
+          kit: line.kit,
+          methodOperationId:
+            line.operation === undefined
+              ? undefined
+              : need(opIdByOrder, String(line.operation), "bop order")
+        }
+      );
     }
   }
 
