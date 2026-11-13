@@ -245,7 +245,15 @@ export const manifest = {
   agentThread: policies({
     all: and(owner("userId"), inCompany("companyId", "employee"))
   }),
-  apiKey: company("settings", { read: "settings_view" }),
+  // Keys are written only by the server (createApiKey / updateApiKey / revokeApiKey,
+  // gated on users_update). A key acts as its createdBy with its scopes, so a write
+  // through the API would let a caller pick both, and the key hash, themselves.
+  apiKey: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   apiKeyRateLimit: policies({
     select: exists("apiKey", "apiKeyId", "settings_view")
   }),
