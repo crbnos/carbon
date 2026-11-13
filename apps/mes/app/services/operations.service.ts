@@ -487,7 +487,8 @@ async function getRequiredScanShortfalls(
   error: unknown | null;
 }> {
   const fail = (what: string, error: unknown) => {
-    log.error(`getRequiredScanShortfall: ${what} failed`, {
+    log.error("getRequiredScanShortfall: a read failed", {
+      read: what,
       companyId,
       jobOperationIds: checks.map((check) => check.jobOperationId),
       error
