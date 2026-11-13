@@ -165,12 +165,33 @@ export const maintenanceDispatchPriority = [
   "Critical"
 ] as const;
 
+// Each KPI names the pages it reads, so the dashboard shows only what the person may see.
 export const MaintenanceKPIs = [
-  { key: "mttr", label: "Mean Time To Repair" },
-  { key: "mtbf", label: "Mean Time Between Failures" },
-  { key: "sparePartCost", label: "Spare Part Cost" },
-  { key: "worstPerformingMachines", label: "Worst Performing Machines" },
-  { key: "sparePartConsumption", label: "Spare Part Consumption" }
+  {
+    key: "mttr",
+    label: "Mean Time To Repair",
+    gate: { "resources.dispatches": "View" }
+  },
+  {
+    key: "mtbf",
+    label: "Mean Time Between Failures",
+    gate: { "resources.dispatches": "View", "production.jobs": "View" }
+  },
+  {
+    key: "sparePartCost",
+    label: "Spare Part Cost",
+    gate: { "resources.dispatches": "View" }
+  },
+  {
+    key: "worstPerformingMachines",
+    label: "Worst Performing Machines",
+    gate: { "resources.dispatches": "View", "resources.workCenters": "View" }
+  },
+  {
+    key: "sparePartConsumption",
+    label: "Spare Part Consumption",
+    gate: { "resources.dispatches": "View" }
+  }
 ] as const;
 
 export const maintenanceDispatchStatus = [

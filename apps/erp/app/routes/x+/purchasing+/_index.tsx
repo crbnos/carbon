@@ -6,7 +6,8 @@ import { dataOrThrow } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { anyOf, pagesOf } from "@carbon/database/access";
+import type { PageGate } from "@carbon/database/access";
+import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
 import type { ApprovalRequest } from "@carbon/ee/approvals";
 import { getPendingApprovalsForApprover } from "@carbon/ee/approvals.server";
 import { useLoaderQuery } from "@carbon/query";
@@ -107,6 +108,17 @@ const OPEN_PURCHASE_ORDER_STATUSES = [
   "To Invoice"
 ] as const;
 
+// The page that owns each force deleted document type.
+const FORCE_DELETE_DOCUMENT_GATES = {
+  purchaseInvoice: { "invoicing.purchaseInvoices": "View" },
+  salesInvoice: { "invoicing.salesInvoices": "View" },
+  receipt: { "inventory.receipts": "View" },
+  payment: { "invoicing.payments": "View" }
+} as const satisfies Record<
+  Database["public"]["Enums"]["forceDeleteDocumentType"],
+  PageGate
+>;
+
 const chartConfig = {
   value: {
     color: "hsl(var(--primary))"
@@ -114,10 +126,35 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId, api } = await authorize(
+  const { client, userId, companyId, api, permissions } = await authorize(
     request,
     anyOf(pagesOf("purchasing"), "View")
   );
+
+  // RLS reads the whole module, so each section checks its own page.
+  const can = {
+    purchaseOrders: holdsGate(
+      permissions,
+      { "purchasing.purchaseOrders": "View" },
+      companyId
+    ),
+    supplierQuotes: holdsGate(
+      permissions,
+      { "purchasing.supplierQuotes": "View" },
+      companyId
+    ),
+    purchaseInvoices: holdsGate(
+      permissions,
+      { "invoicing.purchaseInvoices": "View" },
+      companyId
+    ),
+    suppliers: holdsGate(
+      permissions,
+      { "purchasing.suppliers": "View" },
+      companyId
+    )
+  };
+  const none = { data: [], count: 0, error: null };
 
   const serviceRole = getCarbonServiceRole();
 
@@ -178,31 +215,43 @@ export async function loader({ request }: LoaderFunctionArgs) {
     forceDeletesNeedingApproval,
     documentForceDeletesNeedingApproval
   ] = await Promise.all([
-    client
-      .from("purchaseOrder")
-      .select("id, purchaseOrderId, status, supplierId, assignee, createdAt", {
-        count: "exact"
-      })
-      .in("status", OPEN_PURCHASE_ORDER_STATUSES)
-      .eq("companyId", companyId)
-      .limit(10),
-    client
-      .from("purchaseInvoice")
-      .select("id, invoiceId, status, supplierId, assignee, createdAt", {
-        count: "exact"
-      })
-      .in("status", OPEN_INVOICE_STATUSES)
-      .eq("companyId", companyId)
-      .limit(10),
-    client
-      .from("supplierQuote")
-      .select("id, supplierQuoteId, status, supplierId, assignee, createdAt", {
-        count: "exact"
-      })
-      .in("status", OPEN_SUPPLIER_QUOTE_STATUSES)
-      .eq("companyId", companyId)
-      .limit(10),
-    approvalPoIds.length > 0
+    can.purchaseOrders
+      ? client
+          .from("purchaseOrder")
+          .select(
+            "id, purchaseOrderId, status, supplierId, assignee, createdAt",
+            {
+              count: "exact"
+            }
+          )
+          .in("status", OPEN_PURCHASE_ORDER_STATUSES)
+          .eq("companyId", companyId)
+          .limit(10)
+      : none,
+    can.purchaseInvoices
+      ? client
+          .from("purchaseInvoice")
+          .select("id, invoiceId, status, supplierId, assignee, createdAt", {
+            count: "exact"
+          })
+          .in("status", OPEN_INVOICE_STATUSES)
+          .eq("companyId", companyId)
+          .limit(10)
+      : none,
+    can.supplierQuotes
+      ? client
+          .from("supplierQuote")
+          .select(
+            "id, supplierQuoteId, status, supplierId, assignee, createdAt",
+            {
+              count: "exact"
+            }
+          )
+          .in("status", OPEN_SUPPLIER_QUOTE_STATUSES)
+          .eq("companyId", companyId)
+          .limit(10)
+      : none,
+    can.purchaseOrders && approvalPoIds.length > 0
       ? client
           .from("purchaseOrder")
           .select(
@@ -212,7 +261,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .eq("companyId", companyId)
           .in("id", approvalPoIds)
       : { data: [], error: null },
-    approvalSupplierIds.length > 0
+    can.suppliers && approvalSupplierIds.length > 0
       ? client
           .from("supplier")
           .select("id, name, supplierStatus")
@@ -221,7 +270,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .in("id", approvalSupplierIds)
       : { data: [], error: null },
     // Service role: the request table is serviceOnly.
-    approvalForceDeleteIds.length > 0
+    can.purchaseOrders && approvalForceDeleteIds.length > 0
       ? serviceRole
           .from("purchaseOrderForceDeleteRequest")
           .select(
@@ -241,24 +290,40 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : { data: [], error: null }
   ]);
 
-  const assignedToMePromise = api.purchasing
-    .getPurchasingDocumentsAssignedToMe({})
-    .then(dataOrThrow);
+  const assignedToMePromise =
+    can.purchaseOrders || can.supplierQuotes || can.purchaseInvoices
+      ? api.purchasing.getPurchasingDocumentsAssignedToMe({}).then(dataOrThrow)
+      : Promise.resolve([]);
 
   return {
+    can,
+    kpis: KPIs.filter((kpi) => holdsGate(permissions, kpi.gate, companyId)).map(
+      (kpi) => kpi.key
+    ),
     openPurchaseOrders: openPurchaseOrders,
     openSupplierQuotes: openSupplierQuotes,
     openPurchaseInvoices: openPurchaseInvoices,
     purchaseOrdersNeedingApproval: purchaseOrdersNeedingApproval,
     suppliersNeedingApproval: suppliersNeedingApproval,
     forceDeletesNeedingApproval: forceDeletesNeedingApproval,
-    documentForceDeletesNeedingApproval: documentForceDeletesNeedingApproval,
+    documentForceDeletesNeedingApproval: {
+      ...documentForceDeletesNeedingApproval,
+      data: (documentForceDeletesNeedingApproval.data ?? []).filter((request) =>
+        holdsGate(
+          permissions,
+          FORCE_DELETE_DOCUMENT_GATES[request.documentType],
+          companyId
+        )
+      )
+    },
     assignedToMe: assignedToMePromise
   };
 }
 
 export default function PurchaseDashboard() {
   const {
+    can,
+    kpis,
     openPurchaseOrders,
     openSupplierQuotes,
     openPurchaseInvoices,
@@ -337,7 +402,11 @@ export default function PurchaseDashboard() {
   }, [suppliers, t]);
 
   const [interval, setInterval] = useState("month");
-  const [selectedKpi, setSelectedKpi] = useState("purchaseOrderAmount");
+  const [pickedKpi, setSelectedKpi] = useState<string>("purchaseOrderAmount");
+  // The pick, else the first KPI the person can see.
+  const selectedKpi = (kpis as readonly string[]).includes(pickedKpi)
+    ? pickedKpi
+    : (kpis[0] ?? "");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
     const end = toCalendarDateTime(now("UTC"));
     const start = end.add({ months: -1 });
@@ -347,11 +416,13 @@ export default function PurchaseDashboard() {
   const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
 
   const kpiFetcher = useLoaderQuery<typeof kpiLoader>(
-    `${path.to.api.purchasingKpi(
-      selectedKpiData.key
-    )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
-      supplierId === "all" ? "" : `&supplierId=${supplierId}`
-    }`
+    kpis.length
+      ? `${path.to.api.purchasingKpi(
+          selectedKpiData.key
+        )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
+          supplierId === "all" ? "" : `&supplierId=${supplierId}`
+        }`
+      : null
   );
   const isFetching = kpiFetcher.isFetching || !kpiFetcher.data;
 
@@ -454,198 +525,210 @@ export default function PurchaseDashboard() {
         <Trans>Purchasing Dashboard</Trans>
       </h1>
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
-        <MetricCard
-          icon={<LuPackageSearch />}
-          title={<Trans>Active Supplier Quotes</Trans>}
-          value={openSupplierQuotes.count ?? 0}
-          to={`${
-            path.to.supplierQuotes
-          }?filter=status:in:${OPEN_SUPPLIER_QUOTE_STATUSES.join(",")}`}
-          linkLabel={t`View Active Quotes`}
-        />
+        {can.supplierQuotes && (
+          <MetricCard
+            icon={<LuPackageSearch />}
+            title={<Trans>Active Supplier Quotes</Trans>}
+            value={openSupplierQuotes.count ?? 0}
+            to={`${
+              path.to.supplierQuotes
+            }?filter=status:in:${OPEN_SUPPLIER_QUOTE_STATUSES.join(",")}`}
+            linkLabel={t`View Active Quotes`}
+          />
+        )}
 
-        <MetricCard
-          icon={<LuLayoutList />}
-          title={<Trans>Open Purchase Orders</Trans>}
-          value={openPurchaseOrders.count ?? 0}
-          to={`${
-            path.to.purchaseOrders
-          }?filter=status:in:${OPEN_PURCHASE_ORDER_STATUSES.join(",")}`}
-          linkLabel={t`View Open POs`}
-        />
+        {can.purchaseOrders && (
+          <MetricCard
+            icon={<LuLayoutList />}
+            title={<Trans>Open Purchase Orders</Trans>}
+            value={openPurchaseOrders.count ?? 0}
+            to={`${
+              path.to.purchaseOrders
+            }?filter=status:in:${OPEN_PURCHASE_ORDER_STATUSES.join(",")}`}
+            linkLabel={t`View Open POs`}
+          />
+        )}
 
-        <MetricCard
-          icon={<LuCreditCard />}
-          title={<Trans>Open Purchase Invoices</Trans>}
-          value={openPurchaseInvoices.count ?? 0}
-          to={`${
-            path.to.invoicingPurchasing
-          }?filter=status:in:${OPEN_INVOICE_STATUSES.join(",")}`}
-          linkLabel={t`View Open Invoices`}
-        />
+        {can.purchaseInvoices && (
+          <MetricCard
+            icon={<LuCreditCard />}
+            title={<Trans>Open Purchase Invoices</Trans>}
+            value={openPurchaseInvoices.count ?? 0}
+            to={`${
+              path.to.invoicingPurchasing
+            }?filter=status:in:${OPEN_INVOICE_STATUSES.join(",")}`}
+            linkLabel={t`View Open Invoices`}
+          />
+        )}
       </div>
 
-      <Card>
-        <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch">
-          <CardHeader>
-            <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
+      {kpis.length > 0 && (
+        <Card>
+          <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch">
+            <CardHeader>
+              <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      rightIcon={<LuChevronDown />}
+                      className="hover:bg-background/80"
+                    >
+                      <span>{kpiLabels[selectedKpiData.key]}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="bottom" align="start">
+                    <DropdownMenuRadioGroup
+                      value={selectedKpi}
+                      onValueChange={setSelectedKpi}
+                    >
+                      {KPIs.filter((kpi) => kpis.includes(kpi.key)).map(
+                        (kpi) => (
+                          <DropdownMenuRadioItem key={kpi.key} value={kpi.key}>
+                            {kpiLabels[kpi.key]}
+                          </DropdownMenuRadioItem>
+                        )
+                      )}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Combobox
+                  asButton
+                  aria-label={t`Supplier`}
+                  value={supplierId}
+                  onChange={setSupplierId}
+                  options={supplierOptions}
+                  size="sm"
+                  className="font-medium text-sm min-w-[160px] gap-4 max-md:min-w-0"
+                />
+              </div>
+            </CardHeader>
+            <CardAction className="flex-row items-center gap-2 max-md:pt-0">
+              <DateSelect
+                value={interval}
+                onValueChange={onIntervalChange}
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+              />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
+                  <IconButton
                     variant="secondary"
-                    rightIcon={<LuChevronDown />}
-                    className="hover:bg-background/80"
-                  >
-                    <span>{kpiLabels[selectedKpiData.key]}</span>
-                  </Button>
+                    icon={<LuEllipsisVertical />}
+                    aria-label={t`More`}
+                  />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="bottom" align="start">
-                  <DropdownMenuRadioGroup
-                    value={selectedKpi}
-                    onValueChange={setSelectedKpi}
-                  >
-                    {KPIs.map((kpi) => (
-                      <DropdownMenuRadioItem key={kpi.key} value={kpi.key}>
-                        {kpiLabels[kpi.key]}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    <CSVLink
+                      data={csvData}
+                      filename={csvFilename}
+                      className="flex flex-row items-center gap-2"
+                    >
+                      <DropdownMenuIcon icon={<LuFile />} />
+                      <Trans>Export CSV</Trans>
+                    </CSVLink>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <Combobox
-                asButton
-                aria-label={t`Supplier`}
-                value={supplierId}
-                onChange={setSupplierId}
-                options={supplierOptions}
-                size="sm"
-                className="font-medium text-sm min-w-[160px] gap-4 max-md:min-w-0"
-              />
-            </div>
-          </CardHeader>
-          <CardAction className="flex-row items-center gap-2 max-md:pt-0">
-            <DateSelect
-              value={interval}
-              onValueChange={onIntervalChange}
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  variant="secondary"
-                  icon={<LuEllipsisVertical />}
-                  aria-label={t`More`}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <CSVLink
-                    data={csvData}
-                    filename={csvFilename}
-                    className="flex flex-row items-center gap-2"
-                  >
-                    <DropdownMenuIcon icon={<LuFile />} />
-                    <Trans>Export CSV</Trans>
-                  </CSVLink>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </CardAction>
-        </HStack>
-        <CardContent className="flex-col gap-4">
-          <VStack className="pl-[3px]" spacing={0}>
-            {isFetching ? (
-              <div className="flex flex-col gap-0.5 w-full">
-                <Skeleton className="h-8 w-[120px]" />
-                <Skeleton className="h-4 w-[50px]" />
-              </div>
-            ) : (
-              <>
-                <p className="text-3xl font-medium tracking-tighter">
-                  {formatValue(total)}
-                </p>
-                {percentageChange >= 0 ? (
-                  <Badge variant="green">+{percentageChange.toFixed(0)}%</Badge>
-                ) : (
-                  <Badge variant="red">{percentageChange.toFixed(0)}%</Badge>
-                )}
-              </>
-            )}
-          </VStack>
-          <Loading
-            isLoading={isFetching}
-            className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
-          >
-            <ChartContainer
-              config={chartConfig}
-              aria-label={chartLabel}
-              summary={chartSummary}
-              className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
+            </CardAction>
+          </HStack>
+          <CardContent className="flex-col gap-4">
+            <VStack className="pl-[3px]" spacing={0}>
+              {isFetching ? (
+                <div className="flex flex-col gap-0.5 w-full">
+                  <Skeleton className="h-8 w-[120px]" />
+                  <Skeleton className="h-4 w-[50px]" />
+                </div>
+              ) : (
+                <>
+                  <p className="text-3xl font-medium tracking-tighter">
+                    {formatValue(total)}
+                  </p>
+                  {percentageChange >= 0 ? (
+                    <Badge variant="green">
+                      +{round(percentageChange, 0)}%
+                    </Badge>
+                  ) : (
+                    <Badge variant="red">{round(percentageChange, 0)}%</Badge>
+                  )}
+                </>
+              )}
+            </VStack>
+            <Loading
+              isLoading={isFetching}
+              className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
             >
-              <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
-                <CartesianGrid vertical={false} />
-                <YAxis
-                  dataKey="value"
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => {
-                    return [
-                      "purchaseOrderAmount",
-                      "purchaseInvoiceAmount"
-                    ].includes(selectedKpiData.key)
-                      ? currencyCompactFormatter.format(value as number)
-                      : numberFormatter.format(value as number);
-                  }}
-                />
-                <XAxis
-                  dataKey={
-                    ["week", "month"].includes(interval) ? "date" : "month"
-                  }
-                  tickLine={false}
-                  tickMargin={8}
-                  minTickGap={32}
-                  axisLine={false}
-                  tickFormatter={(value) => {
-                    if (!value) return "";
-                    return ["week", "month"].includes(interval)
-                      ? dateFormatter.format(
-                          parseDate(value).toDate(getLocalTimeZone())
-                        )
-                      : value.slice(0, 3);
-                  }}
-                />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={
-                        ["week", "month"].includes(interval)
-                          ? (value) =>
-                              dateFormatter.format(
-                                parseDate(value).toDate(getLocalTimeZone())
+              <ChartContainer
+                config={chartConfig}
+                aria-label={chartLabel}
+                summary={chartSummary}
+                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
+              >
+                <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
+                  <CartesianGrid vertical={false} />
+                  <YAxis
+                    dataKey="value"
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => {
+                      return [
+                        "purchaseOrderAmount",
+                        "purchaseInvoiceAmount"
+                      ].includes(selectedKpiData.key)
+                        ? currencyCompactFormatter.format(value as number)
+                        : numberFormatter.format(value as number);
+                    }}
+                  />
+                  <XAxis
+                    dataKey={
+                      ["week", "month"].includes(interval) ? "date" : "month"
+                    }
+                    tickLine={false}
+                    tickMargin={8}
+                    minTickGap={32}
+                    axisLine={false}
+                    tickFormatter={(value) => {
+                      if (!value) return "";
+                      return ["week", "month"].includes(interval)
+                        ? dateFormatter.format(
+                            parseDate(value).toDate(getLocalTimeZone())
+                          )
+                        : value.slice(0, 3);
+                    }}
+                  />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={
+                          ["week", "month"].includes(interval)
+                            ? (value) =>
+                                dateFormatter.format(
+                                  parseDate(value).toDate(getLocalTimeZone())
+                                )
+                            : (value) => (
+                                <span className="font-mono">{value}</span>
                               )
-                          : (value) => (
-                              <span className="font-mono">{value}</span>
-                            )
-                      }
-                      formatter={(value) =>
-                        [
-                          "purchaseOrderAmount",
-                          "purchaseInvoiceAmount"
-                        ].includes(selectedKpiData.key)
-                          ? currencyFormatter.format(value as number)
-                          : numberFormatter.format(value as number)
-                      }
-                    />
-                  }
-                />
-                <Bar dataKey="value" fill="var(--color-value)" radius={2} />
-              </BarChart>
-            </ChartContainer>
-          </Loading>
-        </CardContent>
-      </Card>
+                        }
+                        formatter={(value) =>
+                          [
+                            "purchaseOrderAmount",
+                            "purchaseInvoiceAmount"
+                          ].includes(selectedKpiData.key)
+                            ? currencyFormatter.format(value as number)
+                            : numberFormatter.format(value as number)
+                        }
+                      />
+                    }
+                  />
+                  <Bar dataKey="value" fill="var(--color-value)" radius={2} />
+                </BarChart>
+              </ChartContainer>
+            </Loading>
+          </CardContent>
+        </Card>
+      )}
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex-row gap-2">

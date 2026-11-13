@@ -5,7 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { activeJobStatuses } from "@carbon/database";
-import { anyOf, pagesOf } from "@carbon/database/access";
+import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
 import { useChangedRows, useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -47,7 +47,8 @@ import {
   convertDateStringToIsoString,
   formatDurationMilliseconds,
   formatRelativeTime,
-  pluckUnique
+  pluckUnique,
+  round
 } from "@carbon/utils";
 import { now, toCalendarDateTime } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -109,48 +110,77 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, api } = await authorize(
+  const { client, companyId, userId, api, permissions } = await authorize(
     request,
     anyOf(pagesOf("production"), "View")
   );
 
+  // RLS reads the whole module, so each section checks its own page.
+  const can = {
+    jobs: holdsGate(permissions, { "production.jobs": "View" }, companyId),
+    batches: holdsGate(permissions, { "production.batches": "View" }, companyId)
+  };
+  const none = { data: [], count: 0 } as const;
+
   const [activeJobs, assignedJobs, unbatchedOperations, workCenters] =
     await Promise.all([
-      client
-        .from("job")
-        .select("id,status,assignee")
-        .eq("companyId", companyId)
-        .in("status", activeJobStatuses),
-      client
-        .from("job")
-        .select("id,status,assignee")
-        .eq("companyId", companyId)
-        .eq("assignee", userId),
-      getUnbatchedBatchableOperationCount(client, companyId),
-      getWorkCentersListWithBlockingStatus(client, companyId)
+      can.jobs
+        ? client
+            .from("job")
+            .select("id,status,assignee")
+            .eq("companyId", companyId)
+            .in("status", activeJobStatuses)
+        : none,
+      can.jobs
+        ? client
+            .from("job")
+            .select("id,status,assignee")
+            .eq("companyId", companyId)
+            .eq("assignee", userId)
+        : none,
+      can.batches
+        ? getUnbatchedBatchableOperationCount(client, companyId)
+        : none,
+      can.jobs ? getWorkCentersListWithBlockingStatus(client, companyId) : none
     ]);
 
   return {
+    can,
+    kpis: KPIs.filter((kpi) => holdsGate(permissions, kpi.gate, companyId)).map(
+      (kpi) => kpi.key
+    ),
     activeJobs: activeJobs.data?.length ?? 0,
     assignedJobs: assignedJobs.data?.length ?? 0,
     unbatchedOperations: unbatchedOperations.count ?? 0,
     workCenters: workCenters.data ?? [],
-    events: api.production.getActiveProductionEvents({})
+    events: can.jobs
+      ? api.production.getActiveProductionEvents({})
+      : Promise.resolve({ data: [] })
   };
 }
 
 export default function ProductionDashboard() {
   const { t } = useLingui();
   const { isPhone } = useViewport();
-  const { activeJobs, assignedJobs, unbatchedOperations, events, workCenters } =
-    useLoaderData<typeof loader>();
+  const {
+    can,
+    kpis,
+    activeJobs,
+    assignedJobs,
+    unbatchedOperations,
+    events,
+    workCenters
+  } = useLoaderData<typeof loader>();
 
   const user = useUser();
 
   const [interval, setInterval] = useState("month");
-  const [selectedKpi, setSelectedKpi] = useState<
-    "utilization" | "completionTime" | "estimatesVsActuals"
-  >("utilization");
+  const [chosenKpi, setSelectedKpi] =
+    useState<(typeof KPIs)[number]["key"]>("utilization");
+  // Fall back to a KPI the person holds when the chosen one is not theirs.
+  const selectedKpi = kpis.includes(chosenKpi)
+    ? chosenKpi
+    : (kpis[0] ?? chosenKpi);
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
     const end = toCalendarDateTime(now("UTC"));
     const start = end.add({ months: -1 });
@@ -160,9 +190,11 @@ export default function ProductionDashboard() {
   const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
 
   const kpiFetcher = useLoaderQuery<typeof kpiLoader>(
-    `${path.to.api.productionKpi(
-      selectedKpiData.key
-    )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}`
+    kpis.length
+      ? `${path.to.api.productionKpi(
+          selectedKpiData.key
+        )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}`
+      : null
   );
   const isFetching = kpiFetcher.isFetching || !kpiFetcher.data;
 
@@ -333,295 +365,312 @@ export default function ProductionDashboard() {
         <Trans>Production Dashboard</Trans>
       </h1>
       <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6 max-md:grid-cols-2 max-md:gap-3">
-        <MetricCard
-          className="col-span-1 lg:col-span-2"
-          icon={<LuCirclePlay />}
-          title={<Trans>Active Jobs</Trans>}
-          value={activeJobs}
-          to={`${path.to.jobs}?filter=status:in:${activeJobStatuses.join(",")}`}
-          linkLabel={t`View Active Jobs`}
-        />
+        {can.jobs && (
+          <MetricCard
+            className="col-span-1 lg:col-span-2"
+            icon={<LuCirclePlay />}
+            title={<Trans>Active Jobs</Trans>}
+            value={activeJobs}
+            to={`${path.to.jobs}?filter=status:in:${activeJobStatuses.join(",")}`}
+            linkLabel={t`View Active Jobs`}
+          />
+        )}
 
-        <MetricCard
-          className="col-span-1 lg:col-span-2"
-          icon={<LuInbox />}
-          title={<Trans>Jobs Assigned to Me</Trans>}
-          value={assignedJobs}
-          to={`${path.to.jobs}?filter=assignee:eq:${user.id}`}
-          linkLabel={t`View Assigned Jobs`}
-        />
+        {can.jobs && (
+          <MetricCard
+            className="col-span-1 lg:col-span-2"
+            icon={<LuInbox />}
+            title={<Trans>Jobs Assigned to Me</Trans>}
+            value={assignedJobs}
+            to={`${path.to.jobs}?filter=assignee:eq:${user.id}`}
+            linkLabel={t`View Assigned Jobs`}
+          />
+        )}
 
-        <MetricCard
-          className="col-span-1 lg:col-span-2 max-md:col-span-2"
-          icon={<LuLayers />}
-          title={<Trans>Unbatched Operations</Trans>}
-          value={unbatchedOperations}
-          to={path.to.newOperationBatch}
-          linkLabel={t`Create Batch`}
-        />
+        {can.batches && (
+          <MetricCard
+            className="col-span-1 lg:col-span-2 max-md:col-span-2"
+            icon={<LuLayers />}
+            title={<Trans>Unbatched Operations</Trans>}
+            value={unbatchedOperations}
+            to={path.to.newOperationBatch}
+            linkLabel={t`Create Batch`}
+          />
+        )}
 
-        <Card className="col-span-1 lg:col-span-6 max-md:col-span-2">
-          <HStack className="flex-col items-start gap-2 sm:flex-row sm:justify-between sm:items-center max-md:flex-row max-md:items-center max-md:gap-1.5 max-md:px-3 max-md:pt-3">
-            <CardHeader className="max-md:min-w-0 max-md:flex-1 max-md:p-0">
-              <div className="flex w-full min-w-0 justify-start items-center gap-2">
+        {kpis.length > 0 && (
+          <Card className="col-span-1 lg:col-span-6 max-md:col-span-2">
+            <HStack className="flex-col items-start gap-2 sm:flex-row sm:justify-between sm:items-center max-md:flex-row max-md:items-center max-md:gap-1.5 max-md:px-3 max-md:pt-3">
+              <CardHeader className="max-md:min-w-0 max-md:flex-1 max-md:p-0">
+                <div className="flex w-full min-w-0 justify-start items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        rightIcon={<LuChevronDown />}
+                        className="hover:bg-background/80 max-md:min-w-0 max-md:flex-1 max-md:justify-between"
+                      >
+                        <span className="truncate">
+                          {kpiLabels[selectedKpiData.key]}
+                        </span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="bottom" align="start">
+                      <DropdownMenuRadioGroup
+                        value={selectedKpi}
+                        // @ts-expect-error
+                        onValueChange={setSelectedKpi}
+                      >
+                        {KPIs.filter((kpi) => kpis.includes(kpi.key)).map(
+                          (kpi) => (
+                            <DropdownMenuRadioItem
+                              key={kpi.key}
+                              value={kpi.key}
+                            >
+                              {kpiLabels[kpi.key]}
+                            </DropdownMenuRadioItem>
+                          )
+                        )}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardAction className="flex-row items-center gap-2 max-md:shrink-0 max-md:gap-1.5 max-md:p-0">
+                <DateSelect
+                  value={interval}
+                  onValueChange={onIntervalChange}
+                  dateRange={dateRange}
+                  onDateRangeChange={setDateRange}
+                />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
+                    <IconButton
                       variant="secondary"
-                      rightIcon={<LuChevronDown />}
-                      className="hover:bg-background/80 max-md:min-w-0 max-md:flex-1 max-md:justify-between"
-                    >
-                      <span className="truncate">
-                        {kpiLabels[selectedKpiData.key]}
-                      </span>
-                    </Button>
+                      icon={<LuEllipsisVertical />}
+                      aria-label={t`More`}
+                    />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent side="bottom" align="start">
-                    <DropdownMenuRadioGroup
-                      value={selectedKpi}
-                      // @ts-expect-error
-                      onValueChange={setSelectedKpi}
-                    >
-                      {KPIs.map((kpi) => (
-                        <DropdownMenuRadioItem key={kpi.key} value={kpi.key}>
-                          {kpiLabels[kpi.key]}
-                        </DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>
+                      <CSVLink
+                        data={csvData}
+                        filename={csvFilename}
+                        className="flex flex-row items-center gap-2"
+                      >
+                        <DropdownMenuIcon icon={<LuFile />} />
+                        <Trans>Export CSV</Trans>
+                      </CSVLink>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardAction className="flex-row items-center gap-2 max-md:shrink-0 max-md:gap-1.5 max-md:p-0">
-              <DateSelect
-                value={interval}
-                onValueChange={onIntervalChange}
-                dateRange={dateRange}
-                onDateRangeChange={setDateRange}
-              />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    variant="secondary"
-                    icon={<LuEllipsisVertical />}
-                    aria-label={t`More`}
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                    <CSVLink
-                      data={csvData}
-                      filename={csvFilename}
-                      className="flex flex-row items-center gap-2"
-                    >
-                      <DropdownMenuIcon icon={<LuFile />} />
-                      <Trans>Export CSV</Trans>
-                    </CSVLink>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </CardAction>
-          </HStack>
-          <CardContent className="min-h-[320px] flex-col gap-4">
-            <VStack className="pl-[3px]" spacing={0}>
-              {isFetching ? (
-                <div className="flex flex-col gap-0.5 w-full">
-                  <Skeleton className="h-8 w-[120px]" />
-                  <Skeleton className="h-4 w-[50px]" />
+              </CardAction>
+            </HStack>
+            <CardContent className="min-h-[320px] flex-col gap-4">
+              <VStack className="pl-[3px]" spacing={0}>
+                {isFetching ? (
+                  <div className="flex flex-col gap-0.5 w-full">
+                    <Skeleton className="h-8 w-[120px]" />
+                    <Skeleton className="h-4 w-[50px]" />
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-3xl font-medium tracking-tighter">
+                      {formatValue(total)}
+                    </p>
+                    {percentageChange >= 0 ? (
+                      <Badge variant="green">
+                        +{round(percentageChange, 0)}%
+                      </Badge>
+                    ) : (
+                      <Badge variant="red">{round(percentageChange, 0)}%</Badge>
+                    )}
+                  </>
+                )}
+              </VStack>
+              {!kpiFetcher.isFetching && kpiFetcher.data?.data?.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <Empty className="py-8">
+                    <p className="text-sm text-muted-foreground">
+                      {kpiEmptyMessages[selectedKpiData.key]}
+                    </p>
+                  </Empty>
                 </div>
-              ) : (
-                <>
-                  <p className="text-3xl font-medium tracking-tighter">
-                    {formatValue(total)}
-                  </p>
-                  {percentageChange >= 0 ? (
-                    <Badge variant="green">
-                      +{percentageChange.toFixed(0)}%
-                    </Badge>
-                  ) : (
-                    <Badge variant="red">{percentageChange.toFixed(0)}%</Badge>
-                  )}
-                </>
-              )}
-            </VStack>
-            {!kpiFetcher.isFetching && kpiFetcher.data?.data?.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full">
-                <Empty className="py-8">
-                  <p className="text-sm text-muted-foreground">
-                    {kpiEmptyMessages[selectedKpiData.key]}
-                  </p>
-                </Empty>
-              </div>
-            ) : isPhone ? (
-              <Loading isLoading={isFetching} className="w-full">
-                <KpiBarList
-                  kpi={selectedKpi}
-                  data={kpiFetcher.data?.data ?? []}
-                  totalTimeInInterval={totalTimeInInterval}
-                />
-              </Loading>
-            ) : (
-              <Loading isLoading={isFetching} className="w-full">
-                <ChartContainer
-                  config={chartConfig}
-                  aria-label={chartLabel}
-                  style={{
-                    height: `${
-                      (kpiFetcher.data?.data?.length ?? 5) *
-                      (selectedKpi === "estimatesVsActuals" ? 80 : 40)
-                    }px`
-                  }}
-                >
-                  <BarChart
-                    accessibilityLayer
+              ) : isPhone ? (
+                <Loading isLoading={isFetching} className="w-full">
+                  <KpiBarList
+                    kpi={selectedKpi}
                     data={kpiFetcher.data?.data ?? []}
-                    layout="vertical"
-                    margin={{ right: 30 }}
+                    totalTimeInInterval={totalTimeInInterval}
+                  />
+                </Loading>
+              ) : (
+                <Loading isLoading={isFetching} className="w-full">
+                  <ChartContainer
+                    config={chartConfig}
+                    aria-label={chartLabel}
+                    style={{
+                      height: `${
+                        (kpiFetcher.data?.data?.length ?? 5) *
+                        (selectedKpi === "estimatesVsActuals" ? 80 : 40)
+                      }px`
+                    }}
                   >
-                    <YAxis
-                      dataKey="key"
-                      type="category"
-                      tickLine={false}
-                      axisLine={false}
-                      width={yAxisWidth}
-                    />
-                    <XAxis type="number" hide />
+                    <BarChart
+                      accessibilityLayer
+                      data={kpiFetcher.data?.data ?? []}
+                      layout="vertical"
+                      margin={{ right: 30 }}
+                    >
+                      <YAxis
+                        dataKey="key"
+                        type="category"
+                        tickLine={false}
+                        axisLine={false}
+                        width={yAxisWidth}
+                      />
+                      <XAxis type="number" hide />
 
-                    {selectedKpi === "utilization" && (
-                      <>
-                        <ChartTooltip
-                          content={
-                            <ChartTooltipContent
-                              formatter={(value) => {
+                      {selectedKpi === "utilization" && (
+                        <>
+                          <ChartTooltip
+                            content={
+                              <ChartTooltipContent
+                                formatter={(value) => {
+                                  const percentage =
+                                    totalTimeInInterval === 0
+                                      ? "0.00"
+                                      : (
+                                          ((value as number) /
+                                            totalTimeInInterval) *
+                                          100
+                                        ).toFixed(2);
+                                  return (
+                                    <div className="flex flex-col gap-1">
+                                      <div className="font-medium font-mono">
+                                        {percentage}%
+                                      </div>
+                                      <div className="font-mono">
+                                        {formatDurationMilliseconds(
+                                          value as number
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                }}
+                              />
+                            }
+                          />
+
+                          <Bar
+                            dataKey="value"
+                            fill="var(--color-value)"
+                            radius={2}
+                          >
+                            <LabelList
+                              dataKey="value"
+                              position="right"
+                              formatter={(value: number) => {
                                 const percentage =
                                   totalTimeInInterval === 0
                                     ? "0.00"
                                     : (
-                                        ((value as number) /
-                                          totalTimeInInterval) *
+                                        (value / totalTimeInInterval) *
                                         100
                                       ).toFixed(2);
-                                return (
-                                  <div className="flex flex-col gap-1">
-                                    <div className="font-medium font-mono">
-                                      {percentage}%
-                                    </div>
-                                    <div className="font-mono">
-                                      {formatDurationMilliseconds(
-                                        value as number
-                                      )}
-                                    </div>
-                                  </div>
-                                );
+
+                                return `${percentage}%`;
                               }}
+                              offset={8}
+                              className="fill-foreground"
+                              fontSize={12}
                             />
-                          }
-                        />
-
-                        <Bar
-                          dataKey="value"
-                          fill="var(--color-value)"
-                          radius={2}
-                        >
-                          <LabelList
-                            dataKey="value"
-                            position="right"
-                            formatter={(value: number) => {
-                              const percentage =
-                                totalTimeInInterval === 0
-                                  ? "0.00"
-                                  : (
-                                      (value / totalTimeInInterval) *
-                                      100
-                                    ).toFixed(2);
-
-                              return `${percentage}%`;
-                            }}
-                            offset={8}
-                            className="fill-foreground"
-                            fontSize={12}
+                          </Bar>
+                        </>
+                      )}
+                      {selectedKpi === "estimatesVsActuals" && (
+                        <>
+                          <ChartTooltip
+                            content={
+                              <ChartTooltipContent
+                                formatter={(value, name) => {
+                                  return (
+                                    <div className="min-w-64 flex justify-between gap-1">
+                                      <div className="font-medium">
+                                        {capitalize(name as string)}
+                                      </div>
+                                      <div className="font-mono">
+                                        {formatDurationMilliseconds(
+                                          value as number
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                }}
+                              />
+                            }
                           />
-                        </Bar>
-                      </>
-                    )}
-                    {selectedKpi === "estimatesVsActuals" && (
-                      <>
-                        <ChartTooltip
-                          content={
-                            <ChartTooltipContent
-                              formatter={(value, name) => {
-                                return (
-                                  <div className="min-w-64 flex justify-between gap-1">
-                                    <div className="font-medium">
-                                      {capitalize(name as string)}
-                                    </div>
-                                    <div className="font-mono">
-                                      {formatDurationMilliseconds(
-                                        value as number
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              }}
-                            />
-                          }
-                        />
 
-                        <ChartLegend content={<ChartLegendContent />} />
-                        <Bar
-                          dataKey="actual"
-                          fill="var(--color-actual)"
-                          radius={2}
-                        />
-                        <Bar
-                          dataKey="estimate"
-                          fill="var(--color-estimate)"
-                          radius={2}
-                        />
-                      </>
-                    )}
-                    {selectedKpi === "completionTime" && (
-                      <>
-                        <ChartTooltip
-                          content={
-                            <ChartTooltipContent
-                              labelFormatter={(value) => value}
-                              formatter={(value) => (
-                                <span className="font-mono">
-                                  {formatDurationMilliseconds(value as number)}
-                                </span>
-                              )}
-                            />
-                          }
-                        />
-                        <Bar
-                          dataKey="value"
-                          fill="var(--color-value)"
-                          radius={2}
-                        />
-                      </>
-                    )}
-                  </BarChart>
-                </ChartContainer>
-              </Loading>
-            )}
-          </CardContent>
-        </Card>
+                          <ChartLegend content={<ChartLegendContent />} />
+                          <Bar
+                            dataKey="actual"
+                            fill="var(--color-actual)"
+                            radius={2}
+                          />
+                          <Bar
+                            dataKey="estimate"
+                            fill="var(--color-estimate)"
+                            radius={2}
+                          />
+                        </>
+                      )}
+                      {selectedKpi === "completionTime" && (
+                        <>
+                          <ChartTooltip
+                            content={
+                              <ChartTooltipContent
+                                labelFormatter={(value) => value}
+                                formatter={(value) => (
+                                  <span className="font-mono">
+                                    {formatDurationMilliseconds(
+                                      value as number
+                                    )}
+                                  </span>
+                                )}
+                              />
+                            }
+                          />
+                          <Bar
+                            dataKey="value"
+                            fill="var(--color-value)"
+                            radius={2}
+                          />
+                        </>
+                      )}
+                    </BarChart>
+                  </ChartContainer>
+                </Loading>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      <div className="w-full">
-        <Suspense fallback={null}>
-          <Await resolve={events}>
-            {(resolvedEvents) => (
-              <WorkCenterCards
-                events={resolvedEvents.data ?? []}
-                // @ts-expect-error TS2322 - TODO: fix type
-                workCenters={workCenters}
-              />
-            )}
-          </Await>
-        </Suspense>
-      </div>
+      {can.jobs && (
+        <div className="w-full">
+          <Suspense fallback={null}>
+            <Await resolve={events}>
+              {(resolvedEvents) => (
+                <WorkCenterCards
+                  events={resolvedEvents.data ?? []}
+                  // @ts-expect-error TS2322 - TODO: fix type
+                  workCenters={workCenters}
+                />
+              )}
+            </Await>
+          </Suspense>
+        </div>
+      )}
     </div>
   );
 }

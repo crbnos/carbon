@@ -5616,17 +5616,33 @@ export const getPurchaseOrderLine = defineServiceFn({
 /**
  * Get purchasing documents assigned to me
  *
+ * @remarks
+ * Only the document types the caller can view: purchase orders, supplier quotes and purchase invoices.
+ *
  * @mcp read
  */
 export const getPurchasingDocumentsAssignedToMe = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "purchasing.purchaseOrders": "View" },
+  permission: {
+    anyOf: [
+      { "purchasing.purchaseOrders": "View" },
+      { "purchasing.supplierQuotes": "View" },
+      { "invoicing.purchaseInvoices": "View" }
+    ]
+  } as const,
   async run(ctx) {
-    return await service.getPurchasingDocumentsAssignedToMe(
+    const docs = await service.getPurchasingDocumentsAssignedToMe(
       ctx.asCaller.supabase,
       ctx.auditUserId,
       ctx.company.id
     );
+    // RLS reads the whole module, so each type checks its own page.
+    const can = {
+      purchaseOrder: ctx.can({ "purchasing.purchaseOrders": "View" }),
+      supplierQuote: ctx.can({ "purchasing.supplierQuotes": "View" }),
+      purchaseInvoice: ctx.can({ "invoicing.purchaseInvoices": "View" })
+    };
+    return docs.filter((doc) => can[doc.type as keyof typeof can]);
   }
 });
 
@@ -8497,7 +8513,7 @@ export const getSupplierStages = defineServiceFn({
  */
 export const getSupplierStagesList = defineServiceFn({
   input: z.object({}),
-  permission: { "purchasing.supplierStages": "View" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,

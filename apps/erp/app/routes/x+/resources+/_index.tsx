@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import { anyOf, pagesOf } from "@carbon/database/access";
+import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -80,54 +80,78 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await authorize(
+  const { client, userId, companyId, permissions } = await authorize(
     request,
     anyOf(pagesOf("resources"), "View")
   );
 
+  // RLS reads the whole module, so each section checks its own page.
+  const can = {
+    dispatches: holdsGate(
+      permissions,
+      { "resources.dispatches": "View" },
+      companyId
+    )
+  };
+  const none = { data: [] as never[], count: 0 };
+
   const [openDispatches, openScheduled, openReactive, recentlyCreated] =
     await Promise.all([
-      client
-        .from("maintenanceDispatch")
-        .select("id", { count: "exact" })
-        .in("status", OPEN_STATUSES)
-        .eq("companyId", companyId),
-      client
-        .from("maintenanceDispatch")
-        .select("id", { count: "exact" })
-        .in("status", OPEN_STATUSES)
-        .eq("source", "Scheduled")
-        .eq("companyId", companyId),
-      client
-        .from("maintenanceDispatch")
-        .select("id", { count: "exact" })
-        .in("status", OPEN_STATUSES)
-        .eq("source", "Reactive")
-        .eq("companyId", companyId),
-      client
-        .from("maintenanceDispatch")
-        .select(
-          "id, maintenanceDispatchId, status, source, priority, workCenterId, createdAt, assignee"
-        )
-        .eq("companyId", companyId)
-        .order("createdAt", { ascending: false })
-        .limit(10)
+      can.dispatches
+        ? client
+            .from("maintenanceDispatch")
+            .select("id", { count: "exact" })
+            .in("status", OPEN_STATUSES)
+            .eq("companyId", companyId)
+        : none,
+      can.dispatches
+        ? client
+            .from("maintenanceDispatch")
+            .select("id", { count: "exact" })
+            .in("status", OPEN_STATUSES)
+            .eq("source", "Scheduled")
+            .eq("companyId", companyId)
+        : none,
+      can.dispatches
+        ? client
+            .from("maintenanceDispatch")
+            .select("id", { count: "exact" })
+            .in("status", OPEN_STATUSES)
+            .eq("source", "Reactive")
+            .eq("companyId", companyId)
+        : none,
+      can.dispatches
+        ? client
+            .from("maintenanceDispatch")
+            .select(
+              "id, maintenanceDispatchId, status, source, priority, workCenterId, createdAt, assignee"
+            )
+            .eq("companyId", companyId)
+            .order("createdAt", { ascending: false })
+            .limit(10)
+        : none
     ]);
 
   // Deferred promise for Assigned to Me
-  const assignedToMe = client
-    .from("maintenanceDispatch")
-    .select(
-      "id, maintenanceDispatchId, status, source, priority, workCenterId, createdAt"
-    )
-    .eq("companyId", companyId)
-    .eq("assignee", userId)
-    .in("status", OPEN_STATUSES)
-    .order("priority", { ascending: false })
-    .limit(10)
-    .then((result) => result.data ?? []);
+  const assignedToMe = can.dispatches
+    ? client
+        .from("maintenanceDispatch")
+        .select(
+          "id, maintenanceDispatchId, status, source, priority, workCenterId, createdAt"
+        )
+        .eq("companyId", companyId)
+        .eq("assignee", userId)
+        .in("status", OPEN_STATUSES)
+        .order("priority", { ascending: false })
+        .limit(10)
+        .then((result) => result.data ?? [])
+    : Promise.resolve([]);
 
   return {
+    can,
+    kpis: MaintenanceKPIs.filter((kpi) =>
+      holdsGate(permissions, kpi.gate, companyId)
+    ).map((kpi) => kpi.key),
     openDispatches: openDispatches.count ?? 0,
     openScheduled: openScheduled.count ?? 0,
     openReactive: openReactive.count ?? 0,
@@ -140,6 +164,8 @@ export default function MaintenanceDashboard() {
   const { t } = useLingui();
   const { isPhone } = useViewport();
   const {
+    can,
+    kpis,
     openDispatches,
     openScheduled,
     openReactive,
@@ -172,7 +198,11 @@ export default function MaintenanceDashboard() {
   }, [workCenters, t]);
 
   const [interval, setInterval] = useState("month");
-  const [selectedKpi, setSelectedKpi] = useState("mttr");
+  const [pickedKpi, setSelectedKpi] = useState<string>("mttr");
+  // Only a KPI the person holds; MTTR first when held.
+  const selectedKpi = (kpis as readonly string[]).includes(pickedKpi)
+    ? pickedKpi
+    : (kpis[0] ?? "");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
     const end = today("UTC");
     const start = end.add({ months: -1 });
@@ -183,11 +213,13 @@ export default function MaintenanceDashboard() {
     MaintenanceKPIs.find((k) => k.key === selectedKpi) || MaintenanceKPIs[0];
 
   const kpiFetcher = useLoaderQuery<typeof kpiLoader>(
-    `${path.to.api.resourcesKpi(
-      selectedKpiData.key
-    )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
-      workCenterId === "all" ? "" : `&workCenterId=${workCenterId}`
-    }`
+    kpis.length
+      ? `${path.to.api.resourcesKpi(
+          selectedKpiData.key
+        )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
+          workCenterId === "all" ? "" : `&workCenterId=${workCenterId}`
+        }`
+      : null
   );
   const isFetching = kpiFetcher.isFetching || !kpiFetcher.data;
 
@@ -367,309 +399,322 @@ export default function MaintenanceDashboard() {
       <h1 className="sr-only">
         <Trans>Maintenance Dashboard</Trans>
       </h1>
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
-        <MetricCard
-          icon={<LuWrench />}
-          title={<Trans>Open Dispatches</Trans>}
-          value={openDispatches}
-          to={`${
-            path.to.maintenanceDispatches
-          }?filter=status:in:${OPEN_STATUSES.join(",")}`}
-          linkLabel={t`View Open`}
-        />
+      {can.dispatches && (
+        <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
+          <MetricCard
+            icon={<LuWrench />}
+            title={<Trans>Open Dispatches</Trans>}
+            value={openDispatches}
+            to={`${
+              path.to.maintenanceDispatches
+            }?filter=status:in:${OPEN_STATUSES.join(",")}`}
+            linkLabel={t`View Open`}
+          />
 
-        <MetricCard
-          icon={<LuCalendarClock />}
-          title={<Trans>Open Scheduled</Trans>}
-          value={openScheduled}
-          to={`${
-            path.to.maintenanceDispatches
-          }?filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Scheduled`}
-          linkLabel={t`View Scheduled`}
-        />
+          <MetricCard
+            icon={<LuCalendarClock />}
+            title={<Trans>Open Scheduled</Trans>}
+            value={openScheduled}
+            to={`${
+              path.to.maintenanceDispatches
+            }?filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Scheduled`}
+            linkLabel={t`View Scheduled`}
+          />
 
-        <MetricCard
-          icon={<LuTriangleAlert />}
-          title={<Trans>Open Reactive</Trans>}
-          value={openReactive}
-          to={`${
-            path.to.maintenanceDispatches
-          }?filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Reactive`}
-          linkLabel={t`View Reactive`}
-        />
-      </div>
+          <MetricCard
+            icon={<LuTriangleAlert />}
+            title={<Trans>Open Reactive</Trans>}
+            value={openReactive}
+            to={`${
+              path.to.maintenanceDispatches
+            }?filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Reactive`}
+            linkLabel={t`View Reactive`}
+          />
+        </div>
+      )}
 
-      <Card>
-        <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch max-md:space-x-0">
-          <CardHeader>
-            <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
+      {kpis.length > 0 && (
+        <Card>
+          <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch max-md:space-x-0">
+            <CardHeader>
+              <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      rightIcon={<LuChevronDown />}
+                      className={cn(
+                        "hover:bg-background/80",
+                        // Phones: the KPI picker reads as the section title.
+                        "max-md:px-0 max-md:bg-transparent max-md:shadow-none max-md:dark:bg-transparent max-md:text-[1.0625rem] max-md:font-semibold max-md:text-foreground"
+                      )}
+                    >
+                      <span>{kpiLabels[selectedKpiData.key]}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="bottom" align="start">
+                    <DropdownMenuRadioGroup
+                      value={selectedKpi}
+                      onValueChange={setSelectedKpi}
+                    >
+                      {MaintenanceKPIs.filter((kpi) =>
+                        kpis.includes(kpi.key)
+                      ).map((kpi) => (
+                        <DropdownMenuRadioItem key={kpi.key} value={kpi.key}>
+                          {kpiLabels[kpi.key]}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Combobox
+                  asButton
+                  aria-label={t`Work center`}
+                  value={workCenterId}
+                  onChange={setWorkCenterId}
+                  options={workCenterOptions}
+                  size="sm"
+                  className="min-w-[160px] gap-4 max-md:min-w-0"
+                />
+              </div>
+            </CardHeader>
+            <CardAction className="flex-row items-center gap-2">
+              <DateSelect
+                value={interval}
+                onValueChange={onIntervalChange}
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+              />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
+                  <IconButton
                     variant="secondary"
-                    rightIcon={<LuChevronDown />}
-                    className={cn(
-                      "hover:bg-background/80",
-                      // Phones: the KPI picker reads as the section title.
-                      "max-md:px-0 max-md:bg-transparent max-md:shadow-none max-md:dark:bg-transparent max-md:text-[1.0625rem] max-md:font-semibold max-md:text-foreground"
-                    )}
-                  >
-                    <span>{kpiLabels[selectedKpiData.key]}</span>
-                  </Button>
+                    icon={<LuEllipsisVertical />}
+                    aria-label={t`More`}
+                    className="max-md:rounded-full"
+                  />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="bottom" align="start">
-                  <DropdownMenuRadioGroup
-                    value={selectedKpi}
-                    onValueChange={setSelectedKpi}
-                  >
-                    {MaintenanceKPIs.map((kpi) => (
-                      <DropdownMenuRadioItem key={kpi.key} value={kpi.key}>
-                        {kpiLabels[kpi.key]}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    <CSVLink
+                      data={csvData}
+                      filename={csvFilename}
+                      className="flex flex-row items-center gap-2"
+                    >
+                      <DropdownMenuIcon icon={<LuFile />} />
+                      <Trans>Export CSV</Trans>
+                    </CSVLink>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <Combobox
-                asButton
-                aria-label={t`Work center`}
-                value={workCenterId}
-                onChange={setWorkCenterId}
-                options={workCenterOptions}
-                size="sm"
-                className="min-w-[160px] gap-4 max-md:min-w-0"
-              />
-            </div>
-          </CardHeader>
-          <CardAction className="flex-row items-center gap-2">
-            <DateSelect
-              value={interval}
-              onValueChange={onIntervalChange}
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  variant="secondary"
-                  icon={<LuEllipsisVertical />}
-                  aria-label={t`More`}
-                  className="max-md:rounded-full"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <CSVLink
-                    data={csvData}
-                    filename={csvFilename}
-                    className="flex flex-row items-center gap-2"
-                  >
-                    <DropdownMenuIcon icon={<LuFile />} />
-                    <Trans>Export CSV</Trans>
-                  </CSVLink>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </CardAction>
-        </HStack>
-        <CardContent className="flex-col gap-4">
-          <VStack className="pl-[3px]" spacing={0}>
-            {isFetching ? (
-              <div className="flex flex-col gap-0.5 w-full">
-                <Skeleton className="h-8 w-[120px]" />
-                <Skeleton className="h-4 w-[50px]" />
-              </div>
-            ) : (
-              <>
-                <p className="text-3xl font-medium tracking-tighter">
-                  {formatValue(total)}
-                </p>
-                {isBadgePositive ? (
-                  <Badge variant="green">
-                    {percentageChange >= 0 ? "+" : ""}
-                    {percentageChange.toFixed(0)}%
-                  </Badge>
-                ) : (
-                  <Badge variant="red">
-                    {percentageChange >= 0 ? "+" : ""}
-                    {percentageChange.toFixed(0)}%
-                  </Badge>
-                )}
-              </>
-            )}
-          </VStack>
-          <Loading
-            isLoading={isFetching}
-            className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
-          >
-            {selectedKpi === "worstPerformingMachines" ? (
-              <ChartContainer
-                config={chartConfig}
-                aria-label={t`Failures by work center`}
-                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
-              >
-                <BarChart
-                  accessibilityLayer
-                  layout="vertical"
-                  data={kpiFetcher.data?.data ?? []}
-                  margin={{ left: 20 }}
-                >
-                  <CartesianGrid horizontal={false} />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    tickLine={false}
-                    axisLine={false}
-                    width={150}
-                  />
-                  <XAxis type="number" tickLine={false} axisLine={false} />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        formatter={(value) =>
-                          `${numberFormatter.format(value as number)} failures`
-                        }
-                      />
-                    }
-                  />
-                  <Bar dataKey="value" fill="var(--color-value)" radius={2} />
-                </BarChart>
-              </ChartContainer>
-            ) : (
-              <ChartContainer
-                config={chartConfig}
-                aria-label={chartLabel}
-                summary={chartSummary}
-                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
-              >
-                <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
-                  <CartesianGrid vertical={false} />
-                  <YAxis
-                    dataKey="value"
-                    tickLine={false}
-                    axisLine={false}
-                    {...(isPhone ? { width: 64 } : {})}
-                    tickFormatter={(value) => {
-                      if (["mttr", "mtbf"].includes(selectedKpiData.key)) {
-                        const duration = formatDurationMilliseconds(
-                          (value as number) * 1000,
-                          { style: "short" }
-                        );
-                        // Recharts wraps ticks on spaces; keep "3h, 20m" on one line.
-                        return isPhone
-                          ? duration.replace(/ /g, "\u00a0")
-                          : duration;
-                      }
-                      if (["sparePartCost"].includes(selectedKpiData.key)) {
-                        return currencyFormatter.format(value as number);
-                      }
-                      return numberFormatter.format(value as number);
-                    }}
-                  />
-                  <XAxis
-                    dataKey={
-                      ["week", "month"].includes(interval) ? "date" : "month"
-                    }
-                    tickLine={false}
-                    tickMargin={8}
-                    minTickGap={32}
-                    axisLine={false}
-                    tickFormatter={(value) => {
-                      if (!value) return "";
-                      return ["week", "month"].includes(interval)
-                        ? dateFormatter.format(
-                            parseDate(value).toDate(getLocalTimeZone())
-                          )
-                        : value.slice(0, 3);
-                    }}
-                  />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        labelFormatter={
-                          ["week", "month"].includes(interval)
-                            ? (value) =>
-                                dateFormatter.format(
-                                  parseDate(value).toDate(getLocalTimeZone())
-                                )
-                            : (value) => (
-                                <span className="font-mono">{value}</span>
-                              )
-                        }
-                        formatter={(value) => {
-                          if (["mttr", "mtbf"].includes(selectedKpiData.key)) {
-                            return formatDurationMilliseconds(
-                              (value as number) * 1000
-                            );
-                          }
-                          if (selectedKpiData.key === "sparePartCost") {
-                            return currencyFormatter.format(value as number);
-                          }
-                          return numberFormatter.format(value as number);
-                        }}
-                      />
-                    }
-                  />
-                  <Bar dataKey="value" fill="var(--color-value)" radius={2} />
-                </BarChart>
-              </ChartContainer>
-            )}
-          </Loading>
-        </CardContent>
-      </Card>
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuClock className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Recently Created</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="min-h-[200px] max-h-[360px] w-full overflow-y-auto">
-              {recentlyCreated.length > 0 ? (
-                <DispatchTable data={recentlyCreated} />
-              ) : (
-                <div className="flex justify-center items-center h-full">
-                  <Empty />
+            </CardAction>
+          </HStack>
+          <CardContent className="flex-col gap-4">
+            <VStack className="pl-[3px]" spacing={0}>
+              {isFetching ? (
+                <div className="flex flex-col gap-0.5 w-full">
+                  <Skeleton className="h-8 w-[120px]" />
+                  <Skeleton className="h-4 w-[50px]" />
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex-row gap-2">
-            <LuInbox className="text-muted-foreground" />
-            <CardTitle>
-              <Trans>Assigned to Me</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="min-h-[200px]">
-            <Suspense fallback={<Loading isLoading />}>
-              <Await
-                resolve={assignedToMe}
-                errorElement={
-                  <div>
-                    <Trans>Error loading assigned dispatches</Trans>
-                  </div>
-                }
-              >
-                {(dispatches) =>
-                  dispatches.length > 0 ? (
-                    <DispatchTable data={dispatches} />
+              ) : (
+                <>
+                  <p className="text-3xl font-medium tracking-tighter">
+                    {formatValue(total)}
+                  </p>
+                  {isBadgePositive ? (
+                    <Badge variant="green">
+                      {percentageChange >= 0 ? "+" : ""}
+                      {round(percentageChange, 0)}%
+                    </Badge>
                   ) : (
-                    <div className="flex justify-center items-center h-full">
-                      <Empty />
-                    </div>
-                  )
-                }
-              </Await>
-            </Suspense>
+                    <Badge variant="red">
+                      {percentageChange >= 0 ? "+" : ""}
+                      {round(percentageChange, 0)}%
+                    </Badge>
+                  )}
+                </>
+              )}
+            </VStack>
+            <Loading
+              isLoading={isFetching}
+              className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
+            >
+              {selectedKpi === "worstPerformingMachines" ? (
+                <ChartContainer
+                  config={chartConfig}
+                  aria-label={t`Failures by work center`}
+                  className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
+                >
+                  <BarChart
+                    accessibilityLayer
+                    layout="vertical"
+                    data={kpiFetcher.data?.data ?? []}
+                    margin={{ left: 20 }}
+                  >
+                    <CartesianGrid horizontal={false} />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      tickLine={false}
+                      axisLine={false}
+                      width={150}
+                    />
+                    <XAxis type="number" tickLine={false} axisLine={false} />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value) =>
+                            `${numberFormatter.format(value as number)} failures`
+                          }
+                        />
+                      }
+                    />
+                    <Bar dataKey="value" fill="var(--color-value)" radius={2} />
+                  </BarChart>
+                </ChartContainer>
+              ) : (
+                <ChartContainer
+                  config={chartConfig}
+                  aria-label={chartLabel}
+                  summary={chartSummary}
+                  className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
+                >
+                  <BarChart
+                    accessibilityLayer
+                    data={kpiFetcher.data?.data ?? []}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <YAxis
+                      dataKey="value"
+                      tickLine={false}
+                      axisLine={false}
+                      {...(isPhone ? { width: 64 } : {})}
+                      tickFormatter={(value) => {
+                        if (["mttr", "mtbf"].includes(selectedKpiData.key)) {
+                          const duration = formatDurationMilliseconds(
+                            (value as number) * 1000,
+                            { style: "short" }
+                          );
+                          // Recharts wraps ticks on spaces; keep "3h, 20m" on one line.
+                          return isPhone
+                            ? duration.replace(/ /g, "\u00a0")
+                            : duration;
+                        }
+                        if (["sparePartCost"].includes(selectedKpiData.key)) {
+                          return currencyFormatter.format(value as number);
+                        }
+                        return numberFormatter.format(value as number);
+                      }}
+                    />
+                    <XAxis
+                      dataKey={
+                        ["week", "month"].includes(interval) ? "date" : "month"
+                      }
+                      tickLine={false}
+                      tickMargin={8}
+                      minTickGap={32}
+                      axisLine={false}
+                      tickFormatter={(value) => {
+                        if (!value) return "";
+                        return ["week", "month"].includes(interval)
+                          ? dateFormatter.format(
+                              parseDate(value).toDate(getLocalTimeZone())
+                            )
+                          : value.slice(0, 3);
+                      }}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={
+                            ["week", "month"].includes(interval)
+                              ? (value) =>
+                                  dateFormatter.format(
+                                    parseDate(value).toDate(getLocalTimeZone())
+                                  )
+                              : (value) => (
+                                  <span className="font-mono">{value}</span>
+                                )
+                          }
+                          formatter={(value) => {
+                            if (
+                              ["mttr", "mtbf"].includes(selectedKpiData.key)
+                            ) {
+                              return formatDurationMilliseconds(
+                                (value as number) * 1000
+                              );
+                            }
+                            if (selectedKpiData.key === "sparePartCost") {
+                              return currencyFormatter.format(value as number);
+                            }
+                            return numberFormatter.format(value as number);
+                          }}
+                        />
+                      }
+                    />
+                    <Bar dataKey="value" fill="var(--color-value)" radius={2} />
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </Loading>
           </CardContent>
         </Card>
-      </div>
+      )}
+      {can.dispatches && (
+        <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
+          <Card>
+            <CardHeader className="flex-row gap-2">
+              <LuClock className="text-muted-foreground" />
+              <CardTitle>
+                <Trans>Recently Created</Trans>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="min-h-[200px] max-h-[360px] w-full overflow-y-auto">
+                {recentlyCreated.length > 0 ? (
+                  <DispatchTable data={recentlyCreated} />
+                ) : (
+                  <div className="flex justify-center items-center h-full">
+                    <Empty />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex-row gap-2">
+              <LuInbox className="text-muted-foreground" />
+              <CardTitle>
+                <Trans>Assigned to Me</Trans>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="min-h-[200px]">
+              <Suspense fallback={<Loading isLoading />}>
+                <Await
+                  resolve={assignedToMe}
+                  errorElement={
+                    <div>
+                      <Trans>Error loading assigned dispatches</Trans>
+                    </div>
+                  }
+                >
+                  {(dispatches) =>
+                    dispatches.length > 0 ? (
+                      <DispatchTable data={dispatches} />
+                    ) : (
+                      <div className="flex justify-center items-center h-full">
+                        <Empty />
+                      </div>
+                    )
+                  }
+                </Await>
+              </Suspense>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

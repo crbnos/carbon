@@ -4,7 +4,7 @@
 
 import { dataOrThrow } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { anyOf, pagesOf } from "@carbon/database/access";
+import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -99,49 +99,74 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
+  const { client, companyId, api, permissions } = await authorize(
     request,
     anyOf(pagesOf("sales"), "View")
   );
 
+  // RLS reads the whole module, so each section checks its own page.
+  const can = {
+    salesOrders: holdsGate(
+      permissions,
+      { "sales.salesOrders": "View" },
+      companyId
+    ),
+    quotes: holdsGate(permissions, { "sales.quotes": "View" }, companyId),
+    rfqs: holdsGate(permissions, { "sales.rfqs": "View" }, companyId)
+  };
+  const none = { data: [], count: 0 } as const;
+
   const [openSalesOrders, openQuotes, openRFQs] = await Promise.all([
-    client
-      .from("salesOrder")
-      .select("id, salesOrderId, status, customerId, assignee, createdAt", {
-        count: "exact"
-      })
-      .in("status", OPEN_SALES_ORDER_STATUSES)
-      .eq("companyId", companyId)
-      .limit(10),
-    client
-      .from("quote")
-      .select("id, quoteId, status, customerId, assignee, createdAt", {
-        count: "exact"
-      })
-      .in("status", OPEN_QUOTE_STATUSES)
-      .eq("companyId", companyId)
-      .limit(10),
-    client
-      .from("salesRfq")
-      .select("id, rfqId, status, customerId, assignee, createdAt", {
-        count: "exact"
-      })
-      .in("status", OPEN_RFQ_STATUSES)
-      .eq("companyId", companyId)
-      .limit(10)
+    can.salesOrders
+      ? client
+          .from("salesOrder")
+          .select("id, salesOrderId, status, customerId, assignee, createdAt", {
+            count: "exact"
+          })
+          .in("status", OPEN_SALES_ORDER_STATUSES)
+          .eq("companyId", companyId)
+          .limit(10)
+      : none,
+    can.quotes
+      ? client
+          .from("quote")
+          .select("id, quoteId, status, customerId, assignee, createdAt", {
+            count: "exact"
+          })
+          .in("status", OPEN_QUOTE_STATUSES)
+          .eq("companyId", companyId)
+          .limit(10)
+      : none,
+    can.rfqs
+      ? client
+          .from("salesRfq")
+          .select("id, rfqId, status, customerId, assignee, createdAt", {
+            count: "exact"
+          })
+          .in("status", OPEN_RFQ_STATUSES)
+          .eq("companyId", companyId)
+          .limit(10)
+      : none
   ]);
 
   return {
+    can,
+    kpis: KPIs.filter((kpi) => holdsGate(permissions, kpi.gate, companyId)).map(
+      (kpi) => kpi.key
+    ),
     openSalesOrders: openSalesOrders,
     openQuotes: openQuotes,
     openRFQs: openRFQs,
-    assignedToMe: api.sales.getSalesDocumentsAssignedToMe({}).then(dataOrThrow)
+    assignedToMe:
+      can.salesOrders || can.quotes || can.rfqs
+        ? api.sales.getSalesDocumentsAssignedToMe({}).then(dataOrThrow)
+        : Promise.resolve([])
   };
 }
 
 export default function SalesDashboard() {
   const { t } = useLingui();
-  const { openSalesOrders, openQuotes, openRFQs, assignedToMe } =
+  const { can, kpis, openSalesOrders, openQuotes, openRFQs, assignedToMe } =
     useLoaderData<typeof loader>();
 
   const mergedOpenDocs = useMemo(() => {
@@ -186,7 +211,11 @@ export default function SalesDashboard() {
   }, [customers, t]);
 
   const [interval, setInterval] = useState("month");
-  const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
+  const [pickedKpi, setSelectedKpi] = useState<string>("salesOrderRevenue");
+  // The pick, else the first KPI the person can see.
+  const selectedKpi = (kpis as readonly string[]).includes(pickedKpi)
+    ? pickedKpi
+    : (kpis[0] ?? "");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
     const end = today("UTC");
     const start = end.add({ months: -1 });
@@ -196,11 +225,13 @@ export default function SalesDashboard() {
   const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
 
   const kpiFetcher = useLoaderQuery<typeof kpiLoader>(
-    `${path.to.api.salesKpi(
-      selectedKpiData.key
-    )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
-      customerId === "all" ? "" : `&customerId=${customerId}`
-    }`
+    kpis.length
+      ? `${path.to.api.salesKpi(
+          selectedKpiData.key
+        )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
+          customerId === "all" ? "" : `&customerId=${customerId}`
+        }`
+      : null
   );
   const isFetching = kpiFetcher.isFetching || !kpiFetcher.data;
 
@@ -396,200 +427,217 @@ export default function SalesDashboard() {
         <Trans>Sales Dashboard</Trans>
       </h1>
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
-        <MetricCard
-          icon={<RiProgress2Line />}
-          title={<Trans>Open RFQs</Trans>}
-          value={openRFQs.count ?? 0}
-          to={`${
-            path.to.salesRfqs
-          }?filter=status:in:${OPEN_RFQ_STATUSES.join(",")}`}
-          linkLabel={t`View Open RFQs`}
-        />
+        {can.rfqs && (
+          <MetricCard
+            icon={<RiProgress2Line />}
+            title={<Trans>Open RFQs</Trans>}
+            value={openRFQs.count ?? 0}
+            to={`${
+              path.to.salesRfqs
+            }?filter=status:in:${OPEN_RFQ_STATUSES.join(",")}`}
+            linkLabel={t`View Open RFQs`}
+          />
+        )}
 
-        <MetricCard
-          icon={<RiProgress4Line />}
-          title={<Trans>Open Quotes</Trans>}
-          value={openQuotes.count ?? 0}
-          to={`${
-            path.to.quotes
-          }?filter=status:in:${OPEN_QUOTE_STATUSES.join(",")}`}
-          linkLabel={t`View Open Quotes`}
-        />
+        {can.quotes && (
+          <MetricCard
+            icon={<RiProgress4Line />}
+            title={<Trans>Open Quotes</Trans>}
+            value={openQuotes.count ?? 0}
+            to={`${
+              path.to.quotes
+            }?filter=status:in:${OPEN_QUOTE_STATUSES.join(",")}`}
+            linkLabel={t`View Open Quotes`}
+          />
+        )}
 
-        <MetricCard
-          icon={<RiProgress8Line />}
-          title={<Trans>Open Sales Orders</Trans>}
-          value={openSalesOrders.count ?? 0}
-          to={`${
-            path.to.salesOrders
-          }?filter=status:in:${OPEN_SALES_ORDER_STATUSES.join(",")}`}
-          linkLabel={t`View Open Orders`}
-        />
+        {can.salesOrders && (
+          <MetricCard
+            icon={<RiProgress8Line />}
+            title={<Trans>Open Sales Orders</Trans>}
+            value={openSalesOrders.count ?? 0}
+            to={`${
+              path.to.salesOrders
+            }?filter=status:in:${OPEN_SALES_ORDER_STATUSES.join(",")}`}
+            linkLabel={t`View Open Orders`}
+          />
+        )}
       </div>
 
-      <Card>
-        <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch">
-          <CardHeader>
-            <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
+      {kpis.length > 0 && (
+        <Card>
+          <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch">
+            <CardHeader>
+              <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      rightIcon={<LuChevronDown />}
+                      className="hover:bg-background/80"
+                    >
+                      <span>{kpiLabels[selectedKpiData.key]}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="bottom" align="start">
+                    <DropdownMenuRadioGroup
+                      value={selectedKpi}
+                      onValueChange={setSelectedKpi}
+                    >
+                      {KPIs.filter((kpi) => kpis.includes(kpi.key)).map(
+                        (kpi) => (
+                          <DropdownMenuRadioItem key={kpi.key} value={kpi.key}>
+                            {kpiLabels[kpi.key]}
+                          </DropdownMenuRadioItem>
+                        )
+                      )}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Combobox
+                  asButton
+                  aria-label={t`Customer`}
+                  value={customerId}
+                  onChange={setCustomerId}
+                  options={customerOptions}
+                  size="sm"
+                  className="min-w-[160px] gap-4 max-md:min-w-0"
+                />
+              </div>
+            </CardHeader>
+            <CardAction className="flex-row items-center gap-2 max-md:pt-0">
+              <DateSelect
+                value={interval}
+                onValueChange={onIntervalChange}
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+              />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
+                  <IconButton
                     variant="secondary"
-                    rightIcon={<LuChevronDown />}
-                    className="hover:bg-background/80"
-                  >
-                    <span>{kpiLabels[selectedKpiData.key]}</span>
-                  </Button>
+                    icon={<LuEllipsisVertical />}
+                    aria-label={t`More`}
+                  />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="bottom" align="start">
-                  <DropdownMenuRadioGroup
-                    value={selectedKpi}
-                    onValueChange={setSelectedKpi}
-                  >
-                    {KPIs.map((kpi) => (
-                      <DropdownMenuRadioItem key={kpi.key} value={kpi.key}>
-                        {kpiLabels[kpi.key]}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    <CSVLink
+                      data={csvData}
+                      filename={csvFilename}
+                      className="flex flex-row items-center gap-2"
+                    >
+                      <DropdownMenuIcon icon={<LuFile />} />
+                      <Trans>Export CSV</Trans>
+                    </CSVLink>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <Combobox
-                asButton
-                aria-label={t`Customer`}
-                value={customerId}
-                onChange={setCustomerId}
-                options={customerOptions}
-                size="sm"
-                className="min-w-[160px] gap-4 max-md:min-w-0"
-              />
-            </div>
-          </CardHeader>
-          <CardAction className="flex-row items-center gap-2 max-md:pt-0">
-            <DateSelect
-              value={interval}
-              onValueChange={onIntervalChange}
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  variant="secondary"
-                  icon={<LuEllipsisVertical />}
-                  aria-label={t`More`}
+            </CardAction>
+          </HStack>
+          <CardContent className="flex-col gap-4">
+            <VStack className="pl-[3px]" spacing={0}>
+              {isFetching ? (
+                <div className="flex flex-col gap-0.5 w-full">
+                  <Skeleton className="h-8 w-[120px]" />
+                  <Skeleton className="h-4 w-[50px]" />
+                </div>
+              ) : (
+                <>
+                  <p className="text-3xl font-medium tracking-tighter">
+                    {formatValue(total)}
+                  </p>
+                  {percentageChange >= 0 ? (
+                    <Badge variant="green">
+                      +{round(percentageChange, 0)}%
+                    </Badge>
+                  ) : (
+                    <Badge variant="red">{round(percentageChange, 0)}%</Badge>
+                  )}
+                </>
+              )}
+            </VStack>
+            <Loading
+              isLoading={isFetching}
+              className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
+            >
+              {selectedKpi === "salesFunnel" ? (
+                <FunnelChart
+                  steps={steps}
+                  currencyFormatter={currencyCompactFormatter}
+                  numberFormatter={numberFormatter}
                 />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <CSVLink
-                    data={csvData}
-                    filename={csvFilename}
-                    className="flex flex-row items-center gap-2"
+              ) : (
+                <ChartContainer
+                  config={chartConfig}
+                  aria-label={chartLabel}
+                  summary={chartSummary}
+                  className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
+                >
+                  <BarChart
+                    accessibilityLayer
+                    data={kpiFetcher.data?.data ?? []}
                   >
-                    <DropdownMenuIcon icon={<LuFile />} />
-                    <Trans>Export CSV</Trans>
-                  </CSVLink>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </CardAction>
-        </HStack>
-        <CardContent className="flex-col gap-4">
-          <VStack className="pl-[3px]" spacing={0}>
-            {isFetching ? (
-              <div className="flex flex-col gap-0.5 w-full">
-                <Skeleton className="h-8 w-[120px]" />
-                <Skeleton className="h-4 w-[50px]" />
-              </div>
-            ) : (
-              <>
-                <p className="text-3xl font-medium tracking-tighter">
-                  {formatValue(total)}
-                </p>
-                {percentageChange >= 0 ? (
-                  <Badge variant="green">+{percentageChange.toFixed(0)}%</Badge>
-                ) : (
-                  <Badge variant="red">{percentageChange.toFixed(0)}%</Badge>
-                )}
-              </>
-            )}
-          </VStack>
-          <Loading
-            isLoading={isFetching}
-            className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
-          >
-            {selectedKpi === "salesFunnel" ? (
-              <FunnelChart
-                steps={steps}
-                currencyFormatter={currencyCompactFormatter}
-                numberFormatter={numberFormatter}
-              />
-            ) : (
-              <ChartContainer
-                config={chartConfig}
-                aria-label={chartLabel}
-                summary={chartSummary}
-                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
-              >
-                <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
-                  <CartesianGrid vertical={false} />
-                  <YAxis
-                    dataKey="value"
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => {
-                      return ["salesOrderRevenue"].includes(selectedKpiData.key)
-                        ? currencyCompactFormatter.format(value as number)
-                        : numberFormatter.format(value as number);
-                    }}
-                  />
-                  <XAxis
-                    dataKey={
-                      ["week", "month"].includes(interval) ? "date" : "month"
-                    }
-                    tickLine={false}
-                    tickMargin={8}
-                    minTickGap={32}
-                    axisLine={false}
-                    tickFormatter={(value) => {
-                      if (!value) return "";
-                      return ["week", "month"].includes(interval)
-                        ? dateFormatter.format(
-                            parseDate(value).toDate(getLocalTimeZone())
-                          )
-                        : value.slice(0, 3);
-                    }}
-                  />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        labelFormatter={
-                          ["week", "month"].includes(interval)
-                            ? (value) =>
-                                dateFormatter.format(
-                                  parseDate(value).toDate(getLocalTimeZone())
+                    <CartesianGrid vertical={false} />
+                    <YAxis
+                      dataKey="value"
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => {
+                        return ["salesOrderRevenue"].includes(
+                          selectedKpiData.key
+                        )
+                          ? currencyCompactFormatter.format(value as number)
+                          : numberFormatter.format(value as number);
+                      }}
+                    />
+                    <XAxis
+                      dataKey={
+                        ["week", "month"].includes(interval) ? "date" : "month"
+                      }
+                      tickLine={false}
+                      tickMargin={8}
+                      minTickGap={32}
+                      axisLine={false}
+                      tickFormatter={(value) => {
+                        if (!value) return "";
+                        return ["week", "month"].includes(interval)
+                          ? dateFormatter.format(
+                              parseDate(value).toDate(getLocalTimeZone())
+                            )
+                          : value.slice(0, 3);
+                      }}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={
+                            ["week", "month"].includes(interval)
+                              ? (value) =>
+                                  dateFormatter.format(
+                                    parseDate(value).toDate(getLocalTimeZone())
+                                  )
+                              : (value) => (
+                                  <span className="font-mono">{value}</span>
                                 )
-                            : (value) => (
-                                <span className="font-mono">{value}</span>
-                              )
-                        }
-                        formatter={(value) =>
-                          ["salesOrderRevenue"].includes(selectedKpiData.key)
-                            ? currencyFormatter.format(value as number)
-                            : numberFormatter.format(value as number)
-                        }
-                      />
-                    }
-                  />
-                  <Bar dataKey="value" fill="var(--color-value)" radius={2} />
-                </BarChart>
-              </ChartContainer>
-            )}
-          </Loading>
-        </CardContent>
-      </Card>
+                          }
+                          formatter={(value) =>
+                            ["salesOrderRevenue"].includes(selectedKpiData.key)
+                              ? currencyFormatter.format(value as number)
+                              : numberFormatter.format(value as number)
+                          }
+                        />
+                      }
+                    />
+                    <Bar dataKey="value" fill="var(--color-value)" radius={2} />
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </Loading>
+          </CardContent>
+        </Card>
+      )}
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex-row gap-2">

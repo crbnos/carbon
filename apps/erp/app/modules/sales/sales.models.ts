@@ -59,26 +59,36 @@ export function withContractRead(gate: PageGate): PageGate[] {
   return CONTRACT_READ_GATE.map((read) => ({ ...gate, ...read }));
 }
 
+// Each KPI names the pages it reads, so the dashboard shows only what the person may see.
 export const KPIs = [
   {
     key: "quoteCount",
-    label: "Quotes"
+    label: "Quotes",
+    gate: { "sales.quotes": "View" }
   },
   {
     key: "rfqCount",
-    label: "RFQs"
+    label: "RFQs",
+    gate: { "sales.rfqs": "View" }
   },
   {
     key: "salesFunnel",
-    label: "Sales Funnel"
+    label: "Sales Funnel",
+    gate: {
+      "sales.rfqs": "View",
+      "sales.quotes": "View",
+      "sales.salesOrders": "View"
+    }
   },
   {
     key: "salesOrderCount",
-    label: "Sales Orders"
+    label: "Sales Orders",
+    gate: { "sales.salesOrders": "View" }
   },
   {
     key: "salesOrderRevenue",
-    label: "Sales Revenue"
+    label: "Sales Revenue",
+    gate: { "sales.salesOrders": "View" }
   }
   // {
   //   key: "turnaroundTime",

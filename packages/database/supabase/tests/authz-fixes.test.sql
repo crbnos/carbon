@@ -45,6 +45,8 @@ DECLARE
   companies text[]; n int; key_id text; plain_type text;
   x text := gen_random_uuid()::text;  -- employee of A with Workflows at Full
   workflow_id text; live_version text; draft_version text; own_workflow text; own_version text;
+  adm text := gen_random_uuid()::text;  -- employee of A on its Admin type
+  admin_type text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Authz A ' || id(), 'system') RETURNING id INTO group_a;
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Authz B ' || id(), 'system') RETURNING id INTO group_b;
@@ -407,9 +409,28 @@ BEGIN
   UPDATE workflow SET "publishedVersionId" = own_version WHERE id = own_workflow AND "companyId" = company_a;
   GET DIAGNOSTICS n = ROW_COUNT;
   ASSERT n = 1, 'the owner still publishes their own workflow';
+  BEGIN
+    UPDATE workflow SET "publishedVersionId" = NULL WHERE id = workflow_id AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Workflows editor unpublished someone else''s workflow through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE workflow SET "publishedVersionId" = NULL WHERE id = own_workflow AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the owner still unpublishes their own workflow';
+  RESET ROLE;
+  SELECT id INTO admin_type FROM "employeeType" WHERE "companyId" = company_a AND "systemType" = 'Admin';
+  IF admin_type IS NULL THEN
+    INSERT INTO "employeeType" (name, "companyId", "systemType") VALUES ('Authz admin', company_a, 'Admin')
+      RETURNING id INTO admin_type;
+  END IF;
+  INSERT INTO "user" (id, email) VALUES (adm, adm || '@authz.invalid');
+  INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES (adm, company_a, 'employee');
+  INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES (adm, admin_type, company_a, true);
+  PERFORM pg_temp.act_as(adm);
+  SET LOCAL ROLE authenticated;
   UPDATE workflow SET "publishedVersionId" = NULL WHERE id = workflow_id AND "companyId" = company_a;
   GET DIAGNOSTICS n = ROW_COUNT;
-  ASSERT n = 1, 'a Workflows editor still unpublishes a workflow';
+  ASSERT n = 1, 'an Admin still unpublishes someone else''s workflow';
   RESET ROLE;
 
   UPDATE workflow SET "publishedVersionId" = draft_version WHERE id = workflow_id AND "companyId" = company_a;
@@ -418,7 +439,7 @@ BEGIN
   UPDATE "workflowVersion" SET edges = '[]' WHERE id = draft_version AND "companyId" = company_a;
   GET DIAGNOSTICS n = ROW_COUNT;
   ASSERT n = 1, 'the server edits a published version';
-  RAISE NOTICE 'PASS a published workflow version and its pointer are changed by the owner or the server only';
+  RAISE NOTICE 'PASS a workflow is published by its owner or the server, and unpublished by its owner, an Admin or the server';
 
   -- ── workflow.nextRunAt: it fires the published version as the owner, so only the owner or the server moves it ──
   -- workflow_id is g's and published; own_workflow is x's.

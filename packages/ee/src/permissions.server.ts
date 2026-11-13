@@ -216,6 +216,63 @@ function keyCapRefusal(pages: readonly string[]): AccessWriteError {
   };
 }
 
+/** Whether the user is on the company's own Admin employee type. */
+export async function isCompanyAdmin(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string,
+  userId: string
+): Promise<boolean> {
+  const row = await db
+    .selectFrom("employee")
+    .innerJoin("employeeType", "employeeType.id", "employee.employeeTypeId")
+    .select("employee.id")
+    .where("employee.id", "=", userId)
+    .where("employee.companyId", "=", companyId)
+    .where("employeeType.companyId", "=", companyId)
+    .where("employeeType.systemType", "=", "Admin")
+    .executeTakeFirst();
+  return !!row;
+}
+
+/**
+ * Refuses putting a person on, or taking them off, the company's Admin type
+ * unless `actor` is an Admin there or the system. An API key never may.
+ */
+export async function adminTypeChangeRefusal(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    actor,
+    typeIds
+  }: {
+    companyId: string;
+    actor?: Actor;
+    typeIds: readonly (string | null | undefined)[];
+  }
+): Promise<AccessWriteError | null> {
+  if (actor?.type === "system") return null;
+  const ids = typeIds.filter((id): id is string => !!id);
+  if (!ids.length) return null;
+  const adminType = await db
+    .selectFrom("employeeType")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("systemType", "=", "Admin")
+    .where("id", "in", ids)
+    .executeTakeFirst();
+  if (!adminType) return null;
+  if (
+    actor?.type === "user" &&
+    (await isCompanyAdmin(db, companyId, actor.userId))
+  ) {
+    return null;
+  }
+  return {
+    code: "forbidden",
+    message: "Only an Admin can give or take away the Admin employee type"
+  };
+}
+
 class Refusal extends Error {
   constructor(
     code: AccessWriteError["code"],
@@ -239,7 +296,8 @@ class Refusal extends Error {
  * role, and `permission_changed` with the grant changes for a key.
  *
  * A person can be moved to another employee type of the company in the same
- * transaction (`employeeType`); `{ keep: true }` moves them and leaves their
+ * transaction (`employeeType`); onto or off the Admin type only by an Admin
+ * (`adminTypeChangeRefusal`). `{ keep: true }` moves them and leaves their
  * grants alone, and needs no plan feature, as choosing a type on invite or
  * convert never did. `subjectRow` writes the subject's own row in
  * that transaction too, before the grants: an API key is created or renamed
@@ -345,6 +403,14 @@ export async function writeAccessGrants(
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!ownType) throw new Refusal("notFound", SUBJECT_RULES.role.notFound);
+      const adminRefusal = await adminTypeChangeRefusal(tx, {
+        companyId,
+        actor,
+        typeIds: [owned.employeeTypeId, moveTo]
+      });
+      if (adminRefusal) {
+        throw new Refusal(adminRefusal.code, adminRefusal.message);
+      }
       await tx
         .updateTable("employee")
         .set({ employeeTypeId: moveTo })

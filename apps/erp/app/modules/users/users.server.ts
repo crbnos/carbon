@@ -16,6 +16,7 @@ import {
   subjectGates
 } from "@carbon/ee/permission-grants";
 import {
+  adminTypeChangeRefusal,
   grantWriteRefusal,
   deleteEmployeeType as removeEmployeeType,
   subjectEntitlement
@@ -71,7 +72,8 @@ const requestOrigin = {
  *
  * @remarks
  * Without role authoring (the PERMISSIONS feature), the invite always gets
- * the Admin employee type, whatever was asked for. In a controlled
+ * the Admin employee type, whatever was asked for; with it, only an Admin may
+ * invite someone as Admin. In a controlled
  * environment the inviter must attest the person is a U.S. person (a
  * `validation` error otherwise). Once SSO is on, an email outside its
  * domains is refused (a `rule` error, its only one). A deactivated or
@@ -104,6 +106,13 @@ export const inviteEmployee = defineServiceFn({
         .eq("systemType", "Admin")
         .maybeSingle();
       if (adminType.data?.id) employeeType = adminType.data.id;
+    } else {
+      const refused = await adminTypeChangeRefusal(ctx.asSystem.pg, {
+        companyId,
+        actor: ctx.actor,
+        typeIds: [employeeType]
+      });
+      if (refused) return grantWriteRefusal(ctx, refused);
     }
 
     // 22 CFR 120.62: the inviter attests the invitee is a U.S. person.

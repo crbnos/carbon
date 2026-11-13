@@ -4,7 +4,7 @@
 
 import { authorize } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
-import { anyOf, pagesOf } from "@carbon/database/access";
+import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { QualityKPIs } from "~/modules/quality/quality.models";
@@ -50,7 +50,7 @@ const PRIORITY_ORDER = ["Critical", "High", "Medium", "Low"] as const;
 // --- Loader ---
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
+  const { client, companyId, api, permissions } = await authorize(
     request,
     anyOf(pagesOf("quality"), "View")
   );
@@ -66,8 +66,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!key || !start || !end) return { data: [], previousPeriodData: [] };
 
   const kpi = QualityKPIs.find((k) => k.key === key);
-  // Allow avgDaysToClose as a special key
-  if (!kpi && key !== "avgDaysToClose")
+  // Allow avgDaysToClose as a special key; it reads issues too
+  const gate =
+    kpi?.gate ??
+    (key === "avgDaysToClose" ? { "quality.issues": "View" as const } : null);
+  if (!gate || !holdsGate(permissions, gate, companyId))
     return { data: [], previousPeriodData: [] };
 
   switch (key) {

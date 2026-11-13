@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import { anyOf, pagesOf } from "@carbon/database/access";
+import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
 import {
   now,
   parseDateTime,
@@ -20,7 +20,7 @@ type ProductionEvent = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
+  const { client, companyId, permissions } = await authorize(
     request,
     anyOf(pagesOf("production"), "View")
   );
@@ -58,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
 
   const kpi = KPIs.find((k) => k.key === key);
-  if (!kpi)
+  if (!kpi || !holdsGate(permissions, kpi.gate, companyId))
     return {
       data: [],
       previousPeriodData: []

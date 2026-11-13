@@ -14,6 +14,7 @@ import {
   readConnections,
   usableConnections
 } from "@carbon/ee/integrations/connections";
+import { isCompanyAdmin } from "@carbon/ee/permissions.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import type { CompanyLock, WorkflowIssue } from "@carbon/ee/workflows";
@@ -583,6 +584,9 @@ export async function checkWorkflowVersionLock(
 export const OWNER_ONLY_PUBLISH_MESSAGE =
   "Only the owner of this workflow can publish it";
 
+export const OWNER_ONLY_UNPUBLISH_MESSAGE =
+  "Only the owner of this workflow or an Admin can unpublish it";
+
 export type WorkflowSyncResult =
   | { ok: false; issues: WorkflowIssue[]; message?: string }
   | { ok: true; issues: never[]; scheduled: boolean };
@@ -721,6 +725,23 @@ export async function unpublishWorkflow(
     userId: string;
   }
 ): Promise<WorkflowSyncResult> {
+  // Switching a workflow off is the owner's call; an Admin may too, to stop one that misbehaves.
+  const workflow = await client
+    .from("workflow")
+    .select("ownerId")
+    .eq("id", workflowId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (workflow.error || !workflow.data) {
+    return { ok: false, issues: [], message: "Workflow not found" };
+  }
+  if (
+    workflow.data.ownerId !== userId &&
+    !(await isCompanyAdmin(db, companyId, userId))
+  ) {
+    return { ok: false, issues: [], message: OWNER_ONLY_UNPUBLISH_MESSAGE };
+  }
+
   const updated = await requireAffected(
     client
       .from("workflow")

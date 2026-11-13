@@ -6432,7 +6432,7 @@ export const getCustomerStatuses = defineServiceFn({
  */
 export const getCustomerStatusesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "sales.statuses": "View" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -7065,17 +7065,33 @@ export const getRelatedPricesForQuoteLine = defineServiceFn({
 /**
  * Get sales documents assigned to me
  *
+ * @remarks
+ * Only the document types the caller can view: sales orders, quotes and RFQs.
+ *
  * @mcp read
  */
 export const getSalesDocumentsAssignedToMe = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { "sales.salesOrders": "View" },
+  permission: {
+    anyOf: [
+      { "sales.salesOrders": "View" },
+      { "sales.quotes": "View" },
+      { "sales.rfqs": "View" }
+    ]
+  } as const,
   async run(ctx) {
-    return await service.getSalesDocumentsAssignedToMe(
+    const docs = await service.getSalesDocumentsAssignedToMe(
       ctx.asCaller.supabase,
       ctx.auditUserId,
       ctx.company.id
     );
+    // RLS reads the whole module, so each type checks its own page.
+    const can = {
+      salesOrder: ctx.can({ "sales.salesOrders": "View" }),
+      quote: ctx.can({ "sales.quotes": "View" }),
+      rfq: ctx.can({ "sales.rfqs": "View" })
+    };
+    return docs.filter((doc) => can[doc.type as keyof typeof can]);
   }
 });
 

@@ -54,6 +54,7 @@ const ids = {
   theirGroup: `${prefix}-their-group`,
   ourType: `${prefix}-our-type`,
   otherType: `${prefix}-other-type`,
+  adminType: `${prefix}-admin-type`,
   theirType: `${prefix}-their-type`,
   ourKey: `${prefix}-our-key`,
   theirKey: `${prefix}-their-key`
@@ -149,6 +150,12 @@ beforeAll(async () => {
       .values([
         { id: ids.ourType, name: prefix, companyId: ids.ours },
         { id: ids.otherType, name: `${prefix}-other`, companyId: ids.ours },
+        {
+          id: ids.adminType,
+          name: `${prefix}-admin`,
+          companyId: ids.ours,
+          systemType: "Admin"
+        },
         { id: ids.theirType, name: prefix, companyId: ids.theirs }
       ])
       .execute();
@@ -409,4 +416,73 @@ describe("a type move that keeps the grants", () => {
     },
     60_000
   );
+});
+
+// Accounts Edit alone must not make or unmake an Admin.
+describe("a move onto or off the Admin type", () => {
+  const writer = {
+    type: "user",
+    role: "employee",
+    userId: ids.user,
+    permissions: {}
+  } as const;
+  const moveAs = (
+    actor: Parameters<typeof writeAccessGrants>[2]["actor"],
+    employeeType: string
+  ) =>
+    writeAccessGrants({} as never, db, {
+      companyId: ids.ours,
+      subject: { userId: ids.mover },
+      change: { keep: true },
+      employeeType,
+      actor,
+      actorId: ids.user
+    });
+  const typeOf = async (id: string) =>
+    (
+      await db
+        .selectFrom("employee")
+        .select("employeeTypeId")
+        .where("id", "=", id)
+        .where("companyId", "=", ids.ours)
+        .executeTakeFirstOrThrow()
+    ).employeeTypeId;
+  const setWriterType = (employeeTypeId: string) =>
+    db
+      .updateTable("employee")
+      .set({ employeeTypeId })
+      .where("id", "=", ids.user)
+      .where("companyId", "=", ids.ours)
+      .execute();
+
+  databaseTest("lets only an Admin or the system move a person onto or off it", async () => {
+    const before = await typeOf(ids.mover);
+    for (const actor of [
+      writer,
+      { type: "apiKey", createdBy: ids.user, permissions: {} } as const,
+      undefined
+    ]) {
+      expect((await moveAs(actor, ids.adminType)).error?.code).toBe(
+        "forbidden"
+      );
+    }
+    expect(await typeOf(ids.mover)).toBe(before);
+
+    await setWriterType(ids.adminType);
+    try {
+      expect((await moveAs(writer, ids.adminType)).error).toBeNull();
+      expect(await typeOf(ids.mover)).toBe(ids.adminType);
+    } finally {
+      await setWriterType(ids.ourType);
+    }
+
+    expect((await moveAs(writer, ids.ourType)).error?.code).toBe("forbidden");
+    expect(await typeOf(ids.mover)).toBe(ids.adminType);
+    expect(
+      (
+        await moveAs({ type: "system", onBehalfOf: ids.user }, ids.ourType)
+      ).error
+    ).toBeNull();
+    expect(await typeOf(ids.mover)).toBe(ids.ourType);
+  });
 });

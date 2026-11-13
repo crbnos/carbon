@@ -20,13 +20,27 @@ BEGIN
   END IF;
 
   -- Publishing picks what runs as the owner, so only the owner may point it at a
-  -- version; clearing it (unpublish) stays open.
+  -- version; clearing it (unpublish) is the owner's or an Admin's.
   IF p_operation = 'UPDATE'
      AND (p_new->>'publishedVersionId') IS NOT NULL
      AND (p_new->>'publishedVersionId') IS DISTINCT FROM (p_old->>'publishedVersionId') THEN
     v_caller := auth.uid()::text;
     IF v_caller IS NULL OR (p_new->>'ownerId') IS DISTINCT FROM v_caller THEN
       RAISE EXCEPTION 'Only the owner of this workflow can publish it'
+        USING ERRCODE = 'insufficient_privilege';
+    END IF;
+  END IF;
+
+  IF p_operation = 'UPDATE'
+     AND (p_new->>'publishedVersionId') IS NULL
+     AND (p_old->>'publishedVersionId') IS NOT NULL THEN
+    v_caller := auth.uid()::text;
+    IF v_caller IS NULL OR (
+      (p_old->>'ownerId') IS DISTINCT FROM v_caller
+      -- With no page, access_level is Full only for the company's Admin type.
+      AND util.access_level(v_caller, NULL, p_old->>'companyId', NULL) IS DISTINCT FROM 'Full'
+    ) THEN
+      RAISE EXCEPTION 'Only the owner of this workflow or an Admin can unpublish it'
         USING ERRCODE = 'insufficient_privilege';
     END IF;
   END IF;

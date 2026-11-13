@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import { anyOf, pagesOf } from "@carbon/database/access";
+import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
@@ -57,10 +57,30 @@ function sumAging(rows: AgingRow[]): AgingTotals {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
+  const { client, companyId, api, permissions } = await authorize(
     request,
     anyOf(pagesOf("invoicing"), "View")
   );
+
+  // RLS reads the whole module, so each section checks its own page.
+  const can = {
+    receivables: holdsGate(
+      permissions,
+      { "invoicing.receivables": "View" },
+      companyId
+    ),
+    payables: holdsGate(
+      permissions,
+      { "invoicing.payables": "View" },
+      companyId
+    ),
+    payments: holdsGate(
+      permissions,
+      { "invoicing.payments": "View" },
+      companyId
+    )
+  };
+  const none = { data: null } as const;
 
   const asOfDate = datetime
     .today(await getCompanyTimeZone(client, companyId))
@@ -73,34 +93,41 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const accountingSetUp = hasAccountingCutover(companySettings.data);
 
   const [arAging, apAging, arTieOut, apTieOut, payments] = await Promise.all([
-    api.invoicing.getArAging({
-      asOfDate,
-      options: { bucketDays: BUCKET_DAYS }
-    }),
-    api.invoicing.getApAging({
-      asOfDate,
-      options: { bucketDays: BUCKET_DAYS }
-    }),
-    accountingSetUp
+    can.receivables
+      ? api.invoicing.getArAging({
+          asOfDate,
+          options: { bucketDays: BUCKET_DAYS }
+        })
+      : none,
+    can.payables
+      ? api.invoicing.getApAging({
+          asOfDate,
+          options: { bucketDays: BUCKET_DAYS }
+        })
+      : none,
+    accountingSetUp && can.receivables
       ? api.invoicing.getArTieOut({ asOfDate })
-      : Promise.resolve({ data: null }),
-    accountingSetUp
+      : none,
+    accountingSetUp && can.payables
       ? api.invoicing.getApTieOut({ asOfDate })
-      : Promise.resolve({ data: null }),
-    api.invoicing.getPayments({
-      search: null,
-      paymentType: null,
-      status: null,
-      customerId: null,
-      supplierId: null,
-      limit: 6,
-      cursor: null,
-      sorts,
-      filters
-    })
+      : none,
+    can.payments
+      ? api.invoicing.getPayments({
+          search: null,
+          paymentType: null,
+          status: null,
+          customerId: null,
+          supplierId: null,
+          limit: 6,
+          cursor: null,
+          sorts,
+          filters
+        })
+      : none
   ]);
 
   return {
+    can,
     asOfDate,
     bucketDays: BUCKET_DAYS,
     accountingSetUp,
@@ -122,6 +149,7 @@ export default function InvoicingIndexRoute() {
     <InvoicingDashboard
       asOfDate={data.asOfDate}
       bucketDays={data.bucketDays}
+      can={data.can}
       accountingSetUp={data.accountingSetUp}
       ar={data.ar}
       ap={data.ap}
