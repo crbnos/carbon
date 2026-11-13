@@ -134,7 +134,7 @@ pnpm --filter erp test
   Each path ends in `releaseCheckedJobs`, so each one also gets the picking list. When `companySettings.autoPickingListOnRelease` is on, `createReleasePickingList` (`production.service.ts`) runs `generatePickingList` for the job's operations that are not Done or Canceled, at the job's location. It creates nothing when the job already has a Draft or In Progress list, or when nothing needs picking (`NO_MATERIALS_TO_PICK`). It returns an error and never throws. The job is already Ready, so a failure keeps the release. `releaseCheckedJobs` then does 3 things:
 
   1. It logs the error.
-  2. It adds a paragraph to the job's `notes` with `appendNoteParagraph` (`production.utils.ts`): "Carbon released the job but could not create its picking list: …".
+  2. It adds a paragraph to the job's `notes` with `appendJobNoteParagraph` (`production.service.ts`): "Carbon released the job but could not create its picking list: …". This is one UPDATE that adds the paragraph in SQL, so a note that a user saves at the same time is kept.
   3. It adds a warning to the result: "The job is released, but its picking list could not be created".
 
   `resumeJob` (Paused → Ready) is not a release. `updateJobStatus` is not published, so the API cannot set Ready without the checks. No SQL function sets a job to Ready (the SQL writes of `'Ready'` are on `jobOperation`). A new path to Ready must run `jobReleaseProblems` before `releaseCheckedJobs`.

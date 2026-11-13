@@ -6,8 +6,11 @@ import type { Database } from "@carbon/database";
 import { getPickingListTravelerEntities } from "@carbon/database/travelers";
 import { type KanbanLabelAction, kanbanLabelCode } from "@carbon/documents/zpl";
 import { ERP_URL } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
 import type { ProductLabelItem } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+const log = getLogger("jobs", "print-job");
 
 export type KanbanCardItem = {
   id: string;
@@ -276,6 +279,16 @@ async function queryTrackedEntities(
         pickingListId: sourceDocumentId,
         companyId
       });
+      // A failed read fails the print job. Returning no units would read as
+      // "nothing to print", and the traveler claim is already taken.
+      if (result.error) {
+        log.error("Failed to read the travelers of a picking list", {
+          companyId,
+          pickingListId: sourceDocumentId,
+          error: result.error
+        });
+        throw new Error("Could not read the travelers of the picking list");
+      }
 
       return {
         trackedEntities: result.data,

@@ -107,7 +107,10 @@ import {
   type StockTransferLineDraft
 } from "@carbon/database/stock-transfer";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
-import { claimTravelerPrint } from "@carbon/database/travelers";
+import {
+  claimTravelerPrint,
+  releaseTravelerPrintClaim
+} from "@carbon/database/travelers";
 import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
@@ -6101,23 +6104,6 @@ export async function generatePickingList(
     return { data: null, error: materials.error };
   }
 
-  if (args.excludeMadeParts && (materials.data ?? []).length > 0) {
-    const itemIds = Array.from(
-      new Set((materials.data ?? []).map((m) => m.itemId))
-    );
-    const madeItems = await client
-      .from("item")
-      .select("id")
-      .in("id", itemIds)
-      .eq("companyId", args.companyId)
-      .eq("replenishmentSystem", "Make");
-    if (madeItems.error) {
-      return { data: null, error: madeItems.error };
-    }
-    const made = new Set((madeItems.data ?? []).map((i) => i.id));
-    materials.data = (materials.data ?? []).filter((m) => !made.has(m.itemId));
-  }
-
   // Supersession config for every demanded material, so a pick can honor an
   // item's supersession: redirect to an effective successor (Prefer New /
   // Stock Only) or, for Consume First, when the predecessor is out of stock.
@@ -6145,6 +6131,34 @@ export async function generatePickingList(
     for (const row of supersessions.data ?? []) {
       supersessionByItem.set(row.itemId, row);
     }
+  }
+
+  // With `excludeMadeParts`, a pick is left out when the item it PICKS is made
+  // in-house. The test runs on the resolved pick targets below, after
+  // supersession, so a Make predecessor with a Buy successor still picks the
+  // successor, and a Buy material redirected to a Make successor is left out.
+  // Every item a pick can target is a material item, the item it was swapped
+  // from, or a successor, so one read covers them all.
+  const madeItemIds = new Set<string>();
+  if (args.excludeMadeParts && materialItemIds.length > 0) {
+    const targetItemIds = Array.from(
+      new Set([
+        ...materialItemIds,
+        ...Array.from(supersessionByItem.values())
+          .map((row) => row.successorItemId)
+          .filter((id): id is string => !!id)
+      ])
+    );
+    const madeItems = await client
+      .from("item")
+      .select("id")
+      .in("id", targetItemIds)
+      .eq("companyId", args.companyId)
+      .eq("replenishmentSystem", "Make");
+    if (madeItems.error) {
+      return { data: null, error: madeItems.error };
+    }
+    for (const item of madeItems.data ?? []) madeItemIds.add(item.id);
   }
   // Business date for supersession effectivity. Uses UTC to match the SQL
   // schedule/availability path — get_picking_schedule and
@@ -6456,6 +6470,10 @@ export async function generatePickingList(
       p_company_id: args.companyId,
       p_user_id: args.createdBy
     });
+    // A failed call must not read as "no lineside bin": the line would be
+    // created with no destination. The caller's catch returns the error
+    // before anything is written.
+    if (result.error) throw new PickingReadError(result.error);
     const linesideId = (result.data as string | null) ?? null;
     linesideByWorkCenter.set(workCenterId, linesideId);
     return linesideId;
@@ -6593,12 +6611,18 @@ export async function generatePickingList(
         if (newCredit) {
           chargeUnclaimed(newCredit, split.stagedNewUsed);
         }
-        if (split.picks.length === 0) continue;
-        targets = split.picks.map((pick) => ({
-          itemId: pick.item === "predecessor" ? predecessorItemId : successorId,
-          quantity: pick.quantity
-        }));
+        targets = split.picks
+          .map((pick) => ({
+            itemId:
+              pick.item === "predecessor" ? predecessorItemId : successorId,
+            quantity: pick.quantity
+          }))
+          .filter((pick) => !madeItemIds.has(pick.itemId));
+        if (targets.length === 0) continue;
       } else {
+        // A made target is left out before its lineside credit is charged, so
+        // the credit stays for the materials that are picked.
+        if (madeItemIds.has(target.itemId)) continue;
         const need = quantityToIssue * target.factor;
         if (toStorageUnitId) {
           const credit = await linesideCreditFor(
@@ -8325,30 +8349,62 @@ export async function autoPrint(
 
 /**
  * Print a picking list's travelers once, after a status change or a pick.
- * With `companySettings.travelerLabels` on, `claimTravelerPrint` sets the
- * list's `travelersPrintedAt`; only the call that sets it prints. With the
- * setting off nothing is claimed, so turning it on later still prints a list
- * not yet claimed. Never throws: a print failure must not fail the pick.
+ * With `companySettings.travelerLabels` on, it first checks that the
+ * printer of the list's location auto-prints (`inventory` context), so a
+ * list whose printer does not auto-print is not claimed and prints once
+ * auto-print is turned on. Then `claimTravelerPrint` sets the list's
+ * `travelersPrintedAt`, and only the call that sets it queues the print
+ * job. When the job cannot be queued, `releaseTravelerPrintClaim` gives the
+ * claim back, so the next pick or status change tries again. With the
+ * setting off nothing is claimed. Never throws: a print failure must not
+ * fail the pick.
  */
 export async function printTravelersOnStart(
   ctx: ServiceContext,
   pickingListId: string
 ) {
+  const companyId = ctx.company.id;
   try {
     const settings = await settingsService.getCompanySettings(
       ctx.asSystem.supabase,
-      ctx.company.id
+      companyId
     );
     if (settings.data?.travelerLabels !== true) return;
 
+    const list = await ctx.asSystem.supabase
+      .from("pickingList")
+      .select("locationId")
+      .eq("id", pickingListId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (list.error) {
+      logger.error("Traveler print: could not read the picking list", {
+        companyId,
+        pickingListId,
+        error: list.error
+      });
+      return;
+    }
+    const locationId = list.data?.locationId ?? null;
+    if (!locationId) return;
+
+    const config = await getCachedPrinterConfig(
+      ctx.asSystem.supabase,
+      companyId,
+      locationId,
+      "inventory"
+    );
+    if (!(config?.autoPrint ?? true)) return;
+
+    const at = datetime.timestamp();
     const claim = await claimTravelerPrint(ctx.asSystem.supabase, {
       pickingListId,
-      companyId: ctx.company.id,
-      at: datetime.timestamp()
+      companyId,
+      at
     });
     if (claim.error) {
       logger.error("Traveler print claim failed", {
-        companyId: ctx.company.id,
+        companyId,
         pickingListId,
         error: claim.error
       });
@@ -8356,15 +8412,36 @@ export async function printTravelersOnStart(
     }
     if (!claim.claimed) return;
 
-    await autoPrint(ctx, {
-      sourceDocument: "PickingList",
-      sourceDocumentId: pickingListId,
-      locationId: claim.locationId,
-      context: "inventory"
-    });
+    try {
+      await trigger("print-job", {
+        sourceDocument: "PickingList",
+        sourceDocumentId: pickingListId,
+        companyId,
+        userId: ctx.auditUserId,
+        locationId: claim.locationId ?? locationId
+      });
+    } catch (error) {
+      logger.error("Traveler print could not be queued", {
+        companyId,
+        pickingListId,
+        error
+      });
+      const released = await releaseTravelerPrintClaim(ctx.asSystem.supabase, {
+        pickingListId,
+        companyId,
+        at
+      });
+      if (released.error) {
+        logger.error("Traveler print claim could not be given back", {
+          companyId,
+          pickingListId,
+          error: released.error
+        });
+      }
+    }
   } catch (error) {
     logger.error("Traveler print failed", {
-      companyId: ctx.company.id,
+      companyId,
       pickingListId,
       error
     });
@@ -29048,6 +29125,193 @@ async function valueServiceJobMovements(
   return costs;
 }
 
+/**
+ * Refuses to consume a serial unit that its own job is still building: an
+ * operation of the unit's own make method (`attributes["Job Make Method"]`)
+ * that is not Done or Canceled, applies to the unit and has no completion
+ * marker (`Operation <id>`) on it. An operation with
+ * `jobOperationTrackedEntity` rows applies only to the units listed; one with
+ * none applies to every unit. The MES `isUnitInProduction` makes the same
+ * test. A failed read throws, so the posting is refused.
+ */
+async function assertUnitsNotInProduction(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  entities: Array<{
+    id: string;
+    readableId: string | null;
+    itemId: string | null;
+    sourceDocumentId: string | null;
+    attributes: unknown;
+  }>
+): Promise<void> {
+  const makeMethodOf = (attributes: unknown) => {
+    const value = (attributes as Record<string, unknown> | null)?.[
+      "Job Make Method"
+    ];
+    return typeof value === "string" ? value : null;
+  };
+  const candidates = entities.filter((entity) =>
+    makeMethodOf(entity.attributes)
+  );
+  if (candidates.length === 0) return;
+
+  const itemIds = Array.from(
+    new Set(
+      candidates
+        .map((entity) => entity.itemId ?? entity.sourceDocumentId)
+        .filter((id): id is string => !!id)
+    )
+  );
+  const serialItems =
+    itemIds.length > 0
+      ? await trx
+          .selectFrom("item")
+          .select("id")
+          .where("id", "in", itemIds)
+          .where("companyId", "=", companyId)
+          .where("itemTrackingType", "=", "Serial")
+          .execute()
+      : [];
+  const serialItemIds = new Set(serialItems.map((item) => item.id));
+  const units = candidates.filter((entity) =>
+    serialItemIds.has(entity.itemId ?? entity.sourceDocumentId ?? "")
+  );
+  if (units.length === 0) return;
+
+  const makeMethodIds = Array.from(
+    new Set(units.map((unit) => makeMethodOf(unit.attributes)!))
+  );
+  const openOperations = await trx
+    .selectFrom("jobOperation")
+    .select(["id", "jobMakeMethodId"])
+    .where("jobMakeMethodId", "in", makeMethodIds)
+    .where("companyId", "=", companyId)
+    .where("status", "not in", ["Done", "Canceled"])
+    .execute();
+  if (openOperations.length === 0) return;
+
+  const scopeRows = await trx
+    .selectFrom("jobOperationTrackedEntity")
+    .select(["jobOperationId", "trackedEntityId"])
+    .where(
+      "jobOperationId",
+      "in",
+      openOperations.map((operation) => operation.id)
+    )
+    .where("companyId", "=", companyId)
+    .execute();
+  const scopes = new Map<string, Set<string>>();
+  for (const row of scopeRows) {
+    const scoped = scopes.get(row.jobOperationId) ?? new Set<string>();
+    scoped.add(row.trackedEntityId);
+    scopes.set(row.jobOperationId, scoped);
+  }
+
+  for (const unit of units) {
+    const makeMethodId = makeMethodOf(unit.attributes);
+    const attributes = (unit.attributes ?? {}) as Record<string, unknown>;
+    const building = openOperations.some((operation) => {
+      if (operation.jobMakeMethodId !== makeMethodId) return false;
+      const scoped = scopes.get(operation.id);
+      if (scoped && !scoped.has(unit.id)) return false;
+      return !(`Operation ${operation.id}` in attributes);
+    });
+    if (building) {
+      throw new InvalidInputError(
+        `${unit.readableId ?? unit.id} is still being built on its own job`
+      );
+    }
+  }
+}
+
+/**
+ * The re-check a traveler scan makes under the job material's row lock. A
+ * serial parent (its make method requires serial tracking) needs the
+ * material's quantity per unit: what is consumed into the parent for this
+ * material now (`Consume` inputs less `Unconsume` outputs per component,
+ * without scrapped components) must be below it. Any other parent needs the
+ * job's remaining quantity (`estimatedQuantity`, else `quantity`, less
+ * `quantityIssued`) above zero. The MES `resolveTravelerMaterial` makes the
+ * same test before the posting; this one is authoritative.
+ */
+async function assertTravelerRequirementOpen(
+  trx: Transaction<KyselyDatabase>,
+  {
+    companyId,
+    jobMaterial,
+    parentTrackedEntityId
+  }: {
+    companyId: string;
+    jobMaterial: Selectable<KyselyDatabase["jobMaterial"]>;
+    parentTrackedEntityId: string;
+  }
+): Promise<void> {
+  const makeMethod = await trx
+    .selectFrom("jobMakeMethod")
+    .select("requiresSerialTracking")
+    .where("id", "=", jobMaterial.jobMakeMethodId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+
+  if (!makeMethod?.requiresSerialTracking) {
+    const required = Number(
+      jobMaterial.estimatedQuantity ?? jobMaterial.quantity ?? 0
+    );
+    const remaining = round(required - Number(jobMaterial.quantityIssued ?? 0));
+    if (remaining <= EPSILON) {
+      throw new InvalidInputError(
+        `This job already has all its ${jobMaterial.description || "material"}`
+      );
+    }
+    return;
+  }
+
+  const consumed = await sql<{ quantity: string | number | null }>`
+    WITH "fitted" AS (
+      SELECT tai."trackedEntityId", SUM(tai."quantity") AS "quantity"
+      FROM "trackedActivity" ta
+      JOIN "trackedActivityOutput" tao
+        ON tao."trackedActivityId" = ta."id"
+      JOIN "trackedActivityInput" tai
+        ON tai."trackedActivityId" = ta."id"
+      WHERE ta."type" = 'Consume'
+        AND ta."companyId" = ${companyId}
+        AND tao."trackedEntityId" = ${parentTrackedEntityId}
+        AND ta."attributes"->>'Job Material' = ${jobMaterial.id}
+      GROUP BY tai."trackedEntityId"
+    ),
+    "returned" AS (
+      SELECT tao."trackedEntityId", SUM(tao."quantity") AS "quantity"
+      FROM "trackedActivity" ta
+      JOIN "trackedActivityInput" tai
+        ON tai."trackedActivityId" = ta."id"
+      JOIN "trackedActivityOutput" tao
+        ON tao."trackedActivityId" = ta."id"
+      WHERE ta."type" = 'Unconsume'
+        AND ta."companyId" = ${companyId}
+        AND tai."trackedEntityId" = ${parentTrackedEntityId}
+        AND ta."attributes"->>'Job Material' = ${jobMaterial.id}
+      GROUP BY tao."trackedEntityId"
+    )
+    SELECT COALESCE(SUM(GREATEST(f."quantity" - COALESCE(r."quantity", 0), 0)), 0) AS "quantity"
+    FROM "fitted" f
+    LEFT JOIN "returned" r ON r."trackedEntityId" = f."trackedEntityId"
+    JOIN "trackedEntity" te
+      ON te."id" = f."trackedEntityId" AND te."companyId" = ${companyId}
+    WHERE te."status" <> 'Scrapped'
+  `.execute(trx);
+
+  const remaining = round(
+    Number(jobMaterial.quantity ?? 0) - Number(consumed.rows[0]?.quantity ?? 0)
+  );
+  if (remaining <= EPSILON) {
+    throw new InvalidInputError(
+      `This unit already has its ${jobMaterial.description || "material"}`
+    );
+  }
+}
+
 // The per-operation tracked-consumption write sequence, extracted verbatim from
 // the trackedEntitiesToOperation case so trackedEntitiesToBatch can run it once
 // per member inside ONE transaction. Reads run against `trx`, so sequential
@@ -29064,6 +29328,7 @@ async function consumeTrackedEntitiesIntoOperation(
     unitNumber,
     overrideExpired,
     overrideReason,
+    travelerScan,
     companyId,
     userId,
     companyToday,
@@ -29081,6 +29346,12 @@ async function consumeTrackedEntitiesIntoOperation(
     unitNumber?: number;
     overrideExpired?: boolean;
     overrideReason?: string | null;
+    /**
+     * An MES traveler scan: lock the job material and refuse the issue when
+     * its requirement is already filled (`assertTravelerRequirementOpen`).
+     * Batch members and the Issue dialog leave it off.
+     */
+    travelerScan?: boolean;
     companyId: string;
     userId: string;
     companyToday: CalendarDate;
@@ -29148,18 +29419,38 @@ async function consumeTrackedEntitiesIntoOperation(
     expiredWarning = expiredCheck.warning;
   }
 
+  // A serial unit its own job is still building cannot be consumed into
+  // another job: its remaining operations would fail, and the cost and the
+  // genealogy would record an unfinished unit.
+  await assertUnitsNotInProduction(trx, companyId, trackedEntities);
+
   let jobMaterial: Selectable<KyselyDatabase["jobMaterial"]> | undefined;
   let actualMaterialId: string | undefined = materialId;
   const firstTrackedEntity = trackedEntities[0];
 
   if (materialId) {
-    // Existing behavior: fetch the jobMaterial
-    jobMaterial = await trx
+    // Existing behavior: fetch the jobMaterial. A traveler scan locks it, so
+    // two scans into the same requirement run one after the other and the
+    // second reads what the first consumed.
+    let jobMaterialQuery = trx
       .selectFrom("jobMaterial")
       .where("id", "=", materialId)
       .where("companyId", "=", companyId)
-      .selectAll()
-      .executeTakeFirst();
+      .selectAll();
+    if (travelerScan) jobMaterialQuery = jobMaterialQuery.forUpdate();
+    jobMaterial = await jobMaterialQuery.executeTakeFirst();
+
+    if (
+      travelerScan &&
+      jobMaterial &&
+      firstTrackedEntity?.sourceDocumentId === jobMaterial.itemId
+    ) {
+      await assertTravelerRequirementOpen(trx, {
+        companyId,
+        jobMaterial,
+        parentTrackedEntityId
+      });
+    }
 
     // Check if any tracked entity has a different sourceDocumentId than the material's itemId
     if (
@@ -31925,6 +32216,7 @@ export async function issueMaterial(
         unitNumber,
         overrideExpired,
         overrideReason,
+        travelerScan,
         companyId,
         userId
       } = validatedPayload;
@@ -31969,6 +32261,7 @@ export async function issueMaterial(
           unitNumber,
           overrideExpired,
           overrideReason,
+          travelerScan,
           companyId,
           userId,
           companyToday,

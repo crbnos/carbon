@@ -383,36 +383,25 @@ export const releaseCheckedJobs = defineServiceFn({
           jobId: id,
           error: picking.error
         });
-        const job = await ctx.asSystem.supabase
-          .from("job")
-          .select("notes")
-          .eq("id", id)
-          .eq("companyId", companyId)
-          .maybeSingle();
-        if (job.error) {
-          logger.error("Failed to read the job notes", {
-            companyId,
+        try {
+          const noted = await service.appendJobNoteParagraph(ctx.asSystem.pg, {
             jobId: id,
-            error: job.error
+            companyId,
+            text: `Carbon released the job but could not create its picking list: ${picking.error}`
           });
-        } else {
-          const noted = await ctx.asSystem.supabase
-            .from("job")
-            .update({
-              notes: utils.appendNoteParagraph(
-                job.data?.notes ?? null,
-                `Carbon released the job but could not create its picking list: ${picking.error}`
-              )
-            })
-            .eq("id", id)
-            .eq("companyId", companyId);
-          if (noted.error) {
+          if (!noted) {
             logger.error("Failed to note the picking list failure on the job", {
               companyId,
               jobId: id,
-              error: noted.error
+              error: "No job row matched"
             });
           }
+        } catch (error) {
+          logger.error("Failed to note the picking list failure on the job", {
+            companyId,
+            jobId: id,
+            error
+          });
         }
         warnings.push({
           jobId: id,

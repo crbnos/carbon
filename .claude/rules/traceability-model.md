@@ -35,7 +35,7 @@ avoid an entity appearing as its own ancestor/descendant within a single activit
 | `readableId` TEXT | the serial OR batch number (promoted out of `attributes` in `20251220013724`/`20251220021403`) |
 | `itemId` TEXT | **FK to `item(id)` `ON DELETE RESTRICT`** (`20260426000000`). Nullable today; an item with any tracked entity (even `Consumed`) cannot be hard-deleted — deactivate instead |
 | `expirationDate` DATE | first-class column (`20260426020000`), drives FEFO + near-expiry reports. NOT stored in `attributes` |
-| `attributes` JSONB | descriptive only: `Receipt Line`, `Receipt`, `Supplier`, `Job`, `Job Make Method`, `Job Material`, etc. (GIN-indexed) |
+| `attributes` JSONB | descriptive only: `Receipt Line`, `Receipt`, `Supplier`, `Job`, `Job Make Method`, `Job Material`, etc. (GIN-indexed; a GIN index cannot serve `->>` equality, so `Receipt Line` and `Job Make Method` also have partial expression indexes on `("companyId", attributes->>'…')`: `trackedEntity_companyId_receiptLine_idx`, `trackedEntity_companyId_jobMakeMethod_idx`) |
 | `companyId`, `createdAt`, `createdBy` | standard |
 
 `trackedActivity`: `id`, `type` TEXT (e.g. `'Picking'`, production, receipt…),
@@ -220,7 +220,16 @@ parent ids server-side from the batch's membership (see `mes-job-operation-ui.md
 `trackedEntitiesToOperation`) posts a negative Consumption row and, on partial use, **splits**
 the entity — the CONSUMED portion becomes the NEW `child` (`status: 'Consumed'`), the survivor
 keeps its id at lineside. Consumption/split rows are booked against the entity's actual on-hand
-bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. The **return** of the un-consumed
+bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. Before it consumes, `trackedEntitiesToOperation` (and each batch member of
+`trackedEntitiesToBatch`) refuses a serial unit that its own job is still building
+(`assertUnitsNotInProduction`, `inventory.service.ts`): an operation of the unit's
+`Job Make Method` that is not Done or Canceled, applies to the unit (an operation with
+`jobOperationTrackedEntity` rows applies only to those units) and has no `Operation <id>`
+marker on it ("<serial> is still being built on its own job"). With `travelerScan` (sent by
+the MES traveler scan) it also locks the `jobMaterial` `FOR UPDATE` and refuses when the
+requirement is already filled (`assertTravelerRequirementOpen`): for a serial parent, the
+material's per-unit quantity less what is consumed into that parent for the material; for
+any other parent, `estimatedQuantity` (else `quantity`) less `quantityIssued`. The **return** of the un-consumed
 remainder runs via `post-picking`'s sweep cases `returnJobRemainders` (at job complete — both
 policies — and at job cancel, with `cancelling: true`, before the status flips) / `returnOperationRemainders` (at operation Done: the whole job's remainder when
 that operation completed the job, otherwise only when

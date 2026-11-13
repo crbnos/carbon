@@ -4602,6 +4602,47 @@ export async function assignJobSerialNumbersAtRelease(
 }
 
 /**
+ * Appends one paragraph to a job's notes in one UPDATE, so a note saved at the
+ * same time is never overwritten. Notes that are a Tiptap document get the
+ * paragraph at the end of their `content`; any other value is replaced by a
+ * new document that holds only the paragraph. Returns false when no row of
+ * the company matched.
+ */
+export async function appendJobNoteParagraph(
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; text: string }
+): Promise<boolean> {
+  const paragraph = JSON.stringify({
+    type: "paragraph",
+    content: [{ type: "text", text: args.text }]
+  });
+  const result = await db
+    .updateTable("job")
+    .set({
+      notes: sql<Json>`CASE
+        WHEN jsonb_typeof("notes") = 'object' AND "notes"->>'type' = 'doc'
+          THEN jsonb_set(
+            "notes",
+            '{content}',
+            COALESCE(
+              CASE WHEN jsonb_typeof("notes"->'content') = 'array'
+                THEN "notes"->'content' END,
+              '[]'::jsonb
+            ) || jsonb_build_array(${paragraph}::jsonb)
+          )
+        ELSE jsonb_build_object(
+          'type', 'doc',
+          'content', jsonb_build_array(${paragraph}::jsonb)
+        )
+      END`
+    })
+    .where("id", "=", args.jobId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  return Number(result.numUpdatedRows ?? 0) > 0;
+}
+
+/**
  * Create the picking list of a job `releaseCheckedJobs` just released, when
  * `companySettings.autoPickingListOnRelease` is on. It does nothing when the
  * job already has an open (Draft or In Progress) list, or nothing to pick. An
@@ -4661,12 +4702,15 @@ export async function createReleasePickingList(
   }
   if ((open.data ?? []).length > 0) return { created: false, error: null };
 
-  const operations = await client
-    .from("jobOperation")
-    .select("id")
-    .eq("jobId", jobId)
-    .eq("companyId", companyId)
-    .not("status", "in", "(Done,Canceled)");
+  const operations = await fetchAllRecords(() =>
+    client
+      .from("jobOperation")
+      .select("id")
+      .eq("jobId", jobId)
+      .eq("companyId", companyId)
+      .not("status", "in", "(Done,Canceled)")
+      .order("id")
+  );
   if (operations.error) {
     return {
       created: false,
