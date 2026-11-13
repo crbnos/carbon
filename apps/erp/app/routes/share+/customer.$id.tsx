@@ -41,6 +41,7 @@ import {
 } from "~/modules/sales/ui/CustomerPortal";
 import {
   CustomerPortalOrderDocuments,
+  type CustomerPortalOverview,
   CustomerPortalPendingOrders,
   CustomerPortalRecords
 } from "~/modules/sales/ui/CustomerPortal/CustomerPortalRecords";
@@ -64,6 +65,8 @@ const logger = getLogger("erp", "share", "customer-portal");
 
 // The thumbnails the page downloads at once.
 const THUMBNAIL_CONCURRENCY = 8;
+
+type PortalQuoteOption = CustomerPortalOverview["quoteOptions"][number];
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const { id } = params;
@@ -218,11 +221,34 @@ export default function CustomerPortal() {
   const formatter = useNumberFormatter(SCALE_FORMAT);
   const location = useLocation();
   const [openForm, setOpenForm] = useState<
-    { type: "rfq" } | { type: "po"; quoteId?: string } | null
+    { type: "rfq" } | { type: "po"; quoteOption?: PortalQuoteOption } | null
   >(null);
 
   function openRequest(form: "rfq" | "po", quoteId?: string) {
-    setOpenForm(form === "rfq" ? { type: "rfq" } : { type: "po", quoteId });
+    if (form === "rfq") return setOpenForm({ type: "rfq" });
+    const quote = portalOverview.quotes.find((item) => item.id === quoteId);
+    setOpenForm({
+      type: "po",
+      quoteOption: quote
+        ? { id: quote.id, quoteId: quote.quoteId, status: quote.status }
+        : undefined
+    });
+  }
+
+  const quoteOptions: PortalQuoteOption[] = [
+    ...portalOverview.quoteOptions,
+    ...portalOverview.quotes.filter(
+      (quote) =>
+        quote.status === "Sent" &&
+        !portalOverview.quoteOptions.some((choice) => choice.id === quote.id)
+    )
+  ];
+  if (
+    openForm?.type === "po" &&
+    openForm.quoteOption &&
+    !quoteOptions.some((choice) => choice.id === openForm.quoteOption?.id)
+  ) {
+    quoteOptions.push(openForm.quoteOption);
   }
 
   function pageUrl(next: string | null, nextRequests = afterRequests) {
@@ -532,21 +558,12 @@ export default function CustomerPortal() {
         </div>
         {openForm && (
           <CustomerPortalSubmissionForms
-            key={`${openForm.type}:${openForm.type === "po" ? (openForm.quoteId ?? "") : ""}`}
+            key={`${openForm.type}:${openForm.type === "po" ? (openForm.quoteOption?.id ?? "") : ""}`}
             portalId={customer.id}
-            quotes={[
-              ...portalOverview.quoteOptions,
-              ...portalOverview.quotes.filter(
-                (quote) =>
-                  quote.status === "Sent" &&
-                  !portalOverview.quoteOptions.some(
-                    (choice) => choice.id === quote.id
-                  )
-              )
-            ]}
+            quotes={quoteOptions}
             initialForm={openForm.type}
             initialQuoteId={
-              openForm.type === "po" ? openForm.quoteId : undefined
+              openForm.type === "po" ? openForm.quoteOption?.id : undefined
             }
             onClose={() => setOpenForm(null)}
           />

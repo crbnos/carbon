@@ -213,7 +213,9 @@ export function CustomerPortalRecords({
       !overview.quotes.length &&
       !overview.rfqs.length &&
       !after &&
-      !afterRequests
+      !afterRequests &&
+      !overview.nextCursor.quotes &&
+      !overview.nextCursor.requests
     )
       return <Empty>No quotes or requests are available yet.</Empty>;
     return (
@@ -224,6 +226,11 @@ export function CustomerPortalRecords({
         <h2 className="border-b px-4 py-3 font-semibold">
           Quotes and requests
         </h2>
+        {!overview.quotes.length && !overview.rfqs.length && (
+          <p className="px-4 py-3 text-sm text-muted-foreground">
+            No records on this page.
+          </p>
+        )}
         <h3 className="bg-muted/30 px-4 py-2 text-sm font-medium">Requests</h3>
         {overview.rfqs.map((rfq) => (
           <Row key={rfq.id}>
@@ -301,7 +308,7 @@ export function CustomerPortalRecords({
   }
 
   if (section === "invoices") {
-    if (!overview.invoices.length && !after)
+    if (!overview.invoices.length && !after && !overview.nextCursor.invoices)
       return <Empty>No invoices are available yet.</Empty>;
     return (
       <section
@@ -309,6 +316,11 @@ export function CustomerPortalRecords({
         aria-label="Invoices"
       >
         <h2 className="border-b px-4 py-3 font-semibold">Invoices</h2>
+        {!overview.invoices.length && (
+          <p className="px-4 py-3 text-sm text-muted-foreground">
+            No downloadable invoices on this page.
+          </p>
+        )}
         {overview.invoices.map((invoice) => (
           <Row key={invoice.id}>
             <div>
@@ -350,7 +362,7 @@ export function CustomerPortalRecords({
     );
   }
 
-  if (!overview.shipments.length && !after)
+  if (!overview.shipments.length && !after && !overview.nextCursor.shipments)
     return <Empty>No packing slips are available yet.</Empty>;
   return (
     <section
@@ -360,6 +372,11 @@ export function CustomerPortalRecords({
       <h2 className="border-b px-4 py-3 font-semibold">
         Shipments and packing slips
       </h2>
+      {!overview.shipments.length && (
+        <p className="px-4 py-3 text-sm text-muted-foreground">
+          No downloadable packing slips on this page.
+        </p>
+      )}
       {overview.shipments.map((shipment) => (
         <Row key={shipment.id}>
           <div>
