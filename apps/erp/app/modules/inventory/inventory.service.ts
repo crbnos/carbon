@@ -29189,9 +29189,9 @@ async function assertUnitsNotInProduction(
     .where("jobOperation.jobMakeMethodId", "in", makeMethodIds)
     .where("jobOperation.companyId", "=", companyId)
     .where("jobOperation.status", "not in", ["Done", "Canceled"])
-    // A Completed or Closed job received its units: an operation it left
-    // open (a skipped non-terminal one) is not building them.
-    .where("job.status", "not in", ["Completed", "Closed"])
+    // A Completed, Closed or Cancelled job builds nothing more: an operation
+    // it left open (a skipped one, or every one a cancel left) never closes.
+    .where("job.status", "not in", ["Completed", "Closed", "Cancelled"])
     .execute();
   if (openOperations.length === 0) return;
 
