@@ -108,6 +108,7 @@ import {
   LuGitPullRequest,
   LuLayers,
   LuPackageCheck,
+  LuPackageSearch,
   LuPrinter,
   LuQrCode,
   LuSquareChartGantt,
@@ -177,6 +178,7 @@ import {
 import { IssueMaterialModal } from "./components/IssueMaterialModal";
 import { MaintenanceDispatch } from "./components/MaintenanceDispatch";
 import { OperationMaterials } from "./components/Materials";
+import { NeedMaterialModal } from "./components/NeedMaterialModal";
 import { ParametersListItem } from "./components/Parameter";
 import { QualityIssueModal } from "./components/QualityIssueModal";
 import { QuantityModal } from "./components/QuantityModal";
@@ -190,6 +192,7 @@ import {
 import { TableSkeleton } from "./components/TableSkeleton";
 import { useFiles } from "./hooks/useFiles";
 import { useOperation } from "./hooks/useOperation";
+import { useTravelerScan } from "./hooks/useTravelerScan";
 
 const DOCK_COLLAPSED_KEY = "mes:operation-dock-collapsed";
 
@@ -235,6 +238,8 @@ type JobOperationProps = {
   correctionName?: string | null;
   trackedEntities: TrackedEntity[];
   isFirstOperation: boolean;
+  isFirstOpenOperation?: boolean;
+  requireTrackedMaterialsIssued?: boolean;
   workCenter: Promise<
     PostgrestSingleResponse<{
       name: string;
@@ -271,6 +276,8 @@ export const JobOperation = ({
   correctionName,
   trackedEntities,
   isFirstOperation,
+  isFirstOpenOperation = false,
+  requireTrackedMaterialsIssued = false,
   workCenter
 }: JobOperationProps) => {
   const { t } = useLingui();
@@ -375,6 +382,7 @@ export const JobOperation = ({
   const attributeRecordDeleteModal = useDisclosure();
   const maintenanceModal = useDisclosure();
   const qualityIssueModal = useDisclosure();
+  const needMaterialModal = useDisclosure();
   const [activeStep, setActiveStep] = useState(
     parentIsSerial ? serialIndex : 0
   );
@@ -747,6 +755,15 @@ export const JobOperation = ({
     // The wedge completes this single op via endOperation — never for a batched
     // member; the batch completes as a whole.
     active: !!kanban?.id && !isBatched && !abilityBlocked
+  });
+
+  // A traveler scan issues the unit into this operation, opens the unit it
+  // already sits in, or goes to its traveler.
+  useTravelerScan({
+    operationId: operation.id,
+    jobMakeMethodId: operation.jobMakeMethodId,
+    parentTrackedEntityId: trackedEntityId,
+    active: !issueModal.isOpen && !isBatched && !abilityBlocked
   });
 
   const item = items.find((it) => it.id === operation.itemId);
@@ -3005,6 +3022,19 @@ export const JobOperation = ({
                   <Trans>Quality Issue</Trans>
                 </span>
               </button>
+              <button
+                type="button"
+                className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform"
+                onClick={() => {
+                  actionsSheet.onClose();
+                  needMaterialModal.onOpen();
+                }}
+              >
+                <LuPackageSearch className="size-4 shrink-0 stroke-muted-foreground" />
+                <span className="text-base/6 font-medium">
+                  <Trans>Need material</Trans>
+                </span>
+              </button>
             </div>
           </BottomSheetBody>
         </BottomSheetContent>
@@ -3064,6 +3094,8 @@ export const JobOperation = ({
                   parentIsBatch={parentIsBatch}
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
+                  isFirstOpenOperation={isFirstOpenOperation}
+                  requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
                   returnFocusRef={actionsSheetOpenerRef}
                   onClose={completeModal.onClose}
                 />
@@ -3163,6 +3195,28 @@ export const JobOperation = ({
         isOpen={qualityIssueModal.isOpen}
         onClose={qualityIssueModal.onClose}
       />
+
+      <Suspense key={`need-material-modal-${operationId}`}>
+        <Await resolve={materials}>
+          {(resolvedMaterials) => (
+            <NeedMaterialModal
+              operationId={operation.id}
+              materials={resolvedMaterials.materials.flatMap((material) =>
+                material.itemId
+                  ? [
+                      {
+                        itemId: material.itemId,
+                        label: material.itemReadableId ?? material.itemId
+                      }
+                    ]
+                  : []
+              )}
+              isOpen={needMaterialModal.isOpen}
+              onClose={needMaterialModal.onClose}
+            />
+          )}
+        </Await>
+      </Suspense>
 
       <Suspense key={`maintenance-modal-${operationId}`}>
         <Await resolve={workCenter}>

@@ -4601,6 +4601,144 @@ export async function assignJobSerialNumbersAtRelease(
   }
 }
 
+/**
+ * Appends one paragraph to a job's notes in one UPDATE, so a note saved at the
+ * same time is never overwritten. Notes that are a Tiptap document get the
+ * paragraph at the end of their `content`; any other value is replaced by a
+ * new document that holds only the paragraph. Returns false when no row of
+ * the company matched.
+ */
+export async function appendJobNoteParagraph(
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; text: string }
+): Promise<boolean> {
+  const paragraph = JSON.stringify({
+    type: "paragraph",
+    content: [{ type: "text", text: args.text }]
+  });
+  const result = await db
+    .updateTable("job")
+    .set({
+      notes: sql<Json>`CASE
+        WHEN jsonb_typeof("notes") = 'object' AND "notes"->>'type' = 'doc'
+          THEN jsonb_set(
+            "notes",
+            '{content}',
+            COALESCE(
+              CASE WHEN jsonb_typeof("notes"->'content') = 'array'
+                THEN "notes"->'content' END,
+              '[]'::jsonb
+            ) || jsonb_build_array(${paragraph}::jsonb)
+          )
+        ELSE jsonb_build_object(
+          'type', 'doc',
+          'content', jsonb_build_array(${paragraph}::jsonb)
+        )
+      END`
+    })
+    .where("id", "=", args.jobId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  return Number(result.numUpdatedRows ?? 0) > 0;
+}
+
+/**
+ * Create the picking list of a job `releaseCheckedJobs` just released, when
+ * `companySettings.autoPickingListOnRelease` is on. It does nothing when the
+ * job already has an open (Draft or In Progress) list, or nothing to pick. An
+ * error is returned, never thrown: the job is already Ready, so the caller
+ * warns and the release goes on.
+ */
+export async function createReleasePickingList(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; userId: string }
+): Promise<{ created: boolean; error: string | null }> {
+  const { jobId, companyId, userId } = args;
+
+  const settings = await client
+    .from("companySettings")
+    .select("autoPickingListOnRelease")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) {
+    return {
+      created: false,
+      error: getErrorMessage(settings.error, "unknown error")
+    };
+  }
+  if (settings.data?.autoPickingListOnRelease !== true) {
+    return { created: false, error: null };
+  }
+
+  const job = await client
+    .from("job")
+    .select("locationId")
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (job.error) {
+    return {
+      created: false,
+      error: getErrorMessage(job.error, "unknown error")
+    };
+  }
+  if (!job.data?.locationId) {
+    return { created: false, error: "The job has no location" };
+  }
+
+  const open = await client
+    .from("pickingListLine")
+    .select("id, pickingList!inner(status)")
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .in("pickingList.status", ["Draft", "In Progress"])
+    .limit(1);
+  if (open.error) {
+    return {
+      created: false,
+      error: getErrorMessage(open.error, "unknown error")
+    };
+  }
+  if ((open.data ?? []).length > 0) return { created: false, error: null };
+
+  const operations = await fetchAllRecords(() =>
+    client
+      .from("jobOperation")
+      .select("id")
+      .eq("jobId", jobId)
+      .eq("companyId", companyId)
+      .not("status", "in", "(Done,Canceled)")
+      .order("id")
+  );
+  if (operations.error) {
+    return {
+      created: false,
+      error: getErrorMessage(operations.error, "unknown error")
+    };
+  }
+  const jobOperationIds = (operations.data ?? []).map((row) => row.id);
+  if (jobOperationIds.length === 0) return { created: false, error: null };
+
+  const generated = await inventoryPostings.generatePickingList(client, db, {
+    jobOperationIds,
+    locationId: job.data.locationId,
+    companyId,
+    createdBy: userId,
+    excludeMadeParts: true
+  });
+  if (generated.error === inventoryPostings.NO_MATERIALS_TO_PICK) {
+    return { created: false, error: null };
+  }
+  if (generated.error) {
+    return {
+      created: false,
+      error: getErrorMessage(generated.error, "unknown error")
+    };
+  }
+  return { created: true, error: null };
+}
+
 /** The row write only; `updateJobDetails` also checks the job and recalculates it. */
 export async function updateJob(
   client: SupabaseClient<Database>,

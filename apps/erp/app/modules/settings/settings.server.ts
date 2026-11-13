@@ -400,7 +400,9 @@ export const updateItemsSettings = defineServiceFn({
  * unit draws its serial number (when the job is created, when it is released,
  * or the first time the unit is worked on, scrapped or received), and whether
  * one location requires an assigned operator before the scheduler places work
- * there. The staffing rule lives on the location row and is written for the
+ * there, whether travelers print at the pick, whether an operation needs its
+ * tracked parts issued before completion, and whether releasing a job creates
+ * its picking list. The staffing rule lives on the location row and is written for the
  * company's own location only, so a settings admin without the resources
  * permission can still set it. Changing it re-plans the location.
  *
@@ -415,6 +417,9 @@ export const updateProductionSettings = defineServiceFn({
     includeOperationsOnTraveler: z.boolean().optional(),
     autoSelectMaterialWithoutPickingList: z.boolean().optional(),
     serialNumberTiming: z.enum(serialNumberTimings).optional(),
+    travelerLabels: z.boolean().optional(),
+    requireTrackedMaterialsIssued: z.boolean().optional(),
+    autoPickingListOnRelease: z.boolean().optional(),
     locationStaffing: z
       .object({
         locationId: z.string().min(1),
@@ -3357,6 +3362,12 @@ export const createItemSerialSequence = defineServiceFn({
       .describe(
         "When this item's units draw their serial numbers. Omit or null to follow the company setting."
       ),
+    printLabelOnCompletion: z
+      .boolean()
+      .optional()
+      .describe(
+        "Print the serial label when the job's last operation completes."
+      ),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -3397,6 +3408,12 @@ export const updateItemSerialSequence = defineServiceFn({
         .optional()
         .describe(
           "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
+        ),
+      printLabelOnCompletion: z
+        .boolean()
+        .optional()
+        .describe(
+          "Print the serial label when the job's last operation completes."
         ),
       id: z
         .string()

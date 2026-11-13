@@ -240,7 +240,10 @@ export const issueTrackedEntityValidator = z.object({
   unitNumber: z.number().int().positive().optional(),
   // Set when policy is BlockWithOverride and operator typed a reason.
   overrideExpired: z.boolean().optional(),
-  overrideReason: z.string().optional()
+  overrideReason: z.string().optional(),
+  // Set by a traveler scan: the server resolves the material and quantity from
+  // the scanned unit and refuses a wrong item.
+  travelerScan: z.boolean().optional()
 });
 
 export const baseQuantityValidator = finishValidator.extend({
@@ -413,6 +416,12 @@ export const qualityIssueValidator = z.object({
     error: "Priority is required"
   }),
   trackedEntityId: zfd.text(z.string().optional())
+});
+
+export const materialRequestValidator = z.object({
+  jobOperationId: z.string().min(1),
+  itemId: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional())
 });
 
 export const maintenanceDispatchIssueValidator = z.object({

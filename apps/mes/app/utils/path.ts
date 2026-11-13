@@ -80,6 +80,9 @@ export const path = {
     // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
     erpApi: `${x}/proxy/api`,
     erpInspection: (id: string) => `${ERP_URL}/x/inspection/${id}`,
+    erpStockTransfer: (id: string) => `${ERP_URL}/x/stock-transfer/${id}`,
+    erpTraceability: (id: string) =>
+      `${getAppUrl()}${x}/traceability/graph?trackedEntityId=${id}`,
     file: {
       // The load-sheet route lives in ERP (like the traveler); MES links to it
       // cross-origin.
@@ -115,6 +118,34 @@ export const path = {
 
         if (labelSize) params.append("labelSize", labelSize);
         if (trackedEntityId) params.append("trackedEntityId", trackedEntityId);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
+      pickingListTravelersPdf: (
+        id: string,
+        { labelSize }: { labelSize?: string } = {}
+      ) => {
+        let url = `${file}/picking-list/${id}/travelers.pdf`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
+      pickingListTravelersZpl: (
+        id: string,
+        { labelSize }: { labelSize?: string } = {}
+      ) => {
+        let url = `${file}/picking-list/${id}/travelers.zpl`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
 
         const queryString = params.toString();
         if (queryString) url += `?${queryString}`;
@@ -181,6 +212,9 @@ export const path = {
     jobMakeMethodDetail: (jobId: string, makeMethodId: string) =>
       `${getAppUrl()}${x}/job/${jobId}/make/${makeMethodId}`,
     jobs: `${x}/jobs`,
+    lineFeed: `${x}/line-feed`,
+    lineFeedResolve: (id: string) =>
+      generatePath(`${x}/line-feed/${id}/resolve`),
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",
@@ -194,6 +228,7 @@ export const path = {
     manualInspection: (id: string) =>
       generatePath(`${x}/manual-inspection/${id}`),
     manualPrint: `${x}/print`,
+    materialRequestNew: `${x}/material-request/new`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
     mfa: "/mfa",
     newMaintenanceDispatch: `${x}/dispatch/new`,
@@ -240,6 +275,8 @@ export const path = {
     timeCardPage: `${x}/timecard`,
     timecard: `${api}/timecard`,
     timesheet: `${x}/timesheet`,
+    traveler: (id: string) => generatePath(`${x}/traveler/${id}`),
+    travelerResolve: `${x}/traveler/resolve`,
     triggerCorrection: `${x}/trigger-correction`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,

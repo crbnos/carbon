@@ -20,9 +20,11 @@ import {
 import type {
   Ctx,
   DayOffset,
+  GenealogyAssemblySpec,
   JobSpec,
   PickingListSpec,
-  ProductionData
+  ProductionData,
+  ReworkSpec
 } from "../types.ts";
 
 type RootOperation = {
@@ -137,6 +139,8 @@ export async function runTier6(ctx: Ctx): Promise<void> {
     await applyOperationDepth(ctx, id, spec);
     if (spec.loggedTime) await seedLoggedTime(ctx, id, spec);
 
+    if (spec.serials) await splitSerialUnits(ctx, id, spec.key, spec.serials);
+
     // The interceptor's reserved entity for the unit being built has no
     // readableId, so the MES assembly view labels the first serial with a raw
     // id. Name it after the job.
@@ -152,18 +156,81 @@ export async function runTier6(ctx: Ctx): Promise<void> {
 
   // Job refs only exist from here on, so this favorite isn't tier 04's.
   // jobFavorite has no companyId/createdBy, so audit injection no-ops.
-  await insertRow(ctx, "jobFavorite", {
-    jobId: need(ctx.refs.documents, `job:${data.eventsJobKey}`),
-    userId: ctx.userId
-  });
-
-  await seedProductionEvents(ctx, data);
-  await seedOpenEvent(ctx, data);
+  // A walkthrough dataset has no jobs: each job story below is null there.
+  const eventsJobKey = data.eventsJobKey;
+  if (eventsJobKey) {
+    await insertRow(ctx, "jobFavorite", {
+      jobId: need(ctx.refs.documents, `job:${eventsJobKey}`),
+      userId: ctx.userId
+    });
+    await seedProductionEvents(ctx, data, eventsJobKey);
+    if (data.openEvent) {
+      await seedOpenEvent(ctx, eventsJobKey, data.openEvent);
+    }
+  }
   await seedStepRecords(ctx);
-  await seedBatch(ctx, data);
-  await seedRework(ctx, data);
-  await seedGenealogy(ctx, data);
+  if (data.batch) await seedBatch(ctx, data.batch);
+  if (eventsJobKey && data.rework) {
+    await seedRework(ctx, eventsJobKey, data.rework);
+  }
+  if (data.genealogyJobKey && data.genealogyAssembly) {
+    await seedGenealogy(
+      ctx,
+      data,
+      data.genealogyJobKey,
+      data.genealogyAssembly
+    );
+  }
   await seedPickingLists(ctx, data);
+  await seedMaterialRequests(ctx, data);
+}
+
+// The interceptor reserves ONE entity for the whole job quantity. A serial job
+// is one entity per unit, so split it the way assignSerialNumbers (step 8,
+// production.service.ts) does: the seed becomes unit 0 with serials[0], and
+// each later serial is a quantity-1 copy dated one millisecond after the last,
+// because createdAt is the unit axis step records are indexed against.
+async function splitSerialUnits(
+  ctx: Ctx,
+  jobId: string,
+  jobKey: string,
+  serials: string[]
+): Promise<void> {
+  const roots = await rows<{ id: string }>(
+    ctx.client,
+    `SELECT te.id FROM "trackedEntity" te
+     JOIN "jobMakeMethod" jmm ON jmm.id = te.attributes->>'Job Make Method'
+     WHERE jmm."jobId" = $1 AND jmm."parentMaterialId" IS NULL
+       AND te."companyId" = $2`,
+    [jobId, ctx.companyId]
+  );
+  const seed = roots[0];
+  if (roots.length !== 1 || !seed) {
+    throw new Error(
+      `Seed: job "${jobKey}" has ${roots.length} root tracked entities, expected 1`
+    );
+  }
+
+  await ctx.client.query(
+    `UPDATE "trackedEntity" SET "readableId" = $1, quantity = 1
+     WHERE id = $2 AND "companyId" = $3`,
+    [serials[0], seed.id, ctx.companyId]
+  );
+
+  for (let n = 1; n < serials.length; n++) {
+    await ctx.client.query(
+      `INSERT INTO "trackedEntity" (
+         "sourceDocument", "sourceDocumentId", "sourceDocumentReadableId",
+         status, attributes, "itemId", "companyId", "createdBy",
+         quantity, "readableId", "createdAt"
+       )
+       SELECT "sourceDocument", "sourceDocumentId", "sourceDocumentReadableId",
+         status, attributes, "itemId", "companyId", "createdBy",
+         1, $1, "createdAt" + $2::int * interval '1 millisecond'
+       FROM "trackedEntity" WHERE id = $3 AND "companyId" = $4`,
+      [serials[n], n, seed.id, ctx.companyId]
+    );
+  }
 }
 
 async function applyOperationDepth(
@@ -255,10 +322,11 @@ async function applyOperationDepth(
  */
 async function seedProductionEvents(
   ctx: Ctx,
-  data: ProductionData
+  data: ProductionData,
+  eventsJobKey: string
 ): Promise<void> {
-  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
-  const eventsJobSpec = data.jobs.find((job) => job.key === data.eventsJobKey);
+  const jobId = need(ctx.refs.documents, `job:${eventsJobKey}`);
+  const eventsJobSpec = data.jobs.find((job) => job.key === eventsJobKey);
 
   const operations = (await rootOperations(ctx, jobId)).slice(0, 2);
   if (operations.length === 0) return;
@@ -303,12 +371,16 @@ async function seedProductionEvents(
 }
 
 // Without an open event (no endTime) MES's active-operation UI renders nothing.
-async function seedOpenEvent(ctx: Ctx, data: ProductionData): Promise<void> {
-  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
+async function seedOpenEvent(
+  ctx: Ctx,
+  eventsJobKey: string,
+  openEvent: NonNullable<ProductionData["openEvent"]>
+): Promise<void> {
+  const jobId = need(ctx.refs.documents, `job:${eventsJobKey}`);
   const operations = await rootOperations(ctx, jobId);
   const operation = rootOperationAt(
     operations,
-    data.openEvent.operationOrder,
+    openEvent.operationOrder,
     "production.openEvent"
   );
 
@@ -325,9 +397,12 @@ async function seedOpenEvent(ctx: Ctx, data: ProductionData): Promise<void> {
 }
 
 // Mirrors batch-operations' "create" with release.
-async function seedBatch(ctx: Ctx, data: ProductionData): Promise<void> {
+async function seedBatch(
+  ctx: Ctx,
+  batch: NonNullable<ProductionData["batch"]>
+): Promise<void> {
   const members: RootOperation[] = [];
-  for (const member of data.batch.members) {
+  for (const member of batch.members) {
     const jobId = need(ctx.refs.documents, `job:${member.job}`);
     members.push(
       rootOperationAt(
@@ -370,12 +445,8 @@ async function seedBatch(ctx: Ctx, data: ProductionData): Promise<void> {
   await insertRow(ctx, "productionEvent", {
     jobOperationId: lead.id,
     jobOperationBatchId: batchId,
-    type: data.batch.running.type,
-    startTime: resolveTimestamp(
-      ctx.anchor,
-      0,
-      data.batch.running.startTimeOfDay
-    ),
+    type: batch.running.type,
+    startTime: resolveTimestamp(ctx.anchor, 0, batch.running.startTimeOfDay),
     endTime: null,
     employeeId: ctx.userId,
     workCenterId: lead.workCenterId,
@@ -561,25 +632,29 @@ async function seedStepRecords(ctx: Ctx): Promise<void> {
 }
 
 /** Mirrors trigger-rework; left open (no completedAt) since the job is still In Progress. */
-async function seedRework(ctx: Ctx, data: ProductionData): Promise<void> {
-  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
+async function seedRework(
+  ctx: Ctx,
+  eventsJobKey: string,
+  rework: ReworkSpec
+): Promise<void> {
+  const jobId = need(ctx.refs.documents, `job:${eventsJobKey}`);
   const operations = await rootOperations(ctx, jobId);
   const target = rootOperationAt(
     operations,
-    data.rework.targetOperationOrder,
+    rework.targetOperationOrder,
     "production.rework target"
   );
   const triggeredAt = rootOperationAt(
     operations,
-    data.rework.triggeredAtOperationOrder,
+    rework.triggeredAtOperationOrder,
     "production.rework triggeredAt"
   );
 
   ctx.log("rework");
   await insertRow(ctx, "rework", {
     jobId,
-    quantity: data.rework.quantity,
-    reason: data.rework.reason,
+    quantity: rework.quantity,
+    reason: rework.reason,
     requestedById: ctx.userId,
     targetJobOperationId: target.id,
     triggeredAtJobOperationId: triggeredAt.id
@@ -690,6 +765,47 @@ async function seedPickingList(ctx: Ctx, spec: PickingListSpec): Promise<void> {
 }
 
 /**
+ * "Need material" calls from the floor. Each sits at its operation's work
+ * center and the job's location, as the MES writes them. A Resolved one was
+ * raised and answered yesterday, so resolvedAt is never before createdAt.
+ */
+async function seedMaterialRequests(
+  ctx: Ctx,
+  data: ProductionData
+): Promise<void> {
+  if (data.materialRequests.length === 0) return;
+  // Every job is at the plant (runTier6).
+  const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
+  ctx.log(`material requests — ${data.materialRequests.length}`);
+
+  for (const spec of data.materialRequests) {
+    const jobId = need(ctx.refs.documents, `job:${spec.job}`);
+    const operation = rootOperationAt(
+      await rootOperations(ctx, jobId),
+      spec.operationOrder,
+      `material request on job "${spec.job}"`
+    );
+    const resolved = spec.status === "Resolved";
+    await insertRow(ctx, "materialRequest", {
+      locationId: plantId,
+      workCenterId: operation.workCenterId,
+      jobOperationId: operation.id,
+      itemId:
+        spec.item === undefined ? null : need(ctx.refs.items, spec.item).id,
+      note: spec.note ?? null,
+      status: spec.status,
+      ...(resolved
+        ? {
+            createdAt: resolveTimestamp(ctx.anchor, -1, "14:05:00"),
+            resolvedBy: ctx.userId,
+            resolvedAt: resolveTimestamp(ctx.anchor, -1, "14:40:00")
+          }
+        : {})
+    });
+  }
+}
+
+/**
  * As-built genealogy for the first satellite off the in-progress job.
  *
  * The traceability graph is drawn from activities, not from entities: each
@@ -697,9 +813,13 @@ async function seedPickingList(ctx: Ctx, spec: PickingListSpec): Promise<void> {
  * parent being built. Seeding entities alone leaves the graph empty, which is
  * what it was.
  */
-async function seedGenealogy(ctx: Ctx, data: ProductionData): Promise<void> {
-  const assembly = data.genealogyAssembly;
-  const jobId = need(ctx.refs.documents, `job:${data.genealogyJobKey}`);
+async function seedGenealogy(
+  ctx: Ctx,
+  data: ProductionData,
+  genealogyJobKey: string,
+  assembly: GenealogyAssemblySpec
+): Promise<void> {
+  const jobId = need(ctx.refs.documents, `job:${genealogyJobKey}`);
   const satellite = need(ctx.refs.items, assembly.item, "item");
 
   const assemblyOperation = await rows<{ id: string }>(

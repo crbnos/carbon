@@ -14,6 +14,7 @@ import {
   getPickOrder
 } from "~/services/inventory.service";
 import { setPickingListLineTrackedEntity } from "~/services/picking.service";
+import { printTravelersOnStart } from "~/services/printing.server";
 
 const logger = getLogger("mes", "picking-tracked-line");
 
@@ -94,8 +95,11 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
   const serviceRole = getCarbonServiceRole();
 
-  const { lineId } = params;
+  const { lineId, pickingListId } = params;
   if (!lineId) return { success: false, message: "Missing line" };
+  if (!pickingListId) {
+    return { success: false, message: "Missing pickingListId" };
+  }
 
   const formData = await request.formData();
   const trackedEntityId = formData.get("trackedEntityId") as string;
@@ -133,6 +137,15 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
           : (result.error.message ?? "Failed to pick line")
     };
   }
+
+  // The pick can move the list out of Draft (the status trigger), which
+  // starts it. After the pick, so a print failure never blocks it.
+  await printTravelersOnStart({
+    serviceRole,
+    pickingListId,
+    companyId,
+    userId: effectiveUserId
+  });
 
   return { success: true, data: result.data };
 }

@@ -4016,6 +4016,9 @@ msgstr "期限を定めないリースは予告で終了できるため、短期
 msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
 msgstr "期限を定めないリースは短期です。これを有効化すると、仕訳が転記されず、各請求書は費用計上されます。"
 
+msgid "An operation cannot complete until every serial and batch part on it is issued."
+msgstr ""
+
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "社内作業区ではなく外部仕入先が実行する工程で、外注発注書でカバーされます。"
 
@@ -7561,6 +7564,9 @@ msgstr "{0}の固定資産クラスとして完了します"
 msgid "Completing"
 msgstr "完了中"
 
+msgid "Completing a job's first operation prints its unit labels."
+msgstr ""
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "この教育訓練を完了すると、選択されたスキルが付与または更新されます。"
 
@@ -8061,6 +8067,9 @@ msgstr "設計変更をリビジョン/ECOで管理"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "作業者が製造現場で材料をピッキングし時間を追跡する方法を制御します。"
+
+msgid "Control how parts and labels move from the pick to the finished unit."
+msgstr ""
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "アイテムID（部品、材料、消耗品、工具、およびサービス）に小文字を含めることができるかどうかを制御します。"
@@ -8856,6 +8865,9 @@ msgstr "新しいルールを作成"
 
 msgid "Create Operator"
 msgstr "作業者を作成"
+
+msgid "Create picking lists on release"
+msgstr ""
 
 msgid "Create PO Line"
 msgstr "発注書明細を作成"
@@ -11412,6 +11424,9 @@ msgstr "各期間は1ヶ月で、月額レートが適用されます。"
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
 
+msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
+msgstr ""
+
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "各レンタル契約または契約の営業担当者（またはその作成者）は、毎日その請求書のサマリーを受け取ります。"
 
@@ -11977,6 +11992,9 @@ msgstr "メール通知はあなたの会社の現在のプランに含まれて
 
 msgid "Email notifications not configured"
 msgstr "メール通知が設定されていません"
+
+msgid "Email order on acceptance"
+msgstr ""
 
 msgid "Email recipients"
 msgstr "メール受信者"
@@ -16492,6 +16510,9 @@ msgstr "このかんばんの次の工程を開始するためのラベル"
 msgid "Labels"
 msgstr "ラベル"
 
+msgid "Labels print at the first operation"
+msgstr ""
+
 msgid "Labor"
 msgstr "労務"
 
@@ -17046,6 +17067,9 @@ msgstr "行の詳細"
 
 msgid "Line Details"
 msgstr "明細詳細"
+
+msgid "Line Flow"
+msgstr ""
 
 msgid "Line Item"
 msgstr "行アイテム"
@@ -21424,6 +21448,9 @@ msgstr "作業者"
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "作業者は PIN 認証で共有ワークステーションを使用できます。"
 
+msgid "Operators see a warning about unissued serial and batch parts and can still complete."
+msgstr ""
+
 msgid "Operators start on the Scan tab"
 msgstr "作業者はスキャンタブで開始します。"
 
@@ -22441,6 +22468,15 @@ msgstr "ピッキングリストのメモ"
 msgid "Picking Lists"
 msgstr "ピッキングリスト"
 
+msgid "Picking lists are created by hand"
+msgstr ""
+
+msgid "Picking lists on release disabled"
+msgstr ""
+
+msgid "Picking lists on release enabled"
+msgstr ""
+
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "ピッキングは追跡対象品目を使用期限が最も近い順に提供するため、期限切れが最も近い在庫がデフォルトで最初に出荷されます。"
 
@@ -23018,6 +23054,9 @@ msgstr "ラベル印刷"
 msgid "Print Label"
 msgstr "ラベルを印刷"
 
+msgid "Print label on completion"
+msgstr ""
+
 msgid "Print Labels"
 msgstr "ラベルを印刷"
 
@@ -23028,6 +23067,12 @@ msgstr "ラベルを印刷 ({0})"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "印刷出力 ({0})"
+
+msgid "Print this item's serial label when its job's last operation completes."
+msgstr ""
+
+msgid "Print travelers at the pick"
+msgstr ""
 
 msgid "Printed on the purchase orders you approve."
 msgstr "あなたが承認した発注書に印刷されています。"
@@ -24740,6 +24785,9 @@ msgstr "発行済みリビジョンはロック中です"
 msgid "Released with problems: {0}"
 msgstr "リリース済（警告あり）: {0}"
 
+msgid "Releasing a job creates its picking list"
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "バッチをリリースするとその製造指図がリリースされ、それぞれが製造現場に対応可能である必要があります。"
 
@@ -25297,6 +25345,9 @@ msgstr "{0} で人員配置が必要"
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "金額しきい値と承認者グループに基づき、発注書、品質ドキュメント、仕入先、変更通知に多段階の承認を必須にします。"
 
+msgid "Require tracked parts before completion"
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "二要素認証が必要です"
 
@@ -25323,6 +25374,12 @@ msgstr "所要日"
 
 msgid "Required in a controlled environment — audit logging cannot be turned off."
 msgstr "管理された環境では必須です。監査ログはオフにできません。"
+
+msgid "Required tracked parts disabled"
+msgstr ""
+
+msgid "Required tracked parts enabled"
+msgstr ""
 
 msgid "Requirement"
 msgstr "要求事項"
@@ -28605,6 +28662,9 @@ msgstr "開始"
 
 msgid "Starting"
 msgstr "開始中"
+
+msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
+msgstr ""
 
 msgid "Starting…"
 msgstr "開始中…"
@@ -32521,6 +32581,12 @@ msgstr "追跡対象の ID、シリアル番号、またはバッチ"
 msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 msgstr "追跡される材料は、ピッキングリストがない場合でも、ピック順（FEFO）によって事前に選択されます。"
 
+msgid "Tracked parts are not required"
+msgstr ""
+
+msgid "Tracked parts must be scanned in"
+msgstr ""
+
 msgid "Tracking"
 msgstr "追跡"
 
@@ -32644,6 +32710,15 @@ msgstr "ゴミ箱"
 msgid "Travel"
 msgstr "旅行"
 
+msgid "Traveler labels disabled"
+msgstr ""
+
+msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
+msgstr ""
+
 msgid "Traveler materials disabled"
 msgstr "現品票の材料が無効になりました"
 
@@ -32655,6 +32730,9 @@ msgstr "現品票工程が無効化されました"
 
 msgid "Traveler operations enabled"
 msgstr "現品票工程が有効化されました"
+
+msgid "Travelers print at the pick"
+msgstr ""
 
 msgid "Treatment"
 msgstr "会計処理"
@@ -32709,6 +32787,9 @@ msgstr "Government Contractingをオンにする"
 
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
+
+msgid "Turn on to create one picking list for each job when it is released."
+msgstr ""
 
 msgid "Turned off sync"
 msgstr "同期をオフにしました"

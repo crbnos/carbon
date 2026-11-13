@@ -13,10 +13,11 @@ import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
 import {
   getJobMakeMethod,
+  getRequiredScanShortfall,
   getTrackedEntitiesForOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
-import { autoPrintFirstOperationLabel } from "~/services/printing.server";
+import { autoPrintOperationLabel } from "~/services/printing.server";
 import {
   getInspection,
   getInspectionMeasurements,
@@ -548,8 +549,8 @@ export async function postSerialCompletions(
   // Labels go out after the postings, so a slow print enqueue never delays
   // a unit's completion. Units completed before a failure still get theirs.
   for (const trackedEntityId of completedEntityIds) {
-    // Auto-print label on first operation only (entity was just minted)
-    await autoPrintFirstOperationLabel({
+    // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
+    await autoPrintOperationLabel({
       serviceRole,
       trackedEntityId,
       jobOperationId: args.jobOperationId,
@@ -603,8 +604,8 @@ export async function postBulkCompletion(
         message: response.error.message || "Failed to complete units"
       };
     }
-    // Auto-print label on first operation only (batch entity was just minted)
-    await autoPrintFirstOperationLabel({
+    // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
+    await autoPrintOperationLabel({
       serviceRole,
       trackedEntityId: state.batchTrackedEntityId,
       jobOperationId: state.jobOperationId,
@@ -674,6 +675,37 @@ export async function checkStrictBackflush(args: {
       error: check.error,
       message: check.error.message || "Failed to issue materials"
     };
+  }
+  return { error: null, message: null };
+}
+
+/** Required scans (`companySettings.requireTrackedMaterialsIssued`) for the
+ *  units an inspection lot completes: a serial lot checks each unit in
+ *  `trackedEntityIds`, any other lot the operation's issued quantity for
+ *  `quantity` more units. Call it before a completion's first write, beside
+ *  `checkStrictBackflush`; nothing completes when `quantity` is 0. */
+export async function checkRequiredScans(
+  serviceRole: ServiceRole,
+  args: {
+    jobOperationId: string;
+    quantity: number;
+    requiresSerialTracking: boolean;
+    trackedEntityIds: string[];
+    companyId: string;
+  }
+): Promise<{ error: unknown | null; message: string | null }> {
+  if (args.quantity <= 0) return { error: null, message: null };
+  const shortfall = await getRequiredScanShortfall(serviceRole, {
+    companyId: args.companyId,
+    jobOperationId: args.jobOperationId,
+    parentIsSerial: args.requiresSerialTracking,
+    trackedEntityIds: args.requiresSerialTracking
+      ? args.trackedEntityIds
+      : undefined,
+    quantity: args.quantity
+  });
+  if (shortfall.message) {
+    return { error: shortfall.error, message: shortfall.message };
   }
   return { error: null, message: null };
 }

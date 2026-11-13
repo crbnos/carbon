@@ -6,6 +6,8 @@ import { trackedEntityStripe } from "@carbon/api/stock-stripes";
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import {
+  fetchAllByIds,
+  fetchAllRecords,
   getLocationTimeZone,
   getNonNettableTrackedEntityIds
 } from "@carbon/database";
@@ -20,6 +22,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { erpPosting } from "~/services/erp";
+import { buildLineFeedRows } from "~/services/line-feed";
 import type { SuggestedAllocationLot } from "./allocation";
 import {
   greedyFillAllocation,
@@ -131,6 +134,47 @@ async function withoutNonNettableLots<
   return {
     ...lots,
     data: lots.data.filter((lot) => !quarantined.data?.has(lot.id))
+  };
+}
+
+/**
+ * The tracking type a traveler label prints for each unit, from its item's
+ * tracking type (Serial or Batch) — never from the unit's quantity, since a
+ * batch lot can hold 1 or 0.5. A unit's item is `itemId`, else its
+ * `sourceDocumentId` (as the print job resolves it). One paged read.
+ */
+export async function getLabelTrackingTypes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  units: { id: string; itemId: string | null; sourceDocumentId: string }[]
+): Promise<
+  | { data: Map<string, "Serial" | "Batch">; error: null }
+  | { data: null; error: unknown }
+> {
+  const itemIdOf = (unit: (typeof units)[number]) =>
+    unit.itemId ?? unit.sourceDocumentId;
+  const items = await fetchAllByIds(
+    [...new Set(units.map(itemIdOf))],
+    (batch) =>
+      client
+        .from("item")
+        .select("id, itemTrackingType")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+  );
+  if (items.error) return { data: null, error: items.error };
+  const typeByItem = new Map(
+    items.data.map((item) => [item.id, item.itemTrackingType])
+  );
+  return {
+    data: new Map(
+      units.map((unit) => [
+        unit.id,
+        typeByItem.get(itemIdOf(unit)) === "Batch" ? "Batch" : "Serial"
+      ])
+    ),
+    error: null
   };
 }
 
@@ -727,4 +771,145 @@ export async function insertManualInventoryAdjustment(
   }
 
   return { data: result.data?.itemLedger ?? null, error: null };
+}
+
+/**
+ * The line feeder's queue for one location: open material requests, lineside
+ * shortages and outstanding transfer lines to a work center's storage unit,
+ * plus the names the cards show. Every source is paged with a stable order,
+ * so a location past the row cap still gets its oldest requests and largest
+ * shortages first from `buildLineFeedRows`.
+ */
+export async function getLineFeed(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; locationId: string }
+) {
+  const { companyId, locationId } = args;
+
+  const [requests, shortages, transfers] = await Promise.all([
+    fetchAllRecords(() =>
+      client
+        .from("materialRequest")
+        .select(
+          "*, item(readableIdWithRevision), workCenter(name), jobOperation(job(jobId))"
+        )
+        .eq("status", "Open")
+        .eq("locationId", locationId)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllRecords(() =>
+      client
+        .rpc("get_line_feed_shortages", {
+          p_location_id: locationId,
+          p_company_id: companyId
+        })
+        .order("workCenterId")
+        .order("storageUnitId")
+        .order("itemId")
+    ),
+    fetchAllRecords(() =>
+      client
+        .from("stockTransferLine")
+        .select(
+          "id, itemId, outstandingQuantity, createdAt, toStorageUnitId, stockTransfer!inner(id, stockTransferId, status, locationId), toStorageUnit:storageUnit!stockTransferLine_toStorageUnitId_fkey!inner(name, workCenterId)"
+        )
+        .eq("companyId", companyId)
+        .eq("stockTransfer.locationId", locationId)
+        .in("stockTransfer.status", ["Released", "In Progress"])
+        .gt("outstandingQuantity", 0)
+        .not("toStorageUnit.workCenterId", "is", null)
+        .order("id")
+    )
+  ]);
+
+  const error = requests.error ?? shortages.error ?? transfers.error;
+  if (error) return { data: null, error };
+
+  const requestRows = requests.data ?? [];
+  const shortageRows = shortages.data ?? [];
+  const transferRows = transfers.data ?? [];
+
+  // One read each for the names the shortages and transfers do not carry.
+  const storageUnitIds = [
+    ...new Set(shortageRows.map((shortage) => shortage.storageUnitId))
+  ];
+  const workCenterIds = [
+    ...new Set(
+      [
+        ...shortageRows.map((shortage) => shortage.workCenterId),
+        ...transferRows.map((transfer) => transfer.toStorageUnit?.workCenterId)
+      ].filter((id): id is string => Boolean(id))
+    )
+  ];
+
+  const [storageUnits, workCenters] = await Promise.all([
+    fetchAllByIds(storageUnitIds, (batch) =>
+      client
+        .from("storageUnit")
+        .select("id, name")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(workCenterIds, (batch) =>
+      client
+        .from("workCenter")
+        .select("id, name")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    )
+  ]);
+
+  const nameError = storageUnits.error ?? workCenters.error;
+  if (nameError) return { data: null, error: nameError };
+
+  const workCenterNames: Record<string, string> = {};
+  for (const workCenter of workCenters.data ?? []) {
+    workCenterNames[workCenter.id] = workCenter.name;
+  }
+  for (const request of requestRows) {
+    if (request.workCenterId && request.workCenter?.name) {
+      workCenterNames[request.workCenterId] = request.workCenter.name;
+    }
+  }
+
+  const storageUnitNames: Record<string, string> = {};
+  for (const storageUnit of storageUnits.data ?? []) {
+    storageUnitNames[storageUnit.id] = storageUnit.name;
+  }
+  for (const transfer of transferRows) {
+    if (transfer.toStorageUnitId && transfer.toStorageUnit?.name) {
+      storageUnitNames[transfer.toStorageUnitId] = transfer.toStorageUnit.name;
+    }
+  }
+
+  // The readable ids a card shows: the job a request came from, and the
+  // stock transfer a transfer line belongs to.
+  const jobReadableIds: Record<string, string> = {};
+  for (const request of requestRows) {
+    const jobId = request.jobOperation?.job?.jobId;
+    if (jobId) jobReadableIds[request.id] = jobId;
+  }
+  const stockTransferReadableIds: Record<string, string> = {};
+  for (const transfer of transferRows) {
+    stockTransferReadableIds[transfer.stockTransfer.id] =
+      transfer.stockTransfer.stockTransferId;
+  }
+
+  return {
+    data: {
+      rows: buildLineFeedRows({
+        requests: requestRows,
+        shortages: shortageRows,
+        transfers: transferRows
+      }),
+      workCenterNames,
+      storageUnitNames,
+      jobReadableIds,
+      stockTransferReadableIds
+    },
+    error: null
+  };
 }

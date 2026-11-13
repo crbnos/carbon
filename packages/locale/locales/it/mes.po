@@ -63,6 +63,11 @@ msgstr "{0} h"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} non ha alcun numero di Lotto. Impostalo sul Lotto di produzione o sull'Ordine di produzione in Carbon, quindi completa."
 
+#. placeholder {0}: result.unit.readableId
+#. placeholder {1}: result.unit.status
+msgid "{0} is {1}"
+msgstr ""
+
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} è chiuso. Il suo orario non può cambiare."
@@ -168,6 +173,9 @@ msgstr "{hour} h"
 
 msgid "{hours} h"
 msgstr "{hours} h"
+
+msgid "{issued} of {required}"
+msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, in ritardo"
@@ -346,6 +354,9 @@ msgstr "Aggiunto"
 msgid "Adjustment Type"
 msgstr "Tipo di rettifica"
 
+msgid "Age"
+msgstr ""
+
 msgid "All"
 msgstr "Tutti"
 
@@ -376,6 +387,9 @@ msgstr "Allocare unità non conformi"
 
 msgid "Allocate units"
 msgstr "Assegna unità"
+
+msgid "Any part"
+msgstr ""
 
 msgid "Appearance"
 msgstr "Aspetto"
@@ -624,6 +638,13 @@ msgstr "Scegli Avatar"
 msgid "Choose how Carbon reaches you."
 msgstr "Scegli come Carbon ti raggiunge."
 
+#. placeholder {0}: unit.readableId
+msgid "Choose the operation to issue {0} into"
+msgstr ""
+
+msgid "Choose the operation to open for this unit"
+msgstr ""
+
 msgid "Clear"
 msgstr "Cancella"
 
@@ -792,6 +813,12 @@ msgstr "Correzione: {correctionName}"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Costo della manutenzione non pianificata, ultimi {0} giorni"
 
+msgid "Could not load the line feed"
+msgstr ""
+
+msgid "Could not look up this label. Try again."
+msgstr ""
+
 msgid "Country code"
 msgstr "Prefisso internazionale"
 
@@ -956,7 +983,7 @@ msgstr "Scadenza"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Scadenza {0}"
 
@@ -1110,6 +1137,9 @@ msgstr "Impossibile registrare lo strumento di misura"
 
 msgid "Failed to register passkey"
 msgstr "Impossibile registrare il Passkey"
+
+msgid "Failed to resolve request"
+msgstr ""
 
 msgid "Failed to save measurement"
 msgstr "Errore durante il salvataggio della misurazione"
@@ -1357,6 +1387,10 @@ msgstr "Registra un altro scarico di materiale"
 msgid "Issue Material"
 msgstr "Preleva Materiale"
 
+#. placeholder {0}: selected.operation.jobReadableId
+msgid "Issue to {0}"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "Tipo di Problema"
 
@@ -1473,6 +1507,9 @@ msgstr "Chiaro, scuro, o segui le impostazioni di sistema."
 
 msgid "Line"
 msgstr "Riga"
+
+msgid "Line feed"
+msgstr ""
 
 msgid "lines"
 msgstr "righe"
@@ -1601,6 +1638,9 @@ msgstr "Corrispondenza trovata: {matchedId}"
 msgid "matches"
 msgstr "corrisponde a"
 
+msgid "Material requested"
+msgstr ""
+
 msgid "Materials"
 msgstr "Materiali"
 
@@ -1668,6 +1708,9 @@ msgstr "Nome"
 
 msgid "Navigation"
 msgstr "Navigazione"
+
+msgid "Need material"
+msgstr ""
 
 msgid "New"
 msgstr "Nuovo"
@@ -1817,8 +1860,8 @@ msgstr "Nessun Passkey registrato ancora."
 msgid "No photos yet"
 msgstr "Nessuna foto ancora"
 
-msgid "No picking lists assigned"
-msgstr "Nessuna lista di prelievo assegnata"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "Nessuna stampante configurata"
@@ -1868,6 +1911,9 @@ msgstr "Nessuna scorciatoia disponibile in questa pagina."
 msgid "No spare parts added yet"
 msgstr "Nessun ricambio ancora aggiunto"
 
+msgid "No station"
+msgstr ""
+
 msgid "No stock"
 msgstr "Nessun stock"
 
@@ -1913,6 +1959,9 @@ msgstr "Non impostato"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Scorta non utilizzabile. MRP e pianificazione non la conteggiano e il prelievo non la utilizza."
 
+msgid "Note"
+msgstr ""
+
 msgid "Notes"
 msgstr "Note"
 
@@ -1931,6 +1980,9 @@ msgstr "Niente in esecuzione"
 
 msgid "Nothing scheduled at this work center"
 msgstr "Niente pianificato in questo centro di lavoro"
+
+msgid "Nothing to feed"
+msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "Nulla da scartare"
@@ -2242,6 +2294,9 @@ msgstr "Stampa"
 msgid "Print batch list"
 msgstr "Stampa elenco lotti di produzione"
 
+msgid "Print travelers"
+msgstr ""
+
 msgid "Printed on the purchase orders you approve."
 msgstr "Stampato sugli ordini di acquisto che approvi."
 
@@ -2445,6 +2500,12 @@ msgstr "Riaprire il sottoassieme e creare un'unità di ricambio"
 msgid "Repairable"
 msgstr "Riparabile"
 
+msgid "Request"
+msgstr ""
+
+msgid "Request material"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Richiedi un codice a 6 cifre da un'app autenticatore quando accedi."
 
@@ -2459,6 +2520,9 @@ msgstr "Richiesti: {quantityToPick}{unitSuffix}, prelevati: {quantityPicked}{uni
 
 msgid "Resolution"
 msgstr "Risoluzione"
+
+msgid "Resolve"
+msgstr ""
 
 msgid "Result"
 msgstr "Risultato"
@@ -2534,6 +2598,9 @@ msgstr "Scansiona {partName}"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Scansiona un'entità tracciata per aggiungere la prima colonna campione."
+
+msgid "Scan in these parts first"
+msgstr ""
 
 msgid "Scan or enter a serial"
 msgstr "Scansiona o immetti un numero di serie"
@@ -2785,6 +2852,9 @@ msgstr "Carente"
 msgid "Short pick {itemName}"
 msgstr "Prelievo breve {itemName}"
 
+msgid "Shortage"
+msgstr ""
+
 msgid "Show description"
 msgstr "Mostra descrizione"
 
@@ -2941,6 +3011,12 @@ msgstr "Passi"
 msgid "Steps are missing"
 msgstr "Passi mancanti"
 
+msgid "Stock transfer"
+msgstr ""
+
+msgid "Storage unit"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "Unità di Stoccaggio"
 
@@ -3061,6 +3137,9 @@ msgstr "Il lotto sarà comunque disposizionato, ma non è possibile creare un NC
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Il timer e il completamento sono condivisi da tutti gli {0} ordini di produzione. I passi, i materiali e i file qui sono di questo ordine di produzione."
 
+msgid "The unit changed. Scan again."
+msgstr ""
+
 msgid "The values break a rule on this record."
 msgstr "I valori violano una regola su questo record."
 
@@ -3094,6 +3173,9 @@ msgstr "Ci sono materiali tracciati per numero di serie o lotto nella distinta b
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Questi articoli hanno ancora materiale da prelevare. Il completamento ora contrassegna l'elenco come Parziale."
 
+msgid "This barcode matches more than one unit"
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "Questo lotto di produzione non ha istruzioni di lavoro."
 
@@ -3111,6 +3193,9 @@ msgstr "Questo è un controllo passa / non passa. Premi P o F."
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Questo ordine di produzione non ha una tariffa di fatturazione. Chiedi all'ufficio di impostarla prima che il tempo sia fatturato."
+
+msgid "This label does not belong to a unit in this company"
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "Questo lotto è scaduto e non può essere prelevato."
@@ -3244,6 +3329,15 @@ msgstr "Numero di tracciamento"
 
 msgid "Training"
 msgstr "Formazione"
+
+msgid "Transfer"
+msgstr ""
+
+msgid "Traveler"
+msgstr ""
+
+msgid "Try again"
+msgstr ""
 
 msgid "Two-factor authentication"
 msgstr "Autenticazione a due fattori"
@@ -3395,11 +3489,17 @@ msgstr "Visualizza intervento di manutenzione"
 msgid "View or open"
 msgstr "Visualizza o apri"
 
+msgid "View Traceability"
+msgstr ""
+
 msgid "Warranty"
 msgstr "Garanzia"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Ti abbiamo inviato un link di accesso e un codice di 6 cifre. Segui il link o inserisci il codice qui."
+
+msgid "What do you need?"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Cos'è {translatedTerm}?"

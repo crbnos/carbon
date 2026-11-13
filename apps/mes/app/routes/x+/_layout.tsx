@@ -65,7 +65,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import type {
   LoaderFunctionArgs,
   MiddlewareFunction,
@@ -77,8 +77,10 @@ import {
   data,
   Form,
   Outlet,
+  useFetcher,
   useLoaderData,
-  useLocation
+  useLocation,
+  useNavigate
 } from "react-router";
 import { AppSidebar } from "~/components";
 import { ConsolePill } from "~/components/ConsolePill";
@@ -93,6 +95,7 @@ import { userContext } from "~/context";
 import { useIdle } from "~/hooks";
 import { userMiddleware } from "~/middleware/user";
 import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
+import type { loader as resolveLoader } from "~/routes/x+/traveler.resolve";
 import { getItarCertificationStatus } from "~/services/itar.service";
 import { getActiveMaintenanceEventsCount } from "~/services/maintenance.service";
 import {
@@ -107,6 +110,7 @@ import {
   CONSOLE_PIN_SOURCE_ID
 } from "~/utils/console-pin-activity";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
+import { parseTravelerCode } from "~/utils/traveler";
 
 const log = getLogger("mes", "auth");
 const CONSOLE_PIN_PEER_TIMEOUT_MS = 30_000;
@@ -438,13 +442,47 @@ export default function AuthenticatedRoute() {
 
   const userId = user?.id;
   const { t } = useLingui();
+  const navigate = useNavigate();
+  // The operation and assembly pages read a traveler scan themselves.
+  const onOperationPage =
+    pathname.startsWith("/x/operation/") || pathname.startsWith("/x/assembly/");
+  const resolveFetcher = useFetcher<typeof resolveLoader>();
   useKeyboardWedge({
     test: (input) =>
       (input.startsWith(MES_URL) || input.startsWith(ERP_URL)) &&
-      !input.includes("/kanban/complete/"), // we handle this more gracefully in JobOperation
+      !input.includes("/kanban/complete/") && // we handle this more gracefully in JobOperation
+      !(onOperationPage && parseTravelerCode(input)),
     inTextFields: true,
-    onUnrecognized: () => toast.error(t`Nothing on this page uses that barcode`)
+    onUnrecognized: (input) => {
+      const travelerId = parseTravelerCode(input);
+      if (travelerId) return navigate(path.to.traveler(travelerId));
+      // A raw id from an old label: the server finds the unit it names.
+      return resolveFetcher.load(
+        `${path.to.travelerResolve}?code=${encodeURIComponent(input)}`
+      );
+    }
   });
+  const processedResolveData = useRef<typeof resolveFetcher.data | null>(null);
+  useEffect(() => {
+    const result = resolveFetcher.data;
+    if (
+      resolveFetcher.state !== "idle" ||
+      !result ||
+      result === processedResolveData.current
+    ) {
+      return;
+    }
+    processedResolveData.current = result;
+    if (result.status === "found") {
+      navigate(path.to.traveler(result.trackedEntityId));
+    } else if (result.status === "ambiguous") {
+      toast.error(t`This barcode matches more than one unit`);
+    } else if (result.status === "error") {
+      toast.error(t`Could not look up this label. Try again.`);
+    } else {
+      toast.error(t`Nothing on this page uses that barcode`);
+    }
+  }, [resolveFetcher.state, resolveFetcher.data, navigate, t]);
   const scanPending = useScanPending();
   // Not data a save or a realtime change touches, so it refreshes on its own.
   const systemStatus = useLoaderQuery<typeof systemStatusLoader>(

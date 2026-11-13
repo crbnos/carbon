@@ -4,6 +4,10 @@ paths:
   - "apps/mes/app/routes/x+/operation.$operationId.tsx"
   - "apps/mes/app/routes/x+/batch.$batchId.tsx"
   - "packages/react/src/hooks/useKeyboardWedge.ts"
+  - "apps/mes/app/routes/x+/traveler.*"
+  - "apps/mes/app/routes/x+/line-feed*"
+  - "apps/mes/app/utils/traveler.ts"
+  - "apps/mes/app/utils/trackedMaterials.ts"
 ---
 
 # MES Job Operation UI
@@ -258,7 +262,9 @@ Space (Start/Pause) or clicks the focused button with its Enter. A scan with no
 Enter or Tab ends after 700 ms of quiet. Ending sooner acted on the first half
 of a paused URL, which is itself a valid link.
 
-- The MES layout opens MES/ERP links; `JobOperation` and `AssemblyView`
+- The MES layout opens MES/ERP links. On an operation or assembly page
+  (`/x/operation/`, `/x/assembly/`) it leaves a traveler link to the page's own
+  `useTravelerScan` (see Traveler scan below). `JobOperation` and `AssemblyView`
   complete the kanban (`isKanbanCompleteScan`, `~/utils/kanban`). That check
   compares the label's PATH, because a label holds the origin it was printed
   from. It accepts the completed barcode override and the printed label.
@@ -285,13 +291,177 @@ of a paused URL, which is itself a valid link.
   has focus, and the field is set back to its value from before the scan.
   A scan no handler takes stays in the field.
 - A scan outside a field that no handler takes is kept from the page, and
-  the layout's `onUnrecognized` shows a toast.
+  the layout's `onUnrecognized` handles it. A traveler link
+  (`parseTravelerCode`, `~/utils/traveler`) opens `path.to.traveler(id)`. Any
+  other code goes to `x+/traveler.resolve.tsx`. It finds a unit by id, then by
+  `readableId` (`findTrackedEntityByCode`). So the raw id on an old label still
+  opens its traveler. A code that matches 2 units, or none, shows a toast.
 - A callback that returns a promise (`navigate`, `fetcher.load`, or the
   cross-origin `location.assign` that the default callback waits on) keeps
   the scan pending. `useScanPending` drives `ScanPendingOverlay` in the
   layout, and every other scan is ignored until the promise settles (at most
   20 s). A kanban start label loads the ERP and then the MES, so without
   this state operators scanned it twice.
+
+## Traveler scan
+
+A unit's label QR holds its traveler link, `<MES_URL>/x/traveler/<trackedEntityId>`.
+`parseTravelerCode` compares only the path, because a label holds the origin it
+was printed from.
+
+- **`x+/traveler.$trackedEntityId.tsx`** resolves the scanned unit with
+  `getTravelerTarget` (`get_traveler_target`, see `traceability-model.md`): a
+  unit consumed into a parent travels with that parent. Then it acts on the
+  target's status:
+
+  | Target status | What the route does |
+  |---|---|
+  | `Reserved` (a unit in work) | `pickTravelerOperation` picks from the unit's open operations on the active list. An operation at the operator's work center (today's people assignment) wins, else the lowest `operationOrder`. One candidate redirects to `path.to.operation(id)?trackedEntityId=…`; 2 or more show a chooser (`chooseOperation`); none shows the unit's details |
+  | `Available` (a part to fit) | `travelerIssueCandidates` lists the open operations whose material of that item is still short. A material with no operation belongs to the first open operation of its make method (lowest `order`, then id), where the picking list stages it. A serial make method (`perUnitMakeMethodIds`) skips the job-level check: once each candidate's next incomplete unit is known, the loader keeps it only when `pickTravelerMaterial` finds a material that unit still needs (`getUnitConsumption`, one read for every unit). Operations at the operator's work center come first, then the earliest job due date; the list is capped at 10 after that check. The `IssueChooser` issues the unit into the selected operation's next incomplete unit, then opens that operation. With no candidate, it shows the unit's details and storage unit |
+  | Any other status | The unit's status |
+
+- **`useTravelerScan`** (`JobOperation/hooks/useTravelerScan.ts`) is the
+  traveler wedge on `JobOperation` and `AssemblyView`. It is off while the Issue
+  dialog is open and under an ability Block. On `JobOperation` it is also off in
+  batch mode. It loads `x+/traveler.resolve.tsx`, then
+  `travelerScanAction` decides:
+  1. An `Available` unit: the hook issues it into this operation.
+  2. A unit whose target is `Reserved` on this operation's make method opens that unit here, with no issue.
+  3. Anything else navigates to the traveler route.
+
+  The hook keeps the unit the scan was made for: the operation, the parent
+  unit, the step and the unit number. If any of them changes before the
+  lookup returns, the hook does not issue. It shows "The unit changed. Scan
+  again.".
+- **Rework scope.** An open operation tells you that a unit is still in
+  production only if the operation applies to that unit. An operation with
+  `jobOperationTrackedEntity` rows applies only to the units in those rows.
+  An operation with no rows applies to every unit. `getOperationScopes`
+  (`services/traveler.server.ts`) reads the rows of a set of operations in
+  one paged read. `isUnitInOperationScope` (`~/utils/traveler`) does the
+  check. The traveler route reads the rows once for all of its active
+  operations. It uses them for the open operations of the unit and for the
+  next unit of each issue candidate. `isUnitInProduction` reads them for the
+  open operations of the unit's make method. If that read fails, it returns
+  an error, not `false`. `x+/traveler.resolve.tsx` then returns
+  `status: "error"`, and the scan does not issue the unit.
+- **The issue.** Both the chooser and the hook post `travelerScan: true` to
+  `x+/issue-tracked-entity.tsx`. The route sends `travelerScan` on to the
+  `trackedEntitiesToOperation` posting. The route then needs `jobOperationId`,
+  `parentTrackedEntityId` and exactly one child. `resolveTravelerMaterial`
+  (`services/traveler.server.ts`) sets the material and quantity from the
+  scanned unit. It refuses a unit that is not `Available`, an item the make
+  method does not use ("This job does not use …"), an item no material still
+  needs, and a batch-tracked material (batch lots issue from the Issue dialog).
+  It is the gate; the chooser's filter only mirrors it.
+- **What still needs the item** (`pickTravelerMaterial`, `~/utils/traveler`,
+  tested). Only a material on this operation, then one with no operation, can
+  take the unit (each group in id order). A serial parent
+  (`jobMakeMethod.requiresSerialTracking`) takes a material while its
+  `quantity` (per unit) is more than what is consumed into that unit for it.
+  `getUnitConsumption` reads that per job material from the `Consume`
+  activities that output the unit (their `Job Material` attribute and input
+  quantities), less the `Unconsume` outputs, and leaves out a component that is
+  now `Scrapped`. It gives one entry for each material and component item. It
+  reads every page of both histories (`fetchAllByIds`). Consumption of the
+  scanned item that is booked to another material fills the materials of this
+  operation first. (The Issue dialog's issue by item makes a 0-quantity
+  material.) Consumption of a different item never fills them. A fitted bolt
+  does not count as a chamber. Any other parent takes a material while
+  `jobMaterialShortfall` (`estimatedQuantity ?? quantity` less
+  `quantityIssued`) is above 0. With none left the refusal is "This unit
+  already has its <item>" (serial) or "This job already has all its <item>",
+  shown by `useTravelerScan` and the `IssueChooser` as a toast. A failed read
+  refuses with "Could not check this unit. Try again.".
+- **A failed lookup.** `findTrackedEntityByCode` logs and returns
+  `{ kind: "error" }` when either read fails, and `x+/traveler.resolve.tsx`
+  passes it as `status: "error"`. `useTravelerScan` shows "Could not look up
+  this label. Try again."; the layout wedge still shows its generic toast.
+- The Issue dialog's serial and batch fields also accept a traveler link and
+  keep only its id.
+
+## Required scans before completion
+
+`companySettings.requireTrackedMaterialsIssued` refuses to complete a unit
+while its serial or batch materials are not scanned in.
+
+- **The rule.** `unissuedTrackedMaterials` (`~/utils/trackedMaterials`, tested)
+  lists the tracked materials of the make method that the operation consumes:
+  its own materials, plus the materials with no operation when it is the
+  first open operation of its make method (lowest `order`, then id: where
+  `generatePickingList` stages them and `get_line_feed_shortages` counts
+  them; the screens read it with `isFirstOpenOperationOfMakeMethod`, the
+  server with `getFirstOpenOperationsOfMakeMethods`). A material is short while
+  `quantityIssued` is less than `quantity` × the units after completion. Both
+  sides are rounded to the internal quantity scale first (`round`,
+  `@carbon/utils`), so 0.3 issued covers 0.1 × 3 units.
+- **The server check.** `getRequiredScanShortfall` (`services/operations.service.ts`)
+  returns the refusal message ("Scan in these parts first: …",
+  `requiredScanMessage`). A serial unit counts only what was scanned into that
+  unit; a batch or untracked parent counts the operation's `quantityIssued`.
+  Several serial units (an inspection lot) pass `trackedEntityIds`: each unit
+  must hold its parts, and the message sums them ("issued of required" over
+  the units). One set of reads covers every operation and unit: the
+  operations, their tracked materials (paged with `fetchAllByIds`, so a
+  batch past the row cap is never checked on a partial list), the first-open-operation read
+  (`getFirstOpenOperationsOfMakeMethods`, one `jobOperation` query; the
+  decision is `firstOpenOperationIds`) and the units' inputs through the batch
+  lineage RPCs (`netTrackedInputs`, `issuedByJobMaterial`; `getTrackedInputs`
+  nets the same way). A failed read of any of them, the first-open-operation read
+  included, refuses ("Could not check the scanned parts") and is logged.
+  `isFirstOpenOperationOfMakeMethod` still reads a failed lookup as "not
+  first"; it is for the screens, never the gate.
+- **Where it runs**, before anything is recorded, beside `checkStrictBackflush`:
+  `x+/complete.tsx`, `x+/end.$operationId.tsx` (every branch), `x+/finish.tsx`,
+  `x+/inspection-lot.$id.complete-passed.tsx` and
+  `x+/inspection-lot.$id.disposition.tsx` (through `checkRequiredScans`,
+  `services/quality.server.ts`; the disposition checks the units it completes
+  before it closes the lot; a decision that completes no unit is not checked), and
+  `x+/batch.$batchId.complete.tsx` (`getBatchRequiredScanShortfall`).
+- **Batch completion.** Every member that is not excluded is checked in one
+  set of reads, and the whole batch is refused with the members that are
+  short, by job ("Scan in these parts first: J1: PART (0 of 2); …",
+  `batchRequiredScanMessage`). A batch pick (`trackedEntitiesToBatch`) adds to
+  each member's `jobMaterial.quantityIssued` and books into one WIP unit, not
+  per unit, so every member counts `quantityIssued`, a serial member too. A
+  `Completing` batch (phase 1 recorded its quantities) adds no units, and a
+  `Completed` one (a duplicate submit) is not checked.
+- **The modal.** The operation and assembly loaders pass `isLastOperation` and
+  `requireTrackedMaterialsIssued` to `QuantityModal`. With the setting on, the
+  Complete alert lists each short part ("issued of required") and Complete stays
+  disabled. With it off, the old warning and its "I understand" checkbox stay.
+
+## Need material and the line feed
+
+- **Need material.** The More Actions sheet of `JobOperation` and `AssemblyView`
+  opens `NeedMaterialModal`, which posts an optional item and note to
+  `x+/material-request.new.tsx`. The route calls `createMaterialRequest`
+  (`@carbon/database/material-request`) with the user's client, so the
+  `materialRequest` RLS decides who may ask: any employee of the company, as
+  the author (the insert requires `createdBy` to be the caller). The request sits at the operation's
+  work center and that work center's location, else the operator's location.
+- **The line feed.** `x+/line-feed.tsx` (`path.to.lineFeed`, a sidebar queue,
+  `alt+0`, `view: inventory`) shows the line feeder's queue at the operator's
+  location. `getLineFeed` (`services/inventory.service.ts`) reads 3 sources, and
+  `buildLineFeedRows` (`services/line-feed.ts`, tested) orders them:
+  1. Open material requests, oldest first.
+  2. Lineside shortages (`get_line_feed_shortages`, newest definition
+     `20261113014205_line-feed-first-operation-stripes.sql`), largest first.
+     Required is the unissued Pull from Inventory material of open operations
+     at a work center; a material with no operation counts at the FIRST open
+     operation of its make method, where `generatePickingList` stages it. On
+     hand is the station bins' ledger without Rejected or Scrapped tracked
+     units, netted by stock stripe: a job of a project with project stock uses
+     its project's stock, then unassigned stock; every other job uses
+     unassigned stock only. `onHand` is the stock that can cover the demand.
+  3. Outstanding stock transfer lines to a work center's storage unit, oldest first.
+- **Resolve.** A request card posts to `x+/line-feed.$materialRequestId.resolve.tsx`,
+  which calls `resolveMaterialRequest` with the user's client. Only the
+  requester or an inventory editor can resolve it; the RLS refusal comes back
+  as "Only the requester or an inventory editor can resolve this request".
+- **Picking queue.** `getAssignedPickingLists` (`services/picking.service.ts`)
+  shows the lists assigned to the operator and the unassigned lists at the
+  operator's location.
 
 ## Components
 
@@ -312,7 +482,8 @@ of a paused URL, which is itself a valid link.
 - Modals/sections: `IssueMaterialModal`, `QuantityModal` (type `scrap`/`finish`),
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.
-- **Hooks:** `hooks/useOperation.tsx` (modal disclosures, live progress via
+- `NeedMaterialModal` (Need material, see above).
+- **Hooks:** `hooks/useTravelerScan.ts` (see Traveler scan), `hooks/useOperation.tsx` (modal disclosures, live progress via
   `useInterval` + realtime (`@carbon/query`, see `realtime-system.md`), active-event detection, serial selection),
   `hooks/useFiles.tsx` (`downloadFile`/`downloadModel` via `path.to.file.previewFile`).
 

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { PrintButton } from "@carbon/printing/ui";
 import type {
   TrackedEntityOption,
   TrackedEntityPickOrder,
@@ -177,7 +178,7 @@ export default function PickingExecutionRoute() {
   const completedCount = lines.filter((l) => isLineResolved(l)).length;
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-col flex-1 min-h-0">
       <MesAppBar
         title={pickingList.pickingListId}
         subtitle={<Trans>Picking</Trans>}
@@ -199,6 +200,7 @@ export default function PickingExecutionRoute() {
             <PickingListControls
               pickingListId={pickingList.id}
               status={pickingList.status}
+              locationId={pickingList.locationId ?? undefined}
             />
           </div>
         </header>
@@ -233,6 +235,7 @@ export default function PickingExecutionRoute() {
           <PickingListControls
             pickingListId={pickingList.id}
             status={pickingList.status}
+            locationId={pickingList.locationId ?? undefined}
             size="lg"
             finishVariant="primary"
             className="min-w-0 flex-1 [&_button]:w-full [&_button]:h-12"
@@ -254,12 +257,14 @@ type FinishStatusResponse = {
 function PickingListControls({
   pickingListId,
   status,
+  locationId,
   size = "md",
   finishVariant = "secondary",
   className
 }: {
   pickingListId: string;
   status: string;
+  locationId: string | undefined;
   size?: "md" | "lg";
   finishVariant?: "primary" | "secondary";
   className?: string;
@@ -307,11 +312,36 @@ function PickingListControls({
     });
   };
 
-  if (isPickingListLocked(status)) return null;
+  // Travelers can be reprinted after the list finishes; a cancelled list has
+  // no units to travel with.
+  const printTravelers =
+    status === "Cancelled" ? null : (
+      <PrintButton
+        sourceDocument="PickingList"
+        sourceDocumentId={pickingListId}
+        locationId={locationId}
+        context="inventory"
+        size={size}
+        label={<Trans>Print travelers</Trans>}
+        fileRoutes={{
+          pdf: path.to.file.pickingListTravelersPdf,
+          zpl: path.to.file.pickingListTravelersZpl
+        }}
+      />
+    );
+
+  if (isPickingListLocked(status)) {
+    return printTravelers ? (
+      <HStack spacing={2} className={className}>
+        {printTravelers}
+      </HStack>
+    ) : null;
+  }
 
   return (
     <>
       <HStack spacing={2} className={className}>
+        {printTravelers}
         {status === "Draft" && (
           <Button
             size={size}

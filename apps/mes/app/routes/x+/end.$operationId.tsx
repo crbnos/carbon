@@ -16,12 +16,13 @@ import {
   abilityBlockRefusal,
   finishJobOperation,
   getNextIncompleteSerialEntity,
+  getRequiredScanShortfall,
   getTrackedEntitiesForOperation,
   insertProductionQuantity,
   isFirstOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
-import { autoPrintFirstOperationLabel } from "~/services/printing.server";
+import { autoPrintOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
 import { path } from "~/utils/path";
 
@@ -226,6 +227,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         }
       }
 
+      const shortfall = await getRequiredScanShortfall(serviceRole, {
+        companyId,
+        jobOperationId: jobOperation.data.id,
+        trackedEntityId: trackedEntityId ?? undefined,
+        parentIsSerial: jobMakeMethod.data.requiresSerialTracking,
+        quantity: quantityToComplete
+      });
+      if (shortfall.message) {
+        return redirect(
+          trackedEntityId
+            ? `${path.to.operation(operationId)}?trackedEntityId=${trackedEntityId}`
+            : path.to.operation(operationId),
+          await flash(request, error(null, shortfall.message))
+        );
+      }
+
       if (jobMakeMethod.data.requiresSerialTracking) {
         // Units flow in order through the first operation; at a later one the
         // operator scans or selects each unit, so the scan never moves the view
@@ -264,11 +281,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           | string
           | undefined;
 
-        // Auto-print label on first operation only (entity was just minted).
+        // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides).
         // Print the unit just completed, not the new reserved one.
         const printEntityId = trackedEntityId || newTrackedEntityId;
         if (printEntityId) {
-          await autoPrintFirstOperationLabel({
+          await autoPrintOperationLabel({
             serviceRole,
             trackedEntityId: printEntityId,
             jobOperationId: jobOperation.data.id,
@@ -373,9 +390,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           );
         }
 
-        // Auto-print label on first operation only (batch entity was just minted)
+        // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
         if (trackedEntityId) {
-          await autoPrintFirstOperationLabel({
+          await autoPrintOperationLabel({
             serviceRole,
             trackedEntityId,
             jobOperationId: jobOperation.data.id,
@@ -387,6 +404,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         }
       }
     } else {
+      const shortfall = await getRequiredScanShortfall(serviceRole, {
+        companyId,
+        jobOperationId: jobOperation.data.id,
+        parentIsSerial: false,
+        quantity: quantityToComplete
+      });
+      if (shortfall.message) {
+        return redirect(
+          path.to.operation(operationId),
+          await flash(request, error(null, shortfall.message))
+        );
+      }
+
       const check = await checkStrictBackflush({
         jobOperationId: operationId,
         quantity: quantityToComplete,

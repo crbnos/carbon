@@ -245,6 +245,20 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     ]
   );
 
+  // Written on every apply, so applying a dataset without lineFlow turns the
+  // line-flow settings off again.
+  const flow = data.lineFlow;
+  ctx.log("line flow settings");
+  await ctx.client.query(
+    `UPDATE "companySettings" SET "travelerLabels" = $1, "requireTrackedMaterialsIssued" = $2, "autoPickingListOnRelease" = $3 WHERE id = $4`,
+    [
+      flow?.travelerLabels ?? false,
+      flow?.requireTrackedMaterialsIssued ?? false,
+      flow?.autoPickingListOnRelease ?? false,
+      ctx.companyId
+    ]
+  );
+
   // ── Work centers (need dept + ability + location) ─────────────────────────
   ctx.log("work centers");
   for (const wc of data.workCenters) {
@@ -546,13 +560,45 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── Printer routes ─────────────────────────────────────────────────────────
   if (data.printerRoute) {
     ctx.log("printer routes");
-    await insertRow(ctx, "printerRoute", {
+    const printerRouteId = await insertId(ctx, "printerRoute", {
       name: data.printerRoute.name,
       locationId: plantId,
       format: data.printerRoute.format,
       printerUrl: data.printerRoute.printerUrl,
       companyId
     });
+    if (data.printerRoute.plantDefault) {
+      // The shape of emptyLocationAssignment (@carbon/printing) with the
+      // default set; the contexts and work centers inherit it.
+      const inherit = { printerRouteId: null, autoPrint: true };
+      const plantAssignment = {
+        defaultPrinterRouteId: printerRouteId,
+        defaultAutoPrint: true,
+        shipping: inherit,
+        receiving: inherit,
+        inventory: inherit,
+        // A kanban card needs media of at least 3" x 2", and this route has
+        // no media size, so the print worker would render the card on
+        // label2x1 and the kanban renderer refuses that. A context with no
+        // route of its own always falls back to the location default
+        // (resolveContextAssignment), so kanban cannot opt out of the route;
+        // it opts out of auto-print instead, and creating a kanban queues no
+        // job that is sure to fail.
+        kanban: { printerRouteId: null, autoPrint: false },
+        workCenters: {}
+      };
+      // Set only this plant's entry: the assignments of other locations stay.
+      await ctx.client.query(
+        `UPDATE "companySettings"
+         SET printing = COALESCE(printing, '{}'::jsonb) || jsonb_build_object(
+           'assignments',
+           COALESCE(printing -> 'assignments', '{}'::jsonb)
+             || jsonb_build_object($2::text, $1::jsonb)
+         )
+         WHERE id = $3`,
+        [JSON.stringify(plantAssignment), plantId, companyId]
+      );
+    }
   }
 
   // ── Procedures (shop-floor work instructions) ─────────────────────────────

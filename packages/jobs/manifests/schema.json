@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261112030415",
+  "schemaVersion": "20261113015550",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-12T03:15:56.068Z",
+  "exportedAt": "2026-11-13T02:08:25.351Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -515,7 +515,10 @@
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
         "includeSupplierPartFiles",
-        "requirePromisedDateToFinalizePurchaseOrder"
+        "requirePromisedDateToFinalizePurchaseOrder",
+        "travelerLabels",
+        "requireTrackedMaterialsIssued",
+        "autoPickingListOnRelease"
       ]
     },
     {
@@ -3052,7 +3055,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "serialNumberTiming"
+        "serialNumberTiming",
+        "printLabelOnCompletion"
       ]
     },
     {
@@ -4251,7 +4255,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "travelersPrintedAt"
       ]
     },
     {
@@ -5816,6 +5821,26 @@
         "updatedBy",
         "updatedAt",
         "leaseLineId"
+      ]
+    },
+    {
+      "name": "materialRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "locationId",
+        "workCenterId",
+        "jobOperationId",
+        "itemId",
+        "note",
+        "status",
+        "resolvedBy",
+        "resolvedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {

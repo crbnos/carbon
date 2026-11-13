@@ -8,8 +8,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { userContext } from "~/context";
 import { setPickingListLineQuantity } from "~/services/picking.service";
+import { printTravelersOnStart } from "~/services/printing.server";
 
-export async function action({ context, request }: ActionFunctionArgs) {
+export async function action({ context, request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { userId, companyId } = await requirePermissions(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
@@ -20,6 +21,10 @@ export async function action({ context, request }: ActionFunctionArgs) {
   const quantity = Number(formData.get("quantity") ?? 0);
   const markShort = formData.get("markShort") === "true";
 
+  const { pickingListId } = params;
+  if (!pickingListId) {
+    return { success: false, message: "Missing pickingListId" };
+  }
   if (!pickingListLineId) {
     return { success: false, message: "Missing pickingListLineId" };
   }
@@ -41,6 +46,15 @@ export async function action({ context, request }: ActionFunctionArgs) {
           : (result.error.message ?? "Failed to update pick line")
     };
   }
+
+  // The pick can move the list out of Draft (the status trigger), which
+  // starts it. After the pick, so a print failure never blocks it.
+  await printTravelersOnStart({
+    serviceRole,
+    pickingListId,
+    companyId,
+    userId: effectiveUserId
+  });
 
   return { success: true, data: result.data };
 }

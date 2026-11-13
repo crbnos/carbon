@@ -147,7 +147,11 @@ export const issueInput = z.discriminatedUnion("type", [
     jobOperationStepId: z.string().optional(),
     unitNumber: z.number().int().positive().optional(),
     overrideExpired: z.boolean().optional(),
-    overrideReason: z.string().optional()
+    overrideReason: z.string().optional(),
+    // Sent by the MES traveler scan. The posting then locks the job material
+    // and refuses the issue when the requirement is already filled, so two
+    // scans at once cannot both fill the same requirement.
+    travelerScan: z.boolean().optional()
   }),
   z.object({
     type: z.literal("unconsumeTrackedEntities"),

@@ -4016,6 +4016,9 @@ msgstr "एक खुला पट्टा नोटिस पर समाप�
 msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
 msgstr "एक खुला पट्टा अल्पकालिक है: इसे सक्रिय करते समय कोई जर्नल पोस्ट नहीं होता है, और प्रत्येक चालान को खर्च के रूप में दर्ज किया जाता है।"
 
+msgid "An operation cannot complete until every serial and batch part on it is issued."
+msgstr ""
+
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "एक आपूर्तिकर्ता द्वारा किया गया एक ऑपरेशन एक इन-हाउस वर्क सेंटर के बजाय, एक उप-अनुबंध क्रय आदेश द्वारा कवर किया गया।"
 
@@ -7561,6 +7564,9 @@ msgstr "अचल संपत्ति वर्ग {0} को पूर्ण 
 msgid "Completing"
 msgstr "पूरा कर रहा है"
 
+msgid "Completing a job's first operation prints its unit labels."
+msgstr ""
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "इस प्रशिक्षण को पूरा करने से चयनित कौशल प्रदान किया जाता है या नवीनीकृत होता है।"
 
@@ -8061,6 +8067,9 @@ msgstr "रिवीजन / ECO के साथ डिज़ाइन पर�
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "नियंत्रित करें कि ऑपरेटर शॉप फ्लोर पर सामग्री कैसे चुनते हैं और समय कैसे ट्रैक करते हैं।"
+
+msgid "Control how parts and labels move from the pick to the finished unit."
+msgstr ""
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "नियंत्रित करें कि क्या आइटम ID (पार्ट्स, सामग्री, उपभोग्य सामग्री, टूल और सेवा) में लोअरकेस वर्ण हो सकते हैं।"
@@ -8856,6 +8865,9 @@ msgstr "नया नियम बनाएं"
 
 msgid "Create Operator"
 msgstr "ऑपरेटर बनाएँ"
+
+msgid "Create picking lists on release"
+msgstr ""
 
 msgid "Create PO Line"
 msgstr "PO पंक्ति बनाएँ"
@@ -11412,6 +11424,9 @@ msgstr "प्रत्येक अवधि एक महीना है, म
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
 
+msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
+msgstr ""
+
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "प्रत्येक किराये की समझौते या अनुबंध के विक्रय प्रतिनिधि (या इसके निर्माता) को इसके चालानों का दैनिक सारांश मिलता है।"
 
@@ -11977,6 +11992,9 @@ msgstr "ईमेल सूचनाएँ आपकी कंपनी की �
 
 msgid "Email notifications not configured"
 msgstr "ईमेल सूचनाएं कॉन्फ़िगर नहीं की गई हैं"
+
+msgid "Email order on acceptance"
+msgstr ""
 
 msgid "Email recipients"
 msgstr "ईमेल प्राप्तकर्ता"
@@ -16492,6 +16510,9 @@ msgstr "इस कानबान के लिए अगला ऑपरेश�
 msgid "Labels"
 msgstr "लेबल"
 
+msgid "Labels print at the first operation"
+msgstr ""
+
 msgid "Labor"
 msgstr "श्रम"
 
@@ -17046,6 +17067,9 @@ msgstr "लाइन विवरण"
 
 msgid "Line Details"
 msgstr "पंक्ति विवरण"
+
+msgid "Line Flow"
+msgstr ""
 
 msgid "Line Item"
 msgstr "लाइन आइटम"
@@ -21424,6 +21448,9 @@ msgstr "ऑपरेटर"
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "ऑपरेटर PIN प्रमाणीकरण के साथ साझा वर्कस्टेशन का उपयोग कर सकते हैं।"
 
+msgid "Operators see a warning about unissued serial and batch parts and can still complete."
+msgstr ""
+
 msgid "Operators start on the Scan tab"
 msgstr "ऑपरेटर Scan टैब से शुरू करते हैं"
 
@@ -22441,6 +22468,15 @@ msgstr "पिकिंग सूची नोट्स"
 msgid "Picking Lists"
 msgstr "पिकिंग सूचियाँ"
 
+msgid "Picking lists are created by hand"
+msgstr ""
+
+msgid "Picking lists on release disabled"
+msgstr ""
+
+msgid "Picking lists on release enabled"
+msgstr ""
+
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "पिकिंग सबसे पहले समाप्त होने वाली ट्रैक की गई वस्तुओं को प्राथमिकता देता है, इसलिए डिफ़ॉल्ट रूप से सबसे जल्द समाप्त होने वाला स्टॉक पहले निकलता है।"
 
@@ -23018,6 +23054,9 @@ msgstr "लेबल प्रिंट करें"
 msgid "Print Label"
 msgstr "लेबल प्रिंट करें"
 
+msgid "Print label on completion"
+msgstr ""
+
 msgid "Print Labels"
 msgstr "लेबल प्रिंट करें"
 
@@ -23028,6 +23067,12 @@ msgstr "लेबल प्रिंट करें ({0})"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "प्रिंट आउटपुट ({0})"
+
+msgid "Print this item's serial label when its job's last operation completes."
+msgstr ""
+
+msgid "Print travelers at the pick"
+msgstr ""
 
 msgid "Printed on the purchase orders you approve."
 msgstr "उन क्रय आदेशों पर प्रिंट किया गया जिन्हें आप अनुमोदित करते हैं।"
@@ -24740,6 +24785,9 @@ msgstr "जारी रिवीजन लॉक है"
 msgid "Released with problems: {0}"
 msgstr "समस्याओं के साथ जारी: {0}"
 
+msgid "Releasing a job creates its picking list"
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "बैच जारी करने से इसकी जॉब्स जारी हो जाती हैं, और प्रत्येक को शॉप फ्लोर के लिए तैयार होना चाहिए।"
 
@@ -25297,6 +25345,9 @@ msgstr "{0} पर कर्मचारी आवश्यक है"
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "क्रय आदेशों, गुणवत्ता दस्तावेज़ों, आपूर्तिकर्ताओं और परिवर्तन सूचनाओं पर राशि सीमा और अनुमोदनकर्ता समूहों के आधार पर बहु-स्तरीय साइन-ऑफ आवश्यक है।"
 
+msgid "Require tracked parts before completion"
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
 
@@ -25323,6 +25374,12 @@ msgstr "आवश्यक तिथि"
 
 msgid "Required in a controlled environment — audit logging cannot be turned off."
 msgstr "नियंत्रित वातावरण में आवश्यक — ऑडिट लॉगिंग को बंद नहीं किया जा सकता।"
+
+msgid "Required tracked parts disabled"
+msgstr ""
+
+msgid "Required tracked parts enabled"
+msgstr ""
 
 msgid "Requirement"
 msgstr "आवश्यकता"
@@ -28605,6 +28662,9 @@ msgstr "शुरू किया गया"
 
 msgid "Starting"
 msgstr "शुरुआत"
+
+msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
+msgstr ""
 
 msgid "Starting…"
 msgstr "शुरू हो रहा है…"
@@ -32521,6 +32581,12 @@ msgstr "ट्रैक की गई इकाई ID, सीरियल, य�
 msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 msgstr "ट्रैक की गई सामग्री को पिकिंग क्रम (FEFO) द्वारा पूर्व-चयनित किया जाता है, भले ही पिकिंग सूची के बिना।"
 
+msgid "Tracked parts are not required"
+msgstr ""
+
+msgid "Tracked parts must be scanned in"
+msgstr ""
+
 msgid "Tracking"
 msgstr "ट्रैकिंग"
 
@@ -32644,6 +32710,15 @@ msgstr "ट्रैश"
 msgid "Travel"
 msgstr "यात्रा"
 
+msgid "Traveler labels disabled"
+msgstr ""
+
+msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
+msgstr ""
+
 msgid "Traveler materials disabled"
 msgstr "ट्रैवलर सामग्री अक्षम की गई"
 
@@ -32655,6 +32730,9 @@ msgstr "ट्रैवलर ऑपरेशन अक्षम किए ग�
 
 msgid "Traveler operations enabled"
 msgstr "ट्रैवलर ऑपरेशन सक्षम किए गए"
+
+msgid "Travelers print at the pick"
+msgstr ""
 
 msgid "Treatment"
 msgstr "व्यवहार"
@@ -32709,6 +32787,9 @@ msgstr "सरकारी ठेकेदारी को चालू कर�
 
 msgid "Turn on the built-in pieces"
 msgstr "बिल्ट-इन पीसेस को चालू करें"
+
+msgid "Turn on to create one picking list for each job when it is released."
+msgstr ""
 
 msgid "Turned off sync"
 msgstr "सिंक बंद किया गया"

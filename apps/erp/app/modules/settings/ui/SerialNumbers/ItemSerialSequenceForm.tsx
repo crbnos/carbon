@@ -19,7 +19,15 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { z } from "zod";
-import { Hidden, Input, Item, Number, Select, Submit } from "~/components/Form";
+import {
+  Boolean,
+  Hidden,
+  Input,
+  Item,
+  Number,
+  Select,
+  Submit
+} from "~/components/Form";
 import {
   useCompanySettings,
   useCompanyTimeZone,
@@ -170,6 +178,12 @@ const ItemSerialSequenceForm = ({
                   label: timingLabels[timing]
                 }))}
                 helperText={t`When this item's units draw their serial numbers. Leave empty to follow Settings → Production.`}
+              />
+              <Boolean
+                name="printLabelOnCompletion"
+                label={t`Print label on completion`}
+                description={t`Print this item's serial label when its job's last operation completes.`}
+                bordered
               />
               <VStack spacing={0}>
                 <p className="text-muted-foreground text-sm">{`%{yyyy} = Full Year`}</p>

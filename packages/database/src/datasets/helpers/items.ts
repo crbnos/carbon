@@ -62,9 +62,10 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     itemTrackingType: spec.trackingType ?? "Inventory",
     unitOfMeasureCode: uom,
     description: spec.description ?? null,
-    thumbnailPath: ctx.dataset.industryId
-      ? `_templates/${ctx.dataset.industryId}/${spec.thumbnail ?? spec.readableId}.svg`
-      : null,
+    thumbnailPath:
+      (ctx.dataset.assetIndustryId ?? ctx.dataset.industryId)
+        ? `_templates/${ctx.dataset.assetIndustryId ?? ctx.dataset.industryId}/${spec.thumbnail ?? spec.readableId}.svg`
+        : null,
     active: spec.active ?? true
   });
 
@@ -168,7 +169,11 @@ export async function addBomLine(
   componentItem: ItemRef,
   quantity: number,
   order: number,
-  opts: { methodType?: MethodType; kit?: boolean } = {}
+  opts: {
+    methodType?: MethodType;
+    kit?: boolean;
+    methodOperationId?: string;
+  } = {}
 ): Promise<string> {
   const methodType =
     opts.methodType ??
@@ -183,6 +188,7 @@ export async function addBomLine(
     methodType,
     materialMakeMethodId: isSubassembly ? componentItem.makeMethodId : null,
     kit: opts.kit ?? false,
+    methodOperationId: opts.methodOperationId ?? null,
     quantity,
     order
   });

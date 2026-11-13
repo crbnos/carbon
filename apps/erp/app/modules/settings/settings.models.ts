@@ -615,7 +615,8 @@ export const itemSerialSequenceValidator = z.object({
   step: zfd.numeric(z.number().min(1)),
   size: zfd.numeric(z.number().min(1).max(20)),
   // Empty follows the company's serial number timing.
-  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional())
+  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional()),
+  printLabelOnCompletion: zfd.checkbox()
 });
 
 export type Theme = ThemeName;

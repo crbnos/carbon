@@ -4016,6 +4016,9 @@ msgstr "无期限租赁可随时终止，因此属于短期租赁。该公司不
 msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
 msgstr "无期限租赁属于短期租赁：激活时不会过账凭证，每份发票均作为费用处理。"
 
+msgid "An operation cannot complete until every serial and batch part on it is issued."
+msgstr ""
+
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "一项由外部供应商而非内部工作中心执行的工序，由分包采购订单涵盖。"
 
@@ -7561,6 +7564,9 @@ msgstr "完成至固定资产类别 {0}"
 msgid "Completing"
 msgstr "完成中"
 
+msgid "Completing a job's first operation prints its unit labels."
+msgstr ""
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "完成此培训将授予或更新所选能力。"
 
@@ -8061,6 +8067,9 @@ msgstr "通过修订版/ECO控制设计变更"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "控制操作员在车间内如何拣货原材料和跟踪时间。"
+
+msgid "Control how parts and labels move from the pick to the finished unit."
+msgstr ""
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "控制物料编号（零件、原料、耗材、工具和服务）是否可以包含小写字符。"
@@ -8856,6 +8865,9 @@ msgstr "创建新规则"
 
 msgid "Create Operator"
 msgstr "创建操作员"
+
+msgid "Create picking lists on release"
+msgstr ""
 
 msgid "Create PO Line"
 msgstr "创建采购订单行"
@@ -11412,6 +11424,9 @@ msgstr "每个周期为一个月,按月费率计算。"
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
 
+msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
+msgstr ""
+
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "每个租赁协议或合约的销售人员（或其创建者）每日获得其发票摘要。"
 
@@ -11977,6 +11992,9 @@ msgstr "电子邮件通知不包含在贵公司的当前计划中；如果启用
 
 msgid "Email notifications not configured"
 msgstr "电子邮件通知未配置"
+
+msgid "Email order on acceptance"
+msgstr ""
 
 msgid "Email recipients"
 msgstr "电子邮件收件人"
@@ -16492,6 +16510,9 @@ msgstr "用于启动此看板下一个操作的标签"
 msgid "Labels"
 msgstr "标签"
 
+msgid "Labels print at the first operation"
+msgstr ""
+
 msgid "Labor"
 msgstr "人工"
 
@@ -17046,6 +17067,9 @@ msgstr "行详情"
 
 msgid "Line Details"
 msgstr "行详情"
+
+msgid "Line Flow"
+msgstr ""
 
 msgid "Line Item"
 msgstr "行物品"
@@ -21424,6 +21448,9 @@ msgstr "操作员"
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "操作员可以使用带有PIN身份验证的共享工作站。"
 
+msgid "Operators see a warning about unissued serial and batch parts and can still complete."
+msgstr ""
+
 msgid "Operators start on the Scan tab"
 msgstr "操作员从扫码选项卡开始"
 
@@ -22441,6 +22468,15 @@ msgstr "拣货单备注"
 msgid "Picking Lists"
 msgstr "拣货单"
 
+msgid "Picking lists are created by hand"
+msgstr ""
+
+msgid "Picking lists on release disabled"
+msgstr ""
+
+msgid "Picking lists on release enabled"
+msgstr ""
+
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "拣货按最早有效期优先的方式处理可追踪实体，以便最即将过期的库存首先出库。"
 
@@ -23018,6 +23054,9 @@ msgstr "打印标签"
 msgid "Print Label"
 msgstr "打印标签"
 
+msgid "Print label on completion"
+msgstr ""
+
 msgid "Print Labels"
 msgstr "打印标签"
 
@@ -23028,6 +23067,12 @@ msgstr "打印标签 ({0})"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "打印输出 ({0})"
+
+msgid "Print this item's serial label when its job's last operation completes."
+msgstr ""
+
+msgid "Print travelers at the pick"
+msgstr ""
 
 msgid "Printed on the purchase orders you approve."
 msgstr "打印在您审批的采购订单上。"
@@ -24740,6 +24785,9 @@ msgstr "已下达修订版已锁定"
 msgid "Released with problems: {0}"
 msgstr "已下达，存在问题：{0}"
 
+msgid "Releasing a job creates its picking list"
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "下达生产批次会下达其工单，每个工单都必须为车间做好准备。"
 
@@ -25297,6 +25345,9 @@ msgstr "在 {0} 需要人员配置"
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "根据金额阈值和审批人组对采购订单、质量文档、供应商和变更通知进行分级审批。"
 
+msgid "Require tracked parts before completion"
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
 
@@ -25323,6 +25374,12 @@ msgstr "需求日期"
 
 msgid "Required in a controlled environment — audit logging cannot be turned off."
 msgstr "在受控环境中需要 — 审计日志无法关闭。"
+
+msgid "Required tracked parts disabled"
+msgstr ""
+
+msgid "Required tracked parts enabled"
+msgstr ""
 
 msgid "Requirement"
 msgstr "要求"
@@ -28605,6 +28662,9 @@ msgstr "开始于"
 
 msgid "Starting"
 msgstr "开始中"
+
+msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
+msgstr ""
 
 msgid "Starting…"
 msgstr "正在启动…"
@@ -32521,6 +32581,12 @@ msgstr "追踪实体 ID、序列号或生产批次"
 msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 msgstr "追踪原材料按拣货顺序（先到期先出）预选，即使没有拣货单。"
 
+msgid "Tracked parts are not required"
+msgstr ""
+
+msgid "Tracked parts must be scanned in"
+msgstr ""
+
 msgid "Tracking"
 msgstr "追踪"
 
@@ -32644,6 +32710,15 @@ msgstr "垃圾桶"
 msgid "Travel"
 msgstr "出差"
 
+msgid "Traveler labels disabled"
+msgstr ""
+
+msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
+msgstr ""
+
 msgid "Traveler materials disabled"
 msgstr "流转卡物料已禁用"
 
@@ -32655,6 +32730,9 @@ msgstr "流转卡工序已禁用"
 
 msgid "Traveler operations enabled"
 msgstr "流转卡工序已启用"
+
+msgid "Travelers print at the pick"
+msgstr ""
 
 msgid "Treatment"
 msgstr "处理"
@@ -32709,6 +32787,9 @@ msgstr "打开政府承包"
 
 msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
+
+msgid "Turn on to create one picking list for each job when it is released."
+msgstr ""
 
 msgid "Turned off sync"
 msgstr "已关闭同步"

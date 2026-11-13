@@ -4016,6 +4016,9 @@ msgstr "Uma locação sem prazo fixo pode ser encerrada mediante notificação, 
 msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
 msgstr "Uma locação sem prazo fixo é de curto prazo: ao ativá-la nenhum diário é lançado, e cada fatura é contabilizada como despesa."
 
+msgid "An operation cannot complete until every serial and batch part on it is issued."
+msgstr ""
+
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Uma operação realizada por um fornecedor externo em vez de um centro de trabalho interno, coberta por um pedido de compra de subcontratação."
 
@@ -7561,6 +7564,9 @@ msgstr "Conclui para a classe de ativo fixo {0}"
 msgid "Completing"
 msgstr "Finalizando"
 
+msgid "Completing a job's first operation prints its unit labels."
+msgstr ""
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "Completar este treinamento concede ou renova a habilidade selecionada."
 
@@ -8061,6 +8067,9 @@ msgstr "Controlar alterações de design com revisões / ECOs"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Controle como os operadores separam material e rastreiam tempo no chão de fábrica."
+
+msgid "Control how parts and labels move from the pick to the finished unit."
+msgstr ""
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "Controle se os IDs de itens (peças, materiais, consumíveis, ferramentas e serviços) podem conter caracteres em minúsculas."
@@ -8856,6 +8865,9 @@ msgstr "Criar nova regra"
 
 msgid "Create Operator"
 msgstr "Criar operador"
+
+msgid "Create picking lists on release"
+msgstr ""
 
 msgid "Create PO Line"
 msgstr "Criar Linha do Pedido de compra"
@@ -11412,6 +11424,9 @@ msgstr "Cada período dura um mês, com taxa mensal."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Cada unidade física obtém sua própria entidade rastreada e número único — uma entidade, uma unidade."
 
+msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
+msgstr ""
+
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "O vendedor (ou criador) de cada contrato de aluguel ou contrato recebe um resumo diário de suas faturas."
 
@@ -11977,6 +11992,9 @@ msgstr "As notificações por email não estão incluídas no plano atual da sua
 
 msgid "Email notifications not configured"
 msgstr "Notificações de email não configuradas"
+
+msgid "Email order on acceptance"
+msgstr ""
 
 msgid "Email recipients"
 msgstr "Destinatários de e-mail"
@@ -16492,6 +16510,9 @@ msgstr "Etiqueta para iniciar a próxima operação para este kanban"
 msgid "Labels"
 msgstr "Rótulos"
 
+msgid "Labels print at the first operation"
+msgstr ""
+
 msgid "Labor"
 msgstr "Mão de obra"
 
@@ -17046,6 +17067,9 @@ msgstr "Detalhe da linha"
 
 msgid "Line Details"
 msgstr "Detalhes da Linha"
+
+msgid "Line Flow"
+msgstr ""
 
 msgid "Line Item"
 msgstr "Item de Linha"
@@ -21424,6 +21448,9 @@ msgstr "Operadores"
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Os operadores podem usar estações de trabalho compartilhadas com autenticação PIN."
 
+msgid "Operators see a warning about unissued serial and batch parts and can still complete."
+msgstr ""
+
 msgid "Operators start on the Scan tab"
 msgstr "Operadores começam na aba Escanear"
 
@@ -22441,6 +22468,15 @@ msgstr "Observações da lista de separação"
 msgid "Picking Lists"
 msgstr "Listas de separação"
 
+msgid "Picking lists are created by hand"
+msgstr ""
+
+msgid "Picking lists on release disabled"
+msgstr ""
+
+msgid "Picking lists on release enabled"
+msgstr ""
+
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "A separação prioriza entidades rastreadas por vencimento mais próximo, então o estoque que vence em breve sai primeiro por padrão."
 
@@ -23018,6 +23054,9 @@ msgstr "Imprimir etiqueta"
 msgid "Print Label"
 msgstr "Imprimir Etiqueta"
 
+msgid "Print label on completion"
+msgstr ""
+
 msgid "Print Labels"
 msgstr "Imprimir Etiquetas"
 
@@ -23028,6 +23067,12 @@ msgstr "Imprimir Etiquetas ({0})"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Saída de impressão ({0})"
+
+msgid "Print this item's serial label when its job's last operation completes."
+msgstr ""
+
+msgid "Print travelers at the pick"
+msgstr ""
 
 msgid "Printed on the purchase orders you approve."
 msgstr "Impresso nos pedidos de compra que você aprova."
@@ -24740,6 +24785,9 @@ msgstr "A revisão lançada está bloqueada"
 msgid "Released with problems: {0}"
 msgstr "Liberado com problemas: {0}"
 
+msgid "Releasing a job creates its picking list"
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Liberar o lote de produção libera suas ordens de produção, e cada uma deve estar pronta para o chão de fábrica."
 
@@ -25297,6 +25345,9 @@ msgstr "Exigir pessoal em {0}"
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "Exigir aprovação em camadas em pedidos de compra, documentos de qualidade, fornecedores e avisos de alteração com base em limites de valor e grupos de aprovadores."
 
+msgid "Require tracked parts before completion"
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "Requerer autenticação de dois fatores"
 
@@ -25323,6 +25374,12 @@ msgstr "Data de necessidade"
 
 msgid "Required in a controlled environment — audit logging cannot be turned off."
 msgstr "Obrigatório num ambiente controlado — o registo de auditoria não pode ser desativado."
+
+msgid "Required tracked parts disabled"
+msgstr ""
+
+msgid "Required tracked parts enabled"
+msgstr ""
 
 msgid "Requirement"
 msgstr "Requisito"
@@ -28605,6 +28662,9 @@ msgstr "Iniciado"
 
 msgid "Starting"
 msgstr "Iniciando"
+
+msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
+msgstr ""
 
 msgid "Starting…"
 msgstr "Iniciando…"
@@ -32521,6 +32581,12 @@ msgstr "ID da entidade rastreada, número de série ou lote de produção"
 msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 msgstr "Material rastreado é pré-selecionado por ordem de separação (FEFO), mesmo sem uma lista de separação."
 
+msgid "Tracked parts are not required"
+msgstr ""
+
+msgid "Tracked parts must be scanned in"
+msgstr ""
+
 msgid "Tracking"
 msgstr "Rastreamento"
 
@@ -32644,6 +32710,15 @@ msgstr "Lixo"
 msgid "Travel"
 msgstr "Viagem"
 
+msgid "Traveler labels disabled"
+msgstr ""
+
+msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
+msgstr ""
+
 msgid "Traveler materials disabled"
 msgstr "Materiais da Ficha de acompanhamento desabilitados"
 
@@ -32655,6 +32730,9 @@ msgstr "Operações da ficha de acompanhamento desabilitadas"
 
 msgid "Traveler operations enabled"
 msgstr "Operações da ficha de acompanhamento habilitadas"
+
+msgid "Travelers print at the pick"
+msgstr ""
 
 msgid "Treatment"
 msgstr "Tratamento"
@@ -32709,6 +32787,9 @@ msgstr "Ativar contratação governamental"
 
 msgid "Turn on the built-in pieces"
 msgstr "Ativar os componentes integrados"
+
+msgid "Turn on to create one picking list for each job when it is released."
+msgstr ""
 
 msgid "Turned off sync"
 msgstr "Sincronização desligada"

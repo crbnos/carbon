@@ -15,6 +15,7 @@ import {
   getUnresolvedPickingListLines,
   updatePickingListStatus
 } from "~/services/picking.service";
+import { printTravelersOnStart } from "~/services/printing.server";
 
 type PickingListStatus = (typeof pickingListStatus)[number];
 
@@ -143,6 +144,14 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
       { discriminator: finalStatus }
     );
 
+    // A Draft list finished at once has started too: print its travelers.
+    await printTravelersOnStart({
+      serviceRole,
+      pickingListId,
+      companyId,
+      userId: effectiveUserId
+    });
+
     return { success: true };
   }
 
@@ -157,6 +166,14 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
   if (result.error) {
     return { success: false, message: "Failed to update picking list status" };
   }
+
+  // After the status write, so a print failure never blocks the change.
+  await printTravelersOnStart({
+    serviceRole,
+    pickingListId,
+    companyId,
+    userId: effectiveUserId
+  });
 
   return { success: true };
 }

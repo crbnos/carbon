@@ -87,7 +87,8 @@ export default function NewSerialNumberRoute() {
     suffix: "",
     next: 0,
     size: 5,
-    step: 1
+    step: 1,
+    printLabelOnCompletion: false
   };
 
   return (

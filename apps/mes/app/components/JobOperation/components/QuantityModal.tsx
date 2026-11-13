@@ -25,6 +25,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useNumberFormatter } from "@react-aria/i18n";
 import { type RefObject, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import {
@@ -40,6 +41,7 @@ import type {
 } from "~/services/types";
 import { OriginInput } from "~/utils/origin";
 import { path } from "~/utils/path";
+import { unissuedTrackedMaterials } from "~/utils/trackedMaterials";
 import ScrapReason from "./ScrapReason";
 
 // Fractional quantities for weight/length UoMs, capped at the 2 decimals
@@ -51,12 +53,14 @@ const QUANTITY_FORMAT_OPTIONS: Intl.NumberFormatOptions = {
 
 export function QuantityModal({
   allStepsRecorded = true,
+  isFirstOpenOperation = false,
   laborProductionEvent,
   machineProductionEvent,
   materials = [],
   operation,
   parentIsSerial = false,
   parentIsBatch = false,
+  requireTrackedMaterialsIssued = false,
   setupProductionEvent,
   trackedEntityId,
   trackedEntityReadableId,
@@ -66,12 +70,18 @@ export function QuantityModal({
   onClose
 }: {
   allStepsRecorded?: boolean;
+  // The operation is the last of its make method, so it also consumes the
+  // tracked materials that have no operation.
+  isFirstOpenOperation?: boolean;
   laborProductionEvent: ProductionEvent | undefined;
   machineProductionEvent: ProductionEvent | undefined;
   materials?: JobMaterial[];
   operation: OperationWithDetails;
   parentIsSerial?: boolean;
   parentIsBatch?: boolean;
+  // The company refuses completion until the serial and batch materials are
+  // scanned in, so the warning becomes a block.
+  requireTrackedMaterialsIssued?: boolean;
   setupProductionEvent: ProductionEvent | undefined;
   trackedEntityId: string;
   // Serial parents: the selected unit's serial number, shown in the scrap
@@ -85,6 +95,7 @@ export function QuantityModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  const numberFormatter = useNumberFormatter(QUANTITY_FORMAT_OPTIONS);
   // The modal opens from state, not a DialogTrigger, so Radix has no trigger
   // to return focus to and it falls to <body>. Remember the opener instead.
   const [opener] = useState(() =>
@@ -162,13 +173,16 @@ export function QuantityModal({
     ? 1
     : baseline.complete + quantity;
 
-  const hasUnissuedTrackedMaterials = materials.some(
-    (material) =>
-      (material.requiresSerialTracking || material.requiresBatchTracking) &&
-      material.jobOperationId === operation.id &&
-      (material?.quantityIssued ?? 0) <
-        (material?.quantity ?? 0) * totalPartsAfterCompletion
-  );
+  const missing = unissuedTrackedMaterials({
+    materials,
+    operationId: operation.id,
+    jobMakeMethodId: operation.jobMakeMethodId,
+    isFirstOpenOperation: requireTrackedMaterialsIssued && isFirstOpenOperation,
+    unitsAfterCompletion: totalPartsAfterCompletion
+  });
+  const hasUnissuedTrackedMaterials = missing.length > 0;
+  const blockedByUnissued =
+    requireTrackedMaterialsIssued && type === "complete";
 
   return (
     <Modal
@@ -230,36 +244,73 @@ export function QuantityModal({
             <Hidden name="machineProductionEventId" />
             <OriginInput />
             <VStack spacing={2}>
-              {hasUnissuedTrackedMaterials && type === "complete" && (
+              {hasUnissuedTrackedMaterials && blockedByUnissued && (
                 <Alert variant="destructive">
                   <LuTriangleAlert className="h-4 w-4" />
                   <AlertTitle>
-                    <Trans>Unissued serial/batch materials</Trans>
+                    <Trans>Scan in these parts first</Trans>
                   </AlertTitle>
                   <AlertDescription>
-                    <Trans>
-                      There are serial or batch tracked materials on the bill of
-                      material that have not been fully issued. Completing
-                      without issuing may result in incorrect traceability
-                      records.
-                    </Trans>
+                    <ul className="flex flex-col gap-1">
+                      {missing.map((material) => {
+                        const issued = numberFormatter.format(
+                          material.quantityIssued ?? 0
+                        );
+                        const required = numberFormatter.format(
+                          (material.quantity ?? 0) * totalPartsAfterCompletion
+                        );
+                        return (
+                          <li
+                            key={material.id}
+                            className="flex items-center justify-between gap-4"
+                          >
+                            <span className="font-medium">
+                              {material.itemReadableId}
+                            </span>
+                            <span className="tabular-nums">
+                              <Trans>
+                                {issued} of {required}
+                              </Trans>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </AlertDescription>
-                  <label className="col-start-2 flex items-center gap-2 mt-2 cursor-pointer">
-                    <Checkbox
-                      isChecked={confirmedUnissued}
-                      onCheckedChange={(checked) =>
-                        setConfirmedUnissued(checked === true)
-                      }
-                      className="bg-primary"
-                    />
-                    <span className="text-sm">
-                      <Trans>
-                        I understand and want to complete without issuing
-                      </Trans>
-                    </span>
-                  </label>
                 </Alert>
               )}
+              {hasUnissuedTrackedMaterials &&
+                !blockedByUnissued &&
+                type === "complete" && (
+                  <Alert variant="destructive">
+                    <LuTriangleAlert className="h-4 w-4" />
+                    <AlertTitle>
+                      <Trans>Unissued serial/batch materials</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        There are serial or batch tracked materials on the bill
+                        of material that have not been fully issued. Completing
+                        without issuing may result in incorrect traceability
+                        records.
+                      </Trans>
+                    </AlertDescription>
+                    <label className="col-start-2 flex items-center gap-2 mt-2 cursor-pointer">
+                      <Checkbox
+                        isChecked={confirmedUnissued}
+                        onCheckedChange={(checked) =>
+                          setConfirmedUnissued(checked === true)
+                        }
+                        className="bg-primary"
+                      />
+                      <span className="text-sm">
+                        <Trans>
+                          I understand and want to complete without issuing
+                        </Trans>
+                      </span>
+                    </label>
+                  </Alert>
+                )}
 
               {type === "finish" && !isOperationComplete && (
                 <Alert variant="destructive">
@@ -384,7 +435,7 @@ export function QuantityModal({
                 isSubmitting ||
                 (type === "complete" &&
                   hasUnissuedTrackedMaterials &&
-                  !confirmedUnissued)
+                  (blockedByUnissued || !confirmedUnissued))
               }
             >
               {actionButtonMap[type]}

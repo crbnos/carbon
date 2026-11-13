@@ -4016,6 +4016,9 @@ msgstr "Açık uçlu bir kiralama, fesih bildirimi ile sona erdirilebilir, bu ne
 msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
 msgstr "Açık uçlu bir kiralama kısa vadeli olarak kabul edilir: aktive edildiğinde muhasebe fişi oluşturmaz ve her fatura gidere yazılır."
 
+msgid "An operation cannot complete until every serial and batch part on it is issued."
+msgstr ""
+
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Dış tedarikçi tarafından yapılan operasyon, bir taşeronluk satın alma siparişi ile kapsanan, içeriye iş merkezi yerine."
 
@@ -7561,6 +7564,9 @@ msgstr "Sabit kıymet sınıfı {0} olarak tamamlanır"
 msgid "Completing"
 msgstr "Tamamlanıyor"
 
+msgid "Completing a job's first operation prints its unit labels."
+msgstr ""
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "Bu eğitimi tamamlamak seçilen yetkinliği verir veya yeniler."
 
@@ -8061,6 +8067,9 @@ msgstr "Tasarım değişikliklerini revizyonlar / ECO'lar ile kontrol edin"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Operatörlerin malzeme nasıl seçtiğini ve atölye katında zamanı nasıl takip ettiğini kontrol edin."
+
+msgid "Control how parts and labels move from the pick to the finished unit."
+msgstr ""
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "Stok kartı ID'lerinin (parçalar, malzeme, sarf malzemeleri, takımlar ve hizmetler) küçük harf içerebilmesini kontrol edin."
@@ -8856,6 +8865,9 @@ msgstr "Yeni kural oluştur"
 
 msgid "Create Operator"
 msgstr "Operatör oluştur"
+
+msgid "Create picking lists on release"
+msgstr ""
 
 msgid "Create PO Line"
 msgstr "Satın alma siparişi satırı oluştur"
@@ -11412,6 +11424,9 @@ msgstr "Her dönem bir aydır, aylık oran için."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
 
+msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
+msgstr ""
+
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Her kiralama anlaşmasının veya sözleşmenin satış temsilcisi (veya yaratıcısı) faturalarının günlük bir özetini alır."
 
@@ -11977,6 +11992,9 @@ msgstr "E-posta bildirimleri şirketinizin mevcut planına dahil değildir; e-po
 
 msgid "Email notifications not configured"
 msgstr "E-posta bildirimleri yapılandırılmamış"
+
+msgid "Email order on acceptance"
+msgstr ""
 
 msgid "Email recipients"
 msgstr "E-posta alıcıları"
@@ -16492,6 +16510,9 @@ msgstr "Bu kanban için bir sonraki işlemi başlatmak üzere etiket"
 msgid "Labels"
 msgstr "Etiketler"
 
+msgid "Labels print at the first operation"
+msgstr ""
+
 msgid "Labor"
 msgstr "İşçilik"
 
@@ -17046,6 +17067,9 @@ msgstr "Satır detayı"
 
 msgid "Line Details"
 msgstr "Satır Detayları"
+
+msgid "Line Flow"
+msgstr ""
 
 msgid "Line Item"
 msgstr "Satır Ürünü"
@@ -21424,6 +21448,9 @@ msgstr "Operatörler"
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Operatörler, PIN kimlik doğrulaması ile ortak iş istasyonlarını kullanabilir."
 
+msgid "Operators see a warning about unissued serial and batch parts and can still complete."
+msgstr ""
+
 msgid "Operators start on the Scan tab"
 msgstr "Operatörler Tarama sekmesinde başlarlar"
 
@@ -22441,6 +22468,15 @@ msgstr "Toplama Listesi Notları"
 msgid "Picking Lists"
 msgstr "Toplama Listeleri"
 
+msgid "Picking lists are created by hand"
+msgstr ""
+
+msgid "Picking lists on release disabled"
+msgstr ""
+
+msgid "Picking lists on release enabled"
+msgstr ""
+
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "Toplama izlenen varlıkları en yakın son kullanma tarihine göre sunar, bu nedenle en yakında sona erecek stok varsayılan olarak ilk olarak çıkar."
 
@@ -23018,6 +23054,9 @@ msgstr "Etiketi yazdır"
 msgid "Print Label"
 msgstr "Etiket Yazdır"
 
+msgid "Print label on completion"
+msgstr ""
+
 msgid "Print Labels"
 msgstr "Etiketleri Yazdır"
 
@@ -23028,6 +23067,12 @@ msgstr "Etiketleri Yazdır ({0})"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Yazdırma Çıktısı ({0})"
+
+msgid "Print this item's serial label when its job's last operation completes."
+msgstr ""
+
+msgid "Print travelers at the pick"
+msgstr ""
 
 msgid "Printed on the purchase orders you approve."
 msgstr "Onayladığınız satın alma siparişlerine yazdırılan."
@@ -24740,6 +24785,9 @@ msgstr "Yayınlanan revizyon kilitlidir"
 msgid "Released with problems: {0}"
 msgstr "Sorunlarla serbest bırakıldı: {0}"
 
+msgid "Releasing a job creates its picking list"
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Partiyi serbest bırakmak iş emirlerini serbest bırakır ve her birinin atölye için hazır olması gerekir."
 
@@ -25297,6 +25345,9 @@ msgstr "{0} konumunda personel gerektir"
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "Satın alma siparişleri, kalite belgeleri, tedarikçiler ve değişiklik bildirimleri üzerinde tutar eşikleri ve onaylayan grupları temel alan katmanlı imza gerekir."
 
+msgid "Require tracked parts before completion"
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı gerektir"
 
@@ -25323,6 +25374,12 @@ msgstr "İhtiyaç Tarihi"
 
 msgid "Required in a controlled environment — audit logging cannot be turned off."
 msgstr "Kontrollü ortamda gereklidir — denetim günlüğü kapatılamaz."
+
+msgid "Required tracked parts disabled"
+msgstr ""
+
+msgid "Required tracked parts enabled"
+msgstr ""
 
 msgid "Requirement"
 msgstr "Gereklilik"
@@ -28605,6 +28662,9 @@ msgstr "Başlangıç"
 
 msgid "Starting"
 msgstr "Başlıyor"
+
+msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
+msgstr ""
 
 msgid "Starting…"
 msgstr "Başlanıyor…"
@@ -32521,6 +32581,12 @@ msgstr "İzlenen varlık kimliği, seri veya parti"
 msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 msgstr "İzlenen malzeme, toplama listesi olmasa bile toplama sırasına (FEFO) göre önceden seçilir."
 
+msgid "Tracked parts are not required"
+msgstr ""
+
+msgid "Tracked parts must be scanned in"
+msgstr ""
+
 msgid "Tracking"
 msgstr "Takip"
 
@@ -32644,6 +32710,15 @@ msgstr "Çöp Kutusu"
 msgid "Travel"
 msgstr "Seyahat"
 
+msgid "Traveler labels disabled"
+msgstr ""
+
+msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
+msgstr ""
+
 msgid "Traveler materials disabled"
 msgstr "İş takip kartı malzemeleri devre dışı bırakıldı"
 
@@ -32655,6 +32730,9 @@ msgstr "İş takip kartı operasyonları devre dışı bırakıldı"
 
 msgid "Traveler operations enabled"
 msgstr "İş takip kartı operasyonları etkinleştirildi"
+
+msgid "Travelers print at the pick"
+msgstr ""
 
 msgid "Treatment"
 msgstr "Muhasebe Muamelesi"
@@ -32709,6 +32787,9 @@ msgstr "Hükümet tarafından sağlanan hizmetleri aç"
 
 msgid "Turn on the built-in pieces"
 msgstr "Yerleşik parçaları açın"
+
+msgid "Turn on to create one picking list for each job when it is released."
+msgstr ""
 
 msgid "Turned off sync"
 msgstr "Senkronizasyonu kapatıldı"

@@ -4016,6 +4016,9 @@ msgstr "Договор аренды без указания срока може�
 msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
 msgstr "Договор аренды без указания срока - краткосрочная аренда: при его активировании не создается никакая операция, и каждый счет-фактура списывается в расходы."
 
+msgid "An operation cannot complete until every serial and batch part on it is issued."
+msgstr ""
+
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Операция, выполняемая внешним поставщиком вместо изготовления на собственном рабочем центре, предусмотренная заказом поставщику на субподряд."
 
@@ -7561,6 +7564,9 @@ msgstr "Завершается в класс основных средств {0}
 msgid "Completing"
 msgstr "Завершение"
 
+msgid "Completing a job's first operation prints its unit labels."
+msgstr ""
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "Завершение этого обучения предоставляет или обновляет выбранный навык."
 
@@ -8061,6 +8067,9 @@ msgstr "Управление изменениями конструкции с п
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Управление тем, как операторы отбирают материал и отслеживают время на цехе."
+
+msgid "Control how parts and labels move from the pick to the finished unit."
+msgstr ""
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "Управляйте тем, могут ли коды элементов (детали, материалы, расходники, инструменты и услуги) содержать символы нижнего регистра."
@@ -8856,6 +8865,9 @@ msgstr "Создать новое правило"
 
 msgid "Create Operator"
 msgstr "Создать оператора"
+
+msgid "Create picking lists on release"
+msgstr ""
 
 msgid "Create PO Line"
 msgstr "Создать строку заказа поставщику"
@@ -11412,6 +11424,9 @@ msgstr "Каждый период — один месяц, по месячной
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свой отслеживаемый объект и уникальный номер — один объект, одна единица."
 
+msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
+msgstr ""
+
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Менеджер по продажам каждого договора аренды или контракта (или его создатель) получает ежедневное резюме своих счетов-фактур."
 
@@ -11977,6 +11992,9 @@ msgstr "Уведомления по электронной почте не вк�
 
 msgid "Email notifications not configured"
 msgstr "Уведомления по электронной почте не настроены"
+
+msgid "Email order on acceptance"
+msgstr ""
 
 msgid "Email recipients"
 msgstr "Получатели e-mail"
@@ -16492,6 +16510,9 @@ msgstr "Этикетка для начала следующей операции
 msgid "Labels"
 msgstr "Метки"
 
+msgid "Labels print at the first operation"
+msgstr ""
+
 msgid "Labor"
 msgstr "Труд"
 
@@ -17046,6 +17067,9 @@ msgstr "Сведения о строке"
 
 msgid "Line Details"
 msgstr "Детали строки"
+
+msgid "Line Flow"
+msgstr ""
 
 msgid "Line Item"
 msgstr "Товар строки"
@@ -21424,6 +21448,9 @@ msgstr "Операторы"
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Операторы могут использовать общие рабочие станции с аутентификацией по PIN."
 
+msgid "Operators see a warning about unissued serial and batch parts and can still complete."
+msgstr ""
+
 msgid "Operators start on the Scan tab"
 msgstr "Операторы начинают на вкладке Сканирование"
 
@@ -22441,6 +22468,15 @@ msgstr "Примечания листа отбора"
 msgid "Picking Lists"
 msgstr "Листы отбора"
 
+msgid "Picking lists are created by hand"
+msgstr ""
+
+msgid "Picking lists on release disabled"
+msgstr ""
+
+msgid "Picking lists on release enabled"
+msgstr ""
+
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "Отбор предлагает отслеживаемые товары в первую очередь с наиболее ранним сроком истечения, поэтому запас с ближайшим сроком истечения уходит первым по умолчанию."
 
@@ -23018,6 +23054,9 @@ msgstr "Печать этикетки"
 msgid "Print Label"
 msgstr "Печать этикетки"
 
+msgid "Print label on completion"
+msgstr ""
+
 msgid "Print Labels"
 msgstr "Печать этикеток"
 
@@ -23028,6 +23067,12 @@ msgstr "Печать этикеток ({0})"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Вывод печати ({0})"
+
+msgid "Print this item's serial label when its job's last operation completes."
+msgstr ""
+
+msgid "Print travelers at the pick"
+msgstr ""
 
 msgid "Printed on the purchase orders you approve."
 msgstr "Напечатано на заказы поставщику, которые вы утверждаете."
@@ -24740,6 +24785,9 @@ msgstr "Выпущенная ревизия заблокирована"
 msgid "Released with problems: {0}"
 msgstr "Запущено с проблемами: {0}"
 
+msgid "Releasing a job creates its picking list"
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Запуск серии запускает её производственные заказы, и каждый должен быть готов к цеху."
 
@@ -25297,6 +25345,9 @@ msgstr "Требуется персонал на {0}"
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "Требуется многоуровневое утверждение заказов поставщикам, документов качества, поставщиков и извещений об изменении в зависимости от пороговых сумм и групп утверждающих."
 
+msgid "Require tracked parts before completion"
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "Требовать двухфакторную аутентификацию"
 
@@ -25323,6 +25374,12 @@ msgstr "Дата потребности"
 
 msgid "Required in a controlled environment — audit logging cannot be turned off."
 msgstr "Требуется в контролируемой среде — ведение журнала аудита невозможно отключить."
+
+msgid "Required tracked parts disabled"
+msgstr ""
+
+msgid "Required tracked parts enabled"
+msgstr ""
 
 msgid "Requirement"
 msgstr "Требование"
@@ -28605,6 +28662,9 @@ msgstr "Начал"
 
 msgid "Starting"
 msgstr "Запуск"
+
+msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
+msgstr ""
 
 msgid "Starting…"
 msgstr "Начинаю…"
@@ -32521,6 +32581,12 @@ msgstr "ID отслеживаемого объекта, серийный ном�
 msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 msgstr "Отслеживаемый материал предварительно выбирается в порядке отбора (FEFO), даже без листа отбора"
 
+msgid "Tracked parts are not required"
+msgstr ""
+
+msgid "Tracked parts must be scanned in"
+msgstr ""
+
 msgid "Tracking"
 msgstr "Отслеживание"
 
@@ -32644,6 +32710,15 @@ msgstr "Корзина"
 msgid "Travel"
 msgstr "Деловая поездка"
 
+msgid "Traveler labels disabled"
+msgstr ""
+
+msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
+msgstr ""
+
 msgid "Traveler materials disabled"
 msgstr "Материалы маршрутного листа отключены"
 
@@ -32655,6 +32730,9 @@ msgstr "Операции маршрутного листа отключены"
 
 msgid "Traveler operations enabled"
 msgstr "Операции маршрутного листа включены"
+
+msgid "Travelers print at the pick"
+msgstr ""
 
 msgid "Treatment"
 msgstr "Учет"
@@ -32709,6 +32787,9 @@ msgstr "Включить государственное контрактован
 
 msgid "Turn on the built-in pieces"
 msgstr "Включите встроенные компоненты"
+
+msgid "Turn on to create one picking list for each job when it is released."
+msgstr ""
 
 msgid "Turned off sync"
 msgstr "Синхронизация отключена"

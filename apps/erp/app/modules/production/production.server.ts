@@ -370,6 +370,46 @@ export const releaseCheckedJobs = defineServiceFn({
         });
       }
 
+      // Under autoPickingListOnRelease the job gets its picking list now. The
+      // job is already Ready, so a failure is a warning and a note on the job.
+      const picking = await service.createReleasePickingList(
+        ctx.asSystem.supabase,
+        ctx.asSystem.pg,
+        { jobId: id, companyId, userId }
+      );
+      if (picking.error) {
+        logger.error("Picking list at release failed", {
+          companyId,
+          jobId: id,
+          error: picking.error
+        });
+        try {
+          const noted = await service.appendJobNoteParagraph(ctx.asSystem.pg, {
+            jobId: id,
+            companyId,
+            text: `Carbon released the job but could not create its picking list: ${picking.error}`
+          });
+          if (!noted) {
+            logger.error("Failed to note the picking list failure on the job", {
+              companyId,
+              jobId: id,
+              error: "No job row matched"
+            });
+          }
+        } catch (error) {
+          logger.error("Failed to note the picking list failure on the job", {
+            companyId,
+            jobId: id,
+            error
+          });
+        }
+        warnings.push({
+          jobId: id,
+          message:
+            "The job is released, but its picking list could not be created"
+        });
+      }
+
       const purchaseOrder = await invokeCreate(
         { db: ctx.asSystem.pg, companyId, userId },
         {

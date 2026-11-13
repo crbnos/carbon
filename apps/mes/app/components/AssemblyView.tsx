@@ -84,6 +84,7 @@ import {
   LuImage,
   LuListChecks,
   LuListFilter,
+  LuPackageSearch,
   LuPause,
   LuPlay,
   LuTimer,
@@ -98,11 +99,13 @@ import { TrackingTypeIcon } from "~/components/Icons";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
 import { MaintenanceDispatch } from "~/components/JobOperation/components/MaintenanceDispatch";
+import { NeedMaterialModal } from "~/components/JobOperation/components/NeedMaterialModal";
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
+import { useTravelerScan } from "~/components/JobOperation/hooks/useTravelerScan";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
@@ -291,6 +294,7 @@ type Operation = {
   duration?: number | null;
   jobDeadlineType?: string | null;
   reworkId?: string | null;
+  jobMakeMethodId?: string | null;
 };
 
 type Props = {
@@ -326,6 +330,8 @@ type Props = {
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
   isFirstOperation: boolean;
+  isFirstOpenOperation?: boolean;
+  requireTrackedMaterialsIssued?: boolean;
   openEvent: { id: string; startTime: string } | null;
   events: ProductionEvent[];
   nonConformanceActions: ContainmentAction[];
@@ -540,6 +546,8 @@ export function AssemblyView({
   requiresSerialTracking,
   requiresBatchTracking,
   isFirstOperation,
+  isFirstOpenOperation = false,
+  requireTrackedMaterialsIssued = false,
   openEvent,
   events,
   nonConformanceActions,
@@ -568,6 +576,7 @@ export function AssemblyView({
 
   const issueModal = useDisclosure();
   const qualityModal = useDisclosure();
+  const needMaterialModal = useDisclosure();
   const completeModal = useDisclosure();
   const scrapModal = useDisclosure();
   const reworkModal = useDisclosure();
@@ -1929,6 +1938,17 @@ export function AssemblyView({
   // Block: no production work here. The routes refuse it too.
   const abilityBlocked = abilityWarning?.policy === "Block";
 
+  // A traveler scan issues the unit into this operation, opens the unit it
+  // already sits in, or goes to its traveler.
+  useTravelerScan({
+    operationId,
+    jobMakeMethodId: operation?.jobMakeMethodId,
+    parentTrackedEntityId: currentEntity?.id ?? trackedEntities[0]?.id,
+    jobOperationStepId: step?.id,
+    unitNumber: activeIndex + 1,
+    active: !issueModal.isOpen && !abilityBlocked
+  });
+
   // The header's actions; the md+ header and the phone app bar share them.
   const headerActions = (
     <>
@@ -2801,6 +2821,22 @@ export function AssemblyView({
         onClose={qualityModal.onClose}
       />
 
+      <NeedMaterialModal
+        operationId={operationId}
+        materials={allMaterials.flatMap((material) =>
+          material.itemId
+            ? [
+                {
+                  itemId: material.itemId as string,
+                  label: (material.itemReadableId ?? material.itemId) as string
+                }
+              ]
+            : []
+        )}
+        isOpen={needMaterialModal.isOpen}
+        onClose={needMaterialModal.onClose}
+      />
+
       {operation && completeModal.openCount > 0 && (
         <QuantityModal
           key={`complete-${completeModal.openCount}`}
@@ -2815,6 +2851,8 @@ export function AssemblyView({
           laborProductionEvent={openByType("Labor")}
           machineProductionEvent={openByType("Machine")}
           allStepsRecorded={allStepsRecorded}
+          isFirstOpenOperation={isFirstOpenOperation}
+          requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
           onClose={completeModal.onClose}
         />
       )}
@@ -2941,6 +2979,14 @@ export function AssemblyView({
                 onClick={() => {
                   actionsSheet.onClose();
                   qualityModal.onOpen();
+                }}
+              />
+              <ActionSheetButton
+                icon={<LuPackageSearch className="size-4 shrink-0" />}
+                label={t`Need material`}
+                onClick={() => {
+                  actionsSheet.onClose();
+                  needMaterialModal.onOpen();
                 }}
               />
               {/* Manager-only override: record every remaining step for this unit at once.
