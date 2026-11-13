@@ -130,6 +130,12 @@ describe("customer portal submissions", () => {
       { customerPartId: "TTJ-200", quantity: [100], externalNotes: {} }
     ]);
     expect(await findCustomerPortalSubmission(f.db, args)).toMatchObject({ id: first.id, salesRfqId: rfq.id, submissionType: "RFQ" });
+    await f.db.deleteFrom("salesRfq").where("id", "=", rfq.id).executeTakeFirstOrThrow();
+    expect(await findCustomerPortalSubmission(f.db, args)).toMatchObject({
+      id: first.id,
+      salesRfqId: null,
+      submissionType: "RFQ"
+    });
   });
 
   databaseTest("keeps a quoted PO pending and refuses another company's quote", async () => {

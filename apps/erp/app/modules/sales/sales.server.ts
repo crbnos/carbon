@@ -1575,6 +1575,9 @@ export const acceptCustomerPortalPoSubmission = defineServiceFn({
             ) {
               return { kind: "quoteUnavailable" as const };
             }
+            if (!quote.opportunityId) {
+              return { kind: "quoteNeedsOpportunity" as const };
+            }
             const selected = new Set(
               Object.entries(input.selectedLines)
                 .filter(([, line]) => line.quantity > 0)
@@ -1597,6 +1600,7 @@ export const acceptCustomerPortalPoSubmission = defineServiceFn({
                 id: quote.id,
                 selectedLines: input.selectedLines,
                 purchaseOrderNumber: submission.poNumber ?? "",
+                requestedDelivery: submission.requestedDelivery ?? undefined,
                 customerPortalSubmissionId: submission.id,
                 companyId,
                 userId: ctx.auditUserId
@@ -1687,6 +1691,11 @@ export const acceptCustomerPortalPoSubmission = defineServiceFn({
         return ctx.error("rule", "Purchase order submission is not pending");
       if (result.kind === "quoteUnavailable")
         return ctx.error("rule", "Quote is no longer available for conversion");
+      if (result.kind === "quoteNeedsOpportunity")
+        return ctx.error(
+          "rule",
+          "Add an opportunity to the quote before accepting this purchase order"
+        );
       if (result.kind === "noLines")
         return ctx.error("validation", "Select at least one quoted line");
       if (result.kind === "blocked") return result.check;
@@ -1699,6 +1708,8 @@ export const acceptCustomerPortalPoSubmission = defineServiceFn({
           outcome: "acknowledged",
           ...result.ruleCheck
         });
+      }
+      if (result.quoteId) {
         try {
           const pdf = await service.attachSalesOrderPdf(ctx, {
             salesOrderId: result.salesOrderId,

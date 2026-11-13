@@ -8,6 +8,7 @@ import {
   findCustomerPortalOrderByMarker,
   getAcceptedCustomerPortalPoForOrder,
   insertCustomerPortalDraftOrder,
+  updateSalesOrder,
   withLockedCustomerPortalPoSubmission
 } from "../../app/modules/sales/sales.service";
 import { alwaysPostFixture, USER } from "./fixtures/always-post";
@@ -97,6 +98,16 @@ postgrestTest("an interrupted Draft PO rolls back, and staff can read its submit
       findCustomerPortalOrderByMarker(trx, f.companyId, f.customerId, submissionId)
     );
     expect(recovered?.id).toBe(created.id);
+    const edited = await updateSalesOrder(client, {
+      id: created.id,
+      updatedBy: USER,
+      customFields: { customerNote: "Please call before delivery" }
+    });
+    expect(edited.error).toBeNull();
+    const recoveredAfterEdit = await f.db.transaction().execute((trx) =>
+      findCustomerPortalOrderByMarker(trx, f.companyId, f.customerId, submissionId)
+    );
+    expect(recoveredAfterEdit?.id).toBe(created.id);
     const [order, payment, shipment] = await Promise.all([
       f.db.selectFrom("salesOrder").select(["id", "status"]).where("id", "=", created.id).executeTakeFirst(),
       f.db.selectFrom("salesOrderPayment").select("id").where("id", "=", created.id).executeTakeFirst(),

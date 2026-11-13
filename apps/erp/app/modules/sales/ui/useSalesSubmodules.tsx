@@ -52,6 +52,7 @@ export default function useSalesSubmodules() {
           name: t`Portal POs`,
           to: path.to.customerPortalSubmissions,
           role: "employee",
+          permission: "sales",
           icon: <LuClipboardList />
         }
       ]
@@ -167,32 +168,16 @@ export default function useSalesSubmodules() {
     }
   ];
 
+  const isVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
+    (!route.role || permissions.is(route.role)) &&
+    (!route.permission || permissions.can("view", route.permission));
+
   return {
     groups: salesRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        });
-
-        return filteredRoutes.length > 0;
-      })
+      .filter((group) => group.routes.some(isVisible))
       .map((group) => ({
         ...group,
-        routes: group.routes
-          .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else if (route.permission) {
-              return permissions.can("view", route.permission);
-            } else {
-              return true;
-            }
-          })
-          .map(addSavedViewsToRoutes)
+        routes: group.routes.filter(isVisible).map(addSavedViewsToRoutes)
       }))
   };
 }

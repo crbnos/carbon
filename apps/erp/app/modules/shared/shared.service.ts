@@ -9110,6 +9110,7 @@ export const convertInput = z.discriminatedUnion("type", [
     type: z.literal("quoteToSalesOrder"),
     id: z.string(),
     purchaseOrderNumber: z.string().optional(),
+    requestedDelivery: z.iso.date().optional(),
     // Only `quantity` is trusted (it selects a quantity break). Every financial
     // field is derived server-side from quoteLinePrice in the handler; the money
     // fields below are accepted-but-ignored for backward compatibility with
@@ -9690,6 +9691,7 @@ export async function convertDocument(
         purchaseOrderNumber,
         digitalQuoteAcceptedBy,
         digitalQuoteAcceptedByEmail,
+        requestedDelivery,
         customerPortalSubmissionId
       } = payload;
       const [
@@ -9772,6 +9774,7 @@ export async function convertDocument(
         const hasZeroQuantityLines = quoteLineRows.some(
           (line) =>
             line.id &&
+            line.status !== "No Quote" &&
             selectedLines &&
             line.id in selectedLines &&
             selectedLines[line.id]!.quantity === 0
@@ -10017,7 +10020,9 @@ export async function convertDocument(
             id: insertedSalesOrderId,
             locationId: quoteShipping.data.locationId ?? locationId,
             receiptRequestedDate:
-              quoteShipping.data.receiptRequestedDate ?? receiptPromisedDate,
+              requestedDelivery ??
+              quoteShipping.data.receiptRequestedDate ??
+              receiptPromisedDate,
             receiptPromisedDate
           })
           .execute();

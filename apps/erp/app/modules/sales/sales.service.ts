@@ -383,6 +383,7 @@ export async function convertQuoteToOrder(
     selectedLines: Record<string, { quantity: number }>;
     companyId: string;
     purchaseOrderNumber?: string;
+    requestedDelivery?: string;
     userId: string;
     digitalQuoteAcceptedBy?: string;
     digitalQuoteAcceptedByEmail?: string;
@@ -2109,6 +2110,7 @@ export async function getCustomerPortalOverview(
     const order = row.sourceDocumentId
       ? orderById.get(row.sourceDocumentId)
       : null;
+    if (!order) return [];
     const pdf = portalPdf(
       documentsFor("Shipment", row.id),
       "Shipment",
@@ -2118,18 +2120,16 @@ export async function getCustomerPortalOverview(
         : null,
       row.shipmentId
     );
-    return pdf
-      ? [
-          {
-            id: row.id,
-            shipmentId: row.shipmentId,
-            sourceDocumentId: row.sourceDocumentId,
-            postingDate: row.postingDate,
-            trackingNumber: row.trackingNumber,
-            hasPdf: true
-          }
-        ]
-      : [];
+    return [
+      {
+        id: row.id,
+        shipmentId: row.shipmentId,
+        sourceDocumentId: row.sourceDocumentId,
+        postingDate: row.postingDate,
+        trackingNumber: row.trackingNumber,
+        hasPdf: !!pdf
+      }
+    ];
   });
   const shipmentById = new Map(shipmentRows.map((row) => [row.id, row]));
 
@@ -7717,11 +7717,32 @@ export async function updateSalesOrder(
 
   const existing = await client
     .from("salesOrder")
-    .select("companyId, currencyCode, opportunityId")
+    .select("companyId, currencyCode, opportunityId, customFields")
     .eq("id", id)
     .single();
 
   if (existing.error) return { data: null, error: existing.error };
+
+  // The submission marker must survive ordinary custom-field edits so a
+  // conversion can be recovered if its review receipt was interrupted.
+  const existingFields = existing.data.customFields;
+  const submissionId =
+    existingFields &&
+    typeof existingFields === "object" &&
+    !Array.isArray(existingFields)
+      ? existingFields.customerPortalSubmissionId
+      : undefined;
+  if (typeof submissionId === "string" && updates.customFields !== undefined) {
+    const incomingFields = updates.customFields;
+    updates.customFields = {
+      ...(incomingFields &&
+      typeof incomingFields === "object" &&
+      !Array.isArray(incomingFields)
+        ? incomingFields
+        : {}),
+      customerPortalSubmissionId: submissionId
+    };
+  }
 
   if (
     updates.currencyCode &&

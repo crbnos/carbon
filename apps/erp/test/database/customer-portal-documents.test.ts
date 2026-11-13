@@ -17,7 +17,7 @@ vi.hoisted(() => {
   process.env.CARBON_EDITION = "enterprise";
 });
 
-const { resolveCustomerPortalDocument } = await import(
+const { getCustomerPortalOverview, resolveCustomerPortalDocument } = await import(
   "../../app/modules/sales/sales.service"
 );
 
@@ -211,5 +211,58 @@ describe("customer portal typed PDF resolver", () => {
         validReleaseId
       )
     ).toBeNull();
+  });
+
+  postgrestTest("lists a released shipment document without a packing slip", async (client) => {
+    const shipmentId = `${f.prefix}-released-shipment`;
+    const documentName = "inspection-certificate.pdf";
+    const documentPath = `${f.companyId}/opportunity/${f.prefix}-portal-opportunity/${documentName}`;
+    await f.db.insertInto("shipment").values({
+      id: shipmentId,
+      shipmentId,
+      sourceDocument: "Sales Order",
+      sourceDocumentId: validOrderId,
+      customerId: f.customerId,
+      status: "Posted",
+      postingDate: f.today,
+      trackingNumber: "TRACK-123",
+      companyId: f.companyId,
+      createdBy: USER
+    }).execute();
+    await f.db.insertInto("document").values({
+      companyId: f.companyId,
+      createdBy: USER,
+      type: "PDF",
+      name: documentName,
+      path: documentPath,
+      size: 1,
+      sourceDocument: "Shipment",
+      sourceDocumentId: shipmentId
+    }).execute();
+    const release = await f.db.insertInto("customerPortalDocument").values({
+      companyId: f.companyId,
+      customerId: f.customerId,
+      shipmentId,
+      documentType: "CoC",
+      documentPath,
+      title: "Inspection certificate",
+      createdBy: USER
+    }).returning("id").executeTakeFirstOrThrow();
+
+    const overview = await getCustomerPortalOverview(
+      client,
+      { companyId: f.companyId, customerId: f.customerId },
+      { section: "shipments" }
+    );
+    expect(overview.error).toBeNull();
+    expect(overview.data?.shipments).toContainEqual(expect.objectContaining({
+      id: shipmentId,
+      hasPdf: false,
+      trackingNumber: "TRACK-123"
+    }));
+    expect(overview.data?.releasedDocuments).toContainEqual(expect.objectContaining({
+      id: release.id,
+      shipmentId
+    }));
   });
 });

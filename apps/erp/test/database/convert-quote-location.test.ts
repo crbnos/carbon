@@ -24,9 +24,16 @@ import {
 
 // A Sent quote of one Pull from Inventory line for 4 of the fixture's part,
 // converted to a sales order. Returns the order id.
-async function convertQuote(f: Fixture, customerPortalSubmissionId?: string) {
+async function convertQuote(
+  f: Fixture,
+  customerPortalSubmissionId?: string,
+  requestedDelivery?: string,
+  quoteRequestedDate?: string,
+  includeNoQuoteLine = false
+) {
   const quoteId = `${f.prefix}-quote`;
   const quoteLineId = `${f.prefix}-quote-line`;
+  const noQuoteLineId = `${f.prefix}-no-quote-line`;
   await seed(f, async (trx) => {
     await trx
       .insertInto("sequence")
@@ -56,7 +63,11 @@ async function convertQuote(f: Fixture, customerPortalSubmissionId?: string) {
       .execute();
     await trx
       .insertInto("quoteShipment")
-      .values({ id: quoteId, companyId: f.companyId })
+      .values({
+        id: quoteId,
+        companyId: f.companyId,
+        receiptRequestedDate: quoteRequestedDate
+      })
       .execute();
     await trx
       .insertInto("quoteLine")
@@ -85,6 +96,24 @@ async function convertQuote(f: Fixture, customerPortalSubmissionId?: string) {
         createdBy: USER
       })
       .execute();
+    if (includeNoQuoteLine) {
+      await trx
+        .insertInto("quoteLine")
+        .values({
+          id: noQuoteLineId,
+          quoteId,
+          itemId: f.partId,
+          itemType: "Part",
+          status: "No Quote",
+          description: "Unavailable bracket",
+          methodType: "Pull from Inventory",
+          unitOfMeasureCode: "EA",
+          quantity: [4],
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+    }
   });
 
   const { convertedId } = unwrap(
@@ -94,14 +123,77 @@ async function convertQuote(f: Fixture, customerPortalSubmissionId?: string) {
       {
         type: "quoteToSalesOrder",
         id: quoteId,
-        selectedLines: { [quoteLineId]: { quantity: 4 } },
-        customerPortalSubmissionId
+        selectedLines: {
+          [quoteLineId]: { quantity: 4 },
+          ...(includeNoQuoteLine ? { [noQuoteLineId]: { quantity: 0 } } : {})
+        },
+        customerPortalSubmissionId,
+        requestedDelivery
       },
       convertDocument
     )
   );
   return convertedId!;
 }
+
+databaseTest(
+  "a requested PO delivery date takes precedence over the quote shipment date",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const orderId = await convertQuote(
+        f,
+        undefined,
+        "2031-02-03",
+        "2030-01-01"
+      );
+      const shipment = await f.db
+        .selectFrom("salesOrderShipment")
+        .select("receiptRequestedDate")
+        .where("id", "=", orderId)
+        .executeTakeFirstOrThrow();
+      expect(shipment.receiptRequestedDate).toBe("2031-02-03");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a zero selection for an unavailable quote line does not make the quote Partial",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await convertQuote(f, undefined, undefined, undefined, true);
+      const quote = await f.db
+        .selectFrom("quote")
+        .select("status")
+        .where("id", "=", `${f.prefix}-quote`)
+        .executeTakeFirstOrThrow();
+      expect(quote.status).toBe("Ordered");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "quote conversion keeps the quote shipment date when no PO date is given",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const orderId = await convertQuote(f, undefined, undefined, "2030-01-01");
+      const shipment = await f.db
+        .selectFrom("salesOrderShipment")
+        .select("receiptRequestedDate")
+        .where("id", "=", orderId)
+        .executeTakeFirstOrThrow();
+      expect(shipment.receiptRequestedDate).toBe("2030-01-01");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
 
 databaseTest(
   "a portal PO marker survives quote conversion and a repeated conversion creates no order",

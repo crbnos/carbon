@@ -147,7 +147,7 @@ export async function action(args: ActionFunctionArgs) {
   for (const [key, value] of form.entries()) {
     if (!key.startsWith("quantity:") || typeof value !== "string") continue;
     const quantity = Number(value);
-    if (Number.isFinite(quantity) && quantity > 0) {
+    if (Number.isFinite(quantity) && quantity >= 0) {
       selectedLines[key.slice("quantity:".length)] = { quantity };
     }
   }
