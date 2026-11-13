@@ -2,12 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { rmSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { stripVTControlCharacters } from "node:util";
 import { box, intro, log, outro } from "@clack/prompts";
 import { execa } from "execa";
 import pc from "picocolors";
-import { asleepFile } from "../../stack-state.js";
+import {
+  asleepFile,
+  bootingFile,
+  isCloudDev,
+  livePid,
+  upFile
+} from "../../stack-state.js";
 import {
   APPS,
   type AppId,
@@ -26,6 +32,7 @@ import {
   syncHostsFile
 } from "../portless-setup.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
+import { withExponentialBackoff } from "../retry.js";
 import {
   assemblerMissingPrerequisite,
   installDeps,
@@ -47,6 +54,7 @@ import {
   devComposeImageRefs,
   ensureDockerRunning,
   ensureSlugAvailable,
+  isTransientPullError,
   listComposeServices,
   listContainers,
   listSharedContainers,
@@ -157,6 +165,8 @@ type Ctx = Stack & {
   freshDatabase: boolean;
 };
 
+type Prespawned = { stop: AbortController; exited: Promise<void> };
+
 export async function up(opts: UpOpts = {}) {
   const shouldMigrate = opts.migrate ?? true;
   // Types and swagger follow the migrated schema.
@@ -175,10 +185,14 @@ export async function up(opts: UpOpts = {}) {
   // orphan half-booted containers: tear them down. Detached once the apps
   // take over teardown.
   let interrupted = false;
+  let earlyApps: Prespawned | undefined;
+  let bootMarker: string | undefined;
   const detachEarly = onShutdown(() => {
     if (interrupted) return;
     interrupted = true;
     process.stderr.write("\ninterrupted — stopping partial stack…\n");
+    // The early dev servers stop on this signal themselves (spawnApps).
+    if (bootMarker) rmSync(bootMarker, { force: true });
     stopAuxApps();
     void teardown(stackAt(root), { plain: true }).finally(() =>
       process.exit(130)
@@ -241,43 +255,107 @@ export async function up(opts: UpOpts = {}) {
     includeAssembler: selectedApps.includes("assembler"),
     borrowSlug
   });
-  if (!borrowSlug) {
-    await pullImages(ctx, { force: opts.pull === true, size });
-    await bootDockerStack(ctx, size);
-  }
-  await waitForServices(ctx);
-  await tasks(
-    databaseTasks(ctx, {
-      migrate: shouldMigrate,
-      regen: shouldRegen,
-      swagger: true
-    })
-  );
-  // The `user` table exists only once migrations ran.
-  if (shouldMigrate) {
-    await tasks([
-      {
-        title: "Seed smoke-test users (test@carbon.ms, test+admin2@carbon.ms)",
-        task: async () => {
-          const { seeded } = await ensureSmokeTestUser(
-            root,
-            ctx.db,
-            ctx.ports.PORT_API
-          );
-          if (seeded === "company") return "users created";
-          if (seeded === "second admin") return "second Admin added";
-          return "already exist";
-        }
-      }
-    ]);
-  }
-  // The dev servers' own aliases come up with `holdRoutes`, below.
-  // --run holds no URLs: its command needs the apps' aliases from the start.
-  const held =
-    opts.run === undefined
+  // `crbn down` in another shell stops this process through it (teardown).
+  const upMarker = upFile(ctx.stateDir);
+  mkdirSync(ctx.stateDir, { recursive: true });
+  writeFileSync(upMarker, String(process.pid));
+  process.once("exit", () => {
+    if (livePid(upMarker) === process.pid) rmSync(upMarker, { force: true });
+  });
+  // In cloud containers, let Vite prepare its module graph while Docker and
+  // the database boot. The marker keeps requests away from a partial schema.
+  const earlyAppIds =
+    isCloudDev() && !borrowSlug
       ? reactRouterApps(selectedApps).map((a) => a.id)
       : [];
-  if (ctx.prefix !== null) await setupPortless(ctx.prefix, ctx.ports, held);
+  if (earlyAppIds.length > 0) {
+    const stateDir = ctx.stateDir;
+    rmSync(asleepFile(stateDir), { force: true });
+    bootMarker = bootingFile(stateDir);
+    writeFileSync(bootMarker, String(process.pid));
+    const stop = new AbortController();
+    earlyApps = {
+      stop,
+      exited: spawnApps({
+        root,
+        apps: earlyAppIds,
+        ports: ctx.ports,
+        portless,
+        signal: stop.signal,
+        stateDir
+      })
+    };
+    log.info(
+      `${earlyAppIds.join(" + ")} dev server starting now — requests wait until the database is ready`
+    );
+  }
+
+  const boot = async () => {
+    await bootShared(ctx, borrowSlug);
+    if (!borrowSlug) {
+      await pullImages(ctx, { force: opts.pull === true, size });
+      await bootDockerStack(ctx, size);
+    }
+    await waitForServices(ctx);
+    await tasks(
+      databaseTasks(ctx, {
+        migrate: shouldMigrate,
+        regen: shouldRegen,
+        swagger: true
+      })
+    );
+    // The `user` table exists only once migrations ran.
+    if (shouldMigrate) {
+      await tasks([
+        {
+          title:
+            "Seed smoke-test users (test@carbon.ms, test+admin2@carbon.ms)",
+          task: async () => {
+            const { seeded } = await ensureSmokeTestUser(
+              root,
+              ctx.db,
+              ctx.ports.PORT_API
+            );
+            if (seeded === "company") return "users created";
+            if (seeded === "second admin") return "second Admin added";
+            return "already exist";
+          }
+        }
+      ]);
+    }
+    // The dev servers' own aliases come up with `holdRoutes`, below.
+    // --run holds no URLs: its command needs the apps' aliases from the start.
+    const held =
+      opts.run === undefined
+        ? reactRouterApps(selectedApps).map((a) => a.id)
+        : [];
+    if (ctx.prefix !== null) await setupPortless(ctx.prefix, ctx.ports, held);
+  };
+  try {
+    // An early dev server that gives up (spawnApps stops restarting it) ends
+    // the boot now, not after the migrations. A Ctrl+C also ends it: the
+    // shutdown handler above exits then, so that path never settles.
+    await (earlyApps
+      ? Promise.race([
+          boot(),
+          earlyApps.exited.then(() =>
+            interrupted
+              ? new Promise<never>(() => {})
+              : Promise.reject(
+                  new Error(
+                    "the dev server stopped while the database was being prepared — see its output above"
+                  )
+                )
+          )
+        ])
+      : boot());
+  } catch (err) {
+    earlyApps?.stop.abort();
+    await earlyApps?.exited.catch(() => undefined);
+    throw err;
+  } finally {
+    if (bootMarker) rmSync(bootMarker, { force: true });
+  }
 
   const stripe =
     process.env.CARBON_EDITION === "cloud" ? spawnStripeListener(root) : null;
@@ -298,7 +376,8 @@ export async function up(opts: UpOpts = {}) {
       ctx,
       selectedApps,
       opts.run,
-      opts.volumes ?? false
+      opts.volumes ?? false,
+      earlyApps
     );
     return;
   }
@@ -316,7 +395,8 @@ export async function up(opts: UpOpts = {}) {
   if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
   await runAppsThenTeardown(ctx, selectedApps, size, {
     hibernate: opts.hibernate !== false && !borrowSlug,
-    stateDir
+    stateDir,
+    prespawned: earlyApps
   });
 }
 
@@ -417,7 +497,16 @@ async function provision(opts: {
         await syncEnvSymlinks(root);
         return "env files synced";
       }
-    },
+    }
+  ]);
+  return ctx;
+}
+
+// The shared containers, and in shared mode this worktree's database in them.
+async function bootShared(ctx: Ctx, borrowSlug: string | undefined) {
+  const { mode } = ctx;
+  const { database } = ctx.db;
+  await tasks([
     {
       title:
         mode === "shared"
@@ -447,7 +536,6 @@ async function provision(opts: {
       }
     }
   ]);
-  return ctx;
 }
 
 // Outside `tasks()`: clack's progress bar (a tick per `<service> Pulled`)
@@ -461,27 +549,48 @@ async function pullImages(ctx: Ctx, opts: { force: boolean; size: StackSize }) {
     }
   }
   const services = await listComposeServices(ctx, opts.size);
-  const bar = progress({ style: "heavy", max: Math.max(services.length, 1) });
-  bar.start(
-    opts.size.minimal
-      ? "Pulling docker images (minimal)"
-      : "Pulling docker images"
-  );
+  const title = opts.size.minimal
+    ? "Pulling docker images (minimal)"
+    : "Pulling docker images";
+  // Anonymous registry pulls are rate-limited per IP; a 429 clears in seconds.
+  const attempts = 4;
+  // One bar per attempt: a retry pulls the same services again.
+  let bar: ReturnType<typeof progress> | undefined;
   try {
-    await pullStack(
-      ctx,
-      (line) => {
-        // Layer lines ("98daf4da4175 Downloading 67.37MB") arrive many times
-        // a second; show the service lines only.
-        if (/^[0-9a-f]{12}\b/.test(line)) return;
-        bar.message(line.slice(0, 80));
-        if (/ Pulled$/.test(line)) bar.advance(1);
+    await withExponentialBackoff(
+      () => {
+        bar = progress({ style: "heavy", max: Math.max(services.length, 1) });
+        bar.start(title);
+        const current = bar;
+        return pullStack(
+          ctx,
+          (line) => {
+            // Layer lines ("98daf4da4175 Downloading 67.37MB") arrive many
+            // times a second; show the service lines only.
+            if (/^[0-9a-f]{12}\b/.test(line)) return;
+            const pulled = / Pulled$/.test(line);
+            // A pipe records every message as a line: keep the pulls only.
+            if (process.stdout.isTTY) current.message(line.slice(0, 80));
+            else if (pulled) log.info(line.slice(0, 80));
+            if (pulled) current.advance(1);
+          },
+          opts.size
+        );
       },
-      opts.size
+      {
+        attempts,
+        retryIf: isTransientPullError,
+        onRetry: (_error, attempt, delayMs) => {
+          bar?.stop("pull failed");
+          log.warn(
+            `docker compose pull failed (attempt ${attempt} of ${attempts}); retrying in ${Math.round(delayMs / 1000)} s`
+          );
+        }
+      }
     );
-    bar.stop("images up to date");
+    bar?.stop("images up to date");
   } catch (err) {
-    bar.stop("pull failed");
+    bar?.stop("pull failed");
     throw err;
   }
 }
@@ -649,7 +758,7 @@ async function runAppsThenTeardown(
   ctx: Ctx,
   selectedApps: AppId[],
   size: StackSize,
-  opts: { hibernate: boolean; stateDir: string }
+  opts: { hibernate: boolean; stateDir: string; prespawned?: Prespawned }
 ) {
   const apps = reactRouterApps(selectedApps).map((a) => a.id);
   // `parked`: the dev servers were stopped on purpose and start again.
@@ -701,16 +810,23 @@ async function runAppsThenTeardown(
       whenAuxAppExits()
     ]);
   } else {
+    let first = opts.prespawned;
     for (;;) {
-      stopApps = new AbortController();
-      appsExited = spawnApps({
-        root: ctx.root,
-        apps,
-        ports: ctx.ports,
-        portless: ctx.prefix !== null,
-        signal: stopApps.signal,
-        stateDir: opts.stateDir
-      });
+      if (first) {
+        stopApps = first.stop;
+        appsExited = first.exited;
+        first = undefined;
+      } else {
+        stopApps = new AbortController();
+        appsExited = spawnApps({
+          root: ctx.root,
+          apps,
+          ports: ctx.ports,
+          portless: ctx.prefix !== null,
+          signal: stopApps.signal,
+          stateDir: opts.stateDir
+        });
+      }
       await appsExited;
       // Exited on their own or on Ctrl+C: tear down. Parked: wait for the
       // wake (or a Ctrl+C, which spawnApps is no longer listening for).
@@ -750,16 +866,20 @@ async function runAppsThenCommand(
   ctx: Ctx,
   selectedApps: AppId[],
   command: string,
-  volumes: boolean
+  volumes: boolean,
+  prespawned?: Prespawned
 ) {
-  const controller = new AbortController();
-  const appsDone = spawnApps({
-    root: ctx.root,
-    apps: reactRouterApps(selectedApps).map((a) => a.id),
-    ports: ctx.ports,
-    portless: ctx.prefix !== null,
-    signal: controller.signal
-  }).catch((err: Error) => log.error(`dev servers: ${err.message}`));
+  const controller = prespawned?.stop ?? new AbortController();
+  const appsDone = (
+    prespawned?.exited ??
+    spawnApps({
+      root: ctx.root,
+      apps: reactRouterApps(selectedApps).map((a) => a.id),
+      ports: ctx.ports,
+      portless: ctx.prefix !== null,
+      signal: controller.signal
+    })
+  ).catch((err: Error) => log.error(`dev servers: ${err.message}`));
   const detach = onShutdown(() => controller.abort());
 
   let exitCode = 0;

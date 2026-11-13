@@ -40,7 +40,7 @@ Magic link is the primary flow. The action rate-limits by IP (Upstash via `@carb
 `auth.server.ts`) picks ONE provider per process from `BOT_PROTECTION`: `"botid"` (only
 ON Vercel — `IS_VERCEL`, from Vercel's own `VERCEL=1`, which SST/Docker/the BYOC chart
 never set) or `"turnstile"` (needs both `CLOUDFLARE_TURNSTILE_SITE_KEY` and
-`_SECRET_KEY`). Unset: BotID for Cloud on Vercel, else Turnstile when both keys are set,
+`_SECRET_KEY`), or `"none"` (no check, even with keys set). Unset: BotID for Cloud on Vercel, else Turnstile when both keys are set,
 else `null` (no check). It is explicit because the Turnstile keys can be present for
 something else (GoTrue, another form) while login uses BotID. An explicit value that
 cannot work (botid off Vercel, turnstile without keys, anything else) throws at boot.

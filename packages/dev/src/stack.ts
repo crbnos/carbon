@@ -86,7 +86,9 @@ export function stackAt(root: string, slug = resolveSlug(root)): Stack {
 
 /** The local connection URL of a database, as `role`. */
 export function dbUrl(db: DbTarget, role = "postgres"): string {
-  return `postgresql://${role}:postgres@localhost:${db.port}/${db.database}`;
+  // Docker publishes the database on IPv4 loopback. `localhost` may resolve
+  // to ::1 first (as it does in CI), where nothing is listening.
+  return `postgresql://${role}:postgres@127.0.0.1:${db.port}/${db.database}`;
 }
 
 function readEnvLocal(

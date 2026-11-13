@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "pathe";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { stackAt } from "./stack.js";
+import { dbUrl, stackAt } from "./stack.js";
 import { resolveSlot, writeStackMode } from "./worktree.js";
 
 describe("stackAt", () => {
@@ -55,4 +55,10 @@ describe("stackAt", () => {
     expect(stack.db).toBeNull();
     expect(stack.hosts.api).toBe("carbon-new-api-gw");
   });
+});
+
+it("uses Docker's IPv4 loopback binding for database URLs", () => {
+  expect(dbUrl({ port: 54322, database: "wt_ci_types" })).toBe(
+    "postgresql://postgres:postgres@127.0.0.1:54322/wt_ci_types"
+  );
 });
