@@ -4685,31 +4685,6 @@
       ]
     },
     {
-      "name": "customerPortalSubmission",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "portalId",
-        "customerId",
-        "submissionType",
-        "salesRfqId",
-        "quoteId",
-        "salesOrderId",
-        "poNumber",
-        "requestedDelivery",
-        "lines",
-        "documentPaths",
-        "idempotencyKey",
-        "status",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "requestFingerprint"
-      ]
-    },
-    {
       "name": "salesRfqFavorite",
       "rows": 0,
       "columns": ["rfqId", "userId"]

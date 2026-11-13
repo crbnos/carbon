@@ -6,22 +6,11 @@ import { Button } from "@carbon/react";
 import { Link } from "react-router";
 
 export type CustomerPortalOverview = {
-  quoteOptions: { id: string; quoteId: string; status: string | null }[];
   nextCursor: {
-    orders: string | null;
     quotes: string | null;
-    requests: string | null;
     invoices: string | null;
     shipments: string | null;
   };
-  rfqs: {
-    id: string;
-    salesRfqId: string | null;
-    rfqId: string | null;
-    customerReference: string | null;
-    status: string;
-    createdAt: string;
-  }[];
   orders: {
     id: string;
     salesOrderId: string;
@@ -57,14 +46,6 @@ export type CustomerPortalOverview = {
     postingDate: string | null;
     trackingNumber: string | null;
     hasPdf: boolean;
-  }[];
-  pendingPos: {
-    id: string;
-    poNumber: string | null;
-    quoteId: string | null;
-    requestedDelivery: string | null;
-    createdAt: string;
-    status: string;
   }[];
   releasedDocuments: {
     id: string;
@@ -125,20 +106,19 @@ function RecordsPager({
   search,
   after,
   next,
-  cursorKey,
   label
 }: {
   search: string;
   after: string | null;
   next: string | null;
-  cursorKey: "after" | "afterRequests";
   label: string;
 }) {
   if (!after && !next) return null;
   const href = (cursor: string | null) => {
     const query = new URLSearchParams(search);
-    if (cursor) query.set(cursorKey, cursor);
-    else query.delete(cursorKey);
+    query.delete("afterRequests");
+    if (cursor) query.set("after", cursor);
+    else query.delete("after");
     return `?${query.toString()}`;
   };
   return (
@@ -157,108 +137,33 @@ function RecordsPager({
   );
 }
 
-export function CustomerPortalPendingOrders({
-  pendingPos
-}: {
-  pendingPos: CustomerPortalOverview["pendingPos"];
-}) {
-  if (!pendingPos.length) return null;
-  return (
-    <section
-      className="rounded-lg border bg-card shadow-sm"
-      aria-label="Purchase orders awaiting review"
-    >
-      <h2 className="border-b px-4 py-3 font-semibold">
-        Purchase orders awaiting confirmation
-      </h2>
-      {pendingPos.map((po) => (
-        <Row key={po.id}>
-          <div className="font-medium">{po.poNumber || "Purchase order"}</div>
-          <div className="text-sm text-muted-foreground">
-            Received {po.createdAt.slice(0, 10)}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {po.requestedDelivery
-              ? `Requested ${po.requestedDelivery}`
-              : "Delivery to confirm"}
-          </div>
-          <div className="text-sm font-medium text-amber-700 dark:text-amber-300">
-            {po.status === "Pending" ? "Awaiting confirmation" : po.status}
-          </div>
-        </Row>
-      ))}
-    </section>
-  );
-}
-
 export function CustomerPortalRecords({
   portalId,
   overview,
   section,
   after,
-  afterRequests,
-  search,
-  onOrderQuote
+  search
 }: {
   portalId: string;
   overview: CustomerPortalOverview;
   section: "quotes" | "invoices" | "shipments";
   after: string | null;
-  afterRequests: string | null;
   search: string;
-  onOrderQuote?: (quoteId: string) => void;
 }) {
   if (section === "quotes") {
-    if (
-      !overview.quotes.length &&
-      !overview.rfqs.length &&
-      !after &&
-      !afterRequests &&
-      !overview.nextCursor.quotes &&
-      !overview.nextCursor.requests
-    )
-      return <Empty>No quotes or requests are available yet.</Empty>;
+    if (!overview.quotes.length && !after && !overview.nextCursor.quotes)
+      return <Empty>No quotes are available yet.</Empty>;
     return (
       <section
         className="rounded-lg border bg-card shadow-sm"
         aria-label="Quotes"
       >
-        <h2 className="border-b px-4 py-3 font-semibold">
-          Quotes and requests
-        </h2>
-        {!overview.quotes.length && !overview.rfqs.length && (
+        <h2 className="border-b px-4 py-3 font-semibold">Issued quotes</h2>
+        {!overview.quotes.length && (
           <p className="px-4 py-3 text-sm text-muted-foreground">
             No records on this page.
           </p>
         )}
-        <h3 className="bg-muted/30 px-4 py-2 text-sm font-medium">Requests</h3>
-        {overview.rfqs.map((rfq) => (
-          <Row key={rfq.id}>
-            <div>
-              <div className="font-medium">
-                {rfq.rfqId ?? "Request received"}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {rfq.customerReference || "No customer reference"}
-              </div>
-            </div>
-            <div className="text-sm">Received {rfq.createdAt.slice(0, 10)}</div>
-            <div className="text-sm">
-              {rfq.status === "Draft" ? "Being reviewed" : rfq.status}
-            </div>
-            <div />
-          </Row>
-        ))}
-        <RecordsPager
-          search={search}
-          after={afterRequests}
-          next={overview.nextCursor.requests}
-          cursorKey="afterRequests"
-          label="requests"
-        />
-        <h3 className="border-t bg-muted/30 px-4 py-2 text-sm font-medium">
-          Issued quotes
-        </h3>
         {overview.quotes.map((quote) => (
           <Row key={quote.id}>
             <div>
@@ -283,16 +188,6 @@ export function CustomerPortalRecords({
                   label="Quote PDF"
                 />
               )}
-              {quote.status === "Sent" && onOrderQuote && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="primary"
-                  onClick={() => onOrderQuote(quote.id)}
-                >
-                  Send PO
-                </Button>
-              )}
             </div>
           </Row>
         ))}
@@ -300,7 +195,6 @@ export function CustomerPortalRecords({
           search={search}
           after={after}
           next={overview.nextCursor.quotes}
-          cursorKey="after"
           label="quotes"
         />
       </section>
@@ -355,7 +249,6 @@ export function CustomerPortalRecords({
           search={search}
           after={after}
           next={overview.nextCursor.invoices}
-          cursorKey="after"
           label="invoices"
         />
       </section>
@@ -420,7 +313,6 @@ export function CustomerPortalRecords({
         search={search}
         after={after}
         next={overview.nextCursor.shipments}
-        cursorKey="after"
         label="packing slips"
       />
     </section>

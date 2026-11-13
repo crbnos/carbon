@@ -183,7 +183,7 @@ describe("portal history pagination", () => {
     ).toBe(true);
   });
 
-  it("paginates quotes and requests independently with stable cursors", async () => {
+  it("paginates quotes with stable cursors", async () => {
     const quotes = Array.from({ length: 1001 }, (_, index) => ({
       id: `quote-${String(index).padStart(4, "0")}`,
       quoteId: `Q-${index}`,
@@ -196,21 +196,11 @@ describe("portal history pagination", () => {
       companyId: scope.companyId,
       customerId: scope.customerId
     }));
-    const requests = Array.from({ length: 55 }, (_, index) => ({
-      id: `request-${String(index).padStart(4, "0")}`,
-      salesRfqId: null,
-      status: "Pending",
-      submissionType: "RFQ",
-      createdAt,
-      companyId: scope.companyId,
-      customerId: scope.customerId
-    }));
     const documents = quotes.map((quote) =>
       pdf("Quote", quote.id, quote.quoteId)
     );
     const { client, calls } = portalClient({
       quote: quotes,
-      customerPortalSubmission: requests,
       document: documents
     });
     const first = await getCustomerPortalOverview(client, scope, {
@@ -218,26 +208,20 @@ describe("portal history pagination", () => {
     });
     expect(first.error).toBeNull();
     expect(first.data?.quotes).toHaveLength(50);
-    expect(first.data?.rfqs).toHaveLength(50);
     expect(first.data?.nextCursor.quotes).toBeTruthy();
-    expect(first.data?.nextCursor.requests).toBeTruthy();
 
     const second = await getCustomerPortalOverview(client, scope, {
       section: "quotes",
-      after: first.data?.nextCursor.quotes,
-      afterRequests: first.data?.nextCursor.requests
+      after: first.data?.nextCursor.quotes
     });
     expect(second.error).toBeNull();
     expect(second.data?.quotes[0]?.id).toBe("quote-0050");
-    expect(second.data?.rfqs).toHaveLength(5);
-    expect(second.data?.nextCursor.requests).toBeNull();
     let current = second;
     let pages = 2;
     while (current.data?.nextCursor.quotes) {
       current = await getCustomerPortalOverview(client, scope, {
         section: "quotes",
-        after: current.data.nextCursor.quotes,
-        afterRequests: first.data?.nextCursor.requests
+        after: current.data.nextCursor.quotes
       });
       pages += 1;
       expect(current.error).toBeNull();

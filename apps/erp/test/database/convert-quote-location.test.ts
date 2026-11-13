@@ -16,7 +16,6 @@ import {
   unwrap
 } from "./fixtures/always-post";
 import { databaseTest } from "./fixtures/local-database";
-import { findCustomerPortalOrderByMarker } from "../../app/modules/sales/sales.service";
 import {
   convertDocument,
   invokePosting
@@ -24,16 +23,9 @@ import {
 
 // A Sent quote of one Pull from Inventory line for 4 of the fixture's part,
 // converted to a sales order. Returns the order id.
-async function convertQuote(
-  f: Fixture,
-  customerPortalSubmissionId?: string,
-  requestedDelivery?: string,
-  quoteRequestedDate?: string,
-  includeNoQuoteLine = false
-) {
+async function convertQuote(f: Fixture) {
   const quoteId = `${f.prefix}-quote`;
   const quoteLineId = `${f.prefix}-quote-line`;
-  const noQuoteLineId = `${f.prefix}-no-quote-line`;
   await seed(f, async (trx) => {
     await trx
       .insertInto("sequence")
@@ -63,11 +55,7 @@ async function convertQuote(
       .execute();
     await trx
       .insertInto("quoteShipment")
-      .values({
-        id: quoteId,
-        companyId: f.companyId,
-        receiptRequestedDate: quoteRequestedDate
-      })
+      .values({ id: quoteId, companyId: f.companyId })
       .execute();
     await trx
       .insertInto("quoteLine")
@@ -96,24 +84,6 @@ async function convertQuote(
         createdBy: USER
       })
       .execute();
-    if (includeNoQuoteLine) {
-      await trx
-        .insertInto("quoteLine")
-        .values({
-          id: noQuoteLineId,
-          quoteId,
-          itemId: f.partId,
-          itemType: "Part",
-          status: "No Quote",
-          description: "Unavailable bracket",
-          methodType: "Pull from Inventory",
-          unitOfMeasureCode: "EA",
-          quantity: [4],
-          companyId: f.companyId,
-          createdBy: USER
-        })
-        .execute();
-    }
   });
 
   const { convertedId } = unwrap(
@@ -123,117 +93,13 @@ async function convertQuote(
       {
         type: "quoteToSalesOrder",
         id: quoteId,
-        selectedLines: {
-          [quoteLineId]: { quantity: 4 },
-          ...(includeNoQuoteLine ? { [noQuoteLineId]: { quantity: 0 } } : {})
-        },
-        customerPortalSubmissionId,
-        requestedDelivery
+        selectedLines: { [quoteLineId]: { quantity: 4 } }
       },
       convertDocument
     )
   );
   return convertedId!;
 }
-
-databaseTest(
-  "a requested PO delivery date takes precedence over the quote shipment date",
-  async () => {
-    const f = await alwaysPostFixture();
-    try {
-      const orderId = await convertQuote(
-        f,
-        undefined,
-        "2031-02-03",
-        "2030-01-01"
-      );
-      const shipment = await f.db
-        .selectFrom("salesOrderShipment")
-        .select("receiptRequestedDate")
-        .where("id", "=", orderId)
-        .executeTakeFirstOrThrow();
-      expect(shipment.receiptRequestedDate).toBe("2031-02-03");
-    } finally {
-      await f.cleanup();
-    }
-  }
-);
-
-databaseTest(
-  "a zero selection for an unavailable quote line does not make the quote Partial",
-  async () => {
-    const f = await alwaysPostFixture();
-    try {
-      await convertQuote(f, undefined, undefined, undefined, true);
-      const quote = await f.db
-        .selectFrom("quote")
-        .select("status")
-        .where("id", "=", `${f.prefix}-quote`)
-        .executeTakeFirstOrThrow();
-      expect(quote.status).toBe("Ordered");
-    } finally {
-      await f.cleanup();
-    }
-  }
-);
-
-databaseTest(
-  "quote conversion keeps the quote shipment date when no PO date is given",
-  async () => {
-    const f = await alwaysPostFixture();
-    try {
-      const orderId = await convertQuote(f, undefined, undefined, "2030-01-01");
-      const shipment = await f.db
-        .selectFrom("salesOrderShipment")
-        .select("receiptRequestedDate")
-        .where("id", "=", orderId)
-        .executeTakeFirstOrThrow();
-      expect(shipment.receiptRequestedDate).toBe("2030-01-01");
-    } finally {
-      await f.cleanup();
-    }
-  }
-);
-
-databaseTest(
-  "a portal PO marker survives quote conversion and a repeated conversion creates no order",
-  async () => {
-    const f = await alwaysPostFixture();
-    try {
-      const submissionId = `${f.prefix}-portal-po`;
-      const convertedId = await convertQuote(f, submissionId);
-      const recovered = await f.db.transaction().execute((trx) =>
-        findCustomerPortalOrderByMarker(trx, f.companyId, f.customerId, submissionId)
-      );
-      expect(recovered?.id).toBe(convertedId);
-      const wrongCustomer = await f.db.transaction().execute((trx) =>
-        findCustomerPortalOrderByMarker(trx, f.companyId, `${f.prefix}-other-customer`, submissionId)
-      );
-      expect(wrongCustomer).toBeUndefined();
-
-      const repeated = await invokePosting(
-        f.service,
-        "convert",
-        {
-          type: "quoteToSalesOrder",
-          id: `${f.prefix}-quote`,
-          selectedLines: { [`${f.prefix}-quote-line`]: { quantity: 4 } },
-          customerPortalSubmissionId: submissionId
-        },
-        convertDocument
-      );
-      expect(repeated.error).toBeTruthy();
-      const orders = await f.db.selectFrom("salesOrder")
-        .select("id")
-        .where("companyId", "=", f.companyId)
-        .where("customerId", "=", f.customerId)
-        .execute();
-      expect(orders.map((order) => order.id)).toEqual([convertedId]);
-    } finally {
-      await f.cleanup();
-    }
-  }
-);
 
 databaseTest(
   "a quote with no location converts to an order at the first location",

@@ -488,12 +488,6 @@ export const manifest = {
     update: false,
     delete: false
   }),
-  customerPortalSubmission: company("sales", {
-    read: "sales_view",
-    create: false,
-    update: false,
-    delete: false
-  }),
   customerShipping: company("sales", {
     read: "sales_view",
     create: false,

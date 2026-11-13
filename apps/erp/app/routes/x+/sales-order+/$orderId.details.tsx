@@ -13,15 +13,11 @@ import type { FileObject } from "@supabase/storage-js";
 import type { JSONContent } from "@tiptap/react";
 import { useRef } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Link, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
+import { salesOrderValidator } from "~/modules/sales/sales.models";
 import {
-  customerPortalPoLinesValidator,
-  salesOrderValidator
-} from "~/modules/sales/sales.models";
-import {
-  getAcceptedCustomerPortalPoForOrder,
   getSalesOrder,
   getSalesOrderPayment,
   getSalesOrderShipment
@@ -46,7 +42,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "sales"
   });
 
@@ -83,39 +79,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const portalSubmission = order.data?.customerId
-    ? await getAcceptedCustomerPortalPoForOrder(
-        client,
-        companyId,
-        order.data.customerId,
-        orderId
-      )
-    : null;
-  if (portalSubmission?.error) {
-    throw redirect(
-      path.to.salesOrders,
-      await flash(
-        request,
-        error(portalSubmission.error, "Failed to load submitted PO lines")
-      )
-    );
-  }
-
   return {
     internalNotes: (order.data?.internalNotes ?? {}) as JSONContent,
     externalNotes: (order.data?.externalNotes ?? {}) as JSONContent,
     payment: payment.data || null,
-    shipment: shipment.data || null,
-    submittedPo: portalSubmission?.data
-      ? {
-          id: portalSubmission.data.id,
-          poNumber: portalSubmission.data.poNumber,
-          lines:
-            customerPortalPoLinesValidator.safeParse(
-              portalSubmission.data.lines
-            ).data ?? []
-        }
-      : null
+    shipment: shipment.data || null
   };
 }
 
@@ -139,7 +107,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function SalesOrderDetailsRoute() {
   const { t } = useLingui();
-  const { internalNotes, externalNotes, payment, shipment, submittedPo } =
+  const { internalNotes, externalNotes, payment, shipment } =
     useLoaderData<typeof loader>();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -195,54 +163,6 @@ export default function SalesOrderDetailsRoute() {
         opportunity={orderData?.opportunity!}
       />
       <SalesOrderSummary onEditShippingCost={handleEditShippingCost} />
-
-      {submittedPo && (
-        <section className="w-full rounded-lg border bg-card">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b p-4">
-            <h2 className="font-semibold">
-              Submitted PO lines
-              {submittedPo.poNumber ? ` · ${submittedPo.poNumber}` : ""}
-            </h2>
-            <Link
-              className="text-sm text-primary underline"
-              to={path.to.customerPortalSubmission(submittedPo.id)}
-            >
-              Review submitted PO
-            </Link>
-          </div>
-          <p className="px-4 pt-3 text-sm text-muted-foreground">
-            Match these requested parts to order lines and set approved prices
-            before confirming the order. Submitted prices are reference values.
-          </p>
-          <div className="overflow-x-auto p-4">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="p-2">Part number</th>
-                  <th className="p-2">Description</th>
-                  <th className="p-2">Quantity</th>
-                  <th className="p-2">Submitted unit price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {submittedPo.lines.map((line, index) => (
-                  <tr
-                    key={`${line.partNumber}-${index}`}
-                    className="border-b last:border-0"
-                  >
-                    <td className="p-2">{line.partNumber}</td>
-                    <td className="p-2">{line.description ?? "—"}</td>
-                    <td className="p-2">
-                      {line.quantity} {line.unitOfMeasureCode}
-                    </td>
-                    <td className="p-2">{line.unitPrice ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
 
       <OpportunityNotes
         key={`notes-${orderId}`}

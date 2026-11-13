@@ -13,15 +13,3 @@ END
 $authz$;
 ALTER TABLE public."customerPortalDocument" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."customerPortalDocument" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
-
--- customerPortalSubmission
-DO $authz$
-DECLARE p record;
-BEGIN
-  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerPortalSubmission' LOOP
-    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerPortalSubmission');
-  END LOOP;
-END
-$authz$;
-ALTER TABLE public."customerPortalSubmission" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerPortalSubmission" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));

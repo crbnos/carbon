@@ -787,9 +787,6 @@ export const path = {
       generatePath(`${x}/customer/${id}/payments`),
     customerPortal: (id: string) =>
       generatePath(`${x}/sales/customer-portals/${id}`),
-    customerPortalSubmission: (id: string) =>
-      generatePath(`${x}/sales/customer-portals/submissions/${id}`),
-    customerPortalSubmissions: `${x}/sales/customer-portals/submissions`,
     customerPortals: `${x}/sales/customer-portals`,
     customerRentalRate: (id: string, customerItemRentalRateId: string) =>
       generatePath(

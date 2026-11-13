@@ -8,7 +8,7 @@ import { Avatar, Button } from "@carbon/react";
 import { async, SCALE_FORMAT } from "@carbon/utils";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { LuBookMarked, LuImage, LuShield, LuShieldCheck } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData, useLocation } from "react-router";
@@ -41,11 +41,8 @@ import {
 } from "~/modules/sales/ui/CustomerPortal";
 import {
   CustomerPortalOrderDocuments,
-  type CustomerPortalOverview,
-  CustomerPortalPendingOrders,
   CustomerPortalRecords
 } from "~/modules/sales/ui/CustomerPortal/CustomerPortalRecords";
-import { CustomerPortalSubmissionForms } from "~/modules/sales/ui/CustomerPortal/CustomerPortalSubmissionForms";
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
 import { getCompany } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
@@ -65,8 +62,6 @@ const logger = getLogger("erp", "share", "customer-portal");
 
 // The thumbnails the page downloads at once.
 const THUMBNAIL_CONCURRENCY = 8;
-
-type PortalQuoteOption = CustomerPortalOverview["quoteOptions"][number];
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const { id } = params;
@@ -126,7 +121,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     {
       section,
       after: searchParams.get("after"),
-      afterRequests: searchParams.get("afterRequests"),
       orderSalesOrderIds: (salesOrderLines.data ?? [])
         .map((line) => line.salesOrderId)
         .filter((id): id is string => !!id)
@@ -194,7 +188,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     portalOverview: overview.data,
     section,
     after: searchParams.get("after"),
-    afterRequests: searchParams.get("afterRequests"),
     salesOrderLines: salesOrderLines.data ?? [],
     isTruncated: (salesOrderLines.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,
     jobOperationAttachments: servedAttachments,
@@ -211,7 +204,6 @@ export default function CustomerPortal() {
     portalOverview,
     section,
     after,
-    afterRequests,
     salesOrderLines,
     isTruncated,
     thumbnails,
@@ -220,46 +212,6 @@ export default function CustomerPortal() {
 
   const formatter = useNumberFormatter(SCALE_FORMAT);
   const location = useLocation();
-  const [openForm, setOpenForm] = useState<
-    { type: "rfq" } | { type: "po"; quoteOption?: PortalQuoteOption } | null
-  >(null);
-
-  function openRequest(form: "rfq" | "po", quoteId?: string) {
-    if (form === "rfq") return setOpenForm({ type: "rfq" });
-    const quote = portalOverview.quotes.find((item) => item.id === quoteId);
-    setOpenForm({
-      type: "po",
-      quoteOption: quote
-        ? { id: quote.id, quoteId: quote.quoteId, status: quote.status }
-        : undefined
-    });
-  }
-
-  const quoteOptions: PortalQuoteOption[] = [
-    ...portalOverview.quoteOptions,
-    ...portalOverview.quotes.filter(
-      (quote) =>
-        quote.status === "Sent" &&
-        !portalOverview.quoteOptions.some((choice) => choice.id === quote.id)
-    )
-  ];
-  if (
-    openForm?.type === "po" &&
-    openForm.quoteOption &&
-    !quoteOptions.some((choice) => choice.id === openForm.quoteOption?.id)
-  ) {
-    quoteOptions.push(openForm.quoteOption);
-  }
-
-  function pageUrl(next: string | null, nextRequests = afterRequests) {
-    const query = new URLSearchParams(location.search);
-    query.set("section", section);
-    if (next) query.set("after", next);
-    else query.delete("after");
-    if (nextRequests) query.set("afterRequests", nextRequests);
-    else query.delete("afterRequests");
-    return `?${query.toString()}`;
-  }
 
   const columns = useMemo<ColumnDef<(typeof salesOrderLines)[number]>[]>(() => {
     return [
@@ -530,7 +482,7 @@ export default function CustomerPortal() {
         </Breadcrumbs>
       </div>
       <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-5 p-4 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
           <div>
             <h1 className="text-2xl font-semibold">
               {customer?.customer?.name ?? "Customer portal"}
@@ -539,35 +491,7 @@ export default function CustomerPortal() {
               Track your orders and download issued documents.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => openRequest("rfq")}
-            >
-              Request a quote
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={() => openRequest("po")}
-            >
-              Send a PO
-            </Button>
-          </div>
         </div>
-        {openForm && (
-          <CustomerPortalSubmissionForms
-            key={`${openForm.type}:${openForm.type === "po" ? (openForm.quoteOption?.id ?? "") : ""}`}
-            portalId={customer.id}
-            quotes={quoteOptions}
-            initialForm={openForm.type}
-            initialQuoteId={
-              openForm.type === "po" ? openForm.quoteOption?.id : undefined
-            }
-            onClose={() => setOpenForm(null)}
-          />
-        )}
         <nav
           className="flex gap-2 overflow-x-auto border-b pb-2"
           aria-label="Portal sections"
@@ -582,10 +506,8 @@ export default function CustomerPortal() {
           ).map(([key, label]) => {
             const loaded =
               key === "orders"
-                ? salesOrderLines.length + portalOverview.pendingPos.length
-                : key === "quotes"
-                  ? portalOverview.quotes.length + portalOverview.rfqs.length
-                  : portalOverview[key].length;
+                ? salesOrderLines.length
+                : portalOverview[key].length;
             const total = section === key ? `${loaded} shown` : null;
             return (
               <Button
@@ -606,27 +528,6 @@ export default function CustomerPortal() {
         </nav>
         {section === "orders" ? (
           <div className="flex min-h-[560px] flex-col gap-4">
-            <CustomerPortalPendingOrders
-              pendingPos={portalOverview.pendingPos}
-            />
-            {(after || portalOverview.nextCursor.orders) && (
-              <div className="flex gap-2">
-                {after && (
-                  <Button variant="secondary" asChild>
-                    <Link to={pageUrl(null)}>
-                      Newest pending purchase orders
-                    </Link>
-                  </Button>
-                )}
-                {portalOverview.nextCursor.orders && (
-                  <Button variant="secondary" asChild>
-                    <Link to={pageUrl(portalOverview.nextCursor.orders)}>
-                      Older pending purchase orders
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            )}
             <div className="flex min-h-[480px] flex-1 overflow-hidden rounded-lg border">
               <Table<(typeof salesOrderLines)[number]>
                 data={salesOrderLines}
@@ -648,9 +549,7 @@ export default function CustomerPortal() {
             overview={portalOverview}
             section={section}
             after={after}
-            afterRequests={afterRequests}
             search={location.search}
-            onOrderQuote={(quoteId) => openRequest("po", quoteId)}
           />
         )}
       </main>

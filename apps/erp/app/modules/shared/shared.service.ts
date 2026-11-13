@@ -9110,7 +9110,6 @@ export const convertInput = z.discriminatedUnion("type", [
     type: z.literal("quoteToSalesOrder"),
     id: z.string(),
     purchaseOrderNumber: z.string().optional(),
-    requestedDelivery: z.iso.date().optional(),
     // Only `quantity` is trusted (it selects a quantity break). Every financial
     // field is derived server-side from quoteLinePrice in the handler; the money
     // fields below are accepted-but-ignored for backward compatibility with
@@ -9131,8 +9130,7 @@ export const convertInput = z.discriminatedUnion("type", [
       })
     ),
     digitalQuoteAcceptedBy: z.string().optional(),
-    digitalQuoteAcceptedByEmail: z.string().optional(),
-    customerPortalSubmissionId: z.string().optional()
+    digitalQuoteAcceptedByEmail: z.string().optional()
   }),
 
   z.object({
@@ -9690,9 +9688,7 @@ export async function convertDocument(
         selectedLines,
         purchaseOrderNumber,
         digitalQuoteAcceptedBy,
-        digitalQuoteAcceptedByEmail,
-        requestedDelivery,
-        customerPortalSubmissionId
+        digitalQuoteAcceptedByEmail
       } = payload;
       const [
         quote,
@@ -9774,7 +9770,6 @@ export async function convertDocument(
         const hasZeroQuantityLines = quoteLineRows.some(
           (line) =>
             line.id &&
-            line.status !== "No Quote" &&
             selectedLines &&
             line.id in selectedLines &&
             selectedLines[line.id]!.quantity === 0
@@ -9853,10 +9848,7 @@ export async function convertDocument(
               exchangeRate: quote.data.exchangeRate ?? 1,
               exchangeRateUpdatedAt:
                 quote.data.exchangeRateUpdatedAt ?? datetime.timestamp(),
-              opportunityId: quote.data.opportunityId,
-              ...(customerPortalSubmissionId
-                ? { customFields: toJson({ customerPortalSubmissionId }) }
-                : {})
+              opportunityId: quote.data.opportunityId
             }
           ])
           .returning(["id"])
@@ -10020,9 +10012,7 @@ export async function convertDocument(
             id: insertedSalesOrderId,
             locationId: quoteShipping.data.locationId ?? locationId,
             receiptRequestedDate:
-              requestedDelivery ??
-              quoteShipping.data.receiptRequestedDate ??
-              receiptPromisedDate,
+              quoteShipping.data.receiptRequestedDate ?? receiptPromisedDate,
             receiptPromisedDate
           })
           .execute();

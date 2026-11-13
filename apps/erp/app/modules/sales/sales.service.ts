@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { createHash } from "node:crypto";
 import { openai } from "@ai-sdk/openai";
 import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
@@ -11,7 +10,6 @@ import type {
   ServiceContext
 } from "@carbon/api/service-fn.server";
 import { hasPermission } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json, Tables } from "@carbon/database";
 import {
@@ -98,7 +96,6 @@ import {
   hasCompanyPrivateObjectPathPrefix,
   isStoredDocumentPdf,
   isUnsafeStoragePath,
-  safeStorageFileName,
   storage,
   storedDocumentPdfName,
   TEMP_STAGING_BUCKET
@@ -182,7 +179,6 @@ import { upsertPart } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
 import { generateTimeAndMaterialsItems } from "~/modules/projects/project-posting";
-import { shareLinkContext } from "~/modules/service-context.server";
 import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
@@ -383,11 +379,9 @@ export async function convertQuoteToOrder(
     selectedLines: Record<string, { quantity: number }>;
     companyId: string;
     purchaseOrderNumber?: string;
-    requestedDelivery?: string;
     userId: string;
     digitalQuoteAcceptedBy?: string;
     digitalQuoteAcceptedByEmail?: string;
-    customerPortalSubmissionId?: string;
   }
 ) {
   const { companyId, userId, ...input } = payload;
@@ -427,70 +421,6 @@ export async function convertQuoteToOrder(
   }
 
   return result;
-}
-
-/** Serialize staff decisions for one PO, including recovery of an order committed before its receipt. */
-export async function withLockedCustomerPortalPoSubmission<T>(
-  db: Kysely<KyselyDatabase>,
-  companyId: string,
-  submissionId: string,
-  work: (
-    trx: KyselyTx,
-    submission: Database["public"]["Tables"]["customerPortalSubmission"]["Row"]
-  ) => Promise<T>
-): Promise<T | null> {
-  return db.transaction().execute(async (trx) => {
-    const submission = await trx
-      .selectFrom("customerPortalSubmission")
-      .selectAll()
-      .where("id", "=", submissionId)
-      .where("companyId", "=", companyId)
-      .where("submissionType", "=", "PO")
-      .forUpdate()
-      .executeTakeFirst();
-    if (!submission) return null;
-    return work(
-      trx,
-      submission as Database["public"]["Tables"]["customerPortalSubmission"]["Row"]
-    );
-  });
-}
-
-/** Find an order whose creation committed before the PO review receipt did. */
-export async function findCustomerPortalOrderByMarker(
-  db: KyselyTx,
-  companyId: string,
-  customerId: string,
-  submissionId: string
-) {
-  const marker = JSON.stringify({ customerPortalSubmissionId: submissionId });
-  return db
-    .selectFrom("salesOrder")
-    .select(["id", "opportunityId"])
-    .where("companyId", "=", companyId)
-    .where("customerId", "=", customerId)
-    .where(sql<boolean>`"salesOrder"."customFields" @> ${marker}::jsonb`)
-    .executeTakeFirst();
-}
-
-/** Keep an accepted, unquoted PO's submitted lines available while staff map its Draft order. */
-export async function getAcceptedCustomerPortalPoForOrder(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  customerId: string,
-  salesOrderId: string
-) {
-  return client
-    .from("customerPortalSubmission")
-    .select("id,poNumber,lines")
-    .eq("companyId", companyId)
-    .eq("customerId", customerId)
-    .eq("salesOrderId", salesOrderId)
-    .eq("submissionType", "PO")
-    .eq("status", "Accepted")
-    .is("quoteId", null)
-    .limit(1)
-    .maybeSingle();
 }
 
 export async function copyQuoteLine(
@@ -1482,143 +1412,6 @@ export type ActiveCustomerPortal =
       refusal: "error" | "notFound" | "plan" | CustomerPortalRefusal;
     };
 
-const PORTAL_FILE_LIMIT = 10 * 1024 * 1024;
-
-/** Check extension and bytes; the browser-supplied MIME header is not trusted. */
-async function portalUploadContentType(file: File, poOnly = false) {
-  if (file.size === 0 || file.size > PORTAL_FILE_LIMIT) return null;
-  const safeName = safeStorageFileName(file.name);
-  if (!safeName) return null;
-  const extension = safeName.split(".").pop()?.toLowerCase();
-  if (!extension) return null;
-  const bytes = Buffer.from(await file.arrayBuffer());
-  if (extension === "pdf" && bytes.subarray(0, 5).toString() === "%PDF-") {
-    return { safeName, contentType: "application/pdf" };
-  }
-  if (poOnly) return null;
-  if (
-    extension === "png" &&
-    bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-  ) {
-    return { safeName, contentType: "image/png" };
-  }
-  if (extension === "jpg" || extension === "jpeg") {
-    if (bytes.subarray(0, 3).equals(Buffer.from([255, 216, 255]))) {
-      return { safeName, contentType: "image/jpeg" };
-    }
-  }
-  if (
-    bytes.subarray(0, 4).equals(Buffer.from([80, 75, 3, 4])) &&
-    bytes.includes(Buffer.from("[Content_Types].xml"))
-  ) {
-    if (
-      extension === "docx" &&
-      bytes.includes(Buffer.from("word/document.xml"))
-    ) {
-      return {
-        safeName,
-        contentType:
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      };
-    }
-    if (
-      extension === "xlsx" &&
-      bytes.includes(Buffer.from("xl/workbook.xml"))
-    ) {
-      return {
-        safeName,
-        contentType:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      };
-    }
-  }
-  return null;
-}
-
-/** Resolve the public link and its audit actor without trusting form data. */
-export async function customerPortalSubmissionContext(portalId: string) {
-  const client = getCarbonServiceRole();
-  const portal = await getActiveCustomerPortal(client, portalId);
-  if (portal.refusal) return null;
-  const customer = await client
-    .from("customer")
-    .select("id, createdBy")
-    .eq("id", portal.data.customerId)
-    .eq("companyId", portal.data.companyId)
-    .single();
-  if (!customer.data?.createdBy) return null;
-  const ctx = await shareLinkContext({
-    companyId: portal.data.companyId,
-    createdBy: customer.data.createdBy
-  });
-  if (!ctx) return null;
-  return { ctx, customerId: customer.data.id };
-}
-
-export async function removePortalUploads(
-  ctx: ServiceContext,
-  paths: string[]
-) {
-  if (paths.length === 0) return;
-  const removed = await storage(ctx.asSystem.supabase)
-    .company(ctx.company.id)
-    .remove(paths);
-  if (removed.error)
-    logger.error("Failed to clean up portal upload", {
-      companyId: ctx.company.id,
-      error: removed.error
-    });
-}
-
-export async function uploadPortalFiles(
-  ctx: ServiceContext,
-  folder: string,
-  files: File[],
-  poOnly = false
-) {
-  const checked = await Promise.all(
-    files.map((file) => portalUploadContentType(file, poOnly))
-  );
-  if (checked.some((value) => !value))
-    return { paths: [], error: "Invalid attachment type, name, or size" };
-  const paths: string[] = [];
-  for (let index = 0; index < files.length; index++) {
-    const file = files[index];
-    const valid = checked[index]!;
-    const path = `${ctx.company.id}/${folder}/${crypto.randomUUID()}-${valid.safeName}`;
-    const upload = await storage(ctx.asSystem.supabase)
-      .company(ctx.company.id)
-      .upload(path, file, { contentType: valid.contentType });
-    if (upload.error) {
-      await removePortalUploads(ctx, paths);
-      logger.error("Failed to upload portal attachment", {
-        companyId: ctx.company.id,
-        error: upload.error
-      });
-      return { paths: [], error: "Failed to upload attachment" };
-    }
-    paths.push(path);
-  }
-  return { paths, error: null };
-}
-
-export async function portalSubmissionFingerprint(
-  fields: unknown,
-  files: File[]
-) {
-  const hash = createHash("sha256");
-  hash.update(JSON.stringify(fields));
-  for (const file of files) {
-    hash.update("\0");
-    hash.update(file.name);
-    hash.update("\0");
-    hash.update(file.type);
-    hash.update("\0");
-    hash.update(Buffer.from(await file.arrayBuffer()));
-  }
-  return hash.digest("hex");
-}
-
 /**
  * The customer portal a signed-out share route may serve, or why not. Every
  * share route loads its portal through this, so the plan and expiry checks
@@ -1675,7 +1468,6 @@ export type CustomerPortalSection =
 export type CustomerPortalPageRequest = {
   section: CustomerPortalSection;
   after?: string | null;
-  afterRequests?: string | null;
   orderSalesOrderIds?: string[];
 };
 
@@ -1729,22 +1521,7 @@ export async function getCustomerPortalOverview(
 ) {
   const section = page.section;
   const cursor = decodeCursor(page.after ?? null);
-  const requestCursor = decodeCursor(page.afterRequests ?? null);
   const pagingArgs = { limit: PORTAL_PAGE_SIZE, cursor };
-  const requestPagingArgs = { limit: PORTAL_PAGE_SIZE, cursor: requestCursor };
-
-  // Keep the PO picker small even when another tab is open. A quote selected
-  // from an older Quotes page is passed directly to the form.
-  const quoteChoices = await client
-    .from("quote")
-    .select("id,quoteId,status")
-    .eq("companyId", companyId)
-    .eq("customerId", customerId)
-    .eq("status", "Sent")
-    .order("createdAt", { ascending: false })
-    .order("id")
-    .limit(PORTAL_PAGE_SIZE);
-  if (quoteChoices.error) return { data: null, error: quoteChoices.error };
 
   const orderSalesOrderIds = [...new Set(page.orderSalesOrderIds ?? [])];
   const orders =
@@ -1817,49 +1594,6 @@ export async function getCustomerPortalOverview(
       : null;
   if (invoices?.error) return { data: null, error: invoices.error };
   const invoicePage = toPage(invoices?.data ?? [], pagingArgs, PORTAL_SORT);
-
-  const pendingQuery = client
-    .from("customerPortalSubmission")
-    .select("id,poNumber,quoteId,requestedDelivery,createdAt,status")
-    .eq("companyId", companyId)
-    .eq("customerId", customerId)
-    .eq("submissionType", "PO")
-    .eq("status", "Pending");
-  const pendingPos =
-    section === "orders"
-      ? await (cursor
-          ? pendingQuery.or(portalCursorFilter(cursor))
-          : pendingQuery
-        )
-          .order("createdAt", { ascending: false })
-          .order("id")
-          .limit(PORTAL_PAGE_SIZE + 1)
-      : null;
-  if (pendingPos?.error) return { data: null, error: pendingPos.error };
-  const pendingPage = toPage(pendingPos?.data ?? [], pagingArgs, PORTAL_SORT);
-
-  const requestQuery = client
-    .from("customerPortalSubmission")
-    .select("id,salesRfqId,createdAt,status")
-    .eq("companyId", companyId)
-    .eq("customerId", customerId)
-    .eq("submissionType", "RFQ");
-  const rfqSubmissions =
-    section === "quotes"
-      ? await (requestCursor
-          ? requestQuery.or(portalCursorFilter(requestCursor))
-          : requestQuery
-        )
-          .order("createdAt", { ascending: false })
-          .order("id")
-          .limit(PORTAL_PAGE_SIZE + 1)
-      : null;
-  if (rfqSubmissions?.error) return { data: null, error: rfqSubmissions.error };
-  const requestPage = toPage(
-    rfqSubmissions?.data ?? [],
-    requestPagingArgs,
-    PORTAL_SORT
-  );
 
   const shipmentQuery = client
     .from("shipment")
@@ -1986,32 +1720,6 @@ export async function getCustomerPortalOverview(
     ...(orderReleases?.data ?? []),
     ...(shipmentReleases?.data ?? [])
   ];
-  const rfqIds = [
-    ...new Set(
-      requestPage.rows
-        .map((row) => row.salesRfqId)
-        .filter((id): id is string => !!id)
-    )
-  ];
-  const rfqs = rfqIds.length
-    ? await fetchAllByIds<
-        Pick<
-          Tables<"salesRfq">,
-          "id" | "rfqId" | "customerReference" | "status"
-        >
-      >(rfqIds, (batch) =>
-        client
-          .from("salesRfq")
-          .select("id,rfqId,customerReference,status")
-          .eq("companyId", companyId)
-          .eq("customerId", customerId)
-          .in("id", batch)
-          .order("id")
-      )
-    : null;
-  if (rfqs?.error) return { data: null, error: rfqs.error };
-  const rfqById = new Map((rfqs?.data ?? []).map((row) => [row.id, row]));
-
   const sourceIds = [
     ...new Set([
       ...orderIds,
@@ -2135,11 +1843,8 @@ export async function getCustomerPortalOverview(
 
   return {
     data: {
-      quoteOptions: quoteChoices.data ?? [],
       nextCursor: {
-        orders: pendingPage.nextCursor,
         quotes: quotePage.nextCursor,
-        requests: requestPage.nextCursor,
         invoices: invoicePage.nextCursor,
         shipments: shipmentPage.nextCursor
       },
@@ -2162,18 +1867,6 @@ export async function getCustomerPortalOverview(
       quotes: visibleQuotes,
       invoices: visibleInvoices,
       shipments: visibleShipments,
-      rfqs: requestPage.rows.map((row) => {
-        const rfq = row.salesRfqId ? rfqById.get(row.salesRfqId) : null;
-        return {
-          id: row.id,
-          salesRfqId: rfq?.id ?? null,
-          rfqId: rfq?.rfqId ?? null,
-          customerReference: rfq?.customerReference ?? null,
-          status: rfq?.status ?? row.status,
-          createdAt: row.createdAt
-        };
-      }),
-      pendingPos: pendingPage.rows,
       releasedDocuments: releases.flatMap((row) => {
         const sourceDocument = row.salesOrderId ? "Sales Order" : "Shipment";
         const sourceId = row.salesOrderId ?? row.shipmentId;
@@ -7588,110 +7281,6 @@ export async function insertSalesOrder(
   return { data: { id: orderId, salesOrderId }, error: null };
 }
 
-/** Create a portal PO's Draft header and its required defaults in one transaction. */
-export async function insertCustomerPortalDraftOrder(
-  trx: KyselyTx,
-  client: SupabaseClient<Database>,
-  input: {
-    companyId: string;
-    customerId: string;
-    createdBy: string;
-    submissionId: string;
-    poNumber: string | null;
-    requestedDelivery: string | null;
-  }
-) {
-  const [
-    sequence,
-    customerPayment,
-    customerShipping,
-    seller,
-    company,
-    timeZone
-  ] = await Promise.all([
-    client.rpc("get_next_sequence", {
-      sequence_name: "salesOrder",
-      company_id: input.companyId
-    }),
-    getCustomerPayment(client, input.customerId, input.companyId),
-    getCustomerShipping(client, input.customerId, input.companyId),
-    getEmployeeJob(client, input.createdBy, input.companyId),
-    trx
-      .selectFrom("company")
-      .select("baseCurrencyCode")
-      .where("id", "=", input.companyId)
-      .executeTakeFirstOrThrow(),
-    getCompanyTimeZone(client, input.companyId)
-  ]);
-  if (sequence.error || !sequence.data)
-    throw sequence.error ?? new Error("Failed to generate sales order number");
-  if (customerPayment.error || !customerPayment.data)
-    throw (
-      customerPayment.error ??
-      new Error("Customer payment defaults are missing")
-    );
-  if (customerShipping.error || !customerShipping.data)
-    throw (
-      customerShipping.error ??
-      new Error("Customer shipping defaults are missing")
-    );
-  const currencyCode = company.baseCurrencyCode ?? "USD";
-  const exchange = await getExchangeRate(client, input.companyId, currencyCode);
-  if (exchange.error) throw exchange.error;
-  const locationId = seller.data?.locationId ?? null;
-  const opportunity = await trx
-    .insertInto("opportunity")
-    .values({ customerId: input.customerId, companyId: input.companyId })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-  const order = await trx
-    .insertInto("salesOrder")
-    .values({
-      salesOrderId: sequence.data,
-      customerId: input.customerId,
-      customerReference: input.poNumber,
-      opportunityId: opportunity.id,
-      status: "Draft",
-      orderDate: datetime.today(timeZone).toString(),
-      currencyCode,
-      exchangeRate: exchange.data,
-      exchangeRateUpdatedAt: datetime.timestamp(),
-      locationId,
-      customFields: toJson({ customerPortalSubmissionId: input.submissionId }),
-      companyId: input.companyId,
-      createdBy: input.createdBy,
-      updatedBy: input.createdBy
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-  await trx
-    .insertInto("salesOrderShipment")
-    .values({
-      id: order.id,
-      locationId,
-      receiptRequestedDate: input.requestedDelivery,
-      shippingMethodId: customerShipping.data.shippingMethodId,
-      shippingTermId: customerShipping.data.shippingTermId,
-      incoterm: customerShipping.data.incoterm,
-      incotermLocation: customerShipping.data.incotermLocation,
-      companyId: input.companyId
-    })
-    .execute();
-  await trx
-    .insertInto("salesOrderPayment")
-    .values({
-      id: order.id,
-      paymentTermId: customerPayment.data.paymentTermId,
-      invoiceCustomerId:
-        customerPayment.data.invoiceCustomerId ?? input.customerId,
-      invoiceCustomerContactId: customerPayment.data.invoiceCustomerContactId,
-      invoiceCustomerLocationId: customerPayment.data.invoiceCustomerLocationId,
-      companyId: input.companyId
-    })
-    .execute();
-  return { id: order.id, opportunityId: opportunity.id };
-}
-
 export async function updateSalesOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -7717,32 +7306,11 @@ export async function updateSalesOrder(
 
   const existing = await client
     .from("salesOrder")
-    .select("companyId, currencyCode, opportunityId, customFields")
+    .select("companyId, currencyCode, opportunityId")
     .eq("id", id)
     .single();
 
   if (existing.error) return { data: null, error: existing.error };
-
-  // The submission marker must survive ordinary custom-field edits so a
-  // conversion can be recovered if its review receipt was interrupted.
-  const existingFields = existing.data.customFields;
-  const submissionId =
-    existingFields &&
-    typeof existingFields === "object" &&
-    !Array.isArray(existingFields)
-      ? existingFields.customerPortalSubmissionId
-      : undefined;
-  if (typeof submissionId === "string" && updates.customFields !== undefined) {
-    const incomingFields = updates.customFields;
-    updates.customFields = {
-      ...(incomingFields &&
-      typeof incomingFields === "object" &&
-      !Array.isArray(incomingFields)
-        ? incomingFields
-        : {}),
-      customerPortalSubmissionId: submissionId
-    };
-  }
 
   if (
     updates.currencyCode &&
@@ -8071,247 +7639,6 @@ export async function upsertSalesOrderPayment(
     .insert([salesOrderPayment])
     .select("id")
     .single();
-}
-
-/** A portal idempotency key belongs to one form type for this link. */
-export async function findCustomerPortalSubmission(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; portalId: string; idempotencyKey: string }
-) {
-  return db
-    .selectFrom("customerPortalSubmission")
-    .select(["id", "submissionType", "salesRfqId", "requestFingerprint"])
-    .where("companyId", "=", args.companyId)
-    .where("portalId", "=", args.portalId)
-    .where("idempotencyKey", "=", args.idempotencyKey)
-    .executeTakeFirst();
-}
-
-/** A quote named by a public PO must belong to the portal customer and be Sent. */
-export async function isSentCustomerQuote(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; customerId: string; quoteId: string }
-) {
-  const quote = await db
-    .selectFrom("quote")
-    .select("id")
-    .where("id", "=", args.quoteId)
-    .where("companyId", "=", args.companyId)
-    .where("customerId", "=", args.customerId)
-    .where("status", "=", "Sent")
-    .executeTakeFirst();
-  return !!quote;
-}
-
-function isPortalSubmissionKeyConflict(error: unknown): boolean {
-  const pg = error as { code?: string; constraint?: string; cause?: unknown };
-  return (
-    (pg.code === "23505" &&
-      pg.constraint ===
-        "customerPortalSubmission_companyId_portalId_idempotencyKey_key") ||
-    (!!pg.cause && isPortalSubmissionKeyConflict(pg.cause))
-  );
-}
-
-type PortalSubmissionBase = {
-  companyId: string;
-  portalId: string;
-  customerId: string;
-  createdBy: string;
-  idempotencyKey: string;
-  requestFingerprint: string;
-  documentPaths: string[];
-};
-
-function matchingPortalSubmission<T extends { requestFingerprint: string }>(
-  existing: T,
-  requestFingerprint: string
-) {
-  if (existing.requestFingerprint !== requestFingerprint)
-    throw new Error("IDEMPOTENCY_CONFLICT");
-  return { ...existing, duplicate: true as const };
-}
-
-function portalTextDocument(text: string) {
-  return toJson({
-    type: "doc",
-    content: [{ type: "paragraph", content: [{ type: "text", text }] }]
-  });
-}
-
-export async function insertCustomerPortalRfqSubmission(
-  db: Kysely<KyselyDatabase>,
-  args: PortalSubmissionBase & {
-    opportunityId: string;
-    rfqDate: string;
-    quoteNeededBy?: string;
-    customerReference?: string;
-    notes?: string;
-    lines: Array<{
-      partNumber: string;
-      description?: string;
-      quantity: number;
-      unitOfMeasureCode: string;
-      delivery?: string;
-    }>;
-  }
-) {
-  const existing = await findCustomerPortalSubmission(db, args);
-  if (existing)
-    return matchingPortalSubmission(existing, args.requestFingerprint);
-
-  try {
-    return await db.transaction().execute(async (trx) => {
-      // Claim the unique key first. A competing transaction cannot create a
-      // second RFQ, opportunity, or sequence allocation for the same request.
-      const submission = await trx
-        .insertInto("customerPortalSubmission")
-        .values({
-          companyId: args.companyId,
-          portalId: args.portalId,
-          customerId: args.customerId,
-          createdBy: args.createdBy,
-          idempotencyKey: args.idempotencyKey,
-          requestFingerprint: args.requestFingerprint,
-          submissionType: "RFQ",
-          status: "Pending",
-          lines: toJson(args.lines),
-          documentPaths: toJson(args.documentPaths)
-        })
-        .returning("id")
-        .executeTakeFirstOrThrow();
-      const opportunity = await trx
-        .insertInto("opportunity")
-        .values({
-          id: args.opportunityId,
-          companyId: args.companyId,
-          customerId: args.customerId
-        })
-        .returning("id")
-        .executeTakeFirstOrThrow();
-      const rfqId = await getNextSequence(trx, "salesRfq", args.companyId);
-      const notes = args.notes ? portalTextDocument(args.notes) : null;
-      const rfq = await trx
-        .insertInto("salesRfq")
-        .values({
-          rfqId,
-          customerId: args.customerId,
-          customerReference: args.customerReference ?? null,
-          rfqDate: args.rfqDate,
-          expirationDate: args.quoteNeededBy ?? null,
-          status: "Draft",
-          internalNotes: notes,
-          opportunityId: opportunity.id,
-          companyId: args.companyId,
-          createdBy: args.createdBy,
-          updatedBy: args.createdBy
-        })
-        .returning("id")
-        .executeTakeFirstOrThrow();
-      await trx
-        .insertInto("salesRfqLine")
-        .values(
-          args.lines.map((line, index) => ({
-            salesRfqId: rfq.id,
-            customerPartId: line.partNumber,
-            description: line.description ?? null,
-            quantity: [line.quantity],
-            unitOfMeasureCode: line.unitOfMeasureCode,
-            order: index + 1,
-            companyId: args.companyId,
-            createdBy: args.createdBy,
-            externalNotes: line.delivery
-              ? portalTextDocument(`Requested delivery: ${line.delivery}`)
-              : toJson({}),
-            customFields: toJson({})
-          }))
-        )
-        .execute();
-      await trx
-        .updateTable("customerPortalSubmission")
-        .set({ salesRfqId: rfq.id })
-        .where("id", "=", submission.id)
-        .where("companyId", "=", args.companyId)
-        .executeTakeFirstOrThrow();
-      return {
-        id: submission.id,
-        submissionType: "RFQ",
-        salesRfqId: rfq.id,
-        duplicate: false
-      };
-    });
-  } catch (error) {
-    if (!isPortalSubmissionKeyConflict(error)) throw error;
-    const winner = await findCustomerPortalSubmission(db, args);
-    if (!winner) throw error;
-    return matchingPortalSubmission(winner, args.requestFingerprint);
-  }
-}
-
-export async function insertCustomerPortalPoSubmission(
-  db: Kysely<KyselyDatabase>,
-  args: PortalSubmissionBase & {
-    poNumber: string;
-    requestedDelivery?: string;
-    quoteId?: string;
-    lines: Array<{
-      partNumber: string;
-      description?: string;
-      quantity: number;
-      unitOfMeasureCode: string;
-      unitPrice?: number;
-    }>;
-  }
-) {
-  const existing = await findCustomerPortalSubmission(db, args);
-  if (existing)
-    return matchingPortalSubmission(existing, args.requestFingerprint);
-  try {
-    return await db.transaction().execute(async (trx) => {
-      if (args.quoteId) {
-        const quote = await trx
-          .selectFrom("quote")
-          .select("id")
-          .where("id", "=", args.quoteId)
-          .where("companyId", "=", args.companyId)
-          .where("customerId", "=", args.customerId)
-          .where("status", "=", "Sent")
-          .forShare()
-          .executeTakeFirst();
-        if (!quote) throw new Error("QUOTE_NOT_AVAILABLE");
-      }
-      const submission = await trx
-        .insertInto("customerPortalSubmission")
-        .values({
-          companyId: args.companyId,
-          portalId: args.portalId,
-          customerId: args.customerId,
-          createdBy: args.createdBy,
-          idempotencyKey: args.idempotencyKey,
-          requestFingerprint: args.requestFingerprint,
-          submissionType: "PO",
-          status: "Pending",
-          poNumber: args.poNumber,
-          requestedDelivery: args.requestedDelivery ?? null,
-          quoteId: args.quoteId ?? null,
-          lines: toJson(args.lines),
-          documentPaths: toJson(args.documentPaths)
-        })
-        .returning("id")
-        .executeTakeFirstOrThrow();
-      return {
-        id: submission.id,
-        submissionType: "PO",
-        salesRfqId: null,
-        duplicate: false
-      };
-    });
-  } catch (error) {
-    if (!isPortalSubmissionKeyConflict(error)) throw error;
-    const winner = await findCustomerPortalSubmission(db, args);
-    if (!winner) throw error;
-    return matchingPortalSubmission(winner, args.requestFingerprint);
-  }
 }
 
 export async function insertSalesRFQ(
