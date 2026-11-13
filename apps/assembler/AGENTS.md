@@ -54,8 +54,8 @@ Dependency flow: `apps/assembler → planner → converter → occt-bridge`; `pl
 ## Native deps
 
 **Dev:** macOS `brew install fcl draco openblas cmake ninja` (fcl pulls libccd,
-eigen, octomap); Debian/Ubuntu `apt install build-essential cmake ninja-build
-libfcl-dev libdraco-dev libopenblas-dev`. Rust comes from rustup: the locked
+eigen, octomap); Debian/Ubuntu `apt install build-essential pkg-config libssl-dev
+cmake ninja-build libfcl-dev libdraco-dev libopenblas-dev`. Rust comes from rustup: the locked
 crates need 1.88, and Ubuntu's apt Rust is 1.75. Windows builds only inside WSL2.
 OCCT is not a distro package: build the patched static one with
 `scripts/build-occt.sh` (see Run). The README's assembler section has the steps.
@@ -64,7 +64,8 @@ fixed per-target default (macOS-arm `/opt/homebrew/opt/<pkg>`, Linux `/usr`) —
 `brew` shell-out, so the build is reproducible. OpenBLAS is the exception: the
 planner links it through `ndarray-linalg`'s `openblas-system`, whose
 openblas-src asks `brew --prefix openblas` on macOS and relies on the linker's
-default directories elsewhere. A new system library (a bridge's `build.rs`
+default directories elsewhere. Its build-dependency openblas-build also compiles
+`openssl-sys` everywhere but macOS, hence pkg-config and libssl-dev on Linux. A new system library (a bridge's `build.rs`
 link, a `*-system` crate feature) goes into `missingAssemblerDependencies`
 (`packages/dev/src/services/apps.ts`) and the README's assembler steps in the
 same PR, or a new machine finds it missing minutes into the build.
@@ -122,7 +123,8 @@ slow builds are shared by every worktree on the machine.
 OCCT is built once into `~/.cache/carbon-occt/8.0.0-p1`
 (`scripts/build-occt.sh`, which needs cmake). `crbn up` refuses the assembler
 until every native dependency is present (`missingAssemblerDependencies`:
-Rust, a C++ compiler off macOS, FCL, Draco, OpenBLAS, the OCCT build), and
+Rust, a C++ compiler off macOS, FCL, Draco, OpenBLAS, OpenSSL and pkg-config
+off macOS, the OCCT build), and
 lists all the missing ones with the commands that install them. Cargo builds into
 `~/.cache/carbon-cargo-target` (`assemblerCargoTargetDir`,
 `packages/dev/src/services/apps.ts`), so a new worktree compiles only what its

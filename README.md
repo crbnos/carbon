@@ -367,7 +367,7 @@ It builds on macOS and Linux. On Windows, run the stack inside WSL2 and follow t
    Debian/Ubuntu (other distributions: the same libraries from their package manager):
 
    ```bash
-   sudo apt install build-essential curl git cmake ninja-build libfcl-dev libdraco-dev libopenblas-dev
+   sudo apt install build-essential pkg-config libssl-dev curl git cmake ninja-build libfcl-dev libdraco-dev libopenblas-dev
    ```
 
 2. **Rust**, through rustup. Not the distribution's `cargo`: the locked dependencies need Rust 1.88 or later, and Ubuntu's is 1.75.
