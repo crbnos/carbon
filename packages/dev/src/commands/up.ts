@@ -410,7 +410,7 @@ async function selectApps(opts: UpOpts): Promise<AppId[]> {
           return true;
         }
         log.warn(
-          "assembler skipped from --all: Rust, FCL or its OCCT build isn't present (pick the assembler on its own to see what to install)"
+          "assembler skipped from --all: a native dependency isn't installed (pick the assembler on its own to see what to install)"
         );
         return false;
       })
