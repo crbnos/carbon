@@ -583,6 +583,10 @@ confirm 422'd on one of these and was only `console.error`'d, so synced transact
 the family's step output as `confirmError`. A family confirms whatever it managed to gather
 **even if its own drain threw partway** (the confirm is outside the drain's try/catch). An
 empty batch is skipped.
+**A `BILL_PAYMENT_SYNC` item's `id` is the bill's id, never the payment's.** Ramp tracks
+payment sync per bill, and a batch payment shares one payment id across its bills;
+confirming by the payment id answers `404 DEVELOPER_7002`. Carbon's own payment link
+(`externalIntegrationMapping` `ramp`/`payment`) stays keyed by the Ramp payment id.
 **Repayments have no Ramp confirm** — their idempotency IS the
 `externalIntegrationMapping` / the cursor. The outbound families left this job entirely.
 
