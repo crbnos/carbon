@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { JobPhase } from "@carbon/jobs/backups";
 import {
   Button,
   Card,
@@ -17,19 +18,16 @@ import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
-import type { CompanyTemplateRun } from "~/modules/settings/backups.service";
+import type { CompanyTemplateRun } from "~/modules/settings/types";
+import { ExcludedRowsInfo } from "~/modules/settings/ui/Backups/ExcludedRowsInfo";
 import {
-  ExcludedRowsInfo,
-  PurgeCorruptedRowsModal
-} from "~/modules/settings/ui/Backups";
-import { formatElapsed } from "~/modules/settings/ui/Backups/format";
+  formatElapsed,
+  JOB_POLL,
+  totalScopeRows
+} from "~/modules/settings/ui/Backups/format";
+import { PurgeCorruptedRowsModal } from "~/modules/settings/ui/Backups/PurgeCorruptedRowsModal";
 import { path } from "~/utils/path";
-import { totalScopeRows } from "../../settings.utils";
 import { KeepDemoDataModal } from "./KeepDemoDataModal";
-
-/** A run with no completion after this long is treated as stalled, and offered a
- *  revert retry — the job's own crash handler can't fire if the process died. */
-const STALLED_AFTER_MS = 5 * 60 * 1000;
 
 export function TemplateReviewRow({
   run,
@@ -70,7 +68,7 @@ export function TemplateReviewRow({
   }, [run.status]);
 
   // Phase keys are stable; the copy for them lives here, not in the job.
-  const phaseLabel: Record<string, string> = {
+  const phaseLabel: Partial<Record<JobPhase, string>> = {
     snapshot: t`Saving a copy of your current data`,
     seed: t`Adding demo records`,
     wipe: t`Clearing demo data`,
@@ -94,14 +92,32 @@ export function TemplateReviewRow({
     revertRequestedAt ??
     (run.startedAt ? Date.parse(run.startedAt) : mountedAt);
   const elapsedMs = now - startedMs;
-  const stalled = busy && elapsedMs > STALLED_AFTER_MS;
+  // Stalled runs are offered a revert retry: the job's own crash handler can't
+  // fire if its process died.
+  const stalled = busy && elapsedMs > JOB_POLL.stalledMs;
   const elapsed = formatElapsed(elapsedMs);
 
-  const submit = (intent: "keep" | "revert" | "dismiss") => {
-    if (intent === "revert") setRevertRequestedAt(Date.now());
-    else onResolve(run.templateRunId);
+  // Keep and Dismiss hide the row once the job is enqueued; a refused one (its
+  // error is toasted) leaves the row, and a refused Revert drops its spinner.
+  const [intent, setIntent] = useState<"keep" | "revert" | "dismiss" | null>(
+    null
+  );
+  const result = fetcher.state === "idle" ? fetcher.data : undefined;
+  useEffect(() => {
+    if (!intent || !result) return;
+    setIntent(null);
+    if ((result as { success?: boolean }).success === false) {
+      setRevertRequestedAt(null);
+    } else if (intent !== "revert") {
+      onResolve(run.templateRunId);
+    }
+  }, [intent, result, onResolve, run.templateRunId]);
+
+  const submit = (next: "keep" | "revert" | "dismiss") => {
+    if (next === "revert") setRevertRequestedAt(Date.now());
+    setIntent(next);
     fetcher.submit(
-      { intent, templateRunId: run.templateRunId },
+      { intent: next, templateRunId: run.templateRunId },
       { method: "post", action: path.to.demoData }
     );
   };
@@ -181,7 +197,7 @@ export function TemplateReviewRow({
               )}
             </VStack>
             <HStack spacing={2} className="shrink-0">
-              {run.status === "ready" && !busy && (
+              {(run.status === "ready" || run.applied) && !busy && (
                 <>
                   <Button
                     isLoading={submitting}
@@ -209,7 +225,7 @@ export function TemplateReviewRow({
                   <Trans>Remove corrupted data and apply</Trans>
                 </Button>
               )}
-              {run.status === "failed" && (
+              {run.status === "failed" && !run.applied && (
                 <Button
                   variant="secondary"
                   isLoading={submitting}

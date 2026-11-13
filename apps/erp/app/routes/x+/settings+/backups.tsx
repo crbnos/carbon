@@ -5,7 +5,6 @@
 // Settings → Backups (company export / in-place restore).
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { convertKbToString } from "@carbon/files";
@@ -18,6 +17,7 @@ import {
   validationError,
   validator
 } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
 import { useRevalidator } from "@carbon/query";
 import {
   Badge,
@@ -34,9 +34,10 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { datetime, getErrorMessage } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuLoaderCircle } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -45,39 +46,42 @@ import { z } from "zod";
 import { DateTime } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { SettingsPageHeading } from "~/components/SettingsPage";
-import type { CompanyBackupSummary } from "~/modules/settings/backups.service";
+import { DEFAULT_INCLUDE_STORAGE } from "~/modules/settings/settings.models";
 import {
   deleteCompanyBackup,
-  getCompanyExportRun,
-  getCompanyRestoreRuns
-} from "~/modules/settings/backups.service";
-import {
-  canManageBackups,
   dismissCompanyExportFailure,
   exportCompanyBackup,
-  finalizeCompanyRestore,
+  getBackupInUse,
   getCompanyBackups,
-  purgeCorruptedRows,
-  revertCompanyRestore,
+  getCompanyExportRun,
+  getCompanyRestoreRuns,
+  getPendingChange,
+  isUserBackupName,
+  purgeAndRetry,
+  requireBackupAccess,
   startCompanyRestore
 } from "~/modules/settings/settings.service";
-import { totalScopeRows } from "~/modules/settings/settings.utils";
-import type { BackupStatus } from "~/modules/settings/ui/Backups";
+import type { CompanyBackupSummary } from "~/modules/settings/types";
 import {
-  BackupContentsInfo,
-  BackupSourcePicker,
+  IncludeStorageChoice,
+  RestoreIncludeChoice
+} from "~/modules/settings/ui/Backups/BackupChoices";
+import { BackupContentsInfo } from "~/modules/settings/ui/Backups/BackupContentsInfo";
+import { JobProgressModal } from "~/modules/settings/ui/Backups/BackupProgressModal";
+import { BackupSourcePicker } from "~/modules/settings/ui/Backups/BackupSourcePicker";
+import { ExcludedRowsInfo } from "~/modules/settings/ui/Backups/ExcludedRowsInfo";
+import type { BackupStatus } from "~/modules/settings/ui/Backups/format";
+import {
   backupStatusLabel,
   backupStatusVariant,
-  ExcludedRowsInfo,
   formatBackupDate,
   formatBackupName,
-  IncludeStorageChoice,
-  JobProgressModal,
-  PurgeCorruptedRowsModal,
-  RestoreDisclosure,
-  RestoreIncludeChoice,
-  RestoreReviewRow
-} from "~/modules/settings/ui/Backups";
+  JOB_POLL,
+  totalScopeRows
+} from "~/modules/settings/ui/Backups/format";
+import { PurgeCorruptedRowsModal } from "~/modules/settings/ui/Backups/PurgeCorruptedRowsModal";
+import { RestoreDisclosure } from "~/modules/settings/ui/Backups/RestoreDisclosure";
+import { RestoreReviewRow } from "~/modules/settings/ui/Backups/RestoreReviewRow";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -106,7 +110,10 @@ function useExportChoices(): { label: string; includeStorage: "none" | "all" } {
     "includeStorage",
     EXPORT_FORM_ID
   );
-  return { label: label ?? "", includeStorage: includeStorage ?? "none" };
+  return {
+    label: label ?? "",
+    includeStorage: includeStorage ?? DEFAULT_INCLUDE_STORAGE.export
+  };
 }
 
 // The skip retry posts the Create form's CURRENT values (label + include) so the
@@ -118,13 +125,15 @@ const exportSkipValidator = z.object({
   includeStorage: z.enum(["none", "all"]).optional()
 });
 
-// `source` is `backup:<path>` — one of this company's own exports (or an
+// `source` is a backup folder name — one of this company's own exports (or an
 // uploaded copy of one). Restore is always in-place into the current company.
 // `includeStorage` picks whether uploaded files (3D models, docs) come along.
 const restoreValidator = z.object({
   intent: z.literal("restore"),
   source: z.string().min(1, { message: "Choose a backup to restore" }),
-  includeStorage: z.enum(["none", "all"])
+  includeStorage: z.enum(["none", "all"]),
+  /** The company the confirm dialog named. Set by the dialog, not a field. */
+  companyId: z.string().optional()
 });
 
 /**
@@ -137,69 +146,82 @@ async function clearStaleExportFailure(
   client: Parameters<typeof getCompanyExportRun>[0],
   companyId: string
 ) {
-  const previous = await getCompanyExportRun(client, companyId);
-  if (previous.data?.status === "failed") {
+  if ((await getCompanyExportRun(client, companyId))?.status === "failed") {
     await dismissCompanyExportFailure(companyId);
   }
 }
 
+const PENDING_MESSAGE = {
+  restore: "Finish your current restore — keep or revert it — first.",
+  template: "Finish your current demo data change — keep or revert it — first."
+} as const;
+
+const IN_USE_MESSAGE = {
+  restore:
+    "A restore is using this backup. Keep, revert or dismiss it, then delete the backup.",
+  export: "This backup is still being created."
+} as const;
+
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId, entitled } = await requireBackupAccess(request, {
+    allowLapsed: true
   });
-  // Business/Enterprise feature, plus an internal/local-dev escape hatch.
-  if (!(await canManageBackups(client, companyId, email))) {
-    throw redirect(path.to.settings);
+
+  if (!entitled) {
+    return {
+      entitled,
+      files: [] as CompanyBackupSummary[],
+      restoreRuns: await getCompanyRestoreRuns(client, companyId),
+      exportRun: null
+    };
   }
 
-  const [backupsList, restoreRuns, exportRun] = await Promise.all([
-    // Backup objects are service-role only; the checks above gate this route.
+  const [files, restoreRuns, exportRun] = await Promise.all([
+    // Backup objects are service-role only; the gate above guards this route.
     getCompanyBackups(getCarbonServiceRole(), getDatabaseClient(), companyId),
     getCompanyRestoreRuns(client, companyId),
     getCompanyExportRun(client, companyId)
   ]);
 
-  return {
-    companyId,
-    files: backupsList.data ?? [],
-    restoreRuns: restoreRuns.data ?? [],
-    exportRun: exportRun.data
-  };
+  return { entitled, files, restoreRuns, exportRun };
 }
+
+/** What a company whose backups feature lapsed may still do: finish a restore. */
+const LAPSED_INTENTS = new Set(["keep", "dismiss", "revert"]);
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, email } = await requirePermissions(
+  const { client, companyId, userId, entitled } = await requireBackupAccess(
     request,
-    {
-      update: "settings"
-    }
+    { allowLapsed: true }
   );
-  if (!(await canManageBackups(client, companyId, email))) {
-    throw redirect(path.to.settings);
-  }
 
   const formData = await request.formData();
   const intent = formData.get("intent");
+  if (!entitled && !LAPSED_INTENTS.has(String(intent))) {
+    throw new Response("Not found", { status: 404 });
+  }
+  const restoreRunId = String(formData.get("restoreRunId") ?? "");
+  const failure = (err: unknown, fallback: string) => ({
+    success: false as const,
+    message: getErrorMessage(err, fallback)
+  });
 
   switch (intent) {
     case "export": {
       const validation = await validator(exportValidator).validate(formData);
       if (validation.error) return validationError(validation.error);
-
-      const { label, includeStorage } = validation.data;
-      await clearStaleExportFailure(client, companyId);
-      const result = await exportCompanyBackup({
-        companyId,
-        userId,
-        label: label || undefined,
-        includeStorage
-      });
-      if (result.error)
-        return {
-          success: false,
-          message: getErrorMessage(result.error, "Failed to start backup")
-        };
+      try {
+        await clearStaleExportFailure(client, companyId);
+        await exportCompanyBackup({
+          companyId,
+          userId,
+          label: validation.data.label || undefined,
+          includeStorage: validation.data.includeStorage
+        });
+      } catch (err) {
+        return failure(err, "Failed to start backup");
+      }
       return {
         success: true,
         message: "Backup started",
@@ -214,66 +236,67 @@ export async function action({ request }: ActionFunctionArgs) {
       const validation = await validator(restoreValidator).validate(formData);
       if (validation.error) return validationError(validation.error);
 
-      // The source is the backup folder name. Reject anything with a path
-      // separator (traversal / legacy gz paths).
-      const source = validation.data.source.replace(/^backup:/, "");
-      if (!source || source.includes("/")) {
+      const { source } = validation.data;
+      if (!isUserBackupName(source)) {
         return { success: false, message: "Choose one of your backups" };
       }
-
-      // One restore at a time. A second restore while one is still pending review
-      // would snapshot the already-restored state and tangle the revert chain.
-      const inFlight = await getCompanyRestoreRuns(client, companyId);
-      if (inFlight.data?.some((r) => r.status !== "failed")) {
+      // The dialog named the company this tab shows. Another tab may have
+      // switched the session to a different one since: never restore into a
+      // company the person wasn't shown.
+      if (validation.data.companyId !== companyId) {
         return {
           success: false,
-          message: "Finish your current restore — keep or revert it — first."
+          message:
+            "You switched company in another tab. Reload this page, check the company, and restore again."
         };
       }
 
       try {
+        // One restore at a time. A second restore while one is still pending
+        // review would snapshot the already-restored state and tangle the
+        // revert chain.
+        const pending = await getPendingChange(client, companyId);
+        if (pending) {
+          return { success: false, message: PENDING_MESSAGE[pending] };
+        }
         const restoreRunId = await startCompanyRestore({
           companyId,
           userId,
           filePath: source,
-          includeStorage: validation.data.includeStorage,
-          label: source
+          includeStorage: validation.data.includeStorage
         });
         return { success: true, message: "Restore started", restoreRunId };
       } catch (err) {
-        return {
-          success: false,
-          message:
-            err instanceof Error ? err.message : "Failed to start restore"
-        };
+        return failure(err, "Failed to start restore");
       }
     }
 
     // keep / dismiss / revert / delete are fetcher buttons (modal + review card
-    // use them) and return JSON so the UI can react in place.
-    case "keep": {
-      const restoreRunId = String(formData.get("restoreRunId") ?? "");
-      if (!restoreRunId)
-        return { success: false, message: "Missing restore run" };
-      await finalizeCompanyRestore({ companyId, restoreRunId });
-      return { success: true, message: "Restore kept" };
-    }
-
-    // Same cleanup as keep (drop the snapshot + marker), but for a FAILED run —
-    // nothing was changed, so it's a dismissal, not a "keep".
+    // use them) and return JSON so the UI can react in place. Dismiss is keep
+    // for a FAILED run: nothing was changed, so it's a dismissal, not a "keep".
+    case "keep":
     case "dismiss": {
-      const restoreRunId = String(formData.get("restoreRunId") ?? "");
       if (!restoreRunId)
         return { success: false, message: "Missing restore run" };
-      await finalizeCompanyRestore({ companyId, restoreRunId });
-      return { success: true, message: "Dismissed" };
+      try {
+        await trigger("company-restore-finalize", { companyId, restoreRunId });
+      } catch (err) {
+        return failure(err, "Failed to resolve the restore");
+      }
+      return {
+        success: true,
+        message: intent === "keep" ? "Restore kept" : "Dismissed"
+      };
     }
 
     case "revert": {
-      const restoreRunId = String(formData.get("restoreRunId") ?? "");
       if (!restoreRunId)
         return { success: false, message: "Missing restore run" };
-      await revertCompanyRestore({ companyId, restoreRunId });
+      try {
+        await trigger("company-restore-revert", { companyId, restoreRunId });
+      } catch (err) {
+        return failure(err, "Failed to revert the restore");
+      }
       return {
         success: true,
         message: "Reverting — your previous data is being restored"
@@ -283,47 +306,47 @@ export async function action({ request }: ActionFunctionArgs) {
     // Acknowledge a failed export — clears the failure marker. Any partial
     // backup folder stays in the list (as "Incomplete") until deleted.
     case "dismissExportFailure": {
-      await dismissCompanyExportFailure(companyId);
+      try {
+        await dismissCompanyExportFailure(companyId);
+      } catch (err) {
+        return failure(err, "Failed to dismiss");
+      }
       return { success: true, message: "Dismissed" };
     }
 
     // The ONE sanctioned bypass of the export's closure guard: re-run the
-    // failed backup (same label + include setting) leaving out the rows whose
-    // links escape this company. Only offered for that failure class — the
-    // marker's `reason` is what the job wrote, not something the client sends.
+    // failed backup leaving out the rows whose links escape this company. Only
+    // offered for that failure class — the marker's `reason` is what the job
+    // wrote, not something the client sends.
     case "exportSkipCorrupted": {
-      const run = await getCompanyExportRun(client, companyId);
-      if (
-        run.data?.status !== "failed" ||
-        run.data.reason !== "scope-violations"
-      ) {
-        return {
-          success: false,
-          message: "There is no failed backup to retry"
-        };
-      }
       const validation =
         await validator(exportSkipValidator).validate(formData);
       if (validation.error) return validationError(validation.error);
-      // The banner posts the Create form's current values, and that form is
-      // seeded from this same failed run — so these fallbacks only matter if the
-      // fields are missing entirely.
-      const label = validation.data.label || run.data.label || undefined;
-      const includeStorage =
-        validation.data.includeStorage ?? run.data.includeStorage ?? "none";
-      await clearStaleExportFailure(client, companyId);
-      const result = await exportCompanyBackup({
-        companyId,
-        userId,
-        label,
-        includeStorage,
-        skipCorrupted: true
-      });
-      if (result.error)
-        return {
-          success: false,
-          message: getErrorMessage(result.error, "Failed to start backup")
-        };
+      try {
+        const run = await getCompanyExportRun(client, companyId);
+        if (run?.status !== "failed" || run.reason !== "scope-violations") {
+          return {
+            success: false,
+            message: "There is no failed backup to retry"
+          };
+        }
+        await dismissCompanyExportFailure(companyId);
+        // The banner posts the Create form's current values, and that form is
+        // seeded from this same failed run — so these fallbacks only matter if
+        // the fields are missing entirely.
+        await exportCompanyBackup({
+          companyId,
+          userId,
+          label: validation.data.label || run.label || undefined,
+          includeStorage:
+            validation.data.includeStorage ??
+            run.includeStorage ??
+            DEFAULT_INCLUDE_STORAGE.export,
+          skipCorrupted: true
+        });
+      } catch (err) {
+        return failure(err, "Failed to start backup");
+      }
       return {
         success: true,
         message: "Backup started",
@@ -331,94 +354,78 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    // A restore that died at its pre-restore snapshot because the LIVE data has
-    // rows escaping company scope: permanently delete those rows (user-confirmed
-    // in the UI), drop the failed run, and start the same restore again.
+    // A restore that died at its snapshot because the LIVE data has rows
+    // escaping company scope: permanently delete those rows (user-confirmed in
+    // the UI), drop the failed run, and start the same restore again.
     case "purgeAndRestore": {
-      const restoreRunId = String(formData.get("restoreRunId") ?? "");
-      const runs = await getCompanyRestoreRuns(client, companyId);
-      const failed = runs.data?.find((r) => r.restoreRunId === restoreRunId);
-      if (
-        !failed ||
-        failed.status !== "failed" ||
-        failed.reason !== "scope-violations" ||
-        !failed.filePath
-      ) {
-        return {
-          success: false,
-          message: "This restore can't be retried this way"
-        };
-      }
-      if (runs.data?.some((r) => r.status !== "failed")) {
-        return {
-          success: false,
-          message: "Finish your current restore — keep or revert it — first."
-        };
-      }
-      // The delete commits on its own; the restore is enqueued after. Those are
-      // two steps and cannot be one transaction (the second is a job trigger),
-      // so the failure messages must tell the user WHICH half happened —
-      // "couldn't remove the rows" and "removed the rows but the restore didn't
-      // start" call for opposite next actions, and only the second is lossy.
-      let deleted: Array<{ table: string; rows: number }>;
+      let retry: { filePath: string; includeStorage: "none" | "all" };
       try {
-        ({ deleted } = await purgeCorruptedRows(
-          getDatabaseClient(),
-          companyId
-        ));
-      } catch (err) {
-        return {
-          success: false,
-          message:
-            err instanceof Error
-              ? err.message
-              : "Failed to remove corrupted data — nothing was deleted"
+        const runs = await getCompanyRestoreRuns(client, companyId);
+        const run = runs.find((r) => r.restoreRunId === restoreRunId);
+        if (
+          !run ||
+          run.status !== "failed" ||
+          run.reason !== "scope-violations" ||
+          !run.filePath
+        ) {
+          return {
+            success: false,
+            message: "This restore can't be retried this way"
+          };
+        }
+        const pending = await getPendingChange(client, companyId);
+        if (pending) {
+          return { success: false, message: PENDING_MESSAGE[pending] };
+        }
+        retry = {
+          filePath: run.filePath,
+          includeStorage: run.includeStorage ?? DEFAULT_INCLUDE_STORAGE.restore
         };
+      } catch (err) {
+        return failure(err, "Failed to read the restore");
       }
 
-      const rows = deleted.reduce((sum, d) => sum + d.rows, 0);
-      try {
-        await finalizeCompanyRestore({ companyId, restoreRunId });
-        const newRunId = await startCompanyRestore({
-          companyId,
-          userId,
-          filePath: failed.filePath,
-          includeStorage: failed.includeStorage ?? "all",
-          label: failed.label ?? failed.filePath
-        });
-        return {
-          success: true,
-          message: `Removed ${rows} row${rows === 1 ? "" : "s"} — restoring`,
-          restoreRunId: newRunId,
-          deleted
-        };
-      } catch (err) {
-        return {
-          success: false,
-          message:
-            `Removed ${rows} row${rows === 1 ? "" : "s"}, but the restore did not start` +
-            ` — start it again from the list. (${
-              err instanceof Error ? err.message : "unknown error"
-            })`
-        };
-      }
+      const result = await purgeAndRetry(getDatabaseClient(), companyId, {
+        doing: "restoring",
+        name: "the restore",
+        start: async () => {
+          await trigger("company-restore-finalize", {
+            companyId,
+            restoreRunId
+          });
+          return startCompanyRestore({ companyId, userId, ...retry });
+        }
+      });
+      return result.success
+        ? {
+            success: true,
+            message: result.message,
+            restoreRunId: result.runId,
+            deleted: result.deleted
+          }
+        : result;
     }
 
     case "delete": {
       const name = String(formData.get("name") ?? "");
-      if (!name || name.includes("/"))
+      if (!isUserBackupName(name))
         return data({}, await flash(request, error(null, "Invalid backup")));
-
-      const result = await deleteCompanyBackup(
-        getCarbonServiceRole(),
-        companyId,
-        name
-      );
-      if (result.error)
+      try {
+        const serviceRole = getCarbonServiceRole();
+        const inUse = await getBackupInUse(serviceRole, companyId, name);
+        if (inUse) {
+          return data(
+            {},
+            await flash(request, error(null, IN_USE_MESSAGE[inUse]))
+          );
+        }
+        await deleteCompanyBackup(serviceRole, companyId, name);
+      } catch (err) {
         return data(
           {},
-          await flash(request, error(result.error, "Failed to delete backup"))
+          await flash(request, error(err, "Failed to delete backup"))
         );
+      }
       return data({}, await flash(request, success("Backup deleted")));
     }
 
@@ -428,7 +435,9 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function BackupsRoute() {
-  const { files, restoreRuns, exportRun } = useLoaderData<typeof loader>();
+  const { entitled, files, restoreRuns, exportRun } =
+    useLoaderData<typeof loader>();
+  const { locale } = useLocale();
   const readyBackups = files.filter((f) => f.status === "ready");
   const fetcher = useFetcher<{
     success?: boolean;
@@ -456,9 +465,9 @@ export default function BackupsRoute() {
   // The in-progress export we're tracking this session. Set the instant the user
   // clicks "Create backup" (optimistic — before the job writes its first marker,
   // so the row shows immediately, Supabase-style) or adopted from the marker for
-  // a run started elsewhere (reload / another tab). `baseline` = the READY backups
-  // when tracking began; the run is complete once a ready backup outside it
-  // appears in the (revalidated) list.
+  // a run started elsewhere (reload / another tab). `baseline` = the backups
+  // listed when tracking began; the run is complete once a ready backup outside
+  // it appears in the (revalidated) list.
   const [runningExport, setRunningExport] = useState<{
     startedAt: string | null;
     baseline: Set<string>;
@@ -530,16 +539,21 @@ export default function BackupsRoute() {
   const revalidator = useRevalidator();
   useEffect(() => {
     if (!runningExport || active) return;
-    const id = setInterval(() => revalidator.revalidate(), 2500);
+    const id = setInterval(() => revalidator.revalidate(), JOB_POLL.listMs);
     return () => clearInterval(id);
   }, [runningExport, active, revalidator]);
 
   // keep / dismiss / revert finalize the run via an async Inngest job, so the
   // marker is still present on the next revalidation. Hide the row optimistically
   // the moment the user acts so it doesn't linger until the job lands.
+  // A refused keep/dismiss/revert puts the row back: hidden, it could never be
+  // finished, and every new restore would be refused as "pending".
   const [resolvedRunIds, setResolvedRunIds] = useState<Set<string>>(new Set());
-  const resolveRun = (runId: string) =>
+  const resolvingRunId = useRef<string | null>(null);
+  const resolveRun = (runId: string) => {
+    resolvingRunId.current = runId;
     setResolvedRunIds((prev) => new Set(prev).add(runId));
+  };
   const visibleRestoreRuns = restoreRuns.filter(
     (r) => !resolvedRunIds.has(r.restoreRunId)
   );
@@ -562,8 +576,9 @@ export default function BackupsRoute() {
         ? `failed-${exportRun.startedAt}`
         : "new",
     label: (exportFailed ? exportRun?.label : null) ?? "",
-    includeStorage: ((exportFailed ? exportRun?.includeStorage : null) ??
-      "none") as "none" | "all"
+    includeStorage:
+      (exportFailed ? exportRun?.includeStorage : null) ??
+      DEFAULT_INCLUDE_STORAGE.export
   };
 
   const startRevert = (runId: string) => {
@@ -583,7 +598,7 @@ export default function BackupsRoute() {
     // its modal directly. Everything else (keep/revert/dismiss/errors) toasts.
     if (result.success && result.started === "export") {
       setRunningExport({
-        startedAt: new Date().toISOString(),
+        startedAt: datetime.timestamp(),
         baseline: knownBackupNames(),
         supersedes: supersededFailureRef.current
       });
@@ -595,8 +610,21 @@ export default function BackupsRoute() {
       setActive({ runId: result.restoreRunId, mode: "restore" });
       return;
     }
-    if (result.success) toast.success(result.message);
-    else toast.error(result.message);
+    const resolving = resolvingRunId.current;
+    resolvingRunId.current = null;
+    if (result.success) {
+      toast.success(result.message);
+      return;
+    }
+    toast.error(result.message);
+    if (resolving) {
+      setResolvedRunIds((prev) => {
+        const next = new Set(prev);
+        next.delete(resolving);
+        return next;
+      });
+      setActive((current) => (current?.mode === "revert" ? null : current));
+    }
   }, [fetcher.data, knownBackupNames]);
 
   return (
@@ -606,92 +634,105 @@ export default function BackupsRoute() {
           <Trans>Backups</Trans>
         </SettingsPageHeading>
 
-        {/* Create + Restore — equal-height cards, footers aligned. */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-          <Card className="flex flex-col">
-            <ValidatedForm
-              id={EXPORT_FORM_ID}
-              key={exportDefaults.key}
-              method="post"
-              validator={exportValidator}
-              defaultValues={{
-                label: exportDefaults.label,
-                includeStorage: exportDefaults.includeStorage
-              }}
-              fetcher={fetcher}
-              className="flex flex-1 flex-col"
-            >
-              <CardHeader>
-                <CardTitle className="flex items-center gap-1.5">
-                  Create a backup
-                  <BackupContentsInfo />
-                </CardTitle>
-                <CardDescription>
-                  Snapshot all of this company's non-sensitive data into a
-                  downloadable file.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <Hidden name="intent" value="export" />
-                <div className="flex flex-col gap-6">
-                  <Input name="label" label="Label" />
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-sm">Include</span>
-                    <IncludeStorageChoice />
+        {entitled ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+            <Card className="flex flex-col">
+              <ValidatedForm
+                id={EXPORT_FORM_ID}
+                key={exportDefaults.key}
+                method="post"
+                validator={exportValidator}
+                defaultValues={{
+                  label: exportDefaults.label,
+                  includeStorage: exportDefaults.includeStorage
+                }}
+                fetcher={fetcher}
+                className="flex flex-1 flex-col"
+              >
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-1.5">
+                    Create a backup
+                    <BackupContentsInfo />
+                  </CardTitle>
+                  <CardDescription>
+                    Snapshot all of this company's non-sensitive data into a
+                    downloadable file.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <Hidden name="intent" value="export" />
+                  <div className="flex flex-col gap-6">
+                    <Input name="label" label="Label" />
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-sm">Include</span>
+                      <IncludeStorageChoice />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Submit>Create backup</Submit>
-              </CardFooter>
-            </ValidatedForm>
-          </Card>
+                </CardContent>
+                <CardFooter>
+                  <Submit>Create backup</Submit>
+                </CardFooter>
+              </ValidatedForm>
+            </Card>
 
-          <Card className="flex flex-col">
-            <ValidatedForm
-              method="post"
-              validator={restoreValidator}
-              defaultValues={{ source: "", includeStorage: "all" }}
-              fetcher={fetcher}
-              className="flex flex-1 flex-col"
-            >
-              <CardHeader>
-                <CardTitle>Restore from a backup</CardTitle>
-                <CardDescription>
-                  Replace this company's data with any backup — snapshotted
-                  first, so you can revert.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <Hidden name="intent" value="restore" />
-                <div className="flex flex-col gap-6">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-sm">Source</span>
-                    <BackupSourcePicker backups={readyBackups} />
+            <Card className="flex flex-col">
+              <ValidatedForm
+                method="post"
+                validator={restoreValidator}
+                defaultValues={{ source: "", includeStorage: "all" }}
+                fetcher={fetcher}
+                className="flex flex-1 flex-col"
+              >
+                <CardHeader>
+                  <CardTitle>Restore from a backup</CardTitle>
+                  <CardDescription>
+                    Replace this company's data with any backup — snapshotted
+                    first, so you can revert.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <Hidden name="intent" value="restore" />
+                  <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-sm">Source</span>
+                      <BackupSourcePicker backups={readyBackups} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-sm">Include</span>
+                      <RestoreIncludeChoice />
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-sm">Include</span>
-                    <RestoreIncludeChoice />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                {/* The disclosure screen is the only way this form submits — it
+                </CardContent>
+                <CardFooter>
+                  {/* The disclosure screen is the only way this form submits — it
                     submits through the fetcher rather than the form's own submit
                     button, because the modal is portaled outside the <form>. */}
-                <RestoreDisclosure
-                  backups={readyBackups}
-                  onConfirm={({ source, includeStorage }) =>
-                    fetcher.submit(
-                      { intent: "restore", source, includeStorage },
-                      { method: "post" }
-                    )
-                  }
-                />
-              </CardFooter>
-            </ValidatedForm>
-          </Card>
-        </div>
+                  <RestoreDisclosure
+                    backups={readyBackups}
+                    onConfirm={({ source, includeStorage, companyId }) =>
+                      fetcher.submit(
+                        {
+                          intent: "restore",
+                          source,
+                          includeStorage,
+                          companyId
+                        },
+                        { method: "post" }
+                      )
+                    }
+                  />
+                </CardFooter>
+              </ValidatedForm>
+            </Card>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              Backups aren't included in your plan. You can still keep, revert
+              or dismiss a restore you started before.
+            </Trans>
+          </p>
+        )}
 
         {visibleRestoreRuns.length > 0 && (
           <Card>
@@ -723,10 +764,14 @@ export default function BackupsRoute() {
                       );
                       resolveRun(run.restoreRunId);
                     }}
-                    onPurgeAndRestore={() => {
-                      setPurgeRun(run);
-                      setPurgeOpen(true);
-                    }}
+                    onPurgeAndRestore={
+                      entitled
+                        ? () => {
+                            setPurgeRun(run);
+                            setPurgeOpen(true);
+                          }
+                        : undefined
+                    }
                   />
                 ))}
               </VStack>
@@ -771,130 +816,132 @@ export default function BackupsRoute() {
           />
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Backups</CardTitle>
-            <CardDescription>
-              Past backups stored in this company's bucket.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {files.length === 0 && !runningExport && !exportFailed ? (
-              <p className="text-sm text-muted-foreground">No backups yet.</p>
-            ) : (
-              <VStack spacing={2}>
-                {exportFailed && !runningExport && (
-                  <HStack className="w-full justify-between rounded-lg border border-destructive/50 bg-destructive/5 p-3">
-                    <VStack spacing={0} className="min-w-0">
-                      <span className="text-sm font-medium">
-                        <Trans>Backup failed</Trans>
-                      </span>
-                      {/* Never "the system", and never "contact support" for
+        {entitled && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Backups</CardTitle>
+              <CardDescription>
+                Past backups stored in this company's bucket.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {files.length === 0 && !runningExport && !exportFailed ? (
+                <p className="text-sm text-muted-foreground">No backups yet.</p>
+              ) : (
+                <VStack spacing={2}>
+                  {exportFailed && !runningExport && (
+                    <HStack className="w-full justify-between rounded-lg border border-destructive/50 bg-destructive/5 p-3">
+                      <VStack spacing={0} className="min-w-0">
+                        <span className="text-sm font-medium">
+                          <Trans>Backup failed</Trans>
+                        </span>
+                        {/* Never "the system", and never "contact support" for
                           something the reason already explains. The one-line
                           copy names the cause in product words; the exact
                           tables and the raw error live in the "i" popover. */}
-                      <span className="break-words text-xs text-muted-foreground">
-                        {exportRun?.reason === "scope-violations" ? (
-                          <Plural
-                            value={totalScopeRows(
-                              exportRun.violationRowsByTable
-                            )}
-                            one="# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else."
-                            other="# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else."
+                        <span className="break-words text-xs text-muted-foreground">
+                          {exportRun?.reason === "scope-violations" ? (
+                            <Plural
+                              value={totalScopeRows(
+                                exportRun.violationRowsByTable
+                              )}
+                              one="# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else."
+                              other="# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else."
+                            />
+                          ) : (
+                            <Trans>This backup could not be completed.</Trans>
+                          )}{" "}
+                          <ExcludedRowsInfo
+                            excludedRows={exportRun?.violations ?? []}
+                            title={<Trans>Why this backup failed</Trans>}
+                            description={
+                              exportRun?.reason === "scope-violations" ? (
+                                <Trans>
+                                  Each line is a link from this company's data
+                                  to a row it doesn't own. A backup with these
+                                  rows could never be restored.
+                                </Trans>
+                              ) : (
+                                <Trans>
+                                  The backup job reported this error.
+                                </Trans>
+                              )
+                            }
+                            technical={exportRun?.error}
                           />
-                        ) : (
-                          <Trans>This backup could not be completed.</Trans>
-                        )}{" "}
-                        <ExcludedRowsInfo
-                          excludedRows={exportRun?.violations ?? []}
-                          title={<Trans>Why this backup failed</Trans>}
-                          description={
-                            exportRun?.reason === "scope-violations" ? (
-                              <Trans>
-                                Each line is a link from this company's data to
-                                a row it doesn't own. A backup with these rows
-                                could never be restored.
-                              </Trans>
-                            ) : (
-                              <Trans>The backup job reported this error.</Trans>
-                            )
-                          }
-                          technical={exportRun?.error}
-                        />
-                      </span>
-                    </VStack>
-                    <HStack spacing={2} className="shrink-0">
-                      {exportRun?.reason === "scope-violations" && (
+                        </span>
+                      </VStack>
+                      <HStack spacing={2} className="shrink-0">
+                        {exportRun?.reason === "scope-violations" && (
+                          <Button
+                            isLoading={
+                              fetcher.state !== "idle" &&
+                              fetcher.formData?.get("intent") ===
+                                "exportSkipCorrupted"
+                            }
+                            onClick={() =>
+                              fetcher.submit(
+                                {
+                                  intent: "exportSkipCorrupted",
+                                  label: exportChoices.label,
+                                  includeStorage: exportChoices.includeStorage
+                                },
+                                { method: "post" }
+                              )
+                            }
+                          >
+                            <Trans>Skip corrupted rows and retry</Trans>
+                          </Button>
+                        )}
                         <Button
-                          isLoading={
-                            fetcher.state !== "idle" &&
-                            fetcher.formData?.get("intent") ===
-                              "exportSkipCorrupted"
-                          }
+                          variant="secondary"
                           onClick={() =>
-                            // Post the Create form's CURRENT values so the retry
-                            // is the backup the person just described.
                             fetcher.submit(
-                              {
-                                intent: "exportSkipCorrupted",
-                                label: exportChoices.label,
-                                includeStorage: exportChoices.includeStorage
-                              },
+                              { intent: "dismissExportFailure" },
                               { method: "post" }
                             )
                           }
                         >
-                          <Trans>Skip corrupted rows and retry</Trans>
+                          <Trans>Dismiss</Trans>
                         </Button>
-                      )}
-                      <Button
-                        variant="secondary"
-                        onClick={() =>
-                          fetcher.submit(
-                            { intent: "dismissExportFailure" },
-                            { method: "post" }
-                          )
-                        }
-                      >
-                        <Trans>Dismiss</Trans>
-                      </Button>
+                      </HStack>
                     </HStack>
-                  </HStack>
-                )}
+                  )}
 
-                {/* The in-flight export — fully server-side; appears the instant
+                  {/* The in-flight export — fully server-side; appears the instant
                     "Create backup" is clicked. Click it to open the progress
                     dialog. Its partially-written folder (if any) is hidden below
                     to avoid a duplicate row. */}
-                {runningExport && !exportCompleted && (
-                  <button
-                    type="button"
-                    onClick={openExportProgress}
-                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 max-md:border-0 max-md:p-0 max-md:rounded-none"
-                  >
-                    <VStack spacing={0}>
-                      <span className="text-sm font-medium">
-                        Creating backup…
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {runningExportStartedAt
-                          ? `Started ${formatBackupDate(runningExportStartedAt)}`
-                          : "Starting…"}
-                      </span>
-                    </VStack>
-                    <LuLoaderCircle className="h-4 w-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" />
-                  </button>
-                )}
+                  {runningExport && !exportCompleted && (
+                    <button
+                      type="button"
+                      onClick={openExportProgress}
+                      className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 max-md:border-0 max-md:p-0 max-md:rounded-none"
+                    >
+                      <VStack spacing={0}>
+                        <span className="text-sm font-medium">
+                          Creating backup…
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {runningExportStartedAt
+                            ? `Started ${formatBackupDate(runningExportStartedAt, locale)}`
+                            : "Starting…"}
+                        </span>
+                      </VStack>
+                      <LuLoaderCircle className="h-4 w-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" />
+                    </button>
+                  )}
 
-                {files
-                  .filter((f) => !(runningExport && f.status === "pending"))
-                  .map((file) => (
-                    <BackupRow key={file.name} file={file} />
-                  ))}
-              </VStack>
-            )}
-          </CardContent>
-        </Card>
+                  {files
+                    .filter((f) => !(runningExport && f.status === "pending"))
+                    .map((file) => (
+                      <BackupRow key={file.name} file={file} />
+                    ))}
+                </VStack>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </ScrollArea>
   );
@@ -914,7 +961,13 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
     );
   });
   const name = file.label || formatBackupName(file.name);
-  const excluded = totalScopeRows(file.excludedRowsByTable);
+  // An older backup has the per-edge list but no row count: say rows were left
+  // out without a number, rather than hide it as zero.
+  const excluded = file.excludedRowsByTable
+    ? totalScopeRows(file.excludedRowsByTable)
+    : file.excludedRows.length > 0
+      ? null
+      : 0;
   // A half-written folder has no verdict — the incompleteness is the whole story.
   // A null verdict means the schema could not be read: show no badge rather than
   // a green one nothing actually checked.
@@ -945,14 +998,18 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
                   {convertKbToString(Math.round(file.sizeBytes / 1024))}
                 </>
               ) : null}
-              {excluded > 0 ? (
+              {excluded !== 0 ? (
                 <>
                   {" · "}
-                  <Plural
-                    value={excluded}
-                    one="# row excluded"
-                    other="# rows excluded"
-                  />{" "}
+                  {excluded === null ? (
+                    <Trans>Some rows excluded</Trans>
+                  ) : (
+                    <Plural
+                      value={excluded}
+                      one="# row excluded"
+                      other="# rows excluded"
+                    />
+                  )}{" "}
                   <ExcludedRowsInfo excludedRows={file.excludedRows} />
                 </>
               ) : null}
@@ -971,12 +1028,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
         ) : null}
         {file.status === "ready" && !isDeleting ? (
           <Button asChild variant="secondary">
-            <a
-              href={`/api/settings/backup-archive/${encodeURIComponent(
-                file.name
-              )}`}
-              download
-            >
+            <a href={path.to.api.backupArchive(file.name)} download>
               Download
             </a>
           </Button>

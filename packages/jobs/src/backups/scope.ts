@@ -3,51 +3,21 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase } from "@carbon/database/client";
+import { async } from "@carbon/utils";
 import { type Kysely, type RawBuilder, sql } from "kysely";
-import type { TableInfo } from "./schema";
+import type { TableInfo } from "./catalog";
+import { TABLE_CONCURRENCY } from "./concurrency";
+import {
+  GROUP_ROWS_BY_COMPANY,
+  isCrossTenantEdge,
+  RETAINED_REF_TABLES
+} from "./policy";
 
 /**
  * Company-scope SQL for backups: the per-table scope predicate, the export
  * closure guard (`findExportScopeViolations`), and the opt-in exclusion/purge
  * of rows whose NOT-NULL FK escapes that scope.
- *
- * Keep this module free of runtime `@carbon/*` imports (type-only is fine) —
- * the ERP reaches it through `@carbon/jobs/backups`, and bare-`tsx` scripts
- * cannot named-import CJS workspace packages.
  */
-
-/** Run `fn` over `items` with at most `limit` in flight. */
-export async function mapWithConcurrency<T>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<void>
-): Promise<void> {
-  let next = 0;
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      while (next < items.length) {
-        const item = items[next++];
-        if (item === undefined) break;
-        await fn(item);
-      }
-    }
-  );
-  await Promise.all(workers);
-}
-
-/**
- * FK targets a restore resolves WITHOUT the referenced row being in the backup:
- * `user` (global identity table, never in the catalog) and `company` (structural),
- * plus `employee` (collapsed to the importer) and `companyGroup` (re-stamped to the
- * target group). A FK to any of these can't be a closure gap.
- */
-export const RETAINED_REF_TABLES = new Set([
-  "user",
-  "employee",
-  "company",
-  "companyGroup"
-]);
 
 /**
  * A SQL predicate scoping a table's rows to one company. For a directly-scoped
@@ -66,6 +36,12 @@ export function buildScopeFilter(
   if (table.scope.kind === "direct") {
     const value =
       table.scope.column === "companyGroupId" ? companyGroupId : companyId;
+    const owners = GROUP_ROWS_BY_COMPANY[table.name];
+    if (owners && table.scope.column === "companyGroupId") {
+      return sql`(${sql.id(table.scope.column)} = ${value} AND ${companyId} IN (${sql.join(
+        owners.map((c) => sql.id(c))
+      )}))`;
+    }
     return sql`${sql.id(table.scope.column)} = ${value}`;
   }
   const parent = byName.get(table.scope.parent);
@@ -134,7 +110,11 @@ export class ExportScopeViolationError extends Error {
 }
 
 /** A NOT-NULL FK from an exportable table to another exportable, non-retained table. */
-export type ScopeEdge = { table: TableInfo; column: string; parent: TableInfo };
+export type ScopeEdge = {
+  table: TableInfo;
+  column: string;
+  parent: TableInfo;
+};
 
 /**
  * The FK edges the closure guard, the exclusion and the purge all reason about —
@@ -153,6 +133,7 @@ export function scopeEdges(
     if (fk.refColumn !== "id") continue;
     if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
     if (!exportableNames.has(fk.refTable)) continue;
+    if (isCrossTenantEdge(table.name, fk.column)) continue;
     const col = colByName.get(fk.column);
     if (!col || col.isNullable) continue;
     const parent = byName.get(fk.refTable);
@@ -168,7 +149,7 @@ export function scopeEdges(
  * currencies, …) present in every target — never a gap. A row owned by a
  * DIFFERENT company still surfaces.
  */
-function parentExistence(
+export function parentExistence(
   parent: TableInfo,
   byName: Map<string, TableInfo>,
   companyId: string,
@@ -185,54 +166,80 @@ function parentExistence(
     : parentScope;
 }
 
-/** `<col> IS NOT NULL AND <col> NOT IN (parent rows that exist for this company)` */
-function violationTerm(
+/**
+ * Every id reference a loaded row makes into a tenant table, nullable or not —
+ * what the load checks, with FK enforcement off, still resolves in the target.
+ * Skips retained refs (user, company, …) and cross-tenant-by-design edges.
+ */
+export function referenceEdges(
+  table: TableInfo,
+  byName: Map<string, TableInfo>
+): ScopeEdge[] {
+  const edges: ScopeEdge[] = [];
+  const seen = new Set<string>();
+  for (const fk of table.foreignKeys) {
+    if (fk.refColumn !== "id") continue;
+    if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
+    if (isCrossTenantEdge(table.name, fk.column)) continue;
+    const parent = byName.get(fk.refTable);
+    if (!parent || !table.columns.some((c) => c.name === fk.column)) continue;
+    const key = `${fk.column}->${fk.refTable}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    edges.push({ table, column: fk.column, parent });
+  }
+  return edges;
+}
+
+/**
+ * `<column> = ANY($1::<type>[])`: one bound array, where an `IN (…)` list binds
+ * one parameter per value and fails past Postgres's 65,535 for a big company.
+ */
+export function anyOf(
+  column: string,
+  values: unknown[],
+  udtName: string | undefined
+): RawBuilder<unknown> {
+  const type = udtName && /^[a-z0-9_]+$/.test(udtName) ? udtName : "text";
+  return sql`${sql.id(column)} = ANY(${values}::${sql.raw(type)}[])`;
+}
+
+/**
+ * `<col>` is set and no parent row this company may reference has that id.
+ * Correlated `NOT EXISTS`, which plans as an anti-join on the parent's key;
+ * `NOT IN` cannot, and degrades to a rescan per row once the parent's ids
+ * outgrow work_mem. The caller's FROM must name the child table unaliased;
+ * the parent is aliased so a self-reference resolves to the outer row.
+ */
+export function violationTerm(
   edge: ScopeEdge,
   byName: Map<string, TableInfo>,
   companyId: string,
   companyGroupId: string | null
 ): RawBuilder<unknown> {
-  return sql`(${sql.id(edge.column)} IS NOT NULL AND ${sql.id(
-    edge.column
-  )} NOT IN (SELECT ${sql.id("id")} FROM ${sql.id(
+  const outer = sql`${sql.id(edge.table.name)}.${sql.id(edge.column)}`;
+  return sql`(${outer} IS NOT NULL AND NOT EXISTS (SELECT 1 FROM ${sql.id(
     edge.parent.name
-  )} WHERE ${parentExistence(edge.parent, byName, companyId, companyGroupId)}))`;
+  )} AS __parent WHERE __parent.${sql.id("id")} = ${outer} AND (${parentExistence(
+    edge.parent,
+    byName,
+    companyId,
+    companyGroupId
+  )})))`;
 }
 
 /**
  * Export-time closure guard — refuse to PRODUCE a backup that could never be
- * restored. For each NOT-NULL FK from an exportable scoped table to another
- * exportable scoped table, count rows in this company's export scope whose
- * reference falls OUTSIDE the referenced table's export scope (the child row
- * would be dumped but its parent would not). DB-level and count-only. The
- * export mirror of the restore-side `assertReferentiallyClosed`.
+ * restored. For each NOT-NULL FK from an exportable scoped table to another,
+ * find this company's rows whose reference falls OUTSIDE the referenced table's
+ * export scope (the child would be dumped but its parent would not). The export
+ * counterpart of the restore-side `assertReferentiallyClosed`.
  *
- * Callers format with `formatScopeViolations` or throw `ExportScopeViolationError`.
+ * Returns the per-edge breakdown and the DISTINCT rows behind it, per table. A
+ * row violating three of its FKs is three `violations` entries but one row —
+ * only `rowsByTable` may be summed into a figure a person reads.
  */
 export async function findExportScopeViolations(
-  db: Kysely<KyselyDatabase>,
-  exportable: TableInfo[],
-  byName: Map<string, TableInfo>,
-  companyId: string,
-  companyGroupId: string | null
-): Promise<ScopeViolation[]> {
-  return (
-    await findExportScopeViolationsDetailed(
-      db,
-      exportable,
-      byName,
-      companyId,
-      companyGroupId
-    )
-  ).violations;
-}
-
-/**
- * The guard's full result: the per-edge breakdown AND the DISTINCT rows behind
- * it, per table. A row violating three of its FKs is three `violations` entries
- * but one row — only `rowsByTable` may be summed into a figure a person reads.
- */
-export async function findExportScopeViolationsDetailed(
   db: Kysely<KyselyDatabase>,
   exportable: TableInfo[],
   byName: Map<string, TableInfo>,
@@ -262,48 +269,56 @@ export async function findExportScopeViolationsDetailed(
   }
 
   const violations: ScopeViolation[] = [];
-  await mapWithConcurrency(checks, 6, async (c) => {
-    const r = await c.query.execute(db);
-    const n = Number(r.rows[0]?.n ?? 0);
-    if (n > 0) {
-      violations.push({
-        table: c.edge.table.name,
-        column: c.edge.column,
-        refTable: c.edge.parent.name,
-        rows: n
-      });
-    }
-  });
+  await async.map(
+    checks,
+    async (c) => {
+      const r = await c.query.execute(db);
+      const n = Number(r.rows[0]?.n ?? 0);
+      if (n > 0) {
+        violations.push({
+          table: c.edge.table.name,
+          column: c.edge.column,
+          refTable: c.edge.parent.name,
+          rows: n
+        });
+      }
+    },
+    { concurrency: TABLE_CONCURRENCY }
+  );
 
   // One distinct-row count per offending table — the OR of its violating edges,
   // so a row counts once however many of its FKs escaped.
   const offending = [...new Set(violations.map((v) => v.table))];
   const rowsByTable: Array<{ table: string; rows: number }> = [];
-  await mapWithConcurrency(offending, 6, async (name) => {
-    const t = byName.get(name);
-    if (!t) return;
-    const edges = scopeEdges(t, exportableNames, byName).filter((e) =>
-      violations.some((v) => v.table === name && v.column === e.column)
-    );
-    if (edges.length === 0) return;
-    const anyEdge = sql.join(
-      edges.map((e) => violationTerm(e, byName, companyId, companyGroupId)),
-      sql` OR `
-    );
-    const r = await sql<{ n: string }>`
+  await async.map(
+    offending,
+    async (name) => {
+      const t = byName.get(name);
+      if (!t) return;
+      const edges = scopeEdges(t, exportableNames, byName).filter((e) =>
+        violations.some((v) => v.table === name && v.column === e.column)
+      );
+      if (edges.length === 0) return;
+      const anyEdge = sql.join(
+        edges.map((e) => violationTerm(e, byName, companyId, companyGroupId)),
+        sql` OR `
+      );
+      const r = await sql<{ n: string }>`
       SELECT count(*)::text AS n
       FROM ${sql.id(name)}
       WHERE ${buildScopeFilter(t, byName, companyId, companyGroupId)}
         AND (${anyEdge})`.execute(db);
-    rowsByTable.push({ table: name, rows: Number(r.rows[0]?.n ?? 0) });
-  });
+      rowsByTable.push({ table: name, rows: Number(r.rows[0]?.n ?? 0) });
+    },
+    { concurrency: TABLE_CONCURRENCY }
+  );
 
   return { violations, rowsByTable };
 }
 
-export type ExclusionCause = "violation" | "cascade";
+type ExclusionCause = "violation" | "cascade";
 
-export type ExclusionTerm = {
+type ExclusionTerm = {
   edge: ScopeEdge;
   cause: ExclusionCause;
   predicate: RawBuilder<unknown>;
@@ -344,9 +359,11 @@ export function buildExclusionPredicate(
       terms.push({
         edge,
         cause: "cascade",
-        predicate: sql`${sql.id(edge.column)} IN (${sql.join(
-          ids.map((v) => sql`${v}`)
-        )})`
+        predicate: anyOf(
+          edge.column,
+          ids,
+          edge.parent.columns.find((c) => c.name === "id")?.udtName
+        )
       });
     }
   }
@@ -368,8 +385,8 @@ export type ScopeExclusions = {
   /**
    * What was excluded, per FK EDGE — the breakdown a support engineer reads.
    * NOT summable into a row count: one row violating three of its FKs appears
-   * three times here (`jobOperationDependency` does exactly that). Use
-   * {@link totalExcludedRows} over `perTable` for anything a user sees.
+   * three times here (`jobOperationDependency` does exactly that). Sum
+   * `perTable` for anything a user sees.
    */
   summary: Array<{
     table: string;
@@ -381,17 +398,6 @@ export type ScopeExclusions = {
   /** table → DISTINCT rows excluded. The only correct basis for a total. */
   perTable: Array<{ table: string; rows: number }>;
 };
-
-/**
- * The number of ROWS a skip/purge affects — the one figure a person is shown.
- * Counting `summary` instead double-counts every row that violates more than
- * one of its foreign keys.
- */
-export function totalExcludedRows(
-  perTable: Array<{ table: string; rows: number }>
-): number {
-  return perTable.reduce((sum, t) => sum + t.rows, 0);
-}
 
 /**
  * Decide which rows a `skipCorrupted` export leaves out. Walks `exportable` in
@@ -497,8 +503,8 @@ export async function purgeScopeViolations(
   // shared with the sibling companies in the group, so deleting it reaches data
   // this company does not own — and the delete is irreversible. Refused
   // unconditionally rather than gated on the group having siblings today, since
-  // one can be added later. Mirrors `resolveRestoreScope`, which is why a restore
-  // refuses to touch group data unless the company is its group's only member.
+  // one can be added later. A restore follows the same rule: `resolveRestoreScope`
+  // lets it touch group data only when the company is its group's only member.
   const shared = [...exclusions.predicates.keys()].filter(
     (name) => byName.get(name)?.scopeColumn === "companyGroupId"
   );
@@ -521,7 +527,7 @@ export async function purgeScopeViolations(
     deleted.push({ table: table.name, rows: Number(r.numAffectedRows ?? 0) });
   }
 
-  const left = await findExportScopeViolations(
+  const { violations: left } = await findExportScopeViolations(
     trx,
     exportable,
     byName,

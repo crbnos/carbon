@@ -5449,11 +5449,20 @@ msgstr "Sicherung fehlgeschlagen"
 msgid "Backup for {0}"
 msgstr "Sicherung für {0}"
 
+msgid "Backup ready"
+msgstr "Backup bereit"
+
 msgid "Backup uploaded"
 msgstr "Sicherung hochgeladen"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr "Backup hochgeladen, aber {assetErrors} Datei(en) konnten nicht hochgeladen werden. Die Daten lassen sich wiederherstellen, diese Dateien nicht."
+
 msgid "Backups"
 msgstr "Sicherungen"
+
+msgid "Backups aren't included in your plan. You can still keep, revert or dismiss a restore you started before."
+msgstr ""
 
 msgid "Balance"
 msgstr "Saldo"
@@ -6112,6 +6121,9 @@ msgstr "Massen-Import"
 
 msgid "Bulk Jobs"
 msgstr "Massen-Fertigungsaufträge"
+
+msgid "Bundling files"
+msgstr "Dateien werden gebündelt"
 
 msgid "Burden"
 msgstr "Belastung"
@@ -7138,6 +7150,12 @@ msgstr "Verrechnungskonto für Wareneingang / Rechnungseingang Abgleich"
 msgid "Clearing demo data"
 msgstr "Demo-Daten werden gelöscht"
 
+msgid "Clearing existing data"
+msgstr "Vorhandene Daten werden gelöscht"
+
+msgid "Clearing restored data"
+msgstr "Wiederhergestellte Daten werden gelöscht"
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Klicken Sie auf einen Tag, um Zeit zu {selectedLabel} hinzuzufügen. Ziehen Sie die untere Kante eines Balkens, um dessen Stunden zu ändern."
 
@@ -7294,6 +7312,9 @@ msgstr "Rüsten einklappen"
 
 msgid "Collapse subtree"
 msgstr "Teilbaum einklappen"
+
+msgid "Collecting records"
+msgstr "Datensätze werden gesammelt"
 
 msgid "Color"
 msgstr "Farbe"
@@ -8645,6 +8666,9 @@ msgstr "Konnte die Onshape Government-Verbindung nicht abschließen"
 msgid "Couldn't confirm the account"
 msgstr "Konto konnte nicht bestätigt werden"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr "Der Start der Wiederherstellung konnte nicht bestätigt werden. Sie läuft möglicherweise noch — schließen Sie dies und prüfen Sie gleich die Liste."
+
 msgid "Couldn't load documents"
 msgstr "Dokumente konnten nicht geladen werden"
 
@@ -9079,6 +9103,9 @@ msgstr "Erstellt einen Entwurf einer Lieferantengutschrift für die versandten M
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Erstellt die 12 monatlichen Perioden für ein Geschäftsjahr. Bereits vorhandene Perioden werden beibehalten."
+
+msgid "Creating backup…"
+msgstr "Backup wird erstellt…"
 
 msgid "Creating part..."
 msgstr "Teil wird erstellt..."
@@ -17231,6 +17258,10 @@ msgstr "Offene Transaktionen laden (Bestellungen, Bestellanforderungen, Bestand,
 msgid "Load Templates"
 msgstr "Vorlagen laden"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr "{0} Zeilen geladen. Prüfen Sie sie unten — behalten Sie die Wiederherstellung oder setzen Sie auf den vorherigen Stand zurück."
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "Zuletzt geladen, direkt bei der Umstellung, damit die Salden aktuell sind."
 
@@ -17239,6 +17270,9 @@ msgstr "Vermögenswerte werden geladen..."
 
 msgid "Loading associated jobs..."
 msgstr "Zugehörige Fertigungsaufträge werden geladen..."
+
+msgid "Loading backup"
+msgstr "Backup wird geladen"
 
 msgid "Loading creditable lines..."
 msgstr "Kreditfähige Zeilen werden geladen..."
@@ -25494,6 +25528,12 @@ msgstr "Mit Änderungen wiederherstellbar"
 msgid "Restore"
 msgstr "Wiederherstellen"
 
+msgid "Restore complete"
+msgstr "Wiederherstellung abgeschlossen"
+
+msgid "Restore failed"
+msgstr "Wiederherstellung fehlgeschlagen"
+
 msgid "Restore from Trash"
 msgstr "Aus dem Papierkorb wiederherstellen"
 
@@ -25509,8 +25549,18 @@ msgstr "Wiederherstellen…"
 msgid "Restoring files"
 msgstr "Dateien werden wiederhergestellt"
 
+#. placeholder {0}: company.name
+msgid "Restoring into <0>{0}</0>. Its data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr ""
+
+msgid "Restoring your snapshot"
+msgstr "Ihr Snapshot wird wiederhergestellt"
+
 msgid "restoring…"
 msgstr "wird wiederhergestellt…"
+
+msgid "Restoring…"
+msgstr "Wird wiederhergestellt…"
 
 msgid "Restrict charging to members"
 msgstr "Abrechnung auf Mitglieder beschränken"
@@ -25809,6 +25859,12 @@ msgstr "Stornierung rückgängig machen"
 msgid "Revert cancellation of {readableId}"
 msgstr "Stornierung von {readableId} rückgängig machen"
 
+msgid "Revert failed"
+msgstr "Zurücksetzen fehlgeschlagen"
+
+msgid "Reverted"
+msgstr "Zurückgesetzt"
+
 msgid "Reverting"
 msgstr "Wird zurückgesetzt"
 
@@ -25817,6 +25873,9 @@ msgstr "Das Rückgängigmachen stellt das Enddatum, die Erneuerung und die Posit
 
 msgid "reverting…"
 msgstr "wird rückgängig gemacht…"
+
+msgid "Reverting…"
+msgstr "Wird zurückgesetzt…"
 
 msgid "Review"
 msgstr "Überprüfung"
@@ -28290,6 +28349,9 @@ msgstr "Kleinster Durchlauf für Losbildung. Leer lassen für keine."
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Smoke-Test der täglichen Kernabläufe von Anfang bis Ende"
 
+msgid "Snapshotting current data"
+msgstr "Aktuelle Daten werden als Snapshot gesichert"
+
 msgid "so you can assign it here."
 msgstr "damit Sie es hier zuweisen können."
 
@@ -28311,6 +28373,9 @@ msgstr "Lösungsingenieur"
 msgid "Some balances have no Carbon account"
 msgstr "Einige Salden haben kein Carbon-Konto"
 
+msgid "some files may be missing"
+msgstr ""
+
 msgid "Some inputs have another unit and are left out"
 msgstr "Einige Eingaben haben eine andere Einheit und werden ausgelassen"
 
@@ -28328,6 +28393,9 @@ msgstr "Ein Teil der Arbeit dieses Verfahrens kann nicht geplant werden"
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Einige Datensätze werden nicht zurückkommen. Geben Sie <0>{CONFIRM_WORD}</0> ein, um fortzufahren."
+
+msgid "Some rows excluded"
+msgstr "Einige Zeilen ausgeschlossen"
 
 msgid "Some Shifts"
 msgstr "Einige Schichten"
@@ -28733,6 +28801,9 @@ msgstr "Noch geschuldet"
 
 msgid "Still Owed"
 msgstr "Noch geschuldet"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr "Noch in Arbeit — dies ist ein umfangreicher Datensatz. Sie können dies schließen und später erneut nachsehen."
 
 msgid "Stock"
 msgstr "Bestand"
@@ -30046,6 +30117,9 @@ msgstr "der Rückstand"
 msgid "The backup job reported this error."
 msgstr "Der Sicherungsvorgang hat diesen Fehler gemeldet."
 
+msgid "The backup's data was loaded, but the restore stopped after that. Keep it, or revert to put back what you had."
+msgstr ""
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "Das rückwärts berechnete Datum, bis zu dem ein Arbeitsgang beendet sein muss, um seinen Fertigungsauftrag pünktlich zu halten, geschrieben auf das Fälligkeitsdatum des Arbeitsgangs. Ein stabiles Ziel zur Messung des Fortschritts - niemals eine Platzierungsbeschränkung."
 
@@ -31060,6 +31134,9 @@ msgstr "Der Datensatz, der eine Zahlung oder einen Vermerk auf eine Rechnung anw
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "Die aufgezeichnete Genealogie der verfolgten Einheiten – welche Eingaben wurden verbraucht, um welche Ausgaben zu produzieren, Beleg bis Lieferung."
 
+msgid "The records couldn't be counted. Try again later."
+msgstr "Die Datensätze konnten nicht gezählt werden. Versuchen Sie es später erneut."
+
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Die Referenzdaten, auf denen alles andere aufbaut. Wird zuerst geladen."
 
@@ -31578,9 +31655,6 @@ msgstr "Diese Änderungsmitteilung ist geschlossen, daher sind ihre Änderungen 
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "Diese Änderungsmitteilung wartet auf Genehmigung. Ihre Änderungen sind gesperrt, bis sie genehmigt oder abgelehnt wird."
-
-msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
-msgstr "Die Daten dieses Unternehmens werden durch den Inhalt dieser Sicherung ersetzt. Die heutigen Daten werden zuerst gespeichert, damit Sie rückgängig machen können."
 
 msgid "This completes the Discovery step."
 msgstr "Dies schließt den Discovery-Schritt ab."
@@ -35098,6 +35172,9 @@ msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie das Ausste
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Ihr Konto bleibt sicher, auch wenn Ihr Anmeldedaten gestohlen werden"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr "Ihr Backup ist bereit — es steht in der Liste unten."
+
 msgid "Your backups"
 msgstr "Ihre Sicherungen"
 
@@ -35178,6 +35255,12 @@ msgstr "Ihre Teilenummern"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Ihre Teilenummern und der dahinter stehende Artikelstamm"
+
+msgid "Your previous data is back, but some files couldn't be restored. Revert again to retry them."
+msgstr ""
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr "Ihre vorherigen Daten sind wieder da, genau so wie vor der Wiederherstellung."
 
 msgid "Your profile could not be loaded."
 msgstr "Ihr Profil konnte nicht geladen werden."

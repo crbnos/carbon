@@ -4,177 +4,134 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
-import { chunkArray } from "@carbon/utils";
+import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
 import {
-  groupConflictClause,
-  rebuildDerivedGroups
-} from "../../../backups/derived-groups";
-import { applyTableRenames } from "../../../backups/renames";
-import { getJobDatabaseClient } from "../../../db";
-import { inngest } from "../../client";
-import type { TableInfo } from "./company-backup";
-import {
-  assertBackupImportable,
-  BACKUP_INTEGRATION,
-  backupAssetsDir,
-  backupNameFromSource,
-  bindValue,
-  canSetReplicationRole,
-  filterUnpopulated,
   getCompanyTableCatalog,
-  isUserScopedIdentityTable,
-  RESEED_SKIPPED_TABLES,
-  readBackup,
-  restoreAssetsFromBackup,
-  SECRET_TABLES
-} from "./company-backup";
+  type TableInfo
+} from "../../../backups/catalog";
+import { assertBackupImportable } from "../../../backups/compatibility";
+import {
+  type CompanyBackup,
+  collectRows,
+  exportColumn,
+  tableRows
+} from "../../../backups/format";
+import {
+  assertLoadedInScope,
+  bulkLoad,
+  getCompanyGroupId,
+  insertTables,
+  readBackupForLoad
+} from "../../../backups/load";
+import {
+  isLeftAlone,
+  isUserScopedIdentityTable
+} from "../../../backups/policy";
 import {
   buildIdMaps,
-  buildRowTransforms,
-  getUniqueColumnGroups,
+  flattenIdMaps,
   loadSubstrateIds,
+  scanBackup
+} from "../../../backups/remap";
+import {
+  filterUnpopulated,
+  getUniqueColumnGroups,
   mapCollidingRows,
   matchableUniqueGroups,
   referencedDroppedTables
-} from "./company-backup.transforms";
+} from "../../../backups/reseed";
+import { PER_COMPANY_CONCURRENCY } from "../../../backups/runs";
 
-const INSERT_CHUNK_SIZE = 200;
+const NUMERIC_UDTS = new Set([
+  "numeric",
+  "float4",
+  "float8",
+  "int2",
+  "int4",
+  "int8"
+]);
 
-type LedgerRow = {
-  entityType: string;
-  entityId: string;
-  externalId: string;
-};
+import { restoreAssetsFromBackup } from "../../../backups/storage";
+import { getJobDatabaseClient } from "../../../db";
+import { inngest } from "../../client";
 
+/**
+ * Populate a freshly created company from a backup (onboarding from a backup):
+ * an additive reseed, every id remapped onto the new company.
+ */
 export const companyImportFunction = inngest.createFunction(
   {
     id: "company-import",
     retries: 1,
-    concurrency: { key: "event.data.companyId", limit: 1 }
+    concurrency: PER_COMPANY_CONCURRENCY
   },
   { event: "carbon/company-import" },
-  async ({ event, step, logger }) => {
-    const {
-      companyId,
-      userId,
-      filePath,
-      mode,
-      importRunId,
-      autoFinalize,
-      templateIndustryId
-    } = event.data;
-
-    // Onboarding demo templates reference shared assets at
-    // `_templates/<industryId>/` (uploaded once per workspace at deploy) rather
-    // than copying every file into this company's `{companyId}/` prefix. Real
-    // backups have no industryId and stay self-contained (files embedded + copied).
-    const referencedTemplate =
-      typeof templateIndustryId === "string" && templateIndustryId.length > 0;
-
-    // A real (foreign) backup import is the gated BACKUPS feature; an onboarding
-    // demo-template import is not — keep templating available on every edition.
-    if (!referencedTemplate) {
-      await requireBackupsEntitlement(companyId);
-    }
+  async ({ event, step, logger, attempt }) => {
+    const { companyId, userId, filePath: name } = event.data;
 
     return await step.run("import-company", async () => {
+      await requireBackupsEntitlement(companyId);
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient();
 
-      // Idempotency guard — a retry after a partial failure must not
-      // duplicate rows that already committed under this run id.
-      const existing = await client
-        .from("externalIntegrationMapping")
-        .select("id", { count: "exact", head: true })
-        .eq("integration", BACKUP_INTEGRATION)
-        .eq("companyId", companyId)
-        .filter("metadata->>importRunId", "eq", importRunId);
-      if ((existing.count ?? 0) > 0) {
-        logger.info("Import run already applied, skipping", { importRunId });
-        return { importRunId, skipped: true };
-      }
-
-      const name = backupNameFromSource(filePath);
-      const raw = await readBackup(client, companyId, name);
-
-      if (mode === "preserve" && raw.manifest.sourceCompanyId !== companyId) {
-        throw new Error(
-          "Preserve mode requires importing into the same company the artifact " +
-            `was exported from (${raw.manifest.sourceCompanyId}). ` +
-            "Use reseed mode to import into a different company."
-        );
-      }
-
-      // Reseed populates a fresh company; refuse a target that's already been
-      // set up (defense in depth for retries or direct triggers).
-      // accountDefault is the seed marker.
-      if (mode === "reseed") {
-        const seeded = await client
-          .from("accountDefault")
-          .select("companyId", { count: "exact", head: true })
-          .eq("companyId", companyId);
-        if ((seeded.count ?? 0) > 0) {
-          throw new Error(
-            `Reseed target ${companyId} is already set up — reseed requires a ` +
-              "freshly created company"
-          );
-        }
-      }
-
-      // The target company's group receives the companyGroup-scoped data
-      // (chart of accounts, currencies, …).
-      const targetCompany = await client
-        .from("company")
-        .select("companyGroupId")
-        .eq("id", companyId)
-        .single();
-      if (targetCompany.error) throw new Error(targetCompany.error.message);
-      const targetGroupId = targetCompany.data?.companyGroupId ?? null;
-
       const catalog = await getCompanyTableCatalog(db);
-      // Renamed tables move onto their current names before the gate sees them.
-      const backup = applyTableRenames(catalog, raw);
-      const compatibility = assertBackupImportable(catalog, backup);
-      if (!compatibility.ok) {
-        throw new Error(
-          `This backup can't be restored: ${compatibility.reason}.`
+      const backup = await readBackupForLoad(client, companyId, name, catalog);
+      assertBackupImportable(catalog, backup);
+
+      // accountDefault is the seed marker. The first attempt refuses a target
+      // that's already set up, without a retry, so a retry finding it seeded
+      // is finding its own committed load.
+      const seeded = await client
+        .from("accountDefault")
+        .select("companyId", { count: "exact", head: true })
+        .eq("companyId", companyId);
+      if (seeded.error) throw new Error(seeded.error.message);
+      if ((seeded.count ?? 0) > 0) {
+        if (attempt > 0) {
+          // The id map that places the files was minted at random by the
+          // attempt that committed, and is gone: loading again would duplicate
+          // the data, so finish without the files.
+          logger.error(
+            "Company import: an earlier attempt loaded the data but died " +
+              "before restoring its files. The files were NOT restored.",
+            { companyId, name, files: backup.manifest.storage.length }
+          );
+          return { tables: 0, rows: 0, storageUploaded: 0, resumed: true };
+        }
+        throw new NonRetriableError(
+          `Reseed target ${companyId} is already set up — reseed requires a ` +
+            "freshly created company"
         );
       }
+
+      const targetGroupId = await getCompanyGroupId(client, companyId);
       const catalogTableNames = new Set(catalog.tables.map((t) => t.name));
 
-      const skipped = new Set([
-        ...SECRET_TABLES,
-        ...(mode === "reseed" ? RESEED_SKIPPED_TABLES : [])
-      ]);
-      const backupColumns = new Map(
-        backup.manifest.tables.map((t) => [t.name, new Set(t.columns)])
+      const skipped = new Set(
+        catalog.tables.map((t) => t.name).filter(isLeftAlone)
       );
       const candidateTables = catalog.tables.filter(
         (t) =>
           !skipped.has(t.name) &&
           !isUserScopedIdentityTable(t) &&
-          (backup.data[t.name]?.length ?? 0) > 0
+          tableRows(backup, t.name) > 0
       );
 
-      // Reseed is additive into a fresh company: never touch a table the
-      // target already populated itself — its identity seed, its triggers
-      // (event subscriptions, search registry) or onboarding's own inserts
-      // (location, employee job, groups). Asking the database which tables
-      // are non-empty replaces every hand-maintained "skip" list and is
-      // correct in both cases: a bare clone imports everything, an
-      // identity-seeded onboard skips exactly what's already there.
+      // Never touch a table the target already populated itself — its identity
+      // seed, its triggers (event subscriptions, search registry) or
+      // onboarding's own inserts (location, employee job, groups). Asking the
+      // database which tables are non-empty replaces every hand-maintained
+      // "skip" list: a bare clone imports everything, an identity-seeded
+      // onboard skips exactly what's already there.
       const byName = new Map(catalog.tables.map((t) => [t.name, t]));
-      const unpopulatedTables =
-        mode === "reseed"
-          ? await filterUnpopulated(
-              db,
-              candidateTables,
-              byName,
-              companyId,
-              targetGroupId
-            )
-          : candidateTables;
+      const unpopulatedTables = await filterUnpopulated(
+        db,
+        candidateTables,
+        byName,
+        companyId,
+        targetGroupId
+      );
 
       // A dropped-as-already-populated table whose ids the kept rows still
       // reference must be imported anyway, or every FK into it is nulled /
@@ -182,37 +139,22 @@ export const companyImportFunction = inngest.createFunction(
       // from its location — onboarding's one "Headquarters" row made the
       // backup's `location` table look "already populated"). Colliding rows
       // are mapped onto the target's own rows below instead of inserted.
-      let readdedTables: TableInfo[] = [];
-      let importTables = unpopulatedTables;
-      if (mode === "reseed") {
-        const keptNames = new Set(unpopulatedTables.map((t) => t.name));
-        readdedTables = referencedDroppedTables(
-          unpopulatedTables,
-          candidateTables.filter((t) => !keptNames.has(t.name))
-        );
-        if (readdedTables.length > 0) {
-          const keep = new Set([
-            ...keptNames,
-            ...readdedTables.map((t) => t.name)
-          ]);
-          // Re-filter from candidateTables so topological (catalog) order holds.
-          importTables = candidateTables.filter((t) => keep.has(t.name));
-        }
-      }
+      const keptNames = new Set(unpopulatedTables.map((t) => t.name));
+      const readdedTables: TableInfo[] = referencedDroppedTables(
+        unpopulatedTables,
+        candidateTables.filter((t) => !keptNames.has(t.name))
+      );
+      const keep = new Set([...keptNames, ...readdedTables.map((t) => t.name)]);
+      const importTables = candidateTables.filter((t) => keep.has(t.name));
 
-      // Reseed: assign a fresh id to every row of every id-bearing table up
-      // front so FK references can be rewritten in a single pass. Shares
-      // `buildIdMaps` with the restore path so the two can't drift.
-      const idMaps =
-        mode === "reseed"
-          ? buildIdMaps(importTables, backup.data)
-          : new Map<string, Map<string, string>>();
+      const scan = await scanBackup(catalog, backup, { allIds: true });
+      const idMaps = buildIdMaps(importTables, scan);
 
       // Re-added tables are populated in the target BY DEFINITION, and unique
       // constraints stay enforced under replica mode — a backup row sharing a
       // unique key with an existing target row (both sides have a
       // "Headquarters" location) must map onto it, not be inserted against it.
-      const collisionSkips = new Map<string, Set<string>>();
+      const skippedByTable = new Map<string, Set<string>>();
       for (const table of readdedTables) {
         const idMap = idMaps.get(table.name);
         if (!idMap || table.scope.kind !== "direct") continue;
@@ -225,35 +167,41 @@ export const companyImportFunction = inngest.createFunction(
         );
         if (groups.length === 0) continue;
         const cols = [...new Set(groups.flat())];
+        // Read as the export wrote them, so keys compare equal to the backup's.
+        const colInfo = new Map(table.columns.map((c) => [c.name, c]));
         const existing = await sql<{ [col: string]: unknown }>`
-          SELECT ${sql.join([sql.id("id"), ...cols.map((c) => sql.id(c))])}
+          SELECT ${sql.join([
+            sql.id("id"),
+            ...cols.map((c) => {
+              const info = colInfo.get(c);
+              return info ? exportColumn(info) : sql.id(c);
+            })
+          ])}
           FROM ${sql.id(table.name)}
           WHERE ${sql.id(table.scope.column)} = ${scopeValue}
         `.execute(db);
         const { skippedSourceIds, overrides } = mapCollidingRows(
           groups,
-          backup.data[table.name] ?? [],
-          existing.rows
+          await collectRows(backup, table.name),
+          existing.rows,
+          new Set(
+            cols.filter((c) => NUMERIC_UDTS.has(colInfo.get(c)?.udtName ?? ""))
+          )
         );
         for (const [sourceId, targetId] of overrides) {
           idMap.set(sourceId, targetId);
         }
         if (skippedSourceIds.size > 0) {
-          collisionSkips.set(table.name, skippedSourceIds);
+          skippedByTable.set(table.name, skippedSourceIds);
         }
       }
 
-      // Flat old-id → new-id lookup across every remapped table, used to rewrite
-      // ids embedded in storage paths (e.g. `{co}/models/{modelId}.stl`) so the
-      // restored files and their DB path columns line up. Empty in preserve mode.
-      // Built AFTER collision overrides so a mapped-onto-target row's path
-      // segments rewrite to the surviving id.
-      const idRewrite = new Map<string, string>();
-      for (const map of idMaps.values()) {
-        for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
-      }
+      // Old id → new id across every remapped table, for the ids embedded in
+      // storage paths (e.g. `{co}/models/{modelId}.stl`). Built after the
+      // collision overrides, so a mapped-onto-target row's path segments
+      // rewrite to the surviving id.
+      const idRewrite = flattenIdMaps(idMaps);
 
-      // Group-scoped data needs a destination group on the target company.
       if (
         targetGroupId === null &&
         importTables.some((t) => t.scopeColumn === "companyGroupId")
@@ -266,175 +214,50 @@ export const companyImportFunction = inngest.createFunction(
       }
 
       const sourceCompanyId = backup.manifest.sourceCompanyId;
-      let scrubCounter = 0;
       // FK columns pointing at a tenant table we did NOT import (it was already
       // populated by the target's own seed, or skipped). Their non-null source
       // ids don't exist here; collected so a dangling, non-nullable ref is
       // surfaced rather than silently corrupting referential integrity.
       const unresolvedRefs = new Set<string>();
-
-      // One transform builder for both restore and reseed import
-      // (buildRowTransforms in company-backup.ts) — the reseed-only policies are
-      // passed as knobs; preserve mode (remap=false) copies verbatim.
-      const remap = mode === "reseed";
+      let scrubCounter = 0;
       // Global substrate (companyId IS NULL) ids the backup omits but the target
       // holds by seed — a template's FK into a seeded global row resolves against
       // these instead of dangling.
-      const substrateIds = remap
-        ? await loadSubstrateIds(db, catalog, backup.data)
-        : undefined;
-      const scrubEmail = () => `import-${++scrubCounter}@example.test`;
-      const recordUnresolvedRef = (desc: string) => unresolvedRefs.add(desc);
-
-      const replicaMode = await canSetReplicationRole(db);
-      if (!replicaMode) {
-        logger.warn(
-          "session_replication_role unavailable — importing with triggers " +
-            "and FK enforcement active; relying on topological order"
-        );
-      }
-
-      const counts: Record<string, number> = {};
-
-      await db.transaction().execute(async (trx) => {
-        if (replicaMode) {
-          await sql`SET LOCAL session_replication_role = 'replica'`.execute(
-            trx
-          );
-        }
-        await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
-
-        const ledger: LedgerRow[] = [];
-
-        for (const table of importTables) {
-          const backupCols =
-            backupColumns.get(table.name) ??
-            new Set(Object.keys(backup.data[table.name]![0] ?? {}));
-          const columns = table.columns.filter(
-            (c) => !c.isGenerated && backupCols.has(c.name)
-          );
-          if (columns.length === 0) continue;
-
-          const transforms = buildRowTransforms(table, columns, {
-            remap,
-            companyId,
-            userId,
-            targetGroupId,
-            sourceCompanyId,
-            idMaps,
-            idRewrite,
-            substrateIds,
-            templateIndustryId: referencedTemplate
-              ? templateIndustryId
-              : undefined,
-            skippedRefTables: skipped,
-            catalogTableNames,
-            onUnresolvedRef: recordUnresolvedRef,
-            scrubEmail
-          });
-          const skips = collisionSkips.get(table.name);
-          const allRows = backup.data[table.name]!;
-          const originalRows = skips
-            ? allRows.filter(
-                (row) => !(typeof row.id === "string" && skips.has(row.id))
-              )
-            : allRows;
-          // Hot path: indexed loops (no per-row `forEach` closure), packed
-          // output array, `out` keys in fixed column order (one hidden class
-          // per table).
-          const colCount = columns.length;
-          let rows: Record<string, unknown>[] = [];
-          for (let r = 0; r < originalRows.length; r++) {
-            const row = originalRows[r]!;
-            const out: Record<string, unknown> = {};
-            for (let c = 0; c < colCount; c++) {
-              out[columns[c]!.name] = transforms[c]!(row[columns[c]!.name]);
-            }
-            rows.push(out);
-          }
-
-          // Collapsing user references onto one user can produce duplicate
-          // primary keys in user-keyed tables — keep the first of each.
-          if (mode === "reseed" && !table.hasId && table.pkColumns.length > 0) {
-            const seen = new Set<string>();
-            rows = rows.filter((row) => {
-              const key = JSON.stringify(table.pkColumns.map((c) => row[c]));
-              if (seen.has(key)) return false;
-              seen.add(key);
-              return true;
-            });
-          }
-
-          for (const batch of chunkArray(rows, INSERT_CHUNK_SIZE)) {
-            await sql`
-              INSERT INTO ${sql.id(table.name)}
-                (${sql.join(columns.map((c) => sql.id(c.name)))})
-              VALUES ${sql.join(
-                batch.map(
-                  (row) =>
-                    sql`(${sql.join(
-                      columns.map((c) => sql`${bindValue(row[c.name], c)}`)
-                    )})`
+      const substrateIds = await loadSubstrateIds(db, catalog, scan);
+      // Rows mapped onto the target's own colliding rows are not inserted.
+      const toInsert: CompanyBackup = {
+        manifest: backup.manifest,
+        async *rows(table) {
+          const skip = skippedByTable.get(table);
+          for await (const batch of backup.rows(table)) {
+            yield skip
+              ? batch.filter(
+                  (row) => !(typeof row.id === "string" && skip.has(row.id))
                 )
-              )}${groupConflictClause(table.name)}
-            `.execute(trx);
-          }
-
-          counts[table.name] = rows.length;
-
-          // Revert ledger — one row per inserted row. For id-keyed tables
-          // entityId is the (new) id; for composite-keyed tables it's the
-          // JSON-encoded primary key tuple.
-          if (table.pkColumns.length === 0) {
-            logger.warn("Table has no primary key — revert will skip it", {
-              table: table.name
-            });
-            continue;
-          }
-          if (table.hasId) {
-            // dedupe above only applies to composite-keyed tables, so the
-            // transformed rows still align index-wise with the originals
-            rows.forEach((row, i) => {
-              ledger.push({
-                entityType: table.name,
-                entityId: row.id as string,
-                externalId:
-                  (originalRows[i]?.id as string) ?? (row.id as string)
-              });
-            });
-          } else {
-            for (const row of rows) {
-              const key = JSON.stringify(
-                table.pkColumns.map((c) => row[c] ?? null)
-              );
-              ledger.push({
-                entityType: table.name,
-                entityId: key,
-                externalId: key
-              });
-            }
+              : batch;
           }
         }
+      };
 
-        for (const batch of chunkArray(ledger, INSERT_CHUNK_SIZE)) {
-          await sql`
-            INSERT INTO ${sql.id("externalIntegrationMapping")}
-              ("entityType", "entityId", "integration", "externalId",
-               "metadata", "companyId", "createdBy")
-            VALUES ${sql.join(
-              batch.map(
-                (l) =>
-                  sql`(${l.entityType}, ${l.entityId}, ${BACKUP_INTEGRATION},
-                      ${l.externalId}, ${JSON.stringify({ importRunId })},
-                      ${companyId}, ${userId})`
-              )
-            )}
-          `.execute(trx);
-        }
-
-        // Triggers were off: the imported customers, suppliers and types have
-        // no groups yet.
-        await rebuildDerivedGroups(trx, companyId);
+      const counts = await bulkLoad(db, companyId, async (trx) => {
+        const counts = await insertTables(trx, importTables, toInsert, {
+          companyId,
+          userId,
+          targetGroupId,
+          sourceCompanyId,
+          idMaps,
+          idRewrite,
+          substrateIds,
+          skippedRefTables: skipped,
+          catalogTableNames,
+          onUnresolvedRef: (desc) => unresolvedRefs.add(desc),
+          scrubEmail: () => `import-${++scrubCounter}@example.test`
+        });
+        await assertLoadedInScope(trx, importTables, byName, {
+          companyId,
+          companyGroupId: targetGroupId
+        });
+        return counts;
       });
 
       if (unresolvedRefs.size > 0) {
@@ -448,62 +271,29 @@ export const companyImportFunction = inngest.createFunction(
       }
 
       // Storage files travel outside the transaction — failures here leave the
-      // imported rows intact and are surfaced as warnings. Copy them server-side
-      // from the artifact's `.assets/` folder into the company's own bucket,
-      // with the path rewritten for the target company (and remapped ids on
-      // reseed) to match the path columns rewritten above.
-      //
-      // A referenced template skips this entirely: its assets already live once
-      // per workspace at `_templates/<industryId>/` (the path columns above now
-      // point there), so copying them into `{companyId}/` would defeat the
-      // purpose.
-      let storageUploaded = 0;
-      if (!referencedTemplate) {
-        const assets = await restoreAssetsFromBackup(client, {
-          files: backup.manifest.storage,
-          srcBucket: companyId,
-          srcPrefix: backupAssetsDir(name),
-          sourceCompanyId,
-          companyId,
-          idRewrite
-        });
-        storageUploaded = assets.copied;
-      }
-
-      // Onboarding-from-a-backup commits immediately — no human review — so
-      // drop the revert ledger and skip the pending state.
-      if (autoFinalize) {
-        await sql`
-          DELETE FROM ${sql.id("externalIntegrationMapping")}
-          WHERE ${sql.id("integration")} = ${BACKUP_INTEGRATION}
-            AND ${sql.id("companyId")} = ${companyId}
-            AND metadata->>'importRunId' = ${importRunId}
-        `.execute(db);
-      }
+      // imported rows intact and are surfaced as warnings. Copied server-side
+      // from the backup's assets folder into the company's own bucket, with the
+      // path rewritten (and ids remapped) to match the path columns above.
+      const assets = await restoreAssetsFromBackup(client, {
+        files: backup.manifest.storage,
+        name: name,
+        sourceCompanyId,
+        companyId,
+        idRewrite
+      });
 
       const totalRows = Object.values(counts).reduce((sum, n) => sum + n, 0);
-      logger.info(
-        autoFinalize
-          ? "Company import complete — auto-finalized"
-          : "Company import complete — pending finalize/revert",
-        {
-          companyId,
-          importRunId,
-          mode,
-          tables: Object.keys(counts).length,
-          rows: totalRows,
-          storageUploaded,
-          ...(referencedTemplate
-            ? { referencedTemplate: templateIndustryId }
-            : {})
-        }
-      );
-
-      return {
-        importRunId,
+      logger.info("Company import complete", {
+        companyId,
         tables: Object.keys(counts).length,
         rows: totalRows,
-        storageUploaded
+        storageUploaded: assets.copied
+      });
+
+      return {
+        tables: Object.keys(counts).length,
+        rows: totalRows,
+        storageUploaded: assets.copied
       };
     });
   }

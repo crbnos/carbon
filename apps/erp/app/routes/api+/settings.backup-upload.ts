@@ -2,16 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Readable } from "node:stream";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  canManageBackups,
-  unpackBackupArchive
+  isStagedBackupPath,
+  requireBackupAccess,
+  signBackupStaging,
+  unpackStagedBackupArchive
 } from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "settings-backup-upload");
@@ -23,68 +21,40 @@ const logger = getLogger("erp", "settings-backup-upload");
  *    straight to storage, so the bytes never pass through this function (a
  *    Vercel-hosted target caps the request body).
  * 2. `intent=unpack` — stream the staged archive back and unpack it into a fresh
- *    `exports/<name>/` so the normal restore/import finds it, then drop the
- *    staged object. Returns the folder name.
+ *    backup folder so the normal restore/import finds it, then drop the staged
+ *    object. Returns the folder name.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    update: "settings"
-  });
-  if (!(await canManageBackups(client, companyId, email)))
-    throw new Response("Not found", { status: 404 });
+  const { companyId } = await requireBackupAccess(request);
   if (request.method !== "POST") {
     throw new Response("Method not allowed", { status: 405 });
   }
 
   const formData = await request.formData();
   const intent = formData.get("intent");
-  // Service role: `temp-staging` RLS only admits `${companyId}/models/...` and
-  // backup objects are service-role only; the permission checks above gate
-  // this route.
   const serviceRole = getCarbonServiceRole();
-  const staging = serviceRole.storage.from(TEMP_STAGING_BUCKET);
+  const prefix = `${companyId}/backups`;
 
   if (intent === "sign") {
-    const path = `${companyId}/backups/${nanoid()}.tar.gz`;
-    const signed = await staging.createSignedUploadUrl(path);
-    if (signed.error) {
+    try {
+      return await signBackupStaging(serviceRole, prefix);
+    } catch (err) {
       logger.error("Failed to create backup upload URL", {
         companyId,
-        error: signed.error
+        error: err
       });
-      throw new Response(signed.error.message, { status: 500 });
+      throw new Response((err as Error).message, { status: 500 });
     }
-    return { path: signed.data.path, token: signed.data.token };
   }
 
   if (intent === "unpack") {
     const path = formData.get("path");
-    // Caller-supplied — only ever read back (and then remove) an archive
-    // staged for this company. Match the exact shape `sign` mints: a prefix
-    // check alone would admit `${companyId}/backups/../<other>/…`.
-    if (
-      typeof path !== "string" ||
-      !path.startsWith(`${companyId}/backups/`) ||
-      !/^[A-Za-z0-9_-]+\.tar\.gz$/.test(
-        path.slice(`${companyId}/backups/`.length)
-      )
-    ) {
+    if (!isStagedBackupPath(path, prefix)) {
       logger.error("Rejected backup archive path", { companyId, path });
       throw new Response("Invalid path", { status: 400 });
     }
     try {
-      // Stream through a signed download URL; `download()` would buffer the
-      // whole archive in memory.
-      const signed = await staging.createSignedUrl(path, 60 * 60);
-      if (signed.error) throw new Error(signed.error.message);
-      const res = await fetch(signed.data.signedUrl);
-      if (!res.ok || !res.body) {
-        throw new Error(`Failed to read the uploaded archive (${res.status})`);
-      }
-      const source = Readable.fromWeb(
-        res.body as Parameters<typeof Readable.fromWeb>[0]
-      );
-      return await unpackBackupArchive(serviceRole, companyId, source);
+      return await unpackStagedBackupArchive(serviceRole, companyId, path);
     } catch (err) {
       logger.error("Failed to unpack uploaded backup", {
         companyId,
@@ -92,15 +62,6 @@ export async function action({ request }: ActionFunctionArgs) {
         error: err
       });
       throw new Response((err as Error).message, { status: 400 });
-    } finally {
-      const removed = await staging.remove([path]);
-      if (removed.error) {
-        logger.error("Failed to remove staged backup archive", {
-          companyId,
-          path,
-          error: removed.error
-        });
-      }
     }
   }
 

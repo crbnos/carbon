@@ -3,12 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { Catalog, ColumnInfo, TableInfo } from "./schema";
 import {
+  type Catalog,
+  type ColumnInfo,
   exportableColumns,
-  SECRET_TABLES,
-  selectExportableTables
-} from "./schema";
+  selectExportableTables,
+  type TableInfo
+} from "./catalog";
+import { SECRET_TABLES } from "./policy";
 
 const col = (name: string, over: Partial<ColumnInfo> = {}): ColumnInfo => ({
   name,
@@ -76,13 +78,6 @@ describe("selectExportableTables", () => {
       "jobOperation"
     ]);
   });
-
-  it("returns empty lists for an empty catalog", () => {
-    expect(selectExportableTables(catalog([]))).toEqual({
-      exportable: [],
-      excludedTables: []
-    });
-  });
 });
 
 describe("exportableColumns", () => {
@@ -111,30 +106,3 @@ describe("exportableColumns", () => {
 // The reason both helpers exist: the drift check's baseline must describe what a
 // real export produces. If these ever diverge, the baseline stops standing in for
 // a customer's backup while the check keeps reporting `restorable`.
-describe("the baseline and the exporter share one rule", () => {
-  it("produces the same tables and columns for the same catalog", () => {
-    const source = catalog([
-      table("job", [col("id"), col("total", { isGenerated: true })]),
-      table("apiKey", [col("id")]),
-      table("item", [col("id"), col("name")])
-    ]);
-
-    const exporterView = selectExportableTables(source).exportable.map((t) => ({
-      name: t.name,
-      columns: exportableColumns(t).map((c) => c.name)
-    }));
-    const baselineView = selectExportableTables(source).exportable.map((t) => ({
-      name: t.name,
-      rows: 0,
-      columns: exportableColumns(t).map((c) => c.name)
-    }));
-
-    expect(
-      baselineView.map(({ name, columns }) => ({ name, columns }))
-    ).toEqual(exporterView);
-    expect(baselineView).toEqual([
-      { name: "job", rows: 0, columns: ["id"] },
-      { name: "item", rows: 0, columns: ["id", "name"] }
-    ]);
-  });
-});

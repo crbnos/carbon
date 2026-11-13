@@ -53,7 +53,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./backups": "./src/backups/schema.ts",
+    "./backups": "./src/backups/index.ts",
     "./events": "./src/events.ts",
     "./integrations": "./src/workflows/integrations/index.ts",
     "./inngest": "./src/inngest/index.ts",

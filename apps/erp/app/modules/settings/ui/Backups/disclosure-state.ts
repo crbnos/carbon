@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { CompanyBackupSummary } from "../../backups.service";
+import type { CompanyBackupSummary } from "../../types";
 
 /** The word a person types to confirm a restore that discards data. */
 export const CONFIRM_WORD = "restore";

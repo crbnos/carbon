@@ -15,10 +15,13 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import { LuCircleAlert, LuInfo, LuTriangleAlert } from "react-icons/lu";
+import { useUser } from "~/hooks";
+import { DEFAULT_INCLUDE_STORAGE } from "~/modules/settings/settings.models";
 import { areaLabel, tableArea } from "../../backups.areas";
-import type { CompanyBackupSummary } from "../../backups.service";
+import type { CompanyBackupSummary } from "../../types";
 import { CONFIRM_WORD, disclosureState } from "./disclosure-state";
 import { formatBackupDate, formatBackupName } from "./format";
 
@@ -40,16 +43,24 @@ export function RestoreDisclosure({
   onConfirm
 }: {
   backups: CompanyBackupSummary[];
-  onConfirm: (values: { source: string; includeStorage: string }) => void;
+  onConfirm: (values: {
+    source: string;
+    includeStorage: string;
+    companyId: string;
+  }) => void;
 }) {
   const { t } = useLingui();
+  // The company this tab shows. Another tab can switch the active company; the
+  // action refuses a restore whose company is not the session's.
+  const { company } = useUser();
+  const { locale } = useLocale();
   const [source] = useControlField<string>("source");
   const [includeStorage] = useControlField<string>("includeStorage");
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
 
   const backup = useMemo(
-    () => backups.find((b) => `backup:${b.name}` === source),
+    () => backups.find((b) => b.name === source),
     [backups, source]
   );
 
@@ -91,7 +102,7 @@ export function RestoreDisclosure({
                 <p className="text-sm text-muted-foreground">
                   {backup.label || formatBackupName(backup.name)}
                   {backup.exportedAt
-                    ? ` · ${formatBackupDate(backup.exportedAt)}`
+                    ? ` · ${formatBackupDate(backup.exportedAt, locale)}`
                     : ""}
                 </p>
               ) : null}
@@ -101,8 +112,10 @@ export function RestoreDisclosure({
                   they are the actual decision. */}
               <p className="text-sm">
                 <Trans>
-                  This company's data is replaced with the contents of this
-                  backup. Today's data is saved first, so you can revert.
+                  Restoring into{" "}
+                  <span className="font-semibold">{company.name}</span>. Its
+                  data is replaced with the contents of this backup. Today's
+                  data is saved first, so you can revert.
                 </Trans>
               </p>
 
@@ -154,7 +167,9 @@ export function RestoreDisclosure({
                 onClick={() => {
                   onConfirm({
                     source: source ?? "",
-                    includeStorage: includeStorage ?? "all"
+                    includeStorage:
+                      includeStorage ?? DEFAULT_INCLUDE_STORAGE.restore,
+                    companyId: company.id
                   });
                   close();
                 }}

@@ -5,11 +5,9 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Kysely, sql } from "kysely";
 import { describe, expect, it } from "vitest";
+import { getCompanyTableCatalog } from "../../../backups/catalog";
+import { canSetReplicationRole } from "../../../backups/load";
 import { getJobDatabaseClient } from "../../../db";
-import {
-  canSetReplicationRole,
-  getCompanyTableCatalog
-} from "../tasks/company-backup";
 import {
   dropCompanyTables,
   dropOrphanCompanyTables,

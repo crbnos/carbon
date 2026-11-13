@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { randomUUID } from "node:crypto";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
   groups as companyGroups,
@@ -11,32 +12,35 @@ import {
   rewriteValueEditRowKeys,
   type ValueEdits
 } from "@carbon/documents/template";
+import { async } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
-import { ID_REF_COLUMNS, ROW_ID_REF_COLUMNS } from "../../../backups/id-refs";
+import { customAlphabet } from "nanoid";
 import {
   type Catalog,
   type ColumnInfo,
-  type CompanyBackup,
-  mapWithConcurrency,
-  newIdForTable,
+  idForeignKeyByColumn,
+  type TableInfo
+} from "./catalog";
+import { TABLE_CONCURRENCY } from "./concurrency";
+import { type CompanyBackup, type Row, tableRows } from "./format";
+import { ID_REF_COLUMNS, ROW_ID_REF_COLUMNS } from "./id-refs";
+import {
+  isCrossTenantEdge,
+  isSecretTable,
   READABLE_ID_TABLES,
   RETAINED_REF_TABLES,
-  rewriteStoragePath,
-  rewriteToTemplateAssetPath,
-  SECRET_TABLES,
-  STORAGE_PATH_COLUMNS,
-  type TableInfo
-} from "./company-backup";
+  USER_REF_TABLES
+} from "./policy";
+import { anyOf, parentExistence } from "./scope";
 
-// Referential-closure checks and row-remap transforms for company backup/restore.
-// Extracted from company-backup.ts (which keeps catalog introspection, serialization
-// and storage). Pure except loadSubstrateIds (a single target probe); unit-tested in
-// company-backup.closure.test.ts. Imports one-directionally from company-backup.ts.
+/**
+ * Re-stamping a backup's rows onto another company: fresh ids, FKs and FK-less
+ * id refs following them, user refs collapsed onto the importing user,
+ * storage paths rewritten, and the referential-closure check that refuses a
+ * backup that would dangle.
+ */
 
-/** FKs to these collapse to the importing user when re-stamping a foreign backup. */
-export const USER_REF_TABLES = new Set(["user", "employee"]);
-
-export type DanglingRef = {
+type DanglingRef = {
   table: string;
   column: string;
   refTable: string;
@@ -45,6 +49,91 @@ export type DanglingRef = {
   sampleValue: string;
   count: number;
 };
+
+/**
+ * What the preflight and the id maps need from a backup, without its rows: the
+ * ids of each table, the distinct values of every id foreign key with how many
+ * rows hold each, and the small `group` table. Built while the rows stream.
+ */
+export type BackupScan = {
+  /** Tables the backup has rows for. */
+  tables: Set<string>;
+  ids: Map<string, Set<unknown>>;
+  /** `table.column` → value → rows holding it. */
+  refs: Map<string, Map<unknown, number>>;
+  groupRows: Row[];
+};
+
+/**
+ * Collects a scan from batches. Keeps the ids of every table a foreign key
+ * points at, or of every id-bearing table with `allIds` (a foreign load gives
+ * each row a new id). Secret tables are never loaded, so they are skipped.
+ */
+function scanCollector(tables: TableInfo[], opts: { allIds: boolean }) {
+  const referenced = new Set(
+    tables.flatMap((t) =>
+      t.foreignKeys.filter((f) => f.refColumn === "id").map((f) => f.refTable)
+    )
+  );
+  const scan: BackupScan = {
+    tables: new Set(),
+    ids: new Map(),
+    refs: new Map(),
+    groupRows: []
+  };
+  const add = (table: TableInfo, rows: Row[]) => {
+    if (rows.length === 0 || isSecretTable(table.name)) return;
+    scan.tables.add(table.name);
+    if (table.name === "group") scan.groupRows.push(...rows);
+    if (
+      (opts.allIds || referenced.has(table.name)) &&
+      table.columns.some((c) => c.name === "id")
+    ) {
+      const ids = scan.ids.get(table.name) ?? new Set<unknown>();
+      for (const row of rows) ids.add(row.id);
+      scan.ids.set(table.name, ids);
+    }
+    for (const fk of table.foreignKeys) {
+      if (fk.refColumn !== "id") continue;
+      const key = `${table.name}.${fk.column}`;
+      const counts = scan.refs.get(key) ?? new Map<unknown, number>();
+      for (const row of rows) {
+        const v = row[fk.column];
+        if (v != null) counts.set(v, (counts.get(v) ?? 0) + 1);
+      }
+      scan.refs.set(key, counts);
+    }
+  };
+  return { scan, add };
+}
+
+/** Scan a backup, one table at a time. */
+export async function scanBackup(
+  catalog: Catalog,
+  backup: CompanyBackup,
+  opts: { allIds: boolean }
+): Promise<BackupScan> {
+  const { scan, add } = scanCollector(catalog.tables, opts);
+  await async.map(
+    catalog.tables.filter((t) => tableRows(backup, t.name) > 0),
+    async (table) => {
+      for await (const batch of backup.rows(table.name)) add(table, batch);
+    },
+    { concurrency: TABLE_CONCURRENCY }
+  );
+  return scan;
+}
+
+/** Scan rows already in memory. */
+export function scanRows(
+  tables: TableInfo[],
+  dataByTable: Record<string, Row[]>,
+  opts: { allIds: boolean } = { allIds: true }
+): BackupScan {
+  const { scan, add } = scanCollector(tables, opts);
+  for (const table of tables) add(table, dataByTable[table.name] ?? []);
+  return scan;
+}
 
 /**
  * Find FK values that point at a scoped row the backup does NOT contain — the exact
@@ -59,58 +148,47 @@ export type DanglingRef = {
  * (`companyId IS NULL` global rows the backup deliberately omits — e.g. the
  * seeded `material*` reference rows). A ref resolving to one of those is NOT a
  * gap. The restore passes these from a live probe of the target; tests omit them.
+ *
+ * `groupLoaded: false` (an own restore into a group shared with other
+ * companies): the group's tables are not loaded, so the backup's chart of
+ * accounts proves nothing — a ref into it resolves only against the live
+ * group's rows, which `loadSubstrateIds` with `liveGroup` puts in
+ * `knownSubstrateIds`.
  */
 export function findDanglingReferences(
   catalog: Catalog,
-  dataByTable: Record<string, Array<{ [col: string]: unknown }>>,
-  knownSubstrateIds?: Map<string, Set<unknown>>
+  scan: BackupScan,
+  knownSubstrateIds?: Map<string, Set<unknown>>,
+  opts: { groupLoaded?: boolean } = {}
 ): DanglingRef[] {
-  const catalogNames = new Set(catalog.tables.map((t) => t.name));
-  // Secret tables (credentials/tokens) are never written to a backup and never
-  // loaded on restore, so they can be neither a row source nor a resolvable ref
-  // target here. An OLDER backup made before a table joined SECRET_TABLES may
-  // still carry its rows (e.g. `apiKeyRateLimit` → the stripped `apiKey`) — those
-  // are ignored on load, so the preflight must ignore them too rather than report
-  // a gap that can't exist for the restore.
-  const secret = new Set<string>(SECRET_TABLES);
-  const idsByTable = new Map<string, Set<unknown>>();
-  for (const t of catalog.tables) {
-    // FKs are only ever checked against `refColumn === "id"` below, so any table
-    // with an `id` column can be a referenced parent — NOT only those whose PK is
-    // exactly `id` (`hasId`). Most Carbon tables key on `id` alone, but ~25 use a
-    // composite `("id", "companyId")` PK (stockTransfer, supplierPart, …); gating
-    // on `hasId` left those untracked, so every child row pointing at them was
-    // falsely reported as dangling and refused the restore.
-    if (!t.columns.some((c) => c.name === "id")) continue;
-    const ids = new Set<unknown>();
-    for (const row of dataByTable[t.name] ?? []) ids.add(row.id);
-    idsByTable.set(t.name, ids);
-  }
-
+  const byName = new Map(catalog.tables.map((t) => [t.name, t]));
+  const notLoaded = (name: string) =>
+    opts.groupLoaded === false &&
+    byName.get(name)?.scopeColumn === "companyGroupId";
   const found = new Map<string, DanglingRef>();
   for (const t of catalog.tables) {
-    const rows = dataByTable[t.name];
-    if (!rows?.length) continue;
-    if (secret.has(t.name)) continue; // not loaded → its refs are moot
+    if (!scan.tables.has(t.name) || notLoaded(t.name)) continue;
     const colByName = new Map(t.columns.map((c) => [c.name, c]));
     for (const fk of t.foreignKeys) {
       if (fk.refColumn !== "id") continue;
-      if (secret.has(fk.refTable)) continue; // parent never present in any backup
+      if (isSecretTable(fk.refTable)) continue; // parent never present in any backup
       if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
-      if (!catalogNames.has(fk.refTable)) continue; // non-scoped global → stable ids
+      if (!byName.has(fk.refTable)) continue; // non-scoped global → stable ids
+      if (isCrossTenantEdge(t.name, fk.column)) continue;
       const col = colByName.get(fk.column);
-      if (!col) continue;
-      const refIds = idsByTable.get(fk.refTable) ?? new Set();
+      const values = scan.refs.get(`${t.name}.${fk.column}`);
+      if (!col || !values) continue;
+      const refIds = notLoaded(fk.refTable)
+        ? new Set()
+        : (scan.ids.get(fk.refTable) ?? new Set());
       const substrateIds = knownSubstrateIds?.get(fk.refTable);
-      for (const row of rows) {
-        const v = row[fk.column];
-        if (v == null) continue;
+      for (const [v, count] of values) {
         if (refIds.has(v)) continue;
         if (substrateIds?.has(v)) continue;
         const key = `${t.name}.${fk.column}->${fk.refTable}`;
         const existing = found.get(key);
         if (existing) {
-          existing.count++;
+          existing.count += count;
         } else {
           found.set(key, {
             table: t.name,
@@ -118,7 +196,7 @@ export function findDanglingReferences(
             refTable: fk.refTable,
             fatal: !col.isNullable,
             sampleValue: String(v),
-            count: 1
+            count
           });
         }
       }
@@ -135,13 +213,15 @@ export function findDanglingReferences(
  */
 export function assertReferentiallyClosed(
   catalog: Catalog,
-  backup: CompanyBackup,
-  knownSubstrateIds?: Map<string, Set<unknown>>
+  scan: BackupScan,
+  knownSubstrateIds?: Map<string, Set<unknown>>,
+  opts: { groupLoaded?: boolean } = {}
 ): { ok: true } | { ok: false; reason: string } {
   const fatal = findDanglingReferences(
     catalog,
-    backup.data,
-    knownSubstrateIds
+    scan,
+    knownSubstrateIds,
+    opts
   ).filter((d) => d.fatal);
   if (fatal.length === 0) return { ok: true };
   const lines = fatal
@@ -164,9 +244,10 @@ export function assertReferentiallyClosed(
  * Load the TARGET's substrate ids — the `companyId IS NULL` (global) rows that a
  * company backup deliberately omits because they're seeded into every
  * environment (e.g. the global `material*` reference rows). Returns a per-table
- * `id` set for every catalog table that (a) is the target of a NOT-NULL FK from
- * data the backup carries and (b) has a direct scope column that could hold a
- * global row. A company row's FK into one of these resolves against the target's
+ * `id` set for every catalog table that (a) is the target of an FK from data the
+ * backup carries — nullable too, or a foreign load would clear a valid optional
+ * ref like `material.gradeId` — and (b) has a direct scope column that could
+ * hold a global row. A company row's FK into one of these resolves against the target's
  * own seed, not the backup — so feeding this to {@link assertReferentiallyClosed}
  * stops it flagging that legitimate cross-boundary ref, while still catching a
  * ref to a row that exists in neither the backup nor the target.
@@ -174,57 +255,79 @@ export function assertReferentiallyClosed(
  * List-free and data-driven: it probes the actual target, so it can't drift from
  * a hand-maintained set of "reference tables". Tables with no global rows simply
  * return an empty set. One query per referenced table.
+ *
+ * `liveGroup`: the group's tables are NOT loaded (an own restore into a group
+ * other companies share), so a ref into one resolves against the live group's
+ * rows, nullable or not — those ids are returned as present too.
  */
 export async function loadSubstrateIds(
   db: Kysely<KyselyDatabase>,
   catalog: Catalog,
-  dataByTable: Record<string, Array<{ [col: string]: unknown }>>
+  scan: BackupScan,
+  opts: {
+    liveGroup?: { companyId: string; companyGroupId: string | null };
+  } = {}
 ): Promise<Map<string, Set<unknown>>> {
   const byName = new Map(catalog.tables.map((t) => [t.name, t]));
-  // Per ref table pointed at by a NOT-NULL FK from carried data: its scope column
-  // and the distinct ids referenced (so the probe only loads ids we actually need).
-  const wanted = new Map<string, { scopeColumn: string; ids: Set<unknown> }>();
+  const { liveGroup } = opts;
+  const isLive = (table: TableInfo) =>
+    liveGroup !== undefined && table.scopeColumn === "companyGroupId";
+  const wanted = new Map<string, Set<unknown>>();
   for (const t of catalog.tables) {
-    const rows = dataByTable[t.name];
-    if (!rows?.length) continue;
+    if (!scan.tables.has(t.name) || isLive(t)) continue;
     const colByName = new Map(t.columns.map((c) => [c.name, c]));
     for (const fk of t.foreignKeys) {
       if (fk.refColumn !== "id") continue;
       const ref = byName.get(fk.refTable);
-      if (!ref || ref.scope.kind !== "direct") continue; // only directly-scoped tables hold global rows
-      // A NOT-NULL scope column can't contain a `companyId IS NULL` row, so the
-      // probe would always be empty — skip it. (This is a sound optimization from
-      // the DB constraint, NOT a guess: a non-nullable column literally cannot
-      // hold the global rows we'd be looking for.)
-      const refScopeCol = ref.columns.find((c) => c.name === ref.scope.column);
-      if (!refScopeCol?.isNullable) continue;
       const col = colByName.get(fk.column);
-      if (!col || col.isNullable) continue; // nullable → restore nulls a missing ref
-      const entry = wanted.get(fk.refTable) ?? {
-        scopeColumn: ref.scope.column,
-        ids: new Set<unknown>()
-      };
-      for (const row of rows) {
-        const v = row[fk.column];
-        if (v != null) entry.ids.add(v);
+      if (!ref || !col) continue;
+      if (!isLive(ref)) {
+        if (ref.scope.kind !== "direct") continue; // only directly-scoped tables hold global rows
+        // A NOT-NULL scope column can't contain a `companyId IS NULL` row, so the
+        // probe would always be empty.
+        const refScopeCol = ref.columns.find(
+          (c) => c.name === ref.scope.column
+        );
+        if (!refScopeCol?.isNullable) continue;
       }
-      wanted.set(fk.refTable, entry);
+      const ids = wanted.get(fk.refTable) ?? new Set<unknown>();
+      for (const v of scan.refs.get(`${t.name}.${fk.column}`)?.keys() ?? []) {
+        ids.add(v);
+      }
+      wanted.set(fk.refTable, ids);
     }
   }
 
   const result = new Map<string, Set<unknown>>();
-  await mapWithConcurrency([...wanted.keys()], 6, async (refTable) => {
-    const { scopeColumn, ids } = wanted.get(refTable)!;
-    const idList = [...ids];
-    if (idList.length === 0) return;
-    const present = await sql<{ id: unknown }>`
+  await async.map(
+    [...wanted.keys()],
+    async (refTable) => {
+      const ref = byName.get(refTable)!;
+      const idList = [...wanted.get(refTable)!];
+      if (idList.length === 0) return;
+      const where =
+        liveGroup && isLive(ref)
+          ? parentExistence(
+              ref,
+              byName,
+              liveGroup.companyId,
+              liveGroup.companyGroupId
+            )
+          : sql`${sql.id(ref.scope.column)} IS NULL`;
+      const present = await sql<{ id: unknown }>`
       SELECT ${sql.id("id")} AS id
       FROM ${sql.id(refTable)}
-      WHERE ${sql.id(scopeColumn)} IS NULL
-        AND ${sql.id("id")} IN (${sql.join(idList.map((v) => sql`${v}`))})
+      WHERE (${where})
+        AND ${anyOf(
+          "id",
+          idList,
+          ref.columns.find((c) => c.name === "id")?.udtName
+        )}
     `.execute(db);
-    result.set(refTable, new Set(present.rows.map((r) => r.id)));
-  });
+      result.set(refTable, new Set(present.rows.map((r) => r.id)));
+    },
+    { concurrency: TABLE_CONCURRENCY }
+  );
   return result;
 }
 
@@ -237,7 +340,7 @@ export async function loadSubstrateIds(
  * Carbon tables key on `("id", "companyId")` yet still carry a global `UNIQUE (id)`
  * so children can FK to them, and gating on `hasId` left their source ids in place —
  * which collides with the source company's own live rows on a cross-company restore.
- * Int/serial ids are still skipped (a nanoid doesn't fit, and the table is wiped
+ * Int/serial ids are still skipped (a generated id doesn't fit, and the table is wiped
  * first so the original values are free to reuse verbatim).
  *
  * A 1:1 extension table keys itself BY its parent (`purchaseOrderDelivery.id ->
@@ -248,7 +351,7 @@ export async function loadSubstrateIds(
  */
 export function buildIdMaps(
   tables: TableInfo[],
-  dataByTable: Record<string, Array<{ [col: string]: unknown }>>,
+  scan: BackupScan,
   companies?: GroupRemap
 ): Map<string, Map<string, string>> {
   const idMaps = new Map<string, Map<string, string>>();
@@ -279,15 +382,15 @@ export function buildIdMaps(
       continue;
     }
     const map = new Map<string, string>();
-    for (const row of dataByTable[table.name] ?? []) {
-      if (typeof row.id === "string") map.set(row.id, newIdForTable(table));
+    for (const id of scan.ids.get(table.name) ?? []) {
+      if (typeof id === "string") map.set(id, newIdForTable(table));
     }
     idMaps.set(table.name, map);
   }
   if (groupTable) {
     idMaps.set(
       "group",
-      mapGroupIds(groupTable, dataByTable.group ?? [], idMaps, companies)
+      mapGroupIds(groupTable, scan.groupRows, idMaps, companies)
     );
   }
   return idMaps;
@@ -307,7 +410,7 @@ const MIRRORED_GROUPS = [
 ] as const;
 
 /** What a foreign load needs to give a backup's groups their target ids. */
-export type GroupRemap = {
+type GroupRemap = {
   source: string;
   target: string;
   /** The target's own employee types by name: a restore keeps them, so the
@@ -355,23 +458,33 @@ function mapGroupIds(
   return map;
 }
 
-export type RowTransform = (value: unknown) => unknown;
+/** Old id → new id across every remapped table, for ids held outside a FK
+ *  (storage paths, generic refs). */
+export function flattenIdMaps(
+  idMaps: Map<string, Map<string, string>>
+): Map<string, string> {
+  const idRewrite = new Map<string, string>();
+  for (const map of idMaps.values()) {
+    for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
+  }
+  return idRewrite;
+}
+
+type RowTransform = (value: unknown) => unknown;
 
 /**
  * Per-column transforms for re-stamping a FOREIGN backup onto this company —
  * shared by the in-place restore (wipe + reload) and the reseed/template import
  * (additive). Every id is remapped, companyId/companyGroupId point at the target,
  * FKs follow the id remap, user refs collapse to the importing user, and storage
- * paths are rewritten. For an OWN backup (remap=false) every column is identity.
- * Pure (no DB), so it lives here with the other catalog helpers and is
- * unit-tested directly. The optional `ctx` fields are the import/reseed-only
- * policies; omit them and the behavior is the restore path's, unchanged.
+ * paths are rewritten. An own backup needs none of this: it loads verbatim.
+ * The optional `ctx` fields are the import-only policies; omit them and the
+ * behavior is the restore path's.
  */
 export function buildRowTransforms(
   table: TableInfo,
   columns: ColumnInfo[],
   ctx: {
-    remap: boolean;
     companyId: string;
     userId: string;
     targetGroupId: string | null;
@@ -383,10 +496,6 @@ export function buildRowTransforms(
      *  one of these is kept verbatim — the stable id resolves against the
      *  target's own seed. From the same probe the closure guard uses. */
     substrateIds?: Map<string, Set<unknown>>;
-    /** Reseed only: an onboarding demo template references shared assets at
-     *  `_templates/<industryId>/` instead of per-company files — rewrite storage
-     *  paths there (ids kept) rather than to `{companyId}/`. */
-    templateIndustryId?: string;
     /** Reseed only: tenant tables NOT imported (skipped/secret). A nullable FK
      *  into one is nulled — its source id has no row in the target. */
     skippedRefTables?: ReadonlySet<string>;
@@ -404,9 +513,7 @@ export function buildRowTransforms(
   }
 ): RowTransform[] {
   const identity: RowTransform = (v) => v;
-  if (!ctx.remap) return columns.map(() => identity);
-
-  const fkByColumn = new Map(table.foreignKeys.map((fk) => [fk.column, fk]));
+  const fkByColumn = idForeignKeyByColumn(table);
   // A company-singleton (one row per company) keys itself by `id -> company`, so
   // its `id` IS the company id. On remap it must follow the company, not mint a
   // fresh id (which would orphan the row and dangle the id->company FK).
@@ -418,7 +525,7 @@ export function buildRowTransforms(
       return (v) => (v === ctx.sourceCompanyId ? ctx.companyId : v);
     }
     // Only id-keyed tables with a text/uuid id get an idMap (int/serial ids reuse
-    // verbatim — see idMaps build). Gate on the map's presence, not `hasId`, or an
+    // verbatim — see `buildIdMaps`). Gate on the map's presence, not `hasId`, or an
     // int-id table dereferences an undefined map.
     const idMap = ctx.idMaps.get(table.name);
     if (col.name === "id" && idMap) {
@@ -426,15 +533,6 @@ export function buildRowTransforms(
     }
     if (col.name === "companyId") return () => ctx.companyId;
     if (col.name === "companyGroupId") return () => ctx.targetGroupId;
-    if (STORAGE_PATH_COLUMNS.has(col.name)) {
-      const { sourceCompanyId, companyId, idRewrite, templateIndustryId } = ctx;
-      return (v) => {
-        if (typeof v !== "string") return v;
-        return templateIndustryId
-          ? rewriteToTemplateAssetPath(v, sourceCompanyId, templateIndustryId)
-          : rewriteStoragePath(v, sourceCompanyId, companyId, idRewrite);
-      };
-    }
     if (table.name === "documentEdit" && col.name === "settings") {
       return (v) => rewriteDocumentEditRowKeys(v, ctx.idRewrite);
     }
@@ -484,7 +582,7 @@ export function buildRowTransforms(
           const mapped = map?.get(v as string);
           if (mapped) return mapped;
           if (substrate?.has(v)) return v;
-          if (!isTenantRef) return v; // global-reference id, stable across envs
+          if (!isTenantRef) return v;
           // A tenant row in neither the backup nor the target.
           if (nullable) return null;
           if (onUnresolvedRef) {
@@ -497,6 +595,41 @@ export function buildRowTransforms(
           );
         };
       }
+    }
+    // A storage path is any text value under the source company's folder,
+    // whatever the column is called (`document.path`, `supplier.logo`,
+    // `supplierQuote.sharedFilePaths`, …), or a link to one inside rich text.
+    // The files are copied with the same rewrite, so path and file stay together.
+    const paths = (v: string) =>
+      rewriteEmbeddedPaths(
+        v,
+        ctx.sourceCompanyId,
+        ctx.companyId,
+        ctx.idRewrite
+      );
+    if (col.udtName === "text" || col.udtName === "_text") {
+      const rewrite = (v: unknown) => (typeof v === "string" ? paths(v) : v);
+      return (v) => (Array.isArray(v) ? v.map(rewrite) : rewrite(v));
+    }
+    // JSON holds ids no FK can see (`methodMaterial.storageUnitIds` maps a
+    // location id to a storage unit id; a baseline snapshot names elements) and
+    // rich text linking stored files. A remapped id is a random token, so any
+    // key or string equal to one is that row.
+    if (col.udtName === "jsonb" || col.udtName === "json") {
+      const { idRewrite } = ctx;
+      const rewrite = (v: unknown): unknown => {
+        if (typeof v === "string") return idRewrite.get(v) ?? paths(v);
+        if (Array.isArray(v)) return v.map(rewrite);
+        if (v && typeof v === "object") {
+          const out: Record<string, unknown> = {};
+          for (const [key, value] of Object.entries(v)) {
+            out[idRewrite.get(key) ?? key] = rewrite(value);
+          }
+          return out;
+        }
+        return v;
+      };
+      return rewrite;
     }
     return identity;
   };
@@ -514,163 +647,6 @@ export function buildRowTransforms(
     }
     return base;
   });
-}
-
-/**
- * Reseed drops tables the target already populated (`filterUnpopulated`) — but a
- * dropped table whose ids the kept rows still REFERENCE cannot simply vanish:
- * with no id map, every FK into it is nulled (nullable) or left dangling at the
- * source company's row (NOT NULL, committed under replica mode). That is how
- * creating a company from a backup detached every workCenter and job from its
- * location — onboarding had inserted one "Headquarters" row, so the backup's
- * whole `location` table was dropped as "already populated".
- *
- * Returns the dropped tables that must be imported anyway: those referenced via
- * an `id` FK from any kept table, transitively (a re-added table's own FK
- * targets may also have been dropped). Colliding rows are handled separately —
- * see `mapCollidingRows`.
- */
-export function referencedDroppedTables(
-  kept: TableInfo[],
-  dropped: TableInfo[]
-): TableInfo[] {
-  const droppedByName = new Map(dropped.map((t) => [t.name, t]));
-  const included = new Set(kept.map((t) => t.name));
-  const readded = new Map<string, TableInfo>();
-  const queue = [...kept];
-  while (queue.length > 0) {
-    const table = queue.pop()!;
-    for (const fk of table.foreignKeys) {
-      if (fk.refColumn !== "id") continue;
-      if (included.has(fk.refTable) || readded.has(fk.refTable)) continue;
-      const target = droppedByName.get(fk.refTable);
-      if (!target) continue;
-      readded.set(target.name, target);
-      queue.push(target);
-    }
-  }
-  return [...readded.values()];
-}
-
-/**
- * Unique index column groups usable for matching a backup row onto an EXISTING
- * target row before insert. The scope column is dropped from each group (it is
- * re-stamped to the target, so it matches by construction); a group left empty,
- * or containing `id` or any FK column, is unusable — those values are remapped
- * on load, so comparing raw backup values against target rows would be wrong.
- */
-export function matchableUniqueGroups(
-  groups: string[][],
-  table: TableInfo
-): string[][] {
-  const remapped = new Set(table.foreignKeys.map((fk) => fk.column));
-  remapped.add("id");
-  const scopeColumn = table.scope.kind === "direct" ? table.scope.column : null;
-  const usable: string[][] = [];
-  for (const group of groups) {
-    const cols = group.filter((c) => c !== scopeColumn);
-    if (cols.length === 0) continue;
-    if (cols.some((c) => remapped.has(c))) continue;
-    usable.push(cols);
-  }
-  return usable;
-}
-
-export type CollisionResolution = {
-  /** Source ids of backup rows NOT to insert — the target already has them. */
-  skippedSourceIds: Set<string>;
-  /** source id → the existing target row's id, applied onto the table's id map
-   *  so every FK into the skipped row lands on the target's own row. */
-  overrides: Map<string, string>;
-};
-
-/**
- * Match backup rows against the target's existing rows on the given unique
- * column groups. A re-added table (see `referencedDroppedTables`) is by
- * definition already populated in the target, and inserting a backup row that
- * shares a unique key with an existing one would abort the whole load — unique
- * constraints stay enforced even under replica mode. The canonical case: both
- * sides carry a "Headquarters" location (onboarding names its first location
- * that), and the backup's must MAP onto the target's, not fight it.
- *
- * NULL never matches (Postgres unique treats NULLs as distinct); the first
- * matching group wins.
- */
-export function mapCollidingRows(
-  groups: string[][],
-  backupRows: Array<{ [col: string]: unknown }>,
-  targetRows: Array<{ [col: string]: unknown }>
-): CollisionResolution {
-  const skippedSourceIds = new Set<string>();
-  const overrides = new Map<string, string>();
-
-  const keyFor = (
-    row: { [col: string]: unknown },
-    cols: string[]
-  ): string | null => {
-    const values: unknown[] = [];
-    for (const col of cols) {
-      const v = row[col];
-      if (v == null) return null;
-      values.push(v);
-    }
-    return JSON.stringify(values);
-  };
-
-  const targetByKey = groups.map((cols) => {
-    const index = new Map<string, string>();
-    for (const row of targetRows) {
-      if (typeof row.id !== "string") continue;
-      const key = keyFor(row, cols);
-      if (key !== null && !index.has(key)) index.set(key, row.id);
-    }
-    return index;
-  });
-
-  for (const row of backupRows) {
-    if (typeof row.id !== "string") continue;
-    for (let g = 0; g < groups.length; g++) {
-      const key = keyFor(row, groups[g]!);
-      if (key === null) continue;
-      const targetId = targetByKey[g]!.get(key);
-      if (targetId !== undefined) {
-        skippedSourceIds.add(row.id);
-        overrides.set(row.id, targetId);
-        break;
-      }
-    }
-  }
-
-  return { skippedSourceIds, overrides };
-}
-
-/**
- * Composite unique index column groups of one table, for `mapCollidingRows`.
- * Primary keys are excluded (ids are minted fresh); partial and expression
- * indexes are excluded (their uniqueness is predicate/expression-dependent, so
- * raw column equality over-detects collisions).
- */
-export async function getUniqueColumnGroups(
-  db: Kysely<KyselyDatabase>,
-  tableName: string
-): Promise<string[][]> {
-  const result = await sql<{ cols: string[] }>`
-    -- attname is the "name" type; cast so the driver parses a real text[]
-    SELECT array_agg(a.attname::text ORDER BY x.ordinality) AS cols
-    FROM pg_index ix
-    JOIN pg_class t ON t.oid = ix.indrelid
-    JOIN pg_namespace n ON n.oid = t.relnamespace
-    CROSS JOIN LATERAL unnest(ix.indkey) WITH ORDINALITY AS x(attnum, ordinality)
-    JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = x.attnum
-    WHERE n.nspname = 'public'
-      AND t.relname = ${tableName}
-      AND ix.indisunique
-      AND NOT ix.indisprimary
-      AND ix.indexprs IS NULL
-      AND ix.indpred IS NULL
-    GROUP BY ix.indexrelid
-  `.execute(db);
-  return result.rows.map((r) => r.cols);
 }
 
 /** A received unit names its receipt and line in `attributes`, which no FK can remap. */
@@ -708,4 +684,85 @@ export function rewriteDocumentEditRowKeys(
     valueEdits: rewriteValueEditRowKeys(edits, (id) => idRewrite.get(id) ?? id)
   };
   return typeof settings === "string" ? JSON.stringify(next) : next;
+}
+
+/**
+ * Rewrite a storage path for the target company. Swaps the leading
+ * `{sourceCompanyId}/` and any path segment whose id was remapped
+ * (e.g. `{co}/models/{modelId}.stl`, `{co}/thumbnails/{itemId}/{file}`). A
+ * no-op for an own load (same company, empty `idRewrite`). The same function
+ * is applied to both the copied file path and the DB path columns so they
+ * stay consistent.
+ */
+export function rewriteStoragePath(
+  path: string,
+  sourceCompanyId: string,
+  targetCompanyId: string,
+  idRewrite: Map<string, string>
+): string {
+  let p = path;
+  if (
+    sourceCompanyId !== targetCompanyId &&
+    p.startsWith(`${sourceCompanyId}/`)
+  ) {
+    p = `${targetCompanyId}/${p.slice(sourceCompanyId.length + 1)}`;
+  }
+  if (idRewrite.size === 0) return p;
+  return p
+    .split("/")
+    .map((seg) => {
+      const dot = seg.indexOf(".");
+      const idPart = dot >= 0 ? seg.slice(0, dot) : seg;
+      const rest = dot >= 0 ? seg.slice(dot) : "";
+      const mapped = idRewrite.get(idPart);
+      return mapped ? mapped + rest : seg;
+    })
+    .join("/");
+}
+
+/**
+ * Rewrite every storage path under the source company's folder inside a text
+ * value: the whole value when it IS a path (a file name may hold spaces), else
+ * each one embedded in a URL, such as `/file/preview/private/{company}/…` in
+ * rich text, up to the next character a URL can't hold unescaped.
+ */
+export function rewriteEmbeddedPaths(
+  value: string,
+  sourceCompanyId: string,
+  targetCompanyId: string,
+  idRewrite: Map<string, string>
+): string {
+  const prefix = `${sourceCompanyId}/`;
+  if (value.startsWith(prefix)) {
+    return rewriteStoragePath(
+      value,
+      sourceCompanyId,
+      targetCompanyId,
+      idRewrite
+    );
+  }
+  if (!value.includes(prefix)) return value;
+  const embedded = new RegExp(
+    `(?<=/)${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[^\\s"'<>()\\[\\]{}?#,;]*`,
+    "g"
+  );
+  return value.replace(embedded, (path) =>
+    rewriteStoragePath(path, sourceCompanyId, targetCompanyId, idRewrite)
+  );
+}
+
+/** Base58, as the SQL `id()` default writes ids (`projects.service.ts` copies do the same). */
+const base58Id = customAlphabet(
+  "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz",
+  22
+);
+
+/**
+ * A fresh primary-key value shaped like the one the schema's default writes: a
+ * UUID for a `uuid` column, `item_<base58>` for one defaulting to `id('item')`.
+ */
+function newIdForTable(table: TableInfo): string {
+  const idCol = table.columns.find((c) => c.name === "id");
+  if (idCol?.udtName === "uuid") return randomUUID();
+  return idCol?.idPrefix ? `${idCol.idPrefix}_${base58Id()}` : base58Id();
 }

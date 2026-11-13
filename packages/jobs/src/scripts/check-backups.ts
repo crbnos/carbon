@@ -33,15 +33,14 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { now } from "@internationalized/date";
 import { Kysely, PostgresDialect, sql } from "kysely";
 import pg from "pg";
-import type { Catalog, Manifest } from "../backups/schema";
 import {
-  BACKUP_KIND,
-  BACKUP_VERSION,
+  type Catalog,
   exportableColumns,
   getCompanyTableCatalog,
-  reportBackupCompatibility,
   selectExportableTables
-} from "../backups/schema";
+} from "../backups/catalog";
+import { reportBackupCompatibility } from "../backups/compatibility";
+import { BACKUP_KIND, BACKUP_VERSION, type Manifest } from "../backups/format";
 import {
   BASELINE_BRANCH,
   BaselineError,

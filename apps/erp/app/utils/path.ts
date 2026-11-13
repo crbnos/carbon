@@ -108,6 +108,13 @@ export const path = {
         generatePath(`${api}/production/assembly-instructions/${itemId}`),
       assetClasses: `${api}/accounting/asset-classes`,
       assign: `${api}/assign`,
+      backupArchive: (name: string) =>
+        `${api}/settings/backup-archive/${encodeURIComponent(name)}`,
+      backupExportStatus: `${api}/settings/backup-export-status`,
+      backupRestoreStatus: (restoreRunId: string) =>
+        generatePath(`${api}/settings/backup-restore-status/${restoreRunId}`),
+      backupSummary: `${api}/settings/backup-summary`,
+      backupUpload: `${api}/settings/backup-upload`,
       batchableOperations: (locationId: string, processId: string) =>
         generatePath(
           `${api}/production/batchable-operations?location=${locationId}&process=${processId}`
@@ -290,6 +297,7 @@ export const path = {
           `${api}/mrp${locationId ? `?location=${locationId}` : ""}`
         ),
       nonNettableStorageUnits: `${api}/inventory/non-nettable-storage-units`,
+      onboardingBackupUpload: `${api}/onboarding/backup-upload`,
       onShapeBom: (documentId: string, versionId: string, elementId: string) =>
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`

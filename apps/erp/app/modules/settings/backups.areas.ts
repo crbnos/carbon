@@ -30,14 +30,14 @@ export type BackupArea =
   | "people"
   | "other";
 
-export type Scope = "company" | "group";
+type Scope = "company" | "group";
 
 /**
  * `scope` is the column rows are counted by: "company" (companyId, the
  * default) or "group" (companyGroupId — the shared chart of accounts /
  * currencies / dimensions).
  */
-export type Entity = [label: MessageDescriptor, table: string, scope?: Scope];
+type Entity = [label: MessageDescriptor, table: string, scope?: Scope];
 
 export const AREA_LABELS: Record<BackupArea, MessageDescriptor> = {
   sales: msg`Sales`,
@@ -174,7 +174,7 @@ const TABLE_AREAS: Record<string, BackupArea> = {
   // `itemLedger` is deliberately absent: the popover already files it under
   // Accounting, and one name in two places is worse than an imperfect name.
   location: "inventory",
-  shelf: "inventory",
+  storageUnit: "inventory",
   trackedEntity: "inventory",
   kanban: "inventory",
   warehouseTransfer: "inventory",

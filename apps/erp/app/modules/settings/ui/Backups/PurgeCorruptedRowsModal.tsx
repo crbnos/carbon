@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { RowsByTable } from "@carbon/jobs/backups";
 import {
   Button,
   Modal,
@@ -14,7 +15,7 @@ import {
 } from "@carbon/react";
 import { Plural, Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { type RowsByTable, totalScopeRows } from "../../settings.utils";
+import { totalScopeRows } from "./format";
 
 // Shared by a failed restore and a failed demo data apply, whose safety snapshots
 // refuse on the same out-of-scope rows. Callers own the differing copy and the submit.
@@ -27,7 +28,7 @@ export function PurgeCorruptedRowsModal({
   onCancel
 }: {
   open?: boolean;
-  rowsByTable: RowsByTable[];
+  rowsByTable: RowsByTable;
   description: ReactNode;
   confirmLabel: ReactNode;
   onConfirm: () => void;

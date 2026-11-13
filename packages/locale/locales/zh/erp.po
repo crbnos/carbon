@@ -5449,11 +5449,20 @@ msgstr "备份失败"
 msgid "Backup for {0}"
 msgstr "{0}的备份"
 
+msgid "Backup ready"
+msgstr "备份已就绪"
+
 msgid "Backup uploaded"
 msgstr "已上传备份"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr "备份已上传，但 {assetErrors} 个文件上传失败。其数据可以恢复，这些文件则无法恢复。"
+
 msgid "Backups"
 msgstr "备份"
+
+msgid "Backups aren't included in your plan. You can still keep, revert or dismiss a restore you started before."
+msgstr ""
 
 msgid "Balance"
 msgstr "余额"
@@ -6112,6 +6121,9 @@ msgstr "批量导入"
 
 msgid "Bulk Jobs"
 msgstr "批量工单"
+
+msgid "Bundling files"
+msgstr "正在打包文件"
 
 msgid "Burden"
 msgstr "分摊"
@@ -7138,6 +7150,12 @@ msgstr "商品收据/发票收据匹配的清算账户"
 msgid "Clearing demo data"
 msgstr "正在清除演示数据"
 
+msgid "Clearing existing data"
+msgstr "正在清除现有数据"
+
+msgid "Clearing restored data"
+msgstr "正在清除已恢复的数据"
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "点击某天向 {selectedLabel} 添加时间。拖动条形图的下边缘更改其小时数。"
 
@@ -7294,6 +7312,9 @@ msgstr "收起换型"
 
 msgid "Collapse subtree"
 msgstr "折叠子树"
+
+msgid "Collecting records"
+msgstr "正在收集记录"
 
 msgid "Color"
 msgstr "颜色"
@@ -8645,6 +8666,9 @@ msgstr "无法完成 Onshape Government 连接"
 msgid "Couldn't confirm the account"
 msgstr "无法确认帐户"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr "无法确认恢复是否已开始。它可能仍在运行，请关闭此窗口，稍后查看列表。"
+
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
 
@@ -9079,6 +9103,9 @@ msgstr "为尚未贷项的已发货数量创建供应商贷项备忘录草稿"
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "为会计年度创建12个每月期间。已有期间保留不变。"
+
+msgid "Creating backup…"
+msgstr "正在创建备份…"
 
 msgid "Creating part..."
 msgstr "正在创建零件..."
@@ -17231,6 +17258,10 @@ msgstr "加载未结交易（订单、采购单、库存、余额）"
 msgid "Load Templates"
 msgstr "加载模板"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr "已加载 {0} 行。请在下方检查，选择保留此次恢复，或还原为之前的数据。"
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "最后加载，在切换时进行，以便余额是最新的。"
 
@@ -17239,6 +17270,9 @@ msgstr "正在加载资产..."
 
 msgid "Loading associated jobs..."
 msgstr "加载相关工单..."
+
+msgid "Loading backup"
+msgstr "正在加载备份"
 
 msgid "Loading creditable lines..."
 msgstr "正在加载可退款行..."
@@ -25494,6 +25528,12 @@ msgstr "可恢复（有变更）"
 msgid "Restore"
 msgstr "恢复"
 
+msgid "Restore complete"
+msgstr "恢复完成"
+
+msgid "Restore failed"
+msgstr "恢复失败"
+
 msgid "Restore from Trash"
 msgstr "从垃圾箱恢复"
 
@@ -25509,8 +25549,18 @@ msgstr "恢复…"
 msgid "Restoring files"
 msgstr "正在恢复文件"
 
+#. placeholder {0}: company.name
+msgid "Restoring into <0>{0}</0>. Its data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr ""
+
+msgid "Restoring your snapshot"
+msgstr "正在恢复您的快照"
+
 msgid "restoring…"
 msgstr "恢复中…"
+
+msgid "Restoring…"
+msgstr "正在恢复…"
 
 msgid "Restrict charging to members"
 msgstr "限制成员计费"
@@ -25809,6 +25859,12 @@ msgstr "撤销取消"
 msgid "Revert cancellation of {readableId}"
 msgstr "撤销取消 {readableId}"
 
+msgid "Revert failed"
+msgstr "还原失败"
+
+msgid "Reverted"
+msgstr "已还原"
+
 msgid "Reverting"
 msgstr "正在还原"
 
@@ -25817,6 +25873,9 @@ msgstr "撤销取消会恢复结束日期、续订和行结束日期。"
 
 msgid "reverting…"
 msgstr "还原中…"
+
+msgid "Reverting…"
+msgstr "正在还原…"
 
 msgid "Review"
 msgstr "评审"
@@ -28290,6 +28349,9 @@ msgstr "最小分批数量。留空表示无。"
 msgid "Smoke-test the core daily flows end to end"
 msgstr "进行核心日常流程的端到端冒烟测试"
 
+msgid "Snapshotting current data"
+msgstr "正在为当前数据创建快照"
+
 msgid "so you can assign it here."
 msgstr "这样你可以在这里分配它。"
 
@@ -28311,6 +28373,9 @@ msgstr "解决方案工程师"
 msgid "Some balances have no Carbon account"
 msgstr "某些余额没有 Carbon 账户"
 
+msgid "some files may be missing"
+msgstr ""
+
 msgid "Some inputs have another unit and are left out"
 msgstr "某些输入具有另一个单位并被排除"
 
@@ -28328,6 +28393,9 @@ msgstr "该工艺的部分工作无法排程"
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "某些记录不会回来。输入 <0>{CONFIRM_WORD}</0> 继续。"
+
+msgid "Some rows excluded"
+msgstr "部分行已排除"
 
 msgid "Some Shifts"
 msgstr "某些班次"
@@ -28733,6 +28801,9 @@ msgstr "仍欠"
 
 msgid "Still Owed"
 msgstr "仍欠"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr "仍在处理中，数据量较大。您可以关闭此窗口，稍后再查看。"
 
 msgid "Stock"
 msgstr "库存"
@@ -30046,6 +30117,9 @@ msgstr "待处理工单"
 msgid "The backup job reported this error."
 msgstr "备份工作报告了此错误。"
 
+msgid "The backup's data was loaded, but the restore stopped after that. Keep it, or revert to put back what you had."
+msgstr ""
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "为保持其工单按时完成，工序必须完成的反向计算日期，写入工序的到期日。测量进度的稳定目标 — 永远不是放置约束。"
 
@@ -31060,6 +31134,9 @@ msgstr "将付款或备忘录应用于发票的记录，包含应用、折扣和
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "已跟踪实体的记录谱系——哪些输入被消耗以生产哪些输出,从收货到发货。"
 
+msgid "The records couldn't be counted. Try again later."
+msgstr "无法统计记录数，请稍后重试。"
+
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参考数据是其他一切的基础。首先加载。"
 
@@ -31578,9 +31655,6 @@ msgstr "此变更通知已关闭，因此其更改为只读。"
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "此变更通知待审批。其变更已锁定，直到被审批或拒绝。"
-
-msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
-msgstr "此公司的数据将替换为此备份的内容。首先保存今天的数据，以便您可以恢复。"
 
 msgid "This completes the Discovery step."
 msgstr "这完成了发现步骤。"
@@ -35101,6 +35175,9 @@ msgstr "你已打卡{hoursElapsed}小时。你忘记收工了吗?"
 msgid "Your account stays safe even if your login is stolen"
 msgstr "即使您的登录被盗，您的账户也保持安全"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr "您的备份已就绪，请见下方列表。"
+
 msgid "Your backups"
 msgstr "您的备份"
 
@@ -35181,6 +35258,12 @@ msgstr "您的零件编号"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "您的零件编号和背后的物料主数据"
+
+msgid "Your previous data is back, but some files couldn't be restored. Revert again to retry them."
+msgstr ""
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr "您之前的数据已恢复，与恢复前完全一致。"
 
 msgid "Your profile could not be loaded."
 msgstr "无法加载您的个人资料。"

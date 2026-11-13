@@ -2,29 +2,53 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
 import { Constants } from "@carbon/database";
 import { describe, expect, it } from "vitest";
 import {
+  addDerivedIdForeignKeys,
   type Catalog,
   type ColumnInfo,
-  type CompanyBackup,
   type ForeignKey,
+  type TableInfo
+} from "./catalog";
+import type { Row } from "./format";
+import {
+  collidesOnCollapse,
   isUserScopedIdentityTable,
   READABLE_ID_TABLES,
-  STORAGE_PATH_COLUMNS,
-  selectWipeableTables,
-  type TableInfo
-} from "./company-backup";
+  selectWipeableTables
+} from "./policy";
 import {
-  assertReferentiallyClosed,
-  buildIdMaps,
+  assertReferentiallyClosed as assertScanClosed,
+  buildIdMaps as buildIdMapsFromScan,
   buildRowTransforms,
-  findDanglingReferences,
+  findDanglingReferences as findDanglingInScan,
+  rewriteDocumentEditRowKeys,
+  rewriteTrackedEntityReceiptRefs,
+  scanRows
+} from "./remap";
+import {
   mapCollidingRows,
   matchableUniqueGroups,
   referencedDroppedTables
-} from "./company-backup.transforms";
+} from "./reseed";
+
+// The checks read a scan of the rows; these take the rows, as a restore sees them.
+const findDanglingReferences = (
+  cat: Catalog,
+  data: Record<string, Row[]>,
+  substrate?: Map<string, Set<unknown>>
+) => findDanglingInScan(cat, scanRows(cat.tables, data), substrate);
+const assertReferentiallyClosed = (
+  cat: Catalog,
+  data: Record<string, Row[]>,
+  substrate?: Map<string, Set<unknown>>
+) => assertScanClosed(cat, scanRows(cat.tables, data), substrate);
+const buildIdMaps = (
+  tables: TableInfo[],
+  data: Record<string, Row[]>,
+  companies?: Parameters<typeof buildIdMapsFromScan>[2]
+) => buildIdMapsFromScan(tables, scanRows(tables, data), companies);
 
 // ── Tiny synthetic-catalog builders ─────────────────────────────────────────
 // The closure check is a pure function of (catalog, data), so these tests need
@@ -258,10 +282,63 @@ describe("findDanglingReferences", () => {
   });
 });
 
+describe("findDanglingReferences (group not loaded, cross-tenant edges)", () => {
+  const ACCOUNT = {
+    ...table("account", [col("id"), col("companyGroupId")]),
+    scope: { kind: "direct", column: "companyGroupId" },
+    scopeColumn: "companyGroupId"
+  } as TableInfo;
+  const LINE = table(
+    "journalLine",
+    [col("id"), col("accountId"), col("companyId")],
+    [fk("accountId", "account")]
+  );
+  const data = {
+    account: [{ id: "acc_deleted_since", companyGroupId: "g" }],
+    journalLine: [{ id: "jl", accountId: "acc_deleted_since", companyId: "c" }]
+  };
+
+  it("counts the backup's accounts when the group is loaded", () => {
+    expect(findDanglingReferences(catalog([ACCOUNT, LINE]), data)).toEqual([]);
+  });
+
+  it("resolves against the live group, not the backup, when it isn't loaded", () => {
+    const scan = scanRows([ACCOUNT, LINE], data);
+    const gaps = findDanglingInScan(catalog([ACCOUNT, LINE]), scan, new Map(), {
+      groupLoaded: false
+    });
+    expect(gaps.map((g) => `${g.table}.${g.column}`)).toEqual([
+      "journalLine.accountId"
+    ]);
+    expect(
+      findDanglingInScan(
+        catalog([ACCOUNT, LINE]),
+        scan,
+        new Map([["account", new Set(["acc_deleted_since"])]]),
+        { groupLoaded: false }
+      )
+    ).toEqual([]);
+  });
+
+  it("never reports an intercompany transaction's counterparty journal line", () => {
+    const ICT = table(
+      "intercompanyTransaction",
+      [col("id"), col("sourceJournalLineId"), col("companyGroupId")],
+      [fk("sourceJournalLineId", "journalLine")]
+    );
+    const JL = table("journalLine", [col("id"), col("companyId")]);
+    expect(
+      findDanglingReferences(catalog([JL, ICT]), {
+        intercompanyTransaction: [
+          { id: "t", sourceJournalLineId: "siblings_line", companyGroupId: "g" }
+        ]
+      })
+    ).toEqual([]);
+  });
+});
+
 describe("assertReferentiallyClosed", () => {
-  const backup = (
-    data: Record<string, Array<Record<string, unknown>>>
-  ): CompanyBackup => ({ manifest: {} as CompanyBackup["manifest"], data });
+  const backup = (data: Record<string, Row[]>) => data;
 
   it("is ok for a self-contained backup", () => {
     const result = assertReferentiallyClosed(
@@ -297,7 +374,6 @@ describe("assertReferentiallyClosed", () => {
 describe("buildRowTransforms", () => {
   type RestampCtx = Parameters<typeof buildRowTransforms>[2];
   const ctx = (over: Partial<RestampCtx> = {}): RestampCtx => ({
-    remap: true,
     companyId: "target-co",
     userId: "importer",
     targetGroupId: "target-grp",
@@ -320,16 +396,6 @@ describe("buildRowTransforms", () => {
     return out;
   }
 
-  it("copies every column verbatim when remap=false (own restore)", () => {
-    const t = table("part", [col("id"), col("companyId"), col("name")]);
-    const out = apply(
-      t,
-      { id: "p1", companyId: "src-co", name: "Widget" },
-      ctx({ remap: false })
-    );
-    expect(out).toEqual({ id: "p1", companyId: "src-co", name: "Widget" });
-  });
-
   it("does NOT crash on an int/serial-id table absent from idMaps — keeps id verbatim", () => {
     // Regression: journal/trainingCompletion have a serial `id` and no idMap entry.
     // The pre-fix code dereffed an undefined map here and threw at apply time.
@@ -343,6 +409,166 @@ describe("buildRowTransforms", () => {
     const idMaps = new Map([["item", new Map([["old", "new"]])]]);
     const out = apply(t, { id: "old", companyId: "src-co" }, ctx({ idMaps }));
     expect(out).toEqual({ id: "new", companyId: "target-co" });
+  });
+
+  it("rewrites a storage path whatever its column is called", () => {
+    // A name list missed `document.path`, `supplier.logo`, the slide images and
+    // more: a foreign restore left them pointing at the source company.
+    const t = table("document", [
+      col("id"),
+      col("path"),
+      { ...col("sharedFilePaths"), dataType: "ARRAY", udtName: "_text" },
+      col("description")
+    ]);
+    const idRewrite = new Map([["item_old", "item_new"]]);
+    const out = apply(
+      t,
+      {
+        id: "d1",
+        path: "src-co/parts/item_old/drawing.pdf",
+        sharedFilePaths: ["src-co/item_old.step", "_templates/shared.pdf"],
+        description: "see src-co/notes, not a path at the start"
+      },
+      ctx({ idRewrite })
+    );
+    expect(out.path).toBe("target-co/parts/item_new/drawing.pdf");
+    expect(out.sharedFilePaths).toEqual([
+      "target-co/item_new.step",
+      "_templates/shared.pdf"
+    ]);
+    expect(out.description).toBe("see src-co/notes, not a path at the start");
+  });
+
+  it("rewrites a stored file's URL inside rich text, in text and in JSON", () => {
+    const t = table("procedure", [
+      col("id"),
+      col("html"),
+      { ...col("content"), dataType: "jsonb", udtName: "jsonb" }
+    ]);
+    const idRewrite = new Map([["item_old", "item_new"]]);
+    const url = "/file/preview/private/src-co/parts/item_old/a.png";
+    const out = apply(
+      t,
+      {
+        id: "p1",
+        html: `<img src="${url}"> and src-co/notes`,
+        content: {
+          type: "doc",
+          content: [{ type: "image", attrs: { src: url } }]
+        }
+      },
+      ctx({ idRewrite })
+    );
+    expect(out.html).toBe(
+      '<img src="/file/preview/private/target-co/parts/item_new/a.png"> and src-co/notes'
+    );
+    expect(out.content).toEqual({
+      type: "doc",
+      content: [
+        {
+          type: "image",
+          attrs: {
+            src: "/file/preview/private/target-co/parts/item_new/a.png"
+          }
+        }
+      ]
+    });
+  });
+
+  it("remaps ids held as JSON keys and values (methodMaterial.storageUnitIds)", () => {
+    const t = table("methodMaterial", [
+      col("id"),
+      { ...col("storageUnitIds"), dataType: "jsonb", udtName: "jsonb" }
+    ]);
+    const idRewrite = new Map([
+      ["loc_old", "loc_new"],
+      ["su_old", "su_new"]
+    ]);
+    const out = apply(
+      t,
+      { id: "m1", storageUnitIds: { loc_old: "su_old", loc_kept: "Bin 4" } },
+      ctx({ idRewrite })
+    );
+    expect(out.storageUnitIds).toEqual({
+      loc_new: "su_new",
+      loc_kept: "Bin 4"
+    });
+  });
+
+  it("follows a composite FK's id edge, whatever order the FKs come in", () => {
+    // job (projectElementId, projectId) -> projectElement (id, projectId) also
+    // lists projectId -> projectElement.projectId; the last entry used to win.
+    const idMaps = new Map([["project", new Map([["P_SRC", "P_NEW"]])]]);
+    const idEdge = fk("projectId", "project");
+    const elementEdge: ForeignKey = {
+      column: "projectId",
+      refTable: "projectElement",
+      refColumn: "projectId"
+    };
+    for (const fks of [
+      [idEdge, elementEdge],
+      [elementEdge, idEdge]
+    ]) {
+      const t = table("job", [col("id"), col("projectId")], fks);
+      expect(
+        apply(t, { id: "j", projectId: "P_SRC" }, ctx({ idMaps }))
+      ).toEqual({ id: "j", projectId: "P_NEW" });
+    }
+  });
+
+  it("remaps a column whose only FK is composite onto a non-id column", () => {
+    // projectElementCost.projectId -> projectElement.projectId alone: the
+    // catalog derives its edge to project.id through projectElement's own FK.
+    const fks = new Map<string, ForeignKey[]>([
+      [
+        "projectElementCost",
+        [
+          fk("projectElementId", "projectElement"),
+          {
+            column: "projectId",
+            refTable: "projectElement",
+            refColumn: "projectId"
+          }
+        ]
+      ],
+      ["projectElement", [fk("projectId", "project")]]
+    ]);
+    addDerivedIdForeignKeys(fks);
+    expect(fks.get("projectElementCost")).toContainEqual(
+      fk("projectId", "project")
+    );
+    const t = table(
+      "projectElementCost",
+      [col("id"), col("projectElementId"), col("projectId")],
+      fks.get("projectElementCost")
+    );
+    const idMaps = new Map([
+      ["project", new Map([["P_SRC", "P_NEW"]])],
+      ["projectElement", new Map([["E_SRC", "E_NEW"]])]
+    ]);
+    expect(
+      apply(
+        t,
+        { id: "c", projectElementId: "E_SRC", projectId: "P_SRC" },
+        ctx({ idMaps })
+      )
+    ).toEqual({ id: "c", projectElementId: "E_NEW", projectId: "P_NEW" });
+  });
+
+  it("nulls a nullable ref into a tenant table with no id map", () => {
+    // A restore passes every catalog table: a ref into one empty in the backup
+    // has no row in the target, so it must not keep the source id.
+    const t = table(
+      "salesRfq",
+      [col("id"), col("customerId", { nullable: true })],
+      [fk("customerId", "customer")]
+    );
+    const out = apply(
+      t,
+      { id: "r", customerId: "cust_src" },
+      ctx({ catalogTableNames: new Set(["salesRfq", "customer"]) })
+    );
+    expect(out.customerId).toBeNull();
   });
 
   it("collapses a user/employee FK to the importing user", () => {
@@ -417,6 +643,27 @@ describe("buildRowTransforms", () => {
     expect(out.materialFormId).toBe("angle");
   });
 
+  it("keeps a nullable FK to a target substrate id when the table has no id map", () => {
+    // material.gradeId → a globally-seeded grade; the source has no grades of
+    // its own, so no id map, and the restore passes the whole catalog.
+    const t = table(
+      "material",
+      [col("id"), col("companyId"), col("gradeId", { nullable: true })],
+      [fk("gradeId", "materialGrade")]
+    );
+    const out = apply(
+      t,
+      { id: "m1", companyId: "src-co", gradeId: "g-global" },
+      ctx({
+        catalogTableNames: new Set(["material", "materialGrade"]),
+        substrateIds: new Map([
+          ["materialGrade", new Set<unknown>(["g-global"])]
+        ])
+      })
+    );
+    expect(out.gradeId).toBe("g-global");
+  });
+
   it("remaps a company-singleton's id to the target company (its id IS the company)", () => {
     const t = table(
       "companySettings",
@@ -433,24 +680,6 @@ describe("buildRowTransforms", () => {
       companyId: "target-co",
       useMetric: true
     });
-  });
-
-  it("rewrites a storage path to the shared template prefix when templateIndustryId is set", () => {
-    const t = table("modelUpload", [
-      col("id"),
-      col("companyId"),
-      col("thumbnailPath", { nullable: true })
-    ]);
-    const out = apply(
-      t,
-      {
-        id: "i1",
-        companyId: "src-co",
-        thumbnailPath: "src-co/thumbnails/x.png"
-      },
-      ctx({ templateIndustryId: "metal" })
-    );
-    expect(out.thumbnailPath).toBe("_templates/metal/thumbnails/x.png");
   });
 
   it("nulls a nullable FK into a skipped (not-imported) table", () => {
@@ -581,16 +810,6 @@ describe("buildRowTransforms", () => {
     );
     expect(out.itemIds).toEqual(["a-new", "global-1"]);
   });
-
-  it("leaves an id ref verbatim on an own restore (remap=false)", () => {
-    const t = table("inspection", [col("id"), col("sourceDocumentLineId")]);
-    const out = apply(
-      t,
-      { id: "i1", sourceDocumentLineId: "line-old" },
-      ctx({ remap: false, idRewrite: new Map([["line-old", "line-new"]]) })
-    );
-    expect(out.sourceDocumentLineId).toBe("line-old");
-  });
 });
 
 describe("buildIdMaps", () => {
@@ -614,6 +833,19 @@ describe("buildIdMaps", () => {
     );
     expect(maps.get("changeOrderRequiredAction")?.get("cora_1")).not.toBe(
       "cora_1"
+    );
+  });
+
+  it("mints ids shaped like the schema's id() default", () => {
+    const t = table("item", [
+      { ...col("id"), idPrefix: "item" },
+      col("companyId")
+    ]);
+    const maps = buildIdMaps([t], {
+      item: [{ id: "item_4zQmbFDRZ6T97vHVeyGwDX", companyId: "src-co" }]
+    });
+    expect(maps.get("item")?.get("item_4zQmbFDRZ6T97vHVeyGwDX")).toMatch(
+      /^item_[1-9A-HJ-NP-Za-km-z]{22}$/
     );
   });
 
@@ -711,7 +943,7 @@ describe("isUserScopedIdentityTable", () => {
     expect(isUserScopedIdentityTable(t)).toBe(true);
   });
 
-  it("true when a user FK is in a UNIQUE INDEX but not the PK (trainingCompletion shape)", () => {
+  it("true when a user FK is in a full UNIQUE INDEX but not the PK", () => {
     const t = table(
       "trainingCompletion",
       [
@@ -749,6 +981,32 @@ describe("isUserScopedIdentityTable", () => {
       { pkColumns: ["id"], uniqueColumns: ["id"] }
     );
     expect(isUserScopedIdentityTable(t)).toBe(false);
+  });
+});
+
+describe("collidesOnCollapse (partial unique indexes)", () => {
+  // productionEvent: one OPEN event per operator; the catalog keeps those
+  // columns out of uniqueColumns, so closed labor still loads.
+  const productionEvent = {
+    ...table(
+      "productionEvent",
+      [col("id"), col("jobOperationId"), col("employeeId"), col("companyId")],
+      [fk("employeeId", "user"), fk("jobOperationId", "jobOperation")]
+    ),
+    partialUniqueColumns: ["jobOperationId", "type", "employeeId"]
+  };
+
+  it("is not identity, but collides when users collapse", () => {
+    expect(isUserScopedIdentityTable(productionEvent)).toBe(false);
+    expect(collidesOnCollapse(productionEvent)).toBe(true);
+  });
+
+  it("is false when no user column is in a partial unique index", () => {
+    const project = {
+      ...table("project", [col("id"), col("identifier"), col("companyId")]),
+      partialUniqueColumns: ["companyId", "identifier"]
+    };
+    expect(collidesOnCollapse(project)).toBe(false);
   });
 });
 
@@ -865,6 +1123,23 @@ describe("mapCollidingRows", () => {
     expect(overrides.has("src-plant")).toBe(false);
   });
 
+  it("matches a numeric key column by value, number or text", () => {
+    const { overrides } = mapCollidingRows(
+      [["name", "version"]],
+      [
+        { id: "old", name: "Weld", version: 1 },
+        { id: "new", name: "Cut", version: "2.0" }
+      ],
+      [
+        { id: "tgt-weld", name: "Weld", version: "1" },
+        { id: "tgt-cut", name: "Cut", version: "2" }
+      ],
+      new Set(["version"])
+    );
+    expect(overrides.get("old")).toBe("tgt-weld");
+    expect(overrides.get("new")).toBe("tgt-cut");
+  });
+
   it("never matches on NULL (Postgres unique treats NULLs as distinct)", () => {
     const { skippedSourceIds } = mapCollidingRows(
       groups,
@@ -893,41 +1168,6 @@ describe("cross-company restore invariants", () => {
     "inspectionFeature"
   ];
 
-  // Every `modelUpload` column whose name ends in `Path`, typed against the
-  // GENERATED row type: `satisfies` makes this list fail to COMPILE if a column
-  // is renamed or removed, and the `Exclude` below fails to compile if a new
-  // `*Path` column is added and not listed. The runtime assertion then checks
-  // STORAGE_PATH_COLUMNS covers them all.
-  type ModelUploadPathColumn = Extract<
-    keyof Database["public"]["Tables"]["modelUpload"]["Row"],
-    `${string}Path`
-  >;
-  const MODEL_UPLOAD_PATH_COLUMNS = [
-    "modelPath",
-    "thumbnailPath",
-    "originalPath",
-    "optimizedModelPath",
-    "glbPath",
-    "graphPath",
-    "pmiPath"
-  ] as const satisfies readonly ModelUploadPathColumn[];
-  // Fails to compile when a new `*Path` column exists that the list omits.
-  type _EveryPathColumnListed =
-    Exclude<
-      ModelUploadPathColumn,
-      (typeof MODEL_UPLOAD_PATH_COLUMNS)[number]
-    > extends never
-      ? true
-      : [
-          "unlisted modelUpload *Path column",
-          Exclude<
-            ModelUploadPathColumn,
-            (typeof MODEL_UPLOAD_PATH_COLUMNS)[number]
-          >
-        ];
-  const _pathColumnsExhaustive: _EveryPathColumnListed = true;
-  void _pathColumnsExhaustive;
-
   it("keeps a readable-id table out of the id maps, but maps a normal table", () => {
     const part = table("part", [col("id"), col("companyId"), col("name")], [], {
       pkColumns: ["id", "companyId"]
@@ -954,7 +1194,6 @@ describe("cross-company restore invariants", () => {
       part: [{ id: "ADCS-001", companyId: "src-co", name: "Widget" }]
     });
     const transforms = buildRowTransforms(part, part.columns, {
-      remap: true,
       companyId: "target-co",
       userId: "importer",
       targetGroupId: "target-grp",
@@ -995,11 +1234,79 @@ describe("cross-company restore invariants", () => {
     );
     expect(overlap).toEqual([]);
   });
+});
 
-  it("covers every modelUpload artifact column in STORAGE_PATH_COLUMNS", () => {
-    const missing = MODEL_UPLOAD_PATH_COLUMNS.filter(
-      (c) => !STORAGE_PATH_COLUMNS.has(c)
-    );
-    expect(missing).toEqual([]);
+describe("rewriteDocumentEditRowKeys", () => {
+  const rewrite = new Map([["old", "new"]]);
+  const settings = {
+    text: { title: "Order" },
+    valueEdits: {
+      document: { "order.date": "Soon" },
+      rows: {
+        "line:old": { "line.details": "One" },
+        "line:kept": { "line.details": "Two" }
+      }
+    }
+  };
+  const rewritten = {
+    ...settings,
+    valueEdits: {
+      ...settings.valueEdits,
+      rows: {
+        "line:new": { "line.details": "One" },
+        "line:kept": { "line.details": "Two" }
+      }
+    }
+  };
+
+  it("follows the restore's ids in a row's key", () => {
+    expect(rewriteDocumentEditRowKeys(settings, rewrite)).toEqual(rewritten);
+  });
+
+  it("keeps the shape it was given: a backup holds JSON as text", () => {
+    expect(
+      JSON.parse(
+        rewriteDocumentEditRowKeys(JSON.stringify(settings), rewrite) as string
+      )
+    ).toEqual(rewritten);
+  });
+
+  it("leaves settings with no changed row values alone", () => {
+    const plain = { text: { title: "Order" } };
+    expect(rewriteDocumentEditRowKeys(plain, rewrite)).toBe(plain);
+    expect(rewriteDocumentEditRowKeys(null, rewrite)).toBeNull();
+  });
+});
+
+describe("rewriteTrackedEntityReceiptRefs", () => {
+  const rewrite = new Map([
+    ["old-receipt", "new-receipt"],
+    ["old-line", "new-line"]
+  ]);
+
+  it("remaps the receipt and its line, and leaves other attributes", () => {
+    expect(
+      rewriteTrackedEntityReceiptRefs(
+        { Receipt: "old-receipt", "Receipt Line": "old-line", Job: "old-job" },
+        rewrite
+      )
+    ).toEqual({
+      Receipt: "new-receipt",
+      "Receipt Line": "new-line",
+      Job: "old-job"
+    });
+  });
+
+  it("keeps a string a string, and returns no refs as they came", () => {
+    expect(
+      JSON.parse(
+        rewriteTrackedEntityReceiptRefs(
+          JSON.stringify({ "Receipt Line": "old-line" }),
+          rewrite
+        ) as string
+      )
+    ).toEqual({ "Receipt Line": "new-line" });
+    const none = { Job: "old-job" };
+    expect(rewriteTrackedEntityReceiptRefs(none, rewrite)).toBe(none);
   });
 });

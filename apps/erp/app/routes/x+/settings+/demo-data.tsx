@@ -7,26 +7,26 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { DATASETS, datasetKeys } from "@carbon/database/datasets";
+import { trigger } from "@carbon/jobs";
 import { useRevalidator } from "@carbon/query";
 import { toast, VStack } from "@carbon/react";
+import { getErrorMessage } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
 import { SettingsPageHeading } from "~/components/SettingsPage";
-import type { CompanyTemplateRun } from "~/modules/settings/backups.service";
-import { getCompanyTemplateRun } from "~/modules/settings/backups.service";
 import {
-  finalizeCompanyTemplate,
-  purgeCorruptedRows,
-  revertCompanyTemplate,
+  getCompanyTemplateRun,
+  getPendingChange,
+  purgeAndRetry,
   startCompanyTemplate
 } from "~/modules/settings/settings.service";
-import {
-  TemplateCards,
-  TemplateReviewRow
-} from "~/modules/settings/ui/DemoData";
+import type { CompanyTemplateRun } from "~/modules/settings/types";
+import { JOB_POLL } from "~/modules/settings/ui/Backups/format";
+import { TemplateCards } from "~/modules/settings/ui/DemoData/TemplateCards";
+import { TemplateReviewRow } from "~/modules/settings/ui/DemoData/TemplateReviewRow";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -50,8 +50,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     label: DATASETS[key].label
   }));
 
-  return { run: run.data, datasets };
+  return { run, datasets };
 }
+
+const PENDING_MESSAGE = {
+  restore: "Finish your current restore — keep or revert it — first.",
+  template: "Finish your current demo data change — keep or revert it — first."
+} as const;
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -62,28 +67,26 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
   const templateRunId = String(formData.get("templateRunId") ?? "");
+  const datasetKey = String(formData.get("datasetKey") ?? "");
+  const failure = (err: unknown, fallback: string) => ({
+    success: false as const,
+    message: getErrorMessage(err, fallback)
+  });
 
   switch (intent) {
     // Replaces this company's data with a demo dataset. The job snapshots first
     // so it can be reverted; the snapshot is also what makes the wipe safe.
     case "apply": {
-      const datasetKey = String(formData.get("datasetKey") ?? "");
-      if (!datasetKey || !datasetKeys().includes(datasetKey as never)) {
+      if (!datasetKeys().includes(datasetKey as never)) {
         return { success: false, message: "Choose a demo dataset" };
       }
-
-      // One change at a time. A second apply while one is still pending review
-      // would overwrite the only snapshot of the user's real data.
-      const inFlight = await getCompanyTemplateRun(client, companyId);
-      if (inFlight.data && inFlight.data.status !== "failed") {
-        return {
-          success: false,
-          message:
-            "Finish your current demo data change — keep or revert it — first."
-        };
-      }
-
       try {
+        // One change at a time. A second apply while one is still pending review
+        // would overwrite the only snapshot of the user's real data.
+        const pending = await getPendingChange(client, companyId);
+        if (pending) {
+          return { success: false, message: PENDING_MESSAGE[pending] };
+        }
         const startedRunId = await startCompanyTemplate({
           companyId,
           userId,
@@ -95,13 +98,7 @@ export async function action({ request }: ActionFunctionArgs) {
           templateRunId: startedRunId
         };
       } catch (err) {
-        return {
-          success: false,
-          message:
-            err instanceof Error
-              ? err.message
-              : "Failed to start the demo data change"
-        };
+        return failure(err, "Failed to start the demo data change");
       }
     }
 
@@ -114,17 +111,20 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: "Nothing to resolve" };
       }
       try {
-        await finalizeCompanyTemplate({ companyId, templateRunId });
-        return {
-          success: true,
-          message: intent === "keep" ? "Demo data kept" : "Dismissed"
-        };
+        await trigger("company-template-finalize", {
+          companyId,
+          templateRunId
+        });
       } catch (err) {
         return data(
           { success: false },
           await flash(request, error(err, "Failed to resolve the demo data"))
         );
       }
+      return {
+        success: true,
+        message: intent === "keep" ? "Demo data kept" : "Dismissed"
+      };
     }
 
     case "revert": {
@@ -132,77 +132,58 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: "Nothing to revert" };
       }
       try {
-        await revertCompanyTemplate({ companyId, userId, templateRunId });
-        return { success: true, message: "Reverting demo data" };
+        await trigger("company-template-revert", {
+          companyId,
+          userId,
+          templateRunId
+        });
       } catch (err) {
         return data(
           { success: false },
           await flash(request, error(err, "Failed to revert the demo data"))
         );
       }
+      return { success: true, message: "Reverting demo data" };
     }
 
-    // Mirrors Backups' purgeAndRestore. No finalize first: apply overwrites a
-    // failed marker, and a snapshot-guard failure never recorded a snapshot.
+    // No `company-template-finalize` first: apply overwrites a failed marker,
+    // and a snapshot-guard failure never recorded a snapshot.
     case "purgeAndApply": {
-      const datasetKey = String(formData.get("datasetKey") ?? "");
-      const current = await getCompanyTemplateRun(client, companyId);
-      const failed = current.data;
-      if (
-        !failed ||
-        !templateRunId ||
-        failed.templateRunId !== templateRunId ||
-        failed.status !== "failed" ||
-        failed.reason !== "scope-violations" ||
-        failed.datasetKey !== datasetKey ||
-        !datasetKeys().includes(datasetKey as never)
-      ) {
-        return {
-          success: false,
-          message: "This demo data change can't be retried this way"
-        };
+      try {
+        if ((await getPendingChange(client, companyId)) === "restore") {
+          return { success: false, message: PENDING_MESSAGE.restore };
+        }
+        const failed = await getCompanyTemplateRun(client, companyId);
+        if (
+          !failed ||
+          !templateRunId ||
+          failed.templateRunId !== templateRunId ||
+          failed.status !== "failed" ||
+          failed.reason !== "scope-violations" ||
+          failed.datasetKey !== datasetKey ||
+          !datasetKeys().includes(datasetKey as never)
+        ) {
+          return {
+            success: false,
+            message: "This demo data change can't be retried this way"
+          };
+        }
+      } catch (err) {
+        return failure(err, "Failed to read the demo data change");
       }
 
-      // The delete commits on its own; the apply is enqueued after. Two steps,
-      // not one transaction, so the messages say WHICH half happened.
-      let deleted: Array<{ table: string; rows: number }>;
-      try {
-        ({ deleted } = await purgeCorruptedRows(
-          getDatabaseClient(),
-          companyId
-        ));
-      } catch (err) {
-        return {
-          success: false,
-          message:
-            err instanceof Error
-              ? err.message
-              : "Failed to remove corrupted data — nothing was deleted"
-        };
-      }
-
-      const rows = deleted.reduce((sum, d) => sum + d.rows, 0);
-      try {
-        const startedRunId = await startCompanyTemplate({
-          companyId,
-          userId,
-          datasetKey
-        });
-        return {
-          success: true,
-          message: `Removed ${rows} row${rows === 1 ? "" : "s"} — applying demo data`,
-          templateRunId: startedRunId
-        };
-      } catch (err) {
-        return {
-          success: false,
-          message:
-            `Removed ${rows} row${rows === 1 ? "" : "s"}, but the demo data did not start` +
-            ` — apply it again. (${
-              err instanceof Error ? err.message : "unknown error"
-            })`
-        };
-      }
+      const result = await purgeAndRetry(getDatabaseClient(), companyId, {
+        doing: "applying demo data",
+        name: "the demo data",
+        start: () => startCompanyTemplate({ companyId, userId, datasetKey })
+      });
+      return result.success
+        ? {
+            success: true,
+            message: result.message,
+            templateRunId: result.runId
+          }
+        : result;
     }
 
     default:
@@ -241,6 +222,7 @@ export default function DemoDataRoute() {
           error: null,
           progress: null,
           hasSnapshot: false,
+          applied: false,
           reason: null,
           violations: [],
           violationRowsByTable: []
@@ -248,7 +230,8 @@ export default function DemoDataRoute() {
       : null;
 
   const active =
-    (run !== null && run.status !== "failed") || pendingApplyKey !== null;
+    (run !== null && (run.status !== "failed" || run.applied)) ||
+    pendingApplyKey !== null;
   const pending =
     (run !== null && !resolvedRunIds.includes(run.templateRunId)
       ? run
@@ -259,7 +242,7 @@ export default function DemoDataRoute() {
   // writes, so a faster poll would only re-read the same row.
   useEffect(() => {
     if (!active) return;
-    const id = setInterval(() => revalidator.revalidate(), 2500);
+    const id = setInterval(() => revalidator.revalidate(), JOB_POLL.listMs);
     return () => clearInterval(id);
   }, [active, revalidator]);
 

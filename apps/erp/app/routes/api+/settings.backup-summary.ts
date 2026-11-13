@@ -2,11 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { BACKUP_SUMMARY_GROUPS } from "~/modules/settings/backups.areas";
-import { canManageBackups } from "~/modules/settings/settings.service";
+import { requireBackupAccess } from "~/modules/settings/settings.service";
 
 async function countEntity(
   client: SupabaseClient,
@@ -15,50 +14,53 @@ async function countEntity(
   value: string | null
 ): Promise<number> {
   if (!value) return 0;
-  try {
-    const { count } = await client
-      .from(table)
-      .select("*", { count: "exact", head: true })
-      .eq(column, value);
-    return count ?? 0;
-  } catch {
-    return 0;
-  }
+  const { count, error } = await client
+    .from(table)
+    .select("*", { count: "exact", head: true })
+    .eq(column, value);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 // Lazy-loaded by the backup-contents popover (only when opened). Returns a
 // headline row count per entity, grouped, plus a grand total.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, email } = await requirePermissions(
-    request,
-    { view: "settings" }
-  );
-  if (!(await canManageBackups(client, companyId, email)))
-    throw new Response("Not found", { status: 404 });
+  const { client, companyId, companyGroupId } =
+    await requireBackupAccess(request);
 
   // Keys and counts only — the popover owns the labels (msg descriptors it
-  // resolves client-side), so no display copy crosses the wire.
-  const groups = await Promise.all(
-    BACKUP_SUMMARY_GROUPS.map(async (group) => {
-      const rows = await Promise.all(
-        group.entities.map(async ([, table, scope]) => ({
-          table,
-          count:
-            scope === "group"
-              ? await countEntity(
-                  client,
-                  table,
-                  "companyGroupId",
-                  companyGroupId
-                )
-              : await countEntity(client, table, "companyId", companyId)
-        }))
-      );
-      const subtotal = rows.reduce((sum, r) => sum + r.count, 0);
-      return { area: group.area, rows, subtotal };
-    })
-  );
+  // resolves client-side), so no display copy crosses the wire. A failed count
+  // answers `failed` for the popover to show: thrown, it would replace the page.
+  let groups: Array<{
+    area: string;
+    rows: Array<{ table: string; count: number }>;
+    subtotal: number;
+  }>;
+  try {
+    groups = await Promise.all(
+      BACKUP_SUMMARY_GROUPS.map(async (group) => {
+        const rows = await Promise.all(
+          group.entities.map(async ([, table, scope]) => ({
+            table,
+            count:
+              scope === "group"
+                ? await countEntity(
+                    client,
+                    table,
+                    "companyGroupId",
+                    companyGroupId
+                  )
+                : await countEntity(client, table, "companyId", companyId)
+          }))
+        );
+        const subtotal = rows.reduce((sum, r) => sum + r.count, 0);
+        return { area: group.area, rows, subtotal };
+      })
+    );
+  } catch {
+    return { failed: true as const, groups: [], total: 0 };
+  }
 
   const total = groups.reduce((sum, g) => sum + g.subtotal, 0);
-  return { groups, total };
+  return { failed: false as const, groups, total };
 }

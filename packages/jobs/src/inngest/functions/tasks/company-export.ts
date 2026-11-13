@@ -4,425 +4,111 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
-import { getCompanyPrivateBucket } from "@carbon/files";
-import { getLogger } from "@carbon/logger";
-import { NonRetriableError } from "inngest";
-import { sql } from "kysely";
-import { listBucketFilesRecursive } from "../../../backups/storage";
-import { getJobDatabaseClient, type JobDatabase } from "../../../db";
-import { inngest } from "../../client";
-import type { Manifest } from "./company-backup";
+import { writeCompanyBackup } from "../../../backups/dump";
 import {
-  BACKUP_INTEGRATION,
-  BACKUP_KIND,
-  BACKUP_VERSION,
-  backupAssetsDir,
-  backupTablePath,
-  buildScopeFilter,
-  computeScopeExclusions,
-  copyAssetsToBackup,
-  ExportScopeViolationError,
-  encodeValue,
-  exportableColumns,
-  findExportScopeViolationsDetailed,
-  getCompanyTableCatalog,
-  mapWithConcurrency,
-  type ScopeExclusions,
-  type ScopeViolation,
-  selectExportableTables,
-  serializeTable,
-  writeBackupManifest
-} from "./company-backup";
+  DUMP_CONCURRENCY,
+  EXPORT_INTEGRATION,
+  type ExportRunMeta,
+  failRun,
+  failStuckRun,
+  PER_COMPANY_CONCURRENCY,
+  progressWriter,
+  runMarker,
+  startRun
+} from "../../../backups/runs";
+import { getJobDatabaseClient } from "../../../db";
+import { inngest } from "../../client";
 
-const log = getLogger("jobs", "company-export");
-
-// Assets are copied server-side into the backup's `assets/` folder (no bytes pass
-// through this process), so there's no memory reason to cap a single file — the
-// bucket already bounds uploads (120MB CAD models, 50MB docs). The only bound is a
-// storage-cost guard on the whole backup: each export duplicates the bundled
-// bytes, so cap the total at 1GB.
-const MAX_STORAGE_TOTAL_BYTES = 1024 * 1024 * 1024;
-
-// How many tables to dump concurrently (query + gzip + upload). Matched by the
-// export job's connection pool size.
-const TABLE_CONCURRENCY = 6;
-
-type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
-
-/**
- * Build a company backup as a folder of small objects under `exports/<name>/`:
- * one `tables/<table>.ndjson.gz` per non-empty table (dumped in parallel), a
- * `manifest.json`, and (via the caller) `assets/<path>` files. Returns the folder
- * name. Exported so the same logic backs the export job, snapshots and onboarding
- * templates.
- */
-export async function buildCompanyBackup(
-  client: ServiceRole,
-  db: JobDatabase,
-  opts: {
-    companyId: string;
-    userId: string;
-    label?: string | null;
-    includeStorage: "none" | "all";
-    /** Override the generated folder name (snapshots pass their own). */
-    name?: string;
-    /**
-     * Exclude (and record in `manifest.excludedRows`) rows whose NOT-NULL FK
-     * escapes company scope, plus rows depending on them. Default false =
-     * refuse: the guard is a tenant-leak detector, and skipping is a
-     * user-confirmed recovery after a visible failure (spec 2026-09-01).
-     */
-    skipCorrupted?: boolean;
-    /** Live progress of the table-dump phase (`tables`). Throttled by the caller. */
-    onProgress?: (p: {
-      phase: string;
-      done: number;
-      total: number;
-    }) => Promise<void>;
-  }
-): Promise<{
-  name: string;
-  manifest: Manifest;
-  rows: number;
-  /** `private`-bucket paths to copy into the backup's `assets/` folder. */
-  assetSourcePaths: string[];
-}> {
-  const { companyId, userId, includeStorage } = opts;
-  const label = opts.label ?? null;
-
-  const company = await client
-    .from("company")
-    .select("id, name, companyGroupId")
-    .eq("id", companyId)
-    .single();
-  if (company.error) throw new Error(company.error.message);
-  const companyGroupId = company.data?.companyGroupId ?? null;
-
-  // A companyGroup-scoped backup (chart of accounts, currencies, dimensions) is
-  // meaningless without a group. Fail loudly rather than silently omitting it —
-  // a groupless shell company once produced "valid"-looking backups with an
-  // empty chart of accounts that then propagated to every onboarded company.
-  if (companyGroupId === null) {
-    throw new Error(
-      `Company ${companyId} has no companyGroup — a backup would omit the chart ` +
-        "of accounts, currencies and dimensions. Seed the company before backing it up."
-    );
-  }
-
-  const exportedAt = new Date().toISOString();
-  const slug = label
-    ? `_${label
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .slice(0, 40)}`
-    : "";
-  const name = opts.name ?? `${exportedAt.replace(/[:.]/g, "-")}${slug}`;
-
-  const catalog = await getCompanyTableCatalog(db);
-  // Secrets (credentials/tokens) never travel — they belong to the source
-  // company, not a copy. (Billing identity like companyPlan never enters the
-  // catalog: it's a company-singleton deliberately left out of the scoped set.)
-  const { exportable, excludedTables } = selectExportableTables(catalog);
-  const byName = new Map(catalog.tables.map((t) => [t.name, t]));
-
-  // Closure guard — never write a backup that couldn't be restored. A NOT-NULL FK
-  // pointing outside the company's scope (cross-company / out-of-scope) would dump
-  // the child but not its parent, dangling on restore. Fail BEFORE writing any
-  // table file, listing every offending FK.
-  //
-  // This refusal is DELIBERATE and is not a backup bug to route around. Row-level
-  // security hides another tenant's rows from every ordinary read, so an export —
-  // which runs without it — is the first thing in the system wide enough to see a
-  // cross-tenant reference at all. Excluding the rows and carrying on would make
-  // the only detector we have go quiet.
-  //
-  // `skipCorrupted` is the ONE sanctioned bypass — user-confirmed after a visible
-  // failure, logged loudly here, and the manifest records what was dropped.
-  let exclusions: ScopeExclusions | null = null;
-  if (opts.skipCorrupted) {
-    exclusions = await computeScopeExclusions(
-      db,
-      exportable,
-      byName,
-      companyId,
-      companyGroupId
-    );
-    if (exclusions.summary.length > 0) {
-      // Skipping a group-shared row deletes nothing, but the artifact then
-      // lacks config the whole group depends on — worth its own log line. The
-      // purge refuses outright on these; see `purgeScopeViolations`.
-      const shared = exclusions.summary.filter(
-        (e) => byName.get(e.table)?.scopeColumn === "companyGroupId"
-      );
-      log.warn("Company export skipping out-of-scope rows", {
-        companyId,
-        excludedRows: exclusions.summary,
-        ...(shared.length > 0
-          ? { sharedGroupTablesAffected: shared.map((e) => e.table) }
-          : {})
-      });
-    }
-  } else {
-    const { violations, rowsByTable } = await findExportScopeViolationsDetailed(
-      db,
-      exportable,
-      byName,
-      companyId,
-      companyGroupId
-    );
-    if (violations.length > 0) {
-      throw new ExportScopeViolationError(companyId, violations, rowsByTable);
-    }
-  }
-
-  // Dump each non-empty table to its own `tables/<table>.ndjson.gz`, in parallel.
-  const tableManifest: Manifest["tables"] = [];
-  let dumped = 0; // incremented as each table completes (single-threaded → safe)
-  await mapWithConcurrency(exportable, TABLE_CONCURRENCY, async (table) => {
-    const columns = exportableColumns(table);
-    // a prior import's revert ledger must never travel in an artifact
-    const ledgerFilter =
-      table.name === "externalIntegrationMapping"
-        ? sql` AND ${sql.id("integration")} != ${BACKUP_INTEGRATION}`
-        : sql``;
-    // A skipCorrupted export leaves out the rows computeScopeExclusions decided on.
-    const exclusion = exclusions?.predicates.get(table.name);
-    const exclusionFilter = exclusion ? sql` AND NOT (${exclusion})` : sql``;
-    // Direct-scoped tables filter by their companyId/companyGroupId column;
-    // transitively-scoped child tables (contacts, line prices, …) filter through
-    // their parent FK — see buildScopeFilter.
-    const result = await sql<Record<string, unknown>>`
-      SELECT ${sql.join(columns.map((c) => sql.id(c.name)))}
-      FROM ${sql.id(table.name)}
-      WHERE ${buildScopeFilter(table, byName, companyId, companyGroupId)}${ledgerFilter}${exclusionFilter}
-    `.execute(db);
-
-    if (result.rows.length === 0) {
-      dumped++;
-      await opts.onProgress?.({
-        phase: "tables",
-        done: dumped,
-        total: exportable.length
-      });
-      return; // empty tables get no file
-    }
-
-    const rows = result.rows.map((row) => {
-      const encoded: Record<string, unknown> = {};
-      for (const col of columns) {
-        encoded[col.name] = encodeValue(row[col.name], col);
-      }
-      return encoded;
-    });
-    const buf = await serializeTable(rows);
-    const up = await client.storage
-      .from(companyId)
-      .upload(backupTablePath(name, table.name), buf, {
-        contentType: "application/gzip",
-        upsert: true
-      });
-    if (up.error) throw new Error(`table ${table.name}: ${up.error.message}`);
-
-    tableManifest.push({
-      name: table.name,
-      rows: result.rows.length,
-      columns: columns.map((c) => c.name)
-    });
-    dumped++;
-    await opts.onProgress?.({
-      phase: "tables",
-      done: dumped,
-      total: exportable.length
-    });
+const exportMarker = (
+  client: ReturnType<typeof getCarbonServiceRole>,
+  args: { companyId: string; userId: string; exportRunId: string }
+) =>
+  runMarker<ExportRunMeta>(client, {
+    integration: EXPORT_INTEGRATION,
+    entityType: "export",
+    entityId: args.companyId,
+    companyId: args.companyId,
+    userId: args.userId,
+    identity: { exportRunId: args.exportRunId }
   });
 
-  // Decide which storage assets are in scope. They live in the shared `private`
-  // bucket under a `{companyId}/` prefix (3D models, item thumbnails,
-  // attachments). They are NOT embedded — the caller copies the included files
-  // server-side into the backup's `assets/` folder, so a large asset set costs no
-  // memory. Skip anything over the total size guard.
-  const storageManifest: Manifest["storage"] = [];
-  const assetSourcePaths: string[] = [];
-
-  if (includeStorage === "all") {
-    let totalBytes = 0;
-    const paths = await listBucketFilesRecursive(
-      client,
-      getCompanyPrivateBucket(companyId),
-      companyId
-    );
-    for (const file of paths) {
-      const included = totalBytes + file.size <= MAX_STORAGE_TOTAL_BYTES;
-      if (included) {
-        assetSourcePaths.push(file.path);
-        totalBytes += file.size;
-      }
-      storageManifest.push({ path: file.path, size: file.size, included });
-    }
-  }
-
-  const manifest: Manifest = {
-    kind: BACKUP_KIND,
-    version: BACKUP_VERSION,
-    schemaVersion: catalog.schemaVersion,
-    sourceCompanyId: companyId,
-    sourceCompanyGroupId: companyGroupId,
-    sourceCompanyName: company.data?.name ?? null,
-    exportedAt,
-    exportedBy: userId,
-    label,
-    includeStorage,
-    tables: tableManifest,
-    storage: storageManifest,
-    excludedTables,
-    excludedRows: exclusions?.summary ?? [],
-    excludedRowsByTable: exclusions?.perTable ?? []
-  };
-
-  // The manifest is NOT written here — the caller writes it LAST (after assets)
-  // via writeBackupManifest, so its presence marks the backup as complete.
-  const rows = tableManifest.reduce((sum, t) => sum + t.rows, 0);
-  return { name, manifest, rows, assetSourcePaths };
-}
-
-// One company-scoped progress marker (exports run one-at-a-time, so no run id).
-// The UI polls it for live phase/done/total; it's cleared when the run succeeds
-// (the backup appearing in the list is what signals completion) and kept with
-// status "failed" when it doesn't — a cleared marker on failure made a broken
-// export indistinguishable from one that never ran.
-const EXPORT_INTEGRATION = "company-export";
-type ExportProgress = { phase: string; done: number; total: number };
-
-async function upsertExportMarker(
-  client: ServiceRole,
-  companyId: string,
-  userId: string,
-  metadata: {
-    status: "running" | "failed";
-    startedAt: string;
-    progress?: ExportProgress;
-    error?: string;
-    /** On failure: what was asked for, so a recovery retry can reuse it. */
-    label?: string | null;
-    includeStorage?: "none" | "all";
-    /** Set only when the closure guard refused — the UI offers "skip" for exactly this. */
-    reason?: "scope-violations";
-    /** Per FK EDGE — the breakdown, never summable into a row count. */
-    violations?: ScopeViolation[];
-    /** DISTINCT rows involved, per table — what the user is told. */
-    violationRowsByTable?: Array<{ table: string; rows: number }>;
-  }
-): Promise<void> {
-  const existing = await client
-    .from("externalIntegrationMapping")
-    .select("id")
-    .eq("integration", EXPORT_INTEGRATION)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (existing.data) {
-    await client
-      .from("externalIntegrationMapping")
-      .update({ metadata })
-      .eq("id", existing.data.id)
-      .eq("companyId", companyId);
-  } else {
-    await client.from("externalIntegrationMapping").insert({
-      entityType: "export",
-      entityId: companyId,
-      integration: EXPORT_INTEGRATION,
-      externalId: "",
-      metadata,
-      companyId,
-      createdBy: userId
-    });
-  }
-}
-
-async function clearExportMarker(
-  client: ServiceRole,
-  companyId: string
-): Promise<void> {
-  await client
-    .from("externalIntegrationMapping")
-    .delete()
-    .eq("integration", EXPORT_INTEGRATION)
-    .eq("companyId", companyId);
-}
-
+/**
+ * Write a backup of the company. One marker per company: cleared when the run
+ * succeeds (the backup appearing in the list is what signals completion) and
+ * kept as failed when it doesn't, until the user dismisses it.
+ */
 export const companyExportFunction = inngest.createFunction(
   {
     id: "company-export",
     retries: 1,
-    concurrency: { key: "event.data.companyId", limit: 1 }
+    concurrency: [PER_COMPANY_CONCURRENCY, DUMP_CONCURRENCY],
+    onFailure: ({ event, error }) => {
+      const { companyId, userId } = event.data.event.data;
+      const exportRunId = event.data.run_id;
+      return failStuckRun(
+        exportMarker(getCarbonServiceRole(), {
+          companyId,
+          userId,
+          exportRunId
+        }),
+        error,
+        "running",
+        (meta) => meta.exportRunId === exportRunId
+      );
+    }
   },
   { event: "carbon/company-export" },
-  async ({ event, step, logger }) => {
+  async ({ event, step, logger, runId }) => {
     const { companyId, userId, label, includeStorage, skipCorrupted } =
       event.data;
 
-    await requireBackupsEntitlement(companyId);
+    // Its own step, so the work step below can tell a marker the user removed
+    // from one never written.
+    await step.run("claim-export", async () => {
+      const marker = exportMarker(getCarbonServiceRole(), {
+        companyId,
+        userId,
+        exportRunId: runId
+      });
+      if ((await marker.read())?.exportRunId !== runId) {
+        await startRun(marker, { label: label ?? null, includeStorage });
+      }
+    });
 
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient();
-
-      // Live-progress marker (cleared on success, flipped to "failed" on error).
-      // Throttled so a fast parallel dump doesn't hammer the row.
-      const startedAt = new Date().toISOString();
-      await upsertExportMarker(client, companyId, userId, {
-        status: "running",
-        startedAt
+      const marker = exportMarker(client, {
+        companyId,
+        userId,
+        exportRunId: runId
       });
-      let lastAt = 0;
-      let lastPhase = "";
-      const report = async (progress: ExportProgress) => {
-        const now = Date.now();
-        const terminal = progress.done >= progress.total;
-        if (progress.phase === lastPhase && !terminal && now - lastAt < 250) {
-          return;
-        }
-        lastPhase = progress.phase;
-        lastAt = now;
-        await upsertExportMarker(client, companyId, userId, {
-          status: "running",
-          startedAt,
-          progress
-        });
-      };
+
+      // A retry overwrites its own failed marker back to running. One whose
+      // marker is gone, or now names a later export, was dismissed or
+      // superseded during the retry backoff.
+      const existing = await marker.read();
+      if (existing?.exportRunId !== runId) {
+        logger.info("Export dismissed or superseded, skipping", { companyId });
+        return { skipped: true };
+      }
+
+      await startRun(marker, { label: label ?? null, includeStorage });
 
       try {
-        const { name, manifest, rows, assetSourcePaths } =
-          await buildCompanyBackup(client, db, {
+        await requireBackupsEntitlement(companyId);
+        const { name, manifest, rows, assets } = await writeCompanyBackup(
+          client,
+          db,
+          {
             companyId,
             userId,
             label,
             includeStorage,
             skipCorrupted: skipCorrupted === true,
-            onProgress: report
-          });
-
-        // Copy the in-scope assets server-side into the backup's `assets/` folder.
-        // Best-effort (matches restore/import): the table files are already
-        // committed; per-file copy failures only warn.
-        await report({
-          phase: "files",
-          done: 0,
-          total: assetSourcePaths.length
-        });
-        const assets = await copyAssetsToBackup(
-          client,
-          {
-            companyId,
-            sourcePaths: assetSourcePaths,
-            destBucket: companyId,
-            destPrefix: backupAssetsDir(name)
-          },
-          (done, total) => report({ phase: "files", done, total })
+            onProgress: progressWriter(marker)
+          }
         );
-
-        // Manifest LAST — its presence marks the backup complete, so the list
-        // never shows a half-written backup as ready.
-        await writeBackupManifest(client, companyId, name, manifest);
 
         logger.info("Company export complete", {
           companyId,
@@ -433,35 +119,10 @@ export const companyExportFunction = inngest.createFunction(
           assetsFailed: assets.failed
         });
 
-        await clearExportMarker(client, companyId);
+        await marker.clear();
         return { name, tables: manifest.tables.length, rows };
       } catch (err) {
-        // Keep the marker with the failure so the UI can tell the user the
-        // backup is invalid instead of showing "preparing" forever. A retry
-        // (retries: 1) overwrites it back to "running"; the user dismisses it
-        // from the Backups page, and the next export reuses the row.
-        const message = err instanceof Error ? err.message : String(err);
-        await upsertExportMarker(client, companyId, userId, {
-          status: "failed",
-          startedAt,
-          error: message.slice(0, 2000),
-          label: label ?? null,
-          includeStorage,
-          ...(err instanceof ExportScopeViolationError
-            ? {
-                reason: "scope-violations",
-                violations: err.violations,
-                violationRowsByTable: err.rowsByTable
-              }
-            : {})
-        });
-        // The guard's verdict is deterministic — a retry would only flip the
-        // marker back to "running" and fail again ~10s later, resurrecting the
-        // failure banner after the user has already recovered (skipped).
-        if (err instanceof ExportScopeViolationError) {
-          throw new NonRetriableError(message, { cause: err });
-        }
-        throw err;
+        throw await failRun(marker, err);
       }
     });
   }

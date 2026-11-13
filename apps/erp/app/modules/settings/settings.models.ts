@@ -993,3 +993,13 @@ export const documentSectionValidator = zfd.formData({
   content: jsonField(z.any(), "Invalid section content"),
   config: jsonField(sectionConfigSchema, "Invalid section config").optional()
 });
+
+/**
+ * Whether a backup carries the company's files (3D models, attachments) unless
+ * the person picks otherwise: an export leaves them out, since they can be most
+ * of its size; a restore loads them whenever the backup has them.
+ */
+export const DEFAULT_INCLUDE_STORAGE = {
+  export: "none",
+  restore: "all"
+} as const satisfies Record<"export" | "restore", "none" | "all">;

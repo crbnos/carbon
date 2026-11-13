@@ -5449,11 +5449,20 @@ msgstr "バックアップに失敗しました"
 msgid "Backup for {0}"
 msgstr "{0} のバックアップ"
 
+msgid "Backup ready"
+msgstr "バックアップ準備完了"
+
 msgid "Backup uploaded"
 msgstr "バックアップをアップロードしました"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr "バックアップはアップロードされましたが、{assetErrors} 件のファイルのアップロードに失敗しました。データは復元されますが、それらのファイルは復元されません。"
+
 msgid "Backups"
 msgstr "バックアップ"
+
+msgid "Backups aren't included in your plan. You can still keep, revert or dismiss a restore you started before."
+msgstr ""
 
 msgid "Balance"
 msgstr "残高"
@@ -6112,6 +6121,9 @@ msgstr "一括インポート"
 
 msgid "Bulk Jobs"
 msgstr "一括製造指図"
+
+msgid "Bundling files"
+msgstr "ファイルをまとめています"
 
 msgid "Burden"
 msgstr "負担"
@@ -7138,6 +7150,12 @@ msgstr "商品受領/請求書受領照合用相殺勘定"
 msgid "Clearing demo data"
 msgstr "デモデータをクリア中"
 
+msgid "Clearing existing data"
+msgstr "既存のデータを消去しています"
+
+msgid "Clearing restored data"
+msgstr "復元されたデータを消去しています"
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "{selectedLabel} に時間を追加するには、日をクリックしてください。時間を変更するには、バーの下端をドラッグしてください。"
 
@@ -7294,6 +7312,9 @@ msgstr "段取りを折りたたむ"
 
 msgid "Collapse subtree"
 msgstr "サブツリーを折りたたむ"
+
+msgid "Collecting records"
+msgstr "レコードを収集しています"
 
 msgid "Color"
 msgstr "色"
@@ -8645,6 +8666,9 @@ msgstr "Onshape Government接続を完了できませんでした"
 msgid "Couldn't confirm the account"
 msgstr "アカウントを確認できませんでした"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr "復元が開始されたことを確認できませんでした。まだ実行中の可能性があります。この画面を閉じて、しばらくしてから一覧をご確認ください。"
+
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
 
@@ -9079,6 +9103,9 @@ msgstr "まだクレジットされていない出荷数量に対して、仕入
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "会計年度の12ヶ月間の期間を作成します。既に存在する期間は保持されます。"
+
+msgid "Creating backup…"
+msgstr "バックアップを作成しています…"
 
 msgid "Creating part..."
 msgstr "パーツを作成中..."
@@ -17231,6 +17258,10 @@ msgstr "未決済トランザクションを読み込む(注文、発注書、�
 msgid "Load Templates"
 msgstr "テンプレートを読み込む"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr "{0} 行を読み込みました。下の内容をご確認ください。復元を維持するか、復元前の状態に元に戻してください。"
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "最後に読み込まれ、カットオーバー時に残高が最新の状態になります。"
 
@@ -17239,6 +17270,9 @@ msgstr "資産を読み込み中..."
 
 msgid "Loading associated jobs..."
 msgstr "関連する製造指図を読み込み中..."
+
+msgid "Loading backup"
+msgstr "バックアップを読み込んでいます"
 
 msgid "Loading creditable lines..."
 msgstr "クレジット対象行を読み込み中..."
@@ -25494,6 +25528,12 @@ msgstr "変更ありで復元可能"
 msgid "Restore"
 msgstr "復元"
 
+msgid "Restore complete"
+msgstr "復元完了"
+
+msgid "Restore failed"
+msgstr "復元に失敗しました"
+
 msgid "Restore from Trash"
 msgstr "ゴミ箱から復元"
 
@@ -25509,8 +25549,18 @@ msgstr "復元…"
 msgid "Restoring files"
 msgstr "ファイルを復元中"
 
+#. placeholder {0}: company.name
+msgid "Restoring into <0>{0}</0>. Its data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr ""
+
+msgid "Restoring your snapshot"
+msgstr "スナップショットを復元しています"
+
 msgid "restoring…"
 msgstr "復元中…"
+
+msgid "Restoring…"
+msgstr "復元しています…"
 
 msgid "Restrict charging to members"
 msgstr "請求を会員に制限する"
@@ -25809,6 +25859,12 @@ msgstr "キャンセルを取り消す"
 msgid "Revert cancellation of {readableId}"
 msgstr "{readableId} のキャンセルを取り消す"
 
+msgid "Revert failed"
+msgstr "元に戻せませんでした"
+
+msgid "Reverted"
+msgstr "元に戻しました"
+
 msgid "Reverting"
 msgstr "リバート中"
 
@@ -25817,6 +25873,9 @@ msgstr "取り消すと、キャンセルによって変更された終了日、
 
 msgid "reverting…"
 msgstr "戻す中…"
+
+msgid "Reverting…"
+msgstr "元に戻しています…"
 
 msgid "Review"
 msgstr "レビュー"
@@ -28290,6 +28349,9 @@ msgstr "バッチ処理に値する最小ラン。設定しない場合は空白
 msgid "Smoke-test the core daily flows end to end"
 msgstr "コアの毎日のワークフローをエンドツーエンドでスモークテストします"
 
+msgid "Snapshotting current data"
+msgstr "現在のデータのスナップショットを作成しています"
+
 msgid "so you can assign it here."
 msgstr "ここで割り当てることができます。"
 
@@ -28311,6 +28373,9 @@ msgstr "ソリューションズエンジニア"
 msgid "Some balances have no Carbon account"
 msgstr "いくつかの残高にはCarbonアカウントがありません"
 
+msgid "some files may be missing"
+msgstr ""
+
 msgid "Some inputs have another unit and are left out"
 msgstr "一部の入力は別の単位を持っており、除外されています"
 
@@ -28328,6 +28393,9 @@ msgstr "このプロセスの一部の仕事はスケジュールできません
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "いくつかのレコードは戻りません。続行するには<0>{CONFIRM_WORD}</0>と入力してください。"
+
+msgid "Some rows excluded"
+msgstr "一部の行は除外されました"
 
 msgid "Some Shifts"
 msgstr "一部のシフト"
@@ -28733,6 +28801,9 @@ msgstr "未払い"
 
 msgid "Still Owed"
 msgstr "未払い"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr "処理中です。データ量が多いため時間がかかります。この画面を閉じて、しばらくしてから再度ご確認ください。"
 
 msgid "Stock"
 msgstr "在庫"
@@ -30046,6 +30117,9 @@ msgstr "バックログ"
 msgid "The backup job reported this error."
 msgstr "バックアップジョブがこのエラーを報告しました。"
 
+msgid "The backup's data was loaded, but the restore stopped after that. Keep it, or revert to put back what you had."
+msgstr ""
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "その製造指図を時間通りに保つために、工程が終了する必要のある後方計算日であり、工程の期日に書き込まれます。進捗を測定するための安定した目標であり、配置の制約ではありません。"
 
@@ -31060,6 +31134,9 @@ msgstr "支払またはメモを請求書に適用し、適用額、値引額、
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "追跡対象エンティティの記録された系譜 — どのインプットがどのアウトプットを生成するために消費されたか、入荷から出荷まで。"
 
+msgid "The records couldn't be counted. Try again later."
+msgstr "レコード数を集計できませんでした。しばらくしてから再度お試しください。"
+
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参照データはすべての基盤となります。最初に読み込まれます。"
 
@@ -31578,9 +31655,6 @@ msgstr "この変更通知は閉じられているため、変更は読み取り
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "この変更通知は承認を待機中です。その変更は承認されるか却下されるまでロック中です。"
-
-msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
-msgstr "この会社のデータはこのバックアップの内容に置き換えられます。今日のデータが最初に保存されるため、元に戻すことができます。"
 
 msgid "This completes the Discovery step."
 msgstr "これはDiscoveryステップを完了します。"
@@ -35098,6 +35172,9 @@ msgstr "{hoursElapsed}時間作業しています。作業終了を忘れまし�
 msgid "Your account stays safe even if your login is stolen"
 msgstr "ログインが盗まれてもアカウントは安全です"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr "バックアップの準備が完了しました。下の一覧に表示されています。"
+
 msgid "Your backups"
 msgstr "バックアップ"
 
@@ -35178,6 +35255,12 @@ msgstr "あなたの部品番号"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "あなたの部品番号とそれらの背後にあるアイテムマスター"
+
+msgid "Your previous data is back, but some files couldn't be restored. Revert again to retry them."
+msgstr ""
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr "復元前のデータが、そのまま元に戻りました。"
 
 msgid "Your profile could not be loaded."
 msgstr "プロファイルを読み込めませんでした。"

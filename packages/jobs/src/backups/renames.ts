@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { CompanyBackup, Row } from "./format";
+
 /**
  * Tenant-scoped tables that have been RENAMED or DROPPED, so an older backup
  * naming them can still be read. A migration that renames or drops a
@@ -48,7 +50,7 @@ export const TABLE_RENAMES: Record<string, string | null> = {
  * live table never has its columns rewritten; a rename that keeps its column
  * list 1:1 needs no entry.
  */
-export const COLUMN_RENAMES: Record<string, Record<string, string>> = {
+const COLUMN_RENAMES: Record<string, Record<string, string>> = {
   cardTransaction: { cardTransactionId: "chargeId" },
   cardTransactionLine: { cardTransactionId: "chargeId" }
 };
@@ -70,11 +72,23 @@ export const LIVE_COLUMN_RENAMES: Record<string, Record<string, string>> = {
   inspectionDocument: { drawingNumber: "name" }
 };
 
+/**
+ * `map[name]` for a name read from a backup, own keys only: a backup is a file
+ * the user can edit, and a table or column named `constructor` would otherwise
+ * resolve to `Object.prototype.constructor`.
+ */
+export function ownEntry<T>(
+  map: Record<string, T>,
+  name: string
+): T | undefined {
+  return Object.hasOwn(map, name) ? map[name] : undefined;
+}
+
 /** A live table's column list under its CURRENT column names. */
 export function renameLiveColumns(table: string, columns: string[]): string[] {
   const map = liveColumnMap(table, columns);
   if (!map) return columns;
-  return columns.map((column) => map[column] ?? column);
+  return columns.map((column) => ownEntry(map, column) ?? column);
 }
 
 /** The renames that apply to this backup's copy of the table, if any. */
@@ -82,7 +96,7 @@ function liveColumnMap(
   table: string,
   columns: string[]
 ): Record<string, string> | null {
-  const map = LIVE_COLUMN_RENAMES[table];
+  const map = ownEntry(LIVE_COLUMN_RENAMES, table);
   if (!map) return null;
   const present = new Set(columns);
   const applicable = Object.fromEntries(
@@ -95,87 +109,78 @@ function liveColumnMap(
 
 /** A renamed table's column list under its CURRENT column names. */
 export function renameColumns(oldTable: string, columns: string[]): string[] {
-  const map = COLUMN_RENAMES[oldTable];
+  const map = ownEntry(COLUMN_RENAMES, oldTable);
   if (!map) return columns;
-  return columns.map((column) => map[column] ?? column);
+  return columns.map((column) => ownEntry(map, column) ?? column);
 }
 
-function renameRowColumns(
-  oldTable: string,
-  rows: Record<string, unknown>[]
-): Record<string, unknown>[] {
-  const map = COLUMN_RENAMES[oldTable];
-  if (!map) return rows;
-  return renameRows(map, rows);
-}
-
-function renameRows(
-  map: Record<string, string>,
-  rows: Record<string, unknown>[]
-): Record<string, unknown>[] {
+function renameRows(map: Record<string, string>, rows: Row[]): Row[] {
   return rows.map((row) => {
-    const renamed: Record<string, unknown> = {};
+    const renamed: Row = {};
     for (const [column, value] of Object.entries(row)) {
-      renamed[map[column] ?? column] = value;
+      renamed[ownEntry(map, column) ?? column] = value;
     }
     return renamed;
   });
 }
 
 /**
- * Move a just-read backup's tables onto their CURRENT names. Runs once, right
+ * Read a backup under the CURRENT table and column names. Runs once, right
  * after `readBackup`, so the gate, the closure preflight and `wipeAndLoad` all
- * agree on what the backup contains.
+ * agree on what the backup contains. Rows are renamed as they stream through.
  */
-export function applyTableRenames<
-  T extends {
-    manifest: {
-      tables: Array<{ name: string; rows: number; columns: string[] }>;
-    };
-    data: Record<string, Record<string, unknown>[]>;
-  }
->(catalog: { tables: Array<{ name: string }> }, backup: T): T {
+export function applyTableRenames(
+  catalog: { tables: Array<{ name: string }> },
+  backup: CompanyBackup
+): CompanyBackup {
   const live = new Set(catalog.tables.map((t) => t.name));
+  const stored = new Set(backup.manifest.tables.map((t) => t.name));
 
   // Only consulted for a name the schema no longer has, which is what makes a
   // rename cycle (A→B→A) safe: the stale `A: "B"` entry is never read.
   const resolve = (name: string): string | null => {
     if (live.has(name)) return name;
-    const mapped = TABLE_RENAMES[name];
+    const mapped = ownEntry(TABLE_RENAMES, name);
     if (mapped === null) return null;
     // Can't resolve confidently — leave it for the gate to refuse by name.
-    if (mapped === undefined || !live.has(mapped) || backup.data[mapped]) {
+    if (mapped === undefined || !live.has(mapped) || stored.has(mapped)) {
       return name;
     }
     return mapped;
   };
 
-  const tables: typeof backup.manifest.tables = [];
-  const data: Record<string, Record<string, unknown>[]> = { ...backup.data };
+  const tables: CompanyBackup["manifest"]["tables"] = [];
+  // Today's name → the stored table it reads, and the column renames to apply.
+  const sources = new Map<
+    string,
+    { from: string; columns: Record<string, string> | null }
+  >();
   for (const t of backup.manifest.tables) {
     const to = resolve(t.name);
-    if (to === null) {
-      delete data[t.name];
-      continue;
-    }
+    if (to === null) continue;
     if (to === t.name) {
-      const map = liveColumnMap(t.name, t.columns);
-      if (!map) {
-        tables.push(t);
-        continue;
-      }
-      tables.push({ ...t, columns: renameLiveColumns(t.name, t.columns) });
-      if (backup.data[t.name]) {
-        data[t.name] = renameRows(map, backup.data[t.name]!);
-      }
+      const columns = liveColumnMap(t.name, t.columns);
+      tables.push(
+        columns ? { ...t, columns: renameLiveColumns(t.name, t.columns) } : t
+      );
+      sources.set(t.name, { from: t.name, columns });
       continue;
     }
     tables.push({ ...t, name: to, columns: renameColumns(t.name, t.columns) });
-    if (backup.data[t.name]) {
-      data[to] = renameRowColumns(t.name, backup.data[t.name]!);
-      delete data[t.name];
-    }
+    sources.set(to, {
+      from: t.name,
+      columns: ownEntry(COLUMN_RENAMES, t.name) ?? null
+    });
   }
 
-  return { ...backup, manifest: { ...backup.manifest, tables }, data };
+  return {
+    manifest: { ...backup.manifest, tables },
+    async *rows(table) {
+      const source = sources.get(table);
+      if (!source) return;
+      for await (const batch of backup.rows(source.from)) {
+        yield source.columns ? renameRows(source.columns, batch) : batch;
+      }
+    }
+  };
 }

@@ -5449,11 +5449,20 @@ msgstr "बैकअप विफल रहा"
 msgid "Backup for {0}"
 msgstr "{0} के लिए बैकअप"
 
+msgid "Backup ready"
+msgstr "बैकअप तैयार"
+
 msgid "Backup uploaded"
 msgstr "बैकअप अपलोड किया गया"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr "बैकअप अपलोड हो गया, लेकिन {assetErrors} फ़ाइल(ें) अपलोड नहीं हो सकीं। इसका डेटा पुनर्स्थापित हो जाएगा, वे फ़ाइलें नहीं।"
+
 msgid "Backups"
 msgstr "बैकअप"
+
+msgid "Backups aren't included in your plan. You can still keep, revert or dismiss a restore you started before."
+msgstr ""
 
 msgid "Balance"
 msgstr "शेष राशि"
@@ -6112,6 +6121,9 @@ msgstr "बल्क आयात"
 
 msgid "Bulk Jobs"
 msgstr "बल्क जॉब्स"
+
+msgid "Bundling files"
+msgstr "फ़ाइलें इकट्ठी की जा रही हैं"
 
 msgid "Burden"
 msgstr "बोझ"
@@ -7138,6 +7150,12 @@ msgstr "माल की प्राप्ति / चालान प्रा
 msgid "Clearing demo data"
 msgstr "डेमो डेटा साफ कर रहे हैं"
 
+msgid "Clearing existing data"
+msgstr "मौजूदा डेटा हटाया जा रहा है"
+
+msgid "Clearing restored data"
+msgstr "पुनर्स्थापित डेटा हटाया जा रहा है"
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "किसी दिन पर क्लिक करें {selectedLabel} में समय जोड़ने के लिए। बार के निचले किनारे को खींचकर इसके घंटे बदलें।"
 
@@ -7294,6 +7312,9 @@ msgstr "सेटअप को संक्षिप्त करें"
 
 msgid "Collapse subtree"
 msgstr "सबट्री को संक्षिप्त करें"
+
+msgid "Collecting records"
+msgstr "रिकॉर्ड एकत्र किए जा रहे हैं"
 
 msgid "Color"
 msgstr "रंग"
@@ -8645,6 +8666,9 @@ msgstr "Onshape Government कनेक्शन को पूर्ण नह�
 msgid "Couldn't confirm the account"
 msgstr "खाते की पुष्टि नहीं कर सके"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr "पुनर्स्थापना शुरू हुई या नहीं, इसकी पुष्टि नहीं हो सकी। यह अभी भी चल रही हो सकती है — इसे बंद करें और थोड़ी देर बाद सूची देखें।"
+
 msgid "Couldn't load documents"
 msgstr "दस्तावेज़ लोड नहीं हो सके"
 
@@ -9079,6 +9103,9 @@ msgstr "उन भेजी गई मात्रा के लिए ड्र
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "एक वित्तीय वर्ष के लिए 12 मासिक अवधियों को बनाता है। जो अवधियां पहले से मौजूद हैं उन्हें रखा जाता है।"
+
+msgid "Creating backup…"
+msgstr "बैकअप बनाया जा रहा है…"
 
 msgid "Creating part..."
 msgstr "भाग बनाया जा रहा है..."
@@ -17231,6 +17258,10 @@ msgstr "खुले लेनदेन लोड करें (आदेश, PO
 msgid "Load Templates"
 msgstr "टेम्पलेट लोड करें"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr "{0} पंक्तियाँ लोड हुईं। नीचे इसकी जाँच करें — पुनर्स्थापना रखें, या जो पहले था उसे वापस लाएँ।"
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "अंतिम रूप से लोड किया गया, कटओवर पर, इसलिए शेष राशि वर्तमान है।"
 
@@ -17239,6 +17270,9 @@ msgstr "संपत्ति लोड हो रही है..."
 
 msgid "Loading associated jobs..."
 msgstr "संबंधित जॉब लोड हो रहे हैं..."
+
+msgid "Loading backup"
+msgstr "बैकअप लोड हो रहा है"
 
 msgid "Loading creditable lines..."
 msgstr "क्रेडिट योग्य लाइनें लोड हो रही हैं..."
@@ -25494,6 +25528,12 @@ msgstr "बदलावों के साथ पुनर्स्थापन
 msgid "Restore"
 msgstr "पुनः स्थापित करें"
 
+msgid "Restore complete"
+msgstr "पुनर्स्थापना पूर्ण"
+
+msgid "Restore failed"
+msgstr "पुनर्स्थापना विफल"
+
 msgid "Restore from Trash"
 msgstr "ट्रैश से पुनः स्थापित करें"
 
@@ -25509,8 +25549,18 @@ msgstr "पुनः स्थापित करें…"
 msgid "Restoring files"
 msgstr "फ़ाइलें पुनः स्थापित कर रहे हैं"
 
+#. placeholder {0}: company.name
+msgid "Restoring into <0>{0}</0>. Its data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr ""
+
+msgid "Restoring your snapshot"
+msgstr "आपका स्नैपशॉट पुनर्स्थापित किया जा रहा है"
+
 msgid "restoring…"
 msgstr "पुनर्स्थापित किया जा रहा है…"
+
+msgid "Restoring…"
+msgstr "पुनर्स्थापित हो रहा है…"
 
 msgid "Restrict charging to members"
 msgstr "सदस्यों के लिए प्रभार को प्रतिबंधित करें"
@@ -25809,6 +25859,12 @@ msgstr "रद्दीकरण पूर्ववत करें"
 msgid "Revert cancellation of {readableId}"
 msgstr "{readableId} के रद्दीकरण को पूर्ववत करें"
 
+msgid "Revert failed"
+msgstr "वापस लाना विफल"
+
+msgid "Reverted"
+msgstr "वापस लाया गया"
+
 msgid "Reverting"
 msgstr "पूर्ववत् कर रहे हैं"
 
@@ -25817,6 +25873,9 @@ msgstr "पूर्ववत करने से समाप्ति ति�
 
 msgid "reverting…"
 msgstr "वापस किया जा रहा है…"
+
+msgid "Reverting…"
+msgstr "वापस लाया जा रहा है…"
 
 msgid "Review"
 msgstr "समीक्षा"
@@ -28290,6 +28349,9 @@ msgstr "बैचिंग के लायक सबसे छोटा रन�
 msgid "Smoke-test the core daily flows end to end"
 msgstr "कोर दैनिक प्रवाह को अंत से अंत तक स्मोक-टेस्ट करें"
 
+msgid "Snapshotting current data"
+msgstr "वर्तमान डेटा का स्नैपशॉट लिया जा रहा है"
+
 msgid "so you can assign it here."
 msgstr "तो आप इसे यहाँ असाइन कर सकते हैं।"
 
@@ -28311,6 +28373,9 @@ msgstr "समाधान इंजीनियर"
 msgid "Some balances have no Carbon account"
 msgstr "कुछ शेष राशियों के लिए कोई Carbon खाता नहीं है"
 
+msgid "some files may be missing"
+msgstr ""
+
 msgid "Some inputs have another unit and are left out"
 msgstr "कुछ इनपुट के पास एक अन्य इकाई है और उन्हें छोड़ा गया है"
 
@@ -28328,6 +28393,9 @@ msgstr "इस प्रक्रिया का कुछ काम शेड�
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "कुछ रिकॉर्ड वापस नहीं आएंगे। जारी रखने के लिए <0>{CONFIRM_WORD}</0> टाइप करें।"
+
+msgid "Some rows excluded"
+msgstr "कुछ पंक्तियाँ बाहर रखी गईं"
 
 msgid "Some Shifts"
 msgstr "कुछ शिफ्ट"
@@ -28733,6 +28801,9 @@ msgstr "अभी भी बकाया"
 
 msgid "Still Owed"
 msgstr "अभी भी बकाया"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr "काम जारी है — यह एक बड़ा डेटासेट है। आप इसे बंद कर सकते हैं और थोड़ी देर बाद वापस देख सकते हैं।"
 
 msgid "Stock"
 msgstr "स्टॉक"
@@ -30046,6 +30117,9 @@ msgstr "बैकलॉग"
 msgid "The backup job reported this error."
 msgstr "बैकअप जॉब ने इस त्रुटि की रिपोर्ट की।"
 
+msgid "The backup's data was loaded, but the restore stopped after that. Keep it, or revert to put back what you had."
+msgstr ""
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "वह पिछड़ी हुई गणना की गई तारीख जिस तक एक ऑपरेशन को अपने जॉब को समय पर रखने के लिए समाप्त करना चाहिए, ऑपरेशन की नियत तिथि में लिखा गया है। प्रगति को मापने के लिए एक स्थिर लक्ष्य — कभी भी प्लेसमेंट पर बाधा नहीं।"
 
@@ -31060,6 +31134,9 @@ msgstr "रिकॉर्ड जो एक चालान पर भुगत�
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "ट्रैक किए गए इकाइयों का रिकॉर्ड किया गया वंशावली - कौन से इनपुट का उपभोग किया गया था कौन से आउटपुट का उत्पादन करने के लिए, रसीद से शिपमेंट।"
 
+msgid "The records couldn't be counted. Try again later."
+msgstr "रिकॉर्ड गिने नहीं जा सके। बाद में फिर कोशिश करें।"
+
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "संदर्भ डेटा जिस पर सब कुछ निर्भर करता है। पहले लोड होता है।"
 
@@ -31578,9 +31655,6 @@ msgstr "यह परिवर्तन सूचना बंद है, इस
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "यह परिवर्तन सूचना अनुमोदन की प्रतीक्षा कर रही है। इसके परिवर्तन लॉक हैं जब तक इसे अनुमोदित या अस्वीकार नहीं किया जाता।"
-
-msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
-msgstr "इस कंपनी का डेटा इस बैकअप की सामग्री के साथ प्रतिस्थापित किया जाता है। आज का डेटा पहले सहेजा जाता है, इसलिए आप पूर्ववत कर सकते हैं।"
 
 msgid "This completes the Discovery step."
 msgstr "यह Discovery चरण को पूरा करता है।"
@@ -35101,6 +35175,9 @@ msgstr "आप {hoursElapsed} घंटे से साइन इन हैं�
 msgid "Your account stays safe even if your login is stolen"
 msgstr "यहां तक कि अगर आपका लॉगिन चोरी हो जाता है तो आपका खाता सुरक्षित रहता है"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr "आपका बैकअप तैयार है — यह नीचे की सूची में है।"
+
 msgid "Your backups"
 msgstr "आपके बैकअप"
 
@@ -35181,6 +35258,12 @@ msgstr "आपकी पार्ट संख्याएं"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "आपकी भाग संख्याएं और उनके पीछे की आइटम मास्टर"
+
+msgid "Your previous data is back, but some files couldn't be restored. Revert again to retry them."
+msgstr ""
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr "आपका पिछला डेटा वापस आ गया है, ठीक वैसा ही जैसा पुनर्स्थापना से पहले था।"
 
 msgid "Your profile could not be loaded."
 msgstr "आपकी प्रोफ़ाइल लोड नहीं की जा सकी।"

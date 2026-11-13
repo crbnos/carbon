@@ -12,14 +12,15 @@ import {
 } from "kysely";
 import { describe, expect, it } from "vitest";
 import type { JobDatabase } from "../db";
-import type { ColumnInfo, ForeignKey, TableInfo } from "./schema";
+import type { ColumnInfo, ForeignKey, TableInfo } from "./catalog";
 import {
+  anyOf,
   buildDanglingPredicate,
   buildExclusionPredicate,
-  ExportScopeViolationError,
+  buildScopeFilter,
   formatScopeViolations,
-  scopeEdges,
-  totalExcludedRows
+  referenceEdges,
+  scopeEdges
 } from "./scope";
 
 // ── Compile-only Kysely (no connection) ─────────────────────────────────────
@@ -152,7 +153,7 @@ describe("buildExclusionPredicate", () => {
     expect(built?.terms.map((t) => t.cause)).toEqual(["violation"]);
     const text = compile(built!.predicate);
     expect(text).toContain(
-      `"itemId" IS NOT NULL AND "itemId" NOT IN (SELECT "id" FROM "item" WHERE "companyId" = $1 OR "companyId" IS NULL)`
+      `"pickMethod"."itemId" IS NOT NULL AND NOT EXISTS (SELECT 1 FROM "item" AS __parent WHERE __parent."id" = "pickMethod"."itemId" AND ("companyId" = $1 OR "companyId" IS NULL))`
     );
   });
 
@@ -185,8 +186,8 @@ describe("buildExclusionPredicate", () => {
       "jobId:violation"
     ]);
     const text = compile(withParent!.predicate);
-    expect(text).toContain(`"operationId" IN (`);
-    expect(text).toContain(`"dependsOnId" IN (`);
+    expect(text).toContain(`"operationId" = ANY(`);
+    expect(text).toContain(`"dependsOnId" = ANY(`);
     expect(text).toContain(" OR ");
   });
 
@@ -203,7 +204,7 @@ describe("buildExclusionPredicate", () => {
     );
     expect(built).not.toBeNull();
     expect(compile(built!.predicate)).toContain(
-      `"jobId" NOT IN (SELECT "id" FROM "job"`
+      `NOT EXISTS (SELECT 1 FROM "job" AS __parent WHERE __parent."id" = "jobOperationDependency"."jobId"`
     );
   });
 });
@@ -225,63 +226,6 @@ describe("formatScopeViolations / ExportScopeViolationError", () => {
         "  pickMethod.itemId → item (1 row)\n" +
         "  jobOperationDependency.jobId → job (3 rows)"
     );
-  });
-
-  it("exposes the structured violations on the error", () => {
-    const violations = [
-      { table: "pickMethod", column: "itemId", refTable: "item", rows: 1 }
-    ];
-    const err = new ExportScopeViolationError("C", violations);
-    expect(err).toBeInstanceOf(Error);
-    expect(err.name).toBe("ExportScopeViolationError");
-    expect(err.violations).toEqual(violations);
-    expect(err.message.startsWith("Refusing to export C: 1 NOT-NULL")).toBe(
-      true
-    );
-  });
-});
-
-describe("totalExcludedRows", () => {
-  // The bug this pins: `summary`/`violations` carry ONE ENTRY PER FK EDGE, so a
-  // row escaping scope through three of its foreign keys appears three times.
-  // Summing that told the user "10 rows" for 4 real rows — on the confirm button
-  // of an irreversible delete. Totals come from the per-table distinct counts.
-  it("counts a row once however many of its FKs escaped scope", () => {
-    // The prod shape: 1 pickMethod row (1 edge) + 3 jobOperationDependency rows
-    // (3 edges each) = 4 rows, but 4 summary entries totalling 10.
-    const perEdge = [
-      { table: "pickMethod", rows: 1 },
-      { table: "jobOperationDependency", rows: 3 },
-      { table: "jobOperationDependency", rows: 3 },
-      { table: "jobOperationDependency", rows: 3 }
-    ];
-    expect(perEdge.reduce((sum, e) => sum + e.rows, 0)).toBe(10);
-
-    expect(
-      totalExcludedRows([
-        { table: "pickMethod", rows: 1 },
-        { table: "jobOperationDependency", rows: 3 }
-      ])
-    ).toBe(4);
-  });
-
-  it("is zero for a clean export", () => {
-    expect(totalExcludedRows([])).toBe(0);
-  });
-});
-
-describe("purgeScopeViolations tenancy guard", () => {
-  // A `companyGroupId`-scoped table is shared with the sibling companies in the
-  // group, so its rows are not this company's to delete.
-  const groupScoped = (name: string): TableInfo => ({
-    ...table(name, [col("id"), col("companyGroupId")]),
-    scope: { kind: "direct", column: "companyGroupId" },
-    scopeColumn: "companyGroupId"
-  });
-
-  it("marks group-scoped tables as shared, company-scoped ones as not", () => {
-    expect(groupScoped("currency").scopeColumn).toBe("companyGroupId");
-    expect(pickMethod.scopeColumn).toBe("companyId");
   });
 });
 
@@ -310,5 +254,71 @@ describe("buildDanglingPredicate", () => {
       [fk("abilityId", "ability")]
     );
     expect(buildDanglingPredicate(optional, names)).toBeNull();
+  });
+});
+
+describe("intercompany transactions", () => {
+  const journalLine = table("journalLine", [col("id"), col("companyId")]);
+  const ict = {
+    ...table(
+      "intercompanyTransaction",
+      [
+        col("id"),
+        col("companyGroupId"),
+        col("sourceCompanyId"),
+        col("targetCompanyId"),
+        col("sourceJournalLineId")
+      ],
+      [fk("sourceJournalLineId", "journalLine")]
+    ),
+    scope: { kind: "direct", column: "companyGroupId" },
+    scopeColumn: "companyGroupId"
+  } as TableInfo;
+  const names = new Map([journalLine, ict].map((t) => [t.name, t]));
+
+  it("scopes a company to the transactions it is a party to", () => {
+    const { sql: text, parameters } = sql`SELECT 1 WHERE ${buildScopeFilter(
+      ict,
+      names,
+      "C",
+      "G"
+    )}`.compile(db);
+    expect(text).toContain(
+      `"companyGroupId" = $1 AND $2 IN ("sourceCompanyId", "targetCompanyId")`
+    );
+    expect(parameters).toEqual(["G", "C"]);
+  });
+
+  it("never treats the counterparty's journal line as escaping scope", () => {
+    expect(scopeEdges(ict, new Set(names.keys()), names)).toEqual([]);
+    expect(referenceEdges(ict, names)).toEqual([]);
+  });
+});
+
+describe("referenceEdges", () => {
+  it("checks nullable refs too, and never retained or global ones", () => {
+    const edges = referenceEdges(pickMethod, byName);
+    // defaultStorageUnitId targets a table outside this catalog (global).
+    expect(edges.map((e) => `${e.column}→${e.parent.name}`)).toEqual([
+      "itemId→item"
+    ]);
+    const withStorage = new Map(byName).set(
+      "storageUnit",
+      table("storageUnit", [col("id"), col("companyId")])
+    );
+    expect(
+      referenceEdges(pickMethod, withStorage).map((e) => e.column)
+    ).toEqual(["itemId", "defaultStorageUnitId"]);
+  });
+});
+
+describe("anyOf", () => {
+  it("binds one array, cast to the id column's type", () => {
+    const ids = Array.from({ length: 70_000 }, (_, i) => `id${i}`);
+    const compiled = sql`SELECT 1 WHERE ${anyOf("id", ids, "uuid")}`.compile(
+      db
+    );
+    expect(compiled.sql).toBe(`SELECT 1 WHERE "id" = ANY($1::uuid[])`);
+    expect(compiled.parameters).toHaveLength(1);
   });
 });

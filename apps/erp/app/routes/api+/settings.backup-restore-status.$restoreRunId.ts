@@ -2,29 +2,33 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanyRestoreRuns } from "~/modules/settings/backups.service";
-import { canManageBackups } from "~/modules/settings/settings.service";
+import {
+  getCompanyRestoreRuns,
+  requireBackupAccess
+} from "~/modules/settings/settings.service";
 
-// Polled by the restore progress modal. A restore run is "running" until its
-// marker row appears (the job writes it once the wipe+load commits), then
-// "ready" for keep/revert. Once kept or reverted the marker is gone again — the
-// client knows which phase it's in, so it interprets absence accordingly.
+// Polled by the restore progress modal. No marker answers "gone", which the
+// modal reads by phase: during a restore the job hasn't written its first
+// heartbeat yet; during a revert the revert finished (it deletes the marker). A
+// read error answers "unreadable" instead, so it is never taken for either.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId } = await requireBackupAccess(request, {
+    allowLapsed: true
   });
-  if (!(await canManageBackups(client, companyId, email)))
-    throw new Response("Not found", { status: 404 });
-  const restoreRunId = params.restoreRunId;
-
-  const runs = await getCompanyRestoreRuns(client, companyId);
-  const run = runs.data?.find((r) => r.restoreRunId === restoreRunId);
-
-  // No marker → "gone". The client interprets it by phase: during a restore it
-  // means the job hasn't written its first heartbeat yet (transient); during a
-  // revert it means the revert finished (the marker is deleted on success).
+  let runs: Awaited<ReturnType<typeof getCompanyRestoreRuns>>;
+  try {
+    runs = await getCompanyRestoreRuns(client, companyId, params.restoreRunId);
+  } catch {
+    return {
+      status: "unreadable" as const,
+      rows: 0,
+      error: null,
+      progress: null,
+      startedAt: null
+    };
+  }
+  const run = runs.at(0);
   return {
     status: run?.status ?? ("gone" as const),
     rows: run?.rows ?? 0,

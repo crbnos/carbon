@@ -2,11 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { RowsByTable } from "@carbon/jobs/backups";
+import { formatDate } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 
-// Backup filenames are `{timestamp}_{label-slug}.carbon.json.gz`. Turn the slug
-// back into a readable title (the timestamp is shown separately as the date).
+// Backup folder names are `{timestamp}_{label-slug}`. Turn the slug back into a
+// readable title (the timestamp is shown separately as the date).
 const BACKUP_ACRONYMS = new Set([
   "oem",
   "amr",
@@ -20,9 +22,8 @@ const BACKUP_ACRONYMS = new Set([
 ]);
 
 export function formatBackupName(name: string): string {
-  const base = name.replace(/\.carbon\.json\.gz$/i, "");
-  const underscore = base.indexOf("_");
-  const slug = underscore >= 0 ? base.slice(underscore + 1) : "";
+  const underscore = name.indexOf("_");
+  const slug = underscore >= 0 ? name.slice(underscore + 1) : "";
   if (!slug) return "Untitled backup";
   return slug
     .split("-")
@@ -83,15 +84,40 @@ export function backupStatusVariant(
   }
 }
 
+/** A backup's timestamp for display, in the viewer's `locale`. */
 export function formatBackupDate(
   iso: string | null | undefined,
+  locale: string,
   withTime = true
 ): string {
-  if (!iso) return "";
-  return new Date(iso).toLocaleString(
-    undefined,
+  return formatDate(
+    iso,
     withTime
       ? { dateStyle: "medium", timeStyle: "short" }
-      : { dateStyle: "medium" }
+      : { dateStyle: "medium" },
+    locale
   );
 }
+
+/**
+ * How many ROWS a skip or purge affects. `violations`/`excludedRows` are per FK
+ * EDGE — a row escaping scope through three of its foreign keys appears three
+ * times there — so totals must come from the per-table distinct counts.
+ */
+export function totalScopeRows(rowsByTable: RowsByTable): number {
+  return rowsByTable.reduce((sum, t) => sum + t.rows, 0);
+}
+
+/** How the Backups and Demo Data pages follow a running job. */
+export const JOB_POLL = {
+  /** A job's own status, while its progress is on screen. */
+  statusMs: 500,
+  /** The page's list, while a job runs. */
+  listMs: 2500,
+  /** No first heartbeat this long after starting: the job may never have run. */
+  noStartMs: 60_000,
+  /** Running this long: say it's a large dataset, and let the dialog close. */
+  slowMs: 120_000,
+  /** A demo data change running this long counts as stalled. */
+  stalledMs: 5 * 60_000
+} as const;
