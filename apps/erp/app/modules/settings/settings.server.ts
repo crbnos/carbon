@@ -2025,7 +2025,7 @@ export const createApiKey = defineServiceFn({
     const rawKey = `crbn_${nanoid()}`;
     let created: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
-      created = await upsertApiKey(ctx.asCaller.supabase, {
+      created = await upsertApiKey(ctx.asSystem.supabase, {
         name,
         scopes,
         expiresAt: expiresAt || undefined,
@@ -2061,8 +2061,9 @@ export const updateApiKey = defineServiceFn({
   async run(ctx, { id, name, scopes, expiresAt, rateLimit }) {
     let updated: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
-      updated = await upsertApiKey(ctx.asCaller.supabase, {
+      updated = await upsertApiKey(ctx.asSystem.supabase, {
         id,
+        companyId: ctx.company.id,
         name,
         scopes,
         expiresAt: expiresAt || undefined,
@@ -2095,7 +2096,7 @@ export const revokeApiKey = defineServiceFn({
     const keyHash = await service.invalidateApiKeyCache(id, ctx.company.id);
     let deleted: Awaited<ReturnType<typeof deleteApiKey>>;
     try {
-      deleted = await deleteApiKey(ctx.asCaller.supabase, id);
+      deleted = await deleteApiKey(ctx.asSystem.supabase, id, ctx.company.id);
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
     }
