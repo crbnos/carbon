@@ -49,6 +49,7 @@
     "./posting": "./src/posting.ts",
     "./datasets": "./src/datasets/index.ts",
     "./event": "./src/event.ts",
+    "./first-article": "./src/first-article.ts",
     "./machine-time": "./src/machine-time.ts",
     "./inspection-verdict": "./src/inspection-verdict.ts",
     "./quality": "./src/quality.ts",

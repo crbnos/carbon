@@ -239,6 +239,9 @@ msgstr "合格判定"
 msgid "Accept"
 msgstr "承諾"
 
+msgid "Accept first article?"
+msgstr "初期品を承諾しますか？"
+
 msgid "Accept inspection?"
 msgstr "検査を承諾しますか？"
 
@@ -295,6 +298,9 @@ msgstr "{phrase}を追加"
 msgid "Add & Issue"
 msgstr "追加して払出"
 
+msgid "Add a note to this reading"
+msgstr "この読取値にメモを追加"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷します。"
 
@@ -309,6 +315,9 @@ msgstr "フィルターを追加"
 
 msgid "Add Inventory"
 msgstr "在庫追加"
+
+msgid "Add note"
+msgstr "メモを追加"
 
 msgid "Add option"
 msgstr "オプションを追加"
@@ -376,6 +385,9 @@ msgstr "不合格ユニットを割り当てる"
 
 msgid "Allocate units"
 msgstr "ユニットを割り当てる"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "許容値 {allowableLabel} (ボーナス {bonusLabel})"
 
 msgid "Appearance"
 msgstr "外観"
@@ -991,6 +1003,9 @@ msgstr "編集"
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel}を編集"
 
+msgid "Edit note"
+msgstr "メモを編集"
+
 msgid "Edit Passkey"
 msgstr "パスキーを編集"
 
@@ -1084,6 +1099,9 @@ msgstr "失敗"
 msgid "Failed characteristics"
 msgstr "不合格特性"
 
+msgid "Failed features"
+msgstr "不合格の特性"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "在庫調整の完了に失敗しました"
 
@@ -1176,6 +1194,19 @@ msgstr "材料がピッキングされていない状態で終了しますか?"
 
 msgid "First"
 msgstr "初品"
+
+msgid "First article"
+msgstr "初期品"
+
+msgid "First article plan missing for {description}"
+msgstr "{description}の初期品検査計画がありません"
+
+msgid "First article plan missing for {part}"
+msgstr "{part}の初期品検査計画がありません"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "{0} に初期品が必要です"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -1309,8 +1340,14 @@ msgstr "無効"
 msgid "Increase {fieldLabel}"
 msgstr "{fieldLabel}を増やす"
 
+msgid "Inspect"
+msgstr "検査"
+
 msgid "Inspect Item"
 msgstr "アイテムを検査"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "残りを開始する前に、最初の単位のすべての特性を検査してください。"
 
 msgid "inspected"
 msgstr "検査済み"
@@ -1913,6 +1950,9 @@ msgstr "未設定"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "使用可能な在庫ではありません。MRPと計画には含まれず、ピッキングでも引き当てられません。"
 
+msgid "Note"
+msgstr "メモ"
+
 msgid "Notes"
 msgstr "メモ"
 
@@ -2394,6 +2434,9 @@ msgstr "登録に失敗しました"
 
 msgid "Reject"
 msgstr "却下"
+
+msgid "Reject first article?"
+msgstr "初期品を却下しますか？"
 
 msgid "Reject inspection?"
 msgstr "検査を却下しますか？"
@@ -3007,6 +3050,9 @@ msgstr "作業区をオフラインにする"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "日をタップして{selectedLabel}に時間を追加してください。バーの下部をドラッグして時間を変更してください。"
 
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "品質部門に連絡してください — この部品は初期品検査が必要ですが、有効な検査計画がありません。"
+
 msgid "Text color"
 msgstr "文字色"
 
@@ -3028,6 +3074,12 @@ msgstr "日付がエントリー期間前です。理由はエントリーと共
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "ロット全体{0}は不適合として却下されます—{passes}サンプル合格と{fails}不合格があります。以下のユニットをスクラップまたは手直しにルーティングするか、判決のみを記録してください。"
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "初期品は不合格としてマークされ、その結果はロック中になります。数量は記録されません。"
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "初期品は合格としてマークされ、その結果はロック中になります。数量は記録されません。"
 
 #. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."

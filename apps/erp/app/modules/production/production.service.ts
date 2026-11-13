@@ -41,6 +41,12 @@ import {
   transpileRule
 } from "@carbon/database/configuration-rule";
 import {
+  type FirstArticleNeedInput,
+  formatFirstArticlePartDescription,
+  OPEN_FIRST_ARTICLE_STATUSES,
+  resolveFirstArticleNeeds
+} from "@carbon/database/first-article";
+import {
   type ComputedJobQuantityNode,
   computeJobQuantities,
   flattenJobQuantityTree
@@ -3585,6 +3591,9 @@ export type JobReleaseReadiness = {
     // A Make to Asset job that cannot complete to its asset.
     makeToAssetError: string | null;
     missingAssemblies: { makeMethodId: string; description: string }[];
+    // Make methods whose part needs a first article at release but resolves
+    // no inspection plan — the generator would have nothing to inspect against.
+    firstArticlesWithoutPlan: FirstArticleWithoutPlan[];
     // Outside operations release cannot put on a PO: the process has no
     // supplier, or several and none chosen on the operation.
     outsideOperationsWithoutSupplier: {
@@ -3603,6 +3612,286 @@ export type JobReleaseReadiness = {
     draftPurchaseOrders: { id: string; purchaseOrderId: string }[];
   }[];
 };
+
+export type FirstArticleWithoutPlan = {
+  makeMethodId: string;
+  itemId: string;
+  description: string;
+};
+
+// The release blocker half of AS9102 generation: per job, the make methods
+// that need a first article but resolve no plan. The inputs mirror
+// `loadFirstArticleNeedInput` (@carbon/database/quality) over supabase-js, and
+// the decision is the shared `resolveFirstArticleNeeds`, so the blocker and the
+// generator can never disagree about a part. One query per table for any
+// number of jobs.
+async function getFirstArticlesWithoutPlan(
+  client: SupabaseClient<Database>,
+  jobs: { id: string; customerId: string | null }[],
+  companyId: string
+): Promise<{
+  data: Map<string, FirstArticleWithoutPlan[]>;
+  error: PostgrestError | null;
+}> {
+  const result = new Map<string, FirstArticleWithoutPlan[]>();
+  const customerIds = [
+    ...new Set(
+      jobs.map((job) => job.customerId).filter((id): id is string => !!id)
+    )
+  ];
+  const [settings, customerShipping] = await Promise.all([
+    client
+      .from("companySettings")
+      .select("requireFirstArticle")
+      .eq("id", companyId)
+      .maybeSingle(),
+    customerIds.length
+      ? client
+          .from("customerShipping")
+          .select("customerId, requiresFirstArticle")
+          .in("customerId", customerIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null }
+  ]);
+  const switchError = settings.error ?? customerShipping.error;
+  if (switchError) return { data: result, error: switchError };
+
+  const companyRequires = settings.data?.requireFirstArticle ?? false;
+  const requiringCustomers = new Set(
+    (customerShipping.data ?? [])
+      .filter((row) => row.requiresFirstArticle)
+      .map((row) => row.customerId)
+  );
+  // The part's own First Article slot IS a plan, so a part with no plan can
+  // only be required by a switch: jobs no switch covers can never block.
+  const inScope = jobs.filter(
+    (job) =>
+      companyRequires ||
+      (!!job.customerId && requiringCustomers.has(job.customerId))
+  );
+  if (inScope.length === 0) return { data: result, error: null };
+
+  const [company, makeMethods] = await Promise.all([
+    client.from("company").select("timezone").eq("id", companyId).single(),
+    client
+      .from("jobMakeMethod")
+      .select("id, jobId, itemId, item(readableId, revision)")
+      .in(
+        "jobId",
+        inScope.map((job) => job.id)
+      )
+      .eq("companyId", companyId)
+      .order("createdAt")
+      .order("id")
+  ]);
+  const loadError = company.error ?? makeMethods.error;
+  if (loadError) return { data: result, error: loadError };
+  if (!makeMethods.data?.length) return { data: result, error: null };
+
+  const timezone = company.data?.timezone ?? "UTC";
+  const today = datetime.today(timezone).toString();
+  const itemIds = [...new Set(makeMethods.data.map((m) => m.itemId))];
+
+  // Every approval and every open FAI of these parts, paged: a part approved
+  // more than 1000 times would otherwise drop rows past PostgREST's cap.
+  const [slots, partPlans, approvals, openFirstArticles, lots] =
+    await Promise.all([
+      // An Active plan version only (see loadFirstArticleContext in
+      // @carbon/database/quality): each version is its own row.
+      client
+        .from("itemInspectionDocumentAssignment")
+        .select(
+          "itemId, inspectionDocumentId, inspectionDocument!inner(status)"
+        )
+        .eq("usage", "First Article")
+        .eq("inspectionDocument.status", "Active")
+        .in("itemId", itemIds)
+        .eq("companyId", companyId),
+      client
+        .from("inspectionDocument")
+        .select("id, partId")
+        .in("partId", itemIds)
+        .eq("companyId", companyId)
+        .eq("status", "Active")
+        .order("id"),
+      fetchAllFromTable<{ id: string; itemId: string; approvedAt: string }>(
+        client,
+        "firstArticleInspection",
+        "id, itemId, approvedAt",
+        (query) =>
+          query
+            .eq("status", "Approved")
+            .not("approvedAt", "is", null)
+            .in("itemId", itemIds)
+            .eq("companyId", companyId)
+            .order("approvedAt", { ascending: false })
+            .order("id")
+      ),
+      // An open FAI for the part on another job satisfies this job's need,
+      // unless its lot was rejected (`loadFirstArticleContext` agrees).
+      fetchAllFromTable<{ id: string; itemId: string; jobId: string | null }>(
+        client,
+        "firstArticleInspection",
+        "id, itemId, jobId, inspection!inner(status)",
+        (query) =>
+          query
+            .in("status", [...OPEN_FIRST_ARTICLE_STATUSES])
+            .neq("inspection.status", "Failed")
+            .not("jobId", "is", null)
+            .in("itemId", itemIds)
+            .eq("companyId", companyId)
+            .order("id")
+      ),
+      client
+        .from("inspection")
+        .select("sourceDocumentLineId")
+        .eq("sourceDocument", "First Article")
+        .in(
+          "sourceDocumentLineId",
+          makeMethods.data.map((m) => m.id)
+        )
+        .eq("companyId", companyId)
+    ]);
+  const needError =
+    slots.error ??
+    partPlans.error ??
+    approvals.error ??
+    openFirstArticles.error ??
+    lots.error;
+  if (needError) return { data: result, error: needError };
+
+  const slotByItem = new Map(
+    (slots.data ?? []).map((slot) => [slot.itemId, slot.inspectionDocumentId])
+  );
+  const partPlansByItem = new Map<string, string[]>();
+  for (const plan of partPlans.data ?? []) {
+    if (!plan.partId) continue;
+    partPlansByItem.set(plan.partId, [
+      ...(partPlansByItem.get(plan.partId) ?? []),
+      plan.id
+    ]);
+  }
+  const approvedAtByItem = new Map<string, string>();
+  for (const approval of approvals.data ?? []) {
+    if (approval.approvedAt && !approvedAtByItem.has(approval.itemId)) {
+      approvedAtByItem.set(approval.itemId, approval.approvedAt);
+    }
+  }
+  const lotMakeMethodIds = new Set(
+    (lots.data ?? []).map((lot) => lot.sourceDocumentLineId)
+  );
+  const openJobIdsByItem = new Map<string, Set<string>>();
+  for (const open of openFirstArticles.data ?? []) {
+    if (!open.jobId) continue;
+    const jobIds = openJobIdsByItem.get(open.itemId) ?? new Set<string>();
+    jobIds.add(open.jobId);
+    openJobIdsByItem.set(open.itemId, jobIds);
+  }
+  const hasOpenElsewhere = (itemId: string, jobId: string) =>
+    [...(openJobIdsByItem.get(itemId) ?? [])].some((id) => id !== jobId);
+
+  const inputFor = (
+    jobId: string,
+    customerId: string | null,
+    lastCompletedJobDate: (itemId: string) => string | null
+  ): FirstArticleNeedInput => ({
+    companyRequiresFirstArticle: companyRequires,
+    customerRequiresFirstArticle:
+      !!customerId && requiringCustomers.has(customerId),
+    today,
+    makeMethods: makeMethods.data
+      .filter((makeMethod) => makeMethod.jobId === jobId)
+      .map((makeMethod) => ({
+        jobMakeMethodId: makeMethod.id,
+        itemId: makeMethod.itemId,
+        description: formatFirstArticlePartDescription(
+          makeMethod.item?.readableId ?? makeMethod.itemId,
+          makeMethod.item?.revision
+        ),
+        firstArticlePlanId: slotByItem.get(makeMethod.itemId) ?? null,
+        partPlanIds: partPlansByItem.get(makeMethod.itemId) ?? [],
+        latestApprovedAt: approvedAtByItem.get(makeMethod.itemId) ?? null,
+        lastCompletedJobDate: lastCompletedJobDate(makeMethod.itemId),
+        hasFirstArticleLot: lotMakeMethodIds.has(makeMethod.id),
+        hasOpenFirstArticleElsewhere: hasOpenElsewhere(makeMethod.itemId, jobId)
+      }))
+  });
+
+  // The last completed job only decides a Production Lapse, which only blocks
+  // a part with no plan and an approved FAI (without one it is a New Part and
+  // due anyway). So that read is limited to those parts, and to jobs completed
+  // from the day before the part's earliest approval: an earlier job falls on
+  // an earlier business day than the approval and cannot make it stale.
+  const lapseItemIds = [
+    ...new Set(
+      inScope.flatMap((job) =>
+        resolveFirstArticleNeeds(inputFor(job.id, job.customerId, () => null))
+          .filter(
+            (need) => need.planId === null && approvedAtByItem.has(need.itemId)
+          )
+          .map((need) => need.itemId)
+      )
+    )
+  ];
+  // YYYY-MM-DD strings sort chronologically.
+  const [completedSince] = lapseItemIds
+    .flatMap((itemId) => {
+      const approvedAt = approvedAtByItem.get(itemId);
+      return approvedAt
+        ? [
+            datetime
+              .businessDay(approvedAt, "UTC")
+              .subtract({ days: 1 })
+              .toString()
+          ]
+        : [];
+    })
+    .sort();
+  // Paged: a part with more than 1000 completed jobs since its approval must
+  // not lose the newest ones to PostgREST's cap.
+  const completedJobs = completedSince
+    ? await fetchAllFromTable<{
+        id: string;
+        itemId: string | null;
+        completedDate: string | null;
+      }>(client, "job", "id, itemId, completedDate", (query) =>
+        query
+          .in("status", ["Completed", "Closed"])
+          .gte("completedDate", completedSince)
+          .in("itemId", lapseItemIds)
+          .eq("companyId", companyId)
+          .order("completedDate", { ascending: false })
+          .order("id")
+      )
+    : { data: [], error: null };
+  if (completedJobs.error) return { data: result, error: completedJobs.error };
+
+  for (const job of inScope) {
+    const needs = resolveFirstArticleNeeds(
+      inputFor(job.id, job.customerId, (itemId) => {
+        const last = (completedJobs.data ?? []).find(
+          (completed) =>
+            completed.itemId === itemId &&
+            completed.id !== job.id &&
+            !!completed.completedDate
+        );
+        return last?.completedDate
+          ? datetime.businessDay(last.completedDate, timezone).toString()
+          : null;
+      })
+    );
+    const blocked = needs
+      .filter((need) => need.blocked)
+      .map((need) => ({
+        makeMethodId: need.jobMakeMethodId,
+        itemId: need.itemId,
+        description: need.description
+      }));
+    if (blocked.length > 0) result.set(job.id, blocked);
+  }
+
+  return { data: result, error: null };
+}
 
 async function getMaterialsWithoutStorageUnit(
   client: SupabaseClient<Database>,
@@ -3695,7 +3984,7 @@ export async function getJobReleaseReadiness(
       client
         .from("job")
         .select(
-          "id, jobId, status, quantity, scrapQuantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item!job_itemId_fkey(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+          "id, jobId, status, customerId, quantity, scrapQuantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item!job_itemId_fkey(itemTrackingType, itemReplenishment(manufacturingBlocked))"
         )
         .in("id", batch)
         .eq("companyId", companyId)
@@ -3734,6 +4023,13 @@ export async function getJobReleaseReadiness(
   const failed =
     jobs.error ?? roots.error ?? materials.error ?? operations.error;
   if (failed) return { data: null, error: failed };
+
+  const firstArticles = await getFirstArticlesWithoutPlan(
+    client,
+    jobs.data ?? [],
+    companyId
+  );
+  if (firstArticles.error) return { data: null, error: firstArticles.error };
 
   const withoutStorageUnit = await getMaterialsWithoutStorageUnit(
     client,
@@ -3881,6 +4177,7 @@ export async function getJobReleaseReadiness(
               ? job.jobId
               : (descriptionByMakeMethod.get(makeMethodId) ?? makeMethodId)
         })),
+        firstArticlesWithoutPlan: firstArticles.data.get(job.id) ?? [],
         outsideOperationsWithoutSupplier: (
           withoutSupplierByJob[job.id] ?? []
         ).map(({ op, supplier }) => ({
@@ -14555,6 +14852,15 @@ const normalizeOperationType = (value: unknown) =>
       ? "Outside Processing"
       : value) as Database["public"]["Enums"]["operationType"];
 
+// An operation's inspection-document link is only valid on an Inspection
+// operation (the `*_inspectionDocument_type_check` CHECK on jobOperation,
+// quoteOperation and methodOperation). A configurator rule can change the
+// type, so the link follows the FINAL type of the row being inserted.
+const inspectionDocumentFor = (
+  operationType: unknown,
+  inspectionDocumentId: string | null | undefined
+) => (operationType === "Inspection" ? (inspectionDocumentId ?? null) : null);
+
 // Copy the reference slides (grandchild) of copied operation steps: each source
 // step's slides go to every step copied from it, so an operation copied twice
 // gives both copies its slides. A no-op when there are no slides.
@@ -16641,7 +16947,10 @@ export async function getMethod(
                 // Carry the Assembly → BOP sync link so the MES can drive the
                 // animated instruction player on jobs made from a synced method.
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  normalizeOperationType(operationType),
+                  op.inspectionDocumentId
+                ),
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 ...getOutsideOperationRates(
                   processId,
@@ -17576,7 +17885,10 @@ export async function getMethod(
               // Carry the Assembly → BOP sync link so the MES can drive the
               // animated instruction player on jobs made from a synced method.
               assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
+              inspectionDocumentId: inspectionDocumentFor(
+                op.operationType,
+                op.inspectionDocumentId
+              ),
               operationUnitCost: op.operationUnitCost ?? 0,
               operationSupplierProcessId: op.operationSupplierProcessId,
               ...getOutsideOperationRates(
@@ -18458,7 +18770,10 @@ export async function getMethod(
                 processId,
                 procedureId,
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  normalizeOperationType(operationType),
+                  op.inspectionDocumentId
+                ),
                 workCenterId,
                 description,
                 setupTime,
@@ -19071,7 +19386,10 @@ export async function getMethod(
               processId: op.processId,
               procedureId: op.procedureId,
               assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
+              inspectionDocumentId: inspectionDocumentFor(
+                op.operationType,
+                op.inspectionDocumentId
+              ),
               workCenterId: op.workCenterId,
               description: op.description,
               setupTime: op.setupTime,
@@ -19528,7 +19846,10 @@ export async function getMethod(
               processId: op.processId!,
               procedureId: op.procedureId,
               assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
+              inspectionDocumentId: inspectionDocumentFor(
+                op.operationType ?? "Process",
+                op.inspectionDocumentId
+              ),
               workCenterId: op.workCenterId,
               description: op.description ?? "",
               setupTime: op.setupTime ?? 0,
@@ -19877,7 +20198,10 @@ export async function getMethod(
               processId: op.processId!,
               procedureId: op.procedureId,
               assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
+              inspectionDocumentId: inspectionDocumentFor(
+                op.operationType ?? "Process",
+                op.inspectionDocumentId
+              ),
               // workCenterId: op.workCenterId,
               description: op.description ?? "",
               setupTime: op.setupTime ?? 0,
@@ -20544,7 +20868,10 @@ export async function getMethod(
                 // Carry the Assembly → BOP sync link so the MES can drive the
                 // animated instruction player on the copied job.
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  op.operationType,
+                  op.inspectionDocumentId
+                ),
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 operationMinimumCost: op.operationMinimumCost ?? 0,
                 operationLeadTime: op.operationLeadTime ?? 0,
@@ -21471,7 +21798,10 @@ export async function getMethod(
               processId: op.processId!,
               procedureId: op.procedureId,
               assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
+              inspectionDocumentId: inspectionDocumentFor(
+                op.operationType ?? "Process",
+                op.inspectionDocumentId
+              ),
               workCenterId: op.workCenterId,
               description: op.description ?? "",
               setupTime: op.setupTime ?? 0,
@@ -21818,7 +22148,10 @@ export async function getMethod(
               processId: op.processId!,
               procedureId: op.procedureId,
               assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
+              inspectionDocumentId: inspectionDocumentFor(
+                op.operationType ?? "Process",
+                op.inspectionDocumentId
+              ),
               workCenterId: op.workCenterId,
               description: op.description ?? "",
               setupTime: op.setupTime ?? 0,
@@ -22372,7 +22705,10 @@ export async function getMethod(
                 // Carry the Assembly → BOP sync link so the MES can drive the
                 // animated instruction player on jobs made from a synced method.
                 assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
+                inspectionDocumentId: inspectionDocumentFor(
+                  op.operationType,
+                  op.inspectionDocumentId
+                ),
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 operationMinimumCost: op.operationMinimumCost ?? 0,
                 operationLeadTime: op.operationLeadTime ?? 0,
@@ -22778,7 +23114,10 @@ export async function getMethod(
               processId: op.processId,
               procedureId: op.procedureId,
               assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
+              inspectionDocumentId: inspectionDocumentFor(
+                op.operationType,
+                op.inspectionDocumentId
+              ),
               workCenterId: op.workCenterId,
               description: op.description,
               setupTime: op.setupTime,
@@ -23340,7 +23679,10 @@ export async function getMethod(
               processId: op.processId,
               procedureId: op.procedureId,
               assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
+              inspectionDocumentId: inspectionDocumentFor(
+                op.operationType,
+                op.inspectionDocumentId
+              ),
               workCenterId: op.workCenterId,
               description: op.description,
               setupTime: op.setupTime,

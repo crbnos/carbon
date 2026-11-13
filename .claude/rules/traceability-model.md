@@ -121,6 +121,8 @@ part) do. Neither RPC returns `itemId`; read it from `trackedEntity`.
 `get_direct_ancestors_of_tracked_entities_strict` / `get_direct_descendants_of_tracked_entities_strict`
 — the same directions as above, one round-trip per BFS frontier instead of per node. The ERP
 graph view uses these, and so does projects Build from part (one call per level).
+`getCertificationLineage` walks the descendants batch RPC back to the received lots
+(see `quality-certification-documents.md`).
 
 - Graph route: `apps/erp/app/routes/x+/traceability+/graph.tsx` → calls
   `fetchLineageSubgraph` / `fetchJobScopedLineage` in

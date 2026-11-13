@@ -301,6 +301,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "BAT-SMART-11AH",
+          certificate: {
+            type: "Other",
+            certificateNumber: "SBP-COC-26-0412",
+            specification: "UN 38.3; supplier CofC"
+          },
           orderQuantity: 2,
           outstandingQuantity: 0,
           receivedQuantity: 2,
@@ -313,6 +318,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
         },
         {
           item: "PCB-BARE-R3",
+          certificate: {
+            type: "Other",
+            certificateNumber: "PCB-COC-9152",
+            specification: "IPC-6012 Class 3"
+          },
           orderQuantity: 10,
           outstandingQuantity: 0,
           receivedQuantity: 10,
@@ -352,6 +362,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "ARM-CF-30",
+          certificate: {
+            type: "Material",
+            certificateNumber: "CF-MC-26-3307",
+            specification: "Carbon fiber prepreg mill certificate"
+          },
           orderQuantity: 4,
           outstandingQuantity: 2,
           receivedQuantity: 2,

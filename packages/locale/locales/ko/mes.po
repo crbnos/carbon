@@ -239,6 +239,9 @@ msgstr "Ac"
 msgid "Accept"
 msgstr "수락"
 
+msgid "Accept first article?"
+msgstr "첫 시제품을 수락하시겠습니까?"
+
 msgid "Accept inspection?"
 msgstr "검사를 수락하시겠습니까?"
 
@@ -295,6 +298,9 @@ msgstr "{phrase} 추가"
 msgid "Add & Issue"
 msgstr "추가 및 출고"
 
+msgid "Add a note to this reading"
+msgstr "이 판독값에 메모를 추가하세요"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
 
@@ -309,6 +315,9 @@ msgstr "필터 추가"
 
 msgid "Add Inventory"
 msgstr "재고 추가"
+
+msgid "Add note"
+msgstr "메모 추가"
 
 msgid "Add option"
 msgstr "옵션 추가"
@@ -376,6 +385,9 @@ msgstr "실패한 단위 할당"
 
 msgid "Allocate units"
 msgstr "단위 할당"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "허용 {allowableLabel}(보너스 {bonusLabel})"
 
 msgid "Appearance"
 msgstr "모양"
@@ -991,6 +1003,9 @@ msgstr "편집"
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel} 편집"
 
+msgid "Edit note"
+msgstr "메모 편집"
+
 msgid "Edit Passkey"
 msgstr "패스키 편집"
 
@@ -1084,6 +1099,9 @@ msgstr "실패"
 msgid "Failed characteristics"
 msgstr "부적합 특성"
 
+msgid "Failed features"
+msgstr "불합격 특성"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "재고 조정을 완료하지 못했습니다"
 
@@ -1176,6 +1194,19 @@ msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 
 msgid "First"
 msgstr "초품"
+
+msgid "First article"
+msgstr "첫 시제품"
+
+msgid "First article plan missing for {description}"
+msgstr "{description}에 대한 초도 검사 계획이 누락됨"
+
+msgid "First article plan missing for {part}"
+msgstr "{part}에 대한 초도 검사 계획이 누락됨"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "{0}에 첫 시제품이 필요합니다"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -1309,8 +1340,14 @@ msgstr "비활성"
 msgid "Increase {fieldLabel}"
 msgstr "{fieldLabel} 증가"
 
+msgid "Inspect"
+msgstr "검사"
+
 msgid "Inspect Item"
 msgstr "항목 검사"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "나머지를 실행하기 전에 모든 특성에 대해 첫 개를 검사하세요."
 
 msgid "inspected"
 msgstr "검사됨"
@@ -1913,6 +1950,9 @@ msgstr "설정되지 않음"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "사용 가능한 재고가 아닙니다. MRP와 계획에서 계산하지 않으며 피킹에서도 가져가지 않습니다."
 
+msgid "Note"
+msgstr "메모"
+
 msgid "Notes"
 msgstr "메모"
 
@@ -2394,6 +2434,9 @@ msgstr "등록 실패"
 
 msgid "Reject"
 msgstr "거부"
+
+msgid "Reject first article?"
+msgstr "첫 시제품을 거부하시겠습니까?"
 
 msgid "Reject inspection?"
 msgstr "검사를 거부하시겠습니까?"
@@ -3007,6 +3050,9 @@ msgstr "작업장을 오프라인 상태로 변경"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "날짜를 누르면 {selectedLabel}에 시간을 추가합니다. 막대의 아래쪽 모서리를 드래그하여 시간을 변경합니다."
 
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "품질에 알리세요 — 이 부품은 초도 검사가 필요하지만 활성 검사 계획이 없습니다."
+
 msgid "Text color"
 msgstr "텍스트 색상"
 
@@ -3028,6 +3074,12 @@ msgstr "날짜가 입력 윈도우 이전입니다. 이유는 항목과 함께 �
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "{0}개의 전체 로트는 부적합으로 거부됨될 예정입니다 — {passes}개 샘플링된 합격 및 {fails}개 실패(현재까지). 아래 개를 스크랩 또는 재작업으로 라우팅하거나 판정만 기록하세요."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "첫 시제품이 불합격으로 표시되고 결과가 잠깁니다. 수량이 기록되지 않습니다."
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "첫 시제품이 통과로 표시되고 결과가 잠깁니다. 수량이 기록되지 않습니다."
 
 #. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."

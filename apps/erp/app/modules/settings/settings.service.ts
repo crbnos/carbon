@@ -1419,6 +1419,18 @@ export async function updateLogoWatermark(
   );
 }
 
+/** @mcp update */
+export async function updateRequireFirstArticleSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  requireFirstArticle: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ requireFirstArticle }))
+    .eq("id", companyId);
+}
+
 export async function updateProductLabelSize(
   client: SupabaseClient<Database>,
   companyId: string,

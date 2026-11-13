@@ -4,7 +4,13 @@
 
 import type { Database } from "@carbon/database";
 import { fetchAllByIds, fetchAllRecords } from "@carbon/database";
+import type { JSONContent } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getJobMakeMethod,
+  getTrackedEntitiesByMakeMethodId
+} from "./operations.service";
+import type { InspectionSample } from "./types";
 
 // Reads for the MES inspection execution view. Copied from the ERP quality
 // module's service reads (apps/erp/app/modules/quality/quality.service.ts) —
@@ -39,7 +45,7 @@ export async function getInspectionSamplingPlans(
   return client
     .from("inspectionSamplingPlan")
     .select(
-      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, pmiItemId, gaugeType(name))"
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, materialCondition, gaugeTypeId, pmiItemId, gaugeType(name))"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
@@ -161,6 +167,94 @@ export async function getInspectionDocumentWithBalloons(
     },
     error: null
   };
+}
+
+// Everything the MES InspectionView needs about a lot that does not depend on
+// an operation: its per-feature plans, readings, samples (in the engine's
+// column order), the make method's WIP entities and tracking flags, and the
+// plan's drawing and the active gauges. Shared by the job-operation and
+// first-article routes.
+export async function getInspectionViewData(
+  client: SupabaseClient<Database>,
+  args: {
+    inspection: {
+      id: string;
+      inspectionDocumentId: string | null;
+      inspectionSample?: InspectionSample[] | null;
+    };
+    jobMakeMethodId: string;
+    companyId: string;
+  }
+) {
+  const { inspection, jobMakeMethodId, companyId } = args;
+
+  const [
+    features,
+    measurements,
+    issueTypes,
+    trackedEntities,
+    jobMakeMethod,
+    document,
+    gauges
+  ] = await Promise.all([
+    getInspectionSamplingPlans(client, inspection.id, companyId),
+    getInspectionMeasurements(client, inspection.id, companyId),
+    getIssueTypesList(client, companyId),
+    getTrackedEntitiesByMakeMethodId(client, jobMakeMethodId, companyId),
+    getJobMakeMethod(client, jobMakeMethodId),
+    inspection.inspectionDocumentId
+      ? getInspectionDocumentWithBalloons(
+          client,
+          inspection.inspectionDocumentId
+        )
+      : Promise.resolve(null),
+    getInspectionGauges(client, companyId, inspection.id)
+  ]);
+
+  // Sample column order must match the engine's required-feature derivation
+  // (createdAt asc, id asc).
+  const samples = [...(inspection.inspectionSample ?? [])].sort(
+    (a, b) =>
+      (a.createdAt ?? "").localeCompare(b.createdAt ?? "") ||
+      a.id.localeCompare(b.id)
+  );
+
+  return {
+    samples,
+    features: features.data ?? [],
+    measurements: measurements.data ?? [],
+    gauges: gauges.data ?? [],
+    issueTypes: issueTypes.data ?? [],
+    trackedEntities: trackedEntities.data ?? [],
+    requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
+    requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
+    balloons: document?.data?.balloons ?? [],
+    documentName: document?.data?.name ?? null,
+    parameters: document?.data?.parameters ?? [],
+    workInstruction: (document?.data?.workInstruction ??
+      null) as JSONContent | null,
+    pdfUrl: document?.data?.pdfUrl ?? null,
+    model: document?.data?.model ?? null
+  };
+}
+
+// The job's First Article lots that are still open (not dispositioned). One
+// lot per make method; `sourceDocumentLineId` is the jobMakeMethod id.
+export async function getOpenFirstArticleInspectionsForJob(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("inspection")
+    .select(
+      "id, inspectionId, status, sourceDocumentLineId, itemReadableId, item(readableId, name)"
+    )
+    .eq("sourceDocument", "First Article")
+    .eq("sourceDocumentId", jobId)
+    .eq("companyId", companyId)
+    .not("status", "in", '("Passed","Failed","Partial")')
+    .order("createdAt", { ascending: true });
 }
 
 // Every open inspection of the company (all sources), newest first, for the

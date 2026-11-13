@@ -239,6 +239,9 @@ msgstr "Ka"
 msgid "Accept"
 msgstr "Kabul Et"
 
+msgid "Accept first article?"
+msgstr "İlk makaleyi kabul et?"
+
 msgid "Accept inspection?"
 msgstr "Muayene kabul edilsin mi?"
 
@@ -295,6 +298,9 @@ msgstr "Ekle {phrase}"
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
+msgid "Add a note to this reading"
+msgstr "Bu okumasına bir not ekle"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
 
@@ -309,6 +315,9 @@ msgstr "Filtre ekle"
 
 msgid "Add Inventory"
 msgstr "Envantere Ekle"
+
+msgid "Add note"
+msgstr "Not ekle"
 
 msgid "Add option"
 msgstr "Seçenek ekle"
@@ -376,6 +385,9 @@ msgstr "Başarısız birimleri tahsis et"
 
 msgid "Allocate units"
 msgstr "Birimleri tahsis et"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "izin verilen {allowableLabel} (bonus {bonusLabel})"
 
 msgid "Appearance"
 msgstr "Görünüm"
@@ -991,6 +1003,9 @@ msgstr "Düzenle"
 msgid "Edit {fieldLabel}"
 msgstr "{fieldLabel} Düzenle"
 
+msgid "Edit note"
+msgstr "Notu düzenle"
+
 msgid "Edit Passkey"
 msgstr "Geçiş Anahtarını Düzenle"
 
@@ -1082,6 +1097,9 @@ msgid "Failed"
 msgstr "Başarısız"
 
 msgid "Failed characteristics"
+msgstr "Başarısız özellikler"
+
+msgid "Failed features"
 msgstr "Başarısız özellikler"
 
 msgid "Failed to complete inventory adjustment"
@@ -1176,6 +1194,19 @@ msgstr "Malzeme seçilmeden bitir?"
 
 msgid "First"
 msgstr "İlk"
+
+msgid "First article"
+msgstr "İlk makale"
+
+msgid "First article plan missing for {description}"
+msgstr "{description} için ilk örnek planı eksik"
+
+msgid "First article plan missing for {part}"
+msgstr "{part} için ilk örnek planı eksik"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "{0} için ilk makale gerekli"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -1309,8 +1340,14 @@ msgstr "Pasif"
 msgid "Increase {fieldLabel}"
 msgstr "{fieldLabel} alanını artır"
 
+msgid "Inspect"
+msgstr "Muayene et"
+
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "Geri kalanını çalıştırmadan önce ilk birimi her bir özellikte muayene edin."
 
 msgid "inspected"
 msgstr "incelendi"
@@ -1913,6 +1950,9 @@ msgstr "Ayarlanmamış"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Kullanılabilir stok değil. MRP ve planlama bunu saymaz, toplama da buradan almaz."
 
+msgid "Note"
+msgstr "Not"
+
 msgid "Notes"
 msgstr "Notlar"
 
@@ -2394,6 +2434,9 @@ msgstr "Kayıt başarısız"
 
 msgid "Reject"
 msgstr "Reddet"
+
+msgid "Reject first article?"
+msgstr "İlk makaleyi reddet?"
 
 msgid "Reject inspection?"
 msgstr "Muayene reddedilsin mi?"
@@ -3007,6 +3050,9 @@ msgstr "İş merkezini çevrimdışı alır"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Bir gün seçerek {selectedLabel} için süre ekleyin. Bir çubuğun alt kenarını sürükleyerek saatlerini değiştirin."
 
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "Kaliteye bildir — bu parça bir ilk örneğe ihtiyaç duyuyor, ancak aktif bir kontrol planı yok."
+
 msgid "Text color"
 msgstr "Metin rengi"
 
@@ -3028,6 +3074,12 @@ msgstr "Tarih giriş penceresinden önce. Neden giriş ile tutulur."
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "{0} partinin tamamı uyumsuz olarak reddedilecek — şu ana kadar {passes} örnek uygun(lar) ve {fails} hata(lar). Aşağıdaki adetleri fire veya yeniden işleme yönünde yönlendirin veya sadece kararı kaydedin."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "İlk makale başarısız olarak işaretlenecek ve sonuçları kilitli olacak. Hiç bir miktar kaydedilmeyecektir."
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "İlk makale geçti olarak işaretlenecek ve sonuçları kilitli olacak. Hiç bir miktar kaydedilmeyecektir."
 
 #. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."

@@ -7,10 +7,12 @@ import { IoBalloonOutline } from "react-icons/io5";
 import {
   LuCircleGauge,
   LuClipboardCheck,
+  LuClipboardList,
   LuDraftingCompass,
   LuFileText,
   LuListChecks,
   LuOctagonX,
+  LuScrollText,
   LuShapes,
   LuShieldAlert,
   LuShieldX,
@@ -80,6 +82,11 @@ export default function useQualitySubmodules() {
           name: t`Inspection Plans`,
           to: path.to.inspectionDocuments,
           icon: <IoBalloonOutline />
+        },
+        {
+          name: t`First Articles`,
+          to: path.to.firstArticles,
+          icon: <LuClipboardList />
         }
       ]
     },
@@ -102,7 +109,11 @@ export default function useQualitySubmodules() {
           to: path.to.requiredActions,
           icon: <LuSquareCheck />
         },
-
+        {
+          name: t`Compliance Statements`,
+          to: path.to.complianceStatements,
+          icon: <LuScrollText />
+        },
         {
           name: t`Gauge Types`,
           to: path.to.gaugeTypes,

@@ -35,7 +35,11 @@ export function engineErrResult(err: unknown, fallback: string): Err {
   return errResult(err instanceof Error ? err.message : fallback);
 }
 
-export type InspectionSource = "Receipt" | "Job Operation" | "Manual";
+export type InspectionSource =
+  | "Receipt"
+  | "Job Operation"
+  | "Manual"
+  | "First Article";
 
 // Terminal lot statuses. Passed/Failed/Partial are all hard-terminal: once
 // dispositioned, samples and measurements are immutable (Partial is the mixed

@@ -1415,12 +1415,15 @@ export const cancelManualInspection = defineServiceFn({
 });
 
 /**
- * Reject a receipt or manual inspection lot, and open an issue for it.
+ * Reject a receipt, manual or first article inspection lot, and open an issue
+ * for it.
  *
  * @remarks
  * Every tracked entity of the lot becomes Rejected and the lot Failed (ISO
- * 9001:2015 §8.7). Only a Receipt or Manual lot: a Job Operation lot is
- * rejected from the shop floor. A non-tracked Inventory lot's value is written off through
+ * 9001:2015 §8.7). Only a Receipt, Manual or First Article lot: a Job
+ * Operation lot is rejected from the shop floor. A First Article lot is
+ * verdict-only and one-shot, because its FAI's Verify snapshots the verdict;
+ * its result names the FAI (`firstArticleId`). A non-tracked Inventory lot's value is written off through
  * `post-nonconformance` in the decision's transaction; when the write-off
  * fails the lot is not rejected. With `createNcr` false that is all
  * (`issueId` null). Otherwise an issue opens, of `nonConformanceTypeId`, else a
@@ -1449,6 +1452,20 @@ export const rejectInspection = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
+    const firstArticleLookup = await service.getFirstArticleInspectionByLot(
+      ctx.asSystem.supabase,
+      id,
+      companyId
+    );
+    if (firstArticleLookup.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the inspection's first article",
+        firstArticleLookup.error
+      );
+    }
+    const firstArticleId = firstArticleLookup.data?.id ?? null;
+
     const rejected = await ctx.transaction(async (tx) => {
       const decided = await engine.dispositionInspection(tx.asSystem.pg, {
         id,
@@ -1457,9 +1474,9 @@ export const rejectInspection = defineServiceFn({
         companyId,
         dispositionedBy: userId,
         // A Job Operation lot's reject carries its production outcome, which
-        // only the shop floor posts.
-        requireSource: ["Receipt", "Manual"],
-        requireOpen
+        // only the shop floor posts. A First Article lot is decided once.
+        requireSource: firstArticleId ? "First Article" : ["Receipt", "Manual"],
+        requireOpen: requireOpen || !!firstArticleId
       });
       if (decided.error) {
         return ctx.error(
@@ -1498,12 +1515,14 @@ export const rejectInspection = defineServiceFn({
     });
     if (rejected.error) return rejected.error;
 
-    if (!createNcr) return { id, issueId: null };
+    if (!createNcr) return { id, issueId: null, firstArticleId };
 
     const existingNcr = () =>
       service.getInspectionNcrLink(ctx.asSystem.pg, companyId, id);
     const linked = await existingNcr();
-    if (linked) return { id, issueId: linked.nonConformanceId };
+    if (linked) {
+      return { id, issueId: linked.nonConformanceId, firstArticleId };
+    }
 
     const opened = await service.openInspectionNcr(ctx, {
       id,
@@ -1516,10 +1535,12 @@ export const rejectInspection = defineServiceFn({
     });
     if (opened instanceof CarbonError) {
       const raced = opened.category === "conflict" && (await existingNcr());
-      if (raced) return { id, issueId: raced.nonConformanceId };
+      if (raced) {
+        return { id, issueId: raced.nonConformanceId, firstArticleId };
+      }
       return opened;
     }
-    return { id, issueId: opened.issueId, ncrOpened: true };
+    return { id, issueId: opened.issueId, ncrOpened: true, firstArticleId };
   }
 });
 /**
@@ -1922,20 +1943,32 @@ export const saveInspectionDocument = defineServiceFn({
 });
 
 /**
- * Set an inspection plan's name; an empty one clears it.
+ * Set an inspection plan's name and/or drawing revision; an empty one clears
+ * it, and a field not sent is left as it is.
  *
  * @mcp
  */
 export const setInspectionDocumentName = defineServiceFn({
-  input: z.object({ id: z.string(), name: z.string().nullish() }),
+  input: z.object({
+    id: z.string(),
+    name: z.string().nullish(),
+    drawingRevision: z.string().nullish()
+  }),
   permission: { update: "quality" },
 
-  async run(ctx, { id, name }) {
+  async run(ctx, { id, name, drawingRevision }) {
+    // Each header field submits on its own; only update the fields sent.
+    const fields: { name?: string | null; drawingRevision?: string | null } =
+      {};
+    if (name !== undefined) fields.name = name?.trim() || null;
+    if (drawingRevision !== undefined) {
+      fields.drawingRevision = drawingRevision?.trim() || null;
+    }
     // Only a Draft version is editable.
     const updated = await ctx.asCaller.supabase
       .from("inspectionDocument")
       .update({
-        name: name?.trim() || null,
+        ...fields,
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })

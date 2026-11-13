@@ -558,8 +558,10 @@ export const updatePurchasingSettings = defineServiceFn({
  * @remarks
  * Writes the fields sent and leaves the rest: whether an inspection needs a
  * second person to sign it off, the sampling standard inspection plans use,
- * the open-issue target on the quality dashboard, and who is notified when a
- * gauge goes out of calibration. Then one location's goods-in storage units:
+ * the open-issue target on the quality dashboard, who is notified when a
+ * gauge goes out of calibration, and whether releasing a job creates first
+ * article inspections for new parts and revisions (`requireFirstArticle`).
+ * Then one location's goods-in storage units:
  * the inspection storage unit received parts wait in, and the rejected
  * storage unit rejected stock moves to (null clears one). Each must be an
  * active storage unit at that location. A location is a
@@ -574,6 +576,7 @@ export const updateQualitySettings = defineServiceFn({
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
     qualityIssueTarget: z.number().int().min(0).optional(),
     gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional(),
+    requireFirstArticle: z.boolean().optional(),
     locationGoodsInStorage: z
       .object({
         locationId: z.string().min(1),

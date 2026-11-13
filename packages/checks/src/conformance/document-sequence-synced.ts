@@ -29,6 +29,8 @@ const COUNTER_TABLES: Record<string, string> = {
  * inserts fail on the unique constraint.
  */
 export const EXEMPT_COUNTERS: Record<string, string> = {
+  certificateOfConformance:
+    "no form or API write takes certificateId (issueCertificateOfConformance takes it from get_next_sequence; a reissue keeps it and raises the revision)",
   charge: "no form or API write takes chargeId",
   fixedAssetTransfer:
     "no form or API write takes its transferId (the transferId tools are warehouse transfers)",

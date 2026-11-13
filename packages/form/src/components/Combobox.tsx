@@ -23,6 +23,8 @@ export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
   name: string;
   label?: string;
   termId?: TermId;
+  /** Free-text hover help on the label's ⓘ, when no glossary term fits. */
+  help?: string;
   isLoading?: boolean;
   isOptional?: boolean;
   isRequired?: boolean;
@@ -45,6 +47,7 @@ const Combobox = ({
   name,
   label,
   termId,
+  help,
   isLoading = false,
   isOptional,
   isRequired,
@@ -83,7 +86,9 @@ const Combobox = ({
     <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && inlineField.showLabel && (
         <FormLabel htmlFor={name} isOptional={resolvedIsOptional}>
-          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
+          <LabelWithHelp termId={termId} text={help}>
+            {label}
+          </LabelWithHelp>
         </FormLabel>
       )}
       <input

@@ -68,6 +68,7 @@ import {
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
+import { autoIssueCertificatesOfConformance } from "./certificateOfConformance.pdf";
 import {
   finishPickingList,
   inventoryAdjustmentTypes,
@@ -307,6 +308,22 @@ export const updateReceipt = defineServiceFn({
       if (refused) return refused;
     }
 
+    // The rebuild moves each supplier certificate to the new line for its
+    // source line; one whose source line is gone is deleted with its old line.
+    // Read them first, so the caller can be told which were dropped.
+    const certificatesBefore = await service.getReceiptCertificates(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id
+    );
+    if (certificatesBefore.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the receipt's certificates",
+        certificatesBefore.error
+      );
+    }
+
     const created = await (() => {
       switch (receipt.sourceDocument) {
         case "Purchase Order":
@@ -343,7 +360,33 @@ export const updateReceipt = defineServiceFn({
         "Failed to create receipt"
       );
     }
-    return { id };
+
+    let warning: string | null = null;
+    if (certificatesBefore.data.length > 0) {
+      const certificatesAfter = await service.getReceiptCertificates(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        id
+      );
+      const kept = new Set(
+        (certificatesAfter.data ?? []).map((certificate) => certificate.id)
+      );
+      const dropped = certificatesAfter.error
+        ? []
+        : certificatesBefore.data.filter(
+            (certificate) => !kept.has(certificate.id)
+          );
+      if (dropped.length > 0) {
+        const numbers = dropped
+          .map((certificate) => certificate.certificateNumber)
+          .join(", ");
+        warning =
+          dropped.length === 1
+            ? `Certificate ${numbers} was removed: the new source has no line it belongs to. Its file is still on the receipt.`
+            : `Certificates ${numbers} were removed: the new source has no line they belong to. Their files are still on the receipt.`;
+      }
+    }
+    return { id, warning };
   }
 });
 
@@ -1741,7 +1784,9 @@ export const updateShipment = defineServiceFn({
  *      `warehouseTransfer` for an outbound transfer), and a sales order
  *      shipment runs its order's sales rules on the lines shipped. An
  *      untracked line whose storage unit holds less than it ships adds a
- *      warning that names the storage units holding the item. A
+ *      warning that names the storage units holding the item. A part going
+ *      to a customer whose first article is not approved (an open one, or
+ *      one a requirement covers that is due) adds a warning too. A
  *      blocking rule returns its `violations` and `ruleNames` and changes
  *      nothing (a blocked sales rule is recorded on the order); send
  *      `acknowledged: true` to post past warnings.
@@ -1787,7 +1832,7 @@ export const postShipment = defineServiceFn({
         .eq("companyId", companyId),
       serviceRole
         .from("shipment")
-        .select("sourceDocument, sourceDocumentId, locationId")
+        .select("sourceDocument, sourceDocumentId, locationId, customerId")
         .eq("id", shipmentId)
         .eq("companyId", companyId)
         .maybeSingle()
@@ -1863,6 +1908,28 @@ export const postShipment = defineServiceFn({
       });
       rules.violations.push(...stock.violations);
       Object.assign(rules.ruleNames, stock.ruleNames);
+    }
+
+    // Parts going to a customer whose first article is not approved.
+    if (
+      shipment.data.sourceDocument === "Sales Order" ||
+      shipment.data.sourceDocument === "Sales Invoice" ||
+      shipment.data.sourceDocument === "Customer Contract"
+    ) {
+      const firstArticles = await service.shipmentFirstArticleWarnings(
+        serviceRole,
+        {
+          companyId,
+          customerId: shipment.data.customerId,
+          lines: (lines.data ?? []).map((line) => ({
+            id: line.id,
+            itemId: line.itemId,
+            quantity: Number(line.shippedQuantity ?? 0)
+          }))
+        }
+      );
+      rules.violations.push(...firstArticles.violations);
+      Object.assign(rules.ruleNames, firstArticles.ruleNames);
     }
 
     // Evidence covers the SALES violations only, attributed to the order. A
@@ -2024,7 +2091,14 @@ export const postShipment = defineServiceFn({
       shipmentId,
       sourceDocument: shipment.data.sourceDocument ?? null
     });
-    return { warning };
+    // Once the post has stuck: the Certificate of Conformance a customer
+    // requires. Never changes the post's result; every failure is in it.
+    const certificate = await autoIssueCertificatesOfConformance(
+      ctx.asSystem.pg,
+      ctx.asCaller.supabase,
+      { shipmentIds: [shipmentId], companyId, userId, locale }
+    );
+    return { warning, certificate };
   }
 });
 

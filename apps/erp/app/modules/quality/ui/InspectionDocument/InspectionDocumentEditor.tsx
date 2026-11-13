@@ -187,6 +187,21 @@ export default function InspectionDocumentEditor({
       }
     );
   }, 500);
+  const revisionFetcher = useAction();
+  const [drawingRevision, setDrawingRevision] = useState(
+    content?.drawingRevision ?? ""
+  );
+  const [revisionPending, setRevisionPending] = useState(false);
+  const debouncedSaveRevision = useDebounce((value: string) => {
+    setRevisionPending(false);
+    revisionFetcher.submit(
+      { drawingRevision: value },
+      {
+        method: "post",
+        action: path.to.updateInspectionDocumentName(diagramId)
+      }
+    );
+  }, 500);
 
   const { carbon } = useCarbon();
   const user = useUser();
@@ -370,7 +385,7 @@ export default function InspectionDocumentEditor({
     uploading,
     dragKind: drawing.dragKind
   });
-  const { blocker, isLeaving, saveFailed, pdfReplaceToastRef } = autosave;
+  const { blocker, isLeaving, cannotSave, pdfReplaceToastRef } = autosave;
 
   const uploadPdfAndSave = useCallback(
     async (file: File, options: { clearBalloons: boolean }) => {
@@ -435,6 +450,8 @@ export default function InspectionDocumentEditor({
     uploading ||
     namePending ||
     nameFetcher.state !== "idle" ||
+    revisionPending ||
+    revisionFetcher.state !== "idle" ||
     workInstructionDraft.isPending ||
     modelUpload.upload !== null ||
     modelFetcher.state !== "idle";
@@ -504,23 +521,42 @@ export default function InspectionDocumentEditor({
   const handleDeleteFeature = useCallback(
     (featureId: string) => {
       setFeatureRows((prev) => {
-        const row = prev.find((r) => r.featureId === featureId);
+        const index = prev.findIndex((r) => r.featureId === featureId);
+        const row = index >= 0 ? prev[index] : undefined;
         if (row) {
           queueDelete(ledger.pendingFeatureDeleteIdsRef.current, row.featureId);
         }
+        // Only a delete that goes to the server can be refused.
+        const queued =
+          row != null &&
+          ledger.pendingFeatureDeleteIdsRef.current.has(row.featureId);
         const nextRows = prev.filter((r) => r.featureId !== featureId);
         const keptAnchorIds = new Set(
           nextRows
             .map((r) => r.balloonAnchorId)
             .filter((id): id is string => id.length > 0)
         );
-        setSelectorRects((sels) =>
-          sels.filter((sel) => keptAnchorIds.has(sel.id))
-        );
+        setSelectorRects((sels) => {
+          if (row && queued) {
+            ledger.deletedFeatureSnapshotsRef.current.set(row.featureId, {
+              row,
+              index,
+              anchors: sels.filter(
+                (sel) =>
+                  sel.id === row.balloonAnchorId && !keptAnchorIds.has(sel.id)
+              )
+            });
+          }
+          return sels.filter((sel) => keptAnchorIds.has(sel.id));
+        });
         return nextRows;
       });
     },
-    [queueDelete, ledger.pendingFeatureDeleteIdsRef]
+    [
+      queueDelete,
+      ledger.pendingFeatureDeleteIdsRef,
+      ledger.deletedFeatureSnapshotsRef
+    ]
   );
 
   const handleAddFeature = useCallback(() => {
@@ -580,6 +616,7 @@ export default function InspectionDocumentEditor({
   );
 
   const { featureColumns, featureEditableComponents } = useFeatureColumns({
+    featureRows,
     setFeatureRows,
     unitOfMeasures,
     gaugeTypes,
@@ -714,7 +751,14 @@ export default function InspectionDocumentEditor({
         onDelete={() => deleteDisclosure.onOpen()}
         tab={bottomTab}
         onTabChange={setBottomTab}
-        saveFailed={saveFailed}
+        drawingRevision={drawingRevision}
+        onDrawingRevisionChange={(value) => {
+          setDrawingRevision(value);
+          setRevisionPending(true);
+          debouncedSaveRevision(value);
+        }}
+        saveFailed={cannotSave}
+        saveFailedReason={autosave.invalidCharacteristicMessage}
         saving={autosave.hasUnsavedChanges || autosave.isSaving}
         hasSaved={autosave.hasSaved}
         version={version}
@@ -724,7 +768,7 @@ export default function InspectionDocumentEditor({
       />
 
       <Modal
-        open={isLeaving && saveFailed}
+        open={isLeaving && cannotSave}
         onOpenChange={(open) => !open && blocker.reset?.()}
       >
         <ModalContent>

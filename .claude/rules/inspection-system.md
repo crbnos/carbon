@@ -10,6 +10,9 @@ paths:
   - "apps/mes/app/routes/x+/inspection*.tsx"
   - "packages/database/src/quality.ts"
   - "packages/database/supabase/migrations/*inspection*.sql"
+  - "packages/database/src/inspection-verdict.ts"
+  - "apps/mes/app/routes/x+/first-article.$inspectionId.tsx"
+  - "apps/mes/app/routes/x+/{complete,end.$operationId}.tsx"
   - "apps/erp/app/modules/inventory/inventory.service.ts"
 ---
 
@@ -17,9 +20,12 @@ paths:
 
 Generic quality-inspection execution keyed by `sourceDocument` /
 `sourceDocumentId` / `sourceDocumentLineId` / `sourceDocumentReadableId`
-(enum `inspectionSourceDocument`: 'Receipt', 'Job Operation' and 'Manual'; no
-FKs on the generic ids, unique per `(sourceDocument, sourceDocumentLineId)` —
+(enum `inspectionSourceDocument`: 'Receipt', 'Job Operation', 'First Article' and
+'Manual'; no FKs on the generic ids, unique per `(sourceDocument, sourceDocumentLineId)` —
 a **partial** unique index `WHERE "sourceDocumentLineId" IS NOT NULL`).
+'First Article' lots (AS9102, `sourceDocumentId` = job, `sourceDocumentLineId` =
+job make method) are created at job release and are covered below and in
+[quality-certification-documents.md](quality-certification-documents.md).
 Renamed from the receipt-only "Inbound Inspections" in `20260722132135_inspections-refactor.sql`
 (tables `inspection`/`inspectionSample`/`inspectionSamplingPlan`/
 `inspectionMeasurement`/`inspectionHistory`/`nonConformanceInspection`;
@@ -81,7 +87,8 @@ whose description includes the failed features (documentation only — never
 required, and the NCR does not drive the physical outcome), except an untracked
 receipt Partial, whose NCR is required (see "Goods-in inspection hold"). The
 **ERP receipt UI** exposes **Accept**, **Reject** and **Partial**
-(`PartialLotModal`, the `partialInspection` operation). The **MES job-operation UI** exposes **Accept**,
+(`PartialLotModal`, the `partialInspection` operation); a **First Article** lot
+gets Accept and Reject only, verdict-only and one-shot. The **MES job-operation UI** exposes **Accept**,
 **Partial**, and **Reject**, and its dispositions carry their physical
 production outcome (see "Disposition → production outcome" below). All three
 terminal statuses (Passed/Failed/**Partial**) are hard-terminal in the engine
@@ -150,8 +157,10 @@ Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
 - `inspection.inspectionDocumentId` — **live** reference to the assigned
   `inspectionDocument` (ON DELETE SET NULL); no feature snapshot.
 - `itemInspectionDocumentAssignment` — PK `(itemId, usage)`; `usage` enum
-  `inspectionDocumentUsage` (v1: only `'Receipt'`; FAI/Production are additive
-  enum values later). Edited on the item Quality tab (`ItemQualityView`).
+  `inspectionDocumentUsage`: `'Receipt'` (inbound inspection) and
+  `'First Article'` (the plan an FAI inspects against; it supersedes the part's
+  only plan — see quality-certification-documents.md). Edited on the item
+  Quality tab (`ItemQualityView`).
 - `inspectionFeature` gained six nullable per-feature sampling columns
   (`samplingPlanType/SampleSize/Percentage/Aql/InspectionLevel/Severity`);
   NULL = inherit the document's default rule. Persisted through the
@@ -163,7 +172,30 @@ Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
 - `inspectionMeasurement` — one reading per `(sampleId, featureId)`
   (unique): `value NUMERIC` (NULL for attribute features), `status`
   (`inspectionSampleStatusType` — the valuation at entry; tolerance edits
-  never rewrite recorded statuses), `notes`, `inspectedBy/At`.
+  never rewrite recorded statuses), `notes`, `inspectedBy/At`, and `bonus` /
+  `allowable` (NUMERIC, set only for MMC/LMC geometric features — see Bonus
+  tolerance below).
+
+AS9102 plan fields (`20260926032544_cofc-fai-reports.sql`):
+`inspectionDocument.drawingRevision`; `inspectionFeature.designator`,
+`referenceLocation`, `materialCondition` (enum `materialCondition`: RFS / MMC /
+LMC), `sizeFeatureId` (self-FK, ON DELETE SET NULL — the related feature of
+size; CHECK `inspectionFeature_sizeFeatureId_not_self`, migration
+`20260926053908`) and `featureOfSize` (enum `featureOfSizeType`: Internal /
+External).
+The same migration's `save_inspection_document_atomic` persists them
+(`sizeFeatureId` in a pass after creates/updates, so it may name a new
+feature's `tempId`) and **refuses to delete a feature that has recorded
+results** (`Feature "X" has recorded results and cannot be deleted`) — the
+FK cascade used to wipe measurements on every lot, closed ones included.
+
+**Plans only on Inspection operations.** CHECK constraints
+`{method,quote,job}Operation_inspectionDocument_type_check`
+(`"inspectionDocumentId" IS NULL OR "operationType" = 'Inspection'`); the
+migration first cleared the plans the MES never ran on other operation types.
+`get-method` copies an operation's plan through `inspectionDocumentFor`, keyed
+on the FINAL `operationType` of the row it inserts — a configurator rule can
+change the type, and copying the source's link blindly violated the CHECK.
 
 RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/create/update/delete`.
 
@@ -825,6 +857,85 @@ The action sheet keeps Scrap/Rework (escape hatches for non-quality losses),
 Finish, and Quality Issue; **Log Completed was removed** (verdict-driven
 completion replaced it).
 
+### Completion guards (MES)
+
+An Inspection operation completes **only through its inspection**, never by a
+posted quantity:
+
+- `x+/end.$operationId.tsx` (the traveler's Complete QR) redirects an
+  Inspection operation to `path.to.inspection(operationId)` and posts nothing.
+- `x+/complete.tsx` refuses a completion POST for an Inspection operation
+  ("Record this operation through its inspection").
+
+## First Article lots
+
+Created by `createFirstArticleInspections` (`@carbon/database/quality`) at job
+release — one per job make method that needs one; see
+[quality-certification-documents.md](quality-certification-documents.md) for
+when, the plan rule and the FAI extension row.
+
+- **Forced n = 1.** The lot is `lotSize = 1`, plan `All`, and the one
+  per-feature plan builder `resolveLotFeaturePlan` returns
+  `{ sampleSize: 1, acceptanceNumber: 0, rejectionNumber: 1 }` for
+  `sourceDocument = 'First Article'`, ignoring feature and document sampling
+  rules (AS9102 inspects every characteristic on one unit). The same builder
+  lives in `quality-sampling.ts` and serves `reconcileInspectionSamplingPlans`
+  (hence the `sourceDocument` read) and `createFirstArticleInspections`; new
+  receipt, manual and job-operation lots resolve through
+  `resolveLotSamplingPlans`, which is never First Article.
+- **Verdict only, one-shot, in both apps.** The ERP accept/reject routes take
+  `requireSource: "First Article"` + `requireOpen: true` for these lots (Receipt
+  lots still re-disposition); `InspectionView`'s `canDisposition` covers both
+  sources. The MES runs them at `x+/first-article.$inspectionId.tsx` (Accept /
+  Reject only — Partial needs more than one unit). Nothing is posted: the
+  engine's entity flips and write-off are Receipt-only.
+- ERP reject: the "received entities of the line" lookup runs only for Receipt
+  lots — a First Article lot's `sourceDocumentLineId` is a make method.
+
+## Bonus tolerance (MMC / LMC)
+
+`valuateGeometricMeasurement` (`packages/database/src/inspection-verdict.ts`,
+re-exported by `@carbon/database/quality`, tested in
+`src/inspection-verdict.test.ts`). A geometric tolerance stated at MMC or LMC
+grows by how far its related feature of size (`sizeFeatureId`) departs from
+that condition, capped at the size's own tolerance band:
+
+- MMC: internal `size − lower`, external `upper − size`; LMC the reverse.
+  **No declared `featureOfSize` ⇒ bonus 0** (the stated tolerance applies) —
+  without it the bonus has no direction. The save validators
+  (`inspectionSaveFeature{Create,Update}ItemValidator`, production.models.ts)
+  refuse an MMC/LMC feature without one, and the plan editor's save toasts
+  before posting, as it does for a missing size feature.
+- `allowable = nominal + |tol+| + bonus`; pass when
+  `nominal − |tol−| ≤ value ≤ allowable` (± `EPSILON`).
+- **Size reading Failed ⇒ the geometric feature Failed** outright (bonus 0) —
+  no bonus from an out-of-spec size, whether the size was a value or a
+  pass/fail call.
+- **No size reading ⇒ bonus 0**; the stated tolerance still applies.
+- RFS, null condition, attribute features and unparseable nominals fall back to
+  `valuateMeasurement` with `bonus`/`allowable` null.
+- **Datum shift is never computed** — the valuation has no datum term (a spec
+  decision: only the feature's own bonus counts).
+
+`upsertInspectionMeasurement` locks an existing sample row first
+(`SELECT … FOR UPDATE`, so a size reading and its dependent's reading on one
+unit serialise), uses the size feature's reading on the **same sample** (unit),
+stores `bonus` / `allowable` on the measurement, and — when the saved reading
+is itself a size feature — **re-valuates every dependent MMC/LMC reading on
+that sample** before deriving the sample status, and returns them as
+`dependents` (`RevaluatedDependentMeasurement[]`: feature, measurement id,
+status, bonus, allowable). Both grids merge those into the dependent cells'
+status/bonus state and report each one through `onMeasurementSaved`, so the
+view's disposition gating sees them too — the server's valuation is
+trusted, nothing is recomputed client-side. Both grids show
+"allowable Y (bonus X)" on a reading that earned a bonus.
+
+## Notes per reading
+
+Every ERP grid cell (`InspectionMeasurementGrid`) and MES matrix cell
+(`InspectionMeasurementMatrix`) has a note popover. The engine writes
+`notes: args.notes ?? null`, so a save without the note would clear it: both
+grids send the cell's current note with every value.
 ## Manual inspections (`20261109141852_manual-inspections.sql`)
 
 A person inspects specific tracked entities of one item (a quality hold on stock
@@ -1063,6 +1174,8 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     when `quiet=true` (grid overall-result POST), suppresses the success flash.
   - `valuateMeasurement` (exported, unit-tested) — numeric in `[nominal − |tol−|, nominal + |tol+|]`;
     unparseable nominal / non-Measurement types valuate as attributes.
+    `valuateGeometricMeasurement` (exported, unit-tested) adds MMC/LMC bonus
+    tolerance — see Bonus tolerance above.
   - `upsertInspectionMeasurement` — creates anonymous samples on demand, upserts the
     reading, **derives** the sample status count-based (not positional): any failed
     reading ⇒ Failed; every plan feature Passed on the sample ⇒ Passed; else Pending.
@@ -1085,12 +1198,14 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     same units Accept would; writes `inspectionHistory` on the decision that closes the lot.
     The lot is read `FOR UPDATE` before any entity, so a disposition and a Cancel
     take the same lock in the same order. Optional **`requireOpen`** (one-shot
-    mode: the MES disposition and verdict routes) throws "Inspection is already
+    mode: the MES disposition and verdict routes, and the ERP accept/reject of a
+    First Article lot) throws "Inspection is already
     dispositioned" when that locked read finds a closed lot — a second
     transaction waits on the lock and then sees the committed terminal status.
     ERP receipt lots do NOT pass it: the engine decides a receipt lot once by
     itself, and lets only Reject repeat on a Failed lot (it writes off nothing
-    new). A closed manual lot is refused either way.
+    new). A closed manual lot is refused either way. `requireSource` takes any
+    `InspectionSource` (`quality-core.ts`), First Article included.
   - NCR auto-creation lives in the **`rejectInspection` operation** (`quality.server.ts`,
     called by `x+/inspection+/$id.reject.tsx`), optional via `createNcr`, linking through `nonConformanceInspection`; the description
     includes the `reason` and a "Failed features" block built from the lot's measurements,
@@ -1163,10 +1278,11 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   pass/fail UI there; deviations resolve at disposition via MRB/NCR (spec decision).
 - **Per-cell measurement saves are quiet** (plain `fetch`, no revalidation) — the grid and
   the view mirror statuses locally from the action's returned
-  `{sampleId, measurementStatus, sampleStatus}`.
+  `{sampleId, measurementStatus, sampleStatus, bonus, allowable, dependents}`
+  (`dependents` = MMC/LMC readings a size save re-valuated on the same sample).
 - **MES dispositions are one-shot; ERP receipt lots are decided once too.**
-  Only the MES disposition route passes `requireOpen` — don't add it to ERP
-  receipt routes: the engine already refuses a second decision on a receipt
+  The MES disposition route and the ERP routes for **First Article** lots pass
+  `requireOpen` — don't add it to ERP receipt routes: the engine already refuses a second decision on a receipt
   lot, and a repeated Reject on a Failed lot writes off nothing new.
 - **A crash between the one-shot close and the postings** leaves a closed lot
   with missing postings (by design — close-first is what makes rework

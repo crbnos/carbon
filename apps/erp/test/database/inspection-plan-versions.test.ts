@@ -256,6 +256,54 @@ databaseTest(
 );
 
 databaseTest(
+  "a copied MMC characteristic names the copy of its size feature",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const v0 = await activePlan(f);
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("inspectionFeature")
+          .values({
+            id: `${f.prefix}-f2`,
+            companyId: f.companyId,
+            inspectionDocumentId: v0,
+            label: "2",
+            pageNumber: 1,
+            nominalValue: "0",
+            tolerancePlus: "0.01",
+            toleranceMinus: "0",
+            materialCondition: "MMC",
+            featureOfSize: "Internal",
+            sizeFeatureId: `${f.prefix}-f1`,
+            createdBy: USER
+          })
+          .execute();
+      });
+
+      const copy = await copyInspectionDocumentAsVersion(f.db, {
+        copyFromId: v0,
+        companyId: f.companyId,
+        userId: USER
+      });
+
+      const features = await f.db
+        .selectFrom("inspectionFeature")
+        .select(["id", "label", "sizeFeatureId"])
+        .where("inspectionDocumentId", "=", copy!.id)
+        .orderBy("label")
+        .execute();
+      const [size, position] = features;
+      expect(features).toHaveLength(2);
+      expect(size!.id).not.toBe(`${f.prefix}-f1`);
+      expect(position!.sizeFeatureId).toBe(size!.id);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
   "deleting the first version keeps the other versions one plan",
   async () => {
     const f = await alwaysPostFixture();

@@ -137,6 +137,12 @@ const associationsBlock = builtInBlock("associations");
 const actionTasksBlock = builtInBlock("actionTasks");
 const reviewersBlock = builtInBlock("reviewers");
 /**
+ * Certificate of Conformance built-ins (AS9163 fields 13 and 14; data-bound —
+ * the certificate renders them from its own data bag).
+ */
+const conformityDetailsBlock = builtInBlock("conformityDetails");
+const conformityStatementBlock = builtInBlock("conformityStatement");
+/**
  * Who approved the document: a heading, the approver's signature over a line,
  * and a rich-text caption with merge fields (the approver and the date by
  * default). Prints nothing until the document is approved.
@@ -270,6 +276,8 @@ export const blockSchema = z.discriminatedUnion("type", [
   associationsBlock,
   actionTasksBlock,
   reviewersBlock,
+  conformityDetailsBlock,
+  conformityStatementBlock,
   approvalBlock,
   labelHeadingBlock,
   labelRevisionBlock,
@@ -432,7 +440,8 @@ export const documentTemplateTypeSchema = z.enum([
   "stockTransfer",
   "jobTraveler",
   "issue",
-  "trackingLabel"
+  "trackingLabel",
+  "certificateOfConformance"
 ]);
 
 /**
@@ -448,7 +457,8 @@ export const REGISTRATION_LINE_DOCUMENT_TYPES: DocumentTemplateType[] = [
   "purchaseReturnOrder",
   "purchasingRfq",
   "quote",
-  "packingSlip"
+  "packingSlip",
+  "certificateOfConformance"
 ];
 
 /**
@@ -555,6 +565,14 @@ export type AssociationsBlock = Extract<
 >;
 export type ActionTasksBlock = Extract<DocumentBlock, { type: "actionTasks" }>;
 export type ReviewersBlock = Extract<DocumentBlock, { type: "reviewers" }>;
+export type ConformityDetailsBlock = Extract<
+  DocumentBlock,
+  { type: "conformityDetails" }
+>;
+export type ConformityStatementBlock = Extract<
+  DocumentBlock,
+  { type: "conformityStatement" }
+>;
 export type ApprovalBlock = Extract<DocumentBlock, { type: "approval" }>;
 export type LabelHeadingBlock = Extract<
   DocumentBlock,

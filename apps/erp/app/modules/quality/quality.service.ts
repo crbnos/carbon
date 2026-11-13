@@ -2,31 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
-import { storage } from "@carbon/files";
-import { getLogger } from "@carbon/logger";
-import type { JSONContent } from "@carbon/react";
-import {
-  buildBatchSplitRecords,
-  datetime,
-  EPSILON,
-  pick,
-  requireAffected,
-  resolveTrackedEntityBin,
-  round,
-  searchFilter
-} from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
-import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import { z } from "zod";
-import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { listCount, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
-import { receiptLotIssueType } from "./quality.utils";
-
-const logger = getLogger("erp", "quality");
-
 import { openai } from "@ai-sdk/openai";
 import { NotFoundError, raisedMessage } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
@@ -39,8 +14,17 @@ import {
   trackedEntityStripe
 } from "@carbon/api/stock-stripes";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { Database, Json } from "@carbon/database";
+import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { withTransaction } from "@carbon/database/client";
+import {
+  evaluateFirstArticleDue,
+  evaluateUnapprovedFirstArticle,
+  type FirstArticleReason,
+  OPEN_FIRST_ARTICLE_STATUSES,
+  resolveFirstArticleNeeds
+} from "@carbon/database/first-article";
 import {
   assertPostingStatusUnchanged,
   journalPostingStatus,
@@ -48,7 +32,9 @@ import {
 } from "@carbon/database/journal-posting-status";
 import * as engine from "@carbon/database/quality";
 import {
+  createFirstArticleInspections,
   errResult,
+  loadFirstArticleNeedInput,
   lockIssueDispositions,
   type Result,
   setInspectionRelease,
@@ -57,12 +43,29 @@ import {
 import { inOrder, many, newIds, single } from "@carbon/database/rows";
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
+import { getDocumentType, storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import type { JSONContent } from "@carbon/react";
+import {
+  buildBatchSplitRecords,
+  datetime,
+  EPSILON,
+  pick,
+  requireAffected,
+  resolveTrackedEntityBin,
+  round,
+  searchFilter,
+  stripSpecialCharacters
+} from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { generateText, Output } from "ai";
 import { sql } from "kysely";
 import template from "lodash.template";
 import { nanoid } from "nanoid";
+import { z } from "zod";
 import { systemContext } from "~/modules/service-context.server";
 import { getCachedCompanyIntegrations } from "~/modules/settings/settings.service";
 import {
@@ -79,8 +82,28 @@ import {
 } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { sanitize } from "~/utils/supabase";
 import type { inspectionStatus } from "../shared/shared.models";
+import type { CertificationLineageRow } from "./certificationLineage";
+import { dedupeLineageRows, findReceivedRoots } from "./certificationLineage";
+import { renderFirstArticleInspectionPdf } from "./firstArticle.pdf";
 import type {
+  FirstArticleFeature,
+  FirstArticleMeasurement
+} from "./firstArticleRows";
+import {
+  buildForm3Rows,
+  duplicateNumbers,
+  indexPartType
+} from "./firstArticleRows";
+import type {
+  certificateValidator,
+  complianceStatementValidator,
+  firstArticleCustomerApprovalValidator,
+  firstArticleInspectionHeaderValidator,
+  firstArticleInspectionProductValidator,
   gaugeCalibrationRecordValidator,
   gaugeCalibrationStatus,
   gaugeRole,
@@ -111,7 +134,11 @@ import {
   type inspectionSaveFeaturesPayloadValidator,
   isIssueLocked
 } from "./quality.models";
+import { receiptLotIssueType } from "./quality.utils";
+import type { Certificate } from "./types";
 
+const logger = getLogger("erp", "quality");
+const firstArticleLogger = getLogger("erp", "first-article");
 export async function activateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
@@ -136,6 +163,30 @@ export async function deactivateGauge(
       .eq("id", gaugeId)
       .select("id")
   );
+}
+
+export async function deleteCertificate(
+  client: SupabaseClient<Database>,
+  certificateId: string,
+  companyId: string
+) {
+  return client
+    .from("certificate")
+    .delete()
+    .eq("id", certificateId)
+    .eq("companyId", companyId);
+}
+
+export async function deleteComplianceStatement(
+  client: SupabaseClient<Database>,
+  complianceStatementId: string,
+  companyId: string
+) {
+  return client
+    .from("complianceStatement")
+    .delete()
+    .eq("id", complianceStatementId)
+    .eq("companyId", companyId);
 }
 
 export async function deleteGauge(
@@ -387,6 +438,777 @@ export async function getIssueFromExternalLink(
     .select("*, nonConformance(*)")
     .eq("id", id)
     .single();
+}
+
+/**
+ * Certificates attached to any of the given receipt lines or job operations
+ * (or with any of the given ids). Filters are OR-ed; a filter passed as an
+ * empty array matches nothing.
+ */
+export async function getCertificates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    receiptLineIds?: string[];
+    jobOperationIds?: string[];
+    ids?: string[];
+  } = {}
+) {
+  let query = client
+    .from("certificate")
+    .select("*, supplier(id, name), document(id, name, path)")
+    .eq("companyId", companyId);
+
+  const clauses: string[] = [];
+  if (args.receiptLineIds?.length) {
+    clauses.push(`receiptLineId.in.(${args.receiptLineIds.join(",")})`);
+  }
+  if (args.jobOperationIds?.length) {
+    clauses.push(`jobOperationId.in.(${args.jobOperationIds.join(",")})`);
+  }
+  if (args.ids?.length) {
+    clauses.push(`id.in.(${args.ids.join(",")})`);
+  }
+
+  const filtered =
+    args.receiptLineIds !== undefined ||
+    args.jobOperationIds !== undefined ||
+    args.ids !== undefined;
+
+  if (clauses.length > 0) {
+    query = query.or(clauses.join(","));
+  } else if (filtered) {
+    query = query.in("id", []);
+  }
+
+  return query
+    .order("createdAt", { ascending: true })
+    .order("id", { ascending: true });
+}
+
+export async function getComplianceStatement(
+  client: SupabaseClient<Database>,
+  complianceStatementId: string,
+  companyId: string
+) {
+  return client
+    .from("complianceStatement")
+    .select("*, complianceStatementAssignment(customerId, itemId)")
+    .eq("id", complianceStatementId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getComplianceStatements(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("complianceStatement")
+    .select("*, complianceStatementAssignment(customerId, itemId)", {
+      count: "exact"
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
+}
+
+/**
+ * The active statements a shipment's certificate prints: every statement that
+ * applies to all customers, plus those assigned to the customer or to any of
+ * the shipped items — each once, ordered by name.
+ */
+export async function getComplianceStatementsForShipment(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { customerId: string | null; itemIds: string[] }
+) {
+  const itemIds = [...new Set(args.itemIds)];
+  const targets: string[] = [];
+  if (args.customerId) targets.push(`customerId.eq.${args.customerId}`);
+  if (itemIds.length > 0) targets.push(`itemId.in.(${itemIds.join(",")})`);
+
+  let assignedIds: string[] = [];
+  if (targets.length > 0) {
+    const assignments = await client
+      .from("complianceStatementAssignment")
+      .select("complianceStatementId")
+      .eq("companyId", companyId)
+      .or(targets.join(","));
+    if (assignments.error) return { data: null, error: assignments.error };
+    assignedIds = [
+      ...new Set(
+        (assignments.data ?? []).map((row) => row.complianceStatementId)
+      )
+    ];
+  }
+
+  const applies =
+    assignedIds.length > 0
+      ? `appliesToAllCustomers.eq.true,id.in.(${assignedIds.join(",")})`
+      : "appliesToAllCustomers.eq.true";
+
+  return client
+    .from("complianceStatement")
+    .select("id, name, content")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .or(applies)
+    .order("name", { ascending: true });
+}
+
+type LineageSupplier = { id: string; name: string } | null;
+
+/**
+ * The certificates behind a set of tracked entities (CofC: the shipped lots)
+ * or a job (FAI Form 2), per §2 of the CofC/FAI spec. Rows without a
+ * certificate come back `missing: true` so the documents can say so.
+ *
+ * - Materials: the start entities are walked back through their lineage to
+ *   the lots that were received; each receipt line yields its certificates,
+ *   or a missing row.
+ * - Job input only: Outside Processing operations yield the certificates on
+ *   the receipt lines of their purchase order lines (outside-processing
+ *   receipts write no tracked entities, so this path goes through the PO
+ *   link) or the certificates attached to the operation itself, else a missing
+ *   row; certificates on every operation of the job; and a missing row per
+ *   untracked Material the make method consumes.
+ */
+export async function getCertificationLineage(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  input:
+    | { trackedEntityIds: string[] }
+    | { jobId: string; jobMakeMethodId?: string; trackedEntityId?: string }
+): Promise<
+  | { data: CertificationLineageRow[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const rows: CertificationLineageRow[] = [];
+
+  // ── start entities ────────────────────────────────────────────────────
+  let startIds: string[];
+  if ("trackedEntityIds" in input) {
+    startIds = input.trackedEntityIds;
+  } else if (input.jobMakeMethodId) {
+    // One make method's own consumption: the inputs of the Consume activities
+    // the issue path tags with it. A job-wide read would put another make
+    // method's materials on a sub-assembly's Form 2 (itemLedger cannot narrow
+    // it: the tracked-material ledger rows carry no documentLineId).
+    const jobMakeMethodId = input.jobMakeMethodId;
+    const consumed = await fetchAllFromTable<{
+      trackedActivityInput: { trackedEntityId: string }[];
+    }>(
+      client,
+      "trackedActivity",
+      "trackedActivityInput(trackedEntityId)",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("type", "Consume")
+          .eq("attributes->>Job Make Method", jobMakeMethodId)
+          .order("id")
+    );
+    if (consumed.error) return { data: null, error: consumed.error };
+    startIds = consumed.data.flatMap((activity) =>
+      (activity.trackedActivityInput ?? []).map((row) => row.trackedEntityId)
+    );
+    if (input.trackedEntityId) startIds.push(input.trackedEntityId);
+  } else {
+    const consumed = await fetchAllFromTable<{ trackedEntityId: string }>(
+      client,
+      "itemLedger",
+      "trackedEntityId",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("documentType", "Job Consumption")
+          .eq("documentId", input.jobId)
+          .not("trackedEntityId", "is", null)
+          .order("id")
+    );
+    if (consumed.error) return { data: null, error: consumed.error };
+    startIds = consumed.data.map((row) => row.trackedEntityId);
+    if (input.trackedEntityId) startIds.push(input.trackedEntityId);
+  }
+  startIds = [...new Set(startIds)];
+
+  // ── materials: lineage back to the received lots ──────────────────────
+  if (startIds.length > 0) {
+    const start = await client
+      .from("trackedEntity")
+      .select("id, attributes")
+      .in("id", startIds)
+      .eq("companyId", companyId);
+    if (start.error) return { data: null, error: start.error };
+
+    let walkError: PostgrestError | null = null;
+    const roots = await findReceivedRoots(
+      (start.data ?? []).map((entity) => ({
+        id: entity.id,
+        attributes: asAttributes(entity.attributes)
+      })),
+      async (ids) => {
+        // Carbon names lineage from the assembly down: the "descendants" of an
+        // entity are the inputs of the activity that produced it — the lots it
+        // was consumed from, or the parent it was split from. That is the
+        // backwards ("where from") direction this walk needs.
+        const result = await client.rpc(
+          "get_direct_descendants_of_tracked_entities_strict",
+          { p_tracked_entity_ids: ids, p_company_id: companyId }
+        );
+        if (result.error) {
+          walkError = result.error;
+          return [];
+        }
+        return (result.data ?? []).map((edge) => ({
+          sourceEntityId: edge.sourceEntityId,
+          id: edge.id,
+          attributes: asAttributes(edge.attributes)
+        }));
+      }
+    );
+    if (walkError) return { data: null, error: walkError };
+
+    const receiptLineIds = [...roots.keys()];
+    const rootIds = [...roots.values()].flat();
+
+    if (receiptLineIds.length > 0) {
+      const [certificates, receiptLines, rootEntities] = await Promise.all([
+        getCertificates(client, companyId, { receiptLineIds }),
+        client
+          .from("receiptLine")
+          .select("id, receipt(supplierId, supplier(id, name))")
+          .in("id", receiptLineIds)
+          .eq("companyId", companyId),
+        client
+          .from("trackedEntity")
+          .select("id, item(name)")
+          .in("id", rootIds)
+          .eq("companyId", companyId)
+      ]);
+      if (certificates.error) return { data: null, error: certificates.error };
+      if (receiptLines.error) return { data: null, error: receiptLines.error };
+      if (rootEntities.error) return { data: null, error: rootEntities.error };
+
+      const supplierByLine = new Map<string, LineageSupplier>(
+        (receiptLines.data ?? []).map((line) => [
+          line.id,
+          line.receipt?.supplier ?? null
+        ])
+      );
+      const itemNameByEntity = new Map(
+        (rootEntities.data ?? []).map((entity) => [
+          entity.id,
+          entity.item?.name ?? null
+        ])
+      );
+
+      for (const [receiptLineId, entityIds] of roots) {
+        const name =
+          entityIds
+            .map((id) => itemNameByEntity.get(id))
+            .find((itemName) => !!itemName) ?? "";
+        const supplier = supplierByLine.get(receiptLineId) ?? null;
+        const lineCertificates = (certificates.data ?? []).filter(
+          (certificate) => certificate.receiptLineId === receiptLineId
+        );
+
+        if (lineCertificates.length === 0) {
+          rows.push({
+            kind: "Material",
+            name,
+            specification: null,
+            supplierId: supplier?.id ?? null,
+            supplierName: supplier?.name ?? null,
+            certificateId: null,
+            certificateNumber: null,
+            documentId: null,
+            receiptLineId,
+            jobOperationId: null,
+            trackedEntityIds: entityIds,
+            missing: true
+          });
+          continue;
+        }
+
+        for (const certificate of lineCertificates) {
+          rows.push(
+            certificateLineageRow(certificate, {
+              name,
+              supplier,
+              receiptLineId,
+              jobOperationId: null,
+              trackedEntityIds: entityIds
+            })
+          );
+        }
+      }
+    }
+  }
+
+  if ("trackedEntityIds" in input) {
+    return { data: dedupeLineageRows(rows), error: null };
+  }
+
+  // ── job: special processes, operation certificates, untracked materials ─
+  let operationsQuery = client
+    .from("jobOperation")
+    .select("id, operationType, description, process(name)")
+    .eq("jobId", input.jobId)
+    .eq("companyId", companyId);
+  let materialsQuery = client
+    .from("jobMaterial")
+    .select("id, item(name, type, itemTrackingType)")
+    .eq("jobId", input.jobId)
+    .eq("companyId", companyId);
+  if (input.jobMakeMethodId) {
+    operationsQuery = operationsQuery.eq(
+      "jobMakeMethodId",
+      input.jobMakeMethodId
+    );
+    materialsQuery = materialsQuery.eq(
+      "jobMakeMethodId",
+      input.jobMakeMethodId
+    );
+  }
+
+  const [operations, materials] = await Promise.all([
+    operationsQuery.order("order"),
+    materialsQuery.order("order")
+  ]);
+  if (operations.error) return { data: null, error: operations.error };
+  if (materials.error) return { data: null, error: materials.error };
+
+  const operationIds = (operations.data ?? []).map((op) => op.id);
+  const outsideOperations = (operations.data ?? []).filter(
+    (op) => op.operationType === "Outside Processing"
+  );
+  const operationName = new Map(
+    (operations.data ?? []).map((op) => [
+      op.id,
+      op.process?.name ?? op.description ?? ""
+    ])
+  );
+
+  const [operationCertificates, purchaseOrderLines] = await Promise.all([
+    getCertificates(client, companyId, { jobOperationIds: operationIds }),
+    client
+      .from("purchaseOrderLine")
+      // The row type is given: inferring this nested embed is too deep for
+      // the compiler on the current schema (TS5114).
+      .select<
+        string,
+        {
+          id: string;
+          jobOperationId: string | null;
+          purchaseOrder: {
+            supplierId: string;
+            supplier: { id: string; name: string } | null;
+          } | null;
+        }
+      >("id, jobOperationId, purchaseOrder(supplierId, supplier(id, name))")
+      .in(
+        "jobOperationId",
+        outsideOperations.map((op) => op.id)
+      )
+      .eq("companyId", companyId)
+  ]);
+  if (operationCertificates.error) {
+    return { data: null, error: operationCertificates.error };
+  }
+  if (purchaseOrderLines.error) {
+    return { data: null, error: purchaseOrderLines.error };
+  }
+
+  const purchaseOrderLineIds = (purchaseOrderLines.data ?? []).map(
+    (line) => line.id
+  );
+  const processReceiptLines =
+    purchaseOrderLineIds.length > 0
+      ? await client
+          .from("receiptLine")
+          .select("id, lineId")
+          .in("lineId", purchaseOrderLineIds)
+          .eq("companyId", companyId)
+      : { data: [] as { id: string; lineId: string | null }[], error: null };
+  if (processReceiptLines.error) {
+    return { data: null, error: processReceiptLines.error };
+  }
+
+  const processReceiptLineIds = (processReceiptLines.data ?? []).map(
+    (line) => line.id
+  );
+  const processCertificates =
+    processReceiptLineIds.length > 0
+      ? await getCertificates(client, companyId, {
+          receiptLineIds: processReceiptLineIds
+        })
+      : { data: [] as Certificate[], error: null };
+  if (processCertificates.error) {
+    return { data: null, error: processCertificates.error };
+  }
+
+  for (const operation of outsideOperations) {
+    const name = operationName.get(operation.id) ?? "";
+    const poLines = (purchaseOrderLines.data ?? []).filter(
+      (line) => line.jobOperationId === operation.id
+    );
+    const poLineIds = new Set(poLines.map((line) => line.id));
+    const receiptLineIds = new Set(
+      (processReceiptLines.data ?? [])
+        .filter((line) => line.lineId && poLineIds.has(line.lineId))
+        .map((line) => line.id)
+    );
+    const supplier = poLines[0]?.purchaseOrder?.supplier ?? null;
+    const certificates = (processCertificates.data ?? []).filter(
+      (certificate) =>
+        certificate.receiptLineId &&
+        receiptLineIds.has(certificate.receiptLineId)
+    );
+    const attachedToOperation = (operationCertificates.data ?? []).some(
+      (certificate) => certificate.jobOperationId === operation.id
+    );
+
+    for (const certificate of certificates) {
+      rows.push(
+        certificateLineageRow(certificate, {
+          name,
+          supplier,
+          receiptLineId: certificate.receiptLineId,
+          jobOperationId: operation.id,
+          trackedEntityIds: []
+        })
+      );
+    }
+
+    if (certificates.length === 0 && !attachedToOperation) {
+      rows.push({
+        kind: "Special Process",
+        name,
+        specification: null,
+        supplierId: supplier?.id ?? null,
+        supplierName: supplier?.name ?? null,
+        certificateId: null,
+        certificateNumber: null,
+        documentId: null,
+        receiptLineId: null,
+        jobOperationId: operation.id,
+        trackedEntityIds: [],
+        missing: true
+      });
+    }
+  }
+
+  for (const certificate of operationCertificates.data ?? []) {
+    rows.push(
+      certificateLineageRow(certificate, {
+        name: operationName.get(certificate.jobOperationId ?? "") ?? "",
+        supplier: null,
+        receiptLineId: null,
+        jobOperationId: certificate.jobOperationId,
+        trackedEntityIds: []
+      })
+    );
+  }
+
+  for (const material of materials.data ?? []) {
+    const item = material.item;
+    if (
+      !item ||
+      item.type !== "Material" ||
+      item.itemTrackingType === "Batch" ||
+      item.itemTrackingType === "Serial"
+    ) {
+      continue;
+    }
+    rows.push({
+      kind: "Material",
+      name: item.name,
+      specification: null,
+      supplierId: null,
+      supplierName: null,
+      certificateId: null,
+      certificateNumber: null,
+      documentId: null,
+      receiptLineId: null,
+      jobOperationId: null,
+      trackedEntityIds: [],
+      missing: true
+    });
+  }
+
+  return { data: dedupeLineageRows(rows), error: null };
+}
+
+function asAttributes(value: Json | null): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function certificateLineageRow(
+  certificate: Certificate,
+  context: {
+    name: string;
+    supplier: LineageSupplier;
+    receiptLineId: string | null;
+    jobOperationId: string | null;
+    trackedEntityIds: string[];
+  }
+): CertificationLineageRow {
+  // The certificate's own supplier wins over the receipt's / PO's.
+  const supplier = certificate.supplier ?? context.supplier;
+  return {
+    kind: certificate.type,
+    name: context.name,
+    specification: certificate.specification,
+    supplierId: supplier?.id ?? null,
+    supplierName: supplier?.name ?? null,
+    certificateId: certificate.id,
+    certificateNumber: certificate.certificateNumber,
+    documentId: certificate.documentId,
+    receiptLineId: context.receiptLineId,
+    jobOperationId: context.jobOperationId,
+    trackedEntityIds: context.trackedEntityIds,
+    missing: false
+  };
+}
+
+/**
+ * Whether each item's First Article is due (§5 of the CofC/FAI spec): the
+ * latest Approved FAI per item and the item's latest completed job, excluding
+ * the job being evaluated, run through `evaluateFirstArticleDue`.
+ */
+export async function getFirstArticleDue(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { itemIds: string[]; excludeJobId?: string; today: string }
+): Promise<
+  | {
+      data: Record<
+        string,
+        {
+          due: boolean;
+          reason: FirstArticleReason | null;
+          latestFairId: string | null;
+        }
+      >;
+      error: null;
+    }
+  | { data: null; error: PostgrestError }
+> {
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return { data: {}, error: null };
+
+  const [approved, completedJobs, timeZone] = await Promise.all([
+    fetchAllFromTable<{ id: string; itemId: string; approvedAt: string }>(
+      client,
+      "firstArticleInspection",
+      "id, itemId, approvedAt",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("status", "Approved")
+          .in("itemId", itemIds)
+          .not("approvedAt", "is", null)
+          .order("approvedAt", { ascending: false })
+          .order("id")
+    ),
+    fetchAllFromTable<{ itemId: string; completedDate: string }>(
+      client,
+      "job",
+      "itemId, completedDate",
+      (query) => {
+        const filtered = query
+          .eq("companyId", companyId)
+          .in("status", ["Completed", "Closed"])
+          .in("itemId", itemIds)
+          .not("completedDate", "is", null);
+        return (
+          args.excludeJobId ? filtered.neq("id", args.excludeJobId) : filtered
+        )
+          .order("completedDate", { ascending: false })
+          .order("id");
+      }
+    ),
+    getCompanyTimeZone(client, companyId)
+  ]);
+
+  if (approved.error) return { data: null, error: approved.error };
+  if (completedJobs.error) return { data: null, error: completedJobs.error };
+
+  // Both reads are ordered newest first, so the first row per item is its latest.
+  const latestApproval = new Map<string, { id: string; approvedAt: string }>();
+  for (const row of approved.data) {
+    if (!latestApproval.has(row.itemId)) latestApproval.set(row.itemId, row);
+  }
+  const lastCompletedJobDate = new Map<string, string>();
+  for (const row of completedJobs.data) {
+    if (!lastCompletedJobDate.has(row.itemId)) {
+      lastCompletedJobDate.set(
+        row.itemId,
+        datetime.businessDay(row.completedDate, timeZone).toString()
+      );
+    }
+  }
+
+  const data: Record<
+    string,
+    {
+      due: boolean;
+      reason: FirstArticleReason | null;
+      latestFairId: string | null;
+    }
+  > = {};
+  for (const itemId of itemIds) {
+    const approval = latestApproval.get(itemId);
+    data[itemId] = {
+      ...evaluateFirstArticleDue({
+        latestApprovedAt: approval?.approvedAt ?? null,
+        lastCompletedJobDate: lastCompletedJobDate.get(itemId) ?? null,
+        today: args.today
+      }),
+      latestFairId: approval?.id ?? null
+    };
+  }
+
+  return { data, error: null };
+}
+
+export type UnapprovedFirstArticle = {
+  itemId: string;
+  itemReadableId: string;
+  /** Set when a requirement covers the part and it is due. */
+  reason: FirstArticleReason | null;
+  /** The part's open (Draft / Verified) first articles, on any job. */
+  open: {
+    id: string;
+    inspectionReadableId: string;
+    status: Database["public"]["Enums"]["firstArticleInspectionStatus"];
+  }[];
+};
+
+/**
+ * The parts of a shipment whose first article is not approved: a part with an
+ * open first article, or a part a requirement covers that is due. A
+ * requirement is the part's First Article slot, or the company setting or the
+ * customer's flag for a part we make (a bought part has no first article of
+ * ours). The shipment post's warning and the certificate's issue dialog both
+ * read it, so the two cannot disagree.
+ */
+export async function getUnapprovedFirstArticles(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { customerId: string | null; itemIds: string[]; today: string }
+): Promise<
+  | { data: UnapprovedFirstArticle[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return { data: [], error: null };
+
+  const [settings, customerShipping, slots, items, open] = await Promise.all([
+    client
+      .from("companySettings")
+      .select("requireFirstArticle")
+      .eq("id", companyId)
+      .maybeSingle(),
+    args.customerId
+      ? client
+          .from("customerShipping")
+          .select("requiresFirstArticle")
+          .eq("customerId", args.customerId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    client
+      .from("itemInspectionDocumentAssignment")
+      .select("itemId")
+      .eq("usage", "First Article")
+      .in("itemId", itemIds)
+      .eq("companyId", companyId),
+    client
+      .from("item")
+      .select("id, readableIdWithRevision, replenishmentSystem")
+      .in("id", itemIds)
+      .eq("companyId", companyId),
+    client
+      .from("firstArticleInspection")
+      .select("id, itemId, status, inspection!inner(inspectionId, status)")
+      .in("status", [...OPEN_FIRST_ARTICLE_STATUSES])
+      .neq("inspection.status", "Failed")
+      .in("itemId", itemIds)
+      .eq("companyId", companyId)
+      .order("createdAt")
+  ]);
+  const readError =
+    settings.error ??
+    customerShipping.error ??
+    slots.error ??
+    items.error ??
+    open.error;
+  if (readError) return { data: null, error: readError };
+
+  const requirementSwitchOn =
+    (settings.data?.requireFirstArticle ?? false) ||
+    (customerShipping.data?.requiresFirstArticle ?? false);
+  const slotted = new Set((slots.data ?? []).map((row) => row.itemId));
+  const itemById = new Map((items.data ?? []).map((item) => [item.id, item]));
+
+  const due = await getFirstArticleDue(client, companyId, {
+    itemIds,
+    today: args.today
+  });
+  if (due.error) return { data: null, error: due.error };
+
+  const openByItem = new Map<string, UnapprovedFirstArticle["open"]>();
+  for (const row of open.data ?? []) {
+    openByItem.set(row.itemId, [
+      ...(openByItem.get(row.itemId) ?? []),
+      {
+        id: row.id,
+        inspectionReadableId: row.inspection?.inspectionId ?? row.id,
+        status: row.status
+      }
+    ]);
+  }
+
+  return {
+    data: itemIds.flatMap((itemId) => {
+      const openOnes = openByItem.get(itemId) ?? [];
+      const { unapproved, reason } = evaluateUnapprovedFirstArticle({
+        requirementSwitchOn,
+        slotted: slotted.has(itemId),
+        bought: itemById.get(itemId)?.replenishmentSystem === "Buy",
+        due: due.data[itemId]?.due ?? false,
+        reason: due.data[itemId]?.reason ?? null,
+        hasOpen: openOnes.length > 0
+      });
+      if (!unapproved) return [];
+      return [
+        {
+          itemId,
+          itemReadableId:
+            itemById.get(itemId)?.readableIdWithRevision ?? itemId,
+          reason,
+          open: openOnes
+        }
+      ];
+    }),
+    error: null
+  };
 }
 
 export async function getGauge(
@@ -1640,6 +2462,157 @@ export async function updateGauge(
   return { data: { id: result.data.id! }, error: null };
 }
 
+export async function upsertCertificate(
+  client: SupabaseClient<Database>,
+  certificate:
+    | (Omit<z.infer<typeof certificateValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof certificateValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in certificate) {
+    return client
+      .from("certificate")
+      .insert([certificate])
+      .select("id")
+      .single();
+  }
+
+  const { id, companyId, ...update } = certificate;
+  return client
+    .from("certificate")
+    .update(sanitize({ ...update, updatedAt: datetime.timestamp() }))
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Writes a compliance statement and REPLACES its customer / item assignments
+ * with the given ones, in one transaction.
+ */
+export async function upsertComplianceStatement(
+  db: Kysely<KyselyDatabase>,
+  statement: Omit<z.infer<typeof complianceStatementValidator>, "id"> & {
+    id?: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<
+  | { data: { id: string }; error: null }
+  | { data: null; error: { message: string; code?: string } }
+> {
+  const {
+    id,
+    companyId,
+    userId,
+    customerIds = [],
+    itemIds = [],
+    ...fields
+  } = statement;
+
+  try {
+    const statementId = await db.transaction().execute(async (trx) => {
+      let writtenId = id;
+      if (writtenId) {
+        const updated = await trx
+          .updateTable("complianceStatement")
+          .set({
+            ...fields,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", writtenId)
+          .where("companyId", "=", companyId)
+          .returning("id")
+          .executeTakeFirst();
+        if (!updated) throw new Error("Compliance statement not found");
+
+        await trx
+          .deleteFrom("complianceStatementAssignment")
+          .where("complianceStatementId", "=", writtenId)
+          .where("companyId", "=", companyId)
+          .execute();
+      } else {
+        const inserted = await trx
+          .insertInto("complianceStatement")
+          .values({ ...fields, companyId, createdBy: userId })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        writtenId = inserted.id;
+      }
+
+      // The ids come from the form and Kysely bypasses RLS (an FK does not
+      // check the tenant): keep only this company's customers and items.
+      const requestedCustomerIds = [...new Set(customerIds)];
+      const requestedItemIds = [...new Set(itemIds)];
+      const [ownCustomers, ownItems] = await Promise.all([
+        requestedCustomerIds.length > 0
+          ? trx
+              .selectFrom("customer")
+              .select(["id"])
+              .where("id", "in", requestedCustomerIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          : Promise.resolve([]),
+        requestedItemIds.length > 0
+          ? trx
+              .selectFrom("item")
+              .select(["id"])
+              .where("id", "in", requestedItemIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          : Promise.resolve([])
+      ]);
+
+      const assignments = [
+        ...ownCustomers.map(({ id: customerId }) => ({
+          complianceStatementId: writtenId!,
+          companyId,
+          customerId,
+          createdBy: userId
+        })),
+        ...ownItems.map(({ id: itemId }) => ({
+          complianceStatementId: writtenId!,
+          companyId,
+          itemId,
+          createdBy: userId
+        }))
+      ];
+      if (assignments.length > 0) {
+        await trx
+          .insertInto("complianceStatementAssignment")
+          .values(assignments)
+          .execute();
+      }
+
+      return writtenId;
+    });
+
+    return { data: { id: statementId }, error: null };
+  } catch (err) {
+    logger.error("Failed to save compliance statement", {
+      companyId,
+      complianceStatementId: id,
+      error: err
+    });
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error ? err.message : "Failed to save statement",
+        code: (err as { code?: string })?.code
+      }
+    };
+  }
+}
+
 export async function upsertGaugeCalibrationRecord(
   client: SupabaseClient<Database>,
   gaugeCalibrationRecord:
@@ -2455,7 +3428,7 @@ export async function getInspectionSamplingPlans(
   return client
     .from("inspectionSamplingPlan")
     .select(
-      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, pmiItemId, gaugeType(name))"
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, pmiItemId, materialCondition, gaugeType(name))"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
@@ -2566,6 +3539,481 @@ export async function upsertItemInspectionDocumentAssignment(
   });
 }
 
+// -------------------------------------------------------------
+// First Article Inspections (AS9102)
+// -------------------------------------------------------------
+// The FAI is a 1:1 extension of a `First Article` inspection lot. Form 1 and
+// Form 2 are editable only while the FAI is Draft; after approval the only
+// edit is the customer approval. The lifecycle transitions (verify, reopen,
+// approve, delete) are the Kysely transactions further down this file.
+
+const FIRST_ARTICLE_LOCKED = "This first article is locked";
+
+type FirstArticleResult<T> =
+  | { data: T; error: null }
+  | { data: null; error: { message: string } };
+
+export async function getFirstArticleInspections(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & {
+    search: string | null;
+    status: string | null;
+  }
+) {
+  let query = client
+    .from("firstArticleInspection")
+    .select(
+      "*, inspection(inspectionId, status), item(readableId, readableIdWithRevision, name), job(jobId)",
+      { count: "exact" }
+    )
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      searchFilter(
+        ["partNumber", "partName", "manufacturingProcessReference"],
+        args.search
+      )
+    );
+  }
+
+  if (args?.status) {
+    // @ts-ignore - status is a valid enum value
+    query = query.eq("status", args.status);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getFirstArticleInspectionsByJob(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("firstArticleInspection")
+    .select(
+      "id, status, scope, itemId, jobMakeMethodId, inspection(inspectionId, status), item(readableId, readableIdWithRevision, name)"
+    )
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+}
+
+/** The FAI a `First Article` inspection lot belongs to; null for other lots. */
+export async function getFirstArticleInspectionByLot(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("firstArticleInspection")
+    .select("id, status")
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+/**
+ * What the manual "New First Article" form offers for a job: its make methods
+ * (root and made sub-assemblies) and, for the baseline select, the approved
+ * FAIs of any revision of those parts.
+ */
+export async function getFirstArticleCreateOptions(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+): Promise<
+  FirstArticleResult<{
+    makeMethods: {
+      id: string;
+      itemId: string;
+      readableId: string;
+      label: string;
+    }[];
+    baselines: {
+      id: string;
+      readableId: string;
+      label: string;
+    }[];
+  }>
+> {
+  const makeMethods = await client
+    .from("jobMakeMethod")
+    .select(
+      "id, itemId, parentMaterialId, item(readableId, readableIdWithRevision, name)"
+    )
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+  if (makeMethods.error) return { data: null, error: makeMethods.error };
+
+  const readableIds = [
+    ...new Set(
+      (makeMethods.data ?? [])
+        .map((method) => method.item?.readableId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+
+  const approved =
+    readableIds.length > 0
+      ? await client
+          .from("firstArticleInspection")
+          .select(
+            "id, approvedAt, partNumber, partRevision, item!inner(readableId, readableIdWithRevision), inspection(inspectionId)"
+          )
+          .eq("companyId", companyId)
+          .eq("status", "Approved")
+          .in("item.readableId", readableIds)
+          .order("approvedAt", { ascending: false })
+      : { data: [], error: null };
+  if (approved.error) return { data: null, error: approved.error };
+
+  return {
+    data: {
+      makeMethods: (makeMethods.data ?? []).map((method) => ({
+        id: method.id,
+        itemId: method.itemId,
+        readableId: method.item?.readableId ?? "",
+        label: [
+          method.item?.readableIdWithRevision ?? method.item?.readableId,
+          method.item?.name
+        ]
+          .filter(Boolean)
+          .join(" — ")
+      })),
+      baselines: (approved.data ?? []).map((fai) => ({
+        id: fai.id,
+        readableId: fai.item?.readableId ?? "",
+        label: [
+          fai.inspection?.inspectionId,
+          fai.item?.readableIdWithRevision ?? fai.partNumber
+        ]
+          .filter(Boolean)
+          .join(" — ")
+      }))
+    },
+    error: null
+  };
+}
+
+/**
+ * Everything the FAI detail page and the FAIR PDF show: the extension with its
+ * lot, the plan's features with the first sample's readings (Form 3), the Form
+ * 2 rows, and the Form 1 index derived live from the make method's materials.
+ */
+export async function getFirstArticleInspection(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  const fai = await client
+    .from("firstArticleInspection")
+    .select(
+      "*, inspection(id, inspectionId, status, inspectionDocumentId, dispositionedAt), item(id, readableId, readableIdWithRevision, name, revision), job(id, jobId, status, customerId)"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (fai.error) return { data: null, error: fai.error } as const;
+  if (!fai.data || !fai.data.inspection) {
+    return {
+      data: null,
+      error: { message: "First article not found" }
+    } as const;
+  }
+
+  const firstArticle = fai.data;
+  const lot = fai.data.inspection;
+
+  const [
+    features,
+    samples,
+    measurements,
+    ncrLinks,
+    products,
+    materials,
+    operations,
+    baseline
+  ] = await Promise.all([
+    lot.inspectionDocumentId
+      ? client
+          .from("inspectionFeature")
+          .select(
+            "id, label, description, type, nominalValue, tolerancePlus, toleranceMinus, unit, designator, referenceLocation, materialCondition, sizeFeatureId"
+          )
+          .eq("inspectionDocumentId", lot.inspectionDocumentId)
+          .eq("companyId", companyId)
+      : Promise.resolve({ data: [], error: null }),
+    client
+      .from("inspectionSample")
+      .select("id, status, trackedEntity(readableId)")
+      .eq("inspectionId", lot.id)
+      .eq("companyId", companyId)
+      .order("createdAt", { ascending: true })
+      .order("id", { ascending: true }),
+    client
+      .from("inspectionMeasurement")
+      .select(
+        "inspectionFeatureId, inspectionSampleId, value, status, bonus, allowable, notes"
+      )
+      .eq("inspectionId", lot.id)
+      .eq("companyId", companyId),
+    client
+      .from("nonConformanceInspection")
+      .select("nonConformanceId")
+      .eq("inspectionId", lot.id)
+      .eq("companyId", companyId),
+    client
+      .from("firstArticleInspectionProduct")
+      .select("*")
+      .eq("firstArticleInspectionId", id)
+      .eq("companyId", companyId)
+      .order("sortOrder", { ascending: true })
+      .order("createdAt", { ascending: true }),
+    // The make method is gone once its job is deleted or Get Method rebuilt
+    // the sub-assembly (the FK sets null): no live Form 1 index, no operations.
+    firstArticle.jobMakeMethodId
+      ? client
+          .from("jobMaterial")
+          .select(
+            "id, itemId, methodType, item(readableId, readableIdWithRevision, name, type)"
+          )
+          .eq("jobMakeMethodId", firstArticle.jobMakeMethodId)
+          .eq("companyId", companyId)
+          .order("order", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    firstArticle.jobMakeMethodId
+      ? client
+          .from("jobOperation")
+          .select("id, description, process(name)")
+          .eq("jobMakeMethodId", firstArticle.jobMakeMethodId)
+          .eq("companyId", companyId)
+          .order("order", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    firstArticle.baselineFirstArticleInspectionId
+      ? client
+          .from("firstArticleInspection")
+          .select("id, partNumber, partRevision, inspection(inspectionId)")
+          .eq("id", firstArticle.baselineFirstArticleInspectionId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null })
+  ]);
+
+  for (const result of [
+    features,
+    samples,
+    measurements,
+    ncrLinks,
+    products,
+    materials,
+    operations,
+    baseline
+  ]) {
+    if (result.error) return { data: null, error: result.error } as const;
+  }
+
+  const ncrIds = [
+    ...new Set((ncrLinks.data ?? []).map((link) => link.nonConformanceId))
+  ];
+  const indexMaterials = (materials.data ?? [])
+    .map((material) => ({
+      material,
+      partType: indexPartType({
+        itemType: material.item?.type ?? null,
+        methodType: material.methodType
+      })
+    }))
+    .filter(
+      (
+        entry
+      ): entry is {
+        material: (typeof entry)["material"];
+        partType: NonNullable<(typeof entry)["partType"]>;
+      } => entry.partType !== null
+    );
+  const indexItemIds = [
+    ...new Set(indexMaterials.map((entry) => entry.material.itemId))
+  ];
+
+  const [ncrs, approvedByItem] = await Promise.all([
+    ncrIds.length > 0
+      ? client
+          .from("nonConformance")
+          .select("id, nonConformanceId")
+          .in("id", ncrIds)
+          .eq("companyId", companyId)
+      : Promise.resolve({ data: [], error: null }),
+    indexItemIds.length > 0
+      ? client
+          .from("firstArticleInspection")
+          .select("id, itemId, approvedAt, inspection(inspectionId)")
+          .in("itemId", indexItemIds)
+          .eq("status", "Approved")
+          .eq("companyId", companyId)
+          .order("approvedAt", { ascending: false })
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  if (ncrs.error) return { data: null, error: ncrs.error } as const;
+  if (approvedByItem.error) {
+    return { data: null, error: approvedByItem.error } as const;
+  }
+
+  // Newest first, so the first row per item is its latest approved FAI.
+  const latestApproved = new Map<
+    string,
+    { id: string; fairIdentifier: string | null }
+  >();
+  for (const row of approvedByItem.data ?? []) {
+    if (!latestApproved.has(row.itemId)) {
+      latestApproved.set(row.itemId, {
+        id: row.id,
+        fairIdentifier: row.inspection?.inspectionId ?? null
+      });
+    }
+  }
+
+  // One unit, every characteristic: Form 3 reports the lot's first sample.
+  const sample = samples.data?.[0] ?? null;
+  const measurementByFeatureId = new Map<string, FirstArticleMeasurement>();
+  for (const measurement of measurements.data ?? []) {
+    if (!sample || measurement.inspectionSampleId !== sample.id) continue;
+    measurementByFeatureId.set(measurement.inspectionFeatureId, measurement);
+  }
+
+  const ncrNumber =
+    (ncrs.data ?? [])
+      .map((ncr) => ncr.nonConformanceId)
+      .filter(Boolean)
+      .sort()
+      .join(", ") || null;
+
+  const characteristics = buildForm3Rows(
+    (features.data ?? []) as FirstArticleFeature[],
+    measurementByFeatureId,
+    ncrNumber
+  );
+
+  return {
+    data: {
+      firstArticle,
+      lot,
+      serialNumber: sample?.trackedEntity?.readableId ?? null,
+      hasMeasurements: (measurements.data ?? []).length > 0,
+      characteristics,
+      duplicateCharacteristicNumbers: duplicateNumbers(characteristics),
+      ncrNumber,
+      products: products.data ?? [],
+      index: indexMaterials.map(({ material, partType }) => {
+        const approved = latestApproved.get(material.itemId);
+        return {
+          jobMaterialId: material.id,
+          itemId: material.itemId,
+          partNumber:
+            material.item?.readableIdWithRevision ??
+            material.item?.readableId ??
+            "",
+          partName: material.item?.name ?? "",
+          partType,
+          firstArticleInspectionId: approved?.id ?? null,
+          fairIdentifier: approved?.fairIdentifier ?? null
+        };
+      }),
+      operations: (operations.data ?? []).map((operation) => ({
+        id: operation.id,
+        name: operation.process?.name ?? operation.description ?? ""
+      })),
+      baseline: baseline.data
+        ? {
+            id: baseline.data.id,
+            fairIdentifier: baseline.data.inspection?.inspectionId ?? null,
+            partNumber: baseline.data.partNumber,
+            partRevision: baseline.data.partRevision
+          }
+        : null
+    },
+    error: null
+  } as const;
+}
+
+export async function updateFirstArticleInspectionHeader(
+  client: SupabaseClient<Database>,
+  header: z.infer<typeof firstArticleInspectionHeaderValidator> & {
+    companyId: string;
+    updatedBy: string;
+  }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const { id, companyId, ...fields } = header;
+  const result = await client
+    .from("firstArticleInspection")
+    .update({
+      ...fields,
+      partRevision: fields.partRevision ?? null,
+      drawingNumber: fields.drawingNumber ?? null,
+      drawingRevision: fields.drawingRevision ?? null,
+      additionalChanges: fields.additionalChanges ?? null,
+      supplierCode: fields.supplierCode ?? null,
+      purchaseOrderNumber: fields.purchaseOrderNumber ?? null,
+      baselineFirstArticleInspectionId:
+        fields.baselineFirstArticleInspectionId ?? null,
+      baselineReference: fields.baselineReference ?? null,
+      comments: fields.comments ?? null,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .select("id");
+  if (result.error) return { data: null, error: result.error };
+  if (!result.data?.length) {
+    return { data: null, error: { message: FIRST_ARTICLE_LOCKED } };
+  }
+  return { data: { id }, error: null };
+}
+
+/**
+ * AS9102 fields 24/25 — the only edit an approved FAI accepts.
+ */
+export async function updateFirstArticleCustomerApproval(
+  client: SupabaseClient<Database>,
+  approval: z.infer<typeof firstArticleCustomerApprovalValidator> & {
+    companyId: string;
+    updatedBy: string;
+  }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const result = await client
+    .from("firstArticleInspection")
+    .update({
+      customerApprovalName: approval.customerApprovalName ?? null,
+      customerApprovalDate: approval.customerApprovalDate ?? null,
+      updatedBy: approval.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", approval.id)
+    .eq("companyId", approval.companyId)
+    .eq("status", "Approved")
+    .select("id");
+  if (result.error) return { data: null, error: result.error };
+  if (!result.data?.length) {
+    return {
+      data: null,
+      error: {
+        message: "Only an approved first article takes a customer approval"
+      }
+    };
+  }
+  return { data: { id: approval.id }, error: null };
+}
+
 // ─── Inspection Documents ─────────────────────────────────────────────────────
 
 function toStoragePath(pdfUrl?: string | null) {
@@ -2606,6 +4054,7 @@ function mapInspectionDocument(row: Record<string, unknown>) {
     updatedAt: (row.updatedAt as string | null) ?? null,
     content: {
       name: planName,
+      drawingRevision: (row.drawingRevision as string | null) ?? null,
       pdfUrl: toPreviewUrl((row.storagePath as string | null) ?? null),
       annotations: [],
       features: []
@@ -2974,6 +4423,7 @@ export async function upsertInspectionDocument(
     id,
     partId,
     name,
+    drawingRevision,
     pdfUrl,
     pageCount,
     defaultPageWidth,
@@ -3016,6 +4466,9 @@ export async function upsertInspectionDocument(
       };
     if (name !== undefined) {
       updatePayload.name = name ?? null;
+    }
+    if (drawingRevision !== undefined) {
+      updatePayload.drawingRevision = drawingRevision?.trim() || null;
     }
     if (partId !== undefined) {
       updatePayload.partId = partId;
@@ -3064,6 +4517,7 @@ export async function upsertInspectionDocument(
       companyId,
       partId,
       name: resolvedName ?? null,
+      drawingRevision: drawingRevision?.trim() || null,
       version: 0,
       ...(storagePath
         ? {
@@ -3401,6 +4855,12 @@ export async function copyInspectionDocumentAsVersion(
             ({ id, createdAt, updatedAt, updatedBy, createdBy, ...rest }) => ({
               ...rest,
               id: featureIdMap.get(id)!,
+              // An MMC/LMC characteristic names its size feature on the same
+              // plan: the copy must name the copy, or it keeps pointing at the
+              // version it came from and earns no bonus on this one.
+              sizeFeatureId: rest.sizeFeatureId
+                ? (featureIdMap.get(rest.sizeFeatureId) ?? null)
+                : null,
               inspectionDocumentId: planId!,
               companyId,
               createdBy: userId
@@ -3565,6 +5025,18 @@ function mapInspectionFeature(row: Record<string, unknown>) {
       (row.samplingInspectionLevel as string | null) ?? null,
     samplingSeverity: (row.samplingSeverity as string | null) ?? null,
     gaugeTypeId: (row.gaugeTypeId as string | null) ?? null,
+    // AS9102 Form 3 characteristic accountability + geometric (bonus) tolerance.
+    designator: (row.designator as string | null) ?? null,
+    referenceLocation: (row.referenceLocation as string | null) ?? null,
+    materialCondition:
+      (row.materialCondition as
+        | Database["public"]["Enums"]["materialCondition"]
+        | null) ?? null,
+    featureOfSize:
+      (row.featureOfSize as
+        | Database["public"]["Enums"]["featureOfSizeType"]
+        | null) ?? null,
+    sizeFeatureId: (row.sizeFeatureId as string | null) ?? null,
     pmiItemId: (row.pmiItemId as string | null) ?? null,
     balloonId:
       typeof balloonIdRaw === "string"
@@ -4698,6 +6170,21 @@ type DispositionRow = {
 
 type IssueClosureBlocker = { nonConformanceItemId: string; reason: string };
 
+export type NonTrackedOrigin = "receipt" | "production" | "none";
+
+/**
+ * Where an NCR's non-tracked stock stands, from the source documents of its
+ * linked inspections. A Receipt reject already wrote the lot off; a Job
+ * Operation or First Article lot is WIP that never reached on-hand; with no
+ * inspection link the stock is still on hand.
+ */
+export function nonTrackedOrigin(
+  inspectionSources: readonly (string | null | undefined)[]
+): NonTrackedOrigin {
+  if (inspectionSources.includes("Receipt")) return "receipt";
+  return inspectionSources.length > 0 ? "production" : "none";
+}
+
 export async function closeIssue(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -4881,9 +6368,13 @@ export async function closeIssue(
   const readableNc = issueResult.data.nonConformanceId ?? nonConformanceId;
   const locationId = issueResult.data.locationId;
 
-  // Non-tracked origin: an inspection-rejected Inventory lot was already written
-  // off at reject (so Use As Is / Rework restores value); a MES/manual non-tracked
-  // scrap must be written off now. Detected via the NCR's inspection link.
+  // Non-tracked origin, read off the NCR's inspection links:
+  // - a RECEIPT inspection's reject already wrote the lot off, so Use As Is /
+  //   Rework restores value and Scrap posts nothing more;
+  // - a Job Operation or First Article inspection works on WIP, which never
+  //   reached on-hand stock: neither a restore nor a write-off applies (the MES
+  //   disposition already posted the production outcome);
+  // - no inspection link (MES/manual): Scrap is written off now.
   const linkedLots = await readLinkedLotStates(
     db,
     companyId,
@@ -4899,6 +6390,7 @@ export async function closeIssue(
   if (linkedLots === null) {
     return errResult("Failed to load the disposition origin");
   }
+  const origin = nonTrackedOrigin(linkedLots.map((lot) => lot.sourceDocument));
   const partialLot = linkedLots.find(
     (row) => row.sourceDocument === "Receipt" && row.status === "Partial"
   );
@@ -5107,6 +6599,7 @@ export async function closeIssue(
       continue;
     }
     if (!inventoryItemIds.has(row.itemId)) continue; // Non-Inventory: no ledger
+    if (origin === "production") continue; // WIP: no on-hand to move
     if (isScrap && !inspectionOriginated) {
       let writeOff = row.quantity;
       if (row.disposition === "Return to Supplier") {
@@ -7212,7 +8705,7 @@ export async function getInspectionNcrLink(
     .executeTakeFirst();
 }
 /**
- * Opens the NCR of a rejected or partly rejected receipt inspection lot, with a
+ * Opens the NCR of a rejected or partly rejected receipt (or first article) inspection lot, with a
  * Scrap row for `quantity` and `trackedEntityIds` (null: the whole lot). A
  * failure after the issue was inserted deletes it again.
  */
@@ -7294,7 +8787,10 @@ export async function openInspectionNcr(
 
   const created = await insertIssue(serviceRole, {
     name: issueTitle,
-    description: `Auto-created from ${isManual ? "inspection" : "inbound inspection"} ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}.${isManual ? "" : ` Supplier: ${supplierName}.`}${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
+    description:
+      insp.sourceDocument === "First Article"
+        ? `Auto-created from first article inspection ${inspectionReadableId} on ${sourceReadableId}.${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`
+        : `Auto-created from ${isManual ? "inspection" : "inbound inspection"} ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}.${isManual ? "" : ` Supplier: ${supplierName}.`}${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
     priority: "Medium",
     source: "Internal",
     locationId,
@@ -7352,18 +8848,20 @@ export async function openInspectionNcr(
   let lotEntityIds = args.trackedEntityIds;
   if (!lotEntityIds) {
     // A receipt lot's entities hang off its receipt line; a manual lot lists
-    // its own.
+    // its own. A First Article lot's line id is a make method: it has none.
     const receiptLineEntities = isManual
       ? await serviceRole
           .from("inspectionTrackedEntity")
           .select("id:trackedEntityId")
           .eq("inspectionId", id)
           .eq("companyId", companyId)
-      : await serviceRole
-          .from("trackedEntity")
-          .select("id")
-          .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
-          .eq("companyId", companyId);
+      : insp.sourceDocument === "Receipt"
+        ? await serviceRole
+            .from("trackedEntity")
+            .select("id")
+            .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
+            .eq("companyId", companyId)
+        : { data: [] as { id: string }[], error: null };
     if (receiptLineEntities.error) {
       return abandon(
         `${args.outcome}, but failed to read the lot for the NCR`,
@@ -7533,4 +9031,1067 @@ export async function openInspectionNcr(
   );
 
   return { issueId };
+}
+
+// -------------------------------------------------------------
+// First article inspections: release, Form 2, lifecycle (AS9102)
+// -------------------------------------------------------------
+
+function failure(err: unknown, fallback: string): FirstArticleResult<never> {
+  return {
+    data: null,
+    error: { message: err instanceof Error ? err.message : fallback }
+  };
+}
+
+const NO_CERTIFICATE = "No certificate on file";
+
+// The FAI's job and make method are ON DELETE SET NULL: a deleted job, or Get
+// Method rebuilding the sub-assembly, leaves the report without the operations
+// and materials Form 2 and the verification read.
+const MAKE_METHOD_GONE =
+  "The job or make method of this first article no longer exists";
+
+// AS9102 generation at release: every path that flips a job to Ready calls
+// this AFTER the Ready write succeeds — `releaseJobs` (job Release dialog,
+// batch and bulk release), the plain `status=Ready` post in
+// `$jobId.status.tsx`, and the kanban auto-release. Not inside
+// `updateJobStatus`: that is a `*.service.ts` function, which may not hold a
+// Kysely client.
+//
+// Best-effort: a generation failure is logged and never undoes or blocks a
+// release. The blocker (a required first article with no plan) is enforced
+// BEFORE release by `getJobReleaseReadiness`; what can still fail here is
+// infrastructure, and a missed lot can be created by hand from the job.
+export async function afterJobsReleased(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  {
+    jobIds,
+    companyId,
+    userId
+  }: { jobIds: string[]; companyId: string; userId: string }
+): Promise<void> {
+  if (jobIds.length === 0) return;
+
+  let today: string;
+  try {
+    today = datetime
+      .today(await getCompanyTimeZone(client, companyId))
+      .toString();
+  } catch (err) {
+    firstArticleLogger.error(
+      "Failed to resolve the company timezone for first articles",
+      {
+        error: err,
+        companyId
+      }
+    );
+    return;
+  }
+
+  for (const jobId of jobIds) {
+    try {
+      const created = await createFirstArticleInspections(db, {
+        jobId,
+        companyId,
+        userId,
+        today
+      });
+      if (created.error) {
+        firstArticleLogger.error("Failed to create first article inspections", {
+          error: created.error,
+          jobId,
+          companyId
+        });
+        continue;
+      }
+
+      for (const id of created.data.firstArticleInspectionIds) {
+        const seeded = await seedFirstArticleProducts(db, client, {
+          id,
+          companyId,
+          userId
+        });
+        if (seeded.error) {
+          firstArticleLogger.error("Failed to seed first article Form 2", {
+            error: seeded.error,
+            firstArticleInspectionId: id,
+            jobId,
+            companyId
+          });
+        }
+      }
+    } catch (err) {
+      firstArticleLogger.error("Failed to create first article inspections", {
+        error: err,
+        jobId,
+        companyId
+      });
+    }
+  }
+}
+
+/**
+ * The job header's first article state, from the same shared
+ * `resolveFirstArticleNeeds` the release blocker and the generator use:
+ * - `due` — required (a switch applies) and due, with no lot on this job and
+ *   none open on another job: the "FAI due" badge;
+ * - `coveredElsewhere` — required and due, but an open FAI for the part on
+ *   another job covers it, so this job gets none: the header names that FAI.
+ * Informational: a failure is logged and reads as nothing due.
+ */
+export async function getFirstArticlesDueForJob(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: { jobId: string; companyId: string }
+): Promise<{
+  due: {
+    jobMakeMethodId: string;
+    description: string;
+    reason: FirstArticleReason;
+  }[];
+  coveredElsewhere: {
+    jobMakeMethodId: string;
+    description: string;
+    firstArticleInspectionId: string;
+    status: Database["public"]["Enums"]["firstArticleInspectionStatus"];
+    inspectionReadableId: string;
+    jobReadableId: string;
+  }[];
+}> {
+  try {
+    const today = datetime
+      .today(await getCompanyTimeZone(client, args.companyId))
+      .toString();
+    const input = await loadFirstArticleNeedInput(db, { ...args, today });
+    const needs = resolveFirstArticleNeeds(input);
+
+    const due = needs
+      .filter((need) => need.pending && need.reason !== null)
+      .map((need) => ({
+        jobMakeMethodId: need.jobMakeMethodId,
+        description: need.description,
+        reason: need.reason as FirstArticleReason
+      }));
+
+    const covered = needs.filter((need) => need.coveredElsewhere);
+    if (covered.length === 0) return { due, coveredElsewhere: [] };
+
+    // The same rows the loader's `hasOpenFirstArticleElsewhere` counts.
+    const openElsewhere = await db
+      .selectFrom("firstArticleInspection")
+      .innerJoin("inspection", (join) =>
+        join
+          .onRef("inspection.id", "=", "firstArticleInspection.inspectionId")
+          .onRef(
+            "inspection.companyId",
+            "=",
+            "firstArticleInspection.companyId"
+          )
+      )
+      .innerJoin("job", (join) =>
+        join
+          .onRef("job.id", "=", "firstArticleInspection.jobId")
+          .onRef("job.companyId", "=", "firstArticleInspection.companyId")
+      )
+      .select([
+        "firstArticleInspection.id",
+        "firstArticleInspection.itemId",
+        "firstArticleInspection.status",
+        "inspection.inspectionId as inspectionReadableId",
+        "job.jobId as jobReadableId"
+      ])
+      .where("firstArticleInspection.status", "in", [
+        ...OPEN_FIRST_ARTICLE_STATUSES
+      ])
+      .where("inspection.status", "<>", "Failed")
+      .where("firstArticleInspection.jobId", "<>", args.jobId)
+      .where(
+        "firstArticleInspection.itemId",
+        "in",
+        covered.map((need) => need.itemId)
+      )
+      .where("firstArticleInspection.companyId", "=", args.companyId)
+      .orderBy("inspection.inspectionId")
+      .execute();
+
+    const coveredElsewhere = covered.flatMap((need) =>
+      openElsewhere
+        .filter((open) => open.itemId === need.itemId)
+        .map((open) => ({
+          jobMakeMethodId: need.jobMakeMethodId,
+          description: need.description,
+          firstArticleInspectionId: open.id,
+          status: open.status,
+          inspectionReadableId: open.inspectionReadableId,
+          jobReadableId: open.jobReadableId
+        }))
+    );
+
+    return { due, coveredElsewhere };
+  } catch (err) {
+    firstArticleLogger.error("Failed to evaluate first articles due", {
+      error: err,
+      ...args
+    });
+    return { due: [], coveredElsewhere: [] };
+  }
+}
+
+// -------------------------------------------------------------
+// Form 2 — seeded from the certification lineage
+// -------------------------------------------------------------
+
+/**
+ * The key a lineage row is matched on against existing Form 2 rows: its
+ * certificate, or — for a row with no certificate on file — its kind and name.
+ */
+function productKey(row: {
+  certificateId: string | null;
+  kind: string;
+  name: string;
+}): string {
+  return row.certificateId ?? `missing:${row.kind}:${row.name}`;
+}
+
+/**
+ * Seeds Form 2 from the job's certification lineage — at generation, and
+ * lazily for an FAI the MES generated (see `seedFirstArticleProductsOnView`).
+ * A no-op once the FAI has any Form 2 row: the emptiness is re-checked under
+ * the FAI's row lock, so two concurrent seeds cannot both insert.
+ */
+export async function seedFirstArticleProducts(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<FirstArticleResult<{ inserted: number }>> {
+  return insertLineageProducts(db, client, args, { onlyIfEmpty: true });
+}
+
+/**
+ * The MES auto-start generates First Article lots without Form 2 — the lineage
+ * resolver lives here, in the ERP. The detail page calls this when it loads a
+ * Draft FAI that still has its job and make method but no Form 2 rows, so the
+ * seed happens once, the first time anyone opens it. Best-effort: a failure is
+ * logged and the page loads without the rows (Refresh from traceability still
+ * works). Returns how many rows were inserted.
+ */
+export async function seedFirstArticleProductsOnView(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<number> {
+  try {
+    const seeded = await seedFirstArticleProducts(db, client, args);
+    if (seeded.error) {
+      firstArticleLogger.error("Failed to seed first article Form 2 on view", {
+        error: seeded.error,
+        firstArticleInspectionId: args.id,
+        companyId: args.companyId
+      });
+      return 0;
+    }
+    return seeded.data.inserted;
+  } catch (err) {
+    firstArticleLogger.error("Failed to seed first article Form 2 on view", {
+      error: err,
+      firstArticleInspectionId: args.id,
+      companyId: args.companyId
+    });
+    return 0;
+  }
+}
+
+/**
+ * "Refresh from traceability": inserts the lineage rows not already on Form 2
+ * (by certificate, or by kind + name for a missing certificate). Never deletes
+ * or rewrites a row — they may carry the user's edits. Draft only.
+ */
+export async function refreshFirstArticleProducts(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<FirstArticleResult<{ inserted: number }>> {
+  return insertLineageProducts(db, client, args, { onlyIfEmpty: false });
+}
+
+async function insertLineageProducts(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string },
+  { onlyIfEmpty }: { onlyIfEmpty: boolean }
+): Promise<FirstArticleResult<{ inserted: number }>> {
+  const { id, companyId, userId } = args;
+
+  try {
+    const fai = await db
+      .selectFrom("firstArticleInspection")
+      .select(["jobId", "jobMakeMethodId"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!fai) throw new Error("First article not found");
+    if (!fai.jobId || !fai.jobMakeMethodId) {
+      throw new Error(MAKE_METHOD_GONE);
+    }
+
+    // The lineage resolver reads over supabase-js, so it runs before the
+    // transaction; the transaction re-checks the status it writes under.
+    const lineage = await getCertificationLineage(client, companyId, {
+      jobId: fai.jobId,
+      jobMakeMethodId: fai.jobMakeMethodId
+    });
+    if (lineage.error) throw new Error(lineage.error.message);
+
+    const inserted = await db.transaction().execute(async (trx) => {
+      const locked = await trx
+        .selectFrom("firstArticleInspection")
+        .select(["status"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!locked) throw new Error("First article not found");
+      if (locked.status !== "Draft") {
+        throw new Error("This first article is locked");
+      }
+
+      const existing = await trx
+        .selectFrom("firstArticleInspectionProduct")
+        .select(["certificateId", "kind", "name", "sortOrder"])
+        .where("firstArticleInspectionId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+      // A seed only fills an empty Form 2: rows that appeared since the
+      // caller looked (a concurrent seed, a manual row) mean it is done.
+      if (onlyIfEmpty && existing.length > 0) return 0;
+
+      const present = new Set(existing.map(productKey));
+      let sortOrder = existing.reduce(
+        (max, row) => (row.sortOrder > max ? row.sortOrder : max),
+        -1
+      );
+
+      const rows = lineage.data
+        .map((row: CertificationLineageRow) => ({
+          ...row,
+          name: row.name.trim() || row.specification?.trim() || row.kind
+        }))
+        .filter((row) => {
+          const key = productKey(row);
+          if (present.has(key)) return false;
+          present.add(key);
+          return true;
+        })
+        .map((row) => {
+          sortOrder += 1;
+          return {
+            companyId,
+            firstArticleInspectionId: id,
+            sortOrder,
+            kind: row.kind,
+            name: row.name,
+            specification: row.specification,
+            supplier: row.supplierName,
+            certificateNumber: row.certificateNumber,
+            certificateId: row.certificateId,
+            comments: row.missing ? NO_CERTIFICATE : null,
+            createdBy: userId
+          };
+        });
+
+      if (rows.length > 0) {
+        await trx
+          .insertInto("firstArticleInspectionProduct")
+          .values(rows)
+          .execute();
+      }
+      return rows.length;
+    });
+
+    return { data: { inserted }, error: null };
+  } catch (err) {
+    return failure(err, "Failed to refresh from traceability");
+  }
+}
+
+/**
+ * Adds or edits one Form 2 row. The FAI row is locked and its Draft status
+ * re-checked in the same transaction as the write, so a row cannot land on an
+ * FAI that is being verified or approved concurrently.
+ */
+export async function upsertFirstArticleInspectionProduct(
+  db: Kysely<KyselyDatabase>,
+  product: z.infer<typeof firstArticleInspectionProductValidator> & {
+    companyId: string;
+    userId: string;
+  }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const { id, companyId, userId, firstArticleInspectionId, ...fields } =
+    product;
+
+  const values = {
+    kind: fields.kind,
+    name: fields.name,
+    specification: fields.specification ?? null,
+    code: fields.code ?? null,
+    supplier: fields.supplier ?? null,
+    certificateNumber: fields.certificateNumber ?? null,
+    certificateId: fields.certificateId ?? null,
+    functionalTestProcedureNumber: fields.functionalTestProcedureNumber ?? null,
+    acceptanceReportNumber: fields.acceptanceReportNumber ?? null,
+    comments: fields.comments ?? null,
+    customerApprovalVerification: fields.customerApprovalVerification
+  };
+
+  try {
+    const savedId = await db.transaction().execute(async (trx) => {
+      await lockDraftFirstArticle(trx, firstArticleInspectionId, companyId);
+
+      // The certificate id comes from the form; Kysely bypasses RLS, and an
+      // FK does not check the tenant.
+      if (values.certificateId) {
+        const certificate = await trx
+          .selectFrom("certificate")
+          .select(["id"])
+          .where("id", "=", values.certificateId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (!certificate) throw new Error("Certificate not found");
+      }
+
+      if (id) {
+        const updated = await trx
+          .updateTable("firstArticleInspectionProduct")
+          .set({
+            ...values,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", id)
+          .where("firstArticleInspectionId", "=", firstArticleInspectionId)
+          .where("companyId", "=", companyId)
+          .returning(["id"])
+          .executeTakeFirst();
+        if (!updated) throw new Error("Row not found");
+        return updated.id;
+      }
+
+      const last = await trx
+        .selectFrom("firstArticleInspectionProduct")
+        .select(["sortOrder"])
+        .where("firstArticleInspectionId", "=", firstArticleInspectionId)
+        .where("companyId", "=", companyId)
+        .orderBy("sortOrder", "desc")
+        .limit(1)
+        .executeTakeFirst();
+
+      const inserted = await trx
+        .insertInto("firstArticleInspectionProduct")
+        .values({
+          ...values,
+          firstArticleInspectionId,
+          sortOrder: (last?.sortOrder ?? -1) + 1,
+          companyId,
+          createdBy: userId
+        })
+        .returning(["id"])
+        .executeTakeFirstOrThrow();
+      return inserted.id;
+    });
+    return { data: { id: savedId }, error: null };
+  } catch (err) {
+    return failure(err, "Failed to save the row");
+  }
+}
+
+/** Deletes one Form 2 row of a Draft FAI, under the same FAI lock. */
+export async function deleteFirstArticleInspectionProduct(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; firstArticleInspectionId: string; companyId: string }
+): Promise<FirstArticleResult<{ id: string }>> {
+  try {
+    await db.transaction().execute(async (trx) => {
+      await lockDraftFirstArticle(
+        trx,
+        args.firstArticleInspectionId,
+        args.companyId
+      );
+      const deleted = await trx
+        .deleteFrom("firstArticleInspectionProduct")
+        .where("id", "=", args.id)
+        .where("firstArticleInspectionId", "=", args.firstArticleInspectionId)
+        .where("companyId", "=", args.companyId)
+        .returning(["id"])
+        .executeTakeFirst();
+      if (!deleted) throw new Error("Row not found");
+    });
+    return { data: { id: args.id }, error: null };
+  } catch (err) {
+    return failure(err, "Failed to delete the row");
+  }
+}
+
+async function lockDraftFirstArticle(
+  trx: Kysely<KyselyDatabase>,
+  id: string,
+  companyId: string
+): Promise<void> {
+  const fai = await trx
+    .selectFrom("firstArticleInspection")
+    .select(["status"])
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!fai) throw new Error("First article not found");
+  if (fai.status !== "Draft") throw new Error("This first article is locked");
+}
+
+// -------------------------------------------------------------
+// Lifecycle — Draft → Verified → Approved
+// -------------------------------------------------------------
+
+const DISPOSITIONED = ["Passed", "Failed", "Partial"];
+
+async function signatory(
+  trx: Kysely<KyselyDatabase>,
+  userId: string,
+  companyId: string
+): Promise<{ name: string; title: string | null }> {
+  const [user, job] = await Promise.all([
+    trx
+      .selectFrom("user")
+      .select(["fullName", "firstName", "lastName"])
+      .where("id", "=", userId)
+      .executeTakeFirst(),
+    trx
+      .selectFrom("employeeJob")
+      .select(["title"])
+      .where("id", "=", userId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst()
+  ]);
+  const name =
+    user?.fullName?.trim() ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
+    userId;
+  return { name, title: job?.title?.trim() || null };
+}
+
+/**
+ * AS9102 fields 19–21. The lot must be dispositioned first: the verification
+ * snapshots whether the FAIR documents a nonconformance — the lot failed or
+ * was partial, or an NCR is linked to the lot or to an operation of the make
+ * method.
+ */
+export async function verifyFirstArticleInspection(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const { id, companyId, userId } = args;
+  try {
+    await db.transaction().execute(async (trx) => {
+      const fai = await trx
+        .selectFrom("firstArticleInspection")
+        .select(["status", "inspectionId", "jobMakeMethodId"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!fai) throw new Error("First article not found");
+      if (fai.status !== "Draft") {
+        throw new Error("Only a draft first article can be verified");
+      }
+      const jobMakeMethodId = fai.jobMakeMethodId;
+      if (!jobMakeMethodId) throw new Error(MAKE_METHOD_GONE);
+
+      const lot = await trx
+        .selectFrom("inspection")
+        .select(["status"])
+        .where("id", "=", fai.inspectionId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!lot || !DISPOSITIONED.includes(lot.status)) {
+        throw new Error("Disposition the inspection before verifying");
+      }
+
+      const [lotNcr, operationNcr] = await Promise.all([
+        trx
+          .selectFrom("nonConformanceInspection")
+          .select(["id"])
+          .where("inspectionId", "=", fai.inspectionId)
+          .where("companyId", "=", companyId)
+          .limit(1)
+          .executeTakeFirst(),
+        trx
+          .selectFrom("nonConformanceJobOperation")
+          .innerJoin(
+            "jobOperation",
+            "jobOperation.id",
+            "nonConformanceJobOperation.jobOperationId"
+          )
+          .select(["nonConformanceJobOperation.id"])
+          .where("jobOperation.jobMakeMethodId", "=", jobMakeMethodId)
+          .where("nonConformanceJobOperation.companyId", "=", companyId)
+          .limit(1)
+          .executeTakeFirst()
+      ]);
+
+      const hasNonconformance =
+        lot.status === "Failed" ||
+        lot.status === "Partial" ||
+        !!lotNcr ||
+        !!operationNcr;
+
+      const verifier = await signatory(trx, userId, companyId);
+      const now = datetime.timestamp();
+
+      await trx
+        .updateTable("firstArticleInspection")
+        .set({
+          status: "Verified",
+          hasNonconformance,
+          verifiedBy: userId,
+          verifiedByName: verifier.name,
+          verifiedByTitle: verifier.title,
+          verifiedAt: now,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+    });
+    return { data: { id }, error: null };
+  } catch (err) {
+    return failure(err, "Failed to verify first article");
+  }
+}
+
+/** Verified → Draft. The lot stays closed; its measurements stay locked. */
+export async function reopenFirstArticleInspection(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const { id, companyId, userId } = args;
+  try {
+    await db.transaction().execute(async (trx) => {
+      const fai = await trx
+        .selectFrom("firstArticleInspection")
+        .select(["status"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!fai) throw new Error("First article not found");
+      if (fai.status !== "Verified") {
+        throw new Error("Only a verified first article can be reopened");
+      }
+
+      await trx
+        .updateTable("firstArticleInspection")
+        .set({
+          status: "Draft",
+          hasNonconformance: null,
+          verifiedBy: null,
+          verifiedByName: null,
+          verifiedByTitle: null,
+          verifiedAt: null,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+    });
+    return { data: { id }, error: null };
+  } catch (err) {
+    return failure(err, "Failed to reopen first article");
+  }
+}
+
+/**
+ * AS9102 fields 22/23. Renders the FAIR with the approver's signature, stores
+ * it as a document on the job and locks the FAI — the stored PDF is the
+ * record, so later plan or data edits cannot change what was approved. The
+ * file is uploaded before the transaction and removed again if it fails.
+ */
+export const REJECTED_FIRST_ARTICLE_APPROVAL =
+  "This first article's lot was rejected, so it cannot be approved. Correct the cause; the part's next job gets a new first article.";
+
+/** The status of a first article's inspection lot. */
+async function firstArticleLotStatus(
+  db: Kysely<KyselyDatabase>,
+  id: string,
+  companyId: string
+) {
+  const row = await db
+    .selectFrom("firstArticleInspection")
+    .innerJoin("inspection", (join) =>
+      join
+        .onRef("inspection.id", "=", "firstArticleInspection.inspectionId")
+        .onRef("inspection.companyId", "=", "firstArticleInspection.companyId")
+    )
+    .select("inspection.status")
+    .where("firstArticleInspection.id", "=", id)
+    .where("firstArticleInspection.companyId", "=", companyId)
+    .executeTakeFirst();
+  return row?.status ?? null;
+}
+
+export async function approveFirstArticleInspection(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string; locale?: string }
+): Promise<FirstArticleResult<{ id: string; documentId: string }>> {
+  const { id, companyId, userId, locale } = args;
+
+  const serviceRole = getCarbonServiceRole();
+  let uploadedPath: string | null = null;
+  try {
+    // Refused before the render: a rejected lot is never an approval.
+    if ((await firstArticleLotStatus(db, id, companyId)) === "Failed") {
+      throw new Error(REJECTED_FIRST_ARTICLE_APPROVAL);
+    }
+    const approver = await signatory(db, userId, companyId);
+    const approvedAt = datetime.timestamp();
+
+    const rendered = await renderFirstArticleInspectionPdf(client, {
+      id,
+      companyId,
+      locale,
+      approval: { name: approver.name, title: approver.title, approvedAt }
+    });
+    if (rendered.error) throw new Error(rendered.error.message);
+    const { pdf, firstArticle, fairIdentifier } = rendered.data;
+    if (firstArticle.status !== "Verified") {
+      throw new Error("Only a verified first article can be approved");
+    }
+
+    // A unique name per approval: a retry never overwrites (or, on failure,
+    // removes) a file another attempt stored. Filed on the job when it still
+    // exists (the job's files list it), else under the FAI.
+    const fileName = `${
+      stripSpecialCharacters(
+        `${fairIdentifier} FAIR ${approvedAt.slice(0, 19)}`
+      ) || "fair"
+    }.pdf`;
+    const jobId = firstArticle.jobId;
+    const filePath = jobId
+      ? `${companyId}/job/${jobId}/${fileName}`
+      : `${companyId}/first-article/${id}/${fileName}`;
+
+    // The caller proved access by reading the FAI under their own client and
+    // companyId (the render above). The record is written with the service
+    // role: a quality approver need not hold the job's storage permissions,
+    // and the file route serves it the same way.
+    const upload = await storage(serviceRole)
+      .company(companyId)
+      .upload(filePath, new Uint8Array(pdf), {
+        cacheControl: `${12 * 60 * 60}`,
+        contentType: "application/pdf",
+        upsert: false
+      });
+    if (upload.error) throw new Error(upload.error.message);
+    uploadedPath = filePath;
+
+    const documentId = await db.transaction().execute(async (trx) => {
+      const locked = await trx
+        .selectFrom("firstArticleInspection")
+        .select(["status"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!locked) throw new Error("First article not found");
+      if (locked.status !== "Verified") {
+        throw new Error("Only a verified first article can be approved");
+      }
+      // Again under the lock: the lot can be rejected while the PDF renders.
+      if ((await firstArticleLotStatus(trx, id, companyId)) === "Failed") {
+        throw new Error(REJECTED_FIRST_ARTICLE_APPROVAL);
+      }
+
+      const document = await trx
+        .insertInto("document")
+        .values({
+          path: filePath,
+          name: fileName,
+          // KB, as every other document row stores it.
+          size: Math.round(pdf.byteLength / 1024),
+          type: "PDF",
+          sourceDocument: jobId ? "Job" : null,
+          sourceDocumentId: jobId,
+          readGroups: [userId],
+          writeGroups: [userId],
+          companyId,
+          createdBy: userId
+        })
+        .returning(["id"])
+        .executeTakeFirstOrThrow();
+
+      await trx
+        .updateTable("firstArticleInspection")
+        .set({
+          status: "Approved",
+          approvedBy: userId,
+          approvedByName: approver.name,
+          approvedByTitle: approver.title,
+          approvedAt,
+          documentId: document.id,
+          updatedBy: userId,
+          updatedAt: approvedAt
+        })
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      return document.id;
+    });
+
+    return { data: { id, documentId }, error: null };
+  } catch (err) {
+    if (uploadedPath) {
+      const removed = await storage(serviceRole)
+        .company(companyId)
+        .remove([uploadedPath]);
+      if (removed.error) {
+        firstArticleLogger.error("Failed to remove an orphaned FAIR upload", {
+          error: removed.error,
+          path: uploadedPath,
+          firstArticleInspectionId: id
+        });
+      }
+    }
+    return failure(err, "Failed to approve first article");
+  }
+}
+
+/**
+ * Deletes a Draft FAI whose lot has no readings, by deleting the lot — the
+ * extension, its Form 2 rows, sampling plans and samples cascade.
+ */
+export async function deleteFirstArticleInspection(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const { id, companyId } = args;
+  try {
+    await db.transaction().execute(async (trx) => {
+      const fai = await trx
+        .selectFrom("firstArticleInspection")
+        .select(["status", "inspectionId"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!fai) throw new Error("First article not found");
+      if (fai.status !== "Draft") {
+        throw new Error("Only a draft first article can be deleted");
+      }
+
+      const measurement = await trx
+        .selectFrom("inspectionMeasurement")
+        .select(["id"])
+        .where("inspectionId", "=", fai.inspectionId)
+        .where("companyId", "=", companyId)
+        .limit(1)
+        .executeTakeFirst();
+      if (measurement) {
+        throw new Error(
+          "This first article has recorded results and cannot be deleted"
+        );
+      }
+
+      await trx
+        .deleteFrom("inspection")
+        .where("id", "=", fai.inspectionId)
+        .where("companyId", "=", companyId)
+        .execute();
+    });
+    return { data: { id }, error: null };
+  } catch (err) {
+    return failure(err, "Failed to delete first article");
+  }
+}
+
+// -------------------------------------------------------------
+// Supplier certificates on receipt lines
+// -------------------------------------------------------------
+
+const certificateLogger = getLogger("erp", "certificates");
+
+type CertificateType = Database["public"]["Enums"]["certificateType"];
+
+/**
+ * A supplier certificate on a received line, with its uploaded file, in one
+ * transaction: the `document` row and the `certificate` row land together or
+ * not at all. The file was uploaded by the browser before the post; when the
+ * write fails it is removed again, unless another document already points at
+ * the same path (the form gives every upload a unique path, so this only
+ * guards a path a caller reused).
+ *
+ * `supplierId` comes from the form and Kysely bypasses RLS, so a supplier that
+ * is not this company's is dropped rather than written.
+ */
+export async function addReceiptLineCertificate(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    userId: string;
+    receiptLineId: string;
+    receiptId: string;
+    certificate: {
+      type: CertificateType;
+      certificateNumber: string;
+      specification?: string;
+      notes?: string;
+      supplierId?: string;
+    };
+    upload?: { path: string; name: string; size: number };
+  }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const { companyId, userId, receiptLineId, receiptId, certificate, upload } =
+    args;
+
+  try {
+    const id = await db.transaction().execute(async (trx) => {
+      const supplier = certificate.supplierId
+        ? await trx
+            .selectFrom("supplier")
+            .select(["id"])
+            .where("id", "=", certificate.supplierId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : undefined;
+
+      let documentId: string | null = null;
+      if (upload) {
+        const document = await trx
+          .insertInto("document")
+          .values({
+            path: upload.path,
+            name: upload.name,
+            // KB, as every other document row stores it.
+            size: upload.size,
+            type: getDocumentType(upload.name),
+            sourceDocument: "Receipt",
+            sourceDocumentId: receiptId,
+            readGroups: [userId],
+            writeGroups: [userId],
+            companyId,
+            createdBy: userId
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+        documentId = document.id;
+      }
+
+      const inserted = await trx
+        .insertInto("certificate")
+        .values({
+          type: certificate.type,
+          certificateNumber: certificate.certificateNumber,
+          specification: certificate.specification ?? null,
+          notes: certificate.notes ?? null,
+          supplierId: supplier?.id ?? null,
+          receiptLineId,
+          documentId,
+          companyId,
+          createdBy: userId
+        })
+        .returning(["id"])
+        .executeTakeFirstOrThrow();
+      return inserted.id;
+    });
+
+    return { data: { id }, error: null };
+  } catch (err) {
+    certificateLogger.error("Failed to add a receipt line certificate", {
+      error: err,
+      companyId,
+      receiptLineId
+    });
+    if (upload) await removeOrphanedUpload(db, client, companyId, upload.path);
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error ? err.message : "Failed to add certificate"
+      }
+    };
+  }
+}
+
+async function removeOrphanedUpload(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  companyId: string,
+  path: string
+) {
+  try {
+    const referenced = await db
+      .selectFrom("document")
+      .select(["id"])
+      .where("path", "=", path)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (referenced) return;
+
+    const removed = await storage(client).company(companyId).remove([path]);
+    if (removed.error) {
+      certificateLogger.error(
+        "Failed to remove an orphaned certificate upload",
+        {
+          error: removed.error,
+          companyId,
+          path
+        }
+      );
+    }
+  } catch (err) {
+    certificateLogger.error("Failed to remove an orphaned certificate upload", {
+      error: err,
+      companyId,
+      path
+    });
+  }
+}
+
+/**
+ * Deletes a certificate of one receipt line. The id comes from the client, so
+ * the delete is scoped to the line and fails when it matched nothing.
+ */
+export async function deleteReceiptLineCertificate(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; receiptLineId: string; companyId: string }
+): Promise<FirstArticleResult<{ id: string }>> {
+  try {
+    const deleted = await db
+      .deleteFrom("certificate")
+      .where("id", "=", args.id)
+      .where("receiptLineId", "=", args.receiptLineId)
+      .where("companyId", "=", args.companyId)
+      .returning(["id"])
+      .executeTakeFirst();
+    if (!deleted) {
+      return { data: null, error: { message: "Certificate not found" } };
+    }
+    return { data: { id: deleted.id }, error: null };
+  } catch (err) {
+    certificateLogger.error("Failed to delete a receipt line certificate", {
+      error: err,
+      ...args
+    });
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error ? err.message : "Failed to delete certificate"
+      }
+    };
+  }
 }

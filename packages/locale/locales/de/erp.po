@@ -1002,6 +1002,9 @@ msgstr "Ländercode für {fieldLabel}"
 msgid "{fieldLabel} hex value"
 msgstr "Hexadezimalwert von {fieldLabel}"
 
+msgid "{firstArticle} on {otherJob}"
+msgstr "{firstArticle} in {otherJob}"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} hier gefunden"
 
@@ -1819,6 +1822,9 @@ msgstr "Eine Entwurfsserie von Planänderungen mit einem Titel und einem Grund. 
 msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 msgstr "Die Positionen eines Entwurfs werden direkt bearbeitet. Nach der Bestätigung werden Änderungen mit Ändern durchgeführt und hier aufgezeichnet."
 
+msgid "A FAIR number from outside Carbon"
+msgstr "Eine FAIR-Nummer von außerhalb Carbon"
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "Eine Datei mit dem Namen {0} existiert bereits – löschen oder umbenennen Sie sie zuerst"
@@ -1956,6 +1962,9 @@ msgstr "Ein neuer Einladungslink wird gesendet. Ein zuvor gesendeter Link funkti
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Für jeden Lieferant wird eine neue Bestellung erstellt. Alternativ können Sie eine bestehende Entwurfs-Bestellung des Lieferanten auswählen, um die Fremdvergabe-Arbeitsgänge hinzuzufügen."
+
+msgid "A new revision is issued under the same number. Earlier revisions stay downloadable."
+msgstr "Eine neue Revision wird unter derselben Nummer ausgegeben. Frühere Revisionen bleiben zum Download verfügbar."
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "Eine neue Revision wird erstellt, indem eine Kopie der aktuellen Revision verwendet wird"
@@ -2549,6 +2558,12 @@ msgstr "Akzeptanz"
 msgid "Acceptance passed"
 msgstr "Akzeptanz bestanden"
 
+msgid "Acceptance Report"
+msgstr "Abnahmebericht"
+
+msgid "Acceptance Report Number"
+msgstr "Abnahmeberichtnummer"
+
 msgid "Accepted"
 msgstr "Angenommen"
 
@@ -2987,6 +3002,9 @@ msgstr "Fügen Sie einem Arbeitsgang einen Schritt vom Typ Liste, Prüfung oder 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Materialien-Abschnitt hinzufügen, der jeden Artikel auf der Stückliste mit seiner Menge auflistet."
 
+msgid "Add a note to this reading"
+msgstr "Eine Notiz zu diesem Messwert hinzufügen"
+
 msgid "Add a parameter (procedures only)"
 msgstr "Einen Parameter hinzufügen (nur Verfahrensanweisungen)"
 
@@ -3079,6 +3097,9 @@ msgstr "Kalibrierprotokoll hinzufügen"
 
 msgid "Add Ceiling"
 msgstr "Obergrenze hinzufügen"
+
+msgid "Add Certificate"
+msgstr "Zertifikat hinzufügen"
 
 msgid "Add Characteristic"
 msgstr "Merkmal hinzufügen"
@@ -3224,6 +3245,9 @@ msgstr "Modell hinzufügen"
 msgid "Add Month"
 msgstr "Monat hinzufügen"
 
+msgid "Add note"
+msgstr "Notiz hinzufügen"
+
 msgid "Add Note"
 msgstr "Notiz hinzufügen"
 
@@ -3316,6 +3340,9 @@ msgstr "Risiko hinzufügen"
 msgid "Add row"
 msgstr "Zeile hinzufügen"
 
+msgid "Add Row"
+msgstr "Zeile hinzufügen"
+
 msgid "Add rule"
 msgstr "Regel hinzufügen"
 
@@ -3400,6 +3427,9 @@ msgstr "Die Arbeitsgänge hinzufügen, die diesen Artikel herstellen."
 msgid "Add the rates before the first request."
 msgstr "Tarife vor der ersten Anfrage hinzufügen"
 
+msgid "Add the statements your customers require on certificates — e.g. DFARS 252.225-7009 specialty metals, DFARS 252.246-7008 counterfeit parts, RoHS, REACH."
+msgstr "Hinzufügen der Erklärungen, die Ihre Kunden auf Zertifikaten verlangen — z. B. DFARS 252.225-7009 Spezialmetalle, DFARS 252.246-7008 gefälschte Teile, RoHS, REACH."
+
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Fügen Sie diesen TXT-Eintrag bei Ihrem DNS-Host hinzu und klicken Sie dann auf „Überprüfen\". DNS-Änderungen können einige Minuten dauern, bis sie sich verbreitet haben."
 
@@ -3474,6 +3504,9 @@ msgstr "Demo-Datensätze werden hinzugefügt"
 
 msgid "Adding..."
 msgstr "Wird hinzugefügt..."
+
+msgid "Additional Changes"
+msgstr "Zusätzliche Änderungen"
 
 msgid "Address"
 msgstr "Adresse"
@@ -3725,6 +3758,9 @@ msgstr "Zulässigkeit"
 
 msgid "Allowable"
 msgstr "Zulässig"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "zulässig {allowableLabel} (Bonus {bonusLabel})"
 
 msgid "Allowable and unallowable cost of each contract line, with funding and billing"
 msgstr "Zulässige und nicht zulässige Kosten für jede Vertragsposition mit Finanzierung und Abrechnung"
@@ -4225,6 +4261,9 @@ msgstr "Gilt für"
 msgid "Applies to all"
 msgstr "Gilt für alle"
 
+msgid "Applies to all customers"
+msgstr "Gilt für alle Kunden"
+
 msgid "Applies to all work centers"
 msgstr "Gilt für alle Arbeitsplätze"
 
@@ -4351,6 +4390,9 @@ msgstr ""
 msgid "Approve and Delete"
 msgstr ""
 
+msgid "Approve first article?"
+msgstr "Erstmuster genehmigen?"
+
 msgid "Approve Request"
 msgstr "Anfrage genehmigen"
 
@@ -4362,6 +4404,9 @@ msgstr "Genehmigt durch <0/> von <1/>"
 
 msgid "Approved By"
 msgstr "Genehmigt von"
+
+msgid "Approved By (Customer)"
+msgstr "Genehmigt von (Kunde)"
 
 msgid "Approved On"
 msgstr "Genehmigt am"
@@ -4533,6 +4578,10 @@ msgstr "Sind Sie sicher, dass Sie {0} aus diesem Vorgang löschen möchten? Dies
 msgid "Are you sure you want to delete {0}?"
 msgstr "Sind Sie sicher, dass Sie {0} löschen möchten?"
 
+#. placeholder {0}: lot.inspectionId
+msgid "Are you sure you want to delete {0}? Its inspection is deleted with it. This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie {0} löschen möchten? Die Prüfung wird damit gelöscht. Dies kann nicht rückgängig gemacht werden."
+
 #. placeholder {0}: asset.fixedAssetId
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
@@ -4593,6 +4642,10 @@ msgstr "Sind Sie sicher, dass Sie die Änderungsmitteilung-Kategorie löschen m�
 #. placeholder {0}: deleting.description
 msgid "Are you sure you want to delete the charge \"{0}\"?"
 msgstr "Sind Sie sicher, dass Sie die Gebühr „{0}\" löschen möchten?"
+
+#. placeholder {0}: complianceStatement.name
+msgid "Are you sure you want to delete the compliance statement: {0}? This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie die Konformitätserklärung löschen möchten: {0}? Dies kann nicht rückgängig gemacht werden."
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie den externen Mitarbeiter: {name} löschen möchten? Dies kann nicht rückgängig gemacht werden."
@@ -5105,6 +5158,9 @@ msgstr "Vermögenswerte, Verbindlichkeiten und Eigenkapital an einem bestimmten 
 msgid "Assign a Batch"
 msgstr "Ein Los zuweisen"
 
+msgid "assign a first article plan for"
+msgstr "Zuweisen eines Erstmusterplans für"
+
 msgid "Assign Batch"
 msgstr "Los zuweisen"
 
@@ -5200,6 +5256,9 @@ msgstr "Nach Vorgangsabschluss"
 
 msgid "Attach"
 msgstr "Anhängen"
+
+msgid "Attach Certificate"
+msgstr "Zertifikat anfügen"
 
 msgid "Attach File"
 msgstr "Datei anhängen"
@@ -5545,6 +5604,9 @@ msgstr "Basispreis"
 
 msgid "Baseline"
 msgstr "Ausgangswert"
+
+msgid "Baseline First Article"
+msgstr "Erstmuster-Grundlage"
 
 msgid "Baselines"
 msgstr "Baselines"
@@ -6627,17 +6689,38 @@ msgstr "Zentrale Abrechnung ist aktiviert"
 msgid "Cert Version"
 msgstr "Zertifikat-Version"
 
+msgid "Certificate"
+msgstr "Zertifikat"
+
+msgid "Certificate added"
+msgstr "Zertifikat hinzugefügt"
+
+msgid "Certificate Date"
+msgstr "Zertifikatsdatum"
+
+msgid "Certificate deleted"
+msgstr "Zertifikat gelöscht"
+
 msgid "Certificate Number"
 msgstr "Zertifikatnummer"
 
+msgid "Certificate of Conformance Number"
+msgstr "Konformitätszertifikatnummer"
+
 msgid "Certificate uploaded"
 msgstr "Zertifikat hochgeladen"
+
+msgid "Certificates"
+msgstr "Zertifikate"
 
 msgid "Certification text, exempt staff"
 msgstr "Bescheinigungstext, freigestellte Mitarbeiter"
 
 msgid "Certification text, non-exempt staff"
 msgstr "Bescheinigungstext, nicht freigestellte Mitarbeiter"
+
+msgid "Certifications"
+msgstr "Zertifizierungen"
 
 msgid "Certified"
 msgstr "Zertifiziert"
@@ -6903,6 +6986,9 @@ msgstr "Wird überprüft für jede Einheit, sobald Einheiten hinzugefügt werden
 msgid "Checked value"
 msgstr "Geprüfter Wert"
 
+msgid "Checking first articles and certificates…"
+msgstr "Erstmuster und Zertifikate prüfen…"
+
 msgid "Checking Stripe for this customer…"
 msgstr "Überprüfung von Stripe für diesen Kunden…"
 
@@ -6997,6 +7083,9 @@ msgstr "Wählen Sie, wie Carbon Sie erreicht."
 msgid "Choose how to add lines to this return."
 msgstr "Wählen Sie, wie Sie Positionen zu dieser Rückgabe hinzufügen möchten."
 
+msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
+msgstr "Wählen Sie das interne oder externe Größenmerkmal für MMC/LMC-Merkmale"
+
 msgid "Choose Move on the stock to send somewhere else, or Fill on a storage unit that needs stock."
 msgstr "Wählen Sie beim Bestand „Umlagern“, um ihn an einen anderen Ort zu senden, oder bei einer Lagereinheit, die Bestand benötigt, „Befüllen“."
 
@@ -7026,6 +7115,9 @@ msgstr "Wählen Sie das neue übergeordnete Element"
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Wählen Sie die Dienstleistungen, die dieser Vertrag fakturiert. Jede wird als wiederkehrende Position hinzugefügt, die Sie im Raster preisen können."
+
+msgid "Choose the size feature for MMC/LMC characteristics"
+msgstr "Wählen Sie das Größenmerkmal für MMC/LMC-Merkmale"
 
 msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
 msgstr "Wählen Sie, womit ein neuer Wareneingang die empfangene Menge jeder Position vorfüllt: mit der noch zu empfangenden Menge oder mit null, damit der Empfänger eingibt, was tatsächlich angekommen ist."
@@ -7581,6 +7673,12 @@ msgstr "Abschlusszeit"
 
 msgid "Completion time by job"
 msgstr "Durchlaufzeit je Fertigungsauftrag"
+
+msgid "Compliance Statement"
+msgstr "Konformitätserklärung"
+
+msgid "Compliance Statements"
+msgstr "Konformitätserklärungen"
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -8439,6 +8537,9 @@ msgstr "Korrektionen"
 msgid "Corrective action"
 msgstr "Korrekturmaßnahme"
 
+msgid "Corrective Action"
+msgstr "Korrekturmaßnahme"
+
 msgid "Cost"
 msgstr "Kosten"
 
@@ -8576,6 +8677,9 @@ msgstr "Kosten bis"
 
 msgid "Costs, with children"
 msgstr "Kosten mit untergeordneten Elementen"
+
+msgid "COTS"
+msgstr "COTS"
 
 msgid "Could not analyze cropped region"
 msgstr "Konnte zugeschnittene Region nicht analysieren"
@@ -8722,6 +8826,9 @@ msgstr "Besetzung"
 
 msgid "Coverage changed"
 msgstr "Abdeckung geändert"
+
+msgid "Covered by another job"
+msgstr "Durch einen anderen Job abgedeckt"
 
 msgid "CPI"
 msgstr "KPI"
@@ -9077,6 +9184,9 @@ msgstr "Erstellt {rfqCount, plural, one {# Anfrage im Entwurf} other {# Anfragen
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "Erstellt einen Entwurf einer Lieferantengutschrift für die versandten Mengen, die noch nicht gutgeschrieben wurden"
 
+msgid "Creates an AS9102 first article inspection for one part of a job, inspected against the part's first article plan."
+msgstr "Erstellt eine AS9102-Erstmusterprüfung für einen Teil eines Fertigungsauftrags, geprüft gegen den Erstmusterplan des Teils."
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Erstellt die 12 monatlichen Perioden für ein Geschäftsjahr. Bereits vorhandene Perioden werden beibehalten."
 
@@ -9321,6 +9431,12 @@ msgstr "Kunde – Adresszeile 2"
 
 msgid "Customer and supplier pages"
 msgstr "Kunden- und Lieferantenseiten"
+
+msgid "Customer Approval"
+msgstr "Kundengenehmigung"
+
+msgid "Customer Approval Verification"
+msgstr "Überprüfung der Kundengenehmigung"
 
 msgid "Customer Asset"
 msgstr "Kundenbestand"
@@ -9768,6 +9884,9 @@ msgstr "Entscheiden Sie, wann eine hergestellte Einheit ihre Nummer aus der Seri
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Entscheiden Sie, wann Material, das zu einem Arbeitsplatz kommissioniert, aber nicht verbraucht wurde, zum Lager zurückfließt."
 
+msgid "Decide when releasing a job creates first article inspections."
+msgstr "Entscheiden Sie, wann die Freigabe eines Fertigungsauftrags Erstmusterprüfungen erstellt."
+
 msgid "Decided for each asset when the lease is activated, from its payment rows and its classification inputs."
 msgstr "Für jede Anlage bestimmt, wenn das Leasing aktiviert wird, basierend auf ihren Zahlungspositionen und ihren Klassifizierungseingaben."
 
@@ -10070,6 +10189,9 @@ msgstr "Kategorie löschen"
 msgid "Delete Ceiling"
 msgstr "Obergrenze löschen"
 
+msgid "Delete certificate"
+msgstr "Zertifikat löschen"
+
 msgid "Delete Change Notice"
 msgstr "Änderungsmitteilung löschen"
 
@@ -10133,6 +10255,9 @@ msgstr "Fehlermodus löschen"
 
 msgid "Delete file"
 msgstr "Datei löschen"
+
+msgid "Delete First Article"
+msgstr "Erstmuster löschen"
 
 msgid "Delete Fixed Asset"
 msgstr "Anlagegut löschen"
@@ -10332,6 +10457,9 @@ msgstr "Lieferposition löschen"
 
 msgid "Delete Shipping Method"
 msgstr "Versandmethode löschen"
+
+msgid "Delete Statement"
+msgstr "Erklärung löschen"
 
 msgid "Delete step"
 msgstr "Schritt löschen"
@@ -10661,11 +10789,17 @@ msgstr "Problembeschreibung"
 msgid "Description of the event. You can use HTML tags here."
 msgstr "Beschreibung des Events. Sie können hier HTML-Tags verwenden."
 
+msgid "Design Change"
+msgstr "Designänderung"
+
 msgid "Design Constraint"
 msgstr "Designeinschränkung"
 
 msgid "Design review"
 msgstr "Designüberprüfung"
+
+msgid "Designator"
+msgstr "Kennzeichen"
 
 msgid "Detach"
 msgstr "Trennen"
@@ -10913,6 +11047,9 @@ msgstr "Abgegangen <0/>"
 msgid "Disposition"
 msgstr "Verwendungsentscheid"
 
+msgid "Disposition the inspection before verifying"
+msgstr "Verwendungsentscheid zur Prüfung vor Überprüfung"
+
 msgid "Dispositions"
 msgstr "Verwendungsentscheide"
 
@@ -10964,6 +11101,9 @@ msgstr "Dokumenttyp"
 
 msgid "Document:"
 msgstr "Dokument:"
+
+msgid "Documented Nonconformance"
+msgstr "Dokumentierte Nichtkonformität"
 
 msgid "Documents"
 msgstr "Dokumente"
@@ -11125,8 +11265,17 @@ msgstr "Zeichnen Sie es, oder laden Sie ein Bild davon hoch."
 msgid "Drawing"
 msgstr "Abheben"
 
+msgid "Drawing Number"
+msgstr "Zeichnungsnummer"
+
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Zeichnung ersetzt. Anmerkungsplatzierungen wurden entfernt. Merkmalzeilen bleiben unverändert."
+
+msgid "Drawing revision"
+msgstr "Zeichnungsrevision"
+
+msgid "Drawing Revision"
+msgstr "Zeichnungsrevision"
 
 msgid "drawings"
 msgstr "Zeichnungen"
@@ -11225,6 +11374,9 @@ msgstr "Duplizieren"
 
 msgid "Duplicate batch number"
 msgstr "Doppeltes Los"
+
+msgid "Duplicate characteristic numbers"
+msgstr "Doppelte Merkmalskennzahlen"
 
 msgid "Duplicate file names after image conversion"
 msgstr "Doppelte Dateinamen nach der Bildkonvertierung"
@@ -11345,6 +11497,10 @@ msgstr "Die nachfolgenden Zahlungspositionen jeder Anlage werden aus diesen Bedi
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Jede Zelle zeigt die zugewiesenen Personen gegen die Personen, die die Tagesarbeit benötigt."
+
+#. placeholder {0}: duplicates.join(", ")
+msgid "Each characteristic needs a unique number on the report. Used more than once: {0}"
+msgstr "Jedes Merkmal benötigt eine eindeutige Kennzahl im Bericht. Mehrfach verwendet: {0}"
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Jede Vertragsänderung, die diese Position finanziert, nach ACRN."
@@ -11554,6 +11710,9 @@ msgstr "Gebühr bearbeiten"
 msgid "Edit column visibility"
 msgstr "Spaltensichtbarkeit bearbeiten"
 
+msgid "Edit Compliance Statement"
+msgstr "Compliance-Erklärung bearbeiten"
+
 msgid "Edit Component Group"
 msgstr "Komponentengruppe bearbeiten"
 
@@ -11720,6 +11879,9 @@ msgstr "Meilenstein bearbeiten"
 msgid "Edit Non Conformance Type"
 msgstr "Nichtkonformitätstyp bearbeiten"
 
+msgid "Edit note"
+msgstr "Notiz bearbeiten"
+
 msgid "Edit Part"
 msgstr "Teil bearbeiten"
 
@@ -11804,6 +11966,12 @@ msgstr "Beleg bearbeiten"
 msgid "Edit Revision"
 msgstr "Revision bearbeiten"
 
+msgid "Edit row"
+msgstr "Zeile bearbeiten"
+
+msgid "Edit Row"
+msgstr "Zeile bearbeiten"
+
 msgid "Edit rule"
 msgstr "Regel bearbeiten"
 
@@ -11839,6 +12007,9 @@ msgstr "Versandmethode bearbeiten"
 
 msgid "Edit Size"
 msgstr "Größe bearbeiten"
+
+msgid "Edit Statement"
+msgstr "Erklärung bearbeiten"
 
 msgid "Edit Stock Transfer"
 msgstr "Lagertransfer bearbeiten"
@@ -11978,8 +12149,14 @@ msgstr "E-Mail-Benachrichtigungen sind nicht in Ihrem aktuellen Unternehmensplan
 msgid "Email notifications not configured"
 msgstr "E-Mail-Benachrichtigungen nicht konfiguriert"
 
+msgid "Email order on acceptance"
+msgstr "Auftrag bei Annahme per E-Mail senden"
+
 msgid "Email recipients"
 msgstr "E-Mail-Empfänger"
+
+msgid "Email to customer"
+msgstr "E-Mail an den Kunden"
 
 msgid "Emailed"
 msgstr "E-Mail versendet"
@@ -12956,6 +13133,9 @@ msgstr "Erweiterte Preis"
 msgid "External"
 msgstr "Extern"
 
+msgid "External Baseline"
+msgstr "Externe Basislinie"
+
 msgid "External Delta"
 msgstr "Externe Differenz"
 
@@ -13004,6 +13184,18 @@ msgstr "Fläche {0}"
 
 msgid "Factor"
 msgstr "Faktor"
+
+msgid "FAI Complete (Verified)"
+msgstr "FAI abgeschlossen (überprüft)"
+
+msgid "FAI due"
+msgstr "FAI fällig"
+
+msgid "FAI open"
+msgstr "FAI offen"
+
+msgid "FAI Report"
+msgstr "FAI-Bericht"
 
 msgid "Fail"
 msgstr "Nicht bestanden"
@@ -13425,6 +13617,7 @@ msgstr "Fehler beim Hochladen der Datei an den neuen Speicherort"
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
+#. placeholder {0}: selected.name
 msgid "Failed to upload file: {0}"
 msgstr "Fehler beim Hochladen der Datei: {0}"
 
@@ -13467,6 +13660,9 @@ msgstr "Fehlermodi"
 msgid "Failures by work center"
 msgstr "Störungen nach Arbeitsplatz"
 
+msgid "FAIR"
+msgstr "FAIR"
+
 msgid "Fair Value"
 msgstr "Zeitwert"
 
@@ -13478,6 +13674,9 @@ msgstr "Fax"
 
 msgid "Fax Number"
 msgstr "Faxnummer"
+
+msgid "Feature of size"
+msgstr "Abmessungsmerkmal"
 
 msgid "Fed by"
 msgstr "Bereitgestellt von"
@@ -13517,6 +13716,9 @@ msgstr "Felder"
 
 msgid "FIFO"
 msgstr "FIFO"
+
+msgid "File"
+msgstr "Datei"
 
 msgid "File deleted successfully"
 msgstr "Datei erfolgreich gelöscht"
@@ -13678,6 +13880,22 @@ msgstr "Für Angebotspositionen, Kundenauftragsposition und Ausgangsrechnung Pos
 
 msgid "First {count}"
 msgstr "Erste {count}"
+
+msgid "First Article"
+msgstr "Erstmuster"
+
+#. placeholder {0}: item.itemReadableId
+msgid "First article due for {0}"
+msgstr "Erstmuster erforderlich für {0}"
+
+msgid "First Article Inspection"
+msgstr "Erstmusterprüfung"
+
+msgid "First article settings updated"
+msgstr "Erstmusterprüfungseinstellungen aktualisiert"
+
+msgid "First Articles"
+msgstr "Erstmuster"
 
 msgid "First invoice"
 msgstr "Erste Rechnung"
@@ -13902,6 +14120,15 @@ msgstr "Form"
 msgid "Form"
 msgstr "Formular"
 
+msgid "Form 1: Part Number Accountability"
+msgstr "Formular 1: Teilenummern-Verantwortung"
+
+msgid "Form 2: Product Accountability"
+msgstr "Formular 2: Produkt-Verantwortung"
+
+msgid "Form 3: Characteristic Accountability"
+msgstr "Formular 3: Merkmals-Verantwortung"
+
 msgid "Form 6765 Section G"
 msgstr "Formular 6765 Abschnitt G"
 
@@ -14024,6 +14251,9 @@ msgstr "Von:"
 msgid "Fulfillment Location"
 msgstr "Versandstandort"
 
+msgid "Full"
+msgstr "Vollständig"
+
 msgid "Full name"
 msgstr "Vollständiger Name"
 
@@ -14038,6 +14268,12 @@ msgstr "Funktion"
 
 msgid "Functional"
 msgstr "Funktional"
+
+msgid "Functional Test"
+msgstr "Funktionsprüfung"
+
+msgid "Functional Test Procedure Number"
+msgstr "Funktionsprüfverfahrens-Nummer"
 
 msgid "funded"
 msgstr "finanziert"
@@ -15366,6 +15602,9 @@ msgstr "Bestellung {target} auf {amount} erhöhen"
 msgid "Incremental Borrowing Rate (%)"
 msgstr "Zusätzlicher Kreditzinssatz (%)"
 
+msgid "Index of Parts and Sub-assemblies"
+msgstr "Verzeichnis der Teile und Baugruppen"
+
 msgid "Indirect"
 msgstr "Indirekt"
 
@@ -15506,6 +15745,9 @@ msgstr "Fertigungsauftrag der Prüfung"
 
 msgid "Inspection Level"
 msgstr "Prüfniveau"
+
+msgid "Inspection Method Change"
+msgstr "Prüfmethoden-Änderung"
 
 msgid "Inspection Name"
 msgstr "Prüfungsname"
@@ -15972,6 +16214,9 @@ msgstr "Ausgabe (Material)"
 msgid "issue actions"
 msgstr "Ausgabe-Aktionen"
 
+msgid "Issue Certificate of Conformance"
+msgstr "Konformitätsbescheinigung ausstellen"
+
 msgid "Issue Credit"
 msgstr "Gutschrift ausstellen"
 
@@ -16043,6 +16288,9 @@ msgstr "Problemablauf-Workflows"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "Abweichungs-Workflows definieren die voreingestellten Werte für eine Abweichung. Sie können beispielsweise einen 8D-Workflow oder einen Containment-Workflow haben."
+
+msgid "Issue…"
+msgstr "Ausstellen…"
 
 msgid "Issued"
 msgstr "Ausgegeben"
@@ -16261,6 +16509,9 @@ msgstr "Fertigungsauftrag erfolgreich fertiggestellt"
 msgid "Job completions"
 msgstr "Fertigungsauftrag-Abschlüsse"
 
+msgid "Job deleted"
+msgstr "Fertigungsauftrag gelöscht"
+
 msgid "Job ID"
 msgstr "Auftrags-ID"
 
@@ -16456,6 +16707,9 @@ msgstr "Schlüssel"
 
 msgid "Keyboard shortcuts"
 msgstr "Tastenkombinationen"
+
+msgid "Kind"
+msgstr "Art"
 
 msgid "Kind of record"
 msgstr "Art des Datensatzes"
@@ -17282,6 +17536,9 @@ msgstr "Standort"
 msgid "Location / Item"
 msgstr "Standort / Artikel"
 
+msgid "Location Change"
+msgstr "Standortänderung"
+
 msgid "Location Name"
 msgstr "Standortname"
 
@@ -17584,6 +17841,9 @@ msgstr "Inaktiv machen"
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "Eigenfertigung-Artikel können nicht direkt fakturiert werden. Ändern Sie die Bereitstellungsart zu Kommissionierung, um fortzufahren."
 
+msgid "Make method removed"
+msgstr "Fertigungsmethode entfernt"
+
 msgid "Make Method Version"
 msgstr "Fertigungsmethode-Version"
 
@@ -17680,6 +17940,12 @@ msgstr "Fertigung"
 
 msgid "manufacturing is blocked"
 msgstr "Fertigung ist blockiert"
+
+msgid "Manufacturing Process Reference"
+msgstr "Fertigungsprozess-Referenz"
+
+msgid "Manufacturing Source Change"
+msgstr "Fertigungsquellen-Änderung"
 
 msgid "Map accounts"
 msgstr "Konten zuordnen"
@@ -17847,6 +18113,12 @@ msgstr "Material"
 msgid "Material"
 msgstr "Material"
 
+msgid "Material Change"
+msgstr "Materialänderung"
+
+msgid "Material condition"
+msgstr "Werkstoffzustand"
+
 msgid "Material Cost"
 msgstr "Werkstoffkosten"
 
@@ -17909,6 +18181,12 @@ msgstr "Materialartikel"
 
 msgid "Material measurement point"
 msgstr "Werkstoffmesspunkt"
+
+msgid "Material or Process"
+msgstr "Werkstoff oder Verfahren"
+
+msgid "Material or Process Name"
+msgstr "Werkstoff- oder Verfahrensname"
 
 msgid "Material Planning"
 msgstr "Materialplanung"
@@ -18223,6 +18501,9 @@ msgstr "Fehlend"
 
 msgid "Missing Days"
 msgstr "Fehlende Tage"
+
+msgid "Missing First Article Plans"
+msgstr "Fehlende Erstmusterteilpläne"
 
 msgid "Missing Information"
 msgstr "Fehlende Informationen"
@@ -18600,6 +18881,9 @@ msgstr "Meine gespeicherte Ansicht"
 msgid "My Time"
 msgstr "Meine Zeit"
 
+msgid "N/A"
+msgstr "N/A"
+
 msgid "Name"
 msgstr "Name"
 
@@ -18619,6 +18903,9 @@ msgstr "Namen werden überall dort eingefügt, wo diese Rollen im Hub referenzie
 msgid "Native CAD integration (for example Onshape)"
 msgstr "Native CAD-Integration (zum Beispiel Onshape)"
 
+msgid "Natural or Man-made Event"
+msgstr "Natürliches oder von Menschen verursachtes Ereignis"
+
 msgid "Navigate"
 msgstr "Navigieren"
 
@@ -18630,6 +18917,12 @@ msgstr "NBW nach"
 
 msgid "NBV at Disposal"
 msgstr "NBW bei Abgang"
+
+msgid "NC Program Change"
+msgstr "NC-Programm-Änderung"
+
+msgid "NCR"
+msgstr "NCR"
 
 msgid "NCRs by Type"
 msgstr "NCRs nach Typ"
@@ -18800,6 +19093,9 @@ msgstr "Neue Änderungsanfrage"
 msgid "New Charge"
 msgstr "Neue Gebühr"
 
+msgid "New Compliance Statement"
+msgstr "Neue Konformitätserklärung"
+
 msgid "New Consumable"
 msgstr "Neues Verbrauchsmaterial"
 
@@ -18872,6 +19168,9 @@ msgstr "Neuer Fehlermodus"
 
 msgid "New Field"
 msgstr "Neues Feld"
+
+msgid "New First Article"
+msgstr "Neues Erstmuster"
 
 msgid "New Fixed Asset"
 msgstr "Neues Anlage"
@@ -19055,6 +19354,9 @@ msgstr "Neue RFQ"
 
 msgid "New RMA"
 msgstr "Neue RMA"
+
+msgid "New Row"
+msgstr "Neue Position"
 
 msgid "New rule"
 msgstr "Neue Regel"
@@ -19422,6 +19724,15 @@ msgstr "Keine Obergrenzen. Gemeinkostenzuschläge werden mit den Abrechnungssät
 
 msgid "No cell could take the pasted values"
 msgstr "Keine Zelle konnte die eingefügten Werte übernehmen"
+
+msgid "No certificate on file"
+msgstr "Kein Zertifikat vorhanden"
+
+msgid "No certificate on file for {name}"
+msgstr "Kein Zertifikat vorhanden für {name}"
+
+msgid "No certificates on this line yet"
+msgstr "Noch keine Zertifikate für diese Position"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Es ist kein Zertifizierungstext für Sie festgelegt. Bitten Sie einen Administrator, ihn unter Einstellungen → Zeit festzulegen."
@@ -19838,6 +20149,9 @@ msgstr "Keine Materialien"
 
 msgid "No materials yet"
 msgstr "Noch keine Werkstoffe"
+
+msgid "No materials, special processes or functional tests yet."
+msgstr "Noch keine Materialien, Sonderverfahren oder Funktionsprüfungen."
 
 msgid "No members yet. A project with project stock joins the group on its Settings page."
 msgstr "Noch keine Mitglieder vorhanden. Ein Projekt mit Projektbestand tritt der Gruppe auf seiner Einstellungsseite bei."
@@ -20362,6 +20676,9 @@ msgstr "Kostenlos Austausch"
 msgid "No-charge Replacement"
 msgstr "Kostenlos Austausch"
 
+msgid "No."
+msgstr "Nein."
+
 #. placeholder {0}: ability.name
 msgid "Nobody is qualified for {0}"
 msgstr "Niemand ist für {0} qualifiziert"
@@ -20428,6 +20745,12 @@ msgstr "Arbeitsfreie Tage, die Planung und Kapazität berücksichtigen"
 
 msgid "None"
 msgstr "Keine"
+
+msgid "None — a detail part."
+msgstr "Keine — ein Einzelteil."
+
+msgid "None approved"
+msgstr "Keine genehmigt"
 
 msgid "None available"
 msgstr "Keine verfügbar"
@@ -21544,6 +21867,12 @@ msgstr "Bestellungen"
 msgid "Orders submitted"
 msgstr "Bestellungen eingereicht"
 
+msgid "Organization"
+msgstr "Organisation"
+
+msgid "Organization Name"
+msgstr "Organisationsname"
+
 msgid "Orientation"
 msgstr "Ausrichtung"
 
@@ -21907,14 +22236,23 @@ msgstr "Teil entnommen"
 msgid "Part lead times update from posted purchase receipts."
 msgstr "Beschaffungszeiten von Teilen werden aus gebuchten Wareneingängen aktualisiert."
 
+msgid "Part Name"
+msgstr "Teilname"
+
 msgid "Part Number"
 msgstr "Teilenummer"
+
+msgid "Part Revision"
+msgstr "Teilrevision"
 
 msgid "Part Supersession"
 msgstr "Teil-Ablösung"
 
 msgid "Part supplier created"
 msgstr "Teil-Lieferant erstellt"
+
+msgid "Part Type"
+msgstr "Teiltyp"
 
 msgid "Partial"
 msgstr "Teilweise"
@@ -22781,6 +23119,9 @@ msgstr "Einmal verbucht, keine Korrektionen."
 msgid "Posting"
 msgstr "Buchung"
 
+msgid "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+msgstr "Das Buchen einer Lieferung für diesen Kunden erstellt ein Zertifikat und sendet es per E-Mail an den Versandkontakt."
+
 msgid "Posting date"
 msgstr "Buchungsdatum"
 
@@ -23029,6 +23370,9 @@ msgstr "Etiketten drucken ({0})"
 msgid "Print Output ({0})"
 msgstr "Druckausgabe ({0})"
 
+msgid "Printed on every Certificate of Conformance"
+msgstr "Gedruckt auf jedem Konformitätszertifikat"
+
 msgid "Printed on the purchase orders you approve."
 msgstr "Gedruckt auf den Bestellungen, die Sie genehmigen."
 
@@ -23104,6 +23448,9 @@ msgstr "Prozesse"
 msgid "Process"
 msgstr "Prozess"
 
+msgid "Process Change"
+msgstr "Verfahrensänderung"
+
 msgid "Process Name"
 msgstr "Prozessname"
 
@@ -23160,6 +23507,9 @@ msgstr "Produktionsereignisse"
 
 msgid "Production Events"
 msgstr "Produktionsereignisse"
+
+msgid "Production Lapse"
+msgstr "Produktionspause"
 
 msgid "Production planning"
 msgstr "Produktionsplanung"
@@ -23545,6 +23895,9 @@ msgstr "Bestellposition"
 
 msgid "Purchase Order Location"
 msgstr "Bestellort"
+
+msgid "Purchase Order Number"
+msgstr "Bestellnummer"
 
 msgid "Purchase order removed successfully"
 msgstr "Bestellung erfolgreich entfernt"
@@ -24085,6 +24438,9 @@ msgstr "Sätze für alle Kunden eines Typs"
 msgid "Rates, FY{fiscalYear}"
 msgstr "Sätze, GJ{fiscalYear}"
 
+msgid "Raw material, special processes and functional tests"
+msgstr "Rohmaterial, Sonderverfahren und Funktionsprüfungen"
+
 msgid "Raw Materials"
 msgstr "Rohstoffe"
 
@@ -24201,6 +24557,9 @@ msgstr "Grund für das Überspringen (erforderlich)"
 
 msgid "Reason for skipping {taskName}"
 msgstr "Grund für das Überspringen von {taskName}"
+
+msgid "Reason for Update"
+msgstr "Grund für Aktualisierung"
 
 msgid "Reasonably Certain"
 msgstr "Angemessen Sicher"
@@ -24443,6 +24802,9 @@ msgstr "Erfassen Sie Prüfungen, die an einen Teil und einen Fertigungsauftrag g
 msgid "Record Payment"
 msgstr "Zahlung aufzeichnen"
 
+msgid "Record Results"
+msgstr "Ergebnisse aufzeichnen"
+
 msgid "Record scan"
 msgstr "Scan aufzeichnen"
 
@@ -24529,6 +24891,12 @@ msgstr "Wird zur Verifizierungsseite weitergeleitet..."
 msgid "Reduced"
 msgstr "Reduziert"
 
+msgid "Ref. location"
+msgstr "Ref. Standort"
+
+msgid "Ref. Location"
+msgstr "Ref. Standort"
+
 msgid "Reference"
 msgstr "Referenz"
 
@@ -24540,6 +24908,9 @@ msgstr "Aktualisieren"
 
 msgid "Refresh exchange rate"
 msgstr "Wechselkurs aktualisieren"
+
+msgid "Refresh from Traceability"
+msgstr "Aus Rückverfolgbarkeit aktualisieren"
 
 msgid "Refresh preview"
 msgstr "Vorschau aktualisieren"
@@ -24618,6 +24989,15 @@ msgstr "Kostenerstattung für Mitarbeiter"
 
 msgid "Reimbursements"
 msgstr "Erstattungen"
+
+msgid "Reissue"
+msgstr "Erneut ausstellen"
+
+msgid "Reissue Certificate of Conformance"
+msgstr "Konformitätszertifikat erneut ausstellen"
+
+msgid "Reissue…"
+msgstr "Erneut ausstellen…"
 
 msgid "Reject"
 msgstr "Ablehnen"
@@ -24740,6 +25120,12 @@ msgstr "Freigegebene Revision ist gesperrt"
 msgid "Released with problems: {0}"
 msgstr "Freigegeben mit Problemen: {0}"
 
+msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+msgstr "Das Freigeben eines Fertigungsauftrags erstellt eine Erstmusterteilprüfung für jeden Teil darauf, der kein genehmigtes Erstmuster hat oder seit zwei Jahren nicht hergestellt wurde."
+
+msgid "Releasing a job for this customer creates first article inspections for parts that need one."
+msgstr "Das Freigeben eines Fertigungsauftrags für diesen Kunden erstellt Erstmusterteilprüfungen für Teile, die eine benötigen."
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Die Freigabe des Loses gibt seine Fertigungsaufträge frei, und jeder muss für die Werkstatt bereit sein."
 
@@ -24840,6 +25226,9 @@ msgstr "Beschädigte Daten entfernen und wiederherstellen"
 
 msgid "Remove Employee"
 msgstr "Mitarbeiter entfernen"
+
+msgid "Remove file"
+msgstr "Datei entfernen"
 
 msgid "Remove filter"
 msgstr "Filter entfernen"
@@ -25284,6 +25673,9 @@ msgstr "Genehmigung für Qualitätsdokumente in Ihrem Workflow erforderlich"
 msgid "Require approval of timesheets"
 msgstr "Genehmigung von Zeitblättern erforderlich"
 
+msgid "Require first article for new parts and revisions"
+msgstr "Erstmuster für Neuteile und Revisionen erforderlich"
+
 msgid "Require Match"
 msgstr "Abgleich erforderlich"
 
@@ -25344,6 +25736,12 @@ msgstr "Erfordert Maßnahmen"
 
 msgid "Requires Adjustment"
 msgstr "Erfordert Korrektur"
+
+msgid "Requires Certificate of Conformance"
+msgstr "Konformitätsbescheinigung erforderlich"
+
+msgid "Requires First Article"
+msgstr "Erstmuster erforderlich"
 
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "Erfordert Prüfung. Beim Buchen des Belegs wird ein Los eröffnet."
@@ -25824,6 +26222,9 @@ msgstr "Überprüfung"
 msgid "Review & create"
 msgstr "Überprüfen & erstellen"
 
+msgid "Review before issuing"
+msgstr "Vor Ausstellung überprüfen"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Überprüfen Sie die Änderungen jedes Elements, und bestätigen Sie dann – die Freigabe kann nicht rückgängig gemacht werden."
 
@@ -25841,6 +26242,9 @@ msgstr "Überprüfen Sie die vorgeschlagenen Zuordnungen vor dem Anwenden. Dies 
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Überprüfen Sie die folgenden Warnungen und buchen Sie dann die Anzahl, um die Korrektionen anzuwenden."
+
+msgid "Reviewed (Approved)"
+msgstr "Überprüft (Genehmigt)"
 
 msgid "Reviewer"
 msgstr "Prüfer"
@@ -27218,6 +27622,9 @@ msgstr "Verkaufsgewinn: <0/>"
 msgid "Send"
 msgstr "Senden"
 
+msgid "Send {number}"
+msgstr "{number} senden"
+
 msgid "Send all to"
 msgstr "Alle umlagern nach"
 
@@ -27251,6 +27658,9 @@ msgstr "An Carbon senden"
 msgid "Send Via"
 msgstr "Senden über"
 
+msgid "Send…"
+msgstr "Senden…"
+
 msgid "Sender Email"
 msgstr "Absender-E-Mail"
 
@@ -27271,6 +27681,10 @@ msgstr "Sendet dieses Dokument zur Genehmigung, bevor es aktiv werden kann."
 
 msgid "Sent"
 msgstr "Gesendet"
+
+#. placeholder {0}: formatDate( certificate.lastSentAt, undefined, locale )
+msgid "Sent {0}"
+msgstr "Versendet {0}"
 
 msgid "Sent at"
 msgstr "Gesendet am"
@@ -27298,6 +27712,10 @@ msgstr "Sequenziell"
 
 msgid "Serial"
 msgstr "Seriennummer"
+
+#. placeholder {0}: detail.serialNumber
+msgid "Serial {0}"
+msgstr "Seriennummer {0}"
 
 msgid "Serial / Batch"
 msgstr "Seriennummer / Charge"
@@ -28166,6 +28584,13 @@ msgstr "Unterschriftsfeld. Zeichnen Sie Ihre Unterschrift mit einer Maus, einem 
 msgid "Signature path"
 msgstr "Unterschriftspfad"
 
+#. placeholder {0}: formatDate( certificate.signedAt, undefined, locale )
+msgid "Signed {0}"
+msgstr "Unterzeichnet {0}"
+
+msgid "Signed By"
+msgstr "Unterzeichnet von"
+
 msgid "Signed in as {name}"
 msgstr "Angemeldet als {name}"
 
@@ -28201,6 +28626,9 @@ msgstr "Betriebsstätten, Standorte, Arbeitsplätze, Benutzer, Lieferanten und I
 
 msgid "Size"
 msgstr "Größe"
+
+msgid "Size feature"
+msgstr "Größenmerkmal"
 
 msgid "Sizes"
 msgstr "Größen"
@@ -28449,6 +28877,12 @@ msgstr "Ersatzteilverbrauch"
 msgid "Spare Part Cost"
 msgstr "Ersatzteilkosten"
 
+msgid "Special Process"
+msgstr "Spezialverfahren"
+
+msgid "Special Process Supplier Code"
+msgstr "Sonderprozess-Lieferantenkennummer"
+
 msgid "Specialized"
 msgstr "Spezialisiert"
 
@@ -28466,6 +28900,9 @@ msgstr "Bestimmte Kunden"
 
 msgid "Specific Items"
 msgstr "Spezifische Artikel"
+
+msgid "Specification"
+msgstr "Spezifikation"
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Ausgaben nach Lieferant, Artikel oder Kategorie – Ihre größten Kostenverursacher"
@@ -29209,6 +29646,9 @@ msgstr "Lieferant – Adresszeile 2"
 msgid "Supplier City"
 msgstr "Lieferant – Stadt"
 
+msgid "Supplier Code"
+msgstr "Lieferantenkennummer"
+
 msgid "Supplier contact"
 msgstr "Lieferantenkontakt"
 
@@ -29901,6 +30341,9 @@ msgstr "Testfall"
 msgid "Test label sent to printer"
 msgstr "Testetiketten an Drucker gesendet"
 
+msgid "Test Procedure"
+msgstr "Prüfverfahrensanweisung"
+
 msgid "Test record"
 msgstr "Testdatensatz"
 
@@ -30151,6 +30594,9 @@ msgstr "Die Kategorie, zu der dieser Kunde gehört (OEM, Distributor, Endbenutze
 
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "Die Kategorie, zu der dieser Lieferant gehört (Rohstoff, Dienstleistungen, Vertragsfertigungsunternehmen); bestimmt Standard-GL-Konten und Berichtsgruppierungen."
+
+msgid "The certificate is signed by you and stored with the shipment."
+msgstr "Das Zertifikat wird von Ihnen unterzeichnet und mit der Lieferung gespeichert."
 
 msgid "The change and its reason are kept in the timesheet's history."
 msgstr "Die Änderung und ihr Grund werden im Verlauf des Zeitblatts gespeichert."
@@ -30429,6 +30875,12 @@ msgstr "Die hochgeladene Datei und die vorgenommenen Zuordnungen gehen verloren.
 msgid "the first 3 to 4 weeks"
 msgstr "die ersten 3 bis 4 Wochen"
 
+msgid "The first article will be marked Failed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr "Das Erstmuster wird als fehlgeschlagen markiert. Das Urteil ist endgültig: es wird nichts gebucht und die Messwerte sind gesperrt."
+
+msgid "The first article will be marked Passed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr "Das Erstmuster wird als Bestanden markiert. Das Urteil ist endgültig: es wird nichts gebucht und die Messwerte sind gesperrt."
+
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "Der erste Tag, an dem ein Unternehmen seine Bücher in Carbon führt, wird einmal bei der Einrichtung der Buchhaltung festgelegt und kann danach nie geändert werden; von dann an erstellt jede Buchung einen gebuchten Buchungssatz."
 
@@ -30543,6 +30995,9 @@ msgstr "Die Prüfung wird gelöscht, und ihre nachverfolgten Objekte kehren in d
 msgid "The inspection leaves the shop floor with no verdict. What it recorded is kept, and its held tracked entities return to the status they had before it."
 msgstr "Die Prüfung verlässt die Werkstatt ohne Ergebnis. Was sie erfasst hat, bleibt erhalten, und ihre angehaltenen nachverfolgten Objekte kehren in den Status zurück, den sie vorher hatten."
 
+msgid "The inspection plan has no characteristics."
+msgstr "Der Prüfplan hat keine Merkmale."
+
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "Die Integration autorisierte die Verbindung, aber das Speichern ist fehlgeschlagen. Versuchen Sie erneut, eine Verbindung herzustellen."
 
@@ -30599,6 +31054,9 @@ msgstr "Die Kosten des Fertigungsauftrags gehen an das Projekt, wenn er abgeschl
 
 msgid "The job's cost reports to this task"
 msgstr "Die Kosten des Fertigungsauftrags werden dieser Aufgabe zugeordnet."
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr "Die Fertigungsmethode des Fertigungsauftrags existiert nicht mehr, daher kann der Index nicht abgeleitet werden."
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "Die Ausgabe des Fertigungsauftrags wird zum Projektbestand statt zu nicht zugewiesenem Bestand"
@@ -30709,6 +31167,9 @@ msgstr "Die Logos, die auf Ihren gedruckten und per E-Mail versendeten Dokumente
 
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "Der Los-Identifikation für diesen Bestand; eine Zeile pro Charge, die Menge ist die Hand für diesen Los."
+
+msgid "The lot was rejected, so this first article cannot be approved. The part's next job gets a new first article."
+msgstr "Das Los wurde abgelehnt, daher kann dieser Erstmusterprüfbericht nicht genehmigt werden. Der nächste Job für das Teil erhält einen neuen."
 
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "Das Los wird als Bestanden markiert. {fails} erfasste Fehler werden für Ihre Unterlagen aufgezeichnet."
@@ -31505,6 +31966,9 @@ msgstr "Diese Bestellungen konnten nicht geladen werden. Schließen und öffnen 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Diese Teile werden durch dieses Teil ersetzt. Jede Regel ist auf dem alten Teil konfiguriert; öffnen Sie es, um die Regel zu ändern."
 
+msgid "These parts need a first article inspection but have no active inspection plan to inspect against. Publish the part's plan, or assign an active plan to its First Article slot, before releasing."
+msgstr "Diese Teile benötigen eine Erstmusterprüfung, haben aber keinen aktiven Prüfplan zur Überprüfung. Veröffentlichen Sie den Prüfplan des Teils oder weisen Sie seinem Erstmuster-Platz einen aktiven Plan zu, bevor Sie freigeben."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "Diese Zeilen sind Links zu Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden. Das Löschen kann nicht rückgängig gemacht werden. Falls sie sich als gemeinsam mit anderen Unternehmen in dieser Gruppe herausstellen, wird nichts gelöscht und die Demo-Daten werden nicht angewendet."
 
@@ -31718,6 +32182,9 @@ msgstr "Dieser Artikel wird über einen Konfigurator gebaut und löst seine Komp
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Die Stückliste dieses Artikels hat keine Eingaben mit aktivierter Haltbarkeit, daher wird kein Verfall aus der BOM berechnet."
+
+msgid "This job"
+msgstr "Dieser Job"
 
 msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
 msgstr "Dieser Fertigungsauftrag hat keinen Stundensatz. Legen Sie den Stundensatz in seinen Eigenschaften fest, bevor die Zeit abgerechnet werden kann."
@@ -32327,6 +32794,9 @@ msgstr "Werkzeug-ID"
 
 msgid "Tool supplier created"
 msgstr "Werkzeuganbieter erstellt"
+
+msgid "Tooling Change"
+msgstr "Werkzeugwechsel"
 
 msgid "Tooling Cost"
 msgstr "Werkzeugkosten"
@@ -33459,6 +33929,9 @@ msgstr "Wert des Datensatzes verwenden"
 msgid "Used by"
 msgstr "Verwendet von"
 
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr "Wird für Erstmusterprüfungen dieses Teils verwendet. Ersetzt den einzigen Plan des Teils."
+
 msgid "Used in"
 msgstr "Verwendet in"
 
@@ -33670,11 +34143,17 @@ msgstr "Verifizierung fehlgeschlagen"
 msgid "Verification method"
 msgstr "Überprüfungsmethode"
 
+msgid "Verification of every design characteristic on the inspection plan"
+msgstr "Verifizierung aller Designmerkmale auf dem Prüfplan"
+
 msgid "Verified"
 msgstr "Verifiziert"
 
 msgid "Verified by"
 msgstr "Überprüft von"
+
+msgid "Verified By"
+msgstr "Verifiziert von"
 
 msgid "Verifies"
 msgstr "Überprüft"
@@ -34008,6 +34487,9 @@ msgstr "Storniert <0/>"
 
 msgid "Voided <0/> by <1/>"
 msgstr "Storniert <0/> von <1/>"
+
+msgid "Voided with the shipment"
+msgstr "Mit der Lieferung storniert"
 
 msgid "Voiding this purchase invoice will:"
 msgstr "Das Stornieren dieser Eingangsrechnung wird:"
@@ -35082,6 +35564,9 @@ msgstr "Sie haben diesen Artikel erhalten"
 
 msgid "You received this lot"
 msgstr "Sie haben dieses Los erhalten"
+
+msgid "You verified this first article. AS9102 recommends a different approver. Approve anyway?"
+msgstr "Sie haben dieses Erstmuster verifiziert. AS9102 empfiehlt einen anderen Genehmiger. Trotzdem genehmigen?"
 
 msgid "You're live on Carbon"
 msgstr "Du bist live auf Carbon"

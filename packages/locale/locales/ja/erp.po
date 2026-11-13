@@ -1002,6 +1002,9 @@ msgstr "{fieldLabel}の国コード"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} の16進値"
 
+msgid "{firstArticle} on {otherJob}"
+msgstr "{otherJob} の {firstArticle}"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} がここで見つかりました"
 
@@ -1819,6 +1822,9 @@ msgstr "タイトルと理由を持つ計画変更の下書きセット。現在
 msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 msgstr "下書きの明細は直接編集されます。確定済みになると、変更は修正で行われここに記録されます。"
 
+msgid "A FAIR number from outside Carbon"
+msgstr "Carbon以外からのFAIRナンバー"
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "ファイル {0} は既に存在します — 削除するか先に名前を変更してください"
@@ -1956,6 +1962,9 @@ msgstr "新しい招待リンクが送信されます。以前に送信したリ
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "仕入先ごとに新しい発注書が作成されます。または、既存の下書き発注書を選択して、外注工程を追加することもできます。"
+
+msgid "A new revision is issued under the same number. Earlier revisions stay downloadable."
+msgstr "新しいリビジョンは同じ番号で発行されます。以前のリビジョンはダウンロード可能なままです。"
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "現在のリビジョンのコピーを使用して、新しいリビジョンが作成されます"
@@ -2549,6 +2558,12 @@ msgstr "受け入れ"
 msgid "Acceptance passed"
 msgstr "承諾合格"
 
+msgid "Acceptance Report"
+msgstr "受け入れ検査報告書"
+
+msgid "Acceptance Report Number"
+msgstr "受け入れ検査報告書番号"
+
 msgid "Accepted"
 msgstr "承諾済"
 
@@ -2987,6 +3002,9 @@ msgstr "リスト、検査、測定（最小値または最大値あり）のス
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
 
+msgid "Add a note to this reading"
+msgstr "この測定値にメモを追加"
+
 msgid "Add a parameter (procedures only)"
 msgstr "パラメータを追加（手順書のみ）"
 
@@ -3079,6 +3097,9 @@ msgstr "校正記録を追加"
 
 msgid "Add Ceiling"
 msgstr "上限を追加"
+
+msgid "Add Certificate"
+msgstr "証明書を追加"
 
 msgid "Add Characteristic"
 msgstr "特性を追加"
@@ -3224,6 +3245,9 @@ msgstr "モデルを追加"
 msgid "Add Month"
 msgstr "月を追加"
 
+msgid "Add note"
+msgstr "メモを追加"
+
 msgid "Add Note"
 msgstr "メモを追加"
 
@@ -3316,6 +3340,9 @@ msgstr "リスクを追加"
 msgid "Add row"
 msgstr "行を追加"
 
+msgid "Add Row"
+msgstr "行を追加"
+
 msgid "Add rule"
 msgstr "ルールを追加"
 
@@ -3400,6 +3427,9 @@ msgstr "この品目の工程を追加。"
 msgid "Add the rates before the first request."
 msgstr "最初のリクエストの前にレートを追加してください。"
 
+msgid "Add the statements your customers require on certificates — e.g. DFARS 252.225-7009 specialty metals, DFARS 252.246-7008 counterfeit parts, RoHS, REACH."
+msgstr "証明書で顧客が要求するステートメントを追加します。例：DFARS 252.225-7009 specialty metals、DFARS 252.246-7008 counterfeit parts、RoHS、REACHなど。"
+
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "このTXTレコードをDNSホストに追加し、[確認]をクリックしてください。DNSの変更が反映されるまで数分かかる場合があります。"
 
@@ -3474,6 +3504,9 @@ msgstr "デモレコードを追加中"
 
 msgid "Adding..."
 msgstr "追加中..."
+
+msgid "Additional Changes"
+msgstr "追加の変更"
 
 msgid "Address"
 msgstr "住所"
@@ -3725,6 +3758,9 @@ msgstr "許容性"
 
 msgid "Allowable"
 msgstr "許容可能な"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "許容範囲 {allowableLabel}（ボーナス {bonusLabel}）"
 
 msgid "Allowable and unallowable cost of each contract line, with funding and billing"
 msgstr "各契約明細の許可可能および許可不可能な原価（資金調達および請求を含む）"
@@ -4225,6 +4261,9 @@ msgstr "対象"
 msgid "Applies to all"
 msgstr "すべてに適用"
 
+msgid "Applies to all customers"
+msgstr "すべての得意先に適用"
+
 msgid "Applies to all work centers"
 msgstr "すべての作業区に適用"
 
@@ -4351,6 +4390,9 @@ msgstr ""
 msgid "Approve and Delete"
 msgstr ""
 
+msgid "Approve first article?"
+msgstr "最初の製品を承認しますか？"
+
 msgid "Approve Request"
 msgstr "リクエスト承認"
 
@@ -4362,6 +4404,9 @@ msgstr "承認済 <0/> 〜 <1/>"
 
 msgid "Approved By"
 msgstr "承認者"
+
+msgid "Approved By (Customer)"
+msgstr "承認者（得意先）"
 
 msgid "Approved On"
 msgstr "承認日"
@@ -4533,6 +4578,10 @@ msgstr "{0}をこの操作から削除してもよろしいですか?これは�
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}を削除してもよろしいですか？"
 
+#. placeholder {0}: lot.inspectionId
+msgid "Are you sure you want to delete {0}? Its inspection is deleted with it. This cannot be undone."
+msgstr "{0}を削除してもよろしいですか？その検査も一緒に削除されます。この操作は取り消せません。"
+
 #. placeholder {0}: asset.fixedAssetId
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
@@ -4593,6 +4642,10 @@ msgstr "変更通知カテゴリ「{0}」を削除してもよろしいですか
 #. placeholder {0}: deleting.description
 msgid "Are you sure you want to delete the charge \"{0}\"?"
 msgstr "本当に料金「{0}」を削除しますか？"
+
+#. placeholder {0}: complianceStatement.name
+msgid "Are you sure you want to delete the compliance statement: {0}? This cannot be undone."
+msgstr "コンプライアンス・ステートメント「{0}」を削除してもよろしいですか？この操作は取り消せません。"
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "外部作業者: {name} を削除してもよろしいですか?これは元に戻せません。"
@@ -5105,6 +5158,9 @@ msgstr "特定の日付時点での資産、負債および純資産"
 msgid "Assign a Batch"
 msgstr "バッチを割り当て"
 
+msgid "assign a first article plan for"
+msgstr "最初の製品計画を割り当てる"
+
 msgid "Assign Batch"
 msgstr "バッチを割り当て"
 
@@ -5200,6 +5256,9 @@ msgstr "操作完了時"
 
 msgid "Attach"
 msgstr "添付"
+
+msgid "Attach Certificate"
+msgstr "証明書を添付"
 
 msgid "Attach File"
 msgstr "ファイルを添付"
@@ -5545,6 +5604,9 @@ msgstr "基本価格"
 
 msgid "Baseline"
 msgstr "ベースライン"
+
+msgid "Baseline First Article"
+msgstr "ベースライン最初の製品"
 
 msgid "Baselines"
 msgstr "ベースライン"
@@ -6627,17 +6689,38 @@ msgstr "一括請求は有効です"
 msgid "Cert Version"
 msgstr "認定バージョン"
 
+msgid "Certificate"
+msgstr "証明書"
+
+msgid "Certificate added"
+msgstr "証明書が追加されました"
+
+msgid "Certificate Date"
+msgstr "証明書の日付"
+
+msgid "Certificate deleted"
+msgstr "証明書が削除されました"
+
 msgid "Certificate Number"
 msgstr "証明書番号"
 
+msgid "Certificate of Conformance Number"
+msgstr "適合証明書番号"
+
 msgid "Certificate uploaded"
 msgstr "証明書がアップロードされました"
+
+msgid "Certificates"
+msgstr "証明書"
 
 msgid "Certification text, exempt staff"
 msgstr "認証文、適用除外従業員"
 
 msgid "Certification text, non-exempt staff"
 msgstr "認証文、対象従業員"
+
+msgid "Certifications"
+msgstr "認証"
 
 msgid "Certified"
 msgstr "認定済み"
@@ -6903,6 +6986,9 @@ msgstr "ユニットが追加されたら各ユニットについてチェック
 msgid "Checked value"
 msgstr "チェック値"
 
+msgid "Checking first articles and certificates…"
+msgstr "最初の製品と証明書を確認中…"
+
 msgid "Checking Stripe for this customer…"
 msgstr "この得意先の Stripe を確認中…"
 
@@ -6997,6 +7083,9 @@ msgstr "Carbon があなたに連絡する方法を選択してください。"
 msgid "Choose how to add lines to this return."
 msgstr "この返品に明細を追加する方法を選択してください。"
 
+msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
+msgstr "MMC/LMC特性の寸法の社内または社外特性を選択する"
+
 msgid "Choose Move on the stock to send somewhere else, or Fill on a storage unit that needs stock."
 msgstr "別の場所へ送る在庫では「移動」を、在庫が必要な保管ユニットでは「補充」を選択してください。"
 
@@ -7026,6 +7115,9 @@ msgstr "新しい親を選択"
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "このコントラクトが請求する外注サービスを選択してください。各サービスは、グリッドで価格設定できる繰り返し明細として追加されます。"
+
+msgid "Choose the size feature for MMC/LMC characteristics"
+msgstr "MMC/LMC特性のサイズフィーチャーを選択"
 
 msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
 msgstr "新規入荷における各明細の受け取り数量の初期値を選択してください：入荷待ち数量を使用するか、受け取り者が実績値を入力できるようゼロから開始するか。"
@@ -7581,6 +7673,12 @@ msgstr "完了時間"
 
 msgid "Completion time by job"
 msgstr "製造指図ごとの完了時間"
+
+msgid "Compliance Statement"
+msgstr "コンプライアンス・ステートメント"
+
+msgid "Compliance Statements"
+msgstr "コンプライアンス・ステートメント"
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -8439,6 +8537,9 @@ msgstr "修正"
 msgid "Corrective action"
 msgstr "是正処置"
 
+msgid "Corrective Action"
+msgstr "是正処置"
+
 msgid "Cost"
 msgstr "原価"
 
@@ -8576,6 +8677,9 @@ msgstr "～までの原価"
 
 msgid "Costs, with children"
 msgstr "原価（子を含む）"
+
+msgid "COTS"
+msgstr "COTS"
 
 msgid "Could not analyze cropped region"
 msgstr "トリミングされた領域を分析できませんでした"
@@ -8722,6 +8826,9 @@ msgstr "配置"
 
 msgid "Coverage changed"
 msgstr "カバレッジが変更されました"
+
+msgid "Covered by another job"
+msgstr "別のジョブで対応済み"
 
 msgid "CPI"
 msgstr "CPI"
@@ -9077,6 +9184,9 @@ msgstr "{rfqCount, plural, one {#件の下書きの見積依頼を作成しま�
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "まだクレジットされていない出荷数量に対して、仕入先クレジットメモの下書きを作成します"
 
+msgid "Creates an AS9102 first article inspection for one part of a job, inspected against the part's first article plan."
+msgstr "AS9102最初の製品検査を製造指図の1つの部品について作成し、その部品の最初の製品計画に照らして検査します。"
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "会計年度の12ヶ月間の期間を作成します。既に存在する期間は保持されます。"
 
@@ -9321,6 +9431,12 @@ msgstr "得意先住所2行目"
 
 msgid "Customer and supplier pages"
 msgstr "得意先および仕入先ページ"
+
+msgid "Customer Approval"
+msgstr "顧客承認"
+
+msgid "Customer Approval Verification"
+msgstr "顧客承認の検証"
 
 msgid "Customer Asset"
 msgstr "得意先資産"
@@ -9768,6 +9884,9 @@ msgstr "製造個が品目のシリアル採番から番号を引き出す時期
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "作業区にピッキングされたが消費済みでない材料がいつ倉庫に戻されるかを決定"
 
+msgid "Decide when releasing a job creates first article inspections."
+msgstr "製造指図のリリース時に最初の製品検査を作成するかどうかを決定します。"
+
 msgid "Decided for each asset when the lease is activated, from its payment rows and its classification inputs."
 msgstr "リースが有効化されたとき、各資産について支払明細と分類入力から決定されます。"
 
@@ -10070,6 +10189,9 @@ msgstr "カテゴリを削除"
 msgid "Delete Ceiling"
 msgstr "上限を削除"
 
+msgid "Delete certificate"
+msgstr "証明書を削除"
+
 msgid "Delete Change Notice"
 msgstr "変更通知を削除"
 
@@ -10133,6 +10255,9 @@ msgstr "失敗モードを削除"
 
 msgid "Delete file"
 msgstr "ファイルを削除"
+
+msgid "Delete First Article"
+msgstr "最初の製品を削除"
 
 msgid "Delete Fixed Asset"
 msgstr "固定資産を削除"
@@ -10332,6 +10457,9 @@ msgstr "出荷明細を削除"
 
 msgid "Delete Shipping Method"
 msgstr "出荷方法を削除"
+
+msgid "Delete Statement"
+msgstr "ステートメントを削除"
 
 msgid "Delete step"
 msgstr "ステップを削除"
@@ -10661,11 +10789,17 @@ msgstr "問題の説明"
 msgid "Description of the event. You can use HTML tags here."
 msgstr "イベントの説明。ここではHTMLタグを使用できます。"
 
+msgid "Design Change"
+msgstr "設計変更"
+
 msgid "Design Constraint"
 msgstr "設計制約"
 
 msgid "Design review"
 msgstr "設計レビュー"
+
+msgid "Designator"
+msgstr "デジグネーター"
 
 msgid "Detach"
 msgstr "リンク解除"
@@ -10913,6 +11047,9 @@ msgstr "除却済<0/>"
 msgid "Disposition"
 msgstr "処置"
 
+msgid "Disposition the inspection before verifying"
+msgstr "検査を検証する前に処置する"
+
 msgid "Dispositions"
 msgstr "処置"
 
@@ -10964,6 +11101,9 @@ msgstr "文書タイプ"
 
 msgid "Document:"
 msgstr "文書："
+
+msgid "Documented Nonconformance"
+msgstr "文書化された不適合"
 
 msgid "Documents"
 msgstr "ドキュメント"
@@ -11125,8 +11265,17 @@ msgstr "描画するか、画像をアップロード。"
 msgid "Drawing"
 msgstr "引き出し中"
 
+msgid "Drawing Number"
+msgstr "図面番号"
+
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "図面が置き換えられました。バルーン配置は削除されました。特性行は変更されていません。"
+
+msgid "Drawing revision"
+msgstr "図面リビジョン"
+
+msgid "Drawing Revision"
+msgstr "図面リビジョン"
 
 msgid "drawings"
 msgstr "図面"
@@ -11225,6 +11374,9 @@ msgstr "複製"
 
 msgid "Duplicate batch number"
 msgstr "重複するバッチ番号"
+
+msgid "Duplicate characteristic numbers"
+msgstr "特性番号の重複"
 
 msgid "Duplicate file names after image conversion"
 msgstr "画像変換後のファイル名の重複"
@@ -11345,6 +11497,10 @@ msgstr "以下の各資産の支払明細は、その支払でこれらの条件
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "各セルは、その日の作業に必要な人員に対して配置された人員です"
+
+#. placeholder {0}: duplicates.join(", ")
+msgid "Each characteristic needs a unique number on the report. Used more than once: {0}"
+msgstr "各特性はレポート上で一意の番号が必要です。複数回使用: {0}"
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "この明細に資金を提供する契約変更書（ACRN 別）。"
@@ -11554,6 +11710,9 @@ msgstr "料金の編集"
 msgid "Edit column visibility"
 msgstr "列の表示/非表示を編集"
 
+msgid "Edit Compliance Statement"
+msgstr "コンプライアンス ステートメントを編集"
+
 msgid "Edit Component Group"
 msgstr "コンポーネントグループを編集"
 
@@ -11720,6 +11879,9 @@ msgstr "マイルストーン編集"
 msgid "Edit Non Conformance Type"
 msgstr "不適合タイプを編集"
 
+msgid "Edit note"
+msgstr "メモを編集"
+
 msgid "Edit Part"
 msgstr "パーツを編集"
 
@@ -11804,6 +11966,12 @@ msgstr "領収書を編集"
 msgid "Edit Revision"
 msgstr "リビジョンを編集"
 
+msgid "Edit row"
+msgstr "行を編集"
+
+msgid "Edit Row"
+msgstr "行を編集"
+
 msgid "Edit rule"
 msgstr "ルールを編集"
 
@@ -11839,6 +12007,9 @@ msgstr "出荷方法を編集"
 
 msgid "Edit Size"
 msgstr "サイズを編集"
+
+msgid "Edit Statement"
+msgstr "ステートメントを編集"
 
 msgid "Edit Stock Transfer"
 msgstr "在庫移動を編集"
@@ -11978,8 +12149,14 @@ msgstr "メール通知はあなたの会社の現在のプランに含まれて
 msgid "Email notifications not configured"
 msgstr "メール通知が設定されていません"
 
+msgid "Email order on acceptance"
+msgstr "承認時に注文をメール送信"
+
 msgid "Email recipients"
 msgstr "メール受信者"
+
+msgid "Email to customer"
+msgstr "得意先にメール送信"
 
 msgid "Emailed"
 msgstr "メール送信済"
@@ -12956,6 +13133,9 @@ msgstr "拡張価格"
 msgid "External"
 msgstr "社外"
 
+msgid "External Baseline"
+msgstr "社外ベースライン"
+
 msgid "External Delta"
 msgstr "社外差分"
 
@@ -13004,6 +13184,18 @@ msgstr "面 {0}"
 
 msgid "Factor"
 msgstr "要因"
+
+msgid "FAI Complete (Verified)"
+msgstr "FAI完了（確認済み）"
+
+msgid "FAI due"
+msgstr "FAI期限"
+
+msgid "FAI open"
+msgstr "FAIオープン"
+
+msgid "FAI Report"
+msgstr "FAIレポート"
 
 msgid "Fail"
 msgstr "不合格"
@@ -13425,6 +13617,7 @@ msgstr "新しい場所へのファイルアップロードに失敗しました
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
+#. placeholder {0}: selected.name
 msgid "Failed to upload file: {0}"
 msgstr "ファイルのアップロードに失敗しました: {0}"
 
@@ -13467,6 +13660,9 @@ msgstr "障害モード"
 msgid "Failures by work center"
 msgstr "作業区別の不良"
 
+msgid "FAIR"
+msgstr "FAIR"
+
 msgid "Fair Value"
 msgstr "公正価値"
 
@@ -13478,6 +13674,9 @@ msgstr "ファックス"
 
 msgid "Fax Number"
 msgstr "ファックス番号"
+
+msgid "Feature of size"
+msgstr "サイズ特性"
 
 msgid "Fed by"
 msgstr "供給元"
@@ -13517,6 +13716,9 @@ msgstr "フィールド"
 
 msgid "FIFO"
 msgstr "先入先出"
+
+msgid "File"
+msgstr "ファイル"
 
 msgid "File deleted successfully"
 msgstr "ファイルが正常に削除されました"
@@ -13678,6 +13880,22 @@ msgstr "見積明細、受注明細、売上請求書明細で発動します。
 
 msgid "First {count}"
 msgstr "最初の {count} 件"
+
+msgid "First Article"
+msgstr "初品"
+
+#. placeholder {0}: item.itemReadableId
+msgid "First article due for {0}"
+msgstr "{0}の初品期限"
+
+msgid "First Article Inspection"
+msgstr "初品検査"
+
+msgid "First article settings updated"
+msgstr "初品検査の設定を更新しました"
+
+msgid "First Articles"
+msgstr "初品"
 
 msgid "First invoice"
 msgstr "最初の請求書"
@@ -13902,6 +14120,15 @@ msgstr "形状"
 msgid "Form"
 msgstr "フォーム"
 
+msgid "Form 1: Part Number Accountability"
+msgstr "フォーム1：部品番号の責任"
+
+msgid "Form 2: Product Accountability"
+msgstr "フォーム2：製品の責任"
+
+msgid "Form 3: Characteristic Accountability"
+msgstr "フォーム3：特性の責任"
+
 msgid "Form 6765 Section G"
 msgstr "Form 6765 Section G"
 
@@ -14024,6 +14251,9 @@ msgstr "開始："
 msgid "Fulfillment Location"
 msgstr "出荷拠点"
 
+msgid "Full"
+msgstr "完全"
+
 msgid "Full name"
 msgstr "氏名"
 
@@ -14038,6 +14268,12 @@ msgstr "機能"
 
 msgid "Functional"
 msgstr "機能的"
+
+msgid "Functional Test"
+msgstr "機能テスト"
+
+msgid "Functional Test Procedure Number"
+msgstr "機能テスト手順書番号"
 
 msgid "funded"
 msgstr "資金供給"
@@ -15366,6 +15602,9 @@ msgstr "発注書{target}を{amount}に増加"
 msgid "Incremental Borrowing Rate (%)"
 msgstr "増分借入金利（％）"
 
+msgid "Index of Parts and Sub-assemblies"
+msgstr "部品およびサブアセンブリのインデックス"
+
 msgid "Indirect"
 msgstr "間接"
 
@@ -15506,6 +15745,9 @@ msgstr "検査ジョブ"
 
 msgid "Inspection Level"
 msgstr "検査水準"
+
+msgid "Inspection Method Change"
+msgstr "検査方法変更"
 
 msgid "Inspection Name"
 msgstr "検査名"
@@ -15972,6 +16214,9 @@ msgstr "発行（材料）"
 msgid "issue actions"
 msgstr "出庫処理"
 
+msgid "Issue Certificate of Conformance"
+msgstr "適合証明書を発行"
+
 msgid "Issue Credit"
 msgstr "クレジット発行"
 
@@ -16043,6 +16288,9 @@ msgstr "問題ワークフロー"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "問題ワークフローは、問題の事前設定値を定義しました。例えば、8Dワークフローまたは封じ込めワークフローを使用できます。"
+
+msgid "Issue…"
+msgstr "発行…"
 
 msgid "Issued"
 msgstr "発行済み"
@@ -16261,6 +16509,9 @@ msgstr "製造指図が完了しました"
 msgid "Job completions"
 msgstr "製造指図完了"
 
+msgid "Job deleted"
+msgstr "製造指図を削除しました"
+
 msgid "Job ID"
 msgstr "ジョブID"
 
@@ -16456,6 +16707,9 @@ msgstr "キー"
 
 msgid "Keyboard shortcuts"
 msgstr "キーボードショートカット"
+
+msgid "Kind"
+msgstr "種類"
 
 msgid "Kind of record"
 msgstr "レコード種別"
@@ -17282,6 +17536,9 @@ msgstr "ロケーション"
 msgid "Location / Item"
 msgstr "場所 / 品目"
 
+msgid "Location Change"
+msgstr "拠点変更"
+
 msgid "Location Name"
 msgstr "ロケーション名"
 
@@ -17584,6 +17841,9 @@ msgstr "無効にする"
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "内製品目は直接請求できません。方法をピッキングに変更して続行してください。"
 
+msgid "Make method removed"
+msgstr "製造方法が削除されました"
+
 msgid "Make Method Version"
 msgstr "製造方法バージョン"
 
@@ -17680,6 +17940,12 @@ msgstr "製造"
 
 msgid "manufacturing is blocked"
 msgstr "製造がブロックされています"
+
+msgid "Manufacturing Process Reference"
+msgstr "製造工法参照"
+
+msgid "Manufacturing Source Change"
+msgstr "製造元変更"
 
 msgid "Map accounts"
 msgstr "勘定をマップ"
@@ -17847,6 +18113,12 @@ msgstr "材料"
 msgid "Material"
 msgstr "材料"
 
+msgid "Material Change"
+msgstr "材料変更"
+
+msgid "Material condition"
+msgstr "材料の状態"
+
 msgid "Material Cost"
 msgstr "材料費"
 
@@ -17909,6 +18181,12 @@ msgstr "材料アイテム"
 
 msgid "Material measurement point"
 msgstr "材料測定ポイント"
+
+msgid "Material or Process"
+msgstr "材料または工法"
+
+msgid "Material or Process Name"
+msgstr "材料または工法名"
 
 msgid "Material Planning"
 msgstr "材料計画"
@@ -18223,6 +18501,9 @@ msgstr "見つかりません"
 
 msgid "Missing Days"
 msgstr "不足日"
+
+msgid "Missing First Article Plans"
+msgstr "初回試作品計画がありません"
 
 msgid "Missing Information"
 msgstr "不足している情報"
@@ -18600,6 +18881,9 @@ msgstr "マイ保存ビュー"
 msgid "My Time"
 msgstr "私の時間"
 
+msgid "N/A"
+msgstr "N/A"
+
 msgid "Name"
 msgstr "名前"
 
@@ -18619,6 +18903,9 @@ msgstr "名前はハブ全体でそれらのロールが参照されている場
 msgid "Native CAD integration (for example Onshape)"
 msgstr "ネイティブCAD連携(例えばOnshape)"
 
+msgid "Natural or Man-made Event"
+msgstr "自然現象または人為的事象"
+
 msgid "Navigate"
 msgstr "ナビゲート"
 
@@ -18630,6 +18917,12 @@ msgstr "その後のNBV"
 
 msgid "NBV at Disposal"
 msgstr "除却時のNBV"
+
+msgid "NC Program Change"
+msgstr "NCプログラム変更"
+
+msgid "NCR"
+msgstr "NCR"
 
 msgid "NCRs by Type"
 msgstr "タイプ別NCR"
@@ -18800,6 +19093,9 @@ msgstr "新しい変更要求"
 msgid "New Charge"
 msgstr "新規料金"
 
+msgid "New Compliance Statement"
+msgstr "新規コンプライアンスステートメント"
+
 msgid "New Consumable"
 msgstr "新しい消耗品"
 
@@ -18872,6 +19168,9 @@ msgstr "新しい故障モード"
 
 msgid "New Field"
 msgstr "新しいフィールド"
+
+msgid "New First Article"
+msgstr "新規初回試作品"
 
 msgid "New Fixed Asset"
 msgstr "新しい固定資産"
@@ -19055,6 +19354,9 @@ msgstr "新しいRFQ"
 
 msgid "New RMA"
 msgstr "新規RMA"
+
+msgid "New Row"
+msgstr "新規行"
 
 msgid "New rule"
 msgstr "新しいルール"
@@ -19422,6 +19724,15 @@ msgstr "上限なし。請求レートで負担請求されます。"
 
 msgid "No cell could take the pasted values"
 msgstr "貼り付けた値を受け取れるセルがありません"
+
+msgid "No certificate on file"
+msgstr "ファイルに証明書がありません"
+
+msgid "No certificate on file for {name}"
+msgstr "{name}のファイルに証明書がありません"
+
+msgid "No certificates on this line yet"
+msgstr "この明細にはまだ証明書がありません"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "認証テキストが設定されていません。管理者に設定 → 時間で設定するよう依頼してください。"
@@ -19838,6 +20149,9 @@ msgstr "物料がありません"
 
 msgid "No materials yet"
 msgstr "品目はまだありません"
+
+msgid "No materials, special processes or functional tests yet."
+msgstr "材料、特殊工法または機能試験がまだありません。"
 
 msgid "No members yet. A project with project stock joins the group on its Settings page."
 msgstr "メンバーがまだいません。プロジェクト在庫を持つプロジェクトは、その設定ページでグループに参加します。"
@@ -20362,6 +20676,9 @@ msgstr "無償交換"
 msgid "No-charge Replacement"
 msgstr "無償交換"
 
+msgid "No."
+msgstr "No."
+
 #. placeholder {0}: ability.name
 msgid "Nobody is qualified for {0}"
 msgstr "{0} 向けの適格者がいません"
@@ -20428,6 +20745,12 @@ msgstr "スケジューリングと容量計画が考慮する非稼働日"
 
 msgid "None"
 msgstr "なし"
+
+msgid "None — a detail part."
+msgstr "なし―詳細部品。"
+
+msgid "None approved"
+msgstr "承認なし"
 
 msgid "None available"
 msgstr "該当なし"
@@ -21544,6 +21867,12 @@ msgstr "注文"
 msgid "Orders submitted"
 msgstr "注文が送信されました"
 
+msgid "Organization"
+msgstr "組織"
+
+msgid "Organization Name"
+msgstr "組織名"
+
 msgid "Orientation"
 msgstr "向き"
 
@@ -21907,14 +22236,23 @@ msgstr "部品出庫済"
 msgid "Part lead times update from posted purchase receipts."
 msgstr "部品のリードタイムは転記済の購買入荷から更新されます。"
 
+msgid "Part Name"
+msgstr "部品名"
+
 msgid "Part Number"
 msgstr "部品番号"
+
+msgid "Part Revision"
+msgstr "部品リビジョン"
 
 msgid "Part Supersession"
 msgstr "部品後継切替"
 
 msgid "Part supplier created"
 msgstr "部品の仕入先が作成されました"
+
+msgid "Part Type"
+msgstr "部品タイプ"
 
 msgid "Partial"
 msgstr "一部"
@@ -22781,6 +23119,9 @@ msgstr "1回投稿され、訂正はありません。"
 msgid "Posting"
 msgstr "転記"
 
+msgid "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+msgstr "この顧客への出荷を転記すると、証明書が発行され、配送担当者にメール送信されます。"
+
 msgid "Posting date"
 msgstr "転記日付"
 
@@ -23029,6 +23370,9 @@ msgstr "ラベルを印刷 ({0})"
 msgid "Print Output ({0})"
 msgstr "印刷出力 ({0})"
 
+msgid "Printed on every Certificate of Conformance"
+msgstr "すべての適合証明書に印刷されます"
+
 msgid "Printed on the purchase orders you approve."
 msgstr "あなたが承認した発注書に印刷されています。"
 
@@ -23104,6 +23448,9 @@ msgstr "プロセス"
 msgid "Process"
 msgstr "プロセス"
 
+msgid "Process Change"
+msgstr "工法変更"
+
 msgid "Process Name"
 msgstr "プロセス名"
 
@@ -23160,6 +23507,9 @@ msgstr "生産イベント"
 
 msgid "Production Events"
 msgstr "生産イベント"
+
+msgid "Production Lapse"
+msgstr "生産ラプス"
 
 msgid "Production planning"
 msgstr "生産計画"
@@ -23545,6 +23895,9 @@ msgstr "発注書明細"
 
 msgid "Purchase Order Location"
 msgstr "発注書拠点"
+
+msgid "Purchase Order Number"
+msgstr "発注番号"
 
 msgid "Purchase order removed successfully"
 msgstr "発注書は正常に削除されました"
@@ -24085,6 +24438,9 @@ msgstr "特定タイプのすべての顧客向けレート"
 msgid "Rates, FY{fiscalYear}"
 msgstr "レート、FY{fiscalYear}"
 
+msgid "Raw material, special processes and functional tests"
+msgstr "原材料、特殊工法および機能試験"
+
 msgid "Raw Materials"
 msgstr "原材料"
 
@@ -24201,6 +24557,9 @@ msgstr "スキップの理由（必須）"
 
 msgid "Reason for skipping {taskName}"
 msgstr "{taskName}をスキップする理由"
+
+msgid "Reason for Update"
+msgstr "更新理由"
 
 msgid "Reasonably Certain"
 msgstr "合理的に確実"
@@ -24443,6 +24802,9 @@ msgstr "部品とジョブに関連付けられた検査を記録する"
 msgid "Record Payment"
 msgstr "支払を記録"
 
+msgid "Record Results"
+msgstr "結果を記録"
+
 msgid "Record scan"
 msgstr "スキャン記録"
 
@@ -24529,6 +24891,12 @@ msgstr "検証ページにリダイレクト中..."
 msgid "Reduced"
 msgstr "ゆるい検査"
 
+msgid "Ref. location"
+msgstr "参照位置"
+
+msgid "Ref. Location"
+msgstr "参照位置"
+
 msgid "Reference"
 msgstr "参照"
 
@@ -24540,6 +24908,9 @@ msgstr "更新"
 
 msgid "Refresh exchange rate"
 msgstr "為替レートを更新"
+
+msgid "Refresh from Traceability"
+msgstr "トレーサビリティから更新"
 
 msgid "Refresh preview"
 msgstr "プレビューを更新"
@@ -24618,6 +24989,15 @@ msgstr "従業員への払戻"
 
 msgid "Reimbursements"
 msgstr "払戻"
+
+msgid "Reissue"
+msgstr "再発行"
+
+msgid "Reissue Certificate of Conformance"
+msgstr "適合証明書を再発行"
+
+msgid "Reissue…"
+msgstr "再発行…"
 
 msgid "Reject"
 msgstr "却下"
@@ -24740,6 +25120,12 @@ msgstr "発行済みリビジョンはロック中です"
 msgid "Released with problems: {0}"
 msgstr "リリース済（警告あり）: {0}"
 
+msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+msgstr "製造指図をリリースすると、承認済の初回試作品がない、または2年間製造されていないすべての部品に対して初回試作品検査が作成されます。"
+
+msgid "Releasing a job for this customer creates first article inspections for parts that need one."
+msgstr "この顧客の製造指図をリリースすると、初回試作品検査が必要な部品に対して初回試作品検査が作成されます。"
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "バッチをリリースするとその製造指図がリリースされ、それぞれが製造現場に対応可能である必要があります。"
 
@@ -24840,6 +25226,9 @@ msgstr "破損データを除去して復元"
 
 msgid "Remove Employee"
 msgstr "従業員を削除"
+
+msgid "Remove file"
+msgstr "ファイルを除去"
 
 msgid "Remove filter"
 msgstr "絞り込みを除去"
@@ -25284,6 +25673,9 @@ msgstr "ワークフローの品質ドキュメントについて承認が必要
 msgid "Require approval of timesheets"
 msgstr "タイムシートの承認を必須にする"
 
+msgid "Require first article for new parts and revisions"
+msgstr "新規部品とリビジョンの初回品検査を要求"
+
 msgid "Require Match"
 msgstr "照合が必須"
 
@@ -25344,6 +25736,12 @@ msgstr "対応が必要"
 
 msgid "Requires Adjustment"
 msgstr "調整が必要"
+
+msgid "Requires Certificate of Conformance"
+msgstr "適合証明書が必要"
+
+msgid "Requires First Article"
+msgstr "初回品検査が必要"
 
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "検査が必要です。領収書の転記時にロットが作成されます。"
@@ -25824,6 +26222,9 @@ msgstr "レビュー"
 msgid "Review & create"
 msgstr "確認と作成"
 
+msgid "Review before issuing"
+msgstr "発行前にレビュー"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
 
@@ -25841,6 +26242,9 @@ msgstr "適用する前に提案されたマッチをレビューしてくださ
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "下の警告を確認してから、カウントを転記して調整を適用してください。"
+
+msgid "Reviewed (Approved)"
+msgstr "レビュー済（承認済）"
 
 msgid "Reviewer"
 msgstr "レビュー担当者"
@@ -27218,6 +27622,9 @@ msgstr "売却利益: <0/>"
 msgid "Send"
 msgstr "送信"
 
+msgid "Send {number}"
+msgstr "{number}を送信"
+
 msgid "Send all to"
 msgstr "すべてを次へ移動"
 
@@ -27251,6 +27658,9 @@ msgstr "Carbon に送信"
 msgid "Send Via"
 msgstr "経由で送信"
 
+msgid "Send…"
+msgstr "送信…"
+
 msgid "Sender Email"
 msgstr "送信者メールアドレス"
 
@@ -27271,6 +27681,10 @@ msgstr "この文書を有効にする前に承認用に送信します。"
 
 msgid "Sent"
 msgstr "送信済"
+
+#. placeholder {0}: formatDate( certificate.lastSentAt, undefined, locale )
+msgid "Sent {0}"
+msgstr "送信済 {0}"
 
 msgid "Sent at"
 msgstr "送信日時"
@@ -27298,6 +27712,10 @@ msgstr "逐次"
 
 msgid "Serial"
 msgstr "シリアル"
+
+#. placeholder {0}: detail.serialNumber
+msgid "Serial {0}"
+msgstr "シリアル {0}"
 
 msgid "Serial / Batch"
 msgstr "シリアル / バッチ"
@@ -28166,6 +28584,13 @@ msgstr "署名パッド。マウス、トラックパッド、スタイラス、
 msgid "Signature path"
 msgstr "署名パス"
 
+#. placeholder {0}: formatDate( certificate.signedAt, undefined, locale )
+msgid "Signed {0}"
+msgstr "署名済 {0}"
+
+msgid "Signed By"
+msgstr "署名者"
+
 msgid "Signed in as {name}"
 msgstr "{name}としてサインインしています"
 
@@ -28201,6 +28626,9 @@ msgstr "サイト、拠点、作業区、ユーザー、仕入先、および会
 
 msgid "Size"
 msgstr "サイズ"
+
+msgid "Size feature"
+msgstr "寸法特性"
 
 msgid "Sizes"
 msgstr "サイズ"
@@ -28449,6 +28877,12 @@ msgstr "予備品消費"
 msgid "Spare Part Cost"
 msgstr "予備品原価"
 
+msgid "Special Process"
+msgstr "特別工法"
+
+msgid "Special Process Supplier Code"
+msgstr "特別工法仕入先コード"
+
 msgid "Specialized"
 msgstr "専門的な"
 
@@ -28466,6 +28900,9 @@ msgstr "特定の得意先"
 
 msgid "Specific Items"
 msgstr "特定の品目"
+
+msgid "Specification"
+msgstr "仕様"
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "仕入先、品目、またはカテゴリ別の支出 — 最大の原価ドライバー"
@@ -29209,6 +29646,9 @@ msgstr "仕入先住所2行目"
 msgid "Supplier City"
 msgstr "仕入先市区町村"
 
+msgid "Supplier Code"
+msgstr "仕入先コード"
+
 msgid "Supplier contact"
 msgstr "仕入先担当者"
 
@@ -29901,6 +30341,9 @@ msgstr "テストケース"
 msgid "Test label sent to printer"
 msgstr "テストラベルがプリンターに送信されました"
 
+msgid "Test Procedure"
+msgstr "試験手順書"
+
 msgid "Test record"
 msgstr "テストレコード"
 
@@ -30151,6 +30594,9 @@ msgstr "この得意先が属するカテゴリ（OEM、ディストリビュー
 
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "この仕入先が属するカテゴリ（原材料、サービス、請負製造業者）。デフォルトの勘定科目とレポートのグループ化を決定します。"
+
+msgid "The certificate is signed by you and stored with the shipment."
+msgstr "この証明書は署名済で、出荷と共に保存されます。"
 
 msgid "The change and its reason are kept in the timesheet's history."
 msgstr "変更とその理由はタイムシートの履歴に保持されます。"
@@ -30429,6 +30875,12 @@ msgstr "アップロードしたファイルと設定したマッピングは失
 msgid "the first 3 to 4 weeks"
 msgstr "最初の3～4週間"
 
+msgid "The first article will be marked Failed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr "初回品は不合格とマークされます。判定は最終的です。何も転記されず、測定値はロック中です。"
+
+msgid "The first article will be marked Passed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr "初回品は合格とマークされます。判定は最終的です。何も転記されず、測定値はロック中です。"
+
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "会社がCarbonで帳簿の記録を始める最初の日であり、会計設定時に一度だけ設定され、その後は変更されません。この日以降、転記するたびに転記済の仕訳が作成されます。"
 
@@ -30543,6 +30995,9 @@ msgstr "検査は削除され、追跡対象は検査前のステータスに戻
 msgid "The inspection leaves the shop floor with no verdict. What it recorded is kept, and its held tracked entities return to the status they had before it."
 msgstr "検査は判定なしで製造現場から取り下げられます。記録された内容は保持され、保留中の追跡対象は検査前のステータスに戻ります。"
 
+msgid "The inspection plan has no characteristics."
+msgstr "検査計画に特性がありません。"
+
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "統合は接続を認可しましたが、保存に失敗しました。再度接続してみてください。"
 
@@ -30599,6 +31054,9 @@ msgstr "製造指図が完了したとき、原価がプロジェクトに計上
 
 msgid "The job's cost reports to this task"
 msgstr "この製造指図の原価はこのタスクに配分される。"
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr "製造指図の製造方法が存在しないため、インデックスを導出できません。"
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "製造指図の出力は未割り当て在庫ではなくプロジェクト在庫に入ります"
@@ -30709,6 +31167,9 @@ msgstr "印刷およびメール送信されたドキュメントに表示され
 
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "このストックのロット識別子。ロットごとに1行、数量はそのロットのオンハンドです。"
+
+msgid "The lot was rejected, so this first article cannot be approved. The part's next job gets a new first article."
+msgstr "ロットが不合格になったため、この初品は承認できません。この部品の次のジョブで新しい初品検査が作成されます。"
 
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "ロットは合格とマークされます。{fails}件のサンプル不良が記録されます。"
@@ -31505,6 +31966,9 @@ msgstr "これらの注文を読み込めませんでした。クローズして
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "これらの部品はこの部品で置き換わっています。各ルールは旧部品に設定されています；ルールを変更するには旧部品を開いてください。"
 
+msgid "These parts need a first article inspection but have no active inspection plan to inspect against. Publish the part's plan, or assign an active plan to its First Article slot, before releasing."
+msgstr "これらの部品は初回品検査が必要ですが、検査対象となる有効な検査計画がありません。リリース前に部品の計画を公開するか、初回品スロットに有効な計画を割り当ててください。"
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "これらの行は、この会社の外部のデータにリンクしています。このため、現在のデータのセーフコピーを作成できません。これらの削除は取り消すことができません。これらがこのグループ内の他の会社と共有されている場合、何も削除されず、デモデータは適用されません。"
 
@@ -31718,6 +32182,9 @@ msgstr "この品目はコンフィグレータを通じて構築され、その
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "この品目の部品表には棚寿命が有効な入力がないため、BOM から使用期限は計算されません。"
+
+msgid "This job"
+msgstr "このジョブ"
 
 msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
 msgstr "この製造指図には請求レートがありません。時間を請求する前に、プロパティで請求レートを設定してください。"
@@ -32327,6 +32794,9 @@ msgstr "ツールID"
 
 msgid "Tool supplier created"
 msgstr "工具の仕入先が作成されました"
+
+msgid "Tooling Change"
+msgstr "工具変更"
 
 msgid "Tooling Cost"
 msgstr "工具原価"
@@ -33459,6 +33929,9 @@ msgstr "レコードの値を使用"
 msgid "Used by"
 msgstr "で使用"
 
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr "この部品の初回品検査に使用されます。部品の唯一の計画に優先します。"
+
 msgid "Used in"
 msgstr "で使用"
 
@@ -33670,10 +34143,16 @@ msgstr "検証に失敗しました"
 msgid "Verification method"
 msgstr "検証方法"
 
+msgid "Verification of every design characteristic on the inspection plan"
+msgstr "検査計画上のすべての設計特性の検証"
+
 msgid "Verified"
 msgstr "検証済み"
 
 msgid "Verified by"
+msgstr "検証者"
+
+msgid "Verified By"
 msgstr "検証者"
 
 msgid "Verifies"
@@ -34008,6 +34487,9 @@ msgstr "取消済 <0/>"
 
 msgid "Voided <0/> by <1/>"
 msgstr "取消済 <0/>（<1/>による）"
+
+msgid "Voided with the shipment"
+msgstr "出荷とともに無効化"
 
 msgid "Voiding this purchase invoice will:"
 msgstr "この仕入先請求書を取消すると："
@@ -35082,6 +35564,9 @@ msgstr "あなたがこのアイテムを受け取りました"
 
 msgid "You received this lot"
 msgstr "このロットを受け取りました"
+
+msgid "You verified this first article. AS9102 recommends a different approver. Approve anyway?"
+msgstr "この初回品を検証しました。AS9102は異なる承認者を推奨しています。それでも承認しますか？"
 
 msgid "You're live on Carbon"
 msgstr "Carbonで本番稼働中です"

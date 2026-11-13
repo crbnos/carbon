@@ -239,6 +239,9 @@ msgstr "Ac"
 msgid "Accept"
 msgstr "Aceitar"
 
+msgid "Accept first article?"
+msgstr "Aceitar primeiro artigo?"
+
 msgid "Accept inspection?"
 msgstr "Aceitar inspeção?"
 
@@ -295,6 +298,9 @@ msgstr "Adicionar {phrase}"
 msgid "Add & Issue"
 msgstr "Adicionar e Emitir"
 
+msgid "Add a note to this reading"
+msgstr "Adicionar uma observação a esta leitura"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Adicione uma impressora nas configurações de impressão para imprimir etiquetas diretamente."
 
@@ -309,6 +315,9 @@ msgstr "Adicionar filtro"
 
 msgid "Add Inventory"
 msgstr "Adicionar Estoque"
+
+msgid "Add note"
+msgstr "Adicionar observação"
 
 msgid "Add option"
 msgstr "Adicionar opção"
@@ -376,6 +385,9 @@ msgstr "Alocar unidades com falha"
 
 msgid "Allocate units"
 msgstr "Alocar unidades"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "permitido {allowableLabel} (bônus {bonusLabel})"
 
 msgid "Appearance"
 msgstr "Aparência"
@@ -991,6 +1003,9 @@ msgstr "Editar"
 msgid "Edit {fieldLabel}"
 msgstr "Editar {fieldLabel}"
 
+msgid "Edit note"
+msgstr "Editar observação"
+
 msgid "Edit Passkey"
 msgstr "Editar Chave de Acesso"
 
@@ -1084,6 +1099,9 @@ msgstr "Falhou"
 msgid "Failed characteristics"
 msgstr "Características falhadas"
 
+msgid "Failed features"
+msgstr "Características reprovadas"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "Falha ao concluir ajuste de estoque"
 
@@ -1176,6 +1194,19 @@ msgstr "Finalizar com material não selecionado?"
 
 msgid "First"
 msgstr "Primeira"
+
+msgid "First article"
+msgstr "Primeiro artigo"
+
+msgid "First article plan missing for {description}"
+msgstr "Plano de inspeção de primeira amostra ausente para {description}"
+
+msgid "First article plan missing for {part}"
+msgstr "Plano de inspeção de primeira amostra ausente para {part}"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "Primeiro artigo necessário para {0}"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -1309,8 +1340,14 @@ msgstr "Inativo"
 msgid "Increase {fieldLabel}"
 msgstr "Aumentar {fieldLabel}"
 
+msgid "Inspect"
+msgstr "Inspecionar"
+
 msgid "Inspect Item"
 msgstr "Inspecionar Item"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "Inspecione a primeira unidade em cada característica antes de executar o resto."
 
 msgid "inspected"
 msgstr "inspecionado"
@@ -1913,6 +1950,9 @@ msgstr "Não definido"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Estoque não utilizável. O MRP e o planejamento não o contam, e a separação não o retira."
 
+msgid "Note"
+msgstr "Observação"
+
 msgid "Notes"
 msgstr "Observações"
 
@@ -2394,6 +2434,9 @@ msgstr "Falha no registro"
 
 msgid "Reject"
 msgstr "Rejeitar"
+
+msgid "Reject first article?"
+msgstr "Rejeitar primeiro artigo?"
 
 msgid "Reject inspection?"
 msgstr "Rejeitar inspeção?"
@@ -3007,6 +3050,9 @@ msgstr "Coloca o centro de trabalho offline"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Toque em um dia para adicionar tempo a {selectedLabel}. Arraste a borda inferior de uma barra para alterar suas horas."
 
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "Notifique a qualidade — esta peça precisa de uma primeira amostra, mas não tem um plano de inspeção ativo."
+
 msgid "Text color"
 msgstr "Cor do texto"
 
@@ -3028,6 +3074,12 @@ msgstr "A data é anterior à janela de entrada. A razão é mantida com a entra
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "O lote inteiro de {0} será rejeitado como não-conformado — {passes} aprovação(ções) amostrada(s) e {fails} falha(s) até agora. Encaminhe as unidades abaixo para refugo ou retrabalho, ou registre apenas o veredicto."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "O primeiro artigo será marcado como Reprovado e seus resultados bloqueados. Nenhuma quantidade é registrada."
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "O primeiro artigo será marcado como Aprovado e seus resultados bloqueados. Nenhuma quantidade é registrada."
 
 #. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."

@@ -10,8 +10,13 @@ import { sql } from "kysely";
 import type { Kysely, KyselyDatabase } from "./client.ts";
 import { withTransaction } from "./client.ts";
 import { errResult, isInspectionClosed, type Result } from "./quality-core.ts";
-import type { SamplingPlanInput, SamplingStandard } from "./sampling.ts";
+import type {
+  FeatureSamplingRule,
+  SamplingPlanInput,
+  SamplingStandard
+} from "./sampling.ts";
 import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
+import type { Database } from "./types.ts";
 
 // The sampling hierarchy is: feature rule -> document default -> All. This
 // maps an inspectionDocument row's default-rule columns into the engine's
@@ -38,6 +43,46 @@ export function toSamplingPlanInput(
     aql: row.samplingAql == null ? null : Number(row.samplingAql),
     inspectionLevel: row.samplingInspectionLevel,
     severity: row.samplingSeverity
+  };
+}
+
+export type LotFeaturePlan = {
+  sampleSize: number;
+  acceptanceNumber: number;
+  rejectionNumber: number;
+  codeLetter: string | null;
+};
+
+// The per-feature plan of a lot that inspects against its source's rules. A
+// First Article lot is a single unit inspected on every characteristic
+// (AS9102), so it ignores the feature/document sampling rules; every other
+// source resolves feature rule -> document default -> All.
+export function resolveLotFeaturePlan(
+  sourceDocument: Database["public"]["Enums"]["inspectionSourceDocument"],
+  feature: FeatureSamplingRule,
+  documentDefault: SamplingPlanInput | null,
+  lotSize: number,
+  standard: SamplingStandard
+): LotFeaturePlan {
+  if (sourceDocument === "First Article") {
+    return {
+      sampleSize: 1,
+      acceptanceNumber: 0,
+      rejectionNumber: 1,
+      codeLetter: null
+    };
+  }
+  const resolved = resolveFeatureSamplingPlan(
+    feature,
+    documentDefault,
+    lotSize,
+    standard
+  );
+  return {
+    sampleSize: resolved.sampleSize,
+    acceptanceNumber: resolved.acceptance,
+    rejectionNumber: resolved.rejection,
+    codeLetter: resolved.codeLetter
   };
 }
 
@@ -165,6 +210,7 @@ export async function reconcileInspectionSamplingPlans(
         .selectFrom("inspection")
         .select([
           "id",
+          "sourceDocument",
           "inspectionDocumentId",
           "lotSize",
           "samplingStandard",
@@ -220,7 +266,8 @@ export async function reconcileInspectionSamplingPlans(
       const defaultPlan = toSamplingPlanInput(documentDefault);
 
       const inserts = missing.map((feature) => {
-        const resolved = resolveFeatureSamplingPlan(
+        const resolved = resolveLotFeaturePlan(
+          inspection.sourceDocument,
           feature,
           defaultPlan,
           Number(inspection.lotSize),
@@ -229,10 +276,7 @@ export async function reconcileInspectionSamplingPlans(
         return {
           inspectionId,
           inspectionFeatureId: feature.id,
-          sampleSize: resolved.sampleSize,
-          acceptanceNumber: resolved.acceptance,
-          rejectionNumber: resolved.rejection,
-          codeLetter: resolved.codeLetter,
+          ...resolved,
           companyId,
           // Never NULL into a NOT NULL audit column: fall back to the lot's
           // creator (the creating flow's userId).

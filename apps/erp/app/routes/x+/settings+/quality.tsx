@@ -8,6 +8,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { fetchAllFromTable } from "@carbon/database";
 import {
+  Boolean,
   Hidden,
   Input,
   Select,
@@ -42,7 +43,10 @@ import { Users } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
-import { settingsToggle } from "~/modules/settings/settings.models";
+import {
+  requireFirstArticleValidator,
+  settingsToggle
+} from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { GoodsInStorageCard } from "~/modules/settings/ui/Quality";
 import type { Handle } from "~/utils/handle";
@@ -68,6 +72,10 @@ const dashboardValidator = z.object({
 const samplingStandardValidator = z.object({
   intent: z.literal("samplingStandard"),
   samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"])
+});
+
+const firstArticleValidator = requireFirstArticleValidator.extend({
+  intent: z.literal("requireFirstArticle")
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -135,6 +143,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 const qualitySettingsForm = z.discriminatedUnion("intent", [
   settingsToggle("enforceInspectionFourEyes", "enforceInspectionFourEyes"),
   samplingStandardValidator,
+  firstArticleValidator,
   dashboardValidator,
   gaugeCalibrationValidator.transform((form) => ({
     gaugeCalibrationExpiredNotificationGroup:
@@ -179,6 +188,8 @@ export default function QualitySettingsRoute() {
     onSuccess: ({ data }) => {
       if (!data) return;
       if (data.samplingStandard) toast.success(t`Sampling standard updated`);
+      else if (data.requireFirstArticle !== undefined)
+        toast.success(t`First article settings updated`);
       else if (data.qualityIssueTarget !== undefined)
         toast.success(t`Dashboard settings updated`);
       else toast.success(t`Gauge calibration notification settings updated`);
@@ -407,6 +418,52 @@ export default function QualitySettingsRoute() {
                       | "ANSI_Z1_4"
                       | "ISO_2859_1") ?? "ANSI_Z1_4"
                   }
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>First Article</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={firstArticleValidator}
+            defaultValues={{
+              intent: "requireFirstArticle" as const,
+              requireFirstArticle: companySettings.requireFirstArticle ?? false
+            }}
+            fetcher={fetcher}
+          >
+            <Hidden name="intent" />
+            <CardHeader>
+              <CardTitle>
+                <Trans>First Article Inspection</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Decide when releasing a job creates first article inspections.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-2 max-w-[400px]">
+                <Boolean
+                  name="requireFirstArticle"
+                  label={t`Require first article for new parts and revisions`}
+                  description={t`Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years.`}
+                  bordered
                 />
               </div>
             </CardContent>

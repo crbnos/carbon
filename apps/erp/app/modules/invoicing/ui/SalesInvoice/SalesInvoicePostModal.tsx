@@ -47,6 +47,8 @@ export type SalesInvoicePostResult = {
   data?: {
     sentVia: "Email" | "Stripe" | null;
     warning: string | null;
+    /** The auto-issued certificates' outcome; the post stands either way. */
+    certificate?: { ok: boolean; message: string } | null;
   } | null;
   error?: { message: string } | null;
   violations?: unknown[];
@@ -161,6 +163,10 @@ const SalesInvoicePostBody = ({
           ? t`Invoice posted and sent via Stripe`
           : t`Sales invoice confirmed`
       );
+    }
+    if (posted.certificate) {
+      if (posted.certificate.ok) toast.success(posted.certificate.message);
+      else toast.error(posted.certificate.message);
     }
     onClose();
   }, [fetcher.data]);

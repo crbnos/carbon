@@ -39,10 +39,13 @@ are regenerated; that's expected, not a bug.
 
 ## Template model (`packages/documents/src/template/`)
 
-- **schema.ts** — zod. `documentTemplateTypeSchema` enum = the 12 supported types:
+- **schema.ts** — zod. `documentTemplateTypeSchema` enum = the 13 supported types:
   `salesInvoice, salesOrder, salesReturnOrder, purchaseOrder, purchaseReturnOrder,
-  purchasingRfq, quote, packingSlip, stockTransfer, jobTraveler, issue, trackingLabel` (note `salesInvoice`/`salesOrder`, not bare
-  `invoice`/`order`). `blockSchema` is a discriminated union keyed on `type`:
+  purchasingRfq, quote, packingSlip, stockTransfer, jobTraveler, issue, trackingLabel,
+  certificateOfConformance` (note `salesInvoice`/`salesOrder`, not bare
+  `invoice`/`order`). `REGISTRATION_LINE_DOCUMENT_TYPES` lists the types whose
+  footer renders the registration line (certificateOfConformance included).
+  `blockSchema` is a discriminated union keyed on `type`:
   built-ins carry only `id`+`visible` (some add `options`); extension blocks
   include `richText, keyValue, spacer, shared, field, customField, watermark`.
   `documentTemplateSchema` = `formatVersion + blocks + theme + settings +
@@ -143,6 +146,26 @@ the generic preview.
 
 **Adding a block type** to the union breaks every registry → add the key to all
 registries + a `BLOCK_META` entry + (if built-in) a `DEFAULT_TEMPLATES` entry.
+
+## Certificate of Conformance specifics
+
+`certificateOfConformance` (AS9163) renders via `pdf/CertificateOfConformancePDF.tsx`
+with its own registry `pdf/blocks/certificateOfConformance/registry.tsx`
+(`Partial<Record<…>>` — it reuses the shared `header` / `parties` / `details` /
+`lineItems` / `notes` block TYPES with numbered-field components, plus the
+extension blocks). Two built-ins exist only for it — `conformityDetails` (field
+13: shelf life, FAIRs, certificates, concessions, statements, reason for update)
+and `conformityStatement` (field 14); both are `() => null` in the tracking-label
+registry (the sales-invoice registry is `Partial` and skips them). Default template (`certificateBlocks()` in
+`defaults.ts`) starts with the watermark hidden — an unissued certificate
+already carries its own PREVIEW mark. Merge fields: `certificate.number`,
+`certificate.date`, `certificate.purchaseOrderNumber`, `certificate.signer`,
+`customer.name` + the company fields (`mergeFields.ts`). Its text catalog
+(`texts/certificateOfConformance.ts`) is empty: the blocks still print the AS9163
+field names themselves, so they are not editable texts yet. The data bag and issue
+flow live in the ERP (`inventory/certificateOfConformance.pdf.tsx`) — see
+[quality-certification-documents.md](quality-certification-documents.md). The
+First Article report (`FirstArticleInspectionPDF.tsx`) is NOT templated.
 
 ## Approval block (purchase orders)
 

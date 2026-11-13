@@ -30,7 +30,9 @@ export async function action(args: ActionFunctionArgs) {
     customFields: input.formData && setCustomFields(input.formData)
   });
   return respond(args.request, result).redirect(path.to.receipt(receiptId), {
-    message: "Updated receipt"
+    message: result.data?.warning
+      ? `Updated receipt. ${result.data.warning}`
+      : "Updated receipt"
   });
 }
 

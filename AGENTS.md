@@ -110,6 +110,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Government contracting (DCAA timekeeping, unallowable cost, labor distribution, CLIN funding) | `.claude/rules/government-contracting.md` + `.claude/rules/projects-system.md` |
 | Contract financing (progress payments, SF 1443, PBP, liquidation) | `.claude/rules/contract-financing.md` + `.claude/rules/government-contracting.md` |
 | Quality (inspections, NCRs, CAPAs) | `modules/quality/AGENTS.md` |
+| Certificates of Conformance / First Article (AS9102) | `.claude/rules/quality-certification-documents.md` |
 | Sales (quotes, orders) | `.claude/rules/quote-discount-system.md` + `modules/sales/AGENTS.md` |
 | Accounting (GL, journal entries) | `.claude/rules/accounting-sync-handlers.md` + `modules/accounting/AGENTS.md` |
 | Items / Parts / BOM | `.claude/rules/material-tables.md` + `modules/items/AGENTS.md` |

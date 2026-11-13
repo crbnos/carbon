@@ -116,7 +116,9 @@ around its generic FK-null + topological delete, all inside the apply transactio
    one of several nullable FKs set goes in `PARENT_CHECK_TABLES` (today
    `customerContractInvoiceLine`: an invoice OR a credit memo; `projectCostRelief`: a Cost
    Relief schedule row OR a project close journal; `projectStockTransfer`:
-   two different project owners, after `projectBorrow`, which references its lines). Missing one fails every
+   two different project owners, after `projectBorrow`, which references its lines; `certificate`:
+   a receipt line OR a job operation; `complianceStatementAssignment`: a customer OR an item —
+   not seeded, but a company that made its own fails the same way). Missing one fails every
    re-apply with "new row … violates check constraint", while a first apply onto an
    empty company still works.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier

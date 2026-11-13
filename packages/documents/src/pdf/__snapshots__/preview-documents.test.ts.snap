@@ -108,6 +108,61 @@ exports[`DOCUMENT_PDFS > prints every text of the stockTransfer catalog it reach
 ]
 `;
 
+exports[`DOCUMENT_PDFS > prints the certificateOfConformance sample 1`] = `
+[
+  "PREVIEW
+Acme Manufacturing Co.
+100 Industrial Way
+Detroit, MI 48201
+CERTIFICATE OF CONFORMITY
+(in accordance with IAQG standard 9163)
+1 PAGE
+Page 1 of 1
+2 CERTIFICATE NUMBER
+COC000012
+3 DATE
+Jun 5, 2026
+4 ORGANIZATION NAME AND ADDRESS
+Acme Manufacturing Co.
+100 Industrial Way
+Detroit, MI 48201
+US
+5 CUSTOMER NAME AND ADDRESS
+Globex Aerospace
+500 Commerce Blvd
+Chicago, IL 60601
+US
+6 PURCHASE ORDER NUMBER
+PO-88421
+7 Item Number 8 Quantity 9 Description 10 Revision 11 Traceability 12 Remarks
+1 — GX-4471 10 EA Actuator bracket, 7075-T6 C LOT-2026-0412 (6)
+LOT-2026-0415 (4)
+None
+2 — HSG-220 3 EA Sensor housing, anodized N/C SN-000981 (1)
+SN-000982 (1)
+SN-000983 (1)
+None
+13 CONFORMITY DETAILS
+Shelf Life None
+First Article Inspection FAI000004 — GX-4471 Rev C
+Material Certificates Mill cert HT-77812 (Alcoa) — LOT-2026-0412
+Mill cert HT-77830 (Alcoa) — LOT-2026-0415
+Process Certificates None
+Deviations, Concessions and Waivers None
+Nonconformances None
+Compliance Statements DFARS: Specialty metals comply with DFARS 252.225-7009.
+RoHS: Product complies with Directive 2011/65/EU (RoHS).
+Reason for Update None
+14 STATEMENT OF CONFORMITY
+It is hereby certified that apart from the deviations, concessions, or waivers noted in "Conformity Details", the product(s) /
+service(s) detailed above has (have) been manufactured / maintained / reworked / performed / inspected / tested and conform
+to applicable specifications, drawings, and purchase order and contract requirements.
+Document electronically generated and validated.
+PREVIEW — NOT ISSUED
+Acme Manufacturing Co. is registered in United States COC000012 Page 1 of 1",
+]
+`;
+
 exports[`DOCUMENT_PDFS > prints the issue sample 1`] = `
 [
   "Acme Manufacturing Co.

@@ -52,6 +52,9 @@ type InspectionDocumentHeaderProps = {
   diagramId: string;
   title: string;
   onTitleChange: (value: string) => void;
+  /** AS9102 drawing revision of the plan. */
+  drawingRevision: string;
+  onDrawingRevisionChange: (value: string) => void;
   /** Update permission on a Draft version. */
   canUpdate: boolean;
   /** An Active or Archived version. */
@@ -66,6 +69,8 @@ type InspectionDocumentHeaderProps = {
   tab: EditorTab;
   onTabChange: (tab: EditorTab) => void;
   saveFailed: boolean;
+  /** Why the edits cannot be saved as they are, when it is not a failed save. */
+  saveFailedReason?: string | null;
   /** An edit not saved yet, or a save in flight. */
   saving: boolean;
   hasSaved: boolean;
@@ -85,6 +90,8 @@ export default function InspectionDocumentHeader({
   diagramId,
   title,
   onTitleChange,
+  drawingRevision,
+  onDrawingRevisionChange,
   canUpdate,
   isLocked,
   itemMasterLink,
@@ -97,6 +104,7 @@ export default function InspectionDocumentHeader({
   tab,
   onTabChange,
   saveFailed,
+  saveFailedReason,
   saving,
   hasSaved,
   version,
@@ -121,15 +129,24 @@ export default function InspectionDocumentHeader({
           borderless
           value={title}
           placeholder={t`Untitled Diagram`}
-          className="field-sizing-content w-auto min-w-[6rem] max-w-[28rem] font-semibold text-base truncate"
+          className="field-sizing-content w-auto min-w-8 max-w-[28rem] font-semibold text-base truncate"
           readOnly={!canUpdate}
           onChange={(e) => onTitleChange(e.target.value)}
+        />
+        <Input
+          aria-label={t`Drawing revision`}
+          borderless
+          value={drawingRevision}
+          placeholder={t`Drawing revision`}
+          className="field-sizing-content w-auto min-w-8 max-w-[12rem] text-sm text-muted-foreground truncate"
+          readOnly={!canUpdate}
+          onChange={(e) => onDrawingRevisionChange(e.target.value)}
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
               type="button"
-              variant="outline"
+              variant="secondary"
               size="sm"
               aria-label={t`More actions`}
               icon={<LuEllipsisVertical />}
@@ -200,7 +217,12 @@ export default function InspectionDocumentHeader({
             {t`View only — changes are not saved`}
           </span>
         ) : saveFailed ? (
-          <span className="text-xs text-destructive">{t`Could not save`}</span>
+          <span
+            className="text-xs text-destructive"
+            title={saveFailedReason ?? undefined}
+          >
+            {t`Could not save`}
+          </span>
         ) : saving ? (
           <span className="text-xs text-muted-foreground">{t`Saving…`}</span>
         ) : hasSaved ? (

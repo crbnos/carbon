@@ -33,7 +33,7 @@ export default function RuleViolationModal({
   onAcknowledge,
   isSubmitting
 }: RuleViolationModalProps) {
-  const { errors, warns, hasError, onlyWarns } = useMemo(() => {
+  const { errors, warns, hasError, onlyWarns, onlyChecks } = useMemo(() => {
     const errs: Violation[] = [];
     const wrns: Violation[] = [];
     for (const v of violations) {
@@ -43,7 +43,9 @@ export default function RuleViolationModal({
       errors: errs,
       warns: wrns,
       hasError: errs.length > 0,
-      onlyWarns: errs.length === 0 && wrns.length > 0
+      onlyWarns: errs.length === 0 && wrns.length > 0,
+      // Carbon's own checks, no configured rule: not a "rule violation".
+      onlyChecks: violations.every((v) => v.builtIn)
     };
   }, [violations]);
 
@@ -66,7 +68,7 @@ export default function RuleViolationModal({
               ) : (
                 <LuTriangleAlert className="text-amber-500 h-5 w-5" />
               )}
-              Rule Violation
+              {onlyChecks ? "Review before continuing" : "Rule Violation"}
             </span>
           </ModalTitle>
         </ModalHeader>

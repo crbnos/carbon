@@ -103,7 +103,12 @@ in the migrations — **newest wins**; core tables created in
   (`getReturnLineWriteOffs` in `postShipment`, at the write-off's own cost, Dr Inventory /
   Cr Scrap; voiding the shipment writes them off again) — without it the shipment relieved
   units the reject had already written off; tracked Use-As-Is/Rework and any `Non-Inventory` move
-  no value. Origin detected via the `nonConformanceInspection` link. Reopen is blocked
+  no value. Origin is `nonTrackedOrigin` over the NCR's `nonConformanceInspection`
+  links: a **Receipt** inspection → `receipt` (the reject wrote the lot off: restore on
+  keep, nothing on scrap); a **Job Operation** or **First Article** inspection →
+  `production` (WIP that never reached on-hand: NO non-tracked movement either way —
+  a write-off would remove stock that was never received); no link → `none` (scrap
+  writes off). Reopen is blocked
   once a `Non-Conformance` `itemLedger` row exists (`setIssueStatus`). See
   `.claude/rules/inspection-system.md` and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 

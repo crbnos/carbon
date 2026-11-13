@@ -152,6 +152,13 @@ export type Violation = {
    * single-line evaluation, where the caller already knows the line.
    */
   lineId?: string;
+  /**
+   * A check Carbon makes itself (stock in the storage unit, an unapproved
+   * first article), not a rule a company configured. The violation modal
+   * names a list of only these "Review before continuing", not a rule
+   * violation.
+   */
+  builtIn?: boolean;
 };
 
 export type RuleContext = {

@@ -270,6 +270,19 @@ const ISSUE_MERGE_FIELDS = [
   value("company.country", "Company Country", "Company")
 ] as const satisfies readonly MergeField[];
 
+const CERTIFICATE_OF_CONFORMANCE_MERGE_FIELDS = [
+  locked("certificate.number", "Certificate Number", "Certificate"),
+  value("certificate.date", "Certificate Date", "Certificate"),
+  value(
+    "certificate.purchaseOrderNumber",
+    "Purchase Order Number",
+    "Certificate"
+  ),
+  value("certificate.signer", "Signed By", "Certificate"),
+  value("customer.name", "Customer Name", "Customer"),
+  ...COMPANY_MERGE_FIELDS
+] as const satisfies readonly MergeField[];
+
 const TRACKING_LABEL_MERGE_FIELDS = [
   value("item.id", "Item ID", "Item"),
   value("item.revision", "Revision", "Item"),
@@ -295,7 +308,8 @@ export const MERGE_FIELDS = {
   stockTransfer: STOCK_TRANSFER_MERGE_FIELDS,
   jobTraveler: JOB_TRAVELER_MERGE_FIELDS,
   issue: ISSUE_MERGE_FIELDS,
-  trackingLabel: TRACKING_LABEL_MERGE_FIELDS
+  trackingLabel: TRACKING_LABEL_MERGE_FIELDS,
+  certificateOfConformance: CERTIFICATE_OF_CONFORMANCE_MERGE_FIELDS
 } as const satisfies Record<DocumentTemplateType, readonly MergeField[]>;
 
 /** The fields of table rows, each defined once, so a flag cannot differ by document. */

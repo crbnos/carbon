@@ -69,6 +69,7 @@ import {
   LuCircleAlert,
   LuClipboardCheck,
   LuEllipsisVertical,
+  LuFileBadge,
   LuGroup,
   LuSplit,
   LuTrash,
@@ -104,6 +105,7 @@ import type {
   ReceiptLine,
   RentalReceiptLine
 } from "~/modules/inventory/types";
+import { CertificatesDrawer } from "~/modules/quality/ui/Certificates";
 import {
   getInspectionStatusVariant,
   useInspectionLotStatusLabel
@@ -755,6 +757,8 @@ function ReceiptLineItem({
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
+  const certificatesDisclosure = useDisclosure();
+  const permissions = usePermissions();
 
   const remainingQuantity =
     (line.outstandingQuantity ?? 0) - (line.receivedQuantity ?? 0);
@@ -791,6 +795,10 @@ function ReceiptLineItem({
             >
               <DropdownMenuIcon icon={<LuSplit />} />
               {t`Split receipt line`}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={certificatesDisclosure.onOpen}>
+              <DropdownMenuIcon icon={<LuFileBadge />} />
+              {t`Certificates`}
             </DropdownMenuItem>
             <DropdownMenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
@@ -1083,6 +1091,12 @@ function ReceiptLineItem({
           />
         </>
       )}
+      <CertificatesDrawer
+        open={certificatesDisclosure.isOpen}
+        receiptLineId={line.id!}
+        isReadOnly={!permissions.can("update", "inventory")}
+        onClose={certificatesDisclosure.onClose}
+      />
     </div>
   );
 }

@@ -239,6 +239,9 @@ msgstr "接收数"
 msgid "Accept"
 msgstr "接受"
 
+msgid "Accept first article?"
+msgstr "接受首件？"
+
 msgid "Accept inspection?"
 msgstr "接受检验？"
 
@@ -295,6 +298,9 @@ msgstr "添加 {phrase}"
 msgid "Add & Issue"
 msgstr "添加并发放"
 
+msgid "Add a note to this reading"
+msgstr "为此读数添加备注"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
 
@@ -309,6 +315,9 @@ msgstr "添加筛选"
 
 msgid "Add Inventory"
 msgstr "添加库存管理"
+
+msgid "Add note"
+msgstr "添加备注"
 
 msgid "Add option"
 msgstr "添加选项"
@@ -376,6 +385,9 @@ msgstr "分配不合格单位"
 
 msgid "Allocate units"
 msgstr "分配单位"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "允许值 {allowableLabel}（奖励 {bonusLabel}）"
 
 msgid "Appearance"
 msgstr "外观"
@@ -991,6 +1003,9 @@ msgstr "编辑"
 msgid "Edit {fieldLabel}"
 msgstr "编辑{fieldLabel}"
 
+msgid "Edit note"
+msgstr "编辑备注"
+
 msgid "Edit Passkey"
 msgstr "编辑通行密钥"
 
@@ -1084,6 +1099,9 @@ msgstr "失败"
 msgid "Failed characteristics"
 msgstr "失效特性"
 
+msgid "Failed features"
+msgstr "不合格特性"
+
 msgid "Failed to complete inventory adjustment"
 msgstr "库存调整失败"
 
@@ -1176,6 +1194,19 @@ msgstr "物料未拣货的情况下要完成吗？"
 
 msgid "First"
 msgstr "第一次"
+
+msgid "First article"
+msgstr "首件"
+
+msgid "First article plan missing for {description}"
+msgstr "{description}的首件检验计划缺失"
+
+msgid "First article plan missing for {part}"
+msgstr "{part}的首件检验计划缺失"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "{0} 需要首件检验"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -1309,8 +1340,14 @@ msgstr "已停用"
 msgid "Increase {fieldLabel}"
 msgstr "增加{fieldLabel}"
 
+msgid "Inspect"
+msgstr "检验"
+
 msgid "Inspect Item"
 msgstr "检验物品"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "在生产其余产品前，对首件进行所有特性检验。"
 
 msgid "inspected"
 msgstr "已检验"
@@ -1913,6 +1950,9 @@ msgstr "未设置"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "不可用库存。MRP 和计划不计入此库存，拣货也不会从中取货。"
 
+msgid "Note"
+msgstr "备注"
+
 msgid "Notes"
 msgstr "备注"
 
@@ -2394,6 +2434,9 @@ msgstr "注册失败"
 
 msgid "Reject"
 msgstr "拒绝"
+
+msgid "Reject first article?"
+msgstr "拒绝首件？"
 
 msgid "Reject inspection?"
 msgstr "拒绝检验？"
@@ -3007,6 +3050,9 @@ msgstr "使工作中心离线"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "点击一天以向 {selectedLabel} 添加时间。拖动条形的下边缘以更改其小时数。"
 
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "通知质量部门 — 该零件需要首件检验，但没有有效的检验计划。"
+
 msgid "Text color"
 msgstr "文本颜色"
 
@@ -3028,6 +3074,12 @@ msgstr "日期在输入窗口之前。原因与条目一起保存。"
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "整个{0}批次将作为不符合规范进行拒绝——目前有{passes}个样品合格和{fails}个故障。将下面的件路由到报废或返工，或仅记录判定结果。"
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "首件将被标记为不合格，其结果将被锁定。不记录数量。"
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "首件将被标记为已通过，其结果将被锁定。不记录数量。"
 
 #. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."

@@ -149,6 +149,18 @@ describe("jobReleaseProblems", () => {
       "set a Pull From storage unit on BOLT-10; NUT-10"
     ]);
   });
+
+  it("names the parts that need a first article plan", () => {
+    expect(
+      jobReleaseProblems({
+        ...ready,
+        firstArticlesWithoutPlan: [
+          { description: "P-1001 Rev B" },
+          { description: "P-2002" }
+        ]
+      })
+    ).toEqual(["assign a first article plan for P-1001 Rev B, P-2002"]);
+  });
 });
 
 describe("startingPurchaseOrders", () => {
