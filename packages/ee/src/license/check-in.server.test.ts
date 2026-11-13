@@ -11,9 +11,8 @@ import { EMPTY_STATE } from "./types";
 vi.mock("@carbon/kv", () => ({
   redis: {},
   acquireLease: vi.fn(),
-  releaseLease: vi.fn()
+  withLease: vi.fn()
 }));
-vi.mock("@carbon/auth", () => ({ CarbonEdition: "enterprise" }));
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn()
 }));
@@ -54,7 +53,6 @@ function setup() {
     }
   };
   const checkIn = new LicenceCheckIn({
-    edition: () => "enterprise",
     resolver: {
       resolve: vi.fn(),
       clearCache: t.clearCache,
@@ -75,7 +73,7 @@ function setup() {
       t.lease === "held"
         ? { status: "held" }
         : { status: "acquired", owner: "me" },
-    releaseLease: async () => undefined,
+    withLease: async (_key, _owner, _opts, work) => work(),
     fetch: async (_url, init) => {
       sentNonce = JSON.parse(String(init?.body)).nonce;
       return t.respond();
@@ -85,8 +83,9 @@ function setup() {
     roots: () => [],
     now: () => parseAbsolute(NOW, "UTC")
   });
-  const run = () => checkIn.run({ seatsUsed: 3, companiesCount: 1 });
-  return { t, run };
+  const run = () =>
+    checkIn.run(async () => ({ seatsUsed: 3, companiesCount: 1 }));
+  return { t, run, checkIn };
 }
 
 describe("LicenceCheckIn", () => {
@@ -162,6 +161,13 @@ describe("LicenceCheckIn", () => {
       error: "licence: cannot derive the install id"
     });
     expect(s.t.stored().nextCheckInAt).toBe("2026-11-03T01:00:00.000Z");
+  });
+
+  it("skips, without counting seats, until the next check-in is due", async () => {
+    s.t.setStored({ nextCheckInAt: "2026-11-03T05:00:00.000Z" });
+    const counts = vi.fn();
+    expect(await s.checkIn.run(counts)).toEqual({ skipped: "not-due" });
+    expect(counts).not.toHaveBeenCalled();
   });
 
   it("skips while another process holds the lease", async () => {

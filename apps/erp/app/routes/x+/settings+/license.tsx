@@ -11,7 +11,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Heading,
   ScrollArea,
   Status
 } from "@carbon/react";
@@ -21,7 +20,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { SettingsPage } from "~/components/SettingsPage";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -103,9 +102,9 @@ export default function LicenseRoute() {
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <SettingsPage className="gap-4">
-        <Heading size="h3">
+        <SettingsPageHeading>
           <Trans>License</Trans>
-        </Heading>
+        </SettingsPageHeading>
         <Card>
           <CardHeader>
             <CardTitle>

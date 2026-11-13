@@ -51,7 +51,7 @@ function setup(licence = "crbn.v1.KEY.config") {
         }
       );
     },
-    readStored: async () => stored,
+    readStored: async () => ({ ...EMPTY_STORED, ...stored }),
     updateStored: async (patch) => {
       stored = { ...EMPTY_STORED, ...stored, ...patch };
     },

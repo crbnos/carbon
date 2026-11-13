@@ -4,9 +4,10 @@
 
 import { getEnv } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
-import { normalizePlanId, type Plan } from "@carbon/utils";
-import { now, parseAbsolute } from "@internationalized/date";
+import { datetime, normalizePlanId } from "@carbon/utils";
+import { parseAbsolute } from "@internationalized/date";
 import { FEATURE_PLANS, type Feature } from "../plan";
+import type { ResolvedLicence } from "./entitlement";
 import { licenceRoots } from "./roots";
 import {
   EMPTY_STORED,
@@ -15,7 +16,6 @@ import {
   updateStoredLicence
 } from "./store.server";
 import type {
-  LicenceStatus,
   LicenceView,
   RootKey,
   VerifyContext,
@@ -26,28 +26,11 @@ import { verify } from "./verifier.server";
 
 const logger = getLogger("ee", "licence");
 
-export { LICENCE_ENFORCED } from "./entitlement";
 export { loadVerifier } from "./verifier.server";
 
 const CACHE_MS = 60_000;
 
 type Verified = Extract<VerifyOutput, { ok: true }>;
-
-export type LicenceResolution = {
-  kind: "licence" | "floor";
-  status: LicenceStatus | "none";
-  plan: Plan | null;
-  overrides: Partial<Record<Feature, boolean>>;
-  error: string | null;
-  licence: LicenceView | null;
-  clockSuspect: boolean;
-  checkIn: {
-    lastAt: string | null;
-    status: string | null;
-    error: string | null;
-    seatsUsed: number | null;
-  };
-};
 
 /** The licence in use, for the check-in request. Never sent to a browser. */
 export type LicenceInUse = {
@@ -70,26 +53,37 @@ export function splitLicence(
   return { key: rest.slice(0, dot), sealed: `crbn.v1.${rest.slice(dot + 1)}` };
 }
 
-/** False when either date does not parse: a bad stored value never wins. */
-function isNewer(a: string | null, b: string): boolean {
-  if (!a) return false;
+/**
+ * Whether `candidate` is a later issue of the same licence as `base`. False
+ * when either date does not parse: a bad stored value never wins.
+ */
+function supersedes(
+  licenseId: string | null,
+  issuedAt: string | null,
+  base: LicenceView
+): boolean {
+  if (licenseId !== base.license_id || !issuedAt) return false;
   try {
-    return parseAbsolute(a, "UTC").compare(parseAbsolute(b, "UTC")) > 0;
+    return (
+      parseAbsolute(issuedAt, "UTC").compare(
+        parseAbsolute(base.issued_at, "UTC")
+      ) > 0
+    );
   } catch {
     return false;
   }
 }
 
-function checkInOf(stored: StoredLicence | null): LicenceResolution["checkIn"] {
+function checkInOf(stored: StoredLicence): ResolvedLicence["checkIn"] {
   return {
-    lastAt: stored?.lastCheckInAt ?? null,
-    status: stored?.lastCheckInStatus ?? null,
-    error: stored?.lastCheckInError ?? null,
-    seatsUsed: stored?.seatsUsed ?? null
+    lastAt: stored.lastCheckInAt,
+    status: stored.lastCheckInStatus,
+    error: stored.lastCheckInError,
+    seatsUsed: stored.seatsUsed
   };
 }
 
-function floor(error: string, stored: StoredLicence | null): LicenceResolution {
+function floor(error: string, stored: StoredLicence): ResolvedLicence {
   return {
     kind: "floor",
     status: "none",
@@ -97,15 +91,12 @@ function floor(error: string, stored: StoredLicence | null): LicenceResolution {
     overrides: {},
     error,
     licence: null,
-    clockSuspect: stored?.state.clock_suspect ?? false,
+    clockSuspect: stored.state.clock_suspect,
     checkIn: checkInOf(stored)
   };
 }
 
-function toResolution(
-  out: Verified,
-  stored: StoredLicence | null
-): LicenceResolution {
+function toResolution(out: Verified, stored: StoredLicence): ResolvedLicence {
   const view = out.license;
   const overrides: Partial<Record<Feature, boolean>> = {};
   for (const [feature, on] of Object.entries(view.overrides ?? {})) {
@@ -126,7 +117,8 @@ function toResolution(
 export type ResolverDeps = {
   licence: () => string;
   verify: (input: VerifyInput) => Promise<VerifyOutput>;
-  readStored: () => Promise<StoredLicence | null>;
+  /** A fresh copy each call: the resolver updates it in place. */
+  readStored: () => Promise<StoredLicence>;
   updateStored: (patch: Partial<StoredLicence>) => Promise<unknown>;
   roots: () => RootKey[];
   /** RFC 3339 now, for the verifier. */
@@ -140,9 +132,9 @@ export type ResolverDeps = {
  * licence in use, the last good answer and the 60 s cache.
  */
 export class LicenceResolver {
-  private cached: { at: number; value: LicenceResolution } | null = null;
-  private pending: Promise<LicenceResolution> | null = null;
-  private lastGood: LicenceResolution | null = null;
+  private cached: { at: number; value: ResolvedLicence } | null = null;
+  private pending: Promise<ResolvedLicence> | null = null;
+  private lastGood: ResolvedLicence | null = null;
   private inUse: LicenceInUse | null = null;
   private installedFrom: string | null = null;
   private lastLogged = "";
@@ -162,7 +154,7 @@ export class LicenceResolver {
    * The verified licence, cached in memory for 60 s. Never throws: a failure
    * gives the last good resolution, else the floor.
    */
-  resolve(): Promise<LicenceResolution> {
+  resolve(): Promise<ResolvedLicence> {
     const at = this.deps.ms();
     if (this.cached && at - this.cached.at < CACHE_MS) {
       return Promise.resolve(this.cached.value);
@@ -174,35 +166,34 @@ export class LicenceResolver {
     return this.pending;
   }
 
-  private async refresh(at: number): Promise<LicenceResolution> {
-    let value: LicenceResolution;
+  private async refresh(at: number): Promise<ResolvedLicence> {
+    let value: ResolvedLicence;
     try {
       value = await this.compute();
     } catch (error) {
       logger.error("licence: resolution failed", { error });
-      value = this.lastGood ?? floor("unavailable", null);
+      value = this.lastGood ?? floor("unavailable", EMPTY_STORED);
     }
     this.logChange(value);
     this.cached = { at, value };
     return value;
   }
 
-  private async compute(): Promise<LicenceResolution> {
+  private async compute(): Promise<ResolvedLicence> {
     const licence = this.deps.licence().trim();
     const stored = await this.deps.readStored();
-    const working: StoredLicence = { ...EMPTY_STORED, ...stored };
 
     if (!licence) return floor("missing", stored);
 
     const parts = splitLicence(licence);
     let out: VerifyOutput;
     if (!parts) {
-      out = await this.run({ license: licence }, working, "install");
+      out = await this.run({ license: licence }, stored, "install");
     } else if (this.installedFrom !== licence || !this.inUse) {
-      out = await this.install(licence, parts, working);
+      out = await this.install(licence, parts, stored);
       if (out.ok) this.installedFrom = licence;
     } else {
-      out = await this.recheck(this.inUse, working);
+      out = await this.recheck(this.inUse, stored);
     }
 
     if (!out.ok) {
@@ -213,7 +204,7 @@ export class LicenceResolver {
       return this.lastGood ?? floor(out.error, stored);
     }
 
-    if (stored?.revokedLicenseId === out.license.license_id) {
+    if (stored.revokedLicenseId === out.license.license_id) {
       this.lastGood = null;
       return floor("revoked", stored);
     }
@@ -266,26 +257,29 @@ export class LicenceResolver {
     const fromConfig = await this.run({ license: licence }, stored, "install");
     const config = fromConfig.ok ? fromConfig.license : null;
 
-    const tryRenewal =
-      !!stored.sealed &&
+    const sealed =
+      stored.sealed &&
       stored.sealed !== parts.sealed &&
-      (!config ||
-        (stored.licenseId === config.license_id &&
-          isNewer(stored.issuedAt, config.issued_at)));
-    if (tryRenewal && stored.sealed) {
+      (!config || supersedes(stored.licenseId, stored.issuedAt, config))
+        ? stored.sealed
+        : null;
+    if (sealed) {
       // Stored, so already install-verified when it arrived.
       const renewal = await this.run(
-        { sealed: stored.sealed, key: parts.key },
+        { sealed, key: parts.key },
         stored,
         "resolve"
       );
       if (
         renewal.ok &&
         (!config ||
-          (renewal.license.license_id === config.license_id &&
-            isNewer(renewal.license.issued_at, config.issued_at)))
+          supersedes(
+            renewal.license.license_id,
+            renewal.license.issued_at,
+            config
+          ))
       ) {
-        this.remember(renewal, parts.key, stored.sealed);
+        this.remember(renewal, parts.key, sealed);
         return renewal;
       }
     }
@@ -308,8 +302,7 @@ export class LicenceResolver {
     const renewal =
       stored.sealed &&
       stored.sealed !== current.sealed &&
-      stored.licenseId === current.view.license_id &&
-      isNewer(stored.issuedAt, current.view.issued_at)
+      supersedes(stored.licenseId, stored.issuedAt, current.view)
         ? stored.sealed
         : null;
 
@@ -333,7 +326,7 @@ export class LicenceResolver {
     return out;
   }
 
-  private logChange(value: LicenceResolution) {
+  private logChange(value: ResolvedLicence) {
     const line =
       value.kind === "licence"
         ? `licence: ${value.status}, plan ${value.plan ?? "none"}, expires ${value.licence?.expires_at ?? "never"}`
@@ -351,10 +344,8 @@ export const licenceResolver = new LicenceResolver({
   readStored: readStoredLicence,
   updateStored: updateStoredLicence,
   roots: licenceRoots,
-  now: () => now("UTC").toAbsoluteString(),
+  now: () => datetime.now("UTC").toAbsoluteString(),
   ms: () => performance.now()
 });
 
 export const resolveLicence = () => licenceResolver.resolve();
-export const clearLicenceCache = () => licenceResolver.clearCache();
-export const getLicenceInUse = () => licenceResolver.licenceInUse();

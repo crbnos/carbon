@@ -7,6 +7,7 @@ import {
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
   getMESUrl,
+  hasPermission,
   ITAR_RIDER_PDF_PATH,
   isAuthProviderEnabled,
   SESSION_HEARTBEAT_MS,
@@ -373,7 +374,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Enterprise only, and only for employees who can open Settings.
   const licenceNotice =
     claims?.role === "employee" &&
-    claims.permissions?.settings?.view?.includes(companyId)
+    hasPermission(claims.permissions, "settings", "view", companyId)
       ? await licenceNoticePromise
       : null;
 

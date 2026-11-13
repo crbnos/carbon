@@ -4,10 +4,12 @@
 
 import { checkIn } from "@carbon/ee/license/check-in.server";
 import { CarbonEdition } from "@carbon/env";
-import { Edition } from "@carbon/utils";
+import { Edition, INTERNAL_EMAIL_DOMAINS } from "@carbon/utils";
 import { sql } from "kysely";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+
+const STAFF_EMAILS = INTERNAL_EMAIL_DOMAINS.map((domain) => `%${domain}`);
 
 /**
  * Hourly; the check-in itself acts once a day, or on its back-off schedule
@@ -19,27 +21,24 @@ export const licenseCheckInFunction = inngest.createFunction(
   async ({ step }) => {
     if (CarbonEdition !== Edition.Enterprise) return { skipped: "edition" };
 
-    const counts = await step.run("count", async () => {
-      const db = getJobDatabaseClient();
-      // A seat is a distinct employee across all companies, without Carbon
-      // staff. Customer and supplier portal users are not seats, as
-      // in billing.
-      const seats = await sql<{ n: number }>`
-        select count(distinct u."id")::int as n
-        from "userToCompany" utc
-        join "user" u on u."id" = utc."userId"
-        where utc."role" = 'employee'
-          and u."email" not ilike '%@carbon.ms'
-      `.execute(db);
-      const companies = await sql<{ n: number }>`
-        select count(*)::int as n from "company"
-      `.execute(db);
-      return {
-        seatsUsed: seats.rows[0]?.n ?? 0,
-        companiesCount: companies.rows[0]?.n ?? 0
-      };
-    });
-
-    return step.run("check-in", () => checkIn(counts));
+    return step.run("check-in", () =>
+      checkIn(async () => {
+        // A seat is a distinct employee across all companies, without Carbon
+        // staff. Customer and supplier portal users are not seats.
+        const { rows } = await sql<{
+          seatsUsed: number;
+          companiesCount: number;
+        }>`
+          select
+            (select count(distinct u."id")::int
+               from "userToCompany" utc
+               join "user" u on u."id" = utc."userId"
+              where utc."role" = 'employee'
+                and not (u."email" ilike any(${STAFF_EMAILS}::text[]))) as "seatsUsed",
+            (select count(*)::int from "company") as "companiesCount"
+        `.execute(getJobDatabaseClient());
+        return rows[0] ?? { seatsUsed: 0, companiesCount: 0 };
+      })
+    );
   }
 );

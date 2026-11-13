@@ -79,13 +79,6 @@ export function planIdFromCache(
   return cached || null;
 }
 
-export function planIdAfterRead(
-  read: { planId: string | null } | { error: unknown },
-  lastKnown: string | null | undefined
-): string | null {
-  return "error" in read ? (lastKnown ?? null) : read.planId;
-}
-
 const lastKnownPlanId = new Map<string, string | null>();
 
 async function loadCompanyPlanId(companyId: string): Promise<string | null> {
@@ -101,7 +94,7 @@ async function loadCompanyPlanId(companyId: string): Promise<string | null> {
 
   if (error) {
     logger.error("Failed to read company plan", { companyId, error });
-    return planIdAfterRead({ error }, lastKnownPlanId.get(companyId));
+    return lastKnownPlanId.get(companyId) ?? null;
   }
 
   const planId = data?.planId ?? null;

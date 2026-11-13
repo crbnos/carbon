@@ -28,21 +28,22 @@ export type StoredLicence = {
 };
 
 /**
- * Null for a missing key, an outage or a bad value. `@carbon/kv` answers
- * empty for a miss and an outage alike; both mean "start from CARBON_LICENSE".
- * A field that does not parse reads as missing.
+ * A fresh copy of the stored licence. A missing key, an outage and a field
+ * that does not parse all read as empty: `@carbon/kv` answers empty for a
+ * miss and an outage alike, and both mean "start from CARBON_LICENSE".
  */
-export async function readStoredLicence(): Promise<StoredLicence | null> {
+export async function readStoredLicence(): Promise<StoredLicence> {
   const fields = await redis.hgetall(KEY);
-  if (!fields || typeof fields !== "object") return null;
-  const entries = Object.entries(fields).flatMap(([field, raw]) => {
-    try {
-      return [[field, JSON.parse(raw)] as const];
-    } catch {
-      return [];
-    }
-  });
-  if (entries.length === 0) return null;
+  const entries =
+    fields && typeof fields === "object"
+      ? Object.entries(fields).flatMap(([field, raw]) => {
+          try {
+            return [[field, JSON.parse(raw)] as const];
+          } catch {
+            return [];
+          }
+        })
+      : [];
   return { ...EMPTY_STORED, ...Object.fromEntries(entries) };
 }
 

@@ -12,6 +12,15 @@ import {
   type ResolvedLicence
 } from "./entitlement";
 
+const checkIn = (
+  over: Partial<ResolvedLicence["checkIn"]>
+): ResolvedLicence["checkIn"] => ({
+  lastAt: null,
+  status: null,
+  error: null,
+  seatsUsed: null,
+  ...over
+});
 const licence = (over: Partial<ResolvedLicence> = {}): ResolvedLicence => ({
   kind: "licence",
   status: "active",
@@ -19,13 +28,16 @@ const licence = (over: Partial<ResolvedLicence> = {}): ResolvedLicence => ({
   overrides: {},
   error: null,
   licence: {
+    license_id: "lic_1",
+    kind: "instance",
+    issued_to: "Acme",
     mode: "connected",
     issued_at: "2026-11-01T00:00:00Z",
     terminates_at: "2026-11-22T00:00:00Z",
     seats: 10
   },
   clockSuspect: false,
-  checkIn: { status: "ok", seatsUsed: 5 },
+  checkIn: checkIn({ status: "ok", seatsUsed: 5 }),
   ...over
 });
 const floor = licence({
@@ -102,24 +114,14 @@ describe("enforcesWithoutLicence", () => {
 
 describe("pickLicenceNotice", () => {
   const now = parseAbsolute("2026-11-03T00:00:00Z", "UTC");
-  const pick = (value: ResolvedLicence, enforced = true) =>
-    pickLicenceNotice(value, { now, enforced });
+  const pick = (value: ResolvedLicence) => pickLicenceNotice(value, now);
 
   it("shows nothing for a healthy licence", () => {
     expect(pick(licence())).toBeNull();
   });
 
-  it("shows a missing licence as a warning while not enforced", () => {
-    expect(pick(floor, false)).toMatchObject({
-      reason: "none",
-      severity: "warning",
-      preview: true
-    });
-    expect(pick(floor)).toMatchObject({
-      reason: "none",
-      severity: "destructive",
-      preview: false
-    });
+  it("shows a missing licence", () => {
+    expect(pick(floor)).toEqual({ reason: "none", until: null });
   });
 
   it("puts a terminated licence before every other notice", () => {
@@ -136,17 +138,19 @@ describe("pickLicenceNotice", () => {
   });
 
   it("warns when check-ins have failed for more than 3 days", () => {
-    const stale = licence({ checkIn: { status: "failed", seatsUsed: 5 } });
+    const stale = licence({
+      checkIn: checkIn({ status: "failed", seatsUsed: 5 })
+    });
     expect(pick(stale)?.reason).toBeUndefined();
-    expect(
-      pickLicenceNotice(stale, { now: now.add({ days: 2 }), enforced: true })
-        ?.reason
-    ).toBe("check-in");
+    expect(pickLicenceNotice(stale, now.add({ days: 2 }))?.reason).toBe(
+      "check-in"
+    );
   });
 
   it("warns about seats above the licence, then a suspect clock", () => {
     expect(
-      pick(licence({ checkIn: { status: "ok", seatsUsed: 11 } }))?.reason
+      pick(licence({ checkIn: checkIn({ status: "ok", seatsUsed: 11 }) }))
+        ?.reason
     ).toBe("seats");
     expect(pick(licence({ clockSuspect: true }))?.reason).toBe("clock");
   });

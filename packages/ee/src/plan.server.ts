@@ -16,16 +16,22 @@ import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { flags } from "@carbon/env/flags.server";
 import { getLogger } from "@carbon/logger";
-import { Edition, normalizePlanId, Plan, redirect } from "@carbon/utils";
-import { now } from "@internationalized/date";
+import {
+  datetime,
+  Edition,
+  normalizePlanId,
+  Plan,
+  redirect
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   enforcesWithoutLicence,
+  LICENCE_ENFORCED,
   type LicenceNotice,
   licenceAllows,
   pickLicenceNotice
 } from "./license/entitlement";
-import { LICENCE_ENFORCED, resolveLicence } from "./license/resolve.server";
+import { resolveLicence } from "./license/resolve.server";
 
 export type { LicenceNotice } from "./license/entitlement";
 
@@ -71,10 +77,7 @@ async function enterpriseAllows(
  */
 export async function getLicenceNotice(): Promise<LicenceNotice | null> {
   if (CarbonEdition !== Edition.Enterprise) return null;
-  return pickLicenceNotice(await resolveLicence(), {
-    now: now("UTC"),
-    enforced: LICENCE_ENFORCED
-  });
+  return pickLicenceNotice(await resolveLicence(), datetime.now("UTC"));
 }
 
 export function licenceAllowsAuthoring(spec: GateSpec): Promise<boolean> {
@@ -197,29 +200,17 @@ export async function requirePlan({
   message,
   ...spec
 }: RequirePlanArgs): Promise<void> {
-  const requirement = resolveRequirement(spec as GateSpec);
-  let allowed: boolean;
-  if (CarbonEdition === Edition.Enterprise) {
-    allowed = await enterpriseAllows(spec as GateSpec, "run");
-  } else if (CarbonEdition !== Edition.Cloud || isBypassCompany(companyId)) {
-    allowed = true;
-  } else {
-    allowed =
-      planMeetsRequirement(
-        await getCompanyPlan(client, companyId),
-        requirement
-      ) || (await isCarbonOwnedCompany(companyId));
-  }
-
-  if (!allowed) {
-    throw redirect(
-      redirectTo,
-      await flash(
-        request,
-        error(null, message ?? defaultUpgradeMessage(requirement))
+  if (await companyHasPlan(client, companyId, spec as GateSpec)) return;
+  throw redirect(
+    redirectTo,
+    await flash(
+      request,
+      error(
+        null,
+        message ?? defaultUpgradeMessage(resolveRequirement(spec as GateSpec))
       )
-    );
-  }
+    )
+  );
 }
 
 /**
@@ -253,29 +244,22 @@ export async function companyEnforcesFeature(
 }
 
 /**
- * Every feature's runtime answer, for the client gate (`usePlanGate`). The
- * checks share one cached licence resolution on Enterprise.
+ * Enterprise's runtime answer per feature, for the client gate
+ * (`usePlanGate`), which reads it on Enterprise only. The checks share one
+ * cached licence resolution.
  */
 export async function getEntitledFeatures(
   client: SupabaseClient<Database>,
   companyId: string
-): Promise<Record<Feature, boolean>> {
+): Promise<Partial<Record<Feature, boolean>>> {
+  if (CarbonEdition !== Edition.Enterprise) return {};
   const features = Object.keys(FEATURE_PLANS) as Feature[];
-  let allows = (feature: Feature): Promise<boolean> =>
-    companyHasFeature(client, companyId, { feature });
-  if (CarbonEdition === Edition.Cloud && !isBypassCompany(companyId)) {
-    // companyHasPlan's Cloud answer, with the plan read once: on a save the
-    // per-request memo is off, and 16 calls would read it 16 times.
-    const current = await getCompanyPlan(client, companyId);
-    let owned: Promise<boolean> | undefined;
-    allows = async (feature) =>
-      planMeetsRequirement(current, resolveRequirement({ feature })) ||
-      (owned ??= isCarbonOwnedCompany(companyId));
-  }
-  const answers = await Promise.all(features.map(allows));
+  const answers = await Promise.all(
+    features.map((feature) => companyHasFeature(client, companyId, { feature }))
+  );
   return Object.fromEntries(
     features.map((feature, i) => [feature, answers[i]])
-  ) as Record<Feature, boolean>;
+  );
 }
 
 /** Throws a redirect with flash when `companyHasFeature` is false. */

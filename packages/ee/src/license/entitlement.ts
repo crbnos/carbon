@@ -26,12 +26,14 @@ export type ResolvedLicence = {
   plan: Plan | null;
   overrides: Partial<Record<Feature, boolean>>;
   error: string | null;
-  licence: Pick<
-    LicenceView,
-    "mode" | "issued_at" | "terminates_at" | "seats"
-  > | null;
+  licence: LicenceView | null;
   clockSuspect: boolean;
-  checkIn: { status: string | null; seatsUsed: number | null };
+  checkIn: {
+    lastAt: string | null;
+    status: string | null;
+    error: string | null;
+    seatsUsed: number | null;
+  };
 };
 
 /**
@@ -67,11 +69,8 @@ export function enforcesWithoutLicence(edition: string, feature: Feature) {
 
 export type LicenceNotice = {
   reason: "terminated" | "none" | "expired" | "check-in" | "seats" | "clock";
-  /** Always "warning" in a preview: nothing is turned off yet. */
-  severity: "destructive" | "warning";
   /** The end of the grace period, for "expired". */
   until: string | null;
-  preview: boolean;
 };
 
 const CHECK_IN_STALE_DAYS = 3;
@@ -79,22 +78,16 @@ const CHECK_IN_STALE_DAYS = 3;
 /** The one notice to show, most serious first, or null. */
 export function pickLicenceNotice(
   licence: ResolvedLicence,
-  { now, enforced }: { now: ZonedDateTime; enforced: boolean }
+  now: ZonedDateTime
 ): LicenceNotice | null {
-  const notice = (
-    reason: LicenceNotice["reason"],
-    severity: LicenceNotice["severity"]
-  ): LicenceNotice => ({
+  const notice = (reason: LicenceNotice["reason"]): LicenceNotice => ({
     reason,
-    severity: enforced ? severity : "warning",
-    until: licence.licence?.terminates_at ?? null,
-    preview: !enforced
+    until: licence.licence?.terminates_at ?? null
   });
 
-  if (licence.status === "terminated")
-    return notice("terminated", "destructive");
-  if (licence.kind === "floor") return notice("none", "destructive");
-  if (licence.status === "expired") return notice("expired", "warning");
+  if (licence.status === "terminated") return notice("terminated");
+  if (licence.kind === "floor") return notice("none");
+  if (licence.status === "expired") return notice("expired");
 
   // A connected licence renews daily, so its issue date is its last success.
   const issuedAt = licence.licence?.issued_at;
@@ -106,14 +99,12 @@ export function pickLicenceNotice(
       .add({ days: CHECK_IN_STALE_DAYS })
       .compare(now) < 0
   ) {
-    return notice("check-in", "warning");
+    return notice("check-in");
   }
 
   const seats = licence.licence?.seats;
   const used = licence.checkIn.seatsUsed;
-  if (seats != null && used != null && used > seats) {
-    return notice("seats", "warning");
-  }
-  if (licence.clockSuspect) return notice("clock", "warning");
+  if (seats != null && used != null && used > seats) return notice("seats");
+  if (licence.clockSuspect) return notice("clock");
   return null;
 }

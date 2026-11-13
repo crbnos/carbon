@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { LicenceNotice } from "@carbon/ee/license";
+import { LICENCE_ENFORCED, type LicenceNotice } from "@carbon/ee/license";
 import { Alert, AlertDescription } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -26,13 +26,13 @@ export function LicenceBanner({ notice }: { notice: LicenceNotice | null }) {
   }[notice.reason];
   const consequence = !dropsFeatures
     ? null
-    : notice.preview
-      ? t`Paid features will turn off once licenses are enforced.`
-      : t`Paid features are off.`;
+    : LICENCE_ENFORCED
+      ? t`Paid features are off.`
+      : t`Paid features will turn off once licenses are enforced.`;
 
   return (
     <Alert
-      variant={notice.severity}
+      variant={dropsFeatures && LICENCE_ENFORCED ? "destructive" : "warning"}
       className="rounded-none border-x-0 border-t-0 py-2 items-center"
     >
       <LuTriangleAlert />

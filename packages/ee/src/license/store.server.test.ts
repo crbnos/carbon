@@ -40,8 +40,8 @@ describe("licence store", () => {
     });
   });
 
-  it("reads a missing key as null", async () => {
-    expect(await readStoredLicence()).toBeNull();
+  it("reads a missing key as empty", async () => {
+    expect(await readStoredLicence()).toEqual(EMPTY_STORED);
   });
 
   it("reads a field that does not parse as missing", async () => {
@@ -64,8 +64,8 @@ describe("licence store", () => {
     });
   });
 
-  it("reads an outage as null", async () => {
+  it("reads an outage as empty", async () => {
     hash.value = null;
-    expect(await readStoredLicence()).toBeNull();
+    expect(await readStoredLicence()).toEqual(EMPTY_STORED);
   });
 });
