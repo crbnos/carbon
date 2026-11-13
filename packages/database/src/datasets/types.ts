@@ -201,7 +201,9 @@ export type PrinterRouteSpec = {
   /**
    * Make the route the plant's default printer (Settings → Printing). Every
    * context at the plant inherits it, so travelers and finished-good labels
-   * reach it. Off for the onboarding demos: their printer URLs are fake.
+   * reach it; the kanban context does not auto-print, since a kanban card
+   * cannot print on this route's label media. Other locations' assignments
+   * are kept. Off for the onboarding demos: their printer URLs are fake.
    */
   plantDefault?: boolean;
 };

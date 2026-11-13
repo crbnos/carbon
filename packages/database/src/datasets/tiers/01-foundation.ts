@@ -571,22 +571,32 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       // The shape of emptyLocationAssignment (@carbon/printing) with the
       // default set; the contexts and work centers inherit it.
       const inherit = { printerRouteId: null, autoPrint: true };
-      const printing = {
-        assignments: {
-          [plantId]: {
-            defaultPrinterRouteId: printerRouteId,
-            defaultAutoPrint: true,
-            shipping: inherit,
-            receiving: inherit,
-            inventory: inherit,
-            kanban: inherit,
-            workCenters: {}
-          }
-        }
+      const plantAssignment = {
+        defaultPrinterRouteId: printerRouteId,
+        defaultAutoPrint: true,
+        shipping: inherit,
+        receiving: inherit,
+        inventory: inherit,
+        // A kanban card needs media of at least 3" x 2", and this route has
+        // no media size, so the print worker would render the card on
+        // label2x1 and the kanban renderer refuses that. A context with no
+        // route of its own always falls back to the location default
+        // (resolveContextAssignment), so kanban cannot opt out of the route;
+        // it opts out of auto-print instead, and creating a kanban queues no
+        // job that is sure to fail.
+        kanban: { printerRouteId: null, autoPrint: false },
+        workCenters: {}
       };
+      // Set only this plant's entry: the assignments of other locations stay.
       await ctx.client.query(
-        `UPDATE "companySettings" SET printing = $1 WHERE id = $2`,
-        [JSON.stringify(printing), companyId]
+        `UPDATE "companySettings"
+         SET printing = COALESCE(printing, '{}'::jsonb) || jsonb_build_object(
+           'assignments',
+           COALESCE(printing -> 'assignments', '{}'::jsonb)
+             || jsonb_build_object($2::text, $1::jsonb)
+         )
+         WHERE id = $3`,
+        [JSON.stringify(plantAssignment), plantId, companyId]
       );
     }
   }

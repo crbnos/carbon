@@ -1112,11 +1112,29 @@ export const manifest = {
     update: inCompany("companyId", "parts_update"),
     delete: inCompany("companyId", "parts_delete")
   }),
-  // Any employee raises a "Need material" request. A line feeder
-  // (inventory_update) or its author resolves it. USING is also the CHECK,
-  // so an update never moves a row to another company.
+  // Any employee raises a "Need material" request, as its author: the insert
+  // requires createdBy to be the caller, so a request cannot be filed in
+  // another user's name (and give that user the author's resolve right). A
+  // line feeder (inventory_update) or its author resolves it. USING is also
+  // the CHECK, so an update never moves a row to another company.
   materialRequest: company("inventory", {
-    create: "employee",
+    // The operation and the item it names must be the request's own company:
+    // their FKs are single-column (jobOperation and item have no unique
+    // (id, companyId) to point a composite FK at).
+    create: and(
+      owner("createdBy"),
+      inCompany("companyId", "employee"),
+      or(
+        isNull("jobOperationId"),
+        exists("jobOperation", "jobOperationId", "employee", {
+          sameCompany: true
+        })
+      ),
+      or(
+        isNull("itemId"),
+        exists("item", "itemId", "employee", { sameCompany: true })
+      )
+    ),
     update: or(
       inCompany("companyId", "inventory_update"),
       and(owner("createdBy"), inCompany("companyId", "employee"))

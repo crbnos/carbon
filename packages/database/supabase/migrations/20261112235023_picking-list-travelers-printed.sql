@@ -9,7 +9,17 @@ ALTER TABLE "pickingList"
 
 -- A list that has left Draft already had its travelers printed (or was picked
 -- before travelers existed): do not print them again on its next pick.
+--
+-- The backfill is data, not a change anyone made: app.sync_in_progress keeps
+-- dispatch_event_batch from queueing an UPDATE event per row (for the first
+-- row's company only). The lock timeout makes the migration fail and run
+-- again behind a long transaction, instead of queueing every picker behind it.
+SET lock_timeout = '5s';
+SET LOCAL "app.sync_in_progress" = 'true';
+
 UPDATE "pickingList"
 SET "travelersPrintedAt" = COALESCE("updatedAt", "createdAt")
 WHERE "status" <> 'Draft'
   AND "travelersPrintedAt" IS NULL;
+
+RESET lock_timeout;

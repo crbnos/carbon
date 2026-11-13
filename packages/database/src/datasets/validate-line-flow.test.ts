@@ -216,4 +216,49 @@ describe("line-flow validation", () => {
     expect(violations).toHaveLength(1);
     expect(violations[0]).toContain("inventory.onHandTracked");
   });
+
+  it("refuses a serial that is a genealogy input readableId", () => {
+    const input = motor.production.genealogyInputs[0]!.readableId;
+    const violations = violationsOn(
+      withJobs({ ready: { serials: [input, ...serialsOf("M45", 3)] } }),
+      "serials"
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toContain("production.genealogyInputs");
+  });
+
+  it("refuses a serial that is the genealogy assembly serial", () => {
+    const serial = motor.production.genealogyAssembly!.serial.readableId;
+    const violations = violationsOn(
+      withJobs({ ready: { serials: [serial, ...serialsOf("M45", 3)] } }),
+      "serials"
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toContain("production.genealogyAssembly");
+  });
+
+  it("accepts fractional tracked lots that sum to the opening stock", () => {
+    const dataset = withLineFlow({
+      inventory: {
+        openingStock: motor.inventory.openingStock.map((stock) =>
+          stock.item === "MAG-NDFB-38" && stock.shelf === "Magnet-Vault"
+            ? { ...stock, qty: 0.3 }
+            : stock
+        ),
+        onHandTracked: motor.inventory.onHandTracked.map((tracked) =>
+          tracked.item === "MAG-NDFB-38"
+            ? {
+                ...tracked,
+                shelf: "Magnet-Vault",
+                entities: [
+                  { readableId: "LOT-MAG38-2606", quantity: 0.1 },
+                  { readableId: "LOT-MAG38-2607", quantity: 0.2 }
+                ]
+              }
+            : tracked
+        )
+      }
+    });
+    expect(violationsOn(dataset, "entity quantities")).toEqual([]);
+  });
 });

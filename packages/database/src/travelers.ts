@@ -8,6 +8,7 @@
 
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types.ts";
+import { fetchAllByIds, fetchAllRecords } from "./utils.ts";
 
 /** A list in one of these statuses has not started, so its travelers wait. */
 export const TRAVELER_UNSTARTED_STATUSES = ["Draft", "Cancelled"] as const;
@@ -51,18 +52,41 @@ export async function claimTravelerPrint(
   };
 }
 
+/**
+ * Gives back a claim whose print could not be queued, so the next pick or
+ * status change tries again. It clears `travelersPrintedAt` only while it
+ * still holds the `at` this caller claimed with, so it never undoes another
+ * call's claim.
+ */
+export async function releaseTravelerPrintClaim(
+  client: SupabaseClient<Database>,
+  args: { pickingListId: string; companyId: string; at: string }
+): Promise<{ error: PostgrestError | null }> {
+  const result = await client
+    .from("pickingList")
+    .update({ travelersPrintedAt: null })
+    .eq("id", args.pickingListId)
+    .eq("companyId", args.companyId)
+    .eq("travelersPrintedAt", args.at);
+  return { error: result.error };
+}
+
 export type OperationLabelInput = {
   isFirstOperation: boolean;
   isLastOperation: boolean;
   isTopLevelMakeMethod: boolean;
   travelerLabels: boolean;
+  /** A traveler has printed for the unit's job: a picking list with a line
+   *  for the job has `travelersPrintedAt` set. */
+  travelerPrinted: boolean;
   printLabelOnCompletion: boolean;
 };
 
 /**
  * The last operation of the top-level make method prints the finished-unit
- * label when the flag is on. The first operation prints the unit label only
- * when travelers do not already carry it.
+ * label when the flag is on. The first operation prints the unit label unless
+ * travelers carry it: `travelerLabels` is on AND a traveler has printed for
+ * the job. A job whose travelers never printed still gets its unit label.
  */
 export function shouldPrintOperationLabel(input: OperationLabelInput): boolean {
   if (
@@ -72,12 +96,15 @@ export function shouldPrintOperationLabel(input: OperationLabelInput): boolean {
   ) {
     return true;
   }
-  return input.isFirstOperation && !input.travelerLabels;
+  return (
+    input.isFirstOperation && !(input.travelerLabels && input.travelerPrinted)
+  );
 }
 
 /**
  * The live units of the top-level make methods of every job on a picking
- * list, in serial order (as `getTrackedEntitiesByMakeMethodId`).
+ * list, in serial order (as `getTrackedEntitiesByMakeMethodId`). Every read is
+ * paged with a stable order, so a list past the row cap prints every unit.
  */
 export async function getPickingListTravelerEntities(
   client: SupabaseClient<Database>,
@@ -95,11 +122,14 @@ export async function getPickingListTravelerEntities(
     return { data: null, readableId: null, error: pickingList.error };
   }
 
-  const lines = await client
-    .from("pickingListLine")
-    .select("jobId")
-    .eq("pickingListId", pickingListId)
-    .eq("companyId", companyId);
+  const lines = await fetchAllRecords(() =>
+    client
+      .from("pickingListLine")
+      .select("jobId")
+      .eq("pickingListId", pickingListId)
+      .eq("companyId", companyId)
+      .order("id")
+  );
   if (lines.error) {
     return { data: null, readableId: null, error: lines.error };
   }
@@ -112,12 +142,15 @@ export async function getPickingListTravelerEntities(
     };
   }
 
-  const makeMethods = await client
-    .from("jobMakeMethod")
-    .select("id")
-    .in("jobId", jobIds)
-    .is("parentMaterialId", null)
-    .eq("companyId", companyId);
+  const makeMethods = await fetchAllByIds(jobIds, (batch) =>
+    client
+      .from("jobMakeMethod")
+      .select("id")
+      .in("jobId", batch)
+      .is("parentMaterialId", null)
+      .eq("companyId", companyId)
+      .order("id")
+  );
   if (makeMethods.error) {
     return { data: null, readableId: null, error: makeMethods.error };
   }
@@ -130,22 +163,40 @@ export async function getPickingListTravelerEntities(
     };
   }
 
-  const trackedEntities = await client
-    .from("trackedEntity")
-    .select("*")
-    .in("attributes->>Job Make Method", makeMethodIds)
-    .eq("companyId", companyId)
-    .not("status", "in", "(Consumed,Rejected,Scrapped)")
-    .order("createdAt", { ascending: true })
-    .order("readableId", { ascending: true })
-    .order("id", { ascending: true });
+  const trackedEntities = await fetchAllByIds(makeMethodIds, (batch) =>
+    client
+      .from("trackedEntity")
+      .select("*")
+      .in("attributes->>Job Make Method", batch)
+      .eq("companyId", companyId)
+      .not("status", "in", "(Consumed,Rejected,Scrapped)")
+      .order("createdAt", { ascending: true })
+      .order("readableId", { ascending: true })
+      .order("id", { ascending: true })
+  );
   if (trackedEntities.error) {
     return { data: null, readableId: null, error: trackedEntities.error };
   }
+  // Groups of make methods come back one after another; serial order is
+  // across the whole list, so sort once (the order the query sends).
+  const units = [...trackedEntities.data].sort(
+    (a, b) =>
+      compareText(a.createdAt, b.createdAt) ||
+      compareText(a.readableId, b.readableId) ||
+      compareText(a.id, b.id)
+  );
 
   return {
-    data: trackedEntities.data,
+    data: units,
     readableId: pickingList.data.pickingListId,
     error: null
   };
+}
+
+// Byte order, as Postgres compares the ISO timestamps and ids under "C".
+function compareText(a: string | null, b: string | null): number {
+  if (a === b) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return a < b ? -1 : 1;
 }

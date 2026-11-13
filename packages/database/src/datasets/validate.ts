@@ -2305,10 +2305,15 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
       if (tracked.entities.some((entity) => entity.status === "Scrapped")) {
         fail(`${where}: a Scrapped entity cannot sit on a tracked shelf`);
       }
-      const lotSum = tracked.entities.reduce((sum, e) => sum + e.quantity, 0);
-      const opening = dataset.inventory.openingStock
-        .filter((s) => s.item === tracked.item && s.shelf === tracked.shelf)
-        .reduce((sum, s) => sum + s.qty, 0);
+      // Compared at database precision: 0.1 + 0.2 is not 0.3 in floats.
+      const lotSum = round(
+        tracked.entities.reduce((sum, e) => sum + e.quantity, 0)
+      );
+      const opening = round(
+        dataset.inventory.openingStock
+          .filter((s) => s.item === tracked.item && s.shelf === tracked.shelf)
+          .reduce((sum, s) => sum + s.qty, 0)
+      );
       if (lotSum !== opening) {
         fail(
           `${where}: entity quantities sum to ${lotSum}, not the openingStock ${opening} at "${tracked.shelf}"`
@@ -4307,11 +4312,28 @@ export function jobs(ctx: ValidationCtx): void {
   const seenOperationStatuses = new Set<string>();
   const seenQuantityTypes = new Set<string>();
   const { documentRefs } = ix;
-  const onHandTrackedIds = new Set(
-    dataset.inventory.onHandTracked.flatMap((tracked) =>
-      tracked.entities.map((entity) => entity.readableId)
-    )
-  );
+  // Every other tracked entity the dataset seeds, by readableId: tier 06
+  // inserts each job serial as its own entity, so a serial equal to one of
+  // these would put two entities under one id.
+  const otherTrackedIds = new Map<string, string>();
+  for (const id of ix.lots.onHandIds) {
+    otherTrackedIds.set(id, "an inventory.onHandTracked readableId");
+  }
+  for (const id of ix.lots.receiptLotIds) {
+    otherTrackedIds.set(id, "a purchasing receipt lotNumber");
+  }
+  for (const input of dataset.production.genealogyInputs) {
+    otherTrackedIds.set(
+      input.readableId,
+      "a production.genealogyInputs readableId"
+    );
+  }
+  if (dataset.production.genealogyAssembly) {
+    otherTrackedIds.set(
+      dataset.production.genealogyAssembly.serial.readableId,
+      "the production.genealogyAssembly serial readableId"
+    );
+  }
   const jobSerials = new Set<string>();
   for (const [jobIndex, job] of dataset.production.jobs.entries()) {
     const seen = documentRefs.seenBy.jobs[jobIndex]!;
@@ -4333,10 +4355,9 @@ export function jobs(ctx: ValidationCtx): void {
           fail(`${where}: serials "${serial}" repeats across jobs`);
         }
         jobSerials.add(serial);
-        if (onHandTrackedIds.has(serial)) {
-          fail(
-            `${where}: serials "${serial}" is an inventory.onHandTracked readableId`
-          );
+        const collision = otherTrackedIds.get(serial);
+        if (collision !== undefined) {
+          fail(`${where}: serials "${serial}" is ${collision}`);
         }
       }
     }

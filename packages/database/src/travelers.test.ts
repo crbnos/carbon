@@ -134,6 +134,7 @@ function base(
     isLastOperation: false,
     isTopLevelMakeMethod: true,
     travelerLabels: false,
+    travelerPrinted: false,
     printLabelOnCompletion: false,
     ...overrides
   };
@@ -146,12 +147,32 @@ describe("shouldPrintOperationLabel", () => {
     );
   });
 
-  it("skips the first operation when travelers carry the label", () => {
+  it("skips the first operation when a printed traveler carries the label", () => {
+    expect(
+      shouldPrintOperationLabel(
+        base({
+          isFirstOperation: true,
+          travelerLabels: true,
+          travelerPrinted: true
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("prints at the first operation when no traveler has printed for the job", () => {
     expect(
       shouldPrintOperationLabel(
         base({ isFirstOperation: true, travelerLabels: true })
       )
-    ).toBe(false);
+    ).toBe(true);
+  });
+
+  it("prints at the first operation when travelers are off, even if one printed before", () => {
+    expect(
+      shouldPrintOperationLabel(
+        base({ isFirstOperation: true, travelerPrinted: true })
+      )
+    ).toBe(true);
   });
 
   it("prints at the last top-level operation with the completion flag", () => {
@@ -181,6 +202,7 @@ describe("shouldPrintOperationLabel", () => {
           isFirstOperation: true,
           isLastOperation: true,
           travelerLabels: true,
+          travelerPrinted: true,
           printLabelOnCompletion: true
         })
       )

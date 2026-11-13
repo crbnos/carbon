@@ -813,6 +813,9 @@ msgstr "Korekta: {correctionName}"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Koszt nieplanowanego utrzymania ruchu, ostatnie {0} dni"
 
+msgid "Could not load the line feed"
+msgstr ""
+
 msgid "Could not look up this label. Try again."
 msgstr ""
 
@@ -3134,6 +3137,9 @@ msgstr "Partia będzie nadal dyspozycjonowana, ale nie można utworzyć NCR, dop
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Czasomierz i zakończenie są wspólne dla wszystkich {0} zleceń produkcyjnych. Kroki, materiały i pliki tutaj należą do tego zlecenia produkcyjnego."
 
+msgid "The unit changed. Scan again."
+msgstr ""
+
 msgid "The values break a rule on this record."
 msgstr "Wartości naruszają regułę dla tego rekordu."
 
@@ -3328,6 +3334,9 @@ msgid "Transfer"
 msgstr ""
 
 msgid "Traveler"
+msgstr ""
+
+msgid "Try again"
 msgstr ""
 
 msgid "Two-factor authentication"
