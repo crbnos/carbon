@@ -4,6 +4,7 @@
 
 /// <reference types="node" />
 import { createHash } from "node:crypto";
+import { getLogger } from "@carbon/logger";
 import { FlagdCore } from "@openfeature/flagd-core";
 import flagdCorePackage from "@openfeature/flagd-core/package.json";
 import {
@@ -40,12 +41,13 @@ const BOOT_WAIT_MS = 2_000;
 const BOOT_POLL_MS = 250;
 const MAX_BODY_BYTES = 1 << 20;
 
+const logger = getLogger("env", "flags");
+
 type WarnFn = (message: string, properties: Record<string, unknown>) => void;
 
 // The default when the app passes no `onWarning`.
-const consoleWarn: WarnFn = (message, properties) => {
-  // biome-ignore lint/suspicious/noConsole: @carbon/logger depends on this package
-  console.warn(`flags: ${message}`, properties);
+const logWarning: WarnFn = (message, properties) => {
+  logger.warning(message, properties);
 };
 
 /**
@@ -63,11 +65,11 @@ export function parseHeaders(raw = ""): Record<string, string> {
       // Header names are case-insensitive: keep one spelling, the last wins.
       const name = decodeURIComponent(key).toLowerCase();
       if (name in headers) {
-        consoleWarn("A CARBON_FLAGS_HEADERS name appears twice", { name });
+        logWarning("A CARBON_FLAGS_HEADERS name appears twice", { name });
       }
       headers[name] = decodeURIComponent(pair.slice(i + 1).trim());
     } catch {
-      consoleWarn("Skipping a malformed CARBON_FLAGS_HEADERS pair", { key });
+      logWarning("Skipping a malformed CARBON_FLAGS_HEADERS pair", { key });
     }
   }
   return headers;
@@ -221,7 +223,7 @@ export class CarbonFlagsProvider implements Provider {
       .slice(0, 16);
     this.store = options.store;
     this.waitUntil = options.waitUntil;
-    this.onWarning = options.onWarning ?? consoleWarn;
+    this.onWarning = options.onWarning ?? logWarning;
     if (this.endpoint && this.mode === "none") {
       this.onWarning(
         "CARBON_FLAGS_ENDPOINT must be an https: or data: URL (http: only on localhost); using the code defaults",

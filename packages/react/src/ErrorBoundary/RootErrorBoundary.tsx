@@ -2,11 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { useEffect } from "react";
 import { isRouteErrorResponse, useNavigate } from "react-router";
 import { ErrorScreen, type ErrorScreenProps } from "./ErrorScreen";
 import { isNetworkError } from "./routeErrorCopy";
 import { useNetworkRetry } from "./useNetworkRetry";
+
+const logger = getLogger("react", "error-boundary");
 
 /**
  * VOID//SYS — drop-in root ErrorBoundary for React Router v7 (framework mode).
@@ -40,8 +43,7 @@ export function RootErrorBoundary({ error }: { error: unknown }) {
       : error instanceof Error
         ? error.message
         : String(error);
-    // biome-ignore lint/suspicious/noConsole: surfacing the swallowed error is the point
-    console.error(`[ErrorBoundary] ${summary}`, error);
+    logger.error("Root error boundary caught an error", { summary, error });
   }, [error]);
 
   const config = resolveConfig(

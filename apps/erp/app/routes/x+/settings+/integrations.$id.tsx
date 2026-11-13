@@ -311,7 +311,9 @@ async function getAccountMappingTabData(
   // what loaded and log the cause.
   for (const result of [mappings, unmapped, proposals, allAccounts, blocking]) {
     if (result.error) {
-      console.error("Failed to load account mapping data:", result.error);
+      logger.error("Failed to load account mapping data", {
+        error: result.error
+      });
     }
   }
 
@@ -391,7 +393,9 @@ async function getDimensionSyncTabData(
   // loaded and log the cause.
   for (const result of [dimensionsResult, mappingsResult, unmappedResult]) {
     if (result.error) {
-      console.error("Failed to load dimension sync data:", result.error);
+      logger.error("Failed to load dimension sync data", {
+        error: result.error
+      });
     }
   }
 
@@ -417,7 +421,7 @@ async function getDimensionSyncTabData(
       }))
     });
   } catch (err) {
-    console.error("Failed to resolve dimension value labels:", err);
+    logger.error("Failed to resolve dimension value labels", { error: err });
   }
 
   const mappings = mappingRows.map((mapping) => ({
@@ -671,7 +675,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     if (operations.error) {
       // Don't block the settings drawer on an inbox failure — render the
       // tab empty and log the cause.
-      console.error("Failed to load sync operations:", operations.error);
+      logger.error("Failed to load sync operations", {
+        error: operations.error
+      });
     }
 
     let tieOut: {
@@ -901,10 +907,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // stays empty.)
       chartAccounts = await provider.listChartOfAccounts();
     } catch (error) {
-      console.error(
-        "Failed to fetch QuickBooks Online accounts for settings:",
+      logger.error("Failed to fetch QuickBooks Online accounts for settings", {
         error
-      );
+      });
       // Continue without chart accounts — the Account Mapping tab renders
       // with Carbon accounts only
     }
@@ -930,7 +935,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // returned by listChartOfAccounts.
       chartAccounts = await provider.listChartOfAccounts();
     } catch (error) {
-      console.error("Failed to fetch Rillet accounts for settings:", error);
+      logger.error("Failed to fetch Rillet accounts for settings", { error });
       // Continue without chart accounts — the Account Mapping tab renders
       // with Carbon accounts only
     }

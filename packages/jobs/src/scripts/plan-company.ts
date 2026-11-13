@@ -18,6 +18,9 @@ import { parseArgs } from "node:util";
 const { planDemoCompany } = createRequire(import.meta.url)(
   "../demo-planning"
 ) as typeof import("../demo-planning");
+const { ensureLoggingConfigured } = createRequire(import.meta.url)(
+  "@carbon/logger/config.server"
+) as typeof import("@carbon/logger/config.server");
 
 function printUsage() {
   console.log(`
@@ -65,6 +68,9 @@ async function main() {
   }
 
   console.log(`\nPlanning company ${companyId}...`);
+  // planDemoCompany reports a skipped planning group through the logger,
+  // which drops everything until it is configured.
+  ensureLoggingConfigured();
   const result = await planDemoCompany({ companyId, userId });
 
   console.log(result.mrp === "ok" ? "  MRP ✓" : `  MRP ✗ ${result.mrp}`);

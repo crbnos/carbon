@@ -162,11 +162,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   //   request.headers.get("x-vercel-id")
   // );
 
-  // console.log({
-  //   computeRegion,
-  //   proxyRegion,
-  // });
-
   const client = getCarbonForRequest(accessToken, request);
 
   // The user's and the company's rows, in one round trip. Started here so the

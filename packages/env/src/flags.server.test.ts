@@ -23,6 +23,11 @@ import {
   type StoredFlags
 } from "./flags.server";
 
+const { loggerWarning } = vi.hoisted(() => ({ loggerWarning: vi.fn() }));
+vi.mock("@carbon/logger", () => ({
+  getLogger: () => ({ warning: loggerWarning })
+}));
+
 type Rule = Record<string, unknown>;
 
 const flagDoc = (
@@ -138,7 +143,7 @@ async function start(provider: CarbonFlagsProvider) {
 
 describe("parseHeaders", () => {
   it("keeps '+', decodes '%2C' and '=', and skips a malformed pair", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const warn = loggerWarning.mockClear();
     expect(
       parseHeaders(
         "Authorization=Bearer%20ab+c%2Cd=,X-Bad=%zz, X-Carbon-Instance = inst_1,no-equals"
@@ -428,7 +433,7 @@ describe("CarbonFlagsProvider", () => {
   });
 
   it("warns once per archived flag that the code reads", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const warn = loggerWarning.mockClear();
     doc = flagDoc(companyRule(["cmp_123"]), { archived: true });
     const read = await start(new CarbonFlagsProvider({ endpoint: url }));
     await read("cmp_123");

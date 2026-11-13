@@ -356,9 +356,9 @@ export default function LoginRoute() {
   const logoutReason = searchParams.get("reason");
   useEffect(() => {
     if (logoutReason) {
-      // biome-ignore lint/suspicious/noConsole: surfacing the silent logout is the point
-      console.warn(
-        `[carbon:auth] Session was destroyed server-side (reason: ${logoutReason}). See server logs for the full record.`
+      getLogger("erp", "login").warning(
+        "Session was destroyed server-side; see server logs for the full record",
+        { reason: logoutReason }
       );
     }
   }, [logoutReason]);

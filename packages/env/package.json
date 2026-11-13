@@ -20,6 +20,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@carbon/logger": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@openfeature/core": "catalog:",
     "@openfeature/flagd-core": "catalog:",

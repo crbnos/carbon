@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
+
 /**
  * For an index route whose loader only redirects
  * (`/x/issue/:id` → `/x/issue/:id/details`, `/x/settings` → its first page):
@@ -37,6 +39,8 @@ export function redirectBeforeLoaders<Args extends { request: Request }>(
     return next();
   };
 }
+
+const logger = getLogger("utils", "redirect");
 
 const HOME = "/";
 
@@ -84,7 +88,7 @@ function redirectResponse(url: string, init: number | ResponseInit = 302) {
  */
 export function redirect(to: RedirectTarget, init?: number | ResponseInit) {
   if (!isOwnPath(to)) {
-    if (to) console.warn("redirect: refused a target off this origin", { to });
+    if (to) logger.warning("Refused a redirect target off this origin", { to });
     return redirectResponse(HOME, init);
   }
   return redirectResponse(to, init);
@@ -102,7 +106,7 @@ export function redirectExternal(url: string, init?: number | ResponseInit) {
     // not an absolute URL
   }
   if (protocol !== "https:" && protocol !== "http:") {
-    console.warn("redirectExternal: refused a URL that is not http(s)", {
+    logger.warning("Refused an external redirect URL that is not http(s)", {
       url
     });
     return redirectResponse(HOME, init);

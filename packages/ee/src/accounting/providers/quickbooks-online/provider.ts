@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { createHash } from "node:crypto";
+import { getLogger } from "@carbon/logger";
 import { z } from "zod";
 import type {
   CounterpartSearchKeys,
@@ -41,6 +42,8 @@ import {
   type QboUpdatePayload
 } from "./models";
 import { escapeQboQueryValue } from "./query";
+
+const logger = getLogger("ee", "accounting", "quickbooks");
 
 const QBO_PRODUCTION_HOST = "https://quickbooks.api.intuit.com";
 const QBO_SANDBOX_HOST = "https://sandbox-quickbooks.api.intuit.com";
@@ -233,7 +236,8 @@ export function throwQboApiError(
 
   const error = new AccountingApiError("quickbooks", operation, details);
 
-  console.error(`[QBO API Error] ${operation}`, {
+  logger.error("QuickBooks Online API error", {
+    operation,
     statusCode: details.statusCode,
     statusText: details.statusText,
     providerErrorType: details.providerErrorType,
@@ -630,7 +634,7 @@ export class QboProvider extends BaseProvider {
       const companyInfo = await this.getCompanyInfo();
       return companyInfo !== null;
     } catch (error) {
-      console.error("QuickBooks Online validate error:", error);
+      logger.error("QuickBooks Online validate error", { error });
       return false;
     }
   }
@@ -683,7 +687,7 @@ export class QboProvider extends BaseProvider {
         name: account.Name
       }));
     } catch (error) {
-      console.error("Failed to fetch QuickBooks Online accounts:", error);
+      logger.error("Failed to fetch QuickBooks Online accounts", { error });
       return [];
     }
   }
@@ -1248,9 +1252,9 @@ export class QboProvider extends BaseProvider {
     try {
       return await this.query<Qbo.Class>("Class", "Active = true");
     } catch (error) {
-      console.warn(
-        "Failed to fetch QuickBooks Online classes (class tracking likely unavailable on this plan):",
-        error
+      logger.warning(
+        "Failed to fetch QuickBooks Online classes (class tracking likely unavailable on this plan)",
+        { error }
       );
       return [];
     }
@@ -1264,9 +1268,9 @@ export class QboProvider extends BaseProvider {
     try {
       return await this.query<Qbo.Department>("Department", "Active = true");
     } catch (error) {
-      console.warn(
-        "Failed to fetch QuickBooks Online departments (location tracking likely unavailable on this plan):",
-        error
+      logger.warning(
+        "Failed to fetch QuickBooks Online departments (location tracking likely unavailable on this plan)",
+        { error }
       );
       return [];
     }
@@ -1303,7 +1307,9 @@ export class QboProvider extends BaseProvider {
       await this.query<Qbo.Class>("Class", "Active = true", 1, 1);
       targets.push({ id: QBO_DIMENSION_TARGET_CLASS, label: "Class" });
     } catch (error) {
-      console.warn("QBO class tracking unavailable; omitting target:", error);
+      logger.warning("QBO class tracking unavailable; omitting target", {
+        error
+      });
     }
 
     try {
@@ -1313,10 +1319,9 @@ export class QboProvider extends BaseProvider {
         label: "Department"
       });
     } catch (error) {
-      console.warn(
-        "QBO department tracking unavailable; omitting target:",
+      logger.warning("QBO department tracking unavailable; omitting target", {
         error
-      );
+      });
     }
 
     return targets;
@@ -1366,10 +1371,10 @@ export class QboProvider extends BaseProvider {
           for (const record of records) {
             const parsed = CdcRecordSchema.safeParse(record);
             if (!parsed.success) {
-              console.warn(
-                `[QBO CDC] Skipping unparseable ${entityName} record:`,
-                parsed.error.issues
-              );
+              logger.warning("Skipping unparseable QBO CDC record", {
+                entityName,
+                issues: parsed.error.issues
+              });
               continue;
             }
 
@@ -1425,9 +1430,9 @@ export class QboProvider extends BaseProvider {
           entry.entityName
         ] ?? null;
       if (!entityType) {
-        console.warn(
-          `[QBO] ignoring CDC change for unmapped entity "${entry.entityName}"`
-        );
+        logger.warning("Ignoring QBO CDC change for unmapped entity", {
+          entityName: entry.entityName
+        });
         continue;
       }
 
@@ -1486,19 +1491,20 @@ export class QboProvider extends BaseProvider {
         ? await this.getBillPayment(entry.id)
         : await this.getPayment(entry.id);
     if (!remote) {
-      console.warn(
-        `[QBO] ${entry.entityName} ${entry.id} not found on refetch — skipping`
-      );
+      logger.warning("QBO payment not found on refetch; skipping", {
+        entityName: entry.entityName,
+        id: entry.id
+      });
       return null;
     }
 
     const built = buildQboPaymentSyncChange(remote, family);
     if (!built) {
-      console.warn(
-        `[QBO] ${entry.entityName} ${entry.id} settles no ${
-          family === "ap" ? "Bill" : "Invoice"
-        } — skipping`
-      );
+      logger.warning("QBO payment settles no bill or invoice; skipping", {
+        entityName: entry.entityName,
+        id: entry.id,
+        expected: family === "ap" ? "Bill" : "Invoice"
+      });
       return null;
     }
 

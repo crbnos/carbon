@@ -2291,6 +2291,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@carbon/logger':
+        specifier: workspace:*
+        version: link:../logger
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -2706,6 +2709,9 @@ importers:
 
   packages/env:
     dependencies:
+      '@carbon/logger':
+        specifier: workspace:*
+        version: link:../logger
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
@@ -4090,6 +4096,9 @@ importers:
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
+      '@carbon/logger':
+        specifier: workspace:*
+        version: link:../logger
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0

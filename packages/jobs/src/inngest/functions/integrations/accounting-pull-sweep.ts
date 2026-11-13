@@ -15,6 +15,7 @@ import {
   providerSupportsIncrementalPull,
   type SyncContext
 } from "@carbon/ee/accounting";
+import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
 /**
  * Generic accounting pull sweep — the correctness guarantee behind every
@@ -72,6 +73,8 @@ import {
   getSyncOperationIdempotencyKey,
   mergePullCursor
 } from "./accounting-sync-operations";
+
+const logger = getLogger("jobs", "accounting-pull-sweep");
 
 // Supabase caps a select at 1000 rows, and a very long .in() list can exceed
 // the request URL limit — chunk the dependency-mapping lookup so neither
@@ -160,8 +163,15 @@ export async function filterChangesByDependencyMapping(
         .in("externalId", idChunk);
 
       if (result.error) {
-        console.error(
-          `[PULL SWEEP] ${args.companyId}/${args.integration}: dependency mapping lookup failed for ${entityType} (${result.error.message}); keeping ${remoteIds.size} change(s) for the syncer's ownership gate`
+        logger.error(
+          "Dependency mapping lookup failed; keeping the changes for the syncer's ownership gate",
+          {
+            companyId: args.companyId,
+            integration: args.integration,
+            entityType,
+            changes: remoteIds.size,
+            error: result.error
+          }
         );
         lookupFailed = true;
         break;
@@ -229,9 +239,12 @@ async function sweepCompanyProvider(args: {
   summary.changedSince = cursorDecision.changedSince;
   summary.clamped = cursorDecision.clamped;
   if (cursorDecision.clamped) {
-    console.warn(
-      `[PULL SWEEP] ${companyId}/${providerId}: cursor predates the ${provider.pullLookbackDays}-day change-feed window; clamped to ${cursorDecision.changedSince} — changes before the window are recovered by two-way owner semantics or a backfill`
-    );
+    logger.warning("Pull cursor predates the change-feed window; clamped", {
+      companyId,
+      providerId,
+      lookbackDays: provider.pullLookbackDays,
+      changedSince: cursorDecision.changedSince
+    });
   }
 
   const listed = await provider.listChanges({
@@ -276,9 +289,13 @@ async function sweepCompanyProvider(args: {
 
     if (enqueued.error) {
       summary.enqueueErrors++;
-      console.error(
-        `[PULL SWEEP] ${companyId}/${providerId}: failed to enqueue ${entityType} ${entityId}: ${enqueued.error}`
-      );
+      logger.error("Failed to enqueue a pulled change", {
+        companyId,
+        providerId,
+        entityType,
+        entityId,
+        error: enqueued.error
+      });
     } else if (enqueued.data) {
       summary.enqueued++;
     } else {
@@ -301,9 +318,11 @@ async function sweepCompanyProvider(args: {
         });
         if (composites.length === 0) {
           summary.deletedSkipped++;
-          console.info(
-            `[PULL SWEEP] ${companyId}/${providerId}: deleted payment ${change.remoteId} has no local mapping — skipping (never synced or not ours)`
-          );
+          logger.info("Deleted payment has no local mapping; skipping", {
+            companyId,
+            providerId,
+            remoteId: change.remoteId
+          });
           continue;
         }
         for (const composite of composites) {
@@ -313,8 +332,14 @@ async function sweepCompanyProvider(args: {
       }
 
       summary.deletedSkipped++;
-      console.info(
-        `[PULL SWEEP] ${companyId}/${providerId}: skipping deleted ${change.entityType} ${change.remoteId} (remote deletions are not synced)`
+      logger.info(
+        "Skipping a remote deletion; remote deletions are not synced",
+        {
+          companyId,
+          providerId,
+          entityType: change.entityType,
+          remoteId: change.remoteId
+        }
       );
       continue;
     }
@@ -345,8 +370,14 @@ async function sweepCompanyProvider(args: {
   // Failed rows with UI retry, so they do not hold the cursor back) or was
   // terminally logged-and-skipped (deletions, absent dependency mappings).
   if (summary.enqueueErrors > 0) {
-    console.warn(
-      `[PULL SWEEP] ${companyId}/${providerId}: ${summary.enqueueErrors} enqueue error(s); holding the cursor at ${cursorDecision.changedSince} so the next run re-fetches the window`
+    logger.warning(
+      "Enqueue errors; holding the pull cursor so the next run re-fetches the window",
+      {
+        companyId,
+        providerId,
+        enqueueErrors: summary.enqueueErrors,
+        changedSince: cursorDecision.changedSince
+      }
     );
     return summary;
   }

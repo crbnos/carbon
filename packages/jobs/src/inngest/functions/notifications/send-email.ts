@@ -83,7 +83,7 @@ export const sendEmailFunction = inngest.createFunction(
           p_user_id: tracking.userId
         });
         if (error) {
-          console.error("Failed to record notification delivery", error);
+          logger.error("Failed to record notification delivery", { error });
           throw error;
         }
       });

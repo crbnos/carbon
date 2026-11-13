@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { createHash } from "node:crypto";
+import { getLogger } from "@carbon/logger";
 import type {
   CounterpartSearchKeys,
   ExternalIdentityKind,
@@ -53,6 +54,8 @@ import type {
   RilletVendorWrite
 } from "./models";
 import { readCarbonExternalReference } from "./references";
+
+const logger = getLogger("ee", "accounting", "rillet");
 
 const RILLET_PRODUCTION_HOST = "https://api.rillet.com";
 const RILLET_SANDBOX_HOST = "https://sandbox.api.rillet.com";
@@ -181,7 +184,8 @@ export function throwRilletApiError(
 
   const error = new AccountingApiError("rillet", operation, details);
 
-  console.error(`[Rillet API Error] ${operation}`, {
+  logger.error("Rillet API error", {
+    operation,
     statusCode: details.statusCode,
     statusText: details.statusText,
     providerErrorType: details.providerErrorType,
@@ -553,7 +557,7 @@ export class RilletProvider extends BaseProvider {
       );
       return !response.error;
     } catch (error) {
-      console.error("Rillet validate error:", error);
+      logger.error("Rillet validate error", { error });
       return false;
     }
   }
@@ -591,7 +595,7 @@ export class RilletProvider extends BaseProvider {
           name: account.name ?? account.code!
         }));
     } catch (error) {
-      console.error("Failed to fetch Rillet accounts:", error);
+      logger.error("Failed to fetch Rillet accounts", { error });
       return [];
     }
   }
@@ -648,7 +652,7 @@ export class RilletProvider extends BaseProvider {
         (data) => data.subsidiaries as Rillet.Subsidiary[] | undefined
       );
     } catch (error) {
-      console.error("Failed to fetch Rillet subsidiaries:", error);
+      logger.error("Failed to fetch Rillet subsidiaries", { error });
       return [];
     }
   }
@@ -703,7 +707,7 @@ export class RilletProvider extends BaseProvider {
         capacity: 1
       }));
     } catch (error) {
-      console.error("Failed to fetch Rillet fields:", error);
+      logger.error("Failed to fetch Rillet fields", { error });
       return [];
     }
   }
@@ -1581,9 +1585,9 @@ export class RilletProvider extends BaseProvider {
     );
     for (const payment of invoicePayments) {
       if (!payment.invoice_id) {
-        console.warn(
-          `[Rillet] ignoring invoice payment ${payment.id} with no invoice_id`
-        );
+        logger.warning("Ignoring Rillet invoice payment with no invoice_id", {
+          paymentId: payment.id
+        });
         continue;
       }
       changes.push({
@@ -1603,9 +1607,9 @@ export class RilletProvider extends BaseProvider {
     const billPayments = await this.listBillPaymentsUpdatedSince(args.since);
     for (const payment of billPayments) {
       if (!payment.bill_id) {
-        console.warn(
-          `[Rillet] ignoring bill payment ${payment.id} with no bill_id`
-        );
+        logger.warning("Ignoring Rillet bill payment with no bill_id", {
+          paymentId: payment.id
+        });
         continue;
       }
       changes.push({

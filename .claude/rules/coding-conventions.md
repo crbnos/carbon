@@ -163,6 +163,14 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   React Router skips `handleError` for it, so an unlogged throw leaves no server trace.
 - Also log failures you deliberately swallow (best-effort cleanup, ignored
   `{ error }` results, `.catch(() => {})`).
+- Never `console.*` — Biome's `noConsole` is an error. `console.error(msg, err)`
+  prints a multi-line stack that the log collector stores as one levelless entry
+  per line; the logger writes one JSON record with the error inside. Message is
+  a fixed sentence, values go in the properties (`{ companyId, error }`).
+  Terminal tools are exempt in `biome.jsonc` / `packages/biome.jsonc` (scripts,
+  `src/scripts`, the CLIs, seeds, Deno edge functions); a script that calls code
+  which logs runs `ensureLoggingConfigured()` first, since the logger drops
+  everything before it is configured.
 - The body of a thrown 4xx `Response` is shown to the user on the route error
   screen (`routeErrorCopy`, `@carbon/react`), with its status. Write it for a
   person and say what was wrong ("The item could not be found…"); never pass a

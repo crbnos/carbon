@@ -77,8 +77,9 @@ export const webhookFunction = inngest.createFunction(
     );
 
     if (!entitled) {
-      console.warn(
-        `WEBHOOKS not enabled for company ${payload.companyId}; skipping webhook delivery`
+      logger.warn(
+        "Webhooks are not enabled for the company; skipping webhook delivery",
+        { companyId: payload.companyId }
       );
       return;
     }
