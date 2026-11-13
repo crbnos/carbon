@@ -64,7 +64,10 @@ fixed per-target default (macOS-arm `/opt/homebrew/opt/<pkg>`, Linux `/usr`) —
 `brew` shell-out, so the build is reproducible. OpenBLAS is the exception: the
 planner links it through `ndarray-linalg`'s `openblas-system`, whose
 openblas-src asks `brew --prefix openblas` on macOS and relies on the linker's
-default directories elsewhere.
+default directories elsewhere. A new system library (a bridge's `build.rs`
+link, a `*-system` crate feature) goes into `missingAssemblerDependencies`
+(`packages/dev/src/services/apps.ts`) and the README's assembler steps in the
+same PR, or a new machine finds it missing minutes into the build.
 
 **Deploy (Docker):** OCCT and FCL/ccd are **static-linked into the binary**, so the
 runtime image is just the ~24 MB binary + OpenBLAS/libstdc++ (no collision or OCCT
