@@ -275,6 +275,8 @@ describe("missingAssemblerDependencies", () => {
     "/usr/include/fcl",
     "/usr/include/draco",
     "/usr/lib/x86_64-linux-gnu/libopenblas.so",
+    "/usr/bin/pkg-config",
+    "/usr/include/openssl/ssl.h",
     occtBuild
   ];
   const machine = ({
@@ -299,6 +301,7 @@ describe("missingAssemblerDependencies", () => {
       "fcl",
       "draco",
       "openblas",
+      "openssl",
       "occt"
     ]);
   });
@@ -344,6 +347,7 @@ describe("missingAssemblerDependencies", () => {
       "/opt/fcl/include/fcl",
       "/opt/draco/include/draco",
       "/usr/lib64/libopenblas.so",
+      "/opt/openssl",
       "/opt/occt"
     ];
     const env = {
@@ -351,6 +355,7 @@ describe("missingAssemblerDependencies", () => {
       CARGO_HOME: "/cargo",
       FCL_PREFIX: "/opt/fcl",
       DRACO_PREFIX: "/opt/draco",
+      OPENSSL_DIR: "/opt/openssl",
       OCCT_PREFIX: "/opt/occt"
     };
     expect(missingAssemblerDependencies(machine({ env, files }))).toEqual([]);

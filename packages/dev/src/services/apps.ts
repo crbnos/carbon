@@ -283,6 +283,7 @@ export type AssemblerDependency =
   | "fcl"
   | "draco"
   | "openblas"
+  | "openssl"
   | "occt";
 
 export type MachineProbe = {
@@ -350,6 +351,20 @@ function onPath(machine: MachineProbe, command: string): boolean {
 }
 
 /**
+ * openblas-src's build-dependency openblas-build fetches over native-tls, which
+ * is `openssl-sys` everywhere but macOS. Off macOS that crate finds OpenSSL
+ * through `OPENSSL_DIR` or pkg-config only.
+ */
+function opensslInstalled(machine: MachineProbe): boolean {
+  if (machine.platform === "darwin") return true;
+  if (machine.env.OPENSSL_DIR) return machine.exists(machine.env.OPENSSL_DIR);
+  return (
+    onPath(machine, "pkg-config") &&
+    machine.exists("/usr/include/openssl/ssl.h")
+  );
+}
+
+/**
  * Every native dependency the assembler's build still lacks on this machine,
  * all at once, so one install round covers them. OCCT counts as built where
  * occt-bridge's build.rs would use it: `OCCT_PREFIX`, else the cache holding
@@ -371,6 +386,7 @@ export function missingAssemblerDependencies(
       join(bridgePrefix(machine, "draco", "DRACO"), "include", "draco")
     ),
     openblas: openblasInstalled(machine),
+    openssl: opensslInstalled(machine),
     occt: env.OCCT_PREFIX
       ? exists(env.OCCT_PREFIX)
       : exists(join(occtPrefix(env), "lib", "libTKernel.a"))
@@ -386,6 +402,7 @@ const DEPENDENCY_LABELS: Record<AssemblerDependency, string> = {
   fcl: "FCL, the collision library",
   draco: "Draco, the mesh compression library",
   openblas: "OpenBLAS, the planner's linear algebra",
+  openssl: "OpenSSL headers and pkg-config, for openblas-src's build",
   occt: "the OCCT build"
 };
 
@@ -401,6 +418,7 @@ const APT_PACKAGES: Partial<Record<AssemblerDependency, string>> = {
   fcl: "libfcl-dev",
   draco: "libdraco-dev",
   openblas: "libopenblas-dev",
+  openssl: "pkg-config libssl-dev",
   occt: "cmake ninja-build"
 };
 
