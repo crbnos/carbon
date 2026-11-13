@@ -29184,10 +29184,14 @@ async function assertUnitsNotInProduction(
   );
   const openOperations = await trx
     .selectFrom("jobOperation")
-    .select(["id", "jobMakeMethodId"])
-    .where("jobMakeMethodId", "in", makeMethodIds)
-    .where("companyId", "=", companyId)
-    .where("status", "not in", ["Done", "Canceled"])
+    .innerJoin("job", "job.id", "jobOperation.jobId")
+    .select(["jobOperation.id", "jobOperation.jobMakeMethodId"])
+    .where("jobOperation.jobMakeMethodId", "in", makeMethodIds)
+    .where("jobOperation.companyId", "=", companyId)
+    .where("jobOperation.status", "not in", ["Done", "Canceled"])
+    // A Completed or Closed job received its units: an operation it left
+    // open (a skipped non-terminal one) is not building them.
+    .where("job.status", "not in", ["Completed", "Closed"])
     .execute();
   if (openOperations.length === 0) return;
 

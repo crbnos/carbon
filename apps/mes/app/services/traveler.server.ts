@@ -421,10 +421,11 @@ export async function isUnitInProduction(
       .maybeSingle(),
     client
       .from("jobOperation")
-      .select("id")
+      .select("id, job!inner(status)")
       .eq("jobMakeMethodId", args.jobMakeMethodId)
       .eq("companyId", args.companyId)
       .not("status", "in", "(Done,Canceled)")
+      .not("job.status", "in", "(Completed,Closed)")
   ]);
   if (entity.error || operations.error) {
     log.error("Could not check whether the unit is in production", {
