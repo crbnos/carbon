@@ -2,14 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { RecordOutlet } from "@carbon/react";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
-import {
-  getApprovalCountForUser,
-  getBillingReviewCountForUser
-} from "~/modules/projects/projects.service";
+import { projectsSidebarCounts } from "~/modules/projects/projects.service";
 import type { Handle } from "~/utils/handle";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
@@ -20,23 +17,14 @@ export const meta: MetaFunction = () => {
 
 // No breadcrumb here: the detail route ($projectId.tsx) already emits the
 // "Projects" list link via detailBreadcrumb, so declaring it on the layout too
-// would render "Projects" twice. `module` keeps the navigation highlighted.
-export const handle: Handle = {
-  module: "projects"
-};
+// would render "Projects" twice.
+export const handle: Handle = {};
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "projects"
+  const { client, companyId, permissions } = await authorize(request, {
+    "projects.projects": "View"
   });
-
-  // Approvals counts submitted time and the contract billable items that
-  // wait for review.
-  const [approvalCount, billingReviewCount] = await Promise.all([
-    getApprovalCountForUser(client, { companyId, userId }),
-    getBillingReviewCountForUser(client, { companyId, userId })
-  ]);
-  return { approvalCount, billingReviewCount };
+  return projectsSidebarCounts(client, { companyId, permissions });
 }
 
 export default function ProjectRoute() {

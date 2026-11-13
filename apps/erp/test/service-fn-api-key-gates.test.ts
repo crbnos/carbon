@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { pageClaims } from "./page-claims";
 import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
 import { describe, expect, it } from "vitest";
 import {
@@ -31,11 +32,14 @@ const key = (
 ): Extract<Actor, { type: "apiKey" }> => ({
   type: "apiKey",
   createdBy: "user-1",
-  scopes: Object.fromEntries(
-    Object.entries(scopes).map(([module, actions]) => [
-      module,
-      { ...noScope, ...actions }
-    ])
+  // Module grants, expanded to every page of the module.
+  permissions: pageClaims(
+    Object.fromEntries(
+      Object.entries(scopes).map(([module, actions]) => [
+        module,
+        { ...noScope, ...actions }
+      ])
+    )
   )
 });
 

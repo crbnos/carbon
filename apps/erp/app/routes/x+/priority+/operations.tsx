@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { useChangedRows } from "@carbon/query";
 import {
@@ -53,10 +53,7 @@ import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams, useUser } from "~/hooks";
-import {
-  getActiveJobOperationsByLocation,
-  getJobProjects
-} from "~/modules/production/production.service";
+import { getJobProjects } from "~/modules/production/production.service";
 import type { Column, OperationItem } from "~/modules/production/ui/Schedule";
 import type {
   BatchItem,
@@ -68,14 +65,8 @@ import type {
 import { isBatchItem, Kanban } from "~/modules/production/ui/Schedule/Kanban";
 import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
-import {
-  getProcessesList,
-  getWorkCentersByLocation
-} from "~/modules/resources/resources.service";
-import {
-  getTagsList,
-  resolveLocationId
-} from "~/modules/shared/shared.service";
+import { getWorkCentersByLocation } from "~/modules/resources/resources.service";
+import { resolveLocationId } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/duration";
@@ -86,15 +77,15 @@ const logger = getLogger("erp", "priority-operations");
 
 export const handle: Handle = {
   breadcrumb: msg`Schedule`,
-  to: path.to.priorityOperation,
-  module: "schedule"
+  to: path.to.priorityOperation
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "production",
-    bypassRls: true
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    { "production.priorities": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -171,9 +162,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [workCenters, processes, operations, tags] = await Promise.all([
     getWorkCentersByLocation(client, locationId),
-    getProcessesList(client, companyId),
-    getActiveJobOperationsByLocation(client, locationId, selectedWorkCenterIds),
-    getTagsList(client, companyId, "operation")
+    api.resources.getProcessesList({}),
+    api.production.getActiveJobOperationsByLocation({
+      locationId,
+      workCenterIds: selectedWorkCenterIds
+    }),
+    api.shared.getTagsList({ table: "operation" })
   ]);
 
   // The empty state must tell "no work centers at THIS location" apart from

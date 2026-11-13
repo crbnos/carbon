@@ -29,7 +29,8 @@ import {
 import { usePermissions, useRouteData } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
-import type { AuthenticatedRouteGroup, Role } from "~/types";
+import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 const multiCompanyRoutes = new Set<string>([path.to.intercompany]);
@@ -57,13 +58,11 @@ export default function useAccountingSubmodules() {
           {
             name: t`Reporting`,
             to: path.to.reports,
-            role: "employee",
             icon: <LuFileSpreadsheet />
           },
           {
             name: t`Sync Tie-Out`,
             to: path.to.accountingSyncTieOut,
-            role: "employee",
             icon: <LuScale />
           }
         ]
@@ -74,14 +73,12 @@ export default function useAccountingSubmodules() {
           {
             name: t`Journal Entries`,
             to: path.to.accountingJournals,
-            role: "employee",
             icon: <LuBookOpen />,
             table: "journal"
           },
           {
             name: t`Intercompany`,
             to: path.to.intercompany,
-            role: "employee",
             icon: <LuArrowLeftRight />
           }
         ]
@@ -92,32 +89,27 @@ export default function useAccountingSubmodules() {
           {
             name: t`Accounting Periods`,
             to: path.to.accountingPeriods,
-            role: "employee",
             icon: <LuCalendarCheck />,
             table: "accountingPeriod"
           },
           {
             name: t`Depreciation`,
             to: path.to.depreciationRuns,
-            role: "employee",
             icon: <LuClock />
           },
           {
             name: t`Indirect Rates`,
             to: path.to.indirectRates,
-            role: "employee",
             icon: <LuPercent />
           },
           {
             name: t`Leases`,
             to: path.to.leaseRuns,
-            role: "employee",
             icon: <LuKeyRound />
           },
           {
             name: t`Revenue Recognition`,
             to: path.to.revenueRecognitionRuns,
-            role: "employee",
             icon: <LuCalendarClock />
           }
         ]
@@ -128,14 +120,12 @@ export default function useAccountingSubmodules() {
           {
             name: t`Assets`,
             to: path.to.fixedAssets,
-            role: "employee",
             icon: <LuBuilding2 />,
             table: "fixedAsset"
           },
           {
             name: t`Fleet`,
             to: path.to.fleet,
-            role: "employee",
             icon: <LuTruck />,
             table: "fleetAssets"
           }
@@ -147,55 +137,46 @@ export default function useAccountingSubmodules() {
           {
             name: t`Asset Classes`,
             to: path.to.assetClasses,
-            role: "employee",
             icon: <LuLayers />
           },
           {
             name: t`Chart of Accounts`,
             to: path.to.chartOfAccounts,
-            role: "employee",
             icon: <LuSheet />
           },
           {
             name: t`Cost Centers`,
             to: path.to.costCenters,
-            role: "employee",
             icon: <LuCoins />
           },
           {
             name: t`Default Accounts`,
             to: path.to.accountingDefaults,
-            icon: <LuBetweenHorizontalStart />,
-            role: "employee"
+            icon: <LuBetweenHorizontalStart />
           },
           {
             name: t`Dimensions`,
             to: path.to.dimensions,
-            role: "employee",
             icon: <LuAxis3D />
           },
           {
             name: t`Exchange Rates`,
             to: path.to.exchangeRates,
-            role: "employee",
             icon: <LuEuro />
           },
           {
             name: t`Fiscal Year`,
             to: path.to.fiscalYears,
-            role: "employee",
             icon: <LuCalendar1 />
           },
           {
             name: t`Indirect Pools`,
             to: path.to.indirectPools,
-            role: "employee",
             icon: <LuBoxes />
           },
           {
             name: t`Payment Terms`,
             to: path.to.paymentTerms,
-            role: "employee",
             icon: <LuHandCoins />
           }
         ]
@@ -214,22 +195,17 @@ export default function useAccountingSubmodules() {
     (routeData?.accountingIntegrations?.length ?? 0) > 0;
   const isGovernmentContracting = useGovernmentContracting();
 
-  const isRouteVisible = (route: { to: string; role?: string }) => {
-    if (route.role && !permissions.is(route.role as Role)) return false;
-    if (!hasMultipleCompanies && multiCompanyRoutes.has(route.to)) return false;
-    if (!hasAccountingIntegration && integrationRoutes.has(route.to))
-      return false;
-    if (!isGovernmentContracting && governmentContractingRoutes.has(route.to))
-      return false;
-    return true;
-  };
+  const isEnabled = (route: { to: string }) =>
+    (hasMultipleCompanies || !multiCompanyRoutes.has(route.to)) &&
+    (hasAccountingIntegration || !integrationRoutes.has(route.to)) &&
+    (isGovernmentContracting || !governmentContractingRoutes.has(route.to));
 
   return {
-    groups: accountingRoutes
-      .filter((group) => group.routes.some(isRouteVisible))
-      .map((group) => ({
+    groups: visibleGroups(accountingRoutes, permissions, isEnabled).map(
+      (group) => ({
         ...group,
-        routes: group.routes.filter(isRouteVisible).map(addSavedViewsToRoutes)
-      }))
+        routes: group.routes.map(addSavedViewsToRoutes)
+      })
+    )
   };
 }

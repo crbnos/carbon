@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { PageGate } from "@carbon/database/access";
 import type { SyncedEntityType, SyncedField } from "./types";
 
 /**
@@ -21,8 +22,8 @@ export type SyncedEntity = {
   dueDateColumn: string;
   /** The fields this record type syncs. */
   fields: SyncedField[];
-  /** The permission a user needs to link or unlink the record. */
-  permissions: { update: string };
+  /** The page gate a user needs to link or unlink the record. */
+  permissions: PageGate;
   /** The Carbon page for the record, for the back-link on the issue. */
   detailPath: (parentId: string, id: string) => string;
 };
@@ -44,7 +45,7 @@ export const syncedEntities: Record<SyncedEntityType, SyncedEntity> = {
     assigneeColumn: "assignee",
     dueDateColumn: "dueDate",
     fields: TASK_FIELDS,
-    permissions: { update: "quality" },
+    permissions: { "quality.issues": "Edit" },
     detailPath: (parentId) => `/x/issue/${parentId}/details`
   },
   changeOrderActionTask: {
@@ -56,7 +57,7 @@ export const syncedEntities: Record<SyncedEntityType, SyncedEntity> = {
     assigneeColumn: "assignee",
     dueDateColumn: "dueDate",
     fields: TASK_FIELDS,
-    permissions: { update: "parts" },
+    permissions: { "parts.changeNotices": "Edit" },
     detailPath: (parentId) => `/x/items/change-notice/${parentId}/details`
   },
   // Every element type links (Parameter included). Name and
@@ -77,7 +78,7 @@ export const syncedEntities: Record<SyncedEntityType, SyncedEntity> = {
       "priority",
       "dueDate"
     ],
-    permissions: { update: "projects" },
+    permissions: { "projects.projects": "Edit" },
     detailPath: (projectId, id) => `/x/project/${projectId}/element/${id}`
   }
 };
@@ -88,9 +89,9 @@ export function isSyncedEntityType(
   return !!value && Object.hasOwn(syncedEntities, value);
 }
 
-export function syncedEntityPermissions(entityType: SyncedEntityType): {
-  update?: string;
-} {
+export function syncedEntityPermissions(
+  entityType: SyncedEntityType
+): PageGate {
   return syncedEntities[entityType].permissions;
 }
 

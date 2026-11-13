@@ -17,9 +17,12 @@ package is the single source of truth; ERP and MES consume it.
 Export subpaths (`package.json`): `.` (`index.ts`), `./auth.server`, `./session.server`,
 `./company.server`, `./users.server`, `./passkey.server`, `./verification.server`,
 `./middleware/flash.{server,client}`. User query helpers split across
-`services/users.ts` (client-safe: `getClaims`, `getPermissionCacheKey`,
-`getCompaniesForUser`, `makePermissionsFromClaims`) and `services/users.server.ts`
-(server-only: `getUserClaims`, deactivate flows).
+`services/users.ts` (client-safe: `getClaims`, `getCompaniesForUser`,
+`readClaimsFresh`) and `services/users.server.ts`
+(server-only: `getUserClaims`, `clearClaims`, deactivate flows, and the claims cache key
+`getPermissionCacheKey` with its TTL — exported only for its tests; callers use `clearClaims`).
+Claims become an `AccessActor` through `userActor(claims)` (`@carbon/database/access`), never a
+hand-built `{ type: "user", … }`.
 
 ## Supabase client factories (`lib/supabase/client.ts`, `client.server.ts`)
 
@@ -313,7 +316,12 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
   `companySettings.consoleEnabled` still on — and is memoized per read request. PINs
   are bcrypt hashes in `employeePin` (no API-role access; `set_employee_pin` /
   `verify_employee_pin` over the server's Kysely connection, via
-  `@carbon/ee/console.server`). MES pin-in (`x+/console.pin-in.tsx`) consumes the
+  `@carbon/ee/console.server`). A pinned person passes gates with their own claims,
+  so a PIN reset (`resetConsoleOperatorPin`, refusal in `pinResetRefusal`) needs
+  Operators Edit for a console operator (`isConsoleOperator` and the company's
+  Console Operator type), else also Accounts Edit + People Edit; only an Admin resets
+  an Admin's PIN, and no caller resets the PIN of someone above them on any page
+  (`readEffectiveAccess` levels vs the caller's claims). MES pin-in (`x+/console.pin-in.tsx`) consumes the
   per-operator `AccountLockout` attempt and the per-terminal `Ratelimit` token BEFORE
   verifying (refunding both on a non-guess), so a parallel burst cannot outrun the
   limits. `companySettings.consoleEnabled` is server-only: a trigger refuses API-role
@@ -355,7 +363,7 @@ Supabase's `auth.mfa_factors` — no app table.
   strips colons: `otpauth://totp/{issuer}:{account}` uses one as its delimiter
   and the Key-URI spec forbids it in either field. The issuer is baked into the
   QR at enrollment — changing it does not update existing entries. Admin recovery:
-  `x+/users+/employees.reset-mfa.$employeeId.tsx` (`update: "users"`) calls
+  `x+/users+/employees.reset-mfa.$employeeId.tsx` (`{ "users.accounts": "Edit" }`) calls
   `adminDeleteTotpFactors` — factors are global to the auth user, so it affects
   every company the user belongs to.
 - **Org enforcement**: `companySettings.requireMfa` (migration
@@ -402,23 +410,43 @@ Supabase's `auth.mfa_factors` — no app table.
 
 ## Permissions & RLS gating (`auth.server.ts` → `requirePermissions`)
 
-`requirePermissions(request, { view?, create?, update?, delete?, role?, bypassRls?, allowPortalAccounts? })` is
-the gate used in every loader/action. Two paths:
+`requirePermissions(request, gate, { bypassRls?, allowPortalAccounts? })` is
+the gate behind every loader/action. It is internal to `@carbon/auth`: apps call `authorize`
+(same module), which runs it and returns its result plus `api`, the service functions bound to
+that caller (bound on first read; the ERP registers the binding with `registerCarbon`, which
+calls `registerApi`). Two paths:
 
 1. **`carbon-key` header present** → API-key auth (see below).
 2. **Otherwise** → `requireAuthSession`, then `getUserClaims(userId, companyId)`.
-   - A session whose role in the active company is `customer` or `supplier` (portal
-     accounts) is refused with a 403 BEFORE the empty-requirement early exit, unless the
-     route passes `allowPortalAccounts: true`. Portal accounts hold `documents_*`,
+   - Who passes is `admits(actor, companyId, gate, { allowPortalAccounts })`
+     (`@carbon/database/access`), the caller check every gate shares: an employee of the
+     company, then `holdsGate`; `{}` asks for nothing more. A session whose role in the
+     active company is `customer` or `supplier` (portal accounts) is refused with a 403,
+     and one with no role there is destroyed, unless the route passes the
+     `allowPortalAccounts: true` option (any signed-in user). Portal accounts hold `documents_*`,
      `parts_view`, `sales_view`/`purchasing_view`, and `{}` admitted any session, so before
      this ~50 routes that read with the service role (file previews, job travelers, order
      and quote pages) served them. No route is theirs: portal pages are share links on
      the service role. Opted in: onboarding, company switch (erp/mes/starter),
      `api+/link.ts`, academy challenge — each acts on the user's own identity. A 403, not a
-     redirect: the MES `/x` middleware calls `requirePermissions`, so a redirect there loops.
-   - Claims are `{ role, permissions }`. Cached in **Redis** (`@carbon/kv`) at key
-     `permissions:${userId}`; on miss, fetched via the `get_claims(uid, company)` RPC
-     (`getCarbonServiceRole`) and cached. `makePermissionsFromClaims` shapes the result.
+     redirect: there is no page in the apps to send them to.
+   - Claims are `{ role, permissions }` for ONE company. `get_claims(uid, company)`
+     returns `{ role, admin, grants, portal }` (the `permission` rows of the user and
+     their employee type); `claimsFor(claims, companyId)` (`@carbon/database/access`) expands them
+     per page, and `getUserClaims` narrows `role` to `CompanyRole`.
+     TRANSITIONAL, both ways round for a rolling deploy: `get_claims` also returns the old
+     `"<module>_<action>": [company]` keys, built from the effective MODULE grants (person
+     beats role; Admin holds every action), so app pods from before page permissions keep
+     working on a migrated database; current code ignores them. And `claimsFromJson(json,
+     companyId)` reads the old shape (no `grants`: a database the permission migrations
+     have not reached) as module grants in `companyId`, never cached (`isLegacyClaims`), so
+     every caller must pass the company id or that window fails closed. Remove both once no
+     deployed app version predates page permissions (PR #1958; the TRANSITIONAL comment in
+     `packages/database/src/authz/helpers/get_claims.sql`). Cached in a **Redis**
+     hash (`@carbon/kv`) at `getPermissionCacheKey(userId)` =
+     `permissions:<REGISTRY_HASH>:<userId>`, one field per company, so
+     `clearClaims([userId])` (`@carbon/auth/users.server`) clears every company. On a miss it
+     reads `get_claims` (`getCarbonServiceRole`) and writes the field.
    - `getUserClaims` is additionally memoized **per read request** via
      `oncePerRead` (`@carbon/logger/middleware.server`), so the several loaders a
      page matches share one Redis GET. Read-gated on purpose: an action and its
@@ -426,36 +454,54 @@ the gate used in every loader/action. Two paths:
      gate pass on claims the action just revoked. The Supabase clients
      `requirePermissions` returns are memoized per request too (`oncePerRequest`),
      which needs no gate — a client is not database state.
-   - Each required permission checks `permissions[name][action]` contains the active
-     `companyId` (or `"0"` wildcard = all companies). `role` is matched directly.
+   - The gate is `Partial<Record<PageId, GateLevel>>` (`Gate`, `@carbon/database/access`):
+     `{ "inventory.receipts": "Edit" }`. Each entry is checked with `holdsGate`, which reads
+     the highest action of its level, `<page>_<action>` (`inventory.receipts_update` for
+     Edit). Two entries need both; a list of gates (`anyOf(pages, level)`) passes on any one,
+     for a route several pages share (an item, a memo, a run).
    - On failure: if `role === null` destroy session → `/`; else flash "Access Denied"
      → authenticated root.
    - Returns `{ client, companyId, companyGroupId, email, userId, sessionUserId,
-     consoleMode }`. `bypassRls: true` + employee role returns a service-role client;
+     consoleMode, caller, permissions, role }`. The `bypassRls: true` option + employee role returns a service-role client;
      otherwise a Bearer-authed `getCarbon(accessToken)` client (RLS enforced).
    - `consoleMode` is `authSession.console === companyId`. In console mode `userId`
      is the pinned operator from `resolveConsolePinIn` (falling back to the session
      user when nobody valid is pinned in); `sessionUserId` is always the account the
-     terminal is signed in with. Gate terminal-level actions (entering console mode)
-     on `sessionUserId`, never `userId`.
+     terminal is signed in with, kept for audit.
+   - The pinned operator decides access: `sessionAccess` (`services/session-access.ts`)
+     checks the gate against the operator's claims, and `permissions` / `role` are the
+     operator's, so every gate built from `authorize` (service functions, MES checks
+     such as the assembly "complete all steps" override) asks the person acting. The
+     terminal's session user must still be an employee of the company (`{}`). Do not
+     re-read claims after `authorize` (`getUserClaims(userId, …)`): use its
+     `permissions`. Entering console mode (`x+/console.toggle`) runs outside console
+     mode, so the session user's grants decide it.
 
-Claims cache must be invalidated when permissions change — `users.server.ts` deactivate
-flows call `redis.del(getPermissionCacheKey(userId))`.
+Claims cache must be invalidated when permissions change. Grant writes go through
+`writeAccessGrants` (`@carbon/ee/permissions.server`), which clears it; the deactivation
+flows (`users.server.ts`, one `deactivateAs(role, …)` behind `deactivateCustomer` /
+`deactivateEmployee` / `deactivateSupplier` / `deactivateUser`) clear it themselves; a
+membership change elsewhere (invite accept, SSO provisioning) calls `clearClaims([userId])`.
+A company switch or a new company clears nothing: one field per company, so neither leaves
+a field stale.
 
 ## API key auth
 
-`carbon-key: <key>` header. `requirePermissions` resolves it through
-`getCompanyIdFromAPIKey`, which now reads via `getApiKeyRecord`
+`carbon-key: <key>` header. `requirePermissions` hands it to `authorizeApiKey(rawKey, gate, request)`, which the v1 API and the MCP endpoint call with the key they read. It authenticates it with
+`authenticateApiKey(rawKey)` (`auth.server.ts`), the one path every key takes (the
+postings' `authorizePostingCaller` calls it too). It is memoized per request, so the rate
+limit counts a request once however many gates it meets. It reads via `getApiKeyRecord`
 (`packages/auth/src/services/api-key.server.ts`): a **30s Redis cache** at
-`apikey:auth:<keyHash>`, per-request memoized (`oncePerRequest`) so one HTTP call
-does one lookup even though both `requirePermissions` and the v1 scope read need
-the row. Unknown keys are cached too (the literal `"null"`), so a bad key
+`apikey:auth:<keyHash>`. Unknown keys are cached too (the literal `"null"`), so a bad key
 hammering the endpoint doesn't hammer Postgres. Redis being down falls through to
-the DB. Busting: the api-key service functions (`updateApiKey`, `revokeApiKey` in
-`settings.server.ts`) call `invalidateApiKeyCache` (`settings.service.ts` →
-`bustApiKeyCache`) after an edit, and BEFORE and after a delete (the keyHash is
-unreadable once the row is gone), so a scope
-change or revocation takes effect immediately; the worst-case lag for any other
+the DB. Busting: every grant write of a key goes through `writeAccessGrants`
+(`@carbon/ee/permissions.server`), which calls `bustApiKeyCache` after it commits
+(`createApiKey` / `updateApiKey` write the key's grants through it, after the
+key row, so an expiry or limit edit is busted too); `revokeApiKey`
+(`settings.server.ts`, API Keys at Edit) calls `deleteApiKey`
+(`@carbon/ee/api-keys.server`), which deletes the row over `db` with
+`RETURNING "keyHash"`, refuses `notFound` when no row went, and calls
+`bustApiKeyCache` after the delete commits. So a scope change or revocation takes effect immediately; the worst-case lag for any other
 writer is the 30s TTL. Then:
 
 - Reject if `expiresAt` passed (401).
@@ -471,8 +517,8 @@ writer is the 30s TTL. Then:
   refusal returns the company's limit as `limit`. Pinned by
   `supabase/tests/api-key-rate-limit.test.sql`.
 - **Raising a limit is a support operation, not a setting.** One key: `apiKey.rateLimit`
-  (tenants with `settings_update` can also write it through the Data API, so the company
-  total is the real ceiling). A company: `companyPlan.apiRateLimit`, which only the
+  (set through `saveApiKey`; the Data API cannot write `apiKey`, and the company total
+  is the real ceiling). A company: `companyPlan.apiRateLimit`, which only the
   service role writes (the table has a SELECT policy and no other) and which company
   backups never carry. A key's limit above its company's total is capped by the total.
   Both are read per request through the 30s key cache. Only a company with a
@@ -484,9 +530,10 @@ writer is the 30s TTL. Then:
   key, so the Node path and the edge functions both record it. (The app used to build
   this update with `void client.from(…).update(…)`, which never sends: a supabase-js
   builder only runs when awaited.)
-- Scope check: `scopes` is JSONB `{ "<permission>_<action>": [companyIds] }`; required
-  perms must be present and include the active company. `{}` is NOT full access here —
-  an empty scope set fails the check. 403 on failure.
+- Scope check: the key's `permission` rows (`apiKeyId`), embedded in the
+  `getApiKeyRecord` select and expanded into `record.permissions` (`claimsFor`); the
+  gate is checked by `admits`, after the plan gate. A key with no grants fails every
+  check, `{}` included — no grants is NOT full access. 403 on failure.
 - Cloud edition: Starter-plan companies are blocked from API access (Business+ only),
   except `STRIPE_BYPASS_COMPANY_IDS`. The plan comes from the cached `getCompanyPlanId`
   (see `billing-system.md`), so a plan change made outside the Stripe sync can take up to 5 minutes to bite.
@@ -510,8 +557,11 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   private-use scheme, never a fragment; `supportedScope` keeps only `mcp:tools`.
   Only `client_secret_post` and `none` are accepted as `token_endpoint_auth_method`
   (what discovery advertises; `/token` never reads a Basic header).
-- **Authorize** (`authorize.tsx`) requires `settings_update` and employee role in the
-  SELECTED company (`canAuthorizeForCompany`), not just the session's active one, and
+- **Authorize** (`authorize.tsx`) requires Edit on Settings → API Keys and employee role in
+  the SELECTED company (`companiesToAuthorize`), not just the session's active one, and
+  refuses an API-key caller (`caller === "apiKey"`, 403) in the loader and the action: a
+  key acts as its creator, so consenting with one would mint a token carrying the
+  creator's full access. `token.tsx` and `register.ts` authenticate no caller. It
   re-checks the redirect URI with `isRegisteredRedirectUri` (registered AND still
   allowed — clients registered before the rules existed are held to them too). The
   consent page shows the redirect host only once it passes that check.
@@ -527,9 +577,9 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   `hashOAuthSecret` (`auth.server.ts`). Lookups hash the incoming value and compare.
 - MCP endpoint (`apps/erp/app/routes/api+/mcp+/_index.ts`): a `Bearer` token not
   prefixed `crbn_` is an OAuth token — `findOAuthToken` (hash lookup + expiry), the
-  per-user rate limit, then `oauthContext` (membership, company group, claims, user
-  client, in parallel), both in `api+/v1+/lib/authenticate.server.ts` beside
-  `authenticateApiKey`. A `crbn_` bearer is rewritten to `carbon-key` API-key auth.
+  per-user rate limit, then `oauthContext` (company group, claims, user
+  client, in parallel; the employee check is `admits` on the claims), both in `api+/v1+/lib/authenticate.server.ts` beside
+  `apiKeyContext` (`authorizeApiKey`). A `crbn_` bearer is rewritten to `carbon-key` API-key auth.
   `companyId`/`userId` always come from the token row.
 
 ## Schema (newest migrations; `packages/database/supabase/migrations`)
@@ -537,7 +587,21 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 - `user` / `userPermission` (`id`, `permissions` JSONB) — seeded by the
   `create_public_user()` trigger (`on_auth_user_created` on `auth.users`) — which
   SKIPS inserting when the email already belongs to a different `user` row (the
-  SSO duplicate case; the callback migration owns it).
+  SSO duplicate case; the callback migration owns it). `userPermission` now holds
+  only customer and supplier portal keys (`get_claims` → `portal`).
+- `permission` — every employee and API-key grant: one row per subject
+  (`employeeTypeId` = role, `userId` = person override, `apiKeyId` = key, exactly
+  one set) on a page or, with `page` NULL, a whole module, at a `level`
+  (None/View/Create/Edit/Full). Unique per (company, subject, module, page).
+  Written only through `writeAccessGrants` (`@carbon/ee/permissions.server`:
+  entitlement, ownership, the modules a subject may hold, a key never above its
+  writer — `keyGrantsAboveActor` against the caller's claims as authorised, Admin
+  and the system exempt, lowering always allowed — one transaction over
+  `replaceGrants` / `removeGrant` from `@carbon/database/access-write`, cache
+  clearing and the audit event). Deactivation (`@carbon/auth` `users.server.ts`)
+  still deletes a person's rows by itself, with the service role. RLS has a SELECT
+  policy only, so an API role cannot write a grant; the `check_employee_type_change`
+  interceptor likewise refuses an API-role change to `employee.employeeTypeId`.
 - `userToCompany` — junction, PK `(userId, companyId)`, `role` enum
   `'employee' | 'supplier' | 'customer'`.
 - `ssoConnection` — SAML SSO tenant binding (see the SSO section): PK
@@ -551,7 +615,10 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   `ssoConnection`.
 - `apiKey` — `keyHash` (unique), `keyPreview`, `name`, `companyId`, `createdBy`, `scopes`
   JSONB, `rateLimit` (default **20**; keys created before `20261002153217` keep 60), `rateLimitWindow` (default `'1m'`), `expiresAt`,
-  `lastUsedAt`. The old plaintext `key` column was dropped.
+  `lastUsedAt`. The old plaintext `key` column was dropped. RLS has SELECT and DELETE
+  policies only: a key is created and updated by `saveApiKey` (`@carbon/ee/api-keys.server`,
+  Kysely, inside `writeAccessGrants`), so an API role cannot rewrite a key's `keyHash` and
+  take over its grants.
 - `apiKeyRateLimit` — UNLOGGED, PK `(apiKeyId, windowStart)`, `requestCount`.
 - RLS/RPC functions: `get_claims`, `get_company_id_from_api_key`, `get_api_key_scopes`,
   `check_api_key_rate_limit`, `create_public_user`.
@@ -575,6 +642,6 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 - ERP code imports `getUserClaims` from `@carbon/auth/users.server`; the ERP used to
   carry a drifted copy that missed the cache TTL. Don't reintroduce one.
 - Service-role clients bypass RLS — only use behind `bypassRls` + employee role.
-- API key `scopes: {}` denies, not grants. Don't assume empty = full access.
+- An API key with no grants denies, not grants. Don't assume empty = full access.
 - Edition matters: Enterprise rejects unknown-user login; Cloud gates API keys by plan
   and enforces the bot check (BotID on Vercel, Turnstile elsewhere).

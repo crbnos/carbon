@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
 import type { OnshapePropertyValue } from "@carbon/ee";
 import {
   bomColumnIds,
@@ -19,7 +18,7 @@ import {
   OnshapeWVMType,
   onshapeFailure
 } from "@carbon/ee/onshape";
-import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import {
   readAssemblyProperties,
   readPartProperties
@@ -45,10 +44,9 @@ const querySchema = z.object({
 
 /** Fields page data for the element the panel is open on. */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requireOnshapePanelPermissions(
-    request,
-    { update: "settings" }
-  );
+  const { client, companyId, userId } = await authorizePanel(request, {
+    "settings.integrations": "Edit"
+  });
 
   const url = new URL(request.url);
   const parsed = querySchema.safeParse({
@@ -246,9 +244,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 /** Replace the property map, the description modes and the push defaults. */
 export async function action({ request }: ActionFunctionArgs) {
-  const api = carbonFor(
-    await requireOnshapePanelPermissions(request, { update: "settings" })
-  );
+  const { api } = await authorizePanel(request, {
+    "settings.integrations": "Edit"
+  });
   return panelResponse(
     await api.settings.saveOnshapePropertyMap(
       await request.json().catch(() => null)

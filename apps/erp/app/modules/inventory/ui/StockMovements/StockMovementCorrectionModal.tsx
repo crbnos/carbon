@@ -136,7 +136,7 @@ const StockMovementCorrectionBody = ({
             <HStack>
               <Submit
                 isDisabled={
-                  !permissions.can("update", "inventory") ||
+                  !permissions.has({ "inventory.movements": "Edit" }) ||
                   submitFetcher.state !== "idle"
                 }
               >

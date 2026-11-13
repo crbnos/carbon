@@ -148,7 +148,7 @@ function applySecurityHeaders(headers: Headers, nonce: string) {
  * that the access-log middleware (which only sees the final status) can't.
  *
  * We skip control-flow throws (redirects, and intentional Response throws like
- * 401/403/404 from `requirePermissions`) and client-aborted requests, logging
+ * 401/403/404 from `authorize`) and client-aborted requests, logging
  * only genuine 5xx server failures. `requestId` correlates with the `[http]`
  * access-log line for the same request.
  */

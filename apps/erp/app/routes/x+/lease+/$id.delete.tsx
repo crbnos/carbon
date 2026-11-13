@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
@@ -18,8 +18,8 @@ const logger = getLogger("erp", "lease-delete");
  *  `deleteLease` refuses it, and it is cancelled or terminated instead. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "purchasing"
+  const { client, companyId } = await authorize(request, {
+    "purchasing.leases": "Full"
   });
 
   const { id } = params;

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -65,10 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const { companyId, userId } = await requirePermissions(request, {
-    ...definition.permission,
-    role: "employee"
-  });
+  const { companyId, userId } = await authorize(request, definition.gate);
 
   const exportId = newTableExportId(listKey);
   const refused = await startTableJob(

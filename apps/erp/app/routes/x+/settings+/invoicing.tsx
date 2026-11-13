@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -52,10 +51,6 @@ import {
   invoiceNotificationValidator,
   settingsToggle
 } from "~/modules/settings/settings.models";
-import {
-  getAccountsReceivableBillingAddress,
-  getCompanySettings
-} from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -65,14 +60,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { companyId, api } = await authorize(request, {
+    "settings.invoicing": "View"
   });
 
   const [companySettings, arBillingAddress, stripeAccountId] =
     await Promise.all([
-      getCompanySettings(client, companyId),
-      getAccountsReceivableBillingAddress(client, companyId),
+      api.settings.getCompanySettings({}),
+      api.settings.getAccountsReceivableBillingAddress({}),
       getStripeConnectAccountId(getCarbonServiceRole(), companyId)
     ]);
   if (!companySettings.data)
@@ -123,7 +118,7 @@ const invoicingSettingsForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(invoicingSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.updateInvoicingSettings(input.data);
 }
 

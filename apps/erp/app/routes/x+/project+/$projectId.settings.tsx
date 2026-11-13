@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { projectControlSettingsValidator } from "@carbon/ee/project-control";
@@ -29,7 +28,7 @@ type Intent = (typeof intents)[number];
  * settings. An old link to Settings lands on the Overview.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requirePermissions(request, { view: "projects" });
+  await authorize(request, { "projects.projects": "View" });
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
   throw redirect(path.to.project(projectId));
@@ -39,8 +38,8 @@ export const middleware = [redirectBeforeLoaders(loader)];
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "projects"
+  const { api, client, companyId } = await authorize(request, {
+    "projects.projects": "Edit"
   });
 
   const { projectId } = params;
@@ -53,8 +52,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     data({ success: false }, await flash(request, error(null, message)));
   const done = async (message: string) =>
     data({ success: true }, await flash(request, success(message)));
-
-  const api = await carbon(request);
 
   switch (intent) {
     case "addMember":

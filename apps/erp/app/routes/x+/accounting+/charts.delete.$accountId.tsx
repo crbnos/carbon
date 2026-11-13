@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { isAccountInUse } from "@carbon/database/account-import-reads";
 import { getLogger } from "@carbon/logger";
@@ -27,14 +27,13 @@ const IN_USE_MESSAGE =
   "This account is used by documents, journals or default accounts, so it cannot be deleted.";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    { view: "accounting" }
-  );
+  const { companyId, companyGroupId, api } = await authorize(request, {
+    "accounting.chartOfAccounts": "View"
+  });
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
 
-  const account = await getAccount(client, accountId);
+  const account = await api.accounting.getAccount({ accountId });
   if (account.error) {
     throw redirect(
       path.to.chartOfAccounts,
@@ -66,8 +65,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "accounting"
+  const { client } = await authorize(request, {
+    "accounting.chartOfAccounts": "Full"
   });
 
   const { accountId } = params;

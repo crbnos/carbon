@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import { isServiceJobLocked } from "@carbon/utils";
@@ -22,7 +22,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["jobId", "lineId"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request, { "service.jobs": "Edit" });
   return api.service.upsertServiceJobEstimateLine({
     ...input.data,
     id: input.params.lineId,

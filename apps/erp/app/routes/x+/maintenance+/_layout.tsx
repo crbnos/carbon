@@ -15,8 +15,7 @@ export const meta = moduleMeta("Maintenance");
 
 export const handle: Handle = {
   breadcrumb: msg`Resources`,
-  to: path.to.resources,
-  module: "resources"
+  to: path.to.resources
 };
 
 export default function MaintenanceRoute() {

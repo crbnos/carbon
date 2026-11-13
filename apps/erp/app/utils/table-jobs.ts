@@ -3,11 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import {
+  admits,
+  type Claims,
+  type Gate,
+  pageById,
+  userActor
+} from "@carbon/database/access";
 import type { Feature } from "@carbon/ee/plan";
 import { RoundingMode, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
-import type { ListPermission } from "./list-registry/index.server";
 
 /**
  * Pure parts of the table jobs (background export and bulk actions), shared by
@@ -15,37 +21,19 @@ import type { ListPermission } from "./list-registry/index.server";
  * export download route. No I/O here.
  */
 
-export type TableJobClaims = {
-  role: string | null;
-  permissions: Record<
-    string,
-    { view: string[]; create: string[]; update: string[]; delete: string[] }
-  >;
-};
-
-const PERMISSION_ACTIONS = ["view", "create", "update", "delete"] as const;
+/** The claims a table job checks: one user's in one company (`readClaimsFresh`). */
+export type TableJobClaims = Pick<Claims, "role" | "permissions">;
 
 /**
- * The check `requirePermissions` does for a list's permission, on claims read
- * for one company. A table job also requires the employee role: the loaders
- * refuse portal accounts, and the job must never do more than the loader.
+ * The check `authorize` does for a list's gate (`admits`), on claims read for
+ * one company: the job must never do more than the loader.
  */
-export function hasListPermission(
+export function holdsListGate(
   claims: TableJobClaims,
-  permission: ListPermission,
+  gate: Gate,
   companyId: string
 ): boolean {
-  if (claims.role !== "employee") return false;
-  if (permission.role && claims.role !== permission.role) return false;
-  return PERMISSION_ACTIONS.every((action) => {
-    const required = permission[action];
-    if (required === undefined) return true;
-    const modules = Array.isArray(required) ? required : [required];
-    return modules.every(
-      (module) =>
-        claims.permissions[module]?.[action]?.includes(companyId) ?? false
-    );
-  });
+  return admits(userActor(claims), companyId, gate);
 }
 
 /** The answer when another job of the company holds the lock: the job kind
@@ -210,14 +198,61 @@ export function bulkStartFormResponse(start: BulkActionStart) {
  */
 export const ALL_MATCHING_RELEASE_LIMIT = 2_000;
 
+export type BulkActionList = { key: string; gate: Gate };
+
+function pageOfList(list: BulkActionList): string | null {
+  const { gate } = list;
+  if (Array.isArray(gate)) return null;
+  const pages = Object.keys(gate);
+  return pages.length === 1 ? pages[0]! : null;
+}
+
+export function itemListType(
+  list: BulkActionList
+): Database["public"]["Enums"]["itemType"] | null {
+  const page = pageOfList(list);
+  const where = page ? pageById(page)?.where : undefined;
+  return where?.table === "item" && where.value
+    ? (where.value as Database["public"]["Enums"]["itemType"])
+    : null;
+}
+
+/** A bulk action's gate: one gate, or a gate of the list it runs on (null
+ *  for a list it does not serve). */
+export type BulkActionGate = Gate | ((list: BulkActionList) => Gate | null);
+
+/** The gate a bulk action asks for on `list`. Null refuses. */
+export function bulkActionGate(
+  action: Pick<BulkActionMeta, "lists" | "gate">,
+  list: BulkActionList
+): Gate | null {
+  if (!action.lists.includes(list.key)) return null;
+  return typeof action.gate === "function" ? action.gate(list) : action.gate;
+}
+
+/**
+ * Who may run the items tables' Update in the background: Edit on the page of
+ * the list's item type, as `updateItems`' per-row item rule asks on the action
+ * route. The job runs as the system, which skips that rule, so a broader gate
+ * (any item page) would let Tools Edit update parts.
+ */
+export const itemsBulkUpdateGate: BulkActionGate = (list) => {
+  const page = itemListType(list) ? pageOfList(list) : null;
+  return page ? { [page]: "Edit" } : null;
+};
+
 export type BulkActionMeta = {
   /** The action's English name for the notification ("Release jobs"). */
   label: string;
   /** The list keys whose rows the action may act on. */
   lists: readonly string[];
-  /** The action route's permission check (the job adds the employee role). */
-  permission: ListPermission;
-  /** The plan feature the action route requires, checked again by the job. */
+  /** What starting the action asks: the gate of the service function it
+   *  runs, which the job skips by running it as the system. A function of
+   *  the list when that gate is decided per row (the items lists: each asks
+   *  for its own item type's page). */
+  gate: BulkActionGate;
+  /** The plan feature the action needs: checked before the run
+   *  (`canRunBulkAction`); each write checks it again. */
   feature?: Feature;
   /** The most matching rows the action runs on (default 100,000). */
   maxRows?: number;

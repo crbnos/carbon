@@ -114,7 +114,9 @@ export default function PurchaseOrderExplorer() {
   );
 
   const canReorder =
-    !isDisabled && permissions.can("update", "purchasing") && lines.length > 1;
+    !isDisabled &&
+    permissions.has({ "purchasing.purchaseOrders": "Edit" }) &&
+    lines.length > 1;
 
   const editMode = useLineOrderEditMode<PurchaseOrderLine>({
     actionPath: path.to.purchaseOrderLineOrder(orderId),
@@ -165,7 +167,7 @@ export default function PurchaseOrderExplorer() {
             )
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "purchasing.purchaseOrders": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -191,7 +193,10 @@ export default function PurchaseOrderExplorer() {
               <Button
                 className="flex-1"
                 shortcut={EXPLORER_SHORTCUTS.addLine}
-                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                isDisabled={
+                  isDisabled ||
+                  !permissions.has({ "purchasing.purchaseOrders": "Edit" })
+                }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newPurchaseOrderLineDisclosure.onOpen}
@@ -354,7 +359,7 @@ function PurchaseOrderLineItem({
     line.purchaseOrderLineType !== "G/L Account";
   const hasOutstandingQuantity = (line.quantityToReceive ?? 0) > 0;
   const orderStatus = orderData?.purchaseOrder?.status ?? "";
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.purchaseOrders": "Edit" });
   const canStopReceiving =
     canUpdate &&
     isReceivableLineType &&
@@ -434,7 +439,7 @@ function PurchaseOrderLineItem({
                 shortcut={MENU_ITEM_SHORTCUTS.duplicate}
                 disabled={
                   isDuplicateDisabled ||
-                  !permissions.can("create", "purchasing")
+                  !permissions.has({ "purchasing.purchaseOrders": "Create" })
                 }
                 onClick={(e) => {
                   e.stopPropagation();
@@ -449,7 +454,8 @@ function PurchaseOrderLineItem({
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={
-                  isDeleteDisabled || !permissions.can("delete", "purchasing")
+                  isDeleteDisabled ||
+                  !permissions.has({ "purchasing.purchaseOrders": "Full" })
                 }
                 onClick={(e) => {
                   e.stopPropagation();

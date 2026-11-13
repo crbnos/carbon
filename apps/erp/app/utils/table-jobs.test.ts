@@ -4,8 +4,11 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  bulkActionGate,
   bulkStartFormResponse,
-  hasListPermission,
+  holdsListGate,
+  itemListType,
+  itemsBulkUpdateGate,
   newTableExportId,
   parseAllMatching,
   parseTableExportId,
@@ -76,48 +79,62 @@ describe("refreshingClientFactory", () => {
   });
 });
 
-function claims(overrides: Partial<TableJobClaims> = {}): TableJobClaims {
-  return {
+describe("itemsBulkUpdateGate", () => {
+  const toolsEditor: TableJobClaims = {
     role: "employee",
     permissions: {
-      sales: { view: ["co_1"], create: [], update: ["co_1"], delete: [] },
-      parts: { view: ["co_2"], create: [], update: [], delete: [] }
-    },
-    ...overrides
+      "parts.tools": {
+        view: ["co_1"],
+        create: [],
+        update: ["co_1"],
+        delete: []
+      },
+      "parts.parts": { view: ["co_1"], create: [], update: [], delete: [] }
+    }
   };
-}
+  const list = (key: string, page: string) => ({
+    key,
+    gate: { [page]: "View" as const }
+  });
+  const update = {
+    lists: ["parts", "tools", "services", "jobs"],
+    gate: itemsBulkUpdateGate
+  };
 
-describe("hasListPermission", () => {
-  it("accepts an employee with the list's permission in the company", () => {
-    expect(hasListPermission(claims(), { view: "sales" }, "co_1")).toBe(true);
+  function mayRun(key: string, page: string) {
+    const gate = bulkActionGate(update, list(key, page));
+    return gate !== null ? holdsListGate(toolsEditor, gate, "co_1") : false;
+  }
+
+  it("lets Tools Edit update the tools list", () => {
+    expect(mayRun("tools", "parts.tools")).toBe(true);
   });
 
-  it("refuses a permission granted in another company only", () => {
-    expect(hasListPermission(claims(), { view: "parts" }, "co_1")).toBe(false);
+  it("refuses Tools Edit on the parts list, even with Parts View", () => {
+    expect(mayRun("parts", "parts.parts")).toBe(false);
   });
 
-  it("refuses a portal account even with the permission", () => {
-    expect(
-      hasListPermission(claims({ role: "customer" }), { view: "sales" }, "co_1")
-    ).toBe(false);
+  it("asks for Edit on the page of each list's own gate", () => {
+    expect(bulkActionGate(update, list("parts", "parts.parts"))).toEqual({
+      "parts.parts": "Edit"
+    });
+    expect(bulkActionGate(update, list("services", "parts.services"))).toEqual({
+      "parts.services": "Edit"
+    });
   });
 
-  it("requires every action and every module of the permission", () => {
+  it("refuses a list it does not serve, or one that is not an items list", () => {
     expect(
-      hasListPermission(claims(), { view: "sales", update: "sales" }, "co_1")
-    ).toBe(true);
-    expect(
-      hasListPermission(claims(), { view: ["sales", "parts"] }, "co_1")
-    ).toBe(false);
-    expect(
-      hasListPermission(claims(), { view: "sales", delete: "sales" }, "co_1")
-    ).toBe(false);
+      bulkActionGate(update, list("materials", "parts.materials"))
+    ).toBeNull();
+    expect(bulkActionGate(update, list("jobs", "production.jobs"))).toBeNull();
   });
 
-  it("accepts a role-only permission for an employee", () => {
-    expect(hasListPermission(claims(), { role: "employee" }, "co_1")).toBe(
-      true
+  it("reads the item type from the list's page", () => {
+    expect(itemListType(list("consumables", "parts.consumables"))).toBe(
+      "Consumable"
     );
+    expect(itemListType(list("jobs", "production.jobs"))).toBeNull();
   });
 });
 

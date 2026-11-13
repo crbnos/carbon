@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -12,18 +13,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import {
-  getCustomer,
-  getOpportunity,
-  getOpportunityDocuments,
-  getQuote,
-  getSalesOrder,
-  getSalesOrderInvoiceLines,
-  getSalesOrderInvoicePaymentsByIds,
-  getSalesOrderInvoicesByIds,
-  getSalesOrderLines,
-  getSalesOrderRelatedItems
-} from "~/modules/sales/sales.service";
 import {
   type SalesOrderInvoiceSummary,
   summarizeSalesOrderInvoices
@@ -65,18 +54,18 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Orders`, to: path.to.salesOrders },
     (data) => data?.salesOrder?.salesOrderId
-  ),
-  module: "sales"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.salesOrder?.salesOrderId, "Sales Order");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "sales.salesOrders": "View" },
+    { bypassRls: true }
+  );
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
@@ -86,10 +75,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // the originating quote waits for the opportunity.
   const serviceRole = getCarbonServiceRole();
   const [salesOrder, lines, companySettings, invoiceLines] = await Promise.all([
-    getSalesOrder(client, orderId),
-    getSalesOrderLines(client, orderId),
+    api.sales.getSalesOrder({ salesOrderId: orderId }),
+    api.sales.getSalesOrderLines({ salesOrderId: orderId }),
     getCompanySettings(serviceRole, companyId),
-    getSalesOrderInvoiceLines(client, orderId)
+    api.sales.getSalesOrderInvoiceLines({ salesOrderId: orderId })
   ]);
 
   if (salesOrder.error) {
@@ -110,15 +99,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ) as string[];
 
   const [opportunity, customer, invoices, payments] = await Promise.all([
-    getOpportunity(client, salesOrder.data?.opportunityId ?? null),
+    api.sales.getOpportunity({
+      opportunityId: salesOrder.data?.opportunityId ?? null
+    }),
     salesOrder.data?.customerId
-      ? getCustomer(client, salesOrder.data.customerId)
+      ? api.sales.getCustomer({ customerId: salesOrder.data.customerId })
       : null,
     invoiceIds.length > 0
-      ? getSalesOrderInvoicesByIds(client, invoiceIds)
+      ? api.sales.getSalesOrderInvoicesByIds({ invoiceIds })
       : null,
     invoiceIds.length > 0
-      ? getSalesOrderInvoicePaymentsByIds(client, companyId, invoiceIds)
+      ? api.sales.getSalesOrderInvoicePaymentsByIds({ invoiceIds })
       : null
   ]);
 
@@ -153,7 +144,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const quote = opportunity.data.quotes[0]?.id
-    ? await getQuote(client, opportunity.data.quotes[0].id)
+    ? await api.sales.getQuote({ quoteId: opportunity.data.quotes[0].id })
     : null;
 
   let invoiceSummary: SalesOrderInvoiceSummary = {
@@ -197,12 +188,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     salesOrder: salesOrder.data,
     lines: lines.data ?? [],
-    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
-    relatedItems: getSalesOrderRelatedItems(
-      client,
-      orderId,
-      opportunity.data.id
-    ),
+    files: api.sales
+      .getOpportunityDocuments({ opportunityId: opportunity.data.id })
+      .then(dataOrThrow),
+    relatedItems: api.sales
+      .getSalesOrderRelatedItems({
+        salesOrderId: orderId,
+        opportunityId: opportunity.data.id
+      })
+      .then(dataOrThrow),
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
     quote: quote?.data ?? null,

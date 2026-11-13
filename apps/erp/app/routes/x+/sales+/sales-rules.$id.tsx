@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { upsertEnforcementRule } from "@carbon/ee/rules.server";
@@ -19,24 +19,21 @@ import {
   salesRuleValidator
 } from "~/modules/sales/sales.models";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
-import { getEnforcementRule } from "~/modules/shared/shared.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.salesRules": "View" });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getEnforcementRule(client, "sales", id, companyId);
+  const rule = await api.shared.getEnforcementRule({ family: "sales", id });
   if (rule.error || !rule.data) throw notFound("Rule not found");
   return { rule: rule.data };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, companyId, userId } = await authorize(request, {
+    "sales.salesRules": "Edit"
   });
 
   await requireFeature({

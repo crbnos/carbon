@@ -497,7 +497,8 @@ function StepForm({
 
   const componentNodeIds = draftComponentNodeIds ?? step.componentNodeIds ?? [];
 
-  const cannotSave = isDisabled || !permissions.can("update", "production");
+  const cannotSave =
+    isDisabled || !permissions.has({ "production.assemblies": "Edit" });
 
   const hasSavedView = isSavedView(step.camera);
   const isEditingMotion = motionEditing.isEditingStep;

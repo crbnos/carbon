@@ -79,8 +79,8 @@ const MaintenanceDispatchForm = ({
   const isLocked = isMaintenanceDispatchLocked(routeData?.dispatch?.status);
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "resources")
-    : !permissions.can("create", "resources");
+    ? !permissions.has({ "resources.dispatches": "Edit" })
+    : !permissions.has({ "resources.dispatches": "Create" });
 
   const [content, setContent] = useState<JSONContent>(
     initialValues?.content

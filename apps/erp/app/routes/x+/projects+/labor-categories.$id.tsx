@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -16,27 +15,22 @@ import {
   laborCategoryRateValidator,
   laborCategoryValidator
 } from "~/modules/projects/projects.models";
-import {
-  getLaborCategory,
-  getLaborCategoryRates
-} from "~/modules/projects/projects.service";
 import LaborCategoryForm from "~/modules/projects/ui/LaborCategories/LaborCategoryForm";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "labor-category");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects",
-    role: "employee"
+  const { api, companyId } = await authorize(request, {
+    "projects.laborCategories": "View"
   });
 
   const { id } = params;
   if (!id) throw notFound("Labor category ID was not found");
 
   const [category, rates] = await Promise.all([
-    getLaborCategory(client, id, companyId),
-    getLaborCategoryRates(client, id, companyId)
+    api.projects.getLaborCategory({ id }),
+    api.projects.getLaborCategoryRates({ laborCategoryId: id })
   ]);
 
   if (category.error) {
@@ -69,7 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("Labor category ID was not found");
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const formData = await request.formData();
 
   if (formData.get("intent") === "rate") {

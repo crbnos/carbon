@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -24,9 +24,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "accounting.accountingPeriods": "View"
   });
 
   const periods = await getAccountingPeriods(client, companyId);
@@ -54,7 +53,7 @@ export default function AccountingPeriodsRoute() {
         data={periods}
         count={count}
         primaryAction={
-          permissions.can("create", "accounting") ? (
+          permissions.has({ "accounting.accountingPeriods": "Create" }) ? (
             <Button
               leftIcon={<LuCalendarPlus />}
               variant="primary"

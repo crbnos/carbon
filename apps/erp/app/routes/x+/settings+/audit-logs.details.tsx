@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getGlobalAuditLog } from "@carbon/ee/audit.server";
 import { getLogger } from "@carbon/logger";
 import {
@@ -25,8 +25,8 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "audit-logs");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId } = await authorize(request, {
+    "settings.auditLogs": "View"
   });
 
   const url = new URL(request.url);

@@ -68,8 +68,8 @@ const IndirectPoolForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const canSave = isEditing
-    ? permissions.can("update", "accounting")
-    : permissions.can("create", "accounting");
+    ? permissions.has({ "accounting.indirectPools": "Edit" })
+    : permissions.has({ "accounting.indirectPools": "Create" });
 
   return (
     <ModalDrawerProvider type="drawer">

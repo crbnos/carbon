@@ -12,6 +12,7 @@ import {
   updateJobMaterial
 } from "../app/modules/production/production.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 /** Each table's one row, or none; `jobMaterial` writes are recorded and echo an id. */
 function clientWith(rows: Record<string, unknown>, writes: string[]) {
@@ -43,10 +44,11 @@ function save(rows: Record<string, unknown>) {
   const ctx = createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "u1",
-      permissions: {
+      permissions: pageClaims({
         production: { view: [], create: ["c1"], update: [], delete: [] }
-      }
+      })
     },
     company: { id: "c1", groupId: "g1" },
     caller: clientWith(rows, writes),

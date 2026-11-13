@@ -2,15 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, useParams } from "react-router";
 import CustomerRiskRegister from "~/modules/sales/ui/Customer/CustomerRiskRegister";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    view: "sales"
-  });
+  await authorize(request, { "sales.customers": "View" });
 
   return data({});
 }

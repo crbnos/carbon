@@ -66,7 +66,7 @@ const IssueTypesTable = memo((props: IssueTypesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "sales")}
+            disabled={!permissions.has({ "quality.issueTypes": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteIssueType(row.id)}?${params.toString()}`
@@ -89,7 +89,7 @@ const IssueTypesTable = memo((props: IssueTypesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "quality") && (
+        permissions.has({ "quality.issueTypes": "Create" }) && (
           <New
             label={t`Issue Type`}
             to={`${path.to.newIssueType}?${params.toString()}`}

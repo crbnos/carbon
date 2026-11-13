@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -15,8 +15,8 @@ import { deleteSupplierPart } from "~/modules/items/items.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "parts"
+  const { client, companyId } = await authorize(request, {
+    "parts.tools": "Full"
   });
 
   const { supplierPartId } = params;
@@ -39,8 +39,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "parts"
+  const { client, companyId } = await authorize(request, {
+    "parts.tools": "Full"
   });
 
   const { itemId, supplierPartId } = params;

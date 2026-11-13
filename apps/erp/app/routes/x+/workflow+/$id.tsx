@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { readWorkflowVersion } from "@carbon/ee/workflows";
 import {
@@ -56,8 +56,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Workflows`, to: path.to.workflows },
     (data) => data?.workflow?.name
-  ),
-  module: "workflows"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
@@ -74,9 +73,8 @@ export const shouldRevalidate = deferRootActionPost(
 );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "workflows",
-    role: "employee"
+  const { client, companyId, userId } = await authorize(request, {
+    "workflows.workflows": "View"
   });
   await requireFeature({
     request,
@@ -178,7 +176,7 @@ export default function WorkflowBuilderRoute() {
 
   // Two reasons, two behaviours: a locked version still allows dragging to tidy the
   // layout, a missing permission does not.
-  const canEdit = permissions.can("update", "workflows");
+  const canEdit = permissions.has({ "workflows.workflows": "Edit" });
   const isOwner = workflow.ownerId === userId;
 
   if (!definition || !versionId) {
@@ -214,14 +212,20 @@ export default function WorkflowBuilderRoute() {
             versionId={versionId}
             onIssues={issuesDisclosure.onOpen}
           />
-          {isVersionLocked && permissions.can("create", "workflows") && (
-            <WorkflowLockModal workflowId={workflow.id} versionId={versionId} />
-          )}
+          {isVersionLocked &&
+            permissions.has({ "workflows.workflows": "Create" }) && (
+              <WorkflowLockModal
+                workflowId={workflow.id}
+                versionId={versionId}
+              />
+            )}
           <div className="relative flex flex-1 overflow-hidden">
             <WorkflowBuilder
               workflowId={workflow.id}
               canvasState={canvasState}
-              canPersistCanvasState={permissions.can("update", "workflows")}
+              canPersistCanvasState={permissions.has({
+                "workflows.workflows": "Edit"
+              })}
             />
             {issuesDisclosure.isOpen && (
               <IssuesPanel onDismiss={issuesDisclosure.onClose} />

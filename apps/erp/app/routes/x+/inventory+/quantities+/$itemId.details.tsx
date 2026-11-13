@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
@@ -14,7 +14,6 @@ import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { getTrackedEntityExpirations } from "~/modules/inventory/inventory.service";
 import { InventoryDetails } from "~/modules/inventory/ui";
 import {
-  getItem,
   getItemQuantities,
   getItemShelfLife,
   getMakeMethodById,
@@ -25,16 +24,14 @@ import {
   upsertPickMethod
 } from "~/modules/items/items.service";
 import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
-import { getLocationsList } from "~/modules/resources/resources.service";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "inventory.quantities": "View"
   });
 
   const { itemId } = params;
@@ -48,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // location is, and everything else is read together.
   const [userDefaults, item, itemShelfLife, makeMethods] = await Promise.all([
     locationId ? null : getUserDefaults(client, userId, companyId),
-    getItem(client, itemId),
+    api.items.getItem({ id: itemId }),
     getItemShelfLife(client, itemId),
     getMakeMethods(client, itemId, companyId)
   ]);
@@ -68,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -105,7 +102,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     makeMethod
       ? getMethodOperationsByMakeMethodId(client, makeMethod.id)
       : null,
-    makeMethod ? getTagsList(client, companyId, "operation") : null
+    makeMethod ? api.shared.getTagsList({ table: "operation" }) : null
   ]);
 
   if (pickMethod.error || !pickMethod.data) {

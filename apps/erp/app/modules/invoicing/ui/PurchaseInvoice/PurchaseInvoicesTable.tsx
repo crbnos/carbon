@@ -361,7 +361,9 @@ const PurchaseInvoicesTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("view", "invoicing")}
+            disabled={
+              !permissions.has({ "invoicing.purchaseInvoices": "View" })
+            }
             onClick={() => navigate(path.to.purchaseInvoice(row.id!))}
           >
             <MenuIcon icon={<LuPencil />} />
@@ -370,7 +372,8 @@ const PurchaseInvoicesTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
-              row.status !== "Draft" || !permissions.can("delete", "invoicing")
+              row.status !== "Draft" ||
+              !permissions.has({ "invoicing.purchaseInvoices": "Full" })
             }
             destructive
             onClick={() => {
@@ -414,7 +417,7 @@ const PurchaseInvoicesTable = memo(
             updatedBy: false
           }}
           primaryAction={
-            permissions.can("create", "invoicing") && (
+            permissions.has({ "invoicing.purchaseInvoices": "Create" }) && (
               <New
                 label={t`Purchase Invoice`}
                 to={path.to.newPurchaseInvoice}

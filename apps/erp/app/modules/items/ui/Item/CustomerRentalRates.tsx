@@ -48,9 +48,9 @@ const CustomerRentalRates = ({ itemId, rates }: CustomerRentalRatesProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const canCreate = permissions.can("create", "sales");
-  const canUpdate = permissions.can("update", "sales");
-  const canDelete = permissions.can("delete", "sales");
+  const canCreate = permissions.has({ "sales.rentalAgreements": "Create" });
+  const canUpdate = permissions.has({ "sales.rentalAgreements": "Edit" });
+  const canDelete = permissions.has({ "sales.rentalAgreements": "Full" });
 
   return (
     <Card>

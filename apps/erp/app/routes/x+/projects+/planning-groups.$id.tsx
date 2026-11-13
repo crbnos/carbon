@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -13,28 +12,23 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { planningGroupValidator } from "~/modules/projects/projects.models";
-import {
-  getPlanningGroup,
-  getPlanningGroupMembers,
-  getStockOwnerProjects
-} from "~/modules/projects/projects.service";
+import { getStockOwnerProjects } from "~/modules/projects/projects.service";
 import PlanningGroupForm from "~/modules/projects/ui/PlanningGroups/PlanningGroupForm";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "planning-group");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects",
-    role: "employee"
+  const { api, client, companyId } = await authorize(request, {
+    "projects.planningGroups": "View"
   });
 
   const { id } = params;
   if (!id) throw notFound("Planning group ID was not found");
 
   const [group, members, stockProjects] = await Promise.all([
-    getPlanningGroup(client, id, companyId),
-    getPlanningGroupMembers(client, id, companyId),
+    api.projects.getPlanningGroup({ planningGroupId: id }),
+    api.projects.getPlanningGroupMembers({ planningGroupId: id }),
     getStockOwnerProjects(client, companyId)
   ]);
 
@@ -84,7 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const updated = await api.projects.upsertPlanningGroup({
     ...validation.data,
     id

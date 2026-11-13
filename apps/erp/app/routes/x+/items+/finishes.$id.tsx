@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,23 +11,17 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { materialFinishValidator } from "~/modules/items/items.models";
-import {
-  getMaterialFinish,
-  upsertMaterialFinish
-} from "~/modules/items/items.service";
+import { upsertMaterialFinish } from "~/modules/items/items.service";
 import MaterialFinishForm from "~/modules/items/ui/MaterialFinishes/MaterialFinishForm";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "parts",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "parts.finishes": "View" });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const materialFinish = await getMaterialFinish(client, id);
+  const materialFinish = await api.items.getMaterialFinish({ id });
 
   if (materialFinish.data?.companyId === null) {
     throw redirect(
@@ -46,8 +40,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, companyId } = await authorize(request, {
+    "parts.finishes": "Edit"
   });
 
   const { id } = params;

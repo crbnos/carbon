@@ -43,7 +43,7 @@ import { ColorCell } from "./ColorCell";
 export function ProjectStatesGrid({ states }: { states: ProjectState[] }) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "settings");
+  const canEdit = permissions.has({ "settings.projects": "Edit" });
   const save = useCellSave();
   const action = path.to.projectsSettings;
   const fetcher = useAction<{ message?: string }>({

@@ -86,7 +86,7 @@ const RequiredActionsTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "quality")}
+              disabled={!permissions.has({ "quality.actionTypes": "Full" })}
               onClick={() => {
                 flushSync(() => {
                   setSelectedRequiredAction(row);
@@ -111,7 +111,7 @@ const RequiredActionsTable = memo(
           columns={columns}
           count={count}
           primaryAction={
-            permissions.can("create", "quality") && (
+            permissions.has({ "quality.actionTypes": "Create" }) && (
               <New
                 label={t`Required Action`}
                 to={`${path.to.newRequiredAction}?${params.toString()}`}

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { upsertInspectionSample } from "@carbon/database/quality";
@@ -19,8 +19,8 @@ const logger = getLogger("mes", "inspection-lot-sample");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "quality"
+  const { companyId, userId } = await authorize(request, {
+    "quality.inspections": "Edit"
   });
   const { id } = params;
   if (!id) throw new Error("id is required");

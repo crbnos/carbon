@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet } from "@carbon/react";
@@ -12,12 +13,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
-import {
-  getRentalShipmentLines,
-  getShipment,
-  getShipmentLines,
-  getShipmentRelatedItems
-} from "~/modules/inventory/inventory.service";
+import { getRentalShipmentLines } from "~/modules/inventory/inventory.service";
 import { getShipmentTracking } from "~/modules/inventory/inventory.utils";
 import type { RentalShipmentLine } from "~/modules/inventory/types";
 import {
@@ -36,24 +32,23 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Shipments`, to: path.to.shipments },
     (data) => data?.shipment?.shipmentId
-  ),
-  module: "inventory"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.shipment?.shipmentId, "Shipment");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, api } = await authorize(request, {
+    "inventory.shipments": "View"
   });
 
   const { shipmentId } = params;
   if (!shipmentId) throw new Error("Could not find shipmentId");
 
   const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all([
-    getShipment(client, shipmentId),
-    getShipmentLines(client, shipmentId),
+    api.inventory.getShipment({ shipmentId }),
+    api.inventory.getShipmentLines({ shipmentId }),
     getShipmentTracking(client, shipmentId, companyId)
   ]);
 
@@ -113,7 +108,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let rentalLines: RentalShipmentLine[] = [];
 
   if (shipment.data.sourceDocument === "Rental Agreement") {
-    // Service role: rentalAgreementLine needs sales_view, which an inventory
+    // Service role: rentalAgreementLine needs View on Rental Agreements, which an inventory
     // user may not hold.
     const rentalLineRecords = await getRentalShipmentLines(
       getCarbonServiceRole(),
@@ -178,11 +173,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     fixedAssetLines,
     rentalLines,
     shipmentLineTracking: shipmentLineTracking.data ?? [],
-    relatedItems: getShipmentRelatedItems(
-      client,
-      shipmentId,
-      shipment.data?.sourceDocumentId ?? ""
-    )
+    relatedItems: api.inventory
+      .getShipmentRelatedItems({
+        shipmentId,
+        sourceDocumentId: shipment.data?.sourceDocumentId ?? ""
+      })
+      .then(dataOrThrow)
   };
 }
 

@@ -2,16 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import type { Json } from "@carbon/database";
-import {
-  makeCompanyPermissionsFromClaims,
-  makeCompanyPermissionsFromEmployeeType
-} from "@carbon/ee/permissions.server";
+import { isAdminType } from "@carbon/database/access";
 import { validator } from "@carbon/form";
 import {
   Modal,
@@ -30,14 +26,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import type { CompanyPermission } from "~/modules/users/types";
 import { EmployeePermissionsForm } from "~/modules/users/ui";
 import { employeeValidator } from "~/modules/users/users.models";
 import {
-  getClaims,
   getEmployee,
   getEmployeeTypes,
-  getPermissionsByEmployeeType,
   originOf
 } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
@@ -82,9 +75,8 @@ function PermissionsUpgradeModal() {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "users",
-    role: "employee"
+  const { companyId, api } = await authorize(request, {
+    "users.accounts": "View"
   });
 
   const { employeeId } = params;
@@ -92,71 +84,54 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const client = getCarbonServiceRole();
 
-  const [rawClaims, employee, employeeTypes] = await Promise.all([
-    getClaims(client, employeeId, companyId),
-    getEmployee(client, employeeId, companyId),
-    getEmployeeTypes(client, companyId)
-  ]);
+  const [employee, employeeTypes, grants, roleGrants, effectiveAccess] =
+    await Promise.all([
+      getEmployee(client, employeeId, companyId),
+      getEmployeeTypes(client, companyId),
+      api.users.getAccessGrants({
+        subjectType: "person",
+        subjectId: employeeId
+      }),
+      api.users.getRoleGrants({}),
+      api.users.getEffectiveAccess({ userId: employeeId })
+    ]);
 
-  if (rawClaims.error || employee.error || rawClaims.data === null) {
-    redirect(
+  if (employee.error || grants.error || roleGrants.error) {
+    throw redirect(
       path.to.employeeAccounts,
       await flash(
         request,
-        error(rawClaims.error ?? employee.error, "Failed to load employee")
+        error(
+          {
+            employee: employee.error,
+            grants: grants.error,
+            roleGrants: roleGrants.error
+          },
+          "Failed to load employee"
+        )
       )
     );
   }
-  const claims = makeCompanyPermissionsFromClaims(
-    rawClaims.data as Json[],
-    companyId
-  );
-
-  if (claims === null) {
-    redirect(
-      path.to.employeeAccounts,
-      await flash(request, error(null, "Failed to parse claims"))
-    );
-  }
-
-  const types = employeeTypes.data ?? [];
-  const permissionsByType = await Promise.all(
-    types.map((t) => getPermissionsByEmployeeType(client, t.id))
-  );
-  const employeeTypePermissions: Record<
-    string,
-    Record<string, CompanyPermission>
-  > = {};
-  types.forEach((t, i) => {
-    const result = permissionsByType[i];
-    const raw = makeCompanyPermissionsFromEmployeeType(
-      result.data ?? [],
-      companyId
-    );
-    const perms: Record<string, CompanyPermission> = {};
-    for (const [mod, entry] of Object.entries(raw)) {
-      perms[mod.toLowerCase()] = entry.permission;
-    }
-    employeeTypePermissions[t.id] = perms;
-  });
 
   return {
-    permissions: claims?.permissions,
     employee: employee.data,
-    employeeTypes: types,
-    employeeTypePermissions
+    employeeTypes: (employeeTypes.data ?? []).map((type) => ({
+      id: type.id,
+      name: type.name,
+      admin: isAdminType(type, companyId)
+    })),
+    grants: grants.data,
+    roleGrants: roleGrants.data,
+    effectiveAccess: effectiveAccess.data ?? []
   };
 }
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(employeeValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const { id, employeeType, data: permissions } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.users.updateEmployeePermissions({
-    id,
-    employeeType,
-    permissions: JSON.parse(permissions),
+    ...input.data,
     ip: originOf(args.request).ip
   });
   return respond(args.request, result).redirect(path.to.employeeAccounts, {
@@ -165,7 +140,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function UsersEmployeeRoute() {
-  const { permissions, employee, employeeTypes, employeeTypePermissions } =
+  const { employee, employeeTypes, grants, roleGrants, effectiveAccess } =
     useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "PERMISSIONS" });
 
@@ -175,17 +150,21 @@ export default function UsersEmployeeRoute() {
 
   const initialValues = {
     id: employee?.id || "",
-    employeeType: employee?.employeeTypeId,
-    permissions: permissions || {}
+    employeeType: employee?.employeeTypeId ?? "",
+    grants
   };
 
   return (
     <EmployeePermissionsForm
       key={initialValues.id}
-      name={employee?.name || ""}
+      employee={{
+        name: employee?.name || "",
+        email: employee?.email ?? null,
+        avatarUrl: employee?.avatarUrl ?? null
+      }}
       employeeTypes={employeeTypes}
-      employeeTypePermissions={employeeTypePermissions}
-      // @ts-expect-error
+      roleGrants={roleGrants}
+      effectiveAccess={effectiveAccess}
       initialValues={initialValues}
     />
   );

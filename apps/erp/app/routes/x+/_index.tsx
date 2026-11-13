@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { CONTROLLED_ENVIRONMENT, getAppUrl } from "@carbon/env";
 import {
@@ -83,7 +83,7 @@ const AGENT_WIDGET_COOKIE = "onboardAgentDismissed";
 export const meta: MetaFunction = () => [{ title: "Home | Carbon" }];
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request);
 
   // Compute the greeting on the server so SSR and hydration render the SAME
   // line — no client-side randomness, so no flash on refresh. `pick` is the
@@ -160,7 +160,7 @@ export default function AppIndexRoute() {
   const enrollFetcher = useAction();
   // Self-serve: anyone who can update company settings can enroll their
   // company — no Carbon staff required.
-  const canEnroll = permissions.can("update", "settings");
+  const canEnroll = permissions.has({ "settings.company": "Edit" });
 
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -410,16 +410,11 @@ function RecentlyViewed() {
   const { documents, remove, loading } = useRecentlyViewed(company.id);
   const modules = useAllModules();
 
-  // Resolve a document's `handle.module` to its module icon and name straight
-  // from the `useModules` registry — the single source of truth for module
-  // icons. Match on the module key OR the second segment of its URL, since item
-  // detail pages declare `module: "items"` while the registry keys that module
-  // `parts` (its URL is `/x/items/parts`). Nothing to keep in sync.
+  // A recent saved before modules were keyed by id (`items`) finds no module
+  // and shows the plain icon until the document is opened again.
   const moduleFor = useCallback(
     (moduleKey: string): { icon: IconType; name?: string } => {
-      const module = modules.find(
-        (m) => m.key === moduleKey || m.to.split("/")[2] === moduleKey
-      );
+      const module = modules.find((m) => m.key === moduleKey);
       return { icon: module?.icon ?? LuFileText, name: module?.name };
     },
     [modules]

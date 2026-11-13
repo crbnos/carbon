@@ -18,12 +18,25 @@ import type {
   PermissionAction,
   ToolPermission
 } from "@carbon/api";
+import { readGate } from "../../packages/api/src/permissions";
+import {
+  ACTIONS,
+  type AnyGate,
+  type Level,
+  LEVELS,
+  levelHolds,
+  moduleOf,
+  PAGES,
+  type PageGate,
+  pageById
+} from "../../packages/database/src/access";
 import {
   type CallExpression,
   Node,
   type ObjectLiteralExpression,
   type Project,
   type Symbol as TsSymbol,
+  type Type,
   type VariableDeclaration
 } from "ts-morph";
 import {
@@ -38,7 +51,18 @@ const ROUTER_FILE = path.resolve(
   "../../apps/erp/app/modules/router.server.ts"
 );
 
-const ACTIONS: PermissionAction[] = ["view", "create", "update", "delete"];
+const GATE_LEVELS: readonly string[] = LEVELS.filter(
+  (level) => level !== "None"
+);
+
+/** A property's name as written: `"inventory.receipts"` or `documents`. */
+function literalName(entry: Node): string | undefined {
+  if (!Node.isPropertyAssignment(entry)) return undefined;
+  const name = entry.getNameNode();
+  if (Node.isStringLiteral(name)) return name.getLiteralValue();
+  if (Node.isIdentifier(name)) return name.getText();
+  return undefined;
+}
 
 /** `GenericQueryFilters.filters` (`apps/erp/app/utils/query.ts`). */
 const GENERIC_FILTERS_SCHEMA: JsonSchema = {
@@ -276,12 +300,6 @@ function stringsOf(node: Node | undefined): string[] | null {
 }
 
 /**
- * The API gate's view of the declared permission. The gate checks one module;
- * a permission naming several modules publishes module `null` (membership
- * only) and the function's own gate decides, as it does for `{}` (any member
- * of the company). `"system"` and a keyed rule are refused.
- */
-/**
  * The permission's object literal: written in place, or a constant it names
  * (`service.closeJobPermission`, the one a ported posting body shares with
  * its callers), through `satisfies` / `as const`.
@@ -306,6 +324,123 @@ function permissionLiteral(node: Node | undefined): Node | undefined {
   return current;
 }
 
+/** A union's members, or the type itself. */
+function membersOf(type: Type): Type[] {
+  return type.isUnion() ? type.getUnionTypes() : [type];
+}
+
+/** The page gates a type lists: one object per gate, each `{ page: level }`. */
+function gatesOfType(type: Type, at: Node): [string, string][][] {
+  return membersOf(type).map((gate) =>
+    gate.getProperties().flatMap((property) => {
+      const level = property.getTypeAtLocation(at).getNonNullableType();
+      // An array literal's union gives each member the others' keys as `?: undefined`.
+      if (level.isNever() || level.isUndefined()) return [];
+      return [
+        [
+          property.getName(),
+          level.isStringLiteral() ? String(level.getLiteralValue()) : ""
+        ] as [string, string]
+      ];
+    })
+  );
+}
+
+/**
+ * An `anyOf` or row rule, read off its TYPE: a helper call
+ * (`itemRule("Edit", { id: "itemId" })`) and a constant read like a literal.
+ * The gates are each branch's `then` (a row rule) or entry (`anyOf`).
+ */
+function choiceGates(
+  node: Node
+): { kind: "anyOf" | "row"; gates: [string, string][][] } | null {
+  const type = node.getType();
+  const anyOf = type.getProperty("anyOf");
+  if (anyOf) {
+    const entry = anyOf.getTypeAtLocation(node).getNumberIndexType();
+    return { kind: "anyOf", gates: entry ? gatesOfType(entry, node) : [] };
+  }
+  const row = type.getProperty("row");
+  if (!row) return null;
+  const rowCase = row
+    .getTypeAtLocation(node)
+    .getProperty("cases")
+    ?.getTypeAtLocation(node)
+    .getNumberIndexType();
+  const gates = rowCase
+    ? membersOf(rowCase).flatMap((member) => {
+        const then = member.getProperty("then");
+        return then ? gatesOfType(then.getTypeAtLocation(node), node) : [];
+      })
+    : [];
+  return { kind: "row", gates };
+}
+
+/**
+ * A rule that picks one page per call, as the manifest publishes it: every
+ * page its branches name at one level, and what picks (`item.type`).
+ */
+function publishChoice(
+  where: string,
+  { kind, gates }: { kind: "anyOf" | "row"; gates: [string, string][][] }
+): { permission: ToolPermission; actions: PermissionAction[] } {
+  const levels = new Set<string>();
+  const pages: string[] = [];
+  for (const gate of gates) {
+    const [entry, ...more] = gate;
+    if (!entry || more.length > 0) {
+      throw new Error(
+        `${where}: each branch of a published ${kind} rule names one page`
+      );
+    }
+    const [page, level] = checkedEntry(where, entry);
+    levels.add(level);
+    if (!pages.includes(page)) pages.push(page);
+  }
+  const [level] = levels;
+  if (!level || levels.size > 1) {
+    throw new Error(
+      `${where}: a published ${kind} rule names its pages at one level`
+    );
+  }
+  // Registry order: a union's member order moves with the checker's type ids.
+  const order = PAGES.map((page) => page.id as string);
+  pages.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  const by =
+    kind === "row"
+      ? [
+          ...new Set(
+            pages.flatMap((page) => {
+              const shared = pageById(page)?.where;
+              return shared ? [`${shared.table}.${shared.column}`] : [];
+            })
+          )
+        ]
+      : [];
+  const actions = ACTIONS.filter((action) =>
+    levelHolds(level as Level, action)
+  );
+  const modules = new Set(pages.map(moduleOf));
+  const [module] = modules;
+  return {
+    permission: {
+      module: modules.size === 1 && module ? module : null,
+      actions: modules.size === 1 ? actions : [],
+      oneOf: { pages, level, by }
+    },
+    actions
+  };
+}
+
+/**
+ * The API gate's view of the declared permission: the module of its pages,
+ * the page when the gate names one, and every action its levels hold. A gate
+ * of pages of several modules publishes module `null` and each page and level
+ * as `allOf`; a keyed rule over several modules publishes module `null` alone.
+ * `"employee"` (any employee of the company) publishes no page. A keyed rule publishes every
+ * page its rules name; an `anyOf` or row rule also publishes them as `oneOf`.
+ * `"system"` is refused.
+ */
 export function leafPermission(leaf: ServiceFnLeaf): {
   permission: ToolPermission;
   actions: PermissionAction[];
@@ -323,37 +458,166 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   );
   if (!value) throw new Error(`${where}: no literal \`permission\``);
 
-  if (!Node.isObjectLiteralExpression(value)) {
-    throw new Error(
-      `${where}: a published service function names its permission ({ update: "<module>" }), not ${value.getText()}`
-    );
-  }
-  if (value.getProperty("by")) {
-    throw new Error(`${where}: a keyed permission cannot be published yet`);
+  // `"employee"`: any employee of the company, or a key holding some grant
+  // there (`admits`). No page to publish.
+  if (Node.isStringLiteral(value) && value.getLiteralValue() === "employee") {
+    return { permission: { module: null, actions: [] }, actions: [] };
   }
 
+  const choice = choiceGates(value);
+  if (choice)
+    return publishChoice(
+      where,
+      choice.kind === "anyOf"
+        ? {
+            kind: "anyOf",
+            gates: alternativesOf(
+              readGate({ anyOf: choice.gates.map(asGate) })
+            )
+          }
+        : choice
+    );
+
+  if (!Node.isObjectLiteralExpression(value)) {
+    throw new Error(
+      `${where}: a published service function names its permission ({ "<page>": "<Level>" }), not ${value.getText()}`
+    );
+  }
+  // A keyed rule publishes every page its rules name: the gate picks one
+  // rule by the input, the manifest describes them all.
+  let gates = [value];
+  if (value.getProperty("by")) {
+    const rules = value.getProperty("rules");
+    const literal =
+      rules && Node.isPropertyAssignment(rules)
+        ? permissionLiteral(rules.getInitializer())
+        : undefined;
+    const values =
+      literal && Node.isObjectLiteralExpression(literal)
+        ? literal
+            .getProperties()
+            .map((rule) =>
+              Node.isPropertyAssignment(rule)
+                ? permissionLiteral(rule.getInitializer())
+                : undefined
+            )
+        : [];
+    if (
+      !values.length ||
+      !values.every((v) => v !== undefined && Node.isObjectLiteralExpression(v))
+    ) {
+      throw new Error(
+        `${where}: a published keyed permission names a literal page gate for every value, not ${value.getText()}`
+      );
+    }
+    gates = values as ObjectLiteralExpression[];
+  }
+
+  // Publish what `defineServiceFn` checks: the rule as its read (`readGate`),
+  // every page a widened read admits.
+  const entries = gates.map((gate) => entriesOf(where, gate));
+  const asRule = entries.map(asGate);
+  const read = readGate(
+    gates.length === 1 && !value.getProperty("by")
+      ? asRule[0]!
+      : {
+          by: "value",
+          rules: Object.fromEntries(asRule.map((gate, i) => [i, gate]))
+        }
+  );
+  const reads = ("rules" in read ? Object.values(read.rules) : [read]).map(
+    (gate) => alternativesOf(gate as AnyGate)
+  );
+  if (reads.length === 1 && reads[0]!.length > 1)
+    return publishChoice(where, { kind: "anyOf", gates: reads[0]! });
+
   const modules = new Set<string>();
-  const actions: PermissionAction[] = [];
-  for (const action of ACTIONS) {
-    const entry = value.getProperty(action);
-    if (!entry) continue;
-    const names = Node.isPropertyAssignment(entry)
+  const pages = new Set<string>();
+  const actions = new Set<PermissionAction>();
+  for (const read of reads) {
+    if (read.length < 2) continue;
+    for (const gate of read as [string, string][][]) {
+      const page = gate[0]?.[0];
+      if (!page) continue;
+      modules.add(moduleOf(page));
+      pages.add(page);
+    }
+  }
+  for (const [page, level] of entries.flat()) {
+    modules.add(moduleOf(page));
+    pages.add(page);
+    for (const action of ACTIONS) {
+      if (levelHolds(level as Level, action)) actions.add(action);
+    }
+  }
+  const held = ACTIONS.filter((action) => actions.has(action));
+  const [module] = modules;
+  const [page] = pages;
+  if (modules.size === 1 && module) {
+    return {
+      permission: {
+        module,
+        ...(pages.size === 1 && page ? { page } : {}),
+        actions: held
+      },
+      actions: held
+    };
+  }
+  // One gate over pages of several modules needs every entry: publish them all.
+  if (entries.length === 1) {
+    const order = PAGES.map((page) => page.id as string);
+    const allOf = [...entries[0]!]
+      .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
+      .map(([page, level]) => ({ page, level }));
+    return { permission: { module: null, actions: held, allOf }, actions: held };
+  }
+  return { permission: { module: null, actions: [] }, actions: held };
+}
+
+/** A gate literal's `[page, level]` entries, each checked (`checkedEntry`). */
+function entriesOf(
+  where: string,
+  gate: ObjectLiteralExpression
+): [string, string][] {
+  return gate.getProperties().map((entry) => {
+    const page = literalName(entry);
+    const level = Node.isPropertyAssignment(entry)
       ? stringsOf(entry.getInitializer())
       : null;
-    if (!names || names.length === 0) {
-      throw new Error(`${where}: permission.${action} must be string literals`);
-    }
-    for (const name of names) modules.add(name);
-    actions.push(action);
+    return checkedEntry(where, [
+      page ?? entry.getText(),
+      level?.length === 1 ? level[0]! : ""
+    ]);
+  });
+}
+
+/** `[page, level]` when the page is the registry's and the level a gate level; else throws. */
+function checkedEntry(
+  where: string,
+  [page, level]: [string, string]
+): [string, string] {
+  if (!pageById(page)) {
+    throw new Error(
+      `${where}: permission names a page of the registry ({ "inventory.receipts": "Edit" }), not ${page}`
+    );
   }
-  // `{}`: any member of the company (the caller's own account, a membership
-  // read). The API gate then checks only that the key is the company's.
-  const [module] = modules;
-  return {
-    permission:
-      modules.size === 1 && module ? { module, actions } : { module: null, actions: [] },
-    actions
-  };
+  if (!GATE_LEVELS.includes(level)) {
+    throw new Error(
+      `${where}: permission.${page} must be one of ${GATE_LEVELS.join(", ")}`
+    );
+  }
+  return [page, level];
+}
+
+const asGate = (entries: [string, string][]) =>
+  Object.fromEntries(entries) as PageGate;
+
+/** A gate as the alternatives of which any one passes, each as its entries. */
+function alternativesOf(gate: AnyGate): [string, string][][] {
+  const list = "anyOf" in gate ? gate.anyOf : Array.isArray(gate) ? gate : [gate];
+  return list.map(
+    (alternative: PageGate) => Object.entries(alternative) as [string, string][]
+  );
 }
 
 function classify(

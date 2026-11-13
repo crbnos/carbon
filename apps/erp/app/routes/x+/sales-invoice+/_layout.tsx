@@ -15,8 +15,7 @@ export const meta = moduleMeta("Invoicing");
 
 export const handle: Handle = {
   breadcrumb: msg`Invoicing`,
-  to: path.to.invoicing,
-  module: "invoicing"
+  to: path.to.invoicing
 };
 
 export default function SalesInvoiceRoute() {

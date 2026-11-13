@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
@@ -13,11 +13,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { customerAssetUpdateValidator } from "~/modules/service/service.models";
-import {
-  getCustomerAsset,
-  getSalesReturnLinesByAsset,
-  getServiceJobsByAsset
-} from "~/modules/service/service.service";
+import { getSalesReturnLinesByAsset } from "~/modules/service/service.service";
 import { CustomerAssetPage } from "~/modules/service/ui/CustomerAssets";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -26,20 +22,19 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Customer Assets`, to: path.to.customerAssets },
     (data) => data?.asset?.trackedEntity?.readableId
-  ),
-  module: "service"
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "service"
+  const { api, client, companyId } = await authorize(request, {
+    "service.customerAssets": "View"
   });
   const { assetId } = params;
   if (!assetId) throw new Error("Could not find assetId");
 
   const [asset, serviceJobs, returnLines] = await Promise.all([
-    getCustomerAsset(client, assetId, companyId),
-    getServiceJobsByAsset(client, assetId),
+    api.service.getCustomerAsset({ id: assetId }),
+    api.service.getServiceJobsByAsset({ customerAssetId: assetId }),
     getSalesReturnLinesByAsset(client, assetId, companyId)
   ]);
 
@@ -62,7 +57,9 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { assetId } = input.params;
   const formData = await args.request.formData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request, {
+    "service.customerAssets": "Edit"
+  });
 
   if (formData.get("intent") === "field") {
     if (formData.get("field") !== "notes") {

@@ -77,8 +77,8 @@ const PlanningGroupForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const canSave = isEditing
-    ? permissions.can("update", "projects")
-    : permissions.can("create", "projects");
+    ? permissions.has({ "projects.planningGroups": "Edit" })
+    : permissions.has({ "projects.planningGroups": "Create" });
 
   return (
     <ModalDrawerProvider type="drawer">

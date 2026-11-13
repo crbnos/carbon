@@ -26,6 +26,8 @@ const PRESERVED_TABLES = new Set([
   // Console PIN hashes belong to the employees above, not to the story
   "employeePin",
   "employeeType",
+  // The grants of the roles, people and API keys kept here
+  "permission",
   "fiscalYearSettings",
   "fixedAssetClass",
   "gaugeType",

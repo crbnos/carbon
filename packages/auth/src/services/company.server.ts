@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ownsCompany } from "@carbon/database/access";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -100,6 +101,56 @@ async function loadCompanyPlanId(companyId: string): Promise<string | null> {
 }
 
 /**
+ * Whether the user owns the company (`ownsCompany`: its group's `ownerId`), read
+ * past RLS. The one server check behind billing; a failed read is no owner.
+ */
+export async function isCompanyOwner(
+  companyId: string,
+  userId: string | null
+): Promise<boolean> {
+  if (!userId) return false;
+  const owner = await readCompanyOwnerId(companyId);
+  return owner.ok && ownsCompany(owner.ownerId, userId);
+}
+
+/**
+ * The company's owner: its group's `ownerId`, read past RLS. `ok: false` when
+ * the read failed (logged); `ownerId: null` when the group has no owner.
+ */
+async function readCompanyOwnerId(
+  companyId: string
+): Promise<{ ok: true; ownerId: string | null } | { ok: false }> {
+  const company = await getCarbonServiceRole()
+    .from("company")
+    .select("companyGroup(ownerId)")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (company.error) {
+    logger.error("Failed to read company owner", {
+      companyId,
+      error: company.error
+    });
+    return { ok: false };
+  }
+  return { ok: true, ownerId: company.data?.companyGroup?.ownerId ?? null };
+}
+
+/**
+ * Refuse, with a 403, a route caller who does not own the company
+ * (`isCompanyOwner`).
+ */
+export async function requireCompanyOwner(auth: {
+  companyId: string;
+  userId: string;
+}): Promise<void> {
+  if (!(await isCompanyOwner(auth.companyId, auth.userId))) {
+    throw new Response("Only the company owner can manage billing", {
+      status: 403
+    });
+  }
+}
+
+/**
  * True when the company's group owner has a Carbon-internal email. These
  * companies get top-tier plan access without billing — the runtime analogue of
  * the `STRIPE_BYPASS_COMPANY_IDS` list, keyed on owner identity instead of a
@@ -116,25 +167,13 @@ async function loadIsCarbonOwnedCompany(companyId: string): Promise<boolean> {
   const cached = await redis.get(cacheKey);
   if (cached === "1" || cached === "0") return cached === "1";
 
-  const client = getCarbonServiceRole();
-
-  const company = await client
-    .from("company")
-    .select("companyGroup(ownerId)")
-    .eq("id", companyId)
-    .maybeSingle();
-  if (company.error) {
-    logger.error("Failed to read company owner", {
-      companyId,
-      error: company.error
-    });
-    return false;
-  }
+  const company = await readCompanyOwnerId(companyId);
+  if (!company.ok) return false;
 
   let owned = false;
-  const ownerId = company.data?.companyGroup?.ownerId;
+  const { ownerId } = company;
   if (ownerId) {
-    const owner = await client
+    const owner = await getCarbonServiceRole()
       .from("user")
       .select("email")
       .eq("id", ownerId)

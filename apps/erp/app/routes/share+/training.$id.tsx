@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -83,7 +83,7 @@ type UserAnswer = {
 };
 
 // The training-completion page is opened by the assigned employee themselves.
-// A normal employee lacks the `people_view` permission that RLS on
+// A normal employee lacks View on Assignments (Resources), which RLS on
 // `trainingAssignment` requires, so a user-scoped read 404s for exactly the
 // people the assignment (and its reminder notification) targets. Read with the
 // service role instead, and authorize by confirming the signed-in user is a
@@ -116,9 +116,7 @@ async function getAuthorizedAssignment(
 }
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {
-    role: "employee"
-  });
+  const { userId, companyId } = await authorize(request, {});
 
   const { id } = params;
   if (!id) {
@@ -162,9 +160,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { userId } = await requirePermissions(request, {
-    role: "employee"
-  });
+  const { userId } = await authorize(request, {});
 
   const { id } = params;
   if (!id) {

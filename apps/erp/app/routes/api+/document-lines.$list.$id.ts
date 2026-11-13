@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
+import { getListDefinition } from "~/utils/list-registry/index.server";
 import {
   type DocumentLineList,
   documentLineLists,
@@ -15,20 +16,17 @@ import {
 
 const logger = getLogger("erp", "document-lines");
 
-// The list view a row comes from, and the permission that list needs.
-const sources = {
-  "purchase-orders": { view: "purchaseOrders", module: "purchasing" },
-  "supplier-quotes": { view: "supplierQuotes", module: "purchasing" },
-  "purchasing-rfqs": { view: "purchasingRfqs", module: "purchasing" },
-  "purchase-invoices": { view: "purchaseInvoices", module: "invoicing" },
-  "sales-orders": { view: "salesOrders", module: "sales" },
-  quotes: { view: "quotes", module: "sales" },
-  "sales-rfqs": { view: "salesRfqs", module: "sales" },
-  "sales-invoices": { view: "salesInvoices", module: "invoicing" }
-} as const satisfies Record<
-  DocumentLineList,
-  { view: string; module: "purchasing" | "sales" | "invoicing" }
->;
+// The view a list's rows come from, by list key.
+const views = {
+  "purchase-orders": "purchaseOrders",
+  "supplier-quotes": "supplierQuotes",
+  "purchasing-rfqs": "purchasingRfqs",
+  "purchase-invoices": "purchaseInvoices",
+  "sales-orders": "salesOrders",
+  quotes: "quotes",
+  "sales-rfqs": "salesRfqs",
+  "sales-invoices": "salesInvoices"
+} as const satisfies Record<DocumentLineList, string>;
 
 function isDocumentLineList(
   list: string | undefined
@@ -42,13 +40,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!isDocumentLineList(list) || !id) {
     throw new Response("The document could not be found.", { status: 404 });
   }
-  const source = sources[list];
-  const { client, companyId } = await requirePermissions(request, {
-    view: source.module
-  });
+  const definition = getListDefinition(list);
+  if (!definition) throw new Error(`No list registry entry for ${list}`);
+  const { client, companyId } = await authorize(request, definition.gate);
 
   const result = await client
-    .from(source.view)
+    .from(views[list])
     .select("id, searchLines")
     .eq("id", id)
     .eq("companyId", companyId)

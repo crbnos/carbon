@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { assignStorageRule } from "@carbon/ee/rules.server";
 import { redirect } from "@carbon/utils";
@@ -13,9 +14,11 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "resources"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    // The work center's page or Storage Rules: both write the assignment.
+    anyOf(["resources.workCenters", "inventory.storageRules"], "Create")
+  );
 
   await requireFeature({
     request,

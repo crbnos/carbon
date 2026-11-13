@@ -237,8 +237,8 @@ const ProjectContractDetailsForm = ({
           <Submit
             isDisabled={
               isEditing
-                ? !permissions.can("update", "sales")
-                : !permissions.can("create", "sales")
+                ? !permissions.has({ "sales.serviceContracts": "Edit" })
+                : !permissions.has({ "sales.serviceContracts": "Create" })
             }
           >
             <Trans>Next</Trans>

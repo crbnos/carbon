@@ -186,7 +186,7 @@ const CustomerAssetsTable = memo(
             <Trans>View Asset</Trans>
           </MenuItem>
           <MenuItem
-            disabled={!permissions.can("create", "service")}
+            disabled={!permissions.has({ "service.jobs": "Create" })}
             onClick={() =>
               navigate(
                 `${path.to.newServiceJob}?customerId=${row.customerId}&customerAssetId=${row.id}`
@@ -213,7 +213,7 @@ const CustomerAssetsTable = memo(
           left: ["serial"]
         }}
         primaryAction={
-          permissions.can("create", "service") && (
+          permissions.has({ "service.customerAssets": "Create" }) && (
             <New label={t`Asset`} to={newAssetPath} />
           )
         }

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { getCompanyRestoreRuns } from "~/modules/settings/backups.service";
 import { canManageBackups } from "~/modules/settings/settings.service";
@@ -12,8 +12,8 @@ import { canManageBackups } from "~/modules/settings/settings.service";
 // "ready" for keep/revert. Once kept or reverted the marker is gone again — the
 // client knows which phase it's in, so it interprets absence accordingly.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId, email } = await authorize(request, {
+    "settings.backups": "Edit"
   });
   if (!(await canManageBackups(client, companyId, email)))
     throw new Response("Not found", { status: 404 });

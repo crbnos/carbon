@@ -35,7 +35,7 @@ const PickingListDocuments = () => {
     relatedItems?: Promise<RelatedItems>;
   }>(path.to.pickingList(pickingListId));
 
-  if (!permissions.can("view", "production")) {
+  if (!permissions.has({ "production.jobs": "View" })) {
     return <Empty className="py-12" />;
   }
 

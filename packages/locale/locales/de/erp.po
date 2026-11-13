@@ -926,6 +926,9 @@ msgstr "{count, plural, one {Alle # passende Zeile auswählen} other {Alle # pas
 msgid "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
 msgstr "{count, plural, one {Alle passenden Zeilen auswählen (etwa #)} other {Alle passenden Zeilen auswählen (etwa #)}}"
 
+msgid "{count} grants"
+msgstr ""
+
 msgid "{count} items"
 msgstr "{count} Artikel"
 
@@ -1010,6 +1013,10 @@ msgstr "{from} – {to}"
 
 msgid "{functionLabel}: {formattedValue}"
 msgstr "{functionLabel}: {formattedValue}"
+
+#. placeholder {0}: modules.length
+msgid "{granted} of {0} modules"
+msgstr ""
 
 msgid "{group} {number}"
 msgstr "{group} {number}"
@@ -1198,6 +1205,9 @@ msgstr "{orderLabel} wird zur Bearbeitung erneut geöffnet als Revision {0}. Das
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# Leihbestand ist über das Rückgabedatum hinaus} other {# Leihbestände sind über das Rückgabedatum hinaus}}"
 
+msgid "{overrides} overridden"
+msgstr ""
+
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} schuldet {lender}, fällig {due}"
 
@@ -1234,6 +1244,10 @@ msgstr "{quantity} ohne Los"
 msgid "{quantity} without a serial number"
 msgstr "{quantity} ohne Seriennummer"
 
+#. placeholder {0}: module.rows.length
+msgid "{reached}/{0} pages"
+msgstr ""
+
 msgid "{received} of {ordered}"
 msgstr "{received} von {ordered}"
 
@@ -1257,9 +1271,6 @@ msgstr "{removed} geplante Rechnungen werden entfernt."
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} wird zur Planung als nächste Revision wieder geöffnet. Das bereits an den Lieferanten gesendete Dokument bleibt unverändert, bis Sie die Bestellung abschließen und erneut versenden."
-
-msgid "{scopeCount} permissions"
-msgstr "{scopeCount} Berechtigungen"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} Positionen"
@@ -2559,6 +2570,12 @@ msgstr "Angenommen {0}"
 msgid "Accepted quantity"
 msgstr "Angenommene Menge"
 
+msgid "Access"
+msgstr ""
+
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "Konto"
 
@@ -2618,9 +2635,6 @@ msgstr "Kontotyp"
 
 msgid "Account Type (inherited)"
 msgstr "Kontotyp (geerbt)"
-
-msgid "accounting"
-msgstr "Buchhaltung"
 
 msgid "Accounting"
 msgstr "Buchhaltung"
@@ -3301,6 +3315,9 @@ msgstr "Bestellung hinzufügen"
 msgid "Add Question"
 msgstr "Frage hinzufügen"
 
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
+
 msgid "Add Rate"
 msgstr "Satz hinzufügen"
 
@@ -3511,6 +3528,12 @@ msgstr "Korrekturen"
 msgid "Admin"
 msgstr "Admin"
 
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr ""
+
+msgid "Admin has full access"
+msgstr ""
+
 msgid "Advance"
 msgstr "Anzahlung"
 
@@ -3577,9 +3600,6 @@ msgstr "Alle"
 #. placeholder {0}: tieOut.cellCount
 msgid "All {0} cells tie out"
 msgstr "Alle {0} Zellen gleichen sich ab"
-
-msgid "All {moduleName} permissions"
-msgstr "Alle Berechtigungen für {moduleName}"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Alle {total} Phasen sind erledigt. Gute Arbeit – Ihr Team ist einsatzbereit."
@@ -3656,9 +3676,6 @@ msgstr "Alle offenen Fertigungsaufträge"
 
 msgid "All Others"
 msgstr "Alle anderen"
-
-msgid "All permissions"
-msgstr "Alle Berechtigungen"
 
 msgid "All returnable lines"
 msgstr "Alle rückgabefähigen Positionen"
@@ -5001,7 +5018,7 @@ msgstr "Als Unternehmenseigner können Sie das Eigentum an einen anderen Mitarbe
 msgid "Ascending"
 msgstr "Aufsteigend"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Bitten Sie einen Admin mit {0}-Berechtigung, den ersten {1} hinzuzufügen."
@@ -6304,6 +6321,18 @@ msgstr "Eine Methode in Carbon genannt — die Komponenten plus Arbeitsgänge, d
 msgid "Camera"
 msgstr "Kamera"
 
+msgid "can create"
+msgstr ""
+
+msgid "can delete"
+msgstr ""
+
+msgid "can update"
+msgstr ""
+
+msgid "can view"
+msgstr ""
+
 msgid "Can't be restored"
 msgstr "Kann nicht wiederhergestellt werden"
 
@@ -6887,6 +6916,9 @@ msgstr "Kontenplan"
 
 msgid "Chat"
 msgstr "Chat"
+
+msgid "Check a module to override the type on all its pages, or expand it to override one page."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "Wählen Sie Arbeitsgänge auf der linken Seite, um das Los zu erstellen."
@@ -9906,9 +9938,6 @@ msgstr "Standard-Bereitstellungsart"
 msgid "Default Method Type"
 msgstr "Standard-Bereitstellungsart"
 
-msgid "Default Permissions"
-msgstr "Standardberechtigungen"
-
 msgid "Default Priority"
 msgstr "Standardpriorität"
 
@@ -10932,9 +10961,6 @@ msgstr "Lose auflösen"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "Das Auflösen von {0} gibt seine {memberCount} Arbeitsgänge als nicht ausgeführt zur Planung zurück und löscht das Los. Ein Los mit erfasster Produktion muss stattdessen abgeschlossen werden."
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "Möchten Sie die aktuellen Berechtigungen des Benutzers mit den Standardberechtigungen für diesen Mitarbeitertyp überschreiben?"
-
 msgid "Doc-Backed"
 msgstr "Dokumentgestützt"
 
@@ -11309,6 +11335,9 @@ msgstr "z. B. Verdacht auf Fälschung, falsches Teil, Transportschaden"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "z.B. die ersten 3 bis 4 Wochen"
+
+msgid "e.g. Warehouse Supervisor"
+msgstr ""
 
 msgid "e.g. Zebra 2x1"
 msgstr "z.B. Zebra 2x1"
@@ -12595,6 +12624,9 @@ msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten
 
 msgid "Every job of {name} is complete. Is it done?"
 msgstr "Alle Fertigungsaufträge von {name} sind fertiggestellt. Ist es erledigt?"
+
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr ""
 
 #. placeholder {0}: storageUnit.name
 msgid "Every line already comes from {0}"
@@ -14024,6 +14056,9 @@ msgstr "Von:"
 msgid "Fulfillment Location"
 msgstr "Versandstandort"
 
+msgid "Full access through the Admin type"
+msgstr ""
+
 msgid "Full name"
 msgstr "Vollständiger Name"
 
@@ -14117,6 +14152,10 @@ msgstr "Gewinn aus Mietvertragskündigung"
 
 msgid "Gain/Loss"
 msgstr "Gewinn/Verlust"
+
+#. placeholder {0}: actions.join(", ")
+msgid "Gained {0} when permissions became levels"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Gewinne aus dem Abgang von Anlagevermögen"
@@ -15153,6 +15192,9 @@ msgstr "Importiert"
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "Importiert: {counted} Position(en) gezählt, {added} hinzugefügt, {removed} entfernt"
 
+msgid "in"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "in {0}"
@@ -15666,9 +15708,6 @@ msgstr "Ungültige Verrechnungen"
 
 msgid "Invalid Invite"
 msgstr "Ungültige Einladung"
-
-msgid "inventory"
-msgstr "Bestand"
 
 msgid "Inventory"
 msgstr "Bestand"
@@ -16396,9 +16435,6 @@ msgstr "Kanbans"
 
 msgid "Keep"
 msgstr "Behalten"
-
-msgid "Keep Current"
-msgstr "Aktuell behalten"
 
 msgid "Keep demo data"
 msgstr "Demoinformationen behalten"
@@ -19426,6 +19462,9 @@ msgstr "Keine Zelle konnte die eingefügten Werte übernehmen"
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Es ist kein Zertifizierungstext für Sie festgelegt. Bitten Sie einen Administrator, ihn unter Einstellungen → Zeit festzulegen."
 
+msgid "No change"
+msgstr ""
+
 msgid "No change request"
 msgstr "Keine Änderungsanfrage"
 
@@ -20369,6 +20408,9 @@ msgstr "Niemand ist für {0} qualifiziert"
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "Niemand ist qualifiziert. Fügen Sie jemanden zur Qualifikation des Verfahrens hinzu."
 
+msgid "Nobody yet."
+msgstr ""
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -20922,6 +20964,9 @@ msgstr "Ein Element einer Projektstruktur, typisiert als System, Anforderung, Fu
 
 msgid "One line per CLIN. Time & Materials and Cost Plus lines bill from project cost; a Fixed Price line bills its price. Click a cell to change it."
 msgstr "Eine Position pro CLIN. Zeit & Material und Cost Plus Positionen werden von den Projektkosten abgerechnet; eine Festpreis-Position wird zu ihrem Preis abgerechnet. Klicken Sie auf eine Zelle, um sie zu ändern."
+
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
 
 msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
 msgstr "Eines Ihrer {appName}-Konten muss erneut verbunden werden, bevor Workflow-Schritte es verwenden können."
@@ -21738,9 +21783,6 @@ msgstr "Übersicht"
 msgid "Overwrite Existing"
 msgstr "Vorhandene überschreiben"
 
-msgid "Overwrite Permissions"
-msgstr "Berechtigungen überschreiben"
-
 msgid "Overwrite the quote method with the source method"
 msgstr "Überschreiben Sie die Angebotsmethode mit der Quellmethode"
 
@@ -22190,9 +22232,6 @@ msgstr "Prüfung ausstehend"
 msgid "Pending Inspection"
 msgstr "Prüfung ausstehend"
 
-msgid "people"
-msgstr "Personal"
-
 msgid "People"
 msgstr "Personen"
 
@@ -22290,7 +22329,7 @@ msgid "Permission groups for granting access in bulk"
 msgstr "Berechtigungsgruppen zum Gewähren von Zugriff in großen Mengen"
 
 msgid "Permissions"
-msgstr "Berechtigungen"
+msgstr ""
 
 msgid "Person"
 msgstr "Person"
@@ -23137,9 +23176,6 @@ msgstr "Produktprobleme während der Hypercare"
 msgid "Product support"
 msgstr "Produktunterstützung"
 
-msgid "production"
-msgstr "Produktionsabweichung"
-
 msgid "Production"
 msgstr "Produktion"
 
@@ -23621,9 +23657,6 @@ msgstr "Gekaufte Dienstleistung"
 msgid "Purchases"
 msgstr "Käufe"
 
-msgid "purchasing"
-msgstr "Einkauf & Kosten der verkauften Waren"
-
 msgid "Purchasing"
 msgstr "Einkauf"
 
@@ -23767,9 +23800,6 @@ msgstr "Qualifizierte Forschungsausgaben jeder Geschäftskomponente"
 
 msgid "Qualified to run it"
 msgstr "Qualifiziert, um es auszuführen"
-
-msgid "quality"
-msgstr "qualität"
 
 msgid "Quality"
 msgstr "Qualität"
@@ -25393,6 +25423,9 @@ msgstr "Reserviert"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
+msgid "Reset all overrides"
+msgstr ""
+
 msgid "Reset PIN"
 msgstr "PIN zurücksetzen"
 
@@ -25456,9 +25489,6 @@ msgstr "Ressource"
 
 msgid "Resource Planning"
 msgstr "Ressourcenplanung"
-
-msgid "resources"
-msgstr "Ressourcen"
 
 msgid "Resources"
 msgstr "Ressourcen"
@@ -25971,6 +26001,9 @@ msgstr "RMAs"
 msgid "Role"
 msgstr "Rolle"
 
+msgid "Role default"
+msgstr ""
+
 msgid "Role:"
 msgstr "Rolle:"
 
@@ -26175,9 +26208,6 @@ msgstr "Verkaufspreis"
 
 msgid "Sale Proceeds"
 msgstr "Verkaufserlöse"
-
-msgid "sales"
-msgstr "vertrieb"
 
 msgid "Sales"
 msgstr "Vertrieb"
@@ -26589,9 +26619,6 @@ msgstr "Umfang unterzeichnet"
 msgid "Scope Summary"
 msgstr "Scope-Zusammenfassung"
 
-msgid "Scopes"
-msgstr "Bereiche"
-
 msgid "Scrap"
 msgstr "Ausschuss"
 
@@ -26971,6 +26998,10 @@ msgstr "Konto auswählen"
 
 msgid "Select all"
 msgstr "Alle auswählen"
+
+#. placeholder {0}: module.row.label
+msgid "Select all in {0}"
+msgstr ""
 
 msgid "Select all jobs"
 msgstr "Alle Fertigungsaufträge auswählen"
@@ -27506,6 +27537,14 @@ msgstr "Legen Sie Prognosewerte für den Bedarf für jede Woche fest"
 
 msgid "Set due date"
 msgstr "Fälligkeitsdatum festlegen"
+
+#. placeholder {0}: module.row.label
+#. placeholder {1}: stepLabel(step)
+msgid "Set every page of {0} to {1}"
+msgstr ""
+
+msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
+msgstr ""
 
 msgid "Set on a posting account: Allowable, or Expressly, Mutually Agreed or Directly Associated Unallowable. Cost posted to an unallowable account or element is marked unallowable in the project ledger and never becomes a billable item."
 msgstr "Auf einem Buchungskonto festgelegt: Zulässig oder Ausdrücklich, gegenseitig vereinbart oder direkt mit Unzulässigem verbunden. Kosten, die auf ein unzulässiges Konto oder Element gebucht werden, sind im Projektledger als unzulässig gekennzeichnet und werden niemals zu einem abrechnungsfähigen Artikel."
@@ -29531,8 +29570,8 @@ msgstr "Zu schriftlichen Inhalten wechseln"
 msgid "Switch users over and confirm access"
 msgstr "Benutzer wechseln und Zugriff bestätigen"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "Das Ändern des Mitarbeitertyps hier ändert nicht ihre bestehenden Berechtigungen; das folgende Fenster fragt, ob die aktuelle Menge mit den Standardwerten des neuen Typs überschrieben werden soll."
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "Synchronisieren"
@@ -30659,6 +30698,9 @@ msgstr "Der Vermögenswert des Leasingnehmers für das Recht zur Nutzung eines g
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "Das Vermögen des Vermieters bei einem Miet-Kaufvertrag: der Barwert der Leasingzahlungen und des nicht garantierten Restwerts, der jeden Monat um Leasingzinsen anwächst und durch jede Miete und Kaufoptionsrechnung verringert wird."
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Die Lebenszyklusstadien, die Sie für Kunden nachverfolgen"
 
@@ -30906,9 +30948,6 @@ msgstr "Das pro-Artikel-Ergebnis auf einem betroffenen Werkstoff einer Nichtkonf
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "Der Prozentsatz des Kassenrabatts. Verwenden Sie 0 für keinen Rabatt."
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "Der Berechtigungssatz, den neue Mitarbeiter dieses Typs automatisch erhalten; durch die Bearbeitung hier wird nur die Vorlage für zukünftige Mitarbeiter geändert – vorhandene Mitarbeiter behalten das, was sie haben, es sei denn, es wird explizit in großen Mengen aktualisiert."
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "Die Person, der eine Planungsaktion zugewiesen ist: der Verantwortliche des Artikels an diesem Standort, sonst der Verantwortliche der Artikelgruppe, sonst der Verantwortliche des Standorts, sonst der Standard des Unternehmens."
 
@@ -31099,6 +31138,9 @@ msgstr "Die Revisionsnummer des Teils"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Das Nutzungsrecht und die Leasingverbindlichkeit sind in der Bilanz, und ein linearer Leasingaufwand wird monatlich gebucht."
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Die Kundenauftragsposition, die dieser Fertigungsauftrag liefern soll, wodurch der Fertigungsauftrag an den dahinter liegenden Kundenbedarf gebunden wird."
@@ -31298,8 +31340,8 @@ msgstr "Die Laufkarte listet jeden Artikel auf der Stückliste mit seiner Menge 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "Die Laufkarte listet jeden Arbeitsgang mit seinen erwarteten Zeiten und Scan-Strichcodes auf."
 
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "Der Typ bestimmt, welche Standardberechtigungen der neue Mitarbeiter erhält; die Auswahl hier füllt die Berechtigungsmatrix aus der Vorlage des Typs vorab aus."
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr ""
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "Die typische Anzahl der Tage zwischen dem Versand von Arbeiten an diesen Lieferant für dieses Verfahren und dem Rückempfang; die Planung versetzt den Bedarf um diesen Betrag, wenn ein Lieferant ausgewählt wird."
@@ -33514,9 +33556,6 @@ msgstr "Benutzerrollen"
 msgid "Username"
 msgstr "Benutzername"
 
-msgid "users"
-msgstr "Benutzer"
-
 msgid "Users"
 msgstr "Benutzer"
 
@@ -34632,9 +34671,6 @@ msgstr "Ob dieses Verfahren auf internen Arbeitsplätzen läuft (Verfahren, Mont
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Ob diese Arbeit die Produktion blockiert (Ausfall), sie beeinträchtigt (Auswirkung), in einem geplanten Stillstandszeitfenster liegt (Geplant) oder keine Produktionsauswirkung hat (Keine Auswirkung); informiert die Planung und die kundenorientierte Stillstandszeitkommunikation."
 
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "Ob die ausgewählten Berechtigungen zu den bestehenden Berechtigungen jedes Benutzers hinzufügen oder die Berechtigungssätze aller Benutzer durch die folgende Auswahl ersetzen."
-
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "Ob wiederkehrende Ereignisse in Einzeltermine aufgelöst werden, sodass nur einmalige Ereignisse und Termine wiederkehrender Ereignisse zurückgegeben werden, nicht aber die zugrunde liegenden wiederkehrenden Ereignisse selbst."
 
@@ -34652,6 +34688,9 @@ msgstr "Welcher Arbeitsgang war das?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Während dieser Instandhaltungsauftrag offen ist, ist der Arbeitsplatz für den Terminplan nicht verfügbar (bis zur geplanten Endzeit oder bis der Instandhaltungsauftrag fertiggestellt ist)."
+
+msgid "Who"
+msgstr ""
 
 msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
 msgstr "Wer trägt die Kosten eines Service-Fertigungsauftrags: Gebührenpflichtige Arbeit und Vertragsarbeit werden auf Servicekosten (sonst Umsatzkosten) gebucht, Gewährleistungsarbeit auf Gewährleistungsaufwand. Nur ein gebührenpflichtiger Fertigungsauftrag wird fakturiert."

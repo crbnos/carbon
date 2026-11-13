@@ -48,7 +48,9 @@ export function GoodsInStorageCard({
   storageUnits: GoodsInStorageUnit[];
 }) {
   const { t } = useLingui();
-  const canEditLocations = usePermissions().can("update", "resources");
+  const canEditLocations = usePermissions().has({
+    "resources.locations": "Edit"
+  });
   const fetcher = useAction({
     onSuccess: ({ data }) => {
       if (data?.locationGoodsInStorage) {

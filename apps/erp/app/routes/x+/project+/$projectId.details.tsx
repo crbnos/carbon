@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -28,7 +27,7 @@ const logger = getLogger("erp", "project-details");
  * Overview.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requirePermissions(request, { view: "projects" });
+  await authorize(request, { "projects.projects": "View" });
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
   throw redirect(path.to.project(projectId));
@@ -106,7 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
 
   // `intent=field` saves one field of the properties column; the Settings
   // form posted every field.

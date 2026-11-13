@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -19,10 +19,7 @@ import {
 import MachineTimeTable from "~/modules/production/ui/MachineTime/MachineTimeTable.ee";
 import MachineTimeUpgradeOverlay from "~/modules/production/ui/MachineTime/MachineTimeUpgradeOverlay.ee";
 import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
-import {
-  getLocationsList,
-  getWorkCentersList
-} from "~/modules/resources/resources.service";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/load.server";
@@ -37,9 +34,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "production.unattributedTime": "View"
   });
 
   const url = new URL(request.url);
@@ -50,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [machineTimes, workCenters, locations] = await Promise.all([
     getUnattributedMachineTimes(client, companyId, { filters, limit, cursor }),
     getWorkCentersList(client, companyId),
-    getLocationsList(client, companyId)
+    api.resources.getLocationsList({})
   ]);
 
   if (machineTimes.error) {

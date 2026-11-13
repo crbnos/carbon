@@ -140,7 +140,7 @@ export function PeopleMatrix({
   const { t } = useLingui();
   const permissions = usePermissions();
   const submit = useSubmit();
-  const canEdit = permissions.can("update", "production");
+  const canEdit = permissions.has({ "production.resourcePlanning": "Edit" });
   const [tab, setTab] = usePersistentPageTab(
     "people-matrix",
     ["assignments", "coverage"],

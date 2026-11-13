@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -15,12 +14,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage } from "~/components/DocumentPage";
 import { projectStockTransferValidator } from "~/modules/projects/projects.models";
-import {
-  getProjectBorrows,
-  getProjectStockTransfer,
-  getProjectStockTransferLines,
-  getStockOwnerProjects
-} from "~/modules/projects/projects.service";
+import { getStockOwnerProjects } from "~/modules/projects/projects.service";
 import ProjectStockTransferDetails from "~/modules/projects/ui/Transfers/ProjectStockTransferDetails";
 import ProjectStockTransferHeader from "~/modules/projects/ui/Transfers/ProjectStockTransferHeader";
 import ProjectStockTransferLines from "~/modules/projects/ui/Transfers/ProjectStockTransferLines";
@@ -33,21 +27,20 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Transfers`, to: path.to.projectStockTransfers },
     (data) => data?.transfer?.projectStockTransferId
-  ),
-  module: "projects"
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, client, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [transfer, lines, owners] = await Promise.all([
-    getProjectStockTransfer(client, companyId, id),
-    getProjectStockTransferLines(client, companyId, id),
+    api.projects.getProjectStockTransfer({ projectStockTransferId: id }),
+    api.projects.getProjectStockTransferLines({ projectStockTransferId: id }),
     getStockOwnerProjects(client, companyId)
   ]);
 
@@ -67,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const borrow =
     transfer.data.type === "Payback" && transfer.data.fromProjectId
       ? ((
-          await getProjectBorrows(client, companyId, {
+          await api.projects.getProjectBorrows({
             projectId: transfer.data.fromProjectId
           })
         ).data?.find((b) => b.id === transfer.data.settlesBorrowId) ?? null)
@@ -93,7 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const updated = await api.projects.upsertProjectStockTransfer({
     ...validation.data,
     id

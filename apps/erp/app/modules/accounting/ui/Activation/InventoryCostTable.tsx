@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import type {
   CutoverInventoryAccountValue,
   CutoverInventoryValuedItem
@@ -156,14 +157,15 @@ function InventoryCostRow({ item }: { item: CutoverInventoryValuedItem }) {
   };
   const isAverage = item.costingMethod === "Average";
   // The cost is saved on the item, so it takes the permission to edit parts.
-  const canEditCost = permissions.can("update", "parts");
+  const canEditCost = permissions.has({ [ITEM_TYPE_PAGES[item.type]]: "Edit" });
   const linkType = isLinkableItemType(item.type) ? item.type : null;
 
   return (
     <Tr>
       <Td>
         <div className="flex flex-col">
-          {linkType && permissions.can("view", "parts") ? (
+          {linkType &&
+          permissions.has({ [ITEM_TYPE_PAGES[linkType]]: "View" }) ? (
             <Link
               to={getLinkToItemDetails(linkType, item.itemId)}
               className="font-medium text-primary hover:underline"

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -26,8 +26,8 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "project-change-request");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "projects"
+  const { client, companyId, userId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId, crId } = params;
@@ -64,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   // With a pending approval request, only its approvers decide. Without one,
-  // a user with `update: projects` decides (the page reads the permission).
+  // a user with Edit on Projects decides (the page reads the permission).
   const pending =
     latest.data && latest.data.companyId === companyId ? latest.data : null;
   const pendingApprover = pending
@@ -88,7 +88,7 @@ export default function ProjectChangeRequestRoute() {
 
   const { review, pendingApprover } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "projects");
+  const canUpdate = permissions.has({ "projects.projects": "Edit" });
 
   return (
     <ChangeRequestReview

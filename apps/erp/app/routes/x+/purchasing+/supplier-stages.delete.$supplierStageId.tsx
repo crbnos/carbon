@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { useRouteDialog } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -15,7 +16,9 @@ export async function loader(args: LoaderFunctionArgs) {
   const { supplierStageId } = args.params;
   if (!supplierStageId) throw notFound("supplierStageId not found");
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request, {
+    "purchasing.supplierStages": "Full"
+  });
   const supplierStage = await api.purchasing.getSupplierStage({
     supplierStageId
   });
@@ -32,7 +35,7 @@ export async function action(args: ActionFunctionArgs) {
   const { supplierStageId } = args.params;
   if (!supplierStageId) throw notFound("supplierStageId not found");
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.purchasing.deleteSupplierStage({ supplierStageId });
 
   return respond(args.request, result).redirect(

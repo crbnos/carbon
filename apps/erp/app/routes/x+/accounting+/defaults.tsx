@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { ScrollArea } from "@carbon/react";
@@ -14,10 +14,7 @@ import { data, useLoaderData } from "react-router";
 import { SettingsPage } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
 import { defaultAccountValidator } from "~/modules/accounting/accounting.models";
-import {
-  getDefaultAccounts,
-  updateDefaultAccounts
-} from "~/modules/accounting/accounting.service";
+import { updateDefaultAccounts } from "~/modules/accounting/accounting.service";
 import type { AccountListItem } from "~/modules/accounting/types";
 import { AccountDefaultsForm } from "~/modules/accounting/ui/AccountDefaults";
 import type { Handle } from "~/utils/handle";
@@ -29,11 +26,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
+  const { api } = await authorize(request, {
+    "accounting.defaultAccounts": "View"
   });
 
-  const defaultAccounts = await getDefaultAccounts(client, companyId);
+  const defaultAccounts = await api.accounting.getDefaultAccounts({});
 
   if (defaultAccounts.error || !defaultAccounts.data) {
     throw redirect(
@@ -52,8 +49,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "accounting"
+  const { client, companyId, userId } = await authorize(request, {
+    "accounting.defaultAccounts": "Create"
   });
 
   const formData = await request.formData();

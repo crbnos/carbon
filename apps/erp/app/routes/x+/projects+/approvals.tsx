@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { Tabs, TabsList, TabsTrigger, VStack } from "@carbon/react";
@@ -20,13 +19,12 @@ import {
 } from "react-router";
 import Empty from "~/components/Empty";
 import { usePermissions } from "~/hooks";
-import {
-  getContractBillableItems,
-  getContractBillingLines,
-  getTimesheetApprovals
-} from "~/modules/projects/projects.service";
 import ProjectBillableItemsTable from "~/modules/projects/ui/Billing/ProjectBillableItemsTable";
 import TimesheetApprovals from "~/modules/projects/ui/Timesheet/TimesheetApprovals";
+import {
+  CONTRACT_READ_GATE,
+  withContractRead
+} from "~/modules/sales/sales.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -35,8 +33,7 @@ const logger = getLogger("erp", "project-timesheet-approvals");
 
 export const handle: Handle = {
   breadcrumb: msg`Approvals`,
-  to: path.to.projectTimesheetApprovals,
-  module: "projects"
+  to: path.to.projectTimesheetApprovals
 };
 
 export type ApprovalsTab = "time" | "billing";
@@ -51,12 +48,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const tab: ApprovalsTab =
     searchParams.get("tab") === "billing" ? "billing" : "time";
 
-  // Billing review is contract billing: it also needs the sales permission.
-  const { client, companyId } = await requirePermissions(
+  // Billing review is contract billing: it also needs a contracts page.
+  const { api, companyId } = await authorize(
     request,
     tab === "billing"
-      ? { update: "projects", view: "sales" }
-      : { update: "projects" }
+      ? withContractRead({ "projects.approvals": "Edit" })
+      : { "projects.approvals": "Edit" }
   );
 
   if (tab === "billing") {
@@ -67,15 +64,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       (filter) => filter.column === "status"
     );
     const [items, lines] = await Promise.all([
-      getContractBillableItems(client, {
-        companyId,
+      api.projects.getContractBillableItems({
         status: hasStatusFilter ? null : ["Unbilled", "On Hold"],
         limit,
         offset,
         sorts,
         filters
       }),
-      getContractBillingLines(client, { companyId })
+      api.projects.getContractBillingLines({})
     ]);
     if (items.error) {
       logger.error("Failed to load billable items", {
@@ -100,15 +96,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       tab,
       groups: [],
       billing: {
-        items: items.data ?? [],
-        count: items.count ?? 0,
+        items: items.data?.rows ?? [],
+        count: items.data?.count ?? 0,
         lines: lines.data ?? []
       }
     };
   }
 
-  // A projects_update holder approves time on every project.
-  const approvals = await getTimesheetApprovals(client, companyId, {
+  // An Edit on Approvals holder approves time on every project.
+  const approvals = await api.projects.getTimesheetApprovals({
     ownerId: null
   });
   if (approvals.error) {
@@ -123,7 +119,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
   const ids = formData
@@ -194,7 +190,7 @@ export default function ProjectTimesheetApprovalsRoute() {
   const { tab, groups, billing } = useLoaderData<typeof loader>();
   const [, setSearchParams] = useSearchParams();
   const permissions = usePermissions();
-  const canReviewBilling = permissions.can("view", "sales");
+  const canReviewBilling = permissions.has(CONTRACT_READ_GATE);
 
   const projects = new Map<string, string>();
   for (const item of billing?.items ?? []) {

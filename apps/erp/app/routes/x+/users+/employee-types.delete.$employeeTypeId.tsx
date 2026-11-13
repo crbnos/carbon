@@ -2,24 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { deleteEmployeeType } from "@carbon/ee/permissions.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { getEmployeeType } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "users",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "users.employeeTypes": "View"
   });
 
   await requireFeature({
@@ -33,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { employeeTypeId } = params;
   if (!employeeTypeId) throw notFound("EmployeeTypeId not found");
 
-  const employeeType = await getEmployeeType(client, employeeTypeId);
+  const employeeType = await api.users.getEmployeeType({ employeeTypeId });
   if (employeeType.error) {
     throw redirect(
       path.to.employeeTypes,
@@ -49,48 +48,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "users"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["employeeTypeId"]
   });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    redirectTo: path.to.employeeAccounts,
-    feature: "PERMISSIONS"
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.users.deleteEmployeeType({
+    id: input.params.employeeTypeId
   });
-
-  const { employeeTypeId } = params;
-  if (!employeeTypeId) {
-    throw redirect(
-      path.to.employeeTypes,
-      await flash(request, error(null, "Failed to get an employee type id"))
-    );
-  }
-
-  const { error: deleteTypeError } = await deleteEmployeeType(
-    client,
-    employeeTypeId,
-    companyId
-  );
-  if (deleteTypeError) {
-    throw redirect(
-      path.to.employeeTypes,
-      await flash(
-        request,
-        error(deleteTypeError, "Failed to delete employee type")
-      )
-    );
-  }
-
-  // TODO - delete employeeType group
-
-  throw redirect(
-    path.to.employeeTypes,
-    await flash(request, success("Successfully deleted employee type"))
-  );
+  return respond(args.request, result).redirect(path.to.employeeTypes, {
+    message: "Successfully deleted employee type"
+  });
 }
 
 export default function DeleteEmployeeTypeRoute() {

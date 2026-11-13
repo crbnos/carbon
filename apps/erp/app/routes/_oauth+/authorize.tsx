@@ -2,41 +2,59 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { Button, Heading, VStack } from "@carbon/react";
 import { redirectExternal } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Form, useLoaderData } from "react-router";
 import { z } from "zod";
 import {
-  canAuthorizeForCompany,
+  companiesToAuthorize,
   isRegisteredRedirectUri,
   supportedScope
 } from "~/services/oauth.server";
 
+const logger = getLogger("erp", "oauth-authorize");
+
+/**
+ * The person consenting. An API key acts as its creator, so a key here would
+ * mint a token holding the creator's full access, above the key's own grants.
+ */
+async function authorizeConsent(request: Request) {
+  const auth = await authorize(request, { "settings.apiKeys": "Edit" });
+  if (auth.caller === "apiKey") {
+    logger.warn("Refused an API key on the OAuth consent screen", {
+      companyId: auth.companyId
+    });
+    throw new Response("Only a signed-in person can authorize an app", {
+      status: 403
+    });
+  }
+  return auth;
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+  const { client, companyId, userId } = await authorizeConsent(request);
 
-  const [userCompanies, claims] = await Promise.all([
-    client
-      .from("userToCompany")
-      .select("companyId, role, company:companyId(name)")
-      .eq("userId", userId),
-    getUserClaims(userId, companyId)
-  ]);
+  const userCompanies = await client
+    .from("userToCompany")
+    .select("companyId, role, company:companyId(name)")
+    .eq("userId", userId);
 
-  // Only the companies the user may authorize a connector for.
-  const companies = (userCompanies.data ?? [])
-    .filter((uc) => canAuthorizeForCompany(uc, claims.permissions))
-    .map((uc) => ({
-      id: uc.companyId,
-      name: (uc.company as unknown as { name: string })?.name ?? uc.companyId
-    }));
+  // Claims are one company each; `getUserClaims` reads one field of the
+  // user's cached hash, so one read per membership is cheap and bounded.
+  const companies = (
+    await companiesToAuthorize(userCompanies.data ?? [], (id) =>
+      getUserClaims(userId, id)
+    )
+  ).map((uc) => ({
+    id: uc.companyId,
+    name: (uc.company as unknown as { name: string })?.name ?? uc.companyId
+  }));
 
   const url = new URL(request.url);
   const clientId = url.searchParams.get("client_id");
@@ -78,9 +96,7 @@ const formValidator = z.object({
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+  const { client, userId } = await authorizeConsent(request);
 
   const validation = await validator(formValidator).validate(
     await request.formData()
@@ -120,21 +136,20 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // The token acts in the SELECTED company, so the user must be able to
-  // authorize there — requirePermissions above only checked the active one.
-  const [membership, claims] = await Promise.all([
-    client
-      .from("userToCompany")
-      .select("companyId, role")
-      .eq("userId", userId)
-      .eq("companyId", company_id)
-      .single(),
-    getUserClaims(userId, companyId)
-  ]);
+  // act there — `authorize` above only checked the active one.
+  const membership = await client
+    .from("userToCompany")
+    .select("companyId, role")
+    .eq("userId", userId)
+    .eq("companyId", company_id)
+    .single();
 
-  if (
-    !membership.data ||
-    !canAuthorizeForCompany(membership.data, claims.permissions)
-  ) {
+  const authorizable = await companiesToAuthorize(
+    membership.data ? [membership.data] : [],
+    (id) => getUserClaims(userId, id)
+  );
+
+  if (authorizable.length === 0) {
     return data({ error: "Invalid company" }, { status: 403 });
   }
 

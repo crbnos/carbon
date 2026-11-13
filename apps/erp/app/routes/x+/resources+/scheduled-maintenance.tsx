@@ -3,14 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import type { MaintenanceSchedule } from "~/modules/resources/types";
 import MaintenanceSchedulesTable from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceSchedulesTable";
 import type { Handle } from "~/utils/handle";
@@ -27,15 +26,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(
-    request,
-    maintenanceSchedulesList.permission
-  );
+  const { api, client, companyId } = await authorize(request, {
+    "resources.schedules": "View"
+  });
 
   const searchParams = new URL(request.url).searchParams;
   const locationId = searchParams.get("location");
 
-  const locations = await getLocationsList(client, companyId);
+  const locations = await api.resources.getLocationsList({});
   const locationsList = locations.data ?? [];
 
   // Default to first location if none specified

@@ -2,17 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  ACTIONS,
+  type ExpandedClaims,
+  type Gate,
+  holdsGate,
+  landingOf,
+  type ModuleId,
+  ownsCompany
+} from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useCallback } from "react";
-import type { Permission } from "~/modules/users/types";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
 import { useUser } from "./useUser";
 
 export function usePermissions() {
   const data = useRouteData<{
-    permissions: Record<string, Permission>;
-    role: "employee" | "supplier" | "customer";
+    permissions: ExpandedClaims;
+    role: Role | null;
   }>(path.to.authenticatedRoot);
 
   const {
@@ -20,25 +28,15 @@ export function usePermissions() {
     company: { id: companyId, ownerId }
   } = useUser();
 
-  if (!isPermissions(data?.permissions) || !isRole(data?.role)) {
-    // TODO: force logout -- the likely cause is development changes
+  if (!isPermissions(data?.permissions) || !data?.role) {
     throw new Error(
       "usePermissions must be used within an authenticated route. If you are seeing this error, you are likely in development and have changed the session variables. Try deleting the cookies."
     );
   }
 
-  const can = useCallback(
-    (action: "view" | "create" | "update" | "delete", feature: string) => {
-      return data?.permissions[feature]?.[action].includes(companyId);
-    },
-    [companyId, data?.permissions]
-  );
-
   const has = useCallback(
-    (feature: string) => {
-      return !!data?.permissions && feature in data.permissions;
-    },
-    [data?.permissions]
+    (gate: Gate) => holdsGate(data?.permissions ?? {}, gate, companyId),
+    [companyId, data?.permissions]
   );
 
   const is = useCallback(
@@ -49,35 +47,33 @@ export function usePermissions() {
   );
 
   const isOwner = useCallback(() => {
-    return ownerId === userId;
+    return ownsCompany(ownerId, userId);
   }, [ownerId, userId]);
 
+  /** Where the module opens for this person (`landingOf`). */
+  const landing = useCallback(
+    (module: ModuleId) => landingOf(module, data?.permissions, companyId)?.path,
+    [companyId, data?.permissions]
+  );
+
   return {
-    can,
     has,
     is,
-    isOwner
+    isOwner,
+    landing
   };
 }
 
-function isPermissions(value: unknown): value is Record<string, Permission> {
+function isPermissions(value: unknown): value is ExpandedClaims {
   if (
     typeof value === "object" &&
     Array.isArray(value) === false &&
     value !== null
   ) {
-    return Object.values(value as object).every(
-      (permission) =>
-        "view" in permission &&
-        "create" in permission &&
-        "update" in permission &&
-        "delete" in permission
+    return Object.values(value as object).every((permission) =>
+      ACTIONS.every((action) => action in permission)
     );
   } else {
     return false;
   }
-}
-
-function isRole(value: unknown): value is Role {
-  return value === "employee" || value === "customer" || value === "supplier";
 }

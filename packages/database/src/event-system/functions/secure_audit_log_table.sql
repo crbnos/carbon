@@ -10,7 +10,7 @@ BEGIN
   EXECUTE format('DROP POLICY IF EXISTS "SELECT" ON %I', tbl_name);
   EXECUTE format(
     'CREATE POLICY "SELECT" ON %I FOR SELECT USING (
-       %L = ANY ((SELECT get_companies_with_employee_permission(''settings_view''))::text[])
+       %L = ANY ((SELECT get_companies_with_employee_permission(''settings.auditLogs_view''))::text[])
      )',
     tbl_name, p_company_id
   );

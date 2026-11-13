@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -17,7 +17,6 @@ import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
 import { quoteValidator } from "~/modules/sales/sales.models";
-import { getQuote } from "~/modules/sales/sales.service";
 import type {
   Opportunity,
   Quotation,
@@ -39,14 +38,12 @@ import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.quotes": "View" });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const quote = await getQuote(client, quoteId);
+  const quote = await api.sales.getQuote({ quoteId });
   if (quote.error) {
     throw redirect(
       path.to.quotes,
@@ -67,7 +64,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { quoteId } = input.params;
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.updateQuoteDetails({
     ...input.data,
     id: quoteId,

@@ -80,7 +80,6 @@ export const CarbonProvider = ({
       return;
     }
 
-    // refresh ten minutes before expiry
     if (canRefresh && expiresAt - 60 * 10 < now) {
       refresh.submit(null, {
         method: "post",

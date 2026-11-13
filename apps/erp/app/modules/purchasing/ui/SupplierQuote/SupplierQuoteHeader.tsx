@@ -56,6 +56,7 @@ import {
   useRouteData,
   useSupplierApprovalRequired
 } from "~/hooks";
+import { supplierQuoteToPurchaseOrderPermission } from "~/modules/shared/shared.utils";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import { isSupplierQuoteLocked } from "../../purchasing.models";
@@ -126,7 +127,9 @@ const SupplierQuoteHeader = () => {
   const hasSiblingQuotes = (routeData?.siblingQuotes ?? []).length > 0;
 
   const canSend =
-    isEditableStatus && permissions.can("update", "purchasing") && hasLines;
+    isEditableStatus &&
+    permissions.has({ "purchasing.supplierQuotes": "Edit" }) &&
+    hasLines;
 
   const canFinalize = ["Draft", "Declined"].includes(quoteStatus);
 
@@ -136,7 +139,7 @@ const SupplierQuoteHeader = () => {
         disabled={
           routeData?.quote?.status === "Draft" ||
           statusFetcher.state !== "idle" ||
-          !permissions.can("update", "purchasing")
+          !permissions.has({ "purchasing.supplierQuotes": "Edit" })
         }
         onClick={() => {
           statusFetcher.submit(
@@ -156,7 +159,7 @@ const SupplierQuoteHeader = () => {
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
           isLocked ||
-          !permissions.can("delete", "purchasing") ||
+          !permissions.has({ "purchasing.supplierQuotes": "Full" }) ||
           !permissions.is("employee")
         }
         destructive
@@ -228,7 +231,7 @@ const SupplierQuoteHeader = () => {
                   isDisabled={
                     quoteStatus == "Active" ||
                     sendFetcher.state !== "idle" ||
-                    !permissions.can("update", "purchasing") ||
+                    !permissions.has({ "purchasing.supplierQuotes": "Edit" }) ||
                     !hasLines
                   }
                   variant="primary"
@@ -249,7 +252,7 @@ const SupplierQuoteHeader = () => {
                   isLoading={finalizeFetcher.state !== "idle"}
                   isDisabled={
                     finalizeFetcher.state !== "idle" ||
-                    !permissions.can("update", "purchasing") ||
+                    !permissions.has({ "purchasing.supplierQuotes": "Edit" }) ||
                     !hasLines
                   }
                   variant="secondary"
@@ -267,8 +270,9 @@ const SupplierQuoteHeader = () => {
                     <DropdownMenuTrigger asChild>
                       <Button
                         isDisabled={
-                          !permissions.can("update", "purchasing") ||
-                          !isSupplierApproved
+                          !permissions.has(
+                            supplierQuoteToPurchaseOrderPermission
+                          ) || !isSupplierApproved
                         }
                         variant="primary"
                         leftIcon={<LuShoppingCart />}
@@ -293,8 +297,9 @@ const SupplierQuoteHeader = () => {
                 <RecordAction slot="primary">
                   <Button
                     isDisabled={
-                      !permissions.can("update", "purchasing") ||
-                      !isSupplierApproved
+                      !permissions.has(
+                        supplierQuoteToPurchaseOrderPermission
+                      ) || !isSupplierApproved
                     }
                     variant="primary"
                     leftIcon={<LuShoppingCart />}
@@ -315,7 +320,7 @@ const SupplierQuoteHeader = () => {
                   <Button
                     isDisabled={
                       statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "purchasing")
+                      !permissions.has({ "purchasing.supplierQuotes": "Edit" })
                     }
                     isLoading={
                       statusFetcher.state !== "idle" &&

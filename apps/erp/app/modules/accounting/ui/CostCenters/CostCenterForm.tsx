@@ -69,8 +69,8 @@ const CostCenterForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "accounting.costCenters": "Edit" })
+    : !permissions.has({ "accounting.costCenters": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

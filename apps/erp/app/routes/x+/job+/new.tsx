@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -28,15 +28,13 @@ export const meta = newRecordMeta("Job");
 
 export const handle: Handle = {
   breadcrumb: msg`Jobs`,
-  to: path.to.jobs,
-  module: "production"
+  to: path.to.jobs
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production"
+  const { client, companyId } = await authorize(request, {
+    "production.jobs": "View"
   });
-
   // The Complete To pickers. A CIP class is the holding account a job's cost
   // sits in, never a target, so it is filtered out here rather than by name.
   const [fixedAssetClasses, underConstructionAssets] = await Promise.all([
@@ -79,7 +77,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(jobValidator).request(args);
   if ("invalid" in input) return input.invalid;
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.createJob({
     ...input.data,
     customFields: input.formData ? setCustomFields(input.formData) : undefined

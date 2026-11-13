@@ -23,7 +23,7 @@ export const createWorkflow = defineServiceFn({
     name: z.string().trim().min(1),
     description: z.string().optional()
   }),
-  permission: { create: "workflows" },
+  permission: { "workflows.workflows": "Create" },
 
   async run(ctx, { name, description }) {
     const gated = await service.refuseUnlessWorkflowsEnabled(ctx);
@@ -75,7 +75,7 @@ export const createWorkflow = defineServiceFn({
  */
 export const deleteWorkflow = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { delete: "workflows" },
+  permission: { "workflows.workflows": "Full" },
 
   async run(ctx, { id }) {
     const gated = await service.refuseUnlessWorkflowsEnabled(ctx);

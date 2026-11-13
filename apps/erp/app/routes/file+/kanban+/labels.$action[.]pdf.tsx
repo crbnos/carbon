@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { dataOrThrow } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { KanbanLabelPDF } from "@carbon/documents/pdf";
 import type { KanbanLabelAction } from "@carbon/documents/zpl";
 import { getLogger } from "@carbon/logger";
@@ -10,11 +11,6 @@ import { getRequestOrigin, labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { kanbanLabelSizes } from "~/modules/settings/settings.models";
-import {
-  getCompany,
-  getKanbanOutputSetting
-} from "~/modules/settings/settings.service";
-import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "kanban-labels-pdf");
 
@@ -23,8 +19,8 @@ const logger = getLogger("erp", "kanban-labels-pdf");
 const ACTIONS = ["order", "start", "complete", "all"] as const;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, api } = await authorize(request, {
+    "inventory.kanbans": "View"
   });
 
   // One action per card: Create, Start and Complete are separate cards.
@@ -50,8 +46,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [company, setting, kanbans] = await Promise.all([
-    getCompany(client, companyId),
-    getKanbanOutputSetting(client, companyId),
+    api.settings.getCompany({}),
+    api.settings.getKanbanOutputSetting({}),
     client
       .from("kanbans")
       .select("*")
@@ -92,9 +88,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     await Promise.all(
       rows.map(async (kanban) => {
         if (!kanban.id || !kanban.thumbnailPath) return;
-        thumbnails[kanban.id] = await getBase64ImageFromSupabase(
-          client,
-          kanban.thumbnailPath
+        thumbnails[kanban.id] = dataOrThrow(
+          await api.shared.getBase64ImageFromSupabase({
+            path: kanban.thumbnailPath
+          })
         );
       })
     );

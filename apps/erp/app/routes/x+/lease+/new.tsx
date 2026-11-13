@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -20,10 +20,7 @@ import {
   LeaseDetailsForm,
   LeaseSetupSteps
 } from "~/modules/purchasing/ui/Leases";
-import {
-  getCompanySettings,
-  getNextSequence
-} from "~/modules/settings/settings.service";
+import { getNextSequence } from "~/modules/settings/settings.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { newRecordMeta } from "~/utils/meta";
@@ -39,11 +36,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "purchasing"
+  const { companyId, api } = await authorize(request, {
+    "purchasing.leases": "Create"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   // Without the settings the lease would be discounted at 0 % unnoticed.
   if (companySettings.error) {
     logger.error("company settings read failed for a new lease", {
@@ -68,8 +65,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "purchasing"
+  const { client, companyId, userId } = await authorize(request, {
+    "purchasing.leases": "Create"
   });
 
   const formData = await request.formData();

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthStateByValue } from "@carbon/auth/oauth-state.server";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
@@ -72,10 +72,9 @@ function connectionReply(
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    { update: "settings" }
-  );
+  const { client, companyId, userId, email } = await authorize(request, {
+    "settings.integrations": "Edit"
+  });
 
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());

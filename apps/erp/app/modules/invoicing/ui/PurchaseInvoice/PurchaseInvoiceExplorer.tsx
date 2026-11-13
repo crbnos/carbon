@@ -103,7 +103,9 @@ export default function PurchaseInvoiceExplorer() {
     (line) => !line.itemId && line.invoiceLineType === "Comment"
   );
   const canReorder =
-    !isDisabled && permissions.can("update", "invoicing") && lines.length > 1;
+    !isDisabled &&
+    permissions.has({ "invoicing.purchaseInvoices": "Edit" }) &&
+    lines.length > 1;
 
   const editMode = useLineOrderEditMode<PurchaseInvoiceLine>({
     actionPath: path.to.purchaseInvoiceLineOrder(invoiceId),
@@ -170,7 +172,7 @@ export default function PurchaseInvoiceExplorer() {
             )
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "invoicing.purchaseInvoices": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -196,7 +198,10 @@ export default function PurchaseInvoiceExplorer() {
               <Button
                 className="flex-1"
                 shortcut={EXPLORER_SHORTCUTS.addLine}
-                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                isDisabled={
+                  isDisabled ||
+                  !permissions.has({ "invoicing.purchaseInvoices": "Edit" })
+                }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newPurchaseInvoiceLineDisclosure.onOpen}
@@ -367,7 +372,10 @@ function PurchaseInvoiceLineItem({
               <DropdownMenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
-                disabled={isDisabled || !permissions.can("update", "sales")}
+                disabled={
+                  isDisabled ||
+                  !permissions.has({ "invoicing.purchaseInvoices": "Edit" })
+                }
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(line);

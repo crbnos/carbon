@@ -9,6 +9,7 @@ import {
   upsertAttributeValue
 } from "../app/modules/users/users.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 const USER_ID = "5f0c3d2a-1b2c-4d5e-8f90-123456789abc";
 const OTHER = "9a8b7c6d-0000-4000-8000-000000000000";
@@ -64,11 +65,12 @@ function contextAs(caller: never, permissions: Record<string, unknown> = {}) {
     // `{}` admits a member of the company: anyone holding a grant there.
     actor: {
       type: "user",
+      role: "employee",
       userId: USER_ID,
-      permissions: {
+      permissions: pageClaims({
         documents: { view: ["company-1"], create: [], update: [], delete: [] },
         ...permissions
-      } as never
+      } as never)
     },
     company: { id: "company-1", groupId: "group-1" },
     caller,
@@ -127,23 +129,35 @@ describe("updateOwnAvatar", () => {
   });
 });
 
-// Anyone with resources update may change anyone's attribute values; others
-// only their own, of an attribute marked as self-managed.
+// Anyone with Edit on People → Attributes may change anyone's attribute
+// values; others only their own, of an attribute marked as self-managed.
 describe("attribute values", () => {
   const value = { userAttributeId: "attribute-1", type: "text", value: "Blue" };
   const attribute = (canSelfManage: boolean) =>
     clientWith({ userAttribute: { canSelfManage } });
 
-  it("lets resources update change another person's value", async () => {
+  it("lets Edit on Attributes change another person's value", async () => {
     const { client } = attribute(false);
     const result = await upsertAttributeValue(
-      contextAs(client, { resources: { update: ["company-1"] } }),
+      contextAs(client, { "people.attributes": { update: ["company-1"] } }),
       { ...value, userId: OTHER }
     );
     expect(result.data).toEqual({ userAttributeValueId: "value-1" });
   });
 
-  it("refuses another person's value without resources update", async () => {
+  // The registry put attributes on People → Attributes: resources no longer
+  // reaches them.
+  it("refuses another person's value with resources update alone", async () => {
+    const { client, calls } = attribute(false);
+    const result = await upsertAttributeValue(
+      contextAs(client, { resources: { update: ["company-1"] } }),
+      { ...value, userId: OTHER }
+    );
+    expect(result.error?.category).toBe("forbidden");
+    expect(calls).toEqual([]);
+  });
+
+  it("refuses another person's value without Edit on Attributes", async () => {
     const { client, calls } = attribute(true);
     const result = await upsertAttributeValue(contextAs(client), {
       ...value,

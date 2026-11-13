@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { Combobox, cn, DatePicker, HStack, VStack } from "@carbon/react";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -23,18 +23,13 @@ import type {
   RentalUtilizationRow,
   RentalUtilizationTotals
 } from "~/modules/accounting/accounting.service";
-import {
-  getFixedAssetClassesList,
-  getRentalUtilization
-} from "~/modules/accounting/accounting.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Rental Utilization`,
-  to: path.to.rentalUtilization,
-  module: "accounting"
+  to: path.to.rentalUtilization
 };
 
 // A bad bookmark must not 500 — an unparseable date falls back to the default.
@@ -48,9 +43,8 @@ function parseDateParam(raw: string | null): string | null {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.reporting": "View"
   });
 
   const url = new URL(request.url);
@@ -68,8 +62,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const fixedAssetClassId = url.searchParams.get("fixedAssetClassId") || null;
 
   const [utilization, classes] = await Promise.all([
-    getRentalUtilization(client, companyId, { from, to, fixedAssetClassId }),
-    getFixedAssetClassesList(client, companyId)
+    api.accounting.getRentalUtilization({ from, to, fixedAssetClassId }),
+    api.accounting.getFixedAssetClassesList({})
   ]);
   // A failed query must surface, not render as an idle fleet.
   if (utilization.error) {

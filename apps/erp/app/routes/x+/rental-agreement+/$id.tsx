@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,16 +11,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import {
-  getRentableFleetAssets,
-  getRentalAgreement,
-  getRentalAgreementCharges,
-  getRentalAgreementContacts,
-  getRentalAgreementDeposits,
-  getRentalAgreementLines,
-  getRentalAgreementRelatedDocuments,
-  getRentalBillingPeriods
-} from "~/modules/sales/sales.service";
+import { getRentalAgreementContacts } from "~/modules/sales/sales.service";
 import type {
   RentalInvoiceLinks,
   RentalLeaseLineInputs
@@ -38,22 +29,23 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Rental Agreements`, to: path.to.rentalAgreements },
     (data) => data?.rentalAgreement?.rentalAgreementId
-  ),
-  module: "sales"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.rentalAgreement?.rentalAgreementId, "Rental Agreement");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
+  const { client, companyId, api } = await authorize(request, {
+    "sales.rentalAgreements": "View"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const rentalAgreement = await getRentalAgreement(client, id, companyId);
+  const rentalAgreement = await api.sales.getRentalAgreement({
+    rentalAgreementId: id
+  });
   if (rentalAgreement.error || !rentalAgreement.data) {
     throw redirect(
       path.to.rentalAgreements,
@@ -78,12 +70,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     related,
     contacts
   ] = await Promise.all([
-    getRentalAgreementLines(client, id, companyId),
-    getRentalAgreementCharges(client, id, companyId),
-    getRentalBillingPeriods(client, id, companyId),
-    getRentalAgreementDeposits(client, id, companyId),
+    api.sales.getRentalAgreementLines({ rentalAgreementId: id }),
+    api.sales.getRentalAgreementCharges({ rentalAgreementId: id }),
+    api.sales.getRentalBillingPeriods({ rentalAgreementId: id }),
+    api.sales.getRentalAgreementDeposits({ rentalAgreementId: id }),
     rentalAgreement.data.status === "Draft"
-      ? getRentableFleetAssets(client, companyId)
+      ? api.sales.getRentableFleetAssets({})
       : Promise.resolve({ data: [], error: null }),
     // Whether invoices can be emailed: the primary contact's email.
     customerContactId
@@ -94,7 +86,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .eq("companyId", companyId)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
-    getRentalAgreementRelatedDocuments(client, id, companyId),
+    api.sales.getRentalAgreementRelatedDocuments({ rentalAgreementId: id }),
     getRentalAgreementContacts(client, id, companyId)
   ]);
 

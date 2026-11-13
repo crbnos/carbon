@@ -25,7 +25,7 @@ const ShippingMethod = (props: ShippingMethodSelectProps) => {
     onCreate: () => create.open("")
   });
 
-  return permissions.can("create", "inventory") ? (
+  return permissions.has({ "inventory.shippingMethods": "Create" }) ? (
     <>
       <CreatableCombobox
         ref={triggerRef}

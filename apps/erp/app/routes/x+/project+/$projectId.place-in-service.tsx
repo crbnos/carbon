@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -22,8 +21,9 @@ export type PlaceInServiceResult = {
 
 /** The project's assets under construction and the in-service classes. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: ["projects", "accounting"]
+  const { client, companyId } = await authorize(request, {
+    "projects.projects": "View",
+    "accounting.assets": "View"
   });
 
   const { projectId } = params;
@@ -79,7 +79,7 @@ export async function action({
     };
   }
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.projects.placeProjectAssetsInService({
     ...validation.data,
     projectId

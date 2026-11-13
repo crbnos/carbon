@@ -40,8 +40,8 @@ const TrainingForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "resources")
-    : !permissions.can("create", "resources");
+    ? !permissions.has({ "resources.training": "Edit" })
+    : !permissions.has({ "resources.training": "Create" });
 
   return (
     <ModalDrawerProvider type="modal">

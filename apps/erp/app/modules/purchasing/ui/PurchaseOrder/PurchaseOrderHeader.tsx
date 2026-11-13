@@ -267,7 +267,7 @@ const PurchaseOrderHeader = () => {
         disabled={
           ["Draft"].includes(routeData?.purchaseOrder?.status ?? "") ||
           statusFetcher.state !== "idle" ||
-          !permissions.can("update", "purchasing") ||
+          !permissions.has({ "purchasing.purchaseOrders": "Edit" }) ||
           (isNeedsApproval && !routeData?.canReopen)
         }
         onClick={() => {
@@ -291,7 +291,7 @@ const PurchaseOrderHeader = () => {
             orderDate: routeData?.purchaseOrder?.orderDate
           }) ||
           statusFetcher.state !== "idle" ||
-          !permissions.can("delete", "purchasing")
+          !permissions.has({ "purchasing.purchaseOrders": "Full" })
         }
         onClick={createRevisionModal.onOpen}
       >
@@ -303,7 +303,7 @@ const PurchaseOrderHeader = () => {
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
           isLocked ||
-          !permissions.can("delete", "purchasing") ||
+          !permissions.has({ "purchasing.purchaseOrders": "Full" }) ||
           !permissions.is("employee") ||
           (isNeedsApproval && !routeData?.canDelete)
         }
@@ -315,10 +315,7 @@ const PurchaseOrderHeader = () => {
       </DropdownMenuItem>
       {routeData?.isAdmin && (
         <DropdownMenuItem
-          disabled={
-            !!routeData?.forceDeleteRequest ||
-            !permissions.can("delete", "purchasing")
-          }
+          disabled={!!routeData?.forceDeleteRequest}
           destructive
           onClick={forceDeleteModal.onOpen}
         >
@@ -711,7 +708,7 @@ const PurchaseOrderHeader = () => {
                     routeData?.purchaseOrder?.status ?? ""
                   ) ||
                   statusFetcher.state !== "idle" ||
-                  !permissions.can("delete", "purchasing")
+                  !permissions.has({ "purchasing.purchaseOrders": "Full" })
                 }
                 leftIcon={<LuCircleStop />}
                 variant="secondary"

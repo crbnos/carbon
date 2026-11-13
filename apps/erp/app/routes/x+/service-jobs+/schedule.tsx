@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { formatDate, redirect, richTextToPlainText } from "@carbon/utils";
 import {
@@ -19,20 +19,11 @@ import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getDepartmentsList,
-  getEmployeeDepartments,
-  getEmployeeShifts,
-  getShiftsWithTimes
-} from "~/modules/people/people.service";
+import { getEmployeeShifts } from "~/modules/people/people.service";
 import {
   getLocationEmployees,
   getPeopleAbsencesRange
 } from "~/modules/production/production.service";
-import {
-  getServiceBacklog,
-  getServiceJobAssignmentsRange
-} from "~/modules/service/service.service";
 import type {
   ScheduleAssignment,
   ScheduleBacklogJob
@@ -75,9 +66,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "service",
-    role: "employee"
+  const { api, client, companyId, userId } = await authorize(request, {
+    "service.schedule": "View"
   });
 
   const url = new URL(request.url);
@@ -128,16 +118,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ] = await Promise.all([
     getLocationEmployees(client, companyId, locationId),
     getPeopleAbsencesRange(client, companyId, { startDate, endDate }),
-    getEmployeeDepartments(client, companyId),
-    getDepartmentsList(client, companyId),
+    api.people.getEmployeeDepartments({}),
+    api.people.getDepartmentsList({}),
+    // Read with the caller's client, not `api`: the service functions for
+    // location employees, absences and employee shifts gate on Production and
+    // People pages, and the dispatch grid needs them for a Schedule-only user.
     getEmployeeShifts(client, companyId),
-    getShiftsWithTimes(client, companyId, locationId),
-    getServiceJobAssignmentsRange(client, companyId, {
+    api.people.getShiftsWithTimes({ locationId }),
+    api.service.getServiceJobAssignmentsRange({
       startDate,
       endDate,
       locationId
     }),
-    getServiceBacklog(client, companyId, locationId)
+    api.service.getServiceBacklog({ locationId })
   ]);
 
   if (assignments.error || backlog.error) {

@@ -12,7 +12,7 @@ import { Trans } from "@lingui/react/macro";
 import { lazy, type ReactNode, Suspense } from "react";
 import { LuFilePen } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
-import { DOCUMENT_EDIT_RECORDS } from "~/modules/settings/settings.utils";
+import { documentEditPermissions } from "~/modules/settings/settings.utils";
 
 // Lazy: every record page has this menu item, and few visits open the editor.
 const DocumentEditModal = lazy(() => import("./DocumentEditModalContent"));
@@ -30,7 +30,7 @@ export function useDocumentEditModal(
   const editor = useDisclosure();
   const canEdit =
     Boolean(documentId) &&
-    permissions.can("update", DOCUMENT_EDIT_RECORDS[documentType].module);
+    permissions.has(documentEditPermissions[documentType]);
 
   return {
     canEdit,

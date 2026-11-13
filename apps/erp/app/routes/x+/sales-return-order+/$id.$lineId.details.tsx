@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -15,11 +15,7 @@ import {
   isServiceReturnLine,
   salesReturnOrderLineFormValidator
 } from "~/modules/sales/sales.models";
-import {
-  getReturnReasonsList,
-  getSalesReturnOrderLine,
-  getServiceJobsForReturnLine
-} from "~/modules/sales/sales.service";
+import { getServiceJobsForReturnLine } from "~/modules/sales/sales.service";
 import { SalesReturnOrderLineForm } from "~/modules/sales/ui/SalesReturnOrders";
 import SalesReturnOrderLineServiceJobs from "~/modules/sales/ui/SalesReturnOrders/SalesReturnOrderLineServiceJobs";
 import type { SalesReturnOrderLine } from "~/modules/sales/ui/SalesReturnOrders/types";
@@ -27,8 +23,8 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
+  const { client, companyId, api } = await authorize(request, {
+    "sales.returns": "View"
   });
 
   const { id: orderId, lineId } = params;
@@ -36,8 +32,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!lineId) throw notFound("lineId not found");
 
   const [line, returnReasons, serviceJobs] = await Promise.all([
-    getSalesReturnOrderLine(client, lineId),
-    getReturnReasonsList(client, companyId),
+    api.sales.getSalesReturnOrderLine({ lineId }),
+    api.sales.getReturnReasonsList({}),
     getServiceJobsForReturnLine(client, lineId, companyId)
   ]);
 
@@ -139,7 +135,7 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const { id: orderId, lineId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.updateReturnOrderLine({
     ...input.data,
     id: lineId,

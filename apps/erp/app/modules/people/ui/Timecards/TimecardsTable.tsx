@@ -240,7 +240,7 @@ const TimecardsTable = memo((props: TimecardsTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "people")}
+            disabled={!permissions.has({ "people.timecards": "Edit" })}
             onClick={() =>
               navigate(`${path.to.timecard(row.id!)}?${params.toString()}`)
             }
@@ -251,7 +251,7 @@ const TimecardsTable = memo((props: TimecardsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "people")}
+            disabled={!permissions.has({ "people.timecards": "Full" })}
             onClick={() =>
               navigate(
                 `${path.to.deleteTimecard(row.id!)}?${params.toString()}`
@@ -274,7 +274,7 @@ const TimecardsTable = memo((props: TimecardsTableProps) => {
       count={count}
       columns={columns}
       primaryAction={
-        permissions.can("create", "people") && (
+        permissions.has({ "people.timecards": "Create" }) && (
           <New label={t`Timecard`} to={`new?${params.toString()}`} />
         )
       }

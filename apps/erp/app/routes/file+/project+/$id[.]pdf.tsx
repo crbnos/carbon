@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   ensureFont,
   ProjectReaderPDF,
@@ -23,13 +23,7 @@ import {
   type TestCaseVerdict,
   type VerificationElement
 } from "~/modules/projects/projects.models";
-import {
-  getProject,
-  getProjectElementDescriptions,
-  getProjectElements,
-  getProjectVerification
-} from "~/modules/projects/projects.service";
-import { getCompany } from "~/modules/settings/settings.service";
+import { getProjectVerification } from "~/modules/projects/projects.service";
 
 const logger = getLogger("erp", "project-reader", "pdf");
 
@@ -60,8 +54,8 @@ const VERDICT_LABELS: Record<TestCaseVerdict, string> = {
  * query string, in tree order, one section each.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, client, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { id } = params;
@@ -71,10 +65,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { filters, isFiltered } = parseElementFilters(searchParams);
 
   const [company, project, elements, descriptions] = await Promise.all([
-    getCompany(client, companyId),
-    getProject(client, companyId, id),
-    getProjectElements(client, id, companyId, filters),
-    getProjectElementDescriptions(client, id, companyId)
+    api.settings.getCompany({}),
+    api.projects.getProject({ projectId: id }),
+    api.projects.getProjectElements({ projectId: id, ...filters }),
+    api.projects.getProjectElementDescriptions({ projectId: id })
   ]);
 
   const error =

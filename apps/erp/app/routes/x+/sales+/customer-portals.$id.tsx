@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { upsertCustomerPortal } from "@carbon/ee/customer-portals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
@@ -24,15 +24,14 @@ import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "sales.portals": "View"
   });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const customerPortal = await getCustomerPortal(client, id, companyId);
+  const customerPortal = await api.shared.getCustomerPortal({ id });
 
   if (customerPortal.error) {
     throw redirect(
@@ -54,8 +53,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, companyId } = await authorize(request, {
+    "sales.portals": "Edit"
   });
 
   await requireFeature({

@@ -3,31 +3,23 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useMount, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
-import {
-  getJob,
-  getJobOperationDependencies,
-  getJobOperations
-} from "~/modules/production/production.service";
 import { JobDag } from "~/modules/production/ui/Jobs";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "production.jobs": "View" });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const job = await getJob(client, jobId);
+  const job = await api.production.getJob({ id: jobId });
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -36,8 +28,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [operations, dependencies] = await Promise.all([
-    getJobOperations(client, jobId),
-    getJobOperationDependencies(client, jobId)
+    api.production.getJobOperations({ jobId }),
+    api.production.getJobOperationDependencies({ jobId })
   ]);
 
   if (operations.error) {
@@ -51,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    operations: operations.data ?? [],
+    operations: operations.data?.rows ?? [],
     dependencies: dependencies.data ?? []
   };
 }

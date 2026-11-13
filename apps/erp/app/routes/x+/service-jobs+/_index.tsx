@@ -3,14 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getServiceJobs } from "~/modules/service/service.service";
 import ServiceJobsTable from "~/modules/service/ui/ServiceJob/ServiceJobsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -22,17 +21,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "service",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "service.jobs": "View" });
 
   const searchParams = new URL(request.url).searchParams;
   const search = searchParams.get("search");
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const jobs = await getServiceJobs(client, companyId, {
+  const jobs = await api.service.getServiceJobs({
     search,
     limit,
     offset,
@@ -48,8 +44,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    jobs: jobs.data ?? [],
-    count: jobs.count ?? 0
+    jobs: jobs.data?.rows ?? [],
+    count: jobs.data?.count ?? 0
   };
 }
 

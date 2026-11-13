@@ -31,7 +31,7 @@ import {
   round,
   searchFilter
 } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -2259,9 +2259,15 @@ function extractBatchRules<
   return { batchRules, rest };
 }
 
-/** The bare write under `resources.createProcess`, which also keeps its ability in step. */
+/**
+ * The bare write under `resources.createProcess`, which also keeps its ability
+ * in step. Resources → Work Centers owns `workCenterProcess`, so the links are
+ * written with `system`, once the caller's process permission has passed, and
+ * only to the company's own work centers.
+ */
 export async function insertProcess(
   client: SupabaseClient<Database>,
+  system: SupabaseClient<Database>,
   process: Omit<z.infer<typeof processValidator>, "id"> & {
     companyId: string;
     createdBy: string;
@@ -2285,20 +2291,39 @@ export async function insertProcess(
     return processInsert;
   }
   const processId = processInsert.data.id;
-  const processProcesses = workCenters?.map((workCenterId) => ({
-    workCenterId,
-    processId,
-    companyId: insert.companyId,
-    createdBy: insert.createdBy
-  }));
 
-  if (processProcesses) {
-    const processProcessInsert = await client
-      .from("workCenterProcess")
-      .insert(processProcesses);
+  if (workCenters?.length) {
+    const owned = await system
+      .from("workCenter")
+      .select("id")
+      .eq("companyId", insert.companyId)
+      .in("id", workCenters);
+    if (owned.error) return { data: null, error: owned.error };
+    const ownedIds = new Set(owned.data.map((row) => row.id));
+    if (workCenters.some((id) => !ownedIds.has(id))) {
+      return {
+        data: null,
+        error: {
+          name: "PostgrestError",
+          code: "P0002",
+          message: "Work center not found",
+          details: "",
+          hint: ""
+        } as PostgrestError
+      };
+    }
+
+    const processProcessInsert = await system.from("workCenterProcess").insert(
+      [...ownedIds].map((workCenterId) => ({
+        workCenterId,
+        processId,
+        companyId: insert.companyId,
+        createdBy: insert.createdBy
+      }))
+    );
 
     if (processProcessInsert.error) {
-      return processProcessInsert;
+      return { data: null, error: processProcessInsert.error };
     }
   }
 
@@ -2984,7 +3009,7 @@ export function withoutSupersededEntries(
 }
 
 export const postMaintenanceEventPermission = {
-  update: "resources"
+  "resources.dispatches": "Edit"
 } satisfies PermissionRule<z.output<typeof postMaintenanceEventInput>>;
 
 /**

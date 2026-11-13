@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,24 +11,21 @@ import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { fixedAssetReturnToInventoryValidator } from "~/modules/accounting/accounting.models";
-import {
-  getFixedAsset,
-  invokeAssetTransfer
-} from "~/modules/accounting/accounting.service";
+import { invokeAssetTransfer } from "~/modules/accounting/accounting.service";
 import { FixedAssetReturnToInventoryForm } from "~/modules/accounting/ui/FixedAssets";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.assets": "View"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
-  const asset = await getFixedAsset(client, fixedAssetId, companyId);
+  const asset = await api.accounting.getFixedAsset({ id: fixedAssetId });
   if (asset.error) {
     throw redirect(
       path.to.fixedAssets,
@@ -97,8 +94,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "accounting"
+  const { client, companyId, userId } = await authorize(request, {
+    "accounting.assets": "Create"
   });
 
   const { fixedAssetId } = params;

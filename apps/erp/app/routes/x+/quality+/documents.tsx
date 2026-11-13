@@ -7,7 +7,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import QualityDocumentsTable from "~/modules/quality/ui/Documents/QualityDocumentsTable";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { qualityDocumentsList } from "~/utils/list-registry/quality.server";
@@ -21,8 +20,9 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, qualityDocumentsList, {
     dataKey: "qualityDocuments",
-    firstPage: async ({ client, companyId }) => ({
-      tags: (await getTagsList(client, companyId, "qualityDocument")).data ?? []
+    firstPage: async ({ api }) => ({
+      tags:
+        (await api.shared.getTagsList({ table: "qualityDocument" })).data ?? []
     })
   });
 }

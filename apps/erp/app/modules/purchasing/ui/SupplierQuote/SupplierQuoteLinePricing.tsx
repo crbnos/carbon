@@ -83,7 +83,7 @@ const SupplierQuoteLinePricing = ({
     presentationCurrency: { decimalPlaces: number } | null;
   }>(path.to.supplierQuote(id));
   const isEditable =
-    permissions.can("update", "purchasing") &&
+    permissions.has({ "purchasing.supplierQuotes": "Edit" }) &&
     ["Draft"].includes(routeData?.quote?.status ?? "");
 
   const { carbon } = useCarbon();

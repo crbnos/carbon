@@ -29,15 +29,15 @@ import {
   splitAcrossStripes,
   trackedEntityStripe
 } from "@carbon/api/stock-stripes";
-import { error, hasPermission } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import {
   type Database,
   getCompanyTimeZone,
   type Json,
   journalReference
 } from "@carbon/database";
+import { holdsGate } from "@carbon/database/access";
 import type {
   KyselyDatabase as DB,
   Kysely,
@@ -109,6 +109,10 @@ import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import { claimPlanningActions } from "~/modules/production/planning-action-claims";
 import { insertJob } from "~/modules/production/production.service";
 import { insertPurchaseOrder } from "~/modules/purchasing/purchasing.service";
+import {
+  CONTRACT_READ_GATE,
+  withContractRead
+} from "~/modules/sales/sales.models";
 import {
   allocateJournalLineIds,
   assertCompanyRecords,
@@ -472,7 +476,7 @@ export async function updateProjectStatus(
 
   if (args.status === "Closed") {
     // Not the caller's client: RLS hides purchase order lines from a user with
-    // no purchasing_view, and that count of 0 would let the close through.
+    // no View on a Purchasing page, and that count of 0 would let the close through.
     const [openLines, openJobs] = await Promise.all([
       db
         .selectFrom("purchaseOrderLine")
@@ -3861,30 +3865,6 @@ export async function timesheetApprovalRefusal(
 }
 
 /**
- * Whether `userId` is the employee's manager (`employeeJob.managerId`): who,
- * besides a user with `update: "projects"`, may open and change another
- * employee's timesheet.
- */
-export async function managesEmployee(
-  client: Client,
-  args: { companyId: string; userId: string; employeeId: string }
-): Promise<boolean> {
-  const job = await client
-    .from("employeeJob")
-    .select("managerId")
-    .eq("id", args.employeeId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (job.error) {
-    logger.error("Failed to load the employee job", {
-      companyId: args.companyId,
-      error: job.error
-    });
-  }
-  return job.data?.managerId === args.userId;
-}
-
-/**
  * Corrects a Posted entry: a Submitted reversal of the original hours and,
  * when `hours` is not 0, a Submitted replacement. Both carry the reason.
  * A replacement on another charge number (`projectId`, `projectElementId`)
@@ -4310,7 +4290,7 @@ export async function getTimesheetApprovalCount(
 /**
  * Lists Submitted entries, grouped by employee and week (Monday). When
  * `ownerId` is set, only entries on projects that user owns are listed;
- * pass null for a user with `projects_update`.
+ * pass null for a user with Edit on Approvals.
  */
 export async function getTimesheetApprovals(
   client: Client,
@@ -5573,7 +5553,7 @@ export function certificationTextHash(text: string): string {
 }
 
 export const submitTimesheetWeekPermission = {
-  update: "projects"
+  "projects.projects": "Edit"
 } satisfies PermissionRule<z.output<typeof submitTimesheetWeekInput>>;
 
 /**
@@ -5794,7 +5774,7 @@ function currentEntry(rows: EntryRow[]): EntryRow | null {
 }
 
 export const saveTimesheetEntryPermission = {
-  update: "projects"
+  "projects.projects": "Edit"
 } satisfies PermissionRule<z.output<typeof saveTimesheetEntryInput>>;
 
 /**
@@ -6432,7 +6412,7 @@ async function writeRevision(
 // post-timesheet
 
 export const postTimesheetPermission = {
-  update: "projects"
+  "projects.projects": "Edit"
 } satisfies PermissionRule<z.output<typeof postTimesheetInput>>;
 
 /**
@@ -7258,7 +7238,7 @@ export type PostProjectExpenseResult = {
 };
 
 export const postProjectExpensePermission = {
-  update: "projects"
+  "projects.projects": "Edit"
 } satisfies PermissionRule<z.output<typeof postProjectExpenseInput>>;
 
 /**
@@ -7534,7 +7514,7 @@ export type PostProjectIssueResult = {
 };
 
 export const postProjectIssuePermission = {
-  update: "inventory"
+  "inventory.quantities": "Edit"
 } satisfies PermissionRule<z.output<typeof postProjectIssueInput>>;
 
 /**
@@ -8129,7 +8109,7 @@ export type PostProjectStockTransferResult = {
 };
 
 export const postProjectStockTransferPermission = {
-  update: "projects"
+  "projects.projects": "Edit"
 } satisfies PermissionRule<z.output<typeof postProjectStockTransferInput>>;
 
 /**
@@ -14724,33 +14704,34 @@ export async function timesheetBudgetWarning(
 
 /**
  * The Transfer half of a planning Apply, shared by the purchasing and the
- * production planning routes. Creating a project stock transfer needs
- * `update: projects`, the permission of the transfer pages, on top of the
- * route's own. Returns what the route reports: the applied action ids, the
- * transfers created, and one message per action it could not apply.
+ * production planning operations. Creating a project stock transfer needs
+ * Edit on Projects, the permission of the transfer pages, on top of the
+ * operation's own: the caller passes `ctx.can({ "projects.projects": "Edit" })`
+ * as `canEditProjects`. Returns what the operation reports: the applied action
+ * ids, the transfers created, and one message per action it could not apply.
  */
 export async function applyTransferPlanningActions(args: {
   db: Kysely<KyselyDatabase>;
   companyId: string;
   userId: string;
   planningActionIds: string[];
+  canEditProjects: boolean;
 }): Promise<{
   applied: string[];
   transfers: { id: string; projectStockTransferId: string }[];
   errors: string[];
 }> {
-  const { db, companyId, userId, planningActionIds } = args;
+  const { db, companyId, userId, planningActionIds, canEditProjects } = args;
   if (planningActionIds.length === 0) {
     return { applied: [], transfers: [], errors: [] };
   }
-  const claims = await getUserClaims(userId, companyId);
-  if (!hasPermission(claims?.permissions, "projects", "update", companyId)) {
+  if (!canEditProjects) {
     return {
       applied: [],
       transfers: [],
       errors: planningActionIds.map(
         (id) =>
-          `Planning action ${id} creates a project stock transfer, which needs projects permission`
+          `Planning action ${id} creates a project stock transfer, which needs Edit on Projects`
       )
     };
   }
@@ -15291,17 +15272,16 @@ export async function getTimesheetWeekView(
 
 /**
  * The count the Projects sidebar shows on Approvals: the Submitted timesheet
- * entries, for a user who may approve them (`update: projects`). Any other
+ * entries, for a user who may approve them (Edit on Approvals). Any other
  * user, or a failed read, gets 0, so the sidebar shows no count.
  */
-export async function getApprovalCountForUser(
+async function getApprovalCount(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string }
+  args: { companyId: string; permissions: Parameters<typeof holdsGate>[0] }
 ): Promise<number> {
-  const canApprove = hasPermission(
-    (await getUserClaims(args.userId, args.companyId))?.permissions,
-    "projects",
-    "update",
+  const canApprove = holdsGate(
+    args.permissions,
+    { "projects.approvals": "Edit" },
     args.companyId
   );
   if (!canApprove) return 0;
@@ -15318,20 +15298,20 @@ export async function getApprovalCountForUser(
 
 /**
  * The contract billable items that wait for review (Unbilled or On Hold), for
- * a user who may review them (`update: projects` and `view: sales`, what the
+ * a user who may review them (Edit on Approvals and View on Service Contracts, what the
  * Billing tab of Approvals needs). The Projects sidebar shows Approvals while
  * there are any, and adds them to its count. Any other user, or a failed
  * read, gets 0.
  */
-export async function getBillingReviewCountForUser(
+async function getBillingReviewCount(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string }
+  args: { companyId: string; permissions: Parameters<typeof holdsGate>[0] }
 ): Promise<number> {
-  const permissions = (await getUserClaims(args.userId, args.companyId))
-    ?.permissions;
-  const canReview =
-    hasPermission(permissions, "projects", "update", args.companyId) &&
-    hasPermission(permissions, "sales", "view", args.companyId);
+  const canReview = holdsGate(
+    args.permissions,
+    withContractRead({ "projects.approvals": "Edit" }),
+    args.companyId
+  );
   if (!canReview) return 0;
   const result = await client
     .from("projectBillableItem")
@@ -15347,6 +15327,22 @@ export async function getBillingReviewCountForUser(
     return 0;
   }
   return result.count ?? 0;
+}
+
+/**
+ * The counts the Projects sidebar shows on Approvals, for both Projects
+ * layouts: submitted time and the contract billable items that wait for
+ * review.
+ */
+export async function projectsSidebarCounts(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; permissions: Parameters<typeof holdsGate>[0] }
+): Promise<{ approvalCount: number; billingReviewCount: number }> {
+  const [approvalCount, billingReviewCount] = await Promise.all([
+    getApprovalCount(client, args),
+    getBillingReviewCount(client, args)
+  ]);
+  return { approvalCount, billingReviewCount };
 }
 
 // --- Projects → Reports ---------------------------------------------------------
@@ -15485,4 +15481,20 @@ export async function getProjectJobs(
     })),
     error: null
   };
+}
+
+/**
+ * The gate of contract billing: Approvals at `level`, and View on either
+ * contracts list (Service Contracts or Project Contracts), whose contracts it
+ * reads. Checked in the body: a published rule names one page per branch.
+ */
+export function refuseContractBilling(
+  ctx: ServiceContext,
+  level: "View" | "Edit"
+) {
+  const allowed =
+    ctx.can({ "projects.approvals": level }) && ctx.can(CONTRACT_READ_GATE);
+  return allowed
+    ? null
+    : ctx.error("forbidden", "You do not have permission to do this");
 }

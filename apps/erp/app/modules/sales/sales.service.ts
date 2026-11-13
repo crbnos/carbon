@@ -9,10 +9,9 @@ import type {
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
-import { hasPermission } from "@carbon/auth";
-import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json, Tables } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import { type ExpandedClaims, holdsGate } from "@carbon/database/access";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import {
   type Kysely,
@@ -6351,7 +6350,9 @@ export async function updateSalesOrder(
     customerId?: string;
     notes?: string | null;
     customFields?: Json;
-  }
+  },
+  // Pass the system client once the caller's order permission has passed.
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string } | null;
   error: PostgrestError | null;
@@ -6385,14 +6386,7 @@ export async function updateSalesOrder(
     exchangeRateUpdatedAt = new Date().toISOString();
   }
 
-  if (updates.customerId && existing.data.opportunityId) {
-    await client
-      .from("opportunity")
-      .update({ customerId: updates.customerId })
-      .eq("id", existing.data.opportunityId);
-  }
-
-  return client
+  const updated = await client
     .from("salesOrder")
     .update({
       ...sanitize(updates),
@@ -6405,6 +6399,17 @@ export async function updateSalesOrder(
     .eq("id", id)
     .select("id")
     .single();
+
+  // A new customer follows to the opportunity (Sales → Quotes owns it), only
+  // once the caller's own order write went through.
+  if (!updated.error && updates.customerId && existing.data.opportunityId) {
+    await system
+      .from("opportunity")
+      .update({ customerId: updates.customerId })
+      .eq("id", existing.data.opportunityId)
+      .eq("companyId", existing.data.companyId);
+  }
+  return updated;
 }
 
 export const LIVE_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
@@ -6913,7 +6918,10 @@ export async function upsertSalesRFQ(
         rfqId: string;
         updatedBy: string;
         customFields?: Json;
-      })
+      }),
+  // Sales → Quotes owns `opportunity`: pass the system client once the
+  // caller's RFQ permission has passed, so a customer change reaches it.
+  system: SupabaseClient<Database> = client
 ) {
   if ("createdBy" in rfq) {
     const opportunity = await client
@@ -6941,23 +6949,15 @@ export async function upsertSalesRFQ(
 
     return insert;
   } else {
-    // If customerId is being updated, also update the opportunity's customerId
-    if (rfq.customerId) {
-      const existingRfq = await client
-        .from("salesRfq")
-        .select("opportunityId")
-        .eq("id", rfq.id)
-        .single();
+    const existing = rfq.customerId
+      ? await client
+          .from("salesRfq")
+          .select("opportunityId, companyId")
+          .eq("id", rfq.id)
+          .maybeSingle()
+      : null;
 
-      if (existingRfq.data?.opportunityId) {
-        await client
-          .from("opportunity")
-          .update({ customerId: rfq.customerId })
-          .eq("id", existingRfq.data.opportunityId);
-      }
-    }
-
-    return requireAffected(
+    const updated = await requireAffected(
       client
         .from("salesRfq")
         .update({
@@ -6967,6 +6967,17 @@ export async function upsertSalesRFQ(
         .eq("id", rfq.id)
         .select("id")
     );
+    // A new customer follows to the opportunity, only once the caller's own
+    // RFQ write went through (so the system write is in the RFQ's company).
+    const opportunity = existing?.data;
+    if (!updated.error && rfq.customerId && opportunity?.opportunityId) {
+      await system
+        .from("opportunity")
+        .update({ customerId: rfq.customerId })
+        .eq("id", opportunity.opportunityId)
+        .eq("companyId", opportunity.companyId);
+    }
+    return updated;
   }
 }
 
@@ -8411,7 +8422,10 @@ export async function createReplacementSalesOrder(
     companyGroupId: string;
     userId: string;
     lineIds?: string[];
-  }
+  },
+  // Sales → Returns owns the return order: pass the system client once the
+  // caller's sales order permission has passed, so the link is written.
+  system: SupabaseClient<Database> = client
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const order = await client
     .from("salesReturnOrder")
@@ -8558,7 +8572,7 @@ export async function createReplacementSalesOrder(
 
   if (createdOrder && !existingReplacementId) {
     const link = await requireAffected(
-      client
+      system
         .from("salesReturnOrder")
         .update({
           replacementSalesOrderId: replacementId,
@@ -12809,7 +12823,7 @@ export async function saveQuoteLineWithPrices(
  * `sales-rule-violation` notification. Both writes are best-effort: evidence
  * or notification failures are logged and must never break the submission
  * they describe. Callers pass the SERVICE-ROLE client — the acknowledgment
- * table's INSERT policy requires `sales_create`, but the documents these
+ * table's INSERT policy requires Create on Sales Rules, but the documents these
  * gates protect (invoices, shipments) are legitimately posted by users
  * without it.
  *
@@ -13946,48 +13960,47 @@ export async function deleteContractLineReleasingSalesOrderLine(
 }
 
 /** Where a Draft contract opens: its setup wizard, for anyone who can edit
- *  it (the wizard needs `update: sales`). Null for a confirmed contract, or
- *  for a viewer who cannot edit — they get the contract page. */
+ *  it (the wizard needs Edit on Service Contracts). Null for a confirmed
+ *  contract, or for a viewer who cannot edit — they get the contract page. */
 export async function draftContractSetupPath(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
+  args: { companyId: string; permissions: ExpandedClaims; id: string }
 ): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [contract, claims] = await Promise.all([
-    client
-      .from("customerContract")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
+  const { companyId, permissions, id } = args;
+  const contract = await client
+    .from("customerContract")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
   if (contract.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "sales", "update", companyId)) {
+  if (
+    !holdsGate(permissions, { "sales.serviceContracts": "Edit" }, companyId)
+  ) {
     return null;
   }
   return path.to.contractSetup(id, "products");
 }
 
 /** Where a Draft rental agreement opens: its setup wizard, for anyone who
- *  can edit it (the wizard needs `update: sales`). Null for an activated
- *  agreement, or for a viewer who cannot edit — they get the agreement page. */
+ *  can edit it (the wizard needs Edit on Rental Agreements). Null for an
+ *  activated agreement, or for a viewer who cannot edit — they get the
+ *  agreement page. */
 export async function draftRentalAgreementSetupPath(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
+  args: { companyId: string; permissions: ExpandedClaims; id: string }
 ): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [agreement, claims] = await Promise.all([
-    client
-      .from("rentalAgreement")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
+  const { companyId, permissions, id } = args;
+  const agreement = await client
+    .from("rentalAgreement")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
   if (agreement.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "sales", "update", companyId)) {
+  if (
+    !holdsGate(permissions, { "sales.rentalAgreements": "Edit" }, companyId)
+  ) {
     return null;
   }
   return path.to.rentalAgreementSetup(id, "units");
@@ -14411,8 +14424,8 @@ export function parseConfiguration(
 export async function unlockedQuote(ctx: ServiceContext, quoteId: string) {
   const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
   if (refused) return refused;
-  // The caller may hold the write permission without sales_view, which RLS
-  // needs to read the quote; an unread status would pass as unlocked.
+  // The caller may hold the write permission without View on Quotes, which
+  // RLS needs to read the quote; an unread status would pass as unlocked.
   const quote = await getQuote(ctx.asSystem.supabase, quoteId);
   if (quote.error || !quote.data) {
     return ctx.error("internal", "Failed to load quote", quote.error);
@@ -15926,8 +15939,8 @@ export const createRentalInvoicesInput = z.object({
 });
 
 export const createRentalInvoicesPermission = {
-  update: "sales",
-  create: "invoicing"
+  "sales.rentalAgreements": "Edit",
+  "invoicing.salesInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createRentalInvoicesInput>>;
 
 /** Drafts the rental invoices due on or before `asOf` (see
@@ -18615,7 +18628,7 @@ export const postRentalAgreementInput = payloadValidator;
 export type PostRentalAgreementInput = RentalAgreementPayload;
 
 export const postRentalAgreementPermission = {
-  update: "sales"
+  "sales.rentalAgreements": "Edit"
 } satisfies PermissionRule<z.output<typeof postRentalAgreementInput>>;
 
 /** Activates, releases a unit of, closes or cancels a rental agreement, per
@@ -22142,7 +22155,7 @@ async function revertCancellation(
 // ---------------------------------------------------------------------------
 
 export const postCustomerContractPermission = {
-  update: "sales"
+  "sales.serviceContracts": "Edit"
 } satisfies PermissionRule<z.output<typeof postCustomerContractInput>>;
 
 /** Confirms, edits the schedule of, amends, cancels or reverts the
@@ -23026,8 +23039,8 @@ export const createContractInvoicesInput = z.object({
 });
 
 export const createContractInvoicesPermission = {
-  update: "sales",
-  create: "invoicing"
+  "sales.serviceContracts": "Edit",
+  "invoicing.salesInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createContractInvoicesInput>>;
 
 /** Drafts the contract invoices due on or before `asOf` (see
@@ -23530,8 +23543,8 @@ export const createProjectBillingInvoicesInput = z.object({
 });
 
 export const createProjectBillingInvoicesPermission = {
-  update: "sales",
-  create: "invoicing"
+  "sales.serviceContracts": "Edit",
+  "invoicing.salesInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createProjectBillingInvoicesInput>>;
 
 /** Drafts the project billing invoices due on `asOf` (see
@@ -23561,7 +23574,7 @@ export const generateContractBillableItemsInput = z.object({
 });
 
 export const generateContractBillableItemsPermission = {
-  update: "sales"
+  "sales.serviceContracts": "Edit"
 } satisfies PermissionRule<z.output<typeof generateContractBillableItemsInput>>;
 
 export type GenerateContractBillableItemsResult = {

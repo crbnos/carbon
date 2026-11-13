@@ -59,7 +59,9 @@ export default function JournalEntriesRoute() {
         count={count}
         infinite={infinite}
         primaryAction={
-          permissions.can("create", "accounting") && <NewJournalEntry />
+          permissions.has({ "accounting.journalEntries": "Create" }) && (
+            <NewJournalEntry />
+          )
         }
       />
       <RecordOutlet />

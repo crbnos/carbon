@@ -4,7 +4,8 @@
 
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { company, custom, group, type Manifest } from "./rules";
+import { manifest as real } from "./manifest";
+import { custom, inCompany, type Manifest, policies } from "./rules";
 import { assertOnlyPolicies, syncAuthz } from "./sync";
 
 // Runs against the local database: SUPABASE_DB_URL=… pnpm vitest run src/authz
@@ -28,15 +29,17 @@ describe.skipIf(!url)("syncAuthz against a migrated database", () => {
 
   test("canonical tables already match their rule exactly", async () => {
     const manifest: Manifest = {
-      documentTemplate: company("settings"),
-      dimension: group("accounting")
+      documentTemplate: real.documentTemplate,
+      dimension: real.dimension
     };
     const { changed } = await syncAuthz(db, manifest, { dryRun: true });
     expect(changed).toEqual([]);
   });
 
   test("applies, is idempotent, and heals a hand-added policy", async () => {
-    const manifest = { [scratch]: company("parts") } as Manifest;
+    const manifest = {
+      [scratch]: policies({ all: inCompany("companyId", "employee") })
+    } as Manifest;
 
     expect((await syncAuthz(db, manifest)).changed).toEqual([scratch]);
     expect((await syncAuthz(db, manifest)).changed).toEqual([]);

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import {
@@ -19,10 +19,7 @@ import { Plural, Trans } from "@lingui/react/macro";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getAbility,
-  getAbilityScheduleImpact
-} from "~/modules/resources/resources.service";
+import { getAbilityScheduleImpact } from "~/modules/resources/resources.service";
 import { AbilityEmployeesTable } from "~/modules/resources/ui";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
@@ -36,15 +33,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
+  const { api, client, companyId } = await authorize(request, {
+    "resources.abilities": "View"
   });
 
   const { id } = params;
   if (!id) throw notFound("Invalid ability id");
 
-  const ability = await getAbility(client, id);
+  const ability = await api.resources.getAbility({ abilityId: id });
   if (ability.error) {
     throw redirect(
       path.to.abilities,

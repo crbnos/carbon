@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database, Json } from "@carbon/database";
+import type { Database } from "@carbon/database";
+import { type Claims, claimsFor } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SUPABASE_URL } from "../config/env";
-import type { Permission } from "../types";
 
 const log = getLogger("auth");
 
@@ -16,25 +16,6 @@ export async function getClaims(
   company?: string
 ) {
   return client.rpc("get_claims", { uid, company: company ?? "" });
-}
-
-export function getPermissionCacheKey(userId: string) {
-  return `permissions:${userId}`;
-}
-
-/**
- * Does a resolved claims permission set grant `<module>_<action>` for the company?
- * Honors the `"0"` all-companies wildcard, matching `requirePermissions`. `permissions`
- * is the `permissions` field from `makePermissionsFromClaims` / `getUserClaims`.
- */
-export function hasPermission(
-  permissions: Record<string, Permission> | null | undefined,
-  module: string,
-  action: keyof Permission,
-  companyId: string
-): boolean {
-  const scoped = permissions?.[module]?.[action];
-  return scoped?.some((c) => c === companyId || c === "0") ?? false;
 }
 
 export async function getCompanies(
@@ -97,63 +78,20 @@ export async function getUser(client: SupabaseClient<Database>, id: string) {
     .single();
 }
 
-function isClaimPermission(key: string, value: unknown) {
-  const action = key.split("_")[1];
-  return (
-    action !== undefined &&
-    ["view", "create", "update", "delete"].includes(action) &&
-    Array.isArray(value)
-  );
-}
-
-export function makePermissionsFromClaims(claims: Json | null) {
-  if (typeof claims !== "object" || claims === null) return null;
-  let permissions: Record<string, Permission> = {};
-  let role: string | null = null;
-
-  Object.entries(claims).forEach(([key, value]) => {
-    if (isClaimPermission(key, value)) {
-      const [module, action] = key.split("_") as [string, string];
-      if (!(module in permissions)) {
-        permissions[module] = {
-          view: [],
-          create: [],
-          update: [],
-          delete: []
-        };
-      }
-
-      const perm = permissions[module]!;
-      switch (action) {
-        case "view":
-          // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-          perm["view"] = value as string[];
-          break;
-        case "create":
-          // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-          perm["create"] = value as string[];
-          break;
-        case "update":
-          // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-          perm["update"] = value as string[];
-          break;
-        case "delete":
-          // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-          perm["delete"] = value as string[];
-          break;
-      }
-    }
-  });
-
-  if ("role" in claims) {
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    role = claims["role"] as string;
+/**
+ * The user's claims in the company read now, past the claims cache
+ * (`getUserClaims`): for a check that must see a grant written moments ago, or
+ * one revoked within the cache's hour. `client` decides who asks. Throws when
+ * the read fails.
+ */
+export async function readClaimsFresh(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+): Promise<Claims> {
+  const { data, error } = await getClaims(client, userId, companyId);
+  if (error || data === null) {
+    throw new Error("Failed to read claims", { cause: error });
   }
-
-  if ("items" in permissions) {
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    delete permissions["items"];
-  }
-
-  return { permissions, role };
+  return claimsFor(data, companyId);
 }

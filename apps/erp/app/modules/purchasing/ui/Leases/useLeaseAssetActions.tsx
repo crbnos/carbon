@@ -47,7 +47,8 @@ export function useLeaseAssetActions({
   }>();
 
   const canChange =
-    lease.status === "Active" && permissions.can("update", "purchasing");
+    lease.status === "Active" &&
+    permissions.has({ "purchasing.leases": "Edit" });
 
   const stateOf = (line: LeaseLine): LeaseAssetActionState => {
     const isActive = canChange && line.status === "Active";

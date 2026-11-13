@@ -103,8 +103,6 @@ import {
   type BalloonRegionAnalysis,
   balloonRegionAnalysisResultSchema,
   type inspectionDispositionValidator,
-  type inspectionMeasurementValidator,
-  type inspectionSampleValidator,
   type inspectionSaveAnchorsPayloadValidator,
   type inspectionSaveBalloonsGeometryPayloadValidator,
   type inspectionSaveBalloonsPayloadValidator,
@@ -1725,6 +1723,134 @@ export async function upsertGaugeCalibrationRecord(
       })
     )
     .eq("id", gaugeCalibrationRecord.id);
+}
+
+type GaugeCalibrationRecordFields = Omit<
+  z.infer<typeof gaugeCalibrationRecordValidator>,
+  "id"
+> & {
+  inspectionStatus: (typeof inspectionStatus)[number];
+  customFields?: Json;
+};
+
+/**
+ * Saves a calibration record and moves its gauge's calibration dates and
+ * status, on one Kysely handle: run it in `ctx.transaction` so the two
+ * apply together. Bypasses row-level security (Quality → Gauges owns the
+ * gauge, Records the record): the operation's permission is the gate, and
+ * every statement is scoped to `companyId`. The gauge moves only when this
+ * calibration is not older than its last one. Undefined when the gauge, or
+ * the record to update, is not the company's.
+ */
+export async function saveGaugeCalibrationRecord(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  record:
+    | (GaugeCalibrationRecordFields & { id?: string; createdBy: string })
+    | (GaugeCalibrationRecordFields & { id: string; updatedBy: string })
+): Promise<{ id: string } | undefined> {
+  const userId = "updatedBy" in record ? record.updatedBy : record.createdBy;
+  const now = datetime.timestamp();
+
+  const gauge = await db
+    .selectFrom("gauge")
+    .select("id")
+    .where("id", "=", record.gaugeId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!gauge) return undefined;
+
+  const passed = record.inspectionStatus === "Pass";
+  await db
+    .updateTable("gauge")
+    .set({
+      gaugeCalibrationStatus: passed ? "In-Calibration" : "Out-of-Calibration",
+      lastCalibrationDate: record.dateCalibrated,
+      nextCalibrationDate: sql<string>`(${record.dateCalibrated}::date + make_interval(months => coalesce("calibrationIntervalInMonths", 0)))::date`,
+      // A pass resets the status so a later lapse notifies again.
+      ...(passed ? { lastCalibrationStatus: "In-Calibration" as const } : {}),
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("id", "=", record.gaugeId)
+    .where("companyId", "=", companyId)
+    .where((eb) =>
+      eb.or([
+        eb("lastCalibrationDate", "is", null),
+        eb("lastCalibrationDate", "<=", record.dateCalibrated)
+      ])
+    )
+    .execute();
+
+  const fields = {
+    gaugeId: record.gaugeId,
+    supplierId: record.supplierId ?? null,
+    dateCalibrated: record.dateCalibrated,
+    requiresAction: record.requiresAction,
+    requiresAdjustment: record.requiresAdjustment,
+    requiresRepair: record.requiresRepair,
+    approvedBy: record.approvedBy ?? null,
+    measurementStandard: record.measurementStandard ?? null,
+    calibrationAttempts: JSON.stringify(record.calibrationAttempts ?? null),
+    inspectionStatus: record.inspectionStatus,
+    ...(record.notes !== undefined
+      ? { notes: JSON.stringify(record.notes) }
+      : {}),
+    ...(record.customFields !== undefined
+      ? { customFields: JSON.stringify(record.customFields) }
+      : {})
+  };
+
+  if ("createdBy" in record) {
+    return db
+      .insertInto("gaugeCalibrationRecord")
+      .values({
+        ...fields,
+        // The new-record form picks the id first, so its files upload there.
+        ...(record.id ? { id: record.id } : {}),
+        // A 0 reading is no reading, as the form sends it.
+        humidity: record.humidity || null,
+        temperature: record.temperature || null,
+        companyId,
+        createdBy: record.createdBy
+      })
+      .returning("id")
+      .executeTakeFirst();
+  }
+  return db
+    .updateTable("gaugeCalibrationRecord")
+    .set({
+      ...fields,
+      humidity: record.humidity ?? null,
+      temperature: record.temperature ?? null,
+      updatedBy: record.updatedBy,
+      updatedAt: now
+    })
+    .where("id", "=", record.id)
+    .where("companyId", "=", companyId)
+    .returning("id")
+    .executeTakeFirst();
+}
+
+/**
+ * Saves a calibration record and its gauge's calibration in one transaction,
+ * as the system: Quality → Gauges owns the gauge, so a Records caller could
+ * not move it. The calling operation's permission is the gate.
+ */
+export async function saveGaugeCalibration(
+  ctx: ServiceContext,
+  record: Parameters<typeof saveGaugeCalibrationRecord>[2]
+) {
+  const saved = await ctx.transaction(async (tx) => {
+    const row = await saveGaugeCalibrationRecord(
+      tx.asSystem.pg,
+      ctx.company.id,
+      record
+    );
+    return row ?? tx.error("notFound", "Gauge or calibration record not found");
+  });
+  return saved.error ?? saved.data;
 }
 
 export async function upsertGaugeType(
@@ -5592,16 +5718,6 @@ export async function closeIssue(
 }
 export type { Result } from "@carbon/database/quality";
 
-export async function upsertInspectionSample(
-  db: Kysely<KyselyDatabase>,
-  sample: z.infer<typeof inspectionSampleValidator> & {
-    companyId: string;
-    inspectedBy: string;
-  }
-) {
-  return engine.upsertInspectionSample(db, sample);
-}
-
 export async function dispositionInspection(
   db: Kysely<KyselyDatabase>,
   args: z.infer<typeof inspectionDispositionValidator> & {
@@ -5615,41 +5731,12 @@ export async function dispositionInspection(
   return engine.dispositionInspection(db, args);
 }
 
-export async function upsertInspectionMeasurement(
-  db: Kysely<KyselyDatabase>,
-  args: z.infer<typeof inspectionMeasurementValidator> & {
-    companyId: string;
-    userId: string;
-  }
-) {
-  return engine.upsertInspectionMeasurement(db, args);
-}
-
 export async function reconcileInspectionSamplingPlans(
   db: Kysely<KyselyDatabase>,
   inspectionId: string,
   companyId: string
 ) {
   return engine.reconcileInspectionSamplingPlans(db, inspectionId, companyId);
-}
-
-export async function changeInspectionDocument(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    inspectionId: string;
-    inspectionDocumentId: string | null;
-    companyId: string;
-    userId: string;
-  }
-) {
-  return engine.changeInspectionDocument(db, args);
-}
-
-export async function recordInspectionGauge(
-  db: Kysely<KyselyDatabase>,
-  args: Parameters<typeof engine.recordInspectionGauge>[1]
-) {
-  return engine.recordInspectionGauge(db, args);
 }
 
 export async function getRecentInspectionGauges(
@@ -6845,7 +6932,7 @@ export const postNonConformanceInput = z.object({
 });
 
 export const postNonconformancePermission = {
-  update: "quality"
+  "quality.issues": "Edit"
 } satisfies PermissionRule<z.output<typeof postNonConformanceInput>>;
 
 export async function postNonconformance(

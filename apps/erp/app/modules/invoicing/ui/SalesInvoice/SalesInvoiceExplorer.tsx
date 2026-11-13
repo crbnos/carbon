@@ -108,7 +108,9 @@ export default function SalesInvoiceExplorer() {
 
   const lines = salesInvoiceData?.salesInvoiceLines ?? [];
   const canReorder =
-    !isDisabled && permissions.can("update", "invoicing") && lines.length > 1;
+    !isDisabled &&
+    permissions.has({ "invoicing.salesInvoices": "Edit" }) &&
+    lines.length > 1;
 
   const editMode = useLineOrderEditMode<SalesInvoiceLine>({
     actionPath: path.to.salesInvoiceLineOrder(invoiceId),
@@ -148,7 +150,7 @@ export default function SalesInvoiceExplorer() {
             )
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "invoicing.salesInvoices": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -174,7 +176,10 @@ export default function SalesInvoiceExplorer() {
               <Button
                 className="flex-1"
                 shortcut={EXPLORER_SHORTCUTS.addLine}
-                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                isDisabled={
+                  isDisabled ||
+                  !permissions.has({ "invoicing.salesInvoices": "Edit" })
+                }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newSalesInvoiceLineDisclosure.onOpen}
@@ -336,7 +341,10 @@ function SalesInvoiceLineItem({
               <DropdownMenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
-                disabled={isDisabled || !permissions.can("update", "sales")}
+                disabled={
+                  isDisabled ||
+                  !permissions.has({ "invoicing.salesInvoices": "Edit" })
+                }
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(line);

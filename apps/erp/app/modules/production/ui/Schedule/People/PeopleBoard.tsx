@@ -147,7 +147,9 @@ const PeopleBoard = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const submit = useSubmit();
-  const isDisabled = !permissions.can("update", "production");
+  const isDisabled = !permissions.has({
+    "production.resourcePlanning": "Edit"
+  });
 
   const [activeItem, setActiveItem] = useState<PeopleCardItem | null>(null);
   const hoursEditor = useDrawerItem<PeopleCardItem>();

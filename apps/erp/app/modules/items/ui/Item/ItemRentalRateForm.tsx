@@ -80,8 +80,8 @@ const ItemRentalRateForm = ({ initialValues }: ItemRentalRateFormProps) => {
         <CardFooter>
           <Submit
             isDisabled={
-              !permissions.can("update", "parts") ||
-              !permissions.can("update", "sales")
+              !permissions.has({ "parts.parts": "Edit" }) ||
+              !permissions.has({ "sales.rentalAgreements": "Edit" })
             }
           >
             <Trans>Save</Trans>

@@ -6,7 +6,6 @@ import {
   CONTROLLED_ENVIRONMENT,
   error,
   getAppUrl,
-  getPermissionCacheKey,
   success as successFlash
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -112,9 +111,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // `acceptInvite` already cleared the invitee's cached claims after its commit.
   if (authSession) {
-    await redis.del(getPermissionCacheKey(authSession.userId));
-
     const { data: companyRecord } = await serviceRole
       .from("company")
       .select("companyGroupId")

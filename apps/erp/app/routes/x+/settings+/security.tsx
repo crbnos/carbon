@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getSamlSpUrls,
@@ -67,9 +66,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "settings.security": "View"
   });
 
   // The SP URLs are un-prefixed on purpose: GoTrue self-declares its SP
@@ -156,7 +154,7 @@ const securitySettingsForm = z
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(securitySettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.updateSecuritySettings(input.data);
 }
 
@@ -333,7 +331,7 @@ export default function Security() {
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "settings");
+  const canEdit = permissions.has({ "settings.security": "Edit" });
   const mfaFetcher = useAction<typeof action>({
     onSuccess: ({ data }) => {
       if (!data) return;

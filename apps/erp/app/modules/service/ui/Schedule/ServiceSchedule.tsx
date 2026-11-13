@@ -142,8 +142,8 @@ export function ServiceSchedule({
   const permissions = usePermissions();
   const submit = useSubmit();
   useScheduleFeedback();
-  const canEdit = permissions.can("update", "service");
-  const canUnassign = permissions.can("delete", "service");
+  const canEdit = permissions.has({ "service.schedule": "Edit" });
+  const canUnassign = permissions.has({ "service.schedule": "Full" });
   const assignmentDialog = useDrawerItem<string>();
 
   const today = calendarToday(

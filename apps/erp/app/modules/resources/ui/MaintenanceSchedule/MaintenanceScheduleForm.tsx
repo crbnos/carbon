@@ -129,8 +129,8 @@ const MaintenanceScheduleForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "production")
-    : !permissions.can("create", "production");
+    ? !permissions.has({ "resources.schedules": "Edit" })
+    : !permissions.has({ "resources.schedules": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

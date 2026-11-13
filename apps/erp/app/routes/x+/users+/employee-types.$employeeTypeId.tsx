@@ -2,26 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { makeCompanyPermissionsFromEmployeeType } from "@carbon/ee/permissions.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { actionsGained, isAdminType, moduleId } from "@carbon/database/access";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { EmployeeTypeForm } from "~/modules/users/ui";
 import { employeeTypeValidator } from "~/modules/users/users.models";
-import {
-  getEmployeeType,
-  getPermissionsByEmployeeType
-} from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "users",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "users.employeeTypes": "View"
   });
 
   await requireFeature({
@@ -35,31 +30,36 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { employeeTypeId } = params;
   if (!employeeTypeId) throw notFound("employeeTypeId not found");
 
-  const [employeeType, employeeTypePermissions] = await Promise.all([
-    getEmployeeType(client, employeeTypeId),
-    getPermissionsByEmployeeType(client, employeeTypeId)
+  const [employeeType, grants] = await Promise.all([
+    api.users.getEmployeeType({ employeeTypeId }),
+    api.users.getAccessGrants({
+      subjectType: "role",
+      subjectId: employeeTypeId
+    })
   ]);
 
+  const rows = grants.data ?? [];
   return {
     employeeType: employeeType?.data,
-    employeeTypePermissions: makeCompanyPermissionsFromEmployeeType(
-      employeeTypePermissions.data ?? [],
-      companyId
-    )
+    isAdmin: employeeType?.data
+      ? isAdminType(employeeType.data, companyId)
+      : false,
+    grants: rows,
+    convertedGrowth: rows.flatMap((row) => {
+      const gained = actionsGained(row.level, row.convertedFrom);
+      const id = row.page ?? moduleId(row.module);
+      return id && gained.length > 0 ? [{ id, gained }] : [];
+    })
   };
 }
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(employeeTypeValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const { id, name, data: permissions } = input.data;
+  const { id, name, grants } = input.data;
   if (!id) throw notFound("id not found");
-  const api = await carbon(args.request);
-  const result = await api.users.updateEmployeeType({
-    id,
-    name,
-    permissions: JSON.parse(permissions)
-  });
+  const { api } = await authorize(args.request);
+  const result = await api.users.updateEmployeeType({ id, name, grants });
   return respond(args.request, result).redirect(path.to.employeeTypes, {
     message: "Updated employee type",
     onError: path.to.employeeType(id)
@@ -67,20 +67,21 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function EditEmployeeTypesRoute() {
-  const { employeeType, employeeTypePermissions } =
+  const { employeeType, isAdmin, grants, convertedGrowth } =
     useLoaderData<typeof loader>();
 
   const initialValues = {
     id: employeeType?.id ?? "",
     name: employeeType?.name ?? "",
-    permissions: employeeTypePermissions
+    grants
   };
 
   return (
     <EmployeeTypeForm
       key={initialValues.id}
-      // @ts-expect-error
       initialValues={initialValues}
+      isAdmin={isAdmin}
+      convertedGrowth={convertedGrowth}
     />
   );
 }

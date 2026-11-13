@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -19,9 +18,7 @@ import { zfd } from "zod-form-data";
 import { useLocations } from "~/components/Form/Location";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { stockTransferValidator } from "~/modules/inventory/inventory.models";
-import { getStorageUnitsTreeForLocation } from "~/modules/inventory/inventory.service";
 import { StockTransferBuilder } from "~/modules/inventory/ui/StockTransfers/StockTransferBuilder";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { clearStockTransferWizard } from "~/stores";
 import { setCustomFields } from "~/utils/form";
@@ -41,8 +38,8 @@ export const handle: Handle = {
 // Loads everything the page needs in one round trip, so the line pickers
 // never fetch.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "inventory"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "inventory.stockTransfers": "Create"
   });
 
   // A location named in the URL is used only when it is the company's.
@@ -76,7 +73,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = defaults.data?.locationId ?? null;
   }
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     locationId = locations.data?.[0]?.id ?? null;
   }
   if (!locationId) {
@@ -87,13 +84,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const api = await carbon(request);
   const [stock, storageUnits, trackedStock] = await Promise.all([
     client.rpc("get_item_storage_unit_requirements_by_location", {
       company_id: companyId,
       location_id: locationId
     }),
-    getStorageUnitsTreeForLocation(client, companyId, locationId),
+    api.inventory.getStorageUnitsTreeForLocation({ locationId }),
     api.inventory.getTrackedStockAtLocation({ locationId })
   ]);
   const failure = stock.error ?? storageUnits.error ?? trackedStock.error;
@@ -128,7 +124,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(createForm).request(args);
   if ("invalid" in input) return input.invalid;
   const { locationId, lines, acknowledged, moveNow, stay } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.inventory.createStockTransfer({
     locationId,
     lines,

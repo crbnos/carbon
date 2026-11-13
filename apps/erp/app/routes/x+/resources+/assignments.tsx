@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Badge,
@@ -36,7 +36,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
-import { getTrainingAssignmentSummary } from "~/modules/resources/resources.service";
 import type { TrainingAssignmentSummaryItem } from "~/modules/resources/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -47,12 +46,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "resources.assignments": "View" });
 
-  const summary = await getTrainingAssignmentSummary(client, companyId);
+  const summary = await api.resources.getTrainingAssignmentSummary({});
 
   if (summary.error) {
     throw redirect(
@@ -209,7 +205,7 @@ const TrainingAssignmentsTable = memo(
                 <Trans>View Status</Trans>
               </Link>
             </MenuItem>
-            {permissions.can("update", "resources") && (
+            {permissions.has({ "resources.assignments": "Edit" }) && (
               <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
                 <Link to={path.to.trainingAssignment(assignmentId)}>
                   <MenuIcon icon={<LuPencil />} />
@@ -217,7 +213,7 @@ const TrainingAssignmentsTable = memo(
                 </Link>
               </MenuItem>
             )}
-            {permissions.can("delete", "resources") && (
+            {permissions.has({ "resources.assignments": "Full" }) && (
               <MenuItem
                 onClick={() => {
                   fetcher.submit(null, {
@@ -241,7 +237,7 @@ const TrainingAssignmentsTable = memo(
         columns={columns}
         count={data.length}
         primaryAction={
-          permissions.can("create", "resources") && (
+          permissions.has({ "resources.assignments": "Create" }) && (
             <New label={t`Assignment`} to={path.to.newTrainingAssignment} />
           )
         }

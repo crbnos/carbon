@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getErrorMessage } from "@carbon/utils";
@@ -65,8 +65,8 @@ const isDetailField = (field: string): field is LeaseDetailField =>
  * measured from changes with Modify.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "purchasing"
+  const { client, companyId, userId } = await authorize(request, {
+    "purchasing.leases": "Edit"
   });
 
   const formData = await request.formData();

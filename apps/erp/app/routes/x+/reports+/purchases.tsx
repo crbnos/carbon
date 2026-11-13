@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { downloadText } from "@carbon/files";
 import { CSV_CONTENT_TYPE, encodeCsvTable } from "@carbon/files/csv";
@@ -27,10 +27,6 @@ import {
   pivotStateValidator,
   purchaseGroupingFields
 } from "~/modules/accounting/accounting.models";
-import {
-  getFiscalYearSettings,
-  getPurchaseLinePivot
-} from "~/modules/accounting/accounting.service";
 import type { PurchaseLinePivotLine } from "~/modules/accounting/types";
 import type { PivotCellCoordinates } from "~/modules/accounting/ui/Reports";
 import {
@@ -107,9 +103,8 @@ function parsePurchaseUrlParams(
 export const shouldRevalidate = revalidateIgnoringPivotDisplay;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.reporting": "View"
   });
 
   const url = new URL(request.url);
@@ -121,10 +116,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const startDate = url.searchParams.get("startDate") ?? range.startDate;
   const endDate = range.endDate;
 
-  const fiscalYearSettings = await getFiscalYearSettings(client, companyId);
+  const fiscalYearSettings = await api.accounting.getFiscalYearSettings({});
   if (
     fiscalYearSettings.error &&
-    fiscalYearSettings.error.code !== "PGRST116"
+    fiscalYearSettings.error.category !== "notFound"
   ) {
     throw new Error("Failed to load fiscal year settings");
   }
@@ -165,7 +160,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         )
       : [];
 
-  const pivotResult = await getPurchaseLinePivot(client, {
+  const pivotResult = await api.accounting.getPurchaseLinePivot({
     companyId,
     startDate,
     endDate,

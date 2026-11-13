@@ -3,17 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getCurrencies,
-  getExchangeRates
-} from "~/modules/accounting/accounting.service";
+import { getCurrencies } from "~/modules/accounting/accounting.service";
 import { ExchangeRatesTable } from "~/modules/accounting/ui/ExchangeRates";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -25,13 +22,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting",
-      role: "employee"
-    }
-  );
+  const { client, companyGroupId, api } = await authorize(request, {
+    "accounting.exchangeRates": "View"
+  });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -47,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getExchangeRates(client, companyId)
+    api.accounting.getExchangeRates({})
   ]);
 
   // A broken rates page must not be indistinguishable from a healthy one —

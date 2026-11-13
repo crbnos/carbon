@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { stateActionValidator } from "@carbon/onboarding";
@@ -25,10 +25,7 @@ import { data } from "react-router";
 // structural edits (tier/exclusions/contacts) require an internal Carbon user.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {}
-  );
+  const { client, companyId, userId, email } = await authorize(request);
 
   const validation = await validator(stateActionValidator).validate(
     await request.formData()

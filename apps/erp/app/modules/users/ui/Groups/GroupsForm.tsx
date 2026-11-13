@@ -35,8 +35,8 @@ const GroupForm = ({ initialValues }: GroupFormProps) => {
   const isEditing = !!initialValues.id;
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "users")
-    : !permissions.can("create", "users");
+    ? !permissions.has({ "users.groups": "Edit" })
+    : !permissions.has({ "users.groups": "Create" });
 
   return (
     <Drawer

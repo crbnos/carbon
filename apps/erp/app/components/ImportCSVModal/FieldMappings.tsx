@@ -6,6 +6,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { pageOfTable } from "@carbon/database/access";
 import { Combobox, CreatableCombobox, useFormContext } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -47,10 +48,7 @@ import type {
   CreatableLookup,
   importSchemas
 } from "~/modules/shared/imports.models";
-import {
-  creatableFormPermissions,
-  fieldMappings
-} from "~/modules/shared/imports.models";
+import { fieldMappings } from "~/modules/shared/imports.models";
 import type { action } from "~/routes/api+/ai+/csv+/$table.columns";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -528,7 +526,7 @@ function EnumMappingStep({
   const permissions = usePermissions();
   const canCreateViaForm =
     !!creatableForm &&
-    permissions.can("create", creatableFormPermissions[creatableForm]);
+    permissions.has({ [pageOfTable(creatableForm)]: "Create" });
   const formModal = useDisclosure();
   const [formCreatedName, setFormCreatedName] = useState("");
   const pendingFormCsvValueRef = useRef<string | null>(null);

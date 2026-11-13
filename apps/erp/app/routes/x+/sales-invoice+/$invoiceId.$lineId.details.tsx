@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { RecordOutlet } from "@carbon/react";
@@ -19,10 +19,8 @@ import {
   isSalesInvoiceLocked,
   salesInvoiceLineValidator
 } from "~/modules/invoicing/invoicing.models";
-import { getSalesInvoiceLine } from "~/modules/invoicing/invoicing.service";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
-import { getOpportunityLineDocuments } from "~/modules/sales/sales.service";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -32,21 +30,24 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "invoicing.salesInvoices": "View"
   });
 
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
 
-  const salesInvoiceLine = await getSalesInvoiceLine(client, lineId);
+  const salesInvoiceLine = await api.invoicing.getSalesInvoiceLine({
+    salesInvoiceLineId: lineId
+  });
 
   const itemId = salesInvoiceLine?.data?.itemId;
 
   return {
     salesInvoiceLine: salesInvoiceLine?.data ?? null,
-    files: getOpportunityLineDocuments(client, companyId, lineId, itemId)
+    files: api.sales
+      .getOpportunityLineDocuments({ lineId, itemId })
+      .then(dataOrThrow)
   };
 }
 
@@ -57,7 +58,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { invoiceId, lineId } = input.params;
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.invoicing.updateSalesInvoiceLine({
     ...input.data,
     id: lineId,

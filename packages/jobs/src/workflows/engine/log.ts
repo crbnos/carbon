@@ -17,8 +17,8 @@ export interface RunContext {
     eventId: string;
     status: string;
   };
-  /** The workflow has a published version at all — the pointer IS the on/off switch. */
-  workflowPublished: boolean;
+  /** The pointer IS the on/off switch; null means unpublished. */
+  publishedVersionId: string | null;
   /** The company's group, which service functions need. Falls back to the company. */
   companyGroupId: string;
   version: {
@@ -79,7 +79,7 @@ export async function loadRunContext(
       eventId: row.eventId,
       status: row.status
     },
-    workflowPublished: row.publishedVersionId !== null,
+    publishedVersionId: row.publishedVersionId,
     companyGroupId: row.companyGroupId ?? row.companyId,
     version:
       row.nodes === null

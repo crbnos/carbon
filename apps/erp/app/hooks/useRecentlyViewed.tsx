@@ -7,14 +7,15 @@ import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMatches } from "react-router";
 import type { Handle } from "~/utils/handle";
+import { moduleOfMatches } from "~/utils/nav";
 
 // A document the user opened. Everything here is derived from the route's own
 // `detailBreadcrumb` handle at view time, so nothing has to be kept in sync with
 // a hand-maintained route list:
 //  - `title`     the entity's readable id (last breadcrumb segment)
 //  - `typeLabel` the list-link label the route already declares (e.g. "Orders")
-//  - `module`    the route's `handle.module`, resolved to an icon at display time
-//                against the `useModules` registry
+//  - `module`    the page's module (`moduleOfMatches`), resolved to an icon at
+//                display time against the `useModules` registry
 // `url` is the canonical detail path (link target + de-dupe key); `viewedAt` a
 // UTC instant string.
 export type RecentDocument = {
@@ -94,12 +95,11 @@ export function useRecordRecentlyViewed(companyId: string | null | undefined) {
   const { i18n } = useLingui();
 
   const detail = useMemo<Omit<RecentDocument, "viewedAt"> | null>(() => {
+    const module = moduleOfMatches(matches);
+    if (!module) return null;
     for (const m of matches) {
       const handle = m.handle as Handle | undefined;
       if (!handle || typeof handle.breadcrumb !== "function") continue;
-      const module =
-        typeof handle.module === "string" ? handle.module : undefined;
-      if (!module) continue;
 
       // A detail route resolves to [listLink, { breadcrumb: entityId }]; a list
       // route resolves to a single segment. Only the former is a document.

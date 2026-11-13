@@ -665,7 +665,7 @@ function ReceiptLineInspectionBadge({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        {inspection && permissions.can("view", "quality") ? (
+        {inspection && permissions.has({ "quality.inspections": "View" }) ? (
           <Link
             to={path.to.inspection(inspection.id)}
             // The label replaces the badge text, so it names the status too.

@@ -229,7 +229,7 @@ const ServiceJobForm = ({ initialValues, assets }: ServiceJobFormProps) => {
           </VStack>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("create", "service")}>
+          <Submit isDisabled={!permissions.has({ "service.jobs": "Create" })}>
             <Trans>Save</Trans>
           </Submit>
         </CardFooter>

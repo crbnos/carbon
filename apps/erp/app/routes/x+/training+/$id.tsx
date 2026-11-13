@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { toastServiceError } from "@carbon/query";
@@ -35,7 +35,6 @@ import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { Confirm } from "~/components/Modals";
 import { useImageUpload, usePermissions } from "~/hooks";
-import { getTraining } from "~/modules/resources/resources.service";
 import {
   TrainingExplorer,
   TrainingGuide,
@@ -43,7 +42,6 @@ import {
   TrainingProperties,
   TrainingVideo
 } from "~/modules/resources/ui";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -54,25 +52,25 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Training`, to: path.to.trainings },
     (data) => data?.training?.name
-  ),
-  module: "resources"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.training?.name, "Training");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "resources.training": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [training, tags] = await Promise.all([
-    getTraining(client, id),
-    getTagsList(client, companyId, "training")
+    api.resources.getTraining({ id }),
+    api.shared.getTagsList({ table: "training" })
   ]);
 
   if (training.error) {
@@ -174,8 +172,7 @@ function TrainingContent() {
   const onUploadImage = useImageUpload("training");
 
   const canEdit =
-    permissions.can("update", "people") &&
-    permissions.can("update", "resources") &&
+    permissions.has({ "resources.training": "Edit" }) &&
     loaderData?.training?.status === "Draft";
 
   const guidePath = loaderData?.training?.guidePath ?? null;

@@ -206,7 +206,7 @@ const JobProperties = () => {
       ? optimisticAssignment
       : routeData?.job?.assignee;
 
-  const canUpdate = permissions.can("update", "production");
+  const canUpdate = permissions.has({ "production.jobs": "Edit" });
   const isLocked = isJobLocked(routeData?.job?.status);
   const isDisabled = !canUpdate || isLocked;
 

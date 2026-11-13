@@ -3,24 +3,23 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCustomerBankAccounts } from "~/modules/sales/sales.service";
 import CustomerBankAccounts from "~/modules/sales/ui/Customer/CustomerBankAccounts";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "accounting"
+  const { api } = await authorize(request, {
+    "accounting.bankAccounts": "View"
   });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
-  const bankAccounts = await getCustomerBankAccounts(client, customerId);
+  const bankAccounts = await api.sales.getCustomerBankAccounts({ customerId });
   if (bankAccounts.error) {
     throw redirect(
       path.to.customer(customerId),

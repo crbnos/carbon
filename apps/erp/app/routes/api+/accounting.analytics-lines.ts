@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import type { PivotState } from "~/modules/accounting/accounting.models";
 import {
@@ -10,10 +10,7 @@ import {
   analyticsReports,
   pivotStateValidator
 } from "~/modules/accounting/accounting.models";
-import {
-  getDimensionPivotLines,
-  getScrapAccountIds
-} from "~/modules/accounting/accounting.service";
+import { getDimensionPivotLines } from "~/modules/accounting/accounting.service";
 
 /**
  * Fetcher endpoint for the analytics pivot drill-through drawer
@@ -34,13 +31,9 @@ import {
  * - colstart / colend    — period column bounds (period axis)
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting",
-      role: "employee"
-    }
-  );
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
+    "accounting.reporting": "View"
+  });
 
   const url = new URL(request.url);
   const searchParams = url.searchParams;
@@ -74,7 +67,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   let scrapAccountIds: string[] | undefined;
   if ("source" in report.accountScope) {
-    scrapAccountIds = (await getScrapAccountIds(client, companyId)).data;
+    scrapAccountIds =
+      (await api.accounting.getScrapAccountIds({})).data ?? undefined;
   }
 
   const optional = (name: string) => searchParams.get(name) ?? undefined;

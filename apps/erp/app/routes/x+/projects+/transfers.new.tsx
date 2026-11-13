@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -17,10 +16,7 @@ import {
   projectStockTransferTypes,
   projectStockTransferValidator
 } from "~/modules/projects/projects.models";
-import {
-  getProjectBorrows,
-  getStockOwnerProjects
-} from "~/modules/projects/projects.service";
+import { getStockOwnerProjects } from "~/modules/projects/projects.service";
 import ProjectStockTransferForm from "~/modules/projects/ui/Transfers/ProjectStockTransferForm";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
@@ -30,14 +26,14 @@ import { path } from "~/utils/path";
  * and `?borrow` prefill it (the project Stock tab's buttons).
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
+  const { api, client, companyId, userId } = await authorize(request, {
+    "projects.projects": "Edit"
   });
 
   const searchParams = new URL(request.url).searchParams;
   const [owners, openBorrows, userDefaults] = await Promise.all([
     getStockOwnerProjects(client, companyId),
-    getProjectBorrows(client, companyId, { status: ["Open"] }),
+    api.projects.getProjectBorrows({ status: ["Open"] }),
     getUserDefaults(client, userId, companyId)
   ]);
 
@@ -71,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (validation.error) return validationError(validation.error);
 
   const { id: _id, ...fields } = validation.data;
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const created = await api.projects.upsertProjectStockTransfer(fields);
 
   if (created.error) {

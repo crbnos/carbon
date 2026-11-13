@@ -3,10 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ComponentProps } from "react";
@@ -54,11 +54,12 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId, permissions } = await authorize(request);
 
-  // Manager-only "complete all steps" override is gated on the Production DELETE permission:
-  // operators hold view/create/update (they record steps) but not delete, so delete cleanly
+  // Manager-only "complete all steps" override is gated on Jobs at Full:
+  // operators hold Edit (they record steps) but not Full, so it cleanly
   // separates managers from operators regardless of how a company names its employee types.
+  // On a console it is the pinned operator's grants (`authorize`).
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
@@ -68,14 +69,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
 
   // Every read below is service-role: verify the operation is this company's.
-  const [claims, ownedOperation] = await Promise.all([
-    getUserClaims(userId, companyId),
-    getJobOperationForCompany(serviceRole, operationId, companyId)
-  ]);
-  const canOverrideComplete =
-    claims?.permissions?.production?.delete?.some(
-      (c) => c === "0" || c === companyId
-    ) ?? false;
+  const ownedOperation = await getJobOperationForCompany(
+    serviceRole,
+    operationId,
+    companyId
+  );
+  const canOverrideComplete = holdsGate(
+    permissions,
+    { "production.jobs": "Full" },
+    companyId
+  );
   if (!ownedOperation.data) {
     logger.warn("Operation not found in company", {
       companyId,

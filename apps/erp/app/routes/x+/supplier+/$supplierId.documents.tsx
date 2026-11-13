@@ -2,15 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { storage } from "@carbon/files";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import RecordDocuments from "~/components/RecordDocuments";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { client, companyId } = await authorize(request, {
+    "purchasing.suppliers": "View"
   });
 
   const { supplierId } = params;
@@ -29,13 +29,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function SupplierDocumentsRoute() {
   const { supplierId, files } = useLoaderData<typeof loader>();
 
-  return (
-    <RecordDocuments
-      files={files}
-      id={supplierId}
-      bucketPrefix="supplier"
-      sourceDocument="Supplier"
-      module="purchasing"
-    />
-  );
+  return <RecordDocuments files={files} id={supplierId} record="Supplier" />;
 }

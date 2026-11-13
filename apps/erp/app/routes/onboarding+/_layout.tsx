@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonEdition } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { TooltipProvider } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import { Edition, redirect } from "@carbon/utils";
@@ -13,19 +13,25 @@ import type {
 } from "react-router";
 import { Outlet } from "react-router";
 import { MeshGradientBackground } from "~/components/MeshGradientBackground";
-import { getLocationsList } from "~/modules/resources/resources.service";
-import { getCompany } from "~/modules/settings/settings.service";
 import { onboardingSequence, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId, api } = await authorize(
+    request,
+    {},
+    {
+      // A user with no company role yet (self-signup, first admin) runs
+      // onboarding: it acts on their own account.
+      allowPortalAccounts: true
+    }
+  );
 
   const [company, stripeCustomer, locations] = await Promise.all([
-    getCompany(client, companyId),
+    api.settings.getCompany({}),
     getStripeCustomerByCompanyId(companyId, userId),
-    getLocationsList(client, companyId)
+    api.resources.getLocationsList({})
   ]);
 
   const pathname = new URL(request.url).pathname;

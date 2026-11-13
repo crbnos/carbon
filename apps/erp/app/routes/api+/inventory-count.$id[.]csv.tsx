@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { CSV_CONTENT_TYPE, encodeCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
 import { round } from "@carbon/utils";
@@ -19,8 +19,8 @@ const logger = getLogger("erp", "api/inventory-count.csv");
 // One row per unit of a count, in the columns the count import reads. A
 // blind count leaves out the units not counted yet and the Missing ones.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "inventory"
+  const { companyId } = await authorize(request, {
+    "inventory.inventoryCount": "View"
   });
   const { id } = params;
   if (!id)

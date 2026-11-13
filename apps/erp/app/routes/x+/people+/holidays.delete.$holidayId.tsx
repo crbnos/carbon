@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -12,19 +12,15 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { getHoliday } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "people",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "people.holidays": "View" });
 
   const { holidayId } = params;
   if (!holidayId) throw notFound("holidayId not found");
 
-  const holiday = await getHoliday(client, holidayId);
+  const holiday = await api.people.getHoliday({ holidayId });
   if (holiday.error) {
     throw redirect(
       path.to.holidays,
@@ -40,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   const { holidayId } = params;
   if (!holidayId) throw notFound("Holiday ID was not found");
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.people.deleteHoliday({ holidayId });
   return respond(request, result).redirect(path.to.holidays, {
     message: "Successfully deleted holiday"

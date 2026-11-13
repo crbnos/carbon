@@ -9,11 +9,10 @@ import {
   ServerFnError
 } from "@carbon/api/errors";
 import {
-  hasPermissions,
   type PermissionRule,
   type Permissions,
-  permissionsFromClaims,
-  type RequiredPermissions,
+  type Requirement,
+  type RowsToRead,
   resolvePermissions
 } from "@carbon/api/permissions";
 import {
@@ -27,6 +26,7 @@ import {
   type Actor,
   type CarbonError,
   createServiceContext,
+  readRowRequirement,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import { attempt, serverFnRefusal } from "@carbon/api/service-tools.server";
@@ -34,7 +34,8 @@ import {
   itemLedgerInStripes,
   type StockStripe
 } from "@carbon/api/stock-stripes";
-import { error, getAppUrl } from "@carbon/auth";
+import { error, getAppUrl, readClaimsFresh } from "@carbon/auth";
+import { authenticateApiKey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -45,6 +46,13 @@ import {
   type Json,
   getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
+import {
+  admits,
+  ITEM_TYPE_PAGES,
+  type PageGate,
+  pageById,
+  userActor
+} from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type {
@@ -224,7 +232,12 @@ import {
   type standardFactorType,
   toTiptapDoc
 } from "./shared.models";
-import { flatChargeShare } from "./shared.utils";
+import {
+  flatChargeShare,
+  quoteToSalesOrderPermission,
+  salesRfqToQuotePermission,
+  supplierQuoteToPurchaseOrderPermission
+} from "./shared.utils";
 import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload, MethodRowsAdded } from "./types";
 
@@ -1442,7 +1455,7 @@ type CompanyScopedTable = {
  * belongs to the company AND hangs off that quote. One query.
  *
  * Record ids in a URL or form body prove nothing about tenancy:
- * `requirePermissions` authorizes the CALLER for `companyId`, not the ids it
+ * `authorize` authorizes the CALLER for `companyId`, not the ids it
  * sends. Most tables have single-column foreign keys, so a service-role or
  * Kysely write happily accepts another company's row as a parent. Call this
  * before any RLS-bypassing read or write keyed on a caller-supplied id.
@@ -1514,18 +1527,18 @@ export async function refuseUnlessOwned(
 
 /**
  * For a write gated on company membership (`permission: {}`): a person logs
- * their own time, but that gate admits an API key holding any scope, even a
- * read-only one. A key also needs `required`.
+ * their own time, but that gate admits an API key holding any permission,
+ * even a read-only one. A key also needs `required`.
  */
 export function refuseKeyWithout(
   ctx: ServiceContext,
-  required: RequiredPermissions
+  required: PageGate
 ): CarbonError | null {
   if (ctx.actor.type !== "apiKey" || ctx.can(required)) return null;
   return ctx.error(
     "forbidden",
     `This API key needs ${Object.entries(required)
-      .map(([action, module]) => `${action}: ${module}`)
+      .map(([page, level]) => `${page}: ${level}`)
       .join(", ")} to do this`
   );
 }
@@ -2171,7 +2184,7 @@ const POSTING_DEFAULTS: Partial<
  * - From handles that carry the caller's `client`, `as` is required (the
  *   body's permission rule, or what the input requires): the caller must hold
  *   it first — a user's claims, an API key's
- *   scopes, nothing for the service role. With the body's input `schema`, the
+ *   permissions, nothing for the service role. With the body's input `schema`, the
  *   input is parsed first and the rule reads it as the body will. The body
  *   then runs as the system
  *   on the user's behalf, over that same `db` (a transaction stays one).
@@ -2263,7 +2276,7 @@ async function runPosting<I, R>(
     async (span) => {
       if (handles.client && as) {
         const parsed = (schema ? schema.parse(input) : input) as I;
-        const caller = postingCaller(handles.client, handles.userId);
+        const caller = postingCredential(handles.client, handles.userId);
         span.setAttribute("carbon.function.actor", caller.type);
         await authorizePostingCaller(
           handles,
@@ -3593,9 +3606,11 @@ export async function importMethods(
     companyId: string;
     userId: string;
     summary: Summary;
+    /** Whether the caller holds a gate (`ctx.can`): a parent's method needs Edit on its type's page. */
+    can: (gate: PageGate) => boolean;
   }
 ): Promise<void> {
-  const { table, mappedRecords, companyId, userId, summary } = args;
+  const { table, mappedRecords, companyId, userId, summary, can } = args;
   const added = noMethodRowsAdded();
   const warnings: string[] = [];
   summary.added = added;
@@ -3832,6 +3847,17 @@ export async function importMethods(
 
     if (errors.length > 0) {
       for (const e of errors) summary.errors.push(e);
+      continue;
+    }
+
+    // A parent's method needs Edit on its type's page; the gate covers Parts only.
+    const parent = itemMap.get(key(g.readableId, g.revision));
+    const parentPage = parent ? ITEM_TYPE_PAGES[parent.type] : undefined;
+    if (parent && parentPage && !can({ [parentPage]: "Edit" })) {
+      summary.errors.push({
+        row: rowOf(g.firstIndex),
+        reason: `Parent ${partLabel} is a ${parent.type}; changing its method needs Edit on ${pageById(parentPage)?.label ?? parentPage}`
+      });
       continue;
     }
 
@@ -9015,7 +9041,8 @@ export async function importCsvTable(
         mappedRecords,
         companyId,
         userId,
-        summary
+        summary,
+        can: (gate) => ctx.can(gate)
       });
       break;
     }
@@ -9362,18 +9389,31 @@ async function billedPurchaseOrderCharges(
 /** `id` for the three document-to-invoice conversions, `convertedId` for the rest. */
 export type ConvertResult = { id?: string; convertedId?: string };
 
+/**
+ * Each conversion needs Create (or more) on the page of the document it makes.
+ * Checked only when a caller's client reaches the posting; a system caller's
+ * service function gates on the same constant (`quoteToSalesOrderPermission`).
+ */
 export const convertDocumentPermission = {
   by: "type",
   rules: {
-    methodVersionToActive: { update: "resources" },
-    purchaseOrderToPurchaseInvoice: { update: "invoicing" },
-    quoteToSalesOrder: { update: "sales" },
-    salesOrderToSalesInvoice: { update: "invoicing" },
-    salesRfqToQuote: { update: "sales" },
-    shipmentToSalesInvoice: { update: "invoicing" },
-    supplierQuoteToPurchaseOrder: { update: "purchasing" },
-    warehouseTransferToShipment: { update: "inventory" },
-    warehouseTransferToReceipt: { update: "inventory" }
+    // `activateMethodVersion` passes the item's row rule instead: a keyed
+    // rule names one page, and a method's page is its item's type.
+    methodVersionToActive: { "parts.parts": "Edit" },
+    purchaseOrderToPurchaseInvoice: { "invoicing.purchaseInvoices": "Edit" },
+    quoteToSalesOrder: quoteToSalesOrderPermission,
+    salesOrderToSalesInvoice: { "invoicing.salesInvoices": "Edit" },
+    salesRfqToQuote: salesRfqToQuotePermission,
+    shipmentToSalesInvoice: { "invoicing.salesInvoices": "Edit" },
+    supplierQuoteToPurchaseOrder: supplierQuoteToPurchaseOrderPermission,
+    warehouseTransferToShipment: {
+      "inventory.warehouseTransfers": "Edit",
+      "inventory.shipments": "Create"
+    },
+    warehouseTransferToReceipt: {
+      "inventory.warehouseTransfers": "Edit",
+      "inventory.receipts": "Create"
+    }
   }
 } satisfies PermissionRule<z.output<typeof convertInput>>;
 
@@ -11529,26 +11569,29 @@ async function receiptQuantitiesStartAtZero(
 export const createDocumentPermission = {
   by: "type",
   rules: {
-    nonConformanceTasks: { update: "quality" },
-    purchaseOrderFromJob: { create: ["purchasing", "production"] },
-    receiptDefault: { create: "inventory" },
-    receiptFromPurchaseOrder: { create: "inventory" },
-    receiptFromInboundTransfer: { create: "inventory" },
-    receiptFromSalesReturnOrder: { create: "inventory" },
-    receiptFromWarehouseTransfer: { create: "inventory" },
-    receiptLineSplit: { create: "inventory" },
-    shipmentDefault: { create: "inventory" },
-    shipmentFromPurchaseOrder: { create: "inventory" },
-    shipmentFromWarehouseTransfer: { create: "inventory" },
-    shipmentFromPurchaseReturnOrder: { create: "inventory" },
-    shipmentFromSalesOrder: { create: "inventory" },
-    shipmentFromSalesReturnOrder: { create: "inventory" },
-    shipmentFromSalesOrderLine: { create: "inventory" },
-    shipmentLineSplit: { create: "inventory" },
-    shipmentFromRentalAgreement: { create: "inventory" },
-    receiptFromRentalAgreement: { create: "inventory" },
-    shipmentFromCustomerContract: { create: "inventory" },
-    journalEntry: { create: "accounting" }
+    nonConformanceTasks: { "quality.issues": "Edit" },
+    purchaseOrderFromJob: {
+      "purchasing.purchaseOrders": "Create",
+      "production.jobs": "Create"
+    },
+    receiptDefault: { "inventory.receipts": "Create" },
+    receiptFromPurchaseOrder: { "inventory.receipts": "Create" },
+    receiptFromInboundTransfer: { "inventory.receipts": "Create" },
+    receiptFromSalesReturnOrder: { "inventory.receipts": "Create" },
+    receiptFromWarehouseTransfer: { "inventory.receipts": "Create" },
+    receiptLineSplit: { "inventory.receipts": "Create" },
+    shipmentDefault: { "inventory.shipments": "Create" },
+    shipmentFromPurchaseOrder: { "inventory.shipments": "Create" },
+    shipmentFromWarehouseTransfer: { "inventory.shipments": "Create" },
+    shipmentFromPurchaseReturnOrder: { "inventory.shipments": "Create" },
+    shipmentFromSalesOrder: { "inventory.shipments": "Create" },
+    shipmentFromSalesReturnOrder: { "inventory.shipments": "Create" },
+    shipmentFromSalesOrderLine: { "inventory.shipments": "Create" },
+    shipmentLineSplit: { "inventory.shipments": "Create" },
+    shipmentFromRentalAgreement: { "inventory.shipments": "Create" },
+    receiptFromRentalAgreement: { "inventory.receipts": "Create" },
+    shipmentFromCustomerContract: { "inventory.shipments": "Create" },
+    journalEntry: { "accounting.journalEntries": "Create" }
   }
 } satisfies PermissionRule<z.output<typeof createInput>>;
 
@@ -18621,24 +18664,26 @@ export function attributesContain(values: Record<string, string>) {
   return sql<boolean>`"attributes" @> ${JSON.stringify(values)}::jsonb`;
 }
 /**
- * Who stands behind a posting's client: the service role (the system), an API
- * key (checked against its scopes) or the signed-in user (checked against the
- * user's claims). Never derive it from input.
+ * The credential a posting's client carries: the service role (the system),
+ * an API key (checked against its permissions) or the signed-in user's token
+ * (checked against the user's claims, read through that client). Not an
+ * `Actor`: the key is not yet authenticated and no claims are read. Never
+ * derive it from input.
  */
-export type PostingCaller =
+export type PostingCredential =
   | { type: "system" }
   | { type: "apiKey"; apiKey: string }
-  | { type: "user" };
+  | { type: "user"; client: SupabaseClient<Database> };
 
 /**
  * The client's key decides the caller. A user's token must be `userId`'s,
  * since the permissions are read for that user. Never replace this with a flag
  * the caller passes: /api/v1 fills unknown parameters from the body.
  */
-export function postingCaller(
+export function postingCredential(
   client: SupabaseClient<Database>,
   userId: string
-): PostingCaller {
+): PostingCredential {
   const { supabaseKey, headers = {} } = client as unknown as {
     supabaseKey?: string;
     headers?: Record<string, string>;
@@ -18651,7 +18696,7 @@ export function postingCaller(
   if (bearerSubject(headers.Authorization) !== userId) {
     throw new ForbiddenError("userId does not match the signed-in user");
   }
-  return { type: "user" };
+  return { type: "user", client };
 }
 
 /** The `sub` of a `Bearer` JWT, unverified. The token comes from this
@@ -18669,67 +18714,50 @@ function bearerSubject(authorization: string | undefined): string | undefined {
   }
 }
 
-/** Refuses a caller who does not hold `required` in the company. */
+/** Refuses a caller who does not pass `required` in the company (`admits`). */
 export async function authorizePostingCaller(
   {
     db,
     companyId,
     userId
   }: Pick<PostingHandles, "db" | "companyId" | "userId">,
-  caller: PostingCaller,
-  required: Permissions
+  caller: PostingCredential,
+  resolved: Requirement | RowsToRead
 ): Promise<void> {
   if (caller.type === "system") return;
-  if (required === "system") {
+  if (resolved === "system") {
     throw new ForbiddenError("Only server-side callers may run this");
   }
+  // A row rule reads its rows the way the service function gate does.
+  const required =
+    typeof resolved === "object" && "ids" in resolved
+      ? await readRowRequirement(db, companyId, resolved)
+      : resolved;
   if (caller.type === "apiKey") {
-    return authorizeApiKey(db, companyId, caller.apiKey, required);
+    const { key, refusal } = await authenticateApiKey(caller.apiKey);
+    if (refusal?.status === 429) {
+      throw new ServerFnError(refusal.message, 429, refusal.headers);
+    }
+    if (!key || key.companyId !== companyId) {
+      throw new ForbiddenError(refusal?.message ?? "Invalid API key");
+    }
+    if (
+      !admits(
+        { type: "apiKey", permissions: key.permissions },
+        companyId,
+        required
+      )
+    ) {
+      throw new ForbiddenError("API key lacks required permissions");
+    }
+    return;
   }
-  const { rows } = await sql<{
-    claims: Record<string, unknown> | null;
-  }>`SELECT get_claims(${userId}, ${companyId}) AS claims`.execute(db);
-  const claims = rows[0]?.claims ?? {};
-  // A portal account holds a few view permissions, so the list alone would admit it.
-  if (claims.role === "customer" || claims.role === "supplier") {
-    throw new ForbiddenError();
-  }
-  if (!hasPermissions(permissionsFromClaims(claims), companyId, required)) {
-    throw new ForbiddenError();
-  }
-}
-
-/** A key of this company, unexpired, whose scopes (`<module>_<action>` →
- *  company ids, shaped like claims) cover `required`. Rate limiting stays with
- *  the route that authenticated the key. */
-async function authorizeApiKey(
-  db: Kysely<KyselyDatabase>,
-  companyId: string,
-  apiKey: string,
-  required: RequiredPermissions
-): Promise<void> {
-  const key = await db
-    .selectFrom("apiKey")
-    .select("scopes")
-    .where(
-      "keyHash",
-      "=",
-      sql<string>`encode(sha256(convert_to(${apiKey}, 'UTF8')), 'hex')`
-    )
-    .where("companyId", "=", companyId)
-    .where((eb) =>
-      eb.or([
-        eb("expiresAt", "is", null),
-        eb("expiresAt", ">", sql<string>`now()`)
-      ])
-    )
-    .executeTakeFirst();
-  if (!key) throw new ForbiddenError("Invalid API key");
-  if (Object.keys(required).length === 0) return;
-  const scopes = permissionsFromClaims(
-    (key.scopes ?? {}) as Record<string, unknown>
+  const { role, permissions } = await readClaimsFresh(
+    caller.client,
+    userId,
+    companyId
   );
-  if (!hasPermissions(scopes, companyId, required)) {
-    throw new ForbiddenError("API key lacks required permissions");
+  if (!admits(userActor({ role, permissions }), companyId, required)) {
+    throw new ForbiddenError();
   }
 }

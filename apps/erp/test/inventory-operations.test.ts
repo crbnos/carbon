@@ -9,6 +9,7 @@ import {
   adjustInventory,
   postInventoryCount
 } from "../app/modules/inventory/inventory.server";
+import { pageClaims } from "./page-claims";
 import {
   adjustmentRuleSurfaces,
   inventoryCountPostingFailure,
@@ -30,15 +31,16 @@ const ctx = (rows: Record<string, unknown> = {}) =>
   createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "user-1",
-      permissions: {
+      permissions: pageClaims({
         inventory: {
           view: ["company-1"],
           create: ["company-1"],
           update: ["company-1"],
           delete: []
         }
-      }
+      })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: clientWith(rows) as any,

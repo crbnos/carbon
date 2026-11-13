@@ -26,6 +26,8 @@ export type AuthEvent =
   | "permission_denied"
   | "permission_changed"
   | "role_changed"
+  | "role_access_changed"
+  | "ownership_transferred"
   | "logout";
 
 /**
@@ -84,12 +86,9 @@ export function logAuthEvent(
 }
 
 /**
- * The permission keys (`${module}_${action}`) a user effectively holds in ONE
- * company, derived from the `userPermission.permissions` map — each key maps to
- * the list of company ids it is granted for, so a key is "held" when that list
- * includes `companyId`. Returned sorted so a before/after diff is stable and two
- * equal sets serialise identically. This is the compact, human-readable audit
- * projection of the full cross-company permission blob (which is large and noisy).
+ * The keys a user holds in ONE company, from a key → company ids map: a
+ * person's `<page>_<action>` keys (`claimKeys`) or a portal account's
+ * `userPermission` keys. Sorted, so a before/after diff is stable.
  */
 export function grantedPermissionKeys(
   permissions: Record<string, string[]> | null | undefined,
@@ -109,8 +108,10 @@ export function grantedPermissionKeys(
  * Emit a `permission_changed` audit event (NIST 800-171 3.3.1 / 3.3.2 / AC-6).
  *
  * Records WHO changed WHOSE permissions in which company, plus the before/after
- * grant set for that company and the derived `granted` / `revoked` deltas. Used
- * by the granular permission-edit path (the `update-permissions` batch job).
+ * grant set for that company and the derived `granted` / `revoked` deltas.
+ * Emitted by `writeAccessGrants` (`@carbon/ee/permissions.server`) when a
+ * person's access changes, whether from the access editor or the
+ * `update-permissions` job.
  */
 export function logPermissionChange(fields: {
   /** The acting admin's userId. Falls back to {@link SYSTEM_ACTOR} when absent. */
@@ -139,6 +140,83 @@ export function logPermissionChange(fields: {
   });
 }
 
+/** One module or page whose grant moved; `"inherit"` when there was or is no grant. */
+export type GrantChange = {
+  module: string;
+  page: string | null;
+  from: string;
+  to: string;
+};
+
+/**
+ * Emit a `role_access_changed` audit event (NIST 800-171 3.3.1 / 3.3.2 / AC-6):
+ * who changed which grants of an employee type, and how many employees hold it.
+ */
+export function logRoleAccessChange(fields: {
+  actor?: string | null;
+  employeeTypeId: string;
+  companyId: string;
+  changes: GrantChange[];
+  /** The employees whose access the change moved. */
+  affected: number;
+  ip?: string | null;
+}): void {
+  logAuthEvent("role_access_changed", {
+    actor: fields.actor ?? SYSTEM_ACTOR,
+    employeeTypeId: fields.employeeTypeId,
+    companyId: fields.companyId,
+    ip: fields.ip ?? undefined,
+    changes: fields.changes,
+    affected: fields.affected
+  });
+}
+
+/**
+ * Emit a `permission_changed` audit event for an API key (NIST 800-171 3.3.1 /
+ * 3.3.2 / AC-6): who changed which grants of the key.
+ */
+export function logApiKeyAccessChange(fields: {
+  actor?: string | null;
+  apiKeyId: string;
+  companyId: string;
+  changes: GrantChange[];
+  ip?: string | null;
+}): void {
+  logAuthEvent("permission_changed", {
+    actor: fields.actor || SYSTEM_ACTOR,
+    apiKeyId: fields.apiKeyId,
+    companyId: fields.companyId,
+    ip: fields.ip ?? undefined,
+    changes: fields.changes
+  });
+}
+
+/**
+ * Emit an `ownership_transferred` audit event (NIST 800-171 3.3.1 / 3.3.2 /
+ * AC-2): the owner of a company group, who alone holds billing, changed.
+ * `actor` is the outgoing owner.
+ */
+export function logOwnershipTransfer(fields: {
+  actor: string;
+  companyId: string;
+  companyGroupId: string;
+  toOwnerId: string;
+  ip?: string | null;
+}): void {
+  logAuthEvent("ownership_transferred", {
+    actor: fields.actor,
+    companyId: fields.companyId,
+    companyGroupId: fields.companyGroupId,
+    // Only the owner may transfer, so the actor is the outgoing owner.
+    fromOwnerId: fields.actor,
+    targetUserId: fields.toOwnerId,
+    ip: fields.ip ?? undefined
+  });
+}
+
+/** One `permission` row as an audit event records it. */
+export type AuditGrant = { module: string; page: string | null; level: string };
+
 /**
  * Emit a `role_changed` audit event (NIST 800-171 3.3.1 / 3.3.2 / AC-2).
  *
@@ -158,6 +236,12 @@ export function logRoleChange(fields: {
   afterRole?: string | null;
   before?: Record<string, string[]> | null;
   after?: Record<string, string[]> | null;
+  /**
+   * An employee's own `permission` rows before and after, recorded instead of
+   * `before`/`after` (which read the legacy `userPermission` keys).
+   */
+  grantsBefore?: AuditGrant[];
+  grantsAfter?: AuditGrant[];
   /** Source IP of the request that made the change (AU-3 "source of event"). */
   ip?: string | null;
   reason?: string;
@@ -178,6 +262,16 @@ export function logRoleChange(fields: {
     payload.before = before;
     payload.after = after;
     payload.revoked = before.filter((key) => !after.includes(key));
+  }
+
+  if (fields.grantsBefore !== undefined || fields.grantsAfter !== undefined) {
+    const before = fields.grantsBefore ?? [];
+    const after = fields.grantsAfter ?? [];
+    const same = (a: AuditGrant, b: AuditGrant) =>
+      a.module === b.module && a.page === b.page && a.level === b.level;
+    payload.before = before;
+    payload.after = after;
+    payload.revoked = before.filter((g) => !after.some((a) => same(a, g)));
   }
 
   logAuthEvent("role_changed", payload);

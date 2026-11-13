@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { flags } from "@carbon/env/flags.server";
 import { validator } from "@carbon/form";
@@ -17,8 +17,8 @@ import { CompanyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId, email } = await authorize(request, {
+    "settings.companies": "View"
   });
 
   // Multi-company management: Carbon staff, and the companies the
@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     !isInternalEmail(email) &&
     !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const { id } = params;
@@ -49,7 +49,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["id"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.settings.updateSubsidiaryDetails({
     ...input.data,
     id: input.params.id

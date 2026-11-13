@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { LabelWithHelp } from "@carbon/react";
@@ -22,7 +22,7 @@ import {
   useRouteData
 } from "~/hooks";
 import type { ProjectCostType } from "~/modules/projects/projects.models";
-import { getProjectBillingBackup } from "~/modules/sales/sales.service";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractMoney } from "~/modules/sales/ui/Contracts";
 import { usePeople } from "~/stores";
@@ -34,9 +34,11 @@ const logger = getLogger("erp", "contract-billing-backup");
  *  billed, traced to its ledger row, or to its pool, fiscal year, rate and
  *  base for a burden item. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api, client, companyId } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    CONTRACT_READ_GATE
+  );
 
   const { id, invoiceId } = params;
   if (!id) throw new Error("Could not find id");
@@ -49,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .eq("id", invoiceId)
       .eq("companyId", companyId)
       .single(),
-    getProjectBillingBackup(client, { companyId, salesInvoiceId: invoiceId })
+    api.sales.getProjectBillingBackup({ salesInvoiceId: invoiceId })
   ]);
   if (invoice.error || invoice.data.customerContractId !== id || items.error) {
     logger.error("Failed to load a project billing backup", {
@@ -66,7 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { invoice: invoice.data, items: items.data };
+  return { invoice: invoice.data, items: items.data ?? [] };
 }
 
 type BackupRow = Awaited<ReturnType<typeof loader>>["items"][number];

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,11 +11,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import {
-  getPurchaseReturnOrder,
-  getPurchaseReturnOrderLines,
-  getPurchaseReturnOrderLineTrackedEntities
-} from "~/modules/purchasing/purchasing.service";
 import {
   PurchaseReturnOrderExplorer,
   PurchaseReturnOrderHeader,
@@ -37,8 +32,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Supplier Returns`, to: path.to.purchaseReturnOrders },
     (data) => data?.purchaseReturnOrder?.purchaseReturnOrderId
-  ),
-  module: "purchasing"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
@@ -48,16 +42,16 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { companyId, api } = await authorize(request, {
+    "purchasing.returns": "View"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [purchaseReturnOrder, lines] = await Promise.all([
-    getPurchaseReturnOrder(client, id),
-    getPurchaseReturnOrderLines(client, id, companyId)
+    api.purchasing.getPurchaseReturnOrder({ purchaseReturnOrderId: id }),
+    api.purchasing.getPurchaseReturnOrderLines({ purchaseReturnOrderId: id })
   ]);
 
   if (purchaseReturnOrder.error) {
@@ -77,7 +71,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const lineIds = (lines.data ?? []).map((line) => line.id);
   const trackedEntities =
     lineIds.length > 0
-      ? await getPurchaseReturnOrderLineTrackedEntities(client, lineIds)
+      ? await api.purchasing.getPurchaseReturnOrderLineTrackedEntities({
+          lineIds
+        })
       : { data: [], error: null };
 
   return {

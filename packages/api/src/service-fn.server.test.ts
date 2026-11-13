@@ -9,13 +9,17 @@ vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), warn: vi.fn() })
 }));
 
+import { getPostgresClient } from "@carbon/database/client";
+import { anyOfRule, rowRule } from "./permissions";
 import {
   type Actor,
   CarbonError,
   createServiceContext,
+  dataOrThrow,
   defineServiceFn,
   type Result,
   type RouteResult,
+  refusalOf,
   toResult
 } from "./service-fn.server";
 
@@ -43,7 +47,7 @@ function database() {
 }
 
 const productionView = {
-  production: { view: ["company-1"], create: [], update: [], delete: [] }
+  "production.jobs": { view: ["company-1"], create: [], update: [], delete: [] }
 };
 
 const contextWith = (
@@ -51,7 +55,7 @@ const contextWith = (
   actor: Actor = {
     type: "apiKey",
     createdBy: "user-1",
-    scopes: productionView
+    permissions: productionView
   }
 ) =>
   createServiceContext({
@@ -68,7 +72,7 @@ const ctx = contextWith({});
 describe("defineServiceFn", () => {
   const divide = defineServiceFn({
     input: z.object({ by: z.number().default(2) }),
-    permission: { view: "production" },
+    permission: { "production.jobs": "View" },
     async run(ctx, { by }) {
       if (by === 0) return ctx.error("rule", "Cannot divide by zero");
       if (by < 0) throw new Error("negative");
@@ -121,27 +125,28 @@ describe("the gate", () => {
   });
   const outer = defineServiceFn({
     input: z.object({}),
-    permission: { view: "production" },
+    permission: { "production.jobs": "View" },
     async run(ctx) {
       return inner(ctx, {});
     }
   });
   const accountingDelete = defineServiceFn({
     input: z.object({}),
-    permission: { delete: "accounting" },
+    permission: { "accounting.journalEntries": "Full" },
     async run() {
       return "deleted";
     }
   });
   const outerOfAccounting = defineServiceFn({
     input: z.object({}),
-    permission: { view: "production" },
+    permission: { "production.jobs": "View" },
     async run(ctx) {
       return accountingDelete(ctx, {});
     }
   });
   const user = (permissions = {}): Actor => ({
     type: "user",
+    role: "employee",
     userId: "user-1",
     permissions
   });
@@ -179,18 +184,61 @@ describe("the gate", () => {
     expect(asSystem.data).toEqual({ data: "inner", error: null });
   });
 
-  it("requires company membership when nothing is named", async () => {
+  it("refuses a portal account an employee read, whatever it holds", async () => {
     const open = defineServiceFn({
       input: z.object({}),
-      permission: {},
+      permission: "employee",
       async run() {
         return "ok";
       }
     });
-    expect((await open(contextWith({}, user()), {})).error?.category).toBe(
+    const customer: Actor = {
+      type: "user",
+      role: "customer",
+      userId: "user-1",
+      permissions: productionView
+    };
+    expect((await open(contextWith({}, customer), {})).error?.category).toBe(
       "forbidden"
     );
+  });
+
+  it("admits any employee of the company to an employee read, grants or none", async () => {
+    const open = defineServiceFn({
+      input: z.object({}),
+      permission: "employee",
+      async run() {
+        return "ok";
+      }
+    });
+    // The role is the user's role in this company: membership is proven.
+    expect((await open(contextWith({}, user()), {})).data).toBe("ok");
     expect((await open(contextWith({}, user(productionView)), {})).data).toBe(
+      "ok"
+    );
+    const noRole: Actor = { ...user(productionView), role: null } as Actor;
+    expect((await open(contextWith({}, noRole), {})).error?.category).toBe(
+      "forbidden"
+    );
+  });
+
+  it("requires an API key to hold some grant for an employee read", async () => {
+    const open = defineServiceFn({
+      input: z.object({}),
+      permission: "employee",
+      async run() {
+        return "ok";
+      }
+    });
+    const key = (permissions = {}): Actor => ({
+      type: "apiKey",
+      createdBy: "user-1",
+      permissions
+    });
+    expect((await open(contextWith({}, key()), {})).error?.category).toBe(
+      "forbidden"
+    );
+    expect((await open(contextWith({}, key(productionView)), {})).data).toBe(
       "ok"
     );
   });
@@ -200,7 +248,10 @@ describe("the gate", () => {
       input: z.object({ kind: z.enum(["read", "write"]) }),
       permission: {
         by: "kind",
-        rules: { read: { view: "production" }, write: { update: "production" } }
+        rules: {
+          read: { "production.jobs": "View" },
+          write: { "production.jobs": "Edit" }
+        }
       },
       async run({ actor }) {
         return actor.type;
@@ -218,9 +269,9 @@ describe("the gate", () => {
       input: z.object({ kind: z.string() }),
       permission: {
         by: "kind",
-        rules: { read: { view: "production" } } as Record<
+        rules: { read: { "production.jobs": "View" } } as Record<
           string,
-          { view: string }
+          { "production.jobs": "View" }
         >
       },
       async run() {
@@ -237,13 +288,205 @@ describe("the gate", () => {
   });
 });
 
+// The boundary is the Postgres wire: a driver that records what Kysely sends
+// and answers with the rows the database would return. Kysely runs real.
+function rowsDatabase(rows: Record<string, unknown>[]) {
+  const sent: { sql: string; parameters: readonly unknown[] }[] = [];
+  const connection = {
+    executeQuery: async (query: {
+      sql: string;
+      parameters: readonly unknown[];
+    }) => {
+      sent.push({ sql: query.sql, parameters: query.parameters });
+      return { rows };
+    },
+    // biome-ignore lint/correctness/useYield: never streamed
+    streamQuery: async function* () {
+      throw new Error("not streamed");
+    }
+  };
+  const done = async () => undefined;
+  class Driver {
+    init = done;
+    acquireConnection = async () => connection;
+    beginTransaction = done;
+    commitTransaction = done;
+    rollbackTransaction = done;
+    releaseConnection = done;
+    destroy = done;
+  }
+  return { pg: getPostgresClient({} as never, Driver as never), sent };
+}
+
+describe("the gate on a row rule", () => {
+  const tools = {
+    "parts.tools": {
+      view: ["company-1"],
+      create: ["company-1"],
+      update: ["company-1"],
+      delete: []
+    },
+    "parts.parts": { view: ["company-1"], create: [], update: [], delete: [] }
+  };
+  const user: Actor = {
+    type: "user",
+    role: "employee",
+    userId: "user-1",
+    permissions: tools
+  };
+  const setCost = defineServiceFn({
+    input: z.object({ itemId: z.string() }),
+    permission: rowRule("item", "Edit", { id: "itemId" }),
+    async run() {
+      return "ran";
+    }
+  });
+
+  it("checks the page of the row's type, read in one query", async () => {
+    const tool = rowsDatabase([{ id: "i1", type: "Tool" }]);
+    expect(
+      (await setCost(contextWith(tool.pg, user), { itemId: "i1" })).data
+    ).toBe("ran");
+    expect(tool.sent).toHaveLength(1);
+    expect([...(tool.sent[0]?.parameters ?? [])].sort()).toEqual([
+      "company-1",
+      "i1"
+    ]);
+    const part = rowsDatabase([{ id: "i1", type: "Part" }]);
+    const { error } = await setCost(contextWith(part.pg, user), {
+      itemId: "i1"
+    });
+    expect(error).toMatchObject({
+      category: "forbidden",
+      message: "You do not have permission to do this"
+    });
+  });
+
+  it("joins hop by hop, every table in the caller's company", async () => {
+    const deleteSupplierPart = defineServiceFn({
+      input: z.object({ ids: z.array(z.string()) }),
+      permission: rowRule("item", "View", {
+        id: "ids",
+        from: "supplierPart",
+        path: [["itemId", "item"]]
+      }),
+      async run() {
+        return "ran";
+      }
+    });
+    const db = rowsDatabase([
+      { id: "sp1", type: "Tool" },
+      { id: "sp2", type: "Part" }
+    ]);
+    const { data } = await deleteSupplierPart(contextWith(db.pg, user), {
+      ids: ["sp1", "sp2"]
+    });
+    expect(data).toBe("ran");
+    // One query; the company is bound once for supplierPart and once for item.
+    expect(db.sent).toHaveLength(1);
+    expect([...(db.sent[0]?.parameters ?? [])].sort()).toEqual([
+      "company-1",
+      "company-1",
+      "sp1",
+      "sp2"
+    ]);
+  });
+
+  it("answers not found for an id with no row, and forbidden for a Fixture", async () => {
+    const missing = await setCost(contextWith(rowsDatabase([]).pg, user), {
+      itemId: "i1"
+    });
+    expect(missing.error).toMatchObject({
+      category: "notFound",
+      status: 404,
+      message: "item i1 was not found"
+    });
+    const fixture = await setCost(
+      contextWith(rowsDatabase([{ id: "i1", type: "Fixture" }]).pg, user),
+      { itemId: "i1" }
+    );
+    expect(fixture.error?.category).toBe("forbidden");
+  });
+
+  it("refuses an empty id list as invalid input, before reading", async () => {
+    const setCosts = defineServiceFn({
+      input: z.object({ ids: z.array(z.string()) }),
+      permission: rowRule("item", "Edit", { id: "ids" }),
+      async run() {
+        return "ran";
+      }
+    });
+    const db = rowsDatabase([]);
+    const { error } = await setCosts(contextWith(db.pg, user), { ids: [] });
+    expect(error?.category).toBe("validation");
+    expect(db.sent).toEqual([]);
+  });
+
+  it("reads nothing for the system actor or a nested call", async () => {
+    const db = rowsDatabase([]);
+    const system = contextWith(db.pg, {
+      type: "system",
+      onBehalfOf: "user-1"
+    });
+    expect((await setCost(system, { itemId: "i1" })).data).toBe("ran");
+    const outer = defineServiceFn({
+      input: z.object({}),
+      permission: { "parts.tools": "View" },
+      async run(ctx) {
+        return setCost(ctx, { itemId: "i1" });
+      }
+    });
+    expect((await outer(contextWith(db.pg, user), {})).data).toEqual({
+      data: "ran",
+      error: null
+    });
+    expect(db.sent).toEqual([]);
+  });
+
+  it("passes an anyOf rule on any one page", async () => {
+    const list = defineServiceFn({
+      input: z.object({}),
+      permission: anyOfRule("item", "Edit"),
+      async run() {
+        return "ran";
+      }
+    });
+    expect((await list(contextWith({}, user), {})).data).toBe("ran");
+    const viewer: Actor = { ...user, permissions: productionView };
+    expect((await list(contextWith({}, viewer), {})).error?.category).toBe(
+      "forbidden"
+    );
+  });
+
+  it("lets run check a rule only it can name", async () => {
+    const db = rowsDatabase([{ id: "i1", type: "Part" }]);
+    expect(
+      await refusalOf(
+        contextWith(db.pg, user),
+        rowRule("item", "View", { id: "itemId" }),
+        { itemId: "i1" }
+      )
+    ).toBeNull();
+    expect(
+      (
+        await refusalOf(
+          contextWith(db.pg, user),
+          rowRule("item", "Edit", { id: "itemId" }),
+          { itemId: "i1" }
+        )
+      )?.category
+    ).toBe("forbidden");
+  });
+});
+
 describe("ctx.can", () => {
   it("answers for the actor's own permissions, and yes for the system", () => {
-    expect(ctx.can({ view: "production" })).toBe(true);
-    expect(ctx.can({ update: "production" })).toBe(false);
+    expect(ctx.can({ "production.jobs": "View" })).toBe(true);
+    expect(ctx.can({ "production.jobs": "Edit" })).toBe(false);
+    expect(ctx.can({ "production.batches": "View" })).toBe(false);
     expect(ctx.can("system")).toBe(false);
     const system = contextWith({}, { type: "system", onBehalfOf: "user-1" });
-    expect(system.can({ delete: "accounting" })).toBe(true);
+    expect(system.can({ "accounting.journalEntries": "Full" })).toBe(true);
   });
 });
 
@@ -373,7 +616,7 @@ describe("ctx.transaction", () => {
     const { pg, outcomes } = database();
     const write = defineServiceFn({
       input: z.object({}),
-      permission: { view: "production" },
+      permission: { "production.jobs": "View" },
       async run(ctx) {
         return ctx.asSystem.pg;
       }
@@ -400,5 +643,23 @@ describe("ctx.transaction", () => {
       error: null
     });
     expect(outcomes).toEqual(["commit"]);
+  });
+});
+
+describe("dataOrThrow", () => {
+  it("returns the data of a result with no error", () => {
+    expect(dataOrThrow({ data: { id: "a" }, error: null })).toEqual({
+      id: "a"
+    });
+    expect(dataOrThrow({ data: null, error: null })).toBeNull();
+  });
+
+  it("throws the refusal's message", () => {
+    expect(() =>
+      dataOrThrow({
+        data: null,
+        error: { category: "internal", message: "Something went wrong" }
+      })
+    ).toThrow("Something went wrong");
   });
 });

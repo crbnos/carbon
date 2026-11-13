@@ -3,33 +3,26 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { purchaseReturnOrderCreditValidator } from "~/modules/purchasing/purchasing.models";
-import {
-  createPurchaseReturnOrderCredit,
-  getCreditableQuantitiesForPurchaseReturn
-} from "~/modules/purchasing/purchasing.service";
+import { createPurchaseReturnOrderCredit } from "~/modules/purchasing/purchasing.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.returns": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const result = await getCreditableQuantitiesForPurchaseReturn(
-    client,
-    id,
-    companyId
-  );
+  const result = await api.purchasing.getCreditableQuantitiesForPurchaseReturn({
+    purchaseReturnOrderId: id
+  });
 
   if (result.error) {
     console.error("Failed to load creditable quantities:", result.error);
@@ -41,11 +34,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "invoicing",
-      view: "purchasing"
-    });
+  const { client, companyId, companyGroupId, userId } = await authorize(
+    request,
+    { "invoicing.supplierCredits": "Create", "purchasing.returns": "View" }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

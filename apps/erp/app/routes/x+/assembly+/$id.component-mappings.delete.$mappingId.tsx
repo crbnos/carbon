@@ -3,15 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { deleteAssemblyComponentMapping } from "~/modules/production/production.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    update: "production"
+  const { client } = await authorize(request, {
+    "production.assemblies": "Edit"
   });
 
   const { mappingId } = params;

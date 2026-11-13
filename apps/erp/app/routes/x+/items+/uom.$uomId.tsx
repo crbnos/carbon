@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -14,24 +14,18 @@ import {
   UNIT_OF_MEASURE_TAKEN,
   unitOfMeasureValidator
 } from "~/modules/items/items.models";
-import {
-  getUnitOfMeasure,
-  upsertUnitOfMeasure
-} from "~/modules/items/items.service";
+import { upsertUnitOfMeasure } from "~/modules/items/items.service";
 import { UnitOfMeasureForm } from "~/modules/items/ui/UnitOfMeasure";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "parts.units": "View" });
 
   const { uomId } = params;
   if (!uomId) throw notFound("uomId not found");
 
-  const unitOfMeasure = await getUnitOfMeasure(client, uomId, companyId);
+  const unitOfMeasure = await api.items.getUnitOfMeasure({ id: uomId });
 
   return {
     unitOfMeasure: unitOfMeasure?.data ?? null
@@ -40,8 +34,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, userId } = await authorize(request, {
+    "parts.units": "Edit"
   });
 
   const formData = await request.formData();

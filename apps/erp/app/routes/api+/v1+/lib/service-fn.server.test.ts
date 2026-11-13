@@ -10,7 +10,7 @@ import { callServiceFn } from "./service-fn.server";
 
 const cancel = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, { jobId }) {
     if (jobId === "moved") {
       return ctx.error("conflict", "The job's status changed");
@@ -21,7 +21,7 @@ const cancel = defineServiceFn({
 
 const list = defineServiceFn({
   input: z.object({}),
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(_ctx, _input) {
     return { rows: [{ id: "j1" }], count: 7 };
   }
@@ -29,9 +29,8 @@ const list = defineServiceFn({
 
 const caller = (
   authKind: AuthedContext["authKind"],
-  scopes: Record<string, string[]> = {
-    production_update: ["c1"],
-    production_view: ["c1"]
+  permissions: AuthedContext["permissions"] = {
+    "production.jobs": { view: ["c1"], create: [], update: ["c1"], delete: [] }
   }
 ): AuthedContext => ({
   client: {} as AuthedContext["client"],
@@ -39,7 +38,8 @@ const caller = (
   companyId: "c1",
   companyGroupId: "g1",
   authKind,
-  scopes
+  permissions,
+  role: authKind === "api-key" ? null : "employee"
 });
 
 const single = { paginates: false };
@@ -79,15 +79,18 @@ describe("callServiceFn", () => {
 
   // RLS does not bound an OAuth connector or a workflow: a service function
   // can write through the direct connection, so its gate is the check.
-  it.each<[AuthedContext["authKind"], Record<string, string[]>]>([
-    ["api-key", { production_view: ["c1"] }],
-    ["oauth", { production_update: ["c2"] }],
-    ["session", { production_update: ["c2"] }]
+  const jobs = (view: string[], update: string[]) => ({
+    "production.jobs": { view, create: [], update, delete: [] }
+  });
+  it.each<[AuthedContext["authKind"], AuthedContext["permissions"]]>([
+    ["api-key", jobs(["c1"], [])],
+    ["oauth", jobs([], ["c2"])],
+    ["session", jobs([], ["c2"])]
   ])(
-    "refuses a %s caller whose scopes lack the permission in this company",
-    async (kind, scopes) => {
+    "refuses a %s caller who lacks the permission in this company",
+    async (kind, permissions) => {
       await expect(
-        callServiceFn(cancel, single, caller(kind, scopes), {
+        callServiceFn(cancel, single, caller(kind, permissions), {
           jobId: "j1"
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN", status: 403 });
@@ -105,7 +108,7 @@ describe("callServiceFn", () => {
     };
     const touch = defineServiceFn({
       input: z.object({ jobId: z.string() }),
-      permission: { update: "production" },
+      permission: { "production.jobs": "Edit" },
       async run(ctx, { jobId }) {
         const client = ctx.asCaller.supabase as unknown as {
           from(table: string): {

@@ -2,36 +2,30 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { productionQuantityValidator } from "~/modules/production/production.models";
-import {
-  getJobOperations,
-  getProductionQuantity
-} from "~/modules/production/production.service";
 import { ProductionQuantityForm } from "~/modules/production/ui/Jobs";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "production"
-  });
+  const { api } = await authorize(request, { "production.jobs": "View" });
 
   const { id, jobId } = params;
   if (!id) throw notFound("id not found");
   if (!jobId) throw notFound("jobId not found");
 
   const [productionQuantity, jobOperations] = await Promise.all([
-    getProductionQuantity(client, id),
-    getJobOperations(client, jobId)
+    api.production.getProductionQuantity({ id }),
+    api.production.getJobOperations({ jobId })
   ]);
 
   const operationOptions =
-    jobOperations.data?.map((operation) => ({
+    jobOperations.data?.rows?.map((operation) => ({
       label: operation.description ?? "",
       value: operation.id
     })) ?? [];
@@ -47,7 +41,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["jobId", "id"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.updateProductionQuantity({
     ...input.data,
     id: input.params.id

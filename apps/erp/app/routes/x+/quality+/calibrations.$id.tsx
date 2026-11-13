@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -15,11 +16,6 @@ import { useLoaderData, useParams } from "react-router";
 import type z from "zod";
 import type { calibrationAttempt } from "~/modules/quality/quality.models";
 import { gaugeCalibrationRecordValidator } from "~/modules/quality/quality.models";
-import {
-  getGaugeCalibrationRecord,
-  getQualityFiles,
-  upsertGaugeCalibrationRecord
-} from "~/modules/quality/quality.service";
 import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -33,17 +29,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "quality.records": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [record, files] = await Promise.all([
-    getGaugeCalibrationRecord(client, id),
-    getQualityFiles(client, id, companyId)
+    api.quality.getGaugeCalibrationRecord({ id }),
+    api.quality.getQualityFiles({ id }).then(dataOrThrow)
   ]);
 
   if (record.error) {
@@ -74,8 +71,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+  const { api } = await authorize(request, {
+    "quality.records": "Create"
   });
 
   const formData = await request.formData();
@@ -95,12 +92,12 @@ export async function action({ request }: ActionFunctionArgs) {
       ? "Fail"
       : "Pass";
 
-  const updateGauge = await upsertGaugeCalibrationRecord(client, {
+  // The service function moves the gauge (owned by Quality → Gauges) as the
+  // system, after its own records permission.
+  const updateGauge = await api.quality.updateGaugeCalibrationRecord({
     id,
     ...d,
     inspectionStatus,
-    companyId,
-    updatedBy: userId,
     customFields: setCustomFields(formData)
   });
 

@@ -142,7 +142,11 @@ const PurchaseInvoiceDeliveryForm = forwardRef<
           </div>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "invoicing")}>
+          <Submit
+            isDisabled={
+              !permissions.has({ "invoicing.purchaseInvoices": "Edit" })
+            }
+          >
             <Trans>Save</Trans>
           </Submit>
         </CardFooter>

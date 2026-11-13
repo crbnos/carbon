@@ -926,6 +926,9 @@ msgstr "{count, plural, one {일치하는 #행 모두 선택} other {일치하�
 msgid "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
 msgstr "{count, plural, one {일치하는 모든 행 선택(약 #)} other {일치하는 모든 행 선택(약 #)}}"
 
+msgid "{count} grants"
+msgstr ""
+
 msgid "{count} items"
 msgstr "{count} 품목"
 
@@ -1010,6 +1013,10 @@ msgstr "{from} – {to}"
 
 msgid "{functionLabel}: {formattedValue}"
 msgstr "{functionLabel}: {formattedValue}"
+
+#. placeholder {0}: modules.length
+msgid "{granted} of {0} modules"
+msgstr ""
 
 msgid "{group} {number}"
 msgstr "{group} {number}"
@@ -1198,6 +1205,9 @@ msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열�
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# 차용은 반환 기한을 지남} other {# 차용은 반환 기한을 지남}}"
 
+msgid "{overrides} overridden"
+msgstr ""
+
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower}은(는) {lender}에 {due}에 만기인 채무가 있습니다."
 
@@ -1234,6 +1244,10 @@ msgstr "배치 없는 {quantity}"
 msgid "{quantity} without a serial number"
 msgstr "시리얼 번호가 없는 {quantity}"
 
+#. placeholder {0}: module.rows.length
+msgid "{reached}/{0} pages"
+msgstr ""
+
 msgid "{received} of {ordered}"
 msgstr "{received} / {ordered}"
 
@@ -1257,9 +1271,6 @@ msgstr "{removed}개 계획됨 송장이 제거됨"
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel}이(가) 다음 리비전으로 계획을 위해 다시 열기됩니다. 이미 공급업체로 보낸 문서는 주문서를 최종화하고 다시 보낼 때까지 변경되지 않습니다."
-
-msgid "{scopeCount} permissions"
-msgstr "권한 {scopeCount}개"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} 라인"
@@ -2559,6 +2570,12 @@ msgstr "수락됨 {0}"
 msgid "Accepted quantity"
 msgstr "수락 수량"
 
+msgid "Access"
+msgstr ""
+
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "계정"
 
@@ -2618,9 +2635,6 @@ msgstr "계정 유형"
 
 msgid "Account Type (inherited)"
 msgstr "계정 유형(상속됨)"
-
-msgid "accounting"
-msgstr "회계"
 
 msgid "Accounting"
 msgstr "회계"
@@ -3301,6 +3315,9 @@ msgstr "발주서 추가"
 msgid "Add Question"
 msgstr "질문 추가"
 
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
+
 msgid "Add Rate"
 msgstr "요율 추가"
 
@@ -3511,6 +3528,12 @@ msgstr "조정"
 msgid "Admin"
 msgstr "관리자"
 
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr ""
+
+msgid "Admin has full access"
+msgstr ""
+
 msgid "Advance"
 msgstr "선금"
 
@@ -3577,9 +3600,6 @@ msgstr "전체"
 #. placeholder {0}: tieOut.cellCount
 msgid "All {0} cells tie out"
 msgstr "모든 {0}개 셀이 일치함"
-
-msgid "All {moduleName} permissions"
-msgstr "모든 {moduleName} 권한"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "{total}단계가 모두 완료되었습니다. 수고하셨습니다 — 팀이 이제 정상 가동 중입니다."
@@ -3656,9 +3676,6 @@ msgstr "모든 미결 작업 지시"
 
 msgid "All Others"
 msgstr "기타"
-
-msgid "All permissions"
-msgstr "모든 권한"
 
 msgid "All returnable lines"
 msgstr "모든 반품 가능 라인"
@@ -5001,7 +5018,7 @@ msgstr "회사의 책임자로서 다른 직원에게 책임을 이전할 수 �
 msgid "Ascending"
 msgstr "오름차순"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} 권한이 있는 관리자에게 첫 {1} 추가를 요청하세요."
@@ -6304,6 +6321,18 @@ msgstr "Carbon에서는 이를 방법(method)이라고 부릅니다 — 품목�
 msgid "Camera"
 msgstr "카메라"
 
+msgid "can create"
+msgstr ""
+
+msgid "can delete"
+msgstr ""
+
+msgid "can update"
+msgstr ""
+
+msgid "can view"
+msgstr ""
+
 msgid "Can't be restored"
 msgstr "복원할 수 없습니다"
 
@@ -6887,6 +6916,9 @@ msgstr "계정과목표"
 
 msgid "Chat"
 msgstr "채팅"
+
+msgid "Check a module to override the type on all its pages, or expand it to override one page."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
@@ -9906,9 +9938,6 @@ msgstr "기본 공급 방식"
 msgid "Default Method Type"
 msgstr "기본 공급 방식"
 
-msgid "Default Permissions"
-msgstr "기본 권한"
-
 msgid "Default Priority"
 msgstr "기본 우선순위"
 
@@ -10932,9 +10961,6 @@ msgstr "배치 해제"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "배치 {0}를 해제하면 {memberCount}개의 공정을 미실행 상태로 일정에 반환하고 배치를 삭제합니다. 기록된 생산이 있는 배치는 대신 완료되어야 합니다."
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "이 직원 유형의 기본 권한으로 사용자의 현재 권한을 덮어쓰시겠습니까?"
-
 msgid "Doc-Backed"
 msgstr "문서 기반"
 
@@ -11309,6 +11335,9 @@ msgstr "예: 위조품 의심, 잘못된 부품, 운송 중 파손"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "예: 처음 3~4주"
+
+msgid "e.g. Warehouse Supervisor"
+msgstr ""
 
 msgid "e.g. Zebra 2x1"
 msgstr "예: Zebra 2x1"
@@ -12595,6 +12624,9 @@ msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테�
 
 msgid "Every job of {name} is complete. Is it done?"
 msgstr "{name}의 모든 작업 지시가 완료 처리되었습니다. 완료되었습니까?"
+
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr ""
 
 #. placeholder {0}: storageUnit.name
 msgid "Every line already comes from {0}"
@@ -14024,6 +14056,9 @@ msgstr "시작:"
 msgid "Fulfillment Location"
 msgstr "출하 사업장"
 
+msgid "Full access through the Admin type"
+msgstr ""
+
 msgid "Full name"
 msgstr "전체 이름"
 
@@ -14117,6 +14152,10 @@ msgstr "리스 종료로 인한 이익"
 
 msgid "Gain/Loss"
 msgstr "이득/손실"
+
+#. placeholder {0}: actions.join(", ")
+msgid "Gained {0} when permissions became levels"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 이익"
@@ -15153,6 +15192,9 @@ msgstr "가져온"
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "가져옴: {counted}개 라인 계산됨, {added}개 추가됨, {removed}개 제거됨"
 
+msgid "in"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "{0} 안에"
@@ -15666,9 +15708,6 @@ msgstr "잘못된 적용"
 
 msgid "Invalid Invite"
 msgstr "유효하지 않은 초대"
-
-msgid "inventory"
-msgstr "재고"
 
 msgid "Inventory"
 msgstr "재고"
@@ -16396,9 +16435,6 @@ msgstr "칸반"
 
 msgid "Keep"
 msgstr "유지"
-
-msgid "Keep Current"
-msgstr "현재 값 유지"
 
 msgid "Keep demo data"
 msgstr "데모 데이터 유지"
@@ -19426,6 +19462,9 @@ msgstr "붙여넣은 값을 받을 수 있는 셀이 없습니다"
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설정하도록 관리자에게 요청하세요."
 
+msgid "No change"
+msgstr ""
+
 msgid "No change request"
 msgstr "변경 요청 없음"
 
@@ -20369,6 +20408,9 @@ msgstr "{0}에 대해 숙련된 사람이 없습니다"
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "숙련된 사람이 없습니다. 공법의 역량에 누군가를 추가하세요."
 
+msgid "Nobody yet."
+msgstr ""
+
 msgid "Nom"
 msgstr "명목"
 
@@ -20922,6 +20964,9 @@ msgstr "프로젝트 트리의 항목 하나로, 시스템, 요구사항, 기능
 
 msgid "One line per CLIN. Time & Materials and Cost Plus lines bill from project cost; a Fixed Price line bills its price. Click a cell to change it."
 msgstr "CLIN당 한 라인. 시간 & 자재 및 원가 가산 라인은 프로젝트 원가에서 청구되고, 고정 가격 라인은 그 가격으로 청구됩니다. 셀을 클릭하여 변경하세요."
+
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
 
 msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
 msgstr "워크플로 단계에서 사용하기 전에 {appName} 계정 중 하나를 다시 연결해야 합니다."
@@ -21738,9 +21783,6 @@ msgstr "개요"
 msgid "Overwrite Existing"
 msgstr "기존 항목 덮어쓰기"
 
-msgid "Overwrite Permissions"
-msgstr "권한 덮어쓰기"
-
 msgid "Overwrite the quote method with the source method"
 msgstr "견적 방법을 원본 방법으로 덮어쓰기"
 
@@ -22190,9 +22232,6 @@ msgstr "검사 대기"
 msgid "Pending Inspection"
 msgstr "검사 대기"
 
-msgid "people"
-msgstr "인원"
-
 msgid "People"
 msgstr "인원"
 
@@ -22290,7 +22329,7 @@ msgid "Permission groups for granting access in bulk"
 msgstr "일괄 접근 권한 부여를 위한 권한 그룹"
 
 msgid "Permissions"
-msgstr "권한"
+msgstr ""
 
 msgid "Person"
 msgstr "담당자"
@@ -23137,9 +23176,6 @@ msgstr "하이퍼케어 기간 중 발생한 제품 이슈"
 msgid "Product support"
 msgstr "제품 지원"
 
-msgid "production"
-msgstr "생산"
-
 msgid "Production"
 msgstr "생산"
 
@@ -23621,9 +23657,6 @@ msgstr "구매 서비스"
 msgid "Purchases"
 msgstr "구매"
 
-msgid "purchasing"
-msgstr "구매"
-
 msgid "Purchasing"
 msgstr "구매"
 
@@ -23767,9 +23800,6 @@ msgstr "각 비즈니스 구성 요소의 적격 연구 비용"
 
 msgid "Qualified to run it"
 msgstr "이를 실행할 수 있는 자격이 있음"
-
-msgid "quality"
-msgstr "품질"
 
 msgid "Quality"
 msgstr "품질"
@@ -25393,6 +25423,9 @@ msgstr "예약됨"
 msgid "Reset"
 msgstr "초기화"
 
+msgid "Reset all overrides"
+msgstr ""
+
 msgid "Reset PIN"
 msgstr "PIN 재설정"
 
@@ -25456,9 +25489,6 @@ msgstr "리소스"
 
 msgid "Resource Planning"
 msgstr "리소스 계획"
-
-msgid "resources"
-msgstr "자원"
 
 msgid "Resources"
 msgstr "자원"
@@ -25971,6 +26001,9 @@ msgstr "RMA"
 msgid "Role"
 msgstr "역할"
 
+msgid "Role default"
+msgstr ""
+
 msgid "Role:"
 msgstr "역할:"
 
@@ -26175,9 +26208,6 @@ msgstr "판매가"
 
 msgid "Sale Proceeds"
 msgstr "판매 대금"
-
-msgid "sales"
-msgstr "영업"
 
 msgid "Sales"
 msgstr "영업"
@@ -26589,9 +26619,6 @@ msgstr "범위 서명됨"
 msgid "Scope Summary"
 msgstr "범위 요약"
 
-msgid "Scopes"
-msgstr "범위"
-
 msgid "Scrap"
 msgstr "스크랩"
 
@@ -26971,6 +26998,10 @@ msgstr "계정 선택"
 
 msgid "Select all"
 msgstr "전체 선택"
+
+#. placeholder {0}: module.row.label
+msgid "Select all in {0}"
+msgstr ""
 
 msgid "Select all jobs"
 msgstr "모든 작업 지시 선택"
@@ -27506,6 +27537,14 @@ msgstr "각 주별 소요량 예측값 설정"
 
 msgid "Set due date"
 msgstr "마감일 설정"
+
+#. placeholder {0}: module.row.label
+#. placeholder {1}: stepLabel(step)
+msgid "Set every page of {0} to {1}"
+msgstr ""
+
+msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
+msgstr ""
 
 msgid "Set on a posting account: Allowable, or Expressly, Mutually Agreed or Directly Associated Unallowable. Cost posted to an unallowable account or element is marked unallowable in the project ledger and never becomes a billable item."
 msgstr "전기 계정에 설정: 허용 가능 또는 명시적, 상호 합의 또는 직접 관련 비허용. 비허용 계정 또는 요소에 전기된 원가는 프로젝트 원장에서 비허용으로 표시되며 청구 가능 항목이 되지 않습니다."
@@ -29531,8 +29570,8 @@ msgstr "작성된 콘텐츠로 전환"
 msgid "Switch users over and confirm access"
 msgstr "사용자를 전환하고 접근 권한을 확인하세요"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "여기서 직원 유형을 전환해도 기존 권한은 변경되지 않습니다. 이어지는 모달에서 현재 권한 세트를 새 유형의 기본값으로 덮어쓸지 여부를 묻습니다."
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "동기화"
@@ -30659,6 +30698,9 @@ msgstr "리스이용자의 임차 자산 사용권 자산으로, 영업용 또�
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "판매유형 리스에서 임대인의 자산: 리스료와 보증되지 않은 잔존가치의 현재가치로, 매월 리스이자로 증가하며 각 리스료와 구매선택권 송장으로 감소합니다."
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "고객을 추적하는 생애주기 단계"
 
@@ -30906,9 +30948,6 @@ msgstr "각 영향을 받은 로트 또는 일련번호마다 독립적으로 �
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "현금 할인 비율입니다. 할인이 없으면 0을 사용하세요."
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "이 유형의 신규 직원이 자동으로 받는 권한 세트입니다. 여기서 수정하면 이후 신규 채용자에게만 템플릿이 적용되며, 기존 직원은 명시적으로 일괄 업데이트하지 않는 한 현재 권한을 유지합니다."
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "계획 조치가 할당되는 사람입니다: 해당 사업장의 품목 책임자, 없으면 품목 그룹의 책임자, 없으면 사업장의 책임자, 없으면 회사 기본 책임자입니다."
 
@@ -31099,6 +31138,9 @@ msgstr "품목의 리비전 번호"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "사용권 자산과 임차 부채는 재무상태표에 있으며, 매월 하나의 정액 임차 원가가 계상됩니다."
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "이 작업 지시를 공급하기 위해 생성된 수주 라인으로, 작업 지시를 뒤의 고객 소요량과 연결합니다."
@@ -31298,8 +31340,8 @@ msgstr "작업 이동표는 자재 명세서의 각 품목을 수량과 함께 �
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "작업 이동표는 각 라우팅 공정의 예상 시간과 스캔 바코드를 나열합니다."
 
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "이 유형은 신규 직원이 받는 기본 권한을 결정합니다. 여기서 선택하면 해당 유형의 템플릿으로 권한 매트릭스가 미리 채워집니다."
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr ""
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "이 공급업체에 이 공법의 작업을 보낸 후 반품을 받을 때까지의 일반적인 일 수; 공급업체를 선택할 때 계획이 이만큼 소요량을 계획 오프셋합니다."
@@ -33514,9 +33556,6 @@ msgstr "사용자 역할"
 msgid "Username"
 msgstr "사용자명"
 
-msgid "users"
-msgstr "사용자"
-
 msgid "Users"
 msgstr "사용자"
 
@@ -34632,9 +34671,6 @@ msgstr "이 공법이 내부 작업장(공법, 조립 또는 검사)에서 실�
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "이 작업이 생산을 차단(Down)하는지, 성능을 저하(영향)시키는지, 계획된 비가동 시간 윈도우(계획됨)에 있는지, 또는 생산에 영향(No Impact)이 없는지 여부; 스케줄링 및 고객 대면 비가동 시간 통신을 알립니다."
 
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "선택한 권한을 각 사용자가 이미 가진 권한에 추가할지(추가), 아래 선택 항목으로 각 사용자의 권한 세트를 완전히 교체할지(업데이트) 여부입니다."
-
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "반복 이벤트를 개별 인스턴스로 펼쳐, 기본 반복 이벤트 자체는 제외하고 일회성 이벤트와 반복 이벤트의 인스턴스만 반환할지 여부입니다."
 
@@ -34652,6 +34688,9 @@ msgstr "어떤 공정이었나요?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "이 유지보수 지시가 열려 있는 동안 작업장은 일정에 사용할 수 없습니다(계획된 종료 시간까지 또는 지시가 완료될 때까지)."
+
+msgid "Who"
+msgstr ""
 
 msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
 msgstr "서비스 작업 지시의 비용을 누가 부담하는가: 청구 가능 및 계약 작업은 서비스 원가로 전기되고(또는 매출원가로), 보증 작업은 보증 비용으로 전기됩니다. 청구 가능 작업 지시만 송장 발행됩니다."

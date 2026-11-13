@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, useLocalStorage, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,7 +11,6 @@ import { msg } from "@lingui/core/macro";
 import { useCallback, useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getPickingSchedule } from "~/modules/inventory/inventory.service";
 import type {
   PickingDisplaySettings,
   PickingScheduleItem
@@ -21,7 +20,6 @@ import {
   PickingKanban,
   PickingListsHeader
 } from "~/modules/inventory/ui/PickingLists";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { makeDurations } from "~/utils/duration";
 import type { Handle } from "~/utils/handle";
@@ -35,8 +33,8 @@ export const handle: Handle = {
 const DISPLAY_SETTINGS_KEY = "picking-schedule-display-settings";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "inventory.pickingLists": "View"
   });
 
   const url = new URL(request.url);
@@ -60,7 +58,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.authenticatedRoot,
@@ -73,7 +71,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data[0].id as string;
   }
 
-  const pickingSchedule = await getPickingSchedule(client, {
+  const pickingSchedule = await api.inventory.getPickingSchedule({
     locationId,
     companyId,
     search

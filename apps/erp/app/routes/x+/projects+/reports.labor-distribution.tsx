@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { datetime, redirect } from "@carbon/utils";
@@ -14,15 +14,10 @@ import { useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  buildLaborDistribution,
   NO_PAYROLL_IMPORTED,
   type ProjectCostObjective,
   projectReportPermissions
 } from "~/modules/projects/projects.models";
-import {
-  getLaborDistributionPeriods,
-  getLaborDistributionRows
-} from "~/modules/projects/projects.service";
 import {
   NumberCell,
   ProjectReport,
@@ -30,7 +25,6 @@ import {
   ReportPeriodSelect,
   useReportFormat
 } from "~/modules/projects/ui/Reports/ProjectReport";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -40,23 +34,24 @@ export const handle = projectReportHandle(
 );
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    ...projectReportPermissions["labor-distribution"],
-    role: "employee"
-  });
+  const { api, companyId } = await authorize(
+    request,
+    projectReportPermissions["labor-distribution"]
+  );
   // A DCAA report: only with DCAA timekeeping on.
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await api.settings.getCompanySettings({});
   if (settings.data?.timekeepingControls !== "DCAA") {
     throw redirect(
       path.to.projectReports,
       await flash(request, error(null, "This report needs DCAA timekeeping"))
     );
   }
-  const db = getDatabaseClient();
-  const [periods, timeZone] = await Promise.all([
-    getLaborDistributionPeriods(db, { companyId }),
-    getCompanyTimeZone(db, companyId)
+  const [periodsResult, timeZone] = await Promise.all([
+    api.projects.getLaborDistributionPeriods({}),
+    getCompanyTimeZone(getDatabaseClient(), companyId)
   ]);
+  if (periodsResult.error) throw periodsResult.error;
+  const periods = periodsResult.data;
 
   // The chosen period, else the latest period that has started.
   const today = datetime.today(timeZone).toString();
@@ -67,14 +62,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     periods[0]?.id ??
     null;
 
-  const rows = periodId
-    ? await getLaborDistributionRows(db, { companyId, periodId })
+  const distribution = periodId
+    ? await api.projects.getLaborDistribution({ periodId })
     : null;
+  // A period that cannot be found shows no employees, as before.
+  if (distribution?.error && distribution.error.category !== "notFound") {
+    throw distribution.error;
+  }
 
   return {
     periods,
     periodId,
-    employees: rows ? buildLaborDistribution(rows) : []
+    employees: distribution?.data ?? []
   };
 }
 

@@ -3,30 +3,26 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { useUrlParams } from "~/hooks";
-import {
-  getAttributeCategory,
-  updateAttributeSortOrder
-} from "~/modules/people/people.service";
+import { updateAttributeSortOrder } from "~/modules/people/people.service";
 import { AttributeCategoryDetail } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "people",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "people.attributes": "View" });
 
   const { categoryId } = params;
   if (!categoryId) throw notFound("Invalid categoryId");
 
-  const attributeCategory = await getAttributeCategory(client, categoryId);
+  const attributeCategory = await api.people.getAttributeCategory({
+    id: categoryId
+  });
   if (attributeCategory.error) {
     throw redirect(
       path.to.attributes,
@@ -42,8 +38,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "people"
+  const { client, userId } = await authorize(request, {
+    "people.attributes": "Edit"
   });
 
   const updateMap = (await request.formData()).get("updates") as string;

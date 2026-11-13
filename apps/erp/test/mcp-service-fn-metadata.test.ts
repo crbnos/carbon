@@ -39,7 +39,7 @@ import { defineServiceFn } from "./helper";
  */
 export const cancelJob = defineServiceFn({
   input: null,
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(_ctx, input: { jobId: string; reason?: string }) {
     return { jobId: input.jobId };
   }
@@ -52,7 +52,7 @@ export const cancelJob = defineServiceFn({
  */
 export const deleteJob = defineServiceFn({
   input: null,
-  permission: { update: ["production", "inventory"] },
+  permission: { "production.jobs": "Edit", "inventory.quantities": "Edit" },
   async run(_ctx, input: { jobId: string }) {
     return null;
   }
@@ -112,11 +112,23 @@ describe("buildServiceFnTools", () => {
     });
   });
 
-  it("gates one module on the API and leaves several to the function", () => {
-    expect(cancel?.permission).toEqual({ module: "production", actions: ["update"] });
+  it("publishes a gate of one module by its page, and of several by every page", () => {
+    // A level lists every action it holds; a gate of one page names it.
+    expect(cancel?.permission).toEqual({
+      module: "production",
+      page: "production.jobs",
+      actions: ["view", "create", "update"]
+    });
     expect(cancel?.classification).toBe("WRITE");
     const remove = tools.find((tool) => tool.name === "production_deleteJob");
-    expect(remove?.permission).toEqual({ module: null, actions: [] });
+    expect(remove?.permission).toEqual({
+      module: null,
+      actions: ["view", "create", "update"],
+      allOf: [
+        { page: "inventory.quantities", level: "Edit" },
+        { page: "production.jobs", level: "Edit" }
+      ]
+    });
     expect(remove?.classification).toBe("DESTRUCTIVE");
   });
 
@@ -131,7 +143,7 @@ import { defineServiceFn } from "./helper";
  */
 export const getJobs = defineServiceFn({
   input: null,
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(_ctx, input: { limit?: number }) {
     return { rows: [{ id: "j1" }], count: 1 as number | null };
   }
@@ -157,7 +169,7 @@ import { defineServiceFn } from "./helper";
  */
 export const countJobs = defineServiceFn({
   input: null,
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(_ctx, input: { limit?: number }) {
     return { rows: { id: "j1" }, count: 1 as number | null };
   }
@@ -186,10 +198,12 @@ export const getKeys = defineServiceFn({
 });`,
         "/m/router.ts": ROUTER
       });
-    expect(() => read(`{ update: "users" }`)).toThrow(
-      "@mcp read on a function whose permission names update"
+    expect(() => read(`{ "settings.apiKeys": "Edit" }`)).toThrow(
+      "@mcp read on a function whose permission names create, update"
     );
-    expect(read(`{ view: "users" }`)[0]?.classification).toBe("READ");
+    expect(read(`{ "settings.apiKeys": "View" }`)[0]?.classification).toBe(
+      "READ"
+    );
   });
 
   it("refuses a summary that was cut off", () => {
@@ -204,7 +218,7 @@ import { defineServiceFn } from "./helper";
  */
 export const getJob = defineServiceFn({
   input: null,
-  permission: { view: "production" },
+  permission: { "production.jobs": "View" },
   async run(_ctx, input: { id: string }) {
     return null;
   }
@@ -226,7 +240,7 @@ export const getJob = defineServiceFn({
     const [recost] = toolsFor({
       "/m/production.ts": `
 import { defineServiceFn } from "./helper";
-const recostPermission = { update: "accounting" } as const;
+const recostPermission = { "accounting.reporting": "Edit" } as const;
 /**
  * Recost a unit.
  *
@@ -241,7 +255,143 @@ export const recost = defineServiceFn({
 });`,
       "/m/router.ts": ROUTER
     });
-    expect(recost?.permission).toEqual({ module: "accounting", actions: ["update"] });
+    expect(recost?.permission).toEqual({
+      module: "accounting",
+      page: "accounting.reporting",
+      actions: ["view", "create", "update"]
+    });
+  });
+
+  const published = (permission: string) =>
+    toolsFor({
+      "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+/**
+ * Post a run.
+ *
+ * @mcp
+ */
+export const postRun = defineServiceFn({
+  input: null,
+  permission: ${permission},
+  async run(_ctx, input: { type: string }) {
+    return null;
+  }
+});`,
+      "/m/router.ts": ROUTER
+    });
+
+  it("refuses a page the registry does not have, and a level that is not one", () => {
+    expect(() => published(`{ production: "Edit" }`)).toThrow(
+      "permission names a page of the registry"
+    );
+    expect(() => published(`{ update: "production" }`)).toThrow(
+      "permission names a page of the registry"
+    );
+    expect(() => published(`{ "production.jobs": "update" }`)).toThrow(
+      "permission.production.jobs must be one of View, Create, Edit, Full"
+    );
+    expect(() => published(`{ "production.jobs": "None" }`)).toThrow(
+      "must be one of View, Create, Edit, Full"
+    );
+  });
+
+  it("publishes a keyed rule as every page and action its rules name", () => {
+    const [run] = published(
+      `{ by: "type", rules: { revenue: { "accounting.revenueRecognition": "Create" }, lease: { "accounting.leases": "Edit" } } }`
+    );
+    expect(run?.permission).toEqual({
+      module: "accounting",
+      actions: ["view", "create", "update"]
+    });
+    const [split] = published(
+      `{ by: "type", rules: { a: { "accounting.leases": "View" }, b: { "sales.quotes": "View" } } }`
+    );
+    expect(split?.permission).toEqual({ module: null, actions: [] });
+    expect(() =>
+      published(`{ by: "type", rules: { a: "system" } }`)
+    ).toThrow("a published keyed permission names a literal page gate");
+  });
+
+  // A row rule comes from a helper call: the reader takes the pages from
+  // the call's TYPE, as `rowRule` (`@carbon/api/permissions`) types it.
+  const ITEM_RULE = `
+declare function itemRule<const L extends string>(level: L): {
+  row: {
+    id: "itemId";
+    from: string;
+    cases: { column: string; then: { "parts.tools": L } | { "parts.parts": L } }[];
+  };
+};`;
+
+  it("publishes a row rule as one of its pages, and what picks it", () => {
+    const [run] = toolsFor({
+      "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+${ITEM_RULE}
+/**
+ * Set a cost.
+ *
+ * @mcp
+ */
+export const setCost = defineServiceFn({
+  input: null,
+  permission: itemRule("Edit"),
+  async run(_ctx, input: { itemId: string }) {
+    return null;
+  }
+});`,
+      "/m/router.ts": ROUTER
+    });
+    expect(run?.permission).toEqual({
+      module: "parts",
+      actions: ["view", "create", "update"],
+      oneOf: {
+        pages: ["parts.parts", "parts.tools"],
+        level: "Edit",
+        by: ["item.type"]
+      }
+    });
+    expect(run?.classification).toBe("WRITE");
+  });
+
+  it("publishes an anyOf read as the pages it widens to, picked by nothing", () => {
+    const [list] = published(
+      `{ anyOf: [{ "parts.tools": "View" }, { "parts.parts": "View" }] } as const`
+    );
+    // Item pages share one table, so a read on either is a read on Parts.
+    const parts = [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services",
+      "parts.changeNotices",
+      "parts.changeNoticeTypes",
+      "parts.changeNoticeActions",
+      "parts.dimensions",
+      "parts.finishes",
+      "parts.grades",
+      "parts.shapes",
+      "parts.substances",
+      "parts.types",
+      "parts.itemGroups",
+      "parts.units"
+    ];
+    expect(list?.permission).toEqual({
+      module: "parts",
+      actions: ["view"],
+      oneOf: { pages: parts, level: "View", by: [] }
+    });
+    expect(list?.classification).toBe("READ");
+  });
+
+  it("refuses an anyOf rule whose pages have different levels", () => {
+    expect(() =>
+      published(
+        `{ anyOf: [{ "parts.tools": "View" }, { "parts.parts": "Edit" }] } as const`
+      )
+    ).toThrow("a published anyOf rule names its pages at one level");
   });
 
   it("refuses to publish a system-only function", () => {

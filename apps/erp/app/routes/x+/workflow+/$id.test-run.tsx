@@ -3,14 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { requireFeature } from "@carbon/ee/plan.server";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   createWorkflowCatalog,
+  eventGate,
   REGISTRY_ENTRIES,
   type RunTrigger,
   validateDefinition,
@@ -18,7 +18,7 @@ import {
   workflowDefinitionSchema
 } from "@carbon/ee/workflows";
 import { validator } from "@carbon/form";
-import { executeManualWorkflowRun, noAccess } from "@carbon/jobs/inngest";
+import { executeManualWorkflowRun, ownerRefusal } from "@carbon/jobs/inngest";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -46,8 +46,8 @@ function refuse(error: string, status = 400, issues: WorkflowIssue[] = []) {
 /** The run acts as the owner, so anyone else firing it would be borrowing the owner's
  * permissions. This is the authorization boundary, not a UI nicety. */
 async function requireOwnedWorkflow(request: Request, id: string | undefined) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, { update: "workflows" });
+  const { client, companyId, companyGroupId, userId, permissions } =
+    await authorize(request, { "workflows.workflows": "Edit" });
   await requireFeature({
     request,
     client,
@@ -70,7 +70,14 @@ async function requireOwnedWorkflow(request: Request, id: string | undefined) {
     };
   }
 
-  return { client, companyId, companyGroupId, userId, workflow: workflow.data };
+  return {
+    client,
+    companyId,
+    companyGroupId,
+    userId,
+    permissions,
+    workflow: workflow.data
+  };
 }
 
 /** Options for the test-run record picker. Reads through the request's own client, so
@@ -191,14 +198,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The gate comes before the read, not only inside the walk: `buildTrigger` fetches
   // the record with service role, and an ordering that only happens to be safe is one
   // an edit can quietly break. The walk re-checks against live claims.
-  const module = event?.permission;
-  if (module !== undefined) {
-    const claims = await getUserClaims(gate.userId, gate.companyId);
-    const granted = claims.permissions[module]?.view ?? [];
-    if (!granted.includes(gate.companyId)) {
-      return refuse(noAccess(module), 403);
-    }
-  }
+  const refused = ownerRefusal(
+    event?.permission === undefined ? undefined : eventGate(event.permission),
+    gate.permissions,
+    gate.companyId
+  );
+  if (refused) return refuse(refused, 403);
 
   let input: unknown;
   try {
@@ -299,7 +304,7 @@ async function buildTrigger(
   const recordId = (input as { recordId: string }).recordId;
 
   // Service role bypasses RLS so the lookup works regardless of whether the caller
-  // authenticated via session or API key. requirePermissions already verified the
+  // authenticated via session or API key. authorize already verified the
   // company scope; the companyId filter here ensures cross-tenant safety.
   const row = await getCarbonServiceRole()
     .from(match.table as never)

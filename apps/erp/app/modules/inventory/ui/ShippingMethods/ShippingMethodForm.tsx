@@ -59,8 +59,8 @@ const ShippingMethodForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "inventory")
-    : !permissions.can("create", "inventory");
+    ? !permissions.has({ "inventory.shippingMethods": "Edit" })
+    : !permissions.has({ "inventory.shippingMethods": "Create" });
 
   const shippingCarrierOptions = shippingCarrierType.map((v) => ({
     label: v,

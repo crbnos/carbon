@@ -68,7 +68,9 @@ const CustomerTypesTable = memo((props: CustomerTypesTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={row.protected || !permissions.can("update", "sales")}
+            disabled={
+              row.protected || !permissions.has({ "sales.types": "Edit" })
+            }
             onClick={() => {
               navigate(`${path.to.customerType(row.id)}?${params.toString()}`);
             }}
@@ -79,7 +81,9 @@ const CustomerTypesTable = memo((props: CustomerTypesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={row.protected || !permissions.can("delete", "sales")}
+            disabled={
+              row.protected || !permissions.has({ "sales.types": "Full" })
+            }
             onClick={() => {
               navigate(
                 `${path.to.deleteCustomerType(row.id)}?${params.toString()}`
@@ -102,7 +106,7 @@ const CustomerTypesTable = memo((props: CustomerTypesTableProps) => {
       count={count}
       infinite={infinite}
       primaryAction={
-        permissions.can("create", "sales") && (
+        permissions.has({ "sales.types": "Create" }) && (
           <New
             label={t`Customer Types`}
             to={`${path.to.newCustomerType}?${params.toString()}`}

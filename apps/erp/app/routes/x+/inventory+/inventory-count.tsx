@@ -7,7 +7,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { InventoryCountsTable } from "~/modules/inventory/ui";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
 import { inventoryCountsList } from "~/utils/list-registry/inventory.server";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -22,8 +21,8 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, inventoryCountsList, {
     dataKey: "inventoryCounts",
-    firstPage: async ({ client, companyId }) => {
-      const locations = await getLocationsList(client, companyId);
+    firstPage: async ({ api }) => {
+      const locations = await api.resources.getLocationsList({});
       return { locations: locations.data ?? [] };
     },
     onError: {

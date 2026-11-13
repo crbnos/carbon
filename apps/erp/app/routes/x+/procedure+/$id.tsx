@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -22,14 +22,9 @@ import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { useImageUpload, usePermissions } from "~/hooks";
-import {
-  getProcedure,
-  getProcedureVersions
-} from "~/modules/production/production.service";
 import ProcedureExplorer from "~/modules/production/ui/Procedures/ProcedureExplorer";
 import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/x+/procedure+/update";
 import { useDocumentStore } from "~/stores";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -42,26 +37,25 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Procedures`, to: path.to.procedures },
     (data) => data?.procedure?.name
-  ),
-  module: "production"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.procedure?.name, "Procedure");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "production.procedures": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [procedure, tags] = await Promise.all([
-    getProcedure(client, id),
-    getTagsList(client, companyId, "procedure")
+    api.production.getProcedure({ id }),
+    api.shared.getTagsList({ table: "procedure" })
   ]);
 
   if (procedure.error) {
@@ -84,7 +78,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     procedure: procedure.data,
     tags: tags.data ?? [],
-    versions: getProcedureVersions(client, procedure.data, companyId)
+    versions: api.production.getProcedureVersions(procedure.data)
   };
 }
 
@@ -146,7 +140,7 @@ function ProcedureEditor() {
   );
 
   const canEdit =
-    permissions.can("update", "production") &&
+    permissions.has({ "production.procedures": "Edit" }) &&
     loaderData?.procedure?.status === "Draft";
 
   // Mirror the live title only while editing; clear it when editing ends (e.g.

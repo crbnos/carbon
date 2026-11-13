@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type {
   ContractFinancingEventRow,
   ContractFinancingRow
@@ -23,7 +23,6 @@ import {
 } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompany } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "contract-financing", "pdf");
@@ -68,8 +67,8 @@ const SECTION_3: Sf1443Line[] = [
  * request, or the events and values of a performance-based payment request.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
+  const { api, client, companyId } = await authorize(request, {
+    "sales.serviceContracts": "View"
   });
   const { requestId } = params;
   if (!requestId) throw new Error("Could not find the request");
@@ -93,7 +92,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const db = getDatabaseClient();
   const [company, detail, terms] = await Promise.all([
-    getCompany(client, companyId),
+    api.settings.getCompany({}),
     getFinancingRequest(db, {
       companyId,
       customerContractId: row.data.customerContractId,

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -31,12 +31,7 @@ import type {
 } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import {
-  getContract,
-  getContractAmendments,
-  getContractInvoiceSchedule,
-  getContractLines
-} from "~/modules/sales/sales.service";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import type {
   Contract,
   ContractCreditMemoLinks,
@@ -72,8 +67,7 @@ export const handle: Handle = {
   breadcrumb: (params: unknown, data: ContractRouteData | undefined) =>
     data?.contract?.billingBasis === "Project"
       ? projectContractsCrumb(params, data)
-      : serviceContractsCrumb(params, data),
-  module: "sales"
+      : serviceContractsCrumb(params, data)
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
@@ -90,9 +84,11 @@ export async function loader({
   request,
   params
 }: LoaderFunctionArgs): Promise<ContractRouteData> {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    CONTRACT_READ_GATE
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -106,10 +102,10 @@ export async function loader({
     timeZone,
     researchFlags
   ] = await Promise.all([
-    getContract(client, id, companyId),
-    getContractLines(client, id, companyId),
-    getContractInvoiceSchedule(client, id, companyId),
-    getContractAmendments(client, id, companyId),
+    api.sales.getContract({ customerContractId: id }),
+    api.sales.getContractLines({ customerContractId: id }),
+    api.sales.getContractInvoiceSchedule({ customerContractId: id }),
+    api.sales.getContractAmendments({ customerContractId: id }),
     client
       .from("customerContractRevenue")
       .select("customerContractLineId, periodStart, periodEnd, amount, status")

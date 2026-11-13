@@ -3,23 +3,28 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { createHash } from "node:crypto";
+import {
+  claimsFor,
+  legacyGrants,
+  REGISTRY_HASH
+} from "@carbon/database/access";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { oncePerRequest } from "@carbon/logger/middleware.server";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
+import type { Permission } from "../types";
 
 const log = getLogger("auth");
 
-const API_KEY_CACHE_PREFIX = "apikey:auth:";
-// Short on purpose: the record carries scopes/expiry/rate-limit config, so a
-// revoked or re-scoped key can act for at most this long (the api-keys routes
-// additionally bust the entry on edit/revoke). Negative results are cached too —
+// The registry hash retires records whose permissions a deploy reshaped.
+const API_KEY_CACHE_PREFIX = `apikey:auth:${REGISTRY_HASH}:`;
+// Short on purpose: the record carries the key's grants, expiry and rate limit,
+// so a revoked or re-granted key can act for at most this long (saving or revoking
+// a key, a grant write and a restore clear it at once). Negative results are cached too —
 // a bad key hammering the endpoint must not hammer Postgres.
 const API_KEY_CACHE_TTL_SECONDS = 30;
 /** PostgREST's code for a `.single()` that matched no rows. */
 const NO_ROWS_FOUND = "PGRST116";
 
-/** Hash an API key using SHA-256 for secure storage/lookup */
 export function hashApiKey(rawKey: string): string {
   return createHash("sha256").update(rawKey).digest("hex");
 }
@@ -29,7 +34,8 @@ export type ApiKeyRecord = {
   companyId: string;
   companyGroupId: string;
   createdBy: string;
-  scopes: Record<string, string[]>;
+  /** The key's grants, expanded per page for its company. */
+  permissions: Record<string, Permission>;
   rateLimit: number;
   rateLimitWindow: "1m" | "1h" | "1d";
   expiresAt: string | null;
@@ -39,19 +45,11 @@ export function apiKeyCacheKey(keyHash: string): string {
   return `${API_KEY_CACHE_PREFIX}${keyHash}`;
 }
 
-/**
- * The apiKey row for a raw key, through a ~30s Redis cache. One HTTP API call
- * resolves the key twice (requirePermissions and the v1 scope read), so the
- * lookup is also memoized per request — safe for a credential row because the
- * request is authenticated BY that credential; nothing inside the request can
- * revoke it and then expect the same request to see the revocation.
- */
-export function getApiKeyRecord(rawKey: string): Promise<ApiKeyRecord | null> {
+/** The apiKey row for a raw key, through a ~30s Redis cache. */
+export async function getApiKeyRecord(
+  rawKey: string
+): Promise<ApiKeyRecord | null> {
   const keyHash = hashApiKey(rawKey);
-  return oncePerRequest(`apikey:${keyHash}`, () => loadApiKeyRecord(keyHash));
-}
-
-async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
   try {
     const cached = await redis.get(apiKeyCacheKey(keyHash));
     // The literal string "null" is a cached negative — an unknown key we already
@@ -64,17 +62,19 @@ async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
   const { data, error } = await getCarbonServiceRole()
     .from("apiKey")
     .select(
-      "id, companyId, ...company(companyGroupId), createdBy, scopes, rateLimit, rateLimitWindow, expiresAt"
+      "id, companyId, ...company(companyGroupId), createdBy, rateLimit, rateLimitWindow, expiresAt, permission(companyId, module, page, level)"
     )
     .eq("keyHash", keyHash)
     .single();
 
-  const record = (data as unknown as ApiKeyRecord | null) ?? null;
+  const record = data ? toApiKeyRecord(data) : null;
 
   // Only cache a verdict the database actually gave. `.single()` reports "no rows"
   // as PGRST116; any other error also yields a null row, and caching THAT would
   // reject a valid key for the full TTL over a momentary outage.
   if (error && error.code !== NO_ROWS_FOUND) {
+    const legacy = await loadLegacyApiKeyRecord(keyHash);
+    if (legacy) return legacy;
     log.error("Failed to read api key record", { error });
     return null;
   }
@@ -93,6 +93,71 @@ async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
   }
 
   return record;
+}
+
+/**
+ * TRANSITIONAL(#1958): the key's old `scopes` (`<module>_<action>: [companyIds]`)
+ * as module grants, for a database the permission migrations have not reached
+ * yet (no `permission` table to embed). Never cached: the next read after the
+ * migrations must see the grants.
+ */
+async function loadLegacyApiKeyRecord(
+  keyHash: string
+): Promise<ApiKeyRecord | null> {
+  const { data, error } = await getCarbonServiceRole()
+    .from("apiKey")
+    .select(
+      "id, companyId, ...company(companyGroupId), createdBy, rateLimit, rateLimitWindow, expiresAt, scopes"
+    )
+    .eq("keyHash", keyHash)
+    .single();
+  if (error || !data) return null;
+  const { scopes, ...key } = data;
+  const keys =
+    typeof scopes === "object" && scopes !== null && !Array.isArray(scopes)
+      ? (scopes as Record<string, unknown>)
+      : {};
+  return {
+    ...key,
+    companyGroupId: key.companyGroupId as string,
+    rateLimitWindow: key.rateLimitWindow as ApiKeyRecord["rateLimitWindow"],
+    permissions: claimsFor(
+      { grants: legacyGrants(keys, key.companyId, "key") },
+      key.companyId
+    ).permissions
+  };
+}
+
+function toApiKeyRecord(row: {
+  id: string;
+  companyId: string;
+  companyGroupId: string | null;
+  createdBy: string;
+  rateLimit: number;
+  rateLimitWindow: string;
+  expiresAt: string | null;
+  permission: {
+    companyId: string;
+    module: string;
+    page: string | null;
+    level: string;
+  }[];
+}): ApiKeyRecord {
+  const { permission, ...key } = row;
+  const grants = permission
+    .filter((grant) => grant.companyId === key.companyId)
+    .map(({ module, page, level }) => ({
+      subject: "key",
+      module,
+      page,
+      level
+    }));
+  return {
+    ...key,
+    companyGroupId: key.companyGroupId as string,
+    rateLimitWindow: key.rateLimitWindow as ApiKeyRecord["rateLimitWindow"],
+    permissions: claimsFor({ grants }, key.companyId).permissions
+  };
 }
 
 /** Drop the cached record for a key hash — call when the key is edited or revoked. */

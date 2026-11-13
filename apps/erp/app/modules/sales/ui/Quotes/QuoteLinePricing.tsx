@@ -190,7 +190,7 @@ const QuoteLinePricing = ({
   }>(path.to.quote(quoteId));
   const isEmployee = permissions.is("employee");
   const isEditable =
-    permissions.can("update", "sales") &&
+    permissions.has({ "sales.quotes": "Edit" }) &&
     isEmployee &&
     ["Draft"].includes(routeData?.quote?.status ?? "");
 
@@ -1427,7 +1427,7 @@ const QuoteLinePricing = ({
                               size="sm"
                               variant="secondary"
                               isDisabled={
-                                !permissions.can("update", "sales") ||
+                                !permissions.has({ "sales.quotes": "Edit" }) ||
                                 isDeleting
                               }
                               isLoading={isDeleting}

@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -76,9 +77,7 @@ import {
 import { DateSelect, Empty, Hyperlink, MetricCard } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { QualityKPIs } from "~/modules/quality/quality.models";
-import { getIssueTypesList } from "~/modules/quality/quality.service";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { loader as kpiLoader } from "~/routes/api+/quality.kpi.$key";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -151,10 +150,10 @@ function formatWeekLabel(weekKey: string, locale?: string): string {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
-    view: "quality",
-    role: "employee"
-  });
+  const { client, userId, companyId, api } = await authorize(
+    request,
+    anyOf(pagesOf("quality"), "View")
+  );
 
   const [
     openIssues,
@@ -187,8 +186,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
       .in("status", ["Pending", "In Progress"]),
-    getIssueTypesList(client, companyId),
-    getCompanySettings(client, companyId),
+    api.quality.getIssueTypesList({}),
+    api.settings.getCompanySettings({}),
     client
       .from("issues")
       .select("id, nonConformanceId, name, status, priority, createdAt")

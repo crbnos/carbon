@@ -8,7 +8,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { getBatchPropertyColumns } from "~/modules/inventory/inventory.service";
 import TrackedEntitiesTable from "~/modules/inventory/ui/Traceability/TrackedEntitiesTable";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { trackedEntitiesList } from "~/utils/list-registry/inventory.server";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -23,9 +22,9 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, trackedEntitiesList, {
     dataKey: "trackedEntities",
-    firstPage: async ({ client, companyId }) => {
+    firstPage: async ({ api, client, companyId }) => {
       const [companySettings, batchPropertyColumns] = await Promise.all([
-        getCompanySettings(client, companyId),
+        api.settings.getCompanySettings({}),
         getBatchPropertyColumns(client, companyId)
       ]);
       const inventoryShelfLife = companySettings.data?.inventoryShelfLife as {

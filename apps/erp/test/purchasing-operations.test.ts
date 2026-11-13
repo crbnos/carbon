@@ -10,11 +10,14 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 import {
+  convertSupplierQuoteToOrder,
+  finalizePurchasingRfqAndNotify,
   orderPlannedPurchases,
   reopenPurchaseOrder,
   submitDigitalSupplierQuote
 } from "../app/modules/purchasing/purchasing.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 type Claims = Record<
   string,
@@ -41,7 +44,12 @@ const noClient = () => ({}) as any;
 
 function contextFor(client: any, permissions: Claims) {
   return createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions },
+    actor: {
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: pageClaims(permissions)
+    },
     company: { id: "company-1", groupId: "group-1" },
     caller: client,
     system: noClient,
@@ -84,6 +92,58 @@ describe("reopenPurchaseOrder", () => {
       category: "rule",
       message: "Only a released purchase order can be revised"
     });
+  });
+});
+
+describe("convertSupplierQuoteToOrder", () => {
+  it("refuses a role without Purchase Orders, before reading anything", async () => {
+    const all = purchasing({
+      view: ["company-1"],
+      create: ["company-1"],
+      update: ["company-1"],
+      delete: ["company-1"]
+    }).purchasing;
+    const result = await convertSupplierQuoteToOrder(
+      contextFor(noClient(), { "purchasing.supplierQuotes": all }),
+      { id: "supplier-quote-1", selectedLines: {} }
+    );
+    expect(result.error).toMatchObject({ category: "forbidden" });
+  });
+});
+
+describe("finalizePurchasingRfqAndNotify", () => {
+  const all = {
+    view: ["company-1"],
+    create: ["company-1"],
+    update: ["company-1"],
+    delete: ["company-1"]
+  };
+  const finalize = (permissions: Claims) =>
+    finalizePurchasingRfqAndNotify(contextFor(noClient(), permissions), {
+      rfqId: "rfq-1",
+      suppliers: []
+    });
+
+  // The posting writes the supplier quotes as the system: the gate is the only check.
+  it("refuses a role without Supplier Quotes, before reading anything", async () => {
+    const result = await finalize({ "purchasing.rfqs": all });
+    expect(result.error).toMatchObject({ category: "forbidden" });
+  });
+
+  it("admits a role with RFQs Edit and Supplier Quotes Create", async () => {
+    const result = await finalize({
+      "purchasing.rfqs": { ...all, delete: [] },
+      "purchasing.supplierQuotes": { ...all, update: [], delete: [] }
+    });
+    expect(result.error?.category).not.toBe("forbidden");
+  });
+
+  it("refuses a role that may create RFQs but not edit them", async () => {
+    const result = await finalize({
+      "purchasing.rfqs": { ...all, update: [] },
+      "purchasing.supplierQuotes": all
+    });
+    expect(result.error).toMatchObject({ category: "forbidden" });
   });
 });
 

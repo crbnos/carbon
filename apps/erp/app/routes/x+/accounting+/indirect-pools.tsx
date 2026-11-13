@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getIndirectPools } from "@carbon/ee/indirect-rates.server";
 import { getLogger } from "@carbon/logger";
@@ -30,9 +30,8 @@ export const handle: Handle = {
 // The list loads without a plan check: a gated company sees the upgrade
 // overlay. The write routes and the ee authoring functions enforce the plan.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "accounting.indirectPools": "View"
   });
 
   const pools = await getIndirectPools(client, companyId);

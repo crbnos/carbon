@@ -64,8 +64,8 @@ const ReturnReasonForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.returnReasons": "Edit" })
+    : !permissions.has({ "sales.returnReasons": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

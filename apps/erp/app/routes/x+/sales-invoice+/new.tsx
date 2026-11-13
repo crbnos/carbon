@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
@@ -16,8 +16,7 @@ import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import { salesInvoiceValidator } from "~/modules/invoicing/invoicing.models";
 import {
   createSalesInvoiceFromSalesOrder,
-  createSalesInvoiceFromShipment,
-  insertSalesInvoice
+  createSalesInvoiceFromShipment
 } from "~/modules/invoicing/invoicing.service";
 import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm";
 import { getDatabaseClient } from "~/services/database.server";
@@ -30,16 +29,15 @@ export const meta = newRecordMeta("Sales Invoice");
 
 export const handle: Handle = {
   breadcrumb: msg`Sales`,
-  to: path.to.sales,
-  module: "sales"
+  to: path.to.sales
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "invoicing"
+  const { companyId, userId } = await authorize(request, {
+    "invoicing.salesInvoices": "Create"
   });
 
   const url = new URL(request.url);
@@ -107,10 +105,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "invoicing"
-    });
+  const { api } = await authorize(request, {
+    "invoicing.salesInvoices": "Create"
+  });
 
   const formData = await request.formData();
   const validation = await validator(salesInvoiceValidator).validate(formData);
@@ -121,12 +118,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
-  const result = await insertSalesInvoice(client, {
+  // The service function writes the invoice's opportunity (owned by Sales) as
+  // the system, so an invoicing-only user can create one.
+  const result = await api.invoicing.insertSalesInvoice({
     ...d,
     invoiceId: d.invoiceId || undefined,
-    companyId,
-    companyGroupId,
-    createdBy: userId,
     customFields: setCustomFields(formData)
   });
 

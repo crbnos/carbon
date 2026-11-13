@@ -45,7 +45,7 @@ import {
   selectInBatches,
   withRefusedMethods
 } from "@carbon/ee/onshape";
-import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import { drawingFileKey, readCurrentFiles } from "@carbon/jobs/onshape-assets";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -83,15 +83,10 @@ const FILE_READS_BUDGET_MS = 45_000;
 /** Plan an assembly push without writing; the apply reuses the stored plan. */
 export async function action({ request }: ActionFunctionArgs) {
   const fileReadsDeadline = Date.now() + FILE_READS_BUDGET_MS;
-  const { client, companyId, userId } = await requireOnshapePanelPermissions(
-    request,
-    {
-      create: "parts",
-      update: "parts",
-      // Re-pushing replaces the BOM lines an earlier push wrote.
-      delete: "parts"
-    }
-  );
+  const { client, companyId, userId } = await authorizePanel(request, {
+    // Full: re-pushing replaces the BOM lines an earlier push wrote.
+    "parts.parts": "Full"
+  });
 
   const parsed = payloadSchema.safeParse(
     await request.json().catch(() => null)

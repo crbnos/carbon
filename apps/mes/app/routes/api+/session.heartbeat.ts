@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   resolveConsolePinIn,
   setConsolePinActivity
@@ -16,10 +16,7 @@ import { data } from "react-router";
 // console pin-in. A pin-in that has already expired cannot be revived here.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, sessionUserId, consoleMode } = await requirePermissions(
-    request,
-    {}
-  );
+  const { companyId, sessionUserId, consoleMode } = await authorize(request);
   if (consoleMode) {
     const pinIn = await resolveConsolePinIn(request, companyId, sessionUserId);
     if (!pinIn) return data({ ok: false });

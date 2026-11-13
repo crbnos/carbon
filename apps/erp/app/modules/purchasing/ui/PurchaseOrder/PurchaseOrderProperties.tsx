@@ -135,7 +135,7 @@ const PurchaseOrderProperties = () => {
       ? optimisticAssignment
       : routeData?.purchaseOrder?.assignee;
 
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.purchaseOrders": "Edit" });
   const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
   const isDisabled = !canUpdate || isLocked;
   // A released order never changes who it buys from or in what currency.

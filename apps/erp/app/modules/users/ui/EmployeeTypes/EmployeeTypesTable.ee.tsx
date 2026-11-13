@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { subjectGates } from "@carbon/ee/permission-grants";
 import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -65,7 +66,7 @@ const EmployeeTypesTable = memo((props: EmployeeTypesTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "users")}
+            disabled={!permissions.has(subjectGates("Edit").role)}
             onClick={() => {
               navigate(`${path.to.employeeType(row.id)}?${params.toString()}`);
             }}
@@ -76,7 +77,9 @@ const EmployeeTypesTable = memo((props: EmployeeTypesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={row.protected || !permissions.can("delete", "users")}
+            disabled={
+              row.protected || !permissions.has(subjectGates("Full").role)
+            }
             onClick={() => {
               navigate(
                 `${path.to.deleteEmployeeType(row.id)}?${params.toString()}`
@@ -99,7 +102,7 @@ const EmployeeTypesTable = memo((props: EmployeeTypesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "users") && (
+        permissions.has(subjectGates("Edit").role) && (
           <New label={t`Employee Type`} to={`new?${params.toString()}`} />
         )
       }

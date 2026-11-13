@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -16,22 +16,20 @@ import {
   withoutOperatingHours,
   workCenterFormValidator
 } from "~/modules/resources/resources.models";
-import { getWorkCenter } from "~/modules/resources/resources.service";
 import { WorkCenterForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "resources.workCenters": "View"
   });
 
   const { id } = params;
   if (!id) throw notFound("Invalid work center id");
 
   const [workCenter, capitalCost] = await Promise.all([
-    getWorkCenter(client, id),
+    api.resources.getWorkCenter({ id }),
     getWorkCenterCapitalCost(client, id, companyId)
   ]);
   if (workCenter.error) {
@@ -57,7 +55,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["id"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.resources.updateWorkCenter({
     ...withoutOperatingHours(input.data),
     id: input.params.id,

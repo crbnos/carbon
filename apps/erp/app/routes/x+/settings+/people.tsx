@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { SUBJECT_RULES } from "@carbon/ee/permission-grants";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -41,7 +41,6 @@ import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { settingsToggle } from "~/modules/settings/settings.models";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -51,11 +50,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
-  });
+  const { api } = await authorize(request, { "settings.people": "View" });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
 
   if (!companySettings.data)
     throw redirect(
@@ -77,15 +74,18 @@ const peopleSettingsForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(peopleSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.updatePeopleSettings(input.data);
 }
 
 export default function PeopleSettingsRoute() {
   const { companySettings } = useLoaderData<typeof loader>();
   const { t } = useLingui();
-  // Enterprise: console (kiosk) mode is gated to the Business plan.
-  const { isGated: consoleGated } = usePlanGate({ feature: "PERMISSIONS" });
+  // Enterprise: console (kiosk) mode needs role authoring's plan feature, the
+  // one `updateConsoleSetting` locks and `isConsoleModeEnabledForCompany` reads.
+  const { isGated: consoleGated } = usePlanGate({
+    feature: SUBJECT_RULES.role.feature
+  });
   const [showPinModal, setShowPinModal] = useState(false);
   const [generatedPin, setGeneratedPin] = useState<string | null>(null);
   const fetcher = useAction<typeof action>({

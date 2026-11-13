@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type {
   TrackedEntityOption,
   TrackedEntityPickOrder,
@@ -94,7 +94,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.pickingList?.pickingListId, "Picking List");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {});
+  const { client } = await authorize(request, {});
   const pickingListId = params.pickingListId!;
 
   const result = await getPickingListForExecution(client, pickingListId);

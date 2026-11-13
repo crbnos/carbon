@@ -10,9 +10,9 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 - **Version** — a `workflowVersion` row holding `nodes`, `edges` and `formatVersion`. Numbered, never named.
 - **Canvas state** — `workflow.canvasState` JSONB: `{ x, y, zoom, panOnScroll }`. Per workflow (not per user, not per version), written by `$id.canvas.tsx` through `updateWorkflowCanvasState`, restored as `defaultViewport`. Node collapse is NOT here — `expanded` lives on each node in the definition and rides the autosave. `/save`, `/canvas` and `/positions` are all excluded from `shouldRevalidate`; revalidating on a canvas write would snap the viewport back to where it was on load, and revalidating on a positions write would remount the builder store mid-drag.
 - **Definition** — `{ formatVersion, nodes, edges }`, validated by `workflowDefinitionSchema` from `@carbon/workflows`. `CURRENT_DEFINITION_FORMAT_VERSION` is **3**; the SQL column default is a stale **1**, so the app always writes the constant explicitly.
-- **Publish** — validate → set `publishedVersionId` → `syncWorkflowTriggers` → wake the scheduler. One route does all four; splitting them leaves a workflow that looks published and never fires.
+- **Publish** — owner check → validate → set `publishedVersionId` → `syncWorkflowTriggers` → wake the scheduler. One route does all of it; splitting them leaves a workflow that looks published and never fires. Only the owner may publish (`publishWorkflowVersion` refuses anyone else, and the builder disables the button), for the same reason only the owner may test-run: the workflow then runs as the owner.
 - **Unpublish** — the inverse and the only off switch: `publishedVersionId = NULL` → the same `syncWorkflowTriggers`, which is what deletes the trigger rows and clears `nextRunAt`. It takes no boolean, because publishing needs a version id and has to validate first.
-- **The published version is read-only.** Editing a published workflow means creating a new version, the same rule released item revisions follow.
+- **The published version is read-only.** Editing a published workflow means creating a new version, the same rule released item revisions follow. The database enforces it for the Data API too: the `check_workflow_version_lock` interceptor refuses an `anon`/`authenticated` UPDATE of the version `publishedVersionId` points at unless only node `position`s change (what `updateWorkflowNodePositions` writes).
 
 ## Safety
 
@@ -28,8 +28,8 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 - Adding undo. Its absence is a deliberate, recorded decision (recovery is via versions).
 
 ### Never
-- Never write `workflowTriggerEvent`, `workflow.nextRunAt` or `eventSystemSubscription` directly. `syncWorkflowTriggers` is their sole writer, and it is what makes a workflow able to fire at all.
-- Never let `$id.owner.tsx` accept a submitted `ownerId`. It writes the session user, always. An arbitrary id would let anyone with `workflows_update` borrow someone else's access.
+- Never write `workflowTriggerEvent`, `workflow.nextRunAt` or `eventSystemSubscription` directly. `syncWorkflowTriggers` is their sole writer, and it is what makes a workflow able to fire at all. `workflowTriggerEvent` has a SELECT policy only, so the Data API cannot write it: a row names the version a run executes as the owner.
+- Never let a workflow route accept a submitted `ownerId`. The owner is the person who created the workflow (`insertWorkflow` sets it from `createdBy`) and never changes. An arbitrary id would let anyone with Edit on Workflows borrow someone else's access. The database enforces it for the Data API too: the `check_workflow_owner_change` interceptor refuses an `anon`/`authenticated` UPDATE of `ownerId`, an INSERT whose `ownerId` is not the caller (`auth.uid()`, or an API key's `createdBy`), and a change of `publishedVersionId` to a non-null value by anyone but the owner (so publishing through the Data API is owner-only, as `publishWorkflowVersion` is; unpublishing to `NULL` stays open); the service role, Kysely, the datasets and restore are not affected.
 - Never derive node output handles from a hand-written list — use `getNodeHandles(node)`, the same function the validator uses, or the canvas can draw a handle the validator calls `UNKNOWN_HANDLE`.
 - Never add a per-kind component or a second per-kind lookup. All six node kinds render through one `WorkflowNodeCard`; everything that differs between them is data in `ui/Builder/nodes/meta.ts`, which the palette and the card both read. A new kind is a row in `NODE_KIND_META` plus a row in `nodeTypes` — both are exhaustive `Record<WorkflowNodeType, …>`, so missing either fails the build.
 - Never re-export `@carbon/workflows/labels` through the package barrel. `msg` is a build-time macro; only Vite-built app code may import it.
@@ -67,14 +67,13 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 - `getWorkflowVersions` / `getWorkflowVersion` / `getWorkflowVersionNumbers` — version reads (flat selects; nested embeds across `workflow` + `workflowVersion` trip TS2589 in this app)
 - `insertWorkflow` / `updateWorkflow` — separate rather than one `upsert*`
 - `insertWorkflowVersion` / `updateWorkflowDefinition` / `deleteWorkflowVersion`
-- `updateWorkflowOwner` — takes the session user, never a submitted id
 - `checkWorkflowVersionLock` — the published-version lock; the rule is one equality against `publishedVersionId`, so there is no helper wrapping it
 - `updateWorkflowNodePositions` — the positions-only writer behind `$id.positions.tsx`
-- `publishWorkflowVersion` / `unpublishWorkflow` — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `requirePermissions` is the only authorization gate
+- `publishWorkflowVersion` / `unpublishWorkflow` — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `authorize(request, { "workflows.workflows": "Edit" })` is the only authorization gate
 
 ## Operations (`workflows.server.ts`)
 
-Each is a `defineServiceFn` const; the route calls it through `carbon(request)` (`api.workflows.createWorkflow(input)`). Neither is published (no `@mcp`). Every function under Key Service Functions is a building block in `workflows.service.ts`.
+Each is a `defineServiceFn` const; the route calls it through `authorize(request)` (`api.workflows.createWorkflow(input)`). Neither is published (no `@mcp`). Every function under Key Service Functions is a building block in `workflows.service.ts`.
 
 - `createWorkflow` (`x+/workflows+/new.tsx`) — inserts the workflow (the creator is its owner) and version 1 with one trigger node; the New Workflow modal opens the builder on the returned `id`.
 - `deleteWorkflow` (`x+/workflows+/delete.$id.tsx`) — deletes the workflow, then `syncAfterWorkflowDelete` reconciles the company's event subscriptions.

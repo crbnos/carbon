@@ -60,8 +60,8 @@ const FixedAssetForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "accounting.assets": "Edit" })
+    : !permissions.has({ "accounting.assets": "Create" });
 
   const { assetClasses } = useAssetClasses();
 

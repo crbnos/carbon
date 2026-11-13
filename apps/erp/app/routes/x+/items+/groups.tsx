@@ -9,7 +9,6 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAccountsList } from "~/modules/accounting/accounting.service";
 import { ItemPostingGroupsTable } from "~/modules/items/ui/ItemPostingGroups";
 import type { Handle } from "~/utils/handle";
 import { itemPostingGroupsList } from "~/utils/list-registry/items.server";
@@ -24,8 +23,8 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, itemPostingGroupsList, {
     dataKey: "itemPostingGroups",
-    firstPage: async ({ client, companyGroupId }) => {
-      const accounts = await getAccountsList(client, companyGroupId);
+    firstPage: async ({ api }) => {
+      const accounts = await api.accounting.getAccountsList({});
       if (accounts.error) {
         throw redirect(
           path.to.itemPostingGroups,

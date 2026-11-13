@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -18,10 +18,9 @@ import type { TrainingAssignmentStatusItem } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "people"
+  const { client, companyId } = await authorize(request, {
+    "people.employees": "View"
   });
-
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 

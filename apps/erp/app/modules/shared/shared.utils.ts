@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { PageGate } from "@carbon/database/access";
 import { round } from "@carbon/database/precision";
 import {
   type CurrencyRate,
@@ -142,3 +143,21 @@ export function flatChargeShare({
   const share = round((charge * quantity) / ordered, decimals);
   return Math.abs(share) < Math.abs(left) ? share : left;
 }
+
+// A conversion sets the source's status and makes the next document. The
+// service function, the posting's rule and the button share these gates.
+
+export const quoteToSalesOrderPermission = {
+  "sales.quotes": "Edit",
+  "sales.salesOrders": "Create"
+} satisfies PageGate;
+
+export const salesRfqToQuotePermission = {
+  "sales.rfqs": "Edit",
+  "sales.quotes": "Create"
+} satisfies PageGate;
+
+export const supplierQuoteToPurchaseOrderPermission = {
+  "purchasing.supplierQuotes": "Edit",
+  "purchasing.purchaseOrders": "Create"
+} satisfies PageGate;

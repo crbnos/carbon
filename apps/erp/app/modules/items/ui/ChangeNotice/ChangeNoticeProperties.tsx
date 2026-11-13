@@ -109,7 +109,7 @@ const ChangeNoticeProperties = () => {
   const linkedNonConformance = routeData?.linkedNonConformance ?? null;
   const isLocked = isChangeNoticeLocked(changeNotice?.status);
   const isImplementation = changeNotice?.status === "Implementation";
-  const canUpdate = permissions.can("update", "parts");
+  const canUpdate = permissions.has({ "parts.changeNotices": "Edit" });
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {

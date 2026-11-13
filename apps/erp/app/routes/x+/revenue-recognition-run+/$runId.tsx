@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import type { RunType } from "@carbon/database/run-type";
 import {
   Card,
@@ -26,12 +28,7 @@ import { useAccounts } from "~/components/Form/Account";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { revenueScheduleTypes } from "~/modules/accounting/accounting.models";
-import {
-  getCompanyToday,
-  getPeriodRunRelatedItems,
-  getRevenueRecognitionRun,
-  getRevenueRecognitionRunLines
-} from "~/modules/accounting/accounting.service";
+import { getCompanyToday } from "~/modules/accounting/accounting.service";
 import {
   getNextPeriodEnd,
   isFutureRunPeriod
@@ -44,7 +41,10 @@ import {
 } from "~/modules/accounting/ui/RevenueRecognition";
 import ProjectRevenueProgress from "~/modules/accounting/ui/RevenueRecognition/ProjectRevenueProgress.ee";
 import { summarizeRunJournal } from "~/modules/accounting/ui/RevenueRecognition/runJournal";
-import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
+import {
+  RUN_PAGES,
+  runPage
+} from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -60,8 +60,7 @@ export const handle: Handle = {
       { breadcrumb: title, to: listPath },
       (loaded: RunBreadcrumbData) => loaded.run?.runId
     )(params, data);
-  },
-  module: "accounting"
+  }
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
@@ -71,16 +70,17 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(["accounting.revenueRecognition", "accounting.leases"], "View")
+  );
 
   const { runId } = params;
   if (!runId) throw new Error("Could not find runId");
 
   const [run, lines, companyToday] = await Promise.all([
-    getRevenueRecognitionRun(client, runId, companyId),
-    getRevenueRecognitionRunLines(client, runId, companyId),
+    api.accounting.getRevenueRecognitionRun({ id: runId }),
+    api.accounting.getRevenueRecognitionRunLines({ runId }),
     getCompanyToday(client, companyId)
   ]);
 
@@ -93,6 +93,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
+  // The run's type picks its page.
+  await authorize(request, { [runPage(run.data.type)]: "View" });
 
   // Name the document behind each row: the invoice for a Deferral, the rental
   // agreement for an Accrual or Interest row (one lookup per source table).
@@ -190,19 +192,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       getNextPeriodEnd(run.data.periodEnd),
       companyToday
     ),
-    relatedItems: getPeriodRunRelatedItems(
-      client,
-      companyId,
-      run.data.periodEnd,
-      // One journal per month: every journal the run's rows posted.
-      [
-        ...new Set(
-          (lines.data ?? []).flatMap((line) =>
-            line.schedule?.journalId ? [line.schedule.journalId] : []
+    relatedItems: api.accounting
+      .getPeriodRunRelatedItems({
+        periodEnd: run.data.periodEnd,
+        journalIds: [
+          ...new Set(
+            (lines.data ?? []).flatMap((line) =>
+              line.schedule?.journalId ? [line.schedule.journalId] : []
+            )
           )
-        )
-      ]
-    )
+        ]
+      })
+      .then(dataOrThrow)
   };
 }
 

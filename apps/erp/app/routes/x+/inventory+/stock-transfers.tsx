@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -16,7 +16,6 @@ import {
   STOCK_TRANSFERS_PAGING
 } from "~/modules/inventory/inventory.service";
 import StockTransfersTable from "~/modules/inventory/ui/StockTransfers/StockTransfersTable";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
@@ -33,8 +32,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "inventory.stockTransfers": "View"
   });
 
   const url = new URL(request.url);
@@ -61,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,

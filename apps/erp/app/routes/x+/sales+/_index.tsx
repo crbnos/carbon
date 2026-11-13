@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { dataOrThrow } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -70,7 +72,6 @@ import {
 import { CSVLink } from "~/components/CSVLink";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { KPIs } from "~/modules/sales/sales.models";
-import { getSalesDocumentsAssignedToMe } from "~/modules/sales/sales.service";
 import type { Quotation, SalesOrder, SalesRFQ } from "~/modules/sales/types";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
@@ -98,9 +99,10 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    anyOf(pagesOf("sales"), "View")
+  );
 
   const [openSalesOrders, openQuotes, openRFQs] = await Promise.all([
     client
@@ -133,7 +135,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     openSalesOrders: openSalesOrders,
     openQuotes: openQuotes,
     openRFQs: openRFQs,
-    assignedToMe: getSalesDocumentsAssignedToMe(client, userId, companyId)
+    assignedToMe: api.sales.getSalesDocumentsAssignedToMe({}).then(dataOrThrow)
   };
 }
 

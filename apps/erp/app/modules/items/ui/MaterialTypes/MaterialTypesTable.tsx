@@ -144,7 +144,8 @@ const MaterialTypesTable = memo((props: MaterialTypesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={
-              !permissions.can("update", "parts") || row.companyId === null
+              !permissions.has({ "parts.types": "Edit" }) ||
+              row.companyId === null
             }
             onClick={() => {
               navigate(`${path.to.materialType(row.id!)}?${params.toString()}`);
@@ -156,7 +157,8 @@ const MaterialTypesTable = memo((props: MaterialTypesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
-              !permissions.can("delete", "parts") || row.companyId === null
+              !permissions.has({ "parts.types": "Full" }) ||
+              row.companyId === null
             }
             destructive
             onClick={() => {
@@ -187,7 +189,7 @@ const MaterialTypesTable = memo((props: MaterialTypesTableProps) => {
         }
       ]}
       primaryAction={
-        permissions.can("create", "parts") && (
+        permissions.has({ "parts.types": "Create" }) && (
           <New
             label={t`Material Type`}
             to={`${path.to.newMaterialType}?${params.toString()}`}

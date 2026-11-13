@@ -70,16 +70,18 @@ function MemoDocumentList({
   const settlementRows = useSettlementRows(related);
 
   const salesReturn =
-    related?.salesReturnOrder && permissions.can("view", "sales")
+    related?.salesReturnOrder && permissions.has({ "sales.returns": "View" })
       ? related.salesReturnOrder
       : null;
   const purchaseReturn =
-    related?.purchaseReturnOrder && permissions.can("view", "purchasing")
+    related?.purchaseReturnOrder &&
+    permissions.has({ "purchasing.returns": "View" })
       ? related.purchaseReturnOrder
       : null;
 
   const rentalAgreement =
-    related?.rentalAgreement && permissions.can("view", "sales")
+    related?.rentalAgreement &&
+    permissions.has({ "sales.rentalAgreements": "View" })
       ? related.rentalAgreement
       : null;
 

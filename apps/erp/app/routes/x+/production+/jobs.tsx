@@ -7,8 +7,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { JobsTable } from "~/modules/production/ui/Jobs";
-import { getLocationsList } from "~/modules/resources/resources.service";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { jobsList } from "~/utils/list-registry/production.server";
@@ -24,10 +22,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, jobsList, {
     dataKey: "jobs",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => {
+    firstPage: async ({ api }) => {
       const [locations, tags] = await Promise.all([
-        getLocationsList(client, companyId),
-        getTagsList(client, companyId, "job")
+        api.resources.getLocationsList({}),
+        api.shared.getTagsList({ table: "job" })
       ]);
       return { locations: locations.data ?? [], tags: tags.data ?? [] };
     },

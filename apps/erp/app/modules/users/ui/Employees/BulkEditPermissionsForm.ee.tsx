@@ -2,8 +2,9 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { StoredGrant } from "@carbon/database/access-write";
+import { subjectGates } from "@carbon/ee/permission-grants";
 import { ValidatedForm } from "@carbon/form";
-import { useLoaderQuery } from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -16,25 +17,19 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo } from "react";
+import { useState } from "react";
 import { Employees, Hidden, Radios, Submit } from "~/components/Form";
-import PermissionMatrix from "~/components/PermissionMatrix";
 import {
   type AllMatchingSelection,
   allMatchingRequest
 } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import {
-  fromEmployeeTypePermissions,
-  toCompanyPermissions,
-  usePermissionMatrix
-} from "~/hooks/usePermissionMatrix";
-import type { CompanyPermission } from "~/modules/users/types";
-import {
   bulkPermissionsAllMatchingValidator,
   bulkPermissionsValidator
 } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
+import AccessGrid from "../components/AccessGrid.ee";
 import {
   AllMatchingUsersNote,
   type BulkUserActionFetcher
@@ -76,49 +71,10 @@ const BulkEditPermissionsBody = ({
 }: Omit<BulkEditPermissionsProps, "isOpen">) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const emptyPermissionsFetcher = useLoaderQuery<{
-    permissions: Record<
-      string,
-      {
-        name: string;
-        permission: CompanyPermission;
-      }
-    >;
-  }>(path.to.api.emptyPermissions);
+  // The overrides to apply. A module left on "No change" is not touched.
+  const [grants, setGrants] = useState<StoredGrant[]>([]);
 
-  const canEditPermissions = permissions.can("update", "users");
-
-  const { state: initialState, modules } = useMemo(() => {
-    if (emptyPermissionsFetcher.data) {
-      return fromEmployeeTypePermissions(
-        emptyPermissionsFetcher.data.permissions
-      );
-    }
-    return { state: {}, modules: {} };
-  }, [emptyPermissionsFetcher.data]);
-
-  const matrix = usePermissionMatrix({
-    modules,
-    initialState
-  });
-
-  // When new empty permissions arrive, reset the matrix state
-  useEffect(() => {
-    if (emptyPermissionsFetcher.data) {
-      const { state } = fromEmployeeTypePermissions(
-        emptyPermissionsFetcher.data.permissions
-      );
-      matrix.setPermissions(state);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [emptyPermissionsFetcher.data, matrix.setPermissions]);
-
-  // Serialize permissions to the format expected by the action
-  const permissionsData = JSON.stringify(
-    toCompanyPermissions(matrix.permissions)
-  );
-
-  const hasModules = Object.keys(modules).length > 0;
+  const canEditPermissions = permissions.has(subjectGates("Edit").person);
 
   return (
     <ValidatedForm
@@ -177,13 +133,14 @@ const BulkEditPermissionsBody = ({
             />
           )}
 
-          {hasModules && (
-            <PermissionMatrix
-              matrix={matrix}
-              isDisabled={!canEditPermissions}
-            />
-          )}
-          <Hidden name="data" value={permissionsData} />
+          <AccessGrid
+            value={grants}
+            onChange={setGrants}
+            mode={{ edits: "bulk" }}
+            label={t`Access`}
+            isDisabled={!canEditPermissions}
+          />
+          <Hidden name="grants" value={JSON.stringify(grants)} />
         </VStack>
       </DrawerBody>
       <DrawerFooter>

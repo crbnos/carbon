@@ -2,14 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  getCustomerStatuses,
-  getCustomerTypes
-} from "~/modules/sales/sales.service";
 import type { Handle } from "~/utils/handle";
 import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -20,29 +16,26 @@ export const meta = moduleMeta("Customer");
 
 export const handle: Handle = {
   breadcrumb: msg`Sales`,
-  to: path.to.sales,
-  module: "sales"
+  to: path.to.sales
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.customers": "View" });
 
   const [
     customerTypes,
     customerStatuses
     // shippingTerms,
   ] = await Promise.all([
-    getCustomerTypes(client, companyId),
-    getCustomerStatuses(client, companyId)
+    api.sales.getCustomerTypes({}),
+    api.sales.getCustomerStatuses({})
 
     // getShippingTermsList(client, companyId),
   ]);
 
   return {
-    customerStatuses: customerStatuses.data ?? [],
-    customerTypes: customerTypes.data ?? []
+    customerStatuses: customerStatuses.data?.rows ?? [],
+    customerTypes: customerTypes.data?.rows ?? []
     // shippingTerms: shippingTerms.data ?? [],
   };
 }

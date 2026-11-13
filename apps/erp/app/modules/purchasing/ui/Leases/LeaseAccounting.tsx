@@ -60,7 +60,8 @@ const LeaseAccounting = ({
   const id = lease.id!;
   const { save } = useLeaseTermSave(id);
   const isDisabled =
-    lease.status !== "Draft" || !permissions.can("update", "purchasing");
+    lease.status !== "Draft" ||
+    !permissions.has({ "purchasing.leases": "Edit" });
 
   return (
     <>

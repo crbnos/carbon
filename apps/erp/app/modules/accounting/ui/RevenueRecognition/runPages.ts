@@ -3,10 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Where each run type lives in the app. The rows a type claims, its sequence
-// and its name in messages are `@carbon/database/run-type`; this adds the
-// pages, so every route and component that sends a user back to "the run's
-// list" reads one map.
+// and its name in messages are `@carbon/database/run-type`, and its page is the
+// registry's (`runPage`); this adds the paths, so every route and component
+// that sends a user back to "the run's list" reads one map.
 
+import { type PageId, pageOfTable } from "@carbon/database/access";
 import type { RunType } from "@carbon/database/run-type";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -14,7 +15,11 @@ import { path } from "~/utils/path";
 
 export const RUN_PAGES: Record<
   RunType,
-  { listPath: string; newPath: string; title: MessageDescriptor }
+  {
+    listPath: string;
+    newPath: string;
+    title: MessageDescriptor;
+  }
 > = {
   "Revenue Recognition": {
     listPath: path.to.revenueRecognitionRuns,
@@ -27,3 +32,8 @@ export const RUN_PAGES: Record<
     title: msg`Lease Runs`
   }
 };
+
+/** The page whose level gates a run of the type: the registry's `where` on `revenueRecognitionRun`. */
+export function runPage(type: RunType): PageId {
+  return pageOfTable("revenueRecognitionRun", { type });
+}

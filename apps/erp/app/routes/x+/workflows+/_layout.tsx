@@ -23,7 +23,6 @@ function WorkflowsSidebar() {
 export const handle: Handle = {
   breadcrumb: msg`Workflows`,
   to: path.to.workflows,
-  module: "workflows",
   sidebar: WorkflowsSidebar
 };
 

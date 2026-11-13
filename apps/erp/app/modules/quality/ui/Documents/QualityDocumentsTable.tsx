@@ -198,7 +198,9 @@ const QualityDocumentsTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "quality")}
+              disabled={
+                !permissions.has({ "quality.qualityDocuments": "Edit" })
+              }
               onClick={() => {
                 navigate(`${path.to.qualityDocument(row.id!)}`);
               }}
@@ -209,7 +211,9 @@ const QualityDocumentsTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "quality")}
+              disabled={
+                !permissions.has({ "quality.qualityDocuments": "Full" })
+              }
               onClick={() => {
                 flushSync(() => {
                   setSelectedQualityDocument(row);
@@ -234,7 +238,7 @@ const QualityDocumentsTable = memo(
           columns={columns}
           count={count}
           primaryAction={
-            permissions.can("create", "quality") && (
+            permissions.has({ "quality.qualityDocuments": "Create" }) && (
               <div className="flex items-center gap-2">
                 {data.length === 0 && (
                   <seedFetcher.Form

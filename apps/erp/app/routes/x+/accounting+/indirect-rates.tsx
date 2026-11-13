@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { indirectRateEntryValidator } from "@carbon/ee/indirect-rates";
 import {
@@ -46,9 +45,8 @@ function parseFiscalYear(raw: string | null): number | null {
 // The page loads without a plan check: a gated company sees the upgrade
 // overlay. Every intent runs an operation, and the ee functions lock.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "accounting.indirectRates": "View"
   });
 
   const { fiscalYear: currentFiscalYear, startMonth } =
@@ -132,7 +130,7 @@ export async function action({ request }: ActionFunctionArgs) {
         formData
       );
       if (validation.error) return validationError(validation.error);
-      const api = await carbon(request);
+      const { api } = await authorize(request);
       const result = await api.projects.setIndirectRate(validation.data);
       if (result.error) {
         if (result.error.category === "entitlement") {
@@ -152,7 +150,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (intent === "true-up" && !Number.isInteger(fiscalYear)) {
         return refuse("Choose a fiscal year");
       }
-      const api = await carbon(request);
+      const { api } = await authorize(request);
       const result =
         intent === "run"
           ? await api.projects.runIndirectRatePeriod({ accountingPeriodId })
@@ -206,7 +204,7 @@ export default function IndirectRatesRoute() {
         onFiscalYearChange={(value) => setParams({ fiscalYear: value })}
         canTrueUp={canTrueUp}
         action={path.to.indirectRates}
-        isDisabled={!permissions.can("update", "accounting")}
+        isDisabled={!permissions.has({ "accounting.indirectRates": "Edit" })}
       />
       <RecordOutlet />
     </VStack>

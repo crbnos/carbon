@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { OnshapeGovernment } from "@carbon/ee";
 import type { LoaderFunctionArgs } from "react-router";
 import { completeOnshapeAuthorization } from "~/modules/settings/settings.service";
@@ -15,8 +15,8 @@ export const config = {
 // their Onshape Enterprise. The authorization itself is started by saving the
 // integration settings (see x+/settings+/integrations.$id.tsx).
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {
-    update: "settings"
+  const { userId, companyId } = await authorize(request, {
+    "settings.integrations": "Edit"
   });
 
   return completeOnshapeAuthorization({

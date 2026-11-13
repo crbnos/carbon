@@ -3,29 +3,23 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getContractRateCeilings,
   getIndirectPools
 } from "@carbon/ee/indirect-rates.server";
 import { getLogger } from "@carbon/logger";
-import { datetime, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
-import { getContractBillableItems } from "~/modules/projects/projects.service";
-import { isProjectBillingMethod } from "~/modules/sales/sales.models";
 import {
-  getContractFundingActions,
-  getContractLaborRates,
-  getContractLine,
-  getContractLineFunding
-} from "~/modules/sales/sales.service";
+  CONTRACT_READ_GATE,
+  isProjectBillingMethod
+} from "~/modules/sales/sales.models";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractLineBilling } from "~/modules/sales/ui/Contracts";
-import { getCompanySettings } from "~/modules/settings/settings.service";
-import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-line-billing");
@@ -33,17 +27,22 @@ const logger = getLogger("erp", "contract-line-billing");
 /** The billing of one Time & Materials or Cost Plus line: funding on the
  *  company's today, bill rates and billable items. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api, client, companyId } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    CONTRACT_READ_GATE
+  );
 
   const { id, lineId } = params;
   if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const line = await getContractLine(client, lineId, companyId);
+  const line = await api.sales.getContractLine({
+    customerContractLineId: lineId
+  });
   if (
     line.error ||
+    !line.data ||
     line.data.customerContractId !== id ||
     !isProjectBillingMethod(line.data.billingMethod)
   ) {
@@ -56,9 +55,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const asOf = datetime
-    .today(await getCompanyTimeZone(client, companyId))
-    .toString();
   const isCostPlus = line.data.billingMethod === "Cost Plus";
   const [
     funding,
@@ -69,14 +65,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     rateCeilings,
     pools
   ] = await Promise.all([
-    getContractLineFunding(client, { companyId, lineIds: [lineId], asOf }),
-    getContractLaborRates(client, lineId, companyId),
-    getContractBillableItems(client, {
-      companyId,
-      customerContractLineId: lineId
-    }),
-    getContractFundingActions(client, [lineId], companyId),
-    getCompanySettings(client, companyId),
+    // Funding is read on the company's today.
+    api.sales.getContractLineFunding({ lineIds: [lineId] }),
+    api.sales.getContractLaborRates({ customerContractLineId: lineId }),
+    api.projects.getContractBillableItems({ customerContractLineId: lineId }),
+    api.sales.getContractFundingActions({ lineIds: [lineId] }),
+    api.settings.getCompanySettings({}),
     isCostPlus
       ? getContractRateCeilings(client, {
           companyId,
@@ -117,7 +111,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       incurred: Number(position?.incurred ?? 0)
     },
     laborRates: laborRates.data ?? [],
-    items: items.data ?? [],
+    items: items.data?.rows ?? [],
     fundingActions: fundingActions.data ?? [],
     fundedByActions: settings.data?.timekeepingControls === "DCAA",
     rateCeilings: rateCeilings?.data ?? [],
@@ -163,7 +157,7 @@ export default function ContractLineBillingRoute() {
       rateCeilings={rateCeilings}
       ceilingPools={ceilingPools}
       canUpdate={
-        permissions.can("update", "sales") &&
+        permissions.has({ "sales.serviceContracts": "Edit" }) &&
         (contract.status === "Draft" || contract.status === "Active")
       }
     />

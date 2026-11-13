@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
@@ -11,21 +11,17 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteNoQuoteReason,
-  getNoQuoteReason
-} from "~/modules/sales/sales.service";
+import { deleteNoQuoteReason } from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "sales.noQuoteReasons": "View" });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const noQuoteReason = await getNoQuoteReason(client, id);
+  const noQuoteReason = await api.sales.getNoQuoteReason({
+    noQuoteReasonId: id
+  });
   if (noQuoteReason.error) {
     throw redirect(
       `${path.to.customerStatuses}?${getParams(request)}`,
@@ -40,8 +36,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "sales"
+  const { client } = await authorize(request, {
+    "sales.noQuoteReasons": "Full"
   });
 
   const { id } = params;

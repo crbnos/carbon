@@ -17,7 +17,7 @@ import { NOT_APPLIED_TEXT, reasonText } from "@carbon/utils";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
 import { router } from "~/modules/router.server";
-import { contextFor } from "~/modules/service-context.server";
+import { serviceContext } from "~/modules/service-context.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { companyGroupOf, target } from "./shared";
 
@@ -34,9 +34,10 @@ async function caller() {
   const { companyId, userId } = await target(db);
   const companyGroupId = await companyGroupOf(db, companyId);
   const claims = await getUserClaims(userId, companyId);
-  const ctx = contextFor({
-    kind: "user",
+  const ctx = serviceContext({
+    caller: "session",
     userId,
+    role: "employee", // the sweep targets an employee (shared.ts)
     permissions: claims.permissions,
     companyId,
     companyGroupId,

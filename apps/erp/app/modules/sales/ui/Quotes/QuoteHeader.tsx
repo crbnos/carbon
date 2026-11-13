@@ -57,6 +57,7 @@ import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { quoteToSalesOrderPermission } from "~/modules/shared/shared.utils";
 import { path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
 import type {
@@ -125,7 +126,7 @@ const QuoteHeader = () => {
     isDraft ||
     (routeData?.opportunity?.salesOrders.length ?? 0) > 0 ||
     statusFetcher.state !== "idle" ||
-    !permissions.can("update", "sales");
+    !permissions.has({ "sales.quotes": "Edit" });
   const reopen = () => {
     statusFetcher.submit(
       { status: "Draft" },
@@ -165,7 +166,7 @@ const QuoteHeader = () => {
       <DropdownMenuItem
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
-          !permissions.can("delete", "sales") ||
+          !permissions.has({ "sales.quotes": "Full" }) ||
           !permissions.is("employee") ||
           isQuoteLocked(routeData?.quote?.status)
         }
@@ -268,7 +269,7 @@ const QuoteHeader = () => {
                 onClick={finalizeModal.onOpen}
                 isDisabled={
                   routeData?.quote?.status !== "Draft" ||
-                  !permissions.can("update", "sales") ||
+                  !permissions.has({ "sales.quotes": "Edit" }) ||
                   !eligibleLines?.length
                 }
                 variant={isDraft ? "primary" : "secondary"}
@@ -282,7 +283,7 @@ const QuoteHeader = () => {
               <Button
                 isDisabled={
                   routeData?.quote?.status !== "Sent" ||
-                  !permissions.can("update", "sales")
+                  !permissions.has(quoteToSalesOrderPermission)
                 }
                 leftIcon={<LuTrophy />}
                 variant={isWinnable ? "primary" : "secondary"}
@@ -302,7 +303,7 @@ const QuoteHeader = () => {
                   isDisabled={
                     routeData?.quote?.status !== "Sent" ||
                     statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "sales")
+                    !permissions.has({ "sales.quotes": "Edit" })
                   }
                   isLoading={
                     statusFetcher.state !== "idle" &&
@@ -331,7 +332,7 @@ const QuoteHeader = () => {
                   <Button
                     isDisabled={
                       statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "sales")
+                      !permissions.has({ "sales.quotes": "Edit" })
                     }
                     isLoading={
                       statusFetcher.state !== "idle" &&

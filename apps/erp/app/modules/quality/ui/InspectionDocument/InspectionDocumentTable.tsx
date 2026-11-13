@@ -233,7 +233,7 @@ const InspectionDocumentTable = memo(
         renderExpandedRow={renderExpandedRow}
         expandRowsFor={search}
         primaryAction={
-          permissions.can("create", "quality") && (
+          permissions.has({ "quality.inspectionPlans": "Create" }) && (
             <New
               label={t`Inspection Plan`}
               to={`${path.to.newInspectionDocument}?${params?.toString()}`}

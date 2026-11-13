@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getIndirectPool } from "@carbon/ee/indirect-rates.server";
 import { getLogger } from "@carbon/logger";
@@ -19,8 +19,8 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "indirect-pool-delete");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "accounting"
+  const { client, companyId } = await authorize(request, {
+    "accounting.indirectPools": "Full"
   });
 
   const { poolId } = params;
@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { poolId } = params;
   if (!poolId) throw notFound("Pool ID was not found");
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const deleted = await api.projects.deleteIndirectPool({ id: poolId });
 
   // A pool with rates or burden is refused: the message says what to do.

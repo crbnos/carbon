@@ -122,7 +122,7 @@ const QualityDocumentHeader = () => {
     <DropdownMenuItem
       shortcut={MENU_ITEM_SHORTCUTS.delete}
       disabled={
-        !permissions.can("delete", "quality") ||
+        !permissions.has({ "quality.qualityDocuments": "Full" }) ||
         !permissions.is("employee") ||
         (canActivate && hasApprovalRequest && !canDelete)
       }
@@ -165,7 +165,9 @@ const QualityDocumentHeader = () => {
                         variant="primary"
                         isLoading={submitLoading}
                         isDisabled={
-                          !permissions.can("update", "quality") ||
+                          !permissions.has({
+                            "quality.qualityDocuments": "Edit"
+                          }) ||
                           !permissions.is("employee") ||
                           !statusIdle
                         }
@@ -226,7 +228,9 @@ const QualityDocumentHeader = () => {
                           <QualityDocumentStatus status={v.status} />
                         )}
                         onNewVersion={
-                          permissions.can("create", "quality")
+                          permissions.has({
+                            "quality.qualityDocuments": "Create"
+                          })
                             ? newVersionDisclosure.onOpen
                             : undefined
                         }

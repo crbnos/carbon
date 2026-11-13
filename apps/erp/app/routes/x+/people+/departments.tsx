@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   DropdownMenu,
@@ -35,7 +35,6 @@ import { New } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { AppBarAction } from "~/components/New";
 import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
-import { getDepartmentsTree } from "~/modules/people/people.service";
 import {
   DepartmentsListView,
   DepartmentsTreeView
@@ -52,13 +51,13 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateIgnoringTabDisplay;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "people",
-    role: "employee",
-    bypassRls: true
-  });
+  const { api } = await authorize(
+    request,
+    { "people.departments": "View" },
+    { bypassRls: true }
+  );
 
-  const departments = await getDepartmentsTree(client, companyId);
+  const departments = await api.people.getDepartmentsTree({});
 
   if (departments.error) {
     throw redirect(

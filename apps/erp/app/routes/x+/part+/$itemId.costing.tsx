@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
@@ -11,27 +11,21 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { itemCostValidator } from "~/modules/items/items.models";
-import {
-  getItemCost,
-  getItemCostHistory,
-  upsertItemCost
-} from "~/modules/items/items.service";
+import { upsertItemCost } from "~/modules/items/items.service";
 import { ItemCostingForm } from "~/modules/items/ui/Item";
 import { ItemCostHistoryChart } from "~/modules/items/ui/Item/ItemCostHistoryChart";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.parts": "View" });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
   const [itemCost, itemCostHistory] = await Promise.all([
-    getItemCost(client, itemId, companyId),
-    getItemCostHistory(client, itemId, companyId)
+    api.items.getItemCost({ itemId }),
+    api.items.getItemCostHistory({ itemId })
   ]);
 
   if (itemCost.error) {
@@ -49,8 +43,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, userId } = await authorize(request, {
+    "parts.parts": "Edit"
   });
 
   const { itemId } = params;

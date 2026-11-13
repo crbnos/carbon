@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { isUnsafeStoragePath } from "@carbon/files";
 import { validator } from "@carbon/form";
@@ -16,7 +16,7 @@ import { suggestionValidator } from "~/services/models";
 const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId } = await authorize(request, {});
 
   const formData = await request.formData();
   const validation = await validator(suggestionValidator).validate(formData);

@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -55,8 +54,7 @@ export const meta: MetaFunction = () => [{ title: "Carbon | Project Reports" }];
 
 export const handle: Handle = {
   breadcrumb: msg`Reports`,
-  to: path.to.projectReports,
-  module: "projects"
+  to: path.to.projectReports
 };
 
 const logger = getLogger("erp", "projects-reports");
@@ -66,9 +64,8 @@ const logger = getLogger("erp", "projects-reports");
 const PIN_PREFIX = "projects:";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "projects",
-    role: "employee"
+  const { client, companyId, userId } = await authorize(request, {
+    "projects.reports": "View"
   });
 
   const pins = await getReportPins(client, userId, companyId);
@@ -92,7 +89,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   // The role gate the loader has; the pin itself is the operation's.
-  await requirePermissions(request, { view: "projects", role: "employee" });
+  const { api } = await authorize(request, { "projects.reports": "View" });
 
   const validation = await validator(reportPinValidator).validate(
     await request.formData()
@@ -102,7 +99,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { reportKey, pinned } = validation.data;
-  const api = await carbon(request);
   const result = await api.projects.upsertProjectReportPin({
     reportKey,
     pinned: pinned === "true"
@@ -198,9 +194,7 @@ export default function ProjectReportsRoute() {
       reports.filter(
         (report) =>
           (isGovernmentContracting || !dcaaProjectReports.has(report.key)) &&
-          projectReportPermissions[report.key].view.every((module) =>
-            permissions.can("view", module)
-          )
+          permissions.has(projectReportPermissions[report.key])
       ),
     [reports, permissions, isGovernmentContracting]
   );

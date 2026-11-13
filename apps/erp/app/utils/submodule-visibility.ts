@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { moduleOf, pageOfUrl } from "@carbon/database/access";
+
 type SubmoduleRoute = { to: string; q?: string };
 type SubmoduleGroup = { routes: SubmoduleRoute[] };
 
@@ -66,16 +68,22 @@ export function arrangedGroups<G extends SubmoduleGroup>(
   return visibleGroups(orderedGroups(groups, layout.order), layout.hidden);
 }
 
-/** The module a link belongs to: its first segment after `/x`. */
+/** The first URL segment after `/x`. */
 export function getModule(link: string) {
   return link.split("/")?.[2];
 }
 
+const inModule = (route: SubmoduleRoute, module: string) => {
+  const page = pageOfUrl(route.to);
+  return page !== undefined && moduleOf(page) === module;
+};
+
 /**
- * Where a module opens: `opensOn`, or, if that one is hidden, the first sub-module
- * left inside the module. A page outside it (My Time) has no module sidebar.
+ * Where `module` opens: `opensOn`, or, if that one is hidden, the first sub-module
+ * left whose page is in the module. A page outside it (My Time) has no module sidebar.
  */
 export function moduleLanding(
+  module: string,
   to: string,
   opensOn: string,
   groups: SubmoduleGroup[],
@@ -84,6 +92,6 @@ export function moduleLanding(
   if (!layout.hidden.has(opensOn)) return to;
   const first = arrangedGroups(groups, layout)
     .flatMap((group) => group.routes)
-    .find((route) => getModule(route.to) === getModule(to));
+    .find((route) => inModule(route, module));
   return first ? submoduleKey(first) : to;
 }

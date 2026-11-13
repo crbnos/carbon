@@ -4,7 +4,7 @@
 
 import { openai } from "@ai-sdk/openai";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { generateText, Output } from "ai";
 import type { ActionFunctionArgs } from "react-router";
@@ -20,7 +20,7 @@ const inputSchema = z.object({
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  await requirePermissions(request, {});
+  await authorize(request);
 
   const { table } = params;
   if (!table) {

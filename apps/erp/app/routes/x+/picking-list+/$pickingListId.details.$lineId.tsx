@@ -3,26 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { NonNettableBadge } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
-import { getPickingListLine } from "~/modules/inventory/inventory.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "inventory"
+  const { api } = await authorize(request, {
+    "inventory.pickingLists": "View"
   });
 
   const { pickingListId, lineId } = params;
   if (!pickingListId) throw new Error("pickingListId not found");
   if (!lineId) throw new Error("lineId not found");
 
-  const pickingListLine = await getPickingListLine(client, lineId);
+  const pickingListLine = await api.inventory.getPickingListLine({ lineId });
 
   if (pickingListLine.error) {
     throw redirect(

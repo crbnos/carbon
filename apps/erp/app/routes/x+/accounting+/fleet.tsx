@@ -61,7 +61,7 @@ export default function FleetRoute() {
         count={count}
         infinite={infinite}
         primaryAction={
-          permissions.can("create", "production") && (
+          permissions.has({ "production.jobs": "Create" }) && (
             <Button
               leftIcon={<LuHammer />}
               variant="primary"

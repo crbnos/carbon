@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getCutoverFixedAssets,
@@ -17,7 +17,10 @@ import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
-import { cutoverAccumulatedDepreciationValidator } from "~/modules/accounting/accounting.models";
+import {
+  accountingActivationGate,
+  cutoverAccumulatedDepreciationValidator
+} from "~/modules/accounting/accounting.models";
 import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,
@@ -35,9 +38,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    accountingActivationGate("View")
+  );
   const { cutoverDate } = await getActivationCutover(
     client,
     companyId,
@@ -53,9 +57,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 /** `save-asset`: one asset's accumulated depreciation at the cutover. */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    accountingActivationGate("Edit")
+  );
 
   const formData = await request.formData();
   const intent = formData.get("intent");

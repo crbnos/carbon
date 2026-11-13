@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   fileResponseHeaders,
@@ -41,10 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("This export could not be found.", { status: 404 });
   }
 
-  const { companyId, userId } = await requirePermissions(request, {
-    ...definition.permission,
-    role: "employee"
-  });
+  const { companyId, userId } = await authorize(request, definition.gate);
 
   const key = tableExportStorageKey(companyId, userId, exportId);
   const file = await getCarbonServiceRole()

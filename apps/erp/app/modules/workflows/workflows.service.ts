@@ -6,6 +6,7 @@ import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import { fetchAllByIds } from "@carbon/database";
+import type { Gate } from "@carbon/database/access";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
@@ -579,6 +580,9 @@ export async function checkWorkflowVersionLock(
     : { ok: true };
 }
 
+export const OWNER_ONLY_PUBLISH_MESSAGE =
+  "Only the owner of this workflow can publish it";
+
 export type WorkflowSyncResult =
   | { ok: false; issues: WorkflowIssue[]; message?: string }
   | { ok: true; issues: never[]; scheduled: boolean };
@@ -598,7 +602,7 @@ const lockCompany: CompanyLock = (trx, companyId) =>
  * than waiting for the hourly backstop.
  *
  * DANGER: `syncWorkflowTriggers` uses Kysely and bypasses RLS entirely, so the
- * calling route's `requirePermissions` is the only authorization gate on it.
+ * calling route's `authorize` is the only authorization gate on it.
  */
 async function syncAndWake(
   db: Kysely<KyselyDatabase>,
@@ -643,6 +647,21 @@ export async function publishWorkflowVersion(
   // strippable `requireFeature` UX gate). Throws `EntitlementError` on a
   // non-entitled company.
   await requireWorkflowsEntitlement(client, companyId);
+
+  // A published workflow runs as its owner, so only the owner may publish it, as only the
+  // owner may test it ($id.test-run.tsx). The database refuses any API change of ownerId.
+  const workflow = await client
+    .from("workflow")
+    .select("ownerId")
+    .eq("id", workflowId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (workflow.error || !workflow.data) {
+    return { ok: false, issues: [], message: "Workflow not found" };
+  }
+  if (workflow.data.ownerId !== userId) {
+    return { ok: false, issues: [], message: OWNER_ONLY_PUBLISH_MESSAGE };
+  }
 
   const version = await getWorkflowVersion(client, versionId, companyId);
   if (
@@ -797,9 +816,9 @@ export type OptionsProviderResult = {
 
 export type OptionsProvider = {
   /** Checked before the provider runs, so a provider can never be a way around a
-   * permission the equivalent action carries. Module per action, e.g.
-   * `{ update: "workflows" }`. */
-  permission: Partial<Record<"view" | "create" | "update" | "delete", string>>;
+   * permission the equivalent action carries. A page gate, e.g.
+   * `{ "workflows.workflows": "Edit" }`. */
+  permission: Gate;
   resolve: (context: OptionsProviderContext) => Promise<OptionsProviderResult>;
 };
 
@@ -807,18 +826,18 @@ export type OptionsProvider = {
  * The company's connections for one piece. Non-secret fields only.
  *
  * Read through the SERVICE role, then scoped to `companyId` here. The row's RLS
- * SELECT policy demands `settings_view`, but this provider is gated on
- * `workflows_view` — a workflow author who cannot administer Settings would
+ * SELECT policy demands Settings → Integrations, but this provider is gated on
+ * Workflows at View — a workflow author who cannot administer Settings would
  * otherwise get an empty list and be told the app "isn't connected yet", with
  * nothing anywhere reporting that the rows had been filtered away. The company
- * scope is not weakened: `requirePermissions` resolved `companyId` for this
+ * scope is not weakened: `authorize` resolved `companyId` for this
  * request, and only non-secret columns leave here.
  *
  * Only USABLE accounts are offered. A revoked account in a dropdown is a trap —
  * picking it builds a workflow that cannot run.
  */
 const connectionProvider: OptionsProvider = {
-  permission: { view: "workflows" },
+  permission: { "workflows.workflows": "View" },
   resolve: async ({ companyId, params }) => {
     const piece = params.piece;
     if (!piece) return { options: [] };
@@ -853,21 +872,21 @@ const connectionProvider: OptionsProvider = {
 
 /**
  * One piece property's own `options()`, run against a chosen connection — "pick a
- * calendar". Gated on `workflows_update`, the same permission the action carries,
+ * calendar". Gated on Workflows at Edit, the same permission the action carries,
  * so it cannot reach a vendor a user could not otherwise call.
  */
 const propertyProvider: OptionsProvider = {
-  permission: { update: "workflows" },
+  permission: { "workflows.workflows": "Edit" },
   resolve: async ({ companyId, params, values }) => {
     const { piece, action: actionName, prop } = params;
     const connectionId = values[INTEGRATION_CONNECTION_INPUT];
     if (!piece || !actionName || !prop || !connectionId) return { options: [] };
 
     // Read through the SERVICE role for the same reason `connectionProvider` does:
-    // the row's RLS demands `settings_view`, this provider is gated on
-    // `workflows_update`, and a workflow author without Settings access would
+    // the row's RLS demands Settings → Integrations, this provider is gated on
+    // Workflows at Edit, and a workflow author without Settings access would
     // otherwise see every dependent list come back empty. `companyId` came from
-    // `requirePermissions`, and scopes every read the resolver makes.
+    // `authorize`, and scopes every read the resolver makes.
     const auth = await resolvePieceAuth(
       getCarbonServiceRole(),
       companyId,

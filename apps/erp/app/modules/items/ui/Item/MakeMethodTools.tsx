@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { Number, SelectControlled, Submit, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -129,7 +130,8 @@ const MakeMethodTools = ({
   const changeNoticeModal = useDisclosure();
   const activeMethodModal = useDisclosure();
   const canCreateChangeNotice =
-    (type === "Part" || type === "Tool") && permissions.can("create", "parts");
+    (type === "Part" || type === "Tool") &&
+    permissions.has({ "parts.changeNotices": "Create" });
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
 
   // Version creation is locked while an open change notice owns this item
@@ -314,7 +316,7 @@ const MakeMethodTools = ({
                         destructive
                         disabled={
                           makeMethod.status === "Active" ||
-                          !permissions.can("delete", "parts")
+                          !permissions.has({ [ITEM_TYPE_PAGES[type]]: "Full" })
                         }
                       >
                         <DropdownMenuIcon icon={<LuTrash />} />
@@ -333,7 +335,10 @@ const MakeMethodTools = ({
                           <DropdownMenuItem
                             disabled={
                               makeMethod.status === "Active" ||
-                              isChangeNoticeLocked
+                              isChangeNoticeLocked ||
+                              !permissions.has({
+                                [ITEM_TYPE_PAGES[type]]: "Edit"
+                              })
                             }
                             onClick={() => {
                               flushSync(() => {
@@ -352,7 +357,7 @@ const MakeMethodTools = ({
                 );
               })}
             <DropdownMenuSeparator />
-            {permissions.can("create", "production") && (
+            {permissions.has({ [ITEM_TYPE_PAGES[type]]: "Create" }) && (
               <ItemChangeNoticeLock
                 changeNotices={openChangeNotices}
                 isLocked={isChangeNoticeLocked}
@@ -391,7 +396,7 @@ const MakeMethodTools = ({
                 className="rounded-md"
                 isLoading={isGetMethodLoading}
                 isDisabled={
-                  !permissions.can("update", "parts") ||
+                  !permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" }) ||
                   isGetMethodLoading ||
                   activeMethod.status !== "Draft" // Can only overwrite Draft versions
                 }
@@ -409,7 +414,8 @@ const MakeMethodTools = ({
               <MenubarItem
                 className="rounded-md"
                 isDisabled={
-                  !permissions.can("update", "parts") || isSaveMethodLoading
+                  !permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" }) ||
+                  isSaveMethodLoading
                 }
                 isLoading={isSaveMethodLoading}
                 leftIcon={<LuGitMerge />}
@@ -450,7 +456,8 @@ const MakeMethodTools = ({
           draftVersion={activeMethod.version}
           activeVersion={liveMethod.version}
           isDisabled={
-            !permissions.can("update", "parts") || isChangeNoticeLocked
+            !permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" }) ||
+            isChangeNoticeLocked
           }
           lock={{
             changeNotices: openChangeNotices,

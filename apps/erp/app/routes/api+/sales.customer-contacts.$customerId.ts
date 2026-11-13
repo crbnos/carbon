@@ -3,17 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getCustomerContacts } from "~/modules/sales/sales.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await requirePermissions(request, {
-    view: "sales"
-  });
+  const authorized = await authorize(request, { "sales.customers": "View" });
 
   const { customerId } = params;
 
@@ -22,7 +19,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       data: []
     };
 
-  const contacts = await getCustomerContacts(authorized.client, customerId);
+  const contacts = await authorized.api.sales.getCustomerContacts({
+    customerId
+  });
   if (contacts.error) {
     return data(
       contacts,

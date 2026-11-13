@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import {
@@ -57,7 +56,6 @@ import {
   ReportRangeSelect,
   useReportFormat
 } from "~/modules/projects/ui/Reports/ProjectReport";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -74,12 +72,12 @@ const FILTER_KEYS = [
 type FilterKey = (typeof FILTER_KEYS)[number];
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    ...projectReportPermissions["missing-time"],
-    role: "employee"
-  });
+  const { api, companyId } = await authorize(
+    request,
+    projectReportPermissions["missing-time"]
+  );
   // A DCAA report: only with DCAA timekeeping on.
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await api.settings.getCompanySettings({});
   if (settings.data?.timekeepingControls !== "DCAA") {
     throw redirect(
       path.to.projectReports,
@@ -159,7 +157,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
-  const api = await carbon(request);
+  const { api } = await authorize(request);
 
   if (validation.data.intent === "remind") {
     const { employeeIds, startDate, endDate } = validation.data;
@@ -221,7 +219,7 @@ export default function MissingTimeReportRoute() {
   const permissions = usePermissions();
   const [, setParams] = useUrlParams();
   const fetcher = useFetcher<typeof action>();
-  const canChangePeople = permissions.can("update", "people");
+  const canChangePeople = permissions.has({ "people.employees": "Edit" });
 
   const columns = useMemo<ColumnDef<Row>[]>(() => {
     const filterOptions = (key: FilterKey) =>

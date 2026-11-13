@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -11,7 +11,6 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getProjectStockTransfers } from "~/modules/projects/projects.service";
 import ProjectStockTransfersTable from "~/modules/projects/ui/Transfers/ProjectStockTransfersTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -21,13 +20,12 @@ const logger = getLogger("erp", "project-stock-transfers");
 
 export const handle: Handle = {
   breadcrumb: msg`Transfers`,
-  to: path.to.projectStockTransfers,
-  module: "projects"
+  to: path.to.projectStockTransfers
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const searchParams = new URL(request.url).searchParams;
@@ -35,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const transfers = await getProjectStockTransfers(client, companyId, {
+  const transfers = await api.projects.getProjectStockTransfers({
     search,
     limit,
     offset,
@@ -58,8 +56,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    transfers: transfers.data ?? [],
-    count: transfers.count ?? 0
+    transfers: transfers.data?.rows ?? [],
+    count: transfers.data?.count ?? 0
   };
 }
 

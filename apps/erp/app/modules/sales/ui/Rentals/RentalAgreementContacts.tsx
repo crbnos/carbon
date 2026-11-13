@@ -52,7 +52,7 @@ const RentalAgreementContacts = ({
   const isReadOnly =
     !(
       rentalAgreement.status === "Draft" || rentalAgreement.status === "Active"
-    ) || !permissions.can("update", "sales");
+    ) || !permissions.has({ "sales.rentalAgreements": "Edit" });
 
   const save = (next: RentalContactsValue) => {
     const formData = new FormData();

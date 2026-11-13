@@ -244,7 +244,9 @@ const StockTransfersTable = memo(
                   ? MENU_ITEM_SHORTCUTS.view
                   : MENU_ITEM_SHORTCUTS.edit
               }
-              disabled={!permissions.can("update", "inventory")}
+              disabled={
+                !permissions.has({ "inventory.stockTransfers": "Edit" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.shipmentDetails(row.id!)}?${params.toString()}`
@@ -259,7 +261,7 @@ const StockTransfersTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
-                !permissions.can("delete", "inventory") ||
+                !permissions.has({ "inventory.stockTransfers": "Full" }) ||
                 !!row.completedAt ||
                 ["Completed", "In Progress"].includes(row.status)
               }
@@ -306,7 +308,7 @@ const StockTransfersTable = memo(
                   window.location.href = getLocationPath(selected);
                 }}
               />
-              {permissions.can("create", "inventory") && (
+              {permissions.has({ "inventory.stockTransfers": "Create" }) && (
                 <New
                   label={t`Stock Transfer`}
                   to={`${path.to.newStockTransfer}?location=${locationId}`}

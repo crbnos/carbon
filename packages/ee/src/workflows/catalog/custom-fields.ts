@@ -5,6 +5,7 @@
 import type { CatalogEvent, CatalogInput } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 import { REGISTRY_ENTRIES } from "./entities";
+import { WORKFLOW_EVENTS } from "./events.generated";
 
 /**
  * The property path is ONE segment — the literal string `customFields.<fieldId>` — not a
@@ -183,7 +184,8 @@ export function resolveCustomFieldEvent(id: string): CatalogEvent | undefined {
       before: t.entity(entity),
       after: t.entity(entity)
     },
-    permission: entry.permission,
+    // The page of the entity's own events: a field changes on the same record.
+    permission: WORKFLOW_EVENTS[`${entity}.created`]?.permission,
     match: {
       table: entry.table,
       operation: "UPDATE",

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ExpandedPermission } from "@carbon/database/access";
 import type { FailureReason } from "@carbon/utils";
 import type { getCompanies } from "./services/users";
 
@@ -48,19 +49,9 @@ export type Company = NonNullable<
   Awaited<ReturnType<typeof getCompanies>>["data"]
 >[number];
 
-export type CompanyPermission = {
-  view: boolean;
-  create: boolean;
-  update: boolean;
-  delete: boolean;
-};
+export type Permission = ExpandedPermission;
 
-export type Permission = {
-  view: string[];
-  create: string[];
-  update: string[];
-  delete: string[];
-};
+export type { CompanyRole } from "@carbon/database/access";
 
 export type Result = {
   success: boolean;

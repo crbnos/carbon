@@ -2,18 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { generateQRCodeSVG } from "@carbon/documents/qr";
 import { getRequestOrigin } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getKanban } from "~/modules/inventory/inventory.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
-  });
+  const { api } = await authorize(request, { "inventory.kanbans": "View" });
 
   const { id, action } = params;
   if (!id) throw new Error("Could not find kanban id");
@@ -22,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Invalid kanban action");
   }
 
-  const kanban = await getKanban(client, id, companyId);
+  const kanban = await api.inventory.getKanban({ kanbanId: id });
 
   if (kanban.error) {
     return data({ error: "Unauthorized" }, { status: 401 });

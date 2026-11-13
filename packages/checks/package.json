@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
     "@carbon/ee": "workspace:*",
     "@carbon/env": "workspace:*",
     "@types/node": "^22",

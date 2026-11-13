@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { runLocationSchedule } from "@carbon/planning";
 import type { ActionFunctionArgs } from "react-router";
@@ -16,8 +16,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const url = new URL(request.url);
   const locationId = url.searchParams.get("location");
 
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "production"
+  const { companyId, userId } = await authorize(request, {
+    "production.priorities": "Edit"
   });
 
   if (!locationId) {
@@ -33,7 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Regenerate the whole location's forecast IN-PROCESS (Node). Awaited before
   // we return, so the fetcher's revalidation reads fully-committed
   // reservations. Service-role client for the privileged execution; the route's
-  // requirePermissions is the gate.
+  // authorize is the gate.
   try {
     const result = await runLocationSchedule({
       db: getDatabaseClient(),

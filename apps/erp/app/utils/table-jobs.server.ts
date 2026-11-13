@@ -2,14 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { readGate } from "@carbon/api/permissions";
 import type { CarbonError } from "@carbon/api/service-fn.server";
-import { getClaims, makePermissionsFromClaims } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { readClaimsFresh } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
   getUserScopedClient
 } from "@carbon/auth/client.server";
-import type { Json } from "@carbon/database";
+import type { Gate } from "@carbon/database/access";
+import { SUBJECT_RULES } from "@carbon/ee/permission-grants";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { trigger } from "@carbon/jobs";
 import {
@@ -35,7 +37,12 @@ import {
 } from "~/modules/production/production.server";
 import { deletePurchaseOrders } from "~/modules/purchasing/purchasing.server";
 import { systemContext } from "~/modules/service-context.server";
-import { userPermissionsValidator } from "~/modules/users/users.models";
+import { permissionsValidator } from "~/modules/users/users.models";
+import {
+  bulkUpdatePermissions,
+  deactivateUsers,
+  resendInvites
+} from "~/modules/users/users.server";
 import {
   queueInviteResends,
   queuePermissionUpdates,
@@ -49,11 +56,27 @@ import {
   getListDefinition
 } from "./list-registry/index.server";
 import {
+  consumablesList,
+  materialsList,
+  partsList,
+  servicesList,
+  toolsList
+} from "./list-registry/items.server";
+import {
+  jobsList,
+  operationBatchesList
+} from "./list-registry/production.server";
+import { purchaseOrdersList } from "./list-registry/purchasing.server";
+import { employeeAccountsList } from "./list-registry/users.server";
+import {
   ALL_MATCHING_RELEASE_LIMIT,
   type BulkActionMeta,
   type BulkActionStart,
+  bulkActionGate,
   bulkStartFormResponse,
-  hasListPermission,
+  holdsListGate,
+  itemListType,
+  itemsBulkUpdateGate,
   parseAllMatching,
   refreshingClientFactory,
   rowLimitRefusal,
@@ -69,7 +92,7 @@ const logger = getLogger("erp", "table-jobs");
 /**
  * Every table job reads as the requesting user (`getUserScopedClient`), so RLS
  * applies as it does to a loader that keeps the RLS client. A loader that
- * bypasses RLS checks the same permission first (`hasListPermission`), so the
+ * bypasses RLS checks the same gate first (`holdsListGate`), so the
  * user client returns the same rows unless a policy is stricter than the
  * permission. A service-role read would rely on every list query to filter by
  * `companyId` itself, and the queries of the RLS-client lists were never
@@ -83,30 +106,31 @@ async function canReadList(
   if (!definition) return false;
 
   const claims = await readClaims(context);
-  if (!claims) return false;
-  return hasListPermission(claims, definition.permission, context.companyId);
+  return holdsListGate(claims, definition.gate, context.companyId);
 }
 
 /** The user's claims for the company, read fresh as the user (not through
  *  the permission cache, which can hold a revoked permission for an hour).
- *  Null when the user has none. Throws when the read fails, so a job step
- *  retries or fails instead of telling the user they lost access. */
+ *  Throws when the read fails, so a job step retries or fails instead of
+ *  telling the user they lost access. */
 async function readClaims({
   companyId,
   userId
-}: TableJobContext): Promise<TableJobClaims | null> {
-  const client = await getUserScopedClient(userId);
-  const claims = await getClaims(client, userId, companyId);
-  if (claims.error) {
+}: TableJobContext): Promise<TableJobClaims> {
+  try {
+    return await readClaimsFresh(
+      await getUserScopedClient(userId),
+      userId,
+      companyId
+    );
+  } catch (error) {
     logger.error("Failed to read the claims of a table job's user", {
       companyId,
       userId,
-      error: claims.error
+      error
     });
-    throw new Error("Failed to read the claims of a table job's user");
+    throw error;
   }
-  if (claims.data === null) return null;
-  return makePermissionsFromClaims(claims.data as Json[]) ?? null;
 }
 
 async function fetchPage(
@@ -160,7 +184,17 @@ type BulkActionRunContext = TableJobContext & {
   /** The user's client, signed again when its token is four minutes old:
    *  RLS applies as it does to the action route. */
   getClient: ReturnType<typeof userClientFactory>;
+  /** The list the run acts on (`LIST_KEY_PARAM`), null when the event has
+   *  none (a run started before the key rode along). */
+  listKey: string | null;
 };
+
+/**
+ * The params key the start path writes the run's list key under, so `run`
+ * knows it: the job hands `runBulkAction` the action, not the list. Set by
+ * `startBulkRun` only, over any value the route sent.
+ */
+const LIST_KEY_PARAM = "listKey";
 
 /**
  * A bulk action with a background path (spec "Which bulk actions get the
@@ -245,28 +279,79 @@ function userClientFactory(userId: string) {
 }
 
 /**
+ * What a bulk action asks before it starts: the gate of the service function
+ * it runs, read as that function reads it (`readGate`). The job runs the
+ * function as the system, which skips its check, so this is the check on that
+ * path. A function whose gate needs its input has no such gate.
+ */
+function gateOf(fn: { permission: unknown }): Gate {
+  const rule = readGate(fn.permission);
+  if (
+    typeof rule !== "object" ||
+    rule === null ||
+    "row" in rule ||
+    "by" in rule ||
+    "anyOf" in rule
+  ) {
+    throw new Error("A bulk action's service function has no gate of its own");
+  }
+  return rule as Gate;
+}
+
+const ITEM_LISTS = [
+  partsList,
+  materialsList,
+  toolsList,
+  consumablesList,
+  servicesList
+];
+
+/**
  * Each bulk action runs the same service functions as its action route, so
  * the per-row checks are the same on both paths.
  */
 const BULK_ACTIONS = {
   "items.update": defineBulkAction({
     label: "Update items",
-    lists: ["parts", "materials", "tools", "consumables", "services"],
-    permission: { update: "parts" },
+    lists: ITEM_LISTS.map((list) => list.key),
+    gate: itemsBulkUpdateGate,
     params: itemBulkUpdateValidator,
     run: async (ids, change, context) => {
+      const list = context.listKey
+        ? getListDefinition(context.listKey)
+        : undefined;
+      const type = list ? itemListType(list) : null;
+      if (!type)
+        throw new Error("The items list of the bulk action is unknown");
+      // Only the list's own type: the per-row rule the system context skips.
+      const client = await context.getClient();
+      const items = await client
+        .from("item")
+        .select("id")
+        .in("id", ids)
+        .eq("companyId", context.companyId)
+        .eq("type", type);
+      if (items.error) throw new Error("Failed to read the items");
+      const ofType = items.data.map((item) => item.id);
+      if (ofType.length === 0) {
+        return { done: 0, skipped: ids.length, failed: 0 };
+      }
       const result = await updateItems(await jobServiceContext(context), {
-        ids,
+        ids: ofType,
         change
       });
       if (result.error) throw new Error(result.error.message);
-      return { ...result.data, failed: 0 };
+      return {
+        done: result.data.done,
+        skipped: result.data.skipped + (ids.length - ofType.length),
+        failed: 0
+      };
     }
   }),
   "jobs.release": defineBulkAction({
     label: "Release jobs",
-    lists: ["jobs"],
-    permission: { update: "production" },
+    lists: [jobsList.key],
+    gate: gateOf(releaseJobs),
     maxRows: ALL_MATCHING_RELEASE_LIMIT,
     // Each job runs the requirements recalculation and MRP.
     idsPerStep: 25,
@@ -296,8 +381,8 @@ const BULK_ACTIONS = {
   }),
   "jobs.delete": defineBulkAction({
     label: "Delete jobs",
-    lists: ["jobs"],
-    permission: { update: "production", delete: "production" },
+    lists: [jobsList.key],
+    gate: gateOf(deleteJobs),
     params: noParams,
     run: async (ids, _params, context) =>
       deleteCounts(
@@ -308,8 +393,8 @@ const BULK_ACTIONS = {
   }),
   "purchase-orders.delete": defineBulkAction({
     label: "Delete purchase orders",
-    lists: ["purchase-orders"],
-    permission: { update: "purchasing", delete: "purchasing" },
+    lists: [purchaseOrdersList.key],
+    gate: gateOf(deletePurchaseOrders),
     params: noParams,
     run: async (ids, _params, context) =>
       deleteCounts(
@@ -322,8 +407,8 @@ const BULK_ACTIONS = {
   }),
   "batches.release": defineBulkAction({
     label: "Release batches",
-    lists: ["operation-batches"],
-    permission: { update: "production" },
+    lists: [operationBatchesList.key],
+    gate: gateOf(releaseBatches),
     maxRows: ALL_MATCHING_RELEASE_LIMIT,
     // Each batch releases its member jobs, each with its own MRP run.
     idsPerStep: 10,
@@ -348,8 +433,8 @@ const BULK_ACTIONS = {
   }),
   "batches.dissolve": defineBulkAction({
     label: "Dissolve batches",
-    lists: ["operation-batches"],
-    permission: { update: "production" },
+    lists: [operationBatchesList.key],
+    gate: gateOf(dissolveBatches),
     idsPerStep: 100,
     params: noParams,
     run: async (ids, _params, context) => {
@@ -368,8 +453,8 @@ const BULK_ACTIONS = {
   }),
   "users.deactivate": defineBulkAction({
     label: "Deactivate users",
-    lists: ["employee-accounts"],
-    permission: { delete: "users" },
+    lists: [employeeAccountsList.key],
+    gate: gateOf(deactivateUsers),
     params: z.object({ ip: z.string().optional() }),
     run: async (ids, { ip }, { companyId, userId }) => {
       const { allowed, skipped } = await selectUsersForBulkAction({
@@ -392,8 +477,8 @@ const BULK_ACTIONS = {
   }),
   "users.invite": defineBulkAction({
     label: "Send invites",
-    lists: ["employee-accounts"],
-    permission: { create: "users" },
+    lists: [employeeAccountsList.key],
+    gate: gateOf(resendInvites),
     params: z.object({ location: z.string(), ip: z.string() }),
     run: async (ids, { location, ip }, { companyId, userId }) => {
       const { allowed, skipped } = await selectUsersForBulkAction({
@@ -415,17 +500,16 @@ const BULK_ACTIONS = {
   }),
   "users.permissions": defineBulkAction({
     label: "Edit permissions",
-    lists: ["employee-accounts"],
-    permission: { update: "users" },
-    // The route requires it with `requireFeature`; the job checks it again,
-    // in case the plan changed while the run waited.
-    feature: "PERMISSIONS",
+    lists: [employeeAccountsList.key],
+    gate: gateOf(bulkUpdatePermissions),
+    // Checked before the run (`canRunBulkAction`); each write checks it again.
+    feature: SUBJECT_RULES.person.feature,
     params: z.object({
-      permissions: z.record(z.string(), userPermissionsValidator),
+      grants: permissionsValidator.shape.grants,
       addOnly: z.boolean(),
       ip: z.string().optional()
     }),
-    run: async (ids, { permissions, addOnly, ip }, { companyId, userId }) => {
+    run: async (ids, { grants, addOnly, ip }, { companyId, userId }) => {
       const { allowed, skipped } = await selectUsersForBulkAction({
         action: "permissions",
         userIds: ids,
@@ -437,7 +521,7 @@ const BULK_ACTIONS = {
           userIds: allowed,
           companyId,
           actorId: userId,
-          permissions,
+          grants,
           addOnly,
           ip
         });
@@ -484,9 +568,6 @@ async function jobServiceContext({ companyId, userId }: TableJobContext) {
   });
 }
 
-/** Whether the user may still run the action on the list: an employee with
- *  the list's view permission and the action's own permission, in a company
- *  whose plan has the action's feature. */
 async function canRunBulkAction(
   listKey: string,
   action: TableBulkAction,
@@ -494,14 +575,14 @@ async function canRunBulkAction(
 ): Promise<boolean> {
   const bulkAction = getBulkAction(action.key);
   const list = getListDefinition(listKey);
-  if (!bulkAction || !list || !bulkAction.lists.includes(listKey)) {
+  const gate = bulkAction && list ? bulkActionGate(bulkAction, list) : null;
+  if (!bulkAction || !list || !gate) {
     return false;
   }
   const claims = await readClaims(context);
-  if (!claims) return false;
   if (
-    !hasListPermission(claims, list.permission, context.companyId) ||
-    !hasListPermission(claims, bulkAction.permission, context.companyId)
+    !holdsListGate(claims, list.gate, context.companyId) ||
+    !holdsListGate(claims, gate, context.companyId)
   ) {
     return false;
   }
@@ -526,12 +607,17 @@ async function runBulkAction(
       `The params of the bulk action "${action.key}" are not valid`
     );
   }
+  const listKey = action.params[LIST_KEY_PARAM];
   return bulkAction.run(
     ids,
     params.data,
     {
       ...context,
-      getClient: userClientFactory(context.userId)
+      getClient: userClientFactory(context.userId),
+      listKey:
+        typeof listKey === "string" && bulkAction.lists.includes(listKey)
+          ? listKey
+          : null
     },
     carry
   );
@@ -672,20 +758,21 @@ export async function startBackgroundBulkAction<K extends TableBulkActionKey>(
     action.idsPerStep !== undefined && ids.length > action.idsPerStep;
   if (!allMatching && !tooManyIds) return null;
 
-  const { companyId, userId } = await requirePermissions(
-    request,
-    action.permission
-  );
+  // Selected rows come from the action's one list; the job reads no list
+  // pages for them.
+  const run = allMatching ?? { listKey: action.lists[0]!, search: "", ids };
+  const list = getListDefinition(run.listKey);
+  const gate = list ? bulkActionGate(action, list) : null;
+  if (!gate) {
+    return bulkStartFormResponse({
+      success: false,
+      message: "This action cannot run on this list",
+      refusal: { code: "not-supported" }
+    });
+  }
+  const { companyId, userId } = await authorize(request, gate);
   return bulkStartFormResponse(
-    await startBulkRun({
-      companyId,
-      userId,
-      actionKey,
-      params,
-      // Selected rows come from the action's one list; the job reads no
-      // list pages for them.
-      ...(allMatching ?? { listKey: action.lists[0]!, search: "", ids })
-    })
+    await startBulkRun({ companyId, userId, actionKey, params, ...run })
   );
 }
 
@@ -792,7 +879,10 @@ async function startBulkRun({
         bulkActionId,
         actionKey,
         actionLabel: bulkAction.label,
-        params: parsedParams.data as TableBulkAction["params"],
+        params: {
+          ...(parsedParams.data as TableBulkAction["params"]),
+          [LIST_KEY_PARAM]: listKey
+        },
         listKey,
         search,
         ...(bulkAction.maxRows !== undefined

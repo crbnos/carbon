@@ -294,7 +294,7 @@ const PeopleTable = memo(
     ]);
 
     const renderContextMenu = useMemo(() => {
-      return permissions.can("update", "people")
+      return permissions.has({ "people.employees": "Edit" })
         ? (row: (typeof data)[number]) => {
             return (
               <MenuItem
@@ -324,7 +324,7 @@ const PeopleTable = memo(
             left: ["Select", "User"]
           }}
           primaryAction={
-            permissions.can("create", "users") && (
+            permissions.has({ "users.accounts": "Create" }) && (
               <New
                 label={t`Employee`}
                 to={`${path.to.newEmployee}?${params.toString()}`}

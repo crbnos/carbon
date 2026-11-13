@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,15 +12,8 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
-import {
-  getActiveDimensionsWithValues,
-  getDefaultAccounts
-} from "~/modules/accounting/accounting.service";
-import {
-  getOpenReimbursementsForEmployee,
-  getReimbursement,
-  getReimbursementRelatedItems
-} from "~/modules/invoicing/invoicing.service";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
+import type { getOpenReimbursementsForEmployee } from "~/modules/invoicing/invoicing.service";
 import {
   ReimbursementDocuments,
   ReimbursementHeader
@@ -30,8 +24,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Reimbursements`,
-  to: path.to.reimbursements,
-  module: "invoicing"
+  to: path.to.reimbursements
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
@@ -45,21 +38,16 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
  * only for the update permission and the Draft-only lock on a direct URL.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "invoicing"
-    }
-  );
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
+    "invoicing.reimbursements": "View"
+  });
 
   const { reimbursementId } = params;
   if (!reimbursementId) throw new Error("Could not find reimbursementId");
 
-  const reimbursement = await getReimbursement(
-    client,
-    companyId,
-    reimbursementId
-  );
+  const reimbursement = await api.invoicing.getReimbursement({
+    id: reimbursementId
+  });
   if (reimbursement.error || !reimbursement.data) {
     throw redirect(
       path.to.reimbursements,
@@ -112,17 +100,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .eq("entityType", "reimbursement")
         .eq("entityId", reimbursementId)
         .maybeSingle(),
-      getActiveDimensionsWithValues(client, companyGroupId, companyId),
+      api.accounting.getActiveDimensionsWithValues({}),
       // What is still owed. Only a Posted reimbursement has a booked payable,
       // and the balance is what decides whether "Pay expense" is offered at all
       // — there is no `paidAmount` column; the settlement rows are the truth.
       reimbursement.data.status === "Posted"
-        ? getOpenReimbursementsForEmployee(
-            client,
-            companyId,
-            reimbursement.data.employeeId,
-            reimbursement.data.currencyCode
-          )
+        ? api.invoicing.getOpenReimbursementsForEmployee({
+            employeeId: reimbursement.data.employeeId,
+            currencyCode: reimbursement.data.currencyCode
+          })
         : Promise.resolve({
             data: [] as Awaited<
               ReturnType<typeof getOpenReimbursementsForEmployee>
@@ -165,11 +151,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dimensions: dimensions.data ?? [],
     balanceDue,
     defaultBankAccount: defaults.data?.bankCashAccount ?? "",
-    relatedItems: getReimbursementRelatedItems(
-      client,
-      companyId,
-      reimbursementId
-    )
+    relatedItems: api.invoicing
+      .getReimbursementRelatedItems({ reimbursementId })
+      .then(dataOrThrow)
   };
 }
 

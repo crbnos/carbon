@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -29,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw redirect(back, await flash(request, error(null, "Unknown action")));
   }
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.projects.updateProjectChangeRequestStatus({
     ...form.data,
     projectId,

@@ -172,7 +172,8 @@ export default function MilestoneSchedule({
   const { t } = useLingui();
   const { locale } = useLocale();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "projects") && !isDisabled;
+  const canUpdate =
+    permissions.has({ "projects.projects": "Edit" }) && !isDisabled;
   const fetcher = useFetcher();
   const [searchParams, setSearchParams] = useSearchParams();
   const editing = useDrawerItem<EditingMilestone>();

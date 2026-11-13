@@ -11,7 +11,6 @@ import { useLoaderData, useNavigate } from "react-router";
 import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
 import { AssetClassesTable } from "~/modules/accounting/ui/FixedAssets";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { assetClassesList } from "~/utils/list-registry/accounting.server";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -25,8 +24,8 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, assetClassesList, {
     dataKey: "data",
-    firstPage: async ({ client, companyId }) => {
-      const companySettings = await getCompanySettings(client, companyId);
+    firstPage: async ({ api }) => {
+      const companySettings = await api.settings.getCompanySettings({});
       return {
         taxDepreciationEnabled:
           (companySettings.data as any)?.assetTaxDepreciationEnabled ?? false
@@ -50,7 +49,7 @@ export default function AssetClassesRoute() {
         infinite={infinite}
         taxDepreciationEnabled={taxDepreciationEnabled}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ "accounting.assetClasses": "Create" }) && (
             <NewAction label={t`Add Asset Class`} to={path.to.newAssetClass}>
               <Button
                 leftIcon={<LuCirclePlus />}

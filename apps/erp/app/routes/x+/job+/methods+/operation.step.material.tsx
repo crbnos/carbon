@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -12,9 +12,7 @@ import { setJobMaterialStepLink } from "~/modules/production/production.service"
 // Toggle a part↔step link from the step editor's "Parts" picker (job tier).
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
-    update: "production"
-  });
+  const { client } = await authorize(request, { "production.jobs": "Edit" });
 
   const formData = await request.formData();
   const jobMaterialId = String(formData.get("materialId") ?? "");

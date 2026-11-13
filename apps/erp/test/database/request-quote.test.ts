@@ -14,6 +14,7 @@ import {
   type PurchasingFixture,
   test
 } from "./fixtures/purchasing";
+import { pageClaims } from "../page-claims";
 
 // Approval rules are a commercial feature, off in the community edition that
 // an unset CARBON_EDITION reads as. Set before @carbon/env is imported.
@@ -337,22 +338,23 @@ test("Request Quote refuses another company's supplier and creates nothing", asy
   }
 });
 
-test("Request Quote rows need parts view as well as purchasing", async () => {
+test("Request Quote rows need the item's page as well as purchasing", async () => {
   const f = await fixture();
   try {
-    // The Bill of Material is read as the caller, under parts_view.
+    // The item's own page (Parts for a part) is checked in `run`.
     const buyerOnly = createServiceContext({
       actor: {
         type: "user",
+        role: "employee",
         userId: "pgtest-buyer",
-        permissions: {
+        permissions: pageClaims({
           purchasing: {
             view: [f.companyId],
             create: [f.companyId],
             update: [f.companyId],
             delete: []
           }
-        }
+        })
       },
       company: { id: f.companyId, groupId: f.groupId },
       caller: client!,

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { pageOfTable } from "@carbon/database/access";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -114,7 +115,8 @@ const SupplierInteractionNotes = ({
           </HStack>
           <CardContent>
             <TabsContent value="internal">
-              {!isReadOnly && permissions.can("update", "purchasing") ? (
+              {!isReadOnly &&
+              permissions.has({ [pageOfTable(table)]: "Edit" }) ? (
                 <Editor
                   label={t`Internal notes`}
                   initialValue={(internalNotes ?? {}) as JSONContent}
@@ -133,7 +135,8 @@ const SupplierInteractionNotes = ({
             </TabsContent>
             {["purchaseOrder", "purchaseInvoice"].includes(table) && (
               <TabsContent value="external">
-                {!isReadOnly && permissions.can("update", "purchasing") ? (
+                {!isReadOnly &&
+                permissions.has({ [pageOfTable(table)]: "Edit" }) ? (
                   <Editor
                     label={t`External notes`}
                     initialValue={(externalNotes ?? {}) as JSONContent}

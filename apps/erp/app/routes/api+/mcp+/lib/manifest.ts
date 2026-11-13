@@ -140,7 +140,7 @@ export function buildMcpManifest(origin: string) {
           protectedResourceMetadata: `${origin}/.well-known/oauth-protected-resource`,
           authorizationServerMetadata: `${origin}/.well-known/oauth-authorization-server`,
           scopeModel:
-            "A key is scoped to one company and to explicit module permissions; row-level security in the database enforces the same boundary as the app."
+            "A key is scoped to one company and to explicit page permissions (View, Create, Edit or Full on each page); row-level security in the database enforces the same boundary as the app."
         },
         tools: TOOLS,
         operations: {

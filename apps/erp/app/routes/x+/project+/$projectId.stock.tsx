@@ -2,16 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { type LoaderFunctionArgs, useLoaderData } from "react-router";
-import {
-  getProjectBorrows,
-  getProjectStockOnHand,
-  getProjectStockTransfers
-} from "~/modules/projects/projects.service";
 import ProjectStock from "~/modules/projects/ui/Stock/ProjectStock";
-import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-stock");
 
@@ -20,23 +14,31 @@ const TRANSFER_LIMIT = 10;
 
 /** The project's own stock, its open borrows owed and lent, and its latest transfers. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
   const [onHand, borrows, transfers] = await Promise.all([
-    getProjectStockOnHand(getDatabaseClient(), { companyId, projectId }),
-    getProjectBorrows(client, companyId, { projectId, status: ["Open"] }),
-    getProjectStockTransfers(client, companyId, {
+    api.projects.getProjectStockOnHand({ projectId }),
+    api.projects.getProjectBorrows({ projectId, status: ["Open"] }),
+    api.projects.getProjectStockTransfers({
       projectId,
       search: null,
       limit: TRANSFER_LIMIT,
       offset: 0
     })
   ]);
+
+  if (onHand.error) {
+    logger.error("Failed to load the project's stock", {
+      companyId,
+      projectId,
+      error: onHand.error
+    });
+  }
 
   if (borrows.error) {
     logger.error("Failed to load the project's borrows", {
@@ -55,9 +57,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    onHand,
+    onHand: onHand.data ?? [],
     borrows: borrows.data ?? [],
-    transfers: transfers.data ?? []
+    transfers: transfers.data?.rows ?? []
   };
 }
 

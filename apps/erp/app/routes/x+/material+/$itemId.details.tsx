@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -27,8 +27,8 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.materials": "Edit"
   });
 
   const { itemId } = params;
@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // A new size is a new item revision, so it also needs create.
   if (validation.data.sizes?.length) {
-    await requirePermissions(request, { create: "parts" });
+    await authorize(request, { "parts.materials": "Create" });
   }
 
   const updateMaterial = await upsertMaterial(client, getDatabaseClient(), {

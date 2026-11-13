@@ -21,8 +21,7 @@ export const handle: Handle = {
     { breadcrumb: msg`Accounting`, to: path.to.accounting },
     { breadcrumb: msg`Reports`, to: path.to.reports }
   ],
-  to: path.to.reports,
-  module: "accounting"
+  to: path.to.reports
 };
 
 // Full-screen namespace: no module sidebar — reports render full-width inside

@@ -246,7 +246,8 @@ operation of the same name in `projects.server.ts`.
   `getProjectBorrows` filters by project, status, `locationId` and `dueBefore` (the
   overdue borrows of the project Overview and the planning worklists).
 - `applyTransferPlanningActions`, `createProjectStockTransfersFromActions` —
-  Apply of Transfer planning actions from both planning routes: needs `update: projects`;
+  Apply of Transfer planning actions from both planning operations: needs Edit on Projects,
+  which the operation checks with `ctx.can` and passes as `canEditProjects`;
   one transaction claims the actions and creates one Draft transfer each, readable ids
   from the `projectStockTransfer` sequence. The planning operations call it with
   `ctx.asSystem.pg`; no operation of its own publishes it, so it is no MCP tool.
@@ -306,7 +307,7 @@ The screens open in layers (`.claude/rules/projects-system.md` → *Information 
 plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
 - `ui/useProjectsSubmodules.tsx` — the module sidebar: Projects, My Time, Approvals (with a
   count, while time approval or DCAA is on or contract billable items wait for review;
-  `getBillingReviewCountForUser`, `projects.service.ts`), Reports; Setup: Labor Categories, Planning
+  `projectsSidebarCounts`, `projects.service.ts`, read by both Projects layouts), Reports; Setup: Labor Categories, Planning
   Groups. `ui/useGovernmentContracting.ts` — shows the government fields (Layer 5):
   `useGovernmentContracting` (DCAA or the feature) for most screens, and
   `useGovernmentContractingFields` for the element page's group (DCAA and the feature; DCAA

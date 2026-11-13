@@ -926,6 +926,9 @@ msgstr "Eşleşen # satırın tümünü seç"
 msgid "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
 msgstr "Eşleşen satırların tümünü seç (yaklaşık #)"
 
+msgid "{count} grants"
+msgstr ""
+
 msgid "{count} items"
 msgstr "{count} stok kartı"
 
@@ -1010,6 +1013,10 @@ msgstr "{from} – {to}"
 
 msgid "{functionLabel}: {formattedValue}"
 msgstr "{functionLabel}: {formattedValue}"
+
+#. placeholder {0}: modules.length
+msgid "{granted} of {0} modules"
+msgstr ""
 
 msgid "{group} {number}"
 msgstr "{group} {number}"
@@ -1198,6 +1205,9 @@ msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacakt
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# ödünç geri ödeme tarihini geçmiş} other {# ödünç geri ödeme tarihini geçmiş}}"
 
+msgid "{overrides} overridden"
+msgstr ""
+
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower}, {lender} ile borçludur, {due} vadesi"
 
@@ -1234,6 +1244,10 @@ msgstr "Partisi olmayan {quantity}"
 msgid "{quantity} without a serial number"
 msgstr "{quantity} seri numarasız"
 
+#. placeholder {0}: module.rows.length
+msgid "{reached}/{0} pages"
+msgstr ""
+
 msgid "{received} of {ordered}"
 msgstr "{received} / {ordered}"
 
@@ -1257,9 +1271,6 @@ msgstr "{removed} planlanan fatura kaldırıldı."
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} planlama için sonraki revizyonu olarak yeniden açılacak. Tedarikçiye gönderilen belge, siparişi sonuçlandırana ve yeniden gönderene kadar değişmeden kalır."
-
-msgid "{scopeCount} permissions"
-msgstr "{scopeCount} izinleri"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} satır"
@@ -2559,6 +2570,12 @@ msgstr "{0} tarihinde kabul edildi"
 msgid "Accepted quantity"
 msgstr "Kabul edilen miktar"
 
+msgid "Access"
+msgstr ""
+
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "Hesap"
 
@@ -2618,9 +2635,6 @@ msgstr "Hesap Türü"
 
 msgid "Account Type (inherited)"
 msgstr "Hesap türü (devralınan)"
-
-msgid "accounting"
-msgstr "muhasebe"
 
 msgid "Accounting"
 msgstr "Muhasebe"
@@ -3301,6 +3315,9 @@ msgstr "Satın alma siparişi ekle"
 msgid "Add Question"
 msgstr "Soru Ekle"
 
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
+
 msgid "Add Rate"
 msgstr "Oran Ekle"
 
@@ -3511,6 +3528,12 @@ msgstr "Düzeltmeler"
 msgid "Admin"
 msgstr "Yönetici"
 
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr ""
+
+msgid "Admin has full access"
+msgstr ""
+
 msgid "Advance"
 msgstr "Avans"
 
@@ -3577,9 +3600,6 @@ msgstr "Tümü"
 #. placeholder {0}: tieOut.cellCount
 msgid "All {0} cells tie out"
 msgstr "Tüm {0} hücre uyumluyor"
-
-msgid "All {moduleName} permissions"
-msgstr "Tüm {moduleName} izinleri"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Tüm {total} aşama bitti. Harika iş — ekibiniz çalışıyor."
@@ -3656,9 +3676,6 @@ msgstr "Tüm açık iş emirleri"
 
 msgid "All Others"
 msgstr "Diğer tüm"
-
-msgid "All permissions"
-msgstr "Tüm izinler"
 
 msgid "All returnable lines"
 msgstr "Tüm iade edilebilir satırlar"
@@ -5001,7 +5018,7 @@ msgstr "Şirket sahibi olarak, sahipliği başka bir çalışana devredebilirsin
 msgid "Ascending"
 msgstr "Artan"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} İzni olan bir yöneticiden ilk {1} öğesini eklemesini isteyin."
@@ -6304,6 +6321,18 @@ msgstr "Carbon'da bir yöntem olarak adlandırılır — bir parçayı oluştura
 msgid "Camera"
 msgstr "Kamera"
 
+msgid "can create"
+msgstr ""
+
+msgid "can delete"
+msgstr ""
+
+msgid "can update"
+msgstr ""
+
+msgid "can view"
+msgstr ""
+
 msgid "Can't be restored"
 msgstr "Geri yüklenemez"
 
@@ -6887,6 +6916,9 @@ msgstr "Hesap Planı"
 
 msgid "Chat"
 msgstr "Sohbet"
+
+msgid "Check a module to override the type on all its pages, or expand it to override one page."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
@@ -9906,9 +9938,6 @@ msgstr "Varsayılan tedarik şekli"
 msgid "Default Method Type"
 msgstr "Varsayılan Tedarik Şekli"
 
-msgid "Default Permissions"
-msgstr "Varsayılan İzinler"
-
 msgid "Default Priority"
 msgstr "Varsayılan Öncelik"
 
@@ -10932,9 +10961,6 @@ msgstr "Partileri dağıt"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "{0} çözüldüğünde, {memberCount} operasyonu zamanlamaya yürütülmemiş olarak geri verir ve toplu işi siler. Kaydedilmiş üretimi olan bir toplu iş yerine tamamlanmalıdır."
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "Kullanıcının mevcut izinlerini bu çalışan türü için varsayılan izinlerle üzerine yazmak ister misiniz?"
-
 msgid "Doc-Backed"
 msgstr "Belge Destekli"
 
@@ -11309,6 +11335,9 @@ msgstr "örn. Sahte olduğundan şüpheleniliyor, yanlış parça, taşımada ha
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "örn. ilk 3 ila 4 hafta"
+
+msgid "e.g. Warehouse Supervisor"
+msgstr ""
 
 msgid "e.g. Zebra 2x1"
 msgstr "örneğin Zebra 2x1"
@@ -12595,6 +12624,9 @@ msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle ge
 
 msgid "Every job of {name} is complete. Is it done?"
 msgstr "{name}'nin tüm işleri tamamlandı. Bitti mi?"
+
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr ""
 
 #. placeholder {0}: storageUnit.name
 msgid "Every line already comes from {0}"
@@ -14024,6 +14056,9 @@ msgstr "Başlangıç:"
 msgid "Fulfillment Location"
 msgstr "Sevkiyat lokasyonu"
 
+msgid "Full access through the Admin type"
+msgstr ""
+
 msgid "Full name"
 msgstr "Tam adı"
 
@@ -14117,6 +14152,10 @@ msgstr "Kiralama Sonlandırılmasında Kazanç"
 
 msgid "Gain/Loss"
 msgstr "Kar/Zarar"
+
+#. placeholder {0}: actions.join(", ")
+msgid "Gained {0} when permissions became levels"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Sabit kıymetlerin elden çıkarılmasında muhasebeleştirilen kazançlar"
@@ -15153,6 +15192,9 @@ msgstr "İçeri aktarıldı"
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "İçe aktarıldı: {counted} satır sayıldı, {added} eklendi, {removed} kaldırıldı"
 
+msgid "in"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "{0} içinde"
@@ -15666,9 +15708,6 @@ msgstr "Geçersiz uygulamalar"
 
 msgid "Invalid Invite"
 msgstr "Geçersiz Davetiye"
-
-msgid "inventory"
-msgstr "envanter"
 
 msgid "Inventory"
 msgstr "Stok"
@@ -16396,9 +16435,6 @@ msgstr "Kanbanlar"
 
 msgid "Keep"
 msgstr "Tut"
-
-msgid "Keep Current"
-msgstr "Mevcut Tut"
 
 msgid "Keep demo data"
 msgstr "Demo verilerini tut"
@@ -19426,6 +19462,9 @@ msgstr "Yapıştırılan değerleri hiçbir hücre alamadı"
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Zaman içinde ayarlamasını isteyin."
 
+msgid "No change"
+msgstr ""
+
 msgid "No change request"
 msgstr "Değişiklik isteği yok"
 
@@ -20369,6 +20408,9 @@ msgstr "{0} için yeterli nitelikli kimse yok"
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "Yeterli nitelikli kimse yok. Bu prosesin yetkinliğine birisi ekleyin."
 
+msgid "Nobody yet."
+msgstr ""
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -20922,6 +20964,9 @@ msgstr "Bir projenin ağacının öğesi, Sistem, Gereklilik, İşlev, Görev, T
 
 msgid "One line per CLIN. Time & Materials and Cost Plus lines bill from project cost; a Fixed Price line bills its price. Click a cell to change it."
 msgstr "CLIN başına bir satır. Zaman & Malzeme ve Maliyet Artı satırları proje maliyetinden faturalanır; Sabit Fiyat satırı kendi fiyatından faturalanır. Değiştirmek için bir hücreyi tıklayın."
+
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
 
 msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
 msgstr "{appName} hesaplarınızdan biri iş akışı adımları bunu kullanmadan önce yeniden bağlanması gerekiyor."
@@ -21738,9 +21783,6 @@ msgstr "Genel bakış"
 msgid "Overwrite Existing"
 msgstr "Mevcut Olanı Üzerine Yaz"
 
-msgid "Overwrite Permissions"
-msgstr "İzinleri Üzerine Yaz"
-
 msgid "Overwrite the quote method with the source method"
 msgstr "Teklif yöntemini kaynak yöntemle üzerine yaz"
 
@@ -22190,9 +22232,6 @@ msgstr "Muayene bekliyor"
 msgid "Pending Inspection"
 msgstr "Muayene Bekliyor"
 
-msgid "people"
-msgstr "personel"
-
 msgid "People"
 msgstr "Personel"
 
@@ -22290,7 +22329,7 @@ msgid "Permission groups for granting access in bulk"
 msgstr "Toplu erişim vermek için izin grupları"
 
 msgid "Permissions"
-msgstr "İzinler"
+msgstr ""
 
 msgid "Person"
 msgstr "Kişi"
@@ -23137,9 +23176,6 @@ msgstr "Hypercare sırasında ürün sorunları"
 msgid "Product support"
 msgstr "Ürün desteği"
 
-msgid "production"
-msgstr "Üretim Sapması"
-
 msgid "Production"
 msgstr "Üretim"
 
@@ -23621,9 +23657,6 @@ msgstr "Satın Alınan Hizmet"
 msgid "Purchases"
 msgstr "Satın almalar"
 
-msgid "purchasing"
-msgstr "Satın Alma ve Satılan Malların Maliyeti"
-
 msgid "Purchasing"
 msgstr "Satın Alma"
 
@@ -23767,9 +23800,6 @@ msgstr "Her İş Bileşeninin Nitelikli Araştırma Giderleri"
 
 msgid "Qualified to run it"
 msgstr "Bunu çalıştırmaya yeterli nitelikli"
-
-msgid "quality"
-msgstr "kalite"
 
 msgid "Quality"
 msgstr "Kalite"
@@ -25393,6 +25423,9 @@ msgstr "Rezerve edildi"
 msgid "Reset"
 msgstr "Sıfırla"
 
+msgid "Reset all overrides"
+msgstr ""
+
 msgid "Reset PIN"
 msgstr "PIN'i Sıfırla"
 
@@ -25456,9 +25489,6 @@ msgstr "Kaynak"
 
 msgid "Resource Planning"
 msgstr "Kaynak Planlama"
-
-msgid "resources"
-msgstr "kaynaklar"
 
 msgid "Resources"
 msgstr "Kaynaklar"
@@ -25971,6 +26001,9 @@ msgstr "RMA'lar"
 msgid "Role"
 msgstr "Rol"
 
+msgid "Role default"
+msgstr ""
+
 msgid "Role:"
 msgstr "Rol:"
 
@@ -26175,9 +26208,6 @@ msgstr "Satış Fiyatı"
 
 msgid "Sale Proceeds"
 msgstr "Satış Geliri"
-
-msgid "sales"
-msgstr "satış"
 
 msgid "Sales"
 msgstr "Satışlar"
@@ -26589,9 +26619,6 @@ msgstr "Kapsam imzalandı"
 msgid "Scope Summary"
 msgstr "Kapsam Özeti"
 
-msgid "Scopes"
-msgstr "Kapsamlar"
-
 msgid "Scrap"
 msgstr "Fire"
 
@@ -26971,6 +26998,10 @@ msgstr "Hesap Seç"
 
 msgid "Select all"
 msgstr "Tümünü seç"
+
+#. placeholder {0}: module.row.label
+msgid "Select all in {0}"
+msgstr ""
 
 msgid "Select all jobs"
 msgstr "Tüm iş emirlerini seç"
@@ -27506,6 +27537,14 @@ msgstr "Her hafta için talep tahmin değerlerini ayarlayın"
 
 msgid "Set due date"
 msgstr "Son son tarihi belirle"
+
+#. placeholder {0}: module.row.label
+#. placeholder {1}: stepLabel(step)
+msgid "Set every page of {0} to {1}"
+msgstr ""
+
+msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
+msgstr ""
 
 msgid "Set on a posting account: Allowable, or Expressly, Mutually Agreed or Directly Associated Unallowable. Cost posted to an unallowable account or element is marked unallowable in the project ledger and never becomes a billable item."
 msgstr "Muhasebeleştirme hesabına ayarlanır: İzin Verilen, veya Açıkça, Karşılıklı Anlaşılmış veya Doğrudan İlişkili İzin Verilmeyen. İzin Verilmeyen bir hesaba ya da öğeye muhasebeleştirilen maliyet, proje defterinde izin verilmeyen olarak işaretlenir ve hiçbir zaman faturalanabilir bir kalem haline gelmez."
@@ -29531,8 +29570,8 @@ msgstr "Yazılı İçeriğe Geç"
 msgid "Switch users over and confirm access"
 msgstr "Kullanıcıları değiştir ve erişimi onayla"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "Çalışan türünü burada değiştirmek mevcut izinlerini değiştirmez; takip eden iletişim kutusu geçerli kümenin yeni türün varsayılanlarıyla yazılıp yazılmayacağını sorar."
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "Senkronize Et"
@@ -30659,6 +30698,9 @@ msgstr "Kiracının bir kiralanmış varlığı kullanma hakkına ilişkin varl�
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "Satış türü kiralama üzerinde kiraya verenin varlığı: kira ödemeleri ile garantisiz kalıntı tutarının bugünkü değeri; bu tutar her ay kiralama faizi ile artar ve her kira ve satın alma seçeneği faturası ile azalır."
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Müşterileri takip ettiğiniz yaşam döngüsü aşamaları"
 
@@ -30906,9 +30948,6 @@ msgstr "Bir uygunsuzluk nedeniyle etkilenen malzeme üzerine kaydedilen sonuç �
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "Peşin ödeme iskontosunun yüzdesi. İskonto yoksa 0 kullanın."
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "Bu tür yeni çalışanların otomatik olarak aldığı izin kümesi; burada düzenleme, yalnızca gelecekteki işe almalar için şablonu değiştirir - mevcut çalışanlar, açıkça toplu güncellenmediği sürece sahip olduklarını tutarlar."
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "Planlama aksiyonunun atandığı kişi: o lokasyondaki stok kartının sahibi, değilse stok kartı grubunun, değilse lokasyonun, değilse şirketin varsayılanı."
 
@@ -31099,6 +31138,9 @@ msgstr "Parçanın revizyon numarası"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Kullanım hakkı kıymeti ve kiralama yükümlülüğü bilançoda gösterilir ve her ay bir düz çizgi kiralama maliyeti muhasebeleştirilir."
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Bu iş emrinin arzulanacak satış siparişi satırı, iş emrini arkasındaki müşteri talebine bağlayan."
@@ -31298,8 +31340,8 @@ msgstr "İş takip kartı ürün ağacındaki her stok kartını miktarıyla bir
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "İş takip kartı her rota operasyonunun beklenen zamanlarını ve tarama barkodlarını listeler."
 
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "Tür, yeni çalışanın aldığı varsayılan izinleri kontrol eder; buradan seçmek, tür şablonundan izin matrisini önceden doldurur."
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr ""
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "Bu tedarikçiye bu proses için iş göndermekle geri almak arasında geçen tipik gün sayısı; bir tedarikçi seçerken planlama talebi bu kadar kaydırır."
@@ -33514,9 +33556,6 @@ msgstr "Kullanıcı rolleri"
 msgid "Username"
 msgstr "Kullanıcı adı"
 
-msgid "users"
-msgstr "kullanıcılar"
-
 msgid "Users"
 msgstr "Kullanıcılar"
 
@@ -34632,9 +34671,6 @@ msgstr "Bu prosesin dahili iş merkezlerinde (Proses, Montaj, veya Muayene) veya
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Bu işin üretime engel olup olmadığı (Duruş), üretime zarar verip vermediği (Etki), planlanan duruş penceresinde olup olmadığı (Planlandı), veya üretim üzerinde hiçbir etkisi olmadığı (Etki yok); planlama ve müşteriye yönelik duruş iletişimini bilgilendirir."
 
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "Seçilen izinlerin her kullanıcının zaten sahip olduğu şeylerin üstüne Eklenip Eklenmediği veya her kullanıcının izin setinin aşağıda seçilen kişilerle değiştirilmesi suretiyle Güncelleştirilmesi."
-
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "Tekrarlanan olayların tek tek örneklere genişletilip genişletilmeyeceği; yalnızca tek seferlik olaylar ve tekrarlanan olayların örnekleri döndürülür, temel tekrarlanan olayların kendisi döndürülmez."
 
@@ -34652,6 +34688,9 @@ msgstr "Bu hangi operasyondu?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Bu sevkiyat açık olsa da, iş merkezi plana kullanılamaz (planlanan bitiş saatine veya sevkiyat tamamlanana kadar)."
+
+msgid "Who"
+msgstr ""
 
 msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
 msgstr "Hizmet iş emrinin maliyetinin kimin sorumluluğunda olduğu: Faturalandırılabilir ve Sözleşme işi Hizmet Maliyetine muhasebeleştirilir (aksi takdirde Satılan malın maliyeti), Garanti işi Garanti Giderine muhasebeleştirilir. Yalnızca Faturalandırılabilir iş emri faturalandırılır."

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
@@ -11,7 +11,6 @@ import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCompletionJobs } from "~/modules/production/production.service";
 import type { OutboundRow } from "~/modules/production/ui/Schedule/OutboundTable";
 import {
   isOutboundHorizon,
@@ -27,15 +26,14 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Outbound`,
-  to: path.to.scheduleOutbound,
-  module: "production"
+  to: path.to.scheduleOutbound
 };
 
 const logger = getLogger("erp", "scheduling", "outbound");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "production"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "production.outbound": "View"
   });
 
   const searchParams = new URL(request.url).searchParams;
@@ -54,7 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const timeZone = await getLocationTimeZone(client, locationId, companyId);
   const today = datetime.today(timeZone);
 
-  const jobs = await getCompletionJobs(client, {
+  const jobs = await api.production.getCompletionJobs({
     companyId,
     locationId,
     timeZone,

@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { isForeignKeyViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { deleteItem } from "~/modules/items/items.service";
@@ -13,9 +14,10 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "parts"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    anyOf(ITEM_PAGES, "Full")
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");

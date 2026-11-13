@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it, vi } from "vitest";
+import type { ExpandedClaims } from "@carbon/database/access";
 
 // The service's imports reach the glossary, whose `msg` macro only runs compiled.
 vi.mock("@lingui/core/macro", () => ({
@@ -17,7 +18,6 @@ vi.mock("@carbon/ee/plan.server", async (importOriginal) => ({
   companyHasFeature: vi.fn(async () => false)
 }));
 
-import type { ModulePermissions } from "@carbon/api/permissions";
 import { insertModelUpload } from "../app/modules/items/items.server";
 import {
   type Actor,
@@ -28,9 +28,10 @@ import {
   importCsvFile
 } from "../app/modules/shared/shared.server";
 import { createWorkflow } from "../app/modules/workflows/workflows.server";
+import { pageClaims } from "./page-claims";
 
 const grants = (...entries: [module: string, action: string][]) => {
-  const permissions: ModulePermissions = {};
+  const permissions: ExpandedClaims = {};
   for (const [module, action] of entries) {
     permissions[module] ??= { view: [], create: [], update: [], delete: [] };
     permissions[module][action as "view"] = ["company-1"];
@@ -38,10 +39,11 @@ const grants = (...entries: [module: string, action: string][]) => {
   return permissions;
 };
 
-const user = (permissions: ModulePermissions): Actor => ({
+const user = (permissions: ExpandedClaims): Actor => ({
   type: "user",
+  role: "employee",
   userId: "user-1",
-  permissions
+  permissions: pageClaims(permissions)
 });
 
 // Each of these refuses before it reads or writes anything: a handle that is
@@ -101,9 +103,10 @@ describe("importing a CSV file", () => {
     columnMappings: {}
   };
 
-  it("needs create as well as update on inventory to post stock", async () => {
+  // Edit on Inventory → Quantities, as the single-record adjustment needs.
+  it("needs Edit on Quantities to post stock: Create is refused", async () => {
     const result = await importCsvFile(
-      contextFor(user(grants(["inventory", "update"]))),
+      contextFor(user(grants(["inventory", "view"], ["inventory", "create"]))),
       stockImport
     );
     expect(result.error).toMatchObject({ category: "forbidden" });
@@ -130,6 +133,30 @@ describe("importing a CSV file", () => {
     expect(result.error?.category).toBe("validation");
     expect(result.error?.message).toContain("ID is required");
   });
+
+  // A moved table still imports for the page that keeps writing it; reaching
+  // the mapping check means the gate admitted the caller.
+  it.each([
+    ["storageType", "parts"],
+    ["itemPostingGroup", "accounting"]
+  ] as const)("imports %s with Edit on %s, which keeps writing it", async (table, module) => {
+    const result = await importCsvFile(
+      contextFor(user(grants([module, "update"]))),
+      { ...stockImport, table }
+    );
+    expect(result.error?.category).toBe("validation");
+  });
+
+  it.each(["storageType", "itemPostingGroup"] as const)(
+    "refuses %s to a caller without its pages",
+    async (table) => {
+      const result = await importCsvFile(
+        contextFor(user(grants(["sales", "update"]))),
+        { ...stockImport, table }
+      );
+      expect(result.error).toMatchObject({ category: "forbidden" });
+    }
+  );
 });
 
 describe("creating a Jira issue for an action task", () => {

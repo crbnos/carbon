@@ -116,7 +116,7 @@ const IndirectPoolsTable = memo(({ data, count }: IndirectPoolsTableProps) => {
       <>
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.edit}
-          disabled={!permissions.can("update", "accounting")}
+          disabled={!permissions.has({ "accounting.indirectPools": "Edit" })}
           onClick={() => navigate(path.to.indirectPool(row.id))}
         >
           <MenuIcon icon={<LuPencil />} />
@@ -125,7 +125,7 @@ const IndirectPoolsTable = memo(({ data, count }: IndirectPoolsTableProps) => {
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
-          disabled={!permissions.can("delete", "accounting")}
+          disabled={!permissions.has({ "accounting.indirectPools": "Full" })}
           onClick={() => navigate(path.to.deleteIndirectPool(row.id))}
         >
           <MenuIcon icon={<LuTrash />} />
@@ -142,7 +142,7 @@ const IndirectPoolsTable = memo(({ data, count }: IndirectPoolsTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "accounting") && (
+        permissions.has({ "accounting.indirectPools": "Create" }) && (
           <New label={t`Pool`} to={path.to.newIndirectPool} />
         )
       }

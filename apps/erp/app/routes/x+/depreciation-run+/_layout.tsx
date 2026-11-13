@@ -15,8 +15,7 @@ export const meta = moduleMeta("Depreciation Run");
 
 export const handle: Handle = {
   breadcrumb: msg`Accounting`,
-  to: path.to.depreciationRuns,
-  module: "accounting"
+  to: path.to.depreciationRuns
 };
 
 export default function DepreciationRunLayout() {

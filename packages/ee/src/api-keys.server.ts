@@ -2,11 +2,20 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { Actor } from "@carbon/api/service-fn.server";
+import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
+import type { GrantInput } from "@carbon/database/access-write";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { newIds } from "@carbon/database/rows";
 import { SINGLE_TENANT } from "@carbon/env";
-import { sanitize } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { requireEntitlement } from "./entitlements.server";
+import { SUBJECT_RULES } from "./permission-grants";
+import {
+  type AccessWriteError,
+  subjectEntitlement,
+  writeAccessGrants
+} from "./permissions.server";
 
 /**
  * Commercial (Business) API-key AUTHORING — creating, editing, and deleting a
@@ -16,140 +25,123 @@ import { requireEntitlement } from "./entitlements.server";
  * is NOT gated here — an already-issued key keeps authenticating regardless of
  * plan.
  *
- * The key is generated and hashed in the open route action (server-only:
- * `hashApiKey` from `@carbon/auth/auth.server` + `nanoid`); this function only
- * receives the already-computed `rawKey`/`keyHash`/`keyPreview` and stores the
- * hash, so no crypto crosses the package boundary.
+ * The key is generated and hashed by the ERP's `createApiKey` service function
+ * (`hashApiKey` from `@carbon/auth/auth.server` + `nanoid`); this file only
+ * receives the already-computed `keyHash`/`keyPreview` and stores them, so no
+ * crypto crosses the package boundary.
  *
- * The entitlement LOCK lives INSIDE this commercial function (see
- * `entitlements.server`) so it cannot be stripped from open-licensed app code.
+ * The entitlement LOCK lives in this commercial package so it cannot be
+ * stripped from open-licensed app code: `writeAccessGrants` holds it for
+ * `saveApiKey`, and `deleteApiKey` checks it itself (`subjectEntitlement`).
+ * Both return a company without the plan an `entitlement` error.
  */
-
-// Minimal input shape — the validator's `Omit<…, "id" | "scopes" | "expiresAt">`
-// leaves `name` and `rateLimit` (redefined here so `@carbon/ee` never imports `~/`).
-type ApiKeyInput = { name: string; rateLimit?: number };
 
 /**
  * A key's requests per minute is the platform's to set on Carbon Cloud, where
  * companies share the servers. A single-tenant deployment (BYOC, self-hosted)
- * runs on its owner's servers, so its admins set it.
+ * runs on its owner's servers, so its admins set it. The window is always the
+ * platform's.
  */
 function ownRateLimit(rateLimit: number | undefined) {
   return SINGLE_TENANT && rateLimit ? { rateLimit } : {};
 }
 
-export async function upsertApiKey(
+/**
+ * Create a key (`keyHash` and `keyPreview` given) or update one (`id` given),
+ * and set its grants, in one transaction (`writeAccessGrants`). The key
+ * itself never changes on an update. The grants are capped at `actor`'s, the
+ * caller as the request authorised them. Returns `writeAccessGrants`' `{ error }`:
+ * the caller already knows the id (it passed it, or returns the raw key).
+ */
+export async function saveApiKey(
   client: SupabaseClient<Database>,
-  apiKey:
-    | (ApiKeyInput & {
-        createdBy: string;
-        companyId: string;
-        scopes: Record<string, string[]>;
-        expiresAt?: string;
-        rawKey: string;
-        keyHash: string;
-        keyPreview: string;
-      })
-    | (ApiKeyInput & {
-        id: string;
-        scopes: Record<string, string[]>;
-        expiresAt?: string;
-      })
-) {
-  if ("createdBy" in apiKey) {
-    await requireEntitlement(client, apiKey.companyId, "API_KEYS");
-    // Create: store the hash, return the raw key (caller generates both)
-    // The window is always the platform's; the limit is too off single tenant.
-    const {
-      scopes,
-      expiresAt,
-      rawKey,
-      keyHash,
-      rateLimit,
-      rateLimitWindow: _rlw,
-      ...rest
-    } = apiKey as any;
-
-    const result = await client
-      .from("apiKey")
-      .insert(
-        sanitize({
-          ...rest,
-          ...ownRateLimit(rateLimit),
-          keyHash,
-          scopes: scopes as any,
-          expiresAt: expiresAt || null
-        }) as any
-      )
-      .select("id")
-      .single();
-
-    if (result.error) {
-      return { data: null, error: result.error };
-    }
-
-    // Return the raw key (shown to user once, never stored)
-    return { data: { key: rawKey, id: result.data.id }, error: null };
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    key,
+    grants,
+    actor,
+    actorId,
+    ip
+  }: {
+    companyId: string;
+    key: { name: string; expiresAt?: string; rateLimit?: number } & (
+      | { id: string }
+      | { keyHash: string; keyPreview: string }
+    );
+    grants: readonly GrantInput[];
+    actor: Actor;
+    actorId: string;
+    ip?: string;
   }
-
-  // The update input carries no companyId — read it from the row so the
-  // entitlement check (the lock) can run before the write.
-  const existing = await client
-    .from("apiKey")
-    .select("companyId")
-    .eq("id", apiKey.id)
-    .single();
-
-  if (existing.error || !existing.data) {
-    return {
-      data: null,
-      error: existing.error || { message: "API key not found" }
-    };
-  }
-
-  await requireEntitlement(client, existing.data.companyId, "API_KEYS");
-
-  // Update: update name, scopes, expiration (never the key itself)
-  // The window is always the platform's; the limit is too off single tenant.
-  const {
-    scopes,
-    expiresAt,
-    rateLimit,
-    rateLimitWindow: _rlw,
-    ...rest
-  } = apiKey as any;
-  return client
-    .from("apiKey")
-    .update(
-      sanitize({
-        ...rest,
-        ...ownRateLimit(rateLimit),
-        scopes: scopes as any,
-        expiresAt: expiresAt || null
-      }) as any
-    )
-    .eq("id", apiKey.id);
+): Promise<{ error: AccessWriteError | null }> {
+  const fields = {
+    name: key.name,
+    expiresAt: key.expiresAt || null,
+    ...ownRateLimit(key.rateLimit)
+  };
+  const id = "id" in key ? key.id : (await newIds(db, "api", 1))[0]!;
+  return writeAccessGrants(client, db, {
+    companyId,
+    subject: { apiKeyId: id },
+    change: { set: grants },
+    actor,
+    actorId,
+    ip,
+    subjectRow: (tx) =>
+      "id" in key
+        ? tx
+            .updateTable("apiKey")
+            .set({ ...fields, updatedBy: actorId })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute()
+        : tx
+            .insertInto("apiKey")
+            .values({
+              ...fields,
+              id,
+              companyId,
+              keyHash: key.keyHash,
+              keyPreview: key.keyPreview,
+              createdBy: actorId
+            })
+            .execute()
+  });
 }
 
+/**
+ * Delete one of the company's keys and drop its cached authentication, so it
+ * stops authenticating at once. Runs over `db` once the caller's gate passed: RLS
+ * asks a higher level for DELETE and would silently delete nothing. The cache is
+ * dropped after commit, so a request that cached the live row is cleared too.
+ */
 export async function deleteApiKey(
   client: SupabaseClient<Database>,
-  id: string
-) {
-  // The input carries no companyId — read it from the row so the entitlement
-  // check (the lock) can run before the delete.
-  const existing = await client
-    .from("apiKey")
-    .select("companyId")
-    .eq("id", id)
-    .single();
+  db: Kysely<KyselyDatabase>,
+  { companyId, id }: { companyId: string; id: string }
+): Promise<{ error: AccessWriteError | null }> {
+  const unentitled = await subjectEntitlement(client, companyId, "key");
+  if (unentitled) return { error: unentitled };
 
-  if (existing.error || !existing.data) {
+  let deleted: { keyHash: string } | undefined;
+  try {
+    deleted = await db
+      .deleteFrom("apiKey")
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .returning("keyHash")
+      .executeTakeFirst();
+  } catch (cause) {
     return {
-      data: null,
-      error: existing.error || { message: "API key not found" }
+      error: { code: "internal", message: "Failed to delete API key", cause }
     };
   }
-
-  await requireEntitlement(client, existing.data.companyId, "API_KEYS");
-  return client.from("apiKey").delete().eq("id", id);
+  if (!deleted) {
+    return {
+      error: { code: "notFound", message: SUBJECT_RULES.key.notFound }
+    };
+  }
+  await bustApiKeyCache(deleted.keyHash);
+  return { error: null };
 }

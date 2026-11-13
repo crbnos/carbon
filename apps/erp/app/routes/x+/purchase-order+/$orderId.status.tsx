@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -22,7 +23,7 @@ export async function action(args: ActionFunctionArgs) {
   const { orderId } = input.params;
   const { status, createRevision } = input.data;
   const to = requestReferrer(args.request) ?? path.to.purchaseOrder(orderId);
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   if (status === "Closed") {
     const result = await api.purchasing.closePurchaseOrderAndApprovals({

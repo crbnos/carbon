@@ -84,7 +84,7 @@ const SupplierAccountsTable = memo(
       [unrevokedInviteSet]
     );
 
-    const canEdit = permissions.can("update", "users");
+    const canEdit = permissions.has({ "users.accounts": "Edit" });
 
     const rows = useMemo(
       () =>
@@ -233,7 +233,7 @@ const SupplierAccountsTable = memo(
                 resendInviteModal.onOpen();
               }}
               disabled={
-                !permissions.can("create", "users") ||
+                !permissions.has({ "users.accounts": "Create" }) ||
                 !selectedRows.some(
                   (row) =>
                     row.active === false && !hasUnrevokedInviteForRow(row)
@@ -255,7 +255,7 @@ const SupplierAccountsTable = memo(
                 deactivateSupplierModal.onOpen();
               }}
               disabled={
-                !permissions.can("delete", "users") ||
+                !permissions.has({ "users.accounts": "Full" }) ||
                 selectedRows.every((row) => row.active === false)
               }
             >
@@ -294,7 +294,7 @@ const SupplierAccountsTable = memo(
             ) : (
               <>
                 <MenuItem
-                  disabled={!permissions.can("create", "users")}
+                  disabled={!permissions.has({ "users.accounts": "Create" })}
                   onClick={() => {
                     setSelectedUserIds([row.user.id]);
                     resendInviteModal.onOpen();
@@ -307,18 +307,19 @@ const SupplierAccountsTable = memo(
                     <Trans>Send Invite</Trans>
                   )}
                 </MenuItem>
-                {hasUnrevokedInvite && permissions.can("delete", "users") && (
-                  <MenuItem
-                    onClick={() => {
-                      setSelectedUserIds([row.user.id]);
-                      revokeInviteModal.onOpen();
-                    }}
-                    destructive
-                  >
-                    <MenuIcon icon={<LuBan />} />
-                    <Trans>Revoke Invite</Trans>
-                  </MenuItem>
-                )}
+                {hasUnrevokedInvite &&
+                  permissions.has({ "users.accounts": "Full" }) && (
+                    <MenuItem
+                      onClick={() => {
+                        setSelectedUserIds([row.user.id]);
+                        revokeInviteModal.onOpen();
+                      }}
+                      destructive
+                    >
+                      <MenuIcon icon={<LuBan />} />
+                      <Trans>Revoke Invite</Trans>
+                    </MenuItem>
+                  )}
               </>
             )}
           </>
@@ -342,7 +343,7 @@ const SupplierAccountsTable = memo(
           data={rows}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
-            permissions.can("create", "users") && (
+            permissions.has({ "users.accounts": "Create" }) && (
               <New label={t`Supplier`} to={`new?${params.toString()}`} />
             )
           }

@@ -77,7 +77,7 @@ export const getCustomerAssets = defineServiceFn({
     itemId: z.string().nullable().optional(),
     warrantyStatus: z.enum(warrantyStatuses).nullable().optional()
   }),
-  permission: { view: "service" },
+  permission: { "service.customerAssets": "View" },
   async run(ctx, input) {
     const timeZone = await getCompanyTimeZone(
       ctx.asCaller.supabase,
@@ -106,7 +106,7 @@ export const getCustomerAssets = defineServiceFn({
  */
 export const getCustomerAsset = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { view: "service" },
+  permission: { "service.customerAssets": "View" },
   async run(ctx, { id }) {
     return unwrap(
       ctx,
@@ -127,7 +127,7 @@ export const getCustomerAsset = defineServiceFn({
  */
 export const registerCustomerAsset = defineServiceFn({
   input: customerAssetValidator,
-  permission: { create: "service" },
+  permission: { "service.customerAssets": "Create" },
 
   async run(ctx, input) {
     const refused =
@@ -165,7 +165,7 @@ export const registerCustomerAsset = defineServiceFn({
  */
 export const updateCustomerAsset = defineServiceFn({
   input: customerAssetPatchValidator,
-  permission: { update: "service" },
+  permission: { "service.customerAssets": "Edit" },
 
   async run(ctx, input) {
     if (input.customerLocationId) {
@@ -193,7 +193,7 @@ export const updateCustomerAsset = defineServiceFn({
 /** Save a customer asset's notes. */
 export const updateCustomerAssetNotes = defineServiceFn({
   input: z.object({ id: z.string(), notes: z.custom<Json>() }),
-  permission: { update: "service" },
+  permission: { "service.customerAssets": "Edit" },
 
   async run(ctx, { id, notes }) {
     const update = await service.updateCustomerAssetNotes(
@@ -222,7 +222,7 @@ export const getServiceJobs = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "service" },
+  permission: { "service.jobs": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -245,7 +245,7 @@ export const getServiceJobs = defineServiceFn({
  */
 export const getServiceJob = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { view: "service" },
+  permission: { "service.jobs": "View" },
   async run(ctx, { jobId }) {
     return unwrap(
       ctx,
@@ -261,7 +261,7 @@ export const getServiceJob = defineServiceFn({
  */
 export const getServiceJobTime = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { view: "service" },
+  permission: { "service.jobs": "View" },
   async run(ctx, { jobId }) {
     return unwrap(
       ctx,
@@ -277,7 +277,7 @@ export const getServiceJobTime = defineServiceFn({
  */
 export const getServiceJobItems = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { view: "service" },
+  permission: { "service.jobs": "View" },
   async run(ctx, { jobId }) {
     return unwrap(
       ctx,
@@ -293,7 +293,7 @@ export const getServiceJobItems = defineServiceFn({
  */
 export const getServiceJobEstimateLines = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { view: "service" },
+  permission: { "service.jobs": "View" },
   async run(ctx, { jobId }) {
     return unwrap(
       ctx,
@@ -321,7 +321,7 @@ export const getServiceJobAssignmentsRange = defineServiceFn({
     endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     locationId: z.string().nullish()
   }),
-  permission: { view: "service" },
+  permission: { "service.schedule": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -344,7 +344,7 @@ export const getServiceJobAssignmentsRange = defineServiceFn({
  */
 export const getServiceBacklog = defineServiceFn({
   input: z.object({ locationId: z.string() }),
-  permission: { view: "service" },
+  permission: { "service.schedule": "View" },
   async run(ctx, { locationId }) {
     return unwrap(
       ctx,
@@ -364,7 +364,7 @@ export const getServiceBacklog = defineServiceFn({
  */
 export const getServiceJobsByAsset = defineServiceFn({
   input: z.object({ customerAssetId: z.string() }),
-  permission: { view: "service" },
+  permission: { "service.jobs": "View" },
   async run(ctx, { customerAssetId }) {
     return unwrap(
       ctx,
@@ -393,7 +393,7 @@ export const getServiceJobsByAsset = defineServiceFn({
  */
 export const createServiceJob = defineServiceFn({
   input: serviceJobValidator,
-  permission: { create: "service" },
+  permission: { "service.jobs": "Create" },
 
   async run(ctx, input) {
     const customerId = input.customerId;
@@ -490,7 +490,7 @@ export const createServiceJob = defineServiceFn({
  */
 export const updateServiceJob = defineServiceFn({
   input: serviceJobUpdateValidator,
-  permission: { update: "service" },
+  permission: { "service.jobs": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const jobs = await ctx.asCaller.supabase
@@ -570,7 +570,7 @@ export const updateServiceJob = defineServiceFn({
  */
 export const setServiceJobStatus = defineServiceFn({
   input: serviceJobStatusValidator,
-  permission: { update: "service" },
+  permission: { "service.jobs": "Edit" },
 
   async run(ctx, { jobId, action }) {
     const job = await service.editableServiceJob(ctx, jobId);
@@ -750,7 +750,7 @@ export const createServiceInvoice = defineServiceFn({
  */
 export const upsertServiceJobEstimateLine = defineServiceFn({
   input: serviceJobEstimateLineValidator,
-  permission: { update: "service" },
+  permission: { "service.jobs": "Edit" },
 
   async run(ctx, { id, ...line }) {
     const job = await service.editableServiceJob(ctx, line.serviceJobId);
@@ -805,7 +805,7 @@ export const upsertServiceJobEstimateLine = defineServiceFn({
  */
 export const deleteServiceJobEstimateLine = defineServiceFn({
   input: childRowInput,
-  permission: { delete: "service" },
+  permission: { "service.jobs": "Full" },
 
   async run(ctx, { serviceJobId, id }) {
     const job = await service.editableServiceJob(ctx, serviceJobId);
@@ -844,7 +844,7 @@ export const deleteServiceJobEstimateLine = defineServiceFn({
  */
 export const sendServiceJobEstimate = defineServiceFn({
   input: serviceJobEstimateSendValidator,
-  permission: { update: "service" },
+  permission: { "service.jobs": "Edit" },
 
   async run(ctx, { jobId, notification, customerContact, cc, locale }) {
     if (notification === "Email" && !customerContact) {
@@ -965,7 +965,7 @@ export const sendServiceJobEstimate = defineServiceFn({
  */
 export const reopenServiceJobEstimate = defineServiceFn({
   input: z.object({ jobId: z.string().min(1) }),
-  permission: { update: "service" },
+  permission: { "service.jobs": "Edit" },
 
   async run(ctx, { jobId }) {
     const job = await service.editableServiceJob(ctx, jobId);
@@ -1027,7 +1027,7 @@ export const reopenServiceJobEstimate = defineServiceFn({
  */
 export const recordServiceJobEstimateResponse = defineServiceFn({
   input: serviceJobEstimateResponseValidator,
-  permission: { update: "service" },
+  permission: { "service.jobs": "Edit" },
 
   async run(ctx, { jobId, response, estimateRespondedBy }) {
     const job = await service.editableServiceJob(ctx, jobId);
@@ -1106,7 +1106,7 @@ export const recordServiceJobEstimateResponse = defineServiceFn({
  */
 export const upsertServiceJobTime = defineServiceFn({
   input: serviceJobTimeValidator,
-  permission: { update: "service" },
+  permission: { "service.jobs": "Edit" },
 
   async run(ctx, { id, ...time }) {
     const job = await service.editableServiceJob(ctx, time.serviceJobId);
@@ -1151,7 +1151,7 @@ export const upsertServiceJobTime = defineServiceFn({
  */
 export const deleteServiceJobTime = defineServiceFn({
   input: childRowInput,
-  permission: { delete: "service" },
+  permission: { "service.jobs": "Full" },
 
   async run(ctx, { serviceJobId, id }) {
     const job = await service.editableServiceJob(ctx, serviceJobId);
@@ -1193,7 +1193,7 @@ export const deleteServiceJobTime = defineServiceFn({
  */
 export const stopServiceJobClock = defineServiceFn({
   input: z.object({ serviceJobId: z.string().min(1) }),
-  permission: { update: "service" },
+  permission: { "service.jobs": "Edit" },
 
   async run(ctx, { serviceJobId }) {
     const job = await service.editableServiceJob(ctx, serviceJobId);
@@ -1236,18 +1236,18 @@ export const stopServiceJobClock = defineServiceFn({
  * MES clock it needs only company membership: any employee may log time on
  * any open job, since more than one person works on a job. Service time
  * never goes through timesheet submit or approval. An API key needs
- * `update: service`.
+ * Edit on Service Jobs.
  *
  * @mcp
  */
 export const setServiceJobDayHours = defineServiceFn({
   input: serviceJobDayHoursValidator,
   // Your own time, on any open job.
-  permission: {},
+  permission: "employee",
 
   async run(ctx, input) {
     const refused =
-      refuseKeyWithout(ctx, { update: "service" }) ??
+      refuseKeyWithout(ctx, { "service.jobs": "Edit" }) ??
       (await service.refuseWithoutLaborCostRate(ctx));
     if (refused) return refused;
     return run(ctx, "setServiceJobDayHours", () =>
@@ -1283,7 +1283,7 @@ export const setServiceJobDayHours = defineServiceFn({
  */
 export const upsertServiceJobCharge = defineServiceFn({
   input: serviceJobItemValidator,
-  permission: { update: "service" },
+  permission: { "service.jobs": "Edit" },
 
   async run(ctx, { id, ...charge }) {
     const job = await service.editableServiceJob(ctx, charge.serviceJobId);
@@ -1342,7 +1342,7 @@ export const getLinkableCostLines = defineServiceFn({
     employeeId: z.string().optional(),
     supplierId: z.string().optional()
   }),
-  permission: { view: "service" },
+  permission: { "service.jobs": "View" },
 
   async run(ctx, { serviceJobId, ...args }) {
     const client = ctx.asCaller.supabase;
@@ -1367,7 +1367,7 @@ export const getLinkableCostLines = defineServiceFn({
  */
 export const deleteServiceJobCharge = defineServiceFn({
   input: childRowInput,
-  permission: { delete: "service" },
+  permission: { "service.jobs": "Full" },
 
   async run(ctx, { serviceJobId, id }) {
     const job = await service.editableServiceJob(ctx, serviceJobId);
@@ -1413,7 +1413,7 @@ export const issueServiceJobPart = defineServiceFn({
       )
       .optional()
   }),
-  permission: { update: "service" },
+  permission: { "service.jobs": "Edit" },
 
   async run(
     ctx,
@@ -1471,7 +1471,7 @@ export const issueServiceJobPart = defineServiceFn({
  */
 export const unissueServiceJobPart = defineServiceFn({
   input: childRowInput,
-  permission: { delete: "service" },
+  permission: { "service.jobs": "Full" },
 
   async run(ctx, { serviceJobId, id }) {
     const job = await service.editableServiceJob(ctx, serviceJobId);
@@ -1515,7 +1515,7 @@ export const unissueServiceJobPart = defineServiceFn({
  */
 export const upsertServiceJobAssignment = defineServiceFn({
   input: serviceJobAssignmentValidator,
-  permission: { update: "service" },
+  permission: { "service.schedule": "Edit" },
 
   async run(ctx, { id, ...assignment }) {
     const job = await service.editableServiceJob(ctx, assignment.serviceJobId);
@@ -1563,7 +1563,7 @@ export const upsertServiceJobAssignment = defineServiceFn({
  */
 export const moveServiceJobAssignment = defineServiceFn({
   input: serviceJobAssignmentMoveValidator,
-  permission: { update: "service" },
+  permission: { "service.schedule": "Edit" },
 
   async run(ctx, { id, employeeId, scheduledDate }) {
     const assignment = await ctx.asCaller.supabase
@@ -1609,7 +1609,7 @@ export const moveServiceJobAssignment = defineServiceFn({
  */
 export const deleteServiceJobAssignment = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { delete: "service" },
+  permission: { "service.schedule": "Full" },
 
   async run(ctx, { id }) {
     const assignment = await ctx.asCaller.supabase

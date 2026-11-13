@@ -160,7 +160,8 @@ async function fixture() {
         mappedRecords,
         companyId,
         userId: USER,
-        summary
+        summary,
+        can: () => true
       });
       return summary;
     },

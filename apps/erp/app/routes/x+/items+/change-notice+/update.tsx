@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { isChangeNoticeLocked } from "~/modules/items/items.models";
 import { updateChangeNotice } from "~/modules/items/items.service";
@@ -24,8 +24,8 @@ const EDITABLE_FIELDS = [
 type EditableField = (typeof EDITABLE_FIELDS)[number];
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.changeNotices": "Edit"
   });
 
   const formData = await request.formData();

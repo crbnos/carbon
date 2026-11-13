@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,27 +11,23 @@ import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { fixedAssetCapitalizeCipValidator } from "~/modules/accounting/accounting.models";
-import {
-  getFixedAsset,
-  getFixedAssetCipCosts,
-  invokeAssetTransfer
-} from "~/modules/accounting/accounting.service";
+import { invokeAssetTransfer } from "~/modules/accounting/accounting.service";
 import { FixedAssetCapitalizeCipForm } from "~/modules/accounting/ui/FixedAssets";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.assets": "View"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
   const [asset, cipCosts, assetClasses, timeZone] = await Promise.all([
-    getFixedAsset(client, fixedAssetId, companyId),
-    getFixedAssetCipCosts(client, fixedAssetId, companyId),
+    api.accounting.getFixedAsset({ id: fixedAssetId }),
+    api.accounting.getFixedAssetCipCosts({ fixedAssetId }),
     // The in-service classes an asset under construction can move into.
     // `getFixedAssetClassesList` does not select `isConstructionInProgress`,
     // so the filter is applied here (same select as `x+/job+/new.tsx`).
@@ -87,8 +83,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "accounting"
+  const { client, companyId, userId } = await authorize(request, {
+    "accounting.assets": "Create"
   });
 
   const { fixedAssetId } = params;

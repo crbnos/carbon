@@ -46,13 +46,17 @@ that defines it: `~/modules/sales/sales.models`, never `~/modules/sales`.
   (`@mcp read`, `@mcp destructive`). The summary line is the title, `@remarks`
   the description, `@param name - text` a field's description, `@returns` the
   response. See `conventions-services.md`.
+- A permission the row decides (the page of an item's type) is a helper
+  call, `permission: service.itemRule("Edit", { id: "itemId" })`. The helper
+  is a function, so it lives in `.service.ts` (`itemRule`, `items.service.ts`,
+  which `inventory.server.ts` imports too); see `conventions-services.md`.
 - Call building blocks through a namespace import, so a service function and
   the building block it wraps can share a name:
   ```ts
   import * as service from "./sales.service";
   export const getCustomers = defineServiceFn({
     input: z.object({ search: z.string().optional() }),
-    permission: { view: "sales" },
+    permission: { "sales.customers": "View" },
     async run(ctx, input) {
       return paged(ctx, await service.getCustomers(ctx.asCaller.supabase, ctx.company.id, input));
     }
@@ -89,8 +93,9 @@ function kept its logic as is:
   it checks the caller behind `client` first.
 - The operation keeps the function's permission exactly: a `<name>Permission`
   constant beside the body, passed as `as`. `apps/erp/test/posting-permissions.test.ts`
-  checks every one names a real module and none is open to every member
-  without review.
+  checks every one names a real page and none is open to every member
+  without review. A row rule passed as `as` is read by `authorizePostingCaller`
+  through `readRowRequirement`, as the gate reads it.
 - Its live-database tests move to `apps/erp/test/database/`, on the fixtures in
   `apps/erp/test/database/fixtures/` (`always-post.ts`, whose `service` is a
   system `ServiceContext`).
@@ -101,11 +106,50 @@ function kept its logic as is:
 |---|---|
 | `defineServiceFn`, `CarbonError`, `ServiceContext`, `toResult` | `@carbon/api/service-fn.server` |
 | `payload`, `unwrap`, `paged`, `run`, `attempt` | `@carbon/api/service-tools.server` |
-| `carbon`, `respond` | `@carbon/api/carbon.server` |
+| `authorize` | `@carbon/auth/auth.server` |
+| `dataOrThrow`, `respond`, `registerCarbon` | `@carbon/api/carbon.server` |
 
-The ERP hands `carbon()` its router and caller context once
+The ERP hands `authorize` its router and caller context once
 (`registerCarbon`, in `apps/erp/app/modules/carbon.server.ts`, imported by
 `entry.server.tsx`) and its router type through `Register`.
+
+## A route loader
+
+A loader reads through the service functions too, so it passes the same gate
+an API or MCP caller does. Take `api` from the loader's own `authorize` call:
+a second `authorize(request)` would authenticate again, and for a
+`bypassRls: true` route its `api` would run with the user's client instead of
+the service role. `api` is bound on first read, so a loader that never calls a
+service function pays nothing for it.
+
+```ts
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { api } = await authorize(request, { "sales.customers": "View" });
+  const [customer, locations] = await Promise.all([
+    api.sales.getCustomer({ customerId: params.customerId! }),
+    api.resources.getLocationsList({})
+  ]);
+  if (customer.error) throw redirect(path.to.customers, await flash(request, error(customer.error, "Failed to load customer")));
+  return { customer: customer.data, locations: locations.data ?? [] };
+}
+```
+
+- A paged read answers `data: { rows, count }`. A list loader that hands the
+  raw page to its component returns `{ data: page.data?.rows ?? null, count:
+  page.data?.count ?? null, error: page.error }`.
+- A refusal is `{ category, message, status }`: a missing row is `category ===
+  "notFound"`, never a `PGRST116` code.
+- A service function that returns a plain value (not `unwrap`/`paged`) is read
+  with `dataOrThrow(await api.<module>.<fn>(input))`
+  (`@carbon/api/carbon.server`): the value, or the refusal thrown.
+- A lookup every screen needs (locations, units) gates on `"employee"`, so a
+  page reads it without the module's permission. Only a lookup whose tables
+  RLS lets every employee read may do so; one that reads a restricted table
+  keeps View on its page, and a loader without that permission calls the
+  building block directly (baselined in `loader-reads-through-api`).
+- A building block no service function calls is a helper (a time zone, user
+  defaults, a label logo) and the loader calls it directly. A read made as the
+  service role, or for another company of the group, stays a direct call too.
 
 ## A route action
 
@@ -113,7 +157,7 @@ The ERP hands `carbon()` its router and caller context once
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(jobValidator).request(args, { params: ["jobId"] });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.cancelJob({ jobId: input.params.jobId });
   return result; // a fetcher form: the component's useAction toasts it
   // a navigating form instead:
@@ -133,3 +177,4 @@ elsewhere.
 | `service-fn-file` | anything in `<module>.server.ts` other than imports, types, plain constants and exported `defineServiceFn` consts |
 | `no-server-code-in-client` | a value import of a `.service` or `.server` file from components, hooks, `ui/`, models, utils or types |
 | `route-action-shape` | a write made in a route instead of a service function |
+| `loader-reads-through-api` | a loader calling a building block that a service function wraps (`service.<name>(…)` in `<module>.server.ts`) |

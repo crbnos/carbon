@@ -2,15 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getLinkedStripeCustomerId } from "@carbon/stripe/send-sales-invoice.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { stripeCustomerChoiceValidator } from "~/modules/invoicing/invoicing.models";
-import { getContract } from "~/modules/sales/sales.service";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-confirm");
@@ -23,14 +23,16 @@ export async function loader({
   request,
   params
 }: LoaderFunctionArgs): Promise<{ stripeCustomerLinked: boolean }> {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { companyId, api } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    CONTRACT_READ_GATE
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const contract = await getContract(client, id, companyId);
+  const contract = await api.sales.getContract({ customerContractId: id });
   if (contract.error || contract.data?.companyId !== companyId) {
     return { stripeCustomerLinked: false };
   }
@@ -64,7 +66,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.confirmContract({ id, ...input.data });
   // Straight to the contract page, never back to the referrer: from the
   // setup wizard that is a second redirect, and the contract layout does not

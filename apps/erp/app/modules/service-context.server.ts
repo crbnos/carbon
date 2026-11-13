@@ -2,47 +2,37 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ModulePermissions } from "@carbon/api/permissions";
 import {
   createServiceContext,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
-import type { requirePermissions } from "@carbon/auth/auth.server";
+import type { CallerAuth } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDatabaseClient } from "~/services/database.server";
 
-/** An authenticated caller, as every entry point states it. */
-export type Caller = {
-  kind: "user" | "apiKey";
-  /** The user, or for a key its creator. */
-  userId: string;
-  /** The user's claims, or the key's scopes, per module. */
-  permissions: ModulePermissions;
-  companyId: string;
-  companyGroupId: string;
-  client: SupabaseClient<Database>;
-};
-
-/** The context a service function runs with for this caller. */
-export function contextFor(caller: Caller): ServiceContext {
+/**
+ * The context a service function runs with for a caller `authorize` resolved
+ * (or the v1 API, the same way): the user with their claims and role, or the
+ * API key with its grants and its creator as the audit user.
+ */
+export function serviceContext(auth: CallerAuth): ServiceContext {
   return createServiceContext({
     actor:
-      caller.kind === "apiKey"
+      auth.caller === "apiKey"
         ? {
             type: "apiKey",
-            createdBy: caller.userId,
-            scopes: caller.permissions
+            createdBy: auth.userId,
+            permissions: auth.permissions
           }
         : {
             type: "user",
-            userId: caller.userId,
-            permissions: caller.permissions
+            userId: auth.userId,
+            permissions: auth.permissions,
+            role: auth.role
           },
-    company: { id: caller.companyId, groupId: caller.companyGroupId },
-    caller: caller.client,
+    company: { id: auth.companyId, groupId: auth.companyGroupId },
+    caller: auth.client,
     system: getCarbonServiceRole,
     pg: getDatabaseClient,
     kv: () => redis
@@ -92,28 +82,5 @@ export async function shareLinkContext(record: {
     companyId: record.companyId,
     companyGroupId: company.data.companyGroupId,
     onBehalfOf: record.createdBy
-  });
-}
-
-type Auth = Pick<
-  Awaited<ReturnType<typeof requirePermissions>>,
-  | "client"
-  | "companyId"
-  | "companyGroupId"
-  | "userId"
-  | "caller"
-  | "permissions"
->;
-
-/** The context for a request, built from what `requirePermissions` returned. */
-export function serviceContext(auth: Auth): ServiceContext {
-  return contextFor({
-    // For a key, requirePermissions reports the key's creator as `userId`.
-    kind: auth.caller === "apiKey" ? "apiKey" : "user",
-    userId: auth.userId,
-    permissions: auth.permissions,
-    companyId: auth.companyId,
-    companyGroupId: auth.companyGroupId,
-    client: auth.client
   });
 }

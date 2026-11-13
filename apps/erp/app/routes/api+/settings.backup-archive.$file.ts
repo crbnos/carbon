@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { createGzip } from "node:zlib";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { listBucketFilesRecursive } from "@carbon/jobs/backups";
 import type { LoaderFunctionArgs } from "react-router";
@@ -23,8 +23,8 @@ const DOWNLOAD_CONCURRENCY = 6;
  * gzip tar, which `backups-archive.server.ts` unpacks on re-import.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId, email } = await authorize(request, {
+    "settings.backups": "View"
   });
   if (!(await canManageBackups(client, companyId, email)))
     throw new Response("Not found", { status: 404 });

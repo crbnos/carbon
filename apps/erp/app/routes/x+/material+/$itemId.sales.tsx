@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getSalesRuleAssignmentsForItem,
@@ -16,10 +16,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import { itemUnitSalePriceValidator } from "~/modules/items/items.models";
-import {
-  getItemUnitSalePrice,
-  upsertItemUnitSalePrice
-} from "~/modules/items/items.service";
+import { upsertItemUnitSalePrice } from "~/modules/items/items.service";
 import type { MaterialSummary } from "~/modules/items/types";
 import { ItemSalePriceForm } from "~/modules/items/ui/Item";
 import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
@@ -27,9 +24,8 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "parts.materials": "View"
   });
 
   const { itemId } = params;
@@ -37,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [materialUnitSalePrice, salesRuleAssignments, salesRuleLibrary] =
     await Promise.all([
-      getItemUnitSalePrice(client, itemId, companyId),
+      api.items.getItemUnitSalePrice({ id: itemId }),
       getSalesRuleAssignmentsForItem(client, { itemId, companyId }),
       getSalesRulesList(client, companyId)
     ]);
@@ -65,8 +61,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.materials": "Edit"
   });
 
   const { itemId } = params;

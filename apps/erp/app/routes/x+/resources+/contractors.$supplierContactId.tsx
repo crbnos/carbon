@@ -3,30 +3,27 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { contractorValidator } from "~/modules/resources/resources.models";
-import {
-  getContractor,
-  upsertContractor
-} from "~/modules/resources/resources.service";
+import { upsertContractor } from "~/modules/resources/resources.service";
 import { ContractorForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "resources"
-  });
+  const { api } = await authorize(request, { "resources.abilities": "View" });
 
   const { supplierContactId } = params;
   if (!supplierContactId) throw notFound("supplierContactId not found");
 
-  const contractor = await getContractor(client, supplierContactId);
+  const contractor = await api.resources.getContractor({
+    contractorId: supplierContactId
+  });
 
   if (contractor.error) {
     throw redirect(
@@ -42,8 +39,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "resources"
+  const { client, companyId, userId } = await authorize(request, {
+    "resources.abilities": "Create"
   });
 
   const formData = await request.formData();

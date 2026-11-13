@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -185,7 +186,9 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
           </div>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "parts")}>
+          <Submit
+            isDisabled={!permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" })}
+          >
             <Trans>Save</Trans>
           </Submit>
         </CardFooter>

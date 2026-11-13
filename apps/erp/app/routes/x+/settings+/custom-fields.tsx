@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -10,7 +10,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { getAttributeDataTypes } from "~/modules/people/people.service";
 import { CustomFieldsTable } from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -25,8 +24,8 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, customFieldTablesList, {
     dataKey: "tables",
-    firstPage: async ({ client }) => {
-      const dataTypes = await getAttributeDataTypes(client);
+    firstPage: async ({ api }) => {
+      const dataTypes = await api.people.getAttributeDataTypes({});
       return { dataTypes: dataTypes.data ?? [] };
     },
     onError: {
@@ -47,7 +46,7 @@ const customFieldsForm = z.object({
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(customFieldsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const { ids, table, value } = input.data;
   return api.settings.setRecordCustomFields({
     table,

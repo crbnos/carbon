@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, useCarbon } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Button, Heading } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -13,7 +13,6 @@ import { LuChevronUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import InfiniteScroll from "~/components/InfiniteScroll";
-import { getItemLedgerBalance } from "~/modules/inventory/inventory.service";
 import { getItemLedgerActivity } from "~/modules/inventory/inventory.utils";
 import type { ItemLedger } from "~/modules/inventory/types";
 import type {
@@ -25,14 +24,12 @@ import {
   InventoryActivity,
   withRunningBalance
 } from "~/modules/inventory/ui";
-import { getItem } from "~/modules/items/items.service";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "inventory.quantities": "View"
   });
 
   const { itemId } = params;
@@ -59,7 +56,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -110,9 +107,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .gt("entryNumber", anchorEntryNumber)
           .limit(1)
       : Promise.resolve({ data: [] as { id: string }[] }),
-    getItem(client, itemId),
+    api.items.getItem({ id: itemId }),
     anchorEntryNumber !== null
-      ? getItemLedgerBalance(client, {
+      ? api.inventory.getItemLedgerBalance({
           itemId,
           companyId,
           locationId,
@@ -142,7 +139,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     newestEntryNumber === undefined
       ? null
       : (anchoredBalance ??
-        (await getItemLedgerBalance(client, {
+        (await api.inventory.getItemLedgerBalance({
           itemId,
           companyId,
           locationId,

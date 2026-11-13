@@ -115,7 +115,8 @@ export function ProjectProperties() {
   if (!project) return null;
 
   const isDisabled =
-    !permissions.can("update", "projects") || project.status === "Closed";
+    !permissions.has({ "projects.projects": "Edit" }) ||
+    project.status === "Closed";
   const common = { projectId, elementId: "", isDisabled };
 
   return (

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { upsertEnforcementRule } from "@carbon/ee/rules.server";
@@ -21,7 +21,7 @@ const isTargetType = (value: string | null): value is TargetType =>
   value === "item" || value === "workCenter";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, { create: "inventory" });
+  await authorize(request, { "inventory.storageRules": "Create" });
   const url = new URL(request.url);
   const raw = url.searchParams.get("targetType");
   return { targetType: isTargetType(raw) ? raw : ("item" as TargetType) };
@@ -29,8 +29,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "inventory"
+  const { client, companyId, userId } = await authorize(request, {
+    "inventory.storageRules": "Create"
   });
 
   await requireFeature({

@@ -66,7 +66,7 @@ const GaugeTypesTable = memo((props: GaugeTypesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "sales")}
+            disabled={!permissions.has({ "quality.gaugeTypes": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteGaugeType(row.id)}?${params.toString()}`
@@ -89,7 +89,7 @@ const GaugeTypesTable = memo((props: GaugeTypesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "quality") && (
+        permissions.has({ "quality.gaugeTypes": "Create" }) && (
           <New
             label={t`Gauge Type`}
             to={`${path.to.newGaugeType}?${params.toString()}`}

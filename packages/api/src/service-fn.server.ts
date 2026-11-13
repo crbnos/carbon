@@ -3,6 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import {
+  type AccessRequirement,
+  admits,
+  type ExpandedClaims,
+  type PageGate
+} from "@carbon/database/access";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -10,11 +16,13 @@ import { describeCause, type FailureReason } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { databaseRefusal } from "./database-refusal";
+import { ForbiddenError, NotFoundError } from "./errors";
 import {
-  hasPermissions,
-  type ModulePermissions,
   type PermissionRule,
-  type Permissions,
+  type Requirement,
+  type RowsToRead,
+  readGate,
+  requirementOfRows,
   resolvePermissions
 } from "./permissions";
 
@@ -88,8 +96,14 @@ export type Result<T, E extends CarbonError = CarbonError> =
  * authenticated it; the gate checks every entry call against it.
  */
 export type Actor =
-  | { type: "user"; userId: string; permissions: ModulePermissions }
-  | { type: "apiKey"; createdBy: string; scopes: ModulePermissions }
+  | {
+      type: "user";
+      userId: string;
+      permissions: ExpandedClaims;
+      /** The user's role in the company: a portal account is not an employee. */
+      role: Database["public"]["Enums"]["role"] | null;
+    }
+  | { type: "apiKey"; createdBy: string; permissions: ExpandedClaims }
   | { type: "system"; onBehalfOf: string };
 
 type Kv = typeof redis;
@@ -111,10 +125,12 @@ export type ServiceContext = {
   /** The user id audit columns record: the user, a key's creator, or the user a job acts for. */
   auditUserId: string;
   /**
-   * Whether the actor also holds `required`: for a permission that depends on
-   * the data, which the entry gate cannot know. The system actor holds all.
+   * Whether the actor also passes `required` (`admits`): for a permission that
+   * depends on the data, which the entry gate cannot know. The system actor
+   * passes all. The check is exact: the entry gate's `readGate` is the one
+   * place a data read widens.
    */
-  can(required: Permissions): boolean;
+  can(required: AccessRequirement): boolean;
   error<C extends ErrorCategory>(
     category: C,
     message: string,
@@ -249,8 +265,8 @@ class Context implements ServiceContext {
     return this.handles.kv();
   }
 
-  can(required: Permissions): boolean {
-    return allows(this.actor, this.company.id, required);
+  can(required: AccessRequirement): boolean {
+    return admits(this.actor, this.company.id, required);
   }
 
   inside(): Context {
@@ -308,18 +324,122 @@ export function createServiceContext(handles: Handles): ServiceContext {
   return new Context(handles, false, false);
 }
 
-function allows(
-  actor: Actor,
+/**
+ * What the rows a row rule names require, read in ONE query: `from` by the
+ * ids, joined hop by hop along `path`, every table in `companyId`. Throws
+ * `NotFoundError` for an id with no row and `ForbiddenError` for a row no
+ * case matches. The postings' caller check reads through it too.
+ */
+export async function readRowRequirement(
+  db: Kysely<KyselyDatabase>,
   companyId: string,
-  required: Permissions
-): boolean {
-  if (actor.type === "system") return true;
-  if (required === "system") return false;
-  return hasPermissions(
-    actor.type === "user" ? actor.permissions : actor.scopes,
-    companyId,
+  rows: RowsToRead
+): Promise<PageGate> {
+  const { from, path = [], cases } = rows.row;
+  // Tables and columns come from the rule, which is code; Kysely quotes them
+  // and binds every value.
+  const k = db as unknown as Kysely<any>;
+  let query = k
+    .selectFrom(`${from} as t0`)
+    .where("t0.id", "in", rows.ids)
+    .where("t0.companyId", "=", companyId);
+  path.forEach(([fk, table], hop) => {
+    const prev = `t${hop}`;
+    const next = `t${hop + 1}`;
+    query = query.innerJoin(`${table} as ${next}`, (join) =>
+      join
+        .onRef(`${next}.id`, "=", `${prev}.${fk}`)
+        .on(`${next}.companyId`, "=", companyId)
+    );
+  });
+  const last = `t${path.length}`;
+  const columns = [...new Set(cases.map((rowCase) => rowCase.column))];
+  const found = await query
+    .select([
+      "t0.id as id",
+      ...columns.map((column) => `${last}.${column} as ${column}`)
+    ])
+    .execute();
+  return requirementOfRows(rows, found);
+}
+
+function forbidden(ctx: ServiceContext, required: unknown) {
+  logger.warn("Service function refused: {actor}", {
+    actor: ctx.actor.type,
+    companyId: ctx.company.id,
     required
-  );
+  });
+  return new CarbonError("forbidden", "You do not have permission to do this");
+}
+
+type Refused = CarbonError<
+  "validation" | "forbidden" | "notFound" | "internal"
+> | null;
+
+/**
+ * The refusal `rule` gives the context's actor for `input`, or null: the
+ * entry gate of every service function, and the check of a permission only
+ * `run` can name (an id that can be an item or one of its make methods). A
+ * row rule reads its rows as the system; the system actor holds everything
+ * and reads nothing.
+ */
+export function refusalOf<I>(
+  ctx: ServiceContext,
+  rule: PermissionRule<I>,
+  input: I
+): Promise<Refused> {
+  return gate(ctx, rule, input, false);
+}
+
+/**
+ * `refusalOf`, or for a nested call (one an outer function's gate already
+ * authorized) only the rule that survives nesting: no one but the system
+ * passes a system-only function.
+ */
+async function gate<I>(
+  ctx: ServiceContext,
+  rule: PermissionRule<I>,
+  input: I,
+  nested: boolean
+): Promise<Refused> {
+  let resolved: Requirement | RowsToRead;
+  try {
+    resolved = resolvePermissions(rule, input);
+  } catch (err) {
+    // A keyed value with no rule, or a row rule's field with no id: bad
+    // input, not a 403.
+    return new CarbonError(
+      "validation",
+      err instanceof Error ? err.message : "Invalid input"
+    );
+  }
+  if (ctx.actor.type === "system") return null;
+  if (nested) return resolved === "system" ? forbidden(ctx, resolved) : null;
+  let required: Requirement;
+  if (typeof resolved === "object" && "ids" in resolved) {
+    try {
+      required = await readRowRequirement(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        resolved
+      );
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        return new CarbonError("notFound", err.message);
+      }
+      if (err instanceof ForbiddenError) return forbidden(ctx, resolved.row);
+      logger.error("Service function permission read failed: {error}", {
+        companyId: ctx.company.id,
+        error: err
+      });
+      return new CarbonError("internal", "Something went wrong", err);
+    }
+  } else {
+    required = resolved;
+  }
+  return admits(ctx.actor, ctx.company.id, required)
+    ? null
+    : forbidden(ctx, required);
 }
 
 /** What a failure log says of the input: its keys. Values can be files, notes, emails. */
@@ -335,7 +455,8 @@ function failed<R>(error: CarbonError) {
 
 type Outcome<R> = Result<
   Exclude<R, CarbonError>,
-  Extract<R, CarbonError> | CarbonError<"internal" | "validation" | "forbidden">
+  | Extract<R, CarbonError>
+  | CarbonError<"internal" | "validation" | "forbidden" | "notFound">
 >;
 
 export type ServiceFn<I extends z.ZodType, R> = {
@@ -363,6 +484,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
   // Compiled on the first call, not at import: a module of service functions
   // would otherwise pay for every schema at startup, used or not.
   let schema: I | undefined;
+  const permission = readGate(definition.permission);
 
   const call = async (
     ctx: ServiceContext,
@@ -376,34 +498,13 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
       );
     }
 
-    let required: Permissions;
-    try {
-      required = resolvePermissions(definition.permission, parsed.data);
-    } catch (err) {
-      // A keyed rule with no entry for the value: bad input, not a 403.
-      return failed(
-        new CarbonError(
-          "validation",
-          err instanceof Error ? err.message : "Invalid input"
-        )
-      );
-    }
-    // A nested call was authorized by the outer function's gate, but no gate
-    // admits anyone but the system to a system-only function.
-    const admitted =
+    const refusal = await gate(
+      ctx,
+      permission,
+      parsed.data,
       ctx instanceof Context && ctx.nested
-        ? required !== "system" || ctx.actor.type === "system"
-        : allows(ctx.actor, ctx.company.id, required);
-    if (!admitted) {
-      logger.warn("Service function refused: {actor}", {
-        actor: ctx.actor.type,
-        companyId: ctx.company.id,
-        required
-      });
-      return failed(
-        new CarbonError("forbidden", "You do not have permission to do this")
-      );
-    }
+    );
+    if (refusal) return failed(refusal);
 
     try {
       const out = await definition.run(
@@ -442,7 +543,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
 
   return Object.assign(call, {
     input: definition.input,
-    permission: definition.permission
+    permission
   });
 }
 
@@ -503,4 +604,17 @@ export function toResult<T, E extends CarbonError>(
       ...(reason && { reason })
     }
   } as RouteResult<Result<T, E>>;
+}
+
+/**
+ * The data of a read a loader cannot do without, or its refusal thrown, as
+ * the building block's own throw was: `dataOrThrow(await api.items.getItemUsedIn(input))`.
+ */
+export function dataOrThrow<R extends { data: unknown; error: unknown }>(
+  result: R
+): Extract<R, { error: null }>["data"] {
+  if (result.error) {
+    throw new Error((result.error as { message: string }).message);
+  }
+  return result.data as Extract<R, { error: null }>["data"];
 }

@@ -222,7 +222,7 @@ const ProjectStockTransfersTable = memo(
         count={count}
         defaultColumnVisibility={{ createdAt: false, postedAt: false }}
         primaryAction={
-          permissions.can("update", "projects") && (
+          permissions.has({ "projects.projects": "Edit" }) && (
             <New label={t`Transfer`} to={path.to.newProjectStockTransfer} />
           )
         }

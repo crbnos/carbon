@@ -4,7 +4,7 @@
 
 import { accountProfileValidator } from "@carbon/account";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { RecordOutlet } from "@carbon/react";
@@ -16,9 +16,7 @@ import type {
   MetaFunction
 } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { getEmployeeSummary } from "~/modules/people/people.service";
 import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import {
   getAllAttributeCategories,
   updatePublicAccount
@@ -31,19 +29,18 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`People`, to: path.to.people },
     (data) => data?.employeeSummary?.name
-  ),
+  )
   // Required for Recently Viewed: the recorder only captures a match whose
   // handle has BOTH a detail breadcrumb and a module (mirrors every other detail
   // route, e.g. tool+/$itemId.tsx). Without it, viewing a person never records.
-  module: "people"
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.employeeSummary?.name, "Person");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "people"
+  const { client, companyId, api } = await authorize(request, {
+    "people.employees": "View"
   });
 
   const { personId } = params;
@@ -51,9 +48,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [employeeSummary, attributeCategories, companySettings] =
     await Promise.all([
-      getEmployeeSummary(client, personId, companyId),
+      api.people.getEmployeeSummary({ employeeId: personId }),
       getAllAttributeCategories(client, personId, companyId),
-      getCompanySettings(client, companyId)
+      api.settings.getCompanySettings({})
     ]);
 
   if (employeeSummary.error) {
@@ -75,9 +72,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
-    update: "people"
-  });
+  const { client } = await authorize(request, { "people.employees": "Edit" });
   const { personId } = params;
   if (!personId) throw new Error("No person ID provided");
 

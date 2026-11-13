@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,27 +11,23 @@ import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { fixedAssetAdjustCostValidator } from "~/modules/accounting/accounting.models";
-import {
-  getDefaultAccounts,
-  getFixedAsset,
-  invokeAssetTransfer
-} from "~/modules/accounting/accounting.service";
+import { invokeAssetTransfer } from "~/modules/accounting/accounting.service";
 import { FixedAssetAdjustCostForm } from "~/modules/accounting/ui/FixedAssets";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.assets": "View"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
   const [asset, accountDefaults, timeZone] = await Promise.all([
-    getFixedAsset(client, fixedAssetId, companyId),
-    getDefaultAccounts(client, companyId),
+    api.accounting.getFixedAsset({ id: fixedAssetId }),
+    api.accounting.getDefaultAccounts({}),
     getCompanyTimeZone(client, companyId)
   ]);
   if (asset.error) {
@@ -77,8 +73,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   // Recosting an asset puts a number of the user's own on the books.
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
+  const { client, companyId, userId } = await authorize(request, {
+    "accounting.assets": "Edit"
   });
 
   const { fixedAssetId } = params;

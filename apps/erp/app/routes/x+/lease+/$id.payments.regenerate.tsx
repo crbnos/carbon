@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { getErrorMessage, redirect } from "@carbon/utils";
@@ -19,8 +19,8 @@ const logger = getLogger("erp", "lease-payments-regenerate");
  *  the lease currency's decimal places inside `regenerateLeasePayments`. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "purchasing"
+  const { companyId, userId } = await authorize(request, {
+    "purchasing.leases": "Edit"
   });
 
   const { id } = params;

@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
 import {
@@ -52,10 +51,6 @@ import {
   settingsToggle,
   supplierQuoteNotificationValidator
 } from "~/modules/settings/settings.models";
-import {
-  getAccountsPayableBillingAddress,
-  getCompanySettings
-} from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -65,14 +60,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId, api } = await authorize(request, {
+    "settings.purchasing": "View"
   });
 
   const [companySettings, apBillingAddress, defaultAttachmentsResult] =
     await Promise.all([
-      getCompanySettings(client, companyId),
-      getAccountsPayableBillingAddress(client, companyId),
+      api.settings.getCompanySettings({}),
+      api.settings.getAccountsPayableBillingAddress({}),
       storage(client)
         .company(companyId)
         .list(`${companyId}/default-attachments/company`)
@@ -141,7 +136,7 @@ const purchasingSettingsForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(purchasingSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.updatePurchasingSettings(input.data);
 }
 

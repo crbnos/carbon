@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, hasPermission } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { error } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { holdsGate } from "@carbon/database/access";
 import { Badge, Button, ClientOnly, cn, useDebounce } from "@carbon/react";
 import { datetime, formatDate, redirect } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
@@ -34,16 +35,10 @@ import {
 } from "~/components/Gantt";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
+import { getShiftsWithTimesByIds } from "~/modules/people/people.service";
 import {
-  getDepartmentsList,
-  getShiftsWithTimes,
-  getShiftsWithTimesByIds
-} from "~/modules/people/people.service";
-import {
-  getCapacityReservationsForResources,
   getForecastNonWorkingIntervals,
   getHolidayDates,
-  getMaintenanceDowntimeForResources,
   getQualifiedPeopleByProcess,
   getWorkCenterNonWorkingIntervals
 } from "~/modules/production/production.service";
@@ -139,14 +134,13 @@ function resolveForecastWindow(input: {
 
 export const handle: Handle = {
   breadcrumb: msg`Forecast`,
-  to: path.to.scheduleForecast,
-  module: "production"
+  to: path.to.scheduleForecast
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, permissions } = await requirePermissions(
+  const { client, companyId, userId, permissions, api } = await authorize(
     request,
-    { view: "production" }
+    { "production.forecast": "View" }
   );
 
   const url = new URL(request.url);
@@ -176,9 +170,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationResult
   ] = await Promise.all([
     getLocationTimeZone(client, locationId, companyId),
-    getShiftsWithTimes(client, companyId, locationId),
+    api.people.getShiftsWithTimes({ locationId }),
     getWorkCentersByLocation(client, locationId),
-    getDepartmentsList(client, companyId),
+    api.people.getDepartmentsList({}),
     client
       .from("location")
       .select("name, requiresStaffing")
@@ -223,11 +217,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // background can't disagree with the bars. Shades the axis so a reservation
   // spanning several days no longer reads as 24h/day.
   const [reservations, maintenanceResult, holidays] = await Promise.all([
-    getCapacityReservationsForResources(client, companyId, locationId, {
-      from: new Date(windowStartMs).toISOString(),
-      to: new Date(windowEndMs).toISOString()
+    api.production.getCapacityReservationsForResources({
+      locationId,
+      window: {
+        from: new Date(windowStartMs).toISOString(),
+        to: new Date(windowEndMs).toISOString()
+      }
     }),
-    getMaintenanceDowntimeForResources(client, companyId, locationId),
+    api.production.getMaintenanceDowntimeForResources({ locationId }),
     getHolidayDates(client, companyId, {
       from: toCalendarDate(fromAbsolute(windowStartMs, timeZone)).toString(),
       to: toCalendarDate(fromAbsolute(windowEndMs, timeZone)).toString()
@@ -496,7 +493,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           }),
       // Qualifications are readable with resources view only; without it the
       // list would read as "nobody is qualified", so it is left out.
-      hasPermission(permissions, "resources", "view", companyId)
+      holdsGate(permissions, { "resources.abilities": "View" }, companyId)
         ? getQualifiedPeopleByProcess(client, companyId, {
             processIds: unschedulableProcessIds,
             fromDate: toCalendarDate(now(timeZone)).toString()

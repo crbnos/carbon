@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getLegacyDocumentCounts,
@@ -56,7 +55,6 @@ import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import BurdenSettingsForm from "~/modules/accounting/ui/IndirectRates/BurdenSettingsForm.ee";
 import { settingsToggle } from "~/modules/settings/settings.models";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -111,12 +109,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { companyId, client, api } = await authorize(request, {
+    "settings.accounting": "View"
   });
 
   const [companySettings, accountDefaults, burdenSettings] = await Promise.all([
-    getCompanySettings(client, companyId),
+    api.settings.getCompanySettings({}),
     getDefaultAccounts(client, companyId),
     getBurdenSettings(client, companyId)
   ]);
@@ -196,7 +194,7 @@ const accountingSettingsForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(accountingSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   if ("writeMissingJournals" in input.data) {
     return api.settings.writeMissingJournals({});
   }
@@ -363,8 +361,10 @@ export default function AccountingSettingsRoute() {
                       isLoading={legacyFetcher.state !== "idle"}
                       isDisabled={
                         legacyFetcher.state !== "idle" ||
-                        !permissions.can("update", "settings") ||
-                        !permissions.can("update", "accounting")
+                        !permissions.has({ "settings.accounting": "Edit" }) ||
+                        !permissions.has({
+                          "accounting.journalEntries": "Edit"
+                        })
                       }
                     >
                       <Trans>Write missing journals</Trans>
@@ -601,7 +601,7 @@ export default function AccountingSettingsRoute() {
             key={`${burdenSettings.burdenRateType}:${burdenSettings.postAppliedBurden}`}
             initialValues={burdenSettings}
             action={path.to.accountingSettings}
-            isDisabled={!permissions.can("update", "settings")}
+            isDisabled={!permissions.has({ "settings.accounting": "Edit" })}
           />
         )}
       </SettingsPage>

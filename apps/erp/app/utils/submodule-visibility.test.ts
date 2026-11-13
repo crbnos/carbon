@@ -85,20 +85,22 @@ describe("visibleGroups", () => {
 
 describe("moduleLanding", () => {
   it("keeps the link if the module does not open on a hidden sub-module", () => {
-    expect(moduleLanding(parts.to, parts.to, groups, layout([units.to]))).toBe(
-      parts.to
-    );
+    expect(
+      moduleLanding("parts", parts.to, parts.to, groups, layout([units.to]))
+    ).toBe(parts.to);
   });
 
   it("opens on the first sub-module left", () => {
-    expect(moduleLanding(parts.to, parts.to, groups, layout([parts.to]))).toBe(
-      materials.to
-    );
+    expect(
+      moduleLanding("parts", parts.to, parts.to, groups, layout([parts.to]))
+    ).toBe(materials.to);
   });
 
   it("opens on the first sub-module left in the user's order", () => {
     const moved = layout([parts.to], [tools.to, parts.to, materials.to]);
-    expect(moduleLanding(parts.to, parts.to, groups, moved)).toBe(tools.to);
+    expect(moduleLanding("parts", parts.to, parts.to, groups, moved)).toBe(
+      tools.to
+    );
   });
 
   it("skips a sub-module outside the module, which has no module sidebar", () => {
@@ -107,8 +109,29 @@ describe("moduleLanding", () => {
     const reports = { to: "/x/projects/reports" };
     const manage = [{ name: "Manage", routes: [projects, myTime, reports] }];
     expect(
-      moduleLanding(projects.to, projects.to, manage, layout([projects.to]))
+      moduleLanding(
+        "projects",
+        projects.to,
+        projects.to,
+        manage,
+        layout([projects.to])
+      )
     ).toBe(reports.to);
+  });
+
+  it("opens on a sub-module of the module under another URL segment", () => {
+    const quantities = { to: "/x/inventory/quantities" };
+    const traceability = { to: "/x/traceability" };
+    const inventory = [{ name: "", routes: [quantities, traceability] }];
+    expect(
+      moduleLanding(
+        "inventory",
+        quantities.to,
+        quantities.to,
+        inventory,
+        layout([quantities.to])
+      )
+    ).toBe(traceability.to);
   });
 
   it("opens the hidden sub-module if nothing else is left inside the module", () => {
@@ -116,13 +139,19 @@ describe("moduleLanding", () => {
     const myTime = { to: "/x/timesheet" };
     const manage = [{ name: "Manage", routes: [projects, myTime] }];
     expect(
-      moduleLanding(projects.to, projects.to, manage, layout([projects.to]))
+      moduleLanding(
+        "projects",
+        projects.to,
+        projects.to,
+        manage,
+        layout([projects.to])
+      )
     ).toBe(projects.to);
   });
 
   it("follows a module link that redirects to a hidden sub-module", () => {
     expect(
-      moduleLanding("/x/items", parts.to, groups, layout([parts.to]))
+      moduleLanding("parts", "/x/items", parts.to, groups, layout([parts.to]))
     ).toBe(materials.to);
   });
 
@@ -130,8 +159,8 @@ describe("moduleLanding", () => {
     const all = { to: "/x/documents/search" };
     const mine = { to: "/x/documents/search", q: "my" };
     const documents = [{ name: "", routes: [all, mine] }];
-    expect(moduleLanding(all.to, all.to, documents, layout([all.to]))).toBe(
-      "/x/documents/search?q=my"
-    );
+    expect(
+      moduleLanding("documents", all.to, all.to, documents, layout([all.to]))
+    ).toBe("/x/documents/search?q=my");
   });
 });

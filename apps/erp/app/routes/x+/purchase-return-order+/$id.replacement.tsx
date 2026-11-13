@@ -3,28 +3,23 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { createReplacementPurchaseOrder } from "~/modules/purchasing/purchasing.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "purchasing"
-    });
+  const { api } = await authorize(request, { "purchasing.returns": "Create" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const result = await createReplacementPurchaseOrder(client, {
-    purchaseReturnOrderId: id,
-    companyId,
-    companyGroupId,
-    userId
+  // The service function checks the purchase order permission and links the
+  // return to its replacement as the system, for this company only.
+  const result = await api.purchasing.createReplacementPurchaseOrder({
+    purchaseReturnOrderId: id
   });
 
   if (result.error || !result.data) {

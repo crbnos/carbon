@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -18,7 +19,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id } = input.params;
   const to =
     requestReferrer(args.request) ?? path.to.purchaseReturnOrderDetails(id);
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   if (input.data.status === "Cancelled") {
     const result = await api.purchasing.cancelReturnOrder({

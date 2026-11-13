@@ -20,6 +20,7 @@ import { DocumentPageHeader } from "~/components/DocumentPage";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { memoPage } from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
 import MemoStatus from "./MemoStatus";
 
@@ -68,8 +69,9 @@ const MemoHeader = () => {
   const status = memo.status;
   const isDraft = status === "Draft";
   const isPosted = status === "Posted";
-  const canMutate = permissions.can("update", "invoicing");
-  const canDelete = permissions.can("delete", "invoicing");
+  const page = memoPage(memo);
+  const canMutate = permissions.has({ [page]: "Edit" });
+  const canDelete = permissions.has({ [page]: "Full" });
   // The party decides which list the memo lives in, and what it is called.
   const typeLabel = memo.supplierId ? t`Supplier Credit` : t`Credit Memo`;
 

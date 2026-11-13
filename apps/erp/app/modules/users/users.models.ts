@@ -2,10 +2,83 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  ACCESS_SUBJECT_TYPES,
+  LEVELS,
+  MODULES,
+  type ModuleEnum,
+  moduleId,
+  moduleOf,
+  type PageGate,
+  pageById
+} from "@carbon/database/access";
 import { supportedLanguages } from "@carbon/locale";
 import { NotificationTopic } from "@carbon/notifications";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+
+/** The `module` enum label of a module with pages: what a grant can name. */
+export const grantModule = z.enum(
+  MODULES.map((module) => module.enum) as [ModuleEnum, ...ModuleEnum[]]
+);
+
+/**
+ * Grants replaced as one set. A null `page` covers the module; a null `level`
+ * stores no grant (inherit), and `"None"` is a stored grant that removes
+ * access.
+ */
+export const grantsSchema = z
+  .array(
+    z.object({
+      module: grantModule,
+      page: z.string().min(1).nullable(),
+      level: z.enum(LEVELS).nullable()
+    })
+  )
+  .superRefine((grants, ctx) => {
+    const seen = new Set<string>();
+    grants.forEach((grant, index) => {
+      if (
+        grant.page !== null &&
+        (!pageById(grant.page) ||
+          moduleOf(grant.page) !== moduleId(grant.module))
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: [index, "page"],
+          message: `Unknown page for ${grant.module}`
+        });
+      }
+      const key = `${grant.module}:${grant.page ?? ""}`;
+      if (seen.has(key)) {
+        ctx.addIssue({
+          code: "custom",
+          path: [index],
+          message: "A page is granted twice"
+        });
+      }
+      seen.add(key);
+    });
+  });
+
+/** Grants as a form posts them: one JSON string, read as `grantsSchema`. */
+export const grantsField = z
+  .string()
+  .transform((text, ctx): unknown => {
+    try {
+      return JSON.parse(text);
+    } catch {
+      ctx.addIssue({ code: "custom", message: "Invalid permissions" });
+      return z.NEVER;
+    }
+  })
+  .pipe(grantsSchema);
+
+export const permissionsValidator = z.object({
+  subjectType: z.enum(ACCESS_SUBJECT_TYPES),
+  subjectId: z.string().min(1),
+  grants: grantsSchema
+});
 
 export const modulePreferencesValidator = z.object({
   preferences: z.array(
@@ -24,10 +97,7 @@ export const bulkPermissionsValidator = z.object({
   userIds: z
     .array(z.string().min(1, { message: "Invalid selection" }))
     .min(1, { message: "Group members are required" }),
-  data: z
-    .string()
-    .startsWith("{", { message: "Invalid JSON" })
-    .endsWith("}", { message: "Invalid JSON" })
+  grants: grantsField
 });
 
 export const createCustomerAccountValidator = z.object({
@@ -107,6 +177,34 @@ export const convertOperatorValidator = z.object({
   employeeType: z.string().min(1, { message: "Employee type is required" })
 });
 
+/** `users.convertConsoleOperator`: it creates a sign-in account and moves the person to an employee type (Accounts). */
+export const convertConsoleOperatorPermission = {
+  "users.operators": "Edit",
+  "users.accounts": "Edit"
+} satisfies PageGate;
+
+/** `users.resetConsoleOperatorPin` on someone who is not a console operator (`isConsoleOperatorOf`). */
+export const nonOperatorPinResetPermission = {
+  "users.accounts": "Edit",
+  "settings.people": "Edit"
+} satisfies PageGate;
+
+/** Whether a person is a console operator of the company: PIN-only and of its Console Operator type. */
+export function isConsoleOperatorOf(
+  person: {
+    isConsoleOperator: boolean;
+    systemType: string | null;
+    employeeTypeCompanyId: string | null;
+  },
+  companyId: string
+): boolean {
+  return (
+    person.isConsoleOperator &&
+    person.systemType === "Console Operator" &&
+    person.employeeTypeCompanyId === companyId
+  );
+}
+
 export const createSupplierAccountValidator = z.object({
   id: z.string().min(1, "Supplier contact is required"),
   supplier: z.string().min(1, { message: "Supplier is required" })
@@ -122,31 +220,13 @@ export const deactivateUsersValidator = z.object({
 export const employeeTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
-  data: z
-    .string()
-    .startsWith("[", { message: "Invalid JSON" })
-    .endsWith("]", { message: "Invalid JSON" })
+  grants: grantsField
 });
-
-export const employeeTypePermissionsValidator = z.array(
-  z.object({
-    name: z.string(),
-    permission: z.object({
-      view: z.boolean(),
-      create: z.boolean(),
-      update: z.boolean(),
-      delete: z.boolean()
-    })
-  })
-);
 
 export const employeeValidator = z.object({
   id: z.string(),
   employeeType: z.string().min(1, { message: "Employee type is required" }),
-  data: z
-    .string()
-    .startsWith("{", { message: "Invalid JSON" })
-    .endsWith("}", { message: "Invalid JSON" })
+  grants: grantsField
 });
 
 export const groupValidator = z.object({
@@ -167,13 +247,6 @@ export const revokeInviteValidator = z.object({
   users: z
     .array(z.string().min(1, { message: "Invalid user id" }))
     .min(1, { message: "Users are required" })
-});
-
-export const userPermissionsValidator = z.object({
-  view: z.boolean(),
-  create: z.boolean(),
-  update: z.boolean(),
-  delete: z.boolean()
 });
 
 export const validUserFlags = [

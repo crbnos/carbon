@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   Card,
   CardContent,
@@ -31,14 +31,14 @@ import { path } from "~/utils/path";
  *  there — including every action that returns to the agreement page. A
  *  viewer who cannot edit sees the page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "sales"
+  const { client, companyId, permissions } = await authorize(request, {
+    "sales.rentalAgreements": "View"
   });
   const { id } = params;
   if (!id) throw new Error("Could not find id");
   const setup = await draftRentalAgreementSetupPath(client, {
     companyId,
-    userId,
+    permissions,
     id
   });
   if (setup) throw redirect(setup);

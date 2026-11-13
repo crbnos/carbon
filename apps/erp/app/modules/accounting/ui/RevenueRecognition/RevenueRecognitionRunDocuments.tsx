@@ -52,12 +52,12 @@ const RevenueRecognitionRunDocuments = () => {
     relatedItems?: Promise<PeriodRunRelatedItems>;
   }>(path.to.revenueRecognitionRun(runId));
 
-  const rentalAgreements = permissions.can("view", "sales")
+  const rentalAgreements = permissions.has({ "sales.rentalAgreements": "View" })
     ? [...(routeData?.rentalAgreements ?? [])].sort((a, b) =>
         a.rentalAgreementId.localeCompare(b.rentalAgreementId)
       )
     : [];
-  const salesInvoices = permissions.can("view", "invoicing")
+  const salesInvoices = permissions.has({ "invoicing.salesInvoices": "View" })
     ? [...(routeData?.salesInvoices ?? [])].sort((a, b) =>
         a.invoiceId.localeCompare(b.invoiceId)
       )

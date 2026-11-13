@@ -3,22 +3,20 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { datetime, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import type { WarrantyStatus } from "~/modules/service/service.models";
 import { warrantyStatuses } from "~/modules/service/service.models";
-import { getCustomerAssets } from "~/modules/service/service.service";
 import { CustomerAssetsTable } from "~/modules/service/ui/CustomerAssets";
-import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters, takeQueryFilter } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "service"
+  const { api } = await authorize(request, {
+    "service.customerAssets": "View"
   });
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
@@ -33,12 +31,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? (warranty.values[0] as WarrantyStatus)
       : null;
 
-  const timeZone = await getCompanyTimeZone(client, companyId);
-  const assets = await getCustomerAssets(client, companyId, {
+  // The service function reads the company's today for the warranty status.
+  const assets = await api.service.getCustomerAssets({
     search: searchParams.get("search"),
     customerId,
     warrantyStatus,
-    today: datetime.today(timeZone).toString(),
     limit,
     offset,
     sorts,
@@ -57,8 +54,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     customerId,
-    count: assets.count ?? 0,
-    assets: assets.data ?? []
+    count: assets.data?.count ?? 0,
+    assets: assets.data?.rows ?? []
   };
 }
 

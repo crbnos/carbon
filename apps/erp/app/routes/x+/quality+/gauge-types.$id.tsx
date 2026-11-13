@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,24 +11,18 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { gaugeTypeValidator } from "~/modules/quality/quality.models";
-import {
-  getGaugeType,
-  upsertGaugeType
-} from "~/modules/quality/quality.service";
+import { upsertGaugeType } from "~/modules/quality/quality.service";
 import GaugeTypeForm from "~/modules/quality/ui/GaugeTypes/GaugeTypeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "quality",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "quality.gaugeTypes": "View" });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const gaugeType = await getGaugeType(client, id);
+  const gaugeType = await api.quality.getGaugeType({ gaugeTypeId: id });
 
   if (gaugeType.error) {
     throw redirect(
@@ -44,8 +38,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "quality"
+  const { client, userId } = await authorize(request, {
+    "quality.gaugeTypes": "Edit"
   });
 
   const formData = await request.formData();

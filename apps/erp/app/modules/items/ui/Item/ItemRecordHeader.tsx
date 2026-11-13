@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import {
   DropdownMenuIcon,
   DropdownMenuItem,
@@ -85,8 +86,7 @@ const ItemRecordHeader = ({
       <DropdownMenuSeparator />
       <DropdownMenuItem
         disabled={
-          !permissions.can("create", "purchasing") ||
-          !permissions.can("view", "purchasing") ||
+          !permissions.has({ "purchasing.rfqs": "Create" }) ||
           !permissions.is("employee")
         }
         onClick={requestQuoteModal.onOpen}
@@ -97,7 +97,7 @@ const ItemRecordHeader = ({
       {withChangeNotice && (
         <>
           <DropdownMenuItem
-            disabled={!permissions.can("create", "parts")}
+            disabled={!permissions.has({ "parts.changeNotices": "Create" })}
             onClick={changeNoticeModal.onOpen}
           >
             <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
@@ -109,7 +109,8 @@ const ItemRecordHeader = ({
       <DropdownMenuItem
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
-          !permissions.can("delete", "parts") || !permissions.is("employee")
+          !permissions.has(anyOf(ITEM_PAGES, "Full")) ||
+          !permissions.is("employee")
         }
         destructive
         onClick={deleteModal.onOpen}

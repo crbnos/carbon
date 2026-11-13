@@ -42,7 +42,7 @@ export default function IntercompanyRoute() {
         count={count}
         infinite={infinite}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ "accounting.intercompany": "Create" }) && (
             <div className="flex items-center gap-2">
               <matchFetcher.Form method="post" action="match">
                 <Button

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { LabelWithHelp } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -12,11 +12,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { EmployeeAvatar, Table } from "~/components";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
-import {
-  getProjectElementCosts,
-  getProjectLedger,
-  getProjectOpenTimesheetEntries
-} from "~/modules/projects/projects.service";
 import ProjectLedgerTable from "~/modules/projects/ui/Costs/ProjectLedgerTable";
 import { OpenTimeAction } from "~/modules/projects/ui/Element/OpenTimeAction";
 import { TimesheetEntryStatus } from "~/modules/projects/ui/Element/TimesheetEntryStatus";
@@ -25,8 +20,8 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "project-time");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId } = params;
@@ -37,15 +32,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [ledger, openTime, elements] = await Promise.all([
-    getProjectLedger(client, companyId, {
+    api.projects.getProjectLedger({
       projectId,
       limit,
       offset,
       sorts,
       filters
     }),
-    getProjectOpenTimesheetEntries(client, projectId, companyId),
-    getProjectElementCosts(client, projectId, companyId)
+    api.projects.getProjectOpenTimesheetEntries({ projectId }),
+    api.projects.getProjectElementCosts({ projectId })
   ]);
 
   if (ledger.error) {
@@ -71,8 +66,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    ledger: ledger.data ?? [],
-    count: ledger.count ?? 0,
+    ledger: ledger.data?.rows ?? [],
+    count: ledger.data?.count ?? 0,
     openTime: openTime.data ?? [],
     elements: Object.fromEntries(
       (elements.data ?? []).map((row) => [

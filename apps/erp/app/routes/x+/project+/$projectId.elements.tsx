@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { useDisclosure } from "@carbon/react";
@@ -41,8 +41,6 @@ import {
 import {
   type ChangeRequestOverlay,
   getProjectElementCommentCounts,
-  getProjectElementDescriptions,
-  getProjectElements,
   getProjectJobs,
   getProjectVerification,
   getProjectWbsNodes,
@@ -111,8 +109,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, client, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId } = params;
@@ -140,10 +138,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isTree = layout === "tree";
   const [elements, descriptions, commentCounts, jobs, timeZone] =
     await Promise.all([
-      getProjectElements(client, projectId, companyId, queryFilters),
+      api.projects.getProjectElements({ projectId, ...queryFilters }),
       // Only the Reader shows descriptions; the list query leaves them out.
       layout === "reader"
-        ? getProjectElementDescriptions(client, projectId, companyId)
+        ? api.projects.getProjectElementDescriptions({ projectId })
         : Promise.resolve({ data: [], error: null }),
       // Only the Tree's cards show comment counts and job badges.
       isTree
@@ -447,11 +445,16 @@ export default function ProjectElementsRoute() {
   const planLocked =
     isProjectPlanLocked({ lockMilestone }) && changeRequest?.status !== "Draft";
 
-  const canUpdate = permissions.can("update", "projects") && !isClosed;
+  const canUpdate =
+    permissions.has({ "projects.projects": "Edit" }) && !isClosed;
   const canCreate =
-    permissions.can("create", "projects") && !isClosed && !planLocked;
+    permissions.has({ "projects.projects": "Create" }) &&
+    !isClosed &&
+    !planLocked;
   const canDelete =
-    permissions.can("delete", "projects") && !isClosed && !planLocked;
+    permissions.has({ "projects.projects": "Full" }) &&
+    !isClosed &&
+    !planLocked;
 
   // New Element opens the New element modal with the type, parent or state
   // it was asked for. The List highlights the new row; the other layouts
@@ -492,7 +495,9 @@ export default function ProjectElementsRoute() {
           <WbsMenu
             projectId={projectId}
             canUpdate={canUpdate}
-            canImport={canUpdate && permissions.can("create", "projects")}
+            canImport={
+              canUpdate && permissions.has({ "projects.projects": "Create" })
+            }
             repeatedCodes={repeatedCodes}
           />
         }

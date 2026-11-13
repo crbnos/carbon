@@ -2,66 +2,83 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { claimsFor } from "@carbon/database/access";
 import { describe, expect, it, vi } from "vitest";
-import { hasPermission, type OwnerPermissions } from "./owner";
+import { ownerPermissionsOf, ownerRefusal } from "./owner";
 
-// The @carbon/auth barrel pulls @carbon/react (lingui macros) — unloadable under node vitest.
-vi.mock("@carbon/auth", () => ({
-  getClaims: vi.fn(),
-  makePermissionsFromClaims: vi.fn()
-}));
-vi.mock("@carbon/auth/client.server", () => ({
-  getUserScopedClient: vi.fn()
-}));
+// @carbon/auth/client.server reads its configuration once, at import.
+vi.hoisted(() => {
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+});
 
-function permissions(
-  overrides: Partial<Record<string, Partial<OwnerPermissions[string]>>> = {}
-): OwnerPermissions {
-  const base: OwnerPermissions = {};
-  for (const [module, actions] of Object.entries(overrides)) {
-    base[module] = {
-      view: [],
-      create: [],
-      update: [],
-      delete: [],
-      ...actions
-    };
-  }
-  return base;
+/** `get_claims` for an owner in c1 with `level` on Purchase Orders. */
+function owner(role: string, level: "View" | "Edit" | null) {
+  return claimsFor(
+    {
+      role,
+      admin: false,
+      grants:
+        level === null
+          ? []
+          : [
+              {
+                subject: "role",
+                module: "Purchasing",
+                page: "purchasing.purchaseOrders",
+                level
+              }
+            ],
+      portal: {}
+    },
+    "c1"
+  );
 }
 
-describe("hasPermission", () => {
-  it("no longer grants on the retired all-companies wildcard (NIST 3.1.5)", () => {
-    // "0" was the global-company wildcard; it was removed. It is now just a
-    // literal company id that never matches a real one.
-    const perms = permissions({ purchasing: { view: ["0"] } });
-    expect(hasPermission(perms, "purchasing", "view", "cmp_1")).toBe(false);
+describe("ownerPermissionsOf", () => {
+  it("returns an employee owner's permissions", () => {
+    const permissions = ownerPermissionsOf(owner("employee", "View"), "c1");
+    expect(permissions?.["purchasing.purchaseOrders"]).toEqual({
+      view: ["c1"],
+      create: [],
+      update: [],
+      delete: []
+    });
   });
 
-  it("grants when the action names the company exactly", () => {
-    const perms = permissions({ purchasing: { view: ["cmp_1", "cmp_2"] } });
-    expect(hasPermission(perms, "purchasing", "view", "cmp_1")).toBe(true);
+  it("runs nothing for an owner who became a portal account", () => {
+    expect(ownerPermissionsOf(owner("customer", "View"), "c1")).toBeNull();
+    expect(ownerPermissionsOf(owner("supplier", "View"), "c1")).toBeNull();
+  });
+});
+
+describe("ownerRefusal", () => {
+  const LOST =
+    "The owner of this workflow no longer has access to Purchase Orders.";
+  const permissionsWith = (level: "View" | "Edit" | null) =>
+    owner("employee", level).permissions;
+
+  // An action step: the trigger's View still holds, the step's Edit does not.
+  it("refuses an Edit step on Purchase Orders to an owner with View only", () => {
+    const gate = { "purchasing.purchaseOrders": "Edit" } as const;
+    expect(ownerRefusal(gate, permissionsWith("View"), "c1")).toBe(LOST);
+    expect(ownerRefusal(gate, permissionsWith("Edit"), "c1")).toBeNull();
   });
 
-  it("denies a company the action does not name", () => {
-    const perms = permissions({ purchasing: { view: ["cmp_2"] } });
-    expect(hasPermission(perms, "purchasing", "view", "cmp_1")).toBe(false);
+  // The trigger's own page: without View the whole run is refused.
+  it("refuses the trigger's View gate to an owner who lost the page", () => {
+    const gate = { "purchasing.purchaseOrders": "View" } as const;
+    expect(ownerRefusal(gate, permissionsWith(null), "c1")).toBe(LOST);
+    expect(ownerRefusal(gate, permissionsWith("View"), "c1")).toBeNull();
   });
 
-  it("denies a module the owner does not hold at all", () => {
-    const perms = permissions({ purchasing: { view: ["0"] } });
-    expect(hasPermission(perms, "sales", "view", "cmp_1")).toBe(false);
+  it("holds only in the company the grant is in", () => {
+    const gate = { "purchasing.purchaseOrders": "View" } as const;
+    expect(ownerRefusal(gate, permissionsWith("Edit"), "c2")).toBe(LOST);
   });
 
-  it("denies an action whose array is empty", () => {
-    const perms = permissions({ purchasing: { view: ["0"] } });
-    expect(hasPermission(perms, "purchasing", "update", "cmp_1")).toBe(false);
-  });
-
-  it("denies when the action array is missing entirely", () => {
-    const perms = {
-      purchasing: { view: ["0"] }
-    } as unknown as OwnerPermissions;
-    expect(hasPermission(perms, "purchasing", "delete", "cmp_1")).toBe(false);
+  it("refuses nothing when the step has no gate", () => {
+    expect(ownerRefusal(undefined, permissionsWith(null), "c1")).toBeNull();
   });
 });

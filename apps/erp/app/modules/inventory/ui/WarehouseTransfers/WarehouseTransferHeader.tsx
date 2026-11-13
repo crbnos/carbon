@@ -65,7 +65,7 @@ const WarehouseTransferHeader = () => {
   const status = warehouseTransfer.status;
   const isDraft = status === "Draft";
   const isLocked = isWarehouseTransferLocked(status);
-  const canUpdate = permissions.can("update", "inventory");
+  const canUpdate = permissions.has({ "inventory.warehouseTransfers": "Edit" });
   const isChangingStatus = statusFetcher.state !== "idle";
   const pendingStatus = statusFetcher.formData?.get("status");
 
@@ -145,7 +145,7 @@ const WarehouseTransferHeader = () => {
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
                 isLocked ||
-                !permissions.can("delete", "inventory") ||
+                !permissions.has({ "inventory.warehouseTransfers": "Full" }) ||
                 !permissions.is("employee")
               }
               destructive

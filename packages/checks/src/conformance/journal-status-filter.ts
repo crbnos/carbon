@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ConformanceCheck, Violation } from "../check";
-import { blankComments } from "./no-unscoped-kysely-write";
+import { blankComments, blankSqlComments } from "../sources/comments";
 
 // A journal reader that filters `status <> 'Draft'` counts every non-Draft
 // status, so the Provisional and Superseded journals of the accounting cutover
@@ -121,13 +121,6 @@ const MESSAGE =
 
 function basename(file: string): string {
   return file.slice(file.lastIndexOf("/") + 1);
-}
-
-/** Replace SQL comment text with spaces, keeping newlines and offsets. */
-function blankSqlComments(src: string): string {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, " "))
-    .replace(/--[^\n]*/g, (c) => " ".repeat(c.length));
 }
 
 /** The [start, end) offsets of the text between consecutive semicolons. */

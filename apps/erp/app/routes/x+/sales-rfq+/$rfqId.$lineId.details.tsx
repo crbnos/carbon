@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -40,9 +40,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "sales-rfq-line-details");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { companyId } = await authorize(request, { "sales.rfqs": "View" });
 
   const { rfqId, lineId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
@@ -85,8 +83,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+  const { client: viewClient } = await authorize(request, {
+    "sales.rfqs": "View"
   });
 
   const rfq = await getSalesRFQ(viewClient, rfqId);
@@ -97,8 +95,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
-    create: "sales"
+  const { client, userId } = await authorize(request, {
+    "sales.rfqs": "Create"
   });
 
   const formData = await request.formData();
@@ -184,7 +182,7 @@ export default function SalesRFQLine() {
         )}
       </DeferredFiles>
       <CadModel
-        isReadOnly={isReadOnly || !permissions.can("update", "sales")}
+        isReadOnly={isReadOnly || !permissions.has({ "sales.rfqs": "Edit" })}
         metadata={{
           salesRfqLineId: line.id ?? undefined,
           itemId: line.itemId ?? undefined

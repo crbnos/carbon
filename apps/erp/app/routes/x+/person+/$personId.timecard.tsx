@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -73,11 +72,6 @@ import {
   deleteTimeCardEntryValidator,
   updateTimeCardEntryValidator
 } from "~/modules/people/people.models";
-import {
-  getOpenClockEntry,
-  getTimeCardEntries
-} from "~/modules/people/people.service";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
@@ -113,8 +107,8 @@ function formatDay(dateStr: string, locale: string) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "people"
+  const { client, companyId, api } = await authorize(request, {
+    "people.employees": "View"
   });
 
   const { personId } = params;
@@ -134,14 +128,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [entries, openEntry, companySettings, employeeShift] =
     await Promise.all([
-      getTimeCardEntries(client, {
+      api.people.getTimeCardEntries({
         employeeId: personId,
         companyId,
         from,
         to
       }),
-      getOpenClockEntry(client, personId, companyId),
-      getCompanySettings(client, companyId),
+      api.people.getOpenClockEntry({ employeeId: personId }),
+      api.settings.getCompanySettings({}),
       client
         .from("employeeJob")
         .select(
@@ -197,7 +191,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { personId } = input.params;
   const form = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   switch (form.intent) {
     case "clockIn":

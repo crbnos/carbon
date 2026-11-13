@@ -110,7 +110,9 @@ const CustomerAssetForm = ({
               <HStack>
                 <Submit
                   hideShortcutKey
-                  isDisabled={!permissions.can("create", "service")}
+                  isDisabled={
+                    !permissions.has({ "service.customerAssets": "Create" })
+                  }
                 >
                   <Trans>Save</Trans>
                 </Submit>

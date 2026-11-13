@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { certificationTextFor } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -30,9 +30,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    role: "employee"
-  });
+  const { client, companyId, userId } = await authorize(request, {});
 
   const url = new URL(request.url);
   const weekOffset = Number.parseInt(url.searchParams.get("week") ?? "0", 10);

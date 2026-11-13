@@ -4,10 +4,17 @@
 
 // The authorization rules for every public table. `authz sync` makes a database match this
 // file; `authz migration` ships a change to databases that do not sync yet (see migration.ts).
+// A bare action (`"update"`) is the key of the page that owns the table (access/registry.ts;
+// rules.ts `Permission`): a table's module and its read come from the registry, so a rule
+// names only what differs. A page key (`purchasing.suppliers_create`) is a grant to a page
+// that does not own the table, and renders as written.
+import { permissionKey } from "../access/levels";
+import { ITEM_PAGES } from "../access/registry";
 import {
   always,
   and,
   anyOf,
+  anyPageOf,
   authenticated,
   company,
   custom,
@@ -32,6 +39,10 @@ import {
   viaParent,
   where
 } from "./rules";
+
+/** Any one item page at `action`: for a row no one item decides. */
+const anyItemPage = (action: "create" | "update" | "delete") =>
+  anyOf(...ITEM_PAGES.map((page) => permissionKey(page, action)));
 
 /** The payment and memo a settlement applies are both still Draft (or absent). */
 const draftSettlement = and(
@@ -98,41 +109,35 @@ const documentEditReader = or(
   ),
   and(
     where<"documentEdit">((eb) => eb("documentType", "=", "purchaseOrder")),
-    inCompany(
-      "companyId",
-      anyOf("purchasing_view", "inventory_view", "invoicing_view")
-    )
+    inCompany("companyId", anyPageOf("purchasing", "inventory", "invoicing"))
   ),
   and(
     where<"documentEdit">((eb) => eb("documentType", "=", "purchasingRfq")),
-    inCompany("companyId", "purchasing_view")
+    inCompany("companyId", anyPageOf("purchasing"))
   ),
   and(
     where<"documentEdit">((eb) => eb("documentType", "=", "quote")),
-    inCompany("companyId", "sales_view")
+    inCompany("companyId", anyPageOf("sales"))
   ),
   and(
     where<"documentEdit">((eb) => eb("documentType", "=", "salesOrder")),
-    inCompany(
-      "companyId",
-      anyOf("sales_view", "inventory_view", "invoicing_view")
-    )
+    inCompany("companyId", anyPageOf("sales", "inventory", "invoicing"))
   ),
   and(
     where<"documentEdit">((eb) => eb("documentType", "=", "salesInvoice")),
-    inCompany("companyId", "invoicing_view")
+    inCompany("companyId", anyPageOf("invoicing"))
   ),
   and(
     where<"documentEdit">((eb) => eb("documentType", "=", "packingSlip")),
-    inCompany("companyId", anyOf("inventory_view", "sales_view"))
+    inCompany("companyId", anyPageOf("inventory", "sales"))
   ),
   and(
     where<"documentEdit">((eb) => eb("documentType", "=", "issue")),
-    inCompany("companyId", "quality_view")
+    inCompany("companyId", anyPageOf("quality"))
   )
 );
 
-/** The value's attribute belongs to a category the caller manages (resources_update). */
+/** The value's attribute belongs to a category the caller manages (Attributes at Edit). */
 const managedAttribute = through(
   "userAttributeId",
   "userAttribute",
@@ -141,20 +146,27 @@ const managedAttribute = through(
     "userAttributeCategoryId",
     "userAttributeCategory",
     "id",
-    inCompany("companyId", "resources_update")
+    inCompany("companyId", "update")
   )
 );
 
+/** Who reads a grant row: the page of its subject column. */
+const grantRows = or(
+  and(isNotNull("userId"), inCompany("companyId", "users.accounts_update")),
+  // A role's grants read like any Users table (the person Access tab shows them).
+  and(isNotNull("employeeTypeId"), inCompany("companyId", anyPageOf("users"))),
+  and(isNotNull("apiKeyId"), inCompany("companyId", "settings.apiKeys_view"))
+);
+
 /**
- * A project table, governed by projects_* (any employee reads) in its project's company.
- * `column` names the row's project, or its element with `via: "projectElement"`;
- * `project` itself passes "id".
+ * A project table, governed by the owning page's action (any employee reads) in its project's company.
+ * `column` names the row's project, or its element with `via: "projectElement"`.
  */
 const projectTable = <T extends Table>(
   column = "projectId",
   via?: "projectElement"
 ) =>
-  company<T>("projects", {
+  company<T>({
     read: projectModule(column, "view", { standard: "employee", via }),
     create: projectModule(column, "create", { via }),
     update: projectModule(column, "update", { via }),
@@ -162,39 +174,28 @@ const projectTable = <T extends Table>(
   });
 
 export const manifest = {
-  ability: company("resources", {
-    read: anyOf("resources_view", "production_view")
-  }),
-  account: group("accounting"),
-  accountDefault: company("accounting", {
-    read: "accounting_view",
+  ability: company(),
+  account: group({ read: "employee" }),
+  accountDefault: company({
     create: false,
     delete: false
   }),
-  accountingCutoverIgnoredInvoice: company("accounting", {
-    read: "accounting_view"
+  accountingCutoverIgnoredInvoice: company(),
+  accountingPeriod: company(),
+  accountingPeriodBalance: company({
+    delete: "update"
   }),
-  accountingPeriod: company("accounting", { read: "accounting_view" }),
-  accountingPeriodBalance: company("accounting", {
-    read: "accounting_view",
-    delete: "accounting_update"
-  }),
-  accountingSyncOperation: company("settings", {
+  accountingSyncOperation: company({
+    read: "employee",
     create: false,
     delete: false
   }),
-  accountingSyncTieOut: company("accounting", {
-    read: "accounting_view",
+  accountingSyncTieOut: company({
     create: false,
     update: false,
     delete: false
   }),
-  address: policies({
-    select: inCompany("companyId", anyOf("sales_view", "purchasing_view")),
-    insert: inCompany("companyId", anyOf("sales_create", "purchasing_create")),
-    update: inCompany("companyId", anyOf("sales_update", "purchasing_update")),
-    delete: inCompany("companyId", anyOf("sales_delete", "purchasing_delete"))
-  }),
+  address: company(),
   agentMessage: policies({
     select: and(
       inCompany("companyId", "employee"),
@@ -229,47 +230,39 @@ export const manifest = {
   agentThread: policies({
     all: and(owner("userId"), inCompany("companyId", "employee"))
   }),
-  apiKey: company("settings", { read: "settings_view" }),
+  // A key and its hash are written by saveApiKey (Kysely), which caps its grants.
+  apiKey: company({ create: false, update: false }),
   apiKeyRateLimit: policies({
-    select: exists("apiKey", "apiKeyId", "settings_view")
+    select: exists("apiKey", "apiKeyId", "view")
   }),
   approvalRequest: serviceOnly(),
-  approvalRule: company("settings", { read: "settings_view" }),
-  assemblyComponentMapping: company("production"),
-  assemblyInstruction: company("production"),
-  assemblyInstructionStep: company("production"),
-  assemblyInstructionStepMaterial: company("production"),
-  assemblyInstructionStepSlide: company("production", {
-    read: "production_view"
-  }),
-  assemblyInstructionStepTool: company("production", {
-    read: "production_view"
-  }),
-  assemblyPlanJob: company("production"),
-  assemblyUnit: company("production"),
+  approvalRule: company(),
+  assemblyComponentMapping: company({ read: "employee" }),
+  assemblyInstruction: company({ read: "employee" }),
+  assemblyInstructionStep: company({ read: "employee" }),
+  assemblyInstructionStepMaterial: company({ read: "employee" }),
+  assemblyInstructionStepSlide: company(),
+  assemblyInstructionStepTool: company(),
+  assemblyPlanJob: company({ read: "employee" }),
+  assemblyUnit: company({ read: "employee" }),
   attributeDataType: policies({ select: authenticated }),
   auditLogArchive: serviceOnly(),
-  balloon: company("quality"),
-  batchProperty: policies({
-    select: inCompany("companyId", anyOf("parts_view", "inventory_view")),
-    insert: inCompany("companyId", anyOf("parts_create", "inventory_create")),
-    update: inCompany("companyId", anyOf("parts_update", "inventory_update")),
-    delete: inCompany("companyId", anyOf("parts_delete", "inventory_delete"))
-  }),
-  capacityReservation: company("production"),
+  balloon: company({ read: "employee" }),
+  batchProperty: company(),
+  capacityReservation: company({ read: "employee" }),
   charge: policies({
     select: inCompany("companyId", "employee"),
     insert: and(
       where<"charge">((eb) => eb("status", "=", "Draft")),
-      inCompany("companyId", "invoicing_create")
+      inCompany("companyId", "create")
     ),
     update: and(
       where<"charge">((eb) => eb("status", "=", "Draft")),
-      inCompany("companyId", "invoicing_update")
+      inCompany("companyId", "update")
     ),
     delete: and(
       where<"charge">((eb) => eb("status", "=", "Draft")),
-      inCompany("companyId", "invoicing_delete")
+      inCompany("companyId", "delete")
     )
   }),
   chargeLine: policies({
@@ -281,7 +274,7 @@ export const manifest = {
         where<"charge">((eb) => eb("status", "=", "Draft")),
         { sameCompany: true }
       ),
-      inCompany("companyId", "invoicing_create")
+      inCompany("companyId", "create")
     ),
     update: and(
       exists(
@@ -290,7 +283,7 @@ export const manifest = {
         where<"charge">((eb) => eb("status", "=", "Draft")),
         { sameCompany: true }
       ),
-      inCompany("companyId", "invoicing_update")
+      inCompany("companyId", "update")
     ),
     delete: and(
       exists(
@@ -299,226 +292,198 @@ export const manifest = {
         where<"charge">((eb) => eb("status", "=", "Draft")),
         { sameCompany: true }
       ),
-      inCompany("companyId", "invoicing_delete")
+      inCompany("companyId", "delete")
     )
   }),
   challengeAttempt: policies({
     select: owner("userId"),
     insert: owner("userId")
   }),
-  changeOrder: company("parts", { read: "parts_view" }),
-  changeOrderActionTask: company("parts", { read: "parts_view" }),
-  changeOrderAffectedItem: company("parts", { read: "parts_view" }),
-  changeOrderRequiredAction: company("parts"),
-  changeOrderSupersession: company("parts", { read: "parts_view" }),
-  changeOrderType: company("parts"),
+  changeOrder: company(),
+  changeOrderActionTask: company(),
+  changeOrderAffectedItem: company(),
+  changeOrderRequiredAction: company({ read: "employee" }),
+  changeOrderSupersession: company(),
+  changeOrderType: company({ read: "employee" }),
   changelogDispatch: serviceOnly(),
   company: policies({
     select: and(
       isNotNull("companyGroupId"),
       inGroup("companyGroupId", "employee")
     ),
-    update: inCompany("id", "settings_update")
+    update: inCompany("id", "update")
   }),
-  companyAccountsPayableBillingAddress: company("settings", { column: "id" }),
-  companyAccountsReceivableBillingAddress: company("settings", {
+  companyAccountsPayableBillingAddress: company({
+    read: "employee",
+    column: "id"
+  }),
+  companyAccountsReceivableBillingAddress: company({
+    read: "employee",
     column: "id"
   }),
   companyGroup: policies({
     select: through("id", "company", "companyGroupId", member("id"))
   }),
-  companyIntegration: company("settings", { read: "settings_view" }),
+  companyIntegration: company(),
   companyPlan: policies({ select: and(authenticated, member("id")) }),
-  companySettings: company("settings", {
+  companySettings: company({
+    read: "employee",
     create: false,
     delete: false,
     column: "id"
   }),
   companyUsage: policies({ select: and(authenticated, member("id")) }),
   config: policies({ select: authenticated }),
-  configurationParameter: company("parts", { read: "member" }),
-  configurationParameterGroup: company("parts", { read: "member" }),
-  configurationRule: company("parts", { read: "parts_view" }),
-  consumable: company("parts"),
-  contact: policies({
-    select: inCompany("companyId", anyOf("sales_view", "purchasing_view")),
-    insert: inCompany("companyId", anyOf("sales_create", "purchasing_create")),
-    update: inCompany("companyId", anyOf("sales_update", "purchasing_update")),
-    delete: inCompany("companyId", anyOf("sales_delete", "purchasing_delete"))
-  }),
-  contractFinancingRequest: company("sales", { read: "sales_view" }),
-  contractFinancingRequestEvent: company("sales", { read: "sales_view" }),
-  contractor: company("resources", { read: "resources_view" }),
+  configurationParameter: company({ read: "member" }),
+  configurationParameterGroup: company({ read: "member" }),
+  configurationRule: company(),
+  consumable: company({ read: "employee" }),
+  // Customers and Suppliers share it by isCustomer (the registry).
+  contact: company(),
+  contractFinancingRequest: company(),
+  contractFinancingRequestEvent: company(),
+  contractor: company(),
   contractorAbility: policies({
-    select: viaParent("contractorId", "contractor", "resources_view"),
-    insert: viaParent("contractorId", "contractor", "resources_create"),
-    update: viaParent("contractorId", "contractor", "resources_update"),
-    delete: viaParent("contractorId", "contractor", "resources_delete")
+    select: viaParent("contractorId", "contractor", "view"),
+    insert: viaParent("contractorId", "contractor", "create"),
+    update: viaParent("contractorId", "contractor", "update"),
+    delete: viaParent("contractorId", "contractor", "delete")
   }),
-  costCenter: company("accounting"),
+  costCenter: company({ read: "employee" }),
   costLedger: policies({
-    select: inCompany("companyId", anyOf("accounting_view", "parts_view"))
+    select: inCompany("companyId", "view")
   }),
   country: policies({ select: authenticated }),
-  currency: group("accounting"),
+  currency: group({ read: "employee" }),
   currencyCode: policies({ select: authenticated }),
   customer: policies({
     select: or(
-      inCompany("companyId", "sales_view"),
+      inCompany("companyId", "view"),
       portal.customer("id", "sales_view")
     ),
-    insert: inCompany("companyId", "sales_create"),
-    update: inCompany("companyId", "sales_update"),
-    delete: inCompany("companyId", "sales_delete")
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
+    delete: inCompany("companyId", "delete")
   }),
   customerAccount: policies({
     select: or(
-      inCompany("companyId", "sales_view"),
+      inCompany("companyId", "view"),
       portal.customer("customerId", "sales_view")
     ),
-    insert: inCompany("companyId", "sales_create"),
-    update: inCompany("companyId", "sales_update"),
-    delete: inCompany("companyId", "sales_delete")
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
+    delete: inCompany("companyId", "delete")
   }),
-  customerAsset: company("service"),
-  customerBankAccount: company("accounting", { read: "accounting_view" }),
+  customerAsset: company({ read: "employee" }),
+  customerBankAccount: company(),
   customerContact: policies({
     select: or(
-      viaParent("customerId", "customer", "sales_view"),
+      viaParent("customerId", "customer", "view"),
       portal.customer("customerId", "sales_view")
     ),
     insert: or(
-      viaParent("customerId", "customer", "sales_create"),
+      viaParent("customerId", "customer", "create"),
       portal.customer("customerId", "sales_create")
     ),
     update: or(
-      viaParent("customerId", "customer", "sales_update"),
+      viaParent("customerId", "customer", "update"),
       portal.customer("customerId", "sales_update")
     ),
     delete: or(
-      viaParent("customerId", "customer", "sales_delete"),
+      viaParent("customerId", "customer", "delete"),
       portal.customer("customerId", "sales_delete")
     )
   }),
-  customerContract: company("sales", { read: "sales_view" }),
-  customerContractAmendment: company("sales", { read: "sales_view" }),
+  customerContract: company(),
+  customerContractAmendment: company(),
   // Government contracting Phase 5a: ACRN funding actions on a contract line.
-  customerContractFinancing: company("sales", { read: "sales_view" }),
-  customerContractFinancingRate: company("sales", { read: "sales_view" }),
-  customerContractFunding: company("sales", { read: "sales_view" }),
-  customerContractInvoice: company("sales", { read: "sales_view" }),
-  customerContractInvoiceLine: company("sales", { read: "sales_view" }),
-  customerContractLaborRate: company("sales", { read: "sales_view" }),
-  customerContractLedgerEntry: company("sales", { read: "sales_view" }),
-  customerContractLine: company("sales", { read: "sales_view" }),
+  customerContractFinancing: company(),
+  customerContractFinancingRate: company(),
+  customerContractFunding: company(),
+  customerContractInvoice: company(),
+  customerContractInvoiceLine: company(),
+  customerContractLaborRate: company(),
+  customerContractLedgerEntry: company(),
+  customerContractLine: company(),
   // Government contracting Phase 5b: a rate ceiling reads like its contract line.
-  customerContractRateCeiling: company("sales", { read: "sales_view" }),
-  customerContractRevenue: company("sales", { read: "sales_view" }),
-  customerItemPriceOverride: company("sales"),
-  customerItemPriceOverrideBreak: company("sales"),
-  customerItemRentalRate: company("sales", { read: "sales_view" }),
+  customerContractRateCeiling: company(),
+  customerContractRevenue: company(),
+  customerItemPriceOverride: company({ read: "employee" }),
+  customerItemPriceOverrideBreak: company({ read: "employee" }),
+  customerItemRentalRate: company(),
   customerLocation: policies({
     select: or(
-      viaParent("customerId", "customer", "sales_view"),
+      viaParent("customerId", "customer", "view"),
       portal.customer("customerId", "sales_view")
     ),
     insert: or(
-      viaParent("customerId", "customer", "sales_create"),
+      viaParent("customerId", "customer", "create"),
       portal.customer("customerId", "sales_create")
     ),
     update: or(
-      viaParent("customerId", "customer", "sales_update"),
+      viaParent("customerId", "customer", "update"),
       portal.customer("customerId", "sales_update")
     ),
     delete: or(
-      viaParent("customerId", "customer", "sales_delete"),
+      viaParent("customerId", "customer", "delete"),
       portal.customer("customerId", "sales_delete")
     )
   }),
   customerPartToItem: policies({
     select: or(
-      or(
-        inCompany("companyId", "sales_view"),
-        inCompany("companyId", "parts_view")
-      ),
+      inCompany("companyId", "view"),
       or(
         portal.customer("customerId", "sales_view"),
         portal.customer("customerId", "parts_view")
       )
     ),
     insert: or(
-      or(
-        inCompany("companyId", "sales_create"),
-        inCompany("companyId", "parts_create")
-      ),
+      inCompany("companyId", "create"),
       or(
         portal.customer("customerId", "sales_create"),
         portal.customer("customerId", "parts_create")
       )
     ),
     update: or(
-      or(
-        inCompany("companyId", "sales_update"),
-        inCompany("companyId", "parts_update")
-      ),
+      inCompany("companyId", "update"),
       or(
         portal.customer("customerId", "sales_update"),
         portal.customer("customerId", "parts_update")
       )
     ),
     delete: or(
-      or(
-        inCompany("companyId", "sales_delete"),
-        inCompany("companyId", "parts_delete")
-      ),
+      inCompany("companyId", "delete"),
       or(
         portal.customer("customerId", "sales_delete"),
         portal.customer("customerId", "parts_delete")
       )
     )
   }),
-  customerPayment: company("sales", {
-    read: "sales_view",
+  customerPayment: company({
     create: false,
     delete: false
   }),
-  customerShipping: company("sales", {
-    read: "sales_view",
+  customerShipping: company({
     create: false,
     delete: false
   }),
-  customerStatus: company("sales", { read: "member" }),
-  customerTax: company("sales", {
-    read: "sales_view",
+  customerStatus: company({ read: "member" }),
+  customerTax: company({
     create: false,
     delete: false
   }),
-  customerType: company("sales", { read: "member" }),
-  customField: company("settings", { read: "member" }),
+  customerType: company({ read: "member" }),
+  customField: company({ read: "member" }),
   customFieldTable: policies({ select: authenticated }),
-  demandActual: policies({
-    select: or(
-      inCompany("companyId", "parts_view"),
-      inCompany("companyId", "inventory_view")
-    ),
-    insert: inCompany("companyId", "inventory_create"),
-    update: inCompany("companyId", "inventory_update"),
-    delete: inCompany("companyId", "inventory_delete")
-  }),
-  demandForecast: company("inventory", {
-    read: "inventory_view"
-  }),
-  demandForecastSource: company("inventory", {
-    read: "inventory_view"
-  }),
-  demandProjection: company("inventory", {
-    read: "inventory_view"
-  }),
-  department: company("people"),
-  depreciationRun: company("accounting", { read: "accounting_view" }),
-  depreciationRunLine: company("accounting", { read: "accounting_view" }),
-  dimension: group("accounting"),
-  dimensionValue: group("accounting"),
+  demandActual: company(),
+  demandForecast: company(),
+  demandForecastSource: company(),
+  demandProjection: company(),
+  department: company({ read: "employee" }),
+  depreciationRun: company(),
+  depreciationRunLine: company(),
+  dimension: group({ read: "employee" }),
+  dimensionValue: group({ read: "employee" }),
   // groups_for_user is wrapped in a SELECT so Postgres runs it once per query
   // rather than once per row (it is VOLATILE), and it comes first so the
   // API-key lookup only runs for rows outside the caller's groups.
@@ -543,9 +508,10 @@ export const manifest = {
     delete: owner("userId")
   }),
   documentEdit: policies({ select: documentEditReader }),
-  documentSection: company("settings"),
+  documentSection: company({ read: "employee" }),
   // Saved by the server, which validates its figures: no API writes.
-  documentTemplate: company("settings", {
+  documentTemplate: company({
+    read: "employee",
     create: false,
     update: false,
     delete: false
@@ -554,263 +520,222 @@ export const manifest = {
     select: owner("userId"),
     insert: owner("userId")
   }),
-  earnedValuePeriod: company("projects", {
+  earnedValuePeriod: company({
+    read: "employee",
     create: false,
     update: false,
     delete: false
   }),
-  employee: company("users", { create: "users_update" }),
-  employeeAbility: company("resources", { read: "resources_view" }),
-  employeeJob: company("people"),
+  employee: company({ read: "employee", create: "update" }),
+  employeeAbility: company(),
+  employeeJob: company({ read: "employee" }),
   employeePin: serviceOnly(),
-  employeeShift: company("people", { read: "people_view" }),
-  employeeType: company("users", {
-    read: "users_update",
-    create: "users_update",
-    delete: "users_update"
+  employeeShift: company(),
+  employeeType: company({
+    create: "update",
+    delete: "update"
   }),
   employeeTypePermission: policies({
-    all: viaParent("employeeTypeId", "employeeType", "users_update")
+    all: viaParent("employeeTypeId", "employeeType", "update")
   }),
-  enforcementRule: policies({
-    select: inCompany("companyId", "employee"),
-    insert: or(
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-        inCompany("companyId", "inventory_create")
-      ),
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-        inCompany("companyId", "sales_create")
-      )
-    ),
-    update: or(
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-        inCompany("companyId", "inventory_update")
-      ),
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-        inCompany("companyId", "sales_update")
-      )
-    ),
-    delete: or(
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-        inCompany("companyId", "inventory_delete")
-      ),
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-        inCompany("companyId", "sales_delete")
-      )
-    )
-  }),
-  enforcementRuleAcknowledgment: company("sales", {
+  // Storage Rules and Sales Rules share it by family, and its assignments and
+  // acknowledgments through ruleId (the registry).
+  enforcementRule: company({ read: "employee" }),
+  enforcementRuleAcknowledgment: company({
+    read: "employee",
     update: false,
     delete: false
   }),
+  // A storage rule's items are also assigned from the item pages, as before.
   enforcementRuleItemAssignment: policies({
     select: inCompany("companyId", "employee"),
-    insert: exists(
-      "enforcementRule",
-      "ruleId",
-      or(
+    insert: or(
+      inCompany("companyId", "create"),
+      exists(
+        "enforcementRule",
+        "ruleId",
         and(
           where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-          inCompany("companyId", "parts_create")
+          inCompany("companyId", anyItemPage("create"))
         ),
-        and(
-          where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-          inCompany("companyId", "sales_create")
-        )
-      ),
-      { sameCompany: true }
+        { sameCompany: true }
+      )
     ),
-    update: exists(
-      "enforcementRule",
-      "ruleId",
-      or(
+    update: or(
+      inCompany("companyId", "update"),
+      exists(
+        "enforcementRule",
+        "ruleId",
         and(
           where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-          inCompany("companyId", "parts_update")
+          inCompany("companyId", anyItemPage("update"))
         ),
-        and(
-          where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-          inCompany("companyId", "sales_update")
-        )
-      ),
-      { sameCompany: true }
+        { sameCompany: true }
+      )
     ),
-    delete: exists(
-      "enforcementRule",
-      "ruleId",
-      or(
+    delete: or(
+      inCompany("companyId", "delete"),
+      exists(
+        "enforcementRule",
+        "ruleId",
         and(
           where<"enforcementRule">((eb) => eb("family", "=", "storage")),
-          inCompany("companyId", "parts_delete")
+          inCompany("companyId", anyItemPage("delete"))
         ),
-        and(
-          where<"enforcementRule">((eb) => eb("family", "=", "sales")),
-          inCompany("companyId", "sales_delete")
-        )
-      ),
-      { sameCompany: true }
+        { sameCompany: true }
+      )
     )
   }),
   enforcementRuleWorkCenterAssignment: policies({
     select: inCompany("companyId", "employee"),
-    insert: exists(
-      "enforcementRule",
-      "ruleId",
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "storage")),
+    insert: and(
+      exists(
+        "enforcementRule",
+        "ruleId",
         where<"enforcementRule">((eb) => eb("targetType", "=", "workCenter")),
-        inCompany("companyId", "resources_create")
+        { sameCompany: true }
       ),
-      { sameCompany: true }
+      inCompany("companyId", "create")
     ),
-    update: exists(
-      "enforcementRule",
-      "ruleId",
-      and(
-        where<"enforcementRule">((eb) => eb("family", "=", "storage")),
+    update: and(
+      exists(
+        "enforcementRule",
+        "ruleId",
         where<"enforcementRule">((eb) => eb("targetType", "=", "workCenter")),
-        inCompany("companyId", "resources_update")
+        { sameCompany: true }
       ),
-      { sameCompany: true }
+      inCompany("companyId", "update")
     ),
-    delete: inCompany("companyId", "resources_delete")
+    delete: inCompany("companyId", "delete")
   }),
-  eventSystemSubscription: company("settings"),
+  // Also written by the audit log switch, from its Settings page, as before.
+  // Audit Logs tops out at Edit.
+  eventSystemSubscription: company({
+    read: "employee",
+    create: anyOf("create", "settings.auditLogs_update"),
+    update: anyOf("update", "settings.auditLogs_update"),
+    delete: anyOf("delete", "settings.auditLogs_update")
+  }),
   exchangeRate: policies({ select: always, to: "authenticated" }),
-  exchangeRateOverride: company("accounting", {
-    create: "accounting_update",
-    delete: "accounting_update"
+  exchangeRateOverride: company({
+    read: "employee",
+    create: "update",
+    delete: "update"
   }),
   externalIntegrationMapping: policies({
     select: inCompany("companyId", "employee"),
     insert: inCompany("companyId", "employee")
   }),
-  externalLink: policies({
-    select: inCompany("companyId", "employee"),
-    insert: inCompany(
-      "companyId",
-      anyOf("sales_create", "purchasing_create", "quality_create")
-    ),
-    update: inCompany(
-      "companyId",
-      anyOf("sales_update", "purchasing_update", "quality_update")
-    ),
-    delete: inCompany(
-      "companyId",
-      anyOf("sales_delete", "purchasing_delete", "quality_delete")
-    )
-  }),
+  externalLink: company({ read: "employee" }),
   feedback: serviceOnly(),
-  fiscalYearSettings: company("settings", { read: "settings_view" }),
-  fixedAsset: company("accounting", { read: "accounting_view" }),
-  fixedAssetCipCost: company("accounting", { read: "accounting_view" }),
-  fixedAssetClass: company("accounting", { read: "accounting_view" }),
-  fixedAssetDisposal: company("accounting", {
-    read: "accounting_view",
+  fiscalYearSettings: company(),
+  fixedAsset: company(),
+  fixedAssetCipCost: company(),
+  fixedAssetClass: company(),
+  fixedAssetDisposal: company({
     update: false,
     delete: false
   }),
-  fixedAssetTransfer: company("accounting", { read: "accounting_view" }),
-  fixedAssetUsageLog: company("accounting", { read: "accounting_view" }),
+  fixedAssetTransfer: company(),
+  fixedAssetUsageLog: company(),
   fixture: serviceOnly(),
   // The Admin force-delete override for invoices, receipts and payments:
   // written and read only by the service functions, which check that the
   // caller is an Admin.
   forceDeleteRequest: serviceOnly(),
-  fulfillment: company("sales", {
-    read: anyOf("inventory_view", "sales_view"),
-    create: anyOf("inventory_create", "sales_create")
+  fulfillment: company({
+    create: anyOf("create", "inventory.shipments_create")
   }),
-  gauge: company("quality"),
-  gaugeCalibrationRecord: company("quality", { read: "quality_view" }),
-  gaugeType: company("quality"),
-  group: company("users"),
-  holiday: company("people"),
-  implementationCheckState: company("settings", {
+  gauge: company({ read: "employee" }),
+  gaugeCalibrationRecord: company(),
+  gaugeType: company({ read: "employee" }),
+  group: company({ read: "employee" }),
+  holiday: company({ read: "employee" }),
+  implementationCheckState: company({
+    read: "employee",
     create: "employee",
     update: "employee"
   }),
-  implementationFieldValue: company("settings", {
+  implementationFieldValue: company({
+    read: "employee",
     create: "employee",
     update: "employee"
   }),
-  implementationHub: company("settings", { update: "employee", column: "id" }),
+  implementationHub: company({
+    read: "employee",
+    update: "employee",
+    column: "id"
+  }),
   implementationRow: policies({ all: inCompany("companyId", "employee") }),
   // Government contracting Phase 5b. The rate run writes the statement, the
   // runs and the Actual rates with Kysely; nothing writes them through the API.
-  indirectExpenseStatement: company("accounting", {
+  indirectExpenseStatement: company({
+    read: "employee",
     create: false,
     update: false,
     delete: false
   }),
-  indirectPool: company("accounting"),
-  indirectPoolAccount: company("accounting"),
-  indirectRate: company("accounting"),
-  indirectRateRun: company("accounting", {
+  indirectPool: company({ read: "employee" }),
+  indirectPoolAccount: company({ read: "employee" }),
+  indirectRate: company({ read: "employee" }),
+  indirectRateRun: company({
+    read: "employee",
     create: false,
     update: false,
     delete: false
   }),
   industry: policies({ select: authenticated }),
-  inspection: company("quality", { read: "quality_view" }),
-  inspectionDocument: company("quality"),
-  inspectionDocumentParameter: company("quality"),
-  inspectionFeature: company("quality"),
-  inspectionHistory: company("quality", {
-    read: "quality_view",
+  inspection: company(),
+  inspectionDocument: company({ read: "employee" }),
+  inspectionDocumentParameter: company({ read: "employee" }),
+  inspectionFeature: company({ read: "employee" }),
+  inspectionHistory: company({
     update: false,
     delete: false
   }),
-  inspectionMeasurement: company("quality", { read: "quality_view" }),
-  inspectionSample: company("quality", { read: "quality_view" }),
-  inspectionSamplingPlan: company("quality", { read: "quality_view" }),
-  inspectionTrackedEntity: company("quality", { read: "quality_view" }),
+  inspectionMeasurement: company(),
+  inspectionSample: company(),
+  inspectionSamplingPlan: company(),
+  inspectionTrackedEntity: company(),
   integration: policies({ select: authenticated }),
   // Read-only to API roles: a user-written row could claim another company's Slack
   // team_id or point secretRef at someone else's vault secret. The server writes it
   // with the service role after its own permission check.
-  integrationConnection: company("settings", {
-    read: "settings_view",
+  integrationConnection: company({
     create: false,
     update: false,
     delete: false
   }),
-  intercompanyEliminationLine: company("accounting"),
+  intercompanyEliminationLine: company({ read: "employee" }),
   intercompanyTransaction: policies({
     select: or(
-      inCompany("sourceCompanyId", "accounting_create"),
-      inCompany("targetCompanyId", "accounting_create")
+      inCompany("sourceCompanyId", "create"),
+      inCompany("targetCompanyId", "create")
     ),
     insert: or(
-      inCompany("sourceCompanyId", "accounting_create"),
-      inCompany("targetCompanyId", "accounting_create")
+      inCompany("sourceCompanyId", "create"),
+      inCompany("targetCompanyId", "create")
     ),
     update: or(
-      inCompany("sourceCompanyId", "accounting_update"),
-      inCompany("targetCompanyId", "accounting_update")
+      inCompany("sourceCompanyId", "update"),
+      inCompany("targetCompanyId", "update")
     ),
     delete: or(
-      inCompany("sourceCompanyId", "accounting_delete"),
-      inCompany("targetCompanyId", "accounting_delete")
+      inCompany("sourceCompanyId", "delete"),
+      inCompany("targetCompanyId", "delete")
     )
   }),
-  inventoryCount: company("inventory", { read: "inventory_view" }),
-  inventoryCountLine: company("inventory", { read: "inventory_view" }),
+  inventoryCount: company(),
+  inventoryCountLine: company(),
   invite: serviceOnly(),
   // Settlements change only while the payment and memo they apply are still Draft, in the
   // settlement's own company. (The imported policy compared each parent to itself —
   // p.id = p."paymentId" — so writes only passed when both ids were null.)
   invoiceSettlement: policies({
     select: inCompany("companyId", "employee"),
-    insert: and(draftSettlement, inCompany("companyId", "invoicing_create")),
-    update: and(draftSettlement, inCompany("companyId", "invoicing_update")),
-    delete: and(draftSettlement, inCompany("companyId", "invoicing_delete"))
+    insert: and(draftSettlement, inCompany("companyId", "create")),
+    update: and(draftSettlement, inCompany("companyId", "update")),
+    delete: and(draftSettlement, inCompany("companyId", "delete"))
   }),
   itarCertification: policies({ select: inCompany("companyId", "employee") }),
   item: policies({
@@ -829,9 +754,9 @@ export const manifest = {
         and(portal.customer("customerId", "parts_view"), isNotNull("itemId"))
       )
     ),
-    insert: inCompany("companyId", "parts_create"),
+    insert: inCompany("companyId", "create"),
     update: or(
-      inCompany("companyId", "parts_update"),
+      inCompany("companyId", "update"),
       throughIndexed(
         "id",
         "supplierPart",
@@ -846,7 +771,7 @@ export const manifest = {
       )
     ),
     delete: or(
-      inCompany("companyId", "parts_delete"),
+      inCompany("companyId", "delete"),
       throughIndexed(
         "id",
         "supplierPart",
@@ -863,10 +788,7 @@ export const manifest = {
   }),
   itemCost: policies({
     select: or(
-      or(
-        inCompany("companyId", "parts_view"),
-        inCompany("companyId", "sales_view")
-      ),
+      inCompany("companyId", "view"),
       throughIndexed(
         "itemId",
         "supplierPart",
@@ -874,9 +796,9 @@ export const manifest = {
         portal.supplier("supplierId", "parts_view")
       )
     ),
-    insert: inCompany("companyId", "parts_create"),
+    insert: inCompany("companyId", "create"),
     update: or(
-      inCompany("companyId", "parts_update"),
+      inCompany("companyId", "update"),
       throughIndexed(
         "itemId",
         "supplierPart",
@@ -891,90 +813,75 @@ export const manifest = {
       )
     )
   }),
-  itemInspectionDocumentAssignment: company("quality", {
-    read: "quality_view"
-  }),
+  itemInspectionDocumentAssignment: company(),
   itemLedger: policies({
-    select: inCompany("companyId", anyOf("inventory_view", "accounting_view")),
+    select: inCompany("companyId", "view"),
     insert: inCompany(
       "companyId",
-      anyOf("inventory_create", "accounting_create")
+      anyOf("create", "accounting.journalEntries_create")
     )
   }),
-  itemPlanning: company("parts", { read: "parts_view", delete: false }),
-  itemPostingGroup: company("accounting", { read: "accounting_view" }),
-  itemPostingGroupResponsibility: company("settings", {
-    create: "settings_update",
-    update: "settings_update",
-    delete: "settings_update"
+  itemPlanning: company({ delete: false }),
+  itemPostingGroup: company(),
+  itemPostingGroupResponsibility: company({
+    read: "employee",
+    create: "update",
+    update: "update",
+    delete: "update"
   }),
-  itemRentalRate: company("sales", { read: "sales_view" }),
-  itemReplenishment: company("parts", { read: "parts_view" }),
-  itemSerialSequence: company("settings"),
-  itemShelfLife: company("parts", { read: "parts_view" }),
+  itemRentalRate: company(),
+  itemReplenishment: company(),
+  itemSerialSequence: company({ read: "employee" }),
+  itemShelfLife: company(),
   itemStockQuantities: policies({ select: inCompany("companyId", "employee") }),
-  itemSupersession: company("parts"),
-  itemUnitSalePrice: company("parts", {
-    read: anyOf("parts_view", "sales_view")
-  }),
-  job: company("production"),
-  jobCorrection: company("production"),
-  jobCorrectionTrigger: company("production"),
+  itemSupersession: company({ read: "employee" }),
+  itemUnitSalePrice: company(),
+  job: company({ read: "employee" }),
+  jobCorrection: company({ read: "employee" }),
+  jobCorrectionTrigger: company({ read: "employee" }),
   jobFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
     delete: owner("userId")
   }),
-  jobMakeMethod: company("production"),
-  jobMaterial: company("production"),
+  jobMakeMethod: company({ read: "employee" }),
+  jobMaterial: company({ read: "employee" }),
   jobMaterialStep: policies({
     select: exists("jobMaterial", "jobMaterialId", "employee"),
-    insert: exists("jobMaterial", "jobMaterialId", "production_create"),
-    update: exists("jobMaterial", "jobMaterialId", "production_update"),
-    delete: exists("jobMaterial", "jobMaterialId", "production_delete")
+    insert: exists("jobMaterial", "jobMaterialId", "create"),
+    update: exists("jobMaterial", "jobMaterialId", "update"),
+    delete: exists("jobMaterial", "jobMaterialId", "delete")
   }),
-  jobOperation: company("production"),
-  jobOperationBatch: company("production"),
+  jobOperation: company({ read: "employee" }),
+  jobOperationBatch: company({ read: "employee" }),
   jobOperationDependency: policies({
     select: inCompany("companyId", "employee")
   }),
-  jobOperationNote: company("production", { create: "employee" }),
-  jobOperationParameter: company("production"),
-  jobOperationStep: company("production"),
-  jobOperationStepRecord: company("production", { create: "employee" }),
-  jobOperationStepSlide: company("production"),
-  jobOperationTool: company("production"),
+  jobOperationNote: company({ read: "employee", create: "employee" }),
+  jobOperationParameter: company({ read: "employee" }),
+  jobOperationStep: company({ read: "employee" }),
+  jobOperationStepRecord: company({ read: "employee", create: "employee" }),
+  jobOperationStepSlide: company({ read: "employee" }),
+  jobOperationTool: company({ read: "employee" }),
   // Written by the trigger-rework posting only (system connection).
   jobOperationTrackedEntity: policies({
     select: inCompany("companyId", "employee")
   }),
   jobOperationToolStep: policies({
     select: exists("jobOperationTool", "jobOperationToolId", "employee"),
-    insert: exists(
-      "jobOperationTool",
-      "jobOperationToolId",
-      "production_create"
-    ),
-    update: exists(
-      "jobOperationTool",
-      "jobOperationToolId",
-      "production_update"
-    ),
-    delete: exists(
-      "jobOperationTool",
-      "jobOperationToolId",
-      "production_delete"
-    )
+    insert: exists("jobOperationTool", "jobOperationToolId", "create"),
+    update: exists("jobOperationTool", "jobOperationToolId", "update"),
+    delete: exists("jobOperationTool", "jobOperationToolId", "delete")
   }),
   // Provisional and Superseded are the accounting cutover's automatic statuses
   // (.ai/specs/implemented/2026-10-08-accounting-cutover.md): only the posting
   // server functions and the enable write them, as the service connection. A
   // user never creates a journal in either status nor moves one into it.
   journal: policies({
-    select: inCompany("companyId", "accounting_view"),
+    select: inCompany("companyId", "view"),
     insert: and(
       where<"journal">((eb) => eb("status", "in", ["Draft", "Posted"])),
-      inCompany("companyId", "accounting_create")
+      inCompany("companyId", "create")
     ),
     // Posted stays updatable only for the Posted -> Reversed transition, which the
     // journal_posted_immutable trigger enforces. The new row keeps the company scope,
@@ -983,27 +890,27 @@ export const manifest = {
     update: {
       using: and(
         where<"journal">((eb) => eb("status", "in", ["Draft", "Posted"])),
-        inCompany("companyId", "accounting_update")
+        inCompany("companyId", "update")
       ),
       check: and(
         where<"journal">((eb) =>
           eb("status", "in", ["Draft", "Posted", "Reversed"])
         ),
-        inCompany("companyId", "accounting_update")
+        inCompany("companyId", "update")
       )
     },
     delete: and(
       where<"journal">((eb) => eb("status", "=", "Draft")),
-      inCompany("companyId", "accounting_delete")
+      inCompany("companyId", "delete")
     )
   }),
   journalLine: policies({
-    select: inCompany("companyId", "accounting_view"),
+    select: inCompany("companyId", "view"),
     // Lines go into a Draft journal, or into the Posted reversal the ERP's
     // reverseJournalEntry writes through the user's client. Never into a
     // Provisional, Superseded or Reversed journal.
     insert: and(
-      inCompany("companyId", "accounting_create"),
+      inCompany("companyId", "create"),
       exists(
         "journal",
         "journalId",
@@ -1011,7 +918,7 @@ export const manifest = {
       )
     ),
     update: and(
-      inCompany("companyId", "accounting_update"),
+      inCompany("companyId", "update"),
       exists(
         "journal",
         "journalId",
@@ -1019,7 +926,7 @@ export const manifest = {
       )
     ),
     delete: and(
-      inCompany("companyId", "accounting_delete"),
+      inCompany("companyId", "delete"),
       exists(
         "journal",
         "journalId",
@@ -1027,26 +934,23 @@ export const manifest = {
       )
     )
   }),
-  journalLineDimension: company("accounting", {
-    read: "accounting_view",
+  journalLineDimension: company({
     update: false
   }),
-  kanban: company("inventory"),
-  laborCategory: company("projects"),
-  laborCategoryRate: company("projects"),
-  lease: company("purchasing", { read: "purchasing_view" }),
+  kanban: company({ read: "employee" }),
+  laborCategory: company({ read: "employee" }),
+  laborCategoryRate: company({ read: "employee" }),
+  lease: company(),
   // Written only by post-lease and the lease run (Kysely); read-only over the API.
-  leaseEvent: company("purchasing", {
-    read: "purchasing_view",
+  leaseEvent: company({
     create: false,
     update: false,
     delete: false
   }),
-  leaseLine: company("purchasing", { read: "purchasing_view" }),
-  leasePayment: company("purchasing", { read: "purchasing_view" }),
+  leaseLine: company(),
+  leasePayment: company(),
   // Written only by post-lease and the lease run (Kysely); read-only over the API.
-  leaseScheduleLine: company("purchasing", {
-    read: "purchasing_view",
+  leaseScheduleLine: company({
     create: false,
     update: false,
     delete: false
@@ -1055,11 +959,12 @@ export const manifest = {
     select: owner("userId"),
     insert: owner("userId")
   }),
-  location: company("resources"),
+  location: company({ read: "employee" }),
   // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
   // functions, over Kysely and under the device lock: read-only through the API.
   machineStateChange: policies({ select: inCompany("companyId", "employee") }),
-  maintenanceDispatch: company("resources", {
+  maintenanceDispatch: company({
+    read: "employee",
     create: "employee",
     update: "employee"
   }),
@@ -1072,132 +977,122 @@ export const manifest = {
     },
     delete: owner("createdBy")
   }),
-  maintenanceDispatchEvent: company("resources", {
+  maintenanceDispatchEvent: company({
+    read: "employee",
     create: "employee",
     update: "employee"
   }),
-  maintenanceDispatchItem: company("resources", { create: "employee" }),
+  maintenanceDispatchItem: company({ read: "employee", create: "employee" }),
   // Same rule as its sibling maintenanceDispatchItem. (The imported policy named
   // maintenance_update / maintenance_delete, which no one can hold.)
-  maintenanceDispatchItemTrackedEntity: company("resources", {
+  maintenanceDispatchItemTrackedEntity: company({
+    read: "employee",
     create: "employee"
   }),
-  maintenanceDispatchWorkCenter: company("resources", { create: "employee" }),
-  maintenanceFailureMode: company("resources"),
-  maintenanceSchedule: company("resources", { read: "resources_view" }),
-  maintenanceScheduleItem: company("resources", { create: "employee" }),
-  makeMethod: company("parts", { read: "parts_view" }),
-  material: company("parts"),
+  maintenanceDispatchWorkCenter: company({
+    read: "employee",
+    create: "employee"
+  }),
+  maintenanceFailureMode: company({ read: "employee" }),
+  maintenanceSchedule: company(),
+  maintenanceScheduleItem: company({ read: "employee", create: "employee" }),
+  makeMethod: company(),
+  material: company({ read: "employee" }),
   materialDimension: policies({
-    select: or(isNull("companyId"), inCompany("companyId", "parts_view")),
-    insert: inCompany("companyId", "parts_create"),
-    update: inCompany("companyId", "parts_update"),
-    delete: inCompany("companyId", "parts_delete")
+    select: or(isNull("companyId"), inCompany("companyId", "view")),
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
+    delete: inCompany("companyId", "delete")
   }),
   materialFinish: policies({
-    select: or(isNull("companyId"), inCompany("companyId", "parts_view")),
-    insert: inCompany("companyId", "parts_create"),
-    update: inCompany("companyId", "parts_update"),
-    delete: inCompany("companyId", "parts_delete")
+    select: or(isNull("companyId"), inCompany("companyId", "view")),
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
+    delete: inCompany("companyId", "delete")
   }),
   materialForm: policies({
-    select: or(isNull("companyId"), inCompany("companyId", "parts_view")),
-    insert: inCompany("companyId", "parts_create"),
-    update: inCompany("companyId", "parts_update"),
-    delete: inCompany("companyId", "parts_delete")
+    select: or(isNull("companyId"), inCompany("companyId", "view")),
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
+    delete: inCompany("companyId", "delete")
   }),
   materialGrade: policies({
-    select: or(isNull("companyId"), inCompany("companyId", "parts_view")),
-    insert: inCompany("companyId", "parts_create"),
-    update: inCompany("companyId", "parts_update"),
-    delete: inCompany("companyId", "parts_delete")
+    select: or(isNull("companyId"), inCompany("companyId", "view")),
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
+    delete: inCompany("companyId", "delete")
   }),
   materialSubstance: policies({
-    select: or(isNull("companyId"), inCompany("companyId", "parts_view")),
-    insert: inCompany("companyId", "parts_create"),
-    update: inCompany("companyId", "parts_update"),
-    delete: inCompany("companyId", "parts_delete")
+    select: or(isNull("companyId"), inCompany("companyId", "view")),
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
+    delete: inCompany("companyId", "delete")
   }),
   materialType: policies({
-    select: or(isNull("companyId"), inCompany("companyId", "parts_view")),
-    insert: inCompany("companyId", "parts_create"),
-    update: inCompany("companyId", "parts_update"),
-    delete: inCompany("companyId", "parts_delete")
+    select: or(isNull("companyId"), inCompany("companyId", "view")),
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
+    delete: inCompany("companyId", "delete")
   }),
   membership: policies({
     select: viaParent("groupId", "group", "employee"),
-    insert: viaParent("groupId", "group", "users_update"),
-    update: viaParent("groupId", "group", "users_update"),
-    delete: viaParent("groupId", "group", "users_update")
+    insert: viaParent("groupId", "group", "update"),
+    update: viaParent("groupId", "group", "update"),
+    delete: viaParent("groupId", "group", "update")
   }),
   memo: policies({
     select: inCompany("companyId", "employee"),
-    insert: inCompany("companyId", "invoicing_create"),
-    update: inCompany("companyId", "invoicing_update"),
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
     delete: and(
       where<"memo">((eb) => eb("status", "=", "Draft")),
-      inCompany("companyId", "invoicing_delete")
+      inCompany("companyId", "delete")
     )
   }),
-  methodCorrection: company("parts", { read: "parts_view" }),
-  methodCorrectionTrigger: company("parts", { read: "parts_view" }),
-  methodMaterial: company("parts", { read: "parts_view" }),
+  methodCorrection: company(),
+  methodCorrectionTrigger: company(),
+  methodMaterial: company(),
   methodMaterialStep: policies({
     select: exists("methodMaterial", "methodMaterialId", "employee"),
-    insert: exists("methodMaterial", "methodMaterialId", "parts_create"),
-    update: exists("methodMaterial", "methodMaterialId", "parts_update"),
-    delete: exists("methodMaterial", "methodMaterialId", "parts_delete")
+    insert: exists("methodMaterial", "methodMaterialId", "create"),
+    update: exists("methodMaterial", "methodMaterialId", "update"),
+    delete: exists("methodMaterial", "methodMaterialId", "delete")
   }),
-  methodOperation: company("parts", { read: "parts_view" }),
-  methodOperationParameter: company("parts"),
-  methodOperationStep: company("production"),
-  methodOperationStepSlide: company("production"),
-  methodOperationTool: company("parts", { read: "parts_view" }),
+  methodOperation: company(),
+  methodOperationParameter: company({ read: "employee" }),
+  methodOperationStep: company({ read: "employee" }),
+  methodOperationStepSlide: company({ read: "employee" }),
+  methodOperationTool: company(),
   methodOperationToolStep: policies({
     select: exists("methodOperationTool", "methodOperationToolId", "employee"),
-    insert: exists(
-      "methodOperationTool",
-      "methodOperationToolId",
-      "parts_create"
-    ),
-    update: exists(
-      "methodOperationTool",
-      "methodOperationToolId",
-      "parts_update"
-    ),
-    delete: exists(
-      "methodOperationTool",
-      "methodOperationToolId",
-      "parts_delete"
-    )
+    insert: exists("methodOperationTool", "methodOperationToolId", "create"),
+    update: exists("methodOperationTool", "methodOperationToolId", "update"),
+    delete: exists("methodOperationTool", "methodOperationToolId", "delete")
   }),
-  modelUpload: company("parts"),
-  nonConformance: company("quality", { read: "quality_view" }),
-  nonConformanceActionProcess: company("quality", { read: "quality_view" }),
-  nonConformanceActionTask: company("quality", { read: "quality_view" }),
-  nonConformanceApprovalTask: company("quality", { read: "quality_view" }),
-  nonConformanceCustomer: company("quality", { read: "quality_view" }),
-  nonConformanceInspection: company("quality", { read: "quality_view" }),
-  nonConformanceItem: company("quality", { read: "quality_view" }),
-  nonConformanceItemTrackedEntity: company("quality", { read: "quality_view" }),
-  nonConformanceJobOperation: company("quality", { read: "quality_view" }),
-  nonConformancePurchaseOrderLine: company("quality", { read: "quality_view" }),
-  nonConformancePurchaseReturnOrderLine: company("quality", {
-    read: "quality_view"
-  }),
-  nonConformanceReceiptLine: company("quality", { read: "quality_view" }),
-  nonConformanceRequiredAction: company("quality", { read: "quality_view" }),
-  nonConformanceReviewer: company("quality", { read: "quality_view" }),
-  nonConformanceSalesOrderLine: company("quality", { read: "quality_view" }),
-  nonConformanceSalesReturnOrderLine: company("quality", {
-    read: "quality_view"
-  }),
-  nonConformanceShipmentLine: company("quality", { read: "quality_view" }),
-  nonConformanceSupplier: company("quality", { read: "quality_view" }),
-  nonConformanceTrackedEntity: company("quality", { read: "quality_view" }),
-  nonConformanceType: company("quality"),
-  nonConformanceWorkflow: company("quality", { read: "quality_view" }),
-  noQuoteReason: company("sales", { read: "sales_view" }),
+  // Every item page writes it (the registry: Parts, alsoWrittenBy).
+  modelUpload: company({ read: "employee" }),
+  nonConformance: company(),
+  nonConformanceActionProcess: company(),
+  nonConformanceActionTask: company(),
+  nonConformanceApprovalTask: company(),
+  nonConformanceCustomer: company(),
+  nonConformanceInspection: company(),
+  nonConformanceItem: company(),
+  nonConformanceItemTrackedEntity: company(),
+  nonConformanceJobOperation: company(),
+  nonConformancePurchaseOrderLine: company(),
+  nonConformancePurchaseReturnOrderLine: company(),
+  nonConformanceReceiptLine: company(),
+  nonConformanceRequiredAction: company(),
+  nonConformanceReviewer: company(),
+  nonConformanceSalesOrderLine: company(),
+  nonConformanceSalesReturnOrderLine: company(),
+  nonConformanceShipmentLine: company(),
+  nonConformanceSupplier: company(),
+  nonConformanceTrackedEntity: company(),
+  nonConformanceType: company({ read: "employee" }),
+  nonConformanceWorkflow: company(),
+  noQuoteReason: company(),
   // Only the author edits or deletes a note, and never moves it into another company.
   note: policies({
     select: inCompany("companyId", "employee"),
@@ -1223,71 +1118,80 @@ export const manifest = {
   oauthClient: serviceOnly(),
   oauthCode: serviceOnly(),
   oauthToken: serviceOnly(),
-  opportunity: company("sales", { read: "sales_view", delete: false }),
-  part: company("parts"),
-  partner: company("resources"),
+  // Quotes owns it, but a new RFQ and a new sales order each insert their
+  // opportunity as the caller.
+  opportunity: company({
+    create: anyOf(
+      "sales.rfqs_create",
+      "sales.quotes_create",
+      "sales.salesOrders_create"
+    ),
+    delete: false
+  }),
+  part: company({ read: "employee" }),
+  partner: company({ read: "employee" }),
   passkeyCredential: policies({ all: owner("userId") }),
   payment: policies({
     select: inCompany("companyId", "employee"),
-    insert: inCompany("companyId", "invoicing_create"),
-    update: inCompany("companyId", "invoicing_update"),
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
     delete: and(
       where<"payment">((eb) => eb("status", "=", "Draft")),
-      inCompany("companyId", "invoicing_delete")
+      inCompany("companyId", "delete")
     )
   }),
-  paymentTerm: company("accounting", {
-    read: anyOf("accounting_view", "sales_view", "purchasing_view")
-  }),
+  paymentTerm: company(),
   // Government contracting Phase 5a: payroll totals imported from CSV.
-  payrollPeriodTotal: company("people", { read: "people_view" }),
-  peopleAbsence: company("production"),
-  performanceBasedPaymentEvent: company("sales", { read: "sales_view" }),
-  peopleAssignment: company("production"),
+  payrollPeriodTotal: company(),
+  peopleAbsence: company({ read: "employee" }),
+  performanceBasedPaymentEvent: company(),
+  peopleAssignment: company({ read: "employee" }),
   period: policies({ select: authenticated }),
-  periodCloseTask: company("accounting"),
-  periodCloseTaskDefinition: company("accounting"),
-  pickingList: company("inventory", { read: "inventory_view" }),
-  pickingListLine: company("inventory", { read: "inventory_view" }),
+  // Read-only through the API: every write goes through writeAccessGrants (Kysely).
+  permission: policies({ select: grantRows }),
+  periodCloseTask: company({ read: "employee" }),
+  periodCloseTaskDefinition: company({ read: "employee" }),
+  pickingList: company(),
+  pickingListLine: company(),
   pickingListLineTrackedEntity: policies({
-    select: exists("pickingListLine", "pickingListLineId", "inventory_view"),
-    insert: exists("pickingListLine", "pickingListLineId", "inventory_create"),
-    update: exists("pickingListLine", "pickingListLineId", "inventory_update"),
-    delete: exists("pickingListLine", "pickingListLineId", "inventory_delete")
+    select: exists("pickingListLine", "pickingListLineId", "view"),
+    insert: exists("pickingListLine", "pickingListLineId", "create"),
+    update: exists("pickingListLine", "pickingListLineId", "update"),
+    delete: exists("pickingListLine", "pickingListLineId", "delete")
   }),
-  pickMethod: company("parts", { read: "parts_view", delete: false }),
+  pickMethod: company({ delete: false }),
   plan: policies({ select: authenticated }),
   // Read-only through the API. MRP writes it (Kysely) and the planning routes
   // change it with the service role after their own checks; an API write could
   // point an action's jobId / purchaseOrderLineId at another company's row
   // (single-column foreign keys), which the service-role read then shows.
-  planningAction: company("production", {
-    // Read by the production AND purchasing planning pages with the user's
-    // client; the row names a supplier, an open quantity and an assignee.
-    read: anyOf("production_view", "purchasing_view"),
+  // Read by the production AND purchasing planning pages with the user's
+  // client; the row names a supplier, an open quantity and an assignee.
+  planningAction: company({
     create: false,
     update: false,
     delete: false
   }),
-  planningGroup: company("projects"),
-  pricingRule: company("sales"),
-  printerRoute: company("printing", { read: "printing_view" }),
-  printJob: company("printing", { read: "printing_view" }),
-  procedure: company("production"),
-  procedureParameter: company("production"),
-  procedureStep: company("production"),
-  process: company("resources"),
-  productionEvent: company("production", { read: "production_view" }),
-  productionQuantity: company("production"),
-  project: projectTable("id"),
-  projectBaseline: company("projects", { update: false, delete: false }),
-  projectChangeRequest: company("projects"),
-  projectChangeRequestComment: company("projects", {
+  planningGroup: company({ read: "employee" }),
+  pricingRule: company({ read: "employee" }),
+  printerRoute: company(),
+  printJob: company(),
+  procedure: company({ read: "employee" }),
+  procedureParameter: company({ read: "employee" }),
+  procedureStep: company({ read: "employee" }),
+  process: company({ read: "employee" }),
+  productionEvent: company(),
+  productionQuantity: company({ read: "employee" }),
+  project: company({ read: "employee" }),
+  projectBaseline: company({ read: "employee", update: false, delete: false }),
+  projectChangeRequest: company({ read: "employee" }),
+  projectChangeRequestComment: company({
+    read: "employee",
     create: "employee",
     update: and(owner("createdBy"), inCompany("companyId", "employee")),
     delete: owner("createdBy")
   }),
-  projectChangeRequestItem: company("projects"),
+  projectChangeRequestItem: company({ read: "employee" }),
   projectChangeRequestView: policies({
     select: owner("userId"),
     insert: and(owner("userId"), inCompany("companyId", "employee")),
@@ -1298,20 +1202,22 @@ export const manifest = {
     delete: owner("userId")
   }),
   projectBillableItem: projectTable(),
-  projectBorrow: company("projects", {
+  projectBorrow: company({
+    read: "employee",
     create: false,
     update: false,
     delete: false
   }),
   // The revenue recognition run writes reliefs with Kysely; nothing writes
   // them through the API.
-  projectCostRelief: company("accounting", {
+  projectCostRelief: company({
+    read: "employee",
     create: false,
     update: false,
     delete: false
   }),
   projectElement: projectTable(),
-  projectElementComment: company("projects", {
+  projectElementComment: company({
     read: projectModule("projectElementId", "view", {
       standard: "employee",
       via: "projectElement"
@@ -1334,12 +1240,13 @@ export const manifest = {
   projectExpenseEntry: projectTable(),
   // Company-wide (Settings → Projects): any employee reads; Settings or
   // Projects writers edit.
-  projectLabel: company("projects", {
-    create: anyOf("projects_create", "settings_update"),
-    update: anyOf("projects_update", "settings_update"),
-    delete: anyOf("projects_delete", "settings_update")
+  projectLabel: company({
+    read: "employee",
+    create: anyOf("create", "settings.projects_update"),
+    update: anyOf("update", "settings.projects_update"),
+    delete: anyOf("delete", "settings.projects_update")
   }),
-  projectLedger: company("projects", {
+  projectLedger: company({
     read: projectModule("projectId", "view", { standard: "employee" }),
     create: false,
     update: false,
@@ -1350,21 +1257,23 @@ export const manifest = {
   projectMember: projectTable(),
   projectMilestone: projectTable(),
   // MRP writes pegs with the service role; a manual peg goes through a server
-  // action that checks update: projects first.
-  projectPeg: company("projects", {
+  // action that checks Edit on Projects first.
+  projectPeg: company({
+    read: "employee",
     create: false,
     update: false,
     delete: false
   }),
   // Company-wide (Settings → Projects): any employee reads; Settings or
   // Projects writers edit.
-  projectState: company("projects", {
-    create: anyOf("projects_create", "settings_update"),
-    update: anyOf("projects_update", "settings_update"),
-    delete: anyOf("projects_delete", "settings_update")
+  projectState: company({
+    read: "employee",
+    create: anyOf("create", "settings.projects_update"),
+    update: anyOf("update", "settings.projects_update"),
+    delete: anyOf("delete", "settings.projects_update")
   }),
-  projectStockTransfer: company("projects"),
-  projectStockTransferLine: company("projects"),
+  projectStockTransfer: company({ read: "employee" }),
+  projectStockTransferLine: company({ read: "employee" }),
   projectUserPreference: policies({
     select: owner("userId"),
     insert: and(owner("userId"), inCompany("companyId", "employee")),
@@ -1379,29 +1288,27 @@ export const manifest = {
       owner("createdBy"),
       and(
         where<"projectView">((eb) => eb("isShared", "=", true)),
-        inCompany("companyId", "projects_view")
+        inCompany("companyId", "view")
       )
     ),
-    insert: and(owner("createdBy"), inCompany("companyId", "projects_view")),
+    insert: and(owner("createdBy"), inCompany("companyId", "view")),
     update: {
       using: owner("createdBy"),
-      check: and(owner("createdBy"), inCompany("companyId", "projects_view"))
+      check: and(owner("createdBy"), inCompany("companyId", "view"))
     },
     delete: owner("createdBy")
   }),
-  purchaseInvoice: company("invoicing", { read: "invoicing_view" }),
-  purchaseInvoiceDelivery: company("invoicing", { read: "invoicing_view" }),
-  purchaseInvoiceLine: company("invoicing", { read: "invoicing_view" }),
+  purchaseInvoice: company(),
+  purchaseInvoiceDelivery: company(),
+  purchaseInvoiceLine: company(),
   purchaseInvoicePriceChange: policies({
-    select: viaParent("invoiceId", "purchaseInvoice", "invoicing_view")
+    select: viaParent("invoiceId", "purchaseInvoice", "view")
   }),
   purchaseInvoiceStatusHistory: policies({
-    select: viaParent("invoiceId", "purchaseInvoice", "invoicing_view")
+    select: viaParent("invoiceId", "purchaseInvoice", "view")
   }),
-  purchaseOrder: company("purchasing", {
-    read: anyOf("purchasing_view", "inventory_view", "invoicing_view")
-  }),
-  purchaseOrderDelivery: company("purchasing", { read: "purchasing_view" }),
+  purchaseOrder: company(),
+  purchaseOrderDelivery: company(),
   purchaseOrderFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
@@ -1410,38 +1317,36 @@ export const manifest = {
   // The Admin force-delete override: written and read only by the service
   // functions, which check that the caller is an Admin.
   purchaseOrderForceDeleteRequest: serviceOnly(),
-  purchaseOrderLine: company("purchasing", { read: "purchasing_view" }),
+  purchaseOrderLine: company(),
   // The versions an approval request keeps: written by the amendment
   // re-submit and read by the rejection, both through Kysely.
   purchaseOrderLineVersion: serviceOnly(),
-  purchaseOrderPayment: company("purchasing", { read: "purchasing_view" }),
+  purchaseOrderPayment: company(),
   purchaseOrderVersion: serviceOnly(),
   purchaseOrderStatusHistory: policies({
-    select: viaParent("purchaseOrderId", "purchaseOrder", "purchasing_view")
+    select: viaParent("purchaseOrderId", "purchaseOrder", "view")
   }),
   purchaseOrderTransaction: policies({
-    select: viaParent("purchaseOrderId", "purchaseOrder", "purchasing_view"),
-    insert: viaParent("purchaseOrderId", "purchaseOrder", "purchasing_update")
+    select: viaParent("purchaseOrderId", "purchaseOrder", "view"),
+    insert: viaParent("purchaseOrderId", "purchaseOrder", "update")
   }),
-  purchaseReturnOrder: company("purchasing"),
-  purchaseReturnOrderCreditLine: company("invoicing"),
-  purchaseReturnOrderLine: company("purchasing"),
-  purchaseReturnOrderLineTrackedEntity: company("purchasing"),
-  purchasingRfq: company("purchasing", { read: "purchasing_view" }),
+  purchaseReturnOrder: company({ read: "employee" }),
+  purchaseReturnOrderCreditLine: company({ read: "employee" }),
+  purchaseReturnOrderLine: company({ read: "employee" }),
+  purchaseReturnOrderLineTrackedEntity: company({ read: "employee" }),
+  purchasingRfq: company(),
   purchasingRfqFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
     delete: owner("userId")
   }),
-  purchasingRfqLine: company("purchasing", { read: "purchasing_view" }),
-  purchasingRfqSupplier: company("purchasing", { read: "purchasing_view" }),
-  purchasingRfqToPurchaseOrder: company("purchasing", {
-    read: "purchasing_view",
+  purchasingRfqLine: company(),
+  purchasingRfqSupplier: company(),
+  purchasingRfqToPurchaseOrder: company({
     update: false,
     delete: false
   }),
-  purchasingRfqToSupplierQuote: company("purchasing", {
-    read: "purchasing_view",
+  purchasingRfqToSupplierQuote: company({
     update: false,
     delete: false
   }),
@@ -1454,100 +1359,92 @@ export const manifest = {
     },
     delete: and(owner("userId"), member("companyId"))
   }),
-  qualityDocument: company("quality"),
-  qualityDocumentStep: company("production"),
-  quote: company("sales", { read: "sales_view" }),
+  qualityDocument: company({ read: "employee" }),
+  qualityDocumentStep: company({ read: "employee" }),
+  quote: company(),
   quoteFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
     delete: owner("userId")
   }),
-  quoteLine: company("sales", { read: "sales_view" }),
+  quoteLine: company(),
   quoteLinePrice: policies({
-    select: viaParent("quoteLineId", "quoteLine", "sales_view"),
-    insert: viaParent("quoteLineId", "quoteLine", "sales_create"),
-    update: viaParent("quoteLineId", "quoteLine", "sales_update"),
-    delete: viaParent("quoteLineId", "quoteLine", "sales_delete")
+    select: viaParent("quoteLineId", "quoteLine", "view"),
+    insert: viaParent("quoteLineId", "quoteLine", "create"),
+    update: viaParent("quoteLineId", "quoteLine", "update"),
+    delete: viaParent("quoteLineId", "quoteLine", "delete")
   }),
-  quoteMakeMethod: company("sales", { read: "sales_view" }),
-  quoteMaterial: company("sales", { read: "sales_view" }),
+  quoteMakeMethod: company(),
+  quoteMaterial: company(),
   quoteMaterialStep: policies({
     select: exists("quoteMaterial", "quoteMaterialId", "employee"),
-    insert: exists("quoteMaterial", "quoteMaterialId", "sales_create"),
-    update: exists("quoteMaterial", "quoteMaterialId", "sales_update"),
-    delete: exists("quoteMaterial", "quoteMaterialId", "sales_delete")
+    insert: exists("quoteMaterial", "quoteMaterialId", "create"),
+    update: exists("quoteMaterial", "quoteMaterialId", "update"),
+    delete: exists("quoteMaterial", "quoteMaterialId", "delete")
   }),
-  quoteOperation: company("sales", { read: "sales_view" }),
-  quoteOperationParameter: company("parts"),
-  quoteOperationStep: company("production"),
-  quoteOperationStepSlide: company("production"),
-  quoteOperationTool: company("sales"),
+  quoteOperation: company(),
+  quoteOperationParameter: company({ read: "employee" }),
+  quoteOperationStep: company({ read: "employee" }),
+  quoteOperationStepSlide: company({ read: "employee" }),
+  quoteOperationTool: company({ read: "employee" }),
   quoteOperationToolStep: policies({
     select: exists("quoteOperationTool", "quoteOperationToolId", "employee"),
-    insert: exists(
-      "quoteOperationTool",
-      "quoteOperationToolId",
-      "sales_create"
-    ),
-    update: exists(
-      "quoteOperationTool",
-      "quoteOperationToolId",
-      "sales_update"
-    ),
-    delete: exists("quoteOperationTool", "quoteOperationToolId", "sales_delete")
+    insert: exists("quoteOperationTool", "quoteOperationToolId", "create"),
+    update: exists("quoteOperationTool", "quoteOperationToolId", "update"),
+    delete: exists("quoteOperationTool", "quoteOperationToolId", "delete")
   }),
   quotePayment: policies({
     select: or(
-      inCompany("companyId", "sales_view"),
+      inCompany("companyId", "view"),
       exists("quote", "id", portal.customer("customerId", "sales_view"))
     ),
     insert: or(
-      inCompany("companyId", "sales_create"),
+      inCompany("companyId", "create"),
       exists("quote", "id", portal.customer("customerId", "sales_create"))
     ),
     update: or(
-      inCompany("companyId", "sales_update"),
+      inCompany("companyId", "update"),
       exists("quote", "id", portal.customer("customerId", "sales_update"))
     ),
     delete: or(
-      inCompany("companyId", "sales_delete"),
+      inCompany("companyId", "delete"),
       exists("quote", "id", portal.customer("customerId", "sales_delete"))
     )
   }),
   quoteShipment: policies({
     select: or(
-      inCompany("companyId", "sales_view"),
+      inCompany("companyId", "view"),
       exists("quote", "id", portal.customer("customerId", "sales_view"))
     ),
     insert: or(
-      inCompany("companyId", "sales_create"),
+      inCompany("companyId", "create"),
       exists("quote", "id", portal.customer("customerId", "sales_create"))
     ),
     update: or(
-      inCompany("companyId", "sales_update"),
+      inCompany("companyId", "update"),
       exists("quote", "id", portal.customer("customerId", "sales_update"))
     ),
     delete: or(
-      inCompany("companyId", "sales_delete"),
+      inCompany("companyId", "delete"),
       exists("quote", "id", portal.customer("customerId", "sales_delete"))
     )
   }),
-  receipt: company("inventory", { read: "inventory_view" }),
-  receiptFixedAssetLine: company("inventory", { read: "inventory_view" }),
-  receiptLine: company("inventory", { read: "inventory_view" }),
+  receipt: company(),
+  receiptFixedAssetLine: company(),
+  receiptLine: company(),
   reimbursement: policies({
     select: inCompany("companyId", "employee"),
     insert: and(
       where<"reimbursement">((eb) => eb("status", "=", "Draft")),
-      inCompany("companyId", "invoicing_create")
+      inCompany("companyId", "create")
     ),
     update: and(
       where<"reimbursement">((eb) => eb("status", "=", "Draft")),
-      inCompany("companyId", "invoicing_update")
+      inCompany("companyId", "update")
     ),
     delete: and(
       where<"reimbursement">((eb) => eb("status", "=", "Draft")),
-      inCompany("companyId", "invoicing_delete")
+      inCompany("companyId", "delete")
     )
   }),
   reimbursementLine: policies({
@@ -1559,7 +1456,7 @@ export const manifest = {
         where<"reimbursement">((eb) => eb("status", "=", "Draft")),
         { sameCompany: true }
       ),
-      inCompany("companyId", "invoicing_create")
+      inCompany("companyId", "create")
     ),
     update: and(
       exists(
@@ -1568,7 +1465,7 @@ export const manifest = {
         where<"reimbursement">((eb) => eb("status", "=", "Draft")),
         { sameCompany: true }
       ),
-      inCompany("companyId", "invoicing_update")
+      inCompany("companyId", "update")
     ),
     delete: and(
       exists(
@@ -1577,7 +1474,7 @@ export const manifest = {
         where<"reimbursement">((eb) => eb("status", "=", "Draft")),
         { sameCompany: true }
       ),
-      inCompany("companyId", "invoicing_delete")
+      inCompany("companyId", "delete")
     )
   }),
   // SELECT / INSERT / DELETE only — a line's dimensions are replaced by
@@ -1589,23 +1486,22 @@ export const manifest = {
     "two-hop parent check: the dimension's line's reimbursement must still be Draft",
     (t) => `
     CREATE POLICY "SELECT" ON ${t} AS PERMISSIVE FOR SELECT TO public USING (("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
-    CREATE POLICY "INSERT" ON ${t} AS PERMISSIVE FOR INSERT TO public WITH CHECK ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing_create'::text))::text[]))));
-    CREATE POLICY "DELETE" ON ${t} AS PERMISSIVE FOR DELETE TO public USING ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing_delete'::text))::text[]))));
+    CREATE POLICY "INSERT" ON ${t} AS PERMISSIVE FOR INSERT TO public WITH CHECK ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.reimbursements_create'::text))::text[]))));
+    CREATE POLICY "DELETE" ON ${t} AS PERMISSIVE FOR DELETE TO public USING ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.reimbursements_delete'::text))::text[]))));
   `
   ),
-  rentalAgreement: company("sales", { read: "sales_view" }),
-  rentalAgreementCharge: company("sales", { read: "sales_view" }),
+  rentalAgreement: company(),
+  rentalAgreementCharge: company(),
   // Written only by saveRentalAgreementContacts (server-side), which checks the
   // agreement's status and customer; the API cannot write rows directly.
-  rentalAgreementContact: company("sales", {
-    read: "sales_view",
+  rentalAgreementContact: company({
     create: false,
     update: false,
     delete: false
   }),
-  rentalAgreementLine: company("sales", { read: "sales_view" }),
-  rentalBillingPeriod: company("sales", { read: "sales_view" }),
-  rentalLeaseScheduleLine: company("sales", { read: "sales_view" }),
+  rentalAgreementLine: company(),
+  rentalBillingPeriod: company(),
+  rentalLeaseScheduleLine: company(),
   reportPin: policies({
     all: and(owner("userId"), inCompany("companyId", "employee"))
   }),
@@ -1621,205 +1517,179 @@ export const manifest = {
     update: and(inCompany("companyId", "employee"), owner("createdBy")),
     delete: and(inCompany("companyId", "employee"), owner("createdBy"))
   }),
-  returnReason: company("sales"),
-  revenueRecognitionRun: company("accounting", { read: "accounting_view" }),
-  revenueRecognitionRunLine: company("accounting", { read: "accounting_view" }),
-  revenueRecognitionSchedule: company("accounting", {
-    read: "accounting_view"
-  }),
-  rework: company("production", { read: "production_view" }),
-  riskRegister: company("quality", { create: "employee" }),
-  salesInvoice: company("invoicing", { read: "invoicing_view" }),
-  salesInvoiceLine: company("invoicing", { read: "invoicing_view" }),
+  returnReason: company({ read: "employee" }),
+  revenueRecognitionRun: company(),
+  revenueRecognitionRunLine: company(),
+  revenueRecognitionSchedule: company(),
+  rework: company(),
+  riskRegister: company({ read: "employee", create: "employee" }),
+  salesInvoice: company(),
+  salesInvoiceLine: company(),
   // Government contracting Phase 5a: the ACRN split of an invoice. Only the
   // invoice server function writes it, with Kysely.
-  salesInvoiceFundingAllocation: company("invoicing", {
-    read: "invoicing_view",
+  salesInvoiceFundingAllocation: company({
     create: false,
     update: false,
     delete: false
   }),
-  salesInvoiceShipment: company("invoicing", { read: "invoicing_view" }),
-  salesOrder: company("sales", {
-    read: anyOf("sales_view", "inventory_view", "invoicing_view")
-  }),
+  salesInvoiceShipment: company(),
+  salesOrder: company(),
   salesOrderFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
     delete: owner("userId")
   }),
-  salesOrderLine: company("sales", { read: "sales_view" }),
+  salesOrderLine: company(),
   salesOrderPayment: policies({
     select: or(
-      inCompany("companyId", "sales_view"),
+      inCompany("companyId", "view"),
       exists("salesOrder", "id", portal.customer("customerId", "sales_view"))
     ),
     insert: or(
-      inCompany("companyId", "sales_create"),
+      inCompany("companyId", "create"),
       exists("salesOrder", "id", portal.customer("customerId", "sales_create"))
     ),
     update: or(
-      inCompany("companyId", "sales_update"),
+      inCompany("companyId", "update"),
       exists("salesOrder", "id", portal.customer("customerId", "sales_update"))
     ),
     delete: or(
-      inCompany("companyId", "sales_delete"),
+      inCompany("companyId", "delete"),
       exists("salesOrder", "id", portal.customer("customerId", "sales_delete"))
     )
   }),
   salesOrderShipment: policies({
     select: or(
-      inCompany("companyId", "sales_view"),
+      inCompany("companyId", "view"),
       exists("salesOrder", "id", portal.customer("customerId", "sales_view"))
     ),
     insert: or(
-      inCompany("companyId", "sales_create"),
+      inCompany("companyId", "create"),
       exists("salesOrder", "id", portal.customer("customerId", "sales_create"))
     ),
     update: or(
-      inCompany("companyId", "sales_update"),
+      inCompany("companyId", "update"),
       exists("salesOrder", "id", portal.customer("customerId", "sales_update"))
     ),
     delete: or(
-      inCompany("companyId", "sales_delete"),
+      inCompany("companyId", "delete"),
       exists("salesOrder", "id", portal.customer("customerId", "sales_delete"))
     )
   }),
   salesOrderStatusHistory: policies({
-    select: viaParent("salesOrderId", "salesOrder", "sales_view")
+    select: viaParent("salesOrderId", "salesOrder", "view")
   }),
   salesOrderTransaction: policies({
-    select: viaParent("salesOrderId", "salesOrder", "sales_view"),
-    insert: viaParent("salesOrderId", "salesOrder", "sales_update")
+    select: viaParent("salesOrderId", "salesOrder", "view"),
+    insert: viaParent("salesOrderId", "salesOrder", "update")
   }),
-  salesReturnOrder: company("sales"),
-  salesReturnOrderCreditLine: company("invoicing"),
-  salesReturnOrderLine: company("sales"),
-  salesReturnOrderLineTrackedEntity: company("sales"),
-  salesRfq: company("sales", { read: "sales_view" }),
+  salesReturnOrder: company({ read: "employee" }),
+  salesReturnOrderCreditLine: company({ read: "employee" }),
+  salesReturnOrderLine: company({ read: "employee" }),
+  salesReturnOrderLineTrackedEntity: company({ read: "employee" }),
+  salesRfq: company(),
   salesRfqFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
     delete: owner("userId")
   }),
-  salesRfqLine: company("sales", { read: "sales_view" }),
-  scrapReason: company("production"),
+  salesRfqLine: company(),
+  scrapReason: company({ read: "employee" }),
   scriptRun: policies({ select: authenticated }),
   searchIndexRegistry: serviceOnly(),
-  sequence: company("settings", { read: "settings_view" }),
-  service: company("parts"),
+  sequence: company(),
+  service: company({ read: "employee" }),
   // Every technician write (MES, My Time) runs on the service role or the
   // system connection after its own check; the user's client needs the scope.
-  serviceJob: company("service"),
-  serviceJobAssignment: company("service"),
-  serviceJobEstimateLine: company("service"),
-  serviceJobItem: company("service"),
-  serviceJobTime: company("service"),
-  shift: company("people"),
-  shipment: company("inventory", {
-    read: anyOf("inventory_view", "sales_view"),
-    create: anyOf("inventory_create", "sales_create")
+  serviceJob: company({ read: "employee" }),
+  serviceJobAssignment: company({ read: "employee" }),
+  serviceJobEstimateLine: company({ read: "employee" }),
+  serviceJobItem: company({ read: "employee" }),
+  serviceJobTime: company({ read: "employee" }),
+  shift: company({ read: "employee" }),
+  shipment: company({
+    create: anyOf("create", "sales.salesOrders_create")
   }),
-  shipmentFixedAssetLine: company("inventory", { read: "inventory_view" }),
-  shipmentLine: company("sales", {
-    read: anyOf("inventory_view", "sales_view"),
-    create: anyOf("inventory_create", "sales_create")
-  }),
-  shippingMethod: company("inventory"),
-  shippingTerm: company("inventory"),
+  shipmentFixedAssetLine: company(),
+  shipmentLine: company(),
+  shippingMethod: company({ read: "employee" }),
+  shippingTerm: company({ read: "employee" }),
   slackDocumentThread: serviceOnly(),
-  ssoConnection: company("settings", {
-    create: "settings_update",
-    delete: "settings_update"
+  ssoConnection: company({
+    read: "employee",
+    create: "update",
+    delete: "update"
   }),
-  ssoDomain: company("settings", {
-    create: "settings_update",
-    delete: "settings_update"
+  ssoDomain: company({
+    read: "employee",
+    create: "update",
+    delete: "update"
   }),
   ssoReservedDomain: policies({ select: authenticated }),
-  stockTransfer: company("inventory"),
-  stockTransferLine: company("inventory"),
-  storageType: company("parts"),
-  storageUnit: company("parts"),
-  suggestion: company("resources", {
-    read: "resources_view",
+  stockTransfer: company({ read: "employee" }),
+  stockTransferLine: company({ read: "employee" }),
+  storageType: company({ read: "employee" }),
+  storageUnit: company({ read: "employee" }),
+  suggestion: company({
     create: "employee"
   }),
-  supplier: company("purchasing", { read: "purchasing_view" }),
-  supplierAccount: company("purchasing", { read: "purchasing_view" }),
-  supplierBankAccount: company("accounting", { read: "accounting_view" }),
+  supplier: company(),
+  supplierAccount: company(),
+  supplierBankAccount: company(),
   supplierContact: policies({
-    select: viaParent("supplierId", "supplier", "purchasing_view"),
-    insert: viaParent("supplierId", "supplier", "purchasing_create"),
-    update: viaParent("supplierId", "supplier", "purchasing_update"),
-    delete: viaParent("supplierId", "supplier", "purchasing_delete")
+    select: viaParent("supplierId", "supplier", "view"),
+    insert: viaParent("supplierId", "supplier", "create"),
+    update: viaParent("supplierId", "supplier", "update"),
+    delete: viaParent("supplierId", "supplier", "delete")
   }),
-  supplierInteraction: company("purchasing", { read: "purchasing_view" }),
-  supplierLedger: company("accounting", {
-    read: "accounting_view",
+  supplierInteraction: company(),
+  supplierLedger: company({
     create: false,
     update: false,
     delete: false
   }),
   supplierLocation: policies({
-    select: viaParent("supplierId", "supplier", "purchasing_view"),
-    insert: viaParent("supplierId", "supplier", "purchasing_create"),
-    update: viaParent("supplierId", "supplier", "purchasing_update"),
-    delete: viaParent("supplierId", "supplier", "purchasing_delete")
+    select: viaParent("supplierId", "supplier", "view"),
+    insert: viaParent("supplierId", "supplier", "create"),
+    update: viaParent("supplierId", "supplier", "update"),
+    delete: viaParent("supplierId", "supplier", "delete")
   }),
-  supplierPart: company("parts", {
-    read: anyOf("parts_view", "purchasing_view")
-  }),
-  supplierPartPrice: company("parts", {
-    read: anyOf("parts_view", "purchasing_view")
-  }),
-  supplierPayment: company("purchasing", {
-    read: "purchasing_view",
+  supplierPart: company(),
+  supplierPartPrice: company(),
+  supplierPayment: company({
     create: false,
     delete: false
   }),
-  supplierProcess: company("resources", {
-    read: anyOf("purchasing_view", "resources_view", "sales_view"),
-    create: anyOf("purchasing_update", "resources_update"),
-    delete: anyOf("purchasing_delete", "resources_delete")
+  // Processes owns it; Suppliers edits a supplier's processes.
+  supplierProcess: company({
+    create: anyOf("update", "purchasing.suppliers_update"),
+    delete: anyOf("delete", "purchasing.suppliers_delete")
   }),
-  supplierQuote: company("purchasing", { read: "purchasing_view" }),
+  supplierQuote: company(),
   supplierQuoteFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
     delete: owner("userId")
   }),
-  supplierQuoteLine: company("purchasing", { read: "purchasing_view" }),
+  supplierQuoteLine: company(),
   supplierQuoteLinePrice: policies({
-    select: viaParent("supplierQuoteId", "supplierQuote", "purchasing_view"),
-    insert: viaParent("supplierQuoteId", "supplierQuote", "purchasing_create"),
-    update: viaParent("supplierQuoteId", "supplierQuote", "purchasing_update"),
-    delete: viaParent("supplierQuoteId", "supplierQuote", "purchasing_delete")
+    select: viaParent("supplierQuoteId", "supplierQuote", "view"),
+    insert: viaParent("supplierQuoteId", "supplierQuote", "create"),
+    update: viaParent("supplierQuoteId", "supplierQuote", "update"),
+    delete: viaParent("supplierQuoteId", "supplierQuote", "delete")
   }),
-  supplierShipping: company("purchasing", {
-    read: "purchasing_view",
+  supplierShipping: company({
     create: false,
     delete: false
   }),
-  supplierTax: company("purchasing", {
-    read: "purchasing_view",
+  supplierTax: company({
     create: false,
     delete: false
   }),
-  supplierStage: company("purchasing"),
-  supplierType: company("purchasing", { read: "member" }),
-  supplyActual: policies({
-    select: or(
-      inCompany("companyId", "parts_view"),
-      inCompany("companyId", "inventory_view")
-    ),
-    insert: inCompany("companyId", "inventory_create"),
-    update: inCompany("companyId", "inventory_update"),
-    delete: inCompany("companyId", "inventory_delete")
-  }),
-  supplyForecast: company("inventory", {
-    read: "inventory_view"
-  }),
+  supplierStage: company({ read: "employee" }),
+  supplierType: company({ read: "member" }),
+  supplyActual: company(),
+  supplyForecast: company(),
   // Written by the log_*_changes triggers and read through table_changes_since,
   // which checks the caller's company itself. No API access.
   tableChange: serviceOnly(),
@@ -1838,13 +1708,14 @@ export const manifest = {
     },
     delete: owner("createdBy")
   }),
-  tag: company("settings", {
+  // Every page tags its records; deleting a tag is a Company setting (the registry).
+  tag: company({
+    read: "employee",
     create: "employee",
     update: false,
-    delete: "settings_update"
+    delete: "update"
   }),
-  terms: company("settings", {
-    read: anyOf("purchasing_view", "sales_view", "settings_view"),
+  terms: company({
     create: false,
     delete: false,
     column: "id"
@@ -1852,25 +1723,25 @@ export const manifest = {
   timeCardEntry: policies({
     select: or(
       and(owner("employeeId"), inCompany("companyId", "employee")),
-      inCompany("companyId", "people_view")
+      inCompany("companyId", "view")
     ),
     insert: or(
       and(owner("employeeId"), inCompany("companyId", "employee")),
-      inCompany("companyId", "people_create")
+      inCompany("companyId", "create")
     ),
     update: or(
       and(owner("employeeId"), inCompany("companyId", "employee")),
-      inCompany("companyId", "people_update")
+      inCompany("companyId", "update")
     ),
-    delete: inCompany("companyId", "people_delete")
+    delete: inCompany("companyId", "delete")
   }),
   // Government contracting Phase 5a: weekly certification and the DCAA
   // correction trail. Only the timesheet server functions write them, with
   // Kysely. The owner reads their own rows; projects_view reads every row.
-  timesheetCertification: company("projects", {
+  timesheetCertification: company({
     read: or(
       and(owner("employeeId"), inCompany("companyId", "employee")),
-      inCompany("companyId", "projects_view")
+      inCompany("companyId", "view")
     ),
     create: false,
     update: false,
@@ -1905,40 +1776,40 @@ export const manifest = {
       where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
     )
   }),
-  timesheetEntryRevision: company("projects", {
+  timesheetEntryRevision: company({
     read: or(
       and(owner("employeeId"), inCompany("companyId", "employee")),
-      inCompany("companyId", "projects_view")
+      inCompany("companyId", "view")
     ),
     create: false,
     update: false,
     delete: false
   }),
-  tool: company("parts"),
-  trackedActivity: company("inventory", { create: "employee" }),
-  trackedActivityInput: company("inventory", { create: "employee" }),
-  trackedActivityOutput: company("inventory", { create: "employee" }),
-  trackedEntity: company("inventory", { create: "employee" }),
-  training: company("resources"),
-  trainingAssignment: company("people", { read: "people_view" }),
+  tool: company({ read: "employee" }),
+  trackedActivity: company({ read: "employee", create: "employee" }),
+  trackedActivityInput: company({ read: "employee", create: "employee" }),
+  trackedActivityOutput: company({ read: "employee", create: "employee" }),
+  trackedEntity: company({ read: "employee", create: "employee" }),
+  training: company({ read: "employee" }),
+  trainingAssignment: company(),
   trainingCompletion: policies({
-    select: inCompany("companyId", "resources_view"),
+    select: inCompany("companyId", "view"),
     insert: or(
-      inCompany("companyId", "people_create"),
+      inCompany("companyId", "create"),
       and(owner("employeeId"), inCompany("companyId", "employee"))
     ),
-    update: inCompany("companyId", "resources_update"),
-    delete: inCompany("companyId", "resources_delete")
+    update: inCompany("companyId", "update"),
+    delete: inCompany("companyId", "delete")
   }),
-  trainingQuestion: company("people"),
+  trainingQuestion: company({ read: "employee" }),
   // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
   // functions, over Kysely and under the device lock: read-only through the API.
   unattributedMachineTime: policies({
     select: inCompany("companyId", "employee")
   }),
-  unitOfMeasure: company("parts", { read: "member" }),
+  unitOfMeasure: company({ read: "member" }),
   user: custom(
-    "bespoke: five overlapping policies — self, shared company membership, employee/customer/supplier accounts, users_update, and an API-key EXISTS on userToCompany",
+    "bespoke: five overlapping policies — self, shared company membership, employee/customer/supplier accounts, Accounts Edit, and an API-key EXISTS on userToCompany",
     (t) => `
     CREATE POLICY "Employees can view users with an account in their company" ON ${t} AS PERMISSIVE FOR SELECT TO public USING (((id IN ( SELECT employee.id
    FROM employee
@@ -1947,11 +1818,11 @@ export const manifest = {
   WHERE ("customerAccount"."companyId" = ANY (( SELECT get_companies_with_employee_role() AS get_companies_with_employee_role)::text[])))) OR (id IN ( SELECT "supplierAccount".id
    FROM "supplierAccount"
   WHERE ("supplierAccount"."companyId" = ANY (( SELECT get_companies_with_employee_role() AS get_companies_with_employee_role)::text[]))))));
-    CREATE POLICY "Employees with users_update can update users in their company" ON ${t} AS PERMISSIVE FOR UPDATE TO public USING ((id IN ( SELECT "userToCompany"."userId"
+    CREATE POLICY "Employees with Accounts Edit can update users in their company" ON ${t} AS PERMISSIVE FOR UPDATE TO public USING ((id IN ( SELECT "userToCompany"."userId"
    FROM "userToCompany"
-  WHERE ("userToCompany"."companyId" = ANY (( SELECT get_companies_with_employee_permission('users_update'::text) AS get_companies_with_employee_permission)::text[]))))) WITH CHECK ((id IN ( SELECT "userToCompany"."userId"
+  WHERE ("userToCompany"."companyId" = ANY (( SELECT get_companies_with_employee_permission('users.accounts_update'::text) AS get_companies_with_employee_permission)::text[]))))) WITH CHECK ((id IN ( SELECT "userToCompany"."userId"
    FROM "userToCompany"
-  WHERE ("userToCompany"."companyId" = ANY (( SELECT get_companies_with_employee_permission('users_update'::text) AS get_companies_with_employee_permission)::text[])))));
+  WHERE ("userToCompany"."companyId" = ANY (( SELECT get_companies_with_employee_permission('users.accounts_update'::text) AS get_companies_with_employee_permission)::text[])))));
     CREATE POLICY "Requests with an API key can select users from their company" ON ${t} AS PERMISSIVE FOR SELECT TO public USING ((EXISTS ( SELECT 1
    FROM "userToCompany"
   WHERE (("userToCompany"."userId" = "user".id) AND ("userToCompany"."companyId" = get_company_id_from_api_key())))));
@@ -1965,14 +1836,15 @@ export const manifest = {
   ),
   // Employees read the attributes they manage for themselves, so the self-service path of
   // userAttributeValue (which reads these rows under the caller's RLS) works without
-  // resources_view; every other attribute still needs it.
+  // Attributes at View; every other attribute still needs it.
   userAttribute: policies({
     select: or(
+      // Resources owned it before people.attributes; the category every employee reads cannot list a reader.
       through(
         "userAttributeCategoryId",
         "userAttributeCategory",
         "id",
-        inCompany("companyId", "resources_view")
+        inCompany("companyId", anyOf("view", "resources.abilities_view"))
       ),
       and(
         where<"userAttribute">((eb) => eb("canSelfManage", "=", true)),
@@ -1988,33 +1860,33 @@ export const manifest = {
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      inCompany("companyId", "resources_create")
+      inCompany("companyId", "create")
     ),
     update: through(
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      inCompany("companyId", "resources_update")
+      inCompany("companyId", "update")
     ),
     delete: through(
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      inCompany("companyId", "resources_delete")
+      inCompany("companyId", "delete")
     )
   }),
   // Any employee reads the categories (names only): userAttribute's self-service read goes
   // through them, and they cannot look back at userAttribute without a policy cycle.
   userAttributeCategory: policies({
     select: inCompany("companyId", "employee"),
-    insert: inCompany("companyId", "resources_create"),
-    update: inCompany("companyId", "resources_update"),
-    delete: inCompany("companyId", "resources_delete")
+    insert: inCompany("companyId", "create"),
+    update: inCompany("companyId", "update"),
+    delete: inCompany("companyId", "delete")
   }),
   // A user reads, writes and clears their own values of self-managed attributes, in a
-  // company they belong to; resources_update manages everyone's. (The imported "insert"
+  // company they belong to; Attributes at Edit manages everyone's. (The imported "insert"
   // policy was FOR UPDATE with no USING, so the account page could not save a value without
-  // resources_update.)
+  // Attributes at Edit.)
   userAttributeValue: policies({
     all: or(and(owner("userId"), ownAttribute), managedAttribute)
   }),
@@ -2025,41 +1897,45 @@ export const manifest = {
   // Memberships are written only by the server (invites, SSO, onboarding) through the
   // service role. Through the API an admin could otherwise attach any user to their company
   // and then read that user's profile and permissions.
-  userToCompany: company("users", { create: false, update: false }),
-  warehouse: company("parts"),
-  warehouseTransfer: company("inventory", { read: "inventory_view" }),
-  warehouseTransferLine: company("inventory", { read: "inventory_view" }),
-  webhook: company("settings", { read: "settings_view" }),
+  userToCompany: company({ read: "employee", create: false, update: false }),
+  // Unused since the parts schema: nothing writes it, so the API cannot either.
+  warehouse: company({
+    read: "employee",
+    create: false,
+    update: false,
+    delete: false
+  }),
+  warehouseTransfer: company(),
+  warehouseTransferLine: company(),
+  webhook: company(),
   webhookTable: policies({ select: authenticated }),
-  workCenter: company("resources"),
+  workCenter: company({ read: "employee" }),
   // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
   // functions, over Kysely and under the device lock: read-only through the API.
   workCenterDevice: policies({ select: inCompany("companyId", "employee") }),
   // Written only by the load and unload interceptors: read-only through the API.
   workCenterLoad: policies({ select: inCompany("companyId", "employee") }),
-  workCenterProcess: company("resources"),
-  workCenterReplacementPart: company("resources", { read: "resources_view" }),
-  workCenterShift: company("resources"),
-  workflow: company("workflows", { read: "workflows_view" }),
-  workflowRun: company("workflows", {
-    read: "workflows_view",
+  workCenterProcess: company({ read: "employee" }),
+  workCenterReplacementPart: company(),
+  workCenterShift: company({ read: "employee" }),
+  workflow: company(),
+  workflowRun: company({
     create: false,
     update: false,
     delete: false
   }),
-  workflowStepRun: company("workflows", {
-    read: "workflows_view",
+  workflowStepRun: company({
     create: false,
     update: false,
     delete: false
   }),
-  workflowTriggerEvent: company("workflows", {
-    read: "workflows_view",
-    create: "workflows_update",
+  // Server-written only (syncWorkflowTriggers): a row names the version the owner's run executes.
+  workflowTriggerEvent: company({
+    create: false,
     update: false,
-    delete: "workflows_update"
+    delete: false
   }),
-  workflowVersion: company("workflows", { read: "workflows_view" }),
+  workflowVersion: company(),
   // Who may join a private Realtime broadcast topic. The policy is checked once,
   // when the client joins; the topic itself names the company or the user.
   "realtime.messages": external(

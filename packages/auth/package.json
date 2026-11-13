@@ -27,6 +27,7 @@
     "./mfa.server": "./src/services/mfa.server.ts",
     "./session.server": "./src/services/session.server.ts",
     "./self-signup.server": "./src/services/self-signup.server.ts",
+    "./users": "./src/services/users.ts",
     "./users.server": "./src/services/users.server.ts",
     "./passkey.server": "./src/services/passkey.server.ts",
     "./verification.server": "./src/services/verification.server.ts",

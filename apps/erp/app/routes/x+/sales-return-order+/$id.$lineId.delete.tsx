@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -22,8 +22,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw notFound("Could not find orderId");
   if (!lineId) throw notFound("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+  const { client: viewClient } = await authorize(request, {
+    "sales.returns": "View"
   });
 
   const [salesReturnOrder, line] = await Promise.all([
@@ -60,9 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { client } = await requirePermissions(request, {
-    delete: "sales"
-  });
+  const { client } = await authorize(request, { "sales.returns": "Full" });
 
   const { error: deleteLineError } = await deleteSalesReturnOrderLine(
     client,

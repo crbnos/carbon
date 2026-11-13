@@ -145,7 +145,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
       <>
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.edit}
-          disabled={!permissions.can("update", "sales")}
+          disabled={!permissions.has({ "sales.salesRules": "Edit" })}
           onClick={() => {
             navigate(`${path.to.salesRule(row.id)}?${params.toString()}`);
           }}
@@ -155,7 +155,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
         </MenuItem>
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
-          disabled={!permissions.can("delete", "sales")}
+          disabled={!permissions.has({ "sales.salesRules": "Full" })}
           destructive
           onClick={() => {
             navigate(`${path.to.deleteSalesRule(row.id)}?${params.toString()}`);
@@ -175,7 +175,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "sales") && (
+        permissions.has({ "sales.salesRules": "Create" }) && (
           <New
             label={t`Rule`}
             to={`${path.to.newSalesRule}?${params.toString()}`}

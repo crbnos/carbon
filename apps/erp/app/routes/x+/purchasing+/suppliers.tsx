@@ -7,7 +7,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SuppliersTable } from "~/modules/purchasing/ui/Supplier";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { suppliersList } from "~/utils/list-registry/purchasing.server";
@@ -23,8 +22,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, suppliersList, {
     dataKey: "suppliers",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => ({
-      tags: (await getTagsList(client, companyId, "supplier")).data ?? []
+    firstPage: async ({ api }) => ({
+      tags: (await api.shared.getTagsList({ table: "supplier" })).data ?? []
     }),
     onError: {
       redirectTo: path.to.purchasing,

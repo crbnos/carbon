@@ -18,6 +18,7 @@ vi.mock("@carbon/logger", () => ({
 
 import {
   grantedPermissionKeys,
+  logApiKeyAccessChange,
   logPermissionChange,
   logRoleChange
 } from "./auth-events.server";
@@ -106,6 +107,26 @@ describe("logPermissionChange", () => {
 });
 
 describe("logRoleChange", () => {
+  it("records an employee's permission rows as before, after and revoked", () => {
+    const inventory = { module: "Inventory", page: null, level: "Edit" };
+    const quotes = { module: "Sales", page: "sales.quotes", level: "None" };
+    logRoleChange({
+      targetUserId: "usr_target",
+      companyId: COMPANY,
+      beforeRole: "employee",
+      afterRole: null,
+      grantsBefore: [inventory, quotes],
+      grantsAfter: [quotes],
+      reason: "deactivate"
+    });
+    const [, payload] = info.mock.calls[0]!;
+    expect(payload).toMatchObject({
+      before: [inventory, quotes],
+      after: [quotes],
+      revoked: [inventory]
+    });
+  });
+
   it("emits role_changed with role transition and revoked permissions on deactivation", () => {
     logRoleChange({
       actor: "usr_admin",
@@ -152,5 +173,39 @@ describe("logRoleChange", () => {
     expect(payload.after).toBeUndefined();
     expect(payload.beforeRole).toBe("employee");
     expect(payload.afterRole).toBeNull();
+  });
+});
+
+describe("logApiKeyAccessChange", () => {
+  it("emits permission_changed with the key and its grant changes", () => {
+    const changes = [
+      { module: "Sales", page: null, from: "inherit", to: "View" }
+    ];
+    logApiKeyAccessChange({
+      actor: "usr_admin",
+      apiKeyId: "key_1",
+      companyId: COMPANY,
+      changes
+    });
+    const [message, payload] = info.mock.calls[0]!;
+    expect(message).toContain("auth.permission_changed");
+    expect(payload).toMatchObject({
+      authEvent: "permission_changed",
+      actor: "usr_admin",
+      apiKeyId: "key_1",
+      companyId: COMPANY,
+      changes
+    });
+  });
+
+  it("stamps a system actor when actor is missing", () => {
+    logApiKeyAccessChange({
+      actor: "",
+      apiKeyId: "key_1",
+      companyId: COMPANY,
+      changes: []
+    });
+    const [, payload] = info.mock.calls[0]!;
+    expect(payload.actor).toBe("system");
   });
 });

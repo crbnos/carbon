@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { Menubar, VStack } from "@carbon/react";
@@ -12,13 +12,7 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import {
-  getMakeMethodById,
-  getMakeMethods,
-  getMethodCorrectionsData,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId
-} from "~/modules/items/items.service";
+import { getMethodCorrectionsData } from "~/modules/items/items.service";
 import type { ServiceSummary } from "~/modules/items/types";
 import {
   BillOfMaterial,
@@ -27,13 +21,12 @@ import {
   MethodCorrections
 } from "~/modules/items/ui/Item";
 import { toMethodCorrectionsProps } from "~/modules/items/ui/Item/MethodCorrections";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
+  const { api, client, companyId } = await authorize(request, {
+    "parts.services": "View"
   });
 
   const { itemId, makeMethodId } = params;
@@ -42,10 +35,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [makeMethod, methodMaterials, methodOperations, tags] =
     await Promise.all([
-      getMakeMethodById(client, makeMethodId, companyId),
-      getMethodMaterialsByMakeMethod(client, makeMethodId),
-      getMethodOperationsByMakeMethodId(client, makeMethodId),
-      getTagsList(client, companyId, "operation")
+      api.items.getMakeMethodById({ makeMethodId }),
+      api.items.getMethodMaterialsByMakeMethod({ makeMethodId }),
+      api.items.getMethodOperationsByMakeMethodId({ makeMethodId }),
+      api.shared.getTagsList({ table: "operation" })
     ]);
 
   if (makeMethod.error) {
@@ -110,7 +103,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workCenterId: operation.workCenterId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null
       })) ?? [],
-    makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
+    makeMethods: api.items.getMakeMethods({ itemId: makeMethod.data.itemId }),
     tags: tags.data ?? []
   };
 }

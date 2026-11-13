@@ -83,9 +83,10 @@ const RentalAgreementHeader = ({
   const id = rentalAgreement.id!;
   const readableId = rentalAgreement.rentalAgreementId ?? "";
   const status = rentalAgreement.status;
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.rentalAgreements": "Edit" });
   // Invoicing drafts sales invoices, so it needs the invoicing permission too.
-  const canInvoice = canUpdate && permissions.can("create", "invoicing");
+  const canInvoice =
+    canUpdate && permissions.has({ "invoicing.salesInvoices": "Create" });
 
   const isDraft = status === "Draft";
   const isActive = status === "Active";
@@ -100,7 +101,12 @@ const RentalAgreementHeader = ({
   );
   const hasUnitOnRent = lines.some((line) => line.status === "On Rent");
   // Delivering and returning draft inventory documents.
-  const canMoveUnits = canUpdate && permissions.can("create", "inventory");
+  const canMoveUnits =
+    canUpdate &&
+    permissions.has({
+      "inventory.shipments": "Create",
+      "inventory.receipts": "Create"
+    });
   const hasPendingUnit = lines.some((line) => line.status === "Pending");
   // A receipt also holds Pending units (spec Q8).
   const canReturn = hasUnitOnRent || hasPendingUnit;
@@ -209,7 +215,10 @@ const RentalAgreementHeader = ({
               <DropdownMenuContent>
                 <DropdownMenuItem
                   destructive
-                  disabled={!isDraft || !permissions.can("delete", "sales")}
+                  disabled={
+                    !isDraft ||
+                    !permissions.has({ "sales.rentalAgreements": "Full" })
+                  }
                   onClick={deleteDisclosure.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuTrash />} />

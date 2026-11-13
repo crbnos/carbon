@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { ProductLabelPDF } from "@carbon/documents/pdf";
 import { labelSizes, redirect } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
@@ -20,7 +20,7 @@ import { getTrackedEntitiesByOperationId } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request, {});
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

@@ -31,54 +31,53 @@ import {
 import type { ListDefinition } from "./index.server";
 import { searchList } from "./index.server";
 
-// The quality loaders do not bypass RLS, so their lists keep the RLS client
-// and `role: "employee"`.
+// The quality loaders do not bypass RLS, so their lists keep the RLS client.
 
 export const issuesList = searchList({
   key: "issues",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.issues": "View" },
   paging: ISSUES_PAGING,
   service: getIssues
 });
 
 export const qualityActionsList = searchList({
   key: "quality-actions",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.actions": "View" },
   paging: QUALITY_ACTIONS_PAGING,
   service: getQualityActions
 });
 
 export const gaugeCalibrationRecordsList = searchList({
   key: "gauge-calibration-records",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.records": "View" },
   paging: GAUGE_CALIBRATION_RECORDS_PAGING,
   service: getGaugeCalibrationRecords
 });
 
 export const qualityDocumentsList = searchList({
   key: "quality-documents",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.qualityDocuments": "View" },
   paging: QUALITY_DOCUMENTS_PAGING,
   service: getQualityDocuments
 });
 
 export const gaugesList = searchList({
   key: "gauges",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.gauges": "View" },
   paging: GAUGES_PAGING,
   service: getGauges
 });
 
 export const gaugeTypesList = searchList({
   key: "gauge-types",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.gaugeTypes": "View" },
   paging: GAUGE_TYPES_PAGING,
   service: getGaugeTypes
 });
 
 export const inspectionPlansList = searchList({
   key: "inspection-plans",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.inspectionPlans": "View" },
   paging: INSPECTION_PLAN_PARTS_PAGING,
   service: getInspectionPlanParts,
   // The column joins the plans' names; the view's `planNames` is for search.
@@ -89,7 +88,7 @@ export const inspectionPlansList = searchList({
 
 export const inspectionsList = searchList({
   key: "inspections",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.inspections": "View" },
   paging: INSPECTIONS_PAGING,
   service: getInspections,
   params: { status: "status", source: "source" }
@@ -97,28 +96,28 @@ export const inspectionsList = searchList({
 
 export const issueTypesList = searchList({
   key: "issue-types",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.issueTypes": "View" },
   paging: ISSUE_TYPES_PAGING,
   service: getIssueTypes
 });
 
 export const issueWorkflowsList = searchList({
   key: "issue-workflows",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.issueWorkflows": "View" },
   paging: ISSUE_WORKFLOWS_PAGING,
   service: getIssueWorkflows
 });
 
 export const requiredActionsList = searchList({
   key: "required-actions",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.actionTypes": "View" },
   paging: REQUIRED_ACTIONS_PAGING,
   service: getRequiredActions
 });
 
 export const risksList = searchList({
   key: "risks",
-  permission: { view: "quality", role: "employee" },
+  gate: { "quality.risks": "View" },
   paging: RISKS_PAGING,
   service: getRisks
 });

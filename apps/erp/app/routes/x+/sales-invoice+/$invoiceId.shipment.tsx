@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -27,8 +27,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   // Check if SI is locked
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "invoicing"
+  const { client: viewClient } = await authorize(request, {
+    "invoicing.salesInvoices": "View"
   });
 
   const invoice = await getSalesInvoice(viewClient, invoiceId);
@@ -46,8 +46,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales invoice. Reopen it first."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
+  const { client, companyId, userId } = await authorize(request, {
+    "invoicing.salesInvoices": "Edit"
   });
 
   const formData = await request.formData();

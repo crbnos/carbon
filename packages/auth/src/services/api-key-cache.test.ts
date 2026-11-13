@@ -46,16 +46,35 @@ vi.mock("@carbon/kv", () => ({
   }
 }));
 
-const ROW: ApiKeyRecord = {
+const KEY_ROW = {
   id: "key1",
   companyId: "c1",
   companyGroupId: "g1",
   createdBy: "u1",
-  scopes: { sales_view: ["c1"] },
   rateLimit: 60,
   rateLimitWindow: "1m",
   expiresAt: null
 };
+
+// What the select returns: the key with its grants embedded. A grant naming
+// another company is ignored.
+const DB_ROW = {
+  ...KEY_ROW,
+  permission: [
+    { companyId: "c1", module: "Sales", page: null, level: "View" },
+    { companyId: "c2", module: "Parts", page: null, level: "Full" }
+  ]
+};
+
+// A module grant reaches every page of the module, and no module key.
+const ROW = {
+  ...KEY_ROW,
+  permissions: expect.objectContaining({
+    "sales.quotes": { view: ["c1"], create: [], update: [], delete: [] },
+    "sales.customers": { view: ["c1"], create: [], update: [], delete: [] },
+    "parts.parts": { view: [], create: [], update: [], delete: [] }
+  })
+} as unknown as ApiKeyRecord;
 
 const KEY = "crbn_test_key";
 const CACHE_KEY = apiKeyCacheKey(hashApiKey(KEY));
@@ -63,7 +82,7 @@ const CACHE_KEY = apiKeyCacheKey(hashApiKey(KEY));
 // PostgREST's answer to the apiKey lookup, and how many lookups reached it.
 const db = {
   reads: 0,
-  respond: (): Response => json(ROW)
+  respond: (): Response => json(DB_ROW)
 };
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -75,7 +94,7 @@ beforeEach(() => {
   kv.entries.clear();
   kv.down = false;
   db.reads = 0;
-  db.respond = () => json(ROW);
+  db.respond = () => json(DB_ROW);
   vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.pathname !== "/rest/v1/apiKey") return json({}, 404);
@@ -92,16 +111,16 @@ describe("getApiKeyRecord", () => {
   it("reads the database on a miss and caches the record for 30 seconds", async () => {
     expect(await getApiKeyRecord(KEY)).toEqual(ROW);
     expect(db.reads).toBe(1);
-    expect(kv.entries.get(CACHE_KEY)).toEqual({
-      value: JSON.stringify(ROW),
-      ttl: 30
-    });
+    const cached = kv.entries.get(CACHE_KEY);
+    expect(cached?.ttl).toBe(30);
+    expect(JSON.parse(cached?.value ?? "null")).toEqual(ROW);
   });
 
   it("serves a cached record without reading the database", async () => {
-    kv.entries.set(CACHE_KEY, { value: JSON.stringify(ROW), ttl: 30 });
+    const record = { ...KEY_ROW, permissions: {} };
+    kv.entries.set(CACHE_KEY, { value: JSON.stringify(record), ttl: 30 });
 
-    expect(await getApiKeyRecord(KEY)).toEqual(ROW);
+    expect(await getApiKeyRecord(KEY)).toEqual(record);
     expect(db.reads).toBe(0);
   });
 
@@ -133,6 +152,31 @@ describe("getApiKeyRecord", () => {
       );
 
     expect(await getApiKeyRecord(KEY)).toBeNull();
+    expect(kv.entries.size).toBe(0);
+  });
+
+  // A database the permission migrations have not reached has no `permission`
+  // table to embed: the key's old scopes stand in, and nothing is cached.
+  it("reads the old scopes, uncached, when the database has no grants yet", async () => {
+    db.respond = () => {
+      if (db.reads === 1)
+        return json(
+          {
+            code: "PGRST200",
+            message: "no relationship apiKey → permission",
+            details: null,
+            hint: null
+          },
+          400
+        );
+      return json({
+        ...KEY_ROW,
+        scopes: { sales_view: ["c1"], parts_update: ["c2"] }
+      });
+    };
+
+    expect(await getApiKeyRecord(KEY)).toEqual(ROW);
+    expect(db.reads).toBe(2);
     expect(kv.entries.size).toBe(0);
   });
 

@@ -3,19 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getSupplierTypes } from "~/modules/purchasing/purchasing.service";
 import { SupplierAccountsTable } from "~/modules/users/ui";
-import {
-  getSuppliers,
-  getUnrevokedInviteEmails
-} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
@@ -27,10 +22,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "users",
-    bypassRls: true
-  });
+  const { api } = await authorize(
+    request,
+    { "users.accounts": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -39,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { sorts, filters } = getGenericQueryFilters(searchParams);
 
   const [suppliers, supplierTypes, invites] = await Promise.all([
-    getSuppliers(client, companyId, {
+    api.users.getSuppliers({
       search,
       // A single-load list: its default sort is on the joined user, which a
       // cursor cannot follow.
@@ -48,8 +44,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getSupplierTypes(client, companyId),
-    getUnrevokedInviteEmails(client, companyId)
+    api.purchasing.getSupplierTypes({}),
+    api.users.getUnrevokedInviteEmails({})
   ]);
   if (suppliers.error) {
     throw redirect(
@@ -68,10 +64,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    count: suppliers.count ?? 0,
-    suppliers: suppliers.data ?? [],
-    isTruncated: (suppliers.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,
-    supplierTypes: supplierTypes.data,
+    count: suppliers.data?.count ?? 0,
+    suppliers: suppliers.data?.rows ?? [],
+    isTruncated: (suppliers.data?.rows?.length ?? 0) >= SINGLE_LOAD_LIMIT,
+    supplierTypes: supplierTypes.data?.rows,
     unrevokedInviteEmails: invites.data?.map((i) => i.email) ?? []
   };
 }

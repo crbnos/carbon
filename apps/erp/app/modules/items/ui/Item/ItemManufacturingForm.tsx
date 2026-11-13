@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { useFormState, ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -96,7 +97,7 @@ const ItemManufacturingForm = ({
         </CardContent>
         <CardFooter className="flex justify-between">
           <ManufacturingSubmit
-            isDisabled={!permissions.can("update", "parts")}
+            isDisabled={!permissions.has(anyOf(ITEM_PAGES, "Edit"))}
           />
         </CardFooter>
       </ValidatedForm>

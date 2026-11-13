@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   HStack,
@@ -29,13 +30,8 @@ import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import {
-  getItemFiles,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
-  getMethodTree,
-  getPartUsedIn,
-  getService,
-  getSupplierParts,
   streamItemSupersession
 } from "~/modules/items/items.service";
 import type { ItemFile, ServiceSummary } from "~/modules/items/types";
@@ -43,25 +39,24 @@ import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import { ServiceHeader, ServiceProperties } from "~/modules/items/ui/Services";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Services`,
-  to: path.to.services,
-  module: "items"
+  to: path.to.services
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.serviceSummary?.readableIdWithRevision, "Service");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "parts.services": "View" },
+    { bypassRls: true }
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -73,9 +68,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   const [serviceSummary, supplierParts, tags] = await Promise.all([
-    getService(client, itemId, companyId),
-    getSupplierParts(client, itemId, companyId),
-    getTagsList(client, companyId, "service")
+    api.items.getService({ itemId }),
+    api.items.getSupplierParts({ id: itemId }),
+    api.shared.getTagsList({ table: "service" })
   ]);
 
   if (serviceSummary.error) {
@@ -108,7 +103,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
       if (fullMethod.error || !fullMethod.data) return null;
 
-      const tree = await getMethodTree(client, fullMethod.data.id);
+      const tree = await api.items.getMethodTree({
+        makeMethodId: fullMethod.data.id
+      });
       if (tree.error) return null;
 
       const methods = tree.data.length > 0 ? flattenTree(tree.data[0]) : [];
@@ -124,11 +121,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     serviceSummary: serviceSummary.data,
     supersession,
     supersededBy,
-    files: getItemFiles(client, itemId, companyId),
+    files: api.items.getItemFiles({ itemId }).then(dataOrThrow),
     supplierParts: supplierParts.data ?? [],
     makeMethods: getMakeMethodsOnce(client, itemId, companyId),
     tags: tags.data ?? [],
-    usedIn: getPartUsedIn(client, itemId, companyId),
+    usedIn: api.items.getPartUsedIn({ itemId }).then(dataOrThrow),
     methodTree
   };
 }
@@ -172,13 +169,13 @@ export default function ServiceRoute() {
       {
         key: "issues",
         name: t`Issues`,
-        module: "quality",
+        pages: ["quality.issues"],
         children: issues
       },
       {
         key: "jobs",
         name: t`Jobs`,
-        module: "production",
+        pages: ["production.jobs"],
         children: jobs.map((job) => ({
           ...job,
           methodType: "Make to Order"
@@ -187,7 +184,7 @@ export default function ServiceRoute() {
       {
         key: "purchaseOrderLines",
         name: t`Purchase Orders`,
-        module: "purchasing",
+        pages: ["purchasing.purchaseOrders"],
         children: purchaseOrderLines.map((po) => ({
           ...po,
           methodType: "Purchase to Order"
@@ -196,19 +193,19 @@ export default function ServiceRoute() {
       {
         key: "quoteLines",
         name: t`Quotes`,
-        module: "sales",
+        pages: ["sales.quotes"],
         children: quoteLines
       },
       {
         key: "salesOrderLines",
         name: t`Sales Orders`,
-        module: "sales",
+        pages: ["sales.salesOrders"],
         children: salesOrderLines
       },
       {
         key: "supplierQuotes",
         name: t`Supplier Quotes`,
-        module: "purchasing",
+        pages: ["purchasing.supplierQuotes"],
         children: supplierQuotes
       }
     ];

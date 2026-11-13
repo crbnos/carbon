@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getApprovalRulesForApprover } from "@carbon/ee/approvals.server";
 import {
@@ -23,7 +23,6 @@ import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { New } from "~/components";
 import { SettingsPageHeading } from "~/components/SettingsPage";
 import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
-import { getCostCentersTree } from "~/modules/accounting/accounting.service";
 import {
   CostCentersListView,
   CostCentersTreeView
@@ -40,13 +39,12 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateIgnoringTabDisplay;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.costCenters": "View"
   });
 
   const [costCenters, approvalRules] = await Promise.all([
-    getCostCentersTree(client, companyId),
+    api.accounting.getCostCentersTree({}),
     getApprovalRulesForApprover(client, "purchaseOrder", companyId)
   ]);
 

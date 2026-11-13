@@ -3,13 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { datetime, defaultReportRange, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  getAccount,
   getAccountLedgerPage,
   getTrialBalanceLedgerSummary
 } from "~/modules/accounting/accounting.service";
@@ -18,13 +17,9 @@ import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting",
-      role: "employee"
-    }
-  );
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
+    "accounting.reporting": "View"
+  });
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
@@ -48,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     : (companiesParam ?? companyId);
 
   const [account, ledger, rowSummary] = await Promise.all([
-    getAccount(client, accountId),
+    api.accounting.getAccount({ accountId }),
     // A later page (`?after=`) is read for its lines only.
     getAccountLedgerPage(client, {
       accountId,

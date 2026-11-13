@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { createMappingService } from "@carbon/ee/accounting";
@@ -22,21 +23,11 @@ import { useLoaderData, useParams } from "react-router";
 import { DocumentForceDeleteBanner } from "~/components/ForceDelete/DocumentForceDelete";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
-import {
-  getCompanyHasOpenCredits,
-  getDocumentForceDeleteData,
-  getSalesInvoice,
-  getSalesInvoiceLines,
-  getSalesInvoiceShipment
-} from "~/modules/invoicing/invoicing.service";
+import { getDocumentForceDeleteData } from "~/modules/invoicing/invoicing.service";
 import SalesInvoiceExplorer from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceExplorer";
 import SalesInvoiceHeader from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader";
 import SalesInvoiceProperties from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties";
-import {
-  getCustomer,
-  getOpportunity,
-  getOpportunityDocuments
-} from "~/modules/sales/sales.service";
+import { getCustomer, getOpportunity } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -59,8 +50,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Sales Invoices`, to: path.to.invoicingSales },
     (data) => data?.salesInvoice?.invoiceId
-  ),
-  module: "invoicing"
+  )
 };
 
 const logger = getLogger("erp", "sales-invoice");
@@ -69,19 +59,19 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.salesInvoice?.invoiceId, "Sales Invoice");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      view: "invoicing"
-    });
+  const { client, companyId, companyGroupId, userId, api } = await authorize(
+    request,
+    { "invoicing.salesInvoices": "View" }
+  );
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const [salesInvoice, salesInvoiceLines, salesInvoiceShipment, forceDelete] =
     await Promise.all([
-      getSalesInvoice(client, invoiceId),
-      getSalesInvoiceLines(client, invoiceId),
-      getSalesInvoiceShipment(client, invoiceId),
+      api.invoicing.getSalesInvoice({ salesInvoiceId: invoiceId }),
+      api.invoicing.getSalesInvoiceLines({ salesInvoiceId: invoiceId }),
+      api.invoicing.getSalesInvoiceShipment({ salesInvoiceId: invoiceId }),
       // The Admin force-delete override (`force-delete+`).
       getDocumentForceDeleteData(getCarbonServiceRole(), getDatabaseClient(), {
         companyId,
@@ -111,7 +101,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ? getOpportunity(client, salesInvoice.data.opportunityId)
         : null,
       getCompanySettings(serviceRole, companyId),
-      getCompanyHasOpenCredits(client, companyId, "sales"),
+      api.invoicing
+        .getCompanyHasOpenCredits({ side: "sales" })
+        .then(dataOrThrow),
       salesInvoice.data?.currencyCode
         ? getCurrencyByCode(
             serviceRole,
@@ -171,11 +163,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     salesInvoiceLines: salesInvoiceLines.data ?? [],
     salesInvoiceShipment: salesInvoiceShipment.data,
     files: salesInvoice.data?.opportunityId
-      ? getOpportunityDocuments(
-          client,
-          companyId,
-          salesInvoice.data.opportunityId
-        )
+      ? api.sales
+          .getOpportunityDocuments({
+            opportunityId: salesInvoice.data.opportunityId
+          })
+          .then(dataOrThrow)
       : Promise.resolve([]),
     opportunity: opportunity?.data ?? null,
     customer: customer?.data ?? null,

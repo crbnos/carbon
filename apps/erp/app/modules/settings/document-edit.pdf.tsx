@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { SUPABASE_URL } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { DOCUMENT_PDFS } from "@carbon/documents/pdf";
@@ -39,7 +39,7 @@ import {
   getCompany,
   getDocumentEditRecord
 } from "./settings.service";
-import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
+import { documentEditPermissions } from "./settings.utils";
 
 const logger = getLogger("erp", "document-edit");
 
@@ -55,9 +55,9 @@ export async function requireDocumentEditRecord(
   if (!type || !isDocumentEditType(type) || !id) {
     throw new Response("Document not found", { status: 404 });
   }
-  const { client, companyId, companyGroupId } = await requirePermissions(
+  const { client, companyId, companyGroupId } = await authorize(
     request,
-    { update: DOCUMENT_EDIT_RECORDS[type].module }
+    documentEditPermissions[type]
   );
 
   const key = { companyId, documentType: type, documentId: id };
@@ -91,7 +91,7 @@ export async function templatePreviewProps(
 ): Promise<Record<string, unknown>> {
   const { companyId, documentType, previewId, locale } = args;
   if (previewId) {
-    await requirePermissions(request, { update: "settings" });
+    await authorize(request, { "settings.documentTemplates": "Edit" });
     const real = await buildPreviewProps(
       client,
       companyId,

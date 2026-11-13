@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,20 +11,15 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteItemPostingGroup,
-  getItemPostingGroup
-} from "~/modules/items/items.service";
+import { deleteItemPostingGroup } from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.itemGroups": "View" });
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const itemPostingGroup = await getItemPostingGroup(client, groupId);
+  const itemPostingGroup = await api.items.getItemPostingGroup({ id: groupId });
   if (itemPostingGroup.error) {
     throw redirect(
       path.to.itemPostingGroups,
@@ -39,9 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "parts"
-  });
+  const { client } = await authorize(request, { "parts.itemGroups": "Full" });
 
   const { groupId } = params;
   if (!groupId) {

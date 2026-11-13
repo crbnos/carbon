@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
@@ -11,7 +11,7 @@ import { getNonNettableStorageUnitIds } from "~/modules/inventory/inventory.serv
 const logger = getLogger("erp", "inventory-non-nettable-storage-units");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request);
   const result = await getNonNettableStorageUnitIds(client, companyId);
   if (result.error) {
     logger.error("Failed to read non-nettable storage units", {

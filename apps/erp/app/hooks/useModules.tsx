@@ -2,6 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  anyOf,
+  MODULES,
+  type ModuleId,
+  pageOfUrl,
+  pagesOf
+} from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
@@ -33,7 +40,97 @@ import {
 } from "~/utils/submodule-visibility";
 import { usePermissions } from "./usePermissions";
 
-type ModuleDefinition = Authenticated<NavItem> & { key: string };
+/** `opensOn`: the sub-module the link opens on, or `to` when that is a dashboard. */
+type ModuleLink = Authenticated<NavItem> & { key: string; opensOn: string };
+
+/**
+ * Each module's nav entry. A module of several pages whose `to` is one of
+ * them opens on the person's first page of the module (`landingOf`); the
+ * others open on `to`: a dashboard any page of the module can view, the one
+ * page of a one-page module, or, with `indexPicksPage`, an `_index` that
+ * redirects to that first page itself.
+ * Names stay here: Lingui translates only strings the macro sees.
+ */
+function useModuleLinks(): Record<
+  ModuleId,
+  Omit<ModuleLink, "key" | "opensOn"> & { indexPicksPage?: true }
+> {
+  const { t } = useLingui();
+  return {
+    accounting: {
+      name: t`Accounting`,
+      to: path.to.accounting,
+      icon: LuLandmark,
+      indexPicksPage: true
+    },
+    documents: { name: t`Documents`, to: path.to.documents, icon: LuFiles },
+    inventory: {
+      name: t`Inventory`,
+      to: path.to.inventory,
+      icon: LuBox
+    },
+    invoicing: {
+      name: t`Invoicing`,
+      to: path.to.invoicing,
+      icon: LuCreditCard
+    },
+    parts: { name: t`Items`, to: path.to.parts, icon: LuBlocks },
+    people: {
+      name: t`People`,
+      to: path.to.people,
+      icon: LuUsers
+    },
+    production: {
+      name: t`Production`,
+      to: path.to.production,
+      icon: LuFactory
+    },
+    projects: {
+      name: t`Projects`,
+      to: path.to.projects,
+      icon: LuFolderKanban
+    },
+    purchasing: {
+      name: t`Purchasing`,
+      to: path.to.purchasing,
+      icon: LuShoppingCart
+    },
+    quality: { name: t`Quality`, to: path.to.quality, icon: LuFolderCheck },
+    resources: {
+      name: t`Resources`,
+      to: path.to.resources,
+      icon: LuHeartHandshake
+    },
+    sales: { name: t`Sales`, to: path.to.sales, icon: LuCrown },
+    service: {
+      name: t`Service`,
+      to: path.to.serviceJobs,
+      icon: LuHeadphones
+    },
+    settings: {
+      name: t`Settings`,
+      to: path.to.company,
+      icon: LuSettings
+    },
+    users: {
+      name: t`Users`,
+      to: path.to.employeeAccounts,
+      icon: LuShield
+    },
+    workflows: {
+      name: t`Workflows`,
+      to: path.to.workflows,
+      icon: LuWorkflow
+    }
+  };
+}
+
+/** Each module's translated name, as its nav entry shows it. */
+export function useModuleNames(): Record<ModuleId, string> {
+  return Object.fromEntries(
+    Object.entries(useModuleLinks()).map(([id, link]) => [id, link.name])
+  ) as Record<ModuleId, string>;
+}
 
 type ModulePreference = {
   module: string;
@@ -65,207 +162,78 @@ export function useSubmoduleLayout(): SubmoduleLayout {
   );
 }
 
-function filterByPermissions(
-  modules: ModuleDefinition[],
-  permissions: ReturnType<typeof usePermissions>
-) {
-  return modules.filter((item) => {
-    if (item.permission) {
-      return permissions.can("view", item.permission);
-    } else if (item.role) {
-      return permissions.is(item.role);
-    } else {
-      return true;
-    }
-  });
-}
-
-function useModuleDefinitions(): ModuleDefinition[] {
+/** The modules the person can open (View on any of their pages), plus Shop Floor. */
+function usePermittedModules(): {
+  settings: ModuleLink | null;
+  modules: ModuleLink[];
+  preferences: Map<string, ModulePreference>;
+} {
+  const permissions = usePermissions();
+  const links = useModuleLinks();
   const { t } = useLingui();
-  return [
-    {
-      key: "accounting",
-      permission: "accounting",
-      name: t`Accounting`,
-      to: path.to.accounting,
-      icon: LuLandmark
-    },
-    {
-      key: "documents",
-      permission: "documents",
-      name: t`Documents`,
-      to: path.to.documents,
-      icon: LuFiles
-    },
-    {
-      key: "inventory",
-      permission: "inventory",
-      name: t`Inventory`,
-      to: path.to.inventory,
-      icon: LuBox
-    },
-    {
-      key: "invoicing",
-      permission: "invoicing",
-      name: t`Invoicing`,
-      to: path.to.invoicing,
-      icon: LuCreditCard
-    },
-    {
-      key: "parts",
-      permission: "parts",
-      name: t`Items`,
-      to: path.to.parts,
-      icon: LuBlocks
-    },
-    {
-      key: "people",
-      permission: "people",
-      name: t`People`,
-      to: path.to.people,
-      icon: LuUsers
-    },
-    {
-      key: "production",
-      permission: "production",
-      name: t`Production`,
-      to: path.to.production,
-      icon: LuFactory
-    },
-    {
-      key: "projects",
-      permission: "projects",
-      name: t`Projects`,
-      to: path.to.projects,
-      icon: LuFolderKanban
-    },
-    {
-      key: "purchasing",
-      permission: "purchasing",
-      name: t`Purchasing`,
-      to: path.to.purchasing,
-      icon: LuShoppingCart
-    },
-    {
-      key: "quality",
-      permission: "quality",
-      name: t`Quality`,
-      to: path.to.quality,
-      icon: LuFolderCheck
-    },
-    {
-      key: "resources",
-      permission: "resources",
-      name: t`Resources`,
-      to: path.to.resources,
-      icon: LuHeartHandshake
-    },
-    {
-      key: "sales",
-      permission: "sales",
-      name: t`Sales`,
-      to: path.to.sales,
-      icon: LuCrown
-    },
-    {
-      key: "service",
-      permission: "service",
-      name: t`Service`,
-      to: path.to.serviceJobs,
-      icon: LuHeadphones
-    },
-    {
-      key: "settings",
-      permission: "settings",
-      name: t`Settings`,
-      to: path.to.company,
-      icon: LuSettings
-    },
-    {
-      key: "shopFloor",
-      name: t`Shop Floor`,
-      to: path.to.external.mes,
-      icon: LuTvMinimalPlay,
-      role: "employee",
-      external: true,
-      newTab: true
-    },
-    {
-      key: "users",
-      permission: "users",
-      name: t`Users`,
-      to: path.to.employeeAccounts,
-      icon: LuShield
-    },
-    {
-      key: "workflows",
-      permission: "workflows",
-      name: t`Workflows`,
-      to: path.to.workflows,
-      icon: LuWorkflow
-    }
-  ];
-}
+  const modulePreferences = useModulePreferences();
 
-const PINNED_MODULES = new Set(["settings"]);
+  const permitted = MODULES.filter(({ id }) =>
+    permissions.has(anyOf(pagesOf(id), "View"))
+  ).map(({ id }): ModuleLink => {
+    const { indexPicksPage, ...link } = links[id];
+    const landing =
+      indexPicksPage ||
+      (pagesOf(id).length > 1 && pageOfUrl(link.to) !== undefined)
+        ? permissions.landing(id)
+        : undefined;
+    return {
+      ...link,
+      key: id,
+      to: (!indexPicksPage && landing) || link.to,
+      opensOn: landing ?? link.to
+    };
+  });
+  const shopFloor: ModuleLink = {
+    key: "shopFloor",
+    name: t`Shop Floor`,
+    to: path.to.external.mes,
+    opensOn: path.to.external.mes,
+    icon: LuTvMinimalPlay,
+    external: true,
+    newTab: true
+  };
+
+  return {
+    // Settings is pinned apart from the reorderable modules.
+    settings: permitted.find((m) => m.key === "settings") ?? null,
+    modules: [...permitted.filter((m) => m.key !== "settings"), shopFloor].sort(
+      (a, b) => a.name.localeCompare(b.name)
+    ),
+    preferences: new Map(modulePreferences.map((p) => [p.module, p]))
+  };
+}
 
 export function useModules() {
-  const permissions = usePermissions();
-  const modules = useModuleDefinitions();
-  const modulePreferences = useModulePreferences();
-  const permitted = filterByPermissions(modules, permissions).filter(
-    (m) => !PINNED_MODULES.has(m.key)
-  );
-
-  const alphabetical = permitted.sort((a, b) => a.name.localeCompare(b.name));
-
-  if (modulePreferences.length === 0) {
-    return alphabetical;
-  }
-
-  const prefMap = new Map(modulePreferences.map((p) => [p.module, p]));
-
-  const visible = alphabetical.filter((m) => {
-    const pref = prefMap.get(m.key);
-    return !pref?.hidden;
-  });
-
-  return visible.sort((a, b) => {
-    const posA = prefMap.get(a.key)?.position ?? Infinity;
-    const posB = prefMap.get(b.key)?.position ?? Infinity;
-    return posA - posB;
-  });
+  const { modules, preferences } = usePermittedModules();
+  if (preferences.size === 0) return modules;
+  return modules
+    .filter((m) => !preferences.get(m.key)?.hidden)
+    .sort(
+      (a, b) =>
+        (preferences.get(a.key)?.position ?? Infinity) -
+        (preferences.get(b.key)?.position ?? Infinity)
+    );
 }
 
 export function useSettingsModule() {
-  const permissions = usePermissions();
-  const modules = useModuleDefinitions();
-  const settings = modules.find((m) => m.key === "settings");
-  if (!settings) return null;
-  if (settings.permission && !permissions.can("view", settings.permission)) {
-    return null;
-  }
-  return settings;
+  return usePermittedModules().settings;
 }
 
 export function useAllModules() {
-  const permissions = usePermissions();
-  const modules = useModuleDefinitions();
-  const modulePreferences = useModulePreferences();
-
-  const permitted = filterByPermissions(modules, permissions)
-    .filter((m) => !PINNED_MODULES.has(m.key))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const prefMap = new Map(modulePreferences.map((p) => [p.module, p]));
-
-  return permitted
+  const { modules, preferences } = usePermittedModules();
+  return modules
     .map((m, index) => ({
       ...m,
-      position: prefMap.get(m.key)?.position ?? index + 1,
-      hidden: prefMap.get(m.key)?.hidden ?? false,
-      hiddenSubmodules: prefMap.get(m.key)?.hiddenSubmodules ?? [],
-      submoduleOrder: prefMap.get(m.key)?.submoduleOrder ?? []
+      position: preferences.get(m.key)?.position ?? index + 1,
+      hidden: preferences.get(m.key)?.hidden ?? false,
+      hiddenSubmodules: preferences.get(m.key)?.hiddenSubmodules ?? [],
+      submoduleOrder: preferences.get(m.key)?.submoduleOrder ?? []
     }))
     .sort((a, b) => a.position - b.position);
 }

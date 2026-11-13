@@ -302,7 +302,8 @@ const LeaseModifyBody = ({
         </Button>
         <Submit
           isDisabled={
-            !permissions.can("update", "purchasing") || shortTermTooLong
+            !permissions.has({ "purchasing.leases": "Edit" }) ||
+            shortTermTooLong
           }
         >
           <Trans>Modify Lease</Trans>

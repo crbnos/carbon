@@ -926,6 +926,9 @@ msgstr "{count, plural, one {Выбрать все # подходящую стр
 msgid "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
 msgstr "{count, plural, one {Выбрать все подходящие строки (примерно #)} other {Выбрать все подходящие строки (примерно #)}}"
 
+msgid "{count} grants"
+msgstr ""
+
 msgid "{count} items"
 msgstr "{count} номенклатур"
 
@@ -1010,6 +1013,10 @@ msgstr "{from} – {to}"
 
 msgid "{functionLabel}: {formattedValue}"
 msgstr "{functionLabel}: {formattedValue}"
+
+#. placeholder {0}: modules.length
+msgid "{granted} of {0} modules"
+msgstr ""
 
 msgid "{group} {number}"
 msgstr "{group} {number}"
@@ -1198,6 +1205,9 @@ msgstr "{orderLabel} будет переоткрыт для редактиров
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# заимствование просрочено по дате возврата} other {# заимствования просрочены по дате возврата}}"
 
+msgid "{overrides} overridden"
+msgstr ""
+
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} должен {lender}, срок {due}"
 
@@ -1234,6 +1244,10 @@ msgstr "{quantity} без серии"
 msgid "{quantity} without a serial number"
 msgstr "{quantity} без серийного номера"
 
+#. placeholder {0}: module.rows.length
+msgid "{reached}/{0} pages"
+msgstr ""
+
 msgid "{received} of {ordered}"
 msgstr "{received} из {ordered}"
 
@@ -1257,9 +1271,6 @@ msgstr "{removed} запланированные счет-фактуры уда�
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} будет открыта заново для планирования в качестве следующей ревизии. Документ, уже отправленный поставщику, остаётся без изменений до окончательного утверждения и повторной отправки заказа."
-
-msgid "{scopeCount} permissions"
-msgstr "{scopeCount} прав доступа"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} строк"
@@ -2559,6 +2570,12 @@ msgstr "Принята {0}"
 msgid "Accepted quantity"
 msgstr "Принятое количество"
 
+msgid "Access"
+msgstr ""
+
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "Счет"
 
@@ -2618,9 +2635,6 @@ msgstr "Тип счета"
 
 msgid "Account Type (inherited)"
 msgstr "Тип счета (унаследованный)"
-
-msgid "accounting"
-msgstr "бухгалтерия"
 
 msgid "Accounting"
 msgstr "Бухгалтерия"
@@ -3301,6 +3315,9 @@ msgstr "Добавить заказ поставщику"
 msgid "Add Question"
 msgstr "Добавить вопрос"
 
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
+
 msgid "Add Rate"
 msgstr "Добавить ставку"
 
@@ -3511,6 +3528,12 @@ msgstr "Корректировки"
 msgid "Admin"
 msgstr "Администратор"
 
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr ""
+
+msgid "Admin has full access"
+msgstr ""
+
 msgid "Advance"
 msgstr "Аванс"
 
@@ -3577,9 +3600,6 @@ msgstr "Все"
 #. placeholder {0}: tieOut.cellCount
 msgid "All {0} cells tie out"
 msgstr "Все {0} ячеек согласованы"
-
-msgid "All {moduleName} permissions"
-msgstr "Все права доступа модуля {moduleName}"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "Все {total} этапов завершены. Отличная работа — ваша команда готова к работе."
@@ -3656,9 +3676,6 @@ msgstr "Все открытые производственные заказы"
 
 msgid "All Others"
 msgstr "Все остальные"
-
-msgid "All permissions"
-msgstr "Все права доступа"
 
 msgid "All returnable lines"
 msgstr "Все возвратные строки"
@@ -5001,7 +5018,7 @@ msgstr "Как владелец организации, вы можете пер
 msgid "Ascending"
 msgstr "По возрастанию"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Попросите администратора с правом доступа {0} добавить первую {1}."
@@ -6304,6 +6321,18 @@ msgstr "Называется метод в Carbon — компоненты пл�
 msgid "Camera"
 msgstr "Камера"
 
+msgid "can create"
+msgstr ""
+
+msgid "can delete"
+msgstr ""
+
+msgid "can update"
+msgstr ""
+
+msgid "can view"
+msgstr ""
+
 msgid "Can't be restored"
 msgstr "Невозможно восстановить"
 
@@ -6887,6 +6916,9 @@ msgstr "План счетов"
 
 msgid "Chat"
 msgstr "Чат"
+
+msgid "Check a module to override the type on all its pages, or expand it to override one page."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "Отметьте операции слева, чтобы создать пакет."
@@ -9906,9 +9938,6 @@ msgstr "способ обеспечения по умолчанию"
 msgid "Default Method Type"
 msgstr "Способ обеспечения по умолчанию"
 
-msgid "Default Permissions"
-msgstr "Права доступа по умолчанию"
-
 msgid "Default Priority"
 msgstr "Приоритет по умолчанию"
 
@@ -10932,9 +10961,6 @@ msgstr "Расформировать серии"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "Распускание {0} возвращает его {memberCount} операций в расписание невыполненными и удаляет партию. Партию с записанным производством необходимо вместо этого завершить."
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "Вы хотите заменить текущие права доступа пользователя правами доступа по умолчанию для этого типа сотрудника?"
-
 msgid "Doc-Backed"
 msgstr "Обеспечено документом"
 
@@ -11309,6 +11335,9 @@ msgstr "например: подозрение на подделку, не та 
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "например, первые 3-4 недели"
+
+msgid "e.g. Warehouse Supervisor"
+msgstr ""
 
 msgid "e.g. Zebra 2x1"
 msgstr "например Zebra 2x1"
@@ -12595,6 +12624,9 @@ msgstr "Все тесты в области действия проходят в
 
 msgid "Every job of {name} is complete. Is it done?"
 msgstr "Все производственные заказы {name} завершены. Готово?"
+
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr ""
 
 #. placeholder {0}: storageUnit.name
 msgid "Every line already comes from {0}"
@@ -14024,6 +14056,9 @@ msgstr "От:"
 msgid "Fulfillment Location"
 msgstr "Площадка отгрузки"
 
+msgid "Full access through the Admin type"
+msgstr ""
+
 msgid "Full name"
 msgstr "Полное имя"
 
@@ -14117,6 +14152,10 @@ msgstr "Прибыль от прекращения аренды"
 
 msgid "Gain/Loss"
 msgstr "Прибыль/Убыток"
+
+#. placeholder {0}: actions.join(", ")
+msgid "Gained {0} when permissions became levels"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Прибыль, признаваемая при выбытии основных средств"
@@ -15153,6 +15192,9 @@ msgstr "Импортировано"
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "Импортировано: {counted} строк подсчитано, {added} добавлено, {removed} удалено"
 
+msgid "in"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "через {0}"
@@ -15666,9 +15708,6 @@ msgstr "Недействительные применения"
 
 msgid "Invalid Invite"
 msgstr "Недействительное приглашение"
-
-msgid "inventory"
-msgstr "инвентарь"
 
 msgid "Inventory"
 msgstr "Инвентарь"
@@ -16396,9 +16435,6 @@ msgstr "Канбаны"
 
 msgid "Keep"
 msgstr "Сохранить"
-
-msgid "Keep Current"
-msgstr "Сохранить текущие"
 
 msgid "Keep demo data"
 msgstr "Сохранить демонстрационные данные"
@@ -19426,6 +19462,9 @@ msgstr "Ни одна ячейка не может принять вставле
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Для вас не установлен текст сертификации. Попросите администратора установить его в Настройки → Время."
 
+msgid "No change"
+msgstr ""
+
 msgid "No change request"
 msgstr "Нет запроса на изменение"
 
@@ -20369,6 +20408,9 @@ msgstr "Никто не имеет навыка {0}"
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "Никто не имеет требуемого навыка. Добавьте сотрудника к этому навыку процесса."
 
+msgid "Nobody yet."
+msgstr ""
+
 msgid "Nom"
 msgstr "Номин"
 
@@ -20922,6 +20964,9 @@ msgstr "Один элемент дерева проекта, типизиров�
 
 msgid "One line per CLIN. Time & Materials and Cost Plus lines bill from project cost; a Fixed Price line bills its price. Click a cell to change it."
 msgstr "Одна строка на CLIN. Строки Time & Materials и Cost Plus выставляют счета из себестоимости проекта; строка с фиксированной ценой выставляет счета по ее цене. Нажмите на ячейку для изменения."
+
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
 
 msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
 msgstr "Один из ваших аккаунтов {appName} требует переподключения перед тем, как этапы рабочего процесса смогут его использовать."
@@ -21738,9 +21783,6 @@ msgstr "Обзор"
 msgid "Overwrite Existing"
 msgstr "Перезаписать существующие"
 
-msgid "Overwrite Permissions"
-msgstr "Перезаписать права доступа"
-
 msgid "Overwrite the quote method with the source method"
 msgstr "Перезаписать метод предложения исходным методом"
 
@@ -22190,9 +22232,6 @@ msgstr "Ожидает контроля"
 msgid "Pending Inspection"
 msgstr "Ожидает контроля"
 
-msgid "people"
-msgstr "сотрудники"
-
 msgid "People"
 msgstr "Сотрудники"
 
@@ -22290,7 +22329,7 @@ msgid "Permission groups for granting access in bulk"
 msgstr "Группы прав доступа для массового предоставления доступа"
 
 msgid "Permissions"
-msgstr "Права доступа"
+msgstr ""
 
 msgid "Person"
 msgstr "Человек"
@@ -23137,9 +23176,6 @@ msgstr "Проблемы с продуктом во время гиперпом�
 msgid "Product support"
 msgstr "Поддержка продукта"
 
-msgid "production"
-msgstr "Производственное отклонение"
-
 msgid "Production"
 msgstr "Производство"
 
@@ -23621,9 +23657,6 @@ msgstr "Закупленная услуга"
 msgid "Purchases"
 msgstr "Покупки"
 
-msgid "purchasing"
-msgstr "Закупки и стоимость проданных товаров"
-
 msgid "Purchasing"
 msgstr "Закупки"
 
@@ -23767,9 +23800,6 @@ msgstr "Квалифицированные расходы на исследов�
 
 msgid "Qualified to run it"
 msgstr "Имеет требуемый навык"
-
-msgid "quality"
-msgstr "качество"
 
 msgid "Quality"
 msgstr "Качество"
@@ -25393,6 +25423,9 @@ msgstr "Зарезервировано"
 msgid "Reset"
 msgstr "Сброс"
 
+msgid "Reset all overrides"
+msgstr ""
+
 msgid "Reset PIN"
 msgstr "Сброс PIN"
 
@@ -25456,9 +25489,6 @@ msgstr "Ресурс"
 
 msgid "Resource Planning"
 msgstr "Планирование ресурсов"
-
-msgid "resources"
-msgstr "ресурсы"
 
 msgid "Resources"
 msgstr "Ресурсы"
@@ -25971,6 +26001,9 @@ msgstr "RMA"
 msgid "Role"
 msgstr "Роль"
 
+msgid "Role default"
+msgstr ""
+
 msgid "Role:"
 msgstr "Роль:"
 
@@ -26175,9 +26208,6 @@ msgstr "Цена продажи"
 
 msgid "Sale Proceeds"
 msgstr "Выручка от продажи"
-
-msgid "sales"
-msgstr "продажи"
 
 msgid "Sales"
 msgstr "Продажи"
@@ -26589,9 +26619,6 @@ msgstr "Область подписана"
 msgid "Scope Summary"
 msgstr "Сводка по объему"
 
-msgid "Scopes"
-msgstr "Области"
-
 msgid "Scrap"
 msgstr "Брак"
 
@@ -26971,6 +26998,10 @@ msgstr "Выберите счёт"
 
 msgid "Select all"
 msgstr "Выбрать все"
+
+#. placeholder {0}: module.row.label
+msgid "Select all in {0}"
+msgstr ""
 
 msgid "Select all jobs"
 msgstr "Выбрать все производственные заказы"
@@ -27506,6 +27537,14 @@ msgstr "Установить значения прогноза потребно�
 
 msgid "Set due date"
 msgstr "Установить срок выполнения"
+
+#. placeholder {0}: module.row.label
+#. placeholder {1}: stepLabel(step)
+msgid "Set every page of {0} to {1}"
+msgstr ""
+
+msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
+msgstr ""
 
 msgid "Set on a posting account: Allowable, or Expressly, Mutually Agreed or Directly Associated Unallowable. Cost posted to an unallowable account or element is marked unallowable in the project ledger and never becomes a billable item."
 msgstr "Установлено на счете проведения: Допустимо, или Явно, Взаимно согласованное или Напрямую связанное Недопустимо. Стоимость, проведенная на недопустимый счет или элемент, отмечена как недопустимая в проектном журнале и никогда не становится позицией для выставления счета."
@@ -29531,8 +29570,8 @@ msgstr "Переключиться на письменный контент"
 msgid "Switch users over and confirm access"
 msgstr "Переключите пользователей и подтвердите доступ"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "Изменение типа сотрудника здесь не изменяет его существующие права доступа; модальное окно, которое следует, спрашивает, следует ли перезаписать текущий набор значениями по умолчанию для нового типа."
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "Синхронизация"
@@ -30659,6 +30698,9 @@ msgstr "Актив арендатора для права использован
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "Актив лизингодателя при финансовой аренде: текущая стоимость арендных платежей и не гарантированного остатка, увеличиваемая каждый месяц на сумму процентов по лизингу и уменьшаемая каждый платеж аренды и счет-фактуру по опциону покупки."
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Этапы жизненного цикла, через которые вы отслеживаете покупателей"
 
@@ -30906,9 +30948,6 @@ msgstr "Результат по номенклатуре, записанный �
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "Процент скидки при оплате наличными. Используйте 0, если скидки нет."
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "Набор прав доступа, который автоматически получают новые сотрудники этого типа; редактирование здесь изменяет шаблон только для будущих сотрудников — существующие сотрудники сохраняют свои права, пока их явно не обновить массово."
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "Лицо, которому назначено действие планирования: ответственный номенклатуры на этой площадке, иначе ответственный группы номенклатуры, иначе ответственный площадки, иначе ответственный организации по умолчанию."
 
@@ -31099,6 +31138,9 @@ msgstr "Номер ревизии детали."
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "Активы право пользования и обязательство лизинга отражаются в бухгалтерском балансе, и прямолинейная стоимость лизинга учитывается каждый месяц."
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Строка заказа покупателя, для которой был создан этот Производственный заказ с целью Обеспечения, связывающая Производственный заказ с Потребностью Покупателя."
@@ -31298,8 +31340,8 @@ msgstr "Маршрутный лист содержит каждый элемен
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "Маршрутный лист перечисляет каждую операцию маршрута с ожидаемыми временами и сканируемыми штрих-кодами."
 
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "Тип управляет тем, какие права доступа по умолчанию получает новый сотрудник; выбор его здесь предварительно заполняет матрицу разрешений из шаблона типа."
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr ""
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "Типичное количество дней между отправкой работы этому поставщику для этого процесса и ее возвратом; планирование смещает спрос на эту величину при выборе поставщика."
@@ -33514,9 +33556,6 @@ msgstr "Роли пользователей"
 msgid "Username"
 msgstr "Имя пользователя"
 
-msgid "users"
-msgstr "пользователи"
-
 msgid "Users"
 msgstr "Пользователи"
 
@@ -34632,9 +34671,6 @@ msgstr "Выполняется ли этот процесс на внутрен�
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "Блокирует ли эта работа производство (Вниз), его деградирует (Воздействие), находится в окне планового простоя (Плановое) или не оказывает влияния на производство (Без воздействия); информирует планирование и общение об простое, обращенное к клиентам."
 
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "Добавить выбранные права доступа поверх того, что уже имеет каждый пользователь, или Обновить, заменив набор прав доступа каждого пользователя полностью выбором ниже."
-
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "Разворачивать ли повторяющиеся события в отдельные экземпляры и возвращать только разовые события и экземпляры повторяющихся событий, без самих исходных повторяющихся событий."
 
@@ -34652,6 +34688,9 @@ msgstr "Какая это была операция?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Пока это отправление открыто, рабочий центр недоступен для расписания (до запланированного времени окончания или до завершения отправления)."
+
+msgid "Who"
+msgstr ""
 
 msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
 msgstr "Кто несет себестоимость производственного заказа услуги: Оплачиваемая и Контрактная работа проводятся на Себестоимость услуги (иначе Себестоимость продаж), Гарантийная работа на Расход гарантии. Только оплачиваемому заказу выставляется счет."

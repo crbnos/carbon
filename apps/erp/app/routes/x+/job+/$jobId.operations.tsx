@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { useMount, VStack } from "@carbon/react";
@@ -12,7 +12,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
 import {
-  getJob,
   getJobOperations,
   JOB_OPERATIONS_PAGING
 } from "~/modules/production/production.service";
@@ -25,9 +24,8 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "job-operations");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "production.jobs": "View"
   });
 
   const { jobId } = params;
@@ -39,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const job = await getJob(client, jobId);
+  const job = await api.production.getJob({ id: jobId });
   if (job.error) {
     throw redirect(
       path.to.jobs,

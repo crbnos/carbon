@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { downloadText } from "@carbon/files";
@@ -37,12 +37,7 @@ import {
 } from "~/modules/accounting/accounting.models";
 import {
   deleteReportView,
-  getAccountsInScope,
-  getActiveDimensionsWithValues,
   getDimensionPivot,
-  getFiscalYearSettings,
-  getReportViews,
-  getScrapAccountIds,
   upsertReportView
 } from "~/modules/accounting/accounting.service";
 import type { DimensionPivotLine } from "~/modules/accounting/types";
@@ -176,11 +171,10 @@ function parsePivotUrlParams(
 export const shouldRevalidate = revalidateIgnoringPivotDisplay;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      view: "accounting",
-      role: "employee"
-    });
+  const { client, companyId, companyGroupId, userId, api } = await authorize(
+    request,
+    { "accounting.reporting": "View" }
+  );
 
   const reportKey = analyticsReportKeys.find((key) => key === params.reportKey);
   if (!reportKey) {
@@ -206,11 +200,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     fiscalYearSettings,
     scrapAccounts
   ] = await Promise.all([
-    getActiveDimensionsWithValues(client, companyGroupId, companyId),
-    getReportViews(client, { companyId, reportKey }),
-    getFiscalYearSettings(client, companyId),
+    api.accounting.getActiveDimensionsWithValues({}),
+    api.accounting.getReportViews({ companyId, reportKey }),
+    api.accounting.getFiscalYearSettings({}),
     isScrap
-      ? getScrapAccountIds(client, companyId)
+      ? api.accounting.getScrapAccountIds({})
       : Promise.resolve({ data: [] as string[], error: null })
   ]);
 
@@ -221,12 +215,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // resolves through the ids just fetched; class/type scopes query directly.
   const scopeAccounts =
     (
-      await getAccountsInScope(
-        client,
-        companyGroupId,
-        report.accountScope,
-        scrapAccounts.data ?? undefined
-      )
+      await api.accounting.getAccountsInScope({
+        scope: report.accountScope,
+        scrapAccountIds: scrapAccounts.data ?? undefined
+      })
     ).data ?? [];
 
   // -- Resolve the pivot state --
@@ -284,11 +276,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const state: PivotState = { ...rawState, rows: resolvedRows, columnAxis };
 
-  // January is the fallback only for genuinely-unset settings (PGRST116 = no
+  // January is the fallback only for genuinely-unset settings (notFound = no
   // row); a failed query must not silently mis-bucket a non-January fiscal year.
   if (
     fiscalYearSettings.error &&
-    fiscalYearSettings.error.code !== "PGRST116"
+    fiscalYearSettings.error.category !== "notFound"
   ) {
     throw new Error("Failed to load fiscal year settings");
   }
@@ -309,7 +301,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId,
     companyGroupId,
     report,
-    ...(isScrap ? { scrapAccountIds: scrapAccounts.data } : {}),
+    ...(isScrap ? { scrapAccountIds: scrapAccounts.data ?? undefined } : {}),
     startDate,
     endDate,
     ...(state.columnAxis.type === "period"
@@ -345,9 +337,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { client, companyId, userId } = await authorize(request, {
+    "accounting.reporting": "View"
   });
 
   const formData = await request.formData();

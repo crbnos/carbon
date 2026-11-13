@@ -2,17 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { dataOrThrow } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, ITEM_PAGES, pageOfRow } from "@carbon/database/access";
 import type { LoaderFunctionArgs } from "react-router";
 import type { UnreleasedChangeOrderItem } from "~/modules/items/items.service";
 import {
   getConsumable,
-  getItemFiles,
-  getMakeMethods,
   getMaterial,
   getPart,
-  getPickMethods,
-  getSupplierParts,
   getTool,
   getUnreleasedChangeOrderForItem
 } from "~/modules/items/items.service";
@@ -26,8 +24,6 @@ import type {
   SupplierPart,
   Tool
 } from "~/modules/items/types";
-import { getLocationsList } from "~/modules/resources/resources.service";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { ListItem } from "~/types";
 
 type CommonFields = {
@@ -58,22 +54,34 @@ const typeConfig = {
 } as const;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    bypassRls: true
-  });
-
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const url = new URL(request.url);
-  const typeParam = url.searchParams.get("type");
-  // Own-key check: `in` also accepts inherited keys, so e.g. ?type=toString
-  // would pass and crash on the destructure below.
-  const type =
-    typeParam && Object.prototype.hasOwnProperty.call(typeConfig, typeParam)
-      ? (typeParam as keyof typeof typeConfig)
-      : "Part";
+  // Any item page reads the item's type; the type picks the page that gates it.
+  const caller = await authorize(request, anyOf(ITEM_PAGES, "View"), {
+    bypassRls: true
+  });
+  const item = await caller.client
+    .from("item")
+    .select("type")
+    .eq("id", itemId)
+    .eq("companyId", caller.companyId)
+    .maybeSingle();
+  const page = item.data ? pageOfRow("item", item.data) : undefined;
+  // Own-key check: `in` also accepts inherited keys.
+  if (
+    !page ||
+    !item.data ||
+    !Object.prototype.hasOwnProperty.call(typeConfig, item.data.type)
+  ) {
+    throw new Response("Not Found", { status: 404 });
+  }
+  const type = item.data.type as keyof typeof typeConfig;
+  const { client, companyId, api } = await authorize(
+    request,
+    { [page]: "View" },
+    { bypassRls: true }
+  );
 
   const { tagTable, getSummary } = typeConfig[type];
   const needsMakeMethods = type === "Part" || type === "Tool";
@@ -89,12 +97,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     unreleasedChangeOrder
   ] = await Promise.all([
     getSummary(client, itemId, companyId),
-    getSupplierParts(client, itemId, companyId),
-    getPickMethods(client, itemId, companyId),
-    getTagsList(client, companyId, tagTable),
-    needsMakeMethods ? getMakeMethods(client, itemId, companyId) : null,
-    getItemFiles(client, itemId, companyId),
-    getLocationsList(client, companyId),
+    api.items.getSupplierParts({ id: itemId }),
+    api.items.getPickMethods({ itemId }),
+    api.shared.getTagsList({ table: tagTable }),
+    needsMakeMethods ? api.items.getMakeMethods({ itemId }) : null,
+    api.items.getItemFiles({ itemId }).then(dataOrThrow),
+    api.resources.getLocationsList({}),
     getUnreleasedChangeOrderForItem(client, { itemId, companyId })
   ]);
 

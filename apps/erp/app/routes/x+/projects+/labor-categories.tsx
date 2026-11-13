@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -11,7 +11,6 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getLaborCategories } from "~/modules/projects/projects.service";
 import LaborCategoriesTable from "~/modules/projects/ui/LaborCategories/LaborCategoriesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -21,14 +20,12 @@ const logger = getLogger("erp", "labor-categories");
 
 export const handle: Handle = {
   breadcrumb: msg`Labor Categories`,
-  to: path.to.laborCategories,
-  module: "projects"
+  to: path.to.laborCategories
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects",
-    role: "employee"
+  const { api, companyId } = await authorize(request, {
+    "projects.laborCategories": "View"
   });
 
   const searchParams = new URL(request.url).searchParams;
@@ -36,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const categories = await getLaborCategories(client, companyId, {
+  const categories = await api.projects.getLaborCategories({
     search,
     limit,
     offset,
@@ -59,8 +56,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    categories: categories.data ?? [],
-    count: categories.count ?? 0
+    categories: categories.data?.rows ?? [],
+    count: categories.data?.count ?? 0
   };
 }
 

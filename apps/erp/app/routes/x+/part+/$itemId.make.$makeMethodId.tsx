@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { Menubar, VStack } from "@carbon/react";
@@ -16,13 +17,7 @@ import { CadModel } from "~/components";
 import { useRouteData } from "~/hooks";
 import { usePermissions } from "~/hooks/usePermissions";
 import {
-  getConfigurationRules,
-  getItemManufacturing,
-  getMakeMethodById,
-  getMakeMethods,
   getMethodCorrectionsData,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
   getRevisionLock
 } from "~/modules/items/items.service";
 import { getConfigurationParameters } from "~/modules/items/items.utils";
@@ -34,13 +29,12 @@ import {
   MethodCorrections
 } from "~/modules/items/ui/Item";
 import { toMethodCorrectionsProps } from "~/modules/items/ui/Item/MethodCorrections";
-import { getModelByItemId, getTagsList } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
+  const { client, companyId, api } = await authorize(request, {
+    "parts.parts": "View"
   });
 
   const { itemId, makeMethodId } = params;
@@ -55,11 +49,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     partManufacturing,
     revisionLock
   ] = await Promise.all([
-    getMakeMethodById(client, makeMethodId, companyId),
-    getMethodMaterialsByMakeMethod(client, makeMethodId),
-    getMethodOperationsByMakeMethodId(client, makeMethodId),
-    getTagsList(client, companyId, "operation"),
-    getItemManufacturing(client, itemId, companyId),
+    api.items.getMakeMethodById({ makeMethodId }),
+    api.items.getMethodMaterialsByMakeMethod({ makeMethodId }),
+    api.items.getMethodOperationsByMakeMethodId({ makeMethodId }),
+    api.shared.getTagsList({ table: "operation" }),
+    api.items.getItemManufacturing({ id: itemId }),
     getRevisionLock(client, { itemId, companyId })
   ]);
 
@@ -95,7 +89,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const configData = partManufacturing.data?.requiresConfiguration
     ? await Promise.all([
         getConfigurationParameters(client, itemId, companyId),
-        getConfigurationRules(client, itemId, companyId)
+        api.items.getConfigurationRules({ itemId }).then(dataOrThrow)
       ]).then(([configurationParametersAndGroups, configurationRules]) => ({
         configurationParametersAndGroups,
         configurationRules
@@ -140,8 +134,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })) ?? [],
     partManufacturing: partManufacturing.data,
     ...configData,
-    model: getModelByItemId(client, makeMethod.data.itemId),
-    makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
+    model: api.shared
+      .getModelByItemId({ itemId: makeMethod.data.itemId })
+      .then(dataOrThrow),
+    makeMethods: api.items.getMakeMethods({ itemId: makeMethod.data.itemId }),
     tags: tags.data ?? [],
     revisionStatus: revisionLock.revisionStatus,
     releaseControl: revisionLock.releaseControl
@@ -228,7 +224,7 @@ export default function PartMakeMethodPage() {
           {(model) => (
             <CadModel
               key={`cad:${model.itemId}`}
-              isReadOnly={!permissions.can("update", "parts")}
+              isReadOnly={!permissions.has({ "parts.parts": "Edit" })}
               metadata={{
                 itemId: model?.itemId ?? undefined
               }}

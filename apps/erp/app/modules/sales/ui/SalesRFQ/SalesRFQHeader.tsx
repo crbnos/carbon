@@ -41,6 +41,7 @@ import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { salesRfqToQuotePermission } from "~/modules/shared/shared.utils";
 import { path } from "~/utils/path";
 import { isSalesRfqLocked } from "../../sales.models";
 import type { Opportunity, SalesRFQ, SalesRFQLine } from "../../types";
@@ -83,7 +84,7 @@ const SalesRFQHeader = () => {
           routeData?.rfqSummary?.status === "Draft" ||
           (routeData?.opportunity?.quotes.length ?? 0) > 0 ||
           statusFetcher.state !== "idle" ||
-          !permissions.can("update", "sales")
+          !permissions.has({ "sales.rfqs": "Edit" })
         }
         onClick={() => {
           statusFetcher.submit(
@@ -102,7 +103,7 @@ const SalesRFQHeader = () => {
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
           isLocked ||
-          !permissions.can("delete", "sales") ||
+          !permissions.has({ "sales.rfqs": "Full" }) ||
           !permissions.is("employee")
         }
         destructive
@@ -137,7 +138,7 @@ const SalesRFQHeader = () => {
                     isDisabled={
                       status !== "Draft" ||
                       routeData?.lines?.length === 0 ||
-                      !permissions.can("update", "sales")
+                      !permissions.has({ "sales.rfqs": "Edit" })
                     }
                     isLoading={
                       statusFetcher.state !== "idle" &&
@@ -158,7 +159,7 @@ const SalesRFQHeader = () => {
                   isDisabled={
                     status !== "Ready for Quote" ||
                     routeData?.lines?.length === 0 ||
-                    !permissions.can("update", "sales")
+                    !permissions.has({ "sales.rfqs": "Edit" })
                   }
                   leftIcon={<LuCircleCheck />}
                   variant={status === "Draft" ? "primary" : "secondary"}
@@ -175,7 +176,7 @@ const SalesRFQHeader = () => {
                 isDisabled={
                   status !== "Ready for Quote" ||
                   routeData?.lines?.length === 0 ||
-                  !permissions.can("create", "sales")
+                  !permissions.has(salesRfqToQuotePermission)
                 }
                 leftIcon={<RiProgress4Line />}
                 type="submit"
@@ -194,7 +195,7 @@ const SalesRFQHeader = () => {
             isDisabled={
               status !== "Ready for Quote" ||
               statusFetcher.state !== "idle" ||
-              !permissions.can("update", "sales")
+              !permissions.has({ "sales.rfqs": "Edit" })
             }
             isLoading={
               statusFetcher.state !== "idle" &&
@@ -217,7 +218,7 @@ const SalesRFQHeader = () => {
                 isDisabled={
                   status !== "Ready for Quote" ||
                   statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "sales")
+                  !permissions.has({ "sales.rfqs": "Edit" })
                 }
                 isLoading={
                   statusFetcher.state !== "idle" &&

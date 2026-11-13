@@ -5,48 +5,32 @@
 // Resolve an incoming Carbon API request to an AuthedContext.
 //
 // v1 accepts API keys only, sent as `Authorization: Bearer crbn_…` (the convention the
-// rest.carbon.ms proxy uses) or the raw `carbon-key` header. Client + rate limit + plan
-// gate + expiry are handled by reusing the carbon-key branch of requirePermissions; the
-// per-operation check is the service function's gate, which reads the scopes we attach here.
+// rest.carbon.ms proxy uses) or the raw `carbon-key` header. The per-operation check
+// is the service function's gate, which reads the permissions the key holds.
 // The MCP endpoint also accepts an OAuth connector token (`authenticateOAuthToken`).
-
-import {
-  getCompanyIdFromAPIKey,
-  hashOAuthSecret,
-  requirePermissions
-} from "@carbon/auth/auth.server";
+import { authorizeApiKey, hashOAuthSecret } from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
+import { admits, userActor } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
-import { type AuthedContext, scopesFromPermissions } from "./base.server";
+import type { AuthedContext } from "./base.server";
 
 const logger = getLogger("erp", "api", "authenticate");
 
 /**
- * Authenticate a raw API key into an AuthedContext. Shared by the v1 HTTP
- * transport and the MCP endpoint's carbon-key branch, so the
- * requirePermissions-then-read-scopes dance exists once.
- *
- * requirePermissions' carbon-key branch reads the `carbon-key` header, so the key
- * is presented that way regardless of how the caller sent it. Empty
- * required-permissions: each operation's service function checks the key's
- * scopes in its own gate.
- * The scope read hits the same 30s cache requirePermissions just warmed — a Redis
- * hit, not a second apiKey select.
+ * A raw API key as an AuthedContext. Shared by the v1 HTTP transport and the
+ * MCP endpoint's carbon-key branch. No gate: each operation's service
+ * function checks the key's grants in its own gate.
  */
-export async function authenticateApiKey(
-  url: string,
+export async function apiKeyContext(
+  request: Request,
   rawKey: string
 ): Promise<AuthedContext> {
-  const authHeaders = new Headers();
-  authHeaders.set("carbon-key", rawKey);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(new Request(url, { headers: authHeaders }), {});
-
-  const { data: keyRow } = await getCompanyIdFromAPIKey(rawKey);
+  const { client, companyId, companyGroupId, userId, permissions } =
+    await authorizeApiKey(rawKey, {}, request);
 
   return {
     client,
@@ -54,7 +38,8 @@ export async function authenticateApiKey(
     companyGroupId,
     userId,
     authKind: "api-key",
-    scopes: keyRow?.scopes ?? {}
+    permissions,
+    role: null
   };
 }
 
@@ -80,7 +65,7 @@ export async function resolveApiKeyContext(
     );
   }
 
-  return authenticateApiKey(request.url, rawKey);
+  return apiKeyContext(request, rawKey);
 }
 
 /** Who an OAuth access token was issued to, and for which company. */
@@ -118,15 +103,8 @@ export async function oauthContext({
   userId,
   companyId
 }: OAuthIdentity): Promise<AuthedContext | null> {
-  const serviceRole = getCarbonServiceRole();
-  const [membership, company, claims, client] = await Promise.all([
-    serviceRole
-      .from("userToCompany")
-      .select("role")
-      .eq("userId", userId)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    serviceRole
+  const [company, claims, client] = await Promise.all([
+    getCarbonServiceRole()
       .from("company")
       .select("companyGroupId")
       .eq("id", companyId)
@@ -135,7 +113,9 @@ export async function oauthContext({
     getUserScopedClient(userId)
   ]);
 
-  if (membership.data?.role !== "employee") return null;
+  if (!admits(userActor(claims), companyId, "employee")) {
+    return null;
+  }
   if (!company.data) {
     logger.error("Failed to read the OAuth token's company", {
       companyId,
@@ -152,6 +132,8 @@ export async function oauthContext({
     companyGroupId: company.data.companyGroupId ?? "",
     userId,
     authKind: "oauth",
-    scopes: scopesFromPermissions(claims.permissions, companyId)
+    permissions: claims.permissions,
+    // `admits(…, "employee")` passed only for the employee role.
+    role: "employee"
   };
 }

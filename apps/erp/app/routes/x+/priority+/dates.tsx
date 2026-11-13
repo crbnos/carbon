@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import {
@@ -51,11 +51,7 @@ import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useUrlParams } from "~/hooks";
 import { isDateColumnSentinel } from "~/modules/production/production.models";
-import {
-  getJobProjects,
-  getJobsByDateRange,
-  getUnscheduledJobs
-} from "~/modules/production/production.service";
+import { getJobProjects } from "~/modules/production/production.service";
 import type { Column, JobItem } from "~/modules/production/ui/Schedule";
 import type { DisplaySettings } from "~/modules/production/ui/Schedule/Kanban";
 import { DateKanban } from "~/modules/production/ui/Schedule/Kanban/DateKanban";
@@ -63,7 +59,6 @@ import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/p
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import {
   getLocationTimeZone,
-  getTagsList,
   resolveLocationId
 } from "~/modules/shared/shared.service";
 import { usePeople } from "~/stores";
@@ -74,17 +69,17 @@ const logger = getLogger("erp", "dates");
 
 export const handle: Handle = {
   breadcrumb: msg`Priorities`,
-  to: path.to.priorityDates,
-  module: "production"
+  to: path.to.priorityDates
 };
 
 type ViewType = "week" | "month";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "production",
-    bypassRls: true
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    { "production.priorities": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -165,9 +160,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [jobs, unscheduledJobs, tags] = await Promise.all([
-    getJobsByDateRange(client, locationId ?? "", startDate, endDate),
-    getUnscheduledJobs(client, locationId ?? ""),
-    getTagsList(client, companyId, "job")
+    api.production.getJobsByDateRange({
+      locationId: locationId ?? "",
+      startDate,
+      endDate
+    }),
+    api.production.getUnscheduledJobs({ locationId: locationId ?? "" }),
+    api.shared.getTagsList({ table: "job" })
   ]);
 
   if (jobs.error) {

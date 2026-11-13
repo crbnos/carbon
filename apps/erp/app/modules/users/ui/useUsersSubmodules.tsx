@@ -4,13 +4,16 @@
 
 import { useLingui } from "@lingui/react/macro";
 import { LuFileBadge2, LuGroup, LuMonitor, LuUsers } from "react-icons/lu";
+import { usePermissions } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
 import type { RouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function useUsersSubmodules() {
   const { t } = useLingui();
   const settings = useSettings();
+  const permissions = usePermissions();
 
   const usersRoutes: RouteGroup[] = [
     {
@@ -25,18 +28,8 @@ export default function useUsersSubmodules() {
           name: t`Operators`,
           to: path.to.operators,
           icon: <LuMonitor />,
-          setting: "consoleEnabled" as any
+          setting: "consoleEnabled"
         },
-        // {
-        //   name: t`Customers`,
-        //   to: path.to.customerAccounts,
-        //   icon: <LuSquareUser />,
-        // },
-        // {
-        //   name: t`Suppliers`,
-        //   to: path.to.supplierAccounts,
-        //   icon: <LuContainer />,
-        // },
         {
           name: t`Groups`,
           to: path.to.groups,
@@ -57,13 +50,12 @@ export default function useUsersSubmodules() {
   ];
 
   return {
-    groups: usersRoutes.map((group) => ({
-      ...group,
-      routes: group.routes.filter(
-        (route) =>
-          !route.setting ||
-          settings[route.setting as keyof typeof settings] === true
-      )
-    }))
+    groups: visibleGroups(
+      usersRoutes,
+      permissions,
+      (route) =>
+        !route.setting ||
+        settings[route.setting as keyof typeof settings] === true
+    )
   };
 }

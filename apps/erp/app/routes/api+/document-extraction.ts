@@ -3,17 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { pageOfTable } from "@carbon/database/access";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { insertDocumentExtraction } from "~/modules/documents/documents.service";
 
-// Each document type must be gated by the permission for the module that owns it,
-// and paired with the source document the client claims to be extracting.
+// Each document type is a table, gated by the page that owns it, and paired
+// with the source document the client claims to be extracting.
 const DOCUMENT_TYPES = {
-  salesRfq: { module: "sales", sourceDocument: "Request for Quote" },
-  purchaseInvoice: { module: "purchasing", sourceDocument: "Purchase Invoice" }
+  salesRfq: { sourceDocument: "Request for Quote" },
+  purchaseInvoice: { sourceDocument: "Purchase Invoice" }
 } as const;
 
 type DocumentType = keyof typeof DOCUMENT_TYPES;
@@ -37,10 +38,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid document type" }, { status: 400 });
   }
 
-  // Gate on the module that owns this document type — an RFQ is a sales document,
-  // an invoice is a purchasing document.
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: documentConfig.module
+  const { client, companyId, userId } = await authorize(request, {
+    [pageOfTable(documentType)]: "View"
   });
 
   const result = await insertDocumentExtraction(client, {

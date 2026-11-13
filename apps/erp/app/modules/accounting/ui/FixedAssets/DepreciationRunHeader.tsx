@@ -80,7 +80,9 @@ const DepreciationRunHeader = () => {
             <>
               {isPosted && (
                 <DropdownMenuItem
-                  disabled={!permissions.can("create", "accounting")}
+                  disabled={
+                    !permissions.has({ "accounting.depreciation": "Create" })
+                  }
                   onClick={repeatModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuRepeat />} />
@@ -89,7 +91,9 @@ const DepreciationRunHeader = () => {
               )}
               {isPosted && (
                 <DropdownMenuItem
-                  disabled={!permissions.can("update", "accounting")}
+                  disabled={
+                    !permissions.has({ "accounting.depreciation": "Edit" })
+                  }
                   destructive
                   onClick={reverseModal.onOpen}
                 >
@@ -100,7 +104,9 @@ const DepreciationRunHeader = () => {
               {isDraft && (
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  disabled={!permissions.can("delete", "accounting")}
+                  disabled={
+                    !permissions.has({ "accounting.depreciation": "Full" })
+                  }
                   destructive
                   onClick={deleteModal.onOpen}
                 >
@@ -112,7 +118,7 @@ const DepreciationRunHeader = () => {
           ) : undefined
         }
         actions={
-          isDraft && permissions.can("update", "accounting") ? (
+          isDraft && permissions.has({ "accounting.depreciation": "Edit" }) ? (
             <>
               <Button
                 variant="secondary"

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsDelete, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -11,7 +11,7 @@ import { getCurrentSequence } from "~/modules/settings/settings.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsDelete(request);
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request);
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

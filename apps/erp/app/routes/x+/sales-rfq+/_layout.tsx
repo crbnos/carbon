@@ -15,8 +15,7 @@ export const meta = moduleMeta("Sales RFQ");
 
 export const handle: Handle = {
   breadcrumb: msg`Sales`,
-  to: path.to.sales,
-  module: "sales"
+  to: path.to.sales
 };
 
 export default function SalesRFQRoute() {

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import {
   requireEditableChangeNoticeRoute,
@@ -19,8 +19,8 @@ type ContentField = (typeof CONTENT_FIELDS)[number];
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.changeNotices": "Edit"
   });
 
   const { id } = params;

@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
@@ -12,14 +13,9 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  getInventoryCount,
   getInventoryCountGroupSummaries,
-  getInventoryCountLineSummary,
   getInventoryCountLines,
-  getInventoryCountMovements,
   getInventoryCountOtherBins,
-  getStorageTypesList,
-  getStorageUnitsListForLocation,
   INVENTORY_COUNT_LINES_PAGING
 } from "~/modules/inventory/inventory.service";
 import { inventoryCountGroupId } from "~/modules/inventory/inventory.utils";
@@ -28,7 +24,6 @@ import {
   getMaterialFormsList,
   getMaterialSubstancesList
 } from "~/modules/items/items.service";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { toPage } from "~/utils/cursor";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/load.server";
@@ -46,22 +41,21 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Inventory Count`, to: path.to.inventoryCounts },
     (data) => data?.inventoryCount?.inventoryCountId
-  ),
-  module: "inventory"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.inventoryCount?.inventoryCountId, "Inventory Count");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, api } = await authorize(request, {
+    "inventory.inventoryCount": "View"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const inventoryCount = await getInventoryCount(client, id, companyId);
+  const inventoryCount = await api.inventory.getInventoryCount({ id });
   if (inventoryCount.error || !inventoryCount.data) {
     throw redirect(
       path.to.inventoryCounts,
@@ -114,21 +108,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       sorts: allowedSorts,
       filters: allowedFilters
     }),
-    isFirstPage ? getInventoryCountLineSummary(client, id, companyId) : null,
+    isFirstPage
+      ? api.inventory
+          .getInventoryCountLineSummary({ inventoryCountId: id })
+          .then(dataOrThrow)
+      : null,
     // Adjustments this count has posted (empty for a never-posted Draft).
-    isFirstPage ? getInventoryCountMovements(client, companyId, id) : null,
+    isFirstPage
+      ? api.inventory.getInventoryCountMovements({ inventoryCountId: id })
+      : null,
     // Option lists for the count-line column filters (same set the quantities
     // screen loads).
     isFirstPage ? getMaterialFormsList(client, companyId) : null,
     isFirstPage ? getMaterialSubstancesList(client, companyId) : null,
-    isFirstPage ? getTagsList(client, companyId) : null,
-    isFirstPage ? getStorageTypesList(client, companyId) : null,
+    isFirstPage ? api.shared.getTagsList({}) : null,
+    isFirstPage ? api.inventory.getStorageTypesList({}) : null,
     isFirstPage
-      ? getStorageUnitsListForLocation(
-          client,
-          companyId,
-          inventoryCount.data.locationId
-        )
+      ? api.inventory.getStorageUnitsListForLocation({
+          locationId: inventoryCount.data.locationId
+        })
       : null
   ]);
 

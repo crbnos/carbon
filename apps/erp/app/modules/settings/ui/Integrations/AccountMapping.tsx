@@ -168,7 +168,7 @@ export function AccountMapping({
 }: AccountMappingProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "settings");
+  const canUpdate = permissions.has({ "settings.integrations": "Edit" });
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
   const aiModal = useDisclosure();
   const [search, setSearch] = useState("");

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { Gate } from "@carbon/database/access";
 import {
   isPlanLayerField,
   PLAN_LAYER_FIELDS,
@@ -37,6 +38,7 @@ import {
 import { getDayOfWeek, parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { withContractRead } from "~/modules/sales/sales.models";
 import { type DiffEntry, diffFields, diffRows } from "../shared/diff";
 import {
   methodType,
@@ -956,6 +958,12 @@ export function assertCanApprove(args: {
     throw new Error(LABOR_TRANSFER_SAME_APPROVER);
   }
 }
+
+/** Issue to Project moves stock to a project: its route and its sidebar entry. */
+export const PROJECT_ISSUE_GATE = {
+  "inventory.quantities": "Edit",
+  "projects.projects": "Edit"
+} as const satisfies Gate;
 
 export const projectIssueDirections = ["Issue", "Return"] as const;
 
@@ -4118,21 +4126,28 @@ export function isProjectReportKey(value: string): value is ProjectReportKey {
 }
 
 /**
- * The modules a user must be able to view to run each report. The report
- * page, its CSV and the Reports list all read this one map.
+ * The page gate a user must pass to run each report. The report page, its
+ * CSV and the Reports list all read this one map.
  */
-export const projectReportPermissions: Record<
-  ProjectReportKey,
-  { view: string[] }
-> = {
-  "late-entries": { view: ["projects"] },
-  "missing-time": { view: ["projects"] },
-  "labor-transfers": { view: ["projects"] },
-  "timesheet-audit": { view: ["projects"] },
-  "labor-distribution": { view: ["projects", "people"] },
-  "cost-by-clin": { view: ["sales"] },
-  "rd-section-174a": { view: ["projects", "accounting"] },
-  "rd-form-6765-g": { view: ["projects", "accounting"] }
+export const projectReportPermissions: Record<ProjectReportKey, Gate> = {
+  "late-entries": { "projects.reports": "View" },
+  "missing-time": { "projects.reports": "View" },
+  "labor-transfers": { "projects.reports": "View" },
+  "timesheet-audit": { "projects.reports": "View" },
+  "labor-distribution": {
+    "projects.reports": "View",
+    "people.employees": "View"
+  },
+  // Either contracts list opens the contracts the report rolls up.
+  "cost-by-clin": withContractRead({ "projects.reports": "View" }),
+  "rd-section-174a": {
+    "projects.reports": "View",
+    "accounting.reporting": "View"
+  },
+  "rd-form-6765-g": {
+    "projects.reports": "View",
+    "accounting.reporting": "View"
+  }
 };
 
 /**

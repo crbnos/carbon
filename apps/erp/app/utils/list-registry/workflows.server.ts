@@ -57,7 +57,7 @@ export async function withWorkflowListExtras<
 
 export const workflowsList = searchList({
   key: "workflows",
-  permission: { view: "workflows", role: "employee" },
+  gate: { "workflows.workflows": "View" },
   paging: WORKFLOWS_PAGING,
   service: getWorkflows,
   rows: withWorkflowListExtras,
@@ -85,7 +85,7 @@ async function withWorkflowRunRecordNames<
 
 export const workflowRunsList = searchList({
   key: "workflow-runs",
-  permission: { view: "workflows", role: "employee" },
+  gate: { "workflows.runs": "View" },
   paging: WORKFLOW_RUNS_PAGING,
   service: getWorkflowRuns,
   rows: withWorkflowRunRecordNames,

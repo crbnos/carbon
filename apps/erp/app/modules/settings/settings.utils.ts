@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { type PageGate, pageOfTable } from "@carbon/database/access";
 import type {
   DocumentEditType,
   DocumentTemplateType
@@ -35,7 +36,7 @@ export function totalScopeRows(rowsByTable: RowsByTable[]): number {
 
 /**
  * Where each editable document lives: the record it prints, its readable number,
- * the record's own lock, the module whose update permission edits it, and the
+ * the record's own lock, the page whose Edit level edits it, and the
  * column its Notes block prints (null: the document has no Notes block).
  */
 export interface DocumentEditRecord {
@@ -53,13 +54,6 @@ export interface DocumentEditRecord {
     | "nonConformance";
   readableId: string;
   isLocked: (status: string | null | undefined) => boolean;
-  module:
-    | "purchasing"
-    | "sales"
-    | "invoicing"
-    | "inventory"
-    | "production"
-    | "quality";
   notesColumn: "externalNotes" | "notes" | "content" | null;
 }
 
@@ -71,77 +65,66 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     table: "purchaseOrder",
     readableId: "purchaseOrderId",
     isLocked: isPurchaseOrderLocked,
-    module: "purchasing",
     notesColumn: "externalNotes"
   },
   purchaseReturnOrder: {
     table: "purchaseReturnOrder",
     readableId: "purchaseReturnOrderId",
     isLocked: isPurchaseReturnOrderLocked,
-    module: "purchasing",
     notesColumn: "externalNotes"
   },
   purchasingRfq: {
     table: "purchasingRfq",
     readableId: "rfqId",
     isLocked: isRfqLocked,
-    module: "purchasing",
     notesColumn: "notes"
   },
   quote: {
     table: "quote",
     readableId: "quoteId",
     isLocked: isQuoteLocked,
-    module: "sales",
     notesColumn: "externalNotes"
   },
   salesOrder: {
     table: "salesOrder",
     readableId: "salesOrderId",
     isLocked: isSalesOrderLocked,
-    module: "sales",
     notesColumn: "externalNotes"
   },
   salesReturnOrder: {
     table: "salesReturnOrder",
     readableId: "salesReturnOrderId",
     isLocked: isSalesReturnOrderLocked,
-    module: "sales",
     notesColumn: "externalNotes"
   },
   salesInvoice: {
     table: "salesInvoice",
     readableId: "invoiceId",
     isLocked: isSalesInvoiceLocked,
-    module: "invoicing",
     notesColumn: "externalNotes"
   },
   packingSlip: {
     table: "shipment",
     readableId: "shipmentId",
     isLocked: (status) => status === "Posted" || status === "Voided",
-    module: "inventory",
     notesColumn: "externalNotes"
   },
   stockTransfer: {
     table: "stockTransfer",
     readableId: "stockTransferId",
     isLocked: isStockTransferLocked,
-    module: "inventory",
     notesColumn: null
   },
   jobTraveler: {
     table: "job",
     readableId: "jobId",
     isLocked: isJobLocked,
-    module: "production",
     notesColumn: "notes"
   },
   issue: {
     table: "nonConformance",
     readableId: "nonConformanceId",
     isLocked: isIssueLocked,
-    module: "quality",
     notesColumn: "content"
   }
 };
@@ -163,10 +146,10 @@ export const DOCUMENT_TERMS_FIELD: Partial<
   purchasingRfq: "purchasingTerms"
 };
 
-/** Editing how a document prints needs the update permission of its record. */
+/** Editing how a document prints needs Edit on the page that owns its record's table. */
 export const documentEditPermissions = Object.fromEntries(
   Object.entries(DOCUMENT_EDIT_RECORDS).map(([type, record]) => [
     type,
-    { update: record.module }
+    { [pageOfTable(record.table)]: "Edit" }
   ])
-) as Record<DocumentEditType, { update: DocumentEditRecord["module"] }>;
+) as Record<DocumentEditType, PageGate>;

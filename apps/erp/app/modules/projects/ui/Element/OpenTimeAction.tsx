@@ -42,7 +42,10 @@ export function OpenTimeAction({ entry }: { entry: OpenTimeEntry }) {
   const approvalRequired = settings.timesheetApprovalRequired ?? true;
   const here = `${location.pathname}${location.search}`;
 
-  if (entry.status === "Submitted" && permissions.can("update", "projects")) {
+  if (
+    entry.status === "Submitted" &&
+    permissions.has({ "projects.approvals": "Edit" })
+  ) {
     return (
       <Button
         variant="secondary"

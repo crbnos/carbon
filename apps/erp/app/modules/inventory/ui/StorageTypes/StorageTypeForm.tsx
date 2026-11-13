@@ -28,7 +28,7 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { storageTypeValidator } from "../../inventory.models";
+import { storageTypesGate, storageTypeValidator } from "../../inventory.models";
 
 type StorageTypeFormProps = {
   initialValues: z.infer<typeof storageTypeValidator>;
@@ -56,8 +56,8 @@ const StorageTypeForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has(storageTypesGate("Edit"))
+    : !permissions.has(storageTypesGate("Create"));
 
   return (
     <ModalDrawerProvider type={type}>

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,24 +11,20 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { materialSubstanceValidator } from "~/modules/items/items.models";
-import {
-  getMaterialSubstance,
-  upsertMaterialSubstance
-} from "~/modules/items/items.service";
+import { upsertMaterialSubstance } from "~/modules/items/items.service";
 import { MaterialSubstanceForm } from "~/modules/items/ui/MaterialSubstances";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "parts",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "parts.substances": "View" });
 
   const { substanceId } = params;
   if (!substanceId) throw notFound("substanceId not found");
 
-  const materialSubstance = await getMaterialSubstance(client, substanceId);
+  const materialSubstance = await api.items.getMaterialSubstance({
+    id: substanceId
+  });
 
   if (materialSubstance.data?.companyId === null) {
     throw redirect(
@@ -50,8 +46,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, userId } = await authorize(request, {
+    "parts.substances": "Edit"
   });
 
   const { substanceId } = params;

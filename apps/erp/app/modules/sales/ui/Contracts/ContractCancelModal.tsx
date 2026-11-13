@@ -110,7 +110,7 @@ const ContractCancelBody = ({
   const credit = preview ? currencyFormatter.format(preview.credit) : "";
   const removed = preview?.removedInvoices ?? 0;
   // The credit is a credit memo, which needs the invoicing permission.
-  const canCredit = permissions.can("create", "invoicing");
+  const canCredit = permissions.has({ "invoicing.creditMemos": "Create" });
 
   return (
     <ValidatedForm
@@ -196,7 +196,9 @@ const ContractCancelBody = ({
         <Submit
           variant="destructive"
           isDisabled={
-            !endDate || isRefused || !permissions.can("update", "sales")
+            !endDate ||
+            isRefused ||
+            !permissions.has({ "sales.serviceContracts": "Edit" })
           }
         >
           <Trans>Cancel Contract</Trans>

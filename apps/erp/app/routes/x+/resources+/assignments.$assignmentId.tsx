@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useAction } from "@carbon/query";
 import {
@@ -51,10 +51,6 @@ import { DateTime, EmployeeAvatar, Empty, FileDropzone } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { trainingCertificateAccept } from "~/modules/resources/resources.models";
-import {
-  getTrainingAssignment,
-  getTrainingAssignmentStatus
-} from "~/modules/resources/resources.service";
 import type { TrainingAssignmentStatusItem } from "~/modules/resources/types";
 import type { action as completeAction } from "~/routes/x+/resources+/assignments.complete";
 import type { Handle } from "~/utils/handle";
@@ -67,9 +63,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
+  const { companyId, api } = await authorize(request, {
+    "resources.assignments": "View"
   });
 
   const { assignmentId } = params;
@@ -81,8 +76,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [assignment, assignmentStatus] = await Promise.all([
-    getTrainingAssignment(client, assignmentId),
-    getTrainingAssignmentStatus(client, companyId, {
+    api.resources.getTrainingAssignment({ assignmentId }),
+    api.resources.getTrainingAssignmentStatus({
       trainingAssignmentId: assignmentId,
       status: undefined,
       search: undefined,
@@ -535,8 +530,12 @@ export default function TrainingAssignmentDetailRoute() {
                       key={`${assignment.employeeId}-${assignment.trainingAssignmentId}`}
                       assignment={assignment}
                       isExternal={isExternal}
-                      canRemove={permissions.can("delete", "resources")}
-                      disabled={!permissions.can("update", "resources")}
+                      canRemove={permissions.has({
+                        "resources.assignments": "Full"
+                      })}
+                      disabled={
+                        !permissions.has({ "resources.assignments": "Edit" })
+                      }
                       isLast={index === filteredAssignments.length - 1}
                     />
                   ))}

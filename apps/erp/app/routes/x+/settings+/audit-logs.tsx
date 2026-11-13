@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   enableAuditLog,
@@ -36,8 +36,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId } = await authorize(request, {
+    "settings.auditLogs": "View"
   });
 
   // Check if audit log is enabled for this company
@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // by default and cannot be turned off. Enable it on demand for any controlled
   // company that isn't already capturing. This is mandatory, not the viewer's
   // choice, so it runs as the service role: create_audit_log_table requires
-  // settings_update, and this loader only requires settings_view.
+  // Edit on Audit Logs, and this loader only requires View.
   if (CONTROLLED_ENVIRONMENT && !enabled) {
     try {
       await enableAuditLog(serviceRole, companyId);
@@ -103,7 +103,7 @@ const auditLogForm = z.discriminatedUnion("action", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(auditLogForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   switch (input.data.action) {
     case "enable":
       return respond(

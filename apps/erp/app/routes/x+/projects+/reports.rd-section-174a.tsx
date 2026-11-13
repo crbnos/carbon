@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -30,10 +30,10 @@ import { path } from "~/utils/path";
 export const handle = projectReportHandle("rd-section-174a", msg`§174A R&E`);
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    ...projectReportPermissions["rd-section-174a"],
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    projectReportPermissions["rd-section-174a"]
+  );
   const report = await getRdTaxReport(getDatabaseClient(), client, {
     companyId,
     taxYear: taxYearParam(new URL(request.url).searchParams.get("taxYear")),

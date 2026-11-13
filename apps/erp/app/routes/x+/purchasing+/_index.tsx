@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { dataOrThrow } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import type { ApprovalRequest } from "@carbon/ee/approvals";
 import { getPendingApprovalsForApprover } from "@carbon/ee/approvals.server";
 import { useLoaderQuery } from "@carbon/query";
@@ -80,7 +82,6 @@ import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import type { PurchaseInvoice } from "~/modules/invoicing/types";
 import { PurchaseInvoicingStatus } from "~/modules/invoicing/ui";
 import { KPIs } from "~/modules/purchasing/purchasing.models";
-import { getPurchasingDocumentsAssignedToMe } from "~/modules/purchasing/purchasing.service";
 import type { PurchaseOrder, SupplierQuote } from "~/modules/purchasing/types";
 import { PurchasingStatus } from "~/modules/purchasing/ui/PurchaseOrder";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
@@ -113,9 +114,10 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { client, userId, companyId, api } = await authorize(
+    request,
+    anyOf(pagesOf("purchasing"), "View")
+  );
 
   const serviceRole = getCarbonServiceRole();
 
@@ -239,11 +241,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : { data: [], error: null }
   ]);
 
-  const assignedToMePromise = getPurchasingDocumentsAssignedToMe(
-    client,
-    userId,
-    companyId
-  );
+  const assignedToMePromise = api.purchasing
+    .getPurchasingDocumentsAssignedToMe({})
+    .then(dataOrThrow);
 
   return {
     openPurchaseOrders: openPurchaseOrders,

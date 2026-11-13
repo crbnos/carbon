@@ -51,7 +51,8 @@ const QuotePaymentForm = ({ initialValues }: QuotePaymentFormProps) => {
   const isEditable = !isLocked;
   const { isPhone } = useViewport();
   const quoteStatus = routeData?.quote?.status ?? "";
-  const isDisabled = !isEditable || !permissions.can("update", "sales");
+  const isDisabled =
+    !isEditable || !permissions.has({ "sales.quotes": "Edit" });
 
   return (
     <Card>

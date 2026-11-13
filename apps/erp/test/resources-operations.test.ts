@@ -36,11 +36,13 @@ vi.mock("@carbon/jobs", () => ({ trigger }));
 vi.mock("@carbon/kv", () => ({ redis: { del: vi.fn() } }));
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 // Load the service first: shared.service imports it, and a module first loaded
 // while shared.service's mock is being built binds the unmocked one.
 await import("../app/modules/resources/resources.service");
 const {
+  createAbility,
   createMaintenanceEvent,
   createProcess,
   createTrainingAssignment,
@@ -71,7 +73,11 @@ type Answer = { data: unknown; error: unknown };
  * answers from `<table>:read` when the test names one. Each write is recorded
  * with its payload; nothing else is checked.
  */
-function client(answers: Record<string, unknown>) {
+function client(
+  answers: Record<string, unknown>,
+  /** Tables RLS refuses this client's writes on: they land nowhere. */
+  refused: readonly string[] = []
+) {
   const writes: { op: string; table: string; payload?: unknown }[] = [];
   const answer = (key: string): Answer => {
     const value = answers[key];
@@ -82,6 +88,7 @@ function client(answers: Record<string, unknown>) {
   const from = (table: string) => {
     const chain: Record<string, unknown> = {};
     let wrote = false;
+    let denied = false;
     for (const method of [
       "select",
       "eq",
@@ -96,12 +103,15 @@ function client(answers: Record<string, unknown>) {
     for (const op of ["insert", "update", "upsert", "delete"]) {
       chain[op] = (payload?: unknown) => {
         wrote = true;
-        writes.push({ op, table, payload });
+        if (refused.includes(table)) denied = true;
+        else writes.push({ op, table, payload });
         return chain;
       };
     }
-    const result = () =>
-      answer(!wrote && `${table}:read` in answers ? `${table}:read` : table);
+    const result = (): Answer =>
+      denied
+        ? { data: null, error: { message: "violates row-level security" } }
+        : answer(!wrote && `${table}:read` in answers ? `${table}:read` : table);
     chain.single = chain.maybeSingle = () => Promise.resolve(result());
     chain.then = (resolve: (value: unknown) => unknown) =>
       Promise.resolve(result()).then(resolve);
@@ -114,7 +124,12 @@ function client(answers: Record<string, unknown>) {
 function contextWith(answers: Record<string, unknown> = {}) {
   const db = client(answers);
   const ctx = createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions },
+    actor: {
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: pageClaims(permissions)
+    },
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
     system: () => db as never,
@@ -301,6 +316,125 @@ describe("creating a process that requires an ability", () => {
       "process",
       { requiresAbility: false }
     ]);
+  });
+});
+
+// Abilities, processes and work centers are separate pages: an operation
+// writes its sibling page's rows as the system, after its own permission.
+// The caller's client refuses writes on a sibling page's tables, as RLS does.
+describe("sibling page writes", () => {
+  const SIBLINGS: Record<string, string[]> = {
+    "resources.abilities": ["process", "workCenterProcess"],
+    "resources.processes": ["ability", "workCenterProcess"]
+  };
+  function pageOnly(page: string, answers: Record<string, unknown>) {
+    const caller = client(answers, SIBLINGS[page]);
+    const system = client(answers);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: {
+          [page]: { view: ["company-1"], create: ["company-1"], update: [], delete: [] }
+        }
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => system as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    const tables = (writes: typeof caller.writes) =>
+      writes.map((w) => `${w.op}:${w.table}`);
+    /** Every write that landed, through either client. */
+    const landed = () =>
+      [...caller.writes, ...system.writes].map((w) => [
+        `${w.op}:${w.table}`,
+        w.payload
+      ]);
+    return { ctx, landed, system: () => tables(system.writes) };
+  }
+
+  it("creating an ability turns its process's gate on", async () => {
+    const { ctx, landed } = pageOnly("resources.abilities", {
+      process: [{ id: "proc-1" }],
+      "ability:read": null,
+      ability: { id: "ability-1" }
+    });
+
+    const result = await createAbility(ctx, { processId: "proc-1" });
+
+    expect(result.error).toBeNull();
+    expect(landed()).toEqual(
+      expect.arrayContaining([
+        [
+          "insert:ability",
+          [expect.objectContaining({ processId: "proc-1", companyId: "company-1" })]
+        ],
+        ["update:process", { requiresAbility: true, updatedBy: "user-1" }]
+      ])
+    );
+  });
+
+  it("creating a process links its work centers and makes its ability", async () => {
+    const { ctx, landed } = pageOnly("resources.processes", {
+      "process:read": null,
+      process: { id: "proc-1" },
+      workCenter: [{ id: "wc-1" }],
+      "ability:read": null,
+      ability: { id: "ability-1" }
+    });
+
+    const result = await createProcess(ctx, {
+      name: "Welding",
+      processType: "Process",
+      requiresAbility: true,
+      workCenters: ["wc-1"]
+    });
+
+    expect(result.error).toBeNull();
+    expect(landed()).toEqual(
+      expect.arrayContaining([
+        [
+          "insert:process",
+          [expect.objectContaining({ name: "Welding", requiresAbility: true })]
+        ],
+        [
+          "insert:workCenterProcess",
+          [
+            {
+              workCenterId: "wc-1",
+              processId: "proc-1",
+              companyId: "company-1",
+              createdBy: "user-1"
+            }
+          ]
+        ],
+        [
+          "insert:ability",
+          [expect.objectContaining({ processId: "proc-1", companyId: "company-1" })]
+        ]
+      ])
+    );
+  });
+
+  it("refuses to link a work center that is not the company's", async () => {
+    const { ctx, system } = pageOnly("resources.processes", {
+      "process:read": null,
+      process: { id: "proc-1" },
+      workCenter: []
+    });
+
+    const result = await createProcess(ctx, {
+      name: "Welding",
+      processType: "Process",
+      requiresAbility: false,
+      workCenters: ["wc-9"]
+    });
+
+    expect(result.error?.category).toBe("internal");
+    expect(system()).toEqual([]);
   });
 });
 

@@ -103,7 +103,7 @@ export function ServiceJobProblem({
   const { t } = useLingui();
   const permissions = usePermissions();
   const onUpdate = useUpdateServiceJobField(id);
-  const isReadOnly = isDisabled || !permissions.can("update", "service");
+  const isReadOnly = isDisabled || !permissions.has({ "service.jobs": "Edit" });
   const [repairable, setRepairable] = useState(initialRepairable);
 
   return (
@@ -206,7 +206,7 @@ export function ServiceJobNotes({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {permissions.can("update", "service") && !isDisabled ? (
+        {permissions.has({ "service.jobs": "Edit" }) && !isDisabled ? (
           <Editor
             initialValue={(content ?? {}) as JSONContent}
             onUpload={onUploadImage}
@@ -279,7 +279,9 @@ export function ServiceJobFiles({
               <ServiceJobFilesContent
                 jobId={jobId}
                 files={resolvedFiles ?? []}
-                isReadOnly={!permissions.can("update", "service") || isDisabled}
+                isReadOnly={
+                  !permissions.has({ "service.jobs": "Edit" }) || isDisabled
+                }
               />
             )}
           </Await>

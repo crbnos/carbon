@@ -562,7 +562,7 @@ export function useCreateProjectLabel() {
     onError: (data) =>
       toast.error(data.error?.message ?? t`Failed to create the label`)
   });
-  if (!permissions.can("create", "projects")) return null;
+  if (!permissions.has({ "projects.projects": "Create" })) return null;
   return (name: string, onCreated: (id: string) => void) => {
     onCreatedRef.current = onCreated;
     fetcher.submit(

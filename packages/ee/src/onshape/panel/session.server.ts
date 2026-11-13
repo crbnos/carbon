@@ -4,7 +4,7 @@
 
 import { randomBytes } from "node:crypto";
 import type { AuthSession } from "@carbon/auth";
-import { getPermissionCacheKey, hasPermission } from "@carbon/auth";
+import { authorize, type Caller, type Gate } from "@carbon/auth/auth.server";
 import { logAuthEvent } from "@carbon/auth/auth-events.server";
 import {
   getCarbonServiceRole,
@@ -12,7 +12,7 @@ import {
 } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { getUserClaims } from "@carbon/auth/users.server";
-import type { Database } from "@carbon/database";
+import { admits, userActor } from "@carbon/database/access";
 import {
   CONTROLLED_ENVIRONMENT,
   SESSION_ABSOLUTE_MAX_MS,
@@ -20,7 +20,6 @@ import {
 } from "@carbon/env";
 import { redis } from "@carbon/kv";
 import { getClientIp } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   type PanelSession,
   panelSessionForCompany,
@@ -148,8 +147,6 @@ export async function switchPanelSessionCompany(
   if (stored !== "OK") return null;
 
   await deletePanelSession(token);
-  // The cached role is the old company's; the cookie switch drops it too.
-  await redis.del(getPermissionCacheKey(session.userId));
   return next;
 }
 
@@ -179,32 +176,33 @@ async function requirePanelSession(token: string): Promise<PanelSession> {
 }
 
 /**
- * Panel counterpart of `requirePermissions` with the same return shape.
- * Employees only, the acting user is always the session user, and failures are
- * 401 or 403, never redirects, since every caller is an iframe fetch.
+ * `authorize` for the Onshape panel: the caller of the `cps_` bearer session,
+ * refused unless they pass `gate`, with the operations bound to
+ * them. Employees only, the acting user is always the session user, and
+ * failures are 401 or 403, never redirects, since every caller is an iframe
+ * fetch.
  */
-export async function requireOnshapePanelPermissions(
+export async function authorizePanel(
   request: Request,
-  requiredPermissions: {
-    view?: string | string[];
-    create?: string | string[];
-    update?: string | string[];
-    delete?: string | string[];
-    bypassRls?: boolean;
+  gate: Gate = {},
+  options: { bypassRls?: boolean } = {}
+) {
+  return authorize(await panelCaller(request, gate, options));
+}
+
+async function panelCaller(
+  request: Request,
+  gate: Gate,
+  options: { bypassRls?: boolean }
+): Promise<
+  Caller & {
+    caller: "session";
+    /** Always an employee: the panel refuses every other role. */
+    role: "employee";
+    /** Set on an SSO sign-in, where the identity provider owns MFA. */
+    ssoProviderId?: string;
   }
-): Promise<{
-  client: SupabaseClient<Database>;
-  companyId: string;
-  companyGroupId: string;
-  email: string;
-  userId: string;
-  sessionUserId: string;
-  /** Set on an SSO sign-in, where the identity provider owns MFA. */
-  ssoProviderId?: string;
-  consoleMode: boolean;
-  caller: "session";
-  permissions: Awaited<ReturnType<typeof getUserClaims>>["permissions"];
-}> {
+> {
   const token = panelSessionTokenFromRequest(request);
   if (!token) {
     throw new Response("Unauthorized", { status: 401 });
@@ -226,34 +224,12 @@ export async function requireOnshapePanelPermissions(
     return new Response("Forbidden", { status: 403 });
   };
 
-  if (myClaims.role !== "employee") {
-    throw deny(`${myClaims.role ?? "no"} role`);
-  }
-
-  const hasRequiredPermissions = Object.entries(requiredPermissions).every(
-    ([action, permission]) => {
-      if (action === "bypassRls") return true;
-      const permissions =
-        typeof permission === "string"
-          ? [permission]
-          : Array.isArray(permission)
-            ? permission
-            : null;
-      if (!permissions) return false;
-      // `hasPermission` honours the "0" all-companies scope.
-      return permissions.every((p) =>
-        hasPermission(
-          myClaims.permissions,
-          p,
-          action as "view" | "create" | "update" | "delete",
-          companyId
-        )
-      );
-    }
-  );
-
-  if (!hasRequiredPermissions) {
-    throw deny(JSON.stringify(requiredPermissions));
+  if (!admits(userActor(myClaims), companyId, gate)) {
+    throw deny(
+      myClaims.role === "employee"
+        ? JSON.stringify(gate)
+        : `${myClaims.role ?? "no"} role`
+    );
   }
 
   // Only an authorized request counts as activity.
@@ -261,7 +237,7 @@ export async function requireOnshapePanelPermissions(
     await stampActivity(token, session);
   }
 
-  const client = requiredPermissions.bypassRls
+  const client = options.bypassRls
     ? getCarbonServiceRole()
     : await getUserScopedClient(userId);
 
@@ -275,6 +251,7 @@ export async function requireOnshapePanelPermissions(
     ssoProviderId: session.ssoProviderId,
     consoleMode: false,
     caller: "session",
-    permissions: myClaims.permissions
+    permissions: myClaims.permissions,
+    role: "employee"
   };
 }

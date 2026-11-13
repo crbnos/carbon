@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { deleteEnforcementRule } from "@carbon/ee/rules.server";
@@ -12,16 +12,15 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { getEnforcementRule } from "~/modules/shared/shared.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "inventory"
+  const { api } = await authorize(request, {
+    "inventory.storageRules": "Full"
   });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getEnforcementRule(client, "storage", id, companyId);
+  const rule = await api.shared.getEnforcementRule({ family: "storage", id });
   if (rule.error || !rule.data) {
     throw redirect(
       path.to.storageRules,
@@ -33,8 +32,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "inventory"
+  const { client, companyId } = await authorize(request, {
+    "inventory.storageRules": "Full"
   });
 
   await requireFeature({

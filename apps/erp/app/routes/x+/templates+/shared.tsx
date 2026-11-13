@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type {
   DocumentSectionPlacement,
   HeaderOptions
@@ -31,7 +30,6 @@ import { z } from "zod";
 import { SectionFormModal } from "~/components/DocumentTemplateEditor/SectionFormModal";
 import { usePermissions } from "~/hooks";
 import { documentSectionValidator } from "~/modules/settings/settings.models";
-import { getDocumentSections } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 const PLACEMENT_LABELS: Record<DocumentSectionPlacement, string> = {
@@ -52,12 +50,11 @@ type Section = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "settings.documentTemplates": "View"
   });
 
-  const sections = await getDocumentSections(client, companyId);
+  const sections = await api.settings.getDocumentSections({});
   return {
     sections: withBuiltInSections(
       (sections.data ?? []) as Section[]
@@ -72,19 +69,19 @@ export async function action(args: ActionFunctionArgs) {
   if (intent === "delete") {
     const input = await validator(deleteSectionForm).request(args);
     if ("invalid" in input) return input.invalid;
-    const api = await carbon(args.request);
+    const { api } = await authorize(args.request);
     return api.settings.removeDocumentSection(input.data);
   }
   const input = await validator(documentSectionValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.saveDocumentSection(input.data);
 }
 
 export default function SharedSectionsRoute() {
   const { sections } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "settings");
+  const canEdit = permissions.has({ "settings.documentTemplates": "Edit" });
 
   const [editing, setEditing] = useState<Section | null>(null);
   const disclosure = useDisclosure();

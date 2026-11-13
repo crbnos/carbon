@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -46,8 +46,8 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "supplier-quote-line-details");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { companyId } = await authorize(request, {
+    "purchasing.supplierQuotes": "View"
   });
 
   const { id, lineId } = params;
@@ -93,16 +93,16 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    create: "purchasing"
+  const { client, userId } = await authorize(request, {
+    "purchasing.supplierQuotes": "Create"
   });
 
   const { id, lineId } = params;
   if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
+  const { client: viewClient } = await authorize(request, {
+    "purchasing.supplierQuotes": "View"
   });
   const quote = await getSupplierQuote(viewClient, id);
   await requireUnlocked({

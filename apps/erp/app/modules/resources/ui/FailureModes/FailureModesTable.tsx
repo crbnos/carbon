@@ -80,7 +80,7 @@ const FailureModesTable = memo((props: FailureModesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "resources")}
+            disabled={!permissions.has({ "resources.failureModes": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteFailureMode(row.id)}?${params.toString()}`
@@ -103,7 +103,7 @@ const FailureModesTable = memo((props: FailureModesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "resources") && (
+        permissions.has({ "resources.failureModes": "Create" }) && (
           <New
             label={t`Failure Mode`}
             to={`${path.to.newFailureMode}?${params.toString()}`}

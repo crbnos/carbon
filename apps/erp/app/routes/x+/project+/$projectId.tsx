@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, hasPermission } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { error } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import { getCompanyTimeZone } from "@carbon/database";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
@@ -35,6 +35,7 @@ import {
 import type { ProjectTreeElement } from "~/modules/projects/ui/Project/ProjectElementTree";
 import ProjectHeader from "~/modules/projects/ui/Project/ProjectHeader";
 import { ProjectSidebar } from "~/modules/projects/ui/Project/ProjectSidebar";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import { getDatabaseClient } from "~/services/database.server";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -57,15 +58,15 @@ export const handle: Handle = {
           }
         ]
       : [])
-  ],
-  module: "projects"
+  ]
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "projects",
-    bypassRls: true
-  });
+  const { client, companyId, permissions } = await authorize(
+    request,
+    { "projects.projects": "View" },
+    { bypassRls: true }
+  );
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
@@ -87,7 +88,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     planningGroups,
     billingLines,
     projectContracts,
-    claims,
     stockRows,
     pegRows
   ] = await Promise.all([
@@ -116,9 +116,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // The project contracts that bill the project, by header or by line:
     // the Billing page names them, and offers a new one when there is none.
     getProjectContracts(client, { companyId, projectId }),
-    // The client bypasses RLS: contracts reach only a user who can view
-    // sales.
-    getUserClaims(userId, companyId),
     // Stock and Pegging show under Costs only once the project has project
     // stock (an item ledger row of its own) or a current peg (Layer 5).
     client
@@ -246,12 +243,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Billing shows under Costs for every Contract project, with or without
     // a project contract.
     showBilling: project.data.costTreatment === "Contract",
-    projectContracts: hasPermission(
-      claims?.permissions,
-      "sales",
-      "view",
-      companyId
-    )
+    // The client bypasses RLS: contracts reach only a user who can view
+    // sales.
+    projectContracts: holdsGate(permissions, CONTRACT_READ_GATE, companyId)
       ? projectContracts.data.map((contract) => ({
           id: contract.id,
           customerContractId: contract.customerContractId,

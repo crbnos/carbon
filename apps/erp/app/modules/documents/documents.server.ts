@@ -2,13 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { defineServiceFn, refusalOf } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
+import { itemRule } from "~/modules/items/items.service";
 import { refuseUnlessOwned } from "~/modules/shared/shared.service";
 import { modelViewDirection } from "./documents.models";
 import * as service from "./documents.service";
@@ -20,18 +21,18 @@ const logger = getLogger("erp", "documents");
  * @remarks
  * The model must be the company's. `direction` is the viewer's camera (model
  * towards camera, Z up); without it the home view is drawn. Any employee may
- * ask: a preview is part of viewing, not part editing. A part's own thumbnail
- * hides the model's, so the call clears it on every part using the model.
- * That replaces the part's thumbnail, which needs permission to update parts;
- * without it the call is refused. The render writes the model's new
- * `thumbnailPath` when it lands.
+ * ask: a preview is part of viewing, not part editing. An item's own thumbnail
+ * hides the model's, so the call clears it on every item using the model.
+ * That replaces the item's thumbnail, which needs Edit on the page of each
+ * item's type; without it the call is refused. The render writes the model's
+ * new `thumbnailPath` when it lands.
  */
 export const regenerateModelThumbnail = defineServiceFn({
   input: z.object({
     modelUploadId: z.string().min(1),
     direction: modelViewDirection.optional()
   }),
-  permission: {},
+  permission: "employee",
 
   async run(ctx, { modelUploadId, direction }) {
     const missing = await service.findModel(ctx, modelUploadId);
@@ -45,18 +46,22 @@ export const regenerateModelThumbnail = defineServiceFn({
       .select("id")
       .eq("modelUploadId", modelUploadId)
       .eq("companyId", companyId)
-      .not("thumbnailPath", "is", null)
-      .limit(1);
+      .not("thumbnailPath", "is", null);
     if (owned.error) {
       return ctx.error("internal", "Failed to read the parts", owned.error);
     }
     if (owned.data.length > 0) {
-      if (!ctx.can({ update: "parts" })) {
+      // Each item needs its own type's page: Tools for a tool.
+      const refused = await refusalOf(ctx, itemRule("Edit", { id: "ids" }), {
+        ids: owned.data.map((item) => item.id)
+      });
+      if (refused?.category === "forbidden") {
         return ctx.error(
           "forbidden",
-          "Replacing a part's thumbnail needs permission to update parts"
+          "Replacing an item's thumbnail needs permission to update the item"
         );
       }
+      if (refused) return refused;
       const cleared = await ctx.asCaller.supabase
         .from("item")
         .update({ thumbnailPath: null })
@@ -96,7 +101,7 @@ export const optimizeModel = defineServiceFn({
     modelUploadId: z.string().min(1),
     force: z.boolean().optional()
   }),
-  permission: {},
+  permission: "employee",
 
   async run(ctx, { modelUploadId, force = false }) {
     const missing = await service.findModel(ctx, modelUploadId);
@@ -146,7 +151,7 @@ export const optimizeModel = defineServiceFn({
  */
 export const cancelModelOptimize = defineServiceFn({
   input: z.object({ modelUploadId: z.string().min(1) }),
-  permission: {},
+  permission: "employee",
 
   async run(ctx, { modelUploadId }) {
     const missing = await service.findModel(ctx, modelUploadId);
@@ -234,7 +239,7 @@ export const recordDocumentDownload = defineServiceFn({
  */
 export const deleteDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "documents" },
+  permission: { documents: "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -250,7 +255,7 @@ export const deleteDocument = defineServiceFn({
  */
 export const getDocument = defineServiceFn({
   input: z.looseObject({ documentId: z.string() }),
-  permission: { view: "documents" },
+  permission: { documents: "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -280,7 +285,7 @@ export const getDocuments = defineServiceFn({
     recent: z.boolean().optional(),
     active: z.boolean()
   }),
-  permission: { view: "documents" },
+  permission: { documents: "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -300,7 +305,7 @@ export const getDocuments = defineServiceFn({
  */
 export const getDocumentExtensions = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "documents" },
+  permission: { documents: "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -316,7 +321,7 @@ export const getDocumentExtensions = defineServiceFn({
  */
 export const getDocumentLabels = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "documents" },
+  permission: { documents: "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -332,7 +337,7 @@ export const getDocumentLabels = defineServiceFn({
  */
 export const moveDocumentToTrash = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { update: "documents" },
+  permission: { documents: "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -352,7 +357,7 @@ export const moveDocumentToTrash = defineServiceFn({
  */
 export const restoreDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { update: "documents" },
+  permission: { documents: "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -411,7 +416,7 @@ export const createDocument = defineServiceFn({
       .optional(),
     sourceDocumentId: z.string().optional()
   }),
-  permission: { create: "documents" },
+  permission: { documents: "Create" },
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.path);
     if (foreign) return foreign;
@@ -473,7 +478,7 @@ export const updateDocument = defineServiceFn({
       id: z.string().describe("The document to update.").optional()
     })
     .required({ id: true }),
-  permission: { update: "documents" },
+  permission: { documents: "Edit" },
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.path);
     if (foreign) return foreign;
@@ -498,7 +503,7 @@ export const createDocumentUploadUrl = defineServiceFn({
     entityId: z.string(),
     name: z.string()
   }),
-  permission: { create: "documents" },
+  permission: { documents: "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -547,7 +552,7 @@ export const insertUploadedDocument = defineServiceFn({
       .optional(),
     sourceDocumentId: z.string().optional()
   }),
-  permission: { create: "documents" },
+  permission: { documents: "Create" },
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.path);
     if (foreign) return foreign;
@@ -571,7 +576,7 @@ export const insertUploadedDocument = defineServiceFn({
  */
 export const updateDocumentFavorite = defineServiceFn({
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
-  permission: { update: "documents" },
+  permission: { documents: "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -593,7 +598,7 @@ export const updateDocumentLabels = defineServiceFn({
     documentId: z.string().min(20),
     labels: z.array(z.string().min(1).max(50)).optional()
   }),
-  permission: { update: "documents" },
+  permission: { documents: "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -617,7 +622,7 @@ export const insertDocumentExtraction = defineServiceFn({
     sourceDocument: z.string(),
     sourceDocumentId: z.string().optional()
   }),
-  permission: { create: "documents" },
+  permission: { documents: "Create" },
   async run(ctx, input) {
     const foreign = service.refuseForeignPath(ctx, input.storagePath);
     if (foreign) return foreign;

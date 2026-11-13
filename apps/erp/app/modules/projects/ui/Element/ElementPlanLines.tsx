@@ -237,8 +237,10 @@ export function ElementPlanLines({
   const methodLabels = useMethodTypeLabels();
   const [items] = useItems();
   const permissions = usePermissions();
-  const canCreateJob = permissions.can("create", "production");
-  const canCreatePurchaseOrderLine = permissions.can("create", "purchasing");
+  const canCreateJob = permissions.has({ "production.jobs": "Create" });
+  const canCreatePurchaseOrderLine = permissions.has({
+    "purchasing.purchaseOrders": "Create"
+  });
   const changeRequestId = useActiveChangeRequestId();
   const routes = useElementRoutes(projectId);
   const action = withChangeRequest(routes.plan(elementId), changeRequestId);

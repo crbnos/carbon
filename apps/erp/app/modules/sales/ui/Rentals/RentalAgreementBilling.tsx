@@ -54,7 +54,8 @@ const RentalAgreementBilling = ({
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { save, saveInvoiceAutomation } = useRentalTermSave(id);
   const isDisabled =
-    rentalAgreement.status !== "Draft" || !permissions.can("update", "sales");
+    rentalAgreement.status !== "Draft" ||
+    !permissions.has({ "sales.rentalAgreements": "Edit" });
   const billingCycle: BillingCycle =
     rentalAgreement.billingCycle ?? "Calendar Month";
   // The Monthly alignment the user left behind by picking 28 Days, so picking
@@ -259,7 +260,9 @@ const RentalAgreementBilling = ({
                   ? t`What happens to an invoice once it is created`
                   : t`Add a contact with an email to send invoices`
               }
-              isReadOnly={!permissions.can("update", "sales")}
+              isReadOnly={
+                !permissions.has({ "sales.rentalAgreements": "Edit" })
+              }
               options={[
                 {
                   value: COMPANY_DEFAULT,

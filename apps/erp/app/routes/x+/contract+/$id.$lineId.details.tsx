@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect, round } from "@carbon/utils";
@@ -11,12 +11,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
+  CONTRACT_READ_GATE,
   contractLineBillingFormValues,
   customerContractLineValidator
 } from "~/modules/sales/sales.models";
 import {
   getContract,
-  getContractLine,
   projectRevenueRefusal,
   upsertContractLine
 } from "~/modules/sales/sales.service";
@@ -28,15 +28,19 @@ import {
 import { path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    CONTRACT_READ_GATE
+  );
 
   const { id, lineId } = params;
   if (!id) throw notFound("id not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const line = await getContractLine(client, lineId, companyId);
+  const line = await api.sales.getContractLine({
+    customerContractLineId: lineId
+  });
   if (
     line.error ||
     line.data.companyId !== companyId ||
@@ -104,8 +108,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, companyId, userId } = await authorize(request, {
+    "sales.serviceContracts": "Edit"
   });
 
   const { id, lineId } = params;

@@ -277,7 +277,7 @@ function MaintenanceExplorerItem({
             )}
           </div>
         </button>
-        {permissions.can("update", "resources") && !isLocked && (
+        {permissions.has({ "resources.dispatches": "Edit" }) && !isLocked && (
           <IconButton
             aria-label={t`Add`}
             size="sm"
@@ -375,7 +375,7 @@ function MaintenanceExplorerChildItem({
       ) : (
         <div className="flex w-full">{content}</div>
       )}
-      {permissions.can("update", "resources") && !isLocked && (
+      {permissions.has({ "resources.dispatches": "Edit" }) && !isLocked && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
@@ -398,7 +398,7 @@ function MaintenanceExplorerChildItem({
                 <Trans>Edit</Trans>
               </DropdownMenuItem>
             )}
-            {permissions.can("delete", "resources") && (
+            {permissions.has({ "resources.dispatches": "Full" }) && (
               <DropdownMenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive

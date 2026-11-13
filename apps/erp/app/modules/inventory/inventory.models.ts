@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { GateLevel } from "@carbon/database/access";
 import {
   conditionAstFormField,
   equals,
@@ -1066,3 +1067,10 @@ export const storageRuleValidator = z
       }
     });
   });
+
+/**
+ * Storage Types, which Parts opened before storageType moved here: its page or
+ * the writer it keeps (`alsoWrittenBy`). A literal, so the MCP manifest can read it.
+ */
+export const storageTypesGate = <L extends GateLevel>(level: L) =>
+  [{ "inventory.storageTypes": level }, { "parts.parts": level }] as const;

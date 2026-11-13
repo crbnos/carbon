@@ -308,7 +308,8 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
   });
 
   const canUseTools =
-    permissions.can("update", "production") && (isJobMethod || isJobMakeMethod);
+    permissions.has({ "production.jobs": "Edit" }) &&
+    (isJobMethod || isJobMakeMethod);
   const hasPrintLabel = Boolean(
     makeMethod &&
       (makeMethod.requiresSerialTracking || makeMethod.requiresBatchTracking)
@@ -347,7 +348,8 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                 <MenubarItem
                   className="rounded-md"
                   isDisabled={
-                    !permissions.can("update", "parts") || isSaveMethodLoading
+                    !permissions.has({ "parts.parts": "Edit" }) ||
+                    isSaveMethodLoading
                   }
                   isLoading={isSaveMethodLoading}
                   leftIcon={<LuGitMerge />}
@@ -364,7 +366,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                     leftIcon={<LuSettings />}
                     isDisabled={
                       isDisabled ||
-                      !permissions.can("update", "production") ||
+                      !permissions.has({ "production.jobs": "Edit" }) ||
                       isConfigureLoading
                     }
                     isLoading={isConfigureLoading}
@@ -663,7 +665,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                 variant={hasMethods ? "destructive" : "primary"}
                 isDisabled={
                   !selectedMakeMethod ||
-                  !permissions.can("update", "parts") ||
+                  !permissions.has({ "parts.parts": "Edit" }) ||
                   !hasMethodParts
                 }
               >

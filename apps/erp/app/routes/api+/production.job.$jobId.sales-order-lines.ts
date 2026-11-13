@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -18,10 +18,9 @@ import { getOpenSalesOrderLinesForItem } from "~/modules/sales/sales.service";
  * never leaks the raw PostgREST error.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production"
+  const { client, companyId } = await authorize(request, {
+    "production.jobs": "View"
   });
-
   const { jobId } = params;
   if (!jobId) {
     return { data: [], error: null };

@@ -112,7 +112,7 @@ const AssemblyInstructionForm = ({
   }, [initialValues.itemId, checkModel]);
 
   const isDisabled =
-    !permissions.can("create", "production") ||
+    !permissions.has({ "production.assemblies": "Create" }) ||
     ["idle", "loading", "none"].includes(modelStatus.state);
 
   return (

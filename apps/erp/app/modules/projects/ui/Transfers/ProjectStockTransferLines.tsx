@@ -309,7 +309,8 @@ export default function ProjectStockTransferLines({
   const editing = useDrawerItem<EditingLine>();
 
   const isEditable =
-    transfer.status === "Draft" && permissions.can("update", "projects");
+    transfer.status === "Draft" &&
+    permissions.has({ "projects.projects": "Edit" });
   const isPosted = transfer.status === "Posted";
 
   return (

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -26,8 +26,8 @@ export async function action({ params, request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { id } = params;
   if (!id) throw new Error("Could not find id");
-  const { client, companyId } = await requirePermissions(request, {
-    update: "workflows"
+  const { client, companyId } = await authorize(request, {
+    "workflows.workflows": "Edit"
   });
   await requireFeature({
     request,

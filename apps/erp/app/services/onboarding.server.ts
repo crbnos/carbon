@@ -3,13 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Readable } from "node:stream";
-import {
-  CarbonEdition,
-  getClaims,
-  makePermissionsFromClaims
-} from "@carbon/auth";
+import { CarbonEdition, readClaimsFresh } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database, Json } from "@carbon/database";
+import type { Database } from "@carbon/database";
+import { admits, userActor } from "@carbon/database/access";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { Edition } from "@carbon/utils";
@@ -143,8 +140,8 @@ async function startCompanyTemplate(
 }
 
 /**
- * Refuse unless `userId` is an employee of `companyId` holding settings_update
- * there. Reads claims fresh from the database (not the Redis cache) so a
+ * Refuse unless `userId` is an employee of `companyId` with Settings → Company
+ * at Edit there. Reads claims fresh from the database (not the Redis cache) so a
  * company the caller created moments ago in a failed first attempt counts.
  */
 async function assertCanUpdateCompany(
@@ -152,21 +149,22 @@ async function assertCanUpdateCompany(
   userId: string,
   companyId: string
 ): Promise<void> {
-  const rawClaims = await getClaims(serviceRole, userId, companyId);
-  const claims = rawClaims.error
-    ? null
-    : makePermissionsFromClaims(rawClaims.data as Json[]);
+  const read = await readClaimsFresh(serviceRole, userId, companyId).then(
+    (claims) => ({ claims, error: null }),
+    (error: unknown) => ({ claims: null, error })
+  );
+  const { claims } = read;
 
   const allowed =
-    claims?.role === "employee" &&
-    (claims.permissions.settings?.update ?? []).includes(companyId);
+    claims !== null &&
+    admits(userActor(claims), companyId, { "settings.company": "Edit" });
 
   if (!allowed) {
     logger.error("Onboarding re-entry refused: caller cannot update company", {
       userId,
       companyId,
       role: claims?.role ?? null,
-      error: rawClaims.error
+      error: read.error
     });
     throw new Response("You do not have permission to update this company", {
       status: 403
@@ -220,7 +218,7 @@ export async function provisionOnboardingCompany(
     // writes below run with the service role: they overwrite the company
     // profile and, for a template, wipe its business data. So the caller must
     // hold the authority that editing company settings needs — an employee
-    // with settings_update — or any portal user / regular employee could
+    // with Edit on Settings → Company — or any portal user / regular employee could
     // rewrite the company by POSTing this step.
     await assertCanUpdateCompany(serviceRole, userId, company.id!);
 

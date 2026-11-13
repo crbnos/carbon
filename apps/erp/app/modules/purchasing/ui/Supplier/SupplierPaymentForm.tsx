@@ -37,7 +37,7 @@ const SupplierPaymentForm = ({ initialValues }: SupplierPaymentFormProps) => {
     initialValues.invoiceSupplierId
   );
 
-  const isDisabled = !permissions.can("update", "purchasing");
+  const isDisabled = !permissions.has({ "purchasing.suppliers": "Edit" });
 
   return (
     <ValidatedForm

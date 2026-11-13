@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { RecordOutlet } from "@carbon/react";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
@@ -16,14 +16,12 @@ export const meta: MetaFunction = () => {
 
 // No breadcrumb here: the asset route emits the "Customer Assets" list link
 // through detailBreadcrumb.
-export const handle: Handle = {
-  module: "service"
-};
+export const handle: Handle = {};
 
+// The only check on this layout's own URL, which has no index route; the
+// children gate themselves.
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    view: "service"
-  });
+  await authorize(request, { "service.customerAssets": "View" });
 
   return {};
 }

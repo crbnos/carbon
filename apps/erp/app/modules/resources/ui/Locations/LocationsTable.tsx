@@ -158,7 +158,7 @@ const LocationsTable = memo((props: LocationsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "resources")}
+            disabled={!permissions.has({ "resources.locations": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteLocation(row.id)}?${params.toString()}`
@@ -181,7 +181,7 @@ const LocationsTable = memo((props: LocationsTableProps) => {
       count={count}
       columns={columns}
       primaryAction={
-        permissions.can("create", "resources") && (
+        permissions.has({ "resources.locations": "Create" }) && (
           <New label={t`Location`} to={`new?${params.toString()}`} />
         )
       }

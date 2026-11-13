@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import {
@@ -24,12 +24,10 @@ import { paymentValidator } from "~/modules/invoicing/invoicing.models";
 import {
   checkDepositDocument,
   getDepositDocuments,
-  getPaymentCurrencyConfiguration,
   getSeedableOpenInvoices,
   getSeededDiscounts
 } from "~/modules/invoicing/invoicing.service";
 import { PaymentForm } from "~/modules/invoicing/ui";
-import { getCompany } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { newRecordMeta } from "~/utils/meta";
@@ -48,10 +46,9 @@ import { path } from "~/utils/path";
 export const meta = newRecordMeta("Payment");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    { create: "invoicing" }
-  );
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
+    "invoicing.payments": "Create"
+  });
 
   const url = new URL(request.url);
   const customerId = url.searchParams.get("customerId");
@@ -71,7 +68,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const partyId = paymentType === "Receipt" ? customerId : supplierId;
 
   const [company, defaults, depositDocuments] = await Promise.all([
-    getCompany(client, companyId),
+    api.settings.getCompany({}),
     getDefaultAccounts(client, companyId),
     getDepositDocuments(client, companyId, [salesOrderId], [purchaseOrderId])
   ]);
@@ -107,10 +104,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
             error(null, "Selected invoices must use the same currency")
           )
         );
-      const configuration = await getPaymentCurrencyConfiguration(
-        client,
-        companyId,
-        currencyCode
+      const configuration = dataOrThrow(
+        await api.invoicing.getPaymentCurrencyConfiguration({ currencyCode })
       );
       // Net of any early-payment discount the invoice's terms grant as of the
       // payment date, so a "2/10 net 30" invoice paid today pre-fills the
@@ -160,8 +155,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(args.request, {
-    create: "invoicing"
+  const { client, companyId } = await authorize(args.request, {
+    "invoicing.payments": "Create"
   });
   const input = await validator(paymentValidator).request(args);
   if ("invalid" in input) return input.invalid;
@@ -176,7 +171,7 @@ export async function action(args: ActionFunctionArgs) {
     return validationError({ fieldErrors: { depositDocument: depositError } });
   }
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.invoicing.createPayment({
     ...input.data,
     customFields: setCustomFields(formData),

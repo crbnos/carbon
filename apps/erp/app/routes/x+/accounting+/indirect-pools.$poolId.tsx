@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   indirectPoolAccountValidator,
@@ -21,7 +20,6 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { usePermissions } from "~/hooks";
-import { getActiveDimensionsWithValues } from "~/modules/accounting/accounting.service";
 import type { IndirectPoolAccountRow } from "~/modules/accounting/ui/IndirectRates";
 import {
   IndirectPoolAccounts,
@@ -33,17 +31,16 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "indirect-pool");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    { view: "accounting", role: "employee" }
-  );
+  const { api, client, companyId } = await authorize(request, {
+    "accounting.indirectPools": "View"
+  });
 
   const { poolId } = params;
   if (!poolId) throw notFound("Pool ID was not found");
 
   const [pool, dimensions] = await Promise.all([
     getIndirectPool(client, poolId, companyId),
-    getActiveDimensionsWithValues(client, companyGroupId, companyId)
+    api.accounting.getActiveDimensionsWithValues({})
   ]);
 
   if (pool.error || !pool.data) {
@@ -90,7 +87,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   };
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
 
   if (intent === "account-add") {
     const validation = await validator(indirectPoolAccountValidator).validate(
@@ -194,7 +191,7 @@ export default function IndirectPoolRoute() {
         accounts={pool.accounts as IndirectPoolAccountRow[]}
         dimensions={dimensions}
         action={path.to.indirectPool(pool.id)}
-        isDisabled={!permissions.can("update", "accounting")}
+        isDisabled={!permissions.has({ "accounting.indirectPools": "Edit" })}
       />
     </IndirectPoolForm>
   );

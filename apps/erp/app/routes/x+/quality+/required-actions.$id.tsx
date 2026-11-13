@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,10 +11,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { requiredActionValidator } from "~/modules/quality/quality.models";
-import {
-  getRequiredAction,
-  upsertRequiredAction
-} from "~/modules/quality/quality.service";
+import { upsertRequiredAction } from "~/modules/quality/quality.service";
 import { RequiredActionForm } from "~/modules/quality/ui/RequiredActions";
 import { path } from "~/utils/path";
 
@@ -22,12 +19,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Required action ID is required");
 
-  const { client } = await requirePermissions(request, {
-    view: "quality",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "quality.actionTypes": "View" });
 
-  const result = await getRequiredAction(client, id);
+  const result = await api.quality.getRequiredAction({ requiredActionId: id });
   if (!result.data) {
     return redirect(
       path.to.requiredActions,
@@ -43,8 +37,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Required action ID is required");
 
-  const { client, userId } = await requirePermissions(request, {
-    update: "quality"
+  const { client, userId } = await authorize(request, {
+    "quality.actionTypes": "Edit"
   });
 
   const formData = await request.formData();

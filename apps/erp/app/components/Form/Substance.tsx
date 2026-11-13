@@ -37,7 +37,7 @@ const Substance = (props: SubstanceSelectProps) => {
     onCreate: () => create.open("")
   });
 
-  return permissions.can("create", "parts") ? (
+  return permissions.has({ "parts.substances": "Create" }) ? (
     <>
       <CreatableCombobox
         ref={triggerRef}

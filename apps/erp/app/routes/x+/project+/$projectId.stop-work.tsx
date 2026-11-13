@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { stopWorkValidator } from "@carbon/ee/project-control";
@@ -25,8 +25,8 @@ const logger = getLogger("erp", "project-stop-work");
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "projects"
+  const { api, client, companyId } = await authorize(request, {
+    "projects.projects": "Edit"
   });
 
   const { projectId } = params;
@@ -35,7 +35,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const intent = formData.get("intent");
-  const api = await carbon(request);
 
   if (intent === "stop") {
     await requireFeature({

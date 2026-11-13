@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -13,11 +13,6 @@ import {
   currencyFormValidator,
   exchangeRateOverrideValidator
 } from "~/modules/accounting/accounting.models";
-import {
-  getCurrency,
-  getExchangeRateHistory,
-  getExchangeRates
-} from "~/modules/accounting/accounting.service";
 import { ExchangeRateForm } from "~/modules/accounting/ui/ExchangeRates";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -27,21 +22,20 @@ const resetForm = z.object({
 });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "accounting.exchangeRates": "View"
   });
 
   const { currencyId } = params;
   if (!currencyId) throw notFound("currencyId not found");
 
-  const currency = await getCurrency(client, currencyId);
+  const currency = await api.accounting.getCurrency({ currencyId });
   const code = currency.data?.code;
 
   const [exchangeRates, exchangeRateHistory] = code
     ? await Promise.all([
-        getExchangeRates(client, companyId),
-        getExchangeRateHistory(client, code)
+        api.accounting.getExchangeRates({}),
+        api.accounting.getExchangeRateHistory({ currencyCode: code })
       ])
     : [{ data: null }, { data: [] }];
 
@@ -78,7 +72,7 @@ export async function action(args: ActionFunctionArgs) {
   if (intent === "override") {
     const input = await validator(exchangeRateOverrideValidator).request(args);
     if ("invalid" in input) return input.invalid;
-    const api = await carbon(args.request);
+    const { api } = await authorize(args.request);
     return answer(
       await api.accounting.overrideExchangeRate(input.data),
       "Updated exchange rate"
@@ -88,7 +82,7 @@ export async function action(args: ActionFunctionArgs) {
   if (intent === "reset") {
     const input = await validator(resetForm).request(args);
     if ("invalid" in input) return input.invalid;
-    const api = await carbon(args.request);
+    const { api } = await authorize(args.request);
     return answer(
       await api.accounting.resetExchangeRate(input.data),
       "Reset to market rate"
@@ -98,7 +92,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(currencyFormValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const { id: _id, ...currency } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return answer(
     await api.accounting.updateCurrency({
       ...currency,

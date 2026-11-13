@@ -87,8 +87,8 @@ const ItemSerialSequenceForm = ({
     timingLabels[companyTiming ?? "jobCreation"] ?? timingLabels.jobCreation;
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "settings")
-    : !permissions.can("create", "settings");
+    ? !permissions.has({ "settings.serialNumbers": "Edit" })
+    : !permissions.has({ "settings.serialNumbers": "Create" });
 
   return (
     <Drawer

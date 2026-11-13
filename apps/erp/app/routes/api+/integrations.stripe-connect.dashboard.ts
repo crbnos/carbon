@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
@@ -15,8 +15,8 @@ import { path } from "~/utils/path";
 const logger = getLogger("stripe-connect");
 
 async function handle({ request }: { request: Request }) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId } = await authorize(request, {
+    "settings.integrations": "Edit"
   });
 
   const existing = await client

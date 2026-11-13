@@ -15,6 +15,7 @@ import {
 } from "../app/modules/production/production.server";
 import { changedPlanningActions } from "../app/modules/production/production.service";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 type Job = {
   id: string;
@@ -63,23 +64,31 @@ function kyselyWith(rows: Record<string, unknown[]>, writes: string[]) {
   };
 }
 
+const productionEdit = {
+  production: { view: [], create: [], update: ["c1"], delete: [] }
+};
+
 function planning({
   job = null,
   planningAction = [],
-  jobs = []
+  jobs = [],
+  permissions = productionEdit
 }: {
   job?: Job | null;
   planningAction?: Record<string, unknown>[];
   jobs?: { id: string; status: string }[];
+  permissions?: Record<
+    string,
+    { view: string[]; create: string[]; update: string[]; delete: string[] }
+  >;
 }) {
   const writes: string[] = [];
   const ctx = createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "u1",
-      permissions: {
-        production: { view: [], create: [], update: ["c1"], delete: [] }
-      }
+      permissions: pageClaims(permissions)
     },
     company: { id: "c1", groupId: "g1" },
     caller: {} as never,
@@ -139,6 +148,23 @@ describe("planJobFromPlanning", () => {
 });
 
 describe("applyPlanningActions", () => {
+  it("refuses a role with Material Planning but not Jobs, before any write", async () => {
+    const { ctx, writes } = planning({
+      planningAction: [
+        { id: "pa1", status: "Open", type: "Cancel", jobId: "j1" }
+      ],
+      jobs: [{ id: "j1", status: "Draft" }],
+      permissions: {
+        "production.materialPlanning": productionEdit.production
+      }
+    });
+    const result = await applyPlanningActions(ctx, {
+      planningActionIds: ["pa1"]
+    });
+    expect(result.error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
+  });
+
   it("sends a released job's suggestion to review without claiming it", async () => {
     const { ctx, writes } = planning({
       planningAction: [

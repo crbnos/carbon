@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   integrations as availableIntegrations,
@@ -28,12 +28,9 @@ export const config = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email, userId } = await requirePermissions(
-    request,
-    {
-      view: "settings"
-    }
-  );
+  const { client, companyId, email, userId } = await authorize(request, {
+    "settings.integrations": "View"
+  });
 
   const integrations = await getIntegrationsWithHealth(client, companyId);
   if (integrations.error) {

@@ -37,8 +37,8 @@ const AttributeCategoryForm = ({
   const permissions = usePermissions();
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "people")
-    : !permissions.can("create", "people");
+    ? !permissions.has({ "people.attributes": "Edit" })
+    : !permissions.has({ "people.attributes": "Create" });
 
   return (
     <Drawer

@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { ITEM_PAGES } from "@carbon/database/access";
 import {
   HStack,
   Input,
@@ -31,14 +33,8 @@ import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { isChangeNoticeOpen } from "~/modules/items/items.models";
 import {
   findChangeNoticesForItemOnce,
-  getItemFiles,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
-  getMethodTree,
-  getPartUsedIn,
-  getPickMethods,
-  getSupplierParts,
-  getTool,
   getUnreleasedChangeOrderForItem,
   streamItemSupersession
 } from "~/modules/items/items.service";
@@ -51,7 +47,6 @@ import {
   UsedInTree
 } from "~/modules/items/ui/Item/UsedIn";
 import { ToolHeader, ToolProperties } from "~/modules/items/ui/Tools";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -60,18 +55,18 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Tools`, to: path.to.tools },
     (data) => data?.toolSummary?.readableIdWithRevision
-  ),
-  module: "items"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.toolSummary?.readableIdWithRevision, "Tool");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "parts.tools": "View" },
+    { bypassRls: true }
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -90,10 +85,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     allChangeNotices,
     unreleasedChangeOrder
   ] = await Promise.all([
-    getTool(client, itemId, companyId),
-    getSupplierParts(client, itemId, companyId),
-    getPickMethods(client, itemId, companyId),
-    getTagsList(client, companyId, "tool"),
+    api.items.getTool({ itemId }),
+    api.items.getSupplierParts({ id: itemId }),
+    api.items.getPickMethods({ itemId }),
+    api.shared.getTagsList({ table: "tool" }),
     // Every CO, any status; the open subset (which locks manual version/revision
     // creation) is derived below.
     findChangeNoticesForItemOnce(client, { itemId, companyId }),
@@ -137,7 +132,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
       if (fullMethod.error || !fullMethod.data) return null;
 
-      const tree = await getMethodTree(client, fullMethod.data.id);
+      const tree = await api.items.getMethodTree({
+        makeMethodId: fullMethod.data.id
+      });
       if (tree.error) return null;
 
       const methods = tree.data.length > 0 ? flattenTree(tree.data[0]) : [];
@@ -153,12 +150,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     toolSummary: toolSummary.data,
     supersession,
     supersededBy,
-    files: getItemFiles(client, itemId, companyId),
+    files: api.items.getItemFiles({ itemId }).then(dataOrThrow),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
     makeMethods: getMakeMethodsOnce(client, itemId, companyId),
     tags: tags.data ?? [],
-    usedIn: getPartUsedIn(client, itemId, companyId),
+    usedIn: api.items.getPartUsedIn({ itemId }).then(dataOrThrow),
     methodTree,
     changeNotices,
     openChangeNotices,
@@ -292,13 +289,13 @@ export default function ToolRoute() {
                                 {
                                   key: "issues",
                                   name: t`Issues`,
-                                  module: "quality",
+                                  pages: ["quality.issues"],
                                   children: issues
                                 },
                                 {
                                   key: "jobs",
                                   name: t`Jobs`,
-                                  module: "production",
+                                  pages: ["production.jobs"],
                                   children: jobs.map((job) => ({
                                     ...job,
                                     methodType: "Make to Order"
@@ -307,26 +304,26 @@ export default function ToolRoute() {
                                 {
                                   key: "jobMaterials",
                                   name: t`Job Materials`,
-                                  module: "production",
+                                  pages: ["production.jobs"],
                                   children: jobMaterials
                                 },
                                 {
                                   key: "maintenanceDispatchItems",
                                   name: t`Maintenance`,
-                                  module: "resources",
+                                  pages: ["resources.dispatches"],
                                   children: maintenanceDispatchItems
                                 },
                                 {
                                   key: "methodMaterials",
                                   name: t`Method Materials`,
-                                  module: "parts",
+                                  pages: ITEM_PAGES,
                                   // @ts-expect-error
                                   children: methodMaterials
                                 },
                                 {
                                   key: "purchaseOrderLines",
                                   name: t`Purchase Orders`,
-                                  module: "purchasing",
+                                  pages: ["purchasing.purchaseOrders"],
                                   children: purchaseOrderLines.map((po) => ({
                                     ...po,
                                     methodType: "Purchase to Order"
@@ -335,7 +332,7 @@ export default function ToolRoute() {
                                 {
                                   key: "receiptLines",
                                   name: t`Receipts`,
-                                  module: "inventory",
+                                  pages: ["inventory.receipts"],
                                   children: receiptLines.map((receipt) => ({
                                     ...receipt,
                                     methodType: "Pull from Inventory"
@@ -344,13 +341,13 @@ export default function ToolRoute() {
                                 {
                                   key: "quoteLines",
                                   name: t`Quotes`,
-                                  module: "sales",
+                                  pages: ["sales.quotes"],
                                   children: quoteLines
                                 },
                                 {
                                   key: "quoteMaterials",
                                   name: t`Quote Materials`,
-                                  module: "sales",
+                                  pages: ["sales.quotes"],
                                   children: quoteMaterials?.map((qm) => ({
                                     ...qm,
                                     documentReadableId:
@@ -360,13 +357,13 @@ export default function ToolRoute() {
                                 {
                                   key: "salesOrderLines",
                                   name: t`Sales Orders`,
-                                  module: "sales",
+                                  pages: ["sales.salesOrders"],
                                   children: salesOrderLines
                                 },
                                 {
                                   key: "shipmentLines",
                                   name: t`Shipments`,
-                                  module: "inventory",
+                                  pages: ["inventory.shipments"],
                                   children: shipmentLines.map((shipment) => ({
                                     ...shipment,
                                     methodType: "Shipment"
@@ -375,7 +372,7 @@ export default function ToolRoute() {
                                 {
                                   key: "supplierQuotes",
                                   name: t`Supplier Quotes`,
-                                  module: "purchasing",
+                                  pages: ["purchasing.supplierQuotes"],
                                   children: supplierQuotes
                                 }
                               ];
@@ -383,7 +380,7 @@ export default function ToolRoute() {
                               tree.push({
                                 key: "inspections",
                                 name: t`Inspections`,
-                                module: "quality",
+                                pages: ["quality.inspections"],
                                 children: inspections
                               });
 
@@ -456,13 +453,13 @@ export default function ToolRoute() {
                               {
                                 key: "issues",
                                 name: "Issues",
-                                module: "quality",
+                                pages: ["quality.issues"],
                                 children: issues
                               },
                               {
                                 key: "jobs",
                                 name: "Jobs",
-                                module: "production",
+                                pages: ["production.jobs"],
                                 children: jobs.map((job) => ({
                                   ...job,
                                   methodType: "Make to Order"
@@ -471,26 +468,26 @@ export default function ToolRoute() {
                               {
                                 key: "jobMaterials",
                                 name: "Job Materials",
-                                module: "production",
+                                pages: ["production.jobs"],
                                 children: jobMaterials
                               },
                               {
                                 key: "maintenanceDispatchItems",
                                 name: "Maintenance",
-                                module: "resources",
+                                pages: ["resources.dispatches"],
                                 children: maintenanceDispatchItems
                               },
                               {
                                 key: "methodMaterials",
                                 name: "Method Materials",
-                                module: "parts",
+                                pages: ITEM_PAGES,
                                 // @ts-expect-error
                                 children: methodMaterials
                               },
                               {
                                 key: "purchaseOrderLines",
                                 name: "Purchase Orders",
-                                module: "purchasing",
+                                pages: ["purchasing.purchaseOrders"],
                                 children: purchaseOrderLines.map((po) => ({
                                   ...po,
                                   methodType: "Purchase to Order"
@@ -499,7 +496,7 @@ export default function ToolRoute() {
                               {
                                 key: "receiptLines",
                                 name: "Receipts",
-                                module: "inventory",
+                                pages: ["inventory.receipts"],
                                 children: receiptLines.map((receipt) => ({
                                   ...receipt,
                                   methodType: "Pull from Inventory"
@@ -508,13 +505,13 @@ export default function ToolRoute() {
                               {
                                 key: "quoteLines",
                                 name: "Quotes",
-                                module: "sales",
+                                pages: ["sales.quotes"],
                                 children: quoteLines
                               },
                               {
                                 key: "quoteMaterials",
                                 name: "Quote Materials",
-                                module: "sales",
+                                pages: ["sales.quotes"],
                                 children: quoteMaterials?.map((qm) => ({
                                   ...qm,
                                   documentReadableId:
@@ -524,13 +521,13 @@ export default function ToolRoute() {
                               {
                                 key: "salesOrderLines",
                                 name: "Sales Orders",
-                                module: "sales",
+                                pages: ["sales.salesOrders"],
                                 children: salesOrderLines
                               },
                               {
                                 key: "shipmentLines",
                                 name: "Shipments",
-                                module: "inventory",
+                                pages: ["inventory.shipments"],
                                 children: shipmentLines.map((shipment) => ({
                                   ...shipment,
                                   methodType: "Shipment"
@@ -539,7 +536,7 @@ export default function ToolRoute() {
                               {
                                 key: "supplierQuotes",
                                 name: "Supplier Quotes",
-                                module: "purchasing",
+                                pages: ["purchasing.supplierQuotes"],
                                 children: supplierQuotes
                               }
                             ];
@@ -547,7 +544,7 @@ export default function ToolRoute() {
                             tree.push({
                               key: "inspections",
                               name: "Inspections",
-                              module: "quality",
+                              pages: ["quality.inspections"],
                               children: inspections
                             });
 

@@ -37,10 +37,14 @@ DECLARE
   w text := gen_random_uuid()::text;  -- plain employee of A, no permissions at all
   c text := gen_random_uuid()::text;  -- customer-portal account of A
   v text := gen_random_uuid()::text;  -- employee of B only
+  g text := gen_random_uuid()::text;  -- employee of A with Users at Full
+  role_type text; other_type text;
   bank text; customer_a text; draft_payment text; posted_payment text;
   note_id text; view_id text; category_a text; category_b text;
   attribute_a text; attribute_b text; attribute_locked text;
-  companies text[]; n int;
+  companies text[]; n int; key_id text; plain_type text;
+  x text := gen_random_uuid()::text;  -- employee of A with Workflows at Full
+  workflow_id text; live_version text; draft_version text; own_workflow text; own_version text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Authz A ' || id(), 'system') RETURNING id INTO group_a;
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Authz B ' || id(), 'system') RETURNING id INTO group_b;
@@ -55,15 +59,12 @@ BEGIN
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
     (u, company_a, 'employee'), (w, company_a, 'employee'), (v, company_b, 'employee'),
     (c, company_a, 'customer');
-  INSERT INTO "userPermission" (id, permissions) VALUES
-    (u, jsonb_build_object(
-      'users_create', jsonb_build_array(company_a),
-      'resources_update', jsonb_build_array(company_a),
-      'invoicing_update', jsonb_build_array(company_a),
-      'documents_view', jsonb_build_array(company_a, company_b),  -- names a company u is not in
-      'inventory_view', jsonb_build_array('0')                    -- the old global wildcard
-    )),
-    (w, '{}'::jsonb), (v, '{}'::jsonb), (c, '{}'::jsonb);
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, u, 'Users', 'Create', 'system'),
+    (company_a, u, 'Resources', 'Edit', 'system'),
+    (company_a, u, 'Invoicing', 'Edit', 'system'),
+    (company_a, u, 'Documents', 'View', 'system'),
+    (company_b, u, 'Documents', 'View', 'system');  -- names a company u is not in
 
   INSERT INTO account (name, class, "incomeBalance", "isGroup", "companyGroupId", "createdBy")
     VALUES ('Authz bank', 'Asset', 'Balance Sheet', false, group_a, 'system') RETURNING id INTO bank;
@@ -96,7 +97,8 @@ BEGIN
   ASSERT NOT EXISTS (
     SELECT 1 FROM pg_proc
     WHERE pronamespace = 'public'::regnamespace
-      AND proname IN ('has_role', 'has_company_permission', 'get_companies_with_permission', 'get_permission_companies')
+      AND proname IN ('has_role', 'has_company_permission', 'get_companies_with_permission', 'get_permission_companies',
+                      'has_any_company_permission', 'get_my_permission')
   ), 'a deprecated RLS helper exists again';
   RAISE NOTICE 'PASS deprecated permission helpers are gone';
   PERFORM pg_temp.act_as(u);
@@ -222,6 +224,244 @@ BEGIN
   ASSERT get_company_id_from_foreign_key(note_id, 'note') = company_a,
     'inside an ordinary request the helper still resolves the company';
   RAISE NOTICE 'PASS get_company_id_from_foreign_key is not an API endpoint';
+
+  -- ── grants and employee types: an Accounts editor reads them, only the server writes them ──
+  INSERT INTO "group" (id, name, "companyId")
+  VALUES ('00000000-0000-' || substring(company_a, 1, 4) || '-' || substring(company_a, 5, 4) || '-' || substring(company_a, 9, 12),
+          'Authz employees', company_a)
+  ON CONFLICT (id) DO NOTHING;
+  INSERT INTO "employeeType" (name, "companyId") VALUES ('Authz role', company_a) RETURNING id INTO role_type;
+  INSERT INTO "employeeType" (name, "companyId") VALUES ('Authz other role', company_a) RETURNING id INTO other_type;
+  INSERT INTO "user" (id, email) VALUES (g, g || '@authz.invalid');
+  INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES (g, company_a, 'employee');
+  INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES
+    (g, role_type, company_a, true), (w, role_type, company_a, true);
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, g, 'Users', 'Full', 'system'),
+    (company_a, w, 'Parts', 'View', 'system');
+
+  PERFORM pg_temp.act_as(g);
+  SET LOCAL ROLE authenticated;
+  SELECT count(*) INTO n FROM permission WHERE "userId" = w AND "companyId" = company_a;
+  ASSERT n = 1, 'an Accounts editor still reads a person''s grants';
+  BEGIN
+    INSERT INTO permission ("companyId", "userId", module, level, "createdBy")
+      VALUES (company_a, g, 'Settings', 'Full', g);
+    RAISE EXCEPTION 'an Accounts editor wrote a grant through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE permission SET level = 'Full' WHERE "userId" = w AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 0, 'an Accounts editor raised a grant through the API';
+  DELETE FROM permission WHERE "userId" = w AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 0, 'an Accounts editor deleted a grant through the API';
+  BEGIN
+    UPDATE employee SET "employeeTypeId" = other_type WHERE id = w AND "companyId" = company_a;
+    RAISE EXCEPTION 'an Accounts editor moved a person to another employee type through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE employee SET active = true WHERE id = w AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'an Accounts editor still updates an employee''s other columns';
+  RESET ROLE;
+  UPDATE employee SET "employeeTypeId" = other_type WHERE id = w AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the server moves a person to another employee type';
+  RAISE NOTICE 'PASS grants and employee types are written by the server only';
+
+  -- ── an API key and an employee type's systemType: an editor cannot write them through the API ──
+  INSERT INTO permission ("companyId", "userId", module, page, level, "createdBy") VALUES
+    (company_a, g, 'Settings', 'settings.apiKeys', 'Full', 'system');
+  INSERT INTO "apiKey" (name, "keyHash", "companyId", "createdBy")
+    VALUES ('Authz key', 'hash-of-the-real-key', company_a, 'system') RETURNING id INTO key_id;
+
+  PERFORM pg_temp.act_as(g);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    INSERT INTO "apiKey" (name, "keyHash", "companyId", "createdBy")
+      VALUES ('Forged key', 'hash-of-mine', company_a, g);
+    RAISE EXCEPTION 'an API Keys editor created a key through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE "apiKey" SET "keyHash" = 'hash-of-mine' WHERE id = key_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 0, 'an API Keys editor rewrote a key''s hash through the API';
+  BEGIN
+    INSERT INTO "employeeType" (name, "companyId", "systemType") VALUES ('Forged admin', company_a, 'Admin');
+    RAISE EXCEPTION 'an Employee Types editor created an Admin type through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  INSERT INTO "employeeType" (name, "companyId") VALUES ('Authz plain role', company_a) RETURNING id INTO plain_type;
+  ASSERT plain_type IS NOT NULL, 'an Employee Types editor still creates a type without a systemType';
+  BEGIN
+    UPDATE "employeeType" SET "systemType" = 'Admin' WHERE id = role_type AND "companyId" = company_a;
+    RAISE EXCEPTION 'an Employee Types editor made a type Admin through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE "employeeType" SET name = 'Authz role renamed' WHERE id = role_type AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'an Employee Types editor still renames a type';
+  RESET ROLE;
+
+  UPDATE "apiKey" SET "keyHash" = 'hash-rotated-by-server' WHERE id = key_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the server updates a key';
+  UPDATE "employeeType" SET "systemType" = 'Admin' WHERE id = role_type AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the server sets a type''s systemType';
+
+  PERFORM pg_temp.act_as(g);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    UPDATE "employeeType" SET "systemType" = NULL WHERE id = role_type AND "companyId" = company_a;
+    RAISE EXCEPTION 'an Employee Types editor cleared the Admin type through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE "employeeType" SET name = 'Authz admin renamed' WHERE id = role_type AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'an unchanged systemType does not block a rename';
+  DELETE FROM "apiKey" WHERE id = key_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'an API Keys editor still deletes a key through the API';
+  RESET ROLE;
+  RAISE NOTICE 'PASS an API key and a systemType are written by the server only';
+
+  -- ── workflow.ownerId: a workflow runs as its owner, so the API never moves it to someone else ──
+  INSERT INTO "user" (id, email) VALUES (x, x || '@authz.invalid');
+  INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES (x, company_a, 'employee');
+  INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES (x, plain_type, company_a, true);
+  INSERT INTO permission ("companyId", "userId", module, page, level, "createdBy") VALUES
+    (company_a, x, 'Workflows', 'workflows.workflows', 'Full', 'system');
+  INSERT INTO workflow (name, "companyId", "ownerId", "createdBy")
+    VALUES ('Authz workflow', company_a, x, x) RETURNING id INTO workflow_id;
+
+  PERFORM pg_temp.act_as(x);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    UPDATE workflow SET "ownerId" = g WHERE id = workflow_id AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Workflows editor moved a workflow to another owner through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO workflow (name, "companyId", "ownerId", "createdBy")
+      VALUES ('Forged owner', company_a, g, x);
+    RAISE EXCEPTION 'a Workflows editor created a workflow owned by someone else through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  INSERT INTO workflow (name, "companyId", "ownerId", "createdBy")
+    VALUES ('Authz own workflow', company_a, x, x);
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'a Workflows editor still creates a workflow they own';
+  UPDATE workflow SET name = 'Authz workflow renamed' WHERE id = workflow_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'an unchanged ownerId does not block the owner''s edit';
+  RESET ROLE;
+
+  UPDATE workflow SET "ownerId" = g WHERE id = workflow_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the server moves a workflow to another owner';
+  RAISE NOTICE 'PASS a workflow''s owner is set by the server or to its creator only';
+
+  -- ── workflow publish: a run acts as the owner, so only the owner picks what runs ──
+  -- workflow_id is now g's; x (Workflows Full) is not its owner.
+  INSERT INTO "workflowVersion" ("workflowId", "companyId", "versionNumber", nodes, edges, "createdBy")
+    VALUES (workflow_id, company_a, 1,
+      '[{"id":"n1","type":"trigger","position":{"x":0,"y":0},"data":{"eventId":"a"}}]', '[]', g)
+    RETURNING id INTO live_version;
+  INSERT INTO "workflowVersion" ("workflowId", "companyId", "versionNumber", nodes, edges, "createdBy")
+    VALUES (workflow_id, company_a, 2, '[]', '[]', x) RETURNING id INTO draft_version;
+  UPDATE workflow SET "publishedVersionId" = live_version WHERE id = workflow_id AND "companyId" = company_a;
+
+  PERFORM pg_temp.act_as(x);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    UPDATE "workflowVersion" SET edges = '[{"id":"e1"}]' WHERE id = live_version AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Workflows editor rewrote a published version''s edges through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    UPDATE "workflowVersion"
+      SET nodes = '[{"id":"n1","type":"trigger","position":{"x":0,"y":0},"data":{"eventId":"b"}}]'
+      WHERE id = live_version AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Workflows editor rewrote a published version''s nodes through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE "workflowVersion"
+    SET nodes = '[{"id":"n1","type":"trigger","position":{"x":40,"y":80},"data":{"eventId":"a"}}]'
+    WHERE id = live_version AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'a Workflows editor still moves a published version''s nodes';
+  UPDATE "workflowVersion" SET edges = '[{"id":"e1"}]' WHERE id = draft_version AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'a Workflows editor still edits a draft version';
+  BEGIN
+    UPDATE workflow SET "publishedVersionId" = draft_version WHERE id = workflow_id AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Workflows editor published someone else''s workflow through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  INSERT INTO workflow (name, "companyId", "ownerId", "createdBy")
+    VALUES ('Authz published workflow', company_a, x, x) RETURNING id INTO own_workflow;
+  INSERT INTO "workflowVersion" ("workflowId", "companyId", "versionNumber", nodes, edges, "createdBy")
+    VALUES (own_workflow, company_a, 1, '[]', '[]', x) RETURNING id INTO own_version;
+  UPDATE workflow SET "publishedVersionId" = own_version WHERE id = own_workflow AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the owner still publishes their own workflow';
+  UPDATE workflow SET "publishedVersionId" = NULL WHERE id = workflow_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'a Workflows editor still unpublishes a workflow';
+  RESET ROLE;
+
+  UPDATE workflow SET "publishedVersionId" = draft_version WHERE id = workflow_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the server publishes any version';
+  UPDATE "workflowVersion" SET edges = '[]' WHERE id = draft_version AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the server edits a published version';
+  RAISE NOTICE 'PASS a published workflow version and its pointer are changed by the owner or the server only';
+
+  -- ── workflow.nextRunAt: it fires the published version as the owner, so only the owner or the server moves it ──
+  -- workflow_id is g's and published; own_workflow is x's.
+  PERFORM pg_temp.act_as(x);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    UPDATE workflow SET "nextRunAt" = now() WHERE id = workflow_id AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Workflows editor moved when someone else''s workflow next runs through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE workflow SET name = 'Authz workflow renamed again' WHERE id = workflow_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'an unchanged nextRunAt does not block an editor''s edit';
+  UPDATE workflow SET "nextRunAt" = now() WHERE id = own_workflow AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the owner still moves when their own workflow next runs';
+  RESET ROLE;
+
+  UPDATE workflow SET "nextRunAt" = now() WHERE id = workflow_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the server sets when any workflow next runs';
+  RAISE NOTICE 'PASS a workflow''s next run is moved by its owner or the server only';
+
+  -- ── workflowTriggerEvent: a row names the version a run executes as the owner, so only the server writes it ──
+  -- draft_version is workflow_id's published version now; live_version is not.
+  INSERT INTO "workflowTriggerEvent" ("companyId", "workflowId", "workflowVersionId", "eventId")
+    VALUES (company_a, workflow_id, draft_version, 'a');
+
+  PERFORM pg_temp.act_as(x);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    INSERT INTO "workflowTriggerEvent" ("companyId", "workflowId", "workflowVersionId", "eventId")
+      VALUES (company_a, workflow_id, live_version, 'b');
+    RAISE EXCEPTION 'a Workflows editor pointed a workflow''s trigger at another version through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  DELETE FROM "workflowTriggerEvent" WHERE "workflowId" = workflow_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 0, 'a Workflows editor deleted a workflow''s trigger rows through the API';
+  SELECT count(*) INTO n FROM "workflowTriggerEvent" WHERE "workflowId" = workflow_id AND "companyId" = company_a;
+  ASSERT n = 1, 'a Workflows editor still reads a workflow''s trigger rows';
+  RESET ROLE;
+  RAISE NOTICE 'PASS a workflow''s trigger rows are written by the server only';
 END
 $proof$;
 

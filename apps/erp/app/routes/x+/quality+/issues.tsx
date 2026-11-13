@@ -6,7 +6,6 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getIssueTypesList } from "~/modules/quality/quality.service";
 import IssuesTable from "~/modules/quality/ui/Issue/IssuesTable";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -22,8 +21,8 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, issuesList, {
     dataKey: "issues",
-    firstPage: async ({ client, companyId }) => ({
-      types: (await getIssueTypesList(client, companyId)).data ?? []
+    firstPage: async ({ api }) => ({
+      types: (await api.quality.getIssueTypesList({})).data ?? []
     }),
     onError: {
       redirectTo: path.to.authenticatedRoot,

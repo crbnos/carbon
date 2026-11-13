@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -14,9 +14,7 @@ const logger = getLogger("erp", "itemid-parameter-group-order");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
-    update: "parts"
-  });
+  const { client } = await authorize(request, { "parts.parts": "Edit" });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");

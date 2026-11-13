@@ -109,8 +109,8 @@ const StockTransferLineForm = ({
   const isDisabled =
     isLocked ||
     (isEditing
-      ? !permissions.can("update", "inventory")
-      : !permissions.can("create", "inventory"));
+      ? !permissions.has({ "inventory.stockTransfers": "Edit" })
+      : !permissions.has({ "inventory.stockTransfers": "Create" }));
 
   return (
     <ModalDrawerProvider type={type}>

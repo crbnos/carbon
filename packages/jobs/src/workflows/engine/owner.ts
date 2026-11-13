@@ -2,20 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  getClaims,
-  makePermissionsFromClaims,
-  type Permission
-} from "@carbon/auth";
 import { getUserScopedClient } from "@carbon/auth/client.server";
-import type { Database, Json } from "@carbon/database";
-import type { PermissionAction } from "@carbon/ee/workflows";
+import { readClaimsFresh } from "@carbon/auth/users";
+import type { Database } from "@carbon/database";
+import {
+  admits,
+  type Claims,
+  type ExpandedClaims,
+  type Gate,
+  holdsGate,
+  MODULES,
+  moduleOf,
+  pageById,
+  userActor
+} from "@carbon/database/access";
+import { gatePages } from "@carbon/ee/workflows";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const log = getLogger("workflows");
-
-export type OwnerPermissions = Record<string, Permission>;
 
 /**
  * A connection as the owner. Call inside every step, never once per run.
@@ -53,35 +58,73 @@ export async function getOwnerClient(
   return client;
 }
 
-/** Not `getUserClaims`: that reads privileged, through a one-hour cache, so a
- * revoked permission would survive an hour. This asks as the owner. */
+/**
+ * The permissions a workflow may act with: the owner's, while the owner is an
+ * employee of the company. A customer or supplier portal account runs nothing.
+ */
+export function ownerPermissionsOf(
+  claims: Claims,
+  companyId: string
+): ExpandedClaims | null {
+  if (!admits(userActor(claims), companyId, "employee")) return null;
+  return claims.permissions;
+}
+
+/**
+ * The one wording for a lost permission: the gate's page label, or its module's
+ * label when the gate names several pages of one shared table.
+ */
+function noAccess(gate: Gate): string {
+  const pages = gatePages(gate);
+  const first: string = pages[0] ?? "";
+  const page = pages.length === 1 ? pageById(first) : undefined;
+  const area =
+    page?.label ??
+    MODULES.find((module) => module.id === moduleOf(first))?.label ??
+    first.charAt(0).toUpperCase() + first.slice(1);
+  return `The owner of this workflow no longer has access to ${area}.`;
+}
+
+/** Why the owner may not pass `gate` in the company, or `null` when they may
+ * (or when there is no gate). The engine and the builder's test-run route both
+ * refuse with it, so the check and its wording are written once. */
+export function ownerRefusal(
+  gate: Gate | undefined,
+  permissions: ExpandedClaims,
+  companyId: string
+): string | null {
+  if (gate === undefined || holdsGate(permissions, gate, companyId)) {
+    return null;
+  }
+  return noAccess(gate);
+}
+
+/** Not `getUserClaims`: that reads privileged, through a cache that a failed
+ * clear leaves stale for up to an hour. This asks as the owner, uncached. */
 export async function readOwnerPermissions(
   client: SupabaseClient<Database>,
   ownerId: string,
   companyId: string
-): Promise<OwnerPermissions | null> {
-  const rawClaims = await getClaims(client, ownerId, companyId);
-
-  if (rawClaims.error || rawClaims.data === null) {
+): Promise<ExpandedClaims | null> {
+  let claims: Claims;
+  try {
+    claims = await readClaimsFresh(client, ownerId, companyId);
+  } catch (error) {
     log.error("Failed to read workflow owner claims", {
       ownerId,
       companyId,
-      error: rawClaims.error
+      error
     });
     return null;
   }
 
-  const claims = makePermissionsFromClaims(rawClaims.data as Json[]);
-  return claims?.permissions ?? null;
-}
-
-export function hasPermission(
-  permissions: OwnerPermissions,
-  module: string,
-  action: PermissionAction,
-  companyId: string
-): boolean {
-  const granted = permissions[module]?.[action];
-  if (!Array.isArray(granted)) return false;
-  return granted.includes(companyId);
+  const permissions = ownerPermissionsOf(claims, companyId);
+  if (permissions === null) {
+    log.warn("Workflow owner is not an employee of the company", {
+      ownerId,
+      companyId,
+      role: claims.role
+    });
+  }
+  return permissions;
 }

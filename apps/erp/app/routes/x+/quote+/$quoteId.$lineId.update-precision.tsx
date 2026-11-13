@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -17,9 +17,7 @@ const SUPPORTED_PRECISIONS = [2, 3, 4];
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { companyId } = await requirePermissions(request, {
-    update: "sales"
-  });
+  const { companyId } = await authorize(request, { "sales.quotes": "Edit" });
 
   const { quoteId, lineId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");

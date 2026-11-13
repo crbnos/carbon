@@ -110,7 +110,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<QuotationLine | null>(null);
   const isDisabled =
-    !permissions.can("delete", "sales") ||
+    !permissions.has({ "sales.quotes": "Full" }) ||
     isQuoteLocked(quoteData?.quote?.status);
 
   const onDeleteLine = (line: QuotationLine) => {
@@ -145,7 +145,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
   const realQuoteLines = (quoteData?.lines ?? []) as QuotationLine[];
   const canReorder =
     !isDisabled &&
-    permissions.can("update", "sales") &&
+    permissions.has({ "sales.quotes": "Edit" }) &&
     realQuoteLines.length > 1;
 
   const editMode = useLineOrderEditMode<QuotationLine>({
@@ -201,7 +201,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
             )
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "sales.quotes": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -227,7 +227,9 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
               <Button
                 className="flex-1"
                 shortcut={EXPLORER_SHORTCUTS.addLine}
-                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                isDisabled={
+                  isDisabled || !permissions.has({ "sales.quotes": "Edit" })
+                }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newQuoteLineDisclosure.onOpen}
@@ -480,7 +482,7 @@ function QuoteLineItem({
         <div className="absolute right-2 z-10">
           <HStack spacing={1}>
             {line.methodType === "Make to Order" &&
-              permissions.can("update", "sales") &&
+              permissions.has({ "sales.quotes": "Edit" }) &&
               line.status !== "No Quote" && (
                 <IconButton
                   aria-label={
@@ -643,7 +645,9 @@ function QuoteLineItem({
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
+                  disabled={
+                    isDisabled || !permissions.has({ "sales.quotes": "Full" })
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(line);
@@ -659,7 +663,7 @@ function QuoteLineItem({
       </HStack>
       {disclosure.isOpen &&
         line.methodType === "Make to Order" &&
-        permissions.can("update", "sales") &&
+        permissions.has({ "sales.quotes": "Edit" }) &&
         line.status !== "No Quote" && (
           <VStack className="border-b border-border p-1">
             <QuoteBoMExplorer

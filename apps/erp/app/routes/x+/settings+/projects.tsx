@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Hidden,
@@ -58,7 +57,6 @@ import {
 import { ProjectLabelsGrid } from "~/modules/projects/ui/Settings/ProjectLabelsGrid";
 import { ProjectStatesGrid } from "~/modules/projects/ui/Settings/ProjectStatesGrid";
 import { certificationTextsValidator } from "~/modules/settings/settings.models";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -71,12 +69,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { api, client, companyId } = await authorize(request, {
+    "settings.projects": "View"
   });
 
   const [companySettings, states, labels] = await Promise.all([
-    getCompanySettings(client, companyId),
+    api.settings.getCompanySettings({}),
     getProjectStates(client, companyId),
     getProjectLabels(client, companyId)
   ]);
@@ -124,8 +122,8 @@ const SETTING_BY_INTENT = {
  * `{ error }` back; the buttons read `message`.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
+  const { api, client, companyId, userId } = await authorize(request, {
+    "settings.projects": "Edit"
   });
 
   const formData = await request.formData();
@@ -237,7 +235,6 @@ export async function action({ request }: ActionFunctionArgs) {
         if (validation.error) return validationError(validation.error);
         texts = validation.data;
       }
-      const api = await carbon(request);
       const update = await api.settings.updateTimeSettings({
         timekeepingControls: enabled ? "DCAA" : "Standard",
         ...texts
@@ -266,7 +263,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const field = SETTING_BY_INTENT[intent as keyof typeof SETTING_BY_INTENT];
-  const api = await carbon(request);
   const update = await api.settings.updateProjectSettings({
     [field]: formData.get("enabled") === "true"
   });

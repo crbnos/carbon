@@ -110,7 +110,7 @@ const ServiceJobProperties = () => {
   );
 
   const isLocked = isServiceJobLocked(job?.status);
-  const isDisabled = isLocked || !permissions.can("update", "service");
+  const isDisabled = isLocked || !permissions.has({ "service.jobs": "Edit" });
   // The customer saw the estimate at this rate.
   const isBillRateLocked =
     job?.estimateStatus === "Sent" || job?.estimateStatus === "Accepted";

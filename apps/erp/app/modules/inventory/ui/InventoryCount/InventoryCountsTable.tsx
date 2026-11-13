@@ -175,7 +175,7 @@ const InventoryCountsTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
-                !permissions.can("delete", "inventory") ||
+                !permissions.has({ "inventory.inventoryCount": "Full" }) ||
                 row.status === "Posted"
               }
               destructive
@@ -202,7 +202,7 @@ const InventoryCountsTable = memo(
           count={count}
           defaultColumnPinning={{ left: ["inventoryCountId"] }}
           primaryAction={
-            permissions.can("create", "inventory") && (
+            permissions.has({ "inventory.inventoryCount": "Create" }) && (
               <New label={t`Inventory Count`} to={path.to.newInventoryCount} />
             )
           }

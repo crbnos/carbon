@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, hasPermission, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { assertIsPost, error, success } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { holdsGate } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
@@ -29,10 +30,7 @@ const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, permissions } = await requirePermissions(
-    request,
-    {}
-  );
+  const { client, companyId, userId, permissions } = await authorize(request);
 
   const formData = await request.formData();
   const validation = await validator(completeQuantityValidator).validate(
@@ -310,7 +308,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (expectedQuantityComplete !== undefined) {
       // The page sent the completed quantity it showed: record the unit only
       // if no other request (a second tab, a resend) recorded it meanwhile.
-      if (!hasPermission(permissions, "production", "create", companyId)) {
+      if (!holdsGate(permissions, { "production.jobs": "Create" }, companyId)) {
         return data(
           {},
           await flash(request, {

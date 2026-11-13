@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import {
@@ -26,8 +26,8 @@ import { pageInMemory } from "~/utils/query";
 const logger = getLogger("erp", "settings-items");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { companyId } = await authorize(request, {
+    "settings.items": "View"
   });
 
   const methods = await getActiveMethodsMissingPullFrom(

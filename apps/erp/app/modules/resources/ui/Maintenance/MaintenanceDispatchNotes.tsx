@@ -103,7 +103,7 @@ export function MaintenanceDispatchNotes({
       </CardHeader>
 
       <CardContent>
-        {permissions.can("update", "resources") && !isDisabled ? (
+        {permissions.has({ "resources.dispatches": "Edit" }) && !isDisabled ? (
           <Editor
             label={t`Notes`}
             initialValue={(content ?? {}) as JSONContent}
@@ -169,7 +169,8 @@ export function MaintenanceDispatchFiles({
                 dispatchId={dispatchId}
                 files={resolvedFiles ?? []}
                 isReadOnly={
-                  !permissions.can("update", "resources") || isDisabled
+                  !permissions.has({ "resources.dispatches": "Edit" }) ||
+                  isDisabled
                 }
               />
             )}

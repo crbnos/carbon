@@ -678,7 +678,7 @@ const PartsTable = memo((props: PartsTableProps) => {
             </MenuSub>
           )}
           <MenuItem
-            disabled={!permissions.can("create", "parts")}
+            disabled={!permissions.has({ "parts.parts": "Create" })}
             onClick={() =>
               fetcher.submit(null, {
                 method: "post",
@@ -692,7 +692,7 @@ const PartsTable = memo((props: PartsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "parts")}
+            disabled={!permissions.has({ "parts.parts": "Full" })}
             onClick={() => {
               setSelectedItem(row);
               deleteItemModal.onOpen();
@@ -744,18 +744,20 @@ const PartsTable = memo((props: PartsTableProps) => {
           }
         ]}
         primaryAction={
-          permissions.can("create", "parts") && (
+          permissions.has({ "parts.parts": "Create" }) && (
             <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                leftIcon={<LuGroup />}
-                className="max-md:hidden"
-                asChild
-              >
-                <Link to={path.to.itemPostingGroups}>
-                  <Trans>Item Groups</Trans>
-                </Link>
-              </Button>
+              {permissions.has({ "parts.itemGroups": "View" }) && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuGroup />}
+                  className="max-md:hidden"
+                  asChild
+                >
+                  <Link to={path.to.itemPostingGroups}>
+                    <Trans>Item Groups</Trans>
+                  </Link>
+                </Button>
+              )}
               <New label={t`Part`} to={path.to.newPart} />
             </div>
           )

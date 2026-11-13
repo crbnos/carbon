@@ -102,7 +102,8 @@ const ContractConfirmBody = ({
     isStripe && !isCheckingStripe && !stripeLink.data?.stripeCustomerLinked;
   // Invoices that post on their own need the invoicing permission too.
   const needsInvoicing =
-    mode !== "Draft Only" && !permissions.can("create", "invoicing");
+    mode !== "Draft Only" &&
+    !permissions.has({ "invoicing.salesInvoices": "Create" });
 
   // An unlinked billing customer is linked as part of confirming: resolve it
   // against the connected account the way the invoice post modal does. The
@@ -260,7 +261,7 @@ const ContractConfirmBody = ({
           isDisabled={
             isStripeBlocked ||
             needsInvoicing ||
-            !permissions.can("update", "sales")
+            !permissions.has({ "sales.serviceContracts": "Edit" })
           }
         >
           <Trans>Confirm</Trans>

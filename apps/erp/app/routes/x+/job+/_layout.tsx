@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -17,14 +17,13 @@ export const meta = moduleMeta("Jobs");
 
 export const handle: Handle = {
   breadcrumb: msg`Production`,
-  to: path.to.production,
-  module: "production"
+  to: path.to.production
 };
 
+// The only check on this layout's own URL, which has no index route; the
+// children gate themselves.
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    view: "production"
-  });
+  await authorize(request, { "production.jobs": "View" });
 
   return {};
 }

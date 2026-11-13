@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { Constants } from "@carbon/database";
+import type { GateLevel } from "@carbon/database/access";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { months } from "~/modules/shared/shared.models";
@@ -1277,3 +1278,13 @@ export const RUN_JOURNAL_SOURCES: Record<string, string> = {
   "Lease Run": "lease",
   "Asset Depreciation": "depreciation"
 };
+
+/**
+ * The activation wizard's page, or Reporting, which still writes its moved table
+ * (`alsoWrittenBy`). A literal, so the MCP manifest can read it.
+ */
+export const accountingActivationGate = <L extends GateLevel>(level: L) =>
+  [
+    { "settings.accounting": level },
+    { "accounting.reporting": level }
+  ] as const;

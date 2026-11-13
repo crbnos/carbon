@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getBatchableOperations } from "~/modules/production/production.service";
+import type { getBatchableOperations } from "~/modules/production/production.service";
 import type { BatchCandidate, BatchMaterial } from "~/modules/production/types";
 
 // The base candidate row, derived from the RPC wrapper's return so a column
@@ -44,9 +44,8 @@ export type HiddenOps = {
 // queue" helper on the WC picker) and hidden (a per-reason breakdown of the ops
 // on this process the RPC excluded).
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "production.batches": "View"
   });
 
   const url = new URL(request.url);
@@ -70,7 +69,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [operations, activeOps, processOps] = await Promise.all([
-    getBatchableOperations(client, companyId, { locationId, processId }),
+    api.production.getBatchableOperations({ locationId, processId }),
     // Location-wide active ops with a work center → per-WC queue depth.
     client
       .from("jobOperation")

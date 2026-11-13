@@ -2,24 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { productionEventValidator } from "~/modules/production/production.models";
-import {
-  getJobOperations,
-  getProductionEvent
-} from "~/modules/production/production.service";
+import { getProductionEvent } from "~/modules/production/production.service";
 import { ProductionEventForm } from "~/modules/production/ui/Jobs";
 import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "production"
+  const { client, companyId, api } = await authorize(request, {
+    "production.jobs": "Create"
   });
 
   const { id, jobId } = params;
@@ -27,12 +24,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!jobId) throw notFound("jobId not found");
 
   const [jobOperations, workCenters, productionEvent] = await Promise.all([
-    getJobOperations(client, jobId),
+    api.production.getJobOperations({ jobId }),
     getWorkCentersList(client, companyId),
     getProductionEvent(client, id)
   ]);
 
-  const operationOptions = jobOperations.data?.map((operation) => ({
+  const operationOptions = jobOperations.data?.rows?.map((operation) => ({
     label: `${operation.description} - ${
       workCenters.data?.find((center) => center.id === operation.workCenterId)
         ?.name
@@ -53,7 +50,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["jobId", "id"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.updateProductionEvent({
     ...input.data,
     id: input.params.id

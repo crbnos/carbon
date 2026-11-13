@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { deactivateEmployee } from "./users.server";
+import { deactivateEmployee, getPermissionCacheKey } from "./users.server";
 
 // Import-safety: the module builds a Supabase client at import.
 vi.hoisted(() => {
@@ -25,6 +25,18 @@ vi.mock("@carbon/kv", () => ({
     del: async (key: string) => Number(kv.delete(key))
   }
 }));
+
+// The audit log, captured at the logger.
+const audit = vi.hoisted(() => ({ calls: [] as unknown[] }));
+vi.mock("@carbon/logger", () => {
+  const log = {
+    info: (_message: string, fields: unknown) => audit.calls.push(fields),
+    warn: () => {},
+    error: () => {},
+    debug: () => {}
+  };
+  return { getLogger: () => log };
+});
 
 const USER = "usr_1";
 const COMPANY = "cmp_1";
@@ -70,6 +82,7 @@ function makeClient(reads: Record<string, unknown>) {
 beforeEach(() => {
   ops = [];
   kv.clear();
+  audit.calls = [];
 });
 
 describe("deactivateEmployee", () => {
@@ -79,8 +92,35 @@ describe("deactivateEmployee", () => {
         data: { permissions: { parts_view: [COMPANY, OTHER_COMPANY] } },
         error: null
       },
-      group: { data: [{ id: "grp_1" }], error: null }
+      group: { data: [{ id: "grp_1" }], error: null },
+      permission: {
+        data: [
+          { module: "Inventory", page: null, level: "Edit" },
+          { module: "Sales", page: "sales.quotes", level: "None" }
+        ],
+        error: null
+      }
     }) as any;
+
+  it("records the person's grants it deletes in the audit event", async () => {
+    await deactivateEmployee(client(), USER, COMPANY, "usr_admin");
+
+    const grants = [
+      { module: "Inventory", page: null, level: "Edit" },
+      { module: "Sales", page: "sales.quotes", level: "None" }
+    ];
+    expect(audit.calls).toContainEqual(
+      expect.objectContaining({
+        authEvent: "role_changed",
+        actor: "usr_admin",
+        targetUserId: USER,
+        reason: "deactivate",
+        before: grants,
+        after: [],
+        revoked: grants
+      })
+    );
+  });
 
   it("keeps the employeeJob row so org placement survives", async () => {
     await deactivateEmployee(client(), USER, COMPANY);
@@ -106,18 +146,21 @@ describe("deactivateEmployee", () => {
     expect(ops).toContainEqual(
       expect.objectContaining({ table: "membership", op: "delete" })
     );
+    expect(ops).toContainEqual(
+      expect.objectContaining({ table: "permission", op: "delete" })
+    );
     expect(result.success).toBe(true);
   });
 
   it("invalidates the cached claims itself, for callers that skip deactivateUser", async () => {
-    kv.set(`permissions:${USER}`, "{}");
+    kv.set(getPermissionCacheKey(USER), "{}");
 
     await deactivateEmployee(client(), USER, COMPANY);
 
     // requirePermissions reads this cache (1h TTL) before the database, and the
     // create*Account rollbacks call this function directly rather than through
     // deactivateUser — so the invalidation has to live here.
-    expect(kv.has(`permissions:${USER}`)).toBe(false);
+    expect(kv.has(getPermissionCacheKey(USER))).toBe(false);
   });
 
   it("strips only the deactivating company from the permission map", async () => {

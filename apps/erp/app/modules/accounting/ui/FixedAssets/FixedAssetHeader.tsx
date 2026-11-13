@@ -58,8 +58,8 @@ const FixedAssetHeader = () => {
     asset.status === "Active" || asset.status === "Fully Depreciated";
   const isUnderConstruction = asset.status === "Under Construction";
   const isOutOfService = Boolean(asset.outOfServiceSince);
-  const canUpdate = permissions.can("update", "accounting");
-  const canCreate = permissions.can("create", "accounting");
+  const canUpdate = permissions.has({ "accounting.assets": "Edit" });
+  const canCreate = permissions.has({ "accounting.assets": "Create" });
   // A CIP asset takes cost from attached jobs until it is capitalized into
   // its in-service class; both actions only make sense on a CIP class.
   const canAttachJob = isCipClass && (isDraft || isUnderConstruction);
@@ -164,7 +164,7 @@ const FixedAssetHeader = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  disabled={!permissions.can("delete", "accounting")}
+                  disabled={!permissions.has({ "accounting.assets": "Full" })}
                   destructive
                   onClick={deleteModal.onOpen}
                 >

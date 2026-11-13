@@ -9,13 +9,13 @@ import type {
 import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
-  hasPermission,
   ITAR_RIDER_SHA256,
   ITAR_RIDER_VERSION
 } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
+  clearClaims,
   deactivateCustomer,
   deactivateEmployee,
   deactivateSupplier,
@@ -23,11 +23,37 @@ import {
 } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
+import {
+  type AccessSubjectType,
+  actionsGained,
+  type Grant,
+  holdsGate,
+  isAdminType,
+  type Level,
+  levelOf,
+  levelReaches,
+  MODULES,
+  type ModuleEnum,
+  PAGES,
+  type PageId,
+  type PortalKey
+} from "@carbon/database/access";
+import {
+  readCompanyGrants,
+  readGrants,
+  subjectTypeOfRow
+} from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { InviteEmail } from "@carbon/documents/email";
+import { isCompanyAdmin } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
-import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
-import { companyHasFeature } from "@carbon/ee/plan.server";
+import { accessSubject, subjectGates } from "@carbon/ee/permission-grants";
+import {
+  type AccessChange,
+  grantWriteRefusal,
+  saveEmployeeType,
+  writeAccessGrants
+} from "@carbon/ee/permissions.server";
 import {
   emailDomain,
   getSsoAwareInviteLink,
@@ -69,7 +95,10 @@ import type { EmployeeInsert, InviteInsert, User } from "~/modules/users/types";
 import {
   type BulkUserAction,
   canBulkActOnUser,
-  type modulePreferencesValidator
+  isConsoleOperatorOf,
+  type modulePreferencesValidator,
+  nonOperatorPinResetPermission,
+  type permissionsValidator
 } from "~/modules/users/users.models";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
@@ -425,8 +454,15 @@ export async function getInvitable(
     .order("lastName");
 }
 
-export async function getModules(client: SupabaseClient<Database>) {
-  return client.from("modules").select("name").order("name");
+/**
+ * The modules a grant can hold: those with pages (`MODULES`), by name. The
+ * `module` enum also names modules with no pages (Items, Messaging, Printing),
+ * which no grant holds, so they are left out.
+ */
+export function getModules(): { name: ModuleEnum }[] {
+  return MODULES.map((module) => ({ name: module.enum })).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
 }
 
 export async function getGroup(
@@ -578,16 +614,6 @@ export async function resolveUserSelectIds(
       .eq("isIdentityGroup", false)
   ]);
   return { users, groups };
-}
-
-export async function getPermissionsByEmployeeType(
-  client: SupabaseClient<Database>,
-  employeeTypeId: string
-) {
-  return client
-    .from("employeeTypePermission")
-    .select("view, create, update, delete, module")
-    .eq("employeeTypeId", employeeTypeId);
 }
 
 export async function getSuppliers(
@@ -970,9 +996,9 @@ export async function acceptInvite(
     });
 
     // Post-commit and failure-tolerant: the grants just written are cached by
-    // requirePermissions, so a stale entry would outlive the acceptance.
+    // authorize, so a stale entry would outlive the acceptance.
     try {
-      await redis.del(getPermissionCacheKey(userId));
+      await clearClaims([userId]);
     } catch (err) {
       logger.error(
         "Failed to invalidate permission cache after invite accept",
@@ -1275,15 +1301,6 @@ export async function createEmployeeAccount(
     return { success: false, message: "Location not found" };
   }
 
-  const employeeTypePermissions = await getPermissionsByEmployeeType(
-    client,
-    employeeType
-  );
-  if (employeeTypePermissions.error) {
-    return { success: false, message: employeeTypePermissions.error.message };
-  }
-
-  const permissions = makePermissionsFromEmployeeType(employeeTypePermissions);
   const serviceRole = getCarbonServiceRole();
   const user = await getUserByEmail(email);
   let userId = "";
@@ -1360,7 +1377,8 @@ export async function createEmployeeAccount(
   const code = crypto.randomUUID();
   const invite = {
     role: "employee",
-    permissions,
+    // An employee's access comes from their employee type's grants.
+    permissions: {},
     email,
     companyId,
     createdBy,
@@ -1370,16 +1388,16 @@ export async function createEmployeeAccount(
   } satisfies InviteInsert;
 
   if (isReactivation) {
-    // Reusing surviving rows is an UPDATE, which RLS would gate behind
-    // users_update / people_update, so this path writes outside RLS, scoped by
+    // Reusing surviving rows is an UPDATE, which RLS would gate behind Edit
+    // on Accounts and Employees, so this path writes outside RLS, scoped by
     // id + companyId. It is one transaction because the three writes are only
     // correct together (see the helper), and it needs no compensation: the
     // auth user already existed, so a rollback leaves nothing behind.
     //
     // Writing outside RLS must not grant more than a first-time add, which
     // inserts under the caller's client: the INSERT policies on "employee" and
-    // "employeeJob" require users_update and people_create. The route only
-    // requires users_create, so the same two are checked here.
+    // "employeeJob" require Accounts Edit and Employees Create. The operation
+    // only requires Accounts Create, so the same two are checked here.
     const claims = await getUserClaims(createdBy, companyId).catch(
       (err: unknown) => {
         logger.error("Failed to read the inviter's permissions", {
@@ -1399,7 +1417,7 @@ export async function createEmployeeAccount(
       return {
         success: false,
         message:
-          "Re-adding a deactivated employee requires the Users update and People create permissions"
+          "Re-adding a deactivated employee requires Edit on Accounts and Create on Employees"
       };
     }
 
@@ -1623,10 +1641,6 @@ export async function getClaims(
   company?: string
 ) {
   return client.rpc("get_claims", { uid, company: company ?? "" });
-}
-
-export function getPermissionCacheKey(userId: string) {
-  return `permissions:${userId}`;
 }
 
 export async function getUser(client: SupabaseClient<Database>, id: string) {
@@ -2043,26 +2057,26 @@ export async function createConsoleOperator(
 }
 
 /**
- * Converts a console-only operator to a full user by adding a Supabase Auth
- * account and updating their email to a real one.
+ * Creates the auth account, then one `writeAccessGrants` write moves the user row
+ * and type; when that write refuses, the auth account is deleted.
  */
 export async function convertConsoleOperatorToUser(
-  client: SupabaseClient<Database>,
+  ctx: ServiceContext,
   {
     userId,
     email,
     employeeType,
-    companyId,
-    createdBy
+    ip
   }: {
     userId: string;
     email: string;
     employeeType: string;
-    companyId: string;
-    createdBy: string;
+    ip?: string;
   }
-): Promise<{ success: false; message: string } | { success: true }> {
-  const serviceRole = getCarbonServiceRole();
+): Promise<CarbonError | null> {
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const createdBy = ctx.auditUserId;
 
   // userId comes from the URL and every write below is service-role, so prove
   // the operator is an employee of THIS company — otherwise another company's
@@ -2088,7 +2102,7 @@ export async function convertConsoleOperatorToUser(
       userId,
       error: membership.error
     });
-    return { success: false, message: "User is not a console operator" };
+    return ctx.error("notFound", "User is not a console operator");
   }
   if (targetEmployeeType.error || !targetEmployeeType.data) {
     logger.error("Employee type is not in the company", {
@@ -2096,9 +2110,8 @@ export async function convertConsoleOperatorToUser(
       employeeType,
       error: targetEmployeeType.error
     });
-    return { success: false, message: "Employee type not found" };
+    return ctx.error("notFound", "Employee type not found");
   }
-
   // Verify the user is a console operator
   // Note: isConsoleOperator field added by migration 20260319000000_console-mode.sql
   const existingUser = await serviceRole
@@ -2108,7 +2121,7 @@ export async function convertConsoleOperatorToUser(
     .single();
 
   if (existingUser.error || !(existingUser.data as any)?.isConsoleOperator) {
-    return { success: false, message: "User is not a console operator" };
+    return ctx.error("notFound", "User is not a console operator");
   }
 
   // Check email isn't already taken
@@ -2119,7 +2132,7 @@ export async function convertConsoleOperatorToUser(
     .maybeSingle();
 
   if (emailCheck.data) {
-    return { success: false, message: "Email is already in use" };
+    return ctx.error("conflict", "Email is already in use");
   }
 
   // Create Supabase Auth account with the same user ID
@@ -2131,37 +2144,59 @@ export async function convertConsoleOperatorToUser(
   });
 
   if (createAuth.error) {
-    return { success: false, message: createAuth.error.message };
+    return ctx.error(
+      "internal",
+      "Failed to create the sign-in account",
+      createAuth.error
+    );
   }
 
-  // Update user record: real email + no longer console operator
-  const updateUser = await requireAffected(
-    serviceRole
-      .from("user")
-      .update({
-        email: email.toLowerCase(),
-        isConsoleOperator: false
-      } as any)
-      .eq("id", userId)
-      .select("id")
+  const written = await writeAccessGrants(
+    ctx.asCaller.supabase,
+    ctx.asSystem.pg,
+    {
+      companyId,
+      subject: { userId },
+      change: { keep: true },
+      employeeType,
+      subjectRow: async (tx) => {
+        const updated = await tx
+          .updateTable("user")
+          .set({ email: email.toLowerCase(), isConsoleOperator: false })
+          .where("id", "in", (eb) =>
+            eb
+              .selectFrom("employee")
+              .select("id")
+              .where("id", "=", userId)
+              .where("companyId", "=", companyId)
+          )
+          .where("isConsoleOperator", "=", true)
+          .executeTakeFirst();
+        if (!updated.numUpdatedRows) {
+          throw new Error("The operator is no longer a console operator");
+        }
+      },
+      actor: ctx.actor,
+      actorId: createdBy,
+      ip,
+      reason: "Console operator converted to a user"
+    }
   );
-
-  if (updateUser.error) {
-    // Cleanup auth
-    await deleteAuthAccount(serviceRole, userId);
-    return { success: false, message: updateUser.error.message };
+  if (written.error) {
+    // Only the new sign-in: the user row is the operator's and was rolled back.
+    const removed = await serviceRole.auth.admin.deleteUser(userId);
+    logger.error("Failed to convert the console operator", {
+      companyId,
+      userId,
+      error: written.error.cause ?? written.error.message,
+      authCleanupError: removed.error
+    });
+    return grantWriteRefusal(ctx, written.error);
   }
-
-  // Change employee type to the selected type
-  await serviceRole
-    .from("employee")
-    .update({ employeeTypeId: employeeType })
-    .eq("id", userId)
-    .eq("companyId", companyId);
 
   // Create invite so user gets the magic link email
   const code = crypto.randomUUID();
-  const employee = await client
+  const employee = await ctx.asCaller.supabase
     .from("employee")
     .select("employeeTypeId")
     .eq("id", userId)
@@ -2169,108 +2204,62 @@ export async function convertConsoleOperatorToUser(
     .single();
 
   if (employee.data?.employeeTypeId) {
-    const employeeTypePermissions = await getPermissionsByEmployeeType(
-      client,
-      employee.data.employeeTypeId
-    );
+    // Access comes from the employee type's grants.
+    const inviteResult = await insertInvite(serviceRole, {
+      role: "employee",
+      permissions: {},
+      email: email.toLowerCase(),
+      companyId,
+      createdBy,
+      code
+    });
 
-    if (!employeeTypePermissions.error) {
-      const permissions = makePermissionsFromEmployeeType(
-        employeeTypePermissions
-      );
-
-      const inviteResult = await insertInvite(serviceRole, {
-        role: "employee",
-        permissions,
-        email: email.toLowerCase(),
-        companyId,
-        createdBy,
-        code
+    if (inviteResult.error) {
+      logger.error("Failed to create invite for converted operator", {
+        error: inviteResult.error
       });
-
-      if (inviteResult.error) {
-        logger.error("Failed to create invite for converted operator", {
-          error: inviteResult.error
-        });
-      }
     }
   }
 
-  return { success: true };
+  return null;
 }
 
 /** Re-adding a deactivated employee writes outside RLS, so the inviter needs
- *  what a first-time add's RLS inserts need: users update and people create. */
+ *  what a first-time add's RLS inserts need: Edit on Accounts and Create on
+ *  Employees. */
 export function canReAddDeactivatedEmployee(
-  permissions: Parameters<typeof hasPermission>[0],
+  permissions: Parameters<typeof holdsGate>[0],
   companyId: string
 ): boolean {
-  return (
-    hasPermission(permissions, "users", "update", companyId) &&
-    hasPermission(permissions, "people", "create", companyId)
+  return holdsGate(
+    permissions,
+    { "users.accounts": "Edit", "people.employees": "Create" },
+    companyId
   );
 }
 
-/** An employee type's permission rows as invite permissions, keyed
- *  `module_action`. */
-export function makePermissionsFromEmployeeType({
-  data
-}: {
-  data: {
-    view: string[];
-    create: string[];
-    update: string[];
-    delete: string[];
-    module: string;
-  }[];
-}) {
-  const permissions: Record<string, string[]> = {};
-
-  data.forEach((permission) => {
-    if (!permission.module) {
-      throw new Error(
-        `Permission module is missing for permission ${JSON.stringify(data)}`
-      );
-    }
-
-    const module = permission.module.toLowerCase();
-
-    permissions[`${module}_view`] = permission.view;
-    permissions[`${module}_create`] = permission.create;
-    permissions[`${module}_update`] = permission.update;
-    permissions[`${module}_delete`] = permission.delete;
-  });
-
-  return permissions;
-}
-
-function makeCustomerPermissions(companyId: string) {
-  // TODO: this should be more dynamic
-  const permissions: Record<string, string[]> = {
+function makeCustomerPermissions(
+  companyId: string
+): Partial<Record<PortalKey, string[]>> {
+  return {
     documents_view: [companyId],
     documents_create: [companyId],
-    documents_udpate: [companyId],
     documents_delete: [companyId],
-    jobs_view: [companyId],
     sales_view: [companyId],
     parts_view: [companyId]
   };
-
-  return permissions;
 }
 
-function makeSupplierPermissions(companyId: string) {
-  // TODO: this should be more dynamic
-  const permissions: Record<string, string[]> = {
+function makeSupplierPermissions(
+  companyId: string
+): Partial<Record<PortalKey, string[]>> {
+  return {
     documents_view: [companyId],
     documents_create: [companyId],
-    documents_udpate: [companyId],
     documents_delete: [companyId],
     purchasing_view: [companyId],
     parts_view: [companyId]
   };
-
-  return permissions;
 }
 
 export async function getInvite(
@@ -2299,21 +2288,6 @@ export function originOf(request: Request) {
     city: request.headers.get("x-vercel-ip-city") ?? undefined,
     userAgent: request.headers.get("user-agent") ?? undefined
   };
-}
-
-/**
- * Role authoring is a Business-plan feature. This is the friendly refusal;
- * the lock is `requireEntitlement` inside `@carbon/ee/permissions.server`.
- */
-export async function refuseUnlessPermissionsFeature(ctx: ServiceContext) {
-  const spec = { feature: "PERMISSIONS" } as const;
-  if (await companyHasFeature(ctx.asCaller.supabase, ctx.company.id, spec)) {
-    return null;
-  }
-  return ctx.error(
-    "entitlement",
-    defaultUpgradeMessage(resolveRequirement(spec))
-  );
 }
 
 /** The company's name and the inviting user, for the invite email. */
@@ -2404,20 +2378,287 @@ export async function emailAccountInvite(
   return { userId: account.userId };
 }
 
-/** `updateEmployee` / `updatePermissions` refusals, by what they mean. */
-export function permissionsWriteError(
+export function readAccessGrants(
   ctx: ServiceContext,
-  message = "Failed to update permissions"
+  subjectType: AccessSubjectType,
+  subjectId: string
 ) {
-  switch (message) {
-    case "Employee not found":
-    case "Employee type not found":
-      return ctx.error("notFound", message);
-    case "You do not have permission to update permissions":
-      return ctx.error("forbidden", message);
-    default:
-      return ctx.error("internal", message);
+  return readGrants(
+    ctx.asSystem.pg,
+    ctx.company.id,
+    accessSubject(subjectType, subjectId)
+  );
+}
+
+type GrantRow = Awaited<ReturnType<typeof readCompanyGrants>>[number];
+
+function toGrant(row: GrantRow): Grant & { convertedFrom: string[] | null } {
+  return {
+    subject: subjectTypeOfRow(row),
+    module: row.module,
+    page: row.page,
+    level: row.level,
+    convertedFrom: row.convertedFrom
+  };
+}
+
+/** The company's employees (or one), with whether their type is the company's Admin type. */
+async function readCompanyEmployees(ctx: ServiceContext, userId?: string) {
+  let query = ctx.asSystem.pg
+    .selectFrom("employee")
+    .innerJoin("userToCompany", (join) =>
+      join
+        .onRef("userToCompany.userId", "=", "employee.id")
+        .onRef("userToCompany.companyId", "=", "employee.companyId")
+        .on("userToCompany.role", "=", "employee")
+    )
+    .innerJoin("user", "user.id", "employee.id")
+    .leftJoin("employeeType", "employeeType.id", "employee.employeeTypeId")
+    .select([
+      "employee.id",
+      "user.fullName",
+      "employee.employeeTypeId",
+      "employeeType.systemType",
+      "employeeType.companyId as employeeTypeCompanyId"
+    ])
+    .where("employee.companyId", "=", ctx.company.id);
+  if (userId) query = query.where("employee.id", "=", userId);
+  const rows = await query.execute();
+  return rows.map(({ systemType, employeeTypeCompanyId, ...employee }) => ({
+    ...employee,
+    admin: isAdminType(
+      { systemType, companyId: employeeTypeCompanyId },
+      ctx.company.id
+    )
+  }));
+}
+
+/** An employee as `levelOf` reads them: Admin, and their own and their role's grants. */
+function employeeSubject(
+  rows: GrantRow[],
+  employee: { id: string; employeeTypeId: string | null; admin: boolean }
+) {
+  return {
+    admin: employee.admin,
+    grants: rows
+      .filter(
+        (row) =>
+          row.userId === employee.id ||
+          (row.employeeTypeId !== null &&
+            row.employeeTypeId === employee.employeeTypeId)
+      )
+      .map(toGrant)
+  };
+}
+
+/**
+ * What a person can do on each page and what decides it (`levelOf`): Admin,
+ * the person's own override, or their role. A converted grant lists the
+ * actions the round-up added to its old checkboxes.
+ */
+export async function readEffectiveAccess(ctx: ServiceContext, userId: string) {
+  const [[employee], rows] = await Promise.all([
+    readCompanyEmployees(ctx, userId),
+    readCompanyGrants(ctx.asSystem.pg, ctx.company.id)
+  ]);
+  if (!employee) return null;
+  const subject = employeeSubject(rows, employee);
+  return PAGES.map((page) => {
+    const { level, source, grant } = levelOf(subject, page.id);
+    return {
+      page: page.id,
+      label: page.label,
+      level,
+      source:
+        source === "admin" ? ("admin" as const) : (grant?.subject ?? null),
+      scope: grant
+        ? grant.page
+          ? ("page" as const)
+          : ("module" as const)
+        : null,
+      gained: grant ? actionsGained(grant.level, grant.convertedFrom) : []
+    };
+  });
+}
+
+/**
+ * Why the actor may not reset the target's console PIN, or null. A PIN signs in
+ * as the target with their own access, so no one resets a PIN above their own.
+ */
+export function pinResetRefusal({
+  actor,
+  actorIsAdmin,
+  companyId,
+  target
+}: {
+  actor: ServiceContext["actor"];
+  actorIsAdmin: boolean;
+  companyId: string;
+  target: {
+    isConsoleOperator: boolean;
+    systemType: string | null;
+    employeeTypeCompanyId: string | null;
+    admin: boolean;
+    levels: readonly { page: PageId; level: Level }[];
+  };
+}): string | null {
+  if (actor.type === "system") return null;
+  if (
+    !isConsoleOperatorOf(target, companyId) &&
+    !holdsGate(actor.permissions, nonOperatorPinResetPermission, companyId)
+  )
+    return "Resetting the PIN of someone who is not a console operator needs Edit on Accounts and on Settings → People";
+  if (target.admin && !actorIsAdmin)
+    return "Only an Admin can reset an Admin's PIN";
+  const above = target.levels.some(
+    ({ page, level }) =>
+      level !== "None" &&
+      !holdsGate(actor.permissions, { [page]: level }, companyId)
+  );
+  return above
+    ? "You cannot reset the PIN of someone with more access than you"
+    : null;
+}
+
+/** The refusal of a console PIN reset (`pinResetRefusal`), or null; notFound when the target is not an employee of the company. */
+export async function refusePinReset(ctx: ServiceContext, userId: string) {
+  const [row, access] = await Promise.all([
+    ctx.asSystem.pg
+      .selectFrom("employee")
+      .innerJoin("user", "user.id", "employee.id")
+      .leftJoin("employeeType", "employeeType.id", "employee.employeeTypeId")
+      .select([
+        "user.isConsoleOperator",
+        "employeeType.systemType",
+        "employeeType.companyId as employeeTypeCompanyId"
+      ])
+      .where("employee.id", "=", userId)
+      .where("employee.companyId", "=", ctx.company.id)
+      .executeTakeFirst(),
+    readEffectiveAccess(ctx, userId)
+  ]);
+  if (!row || !access) return ctx.error("notFound", "Operator not found");
+  const admin = access.some((page) => page.source === "admin");
+  const actorIsAdmin =
+    admin &&
+    ctx.actor.type === "user" &&
+    (await isCompanyAdmin(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      ctx.actor.userId
+    ));
+  const refusal = pinResetRefusal({
+    actor: ctx.actor,
+    actorIsAdmin,
+    companyId: ctx.company.id,
+    target: { ...row, admin, levels: access }
+  });
+  return refusal ? ctx.error("forbidden", refusal) : null;
+}
+
+/**
+ * The employees, and with the settings view the API keys, whose level on a
+ * page (`levelOf`) reaches `level`. One read of the company's grants and
+ * employees.
+ */
+export async function readPageAccessHolders(
+  ctx: ServiceContext,
+  page: string,
+  level: Level
+) {
+  const withKeys = ctx.can(subjectGates("View").key);
+  const [employees, rows, keys] = await Promise.all([
+    readCompanyEmployees(ctx),
+    readCompanyGrants(ctx.asSystem.pg, ctx.company.id),
+    withKeys
+      ? ctx.asSystem.pg
+          .selectFrom("apiKey")
+          .select(["id", "name"])
+          .where("companyId", "=", ctx.company.id)
+          .execute()
+      : Promise.resolve([])
+  ]);
+  const people = employees.flatMap((employee) => {
+    const of = levelOf(employeeSubject(rows, employee), page);
+    if (!levelReaches(of.level, level)) return [];
+    return [
+      {
+        userId: employee.id,
+        name: employee.fullName ?? employee.id,
+        level: of.level,
+        source: of.source === "admin" ? "admin" : (of.grant?.subject ?? "none")
+      }
+    ];
+  });
+  const apiKeys = keys.flatMap((key) => {
+    const of = levelOf(
+      { grants: rows.filter((row) => row.apiKeyId === key.id).map(toGrant) },
+      page
+    );
+    if (!levelReaches(of.level, level)) return [];
+    return [{ apiKeyId: key.id, name: key.name ?? key.id, level: of.level }];
+  });
+  return { people, apiKeys };
+}
+
+export async function readRoleGrants(ctx: ServiceContext) {
+  const rows = await readCompanyGrants(ctx.asSystem.pg, ctx.company.id);
+  return rows.flatMap(({ employeeTypeId, module, page, level }) =>
+    employeeTypeId !== null ? [{ employeeTypeId, module, page, level }] : []
+  );
+}
+
+/**
+ * Write the grants of a role, a person or an API key: replace them with a set,
+ * or remove one (`writeAccessGrants`, `@carbon/ee`, which checks the
+ * entitlement, the subject and what it may hold, and clears the caches). A
+ * person can move to another employee type in the same write.
+ */
+export async function saveAccessGrants(
+  ctx: ServiceContext,
+  {
+    subjectType,
+    subjectId,
+    change,
+    employeeType,
+    ip
+  }: {
+    subjectType: AccessSubjectType;
+    subjectId: string;
+    change: AccessChange;
+    employeeType?: string;
+    ip?: string;
   }
+): Promise<CarbonError | null> {
+  return grantWriteRefusal(
+    ctx,
+    writeAccessGrants(ctx.asCaller.supabase, ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      subject: accessSubject(subjectType, subjectId),
+      change,
+      employeeType,
+      actor: ctx.actor,
+      actorId: ctx.auditUserId,
+      ip
+    })
+  );
+}
+
+/** Create or rename an employee type with its grants, in one transaction (`saveEmployeeType`, `@carbon/ee`). */
+export async function writeEmployeeType(
+  ctx: ServiceContext,
+  input: Pick<
+    Parameters<typeof saveEmployeeType>[2],
+    "employeeType" | "grants" | "ip"
+  >
+): Promise<{ id: string } | CarbonError> {
+  const written = await saveEmployeeType(
+    ctx.asCaller.supabase,
+    ctx.asSystem.pg,
+    { ...input, companyId: ctx.company.id, actorId: ctx.auditUserId }
+  );
+  if (written.error) return grantWriteRefusal(ctx, written.error);
+  return { id: written.id };
 }
 
 /**
@@ -2984,7 +3225,7 @@ export async function refuseAttributeValueChange(
   userAttributeId: string,
   refusal: string
 ) {
-  if (ctx.can({ update: "resources" })) return null;
+  if (ctx.can({ "people.attributes": "Edit" })) return null;
   if (ctx.auditUserId !== userId) return ctx.error("forbidden", refusal);
 
   const attribute = await getAttribute(ctx.asCaller.supabase, userAttributeId);
@@ -3042,24 +3283,24 @@ export async function queueInviteResends(args: {
   );
 }
 
-/** Queues the `update-permissions` job for each user. */
 export async function queuePermissionUpdates(args: {
   userIds: string[];
   companyId: string;
   actorId: string;
-  permissions: Record<
-    string,
-    { view: boolean; create: boolean; update: boolean; delete: boolean }
-  >;
+  /** The access grid's grants; a null level stores nothing (inherit). */
+  grants: z.infer<typeof permissionsValidator>["grants"];
   addOnly: boolean;
   ip?: string;
 }) {
+  const grants = args.grants.flatMap((grant) =>
+    grant.level === null ? [] : [{ ...grant, level: grant.level }]
+  );
   await batchTrigger(
     "update-permissions",
     args.userIds.map((id) => ({
       payload: {
         id,
-        permissions: args.permissions,
+        grants,
         addOnly: args.addOnly,
         companyId: args.companyId,
         actorId: args.actorId,

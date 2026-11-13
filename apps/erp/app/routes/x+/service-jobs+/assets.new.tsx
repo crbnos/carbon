@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -13,9 +13,7 @@ import { CustomerAssetForm } from "~/modules/service/ui/CustomerAssets";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    create: "service"
-  });
+  await authorize(request, { "service.customerAssets": "Create" });
 
   const customerId = new URL(request.url).searchParams.get("customerId");
   return { customerId };
@@ -24,7 +22,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(customerAssetValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request, {
+    "service.customerAssets": "Create"
+  });
   const result = await api.service.registerCustomerAsset(input.data);
   if (result.error?.category === "rule") {
     return validationError({

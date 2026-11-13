@@ -3,9 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Settings → Backups (company export / in-place restore).
-
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { convertKbToString } from "@carbon/files";
@@ -144,12 +143,13 @@ async function clearStaleExportFailure(
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId, email } = await authorize(request, {
+    "settings.backups": "Edit"
   });
-  // Business/Enterprise feature, plus an internal/local-dev escape hatch.
+  // Business/Enterprise feature, plus an internal/local-dev escape hatch. Home,
+  // not Settings: Settings may open on this page and loop.
   if (!(await canManageBackups(client, companyId, email))) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const [backupsList, restoreRuns, exportRun] = await Promise.all([
@@ -169,14 +169,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {
-      update: "settings"
-    }
-  );
+  const { client, companyId, userId, email } = await authorize(request, {
+    "settings.backups": "Edit"
+  });
   if (!(await canManageBackups(client, companyId, email))) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const formData = await request.formData();

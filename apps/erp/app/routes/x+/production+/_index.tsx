@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { activeJobStatuses } from "@carbon/database";
+import { anyOf, pagesOf } from "@carbon/database/access";
 import { useChangedRows, useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -79,10 +80,7 @@ import { CSVLink } from "~/components/CSVLink";
 import { usePercentFormatter } from "~/hooks";
 import { useUser } from "~/hooks/useUser";
 import { KPIs } from "~/modules/production/production.models";
-import {
-  getActiveProductionEvents,
-  getUnbatchedBatchableOperationCount
-} from "~/modules/production/production.service";
+import { getUnbatchedBatchableOperationCount } from "~/modules/production/production.service";
 import type { ActiveProductionEvent } from "~/modules/production/types";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
 import { getWorkCentersListWithBlockingStatus } from "~/modules/resources/resources.service";
@@ -111,9 +109,10 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "production"
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    anyOf(pagesOf("production"), "View")
+  );
 
   const [activeJobs, assignedJobs, unbatchedOperations, workCenters] =
     await Promise.all([
@@ -136,7 +135,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     assignedJobs: assignedJobs.data?.length ?? 0,
     unbatchedOperations: unbatchedOperations.count ?? 0,
     workCenters: workCenters.data ?? [],
-    events: getActiveProductionEvents(client, companyId)
+    events: api.production.getActiveProductionEvents({})
   };
 }
 

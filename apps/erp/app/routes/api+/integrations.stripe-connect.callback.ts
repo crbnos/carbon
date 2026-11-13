@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getConnectAccountStatus } from "@carbon/stripe/connect.server";
 import { redirect } from "@carbon/utils";
@@ -12,8 +12,8 @@ import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId, userId } = await authorize(request, {
+    "settings.integrations": "Edit"
   });
 
   const url = new URL(request.url);

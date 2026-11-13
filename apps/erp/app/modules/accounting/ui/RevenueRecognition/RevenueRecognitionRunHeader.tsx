@@ -25,7 +25,7 @@ import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import RevenueRecognitionRunStatus from "./RevenueRecognitionRunStatus";
-import { RUN_PAGES } from "./runPages";
+import { RUN_PAGES, runPage } from "./runPages";
 
 type RevenueRecognitionRun =
   Database["public"]["Tables"]["revenueRecognitionRun"]["Row"];
@@ -85,7 +85,7 @@ const RevenueRecognitionRunHeader = () => {
             <>
               {isPosted && canRepeat && (
                 <DropdownMenuItem
-                  disabled={!permissions.can("create", "accounting")}
+                  disabled={!permissions.has({ [runPage(run.type)]: "Create" })}
                   onClick={repeatModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuRepeat />} />
@@ -94,7 +94,7 @@ const RevenueRecognitionRunHeader = () => {
               )}
               {isPosted && (
                 <DropdownMenuItem
-                  disabled={!permissions.can("update", "accounting")}
+                  disabled={!permissions.has({ [runPage(run.type)]: "Edit" })}
                   destructive
                   onClick={reverseModal.onOpen}
                 >
@@ -104,7 +104,7 @@ const RevenueRecognitionRunHeader = () => {
               )}
               {isDraft && (
                 <DropdownMenuItem
-                  disabled={!permissions.can("delete", "accounting")}
+                  disabled={!permissions.has({ [runPage(run.type)]: "Full" })}
                   destructive
                   onClick={deleteModal.onOpen}
                 >
@@ -116,7 +116,7 @@ const RevenueRecognitionRunHeader = () => {
           ) : undefined
         }
         actions={
-          isDraft && permissions.can("update", "accounting") ? (
+          isDraft && permissions.has({ [runPage(run.type)]: "Edit" }) ? (
             <>
               <Button
                 variant="secondary"

@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -28,10 +28,7 @@ import {
   isPurchaseOrderEditLocked,
   purchaseOrderLineValidator
 } from "~/modules/purchasing/purchasing.models";
-import {
-  getPurchaseOrderLine,
-  getSupplierInteractionLineDocuments
-} from "~/modules/purchasing/purchasing.service";
+import { getPurchaseOrderLine } from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import {
   SupplierInteractionLineDocuments,
@@ -44,18 +41,20 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "purchase-order-line-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing",
-    role: "employee",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "purchasing.purchaseOrders": "View" },
+    { bypassRls: true }
+  );
 
   const { orderId, lineId } = params;
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
   const [line, chargeNumber] = await Promise.all([
-    getPurchaseOrderLine(client, lineId),
+    api.purchasing.getPurchaseOrderLine({
+      purchaseOrderLineId: lineId
+    }),
     getLineChargeNumber(client, "purchaseOrderLine", lineId, companyId)
   ]);
   if (line.error) {
@@ -85,7 +84,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     line: line?.data ?? null,
     chargeNumber: chargeNumber.data ?? null,
-    files: getSupplierInteractionLineDocuments(client, companyId, lineId)
+    files: api.purchasing
+      .getSupplierInteractionLineDocuments({ lineId })
+      .then(dataOrThrow)
   };
 }
 
@@ -96,8 +97,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client, companyId } = await requirePermissions(request, {
-    update: "purchasing"
+  const { client, companyId, api } = await authorize(request, {
+    "purchasing.purchaseOrders": "Edit"
   });
 
   const formData = await request.formData();
@@ -170,7 +171,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The operation refuses an order in approval or finished, keeps a released
   // order's lines above what was received, and sends an order whose total
   // goes above its approved amount back for approval.
-  const api = await carbon(request);
   const result = await api.purchasing.updatePurchaseOrderLine({
     ...d,
     id: lineId,
@@ -273,7 +273,10 @@ export default function EditPurchaseOrderLineRoute() {
         )}
       </DeferredFiles>
       <CadModel
-        isReadOnly={isReadOnly || !permissions.can("update", "purchasing")}
+        isReadOnly={
+          isReadOnly ||
+          !permissions.has({ "purchasing.purchaseOrders": "Edit" })
+        }
         metadata={{
           itemId: line?.itemId ?? undefined
         }}

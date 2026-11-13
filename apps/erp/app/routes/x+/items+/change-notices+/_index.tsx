@@ -5,7 +5,6 @@
 import { RecordOutlet, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getChangeNoticeTypesList } from "~/modules/items/items.service";
 import { ChangeNoticesTable } from "~/modules/items/ui/ChangeNotice";
 import { changeNoticesList } from "~/utils/list-registry/items.server";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -14,8 +13,8 @@ import { path } from "~/utils/path";
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, changeNoticesList, {
     dataKey: "changeNotices",
-    firstPage: async ({ client, companyId }) => ({
-      types: (await getChangeNoticeTypesList(client, companyId)).data ?? []
+    firstPage: async ({ api }) => ({
+      types: (await api.items.getChangeNoticeTypesList({})).data ?? []
     }),
     onError: {
       redirectTo: path.to.authenticatedRoot,

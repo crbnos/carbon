@@ -33,7 +33,7 @@ const DocumentForm = ({ initialValues, ownerId }: DocumentFormProps) => {
   const dialog = useRouteDialog();
   const onClose = dialog.close;
 
-  const isDisabled = !permissions.can("update", "documents");
+  const isDisabled = !permissions.has({ documents: "Edit" });
 
   return (
     <Drawer

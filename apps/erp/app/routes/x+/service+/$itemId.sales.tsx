@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
@@ -11,28 +11,20 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { itemUnitSalePriceValidator } from "~/modules/items/items.models";
-import {
-  getItemUnitSalePrice,
-  upsertItemUnitSalePrice
-} from "~/modules/items/items.service";
+import { upsertItemUnitSalePrice } from "~/modules/items/items.service";
 import { ItemSalePriceForm } from "~/modules/items/ui/Item";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "parts.services": "View" });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const serviceUnitSalePrice = await getItemUnitSalePrice(
-    client,
-    itemId,
-    companyId
-  );
+  const serviceUnitSalePrice = await api.items.getItemUnitSalePrice({
+    id: itemId
+  });
 
   if (serviceUnitSalePrice.error) {
     throw redirect(
@@ -55,8 +47,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.services": "Edit"
   });
 
   const { itemId } = params;

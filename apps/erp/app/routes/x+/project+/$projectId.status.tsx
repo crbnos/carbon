@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -27,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
   const { status } = validation.data;
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.projects.updateProjectStatus({ projectId, status });
   return respond(request, result).redirect(back, {
     message: `Project is ${status}`

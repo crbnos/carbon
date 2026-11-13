@@ -118,8 +118,6 @@ export async function getAndDeleteAuthChallenge(
   return redis.getdel(authChallengeKey(challengeId));
 }
 
-// ── Registration ─────────────────────────────────────────────────────────────
-
 /**
  * Generate PublicKeyCredentialCreationOptions to send to the browser.
  *
@@ -218,8 +216,6 @@ export async function verifyPasskeyRegistration(
     rpId: RP_ID
   };
 }
-
-// ── Authentication ───────────────────────────────────────────────────────────
 
 /**
  * Generate PublicKeyCredentialRequestOptions to send to the browser.

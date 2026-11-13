@@ -2,520 +2,571 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type {
+  Actor,
+  CarbonError,
+  ServiceContext
+} from "@carbon/api/service-fn.server";
 import type { Result } from "@carbon/auth";
-import { error, getClaims, getPermissionCacheKey, success } from "@carbon/auth";
-import { logPermissionChange } from "@carbon/auth/auth-events.server";
+import { error, getClaims, success } from "@carbon/auth";
+import { bustApiKeyCache } from "@carbon/auth/auth.server";
+import {
+  logApiKeyAccessChange,
+  logPermissionChange,
+  logRoleAccessChange
+} from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database, Json } from "@carbon/database";
-import { redis } from "@carbon/kv";
+import { clearClaims } from "@carbon/auth/users.server";
+import type { Database } from "@carbon/database";
+import {
+  type AccessSubjectType,
+  claimKeys,
+  claimsFor,
+  isAdminType,
+  type Level
+} from "@carbon/database/access";
+import {
+  type GrantInput,
+  type GrantSubject,
+  readGrants,
+  removeGrant,
+  replaceGrants
+} from "@carbon/database/access-write";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { requireEntitlement } from "./entitlements.server";
+import { EntitlementError, requireEntitlement } from "./entitlements.server";
+import {
+  bulkEditGrants,
+  claimsMayEditAccounts,
+  type GrantRow,
+  keyGrantsAboveActor,
+  pageName,
+  refusedModules,
+  SUBJECT_RULES,
+  subjectTypeOf
+} from "./permission-grants";
 
 /**
- * Commercial (Enterprise) RBAC authoring — the single, licensed source of truth
- * for creating/editing employee types, editing an individual user's permissions,
- * and building the flattened `userPermission.permissions` object. Gated to the
- * Business plan via the `PERMISSIONS` feature (`@carbon/ee/plan`); Community ships
- * an "everyone is an admin" experience so none of this is reachable there.
+ * Gated to the Business plan via each subject's feature (`SUBJECT_RULES`);
+ * Community ships an "everyone is an admin" experience so none of this is
+ * reachable there.
  *
- * Consumed on the server by the ERP authoring routes AND by the `@carbon/jobs`
- * bulk-edit task (`carbon/update-permissions`), which previously carried its own
- * drifting copy of `updatePermissions` — this is now the only copy.
- *
- * The low-level community primitives (`makePermissionsFromEmployeeType` and
- * the invite flow's permission merge) stay in the ERP `users.service.ts`: they
- * are shared plumbing the invite flow depends on, not authoring.
+ * The invite flow's permission merge stays in the ERP `users.service.ts`: only
+ * portal invites carry permissions through it, and it is not authoring.
  */
 
-export type CompanyPermission = {
-  view: boolean;
-  create: boolean;
-  update: boolean;
-  delete: boolean;
-};
-
-export type Permission = {
-  view: string[];
-  create: string[];
-  update: string[];
-  delete: string[];
-};
-
-type ModuleName = { name: string | null };
-
-type EmployeeTypePermissionRow = {
-  view: string[];
-  create: string[];
-  update: string[];
-  delete: string[];
-  module: string | null;
-};
-
-// Uppercase the first letter only (mirrors the ERP `~/utils/string` capitalize),
-// which `@carbon/ee` cannot import.
-function capitalize(words: string) {
-  const [first, ...otherLetters] = words;
-  return [first?.toLocaleUpperCase() ?? "", ...otherLetters].join("");
-}
-
-function isClaimPermission(key: string, value: unknown) {
-  const action = key.split("_")[1];
-  return (
-    action !== undefined &&
-    ["view", "create", "update", "delete"].includes(action) &&
-    Array.isArray(value)
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Employee-type CRUD
-// ---------------------------------------------------------------------------
-
+/**
+ * Delete one of the company's unprotected employee types. The plan lock is
+ * returned as a refusal (`subjectEntitlement`), like every other subject write.
+ * A protected type, or one that is not the company's, is left as it is.
+ */
 export async function deleteEmployeeType(
   client: SupabaseClient<Database>,
-  employeeTypeId: string,
-  companyId: string
-) {
-  await requireEntitlement(client, companyId, "PERMISSIONS");
-  return client
+  { companyId, id }: { companyId: string; id: string }
+): Promise<{ error: AccessWriteError | null }> {
+  const unentitled = await subjectEntitlement(client, companyId, "role");
+  if (unentitled) return { error: unentitled };
+  const deleted = await client
     .from("employeeType")
     .delete()
-    .eq("id", employeeTypeId)
+    .eq("id", id)
     .eq("companyId", companyId)
     .eq("protected", false);
-}
-
-export async function insertEmployeeType(
-  client: SupabaseClient<Database>,
-  employeeType: { name: string; companyId: string }
-) {
-  await requireEntitlement(client, employeeType.companyId, "PERMISSIONS");
-  return client
-    .from("employeeType")
-    .insert([employeeType])
-    .select("id")
-    .single();
-}
-
-export async function upsertEmployeeType(
-  client: SupabaseClient<Database>,
-  employeeType:
-    | { name: string; companyId: string }
-    | { id: string; name: string }
-) {
-  if ("id" in employeeType) {
-    // The update input carries no companyId — read it from the row so the
-    // entitlement check (the lock) can run before the write.
-    const existing = await client
-      .from("employeeType")
-      .select("companyId")
-      .eq("id", employeeType.id)
-      .single();
-
-    if (existing.error || !existing.data) {
-      return {
-        data: null,
-        error: existing.error || { message: "Employee type not found" }
-      };
-    }
-
-    await requireEntitlement(client, existing.data.companyId, "PERMISSIONS");
-
-    return client
-      .from("employeeType")
-      .update(employeeType)
-      .eq("id", employeeType.id)
-      .eq("companyId", existing.data.companyId)
-      .select("id")
-      .single();
-  }
-
-  await requireEntitlement(client, employeeType.companyId, "PERMISSIONS");
-  return client
-    .from("employeeType")
-    .insert([employeeType])
-    .select("id")
-    .single();
-}
-
-export async function upsertEmployeeTypePermissions(
-  client: SupabaseClient<Database>,
-  employeeTypeId: string,
-  companyId: string,
-  permissions: { name: string; permission: CompanyPermission }[]
-) {
-  await requireEntitlement(client, companyId, "PERMISSIONS");
-  const employeeTypePermissions = permissions.map(({ name, permission }) => ({
-    employeeTypeId,
-    module: capitalize(name) as "Accounting",
-    view: permission.view ? [companyId] : [],
-    create: permission.create ? [companyId] : [],
-    update: permission.update ? [companyId] : [],
-    delete: permission.delete ? [companyId] : []
-  }));
-
-  return client.from("employeeTypePermission").upsert(employeeTypePermissions);
-}
-
-// ---------------------------------------------------------------------------
-// Permission-object translators (claims / employee-type / UI grid shapes)
-// ---------------------------------------------------------------------------
-
-export function makeEmptyPermissionsFromModules(data: ModuleName[]) {
-  return data.reduce<
-    Record<string, { name: string; permission: CompanyPermission }>
-  >((acc, m) => {
-    if (m.name && m.name !== "Messaging") {
-      acc[m.name] = {
-        name: m.name.toLowerCase(),
-        permission: {
-          view: false,
-          create: false,
-          update: false,
-          delete: false
-        }
-      };
-    }
-    return acc;
-  }, {});
-}
-
-export function makeCompanyPermissionsFromClaims(
-  claims: Json[] | null,
-  companyId: string
-) {
-  if (typeof claims !== "object" || claims === null) return null;
-  const permissions: Record<string, CompanyPermission> = {};
-  let role: string | null = null;
-
-  Object.entries(claims).forEach(([key, value]) => {
-    // `isClaimPermission` guarantees `value` is a string[] and `key` has an
-    // action segment, so `module` is present and the array branch is the only one.
-    if (!isClaimPermission(key, value) || !Array.isArray(value)) return;
-    const [module, action] = key.split("_");
-    if (module === undefined) return;
-
-    const perm = permissions[module] ?? {
-      view: false,
-      create: false,
-      update: false,
-      delete: false
+  if (deleted.error) {
+    return {
+      error: {
+        code: "internal",
+        message: "Failed to delete employee type",
+        cause: deleted.error
+      }
     };
-
-    if (action === "view") perm.view = value.includes(companyId);
-    else if (action === "create") perm.create = value.includes(companyId);
-    else if (action === "update") perm.update = value.includes(companyId);
-    else if (action === "delete") perm.delete = value.includes(companyId);
-
-    permissions[module] = perm;
-  });
-
-  if ("role" in claims) {
-    role = claims.role as string;
   }
-
-  if ("items" in permissions) {
-    delete permissions.items;
-  }
-
-  if ("messaging" in permissions) {
-    delete permissions.messaging;
-  }
-
-  return { permissions, role };
+  return { error: null };
 }
 
-export function makeCompanyPermissionsFromEmployeeType(
-  data: EmployeeTypePermissionRow[],
-  companyId: string
+/**
+ * What a grant write does to the subject's own grants: replace them, remove
+ * one, or `keep` them as they are while a person moves type (`employeeType`).
+ */
+export type AccessChange =
+  | { set: readonly GrantInput[] }
+  | { remove: GrantRow }
+  | { keep: true };
+
+/**
+ * Why a grant write wrote nothing. `entitlement`: the company's plan lacks the
+ * subject's feature (`SUBJECT_RULES[…].refusal` is the message).
+ */
+export type AccessWriteError = {
+  code: "entitlement" | "forbidden" | "notFound" | "validation" | "internal";
+  message: string;
+  /** The failed query's error, for the log; never shown. */
+  cause?: unknown;
+};
+
+/**
+ * A grant write's refusal as the service function's error, `cause` kept. The
+ * one mapping every ERP caller of these writes uses: pass the write, or a
+ * refusal already in hand (`subjectEntitlement`, or a write's `error` once
+ * read) — a refusal in hand always maps to an error.
+ */
+export function grantWriteRefusal(
+  ctx: Pick<ServiceContext, "error">,
+  write: AccessWriteError
+): Promise<CarbonError>;
+export function grantWriteRefusal(
+  ctx: Pick<ServiceContext, "error">,
+  write: Promise<{ error: AccessWriteError | null }> | AccessWriteError | null
+): Promise<CarbonError | null>;
+export async function grantWriteRefusal(
+  ctx: Pick<ServiceContext, "error">,
+  write: Promise<{ error: AccessWriteError | null }> | AccessWriteError | null
+): Promise<CarbonError | null> {
+  const error = write instanceof Promise ? (await write).error : write;
+  return error ? ctx.error(error.code, error.message, error.cause) : null;
+}
+
+/**
+ * The entitlement lock (`requireEntitlement`) for a subject type, as a returned
+ * refusal: every refusal of a grant write is returned, none thrown.
+ */
+export async function subjectEntitlement(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  type: AccessSubjectType
+): Promise<AccessWriteError | null> {
+  try {
+    await requireEntitlement(client, companyId, SUBJECT_RULES[type].feature);
+    return null;
+  } catch (err) {
+    if (!(err instanceof EntitlementError)) throw err;
+    return { code: "entitlement", message: SUBJECT_RULES[type].refusal };
+  }
+}
+
+async function auditedClaims(userId: string, companyId: string) {
+  const claims = await getClaims(getCarbonServiceRole(), userId, companyId);
+  if (claims.error || claims.data === null) return null;
+  return claimKeys(claimsFor(claims.data, companyId).permissions);
+}
+
+function grantChanges(
+  before: readonly { module: string; page: string | null; level: string }[],
+  after: readonly { module: string; page: string | null; level: string }[]
 ) {
-  const result: Record<
-    string,
-    { name: string; permission: CompanyPermission }
-  > = {};
-  if (!data) return result;
-  data.forEach((permission) => {
-    if (!permission.module) {
-      throw new Error(
-        `Module is missing for permission ${JSON.stringify(permission)}`
-      );
-    } else {
-      result[permission.module] = {
-        name: permission.module.toLowerCase(),
-        permission: {
-          view: permission.view.includes(companyId),
-          create: permission.create.includes(companyId),
-          update: permission.update.includes(companyId),
-          delete: permission.delete.includes(companyId)
+  const key = (g: { module: string; page: string | null }) =>
+    `${g.module}\u0000${g.page ?? ""}`;
+  const from = new Map(before.map((g) => [key(g), g.level]));
+  const to = new Map(after.map((g) => [key(g), g.level]));
+  const changes: {
+    module: string;
+    page: string | null;
+    from: string;
+    to: string;
+  }[] = [];
+  for (const k of new Set([...from.keys(), ...to.keys()])) {
+    const a = from.get(k) ?? "inherit";
+    const b = to.get(k) ?? "inherit";
+    if (a === b) continue;
+    const [module, page] = k.split("\u0000") as [string, string];
+    changes.push({ module, page: page || null, from: a, to: b });
+  }
+  return changes;
+}
+
+async function ownedSubject(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string,
+  subject: GrantSubject
+): Promise<{ employeeTypeId?: string | null; keyHash?: string } | null> {
+  if ("userId" in subject) {
+    const employee = await db
+      .selectFrom("employee")
+      .select("employeeTypeId")
+      .where("id", "=", subject.userId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    return employee ? { employeeTypeId: employee.employeeTypeId } : null;
+  }
+  if ("employeeTypeId" in subject) {
+    const type = await db
+      .selectFrom("employeeType")
+      .select("id")
+      .where("id", "=", subject.employeeTypeId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    return type ? {} : null;
+  }
+  const key = await db
+    .selectFrom("apiKey")
+    .select("keyHash")
+    .where("id", "=", subject.apiKeyId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  return key ? { keyHash: key.keyHash } : null;
+}
+
+/** A key write that would give the key more than its writer holds (`keyGrantsAboveActor`). */
+function keyCapRefusal(pages: readonly string[]): AccessWriteError {
+  const shown = pages.slice(0, 5).map(pageName).join(", ");
+  const more = pages.length > 5 ? ` and ${pages.length - 5} more` : "";
+  return {
+    code: "forbidden",
+    message: `An API key cannot have more access than you: ${shown}${more}`
+  };
+}
+
+class Refusal extends Error {
+  constructor(
+    code: AccessWriteError["code"],
+    message: string,
+    readonly refusal: AccessWriteError = { code, message }
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * Write the grants of a role, a person or an API key in the company: the one
+ * grant write. It checks the entitlement (`SUBJECT_RULES[…].feature`; an
+ * `entitlement` error), that the subject is the company's, the modules the
+ * subject may hold (`refusedModules`), and that a key gets no more than
+ * `actor` holds (`keyGrantsAboveActor`; a `forbidden` error); clamps each
+ * level to its page; writes in one transaction; clears the caches the change
+ * reaches (the person's claims, every member of the role, the key's record);
+ * and writes the audit event: `permission_changed` with the claim keys before
+ * and after for a person, `role_access_changed` with the grant changes for a
+ * role, and `permission_changed` with the grant changes for a key.
+ *
+ * A person can be moved to another employee type of the company in the same
+ * transaction (`employeeType`); `{ keep: true }` moves them and leaves their
+ * grants alone, and needs no plan feature, as choosing a type on invite or
+ * convert never did. `subjectRow` writes the subject's own row in
+ * that transaction too, before the grants: an API key is created or renamed
+ * with its grants, or not at all.
+ */
+export async function writeAccessGrants(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    subject,
+    change,
+    employeeType,
+    subjectRow,
+    actor,
+    actorId,
+    ip,
+    reason
+  }: {
+    companyId: string;
+    subject: GrantSubject;
+    change: AccessChange;
+    /** A person only: the employee type to move them to. */
+    employeeType?: string;
+    subjectRow?: (tx: KyselyTx) => Promise<unknown>;
+    /** Who writes, as the request authorised them. Setting a key's grants needs it. */
+    actor?: Actor;
+    actorId: string;
+    ip?: string;
+    /** A person only: why, on their `permission_changed` event. */
+    reason?: string;
+  }
+): Promise<{ error: AccessWriteError | null }> {
+  const type = subjectTypeOf(subject);
+  if ("keep" in change) {
+    if (!("userId" in subject) || !employeeType) {
+      return {
+        error: {
+          code: "validation",
+          message:
+            "Only a person's employee type can change without a grant change"
         }
       };
     }
-  });
-
-  if ("items" in result) {
-    delete result.items;
+  } else {
+    const unentitled = await subjectEntitlement(client, companyId, type);
+    if (unentitled) return { error: unentitled };
   }
 
-  if ("Messaging" in result) {
-    delete result.Messaging;
+  if ("set" in change) {
+    const refused = refusedModules(type, change.set);
+    if (refused.length) {
+      return {
+        error: {
+          code: "validation",
+          message: `${refused.join(", ")} cannot be granted to ${SUBJECT_RULES[type].noun}`
+        }
+      };
+    }
+    // Fail closed: a key's grants are capped at the writer's, so need them.
+    if (type === "key" && !actor) {
+      return {
+        error: {
+          code: "forbidden",
+          message: "An API key's access can only be set by a known caller"
+        }
+      };
+    }
   }
 
-  return result;
+  const userId = "userId" in subject ? subject.userId : null;
+  const claimsBefore = userId ? await auditedClaims(userId, companyId) : null;
+
+  let written: Awaited<ReturnType<typeof writeInTransaction>>;
+  try {
+    written = await db.transaction().execute(writeInTransaction);
+  } catch (err) {
+    if (err instanceof Refusal) return { error: err.refusal };
+    return {
+      error: {
+        code: "internal",
+        message: "Failed to update permissions",
+        cause: err
+      }
+    };
+  }
+  const { owned, before, moveTo } = written;
+
+  async function writeInTransaction(tx: KyselyTx) {
+    await subjectRow?.(tx);
+    const owned = await ownedSubject(tx, companyId, subject);
+    if (!owned) throw new Refusal("notFound", SUBJECT_RULES[type].notFound);
+
+    const moveTo =
+      userId && employeeType && employeeType !== owned.employeeTypeId
+        ? employeeType
+        : null;
+    if (userId && moveTo) {
+      const ownType = await tx
+        .selectFrom("employeeType")
+        .select("id")
+        .where("id", "=", moveTo)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!ownType) throw new Refusal("notFound", SUBJECT_RULES.role.notFound);
+      await tx
+        .updateTable("employee")
+        .set({ employeeTypeId: moveTo })
+        .where("id", "=", userId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    const before = await readGrants(tx, companyId, subject);
+    if (type === "key" && "set" in change && actor && actor.type !== "system") {
+      const above = keyGrantsAboveActor({
+        actor: actor.permissions,
+        companyId,
+        before,
+        after: change.set
+      });
+      if (above.length) {
+        const refusal = keyCapRefusal(above);
+        throw new Refusal(refusal.code, refusal.message);
+      }
+    }
+    if ("set" in change) {
+      await replaceGrants(tx, {
+        companyId,
+        subject,
+        grants: change.set,
+        userId: actorId
+      });
+    } else if ("remove" in change) {
+      await removeGrant(tx, { companyId, subject, ...change.remove });
+    }
+    return { owned, before, moveTo };
+  }
+
+  let affected = 0;
+  if (userId) {
+    await clearClaims([userId]);
+  } else if ("employeeTypeId" in subject) {
+    const employees = await db
+      .selectFrom("employee")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("employeeTypeId", "=", subject.employeeTypeId)
+      .execute();
+    affected = employees.length;
+    await clearClaims(employees.map((e) => e.id));
+  } else if (owned.keyHash) {
+    await bustApiKeyCache(owned.keyHash);
+  }
+
+  // NIST 800-171 3.3.1/3.3.2: who changed whose access, from what to what.
+  // Each subject keeps the event its log consumers match on.
+  if (userId) {
+    logPermissionChange({
+      actor: actorId,
+      targetUserId: userId,
+      companyId,
+      ip,
+      before: claimsBefore,
+      after: await auditedClaims(userId, companyId),
+      reason: reason ?? (moveTo ? "Employee type changed" : undefined)
+    });
+  } else {
+    const changes = grantChanges(
+      before,
+      await readGrants(db, companyId, subject)
+    );
+    if ("employeeTypeId" in subject) {
+      logRoleAccessChange({
+        actor: actorId,
+        employeeTypeId: subject.employeeTypeId,
+        companyId,
+        ip,
+        changes,
+        affected
+      });
+    } else if ("apiKeyId" in subject) {
+      logApiKeyAccessChange({
+        actor: actorId,
+        apiKeyId: subject.apiKeyId,
+        companyId,
+        ip,
+        changes
+      });
+    }
+  }
+
+  return { error: null };
 }
 
-// ---------------------------------------------------------------------------
-// The write path — builds and persists the flattened permission object
-// ---------------------------------------------------------------------------
-
-// The target user id comes from the caller's form (and the bulk path runs as
-// the service role), so prove it is an employee of the company whose
-// permissions are being written before touching the user's grants. Read via
-// the service role: the membership fact must not depend on the caller's RLS.
-async function isCompanyEmployee(
-  userId: string,
-  companyId: string
-): Promise<boolean> {
-  const employee = await getCarbonServiceRole()
-    .from("employee")
-    .select("id")
-    .eq("id", userId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  return !employee.error && !!employee.data;
-}
-
-export async function updateEmployee(
+/**
+ * Create an employee type (`name` only) or rename one (`id` given), and set
+ * its grants, in one transaction (`writeAccessGrants`): a failed grant write
+ * leaves no type and no half-saved edit. Returns the type's id.
+ */
+export async function saveEmployeeType(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
-    id,
-    employeeType,
-    permissions,
     companyId,
+    employeeType,
+    grants,
     actorId,
     ip
   }: {
-    id: string;
-    employeeType: string;
-    permissions: Record<string, CompanyPermission>;
     companyId: string;
-    actorId?: string;
+    employeeType: { name: string } | { id: string; name: string };
+    grants: readonly GrantInput[];
+    actorId: string;
     ip?: string;
   }
-): Promise<Result> {
-  await requireEntitlement(client, companyId, "PERMISSIONS");
-  if (!(await isCompanyEmployee(id, companyId))) {
-    // error() logs the context when it is non-null.
-    return error({ companyId, userId: id }, "Employee not found");
-  }
-  // The employee type comes from the form and employee.employeeTypeId has a
-  // single-column foreign key, so another company's type would be accepted.
-  const ownType = await getCarbonServiceRole()
-    .from("employeeType")
-    .select("id")
-    .eq("id", employeeType)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (ownType.error || !ownType.data) {
-    return error(
-      { companyId, employeeTypeId: employeeType, error: ownType.error },
-      "Employee type not found"
-    );
-  }
-  const updateEmployeeEmployeeType = await client
-    .from("employee")
-    .upsert([{ id, companyId, employeeTypeId: employeeType }]);
-
-  if (updateEmployeeEmployeeType.error)
-    return error(updateEmployeeEmployeeType.error, "Failed to update employee");
-
-  return updatePermissions(client, {
-    id,
-    permissions,
+): Promise<
+  { id: string; error: null } | { id: null; error: AccessWriteError }
+> {
+  const { name } = employeeType;
+  const id = "id" in employeeType ? employeeType.id : crypto.randomUUID();
+  const written = await writeAccessGrants(client, db, {
     companyId,
+    subject: { employeeTypeId: id },
+    change: { set: grants },
     actorId,
-    ip
+    ip,
+    subjectRow: (tx) =>
+      "id" in employeeType
+        ? tx
+            .updateTable("employeeType")
+            .set({ name })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute()
+        : tx
+            .insertInto("employeeType")
+            .values({ id, name, companyId })
+            .execute()
   });
+  return written.error
+    ? { id: null, error: written.error }
+    : { id, error: null };
 }
 
+/**
+ * The bulk edit (`bulkEditGrants`) for one person. Runs in the
+ * `carbon/update-permissions` job as the service role, so it authorizes the
+ * actor who queued it: they must hold Users → Accounts at Edit in the company.
+ */
 export async function updatePermissions(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     id,
-    permissions,
+    grants: chosen,
     companyId,
     addOnly = false,
     actorId,
     ip
   }: {
     id: string;
-    permissions: Record<string, CompanyPermission>;
+    grants: readonly { module: string; page: string | null; level: Level }[];
     companyId: string;
     addOnly?: boolean;
-    actorId?: string;
+    actorId: string;
     ip?: string;
   }
 ): Promise<Result> {
-  await requireEntitlement(client, companyId, "PERMISSIONS");
-  if (!(await isCompanyEmployee(id, companyId))) {
-    // error() logs the context when it is non-null.
-    return error({ companyId, userId: id }, "Employee not found");
+  const employee = await db
+    .selectFrom("employee")
+    .leftJoin("employeeType", "employeeType.id", "employee.employeeTypeId")
+    .select([
+      "employee.employeeTypeId",
+      "employeeType.systemType",
+      "employeeType.companyId as employeeTypeCompanyId"
+    ])
+    .where("employee.id", "=", id)
+    .where("employee.companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!employee) {
+    return error({ companyId, userId: id }, SUBJECT_RULES.person.notFound);
   }
-  const claimsAdmin = await client.rpc("is_claims_admin", {
-    company: companyId
+  const actorClaims = await getClaims(
+    getCarbonServiceRole(),
+    actorId,
+    companyId
+  );
+  if (
+    actorClaims.error ||
+    actorClaims.data === null ||
+    !claimsMayEditAccounts(actorClaims.data, companyId)
+  ) {
+    return error(
+      { companyId, actorId },
+      "You do not have permission to update permissions"
+    );
+  }
+
+  const role = employee.employeeTypeId
+    ? await readGrants(db, companyId, {
+        employeeTypeId: employee.employeeTypeId
+      })
+    : [];
+  const own = await readGrants(db, companyId, { userId: id });
+  const grants = bulkEditGrants({
+    chosen,
+    own,
+    role,
+    admin: isAdminType(
+      {
+        systemType: employee.systemType,
+        companyId: employee.employeeTypeCompanyId
+      },
+      companyId
+    ),
+    addOnly
   });
-  if (claimsAdmin.error)
-    return error(claimsAdmin.error, "Failed to check claims admin");
-  if (claimsAdmin.data === true) {
-    const claims = await getClaims(client, id);
-
-    if (claims.error) return error(claims.error, "Failed to get claims");
-
-    const updatedPermissions = (
-      typeof claims.data !== "object" ||
-      Array.isArray(claims.data) ||
-      claims.data === null
-        ? {}
-        : claims.data
-    ) as Record<string, string[]>;
-    delete updatedPermissions.role;
-
-    // Snapshot the effective grant set BEFORE the in-place mutation below, so
-    // the audit event carries an honest before/after diff (NIST 3.3.1/3.3.2).
-    const beforePermissions = structuredClone(updatedPermissions);
-
-    // add any missing claims to the current claims
-    Object.keys(permissions).forEach((name) => {
-      const module = name.toLowerCase();
-      if (!(`${module}_view` in updatedPermissions)) {
-        updatedPermissions[`${module}_view`] = [];
-      }
-      if (!(`${module}_create` in updatedPermissions)) {
-        updatedPermissions[`${module}_create`] = [];
-      }
-      if (!(`${module}_update` in updatedPermissions)) {
-        updatedPermissions[`${module}_update`] = [];
-      }
-      if (!(`${module}_delete` in updatedPermissions)) {
-        updatedPermissions[`${module}_delete`] = [];
-      }
-    });
-
-    if (addOnly) {
-      Object.entries(permissions).forEach(([name, permission]) => {
-        const module = name.toLowerCase();
-        if (
-          permission.view &&
-          !updatedPermissions[`${module}_view`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_view`]!.push(companyId);
-        }
-        if (
-          permission.create &&
-          !updatedPermissions[`${module}_create`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_create`]!.push(companyId);
-        }
-        if (
-          permission.update &&
-          !updatedPermissions[`${module}_update`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_update`]!.push(companyId);
-        }
-        if (
-          permission.delete &&
-          !updatedPermissions[`${module}_delete`]?.includes(companyId)
-        ) {
-          updatedPermissions[`${module}_delete`]!.push(companyId);
-        }
-      });
-    } else {
-      Object.entries(permissions).forEach(([name, permission]) => {
-        const module = name.toLowerCase();
-        if (permission.view) {
-          if (!updatedPermissions[`${module}_view`]?.includes(companyId)) {
-            updatedPermissions[`${module}_view`] = [
-              ...(updatedPermissions[`${module}_view`] ?? []),
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_view`] = (
-            updatedPermissions[`${module}_view`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-
-        if (permission.create) {
-          if (!updatedPermissions[`${module}_create`]?.includes(companyId)) {
-            updatedPermissions[`${module}_create`] = [
-              ...(updatedPermissions[`${module}_create`] ?? []),
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_create`] = (
-            updatedPermissions[`${module}_create`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-
-        if (permission.update) {
-          if (!updatedPermissions[`${module}_update`]?.includes(companyId)) {
-            updatedPermissions[`${module}_update`] = [
-              ...(updatedPermissions[`${module}_update`] ?? []),
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_update`] = (
-            updatedPermissions[`${module}_update`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-
-        if (permission.delete) {
-          if (!updatedPermissions[`${module}_delete`]?.includes(companyId)) {
-            updatedPermissions[`${module}_delete`] = [
-              ...(updatedPermissions[`${module}_delete`] ?? []),
-              companyId
-            ];
-          }
-        } else {
-          updatedPermissions[`${module}_delete`] = (
-            updatedPermissions[`${module}_delete`] as string[]
-          ).filter((c: string) => c !== companyId);
-        }
-      });
-    }
-
-    // The "0" global-company wildcard is retired (NIST 800-171 3.1.5). Strip it
-    // from every array so it can never be persisted to the authoritative table.
-    for (const key of Object.keys(updatedPermissions)) {
-      const value = updatedPermissions[key];
-      if (Array.isArray(value)) {
-        updatedPermissions[key] = value.filter((c: string) => c !== "0");
-      }
-    }
-
-    const permissionsUpdate = await getCarbonServiceRole()
-      .from("userPermission")
-      .update({ permissions: updatedPermissions })
-      .eq("id", id);
-    if (permissionsUpdate.error)
-      return error(permissionsUpdate.error, "Failed to update claims");
-
-    await redis.del(getPermissionCacheKey(id));
-
-    // Audit the change (NIST 800-171 3.3.1/3.3.2): actor, target, before/after.
-    logPermissionChange({
-      actor: actorId,
-      targetUserId: id,
-      companyId,
-      ip,
-      before: beforePermissions,
-      after: updatedPermissions,
-      reason: addOnly ? "bulk-add" : "bulk-edit"
-    });
-
-    return success("Permissions updated");
-  }
-
-  return error(null, "You do not have permission to update permissions");
+  const written = await writeAccessGrants(client, db, {
+    companyId,
+    subject: { userId: id },
+    change: { set: grants },
+    actorId,
+    ip,
+    reason: addOnly ? "bulk-add" : "bulk-edit"
+  });
+  return written.error
+    ? error(written.error.cause ?? null, written.error.message)
+    : success("Permissions updated");
 }

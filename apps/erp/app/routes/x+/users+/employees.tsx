@@ -11,11 +11,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { EmployeesTable } from "~/modules/users/ui";
-import {
-  getEmployeeTypes,
-  getUnrevokedInviteEmails,
-  getUsersWithVerifiedMfa
-} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { employeeAccountsList } from "~/utils/list-registry/users.server";
@@ -31,11 +26,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     dataKey: "employees",
     bypassRls: true,
     // The invites and the MFA users cover the whole company, so page 1 has them.
-    firstPage: async ({ client, companyId }) => {
+    firstPage: async ({ api, companyId }) => {
       const [employeeTypes, invites, mfaUsers] = await Promise.all([
-        getEmployeeTypes(client, companyId),
-        getUnrevokedInviteEmails(client, companyId),
-        getUsersWithVerifiedMfa(client, companyId)
+        api.users.getEmployeeTypes({}),
+        api.users.getUnrevokedInviteEmails({}),
+        api.users.getUsersWithVerifiedMfa({})
       ]);
 
       if (mfaUsers.error) {
@@ -56,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }
 
       return {
-        employeeTypes: employeeTypes.data ?? [],
+        employeeTypes: employeeTypes.data?.rows ?? [],
         unrevokedInviteEmails: invites.data?.map((i) => i.email) ?? [],
         // Surfaced rather than swallowed: a missing/stale RPC (e.g. PostgREST's
         // schema cache not yet reloaded after the migration) otherwise looks

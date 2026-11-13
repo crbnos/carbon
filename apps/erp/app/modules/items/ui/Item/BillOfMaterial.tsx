@@ -37,7 +37,7 @@ import {
   useThrottle,
   useViewport
 } from "@carbon/react";
-import { getItemById, getItemReadableId } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "motion/react";
 import { nanoid } from "nanoid";
@@ -87,7 +87,7 @@ import {
   SortableListItemToggle
 } from "~/components/SortableList";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
-import { usePermissions, useUrlParams, useUser } from "~/hooks";
+import { useUrlParams, useUser } from "~/hooks";
 import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
 import { methodType, sourcingType } from "~/modules/shared/shared.models";
 import type {
@@ -111,6 +111,7 @@ import type {
 import { MaterialRowDetails, MaterialRowTitle } from "./MethodRow";
 import type { ReleaseLockProps } from "./ReleaseLockAlert";
 import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
+import { useMethodEditable } from "./useMethodEditable";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
@@ -195,23 +196,19 @@ const BillOfMaterial = ({
   methodCorrectionId,
   title
 }: BillOfMaterialProps) => {
-  const permissions = usePermissions();
   const { t } = useLingui();
   const { isProductionRevision, isReleaseLocked } = getReleaseLockFlags({
     revisionStatus,
     releaseControl
   });
   const { isPhone } = useViewport();
-  const isReadOnly =
-    permissions.can("update", "parts") === false ||
-    makeMethod.status !== "Draft" ||
-    isReleaseLocked ||
-    isDisabled;
+  const [items] = useItems();
+  const { methodItem, isEditable } = useMethodEditable(makeMethod);
+  const itemName = methodItem?.name;
+  const isReadOnly = !isEditable || isReleaseLocked || isDisabled;
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
 
-  const [items] = useItems();
-  const itemName = getItemById(items, makeMethod.itemId)?.name;
   const fetcher = useAction();
   const deleteMaterialFetcher = useAction();
   const [searchParams] = useSearchParams();

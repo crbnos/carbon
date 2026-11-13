@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -36,14 +36,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "purchasing"
+  const { api } = await authorize(request, {
+    "purchasing.supplierQuotes": "View"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const quote = await getSupplierQuote(client, id);
+  const quote = await api.purchasing.getSupplierQuote({ supplierQuoteId: id });
   if (quote.error) {
     throw redirect(
       path.to.supplierQuotes,
@@ -59,15 +59,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "purchasing"
+  const { client, userId } = await authorize(request, {
+    "purchasing.supplierQuotes": "Edit"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
+  const { client: viewClient } = await authorize(request, {
+    "purchasing.supplierQuotes": "View"
   });
   const quote = await getSupplierQuote(viewClient, id);
   await requireUnlocked({

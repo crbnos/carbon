@@ -58,8 +58,8 @@ const ScrapReasonForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "production")
-    : !permissions.can("create", "production");
+    ? !permissions.has({ "production.scrapReasons": "Edit" })
+    : !permissions.has({ "production.scrapReasons": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

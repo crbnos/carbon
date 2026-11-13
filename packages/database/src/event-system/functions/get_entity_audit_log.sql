@@ -6,7 +6,7 @@ AS $function$
 DECLARE
   tbl_name TEXT;
 BEGIN
-  PERFORM assert_audit_log_access(p_company_id, 'settings_view');
+  PERFORM assert_audit_log_access(p_company_id, 'settings.auditLogs_view');
 
   tbl_name := 'auditLog_' || p_company_id;
 

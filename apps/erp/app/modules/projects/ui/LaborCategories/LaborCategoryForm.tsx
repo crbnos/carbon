@@ -77,8 +77,8 @@ const LaborCategoryForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const canSave = isEditing
-    ? permissions.can("update", "projects")
-    : permissions.can("create", "projects");
+    ? permissions.has({ "projects.laborCategories": "Edit" })
+    : permissions.has({ "projects.laborCategories": "Create" });
 
   return (
     <>

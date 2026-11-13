@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { getErrorMessage, redirect } from "@carbon/utils";
@@ -16,8 +16,8 @@ import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "production"
+  const { client, companyId } = await authorize(request, {
+    "production.batches": "Edit"
   });
   const { batchId } = params;
   if (!batchId) throw notFound("batchId not found");
@@ -46,8 +46,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+  const { client, companyId, userId } = await authorize(request, {
+    "production.batches": "Edit"
   });
   const { batchId } = params;
   if (!batchId) throw notFound("batchId not found");

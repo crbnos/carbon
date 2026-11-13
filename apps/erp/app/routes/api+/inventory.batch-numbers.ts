@@ -2,12 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getBatchNumbersForItem } from "~/modules/inventory/inventory.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { companyId, api } = await authorize(request);
 
   const url = new URL(request.url);
   const itemId = url.searchParams.get("itemId");
@@ -18,7 +17,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  return await getBatchNumbersForItem(client, {
+  return await api.inventory.getBatchNumbersForItem({
     companyId,
     itemId
   });

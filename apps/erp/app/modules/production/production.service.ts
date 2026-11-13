@@ -8897,11 +8897,30 @@ export async function activateAssemblyInstructionVersion(
 
     const staleOpIds = (staleOps.data ?? []).map((o) => o.id);
     if (staleOpIds.length > 0) {
-      const repoint = await client
-        .from("jobOperation")
-        .update({ assemblyInstructionId: id })
-        .in("id", staleOpIds);
-      if (repoint.error) return repoint;
+      // Production → Jobs owns the operations: repointed on the system
+      // handle (the caller's assembly permission is the gate), this company's only.
+      try {
+        await db
+          .updateTable("jobOperation")
+          .set({ assemblyInstructionId: id })
+          .where("companyId", "=", companyId)
+          .where("id", "in", staleOpIds)
+          .execute();
+      } catch (error) {
+        return {
+          data: null,
+          error: {
+            name: "PostgrestError",
+            code: "",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Failed to repoint job operations",
+            details: "",
+            hint: ""
+          } as PostgrestError
+        };
+      }
 
       // Migrate step markers v(old) -> v(new) by lineage group before syncing.
       // Without this the job's steps still point at the old version's step ids,
@@ -11742,9 +11761,9 @@ export async function generateAssemblyStepsFromPlan(
   //
   // This is a SYSTEM/derived-data write (reflecting the plan), not a user
   // creating a unit — so the generate route passes a bypassRls (service-role)
-  // `client`. The assemblyUnit INSERT/DELETE RLS policies require
-  // `production_create`/`production_delete`, but generate only authorizes
-  // `production_update`; through a plain RLS client the write silently no-ops
+  // `client`. The assemblyUnit INSERT/DELETE RLS policies require Create and
+  // Full on Assemblies, but generate only authorizes Edit there; through a
+  // plain RLS client the write silently no-ops
   // (steps get built, units never do). Scoped to companyId, so it's tenant-safe.
   const detectedUnits = Object.entries(plan.groups ?? {})
     .filter(([groupId]) => groupId.startsWith("swarm:"))
@@ -14036,8 +14055,8 @@ export async function startAssemblyPlan(
   modelUploadId: string,
   options: { reMotionFor?: string; reDetectUnits?: boolean } = {}
 ) {
-  // The service role: the INSERT needs production_create, and the operations
-  // that start a plan require only update. Every caller read the model under
+  // The service role: the INSERT needs Create on Assemblies, and the
+  // operations that start a plan require only Edit. Every caller read the model under
   // the company, and the row is written to it.
   const created = await createAssemblyPlanJob(ctx.asSystem.supabase, {
     modelUploadId,
@@ -14327,7 +14346,7 @@ export const assignSerialNumbersInput = z.object({
  * Idempotent: it no-ops when the seed is already numbered or already split.
  */
 export const assignSerialNumbersPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof assignSerialNumbersInput>>;
 
 export async function assignSerialNumbers(
@@ -15651,7 +15670,7 @@ export const getMethodInput = z.object({
 export type GetMethodResult = { success: boolean; newQuoteId?: string };
 
 export const getMethodPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof getMethodInput>>;
 
 /** Copies a method (BOM + BOP) between items, quotes and jobs, per `type`. */
@@ -25256,7 +25275,7 @@ async function recalculatePriorities(
 }
 
 export const rescheduleJobPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof rescheduleInput>>;
 
 /**
@@ -25402,7 +25421,7 @@ const postedNetKey = (lines: Awaited<ReturnType<typeof readPostedNet>>) =>
     .join(";");
 
 export const postProductionEventPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof postProductionEventInput>>;
 
 export const SHOP_LABOR_CATEGORY_REQUIRED =
@@ -26310,7 +26329,7 @@ const recalculateRequirementsLogger = getLogger(
   "recalculate"
 );
 export const recalculateRequirementsPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof recalculateInput>>;
 
 /** Re-derives a job's (or one make method's) material and operation quantities. */
@@ -27042,9 +27061,7 @@ async function cloneReworkOperations(
   };
 }
 
-export const triggerReworkPermission = {
-  update: "production"
-} satisfies PermissionRule<z.output<typeof triggerReworkInput>>;
+export { triggerReworkPermission } from "@carbon/api/postings";
 
 /**
  * Sends a job back to an earlier operation: clones the operations from the
@@ -27195,9 +27212,7 @@ async function assertUnitsOfMakeMethod(
   }
 }
 
-export const triggerCorrectionPermission = {
-  update: "production"
-} satisfies PermissionRule<z.output<typeof triggerCorrectionInput>>;
+export { triggerCorrectionPermission } from "@carbon/api/postings";
 
 /**
  * Sends units through one of the job's corrections: inserts the correction's
@@ -28630,7 +28645,7 @@ async function completeBatch(
 }
 
 export const batchOperationPermission = {
-  update: "production"
+  "production.batches": "Edit"
 } satisfies PermissionRule<z.output<typeof batchOperationsInput>>;
 
 /** Job-operation batches: create, change membership, release, dissolve and complete. */

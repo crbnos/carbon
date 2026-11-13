@@ -87,7 +87,7 @@ const ServiceJobHeader = () => {
     job?.billingMethod === "Fixed Price" && job?.fixedPrice === null;
 
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "service");
+  const canUpdate = permissions.has({ "service.jobs": "Edit" });
   const cancelModal = useDisclosure();
   const sendModal = useDisclosure();
   const completeModal = useDisclosure();
@@ -178,8 +178,10 @@ const ServiceJobHeader = () => {
     !isBusy &&
     (status === "Open" || status === "In Progress" || status === "On Hold");
   const canInvoice =
-    permissions.can("update", "service") &&
-    permissions.can("create", "invoicing") &&
+    permissions.has({
+      "service.jobs": "Edit",
+      "invoicing.salesInvoices": "Create"
+    }) &&
     !isBusy &&
     status === "Completed" &&
     job?.coverage === "Billable";

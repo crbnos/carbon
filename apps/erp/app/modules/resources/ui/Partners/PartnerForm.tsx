@@ -44,8 +44,8 @@ const PartnerForm = ({ initialValues }: PartnerFormProps) => {
 
   // const isEditing = initialValues.id !== "";
   // const isDisabled = isEditing
-  //   ? !permissions.can("update", "resources")
-  //   : !permissions.can("create", "resources");
+  //   ? !permissions.has({ "resources.abilities": "Edit" })
+  //   : !permissions.has({ "resources.abilities": "Create" });
 
   // const onSupplierChange = (newValue: { value: string } | null) => {
   //   if (newValue) setSupplier(newValue?.value ?? null);

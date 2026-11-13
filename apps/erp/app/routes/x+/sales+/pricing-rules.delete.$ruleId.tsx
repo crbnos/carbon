@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,21 +11,16 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deletePricingRule,
-  getPricingRule
-} from "~/modules/sales/sales.service";
+import { deletePricingRule } from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.pricingRules": "View" });
 
   const { ruleId } = params;
   if (!ruleId) throw notFound("ruleId not found");
 
-  const pricingRule = await getPricingRule(client, ruleId);
+  const pricingRule = await api.sales.getPricingRule({ id: ruleId });
   if (pricingRule.error) {
     throw redirect(
       `${path.to.salesPricingRules}?${getParams(request)}`,
@@ -40,9 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "sales"
-  });
+  const { client } = await authorize(request, { "sales.pricingRules": "Full" });
 
   const { ruleId } = params;
   if (!ruleId) {

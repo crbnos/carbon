@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getAppUrl } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { getIntegrationIdsByRole, integrations } from "@carbon/ee";
 import { redirectExternal } from "@carbon/utils";
@@ -30,12 +30,9 @@ export const config = {
  * parameter the callback reads back.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId, client, email } = await requirePermissions(
-    request,
-    {
-      update: "settings"
-    }
-  );
+  const { userId, companyId, client, email } = await authorize(request, {
+    "settings.integrations": "Edit"
+  });
 
   const integrationId = params.id;
   const integration = integrations.find((i) => i.id === integrationId);

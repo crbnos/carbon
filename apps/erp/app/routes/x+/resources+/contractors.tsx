@@ -6,7 +6,6 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAbilitiesList } from "~/modules/resources/resources.service";
 import { ContractorsTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -22,8 +21,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, contractorsList, {
     dataKey: "contractors",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => ({
-      abilities: (await getAbilitiesList(client, companyId)).data ?? []
+    firstPage: async ({ api }) => ({
+      abilities: (await api.resources.getAbilitiesList({})).data ?? []
     }),
     onError: {
       redirectTo: path.to.resources,

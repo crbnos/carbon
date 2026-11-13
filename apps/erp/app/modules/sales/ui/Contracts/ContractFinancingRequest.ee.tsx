@@ -94,7 +94,7 @@ export default function ContractFinancingRequest({
   const personName = (id: string) =>
     people.find((person) => person.id === id)?.name ?? id;
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.serviceContracts": "Edit" });
   const fetcher = useFetcher();
   const editor = useDrawerItem<Sf1443OverridableLine>();
   const editing = editor.item;
@@ -353,7 +353,9 @@ export default function ContractFinancingRequest({
             {request.status === "Approved" && !request.paymentId && (
               <Button
                 isDisabled={
-                  !canUpdate || !permissions.can("create", "invoicing") || busy
+                  !canUpdate ||
+                  !permissions.has({ "invoicing.payments": "Create" }) ||
+                  busy
                 }
                 isLoading={busy}
                 onClick={() => submit("record-payment")}

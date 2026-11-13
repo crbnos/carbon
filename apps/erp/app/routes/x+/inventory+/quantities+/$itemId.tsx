@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   RecordOutlet,
@@ -22,11 +22,7 @@ import { useSetAppBarOverride } from "~/components/Layout/Mobile";
 import { RecordHero } from "~/components/Layout/RecordHeader";
 import { useUrlParams } from "~/hooks";
 import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
-import {
-  getItem,
-  getPickMethod,
-  upsertPickMethod
-} from "~/modules/items/items.service";
+import { getPickMethod, upsertPickMethod } from "~/modules/items/items.service";
 import { resolveLocationId } from "~/modules/shared/shared.service";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -38,8 +34,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "inventory.quantities": "View"
   });
 
   const { itemId } = params;
@@ -86,7 +82,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const item = await getItem(client, itemId);
+  const item = await api.items.getItem({ id: itemId });
   if (item.error || !item.data) {
     throw redirect(
       path.to.inventory,

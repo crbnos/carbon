@@ -149,7 +149,7 @@ const CustomerPortalsTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "sales")}
+              disabled={!permissions.has({ "sales.portals": "Full" })}
               onClick={() => {
                 navigate(
                   `${path.to.deleteCustomerPortal(row.id)}?${params.toString()}`
@@ -172,7 +172,7 @@ const CustomerPortalsTable = memo(
         count={count}
         infinite={infinite}
         primaryAction={
-          permissions.can("create", "sales") && (
+          permissions.has({ "sales.portals": "Create" }) && (
             <New
               label={t`Customer Portal`}
               to={`${path.to.newCustomerPortal}?${params.toString()}`}

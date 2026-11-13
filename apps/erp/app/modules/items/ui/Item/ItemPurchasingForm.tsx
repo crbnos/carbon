@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import {
   FieldEmptyState,
   fieldEmptyStateLinkClassName,
@@ -119,7 +120,7 @@ const ItemPurchasingForm = ({
           </div>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "parts")}>
+          <Submit isDisabled={!permissions.has(anyOf(ITEM_PAGES, "Edit"))}>
             <Trans>Save</Trans>
           </Submit>
         </CardFooter>

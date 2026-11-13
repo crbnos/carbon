@@ -8,10 +8,6 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getAttributeCategories,
-  getShiftsList
-} from "~/modules/people/people.service";
 import { PeopleTable } from "~/modules/people/ui/People";
 import { getEmployeeTypes } from "~/modules/users/users.service";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -22,11 +18,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, peopleList, {
     dataKey: "people",
     bypassRls: true,
-    firstPage: async ({ client, companyId, request }) => {
+    firstPage: async ({ client, companyId, request, api }) => {
       const [attributeCategories, employeeTypes, shifts] = await Promise.all([
-        getAttributeCategories(client, companyId),
+        api.people.getAttributeCategories({}),
         getEmployeeTypes(client, companyId),
-        getShiftsList(client, companyId, null)
+        api.people.getShiftsList({ locationId: null })
       ]);
       if (attributeCategories.error) {
         throw redirect(
@@ -50,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         );
       }
       return {
-        attributeCategories: attributeCategories.data ?? [],
+        attributeCategories: attributeCategories.data?.rows ?? [],
         employeeTypes: employeeTypes.data ?? [],
         shifts: shifts.data ?? []
       };

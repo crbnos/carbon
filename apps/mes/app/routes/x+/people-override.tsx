@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { setPeopleOverride } from "~/services/people.server";
@@ -12,7 +12,7 @@ import { setPeopleOverride } from "~/services/people.server";
 // cookie); the operations loader stops defaulting the work-center filter.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  await requirePermissions(request, {});
+  await authorize(request, {});
 
   const formData = await request.formData();
   const date = String(formData.get("date") ?? "");

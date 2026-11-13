@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -13,7 +13,6 @@ import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteUnitOfMeasure,
-  getUnitOfMeasure,
   getUnitOfMeasureUsage
 } from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
@@ -30,14 +29,12 @@ function describeUsage(usage: { tableName: string; count: number }[]) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.units": "View" });
 
   const { uomId } = params;
   if (!uomId) throw notFound("uomId not found");
 
-  const unitOfMeasure = await getUnitOfMeasure(client, uomId, companyId);
+  const unitOfMeasure = await api.items.getUnitOfMeasure({ id: uomId });
   if (unitOfMeasure.error) {
     throw redirect(
       `${path.to.uoms}?${getParams(request)}`,
@@ -49,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   // Checked up front so the modal can explain before the DB guard has to.
-  const usage = await getUnitOfMeasureUsage(client, uomId);
+  const usage = await api.items.getUnitOfMeasureUsage({ id: uomId });
   if (usage.error) {
     throw redirect(
       `${path.to.uoms}?${getParams(request)}`,
@@ -67,9 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "parts"
-  });
+  const { client } = await authorize(request, { "parts.units": "Full" });
 
   const { uomId } = params;
   if (!uomId) {

@@ -9,7 +9,7 @@ import {
   notFound,
   success
 } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -21,24 +21,19 @@ import {
   CUSTOMER_CONTACT_EMAIL_REQUIRED,
   customerContactValidator
 } from "~/modules/sales/sales.models";
-import {
-  getCustomerContact,
-  updateCustomerContact
-} from "~/modules/sales/sales.service";
+import { updateCustomerContact } from "~/modules/sales/sales.service";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.customers": "View" });
 
   const { customerId, customerContactId } = params;
   if (!customerId) throw notFound("customerId not found");
   if (!customerContactId) throw notFound("customerContactId not found");
 
-  const contact = await getCustomerContact(client, customerContactId);
+  const contact = await api.sales.getCustomerContact({ customerContactId });
   if (contact.error) {
     throw redirect(
       path.to.customerContacts(customerId),
@@ -56,8 +51,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, companyId } = await authorize(request, {
+    "sales.customers": "Edit"
   });
 
   const { customerId, customerContactId } = params;

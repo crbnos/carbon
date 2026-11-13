@@ -54,7 +54,7 @@ const ReimbursementHeader = () => {
 
   const status = reimbursement.status;
   const balanceDue = routeData?.balanceDue ?? 0;
-  const canUpdate = permissions.can("update", "invoicing");
+  const canUpdate = permissions.has({ "invoicing.reimbursements": "Edit" });
   const isDraft = status === "Draft";
   const isPosted = status === "Posted";
   const canPost = isDraft && canUpdate;
@@ -62,7 +62,9 @@ const ReimbursementHeader = () => {
   // Posted and still owed. `balanceDue` comes from the settlement rows, so a
   // fully paid reimbursement simply stops offering the action.
   const canPay =
-    isPosted && balanceDue > 0 && permissions.can("create", "invoicing");
+    isPosted &&
+    balanceDue > 0 &&
+    permissions.has({ "invoicing.reimbursements": "Create" });
 
   const postAction = path.to.reimbursementPost(reimbursement.id);
 

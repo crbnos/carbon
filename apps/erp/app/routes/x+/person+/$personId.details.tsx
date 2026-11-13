@@ -4,24 +4,21 @@
 
 import { ProfileForm } from "@carbon/account/ui";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useUser } from "~/hooks";
-import { getAccount } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "people"
-  });
+  const { api } = await authorize(request, { "people.employees": "View" });
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
-  const account = await getAccount(client, personId);
+  const account = await api.users.getAccount({ id: personId });
 
   if (account.error) {
     throw redirect(

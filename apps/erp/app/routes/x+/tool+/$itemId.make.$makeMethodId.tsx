@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { Menubar, VStack } from "@carbon/react";
@@ -16,11 +17,7 @@ import { CadModel } from "~/components";
 import { useRouteData } from "~/hooks";
 import { usePermissions } from "~/hooks/usePermissions";
 import {
-  getMakeMethodById,
-  getMakeMethods,
   getMethodCorrectionsData,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
   getRevisionLock
 } from "~/modules/items/items.service";
 import type { ToolSummary } from "~/modules/items/types";
@@ -31,13 +28,12 @@ import {
   MethodCorrections
 } from "~/modules/items/ui/Item";
 import { toMethodCorrectionsProps } from "~/modules/items/ui/Item/MethodCorrections";
-import { getModelByItemId, getTagsList } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
+  const { client, companyId, api } = await authorize(request, {
+    "parts.tools": "View"
   });
 
   const { itemId, makeMethodId } = params;
@@ -46,10 +42,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [makeMethod, methodMaterials, methodOperations, tags, revisionLock] =
     await Promise.all([
-      getMakeMethodById(client, makeMethodId, companyId),
-      getMethodMaterialsByMakeMethod(client, makeMethodId),
-      getMethodOperationsByMakeMethodId(client, makeMethodId),
-      getTagsList(client, companyId, "operation"),
+      api.items.getMakeMethodById({ makeMethodId }),
+      api.items.getMethodMaterialsByMakeMethod({ makeMethodId }),
+      api.items.getMethodOperationsByMakeMethodId({ makeMethodId }),
+      api.shared.getTagsList({ table: "operation" }),
       getRevisionLock(client, { itemId, companyId })
     ]);
 
@@ -115,8 +111,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workCenterId: operation.workCenterId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null
       })) ?? [],
-    model: getModelByItemId(client, makeMethod.data.itemId),
-    makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
+    model: api.shared
+      .getModelByItemId({ itemId: makeMethod.data.itemId })
+      .then(dataOrThrow),
+    makeMethods: api.items.getMakeMethods({ itemId: makeMethod.data.itemId }),
     tags: tags.data ?? [],
     revisionStatus: revisionLock.revisionStatus,
     releaseControl: revisionLock.releaseControl
@@ -194,7 +192,7 @@ export default function ToolMakeMethodPage() {
           {(model) => (
             <CadModel
               key={`cad:${model.itemId}`}
-              isReadOnly={!permissions.can("update", "parts")}
+              isReadOnly={!permissions.has({ "parts.tools": "Edit" })}
               metadata={{
                 itemId: model?.itemId ?? undefined
               }}

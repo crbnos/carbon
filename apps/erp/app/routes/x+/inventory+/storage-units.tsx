@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,14 +11,10 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  getStorageTypesList,
-  getStorageUnitParentIdsWithChildren,
-  getStorageUnitRoots,
   getStorageUnitSubtrees,
   searchStorageUnitsWithAncestors
 } from "~/modules/inventory/inventory.service";
 import StorageUnitsTable from "~/modules/inventory/ui/StorageUnits/StorageUnitsTable";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
@@ -27,8 +23,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Storage Units`,
-  to: path.to.storageUnits,
-  module: "inventory"
+  to: path.to.storageUnits
 };
 
 // Deepest level (1-based, roots = 1) the tree eagerly loads and pre-expands.
@@ -40,10 +35,11 @@ const EAGER_EXPAND_MAX_DEPTH = 5;
 // SINGLE_LOAD_LIMIT of them.
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "inventory",
-    bypassRls: true
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    { "inventory.storageUnits": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -71,7 +67,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Always fetch the locations list server-side so the Location column can
   // render the resolved name on first paint instead of flashing the raw
   // locationId while the client-side useLocations() fetcher catches up.
-  const locationsList = await getLocationsList(client, companyId);
+  const locationsList = await api.resources.getLocationsList({});
   if (locationsList.error || !locationsList.data?.length) {
     throw redirect(
       path.to.storageUnits,
@@ -87,11 +83,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [parentIdsWithChildren, storageTypesList] = await Promise.all([
-    getStorageUnitParentIdsWithChildren(client, companyId, locationId),
+    api.inventory.getStorageUnitParentIdsWithChildren({ locationId }),
     // Fetch storage types server-side so the Storage Types column can render
     // resolved names on first paint instead of flashing raw ids while the
     // client-side useStorageTypes() fetcher catches up.
-    getStorageTypesList(client, companyId)
+    api.inventory.getStorageTypesList({})
   ]);
 
   let rows: any[];
@@ -119,12 +115,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count = searchResult.rows.length;
     initialExpanded = searchResult.expandedParentIds;
   } else {
-    const rootsResult = await getStorageUnitRoots(
-      client,
-      companyId,
-      locationId,
-      { search, limit: SINGLE_LOAD_LIMIT, offset: 0, sorts, filters }
-    );
+    const rootsResult = await api.inventory.getStorageUnitRoots({
+      search,
+      limit: SINGLE_LOAD_LIMIT,
+      offset: 0,
+      sorts,
+      filters,
+      locationId
+    });
     if (rootsResult.error) {
       throw redirect(
         path.to.authenticatedRoot,
@@ -134,8 +132,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         )
       );
     }
-    const roots = rootsResult.data ?? [];
-    count = rootsResult.count ?? 0;
+    const roots = rootsResult.data?.rows ?? [];
+    count = rootsResult.data?.count ?? 0;
     isTruncated = roots.length >= SINGLE_LOAD_LIMIT;
 
     // Eagerly load the subtrees of the roots so the tree renders expanded by
@@ -176,7 +174,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     count,
     storageUnits: rows,
-    parentIdsWithChildren: parentIdsWithChildren.data,
+    parentIdsWithChildren: parentIdsWithChildren.data ?? [],
     initialExpanded,
     locations: locationsList.data,
     locationId,

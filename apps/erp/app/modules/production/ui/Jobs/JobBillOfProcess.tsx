@@ -191,7 +191,10 @@ import {
   procedureSyncValidator,
   syncAssemblyToBopValidator
 } from "../../production.models";
-import { getProductionEventsPage } from "../../production.utils";
+import {
+  getProductionEventsPage,
+  syncAssemblyToOperationPermission
+} from "../../production.utils";
 import type { Job, JobOperation } from "../../types";
 import { JobOperationStatus, JobOperationTags } from "./JobOperationStatus";
 import { OperationDueDatePicker } from "./OperationDueDatePicker";
@@ -611,7 +614,8 @@ const JobBillOfProcess = ({
   const isDisabled = ["Completed", "Cancelled"].includes(
     jobData?.job?.status ?? ""
   );
-  const isReadOnly = isDisabled || !permissions.can("update", "production");
+  const isReadOnly =
+    isDisabled || !permissions.has({ "production.jobs": "Edit" });
 
   const onToggleItem = (id: string) => {
     if (isReadOnly) return;
@@ -676,7 +680,7 @@ const JobBillOfProcess = ({
     .map((item) => item.id);
 
   const onReorder = (items: ItemWithData[]) => {
-    if (!permissions.can("update", "production") || isDisabled) return;
+    if (!permissions.has({ "production.jobs": "Edit" }) || isDisabled) return;
     const newItems = items.map((item, index) => ({
       ...item,
       data: {
@@ -861,7 +865,7 @@ const JobBillOfProcess = ({
         content: (
           <div className="flex flex-col">
             <div>
-              {permissions.can("update", "parts") ? (
+              {permissions.has({ "production.jobs": "Edit" }) ? (
                 <Editor
                   label={t`Work Instructions`}
                   initialValue={
@@ -869,7 +873,7 @@ const JobBillOfProcess = ({
                   }
                   onUpload={onUploadImage}
                   onChange={(content) => {
-                    if (!permissions.can("update", "production")) return;
+                    if (!permissions.has({ "production.jobs": "Edit" })) return;
                     setWorkInstructions((prev) => ({
                       ...prev,
                       [item.id]: content
@@ -1075,7 +1079,7 @@ const JobBillOfProcess = ({
               ref={addOperationButtonRef}
               variant="secondary"
               isDisabled={
-                !permissions.can("update", "production") ||
+                !permissions.has({ "production.jobs": "Edit" }) ||
                 selectedItemId !== null ||
                 isDisabled
               }
@@ -1108,7 +1112,7 @@ const JobBillOfProcess = ({
                   <Button
                     variant="secondary"
                     isDisabled={
-                      !permissions.can("update", "production") ||
+                      !permissions.has({ "production.jobs": "Edit" }) ||
                       selectedItemId !== null ||
                       isDisabled
                     }
@@ -2818,6 +2822,7 @@ function OperationForm({
   const { jobId } = useParams();
   const { t } = useLingui();
   const { company } = useUser();
+  const permissions = usePermissions();
   if (!jobId) throw new Error("jobId not found");
 
   const isNew = !!temporaryItems[item.id];
@@ -3675,6 +3680,9 @@ function OperationForm({
                         <Button
                           variant="secondary"
                           rightIcon={<LuRefreshCcw />}
+                          isDisabled={
+                            !permissions.has(syncAssemblyToOperationPermission)
+                          }
                           onClick={assemblySyncDisclosure.onOpen}
                         >
                           Sync Assembly Steps

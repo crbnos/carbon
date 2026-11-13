@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -28,8 +28,8 @@ import {
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
+  const { client, companyId, api } = await authorize(request, {
+    "sales.rentalAgreements": "View"
   });
 
   const { id, lineId } = params;
@@ -37,8 +37,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!lineId) throw notFound("lineId not found");
 
   const [agreement, line] = await Promise.all([
-    getRentalAgreement(client, id, companyId),
-    getRentalAgreementLine(client, lineId, companyId)
+    api.sales.getRentalAgreement({ rentalAgreementId: id }),
+    api.sales.getRentalAgreementLine({ rentalAgreementLineId: lineId })
   ]);
 
   if (
@@ -80,8 +80,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, companyId, userId } = await authorize(request, {
+    "sales.rentalAgreements": "Edit"
   });
 
   const { id, lineId } = params;

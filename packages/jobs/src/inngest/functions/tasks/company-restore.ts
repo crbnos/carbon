@@ -12,6 +12,7 @@ import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
+import { clearCompanyAccessCaches } from "../../../backups/access-cache";
 import {
   groupConflictClause,
   rebuildDerivedGroups
@@ -302,6 +303,10 @@ export async function wipeAndLoad(
       `.execute(trx);
     }
   });
+
+  // Access rows are kept, but the app's cached claims must not outlive the
+  // data they were read next to.
+  await clearCompanyAccessCaches(db, companyId);
 
   return { rows: inserted, idRewrite };
 }

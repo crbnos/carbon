@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { supportedModelTypes } from "@carbon/files/cad";
@@ -48,17 +48,14 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RFQs`, to: path.to.salesRfqs },
     (data) => data?.rfqSummary?.rfqId
-  ),
-  module: "sales"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.rfqSummary?.rfqId, "Sales RFQ");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { companyId } = await authorize(request, { "sales.rfqs": "View" });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
@@ -151,8 +148,7 @@ export default function SalesRFQRoute() {
   // add-line controls take: an unlocked RFQ and sales edit rights.
   const canDropDocuments =
     !isSalesRfqLocked(rfqSummary?.status) &&
-    permissions.can("update", "sales") &&
-    permissions.can("create", "sales");
+    permissions.has({ "sales.rfqs": "Edit" });
 
   const handleDrop = (
     document: FileObject & { path: string },

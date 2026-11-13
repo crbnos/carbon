@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import { Heading, SidebarTrigger, useViewport } from "@carbon/react";
@@ -34,7 +34,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.readableId, "Job");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
   const serviceRole = getCarbonServiceRole();
 
   const { jobId } = params;

@@ -19,6 +19,7 @@ import { Enumerable } from "~/components/Enumerable";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { storageTypesGate } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
 type StorageType = {
@@ -94,7 +95,7 @@ const StorageTypesTable = memo((props: StorageTypesTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "parts")}
+            disabled={!permissions.has(storageTypesGate("Edit"))}
             onClick={() => {
               navigate(`${path.to.storageType(row.id)}?${params.toString()}`);
             }}
@@ -104,7 +105,7 @@ const StorageTypesTable = memo((props: StorageTypesTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "parts")}
+            disabled={!permissions.has(storageTypesGate("Full"))}
             destructive
             onClick={() => {
               navigate(
@@ -134,7 +135,7 @@ const StorageTypesTable = memo((props: StorageTypesTableProps) => {
         }
       ]}
       primaryAction={
-        permissions.can("create", "parts") && (
+        permissions.has(storageTypesGate("Create")) && (
           <New
             label={t`Storage Type`}
             to={`${path.to.newStorageType}?${params.toString()}`}

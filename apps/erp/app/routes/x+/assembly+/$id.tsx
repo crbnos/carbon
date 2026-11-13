@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
@@ -48,17 +49,6 @@ import {
   isAssemblyPlanRunning
 } from "~/modules/production/production.models";
 import {
-  getAssemblyComponentMappings,
-  getAssemblyInstruction,
-  getAssemblyInstructionStepMaterials,
-  getAssemblyInstructionStepSlides,
-  getAssemblyInstructionSteps,
-  getAssemblyInstructionStepTools,
-  getAssemblyInstructionVersions,
-  getAssemblyPlanJson,
-  getAssemblyUnits,
-  getFlattenedBomMaterials,
-  getLatestAssemblyPlanJob,
   isAssemblerServiceHealthy,
   upsertAssemblyInstruction
 } from "~/modules/production/production.service";
@@ -83,37 +73,34 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Assemblies`, to: path.to.assemblyInstructions },
     (data) => data?.instruction?.name
-  ),
-  module: "production"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.instruction?.name, "Assembly Instruction");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "production.assemblies": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [instruction, steps] = await Promise.all([
-    getAssemblyInstruction(client, id),
-    getAssemblyInstructionSteps(client, id)
+    api.production.getAssemblyInstruction({ id }),
+    api.production.getAssemblyInstructionSteps({ assemblyInstructionId: id })
   ]);
 
   const instructionError = instruction.error;
   if (instructionError || !instruction.data) {
-    // A deleted/absent instruction is a normal not-found (PGRST116 = no rows),
+    // A deleted/absent instruction is a normal not-found (a notFound refusal),
     // not a server error. A stale tab left open on a deleted instruction keeps
     // revalidating (realtime + poll); logging error() on every hit spams the
     // service log. Log only genuine DB errors; redirect quietly otherwise.
-    // Entered when there's an error OR no row. Not-found = a PGRST116 (no rows)
+    // Entered when there's an error OR no row. Not-found = a notFound refusal (no rows)
     // error, or the no-error-no-row case; a genuine DB error falls through to
     // error() so it's still logged.
-    const notFound = !instructionError || instructionError.code === "PGRST116";
+    const notFound =
+      !instructionError || instructionError.category === "notFound";
     throw redirect(
       path.to.assemblyInstructions,
       await flash(
@@ -138,26 +125,38 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     assemblerAvailable,
     versions
   ] = await Promise.all([
-    getAssemblyInstructionStepMaterials(client, stepIds),
-    getAssemblyInstructionStepSlides(client, stepIds),
-    getAssemblyInstructionStepTools(client, stepIds),
+    api.production.getAssemblyInstructionStepMaterials({ stepIds }),
+    api.production.getAssemblyInstructionStepSlides({ stepIds }),
+    api.production.getAssemblyInstructionStepTools({ stepIds }),
     instruction.data.modelUploadId
-      ? getAssemblyPlanJson(client, instruction.data.modelUploadId)
+      ? api.production
+          .getAssemblyPlanJson({
+            modelUploadId: instruction.data.modelUploadId
+          })
+          .then(dataOrThrow)
       : Promise.resolve(null),
     instruction.data.modelUploadId
-      ? getLatestAssemblyPlanJob(client, instruction.data.modelUploadId)
+      ? api.production.getLatestAssemblyPlanJob({
+          modelUploadId: instruction.data.modelUploadId
+        })
       : Promise.resolve({ data: null }),
     instruction.data.modelUploadId
-      ? getAssemblyComponentMappings(client, instruction.data.modelUploadId)
+      ? api.production.getAssemblyComponentMappings({
+          modelUploadId: instruction.data.modelUploadId
+        })
       : Promise.resolve({ data: [] }),
     instruction.data.modelUploadId
-      ? getAssemblyUnits(client, instruction.data.modelUploadId)
+      ? api.production.getAssemblyUnits({
+          modelUploadId: instruction.data.modelUploadId
+        })
       : Promise.resolve({ data: [] }),
     instruction.data.itemId
-      ? getFlattenedBomMaterials(client, instruction.data.itemId, companyId)
+      ? api.production
+          .getFlattenedBomMaterials({ itemId: instruction.data.itemId })
+          .then(dataOrThrow)
       : Promise.resolve([]),
     isAssemblerServiceHealthy(),
-    getAssemblyInstructionVersions(client, instruction.data)
+    api.production.getAssemblyInstructionVersions(instruction.data)
   ]);
 
   return {
@@ -178,8 +177,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+  const { client, companyId, userId } = await authorize(request, {
+    "production.assemblies": "Edit"
   });
 
   const { id } = params;
@@ -238,7 +237,8 @@ export default function AssemblyInstructionRoute() {
   const mode = useMode();
 
   const isDisabled =
-    instruction.status !== "Draft" || !permissions.can("update", "production");
+    instruction.status !== "Draft" ||
+    !permissions.has({ "production.assemblies": "Edit" });
 
   // Motion planning runs server-side and patches step motions when it lands
   // (the explorer polls while it runs). Until then the stored motions are
@@ -698,7 +698,9 @@ export default function AssemblyInstructionRoute() {
                         <span className="text-xs font-medium text-foreground">
                           {t`The part has a newer model than this instruction.`}
                         </span>
-                        {permissions.can("create", "production") && (
+                        {permissions.has({
+                          "production.assemblies": "Create"
+                        }) && (
                           <Link
                             to={`${path.to.newAssemblyInstruction}?itemId=${instruction.itemId}`}
                             className="whitespace-nowrap text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
@@ -798,7 +800,9 @@ export default function AssemblyInstructionRoute() {
                             isLoading={retryFetcher.state !== "idle"}
                             isDisabled={
                               retryFetcher.state !== "idle" ||
-                              !permissions.can("update", "production")
+                              !permissions.has({
+                                "production.assemblies": "Edit"
+                              })
                             }
                           >
                             Try again

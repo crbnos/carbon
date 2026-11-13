@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
@@ -21,14 +21,9 @@ import type {
 } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import {
-  getQualityDocument,
-  getQualityDocumentVersions
-} from "~/modules/quality/quality.service";
 import QualityDocumentEditor from "~/modules/quality/ui/Documents/QualityDocumentEditor";
 import QualityDocumentHeader from "~/modules/quality/ui/Documents/QualityDocumentHeader";
 import QualityDocumentProperties from "~/modules/quality/ui/Documents/QualityDocumentProperties";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -39,8 +34,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Policy & Procedure`, to: path.to.qualityDocuments },
     (data) => data?.document?.name
-  ),
-  module: "quality"
+  )
 };
 
 // Approving makes the document Active; rejecting leaves it in Draft.
@@ -50,7 +44,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.quality.decideQualityDocumentApproval({
     ...input.data,
     qualityDocumentId: id
@@ -64,10 +58,11 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.document?.name, "Quality Document");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "quality",
-    bypassRls: true
-  });
+  const { companyId, userId, api } = await authorize(
+    request,
+    { "quality.qualityDocuments": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -75,10 +70,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Kick off approval in parallel — it only needs document.status, so we chain
   // off the document fetch rather than waiting for Promise.all to settle.
   // Approval only gates Draft / Archived → Active.
-  const documentPromise = getQualityDocument(client, id);
+  const documentPromise = api.quality.getQualityDocument({ id });
   const [document, tags, approval] = await Promise.all([
     documentPromise,
-    getTagsList(client, companyId, "qualityDocument"),
+    api.shared.getTagsList({ table: "qualityDocument" }),
     documentPromise.then((d) =>
       d.data?.status === "Draft" || d.data?.status === "Archived"
         ? getDocumentApprovalState(getCarbonServiceRole(), {
@@ -110,7 +105,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     document: document.data,
-    versions: getQualityDocumentVersions(client, document.data, companyId),
+    versions: api.quality.getQualityDocumentVersions(document.data),
     tags: tags.data ?? [],
     approval
   };

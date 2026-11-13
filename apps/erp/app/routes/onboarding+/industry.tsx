@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
@@ -94,11 +94,15 @@ function appendDraftCompany(
 }
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    // Onboarding acts on the user's own account: a portal-only user may still
-    // create a company of their own.
-    allowPortalAccounts: true
-  });
+  const { client, companyId, email } = await authorize(
+    request,
+    {},
+    {
+      // Onboarding acts on the user's own account: a portal-only user may
+      // still create a company of their own.
+      allowPortalAccounts: true
+    }
+  );
 
   // Restoring from a backup stays internal-only; the demo template and a clean
   // start are open to every signup.
@@ -122,11 +126,15 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, email } = await requirePermissions(request, {
-    // Onboarding acts on the user's own account: a portal-only user may still
-    // create a company of their own.
-    allowPortalAccounts: true
-  });
+  const { client, userId, email } = await authorize(
+    request,
+    {},
+    {
+      // Onboarding acts on the user's own account: a portal-only user may
+      // still create a company of their own.
+      allowPortalAccounts: true
+    }
+  );
 
   // Get draft data from previous step (company)
   const draft = await getOnboardingDraft(request);

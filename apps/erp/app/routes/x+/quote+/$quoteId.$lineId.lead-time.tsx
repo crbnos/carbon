@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import { runQuoteLeadTimeWhatIf } from "@carbon/planning";
@@ -19,8 +19,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   // Read-only capable-to-promise what-if — nothing is persisted, so `view` is
   // sufficient (same reasoning as $jobId.expedite.tsx).
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "sales"
+  const { client, companyId, userId } = await authorize(request, {
+    "sales.quotes": "View"
   });
 
   const { quoteId, lineId } = params;

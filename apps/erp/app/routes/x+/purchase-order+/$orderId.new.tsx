@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -30,8 +30,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const { client, companyId } = await requirePermissions(request, {
-    create: "purchasing"
+  const { client, companyId, api } = await authorize(request, {
+    "purchasing.purchaseOrders": "Create"
   });
 
   const formData = await request.formData();
@@ -101,7 +101,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The operation refuses an order in approval or finished, and sends a
   // released order whose total goes above its approved amount back for
   // approval.
-  const api = await carbon(request);
   const result = await api.purchasing.createPurchaseOrderLine({
     ...d,
     purchaseOrderId: orderId,

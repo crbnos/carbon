@@ -3,15 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { saveJournalLineDimensions } from "~/modules/accounting/accounting.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "accounting"
+  const { client, companyId } = await authorize(request, {
+    "accounting.journalEntries": "Edit"
   });
 
   const { journalLineId } = params;

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { PageGate } from "@carbon/database/access";
 import {
   addDays,
   addMonths,
@@ -2722,3 +2723,9 @@ export function purchaseOrderStatusAfterReversal(
   if (allReceived) return "To Invoice";
   return "To Receive and Invoice";
 }
+
+/** `purchasing.finalizePurchasingRfqAndNotify`: the posting writes the supplier quotes as the system. */
+export const finalizePurchasingRfqAndNotifyPermission = {
+  "purchasing.rfqs": "Edit",
+  "purchasing.supplierQuotes": "Create"
+} satisfies PageGate;

@@ -3,31 +3,29 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { partnerValidator } from "~/modules/resources/resources.models";
-import {
-  getPartner,
-  upsertPartner
-} from "~/modules/resources/resources.service";
+import { upsertPartner } from "~/modules/resources/resources.service";
 import { PartnerForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "resources"
-  });
+  const { api } = await authorize(request, { "resources.abilities": "View" });
 
   const { supplierLocationId, abilityId } = params;
   if (!supplierLocationId) throw notFound("Partner ID was not found");
   if (!abilityId) throw notFound("Ability ID was not found");
 
-  const partner = await getPartner(client, supplierLocationId, abilityId);
+  const partner = await api.resources.getPartner({
+    partnerId: supplierLocationId,
+    abilityId
+  });
 
   if (partner.error) {
     throw redirect(
@@ -43,8 +41,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    create: "resources"
+  const { client, userId } = await authorize(request, {
+    "resources.abilities": "Create"
   });
 
   const formData = await request.formData();

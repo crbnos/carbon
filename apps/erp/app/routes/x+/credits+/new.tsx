@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
 import {
   Card,
@@ -23,13 +24,10 @@ import type {
 } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
-import { memoValidator } from "~/modules/invoicing/invoicing.models";
+import { memoPage, memoValidator } from "~/modules/invoicing/invoicing.models";
 import { upsertMemo } from "~/modules/invoicing/invoicing.service";
 import { MemoForm } from "~/modules/invoicing/ui";
-import {
-  getCompany,
-  getNextSequence
-} from "~/modules/settings/settings.service";
+import { getNextSequence } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -55,20 +53,18 @@ export const handle: Handle = {
         ? { breadcrumb: msg`Supplier Credits`, to: path.to.supplierCredits }
         : { breadcrumb: msg`Credit Memos`, to: path.to.creditMemos }
     ];
-  },
-  module: "invoicing"
+  }
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "invoicing"
-  });
-
-  const company = await getCompany(client, companyId);
-  const currencyCode = company.data?.baseCurrencyCode ?? "";
-
   const party = new URL(request.url).searchParams.get("party");
   const type = party === "supplier" ? "supplierCredit" : "creditMemo";
+  const { client, companyId, api } = await authorize(request, {
+    [memoPage(party === "supplier" ? "supplier" : "customer")]: "Create"
+  });
+
+  const company = await api.settings.getCompany({});
+  const currencyCode = company.data?.baseCurrencyCode ?? "";
 
   return {
     type,
@@ -93,15 +89,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "invoicing"
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    anyOf(["invoicing.supplierCredits", "invoicing.creditMemos"], "Create")
+  );
 
   const formData = await request.formData();
   const validation = await validator(memoValidator).validate(formData);
   if (validation.error) {
     return validationError(validation.error);
   }
+  await authorize(request, { [memoPage(validation.data)]: "Create" });
 
   let memoId = validation.data.memoId;
   if (!memoId) {

@@ -28,7 +28,7 @@ packages/ee/src/workflows/runtime/  pure. no I/O, no client, no database.
 
 packages/jobs/src/workflows/engine/  everything that touches the world
   walk.ts    pure graph maths — frontier, handles, MAX_NODE_EXECUTIONS (500)
-  owner.ts   getOwnerClient / readOwnerPermissions / hasPermission
+  owner.ts   getOwnerClient / readOwnerPermissions (the owner's claims, checked by admits)
   loader.ts  EntityLoader over the owner's connection + triggerOutputs
   ledger.ts  claimStep / settleStep / failInterruptedSteps / redactForLog
   log.ts     loadRunContext / claimRun / finishRun / failCrashedRun (workflowRun)
@@ -39,7 +39,7 @@ packages/jobs/src/workflows/actions/  the WorkflowServices implementation
 ```
 
 A node kind runs only if `EXECUTORS` in `runtime/executors.ts` has an entry for
-it, and `execute.ts` takes the permission module and the work from that **same**
+it, and `execute.ts` takes the permission and the work from that **same**
 entry. Two lookups could drift, and the one that drifts silently is the
 permission check — so a new kind is one registry line, never an extended
 `node.type` chain.
@@ -69,12 +69,17 @@ A workflow must never be able to do something its owner could not do by hand.
 - `workflowRunId` is **not optional**. `dispatch_event_batch()` reads that claim
   to tag the write. An untagged write looks like a person's, so the origin filter
   and both loop guards go blind. See `workflow-matcher.md`.
-- The declared permission is checked **explicitly** as well as by RLS — the
-  trigger event's module at run start, and each node's `{module, action}` before
-  it executes. RLS alone returns zero rows, which reads as "no data"; a customer
-  needs `"The owner of this workflow no longer has access to Purchasing."` The
-  action is part of the gate: an owner who may view Purchasing but not update it
-  fails at the update node, not at the trigger.
+- The declared permission is checked **explicitly** as well as by RLS — View on
+  the trigger event's page at run start (`eventGate`), and each node's `Gate` before
+  it executes (`holdsGate`; an `anyOf` gate passes on any one page). RLS alone returns zero rows,
+  which reads as "no data"; a customer needs `"The owner of this workflow no
+  longer has access to Purchase Orders."` The level is part of the gate: an
+  owner who may view Purchase Orders but not edit them fails at the update node,
+  not at the trigger.
+- **Only the published version runs.** At `"load"`, `executeWorkflowRun` settles a run
+  `Skipped` when the workflow is unpublished, or when the run's `workflowVersionId` is not
+  `workflow.publishedVersionId`. The owner's test run (`executeManualWorkflowRun`, a draft
+  by design) does not go through `executeWorkflowRun`.
 - **The only privileged access is the two run-log tables.** `getJobDatabaseClient`
   appears in `execute.ts` for `claimStep`/`settleStep`/`loadRunContext`/`claimRun`/
   `finishRun` and nowhere else. RLS on those tables is SELECT-only by design. A

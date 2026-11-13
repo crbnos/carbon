@@ -58,7 +58,7 @@ const ShipmentNotes = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {permissions.can("update", "inventory") ? (
+          {permissions.has({ "inventory.stockTransfers": "Edit" }) ? (
             <Editor
               label={t`Stock Transfer Notes`}
               initialValue={(notes ?? {}) as JSONContent}

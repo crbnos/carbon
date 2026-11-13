@@ -6,11 +6,13 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import * as seedData from "@carbon/database/seed-data";
 import { type Kysely, sql } from "kysely";
 
-// `@carbon/database` has no `"type": "module"`, so tsx (the backup scripts)
-// loads it as CommonJS and its exports arrive on `default`; a bundler (the
-// jobs) gives the module itself.
+// `@carbon/database` has no `"type": "module"`, so `tsx` (`db:check:backups`)
+// loads it as CommonJS, and from this ES module package its exports sit on
+// `default`. Bundled and test runs load it as ESM, with the named exports.
 const { groups: companyGroups, getGroupId } =
-  (seedData as { default?: typeof seedData }).default ?? seedData;
+  "groups" in seedData
+    ? seedData
+    : (seedData as unknown as { default: typeof seedData }).default;
 
 /**
  * Loading a backup's `group` rows: a derived group's id is its row's id, so

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { equals } from "@carbon/utils";
 import { Plural, Trans } from "@lingui/react/macro";
@@ -11,13 +11,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, useParams } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
 import { useRouteData } from "~/hooks";
-import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
-import { getLaborCategories } from "~/modules/projects/projects.service";
 import type {
   ProjectContractAccountDefault,
   ProjectContractGap
 } from "~/modules/sales/sales.models";
 import {
+  CONTRACT_READ_GATE,
   laborCategoriesWithoutBillRate,
   projectContractAccountDefaults
 } from "~/modules/sales/sales.models";
@@ -42,9 +41,11 @@ export async function loader({
   request,
   params
 }: LoaderFunctionArgs): Promise<ProjectContractReviewData> {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api, client, companyId } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    CONTRACT_READ_GATE
+  );
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
@@ -110,12 +111,12 @@ export async function loader({
             .eq("companyId", companyId)
         : Promise.resolve({ data: [], error: null }),
       timeAndMaterialsLineIds.length > 0
-        ? getLaborCategories(client, companyId, {
+        ? api.projects.getLaborCategories({
             search: null,
             limit: 1000,
             offset: 0
           })
-        : Promise.resolve({ data: [], error: null }),
+        : Promise.resolve({ data: { rows: [], count: 0 }, error: null }),
       timeAndMaterialsLineIds.length > 0
         ? client
             .from("customerContractLaborRate")
@@ -123,7 +124,7 @@ export async function loader({
             .in("customerContractLineId", timeAndMaterialsLineIds)
             .eq("companyId", companyId)
         : Promise.resolve({ data: [], error: null }),
-      getDefaultAccounts(client, companyId)
+      api.accounting.getDefaultAccounts({})
     ]);
 
   for (const [what, result] of [
@@ -143,7 +144,7 @@ export async function loader({
     }
   }
 
-  // Without `accounting_view` the read finds no row: unknown, not empty.
+  // Without the Default Accounts page the read fails: unknown, not empty.
   const defaults = accountDefaults.error ? null : accountDefaults.data;
   const emptyAccountDefaults = defaults
     ? projectContractAccountDefaults.filter((account) => !defaults[account])
@@ -165,7 +166,7 @@ export async function loader({
       laborCategoriesWithoutBillRate: lineRates.error
         ? []
         : laborCategoriesWithoutBillRate({
-            categories: categories.data ?? [],
+            categories: categories.data?.rows ?? [],
             timeAndMaterialsLineIds,
             lineRates: lineRates.data ?? []
           }),

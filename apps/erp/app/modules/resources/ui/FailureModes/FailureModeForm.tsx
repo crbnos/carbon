@@ -68,8 +68,8 @@ const FailureModeForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "resources")
-    : !permissions.can("create", "resources");
+    ? !permissions.has({ "resources.failureModes": "Edit" })
+    : !permissions.has({ "resources.failureModes": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

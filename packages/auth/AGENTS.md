@@ -4,13 +4,14 @@ Authentication, RBAC, session management, Supabase client factories, API key aut
 
 ## Always
 
-- Gate loaders/actions with `requirePermissions(request, { view?, create?, update?, delete? })` — never construct Supabase clients directly in routes.
-- `requirePermissions` also returns `caller` (`"session"` or `"apiKey"`) and `permissions` (the session user's claims, or the key's scopes, per module). `serviceContext` (ERP) builds the service-function actor from them, so the gate in `defineServiceFn` checks the same grants this function read.
-- `requirePermissions` refuses customer and supplier portal sessions with a 403 (API keys are unaffected). `{}` used to admit them everywhere, and ~50 routes that then read with the service role were reachable by a portal account. Pass `allowPortalAccounts: true` ONLY on a route that acts on the user's own identity (onboarding, company switch, notification links, academy progress) — never on one that returns company data.
+- Gate loaders/actions with `authorize(request, gate?, options?)` — never construct Supabase clients directly in routes. It runs `requirePermissions` (internal to this package, not exported) and returns its result plus `api`: the ERP's service functions bound to that caller, built on first read by the binding the ERP registers through `registerApi` (`registerCarbon`, `@carbon/api/carbon.server`), with its type stated on `Register`. `authorize(caller)` binds a caller another gate authenticated (the Onshape panel's `authorizePanel`).
+- A gate names pages and levels: `{ "inventory.receipts": "Edit" }` (`Gate`, from `@carbon/database/access`, typed by the registry). Two entries need both; a list (`anyOf(pages, level)`) passes on any one, for a route several pages share. An entry passes when the claims hold the highest action of its level on the page (`holdsGate`). Who may ask at all is `admits(actor, companyId, gate, options)` (`@carbon/database/access`), the one caller check `authorize`, `authorizePanel`, service functions, postings, the workflow owner and table jobs share: an employee of the company, or an API key holding some grant there; `{}` asks for nothing more. A user's claims become the actor through `userActor(claims)`. `options` holds `bypassRls` and `allowPortalAccounts`. No route gate names a module.
+- `authorize` also returns `caller` (`"session"` or `"apiKey"`) and `permissions` and `role` (the acting user's claims: the pinned operator on an MES console terminal, else the session user; or the key's grants, per page). On a console the operator's claims pass the gate and the terminal's session user must still be an employee (`sessionAccess`, `services/session-access.ts`); `sessionUserId` stays the terminal account for audit. Never re-read claims after `authorize`: use its `permissions`. `serviceContext` (ERP) builds the service-function actor from them, so the gate in `defineServiceFn` checks the same grants this function read.
+- `authorize` refuses customer and supplier portal sessions with a 403, and a session with no role in the company (deactivated, or company-less before onboarding) by destroying it. `{}` used to admit both. Pass `{ allowPortalAccounts: true }` as the options ONLY on a route that acts on the user's own identity (onboarding, company switch, notification links, academy progress) — it admits any signed-in user whatever their role — never on one that returns company data.
 - Use the factory from `@carbon/auth/client.server`: `getCarbon(accessToken)` for user-scoped (RLS), `getCarbonServiceRole()` for privileged server ops only.
 - Every server client built while a request is being handled is bound to it through `requestFetch()` (`lib/supabase/client.server.ts`): all of that request's clients share one limit of 8 calls in flight (a wait for a slot is a `supabase slot wait` span), and on a GET/HEAD request their reads (PostgREST GET/HEAD, storage reads) are cancelled when the request is. RPCs, table writes, auth and edge-function calls are never cancelled. Outside a request (jobs, scripts) `requestFetch()` is `undefined` and the client is unbound. A new client factory must pass `requestFetch()` too, or its calls escape both. The browser-safe `getCarbon(accessToken)` (`lib/supabase/client.ts`) passes nothing: on the server use `getCarbonForRequest(accessToken, request)` (`./client.server`), the same bound client `requirePermissions` returns, shared per request.
-- Invalidate Redis permission cache (`redis.del(getPermissionCacheKey(userId))`) when changing user permissions — stale cache is the #1 cause of "Access Denied" bugs.
-- API key `scopes: {}` **denies all** — never treat empty scopes as full access.
+- Grant writes go through `writeAccessGrants` (`@carbon/ee/permissions.server`), which clears the claims and API-key caches it reaches, and the deactivation flows (`users.server.ts`) clear the user's claims themselves. Any other write that changes a user's company membership or role (invite accept in `acceptInvite`, SSO provisioning) calls `clearClaims([userId])` (`./users.server`) by hand. A company switch or a new company clears nothing: the cache holds one field per company, so neither leaves a field stale. Stale cache is the #1 cause of "Access Denied" bugs. The cache key (`getPermissionCacheKey`, in `users.server.ts` beside its TTL) is exported for its tests only.
+- An API key with no `permission` rows **denies all**, `{}` included (`admits`) — never treat no grants as full access. Every key is authenticated by `authenticateApiKey(rawKey)` (`./auth.server`): the cached record, expiry, rate limit and plan gate, once per request; `authorize` and the postings' caller check both call it. `authorizeApiKey(rawKey, gate, request)` is `authorize`'s key branch on its own (the refusal thrown as a 401/403/429 `Response`; `request` binds the client to it), for a caller that has the key but not a `carbon-key` header (the v1 API, the MCP endpoint).
 - Import env constants from `@carbon/auth` (re-exports `@carbon/env`) — not `process.env` directly.
 - Keep `securityMiddleware` in every app's root `middleware`. It refuses cross-origin POST/PUT/PATCH/DELETE (CSRF), issues the CSP nonce and sets `nosniff`/`X-Frame-Options`/`Referrer-Policy`/HSTS on every response. A route that browsers must reach from another origin goes in `CROSS_ORIGIN_ENDPOINTS` (`lib/security.ts`) — webhooks and API-key callers do not need it (servers send neither `Sec-Fetch-Site` nor `Origin`).
 - A loader that writes on GET calls `rejectCrossSiteNavigation(request)` first: the `SameSite=Lax` session cookie still rides a top-level link from another site.
@@ -24,7 +25,7 @@ Authentication, RBAC, session management, Supabase client factories, API key aut
 
 ## Never
 
-- Expose `getCarbonServiceRole()` client to code that hasn't verified permissions via `requirePermissions` with `bypassRls: true` + employee role.
+- Expose `getCarbonServiceRole()` client to code that hasn't verified permissions via `authorize` with the `bypassRls: true` option + employee role.
 - Return or log raw API keys — only `keyHash` (SHA-256) and `keyPreview` are stored; raw key is shown once at creation.
 - Skip rate limiting on login or API key endpoints.
 
@@ -39,14 +40,14 @@ pnpm --filter @carbon/auth test
 
 | Subpath | Provides |
 |---------|----------|
-| `.` (index) | Env re-exports, Supabase client factories, `getClaims`, cookie/http/result utils, validators. `error(cause, message)` puts `describeCause(cause)` (`@carbon/utils`) on the result as `reason`, and the flash toast shows it as its second line |
-| `./auth.server` | `requirePermissions`, API key auth (30s Redis-cached `getApiKeyRecord` + `bustApiKeyCache`, from `services/api-key.server.ts`), `hashApiKey`, `hashOAuthSecret` |
+| `.` (index) | Env re-exports, Supabase client factories, `getClaims`, `readClaimsFresh(client, userId, companyId)` (`get_claims` read past the claims cache, as `Claims`; throws when the read fails — the workflow owner and onboarding's re-entry check), the `Permission` (= `ExpandedPermission`) and `CompanyRole` types, cookie/http/result utils, validators. `error(cause, message)` puts `describeCause(cause)` (`@carbon/utils`) on the result as `reason`, and the flash toast shows it as its second line |
+| `./auth.server` | `authorize`, `registerApi`, `Register` / `Caller` / `CallerAuth` / `Gate` / `GateOptions` types, API key auth (`authenticateApiKey`, `authorizeApiKey`; 30s Redis-cached `getApiKeyRecord` + `bustApiKeyCache`, from `services/api-key.server.ts`), `hashApiKey`, `hashOAuthSecret` |
 | `./mfa.server` | TOTP MFA: `enrollTotpFactor`, `verifyTotpChallenge`, `unenrollTotpFactor`, `userHasVerifiedTotpFactor` (Redis-cached), `adminDeleteTotpFactors` |
 | `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge`; `pushEndpointCookie` (signed `carbon-push`, this browser's Web Push endpoint) — `clearAuthCookies` deletes that endpoint's `pushSubscription` rows on every same-site sign-out (a cross-site navigation skips it, per the GET-write rule) |
 | `./company.server` | Company switching, `updateCompanySession`; the cached plan lookups `getCompanyPlanId` and `isCarbonOwnedCompany` (Redis 5 min, a missing plan row cached as `""`) |
-| `./users.server` | `getUserClaims`, deactivation flows, cache invalidation |
+| `./users.server` | `getUserClaims`, deactivation flows, cache invalidation (`clearClaims(userIds)`: the cached claims of many users, one `DEL` per 500 — a role's grant change, a restore) |
 | `./passkey.server` | WebAuthn/passkey registration and authentication |
-| `./console-pin.server` | MES console pin-in cookie (signed, bound to company + terminal session user): `setConsolePinIn`, `clearConsolePinIn`, `resolveConsolePinIn` (re-validated against the DB, memoized per read), `ConsolePinIn`; `requirePermissions` uses it to derive `userId` in console mode |
+| `./console-pin.server` | MES console pin-in cookie (signed, bound to company + terminal session user): `setConsolePinIn`, `clearConsolePinIn`, `resolveConsolePinIn` (re-validated against the DB, memoized per read), `ConsolePinIn`; `requirePermissions` uses it to derive `userId`, and whose claims decide, in console mode |
 | `./self-signup.server` | Cloud self-signup blocklist: `isSelfSignupBlockedForEmail`, `SELF_SIGNUP_BLOCKED_MESSAGE` (free/disposable email domains; used by ERP login/verify/callback + MES callback) |
 | `./middleware/flash.server` | Flash message middleware |
 | `./middleware/maintenance.server` | `maintenanceMiddleware` (with `MAINTENANCE_MODE` on: 503 for every request, 200 for `/health`, `/templates/` passes through); keep it after `securityMiddleware` in each root `middleware`. The decision is the pure `maintenanceVerdict` |
@@ -57,9 +58,9 @@ only carries `AuthSession.ssoProviderId` and its preservation across refresh.
 
 The Onshape panel's bearer credential (the `cps_` iframe session) lives in
 `@carbon/ee/onshape/panel-session.server`, not here, with its own gate
-`requireOnshapePanelPermissions`. `requirePermissions` stays cookie and API key
+`authorizePanel`. `authorize` stays cookie and API key
 only. ee imports `getUserClaims`, `userHasVerifiedTotpFactor`,
-`getUserScopedClient` and `hasPermission` from auth, never the reverse.
+`getUserScopedClient` from auth, never the reverse.
 
 ## Cross-References
 

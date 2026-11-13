@@ -55,21 +55,20 @@ function isPosted(status: string) {
 
 /**
  * "Force Delete (Admin)" for a document header's menu: Admins only, disabled
- * while a request is open or the caller may not delete the document.
+ * while a request is open. An Admin holds Full on every page, so it needs no
+ * delete check of its own.
  */
 export function DocumentForceDeleteMenuItem({
   forceDelete,
-  canDelete,
   onClick
 }: {
   forceDelete: DocumentForceDeleteData | undefined;
-  canDelete: boolean;
   onClick: () => void;
 }) {
   if (!forceDelete?.isAdmin) return null;
   return (
     <DropdownMenuItem
-      disabled={!!forceDelete.forceDeleteRequest || !canDelete}
+      disabled={!!forceDelete.forceDeleteRequest}
       destructive
       onClick={onClick}
     >

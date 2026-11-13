@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getDocumentApprovalState } from "@carbon/ee/approvals/document.server";
@@ -60,7 +60,6 @@ export const handle: Handle = {
     _params: unknown,
     data?: { changeNotice?: { changeOrderId?: string } }
   ) => data?.changeNotice?.changeOrderId ?? msg`Change Notice`,
-  module: "parts",
   // The CO detail workspace has its own left affected-items sidebar — hide the
   // Items module sidebar here so two left sidebars don't stack.
   hideModuleSidebar: true
@@ -70,8 +69,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.changeNotice?.changeOrderId, "Change Notice");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.changeNotices": "View"
   });
 
   const { id } = params;

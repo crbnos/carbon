@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
@@ -28,8 +27,8 @@ const logger = getLogger("erp", "project-pegging-manual");
  * group for the same item: the supplies a Manual peg may name.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "projects"
+  const { client, companyId } = await authorize(request, {
+    "projects.projects": "Edit"
   });
 
   const { projectId } = params;
@@ -122,7 +121,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.projects.createManualPeg({
     projectId,
     pegId: validation.data.pegId,

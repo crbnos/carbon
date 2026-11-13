@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { CSV_CONTENT_TYPE, encodeCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
 import {
@@ -59,10 +59,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("The report could not be found", { status: 404 });
   }
 
-  const { client, companyId } = await requirePermissions(request, {
-    ...projectReportPermissions[reportKey],
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    projectReportPermissions[reportKey]
+  );
 
   const searchParams = new URL(request.url).searchParams;
   const db = getDatabaseClient();

@@ -3,16 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getSupplierLocations } from "~/modules/purchasing/purchasing.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await requirePermissions(request, {
-    view: "purchasing"
+  const authorized = await authorize(request, {
+    "purchasing.suppliers": "View"
   });
 
   const { supplierId } = params;
@@ -22,7 +21,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       data: []
     };
 
-  const locations = await getSupplierLocations(authorized.client, supplierId);
+  const locations = await authorized.api.purchasing.getSupplierLocations({
+    supplierId
+  });
   if (locations.error) {
     return data(
       locations,

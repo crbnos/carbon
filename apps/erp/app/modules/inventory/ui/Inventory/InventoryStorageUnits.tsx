@@ -367,12 +367,13 @@ const InventoryStorageUnits = ({
   // A serialized unit can leave stock as a fixed asset (Dr asset / Cr Finished
   // Goods at its carrying cost). The capitalize route reads the unit from the
   // search params; the posting itself needs `create: accounting`.
-  const canCapitalize = permissions.can("create", "accounting");
+  const canCapitalize = permissions.has({ "accounting.assets": "Create" });
 
   // What each serial unit would leave stock at — the cost a shipment or a
   // capitalization would relieve. Inventory value is accounting data, so it
   // is only read for someone who can view accounting.
-  const canViewCost = isSerial && permissions.can("view", "accounting");
+  const canViewCost =
+    isSerial && permissions.has({ "accounting.reporting": "View" });
   const { data: serialCosts } = useLoaderQuery<{
     costs: Record<string, number>;
     costingMethod: string | null;
@@ -388,7 +389,7 @@ const InventoryStorageUnits = ({
   // takes accounting update; only a FIFO / LIFO unit carries its own layer.
   const canRecost =
     canViewCost &&
-    permissions.can("update", "accounting") &&
+    permissions.has({ "accounting.reporting": "Edit" }) &&
     (serialCosts?.costingMethod === "FIFO" ||
       serialCosts?.costingMethod === "LIFO");
   const { company } = useUser();
@@ -399,7 +400,7 @@ const InventoryStorageUnits = ({
   const recostItem = recostModal.item;
   const moveModal = useDrawerItem<ItemStorageUnitQuantities>();
   const moveItem = moveModal.item;
-  const canMove = permissions.can("create", "inventory");
+  const canMove = permissions.has({ "inventory.stockTransfers": "Create" });
   const recostFetcher = useAction({
     onSuccess: () => {
       recostModal.close();
@@ -1023,7 +1024,9 @@ const InventoryStorageUnits = ({
               </Button>
               <Submit
                 withBlocker={false}
-                isDisabled={!permissions.can("update", "inventory")}
+                isDisabled={
+                  !permissions.has({ "inventory.quantities": "Edit" })
+                }
               >
                 Save
               </Submit>
