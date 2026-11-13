@@ -27,15 +27,15 @@ const key = (permission: string) =>
 const policy = (sql: string, command: string) =>
   sql.split("\n").find((line) => line.includes(`FOR ${command}`)) ?? "";
 
-// "storageUnit" is owned by one page, Storage Units.
+// "kanban" is owned by one page, Kanbans.
 describe("render", () => {
   test("company: the owning page's keys, and a read of its module", () => {
-    expect(render(company(), "storageUnit")).toBe(
+    expect(render(company(), "kanban")).toBe(
       [
-        `CREATE POLICY "SELECT" ON "public"."storageUnit" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));`,
-        `CREATE POLICY "INSERT" ON "public"."storageUnit" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT ${key("inventory.storageUnits_create")})::text[]));`,
-        `CREATE POLICY "UPDATE" ON "public"."storageUnit" FOR UPDATE USING ("companyId" = ANY ((SELECT ${key("inventory.storageUnits_update")})::text[]));`,
-        `CREATE POLICY "DELETE" ON "public"."storageUnit" FOR DELETE USING ("companyId" = ANY ((SELECT ${key("inventory.storageUnits_delete")})::text[]));`
+        `CREATE POLICY "SELECT" ON "public"."kanban" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));`,
+        `CREATE POLICY "INSERT" ON "public"."kanban" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT ${key("inventory.kanbans_create")})::text[]));`,
+        `CREATE POLICY "UPDATE" ON "public"."kanban" FOR UPDATE USING ("companyId" = ANY ((SELECT ${key("inventory.kanbans_update")})::text[]));`,
+        `CREATE POLICY "DELETE" ON "public"."kanban" FOR DELETE USING ("companyId" = ANY ((SELECT ${key("inventory.kanbans_delete")})::text[]));`
       ].join("\n")
     );
   });
@@ -45,10 +45,10 @@ describe("render", () => {
       company<"journal">({
         where: { update: (eb) => eb("status", "=", "Draft") }
       }),
-      "storageUnit"
+      "kanban"
     );
     expect(sql).toContain(
-      `FOR UPDATE USING (("status" = 'Draft' AND "companyId" = ANY ((SELECT ${key("inventory.storageUnits_update")})::text[]))) WITH CHECK ("companyId" = ANY ((SELECT ${key("inventory.storageUnits_update")})::text[]));`
+      `FOR UPDATE USING (("status" = 'Draft' AND "companyId" = ANY ((SELECT ${key("inventory.kanbans_update")})::text[]))) WITH CHECK ("companyId" = ANY ((SELECT ${key("inventory.kanbans_update")})::text[]));`
     );
   });
 
@@ -58,7 +58,7 @@ describe("render", () => {
         read: "employee",
         create: "purchasing.purchaseOrders_create"
       }),
-      "storageUnit"
+      "kanban"
     );
     expect(policy(sql, "SELECT")).toContain(
       "get_companies_with_employee_role()"
@@ -166,7 +166,7 @@ describe("render", () => {
           update: (eb) => eb("status", "in", ["Draft", "O'Brien"] as never)
         }
       }),
-      "storageUnit"
+      "kanban"
     );
     expect(sql).toContain(`"status" in ('Draft', 'O''Brien')`);
     expect(sql).not.toMatch(/\$\d/);
@@ -202,7 +202,7 @@ describe("render: actions become page keys", () => {
           policies({
             select: inCompany("companyId", anyPageOf("sales", "inventory"))
           }),
-          "storageUnit"
+          "kanban"
         ),
         "SELECT"
       )

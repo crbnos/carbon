@@ -2037,6 +2037,7 @@ export const createApiKey = defineServiceFn({
       ctx,
       saveApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
         companyId: ctx.company.id,
+        actor: ctx.actor,
         actorId: ctx.auditUserId,
         key: {
           name,
@@ -2068,6 +2069,7 @@ export const updateApiKey = defineServiceFn({
       ctx,
       saveApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
         companyId: ctx.company.id,
+        actor: ctx.actor,
         actorId: ctx.auditUserId,
         key: { id, name, expiresAt, rateLimit },
         grants
@@ -2082,7 +2084,8 @@ export const updateApiKey = defineServiceFn({
  *
  * @remarks
  * The key stops authenticating at once: its cached authentication is dropped
- * (`deleteApiKey`).
+ * (`deleteApiKey`). Edit on API Keys is enough: the delete runs as the system
+ * once the gate passes, and a key that was not deleted is refused.
  */
 export const revokeApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),

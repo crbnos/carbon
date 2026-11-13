@@ -17,7 +17,10 @@ import { Link } from "react-router";
 import { New, PeriodSelector } from "~/components";
 import { AppBarAction } from "~/components/New";
 import { usePermissions, useSettings, useUrlParams } from "~/hooks";
-import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import {
+  hasAccountingCutover,
+  importChartOfAccountsPermission
+} from "~/modules/accounting/accounting.utils";
 import { path } from "~/utils/path";
 
 type ChartOfAccountsTableFiltersProps = {
@@ -37,7 +40,7 @@ const ChartOfAccountsTableFilters = ({
   const settings = useSettings();
   // The chart is imported once, before accounting is activated.
   const canImport =
-    permissions.has({ "accounting.chartOfAccounts": "Edit" }) &&
+    permissions.has(importChartOfAccountsPermission) &&
     !hasAccountingCutover(settings);
   const newGroupTo = `new-group?${params.toString()}`;
   const newAccountTo = `new?${params.toString()}`;

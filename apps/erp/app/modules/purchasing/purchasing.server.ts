@@ -101,11 +101,13 @@ import {
   isActiveCompanyEmployee,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
+import { supplierQuoteToPurchaseOrderPermission } from "~/modules/shared/shared.utils";
 import { getUser } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
 import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
+  finalizePurchasingRfqAndNotifyPermission,
   findMergeablePlanningLine,
   findPlanningPurchaseOrder,
   getRfqLinesFromMethod,
@@ -411,7 +413,7 @@ export const listItemSupplierFiles = defineServiceFn({
  */
 export const finalizePurchasingRfqAndNotify = defineServiceFn({
   input: purchasingRfqFinalizeValidator.extend({ rfqId: z.string() }),
-  permission: { "purchasing.rfqs": "Create" },
+  permission: finalizePurchasingRfqAndNotifyPermission,
 
   async run(ctx, { rfqId, suppliers, partFiles }) {
     const client = ctx.asSystem.supabase;
@@ -5049,6 +5051,10 @@ export const assignPurchasingPlanningActions = defineServiceFn({
 /**
  * Convert supplier quote to order
  *
+ * @remarks
+ * Refused while supplier approval is on and the quote's supplier is not
+ * Active.
+ *
  * @mcp
  */
 export const convertSupplierQuoteToOrder = defineServiceFn({
@@ -5056,8 +5062,35 @@ export const convertSupplierQuoteToOrder = defineServiceFn({
     id: z.string(),
     selectedLines: z.record(z.string(), z.unknown())
   }),
-  permission: { "purchasing.supplierQuotes": "Edit" },
+  permission: supplierQuoteToPurchaseOrderPermission,
   async run(ctx, input) {
+    const system = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const quote = await system
+      .from("supplierQuote")
+      .select("supplierId")
+      .eq("id", input.id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (quote.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the supplier quote",
+        quote.error
+      );
+    }
+    if (
+      quote.data?.supplierId &&
+      (await isApprovalRequired(system, "supplier", companyId))
+    ) {
+      const supplier = await service.getSupplier(system, quote.data.supplierId);
+      if (supplier.data?.status !== "Active") {
+        return ctx.error(
+          "rule",
+          "Cannot convert to order: supplier is not approved (Active)"
+        );
+      }
+    }
     return unwrap(
       ctx,
       await service.convertSupplierQuoteToOrder(

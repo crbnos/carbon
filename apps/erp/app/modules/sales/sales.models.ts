@@ -2828,52 +2828,72 @@ export const customerContractCancelValidator = z.object({
   creditUnusedTime: zfd.checkbox()
 });
 
-export const createContractFromSalesOrderValidator = z
-  .object({
-    salesOrderId: z.string().min(1, { message: "Sales order is required" }),
-    name: z.string().trim().min(1, { message: "Name is required" }),
-    startDate: z.string().min(1, { message: "Start date is required" }),
-    duration: z.enum(contractDurations, { error: "Duration is required" }),
-    endDate: zfd.text(z.string().optional()),
-    billingFrequency: z.enum(contractBillingFrequencies, {
-      error: "Billing frequency is required"
-    }),
-    billingAlignment: z.enum(contractBillingAlignments, {
-      error: "Billing alignment is required"
-    }),
-    billingTiming: z.enum(contractBillingTimings, {
-      error: "Billing timing is required"
-    }),
-    lines: jsonField(
-      z
-        .array(
-          z
-            .object({
-              salesOrderLineId: z.string().min(1),
-              revenueType: z.enum(contractRevenueTypes),
-              rateUnit: z.enum(contractRateUnits).optional()
-            })
-            .refine(
-              (line) => (line.revenueType === "Recurring") === !!line.rateUnit,
-              {
-                message:
-                  "A recurring line needs a rate unit; a one-time line has none",
-                path: ["rateUnit"]
-              }
-            )
-        )
-        .min(1, { message: "Choose at least one line" }),
-      "Invalid lines"
-    )
+const contractFromSalesOrderFields = z.object({
+  salesOrderId: z.string().min(1, { message: "Sales order is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  startDate: z.string().min(1, { message: "Start date is required" }),
+  duration: z.enum(contractDurations, { error: "Duration is required" }),
+  endDate: zfd.text(z.string().optional()),
+  billingFrequency: z.enum(contractBillingFrequencies, {
+    error: "Billing frequency is required"
+  }),
+  billingAlignment: z.enum(contractBillingAlignments, {
+    error: "Billing alignment is required"
+  }),
+  billingTiming: z.enum(contractBillingTimings, {
+    error: "Billing timing is required"
   })
-  .refine((data) => (data.duration === "custom" ? !!data.endDate : true), {
-    message: "End date is required",
-    path: ["endDate"]
-  })
-  .refine((data) => isOnOrAfter(data.endDate, data.startDate, -1), {
-    message: "End date cannot be before the start date",
-    path: ["endDate"]
-  });
+});
+
+const contractFromSalesOrderLines = z
+  .array(
+    z
+      .object({
+        salesOrderLineId: z.string().min(1),
+        revenueType: z.enum(contractRevenueTypes),
+        rateUnit: z.enum(contractRateUnits).optional()
+      })
+      .refine(
+        (line) => (line.revenueType === "Recurring") === !!line.rateUnit,
+        {
+          message:
+            "A recurring line needs a rate unit; a one-time line has none",
+          path: ["rateUnit"]
+        }
+      )
+  )
+  .min(1, { message: "Choose at least one line" });
+
+function checkContractFromSalesOrderDates(
+  data: { duration: string; startDate: string; endDate?: string },
+  ctx: z.RefinementCtx
+) {
+  if (data.duration === "custom" && !data.endDate) {
+    ctx.addIssue({
+      code: "custom",
+      message: "End date is required",
+      path: ["endDate"]
+    });
+  }
+  if (!isOnOrAfter(data.endDate, data.startDate, -1)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "End date cannot be before the start date",
+      path: ["endDate"]
+    });
+  }
+}
+
+/** The modal's form: the lines arrive as JSON. */
+export const createContractFromSalesOrderValidator =
+  contractFromSalesOrderFields
+    .extend({ lines: jsonField(contractFromSalesOrderLines, "Invalid lines") })
+    .superRefine(checkContractFromSalesOrderDates);
+
+/** `sales.createContractFromSalesOrder`'s input: the lines already parsed. */
+export const contractFromSalesOrderValidator = contractFromSalesOrderFields
+  .extend({ lines: contractFromSalesOrderLines })
+  .superRefine(checkContractFromSalesOrderDates);
 
 export const customerContractInvoiceAutomationValidator = z.object({
   invoiceAutomation: z.enum(invoiceAutomations).nullable()

@@ -5,7 +5,7 @@
 import { NotFoundError } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
-import type { PageGate } from "@carbon/database/access";
+import type { AnyOfGate, PageGate } from "@carbon/database/access";
 import { StripeConnect } from "@carbon/ee";
 import {
   type SyncedEntityType,
@@ -44,6 +44,7 @@ import {
 } from "@carbon/stripe/connect.server";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
+import { storageTypesGate } from "~/modules/inventory/inventory.models";
 import { nonConformancePriority } from "~/modules/quality/quality.models";
 import { insertIssue } from "~/modules/quality/quality.service";
 import * as salesService from "~/modules/sales/sales.service";
@@ -213,11 +214,26 @@ const importTables = Object.keys(importPermissions) as [
   ...ImportTable[]
 ];
 
+// Tables whose page moved: their import also admits the page that keeps
+// writing them (`alsoWrittenBy`), as their screen does. Checked in `run`.
+const importAnyOf: Partial<Record<ImportTable, AnyOfGate>> = {
+  storageType: { anyOf: storageTypesGate("Edit") },
+  itemPostingGroup: {
+    anyOf: [
+      { "parts.itemGroups": "Edit" },
+      { "accounting.defaultAccounts": "Edit" }
+    ]
+  }
+};
+
 // Edit on the table's page; an import that posts stock needs it too, as the
 // single-record adjustment does.
 const importRules = Object.fromEntries(
-  importTables.map((table) => [table, { [importPermissions[table]]: "Edit" }])
-) as Record<ImportTable, PageGate>;
+  importTables.map((table) => [
+    table,
+    importAnyOf[table] ? "employee" : { [importPermissions[table]]: "Edit" }
+  ])
+) as Record<ImportTable, PageGate | "employee">;
 
 /**
  * Import a CSV file into a table.
@@ -227,7 +243,8 @@ const importRules = Object.fromEntries(
  * `columnMappings` names, for each of the table's fields, the CSV column that
  * fills it; the table's required fields must be mapped. `enumMappings` maps
  * CSV values onto a field's allowed values (field → CSV value → value). Needs
- * Edit on the table's page (`importPermissions`).
+ * Edit on the table's page (`importPermissions`), or on a page that keeps
+ * writing a moved table (`importAnyOf`).
  * Quotes go through the sales importer, so each gets its opportunity,
  * payment, shipment and share link as one made in the app does; every other
  * table goes through the `import-csv` posting. Returns how many rows were
@@ -245,6 +262,10 @@ export const importCsvFile = defineServiceFn({
   permission: { by: "table", rules: importRules },
 
   async run(ctx, { table, filePath, enumMappings, ...input }) {
+    const anyOf = importAnyOf[table];
+    if (anyOf && !ctx.can(anyOf)) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
     const mapped = importSchemas[table].safeParse(input.columnMappings);
     if (!mapped.success) {
       return ctx.error("validation", z.prettifyError(mapped.error));

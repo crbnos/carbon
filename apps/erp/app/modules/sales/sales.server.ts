@@ -65,7 +65,11 @@ import {
   sendSalesOrderEmail,
   upsertExternalLink
 } from "~/modules/shared/shared.service";
-import { resolveBuyUnitCost } from "~/modules/shared/shared.utils";
+import {
+  quoteToSalesOrderPermission,
+  resolveBuyUnitCost,
+  salesRfqToQuotePermission
+} from "~/modules/shared/shared.utils";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
@@ -79,6 +83,7 @@ import {
   baseQuoteOperationValidator,
   contractAmendmentChangeValidator,
   contractDurationOf,
+  contractFromSalesOrderValidator,
   contractLaborRateValidator,
   contractLineBuildValidator,
   contractLineFundingValidator,
@@ -119,7 +124,10 @@ import type {
 } from "./sales.service";
 import * as service from "./sales.service";
 import * as utils from "./sales.utils";
-import { reconcileQuantityBreaks } from "./sales.utils";
+import {
+  createContractFromSalesOrderPermission,
+  reconcileQuantityBreaks
+} from "./sales.utils";
 
 const logger = getLogger("erp", "sales-server");
 // ---------------------------------------------------------------------------
@@ -402,7 +410,7 @@ export const setSalesRfqStatus = defineServiceFn({
  */
 export const convertSalesRfq = defineServiceFn({
   input: z.object({ id: z.string(), acknowledged: z.boolean().default(false) }),
-  permission: { "sales.quotes": "Create" },
+  permission: salesRfqToQuotePermission,
 
   async run(ctx, { id, acknowledged }) {
     const serviceRole = ctx.asSystem.supabase;
@@ -1250,7 +1258,7 @@ export const convertQuote = defineServiceFn({
     ...documentNotification,
     locale: z.string().default("en-US")
   }),
-  permission: { "sales.quotes": "Create" },
+  permission: quoteToSalesOrderPermission,
 
   async run(ctx, input) {
     const { quoteId, selectedLines, notification, customerContact } = input;
@@ -3972,6 +3980,36 @@ export const createContract = defineServiceFn({
       return ctx.error("internal", "Failed to create contract", contract.error);
     }
     return { id: contract.data.id };
+  }
+});
+
+/**
+ * Create a Draft contract from a sales order's Service lines.
+ *
+ * @remarks
+ * The order keeps the lines, marked invoiced, so the contract bills them
+ * instead. Needs Service Contracts Create as well as Sales Orders Edit.
+ */
+export const createContractFromSalesOrder = defineServiceFn({
+  input: contractFromSalesOrderValidator,
+  permission: createContractFromSalesOrderPermission,
+
+  async run(ctx, input) {
+    try {
+      const id = await service.createContractFromSalesOrder(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        asOf: await service.companyToday(ctx),
+        input
+      });
+      return { id };
+    } catch (err) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(err, "Failed to create contract"),
+        err
+      );
+    }
   }
 });
 

@@ -434,9 +434,10 @@ function publishChoice(
 
 /**
  * The API gate's view of the declared permission: the module of its pages,
- * the page when the gate names one, and every action its levels hold. Pages of several modules publish module `null`
- * (membership only) and the function's own gate decides, as it does for
- * `"employee"` (any employee of the company). A keyed rule publishes every
+ * the page when the gate names one, and every action its levels hold. A gate
+ * of pages of several modules publishes module `null` and each page and level
+ * as `allOf`; a keyed rule over several modules publishes module `null` alone.
+ * `"employee"` (any employee of the company) publishes no page. A keyed rule publishes every
  * page its rules name; an `anyOf` or row rule also publishes them as `oneOf`.
  * `"system"` is refused.
  */
@@ -552,13 +553,25 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   const held = ACTIONS.filter((action) => actions.has(action));
   const [module] = modules;
   const [page] = pages;
-  return {
-    permission:
-      modules.size === 1 && module
-        ? { module, ...(pages.size === 1 && page ? { page } : {}), actions: held }
-        : { module: null, actions: [] },
-    actions: held
-  };
+  if (modules.size === 1 && module) {
+    return {
+      permission: {
+        module,
+        ...(pages.size === 1 && page ? { page } : {}),
+        actions: held
+      },
+      actions: held
+    };
+  }
+  // One gate over pages of several modules needs every entry: publish them all.
+  if (entries.length === 1) {
+    const order = PAGES.map((page) => page.id as string);
+    const allOf = [...entries[0]!]
+      .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
+      .map(([page, level]) => ({ page, level }));
+    return { permission: { module: null, actions: held, allOf }, actions: held };
+  }
+  return { permission: { module: null, actions: [] }, actions: held };
 }
 
 /** A gate literal's `[page, level]` entries, each checked (`checkedEntry`). */

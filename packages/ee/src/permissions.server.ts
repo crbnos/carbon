@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type {
+  Actor,
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
@@ -38,6 +39,8 @@ import {
   bulkEditGrants,
   claimsMayEditAccounts,
   type GrantRow,
+  keyGrantsAboveActor,
+  pageName,
   refusedModules,
   SUBJECT_RULES,
   subjectTypeOf
@@ -81,16 +84,21 @@ export async function deleteEmployeeType(
   return { error: null };
 }
 
+/**
+ * What a grant write does to the subject's own grants: replace them, remove
+ * one, or `keep` them as they are while a person moves type (`employeeType`).
+ */
 export type AccessChange =
   | { set: readonly GrantInput[] }
-  | { remove: GrantRow };
+  | { remove: GrantRow }
+  | { keep: true };
 
 /**
  * Why a grant write wrote nothing. `entitlement`: the company's plan lacks the
  * subject's feature (`SUBJECT_RULES[…].refusal` is the message).
  */
 export type AccessWriteError = {
-  code: "entitlement" | "notFound" | "validation" | "internal";
+  code: "entitlement" | "forbidden" | "notFound" | "validation" | "internal";
   message: string;
   /** The failed query's error, for the log; never shown. */
   cause?: unknown;
@@ -198,6 +206,16 @@ async function ownedSubject(
   return key ? { keyHash: key.keyHash } : null;
 }
 
+/** A key write that would give the key more than its writer holds (`keyGrantsAboveActor`). */
+function keyCapRefusal(pages: readonly string[]): AccessWriteError {
+  const shown = pages.slice(0, 5).map(pageName).join(", ");
+  const more = pages.length > 5 ? ` and ${pages.length - 5} more` : "";
+  return {
+    code: "forbidden",
+    message: `An API key cannot have more access than you: ${shown}${more}`
+  };
+}
+
 class Refusal extends Error {
   constructor(
     code: AccessWriteError["code"],
@@ -211,7 +229,9 @@ class Refusal extends Error {
 /**
  * Write the grants of a role, a person or an API key in the company: the one
  * grant write. It checks the entitlement (`SUBJECT_RULES[…].feature`; an
- * `entitlement` error), that the subject is the company's, and the modules the subject may hold (`refusedModules`); clamps each
+ * `entitlement` error), that the subject is the company's, the modules the
+ * subject may hold (`refusedModules`), and that a key gets no more than
+ * `actor` holds (`keyGrantsAboveActor`; a `forbidden` error); clamps each
  * level to its page; writes in one transaction; clears the caches the change
  * reaches (the person's claims, every member of the role, the key's record);
  * and writes the audit event: `permission_changed` with the claim keys before
@@ -219,7 +239,9 @@ class Refusal extends Error {
  * role, and `permission_changed` with the grant changes for a key.
  *
  * A person can be moved to another employee type of the company in the same
- * transaction (`employeeType`). `subjectRow` writes the subject's own row in
+ * transaction (`employeeType`); `{ keep: true }` moves them and leaves their
+ * grants alone, and needs no plan feature, as choosing a type on invite or
+ * convert never did. `subjectRow` writes the subject's own row in
  * that transaction too, before the grants: an API key is created or renamed
  * with its grants, or not at all.
  */
@@ -232,6 +254,7 @@ export async function writeAccessGrants(
     change,
     employeeType,
     subjectRow,
+    actor,
     actorId,
     ip,
     reason
@@ -242,6 +265,8 @@ export async function writeAccessGrants(
     /** A person only: the employee type to move them to. */
     employeeType?: string;
     subjectRow?: (tx: KyselyTx) => Promise<unknown>;
+    /** Who writes, as the request authorised them. Setting a key's grants needs it. */
+    actor?: Actor;
     actorId: string;
     ip?: string;
     /** A person only: why, on their `permission_changed` event. */
@@ -249,8 +274,20 @@ export async function writeAccessGrants(
   }
 ): Promise<{ error: AccessWriteError | null }> {
   const type = subjectTypeOf(subject);
-  const unentitled = await subjectEntitlement(client, companyId, type);
-  if (unentitled) return { error: unentitled };
+  if ("keep" in change) {
+    if (!("userId" in subject) || !employeeType) {
+      return {
+        error: {
+          code: "validation",
+          message:
+            "Only a person's employee type can change without a grant change"
+        }
+      };
+    }
+  } else {
+    const unentitled = await subjectEntitlement(client, companyId, type);
+    if (unentitled) return { error: unentitled };
+  }
 
   if ("set" in change) {
     const refused = refusedModules(type, change.set);
@@ -259,6 +296,15 @@ export async function writeAccessGrants(
         error: {
           code: "validation",
           message: `${refused.join(", ")} cannot be granted to ${SUBJECT_RULES[type].noun}`
+        }
+      };
+    }
+    // Fail closed: a key's grants are capped at the writer's, so need them.
+    if (type === "key" && !actor) {
+      return {
+        error: {
+          code: "forbidden",
+          message: "An API key's access can only be set by a known caller"
         }
       };
     }
@@ -308,6 +354,18 @@ export async function writeAccessGrants(
     }
 
     const before = await readGrants(tx, companyId, subject);
+    if (type === "key" && "set" in change && actor && actor.type !== "system") {
+      const above = keyGrantsAboveActor({
+        actor: actor.permissions,
+        companyId,
+        before,
+        after: change.set
+      });
+      if (above.length) {
+        const refusal = keyCapRefusal(above);
+        throw new Refusal(refusal.code, refusal.message);
+      }
+    }
     if ("set" in change) {
       await replaceGrants(tx, {
         companyId,
@@ -315,7 +373,7 @@ export async function writeAccessGrants(
         grants: change.set,
         userId: actorId
       });
-    } else {
+    } else if ("remove" in change) {
       await removeGrant(tx, { companyId, subject, ...change.remove });
     }
     return { owned, before, moveTo };

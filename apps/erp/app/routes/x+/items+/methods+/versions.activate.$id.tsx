@@ -4,24 +4,18 @@
 
 import { assertIsPost, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { getRequestOrigin, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  activateMethodVersion,
-  checkRevisionLock
-} from "~/modules/items/items.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "items");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await authorize(
+  const { api, companyId } = await authorize(
     request,
     anyOf(ITEM_PAGES, "Edit")
   );
@@ -66,36 +60,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const serviceRole = getCarbonServiceRole();
-
-  // Release-lock gate: activating a make-method version switches the live
-  // BOM/BOP for the item, so resolve the version's parent item and gate on it.
-  const lock = await checkRevisionLock(serviceRole, {
-    kind: "makeMethod",
-    id,
-    companyId
-  });
-  if (!lock.ok) {
-    logger.warning("Method version activation blocked by revision lock", {
-      methodVersionId: id,
-      companyId,
-      reason: lock.message
-    });
-    return { success: false, message: lock.message };
-  }
-
-  // No change-order gate here: the V1 change-order model applies BOM edits by
-  // spinning fresh method versions at Done and never stages/reserves a pending
-  // revision, so there is nothing for an open CO to lock against.
-
-  const update = await activateMethodVersion(serviceRole, getDatabaseClient(), {
-    id,
-    companyId,
-    userId
-  });
+  // The service function checks the revision lock and Edit on the page of
+  // the method's item type.
+  const update = await api.items.activateMethodVersion({ id });
 
   if (update.error) {
-    logger.error("Failed to activate method version", {
+    logger.warning("Failed to activate method version", {
       methodVersionId: id,
       companyId,
       error: update.error
@@ -106,8 +76,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
+  // Release control on warn: activated, with the lock's message (`withLockNotice`).
+  const notice = "notice" in update.data ? String(update.data.notice) : null;
   return redirect(
     redirectPath,
-    lock.warn ? await flash(request, success(lock.message)) : undefined
+    notice ? await flash(request, success(notice)) : undefined
   );
 }

@@ -41,6 +41,7 @@ import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { salesRfqToQuotePermission } from "~/modules/shared/shared.utils";
 import { path } from "~/utils/path";
 import { isSalesRfqLocked } from "../../sales.models";
 import type { Opportunity, SalesRFQ, SalesRFQLine } from "../../types";
@@ -175,7 +176,7 @@ const SalesRFQHeader = () => {
                 isDisabled={
                   status !== "Ready for Quote" ||
                   routeData?.lines?.length === 0 ||
-                  !permissions.has({ "sales.rfqs": "Create" })
+                  !permissions.has(salesRfqToQuotePermission)
                 }
                 leftIcon={<RiProgress4Line />}
                 type="submit"

@@ -31,7 +31,10 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import { activateAccountingValidator } from "~/modules/accounting/accounting.models";
+import {
+  accountingActivationGate,
+  activateAccountingValidator
+} from "~/modules/accounting/accounting.models";
 import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,
@@ -81,9 +84,10 @@ const SUMMARY_LIST_CLASS =
   "grid w-full max-w-xl grid-cols-[18rem_1fr] gap-x-8 gap-y-3 text-sm";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    "settings.accounting": "View"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    accountingActivationGate("View")
+  );
   const { cutoverDate } = await getActivationCutover(
     client,
     companyId,
@@ -146,7 +150,7 @@ export default function AccountingActivationEnableRoute() {
     readinessPassed &&
     isClearingZero &&
     reconciliationBlockerCount === 0 &&
-    permissions.has({ "settings.accounting": "Edit" });
+    permissions.has(accountingActivationGate("Edit"));
 
   return (
     <>

@@ -20,6 +20,7 @@ type Tool = {
     page?: string;
     actions: string[];
     oneOf?: { pages: string[]; level: string; by: string[] };
+    allOf?: { page: string; level: string }[];
   };
 };
 
@@ -38,6 +39,19 @@ const byItemType = (level: string) => ({
 
 const allTools = metadata.tools as Tool[];
 
+// A gate that needs pages of several modules: each page at its level, in
+// registry order, and the actions of its highest level.
+const VIEW = ["view"];
+const EDIT = ["view", "create", "update"];
+const allOf = (
+  actions: string[],
+  ...gates: [page: string, level: string][]
+): Tool["permission"] => ({
+  module: null,
+  actions,
+  allOf: gates.map(([page, level]) => ({ page, level }))
+});
+
 // A read on one page admits View on any page of its module and on its
 // cross-module readers (`readPages`, the gate `readGate` runs), in registry order.
 const ORDER = PAGES.map((page) => page.id as string);
@@ -52,6 +66,18 @@ const read = (page: string): Tool["permission"] => {
     ? { module, actions: ["view"], oneOf }
     : { module: null, actions: [], oneOf };
 };
+/** A read gated on any of `pages`, each widened as a read is. */
+const readAny = (...pages: string[]): Tool["permission"] => ({
+  module: null,
+  actions: [],
+  oneOf: { pages: [...new Set(pages.flatMap(readPagesOf))], level: "View", by: [] }
+});
+/** A write any one of `pages` passes at `level`. */
+const choice = (level: string, ...pages: string[]): Tool["permission"] => ({
+  module: null,
+  actions: [],
+  oneOf: { pages, level, by: [] }
+});
 /** A tool whose gate is a widened read: its pages hold a whole module. */
 const isWidenedRead = (t: Tool) => {
   const pages = t.permission.oneOf?.pages ?? [];
@@ -67,22 +93,13 @@ const isWidenedRead = (t: Tool) => {
 const OVERRIDES: Record<string, Tool["permission"]> = {
   // The page registry moved these tables to a page of another module, and
   // the gate follows the page. Each is pinned so the move stays visible.
-  // Storage types are on Inventory → Storage Types (was parts).
-  inventory_getStorageTypes: read("inventory.storageTypes"),
-  inventory_getStorageType: read("inventory.storageTypes"),
-  inventory_getStorageTypeUsage: read("inventory.storageTypes"),
-  inventory_createStorageType: {
-    module: "inventory", page: "inventory.storageTypes",
-    actions: ["view", "create"]
-  },
-  inventory_updateStorageType: {
-    module: "inventory", page: "inventory.storageTypes",
-    actions: ["view", "create", "update"]
-  },
-  inventory_deleteStorageTypeWithCascade: {
-    module: "inventory", page: "inventory.storageTypes",
-    actions: ["view", "create", "update", "delete"]
-  },
+  // Parts → Parts keeps writing storageType (alsoWrittenBy).
+  inventory_getStorageTypes: readAny("inventory.storageTypes", "parts.parts"),
+  inventory_getStorageType: readAny("inventory.storageTypes", "parts.parts"),
+  inventory_getStorageTypeUsage: readAny("inventory.storageTypes", "parts.parts"),
+  inventory_createStorageType: choice("Create", "inventory.storageTypes", "parts.parts"),
+  inventory_updateStorageType: choice("Edit", "inventory.storageTypes", "parts.parts"),
+  inventory_deleteStorageTypeWithCascade: choice("Full", "inventory.storageTypes", "parts.parts"),
   // Bank details need Accounting → Bank Accounts, not the partner page.
   purchasing_getSupplierBankAccounts: read("accounting.bankAccounts"),
   purchasing_createSupplierBankAccount: {
@@ -275,17 +292,35 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "purchasing", page: "purchasing.returns",
     actions: ["view", "create"]
   },
-  // Opens a quality Issue from an RMA line: Returns AND Issues, which the
-  // API cannot name as one module, so its own gate checks both.
-  sales_escalateReturnOrderLine: { module: null, actions: [] },
+  // Opens a quality Issue from an RMA line: Returns AND Issues.
+  sales_escalateReturnOrderLine: allOf(
+    EDIT,
+    ["quality.issues", "Create"],
+    ["sales.returns", "Edit"]
+  ),
   // A rental unit on a shipment or receipt: Rental Agreements AND Shipments
   // or Receipts. Selling it: Rental Agreements AND Sales Invoices.
-  sales_deliverRentalUnit: { module: null, actions: [] },
-  sales_returnRentalUnit: { module: null, actions: [] },
-  sales_sellRentalUnit: { module: null, actions: [] },
-  // A part CLIN's delivery: Contracts AND Shipments, which the API cannot
-  // name as one page, so its own gate checks both.
-  sales_deliverContractLine: { module: null, actions: [] },
+  sales_deliverRentalUnit: allOf(
+    EDIT,
+    ["inventory.shipments", "Create"],
+    ["sales.rentalAgreements", "Edit"]
+  ),
+  sales_returnRentalUnit: allOf(
+    EDIT,
+    ["inventory.receipts", "Create"],
+    ["sales.rentalAgreements", "Edit"]
+  ),
+  sales_sellRentalUnit: allOf(
+    EDIT,
+    ["invoicing.salesInvoices", "Create"],
+    ["sales.rentalAgreements", "Edit"]
+  ),
+  // A part CLIN's delivery: Contracts AND Shipments.
+  sales_deliverContractLine: allOf(
+    EDIT,
+    ["inventory.shipments", "Create"],
+    ["sales.serviceContracts", "Edit"]
+  ),
   // The classification override is an accounting decision.
   sales_classifyRentalUnit: {
     module: "accounting", page: "accounting.revenueRecognition",
@@ -310,9 +345,12 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   // accounting.
   inventory_getInventoryValuation: read("accounting.reporting"),
   inventory_getInventoryValuationTieOut: read("accounting.reporting"),
-  // A quote's steps need Jobs AND Quotes, which the API cannot name as one
-  // module, so the function's own gate checks both.
-  production_updateQuoteOperationStepOrder: { module: null, actions: [] },
+  // A quote's steps need Jobs AND Quotes.
+  production_updateQuoteOperationStepOrder: allOf(
+    EDIT,
+    ["production.jobs", "Edit"],
+    ["sales.quotes", "Edit"]
+  ),
   // An item method's steps and Save Method follow the item's type, like the
   // method editor; Save Method also checks Jobs in `run`.
   production_updateMethodOperationStepOrder: {
@@ -369,31 +407,69 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   projects_logTimesheetEntry: { module: null, actions: [] },
   projects_saveTimesheetEntry: { module: null, actions: [] },
   service_setServiceJobDayHours: { module: null, actions: [] },
-  // Each needs two pages, as its route does, so the function's own gate
-  // checks them. A Kysely read or a posting has no RLS behind that gate.
-  projects_postProjectIssue: { module: null, actions: [] },
-  projects_placeProjectAssetsInService: { module: null, actions: [] },
-  projects_getLaborDistribution: { module: null, actions: [] },
-  projects_getLaborDistributionPeriods: { module: null, actions: [] },
-  projects_getRdSection174AReport: { module: null, actions: [] },
-  projects_getRdForm6765GReport: { module: null, actions: [] },
-  sales_buildContractLineJob: { module: null, actions: [] },
-  sales_createProjectBillingInvoices: { module: null, actions: [] },
+  // Each needs two pages, as its route does. A Kysely read or a posting has
+  // no RLS behind that gate.
+  projects_postProjectIssue: allOf(
+    EDIT,
+    ["inventory.quantities", "Edit"],
+    ["projects.projects", "Edit"]
+  ),
+  projects_placeProjectAssetsInService: allOf(
+    EDIT,
+    ["accounting.assets", "Create"],
+    ["projects.projects", "Edit"]
+  ),
+  projects_getLaborDistribution: allOf(
+    VIEW,
+    ["people.employees", "View"],
+    ["projects.reports", "View"]
+  ),
+  projects_getLaborDistributionPeriods: allOf(
+    VIEW,
+    ["people.employees", "View"],
+    ["projects.reports", "View"]
+  ),
+  projects_getRdSection174AReport: allOf(
+    VIEW,
+    ["accounting.reporting", "View"],
+    ["projects.reports", "View"]
+  ),
+  projects_getRdForm6765GReport: allOf(
+    VIEW,
+    ["accounting.reporting", "View"],
+    ["projects.reports", "View"]
+  ),
+  sales_buildContractLineJob: allOf(
+    EDIT,
+    ["production.jobs", "Create"],
+    ["sales.serviceContracts", "Edit"]
+  ),
+  sales_createProjectBillingInvoices: allOf(
+    EDIT,
+    ["invoicing.salesInvoices", "Create"],
+    ["sales.serviceContracts", "Edit"]
+  ),
   // Creating and editing a labor category need different permissions, and
-  // contract billing needs projects AND sales, which the API cannot name as
-  // one page, so each function's own gate checks them.
+  // contract billing needs Approvals AND either contracts list, a gate the
+  // manifest cannot publish, so each function's own gate checks them.
   projects_upsertLaborCategory: { module: null, actions: [] },
   projects_getContractBillableItems: { module: null, actions: [] },
   projects_getContractBillingLines: { module: null, actions: [] },
   projects_updateProjectBillableItems: { module: null, actions: [] },
   // Changing a warranty return line to a billable service line edits the RMA
-  // (sales) AND re-posts the job's coverage (service); the API cannot name
-  // two pages, so the operation's own gate checks both.
-  sales_changeReturnLineToService: { module: null, actions: [] },
+  // (sales) AND re-posts the job's coverage (service).
+  sales_changeReturnLineToService: allOf(
+    EDIT,
+    ["sales.returns", "Edit"],
+    ["service.jobs", "Edit"]
+  ),
   // Invoicing a completed service job needs Edit on Service Jobs AND
-  // Create on Sales Invoices (the old service order invoice's rule); the operation's
-  // own gate checks both.
-  service_createServiceInvoice: { module: null, actions: [] }
+  // Create on Sales Invoices.
+  service_createServiceInvoice: allOf(
+    EDIT,
+    ["invoicing.salesInvoices", "Create"],
+    ["service.jobs", "Edit"]
+  )
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));
@@ -585,6 +661,7 @@ describe("gates the row decides", () => {
         "purchasing.materialPlanning",
         "purchasing.rfqs",
         "purchasing.supplierQuotes",
+        "purchasing.supplierStages",
         "purchasing.types"
       ])
     );
@@ -640,7 +717,7 @@ describe("gates the row decides", () => {
       invoicing: ["invoicing.supplierCredits", "invoicing.creditMemos"],
       accounting: ["accounting.leases", "accounting.revenueRecognition"]
     };
-    for (const t of oneOf.filter((t) => !isWidenedRead(t))) {
+    for (const t of oneOf.filter((t) => !isWidenedRead(t) && !(t.name in OVERRIDES))) {
       const module = t.permission.module ?? "";
       expect(t.permission.oneOf?.pages, t.name).toEqual(tables[module]);
     }
@@ -664,6 +741,35 @@ describe("gates the row decides", () => {
       byItemType("Full")
     );
     expect(named("items_getMethodTree")?.oneOf).toEqual(byItemType("View"));
+  });
+});
+
+describe("gates of several modules", () => {
+  it("publish every page and level, and the actions of the highest", () => {
+    const LEVEL_ACTIONS: Record<string, string[]> = {
+      View: ["view"],
+      Create: ["view", "create"],
+      Edit: ["view", "create", "update"],
+      Full: ["view", "create", "update", "delete"]
+    };
+    const gated = allTools.filter((t) => t.permission.allOf);
+    expect(gated.length).toBeGreaterThan(0);
+    for (const t of gated) {
+      const entries = t.permission.allOf ?? [];
+      expect(t.permission.module, t.name).toBeNull();
+      expect(
+        new Set(entries.map((e) => moduleOf(e.page))).size,
+        t.name
+      ).toBeGreaterThan(1);
+      expect(
+        entries.map((e) => ORDER.indexOf(e.page)),
+        t.name
+      ).toEqual(entries.map((e) => ORDER.indexOf(e.page)).sort((a, b) => a - b));
+      const widest = entries
+        .map((e) => LEVEL_ACTIONS[e.level] ?? [])
+        .reduce((a, b) => (b.length > a.length ? b : a), []);
+      expect(t.permission.actions, t.name).toEqual(widest);
+    }
   });
 });
 

@@ -20,6 +20,7 @@ import { EmployeeAvatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { convertConsoleOperatorPermission } from "~/modules/users/users.models";
 import type { getConsoleOperators } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import type { Handle } from "~/utils/handle";
@@ -163,7 +164,7 @@ const OperatorsTable = memo(
             onClick={() =>
               navigate(`${path.to.operator(row.id!)}?${params.toString()}`)
             }
-            disabled={!permissions.has({ "users.operators": "Edit" })}
+            disabled={!permissions.has(convertConsoleOperatorPermission)}
           >
             <MenuIcon icon={<LuUser />} />
             Convert to Full User

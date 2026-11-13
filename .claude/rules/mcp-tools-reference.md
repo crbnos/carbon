@@ -120,10 +120,12 @@ any other value export in a server file fails generation.
   pages' module and every action their levels hold (Edit → view, create,
   update). Pages of one module → `{ module, actions }`, plus `page` when the
   gate names one page (`describe_tool` prints `<page>_<action>`, the digest
-  `<page>:<actions>`); pages of several
-  modules, or `"employee"` (any employee of the company) →
-  `{ module: null, actions: [] }`. A keyed permission (`{ by, rules }`)
-  publishes every page its rules name. An `anyOf` or row rule (`rowRule`,
+  `<page>:<actions>`). One gate over pages of several modules (every entry
+  needed) → `{ module: null, actions, allOf: [{ page, level }, …] }` in
+  registry order, `actions` those of its highest level; the digest writes
+  it `all of <page>:<Level>+…`. `"employee"` (any employee of the company),
+  or a keyed rule over several modules → `{ module: null, actions: [] }`.
+  A keyed permission (`{ by, rules }`) publishes every page its rules name. An `anyOf` or row rule (`rowRule`,
   `itemRule`) is read off its TYPE, so a helper call publishes like a
   literal: its pages also go out as `oneOf: { pages, level, by }` (`by` is
   the row column that picks, `item.type`), which `describe_tool` prints as
@@ -444,8 +446,9 @@ Markdown markers.
   not a customer's saved workflow.
 - Publish a function only when it is safe with nothing but its input. The API
   runs the gate and `run`; nothing a route does around the call.
-- A function gated on several modules publishes `module: null` in the
-  manifest; its own gate decides, as for every function.
+- A function gated on several modules publishes `module: null` and its pages
+  as `allOf` (or `oneOf`) in the manifest; its own gate decides, as for every
+  function.
 - A write gated on `{}` admits an API key with any scope, even a read-only one.
   It starts with `refuseKeyWithout(ctx, required)` (`shared.service.ts`), and its
   `@remarks` name what a key needs: the manifest shows no permission.

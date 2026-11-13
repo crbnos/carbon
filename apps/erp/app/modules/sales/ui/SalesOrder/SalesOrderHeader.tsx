@@ -67,6 +67,7 @@ import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.s
 import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
 import { isSalesOrderLocked, salesConfirmValidator } from "../../sales.models";
+import { createContractFromSalesOrderPermission } from "../../sales.utils";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
 import { CancelSalesOrderModal } from "./CancelSalesOrderModal";
 import SalesOrderToContractModal from "./SalesOrderToContractModal";
@@ -341,7 +342,7 @@ const SalesOrderHeader = () => {
             routeData?.salesOrder?.status ?? ""
           ) ||
           contractEligibleLines.length === 0 ||
-          !permissions.has({ "sales.salesOrders": "Create" }) ||
+          !permissions.has(createContractFromSalesOrderPermission) ||
           !permissions.is("employee")
         }
         onClick={salesOrderToContractModal.onOpen}

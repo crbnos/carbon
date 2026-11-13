@@ -3,10 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { ACCESS_READER_GATE } from "@carbon/ee/permission-grants";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, { "users.employeeTypes": "View" });
+  const { api } = await authorize(request, ACCESS_READER_GATE.anyOf);
 
   const page = await api.users.getEmployeeTypes({});
   return {

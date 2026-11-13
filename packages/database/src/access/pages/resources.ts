@@ -71,6 +71,8 @@ export const PAGES = [
       "contractorAbility",
       "partner"
     ],
+    // people.attributes, which moved from Resources (people.ts alsoWrittenBy).
+    readers: ["userAttribute"],
     paths: [
       "/x/resources/abilities",
       "/x/resources/ability/",
@@ -84,6 +86,8 @@ export const PAGES = [
     label: "Training",
     maxLevel: "Full",
     tables: ["training", "trainingQuestion"],
+    // trainingQuestion moved from People, which had no screen for it: Employees is its most general page.
+    alsoWrittenBy: { trainingQuestion: ["people.employees"] },
     paths: ["/x/resources/training", "/x/training/"]
   },
   {
@@ -91,6 +95,11 @@ export const PAGES = [
     label: "Assignments",
     maxLevel: "Full",
     tables: ["trainingAssignment", "trainingCompletion"],
+    // Moved from People, which had no screen for them: Employees is its most general page.
+    alsoWrittenBy: {
+      trainingAssignment: ["people.employees"],
+      trainingCompletion: ["people.employees"]
+    },
     paths: ["/x/resources/assignments"]
   },
   {

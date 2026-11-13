@@ -28,6 +28,14 @@ it("gives a Purchase Orders viewer the Purchasing types and no Sales type", () =
   ).toEqual(["supplier", "purchaseOrder", "supplierQuote"]);
 });
 
+it("gives a Suppliers viewer suppliers and no customers, though it reads customer addresses", () => {
+  expect(searchableTypes(viewOf("purchasing.suppliers"), "company-1")).toEqual([
+    "supplier",
+    "purchaseOrder",
+    "supplierQuote"
+  ]);
+});
+
 it("searches nothing without a page that owns a searched table", () => {
   expect(searchableTypes({}, "company-1")).toEqual([]);
   expect(searchableTypes(null, "company-1")).toEqual([]);

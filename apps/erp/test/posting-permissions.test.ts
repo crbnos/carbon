@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { pageById } from "@carbon/database/access";
+import { levelReaches, pageById } from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 
 // A permission is `{ "<page>": "<Level>" }`: each key a page of the registry.
@@ -66,5 +66,38 @@ describe("posting permissions", () => {
             .map(([page, level]) => `${name}: ${page} ${level}`)
     );
     expect(unknown).toEqual([]);
+  }, 120_000);
+
+  // The rule's type needs a row for every conversion, including those that run as
+  // the system (quote → order, RFQ → quote, warehouse transfers).
+  it("a conversion needs Create on the page of the document it makes", async () => {
+    const { convertDocumentPermission } = await import(
+      "../app/modules/shared/shared.service"
+    );
+    const made: Record<string, string> = {
+      purchaseOrderToPurchaseInvoice: "invoicing.purchaseInvoices",
+      quoteToSalesOrder: "sales.salesOrders",
+      salesOrderToSalesInvoice: "invoicing.salesInvoices",
+      salesRfqToQuote: "sales.quotes",
+      shipmentToSalesInvoice: "invoicing.salesInvoices",
+      supplierQuoteToPurchaseOrder: "purchasing.purchaseOrders",
+      warehouseTransferToShipment: "inventory.shipments",
+      warehouseTransferToReceipt: "inventory.receipts"
+    };
+    const rules = convertDocumentPermission.rules as Record<
+      string,
+      Record<string, "View" | "Create" | "Edit" | "Full">
+    >;
+    // A new conversion gets a row here; activating a method makes nothing.
+    expect(Object.keys(rules).sort()).toEqual(
+      [...Object.keys(made), "methodVersionToActive"].sort()
+    );
+    const missing = Object.entries(made)
+      .filter(([type, page]) => {
+        const level = rules[type]?.[page];
+        return !level || !levelReaches(level, "Create");
+      })
+      .map(([type, page]) => `${type}: ${page}`);
+    expect(missing).toEqual([]);
   }, 120_000);
 });

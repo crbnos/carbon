@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
+import { assertIsPost, error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
@@ -24,14 +25,17 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { Input, Select, Submit } from "~/components/Form";
-import { convertOperatorValidator } from "~/modules/users/users.models";
+import {
+  convertConsoleOperatorPermission,
+  convertOperatorValidator
+} from "~/modules/users/users.models";
 import type { getEmployeeTypes } from "~/modules/users/users.service";
-import { convertConsoleOperatorToUser } from "~/modules/users/users.service";
+import { originOf } from "~/modules/users/users.service";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await authorize(request, { "users.operators": "Edit" });
+  const { client } = await authorize(request, convertConsoleOperatorPermission);
 
   const { operatorId } = params;
   if (!operatorId) throw new Error("Operator ID is required");
@@ -54,10 +58,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    "users.operators": "Edit"
-  });
-
   const { operatorId } = params;
   if (!operatorId) throw new Error("Operator ID is required");
 
@@ -69,28 +69,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await convertConsoleOperatorToUser(client, {
-    userId: operatorId,
-    email: validation.data.email,
-    employeeType: validation.data.employeeType,
-    companyId,
-    createdBy: userId
+  const { api } = await authorize(request);
+  const result = await api.users.convertConsoleOperator({
+    ...validation.data,
+    operatorId,
+    ip: originOf(request).ip
   });
-
-  if (!result.success) {
-    throw redirect(
-      path.to.operators,
-      await flash(request, error(result, result.message))
-    );
-  }
-
-  throw redirect(
-    path.to.employeeAccounts,
-    await flash(
-      request,
-      success("Operator converted to full user. Invite email sent.")
-    )
-  );
+  return respond(request, result).redirect(path.to.employeeAccounts, {
+    message: "Operator converted to full user. Invite email sent.",
+    onError: path.to.operators
+  });
 }
 
 export default function ConvertOperatorRoute() {

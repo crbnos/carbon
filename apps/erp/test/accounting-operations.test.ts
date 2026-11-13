@@ -4,7 +4,10 @@
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { describe, expect, it } from "vitest";
-import { saveJournalEntry } from "../app/modules/accounting/accounting.server";
+import {
+  importChartOfAccounts,
+  saveJournalEntry
+} from "../app/modules/accounting/accounting.server";
 import { accountMoveRefusal } from "../app/modules/accounting/accounting.utils";
 import { pageClaims } from "./page-claims";
 
@@ -13,20 +16,27 @@ const unreachable = () => {
   throw new Error("must not be reached");
 };
 
-const context = () =>
+const all = {
+  view: ["company-1"],
+  create: ["company-1"],
+  update: ["company-1"],
+  delete: ["company-1"]
+};
+
+/** Every accounting page, less the ones named. */
+const accountingWithout = (...pages: string[]) => {
+  const claims = pageClaims({ accounting: all });
+  for (const page of pages) delete claims[page];
+  return claims;
+};
+
+const context = (permissions = accountingWithout()) =>
   createServiceContext({
     actor: {
       type: "user",
       role: "employee",
       userId: "user-1",
-      permissions: pageClaims({
-        accounting: {
-          view: ["company-1"],
-          create: ["company-1"],
-          update: ["company-1"],
-          delete: ["company-1"]
-        }
-      })
+      permissions
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: {} as never,
@@ -63,6 +73,38 @@ describe("saveJournalEntry", () => {
     expect(result.error).toMatchObject({
       message: "Each line must have an account"
     });
+  });
+});
+
+describe("importChartOfAccounts", () => {
+  const importAs = (permissions: ReturnType<typeof accountingWithout>) =>
+    importChartOfAccounts(context(permissions), {
+      chart: [
+        {
+          line: 2,
+          number: "1000",
+          name: "Cash",
+          class: "Asset",
+          accountType: null,
+          group: "Current Assets"
+        }
+      ],
+      defaults: [{ line: 2, key: "bankCash", number: "1000" }],
+      resolutions: { targets: {} }
+    });
+
+  // The posting rewrites the default accounts and the asset classes as the system.
+  it.each(["accounting.defaultAccounts", "accounting.assetClasses"])(
+    "refuses a role without %s, before the import runs",
+    async (page) => {
+      const result = await importAs(accountingWithout(page));
+      expect(result.error).toMatchObject({ category: "forbidden" });
+    }
+  );
+
+  it("admits a role with all three pages", async () => {
+    const result = await importAs(accountingWithout());
+    expect(result.error?.category).not.toBe("forbidden");
   });
 });
 

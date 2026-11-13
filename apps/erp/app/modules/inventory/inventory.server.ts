@@ -10,6 +10,7 @@ import {
 } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
+import { anyOf, type PageId, writersOf } from "@carbon/database/access";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   dedupeViolations,
@@ -83,6 +84,7 @@ import {
   shipmentFixedAssetLineUpdateValidator,
   shipmentSourceDocumentType,
   stockTransferStatusType,
+  storageTypesGate,
   warehouseTransferStatusType
 } from "./inventory.models";
 import type { Blocked } from "./inventory.service";
@@ -7265,7 +7267,7 @@ export const expandStorageUnitIdsWithDescendants = defineServiceFn({
  */
 export const getStorageTypeUsage = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "inventory.storageTypes": "View" },
+  permission: { anyOf: storageTypesGate("View") },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7289,7 +7291,7 @@ export const getStorageTypeUsage = defineServiceFn({
  */
 export const deleteStorageTypeWithCascade = defineServiceFn({
   input: z.looseObject({ id: z.string(), cascade: z.boolean().optional() }),
-  permission: { "inventory.storageTypes": "Full" },
+  permission: { anyOf: storageTypesGate("Full") },
   async run(ctx, { id, cascade }) {
     const usage = await service.getStorageTypeUsage(
       ctx.asCaller.supabase,
@@ -7311,7 +7313,17 @@ export const deleteStorageTypeWithCascade = defineServiceFn({
         );
       }
       // The cascade edits those storage units.
-      if (!ctx.can({ "inventory.storageUnits": "Edit" })) {
+      if (
+        !ctx.can({
+          anyOf: anyOf(
+            [
+              "inventory.storageUnits",
+              ...(writersOf("storageUnit") as PageId[])
+            ],
+            "Edit"
+          )
+        })
+      ) {
         return ctx.error("forbidden", "You do not have permission to do this");
       }
     }
@@ -7339,7 +7351,7 @@ export const getStorageTypes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { "inventory.storageTypes": "View" },
+  permission: { anyOf: storageTypesGate("View") },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7359,7 +7371,7 @@ export const getStorageTypes = defineServiceFn({
  */
 export const getStorageType = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { "inventory.storageTypes": "View" },
+  permission: { anyOf: storageTypesGate("View") },
   async run(ctx, input) {
     const storageType = await service.getStorageType(
       ctx.asCaller.supabase,
@@ -7405,7 +7417,7 @@ export const createStorageType = defineServiceFn({
       .optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { "inventory.storageTypes": "Create" },
+  permission: { anyOf: storageTypesGate("Create") },
   async run(ctx, { id: _id, ...input }) {
     return unwrap(
       ctx,
@@ -7437,7 +7449,7 @@ export const updateStorageType = defineServiceFn({
       id: z.string().describe("The storage type to update.").optional()
     })
     .required({ id: true }),
-  permission: { "inventory.storageTypes": "Edit" },
+  permission: { anyOf: storageTypesGate("Edit") },
   async run(ctx, input) {
     // The update matches by id alone: it must be this company's type.
     const owned = await refuseUnlessOwned(ctx, "storageType", {

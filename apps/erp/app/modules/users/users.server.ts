@@ -36,6 +36,8 @@ import {
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import {
+  convertConsoleOperatorPermission,
+  convertOperatorValidator,
   createOperatorValidator,
   grantModule,
   grantsSchema,
@@ -870,33 +872,20 @@ export const addConsoleOperator = defineServiceFn({
  * Give a person a new console PIN. Their old PIN stops working at once.
  *
  * @remarks
- * A PIN pins in as that person at any MES console, so resetting one hands
- * over their shop-floor identity. Users update covers console operators
- * (PIN-only accounts made for this); for anyone else, an admin included, the
- * caller also needs settings update, the permission that turns console mode
- * on. The PIN is stored only as a hash and returned once.
+ * A PIN pins in as that person at any MES console, with their access, so
+ * resetting one hands over their shop-floor identity. Operators Edit covers a
+ * console operator (the Console Operator type); anyone else also needs Edit on
+ * Accounts and on Settings → People. Only an Admin resets an Admin's PIN, and
+ * no one resets the PIN of someone with more access than they hold on any page
+ * (`pinResetRefusal`). The PIN is stored only as a hash and returned once.
  */
 export const resetConsoleOperatorPin = defineServiceFn({
   input: z.object({ operatorId: z.string().min(1) }),
   permission: { "users.operators": "Edit" },
   async run(ctx, { operatorId }) {
-    const user = await ctx.asCaller.supabase
-      .from("user")
-      .select("id, isConsoleOperator")
-      .eq("id", operatorId)
-      .single();
-    if (user.error || !user.data) {
-      return ctx.error("notFound", "Operator not found", user.error);
-    }
-    if (
-      !user.data.isConsoleOperator &&
-      !ctx.can({ "settings.people": "Edit" })
-    ) {
-      return ctx.error("forbidden", "You do not have permission to do this");
-    }
+    const refused = await service.refusePinReset(ctx, operatorId);
+    if (refused) return refused;
 
-    // The (employee, company) foreign key refuses an operator outside this
-    // company.
     const pin = generateConsolePin();
     try {
       await setEmployeePin(ctx.asSystem.pg, {
@@ -909,6 +898,32 @@ export const resetConsoleOperatorPin = defineServiceFn({
       return ctx.error("internal", "Failed to reset PIN", err);
     }
     return { pin };
+  }
+});
+
+/**
+ * Turn a console operator into a full user: a sign-in account under a real
+ * email, the chosen employee type, and an invite email.
+ *
+ * @remarks
+ * Needs Accounts Edit as well as Operators Edit: it moves the person to an
+ * employee type. When the grant write refuses, nothing is converted.
+ */
+export const convertConsoleOperator = defineServiceFn({
+  input: convertOperatorValidator.extend({
+    operatorId: z.string().min(1),
+    ip: z.string().optional()
+  }),
+  permission: convertConsoleOperatorPermission,
+  async run(ctx, { operatorId, email, employeeType, ip }) {
+    const refused = await service.convertConsoleOperatorToUser(ctx, {
+      userId: operatorId,
+      email,
+      employeeType,
+      ip
+    });
+    if (refused) return refused;
+    return { id: operatorId };
   }
 });
 
@@ -1236,7 +1251,8 @@ export const getEmployeeTypes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { "users.employeeTypes": "View" },
+  // Picking a type on invite / convert is Accounts work, so Accounts viewers list them too.
+  permission: ACCESS_READER_GATE,
   async run(ctx, input) {
     return paged(
       ctx,

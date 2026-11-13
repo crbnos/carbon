@@ -25,6 +25,8 @@ export const PAGES = [
       "implementationCheckState",
       "implementationFieldValue"
     ],
+    // accounting.fiscalYear, which moved from Settings (accounting.ts alsoWrittenBy).
+    readers: ["fiscalYearSettings"],
     paths: ["/x/settings/company"]
   },
   {
@@ -67,6 +69,10 @@ export const PAGES = [
     label: "Accounting",
     maxLevel: "Full",
     tables: ["accountingCutoverIgnoredInvoice"],
+    // Moved from Accounting, whose index sent Reporting to the activation wizard.
+    alsoWrittenBy: {
+      accountingCutoverIgnoredInvoice: ["accounting.reporting"]
+    },
     paths: ["/x/settings/accounting", "/x/accounting/activation"]
   },
   {
@@ -166,6 +172,7 @@ export const PAGES = [
     maxLevel: "Full",
     tables: ["apiKey", "apiKeyRateLimit", "permission"],
     where: { table: "permission", column: "apiKeyId" },
+    privateReads: ["apiKey", "apiKeyRateLimit"],
     paths: ["/x/settings/api-keys"]
   },
   {
@@ -212,6 +219,9 @@ export const PAGES = [
       "accountingSyncOperation",
       "integrationConnection"
     ],
+    // companyIntegration stays module-wide: its secrets are in Vault (secretRef),
+    // and the app shell reads which integrations are on through the caller's client.
+    privateReads: ["integrationConnection"],
     paths: ["/x/settings/integrations"]
   },
   {
@@ -247,6 +257,7 @@ export const PAGES = [
     label: "Webhooks",
     maxLevel: "Full",
     tables: ["webhook"],
+    privateReads: ["webhook"],
     paths: ["/x/settings/webhooks"]
   }
 ] as const satisfies readonly Page[];

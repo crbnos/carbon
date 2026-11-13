@@ -2,31 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
+import { assertIsPost, error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { selectedLinesValidator } from "~/modules/purchasing/purchasing.models";
-import {
-  convertSupplierQuoteToOrder,
-  getSupplier,
-  getSupplierQuote
-} from "~/modules/purchasing/purchasing.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id-convert");
 
+/** `purchasing.convertSupplierQuoteToOrder` holds the gate and the supplier-approval check. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await authorize(request, {
-    "purchasing.supplierQuotes": "Create"
-  });
-
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
@@ -52,71 +42,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const selectedLines = parseResult.data;
+  const { api } = await authorize(request);
+  const result = await api.purchasing.convertSupplierQuoteToOrder({
+    id,
+    selectedLines: parseResult.data
+  });
 
-  const serviceRole = getCarbonServiceRole();
-
-  // Check supplier approval status
-  const [quote, supplierApprovalRequired] = await Promise.all([
-    getSupplierQuote(serviceRole, id),
-    isApprovalRequired(serviceRole, "supplier", companyId)
-  ]);
-
-  // The service role bypasses RLS and id comes from the URL.
-  if (!quote.data || quote.data.companyId !== companyId) {
-    logger.error("Supplier quote not found for company", {
-      companyId,
-      supplierQuoteId: id,
-      error: quote.error
-    });
-    throw redirect(
-      path.to.supplierQuotes,
-      await flash(request, error(null, "Supplier quote not found"))
-    );
-  }
-
-  if (supplierApprovalRequired && quote.data?.supplierId) {
-    const supplier = await getSupplier(serviceRole, quote.data.supplierId);
-    if (supplier.data?.status !== "Active") {
-      throw redirect(
-        path.to.supplierQuoteDetails(id),
-        await flash(
-          request,
-          error(
-            null,
-            "Cannot convert to order: supplier is not approved (Active)"
-          )
-        )
-      );
-    }
-  }
-
-  const convert = await convertSupplierQuoteToOrder(
-    serviceRole,
-    getDatabaseClient(),
-    {
-      id: id,
-      companyId,
-      userId,
-      selectedLines
-    }
-  );
-
-  if (convert.error) {
-    throw redirect(
-      path.to.supplierQuoteDetails(id),
-      await flash(
-        request,
-        error(
-          convert.error,
-          getErrorMessage(convert.error, "Failed to convert quote to order")
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.purchaseOrder(convert.data?.convertedId!),
-    await flash(request, success("Successfully converted quote to order"))
+  return respond(request, result).redirect(
+    result.data?.convertedId
+      ? path.to.purchaseOrder(result.data.convertedId)
+      : path.to.supplierQuoteDetails(id),
+    { message: "Successfully converted quote to order" }
   );
 }

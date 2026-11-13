@@ -2,158 +2,144 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
+  isPageModule,
   moduleEnum,
   moduleOf,
-  ownersOf,
-  PAGES,
-  type Page
+  ownersOf
 } from "@carbon/database/access";
 import type { SourceFile, Violation } from "../check";
 
 export const MOVED_TABLES_COVERED = "moved-tables-covered";
 
-/** The migration whose `moved` rows turn an old module grant into a page grant. */
-export const MOVED_TABLES_MIGRATION =
-  "packages/database/supabase/migrations/20261110101723_grants-for-moved-tables.sql";
+const PAGES_DIR = "packages/database/src/access/pages";
+
+/** The modules a table's policies checked before page permissions: module ids, as `inventory`. */
+export type BaseModules = { read: readonly string[]; write: readonly string[] };
+
+/**
+ * Per table, the modules whose keys its SELECT (`read`) and its writes (`write`)
+ * checked in the manifest on main before page permissions (a0d1fa4279). Frozen:
+ * every later move is measured against it, so never regenerate or edit it.
+ */
+export const BASE_TABLE_MODULES: Readonly<Record<string, BaseModules>> =
+  JSON.parse(
+    readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), "base-table-modules.json"),
+      "utf8"
+    )
+  );
+
+/** A table's live policies: the command (`SELECT`, `INSERT`, `UPDATE`, `DELETE`, `ALL`) and its SQL. */
+export type LivePolicy = { command: string; sql: string };
+
+const POLICY =
+  /CREATE POLICY\s+"[^"]*"\s+ON\s+(?:"?public"?\.)?"(\w+)"\s+(?:AS\s+\w+\s+)?FOR\s+(\w+)[^;]*;/g;
+
+/**
+ * Each table's policies as the migrations leave them: a migration that creates
+ * any policy on a table replaces the whole set (a generated block drops them
+ * all first). `migrations` must be in apply order.
+ */
+export function livePolicies(
+  migrations: readonly SourceFile[]
+): Map<string, LivePolicy[]> {
+  const live = new Map<string, LivePolicy[]>();
+  for (const migration of migrations) {
+    const found = new Map<string, LivePolicy[]>();
+    for (const match of migration.contents.matchAll(POLICY)) {
+      const [sql, table, command] = match as unknown as [
+        string,
+        string,
+        string
+      ];
+      found.set(table, [
+        ...(found.get(table) ?? []),
+        { command: command.toUpperCase(), sql }
+      ]);
+    }
+    for (const [table, policies] of found) live.set(table, policies);
+  }
+  return live;
+}
 
 /** The registry facts the check needs; `REGISTRY` is the real one. */
 export type MovedTablesRegistry = {
-  pages: readonly {
-    id: string;
-    maxLevel: string;
-    alsoWrittenBy?: Readonly<Record<string, readonly string[]>>;
-  }[];
   /** The table's page, or every branch's page for a shared table or a child; empty when no page lists it. */
-  ownersOf(table: string): string[];
-  /** The `module` enum label of the page's module: `inventory.receipts` → `Inventory`. */
-  moduleEnumOf(page: string): string;
+  ownersOf(table: string): readonly string[];
+  /** The module id of a page: `inventory.receipts` → `inventory`. */
+  moduleOf(page: string): string;
+  /** False for a module with no pages (`printing`): its grants were moved in place. */
+  hasPages(module: string): boolean;
 };
 
 export const REGISTRY: MovedTablesRegistry = {
-  pages: PAGES as readonly Page[],
   ownersOf,
-  moduleEnumOf: (page) => moduleEnum(moduleOf(page) as never)
+  moduleOf,
+  hasPages: (module) => isPageModule(moduleEnum(module as never))
 };
 
-type MovedRow = {
-  newModule: string;
-  page: string;
-  cap: string;
-  /** The registry tables the row's trailing comment names. */
-  tables: string[];
-  line: number;
-};
+const label = (module: string) => moduleEnum(module as never);
+
+/** A key of a page of `module` that a write checks: `'inventory.quantities_create'`. */
+const writeKey = (module: string) =>
+  new RegExp(String.raw`'${module}\.\w+_(?:create|update|delete)'`);
+/** A read of `module`: one of its page keys, or the module in `get_companies_with_module_view`. */
+const readKey = (module: string) =>
+  new RegExp(String.raw`'${module}(?:'|\.\w+_(?:view|create|update|delete)')`);
 
 /**
- * The `moved` rows: `('Old', 'New', 'module.page', 'Cap'), -- table, table…`.
- * The rows sit between `VALUES` and the `typed` CTE.
- */
-function movedRows(sql: string, registry: MovedTablesRegistry): MovedRow[] {
-  const start = sql.indexOf("VALUES");
-  const end = sql.indexOf("),\ntyped");
-  if (start === -1) return [];
-  const values = sql.slice(start, end === -1 ? undefined : end);
-  return [
-    ...values.matchAll(
-      /\('(\w+)', '(\w+)', '([\w.]+)', '(\w+)'\),?\s*--([^\n]*)/g
-    )
-  ].map((m) => ({
-    newModule: m[2] as string,
-    page: m[3] as string,
-    cap: m[4] as string,
-    tables: [
-      ...(m[5] as string).matchAll(/\b[a-z]\w*[A-Z]\w*\b|\b[a-z]{4,}\b/g)
-    ]
-      .map((word) => word[0])
-      .filter((word) => registry.ownersOf(word).length > 0),
-    line: sql.slice(0, start + (m.index ?? 0)).split("\n").length
-  }));
-}
-
-/**
- * A table whose owning page is in another module than its policy checked before
- * keeps its old writers one way only: a page grant on its new page (a `moved`
- * row of the migration), or the old page listed in the new page's
- * `alsoWrittenBy`. Both, and a role holds the new page twice over; neither, and
- * it loses the table.
+ * A table whose page is now in another module than one its policies checked
+ * before page permissions keeps that module's holders: its live write policies
+ * check a page of every old write module, and its SELECT admits every old read
+ * module. Never through a page grant in the new module, which would read the
+ * whole new module (RLS reads are module-wide); the registry way is the new
+ * page's `alsoWrittenBy` and the old page's `readers`, or a page key in the
+ * rule. Read off the live policies, so a rule, a registry entry or a generated
+ * migration that drops the old holders fails here.
  *
- * It fails:
- * - a migration with no `moved` rows (the parse broke);
- * - a row whose page is not in the registry, whose new module is not that
- *   page's module, or whose cap is not that page's `maxLevel`;
- * - a table the row names covered by both, or by neither;
- * - an `alsoWrittenBy` table whose owning page also gets a grant.
+ * Tables no page owns are skipped (gone from the schema, or not a page's).
  */
 export function findMovedTableGaps(
-  migration: SourceFile,
-  registry: MovedTablesRegistry = REGISTRY
+  policies: ReadonlyMap<string, readonly LivePolicy[]>,
+  registry: MovedTablesRegistry = REGISTRY,
+  base: Readonly<Record<string, BaseModules>> = BASE_TABLE_MODULES
 ): Violation[] {
-  const { file } = migration;
-  const rows = movedRows(migration.contents, registry);
   const violations: Violation[] = [];
-  const push = (line: number, snippet: string, message: string) =>
-    violations.push({ file, line, snippet, message });
-
-  if (rows.length === 0) {
-    push(
-      0,
-      "moved",
-      "no `moved` rows found: the VALUES list or the `typed` CTE changed shape"
-    );
-    return violations;
-  }
-
-  const alsoWritten = registry.pages.flatMap((page) =>
-    Object.keys(page.alsoWrittenBy ?? {}).map((table) => ({
-      page: page.id,
-      table
-    }))
-  );
-  const byId = new Map(registry.pages.map((page) => [page.id, page]));
-
-  for (const row of rows) {
-    const page = byId.get(row.page);
-    if (!page) {
-      push(row.line, row.page, `${row.page} is not a page in the registry`);
-      continue;
-    }
-    const module = registry.moduleEnumOf(row.page);
-    if (module !== row.newModule)
-      push(
-        row.line,
-        row.newModule,
-        `${row.page} is in module ${module}, not ${row.newModule}`
-      );
-    if (row.cap !== page.maxLevel)
-      push(
-        row.line,
-        row.cap,
-        `${row.page}: cap ${row.cap} is not the page's maxLevel ${page.maxLevel}`
-      );
-    for (const table of row.tables) {
-      const byGrant = registry.ownersOf(table).includes(row.page);
-      const byWriters = alsoWritten.some((entry) => entry.table === table);
-      if (byGrant === byWriters)
-        push(
-          row.line,
-          table,
-          byGrant
-            ? `${table} (${row.page}) is covered twice: by this grant and by alsoWrittenBy`
-            : `${table} (${row.page}) is covered by neither a grant on a page that owns it nor alsoWrittenBy`
+  for (const [table, before] of Object.entries(base)) {
+    const owners = registry.ownersOf(table);
+    if (owners.length === 0) continue;
+    const now = new Set(owners.map((owner) => registry.moduleOf(owner)));
+    const left = (modules: readonly string[]) =>
+      modules.filter((m) => !now.has(m) && registry.hasPages(m));
+    const live = policies.get(table) ?? [];
+    const sqlOf = (commands: string[]) =>
+      live
+        .filter((p) => commands.includes(p.command))
+        .map((p) => p.sql)
+        .join("\n");
+    const writes = sqlOf(["INSERT", "UPDATE", "DELETE", "ALL"]);
+    const reads = sqlOf(["SELECT", "ALL"]);
+    const gap = (from: string, problem: string, fix: string) =>
+      violations.push({
+        file: `${PAGES_DIR}/${registry.moduleOf(owners[0] as string)}.ts`,
+        line: 0,
+        snippet: table,
+        message: `${table} moved from ${label(from)} to ${owners.join(", ")}, and ${problem} page of ${label(from)}: ${fix} a page of ${label(from)}, then run authz migration`
+      });
+    for (const from of left(before.write))
+      if (!writeKey(from).test(writes))
+        gap(
+          from,
+          "no write policy checks a",
+          "list it in its page's alsoWrittenBy with"
         );
-    }
+    for (const from of left(before.read))
+      if (!readKey(from).test(reads))
+        gap(from, "its SELECT admits no", "list it in the readers of");
   }
-
-  const granted = new Set(rows.map((row) => row.page));
-  for (const entry of alsoWritten)
-    for (const owner of registry.ownersOf(entry.table))
-      if (granted.has(owner))
-        push(
-          0,
-          entry.table,
-          `${entry.table} is in ${entry.page}'s alsoWrittenBy, and ${owner} gets a grant in this migration`
-        );
-
   return violations;
 }

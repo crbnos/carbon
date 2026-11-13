@@ -95,7 +95,9 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
         classification: t.classification,
         schema: stableHash(t.schema),
         response: t.responseSchema ? stableHash(t.responseSchema) : "none",
-        permission: `${
+        permission: t.permission?.allOf
+          ? `all of ${t.permission.allOf.map(({ page, level }) => `${page}:${level}`).join("+")}`
+          : `${
           t.permission?.module
             ? `${t.permission.page ?? t.permission.module}:${[...t.permission.actions].sort().join("+")}`
             : "none"

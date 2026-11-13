@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { Actor } from "@carbon/api/service-fn.server";
 import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import type { GrantInput } from "@carbon/database/access-write";
@@ -48,7 +49,8 @@ function ownRateLimit(rateLimit: number | undefined) {
 /**
  * Create a key (`keyHash` and `keyPreview` given) or update one (`id` given),
  * and set its grants, in one transaction (`writeAccessGrants`). The key
- * itself never changes on an update. Returns `writeAccessGrants`' `{ error }`:
+ * itself never changes on an update. The grants are capped at `actor`'s, the
+ * caller as the request authorised them. Returns `writeAccessGrants`' `{ error }`:
  * the caller already knows the id (it passed it, or returns the raw key).
  */
 export async function saveApiKey(
@@ -58,6 +60,7 @@ export async function saveApiKey(
     companyId,
     key,
     grants,
+    actor,
     actorId,
     ip
   }: {
@@ -67,6 +70,7 @@ export async function saveApiKey(
       | { keyHash: string; keyPreview: string }
     );
     grants: readonly GrantInput[];
+    actor: Actor;
     actorId: string;
     ip?: string;
   }
@@ -81,6 +85,7 @@ export async function saveApiKey(
     companyId,
     subject: { apiKeyId: id },
     change: { set: grants },
+    actor,
     actorId,
     ip,
     subjectRow: (tx) =>
@@ -107,10 +112,9 @@ export async function saveApiKey(
 
 /**
  * Delete one of the company's keys and drop its cached authentication, so it
- * stops authenticating at once. The hash is read first, over `db`: it cannot
- * be read once the row is gone. The delete runs as the caller, under RLS. The
- * cache is dropped after the delete commits, so a request that cached the live
- * row before it is cleared too.
+ * stops authenticating at once. Runs over `db` once the caller's gate passed: RLS
+ * asks a higher level for DELETE and would silently delete nothing. The cache is
+ * dropped after commit, so a request that cached the live row is cleared too.
  */
 export async function deleteApiKey(
   client: SupabaseClient<Database>,
@@ -119,32 +123,25 @@ export async function deleteApiKey(
 ): Promise<{ error: AccessWriteError | null }> {
   const unentitled = await subjectEntitlement(client, companyId, "key");
   if (unentitled) return { error: unentitled };
-  const key = await db
-    .selectFrom("apiKey")
-    .select("keyHash")
-    .where("id", "=", id)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  if (!key) {
+
+  let deleted: { keyHash: string } | undefined;
+  try {
+    deleted = await db
+      .deleteFrom("apiKey")
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .returning("keyHash")
+      .executeTakeFirst();
+  } catch (cause) {
+    return {
+      error: { code: "internal", message: "Failed to delete API key", cause }
+    };
+  }
+  if (!deleted) {
     return {
       error: { code: "notFound", message: SUBJECT_RULES.key.notFound }
     };
   }
-
-  const deleted = await client
-    .from("apiKey")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
-  if (deleted.error) {
-    return {
-      error: {
-        code: "internal",
-        message: "Failed to delete API key",
-        cause: deleted.error
-      }
-    };
-  }
-  await bustApiKeyCache(key.keyHash);
+  await bustApiKeyCache(deleted.keyHash);
   return { error: null };
 }

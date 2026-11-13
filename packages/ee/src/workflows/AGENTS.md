@@ -167,7 +167,8 @@ Five exports, all re-exported from the package root:
 - `findTriggerSchedule(nodes)` — returns the `Schedule` from the trigger node, or `null` if
   the workflow is event-triggered. Throws if nodes fail to parse.
 - `syncWorkflowTriggers(db, companyId, workflowId)` — rewrites one workflow's trigger rows,
-  **writes `workflow.nextRunAt`** (the scheduler's bookmark), and reconciles the company's
+  **writes `workflow.nextRunAt`** (the scheduler's bookmark; the database refuses an API
+  change of it by anyone but the owner, `check_workflow_owner_change`), and reconciles the company's
   subscriptions in one transaction. Returns `{ eventIds, tables, scheduled }`. Call it on
   promote, on trigger edit, and on activate/deactivate.
 - `syncWorkflowSubscriptions(db, companyId)` — standalone repair from existing rows.
@@ -325,7 +326,9 @@ A `workflowTriggerEvent` row exists **if and only if** the workflow has a publis
 that version's trigger nodes list that event id. Publishing a version, editing the published
 version's trigger, and unpublishing must all rewrite the workflow's rows —
 delete-then-insert **in the same transaction** as the change. If these drift, a workflow silently
-stops firing or fires when it should not.
+stops firing or fires when it should not. RLS on the table is SELECT-only: only `syncWorkflowTriggers`
+(Kysely) and the datasets write it. The matcher also joins on `w.publishedVersionId = te.workflowVersionId`,
+so a row naming any other version queues nothing.
 
 Two deploy-time checks in `packages/checks` watch for that drift against a live database (they need
 one, so they are not CI jobs): the `workflow-trigger-event-drift` SQL invariant compares the rows to

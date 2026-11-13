@@ -19,6 +19,7 @@ import * as service from "./pages/service";
 import * as settings from "./pages/settings";
 import * as users from "./pages/users";
 import * as workflows from "./pages/workflows";
+import type { AnyOfGate, PageGate } from "./resolve";
 
 /**
  * Two or more pages share a table: the column and value that pick this page's
@@ -60,11 +61,16 @@ export type Page = {
   /**
    * Tables this page owns that other pages also write at the same action, each
    * with those pages: a table that moved to this page from another module keeps
-   * the page that wrote it before (20261110101723_grants-for-moved-tables.sql
-   * gives the moved tables it does not list a grant instead), and a table
-   * another page writes its own rows of (a supplier's addresses). RLS renders it.
+   * a page of the old module, which also lists it in `readers` when its read is
+   * restricted (@carbon/checks `moved-tables-covered`), and a table another
+   * page writes its own rows of (a supplier's addresses). RLS renders it.
    */
   alsoWrittenBy?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * Tables holding secrets (key hashes, webhook URLs, connection details): a read
+   * needs View on this page itself, never just any page of its module.
+   */
+  privateReads?: readonly string[];
   /** Route path prefixes, used to map route files to pages. */
   paths: readonly string[];
 };
@@ -204,6 +210,7 @@ function buildIndex() {
   const places = new Map<string, TablePlace>();
   const readers = new Map<string, string[]>();
   const writers = new Map<string, string[]>();
+  const privates = new Set<string>();
   const put = (table: string, next: TablePlace) => {
     const prev = places.get(table);
     if (!prev) {
@@ -264,7 +271,17 @@ function buildIndex() {
         ...new Set([...(writers.get(table) ?? []), ...pages])
       ]);
     }
-  return { places, readers, writers };
+  // A shared table's read is per branch (rules.ts), so a private one is a page's own table.
+  for (const page of PAGES as readonly Page[])
+    for (const table of page.privateReads ?? []) {
+      const place = places.get(table);
+      if (place?.kind !== "page" || place.page !== page.id)
+        throw new Error(
+          `registry: ${page.id} lists ${table} in privateReads but is not its only page`
+        );
+      privates.add(table);
+    }
+  return { places, readers, writers, privates };
 }
 
 const ownersIn = (place: TablePlace | undefined): PageId[] =>
@@ -291,16 +308,50 @@ export function readersOf(table: string): readonly string[] {
   return INDEX.readers.get(table) ?? [];
 }
 
+/** Whether a read of the table needs View on its own page (`Page.privateReads`). */
+export function isPrivateRead(table: string): boolean {
+  return INDEX.privates.has(table);
+}
+
 /** The pages that list the table in `alsoWrittenBy`, besides the page that owns it. */
 export function writersOf(table: string): readonly string[] {
   return INDEX.writers.get(table) ?? [];
 }
 
 /**
+ * What RLS admits a read of the table on: View on any page of `modules`, or on
+ * one of `readers`. rules.ts `belongsTo` renders its SELECT from this.
+ */
+export function readAccessOf(table: string): {
+  modules: ModuleId[];
+  readers: PageId[];
+} {
+  const owners = ownersOf(table);
+  const readers = readersOf(table) as PageId[];
+  if (isPrivateRead(table))
+    return { modules: [], readers: [...new Set([...owners, ...readers])] };
+  return {
+    modules: [...new Set(owners.map((page) => moduleOf(page) as ModuleId))],
+    readers
+  };
+}
+
+/**
+ * A read of the table as RLS answers it. A service-role read on a person's behalf
+ * checks this, not `widenReads`, which widens by page and admits more than RLS.
+ */
+export function tableReadGate(table: string): AnyOfGate {
+  const { modules, readers } = readAccessOf(table);
+  const pages = new Set<PageId>([...modules.flatMap(pagesOf), ...readers]);
+  return { anyOf: [...pages].map((page) => ({ [page]: "View" }) as PageGate) };
+}
+
+/**
  * The pages whose View admits a read of what a page owns: every page of its
- * module, then the pages of other modules that list one of its tables in
- * `readers`. Writes stay per page. `holdsGate`'s read mode (`widenReads`)
- * uses it; RLS composes the same rule per table in rules.ts `belongsTo`.
+ * module (only the page itself when it has `privateReads`), then the pages of
+ * other modules that list one of its tables in `readers`. Writes stay per page.
+ * `holdsGate`'s read mode (`widenReads`) uses it. It is per page, so wider
+ * than RLS, which is per table (`readAccessOf`).
  */
 export function readPages(pageId: string): PageId[] {
   const module = moduleOf(pageId);
@@ -309,7 +360,9 @@ export function readPages(pageId: string): PageId[] {
     for (const reader of readersOf(table))
       if (moduleOf(reader) !== module) others.add(reader);
   return [
-    ...pagesOf(module),
+    ...(pageById(pageId)?.privateReads?.length
+      ? [pageId as PageId]
+      : pagesOf(module)),
     ...(PAGES as readonly Page[])
       .map((page) => page.id as PageId)
       .filter((id) => others.has(id))

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { storageTypesGate } from "~/modules/inventory/inventory.models";
 import {
   getBatchPropertyColumns,
   getInventoryCounts,
@@ -77,7 +78,7 @@ export const stockMovementsList = searchList({
 
 export const storageTypesList = searchList({
   key: "storage-types",
-  gate: { "inventory.storageTypes": "View" },
+  gate: storageTypesGate("View"),
   paging: STORAGE_TYPES_PAGING,
   service: getStorageTypes
 });

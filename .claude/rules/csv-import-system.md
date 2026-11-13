@@ -274,7 +274,10 @@ parent is an `errors` row. New rows get a DB-generated `xid()` id.
 (`parentId` + `parentRevision`). The import groups rows by parent part, validates
 each group (`validateGroup`, pure), then writes each part in its own Kysely
 transaction (`writeGroup`): a part with any error writes nothing, other parts
-continue.
+continue. The import's gate is `parts.parts` Edit, but a parent may be a Tool:
+an existing parent's group also needs Edit on its type's page
+(`ITEM_TYPE_PAGES`, checked with the `can` argument, `ctx.can`), or the group
+is refused with an error on its first row.
 
 - **Target version** (`pickMethodImportTarget`): a blank Make Method Version
   targets the highest non-archived version that existed before the import; an
@@ -371,7 +374,10 @@ every other field is a column mapping) and calls `importCsvFile` (`shared.server
 1. Refuses a `table` that is not a key of `importPermissions`.
 2. Gates on `{ by: "table" }`: Edit on the page `importPermissions[table]` names. Edit
    holds create, so the three stock imports need what the single-record adjustment
-   needs (Inventory → Quantities at Edit).
+   needs (Inventory → Quantities at Edit). Two moved tables also admit the page that
+   keeps writing them (`alsoWrittenBy`), as their screens do: `storageType` takes
+   Parts too, `itemPostingGroup` Accounting → Default Accounts. A keyed rule holds one
+   page, so these two are `"employee"` there and `run` checks `importAnyOf` first.
 3. Validates `columnMappings` against `importSchemas[table]` (required fields mapped).
 4. Calls `importCsv(ctx, { table, filePath, columnMappings, enumMappings })`
    (quote tables go through `importQuotes` instead).

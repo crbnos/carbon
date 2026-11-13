@@ -92,14 +92,20 @@ export const attachments = {
   documentExtraction: { statement: ["broadcast_table_changes"] },
   documentTemplate: { statement: ["broadcast_table_changes"] },
   employee: {
-    before: ["sync_update_employee_type_membership"],
+    before: [
+      "check_employee_type_change",
+      "sync_update_employee_type_membership"
+    ],
     after: ["sync_add_employee_to_type_group"],
     events: true,
     statement: ["broadcast_table_changes", "log_table_changes"]
   },
   employeeJob: { events: true },
   employeeType: {
-    before: ["sync_update_employee_type_group"],
+    before: [
+      "check_employee_type_system_type",
+      "sync_update_employee_type_group"
+    ],
     after: ["sync_create_employee_type_group"],
     events: true
   },
@@ -519,8 +525,10 @@ export const attachments = {
   workCenter: { events: true, statement: ["broadcast_reference_changes"] },
   workCenterDevice: { statement: ["broadcast_table_changes"] },
   workCenterProcess: { events: true },
+  workflow: { before: ["check_workflow_owner_change"] },
   workflowRun: { statement: ["broadcast_table_changes"] },
-  workflowStepRun: { statement: ["broadcast_table_changes"] }
+  workflowStepRun: { statement: ["broadcast_table_changes"] },
+  workflowVersion: { before: ["check_workflow_version_lock"] }
 } as const satisfies Attachments;
 
 export type AttachedTable = keyof typeof attachments;

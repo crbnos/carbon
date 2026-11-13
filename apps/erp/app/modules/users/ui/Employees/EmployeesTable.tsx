@@ -49,7 +49,10 @@ import {
   ResendInviteModal,
   RevokeInviteModal
 } from "~/modules/users/ui";
-import { canBulkActOnUser } from "~/modules/users/users.models";
+import {
+  canBulkActOnUser,
+  nonOperatorPinResetPermission
+} from "~/modules/users/users.models";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { useBulkUserActionFetcher } from "../components/AllMatchingUsers";
@@ -387,12 +390,11 @@ const EmployeesTable = memo(
                   <MenuIcon icon={<LuPencil />} />
                   <Trans>Edit Permissions</Trans>
                 </MenuItem>
-                {/* Resetting a PIN hands over that person's console identity:
-                    console operators need Edit on Operators, anyone else also
-                    Edit on Settings → People (enforced again by the route). */}
+                {/* A hint only: the row has no operator flag or type, so the
+                    synthetic email stands in; resetConsoleOperatorPin decides. */}
                 {settings.consoleEnabled &&
                   permissions.has({ "users.operators": "Edit" }) &&
-                  (permissions.has({ "settings.people": "Edit" }) ||
+                  (permissions.has(nonOperatorPinResetPermission) ||
                     row.email?.endsWith("@console.internal")) && (
                     <MenuItem
                       onClick={() =>

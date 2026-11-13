@@ -7,16 +7,20 @@ import {
   type AnyOfGate,
   claimsFor,
   clampLevel,
+  type ExpandedClaims,
   type Grant,
   higherLevel,
   holdsGate,
   type Level,
   type LevelSubject,
   levelOf,
+  levelReaches,
   MODULES,
   type ModuleEnum,
   type ModuleId,
   moduleId,
+  moduleOf,
+  PAGES,
   type PageGate,
   type PageId,
   pageById,
@@ -230,9 +234,9 @@ export function subjectGates(
  * Types viewer (the role form's "Who has access" panel, and the person editor
  * reading what each role gives).
  */
-export const ACCESS_READER_GATE: AnyOfGate = {
-  anyOf: [subjectGates("View").person, subjectGates("View").role]
-};
+export const ACCESS_READER_GATE = {
+  anyOf: [{ "users.accounts": "View" }, { "users.employeeTypes": "View" }]
+} as const satisfies AnyOfGate;
 
 export function refusedModules(
   type: AccessSubjectType,
@@ -253,4 +257,46 @@ export function claimsMayEditAccounts(claims: unknown, companyId: string) {
     subjectGates("Edit").person,
     companyId
   );
+}
+
+/**
+ * The pages where a key's grants after a write exceed both the actor's level and
+ * what the key held before: what a key write refuses. Levels compare as `levelOf`
+ * reads them, so a module grant counts on every page it reaches.
+ */
+export function keyGrantsAboveActor({
+  actor,
+  companyId,
+  before,
+  after
+}: {
+  actor: ExpandedClaims;
+  companyId: string;
+  before: readonly Omit<Grant, "subject">[];
+  after: readonly GrantInput[];
+}): PageId[] {
+  const asKey = (
+    grants: readonly (Omit<Grant, "subject" | "level"> & {
+      level: Level | null;
+    })[]
+  ): LevelSubject => ({
+    grants: grants.flatMap((g) =>
+      g.level === null ? [] : [{ ...g, level: g.level, subject: "key" }]
+    )
+  });
+  const was = asKey(before);
+  const will = asKey(after);
+  return PAGES.flatMap(({ id }) => {
+    const level = levelOf(will, id).level;
+    if (level === "None" || levelReaches(levelOf(was, id).level, level))
+      return [];
+    return holdsGate(actor, { [id]: level }, companyId) ? [] : [id];
+  });
+}
+
+/** "Users → Accounts": a page as the access grid names it. */
+export function pageName(pageId: string): string {
+  const module = MODULES.find((m) => m.id === moduleOf(pageId));
+  const page = pageById(pageId);
+  return module && page ? `${module.label} → ${page.label}` : pageId;
 }

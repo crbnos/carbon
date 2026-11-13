@@ -28,13 +28,19 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 - **`employee`** — per-company employee record. PK `(id, companyId)`; `id → user.id`.
   `employeeTypeId → employeeType.id` (RESTRICT), `companyId → company.id`,
   `active BOOLEAN DEFAULT FALSE`, `pin` (console mode). Added in `20241208004151_invites.sql`.
+  An API-role change to `employeeTypeId` is refused (BEFORE interceptor
+  `check_employee_type_change`): a person moves to another type through `writeAccessGrants`
+  (`convertConsoleOperatorToUser` too, with `{ keep: true }`).
 - **`employeeJob`** — job title / org placement. PK `(id, companyId)`; `id → user.id`.
   `title`, `startDate DATE`, `locationId → location.id`, `departmentId → department.id`,
   `shiftId → shift.id`, `managerId → user.id`, `tags TEXT[]`, `customFields` JSONB,
   `updatedAt`, `updatedBy → user.id`. Created `20230224035103_shifts.sql`; `departmentId`/`tags`
   added later. (`workCellId` existed briefly, then dropped in `20240819115702_work-centers.sql`.)
 - **`employeeType`** — per-company role definition. PK `id`. `name`, `companyId → company.id`,
-  `protected BOOLEAN`.
+  `protected BOOLEAN`, `systemType` (`'Admin'` / `'Console Operator'`, one each per company).
+  An API-role INSERT with a `systemType` or change to it is refused (BEFORE interceptor
+  `check_employee_type_system_type`): only the server (company seed, console provisioning,
+  datasets) sets it.
 - **`employeeTypePermission`** — LEGACY: an employee type's old permissions (PK
   `(employeeTypeId, module)`, `view/create/update/delete TEXT[]` of company IDs). Converted to
   `permission` grants by `20261110050003`; no permission check reads it, and it is dropped by transition item 3

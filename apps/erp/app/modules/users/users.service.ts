@@ -35,6 +35,7 @@ import {
   MODULES,
   type ModuleEnum,
   PAGES,
+  type PageId,
   type PortalKey
 } from "@carbon/database/access";
 import {
@@ -44,6 +45,7 @@ import {
 } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { InviteEmail } from "@carbon/documents/email";
+import { isCompanyAdmin } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { accessSubject, subjectGates } from "@carbon/ee/permission-grants";
 import {
@@ -93,7 +95,9 @@ import type { EmployeeInsert, InviteInsert, User } from "~/modules/users/types";
 import {
   type BulkUserAction,
   canBulkActOnUser,
+  isConsoleOperatorOf,
   type modulePreferencesValidator,
+  nonOperatorPinResetPermission,
   type permissionsValidator
 } from "~/modules/users/users.models";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
@@ -2053,26 +2057,26 @@ export async function createConsoleOperator(
 }
 
 /**
- * Converts a console-only operator to a full user by adding a Supabase Auth
- * account and updating their email to a real one.
+ * Creates the auth account, then one `writeAccessGrants` write moves the user row
+ * and type; when that write refuses, the auth account is deleted.
  */
 export async function convertConsoleOperatorToUser(
-  client: SupabaseClient<Database>,
+  ctx: ServiceContext,
   {
     userId,
     email,
     employeeType,
-    companyId,
-    createdBy
+    ip
   }: {
     userId: string;
     email: string;
     employeeType: string;
-    companyId: string;
-    createdBy: string;
+    ip?: string;
   }
-): Promise<{ success: false; message: string } | { success: true }> {
-  const serviceRole = getCarbonServiceRole();
+): Promise<CarbonError | null> {
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const createdBy = ctx.auditUserId;
 
   // userId comes from the URL and every write below is service-role, so prove
   // the operator is an employee of THIS company — otherwise another company's
@@ -2098,7 +2102,7 @@ export async function convertConsoleOperatorToUser(
       userId,
       error: membership.error
     });
-    return { success: false, message: "User is not a console operator" };
+    return ctx.error("notFound", "User is not a console operator");
   }
   if (targetEmployeeType.error || !targetEmployeeType.data) {
     logger.error("Employee type is not in the company", {
@@ -2106,9 +2110,8 @@ export async function convertConsoleOperatorToUser(
       employeeType,
       error: targetEmployeeType.error
     });
-    return { success: false, message: "Employee type not found" };
+    return ctx.error("notFound", "Employee type not found");
   }
-
   // Verify the user is a console operator
   // Note: isConsoleOperator field added by migration 20260319000000_console-mode.sql
   const existingUser = await serviceRole
@@ -2118,7 +2121,7 @@ export async function convertConsoleOperatorToUser(
     .single();
 
   if (existingUser.error || !(existingUser.data as any)?.isConsoleOperator) {
-    return { success: false, message: "User is not a console operator" };
+    return ctx.error("notFound", "User is not a console operator");
   }
 
   // Check email isn't already taken
@@ -2129,7 +2132,7 @@ export async function convertConsoleOperatorToUser(
     .maybeSingle();
 
   if (emailCheck.data) {
-    return { success: false, message: "Email is already in use" };
+    return ctx.error("conflict", "Email is already in use");
   }
 
   // Create Supabase Auth account with the same user ID
@@ -2141,37 +2144,59 @@ export async function convertConsoleOperatorToUser(
   });
 
   if (createAuth.error) {
-    return { success: false, message: createAuth.error.message };
+    return ctx.error(
+      "internal",
+      "Failed to create the sign-in account",
+      createAuth.error
+    );
   }
 
-  // Update user record: real email + no longer console operator
-  const updateUser = await requireAffected(
-    serviceRole
-      .from("user")
-      .update({
-        email: email.toLowerCase(),
-        isConsoleOperator: false
-      } as any)
-      .eq("id", userId)
-      .select("id")
+  const written = await writeAccessGrants(
+    ctx.asCaller.supabase,
+    ctx.asSystem.pg,
+    {
+      companyId,
+      subject: { userId },
+      change: { keep: true },
+      employeeType,
+      subjectRow: async (tx) => {
+        const updated = await tx
+          .updateTable("user")
+          .set({ email: email.toLowerCase(), isConsoleOperator: false })
+          .where("id", "in", (eb) =>
+            eb
+              .selectFrom("employee")
+              .select("id")
+              .where("id", "=", userId)
+              .where("companyId", "=", companyId)
+          )
+          .where("isConsoleOperator", "=", true)
+          .executeTakeFirst();
+        if (!updated.numUpdatedRows) {
+          throw new Error("The operator is no longer a console operator");
+        }
+      },
+      actor: ctx.actor,
+      actorId: createdBy,
+      ip,
+      reason: "Console operator converted to a user"
+    }
   );
-
-  if (updateUser.error) {
-    // Cleanup auth
-    await deleteAuthAccount(serviceRole, userId);
-    return { success: false, message: updateUser.error.message };
+  if (written.error) {
+    // Only the new sign-in: the user row is the operator's and was rolled back.
+    const removed = await serviceRole.auth.admin.deleteUser(userId);
+    logger.error("Failed to convert the console operator", {
+      companyId,
+      userId,
+      error: written.error.cause ?? written.error.message,
+      authCleanupError: removed.error
+    });
+    return grantWriteRefusal(ctx, written.error);
   }
-
-  // Change employee type to the selected type
-  await serviceRole
-    .from("employee")
-    .update({ employeeTypeId: employeeType })
-    .eq("id", userId)
-    .eq("companyId", companyId);
 
   // Create invite so user gets the magic link email
   const code = crypto.randomUUID();
-  const employee = await client
+  const employee = await ctx.asCaller.supabase
     .from("employee")
     .select("employeeTypeId")
     .eq("id", userId)
@@ -2196,7 +2221,7 @@ export async function convertConsoleOperatorToUser(
     }
   }
 
-  return { success: true };
+  return null;
 }
 
 /** Re-adding a deactivated employee writes outside RLS, so the inviter needs
@@ -2457,6 +2482,81 @@ export async function readEffectiveAccess(ctx: ServiceContext, userId: string) {
 }
 
 /**
+ * Why the actor may not reset the target's console PIN, or null. A PIN signs in
+ * as the target with their own access, so no one resets a PIN above their own.
+ */
+export function pinResetRefusal({
+  actor,
+  actorIsAdmin,
+  companyId,
+  target
+}: {
+  actor: ServiceContext["actor"];
+  actorIsAdmin: boolean;
+  companyId: string;
+  target: {
+    isConsoleOperator: boolean;
+    systemType: string | null;
+    employeeTypeCompanyId: string | null;
+    admin: boolean;
+    levels: readonly { page: PageId; level: Level }[];
+  };
+}): string | null {
+  if (actor.type === "system") return null;
+  if (
+    !isConsoleOperatorOf(target, companyId) &&
+    !holdsGate(actor.permissions, nonOperatorPinResetPermission, companyId)
+  )
+    return "Resetting the PIN of someone who is not a console operator needs Edit on Accounts and on Settings → People";
+  if (target.admin && !actorIsAdmin)
+    return "Only an Admin can reset an Admin's PIN";
+  const above = target.levels.some(
+    ({ page, level }) =>
+      level !== "None" &&
+      !holdsGate(actor.permissions, { [page]: level }, companyId)
+  );
+  return above
+    ? "You cannot reset the PIN of someone with more access than you"
+    : null;
+}
+
+/** The refusal of a console PIN reset (`pinResetRefusal`), or null; notFound when the target is not an employee of the company. */
+export async function refusePinReset(ctx: ServiceContext, userId: string) {
+  const [row, access] = await Promise.all([
+    ctx.asSystem.pg
+      .selectFrom("employee")
+      .innerJoin("user", "user.id", "employee.id")
+      .leftJoin("employeeType", "employeeType.id", "employee.employeeTypeId")
+      .select([
+        "user.isConsoleOperator",
+        "employeeType.systemType",
+        "employeeType.companyId as employeeTypeCompanyId"
+      ])
+      .where("employee.id", "=", userId)
+      .where("employee.companyId", "=", ctx.company.id)
+      .executeTakeFirst(),
+    readEffectiveAccess(ctx, userId)
+  ]);
+  if (!row || !access) return ctx.error("notFound", "Operator not found");
+  const admin = access.some((page) => page.source === "admin");
+  const actorIsAdmin =
+    admin &&
+    ctx.actor.type === "user" &&
+    (await isCompanyAdmin(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      ctx.actor.userId
+    ));
+  const refusal = pinResetRefusal({
+    actor: ctx.actor,
+    actorIsAdmin,
+    companyId: ctx.company.id,
+    target: { ...row, admin, levels: access }
+  });
+  return refusal ? ctx.error("forbidden", refusal) : null;
+}
+
+/**
  * The employees, and with the settings view the API keys, whose level on a
  * page (`levelOf`) reaches `level`. One read of the company's grants and
  * employees.
@@ -2537,6 +2637,7 @@ export async function saveAccessGrants(
       subject: accessSubject(subjectType, subjectId),
       change,
       employeeType,
+      actor: ctx.actor,
       actorId: ctx.auditUserId,
       ip
     })

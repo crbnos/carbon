@@ -46,7 +46,13 @@ import {
   type Json,
   getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
-import { admits, type PageGate, userActor } from "@carbon/database/access";
+import {
+  admits,
+  ITEM_TYPE_PAGES,
+  type PageGate,
+  pageById,
+  userActor
+} from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type {
@@ -226,7 +232,12 @@ import {
   type standardFactorType,
   toTiptapDoc
 } from "./shared.models";
-import { flatChargeShare } from "./shared.utils";
+import {
+  flatChargeShare,
+  quoteToSalesOrderPermission,
+  salesRfqToQuotePermission,
+  supplierQuoteToPurchaseOrderPermission
+} from "./shared.utils";
 import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload, MethodRowsAdded } from "./types";
 
@@ -3595,9 +3606,11 @@ export async function importMethods(
     companyId: string;
     userId: string;
     summary: Summary;
+    /** Whether the caller holds a gate (`ctx.can`): a parent's method needs Edit on its type's page. */
+    can: (gate: PageGate) => boolean;
   }
 ): Promise<void> {
-  const { table, mappedRecords, companyId, userId, summary } = args;
+  const { table, mappedRecords, companyId, userId, summary, can } = args;
   const added = noMethodRowsAdded();
   const warnings: string[] = [];
   summary.added = added;
@@ -3834,6 +3847,17 @@ export async function importMethods(
 
     if (errors.length > 0) {
       for (const e of errors) summary.errors.push(e);
+      continue;
+    }
+
+    // A parent's method needs Edit on its type's page; the gate covers Parts only.
+    const parent = itemMap.get(key(g.readableId, g.revision));
+    const parentPage = parent ? ITEM_TYPE_PAGES[parent.type] : undefined;
+    if (parent && parentPage && !can({ [parentPage]: "Edit" })) {
+      summary.errors.push({
+        row: rowOf(g.firstIndex),
+        reason: `Parent ${partLabel} is a ${parent.type}; changing its method needs Edit on ${pageById(parentPage)?.label ?? parentPage}`
+      });
       continue;
     }
 
@@ -9017,7 +9041,8 @@ export async function importCsvTable(
         mappedRecords,
         companyId,
         userId,
-        summary
+        summary,
+        can: (gate) => ctx.can(gate)
       });
       break;
     }
@@ -9364,6 +9389,11 @@ async function billedPurchaseOrderCharges(
 /** `id` for the three document-to-invoice conversions, `convertedId` for the rest. */
 export type ConvertResult = { id?: string; convertedId?: string };
 
+/**
+ * Each conversion needs Create (or more) on the page of the document it makes.
+ * Checked only when a caller's client reaches the posting; a system caller's
+ * service function gates on the same constant (`quoteToSalesOrderPermission`).
+ */
 export const convertDocumentPermission = {
   by: "type",
   rules: {
@@ -9371,13 +9401,19 @@ export const convertDocumentPermission = {
     // rule names one page, and a method's page is its item's type.
     methodVersionToActive: { "parts.parts": "Edit" },
     purchaseOrderToPurchaseInvoice: { "invoicing.purchaseInvoices": "Edit" },
-    quoteToSalesOrder: { "sales.quotes": "Edit" },
+    quoteToSalesOrder: quoteToSalesOrderPermission,
     salesOrderToSalesInvoice: { "invoicing.salesInvoices": "Edit" },
-    salesRfqToQuote: { "sales.rfqs": "Edit" },
+    salesRfqToQuote: salesRfqToQuotePermission,
     shipmentToSalesInvoice: { "invoicing.salesInvoices": "Edit" },
-    supplierQuoteToPurchaseOrder: { "purchasing.supplierQuotes": "Edit" },
-    warehouseTransferToShipment: { "inventory.warehouseTransfers": "Edit" },
-    warehouseTransferToReceipt: { "inventory.warehouseTransfers": "Edit" }
+    supplierQuoteToPurchaseOrder: supplierQuoteToPurchaseOrderPermission,
+    warehouseTransferToShipment: {
+      "inventory.warehouseTransfers": "Edit",
+      "inventory.shipments": "Create"
+    },
+    warehouseTransferToReceipt: {
+      "inventory.warehouseTransfers": "Edit",
+      "inventory.receipts": "Create"
+    }
   }
 } satisfies PermissionRule<z.output<typeof convertInput>>;
 

@@ -26,6 +26,7 @@ import {
   moduleOf,
   type PermissionKey,
   placeOf,
+  readAccessOf,
   readersOf,
   type TablePlace,
   writersOf
@@ -203,18 +204,15 @@ const belongsTo = (
       throw new Error(
         `authz: a rule on ${row.table} names the owner's ${action}, but no page owns ${row.table}; name a page key`
       );
-    const admit = (page: string) => {
-      const a = admits(page, action);
-      for (const k of a.keys) keys.add(k);
-      for (const m of a.modules) modules.add(m);
-    };
-    if (place.kind === "page") admit(place.page);
-    // A child's read never goes through its parent: the parent's SELECT reads
-    // its children (item's portal branches read supplierPart), so a lookup
-    // back would make Postgres refuse both tables as recursive. It admits View
-    // on any page of its parent's module.
-    else if (place.kind === "child" && action === "view")
-      for (const { page } of place.branches) admit(page);
+    // A read is `readAccessOf`, which `tableReadGate` checks too. A child's
+    // read never goes through its parent: the parent's SELECT reads its
+    // children (item's portal branches read supplierPart), so a lookup back
+    // would make Postgres refuse both tables as recursive.
+    const read = action === "view" ? readAccessOf(row.table) : undefined;
+    if (read && place.kind !== "shared")
+      for (const module of read.modules) modules.add(module);
+    else if (place.kind === "page")
+      for (const k of admits(place.page, action).keys) keys.add(k);
     else if (!terms.has(action))
       terms.set(
         action,
@@ -226,9 +224,7 @@ const belongsTo = (
           action
         )
       );
-    for (const page of action === "view"
-      ? readersOf(row.table)
-      : writersOf(row.table))
+    for (const page of read ? read.readers : writersOf(row.table))
       keys.add(permissionKey(page, action));
   }
   return either(

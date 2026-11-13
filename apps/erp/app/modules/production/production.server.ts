@@ -4962,7 +4962,7 @@ const CHANGE_ACTION_TYPES = [
  * Draft project stock transfer (`applyTransferPlanningActions`, which needs
  * Edit on Projects). Returns what was `applied`, the `transfers` created,
  * what needs review, `warnings` (applied, with a follow-up step that failed)
- * and `errors`.
+ * and `errors`. Needs Edit on Jobs as well as Material Planning.
  *
  * @mcp
  */
@@ -4971,7 +4971,7 @@ export const applyPlanningActions = defineServiceFn({
     planningActionIds: planningActionIdsInput,
     type: z.enum(CHANGE_ACTION_TYPES).optional()
   }),
-  permission: { "production.materialPlanning": "Edit" },
+  permission: utils.applyPlanningActionsPermission,
 
   async run(ctx, { planningActionIds, type }) {
     const companyId = ctx.company.id;
@@ -6169,7 +6169,7 @@ export const setAssemblyStepComponents = defineServiceFn({
  */
 export const syncAssemblyToOperation = defineServiceFn({
   input: z.object({ id: z.string(), operationId: z.string().min(1) }),
-  permission: { "production.assemblies": "Edit" },
+  permission: utils.syncAssemblyToOperationPermission,
 
   async run(ctx, { id, operationId }) {
     const operation = await ctx.asCaller.supabase

@@ -57,6 +57,7 @@ import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { quoteToSalesOrderPermission } from "~/modules/shared/shared.utils";
 import { path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
 import type {
@@ -282,7 +283,7 @@ const QuoteHeader = () => {
               <Button
                 isDisabled={
                   routeData?.quote?.status !== "Sent" ||
-                  !permissions.has({ "sales.quotes": "Edit" })
+                  !permissions.has(quoteToSalesOrderPermission)
                 }
                 leftIcon={<LuTrophy />}
                 variant={isWinnable ? "primary" : "secondary"}

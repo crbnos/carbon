@@ -46,6 +46,7 @@ import {
 import { moduleShape } from "./conformance/module-shape";
 import {
   findMovedTableGaps,
+  livePolicies,
   MOVED_TABLES_COVERED
 } from "./conformance/moved-tables-covered";
 import {
@@ -126,7 +127,6 @@ import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 import { testReadsSource } from "./conformance/test-reads-source";
 import {
   loadErpRouteFiles,
-  loadMovedTablesMigration,
   loadRegistryHelperFiles
 } from "./sources/authz-registry";
 import {
@@ -330,7 +330,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
         registryHelpers.map((helper) => helper.name)
       )
     ).map((violation) => ({ checkId: REGISTRY_HELPERS_FRESH, violation })),
-    ...findMovedTableGaps(loadMovedTablesMigration(root)).map((violation) => ({
+    ...findMovedTableGaps(livePolicies(migrations)).map((violation) => ({
       checkId: MOVED_TABLES_COVERED,
       violation
     })),

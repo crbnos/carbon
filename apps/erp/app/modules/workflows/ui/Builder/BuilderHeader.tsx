@@ -166,6 +166,7 @@ export function BuilderHeader({
   // that from simply lacking permission.
   const isVersionLocked = useBuilderStore((state) => state.isVersionLocked);
   const canEdit = useBuilderStore((state) => state.canEdit);
+  const isOwner = useBuilderStore((state) => state.isOwner);
   const isReadOnly = isVersionLocked || !canEdit;
   const { isPhone } = useViewport();
 
@@ -299,6 +300,7 @@ export function BuilderHeader({
               <Button
                 isDisabled={
                   !permissions.has({ "workflows.workflows": "Edit" }) ||
+                  !isOwner ||
                   publishFetcher.state !== "idle"
                 }
                 isLoading={publishFetcher.state !== "idle"}

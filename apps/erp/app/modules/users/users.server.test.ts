@@ -3,15 +3,20 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
-import type { ExpandedClaims } from "@carbon/database/access";
+import {
+  claimsFor,
+  type ExpandedClaims,
+  type Grant,
+  type Level,
+  levelOf,
+  MODULES,
+  PAGES
+} from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 import { pageClaims } from "../../../test/page-claims";
-import {
-  certifyItarEntity,
-  deactivateUsers,
-  resetConsoleOperatorPin
-} from "./users.server";
-import { canReAddDeactivatedEmployee } from "./users.service";
+import { nonOperatorPinResetPermission } from "./users.models";
+import { certifyItarEntity, deactivateUsers } from "./users.server";
+import { canReAddDeactivatedEmployee, pinResetRefusal } from "./users.service";
 
 const COMPANY = "cmp_1";
 
@@ -107,19 +112,6 @@ function userContext(
 }
 
 describe("operation guards", () => {
-  // A PIN signs in as that person anywhere on the floor, so anyone but a
-  // console operator needs Edit on Settings → People as well.
-  it("refuses resetting a non-operator's PIN with users Edit alone", async () => {
-    const result = await resetConsoleOperatorPin(
-      userContext(
-        { users: { view: [], create: [], update: [COMPANY], delete: [] } },
-        { id: "usr_1", isConsoleOperator: false }
-      ),
-      { operatorId: "usr_1" }
-    );
-    expect(result.error?.category).toBe("forbidden");
-  });
-
   it("refuses deactivating the caller's own account", async () => {
     const result = await deactivateUsers(
       userContext({
@@ -154,5 +146,191 @@ describe("operation guards", () => {
       complianceContact: "export@example.com"
     });
     expect(result.error?.category).toBe("forbidden");
+  });
+});
+
+describe("pinResetRefusal", () => {
+  const grant = (
+    subject: Grant["subject"],
+    module: string,
+    page: string | null,
+    level: Level
+  ): Grant => ({ subject, module, page, level });
+  const user = (grants: Grant[], admin = false) => ({
+    type: "user" as const,
+    userId: "usr_actor",
+    role: "employee" as const,
+    permissions: claimsFor({ role: "employee", admin, grants }, COMPANY)
+      .permissions
+  });
+  const target = (
+    type: { systemType: string | null; isConsoleOperator: boolean },
+    grants: Grant[],
+    admin = false
+  ) => ({
+    ...type,
+    employeeTypeCompanyId: COMPANY,
+    admin,
+    levels: PAGES.map((page) => ({
+      page: page.id,
+      level: levelOf({ admin, grants }, page.id).level
+    }))
+  });
+  const operatorType = {
+    systemType: "Console Operator",
+    isConsoleOperator: true
+  };
+  // The Console Operator type's grants (`CONSOLE_OPERATOR_GRANTS`, @carbon/ee).
+  const operatorGrants = (subject: Grant["subject"]) => [
+    grant(subject, "Production", null, "Edit"),
+    grant(subject, "Inventory", null, "Edit"),
+    grant(subject, "Quality", null, "Edit"),
+    grant(subject, "Resources", null, "View"),
+    grant(subject, "People", null, "View")
+  ];
+  const operatorsEdit = grant("role", "Users", "users.operators", "Edit");
+  const accountsEdit = grant("role", "Users", "users.accounts", "Edit");
+  const peopleEdit = grant("role", "Settings", "settings.people", "Edit");
+
+  it("refuses a non-Admin resetting an Admin's PIN", () => {
+    const admin = target(
+      { systemType: "Admin", isConsoleOperator: false },
+      [],
+      true
+    );
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit, accountsEdit, peopleEdit]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: admin
+      })
+    ).toBe("Only an Admin can reset an Admin's PIN");
+  });
+
+  it("refuses a non-Admin holding Full on every module resetting an Admin's PIN", () => {
+    const everything = MODULES.map((module) =>
+      grant("role", module.enum, null, "Full")
+    );
+    expect(
+      pinResetRefusal({
+        actor: user(everything),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: target(
+          { systemType: "Admin", isConsoleOperator: false },
+          [],
+          true
+        )
+      })
+    ).toBe("Only an Admin can reset an Admin's PIN");
+  });
+
+  it("refuses Operators Edit alone resetting an operator moved to another type", () => {
+    // Still flagged a console operator, but no longer the Console Operator
+    // type, and holding nothing the actor lacks.
+    const raised = target({ systemType: null, isConsoleOperator: true }, [
+      grant("role", "Users", "users.operators", "View")
+    ]);
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: raised
+      })
+    ).toMatch(/not a console operator/);
+  });
+
+  it("refuses Operators and People Edit without Accounts Edit resetting a non-operator", () => {
+    const employee = target({ systemType: null, isConsoleOperator: false }, [
+      grant("role", "Users", "users.operators", "View")
+    ]);
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit, peopleEdit]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: employee
+      })
+    ).toMatch(/not a console operator/);
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit, accountsEdit, peopleEdit]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: employee
+      })
+    ).toBeNull();
+  });
+
+  // The Employees "Set Console PIN" item checks the same constant.
+  it("admits a non-operator's reset with exactly nonOperatorPinResetPermission, and no fewer", () => {
+    const gate = Object.entries(nonOperatorPinResetPermission).map(
+      ([page, level]) =>
+        grant(
+          "role",
+          MODULES.find((m) => m.id === page.split(".")[0])!.enum,
+          page,
+          level
+        )
+    );
+    expect(gate.length).toBeGreaterThan(1);
+    const employee = target({ systemType: null, isConsoleOperator: false }, []);
+    const reset = (grants: Grant[]) =>
+      pinResetRefusal({
+        actor: user([operatorsEdit, ...grants]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: employee
+      });
+    expect(reset(gate)).toBeNull();
+    for (const missing of gate) {
+      expect(reset(gate.filter((g) => g !== missing))).toMatch(
+        /not a console operator/
+      );
+    }
+  });
+
+  it("refuses resetting the PIN of someone holding more than the actor", () => {
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: target(operatorType, operatorGrants("role"))
+      })
+    ).toMatch(/more access than you/);
+  });
+
+  it("allows Operators Edit resetting a real console operator's PIN", () => {
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit, ...operatorGrants("role")]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: target(operatorType, operatorGrants("role"))
+      })
+    ).toBeNull();
+  });
+
+  it("allows an Admin resetting anyone's PIN", () => {
+    const admin = user([], true);
+    for (const someone of [
+      target({ systemType: "Admin", isConsoleOperator: false }, [], true),
+      target({ systemType: null, isConsoleOperator: true }, [
+        grant("person", "Accounting", null, "Full")
+      ]),
+      target(operatorType, operatorGrants("role"))
+    ]) {
+      expect(
+        pinResetRefusal({
+          actor: admin,
+          actorIsAdmin: true,
+          companyId: COMPANY,
+          target: someone
+        })
+      ).toBeNull();
+    }
   });
 });

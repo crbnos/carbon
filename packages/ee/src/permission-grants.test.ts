@@ -2,13 +2,22 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import type { Level, ModuleEnum } from "@carbon/database/access";
+import {
+  claimsFor,
+  type Grant,
+  type Level,
+  type ModuleEnum,
+  pagesOf
+} from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 
 import {
+  ACCESS_READER_GATE,
   accessSubject,
   bulkEditGrants,
   claimsMayEditAccounts,
+  keyGrantsAboveActor,
+  pageName,
   refusedModules,
   rowLevel,
   subjectGates,
@@ -248,5 +257,136 @@ describe("accessSubject", () => {
     for (const type of ["role", "person", "key"] as const) {
       expect(subjectTypeOf(accessSubject(type, "id_1"))).toBe(type);
     }
+  });
+});
+
+describe("keyGrantsAboveActor", () => {
+  const companyId = "co_1";
+  const actor = (grants: Grant[], admin = false) =>
+    claimsFor({ role: "employee", admin, grants }, companyId).permissions;
+  const person = (module: ModuleEnum, page: string | null, level: Level) => ({
+    subject: "person" as const,
+    ...g(module, page, level)
+  });
+
+  it("never refuses an Admin", () => {
+    expect(
+      keyGrantsAboveActor({
+        actor: actor([], true),
+        companyId,
+        before: [],
+        after: [g("Users", null, "Full"), g("Settings", null, "Full")]
+      })
+    ).toEqual([]);
+  });
+
+  it("refuses a page grant above the actor's level there", () => {
+    expect(
+      keyGrantsAboveActor({
+        actor: actor([person("Settings", null, "Full")]),
+        companyId,
+        before: [],
+        after: [g("Users", "users.accounts", "Full")]
+      })
+    ).toEqual(["users.accounts"]);
+  });
+
+  it("refuses a module grant on each page of the module the actor holds lower", () => {
+    expect(
+      keyGrantsAboveActor({
+        actor: actor([
+          person("Users", null, "Edit"),
+          person("Users", "users.groups", "View")
+        ]),
+        companyId,
+        before: [],
+        after: [g("Users", null, "Edit")]
+      })
+    ).toEqual(["users.groups"]);
+  });
+
+  it("allows what the actor holds, at each page's maxLevel", () => {
+    expect(
+      keyGrantsAboveActor({
+        actor: actor([person("Settings", null, "Full")]),
+        companyId,
+        before: [],
+        after: [g("Settings", null, "Full")]
+      })
+    ).toEqual([]);
+  });
+
+  it("allows lowering, removing and keeping what the key already held", () => {
+    const before = [g("Users", null, "Full"), g("Sales", null, "Edit")];
+    expect(
+      keyGrantsAboveActor({
+        actor: actor([person("Users", null, "View")]),
+        companyId,
+        before,
+        after: [
+          g("Users", null, "Edit"),
+          { module: "Sales", page: null, level: null },
+          g("Inventory", null, "None")
+        ]
+      })
+    ).toEqual([]);
+    expect(
+      keyGrantsAboveActor({
+        actor: actor([]),
+        companyId,
+        before,
+        after: before
+      })
+    ).toEqual([]);
+  });
+
+  it("caps a key that writes a key at its own grants", () => {
+    const writer = actor([{ subject: "key", ...g("Inventory", null, "Edit") }]);
+    expect(
+      keyGrantsAboveActor({
+        actor: writer,
+        companyId,
+        before: [],
+        after: [g("Inventory", null, "Edit")]
+      })
+    ).toEqual([]);
+    const above = keyGrantsAboveActor({
+      actor: writer,
+      companyId,
+      before: [],
+      after: [g("Inventory", null, "Full")]
+    });
+    expect(above).toContain("inventory.receipts");
+    // Traceability stops at View (its maxLevel), which the writer holds.
+    expect(above).not.toContain("inventory.traceability");
+    expect(above.every((page) => pagesOf("inventory").includes(page))).toBe(
+      true
+    );
+  });
+
+  it("reads the actor's claims in the company only", () => {
+    expect(
+      keyGrantsAboveActor({
+        actor: actor([person("Users", null, "Full")]),
+        companyId: "co_2",
+        before: [],
+        after: [g("Users", "users.accounts", "View")]
+      })
+    ).toEqual(["users.accounts"]);
+  });
+});
+
+describe("pageName", () => {
+  it("names a page as the access grid does", () => {
+    expect(pageName("users.accounts")).toBe("Users → Accounts");
+  });
+});
+
+describe("ACCESS_READER_GATE", () => {
+  it("admits a viewer of the page each person and role is read on", () => {
+    expect(ACCESS_READER_GATE.anyOf).toEqual([
+      subjectGates("View").person,
+      subjectGates("View").role
+    ]);
   });
 });

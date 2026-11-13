@@ -54,6 +54,8 @@ export const PAGES = [
     label: "Demand Forecasts",
     maxLevel: "Full",
     tables: ["demandProjection"],
+    // Moved from Inventory, which had no screen for it: Quantities is its most general page.
+    alsoWrittenBy: { demandProjection: ["inventory.quantities"] },
     paths: ["/x/production/demand-forecasts"]
   },
   {
@@ -68,6 +70,14 @@ export const PAGES = [
       "demandActual",
       "supplyActual"
     ],
+    // Moved from Inventory, which had no screen for them: Quantities is its most general page.
+    alsoWrittenBy: {
+      demandForecast: ["inventory.quantities"],
+      demandForecastSource: ["inventory.quantities"],
+      supplyForecast: ["inventory.quantities"],
+      demandActual: ["inventory.quantities"],
+      supplyActual: ["inventory.quantities"]
+    },
     paths: ["/x/production/planning"]
   },
   {

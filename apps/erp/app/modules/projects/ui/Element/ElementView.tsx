@@ -47,6 +47,7 @@ import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import {
   isProjectPlanLocked,
+  PROJECT_ISSUE_GATE,
   projectPlanLockedMessage
 } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.service";
@@ -187,12 +188,7 @@ export function ElementView({
   const canLogTime =
     usesProjectCharges && canCharge && permissions.is("employee");
   const canIssue =
-    usesProjectCharges &&
-    canCharge &&
-    permissions.has({
-      "inventory.quantities": "Edit",
-      "projects.projects": "Edit"
-    });
+    usesProjectCharges && canCharge && permissions.has(PROJECT_ISSUE_GATE);
   const canChargeCost =
     usesProjectCharges &&
     canCharge &&

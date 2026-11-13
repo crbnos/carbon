@@ -6,6 +6,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { Button, Heading, VStack } from "@carbon/react";
 import { redirectExternal } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -17,10 +18,27 @@ import {
   supportedScope
 } from "~/services/oauth.server";
 
+const logger = getLogger("erp", "oauth-authorize");
+
+/**
+ * The person consenting. An API key acts as its creator, so a key here would
+ * mint a token holding the creator's full access, above the key's own grants.
+ */
+async function authorizeConsent(request: Request) {
+  const auth = await authorize(request, { "settings.apiKeys": "Edit" });
+  if (auth.caller === "apiKey") {
+    logger.warn("Refused an API key on the OAuth consent screen", {
+      companyId: auth.companyId
+    });
+    throw new Response("Only a signed-in person can authorize an app", {
+      status: 403
+    });
+  }
+  return auth;
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {
-    "settings.apiKeys": "Edit"
-  });
+  const { client, companyId, userId } = await authorizeConsent(request);
 
   const userCompanies = await client
     .from("userToCompany")
@@ -78,9 +96,7 @@ const formValidator = z.object({
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await authorize(request, {
-    "settings.apiKeys": "Edit"
-  });
+  const { client, userId } = await authorizeConsent(request);
 
   const validation = await validator(formValidator).validate(
     await request.formData()

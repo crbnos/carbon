@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import { manifest } from "../authz/manifest";
-import { type AnyRule, render } from "../authz/rules";
+import { type AnyRule, company, render } from "../authz/rules";
 import { Constants } from "../constants";
 import {
   childPath,
@@ -19,11 +19,16 @@ import {
   pageOfRow,
   pageOfTable,
   pageOfUrl,
+  pagesOf,
+  readersOf,
+  readPages,
   routeUrl,
+  tableReadGate,
   urlCoverage,
   urlSegments,
   writersOf
 } from "./registry";
+import { holdsGate } from "./resolve";
 
 /** The rendered policies of a table, one per line. */
 const policiesOf = (table: string) =>
@@ -373,6 +378,173 @@ describe("writersOf", () => {
         expect(ownersOf(table)).toContain(page.id);
         for (const writer of writers) expect(writer).not.toBe(page.id);
       }
+  });
+});
+
+describe("tableReadGate", () => {
+  const viewOf = (...pages: string[]) =>
+    Object.fromEntries(
+      pages.map((page) => [
+        page,
+        { view: ["c1"], create: [], update: [], delete: [] }
+      ])
+    );
+  const reads = (table: string, ...pages: string[]) =>
+    holdsGate(viewOf(...pages), tableReadGate(table), "c1");
+
+  it("refuses a table of another module to a page that reads only one of its siblings", () => {
+    // Suppliers lists `address` in readers, which Customers also owns.
+    expect(ownersOf("address")).toEqual(["sales.customers"]);
+    expect(reads("customer", "purchasing.suppliers")).toBe(false);
+  });
+
+  it("admits View on any page of the owner's module", () => {
+    expect(reads("customer", "sales.quotes")).toBe(true);
+  });
+
+  it("admits a page that lists the table in readers", () => {
+    expect(reads("address", "purchasing.suppliers")).toBe(true);
+  });
+
+  it("admits nobody on a table no page owns", () => {
+    expect(tableReadGate("nowhere")).toEqual({ anyOf: [] });
+  });
+
+  it("equals what each company() rule's SELECT policy admits", () => {
+    const select = (sql: string) =>
+      sql.split("\n").find((line) => line.includes("FOR SELECT")) ?? "";
+    const checked = Object.keys(manifest).filter(
+      (table) =>
+        ownersOf(table).length > 0 &&
+        select(policiesOf(table).join("\n")) ===
+          select(render(company(), table))
+    );
+    const problems = checked.flatMap((table) => {
+      const sql = select(policiesOf(table).join("\n"));
+      const rendered = new Set([
+        ...viewedModules(sql).flatMap(pagesOf),
+        ...checkedKeys(sql)
+      ]);
+      const gate = new Set(
+        tableReadGate(table).anyOf.flatMap((entry) => Object.keys(entry))
+      );
+      const same =
+        rendered.size === gate.size &&
+        [...gate].every((page) => rendered.has(page));
+      return same ? [] : [`${table}: ${[...gate]} vs ${[...rendered]}`];
+    });
+    expect(problems).toEqual([]);
+    // The comparison covers the tables that list readers, not only the plain ones.
+    expect(
+      checked.filter((table) => readersOf(table).length).length
+    ).toBeGreaterThan(5);
+  });
+});
+
+// A grant on a page of the new module would read every table of that module,
+// so a moved table keeps a page of its old module instead.
+describe("tables that moved module", () => {
+  const viewOf = (...pages: string[]) =>
+    Object.fromEntries(
+      pages.map((page) => [
+        page,
+        { view: ["c1"], create: [], update: [], delete: [] }
+      ])
+    );
+  const reads = (table: string, page: string) =>
+    holdsGate(viewOf(page), tableReadGate(table), "c1");
+
+  it.each([
+    ["itemPostingGroup", "accounting.defaultAccounts"],
+    ["accountingCutoverIgnoredInvoice", "accounting.reporting"],
+    ["demandProjection", "inventory.quantities"],
+    ["demandForecast", "inventory.quantities"],
+    ["demandForecastSource", "inventory.quantities"],
+    ["supplyForecast", "inventory.quantities"],
+    ["demandActual", "inventory.quantities"],
+    ["supplyActual", "inventory.quantities"],
+    ["storageType", "parts.parts"],
+    ["storageUnit", "parts.parts"],
+    ["trainingAssignment", "people.employees"],
+    ["trainingCompletion", "people.employees"],
+    ["trainingQuestion", "people.employees"],
+    ["userAttributeCategory", "resources.abilities"],
+    ["fiscalYearSettings", "settings.company"]
+  ])("lets the old module's page write %s (%s)", (table, page) => {
+    expect(writersOf(table)).toEqual([page]);
+  });
+
+  it.each([
+    ["itemPostingGroup", "accounting.defaultAccounts"],
+    ["accountingCutoverIgnoredInvoice", "accounting.reporting"],
+    ["demandProjection", "inventory.quantities"],
+    ["demandForecast", "inventory.quantities"],
+    ["trainingAssignment", "people.employees"],
+    ["userAttribute", "resources.abilities"],
+    ["fiscalYearSettings", "settings.company"]
+  ])("lets the old module's page read %s (%s)", (table, page) => {
+    expect(reads(table, page)).toBe(true);
+  });
+
+  it("renders the old page into the reads that go through userAttribute's category", () => {
+    const select = policiesOf("userAttribute").find((line) =>
+      line.includes("FOR SELECT")
+    );
+    expect(checkedKeys(select ?? "")).toContain("resources.abilities");
+  });
+
+  it("does not let the old module's page read the rest of the new module", () => {
+    expect(reads("payrollPeriodTotal", "resources.abilities")).toBe(false);
+    expect(reads("timeCardEntry", "resources.abilities")).toBe(false);
+    expect(reads("planningAction", "inventory.quantities")).toBe(false);
+    expect(reads("supplierBankAccount", "settings.company")).toBe(false);
+    expect(reads("journal", "settings.company")).toBe(false);
+  });
+});
+
+describe("privateReads", () => {
+  const viewOf = (...pages: string[]) =>
+    Object.fromEntries(
+      pages.map((page) => [
+        page,
+        { view: ["c1"], create: [], update: [], delete: [] }
+      ])
+    );
+  const reads = (table: string, page: string) =>
+    holdsGate(viewOf(page), tableReadGate(table), "c1");
+
+  it.each([
+    ["apiKey", "settings.apiKeys"],
+    ["apiKeyRateLimit", "settings.apiKeys"],
+    ["webhook", "settings.webhooks"],
+    ["integrationConnection", "settings.integrations"]
+  ])("reads %s on its own page only", (table, page) => {
+    expect(tableReadGate(table)).toEqual({ anyOf: [{ [page]: "View" }] });
+    expect(reads(table, "settings.printing")).toBe(false);
+  });
+
+  it("renders the own page's key, not a module read, in the SELECT policy", () => {
+    for (const [table, page] of [
+      ["apiKey", "settings.apiKeys"],
+      ["apiKeyRateLimit", "settings.apiKeys"],
+      ["webhook", "settings.webhooks"],
+      ["integrationConnection", "settings.integrations"]
+    ] as const) {
+      const select =
+        policiesOf(table).find((line) => line.includes("FOR SELECT")) ?? "";
+      expect(viewedModules(select)).toEqual([]);
+      expect(checkedKeys(select)).toEqual([page]);
+    }
+  });
+
+  it("keeps companyIntegration a read of any Settings page", () => {
+    expect(reads("companyIntegration", "settings.printing")).toBe(true);
+  });
+
+  it("does not widen a View gate on a page with private tables to its module", () => {
+    expect(readPages("settings.apiKeys")).toEqual(["settings.apiKeys"]);
+    expect(readPages("settings.webhooks")).toEqual(["settings.webhooks"]);
+    expect(readPages("settings.printing")).toContain("settings.company");
   });
 });
 

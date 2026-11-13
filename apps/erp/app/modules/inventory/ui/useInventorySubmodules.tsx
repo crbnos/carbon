@@ -29,7 +29,10 @@ import { PROJECT_ISSUE_GATE } from "~/modules/projects/projects.models";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
-import type { receiptInspectionStatusType } from "../inventory.models";
+import {
+  type receiptInspectionStatusType,
+  storageTypesGate
+} from "../inventory.models";
 
 const receiptsByInspectionStatus = (
   statuses: (typeof receiptInspectionStatusType)[number][]
@@ -165,6 +168,7 @@ export default function useInventorySubmodules() {
         {
           name: t`Storage Types`,
           to: path.to.storageTypes,
+          gate: storageTypesGate("View"),
           icon: <LuTag />,
           table: "storageType"
         },

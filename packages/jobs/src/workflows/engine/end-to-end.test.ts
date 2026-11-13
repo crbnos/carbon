@@ -82,7 +82,7 @@ function seed(eventId: string, definition: SeedDefinition): void {
       eventId,
       status: "Queued"
     },
-    workflowPublished: true,
+    publishedVersionId: "wv1",
     companyGroupId: "cg1",
     version: definition
   });

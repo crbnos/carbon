@@ -9,15 +9,16 @@ import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { storageTypeValidator } from "~/modules/inventory/inventory.models";
+import {
+  storageTypesGate,
+  storageTypeValidator
+} from "~/modules/inventory/inventory.models";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
-    "inventory.storageTypes": "View"
-  });
+  const { api } = await authorize(request, storageTypesGate("View"));
 
   const { id } = params;
   if (!id) throw notFound("id not found");

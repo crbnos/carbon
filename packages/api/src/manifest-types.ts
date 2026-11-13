@@ -17,7 +17,7 @@ export type PermissionAction = "view" | "create" | "update" | "delete";
  * module of the pages its gate names, and every action the gate's levels hold
  * (Edit lists view, create and update; the gate checks the highest).
  * `module` is `null` for operations that gate only on a valid key of the
- * company, or on pages of several modules.
+ * company, or on pages of several modules (named in `oneOf` or `allOf`).
  */
 export interface ToolPermission {
   module: string | null;
@@ -30,6 +30,8 @@ export interface ToolPermission {
    * of the row that picks the page (`item.type`); empty, any page passes.
    */
   oneOf?: { pages: string[]; level: string; by: string[] };
+  /** A gate that needs every one of pages of several modules, each at its level, in registry order. */
+  allOf?: { page: string; level: string }[];
 }
 
 /** One operation in the manifest — the successor of a `tool-metadata.json` entry. */

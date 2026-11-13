@@ -133,6 +133,30 @@ describe("importing a CSV file", () => {
     expect(result.error?.category).toBe("validation");
     expect(result.error?.message).toContain("ID is required");
   });
+
+  // A moved table still imports for the page that keeps writing it; reaching
+  // the mapping check means the gate admitted the caller.
+  it.each([
+    ["storageType", "parts"],
+    ["itemPostingGroup", "accounting"]
+  ] as const)("imports %s with Edit on %s, which keeps writing it", async (table, module) => {
+    const result = await importCsvFile(
+      contextFor(user(grants([module, "update"]))),
+      { ...stockImport, table }
+    );
+    expect(result.error?.category).toBe("validation");
+  });
+
+  it.each(["storageType", "itemPostingGroup"] as const)(
+    "refuses %s to a caller without its pages",
+    async (table) => {
+      const result = await importCsvFile(
+        contextFor(user(grants(["sales", "update"]))),
+        { ...stockImport, table }
+      );
+      expect(result.error).toMatchObject({ category: "forbidden" });
+    }
+  );
 });
 
 describe("creating a Jira issue for an action task", () => {

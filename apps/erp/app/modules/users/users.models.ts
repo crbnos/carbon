@@ -9,6 +9,7 @@ import {
   type ModuleEnum,
   moduleId,
   moduleOf,
+  type PageGate,
   pageById
 } from "@carbon/database/access";
 import { supportedLanguages } from "@carbon/locale";
@@ -175,6 +176,34 @@ export const convertOperatorValidator = z.object({
     .email("Must be a valid email"),
   employeeType: z.string().min(1, { message: "Employee type is required" })
 });
+
+/** `users.convertConsoleOperator`: it creates a sign-in account and moves the person to an employee type (Accounts). */
+export const convertConsoleOperatorPermission = {
+  "users.operators": "Edit",
+  "users.accounts": "Edit"
+} satisfies PageGate;
+
+/** `users.resetConsoleOperatorPin` on someone who is not a console operator (`isConsoleOperatorOf`). */
+export const nonOperatorPinResetPermission = {
+  "users.accounts": "Edit",
+  "settings.people": "Edit"
+} satisfies PageGate;
+
+/** Whether a person is a console operator of the company: PIN-only and of its Console Operator type. */
+export function isConsoleOperatorOf(
+  person: {
+    isConsoleOperator: boolean;
+    systemType: string | null;
+    employeeTypeCompanyId: string | null;
+  },
+  companyId: string
+): boolean {
+  return (
+    person.isConsoleOperator &&
+    person.systemType === "Console Operator" &&
+    person.employeeTypeCompanyId === companyId
+  );
+}
 
 export const createSupplierAccountValidator = z.object({
   id: z.string().min(1, "Supplier contact is required"),

@@ -335,7 +335,10 @@ const MakeMethodTools = ({
                           <DropdownMenuItem
                             disabled={
                               makeMethod.status === "Active" ||
-                              isChangeNoticeLocked
+                              isChangeNoticeLocked ||
+                              !permissions.has({
+                                [ITEM_TYPE_PAGES[type]]: "Edit"
+                              })
                             }
                             onClick={() => {
                               flushSync(() => {

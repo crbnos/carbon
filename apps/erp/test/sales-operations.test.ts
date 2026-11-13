@@ -44,7 +44,9 @@ await import("../app/modules/sales/sales.service");
 const {
   acceptDigitalQuote,
   cancelContract,
+  convertQuote,
   convertSalesRfq,
+  createContractFromSalesOrder,
   setQuoteStatus,
   setSalesOrderStatus
 } = await import("../app/modules/sales/sales.server");
@@ -185,6 +187,28 @@ describe("the document sales-rule gate", () => {
   });
 });
 
+describe("converting to another page's document", () => {
+  // A page key is kept as it is; this role has no Sales Orders.
+  const quotesOnly = { "sales.quotes": grant("sales").sales! };
+
+  it("refuses a quote to a role without Sales Orders, before any write", async () => {
+    const result = await convertQuote(contextFor(quotesOnly), {
+      quoteId: "quote-1",
+      selectedLines: {}
+    });
+    expect(result.error).toMatchObject({ category: "forbidden" });
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("refuses an RFQ to a role without Sales RFQs, before any write", async () => {
+    const result = await convertSalesRfq(contextFor(quotesOnly), {
+      id: "rfq-1"
+    });
+    expect(result.error).toMatchObject({ category: "forbidden" });
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
 describe("setting a document status", () => {
   const setQuote = (status: "Sent" | "Lost") =>
     setQuoteStatus(contextFor(grant("sales")), { quoteId: "quote-1", status });
@@ -272,5 +296,58 @@ describe("cancelling a contract", () => {
       id: "contract-1",
       memoReadableId: "CM-1"
     });
+  });
+});
+
+describe("creating a contract from a sales order", () => {
+  // The contract and its lines are written as the system.
+  const createAs = (permissions: Permissions) => {
+    const transaction = vi.fn(() => {
+      throw new Error("Sales order not found");
+    });
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: pageClaims(permissions)
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: serviceRole(),
+      system: () => serviceRole(),
+      pg: () => ({ transaction }) as any,
+      kv: () => ({}) as any
+    });
+    const result = createContractFromSalesOrder(ctx, {
+      salesOrderId: "order-1",
+      name: "Support",
+      startDate: "2026-11-01",
+      duration: "12",
+      billingFrequency: "Month",
+      billingAlignment: "Anniversary",
+      billingTiming: "Advance",
+      lines: [{ salesOrderLineId: "line-1", revenueType: "One-time" }]
+    });
+    return { result, transaction };
+  };
+
+  it("refuses a role with Sales Orders but not Service Contracts, before any write", async () => {
+    const { result, transaction } = createAs({
+      "sales.salesOrders": grant("sales").sales!
+    });
+    expect((await result).error).toMatchObject({ category: "forbidden" });
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it("runs for a role with both pages, and returns the refusal the write throws", async () => {
+    const { result, transaction } = createAs({
+      "sales.salesOrders": grant("sales").sales!,
+      "sales.serviceContracts": grant("sales").sales!
+    });
+    expect((await result).error).toMatchObject({
+      category: "rule",
+      message: "Sales order not found"
+    });
+    expect(transaction).toHaveBeenCalled();
   });
 });

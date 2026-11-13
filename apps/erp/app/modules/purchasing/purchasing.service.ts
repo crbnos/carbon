@@ -10092,10 +10092,6 @@ export type FinalizedSupplierQuote = {
   externalLinkId: string;
 };
 
-export const finalizePurchasingRfqPermission = {
-  "purchasing.rfqs": "Create"
-} satisfies PermissionRule<z.output<typeof finalizePurchasingRfqInput>>;
-
 /**
  * Sends a purchasing RFQ out: one Draft supplier quote per RFQ supplier, each
  * with its share link and a line per RFQ line that names an item, then the RFQ

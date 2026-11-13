@@ -4,132 +4,114 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  BASE_TABLE_MODULES,
   findMovedTableGaps,
+  livePolicies,
   type MovedTablesRegistry
 } from "./moved-tables-covered";
 
-/** production.forecasts owns demandForecast; sales.orders owns salesOrder and lets inventory.shipments write it. */
+/** demandForecast moved from Inventory (write and read) to production.forecasts. */
+const BASE = {
+  demandForecast: { read: ["inventory"], write: ["inventory"] },
+  salesOrder: { read: [], write: ["sales"] },
+  printerRoute: { read: [], write: ["printing"] },
+  dropped: { read: [], write: ["inventory"] }
+};
+
 const OWNERS: Record<string, string[]> = {
   demandForecast: ["production.forecasts"],
   salesOrder: ["sales.orders"],
-  shipment: ["inventory.shipments"]
+  printerRoute: ["settings.printing"]
 };
 
-const registry = (
-  alsoWrittenBy: Record<string, Record<string, string[]>> = {
-    "sales.orders": { salesOrder: ["inventory.shipments"] }
-  }
-): MovedTablesRegistry => ({
-  pages: [
-    {
-      id: "production.forecasts",
-      maxLevel: "Full",
-      alsoWrittenBy: alsoWrittenBy["production.forecasts"]
-    },
-    {
-      id: "sales.orders",
-      maxLevel: "Edit",
-      alsoWrittenBy: alsoWrittenBy["sales.orders"]
-    },
-    { id: "inventory.shipments", maxLevel: "Full" }
-  ],
+const registry: MovedTablesRegistry = {
   ownersOf: (table) => OWNERS[table] ?? [],
-  moduleEnumOf: (page) => {
-    const id = page.slice(0, page.indexOf("."));
-    return id.charAt(0).toUpperCase() + id.slice(1);
-  }
-});
+  moduleOf: (page) => page.slice(0, page.indexOf(".")),
+  hasPages: (module) => module !== "printing"
+};
 
-const migration = (rows: string) => ({
-  file: "<inline>.sql",
-  contents: `WITH moved (old_module, new_module, page, cap) AS (
-  VALUES
-${rows}
-),
-typed AS (
-  SELECT 1
-)
-SELECT 1;
-`
-});
+const policy = (command: string, keys: string) =>
+  `CREATE POLICY "${command}" ON "public"."demandForecast" FOR ${command} USING (${keys});`;
 
-const GOOD = `  ('Inventory', 'Production', 'production.forecasts', 'Full') -- demandForecast, the page's only table`;
+const gaps = (sql: string) =>
+  findMovedTableGaps(
+    livePolicies([{ file: "1_ship.sql", contents: sql }]),
+    registry,
+    BASE
+  ).map((v) => v.message);
+
+const COVERED = [
+  policy(
+    "SELECT",
+    "get_companies_with_module_view(ARRAY['production']::text[], ARRAY['inventory.quantities_view']::text[])"
+  ),
+  policy(
+    "INSERT",
+    "get_companies_with_any_employee_permission(ARRAY['production.forecasts_create', 'inventory.quantities_create'])"
+  )
+].join("\n");
 
 describe("findMovedTableGaps", () => {
-  it("passes a table granted on its new page and not in alsoWrittenBy", () => {
-    expect(findMovedTableGaps(migration(GOOD), registry())).toEqual([]);
+  it("passes a moved table whose policies still admit its old module", () => {
+    expect(gaps(COVERED)).toEqual([]);
   });
 
-  it("fails a migration whose rows cannot be found", () => {
-    const violations = findMovedTableGaps(
-      { file: "<inline>.sql", contents: "SELECT 1;" },
-      registry()
-    );
-    expect(violations).toHaveLength(1);
-    expect(violations[0]?.message).toContain("no `moved` rows");
-  });
-
-  it("fails a table covered by both a grant and alsoWrittenBy", () => {
-    const violations = findMovedTableGaps(
-      migration(GOOD),
-      registry({
-        "production.forecasts": { demandForecast: ["inventory.shipments"] }
-      })
-    );
-    const messages = violations.map((v) => v.message);
-    expect(messages.some((m) => m.includes("covered twice"))).toBe(true);
+  it("fails a moved table no write policy lets its old module write", () => {
     expect(
-      messages.some((m) => m.includes("production.forecasts gets a grant"))
-    ).toBe(true);
-  });
-
-  it("fails a table covered by neither", () => {
-    // The grant is on sales.orders, which does not own demandForecast.
-    const violations = findMovedTableGaps(
-      migration(
-        `  ('Inventory', 'Sales', 'sales.orders', 'Edit') -- demandForecast moved here`
-      ),
-      registry({})
-    );
-    expect(violations.map((v) => v.snippet)).toEqual(["demandForecast"]);
-    expect(violations[0]?.message).toContain("neither");
-  });
-
-  it("fails a cap that is not the page's maxLevel", () => {
-    const violations = findMovedTableGaps(
-      migration(
-        `  ('Inventory', 'Production', 'production.forecasts', 'Edit') -- demandForecast`
-      ),
-      registry()
-    );
-    expect(violations.map((v) => v.snippet)).toEqual(["Edit"]);
-    expect(violations[0]?.message).toContain("maxLevel Full");
-  });
-
-  it("fails a page that is not in the registry, or not in the row's new module", () => {
-    const violations = findMovedTableGaps(
-      migration(
-        [
-          `  ('Inventory', 'Production', 'production.nowhere', 'Full'), -- demandForecast`,
-          `  ('Inventory', 'Sales', 'production.forecasts', 'Full') -- demandForecast`
-        ].join("\n")
-      ),
-      registry()
-    );
-    expect(violations.map((v) => v.snippet)).toEqual([
-      "production.nowhere",
-      "Sales"
+      gaps(COVERED.replace("'inventory.quantities_create'", "'x'"))
+    ).toEqual([
+      "demandForecast moved from Inventory to production.forecasts, and no write policy checks a page of Inventory: list it in its page's alsoWrittenBy with a page of Inventory, then run authz migration"
     ]);
   });
 
-  it("ignores comment words that name no table", () => {
-    expect(
-      findMovedTableGaps(
-        migration(
-          `  ('Inventory', 'Production', 'production.forecasts', 'Full') -- demandForecast; besides it only planningAction, which nobody writes`
-        ),
-        registry()
-      )
-    ).toEqual([]);
+  it("fails a moved table whose SELECT no longer admits its old module", () => {
+    expect(gaps(COVERED.replace("'inventory.quantities_view'", "'x'"))).toEqual(
+      [
+        "demandForecast moved from Inventory to production.forecasts, and its SELECT admits no page of Inventory: list it in the readers of a page of Inventory, then run authz migration"
+      ]
+    );
+  });
+
+  it("reads a table's policies from the last migration that sets them", () => {
+    const later = [
+      policy(
+        "SELECT",
+        "get_companies_with_module_view(ARRAY['production']::text[], '{}'::text[])"
+      ),
+      policy("INSERT", "'production.forecasts_create'")
+    ].join("\n");
+    const live = livePolicies([
+      { file: "1_ship.sql", contents: COVERED },
+      { file: "2_ship.sql", contents: later }
+    ]);
+    expect(findMovedTableGaps(live, registry, BASE)).toHaveLength(2);
+  });
+
+  it("skips a table still in its module, one from a module with no pages, and one no page owns", () => {
+    expect(gaps("").map((m) => m.slice(0, m.indexOf(" ")))).toEqual([
+      "demandForecast",
+      "demandForecast"
+    ]);
+  });
+
+  it("knows the modules each table's policies checked on main", () => {
+    expect({
+      eventSystemSubscription: BASE_TABLE_MODULES.eventSystemSubscription,
+      qualityDocumentStep: BASE_TABLE_MODULES.qualityDocumentStep,
+      quoteOperationParameter: BASE_TABLE_MODULES.quoteOperationParameter,
+      itemPostingGroup: BASE_TABLE_MODULES.itemPostingGroup,
+      trainingCompletion: BASE_TABLE_MODULES.trainingCompletion,
+      demandActual: BASE_TABLE_MODULES.demandActual
+    }).toEqual({
+      eventSystemSubscription: { read: [], write: ["settings"] },
+      qualityDocumentStep: { read: [], write: ["production"] },
+      quoteOperationParameter: { read: [], write: ["parts"] },
+      itemPostingGroup: { read: ["accounting"], write: ["accounting"] },
+      trainingCompletion: {
+        read: ["resources"],
+        write: ["people", "resources"]
+      },
+      demandActual: { read: ["inventory", "parts"], write: ["inventory"] }
+    });
   });
 });

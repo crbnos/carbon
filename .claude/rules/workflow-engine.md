@@ -76,6 +76,10 @@ A workflow must never be able to do something its owner could not do by hand.
   longer has access to Purchase Orders."` The level is part of the gate: an
   owner who may view Purchase Orders but not edit them fails at the update node,
   not at the trigger.
+- **Only the published version runs.** At `"load"`, `executeWorkflowRun` settles a run
+  `Skipped` when the workflow is unpublished, or when the run's `workflowVersionId` is not
+  `workflow.publishedVersionId`. The owner's test run (`executeManualWorkflowRun`, a draft
+  by design) does not go through `executeWorkflowRun`.
 - **The only privileged access is the two run-log tables.** `getJobDatabaseClient`
   appears in `execute.ts` for `claimStep`/`settleStep`/`loadRunContext`/`claimRun`/
   `finishRun` and nowhere else. RLS on those tables is SELECT-only by design. A

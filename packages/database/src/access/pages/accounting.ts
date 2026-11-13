@@ -12,7 +12,8 @@ export const PAGES = [
     label: "Reporting",
     maxLevel: "Full",
     tables: ["costLedger", "supplierLedger"],
-    readers: ["itemLedger"],
+    // accountingCutoverIgnoredInvoice: settings.accounting, which moved from Accounting.
+    readers: ["itemLedger", "accountingCutoverIgnoredInvoice"],
     paths: ["/x/accounting/reports", "/x/reports/"]
   },
   {
@@ -157,6 +158,8 @@ export const PAGES = [
     label: "Fiscal Year",
     maxLevel: "Full",
     tables: ["fiscalYearSettings"],
+    // Moved from Settings, which had no screen for it: Company is its most general page.
+    alsoWrittenBy: { fiscalYearSettings: ["settings.company"] },
     paths: ["/x/accounting/years"]
   },
   {

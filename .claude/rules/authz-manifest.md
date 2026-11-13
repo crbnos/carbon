@@ -100,7 +100,8 @@ which page owns a table, so a rule names only what differs from the default.
   (`supplierProcess` create by `purchasing.suppliers_update`). `buildIndex` throws on an entry
   whose page does not own the table, or whose writer is no other page; `writersOf` reads it.
 - A read admits View on any page of the owner's module, plus every page that lists the table
-  in `readers`, in ONE call: `get_companies_with_module_view(ARRAY['<module>'], ARRAY[<reader
+  in `readers` (a table in its page's `privateReads` admits that page instead of the module),
+  in ONE call: `get_companies_with_module_view(ARRAY['<module>'], ARRAY[<reader
   keys>])`. The module's pages are resolved in SQL by `util.module_pages`, so a policy never
   lists them and adding a page changes no policy, only that helper.
 - A shared table (`where` on several pages) gets one branch per page:
@@ -182,8 +183,8 @@ RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries i
   `DROP FUNCTION` (sync refuses a file that would create an overload); the new definition
   goes in the file.
 - **Table handlers are managed too**: `../event-system/handlers/<name>.sql` holds every
-  function a table attaches — the 81 interceptors (`sync_*`, `prevent_*`, `set_shelf_life_*`,
-  `storage_unit_*`, `check_*`) and the 5 statement handlers (`apply_item_stock_quantities`,
+  function a table attaches — the 87 interceptors (`sync_*`, `prevent_*`, `set_shelf_life_*`,
+  `storage_unit_*`, `check_*`, `unit_of_measure_enforce_unique_code`) and the 5 statement handlers (`apply_item_stock_quantities`,
   `check_inspection_hold`, `queue_kanban_level_checks`, `queue_model_pipeline`,
   `queue_pmi_inspection_plans`). Same format,
   same sync, same shipping; checked from `20261004194527` (`ATTACHMENTS_SINCE`). A new
@@ -262,13 +263,23 @@ The meaning equals its rule; the wording may not — production's `agentThread` 
 ## Gotchas
 
 - Moving a table to a page of another module takes access from every grant on the old
-  module. When the new page is essentially the table's own home, ship a hand-written
-  migration that gives each such grant a page grant on it
-  (`20261110101723_grants-for-moved-tables.sql`, `20261110050005` for Printing). When
-  the new page owns much more, a page grant would widen access: list the table in the new
-  page's `alsoWrittenBy` with the page that wrote it before instead. `moved-tables-covered`
-  (`@carbon/checks`) reads that migration's rows and fails a moved table covered both ways or
-  neither.
+  module. Never give the old module's holders a grant on the new page: a read admits View on
+  ANY page of the owner's module, so that grant reads every table of the new module (a
+  Resources role given `people.attributes` read `payrollPeriodTotal`). List the table in the
+  new page's `alsoWrittenBy` with a page of the old module, and when its read is restricted,
+  list it in that page's `readers`. A rule that checks the table through another table
+  (`userAttribute` through its category, which every employee reads and so cannot list a
+  reader) names the old page in the rule (`anyOf("view", "resources.abilities_view")`).
+  `moved-tables-covered` (`@carbon/checks`) compares each table's owner modules with the
+  modules its policies checked on main (`base-table-modules.json`, frozen) and fails when the
+  live policies (the last migration that sets them) no longer let an old module write or read
+  it. A screen the old module opened keeps a gate that accepts
+  both pages (`storageTypesGate`, `accountingActivationGate`: `anyOf([page, ...writersOf(table)])`).
+- Printing had no pages, so `20261110050005` renamed its rows to `settings.printing` in
+  place, and `20261111050002` gives a person their role's level there (their own Settings
+  grant would beat it). A Settings page reads every Settings table, so the tables that hold
+  secrets are in their page's `privateReads` (`apiKey`, `apiKeyRateLimit`, `webhook`,
+  `integrationConnection`): their SELECT checks that page's key, not the module.
 - Helpers are applied callee first (`calleesFirst` in `helpers.ts`): Postgres checks a
   SQL-language body at creation, so a generated migration or a sync on a database without the
   callee would fail. A SQL helper on the hot path (`util.access_level`) stays inlinable: a

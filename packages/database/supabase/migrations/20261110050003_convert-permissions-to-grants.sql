@@ -124,4 +124,6 @@ JOIN company co ON co.id = k."companyId"
 JOIN "companyGroup" cg ON cg.id = co."companyGroupId"
 CROSS JOIN LATERAL pg_temp.key_flags(k.scopes, k."companyId") f
 WHERE pg_temp.round_up(f.v, f.c, f.u, f.d) <> 'None'
+  -- Keys are never granted Workflows (refusedModules); a scope stored by hand on main is dropped.
+  AND f.module <> 'Workflows'
 ON CONFLICT ON CONSTRAINT "permission_unique" DO NOTHING;

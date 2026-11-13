@@ -9,6 +9,7 @@ import {
 } from "@carbon/ee/workflows";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EngineStep, RunPayload } from "./execute";
+import type { RunContext } from "./log";
 
 vi.mock("@carbon/ee/workflows.server", () => ({
   workflowsEnabledForCompany: vi.fn(async () => true)
@@ -113,6 +114,26 @@ const payload: RunPayload = {
   }
 };
 
+function runContext(
+  overrides: { publishedVersionId?: string | null } = {}
+): RunContext {
+  return {
+    run: {
+      id: "run1",
+      companyId: "co1",
+      ownerId: "u1",
+      workflowId: "wf1",
+      workflowVersionId: "wv1",
+      eventId: "purchaseOrder.status.changed",
+      status: "Queued"
+    },
+    publishedVersionId: "wv1",
+    companyGroupId: "cg1",
+    version: definition,
+    ...overrides
+  };
+}
+
 const logger = { info: vi.fn(), error: vi.fn() };
 
 function harness() {
@@ -146,20 +167,7 @@ beforeEach(() => {
     runOperation: async () => ({ ok: false, error: "not stubbed" }),
     search: async () => ({ ok: false, error: "not stubbed" })
   });
-  vi.mocked(loadRunContext).mockResolvedValue({
-    run: {
-      id: "run1",
-      companyId: "co1",
-      ownerId: "u1",
-      workflowId: "wf1",
-      workflowVersionId: "wv1",
-      eventId: "purchaseOrder.status.changed",
-      status: "Queued"
-    },
-    workflowPublished: true,
-    companyGroupId: "cg1",
-    version: definition
-  });
+  vi.mocked(loadRunContext).mockResolvedValue(runContext());
 });
 
 // What each gate refuses, and the wording, is pinned by value in owner.test.ts
@@ -197,6 +205,22 @@ describe("a second delivery of the same event", () => {
     expect(result).toEqual({ runId: "run1", status: "Duplicate", steps: 0 });
     expect(ids).toEqual(["load"]);
     expect(claimStep).not.toHaveBeenCalled();
+    expect(runAction).not.toHaveBeenCalled();
+  });
+});
+
+describe("a run queued against a version that is not the published one", () => {
+  it("skips the run without claiming it or running a node", async () => {
+    const { step } = harness();
+    // A trigger row naming a draft: the owner published wv2, the run carries wv1.
+    vi.mocked(loadRunContext).mockResolvedValue(
+      runContext({ publishedVersionId: "wv2" })
+    );
+
+    const result = await executeWorkflowRun({ payload, step, logger });
+
+    expect(result).toEqual({ runId: "run1", status: "Skipped", steps: 0 });
+    expect(claimRun).not.toHaveBeenCalled();
     expect(runAction).not.toHaveBeenCalled();
   });
 });

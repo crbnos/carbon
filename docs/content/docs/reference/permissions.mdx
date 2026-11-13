@@ -97,10 +97,10 @@ Deactivating an active employee removes them from the company, deletes their per
 
 Add one under **Users → Operators** with a name and a location. The screen shows only when console mode is on for the company. Carbon creates an account with no email login, gives it the **Console Operator** type and generates a PIN that it shows once. Carbon stores only a hash of the PIN, so copy it then.
 
-On the shop floor, the operator taps their name and enters the PIN. If a PIN is lost, reset it from the same screen; the old PIN stops working at once. Resetting an operator's PIN needs Edit on Users. Setting a console PIN for any other employee, from the **Accounts** list, also needs Edit on Settings.
+On the shop floor, the operator taps their name and enters the PIN. If a PIN is lost, reset it from the same screen; the old PIN stops working at once. Resetting an operator's PIN needs Edit on **Operators**. Setting a console PIN for any other employee, from the **Accounts** list, also needs Edit on **Accounts** and on **Settings → People**. Either way you must hold at least the person's access on every page, and only an Admin can reset an Admin's PIN.
 
 <Callout type="note" title="An operator can become a full user">
-When a PIN account needs ERP access, convert it: give it an email and an employee type, and Carbon makes the same person a normal invited user. Their floor activity stays attached to the one identity.
+When a PIN account needs ERP access, convert it: give it an email and an employee type, and Carbon makes the same person a normal invited user. Their floor activity stays attached to the one identity. Converting needs Edit on both **Operators** and **Accounts**.
 </Callout>
 
 A PIN account has only the levels of its Console Operator type, so a lost or shared tablet cannot reach the office side of Carbon. For the operator experience itself, such as clocking on, reporting quantities and issuing material, see the [MES reference](/docs/reference/mes) and the [run the floor tour](/guides/floor).

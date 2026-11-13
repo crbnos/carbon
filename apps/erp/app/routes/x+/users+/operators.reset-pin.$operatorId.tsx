@@ -27,15 +27,16 @@ import { useFetcher, useLoaderData } from "react-router";
 import { path } from "~/utils/path";
 
 /**
- * The rule `users.operator.resetPin` enforces (see `resetConsoleOperatorPin`),
- * checked here too so the modal never opens for a reset the action refuses.
+ * The gate of `resetConsoleOperatorPin`. The rest of its refusals (a target who
+ * is not a console operator, an Admin, or someone with more access than the
+ * caller) come from the action, and the modal shows them.
  */
 async function requireResetPinPermission(request: Request, operatorId: string) {
   const { client } = await authorize(request, { "users.operators": "Edit" });
 
   const user = await client
     .from("user")
-    .select("id, firstName, lastName, isConsoleOperator")
+    .select("id, firstName, lastName")
     .eq("id", operatorId)
     .single();
 
@@ -44,10 +45,6 @@ async function requireResetPinPermission(request: Request, operatorId: string) {
       path.to.operators,
       await flash(request, error(user.error, "Operator not found"))
     );
-  }
-
-  if (!user.data.isConsoleOperator) {
-    await authorize(request, { "settings.people": "Edit" });
   }
 
   return { operator: user.data };

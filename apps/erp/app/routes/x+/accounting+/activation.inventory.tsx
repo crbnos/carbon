@@ -9,6 +9,7 @@ import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
+import { accountingActivationGate } from "~/modules/accounting/accounting.models";
 import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,
@@ -24,9 +25,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    "settings.accounting": "View"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    accountingActivationGate("View")
+  );
   const { cutoverDate } = await getActivationCutover(
     client,
     companyId,

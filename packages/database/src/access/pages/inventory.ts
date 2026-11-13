@@ -12,6 +12,15 @@ export const PAGES = [
     label: "Quantities",
     maxLevel: "Full",
     tables: ["itemLedger"],
+    // The planning tables Production took from Inventory (production.ts alsoWrittenBy).
+    readers: [
+      "demandProjection",
+      "demandForecast",
+      "demandForecastSource",
+      "supplyForecast",
+      "demandActual",
+      "supplyActual"
+    ],
     paths: ["/x/inventory/quantities"]
   },
   {
@@ -98,6 +107,8 @@ export const PAGES = [
     label: "Storage Units",
     maxLevel: "Full",
     tables: ["storageUnit"],
+    // Moved from Parts, which had no screen for it: Parts is its most general page.
+    alsoWrittenBy: { storageUnit: ["parts.parts"] },
     paths: ["/x/inventory/storage-units"]
   },
   {
@@ -105,6 +116,8 @@ export const PAGES = [
     label: "Storage Types",
     maxLevel: "Full",
     tables: ["storageType"],
+    // Moved from Parts, which gated this screen: Parts is its most general page.
+    alsoWrittenBy: { storageType: ["parts.parts"] },
     paths: ["/x/inventory/storage-types"]
   },
   {

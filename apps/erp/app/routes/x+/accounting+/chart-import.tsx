@@ -39,7 +39,10 @@ import {
   parseChartCsv,
   parseDefaultsCsv
 } from "~/modules/accounting/account-import-csv";
-import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import {
+  hasAccountingCutover,
+  importChartOfAccountsPermission
+} from "~/modules/accounting/accounting.utils";
 import {
   type AccountImportAccount,
   AccountImportCsvErrors,
@@ -68,9 +71,10 @@ function returnPath(params: URLSearchParams) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
-    "accounting.chartOfAccounts": "Edit"
-  });
+  const { companyId, api } = await authorize(
+    request,
+    importChartOfAccountsPermission
+  );
   const settings = await api.settings.getCompanySettings({});
   if (settings.error) {
     logger.error("Failed to read the company settings", {
@@ -116,9 +120,10 @@ function readFile<Row>(
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { companyId, companyGroupId } = await authorize(request, {
-    "accounting.chartOfAccounts": "Edit"
-  });
+  const { companyId, companyGroupId } = await authorize(
+    request,
+    importChartOfAccountsPermission
+  );
 
   const formData = await request.formData();
   const chart = readFile(formData.get("chart"), parseChartCsv);

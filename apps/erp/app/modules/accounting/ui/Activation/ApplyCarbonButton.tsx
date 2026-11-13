@@ -7,6 +7,7 @@ import { Button } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { LuArrowLeftToLine } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
+import { accountingActivationGate } from "../../accounting.models";
 import { activationStepPath } from "./ActivationSteps";
 
 /**
@@ -35,7 +36,7 @@ export default function ApplyCarbonButton({
         variant="secondary"
         leftIcon={<LuArrowLeftToLine />}
         isDisabled={
-          !permissions.has({ "settings.accounting": "Edit" }) || !hasDifference
+          !permissions.has(accountingActivationGate("Edit")) || !hasDifference
         }
         isLoading={apply.isPending}
       >

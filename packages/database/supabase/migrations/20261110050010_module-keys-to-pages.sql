@@ -4,7 +4,8 @@
 -- check now names the page of what it guards; a module grant still covers it.
 --
 -- The managed functions (get_claims, the audit log functions and
--- util.can_manage_event_subscription) ship in 20261111050000_page-permissions.
+-- util.can_manage_event_subscription) ship in 20261111050000_page-permissions;
+-- 20261111050003 re-secures the existing audit log tables after it.
 -- This file holds what lives in migrations. It is the last migration that may
 -- name a module key (no-module-permission-key, @carbon/checks): it renames the
 -- storage policies whose old names held one.
@@ -479,16 +480,3 @@ CREATE POLICY "Item pages full can delete staged models" ON storage.objects FOR 
       || get_companies_with_employee_permission('parts.services_delete'))::text[])
     AND (storage.foldername(name))[2] = 'models'
   );
-
--- Each company's audit log table keeps the read policy secure_audit_log_table
--- wrote when it was made. Write it again with the Audit Logs page.
-DO $$
-DECLARE t TEXT;
-BEGIN
-  FOR t IN
-    SELECT tablename FROM pg_tables
-    WHERE schemaname = 'public' AND tablename LIKE 'auditLog\_%' ESCAPE '\'
-  LOOP
-    PERFORM secure_audit_log_table(substring(t FROM length('auditLog_') + 1));
-  END LOOP;
-END $$;

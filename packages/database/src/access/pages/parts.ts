@@ -225,6 +225,8 @@ export const PAGES = [
     label: "Item Groups",
     maxLevel: "Full",
     tables: ["itemPostingGroup"],
+    // Moved from Accounting: Default Accounts, which maps the groups, still writes and reads it.
+    alsoWrittenBy: { itemPostingGroup: ["accounting.defaultAccounts"] },
     paths: ["/x/items/groups"]
   },
   {

@@ -3,11 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  anyOf,
   type ExpandedClaims,
   holdsGate,
-  ownersOf,
-  widenReads
+  tableReadGate
 } from "@carbon/database/access";
 
 /** The table behind each `searchIndex` entity type. */
@@ -29,10 +27,8 @@ const ENTITY_TABLES = {
 } as const;
 
 /**
- * The entity types the person may search: View on a page that owns the
- * type's table, widened as a data read is, so a type shows iff its records'
- * list could be read. A `typeFilter` other than "all" narrows to that one
- * type, and only if it is allowed.
+ * The entity types the person may search, as RLS would admit the read
+ * (`tableReadGate`): the search itself reads as the service role.
  */
 export function searchableTypes(
   permissions: ExpandedClaims | null | undefined,
@@ -45,11 +41,7 @@ export function searchableTypes(
         !typeFilter || typeFilter === "all" || entityType === typeFilter
     )
     .filter(([, table]) =>
-      holdsGate(
-        permissions,
-        widenReads(anyOf(ownersOf(table), "View")),
-        companyId
-      )
+      holdsGate(permissions, tableReadGate(table), companyId)
     )
     .map(([entityType]) => entityType);
 }

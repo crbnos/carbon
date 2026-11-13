@@ -112,7 +112,7 @@ describe("buildServiceFnTools", () => {
     });
   });
 
-  it("gates one module on the API and leaves several to the function", () => {
+  it("publishes a gate of one module by its page, and of several by every page", () => {
     // A level lists every action it holds; a gate of one page names it.
     expect(cancel?.permission).toEqual({
       module: "production",
@@ -121,7 +121,14 @@ describe("buildServiceFnTools", () => {
     });
     expect(cancel?.classification).toBe("WRITE");
     const remove = tools.find((tool) => tool.name === "production_deleteJob");
-    expect(remove?.permission).toEqual({ module: null, actions: [] });
+    expect(remove?.permission).toEqual({
+      module: null,
+      actions: ["view", "create", "update"],
+      allOf: [
+        { page: "inventory.quantities", level: "Edit" },
+        { page: "production.jobs", level: "Edit" }
+      ]
+    });
     expect(remove?.classification).toBe("DESTRUCTIVE");
   });
 

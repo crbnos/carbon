@@ -27,13 +27,15 @@ import { useFetcher, useLoaderData, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { ConfirmDelete } from "~/components/Modals";
+import { storageTypesGate } from "~/modules/inventory/inventory.models";
 import { getStorageTypeUsage } from "~/modules/inventory/inventory.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    "inventory.storageTypes": "View"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    storageTypesGate("View")
+  );
   const { id } = params;
   if (!id) throw notFound("id not found");
 

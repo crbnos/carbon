@@ -316,7 +316,12 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
   `companySettings.consoleEnabled` still on — and is memoized per read request. PINs
   are bcrypt hashes in `employeePin` (no API-role access; `set_employee_pin` /
   `verify_employee_pin` over the server's Kysely connection, via
-  `@carbon/ee/console.server`). MES pin-in (`x+/console.pin-in.tsx`) consumes the
+  `@carbon/ee/console.server`). A pinned person passes gates with their own claims,
+  so a PIN reset (`resetConsoleOperatorPin`, refusal in `pinResetRefusal`) needs
+  Operators Edit for a console operator (`isConsoleOperator` and the company's
+  Console Operator type), else also Accounts Edit + People Edit; only an Admin resets
+  an Admin's PIN, and no caller resets the PIN of someone above them on any page
+  (`readEffectiveAccess` levels vs the caller's claims). MES pin-in (`x+/console.pin-in.tsx`) consumes the
   per-operator `AccountLockout` attempt and the per-terminal `Ratelimit` token BEFORE
   verifying (refunding both on a non-guess), so a parallel burst cannot outrun the
   limits. `companySettings.consoleEnabled` is server-only: a trigger refuses API-role
@@ -493,9 +498,10 @@ the DB. Busting: every grant write of a key goes through `writeAccessGrants`
 (`@carbon/ee/permissions.server`), which calls `bustApiKeyCache` after it commits
 (`createApiKey` / `updateApiKey` write the key's grants through it, after the
 key row, so an expiry or limit edit is busted too); `revokeApiKey`
-(`settings.server.ts`) calls `invalidateApiKeyCache` (`settings.service.ts` →
-`bustApiKeyCache`) BEFORE and after the delete (the keyHash is unreadable once
-the row is gone). So a scope change or revocation takes effect immediately; the worst-case lag for any other
+(`settings.server.ts`, API Keys at Edit) calls `deleteApiKey`
+(`@carbon/ee/api-keys.server`), which deletes the row over `db` with
+`RETURNING "keyHash"`, refuses `notFound` when no row went, and calls
+`bustApiKeyCache` after the delete commits. So a scope change or revocation takes effect immediately; the worst-case lag for any other
 writer is the 30s TTL. Then:
 
 - Reject if `expiresAt` passed (401).
@@ -511,8 +517,8 @@ writer is the 30s TTL. Then:
   refusal returns the company's limit as `limit`. Pinned by
   `supabase/tests/api-key-rate-limit.test.sql`.
 - **Raising a limit is a support operation, not a setting.** One key: `apiKey.rateLimit`
-  (tenants with `settings_update` can also write it through the Data API, so the company
-  total is the real ceiling). A company: `companyPlan.apiRateLimit`, which only the
+  (set through `saveApiKey`; the Data API cannot write `apiKey`, and the company total
+  is the real ceiling). A company: `companyPlan.apiRateLimit`, which only the
   service role writes (the table has a SELECT policy and no other) and which company
   backups never carry. A key's limit above its company's total is capped by the total.
   Both are read per request through the 30s key cache. Only a company with a
@@ -551,8 +557,11 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   private-use scheme, never a fragment; `supportedScope` keeps only `mcp:tools`.
   Only `client_secret_post` and `none` are accepted as `token_endpoint_auth_method`
   (what discovery advertises; `/token` never reads a Basic header).
-- **Authorize** (`authorize.tsx`) requires `settings_update` and employee role in the
-  SELECTED company (`canAuthorizeForCompany`), not just the session's active one, and
+- **Authorize** (`authorize.tsx`) requires Edit on Settings → API Keys and employee role in
+  the SELECTED company (`companiesToAuthorize`), not just the session's active one, and
+  refuses an API-key caller (`caller === "apiKey"`, 403) in the loader and the action: a
+  key acts as its creator, so consenting with one would mint a token carrying the
+  creator's full access. `token.tsx` and `register.ts` authenticate no caller. It
   re-checks the redirect URI with `isRegisteredRedirectUri` (registered AND still
   allowed — clients registered before the rules existed are held to them too). The
   consent page shows the redirect host only once it passes that check.
@@ -585,10 +594,14 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   one set) on a page or, with `page` NULL, a whole module, at a `level`
   (None/View/Create/Edit/Full). Unique per (company, subject, module, page).
   Written only through `writeAccessGrants` (`@carbon/ee/permissions.server`:
-  entitlement, ownership, the modules a subject may hold, one transaction over
+  entitlement, ownership, the modules a subject may hold, a key never above its
+  writer — `keyGrantsAboveActor` against the caller's claims as authorised, Admin
+  and the system exempt, lowering always allowed — one transaction over
   `replaceGrants` / `removeGrant` from `@carbon/database/access-write`, cache
   clearing and the audit event). Deactivation (`@carbon/auth` `users.server.ts`)
-  still deletes a person's rows by itself.
+  still deletes a person's rows by itself, with the service role. RLS has a SELECT
+  policy only, so an API role cannot write a grant; the `check_employee_type_change`
+  interceptor likewise refuses an API-role change to `employee.employeeTypeId`.
 - `userToCompany` — junction, PK `(userId, companyId)`, `role` enum
   `'employee' | 'supplier' | 'customer'`.
 - `ssoConnection` — SAML SSO tenant binding (see the SSO section): PK
@@ -602,7 +615,10 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   `ssoConnection`.
 - `apiKey` — `keyHash` (unique), `keyPreview`, `name`, `companyId`, `createdBy`, `scopes`
   JSONB, `rateLimit` (default **20**; keys created before `20261002153217` keep 60), `rateLimitWindow` (default `'1m'`), `expiresAt`,
-  `lastUsedAt`. The old plaintext `key` column was dropped.
+  `lastUsedAt`. The old plaintext `key` column was dropped. RLS has SELECT and DELETE
+  policies only: a key is created and updated by `saveApiKey` (`@carbon/ee/api-keys.server`,
+  Kysely, inside `writeAccessGrants`), so an API role cannot rewrite a key's `keyHash` and
+  take over its grants.
 - `apiKeyRateLimit` — UNLOGGED, PK `(apiKeyId, windowStart)`, `requestCount`.
 - RLS/RPC functions: `get_claims`, `get_company_id_from_api_key`, `get_api_key_scopes`,
   `check_api_key_rate_limit`, `create_public_user`.

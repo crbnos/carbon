@@ -90,6 +90,7 @@ import {
   manualPegSupplyTypes,
   NEW_PURCHASE_ORDER,
   newProjectJobValidator,
+  PROJECT_ISSUE_GATE,
   placeInServiceValidator,
   planningGroupExcessRules,
   planningGroupPriorityRules,
@@ -5082,7 +5083,7 @@ export const createProjectExpense = defineServiceFn({
  */
 export const postProjectIssue = defineServiceFn({
   input: projectIssueValidator,
-  permission: { "inventory.quantities": "Edit", "projects.projects": "Edit" },
+  permission: PROJECT_ISSUE_GATE,
   async run(ctx, input) {
     let budgetWarning: string | null = null;
     if (input.direction === "Issue") {

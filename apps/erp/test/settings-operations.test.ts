@@ -42,12 +42,20 @@ vi.mock("@carbon/printing/printing.server", () => ({
   invalidatePrinterCache: vi.fn()
 }));
 vi.mock("@carbon/jobs", () => ({ batchTrigger, trigger }));
+// The plan check behind the API-key lock: the real answer unless a test says.
+vi.mock("@carbon/ee/plan.server", async (importOriginal) => {
+  const plan = await importOriginal<typeof import("@carbon/ee/plan.server")>();
+  return { ...plan, companyHasFeature: vi.fn(plan.companyHasFeature) };
+});
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import { redis } from "@carbon/kv";
 import { pageClaims } from "./page-claims";
 
 import {
   removePrinterRoute,
+  revokeApiKey,
   setIntegrationSyncEnabled,
   transitionSyncOperations,
   updateInventorySettings,
@@ -587,5 +595,67 @@ describe("a location's staffing requirement", () => {
 
     expect(writes.filter((w) => w.table === "location")).toEqual([]);
     expect(scheduleNotices()).toEqual([]);
+  });
+});
+
+describe("revoking an API key", () => {
+  // API Keys at Edit: RLS lets this role update a key but not delete it.
+  const editor = {
+    "settings.apiKeys": {
+      view: ["company-1"],
+      create: ["company-1"],
+      update: ["company-1"],
+      delete: []
+    }
+  };
+
+  function revoke(deleted: { keyHash: string } | undefined) {
+    const caller = client({});
+    const where: [string, string, string][] = [];
+    const query = {
+      where: (...args: [string, string, string]) => {
+        where.push(args);
+        return query;
+      },
+      returning: () => query,
+      executeTakeFirst: async () => deleted
+    };
+    const pg = { deleteFrom: vi.fn(() => query) };
+    vi.mocked(companyHasFeature).mockResolvedValueOnce(true);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: editor
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => caller as never,
+      pg: () => pg as never,
+      kv: () => ({}) as never
+    });
+    return { result: revokeApiKey(ctx, { id: "key-1" }), caller, pg, where };
+  }
+
+  it("deletes the company's key as the system, then drops its cached authentication", async () => {
+    const { result, caller, pg, where } = revoke({ keyHash: "hash-1" });
+
+    expect(await result).toEqual({ data: { id: "key-1" }, error: null });
+    expect(pg.deleteFrom).toHaveBeenCalledWith("apiKey");
+    expect(where).toEqual([
+      ["id", "=", "key-1"],
+      ["companyId", "=", "company-1"]
+    ]);
+    // Never through the caller's client, whose RLS would delete nothing.
+    expect(caller.writes).toEqual([]);
+    expect(redis.del).toHaveBeenCalledWith(expect.stringContaining("hash-1"));
+  });
+
+  it("refuses a key no row was deleted for, and reports no success", async () => {
+    const { result } = revoke(undefined);
+
+    expect((await result).error?.category).toBe("notFound");
+    expect(redis.del).not.toHaveBeenCalled();
   });
 });

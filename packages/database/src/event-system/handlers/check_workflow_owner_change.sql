@@ -1,0 +1,53 @@
+CREATE OR REPLACE FUNCTION public.check_workflow_owner_change(p_table text, p_operation text, p_new jsonb, p_old jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_caller text;
+BEGIN
+  -- A workflow runs with its owner's permissions, so an API role may only own
+  -- what it creates and never move it to someone else. Reads the request role,
+  -- as check_employee_type_change does.
+  IF current_setting('role', true) IN ('anon', 'authenticated') IS NOT TRUE THEN
+    RETURN;
+  END IF;
+
+  IF p_operation = 'UPDATE'
+     AND (p_new->>'ownerId') IS DISTINCT FROM (p_old->>'ownerId') THEN
+    RAISE EXCEPTION 'A workflow''s owner cannot be changed'
+      USING ERRCODE = 'insufficient_privilege';
+  END IF;
+
+  -- Publishing picks what runs as the owner, so only the owner may point it at a
+  -- version; clearing it (unpublish) stays open.
+  IF p_operation = 'UPDATE'
+     AND (p_new->>'publishedVersionId') IS NOT NULL
+     AND (p_new->>'publishedVersionId') IS DISTINCT FROM (p_old->>'publishedVersionId') THEN
+    v_caller := auth.uid()::text;
+    IF v_caller IS NULL OR (p_new->>'ownerId') IS DISTINCT FROM v_caller THEN
+      RAISE EXCEPTION 'Only the owner of this workflow can publish it'
+        USING ERRCODE = 'insufficient_privilege';
+    END IF;
+  END IF;
+
+  -- nextRunAt fires the published version as the owner; the server (syncWorkflowTriggers, the scheduler) writes it.
+  IF p_operation = 'UPDATE'
+     AND (p_new->>'nextRunAt') IS DISTINCT FROM (p_old->>'nextRunAt') THEN
+    v_caller := auth.uid()::text;
+    IF v_caller IS NULL OR (p_old->>'ownerId') IS DISTINCT FROM v_caller THEN
+      RAISE EXCEPTION 'Only the owner of this workflow can change when it next runs'
+        USING ERRCODE = 'insufficient_privilege';
+    END IF;
+  END IF;
+
+  IF p_operation = 'INSERT' THEN
+    -- An API key holds no Workflows grant and no auth.uid(), so it can neither create nor publish.
+    v_caller := auth.uid()::text;
+    IF v_caller IS NULL OR (p_new->>'ownerId') IS DISTINCT FROM v_caller THEN
+      RAISE EXCEPTION 'A workflow can only be created with its creator as owner'
+        USING ERRCODE = 'insufficient_privilege';
+    END IF;
+  END IF;
+END;
+$function$;

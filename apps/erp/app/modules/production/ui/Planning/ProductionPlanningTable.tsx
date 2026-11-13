@@ -56,6 +56,7 @@ import {
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM
 } from "~/modules/production/production.models";
+import { applyPlanningActionsPermission } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import {
   isApplyablePlanningAction,
@@ -178,6 +179,7 @@ const ProductionPlanningTable = ({
   const canUpdateActions = permissions.has({
     "production.materialPlanning": "Edit"
   });
+  const canApplyActions = permissions.has(applyPlanningActionsPermission);
   const actionTypeOptions = usePlanningActionTypeOptions("Make");
   const [people] = usePeople();
   const {
@@ -734,7 +736,7 @@ const ProductionPlanningTable = ({
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={
-              !canUpdateActions || applyableIds.length === 0 || isActionsBusy
+              !canApplyActions || applyableIds.length === 0 || isActionsBusy
             }
             onSelect={() =>
               submitActions({
@@ -758,7 +760,7 @@ const ProductionPlanningTable = ({
       bulkUpdateFetcher.state,
       onBulkUpdate,
       visibleActionsByRowKey,
-      canUpdateActions,
+      canApplyActions,
       isActionsBusy,
       submitActions
     ]

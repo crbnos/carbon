@@ -150,26 +150,13 @@ const managedAttribute = through(
   )
 );
 
-/** Who manages a grant row: the page of its subject column. */
-const grantRows = (apiKeyAction: "view" | "create" | "update" | "delete") =>
-  or(
-    and(isNotNull("userId"), inCompany("companyId", "users.accounts_update")),
-    and(
-      isNotNull("employeeTypeId"),
-      // A role's grants read like any Users table: View on a Users page (the
-      // person Access tab shows the role's levels). Writing them needs Employee Types.
-      inCompany(
-        "companyId",
-        apiKeyAction === "view"
-          ? anyPageOf("users")
-          : "users.employeeTypes_update"
-      )
-    ),
-    and(
-      isNotNull("apiKeyId"),
-      inCompany("companyId", permissionKey("settings.apiKeys", apiKeyAction))
-    )
-  );
+/** Who reads a grant row: the page of its subject column. */
+const grantRows = or(
+  and(isNotNull("userId"), inCompany("companyId", "users.accounts_update")),
+  // A role's grants read like any Users table (the person Access tab shows them).
+  and(isNotNull("employeeTypeId"), inCompany("companyId", anyPageOf("users"))),
+  and(isNotNull("apiKeyId"), inCompany("companyId", "settings.apiKeys_view"))
+);
 
 /**
  * A project table, governed by the owning page's action (any employee reads) in its project's company.
@@ -243,7 +230,8 @@ export const manifest = {
   agentThread: policies({
     all: and(owner("userId"), inCompany("companyId", "employee"))
   }),
-  apiKey: company(),
+  // A key and its hash are written by saveApiKey (Kysely), which caps its grants.
+  apiKey: company({ create: false, update: false }),
   apiKeyRateLimit: policies({
     select: exists("apiKey", "apiKeyId", "view")
   }),
@@ -1159,14 +1147,8 @@ export const manifest = {
   performanceBasedPaymentEvent: company(),
   peopleAssignment: company({ read: "employee" }),
   period: policies({ select: authenticated }),
-  // A person's grants are an Accounts setting and a role's an Employee Types one, at Edit
-  // for every command; an API key's are API Keys ones, as the apiKey rule is.
-  permission: policies({
-    select: grantRows("view"),
-    insert: grantRows("create"),
-    update: { using: grantRows("update"), check: grantRows("update") },
-    delete: grantRows("delete")
-  }),
+  // Read-only through the API: every write goes through writeAccessGrants (Kysely).
+  permission: policies({ select: grantRows }),
   periodCloseTask: company({ read: "employee" }),
   periodCloseTaskDefinition: company({ read: "employee" }),
   pickingList: company(),
@@ -1857,11 +1839,12 @@ export const manifest = {
   // Attributes at View; every other attribute still needs it.
   userAttribute: policies({
     select: or(
+      // Resources owned it before people.attributes; the category every employee reads cannot list a reader.
       through(
         "userAttributeCategoryId",
         "userAttributeCategory",
         "id",
-        inCompany("companyId", "view")
+        inCompany("companyId", anyOf("view", "resources.abilities_view"))
       ),
       and(
         where<"userAttribute">((eb) => eb("canSelfManage", "=", true)),
@@ -1946,10 +1929,11 @@ export const manifest = {
     update: false,
     delete: false
   }),
+  // Server-written only (syncWorkflowTriggers): a row names the version the owner's run executes.
   workflowTriggerEvent: company({
-    create: "update",
+    create: false,
     update: false,
-    delete: "update"
+    delete: false
   }),
   workflowVersion: company(),
   // Who may join a private Realtime broadcast topic. The policy is checked once,

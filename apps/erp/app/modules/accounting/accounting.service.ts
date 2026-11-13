@@ -15122,10 +15122,6 @@ async function repointReferences(
   );
 }
 
-export const applyAccountImportPermission = {
-  "accounting.chartOfAccounts": "Edit"
-} satisfies PermissionRule<z.output<typeof applyAccountImportInput>>;
-
 export async function applyAccountImport(
   ctx: ServiceContext,
   raw: z.input<typeof applyAccountImportInput>
@@ -22488,10 +22484,6 @@ export type ActivateAccountingResult = {
 };
 
 const OPENING_JOURNAL_DESCRIPTION = "Opening Balance";
-
-export const activateAccountingPermission = {
-  "settings.accounting": "Edit"
-} satisfies PermissionRule<z.output<typeof activateAccountingInput>>;
 
 export async function activateAccounting(
   ctx: ServiceContext,

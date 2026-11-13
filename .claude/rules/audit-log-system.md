@@ -70,8 +70,8 @@ and direct Postgres connections pass. **Never swap it for `REVOKE EXECUTE`**: on
 15.14.1.112, calling any function the caller lacks EXECUTE on, as `anon`/`authenticated`, segfaults the
 backend (see `.ai/lessons.md`). The controlled-environment auto-enable in the `settings+/audit-logs.tsx`
 loader therefore runs as the service role, because that loader only requires View on Audit Logs.
-`20261110050010_module-keys-to-pages.sql` rewrote every existing table's policy from the module
-key to the page key; `create_audit_log_table` re-secures a table whose policy does not name
+`20261111050003_audit-log-page-policy.sql` rewrites every existing table's policy from the module
+key to the page key, after `20261111050000` ships the page-key `secure_audit_log_table`; `create_audit_log_table` re-secures a table whose policy does not name
 `settings.auditLogs_view`.
 
 ## On-by-default in controlled environments (3.3.1)

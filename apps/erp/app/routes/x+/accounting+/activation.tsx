@@ -11,6 +11,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useMatches } from "react-router";
 import { SetupFrame } from "~/components/Setup";
+import { accountingActivationGate } from "~/modules/accounting/accounting.models";
 import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
@@ -31,9 +32,10 @@ export const handle: Handle = {
 /** The enable wizard is for a company with no cutover. Once accounting is set
  *  up it is one-way, so the wizard sends the user to the periods. */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(request, {
-    "settings.accounting": "View"
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    accountingActivationGate("View")
+  );
 
   const settings = await api.settings.getCompanySettings({});
   if (settings.error) {

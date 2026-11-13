@@ -43,7 +43,10 @@ import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
-import { isRfqLocked } from "../../purchasing.models";
+import {
+  finalizePurchasingRfqAndNotifyPermission,
+  isRfqLocked
+} from "../../purchasing.models";
 import type { PurchasingRFQ, PurchasingRFQLine } from "../../types";
 import { SupplierQuoteCompareDrawer } from "../SupplierQuote";
 import FinalizeRFQModal from "./FinalizeRFQModal";
@@ -232,7 +235,7 @@ const PurchasingRFQHeader = () => {
                   isDisabled={
                     status !== "Draft" ||
                     routeData?.lines?.length === 0 ||
-                    !permissions.has({ "purchasing.rfqs": "Create" })
+                    !permissions.has(finalizePurchasingRfqAndNotifyPermission)
                   }
                   leftIcon={<LuSend />}
                   variant={status === "Draft" ? "primary" : "secondary"}
@@ -247,7 +250,7 @@ const PurchasingRFQHeader = () => {
                   isDisabled={
                     status !== "Draft" ||
                     routeData?.lines?.length === 0 ||
-                    !permissions.has({ "purchasing.rfqs": "Create" })
+                    !permissions.has(finalizePurchasingRfqAndNotifyPermission)
                   }
                   leftIcon={<LuSend />}
                   variant={status === "Draft" ? "primary" : "secondary"}

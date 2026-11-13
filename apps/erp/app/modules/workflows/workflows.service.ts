@@ -580,6 +580,9 @@ export async function checkWorkflowVersionLock(
     : { ok: true };
 }
 
+export const OWNER_ONLY_PUBLISH_MESSAGE =
+  "Only the owner of this workflow can publish it";
+
 export type WorkflowSyncResult =
   | { ok: false; issues: WorkflowIssue[]; message?: string }
   | { ok: true; issues: never[]; scheduled: boolean };
@@ -644,6 +647,21 @@ export async function publishWorkflowVersion(
   // strippable `requireFeature` UX gate). Throws `EntitlementError` on a
   // non-entitled company.
   await requireWorkflowsEntitlement(client, companyId);
+
+  // A published workflow runs as its owner, so only the owner may publish it, as only the
+  // owner may test it ($id.test-run.tsx). The database refuses any API change of ownerId.
+  const workflow = await client
+    .from("workflow")
+    .select("ownerId")
+    .eq("id", workflowId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (workflow.error || !workflow.data) {
+    return { ok: false, issues: [], message: "Workflow not found" };
+  }
+  if (workflow.data.ownerId !== userId) {
+    return { ok: false, issues: [], message: OWNER_ONLY_PUBLISH_MESSAGE };
+  }
 
   const version = await getWorkflowVersion(client, versionId, companyId);
   if (

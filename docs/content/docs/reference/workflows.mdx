@@ -103,7 +103,7 @@ Publishing freezes that version. To keep working, use the version menu to create
 
 ## Who can do what
 
-Workflows have their own permission module: **View** opens the list, builder, and run history; **Create** adds workflows and versions; **Update** edits, publishes, and test-runs; **Delete** removes a workflow with its versions and history. Every route also requires an employee account.
+Workflows have their own permission module: **View** opens the list, builder, and run history; **Create** adds workflows and versions; **Update** edits and saves drafts, but only the owner publishes and test-runs; **Delete** removes a workflow with its versions and history. Every route also requires an employee account.
 
 <Callout type="note" title="A workflow runs as its owner, not as whoever triggered it">
 Every step reads and writes with the owner's permissions, re-checked at each step. If the owner's access is revoked the run stops with a plain message naming the area. Nothing a workflow does can reach outside the company it belongs to — and run history is read-only in the database itself, so no user, however privileged, can edit or forge a run log.

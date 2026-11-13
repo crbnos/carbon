@@ -29,6 +29,7 @@ import { getUserDefaults } from "~/modules/users/users.service";
 import { fromServerFn } from "../shared/shared.service";
 import {
   accountClassMatchesIncomeBalance,
+  accountingActivationGate,
   fixedAssetClassValidator
 } from "./accounting.models";
 import * as service from "./accounting.service";
@@ -37,6 +38,7 @@ import {
   depreciationRunLinesMatch,
   getNextPeriodEnd,
   getNextRevenueRecognitionPeriodEnd,
+  importChartOfAccountsPermission,
   monthEndOf
 } from "./accounting.utils";
 
@@ -2107,7 +2109,7 @@ export const moveAccount = defineServiceFn({
  */
 export const importChartOfAccounts = defineServiceFn({
   input: service.applyAccountImportInput,
-  permission: { "accounting.chartOfAccounts": "Edit" },
+  permission: importChartOfAccountsPermission,
   async run(ctx, input) {
     const result = await invokePosting(
       ctx,
@@ -2141,7 +2143,7 @@ export const importChartOfAccounts = defineServiceFn({
  */
 export const enableAccountingCutover = defineServiceFn({
   input: z.object({ cutoverDate: z.string(), confirmation: z.string() }),
-  permission: { "settings.accounting": "Edit" },
+  permission: { anyOf: accountingActivationGate("Edit") },
   async run(ctx, input) {
     const result = await invokePosting(
       ctx,

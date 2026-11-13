@@ -12,6 +12,8 @@ export const PAGES = [
     label: "Employees",
     maxLevel: "Full",
     tables: ["employeeJob", "employeeShift"],
+    // resources.assignments, which moved from People (resources.ts alsoWrittenBy).
+    readers: ["trainingAssignment"],
     paths: ["/x/people/employee", "/x/person/"]
   },
   {
@@ -26,6 +28,13 @@ export const PAGES = [
     label: "Attributes",
     maxLevel: "Full",
     tables: ["userAttributeCategory", "userAttribute", "userAttributeValue"],
+    // Moved from Resources, which had no screen for them: Abilities holds its person pages.
+    // userAttribute and userAttributeValue check their category, so its entry is the one RLS renders.
+    alsoWrittenBy: {
+      userAttributeCategory: ["resources.abilities"],
+      userAttribute: ["resources.abilities"],
+      userAttributeValue: ["resources.abilities"]
+    },
     paths: ["/x/people/attributes", "/x/people/attribute/"]
   },
   {

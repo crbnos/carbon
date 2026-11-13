@@ -191,7 +191,10 @@ import {
   procedureSyncValidator,
   syncAssemblyToBopValidator
 } from "../../production.models";
-import { getProductionEventsPage } from "../../production.utils";
+import {
+  getProductionEventsPage,
+  syncAssemblyToOperationPermission
+} from "../../production.utils";
 import type { Job, JobOperation } from "../../types";
 import { JobOperationStatus, JobOperationTags } from "./JobOperationStatus";
 import { OperationDueDatePicker } from "./OperationDueDatePicker";
@@ -2819,6 +2822,7 @@ function OperationForm({
   const { jobId } = useParams();
   const { t } = useLingui();
   const { company } = useUser();
+  const permissions = usePermissions();
   if (!jobId) throw new Error("jobId not found");
 
   const isNew = !!temporaryItems[item.id];
@@ -3676,6 +3680,9 @@ function OperationForm({
                         <Button
                           variant="secondary"
                           rightIcon={<LuRefreshCcw />}
+                          isDisabled={
+                            !permissions.has(syncAssemblyToOperationPermission)
+                          }
                           onClick={assemblySyncDisclosure.onOpen}
                         >
                           Sync Assembly Steps

@@ -1,0 +1,1670 @@
+{
+  "ability": {
+    "read": ["production", "resources"],
+    "write": ["resources"]
+  },
+  "account": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "accountDefault": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "accountingCutoverIgnoredInvoice": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "accountingPeriod": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "accountingPeriodBalance": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "accountingSyncOperation": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "accountingSyncTieOut": {
+    "read": ["accounting"],
+    "write": []
+  },
+  "address": {
+    "read": ["purchasing", "sales"],
+    "write": ["purchasing", "sales"]
+  },
+  "apiKey": {
+    "read": ["settings"],
+    "write": ["settings"]
+  },
+  "apiKeyRateLimit": {
+    "read": ["settings"],
+    "write": []
+  },
+  "approvalRule": {
+    "read": ["settings"],
+    "write": ["settings"]
+  },
+  "assemblyComponentMapping": {
+    "read": [],
+    "write": ["production"]
+  },
+  "assemblyInstruction": {
+    "read": [],
+    "write": ["production"]
+  },
+  "assemblyInstructionStep": {
+    "read": [],
+    "write": ["production"]
+  },
+  "assemblyInstructionStepMaterial": {
+    "read": [],
+    "write": ["production"]
+  },
+  "assemblyInstructionStepSlide": {
+    "read": ["production"],
+    "write": ["production"]
+  },
+  "assemblyInstructionStepTool": {
+    "read": ["production"],
+    "write": ["production"]
+  },
+  "assemblyPlanJob": {
+    "read": [],
+    "write": ["production"]
+  },
+  "assemblyUnit": {
+    "read": [],
+    "write": ["production"]
+  },
+  "balloon": {
+    "read": [],
+    "write": ["quality"]
+  },
+  "batchProperty": {
+    "read": ["inventory", "parts"],
+    "write": ["inventory", "parts"]
+  },
+  "capacityReservation": {
+    "read": [],
+    "write": ["production"]
+  },
+  "changeOrder": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "changeOrderActionTask": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "changeOrderAffectedItem": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "changeOrderRequiredAction": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "changeOrderSupersession": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "changeOrderType": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "charge": {
+    "read": [],
+    "write": ["invoicing"]
+  },
+  "chargeLine": {
+    "read": [],
+    "write": ["invoicing"]
+  },
+  "company": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "companyAccountsPayableBillingAddress": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "companyAccountsReceivableBillingAddress": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "companyIntegration": {
+    "read": ["settings"],
+    "write": ["settings"]
+  },
+  "companySettings": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "configurationParameter": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "configurationParameterGroup": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "configurationRule": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "consumable": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "contact": {
+    "read": ["purchasing", "sales"],
+    "write": ["purchasing", "sales"]
+  },
+  "contractFinancingRequest": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "contractFinancingRequestEvent": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "contractor": {
+    "read": ["resources"],
+    "write": ["resources"]
+  },
+  "contractorAbility": {
+    "read": ["resources"],
+    "write": ["resources"]
+  },
+  "costCenter": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "costLedger": {
+    "read": ["accounting", "parts"],
+    "write": []
+  },
+  "currency": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "customField": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "customer": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerAccount": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerAsset": {
+    "read": [],
+    "write": ["service"]
+  },
+  "customerBankAccount": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "customerContact": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContract": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractAmendment": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractFinancing": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractFinancingRate": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractFunding": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractInvoice": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractInvoiceLine": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractLaborRate": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractLedgerEntry": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractLine": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractRateCeiling": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerContractRevenue": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerItemPriceOverride": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "customerItemPriceOverrideBreak": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "customerItemRentalRate": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerLocation": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerPartToItem": {
+    "read": ["parts", "sales"],
+    "write": ["parts", "sales"]
+  },
+  "customerPayment": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerShipping": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerStatus": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "customerTax": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "customerType": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "demandActual": {
+    "read": ["inventory", "parts"],
+    "write": ["inventory"]
+  },
+  "demandForecast": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "demandForecastSource": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "demandProjection": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "department": {
+    "read": [],
+    "write": ["people"]
+  },
+  "depreciationRun": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "depreciationRunLine": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "dimension": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "dimensionValue": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "document": {
+    "read": ["documents"],
+    "write": ["documents"]
+  },
+  "documentEdit": {
+    "read": ["inventory", "invoicing", "purchasing", "quality", "sales"],
+    "write": []
+  },
+  "documentSection": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "employee": {
+    "read": [],
+    "write": ["users"]
+  },
+  "employeeAbility": {
+    "read": ["resources"],
+    "write": ["resources"]
+  },
+  "employeeJob": {
+    "read": [],
+    "write": ["people"]
+  },
+  "employeeShift": {
+    "read": ["people"],
+    "write": ["people"]
+  },
+  "employeeType": {
+    "read": ["users"],
+    "write": ["users"]
+  },
+  "employeeTypePermission": {
+    "read": ["users"],
+    "write": ["users"]
+  },
+  "enforcementRule": {
+    "read": [],
+    "write": ["inventory", "sales"]
+  },
+  "enforcementRuleAcknowledgment": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "enforcementRuleItemAssignment": {
+    "read": [],
+    "write": ["parts", "sales"]
+  },
+  "enforcementRuleWorkCenterAssignment": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "eventSystemSubscription": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "exchangeRateOverride": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "externalLink": {
+    "read": [],
+    "write": ["purchasing", "quality", "sales"]
+  },
+  "fiscalYearSettings": {
+    "read": ["settings"],
+    "write": ["settings"]
+  },
+  "fixedAsset": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "fixedAssetCipCost": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "fixedAssetClass": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "fixedAssetDisposal": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "fixedAssetTransfer": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "fixedAssetUsageLog": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "fulfillment": {
+    "read": ["inventory", "sales"],
+    "write": ["inventory", "sales"]
+  },
+  "gauge": {
+    "read": [],
+    "write": ["quality"]
+  },
+  "gaugeCalibrationRecord": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "gaugeType": {
+    "read": [],
+    "write": ["quality"]
+  },
+  "group": {
+    "read": [],
+    "write": ["users"]
+  },
+  "holiday": {
+    "read": [],
+    "write": ["people"]
+  },
+  "implementationCheckState": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "implementationFieldValue": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "implementationHub": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "indirectPool": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "indirectPoolAccount": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "indirectRate": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "inspection": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "inspectionDocument": {
+    "read": [],
+    "write": ["quality"]
+  },
+  "inspectionDocumentParameter": {
+    "read": [],
+    "write": ["quality"]
+  },
+  "inspectionFeature": {
+    "read": [],
+    "write": ["quality"]
+  },
+  "inspectionHistory": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "inspectionMeasurement": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "inspectionSample": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "inspectionSamplingPlan": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "inspectionTrackedEntity": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "integrationConnection": {
+    "read": ["settings"],
+    "write": []
+  },
+  "intercompanyEliminationLine": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "intercompanyTransaction": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "inventoryCount": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "inventoryCountLine": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "invoiceSettlement": {
+    "read": [],
+    "write": ["invoicing"]
+  },
+  "item": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "itemCost": {
+    "read": ["parts", "sales"],
+    "write": ["parts"]
+  },
+  "itemInspectionDocumentAssignment": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "itemLedger": {
+    "read": ["accounting", "inventory"],
+    "write": ["accounting", "inventory"]
+  },
+  "itemPlanning": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "itemPostingGroup": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "itemPostingGroupResponsibility": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "itemRentalRate": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "itemReplenishment": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "itemSerialSequence": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "itemShelfLife": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "itemSupersession": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "itemUnitSalePrice": {
+    "read": ["parts", "sales"],
+    "write": ["parts"]
+  },
+  "job": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobCorrection": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobCorrectionTrigger": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobMakeMethod": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobMaterial": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobMaterialStep": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobOperation": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobOperationBatch": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobOperationNote": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobOperationParameter": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobOperationStep": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobOperationStepRecord": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobOperationStepSlide": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobOperationTool": {
+    "read": [],
+    "write": ["production"]
+  },
+  "jobOperationToolStep": {
+    "read": [],
+    "write": ["production"]
+  },
+  "journal": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "journalLine": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "journalLineDimension": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "kanban": {
+    "read": [],
+    "write": ["inventory"]
+  },
+  "laborCategory": {
+    "read": [],
+    "write": ["projects"]
+  },
+  "laborCategoryRate": {
+    "read": [],
+    "write": ["projects"]
+  },
+  "lease": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "leaseEvent": {
+    "read": ["purchasing"],
+    "write": []
+  },
+  "leaseLine": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "leasePayment": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "leaseScheduleLine": {
+    "read": ["purchasing"],
+    "write": []
+  },
+  "location": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "maintenanceDispatch": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "maintenanceDispatchEvent": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "maintenanceDispatchItem": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "maintenanceDispatchItemTrackedEntity": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "maintenanceDispatchWorkCenter": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "maintenanceFailureMode": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "maintenanceSchedule": {
+    "read": ["resources"],
+    "write": ["resources"]
+  },
+  "maintenanceScheduleItem": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "makeMethod": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "material": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "materialDimension": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "materialFinish": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "materialForm": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "materialGrade": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "materialSubstance": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "materialType": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "membership": {
+    "read": [],
+    "write": ["users"]
+  },
+  "memo": {
+    "read": [],
+    "write": ["invoicing"]
+  },
+  "methodCorrection": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "methodCorrectionTrigger": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "methodMaterial": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "methodMaterialStep": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "methodOperation": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "methodOperationParameter": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "methodOperationStep": {
+    "read": [],
+    "write": ["production"]
+  },
+  "methodOperationStepSlide": {
+    "read": [],
+    "write": ["production"]
+  },
+  "methodOperationTool": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "methodOperationToolStep": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "modelUpload": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "noQuoteReason": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "nonConformance": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceActionProcess": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceActionTask": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceApprovalTask": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceCustomer": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceInspection": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceItem": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceItemTrackedEntity": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceJobOperation": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformancePurchaseOrderLine": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformancePurchaseReturnOrderLine": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceReceiptLine": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceRequiredAction": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceReviewer": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceSalesOrderLine": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceSalesReturnOrderLine": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceShipmentLine": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceSupplier": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceTrackedEntity": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "nonConformanceType": {
+    "read": [],
+    "write": ["quality"]
+  },
+  "nonConformanceWorkflow": {
+    "read": ["quality"],
+    "write": ["quality"]
+  },
+  "opportunity": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "part": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "partner": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "payment": {
+    "read": [],
+    "write": ["invoicing"]
+  },
+  "paymentTerm": {
+    "read": ["accounting", "purchasing", "sales"],
+    "write": ["accounting"]
+  },
+  "payrollPeriodTotal": {
+    "read": ["people"],
+    "write": ["people"]
+  },
+  "peopleAbsence": {
+    "read": [],
+    "write": ["production"]
+  },
+  "peopleAssignment": {
+    "read": [],
+    "write": ["production"]
+  },
+  "performanceBasedPaymentEvent": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "periodCloseTask": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "periodCloseTaskDefinition": {
+    "read": [],
+    "write": ["accounting"]
+  },
+  "pickMethod": {
+    "read": ["parts"],
+    "write": ["parts"]
+  },
+  "pickingList": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "pickingListLine": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "pickingListLineTrackedEntity": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "planningAction": {
+    "read": ["production", "purchasing"],
+    "write": []
+  },
+  "planningGroup": {
+    "read": [],
+    "write": ["projects"]
+  },
+  "pricingRule": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "printJob": {
+    "read": ["printing"],
+    "write": ["printing"]
+  },
+  "printerRoute": {
+    "read": ["printing"],
+    "write": ["printing"]
+  },
+  "procedure": {
+    "read": [],
+    "write": ["production"]
+  },
+  "procedureParameter": {
+    "read": [],
+    "write": ["production"]
+  },
+  "procedureStep": {
+    "read": [],
+    "write": ["production"]
+  },
+  "process": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "productionEvent": {
+    "read": ["production"],
+    "write": ["production"]
+  },
+  "productionQuantity": {
+    "read": [],
+    "write": ["production"]
+  },
+  "project": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectBaseline": {
+    "read": [],
+    "write": ["projects"]
+  },
+  "projectBillableItem": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectChangeRequest": {
+    "read": [],
+    "write": ["projects"]
+  },
+  "projectChangeRequestItem": {
+    "read": [],
+    "write": ["projects"]
+  },
+  "projectElement": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectElementComment": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectElementCost": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectElementLabel": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectElementLabor": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectElementLink": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectElementMaterial": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectExpenseEntry": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectLabel": {
+    "read": [],
+    "write": ["projects", "settings"]
+  },
+  "projectLedger": {
+    "read": ["projects"],
+    "write": []
+  },
+  "projectMember": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectMilestone": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "projectState": {
+    "read": [],
+    "write": ["projects", "settings"]
+  },
+  "projectStockTransfer": {
+    "read": [],
+    "write": ["projects"]
+  },
+  "projectStockTransferLine": {
+    "read": [],
+    "write": ["projects"]
+  },
+  "projectView": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "purchaseInvoice": {
+    "read": ["invoicing"],
+    "write": ["invoicing"]
+  },
+  "purchaseInvoiceDelivery": {
+    "read": ["invoicing"],
+    "write": ["invoicing"]
+  },
+  "purchaseInvoiceLine": {
+    "read": ["invoicing"],
+    "write": ["invoicing"]
+  },
+  "purchaseInvoicePriceChange": {
+    "read": ["invoicing"],
+    "write": []
+  },
+  "purchaseInvoiceStatusHistory": {
+    "read": ["invoicing"],
+    "write": []
+  },
+  "purchaseOrder": {
+    "read": ["inventory", "invoicing", "purchasing"],
+    "write": ["purchasing"]
+  },
+  "purchaseOrderDelivery": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "purchaseOrderLine": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "purchaseOrderPayment": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "purchaseOrderStatusHistory": {
+    "read": ["purchasing"],
+    "write": []
+  },
+  "purchaseOrderTransaction": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "purchaseReturnOrder": {
+    "read": [],
+    "write": ["purchasing"]
+  },
+  "purchaseReturnOrderCreditLine": {
+    "read": [],
+    "write": ["invoicing"]
+  },
+  "purchaseReturnOrderLine": {
+    "read": [],
+    "write": ["purchasing"]
+  },
+  "purchaseReturnOrderLineTrackedEntity": {
+    "read": [],
+    "write": ["purchasing"]
+  },
+  "purchasingRfq": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "purchasingRfqLine": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "purchasingRfqSupplier": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "purchasingRfqToPurchaseOrder": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "purchasingRfqToSupplierQuote": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "qualityDocument": {
+    "read": [],
+    "write": ["quality"]
+  },
+  "qualityDocumentStep": {
+    "read": [],
+    "write": ["production"]
+  },
+  "quote": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "quoteLine": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "quoteLinePrice": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "quoteMakeMethod": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "quoteMaterial": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "quoteMaterialStep": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "quoteOperation": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "quoteOperationParameter": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "quoteOperationStep": {
+    "read": [],
+    "write": ["production"]
+  },
+  "quoteOperationStepSlide": {
+    "read": [],
+    "write": ["production"]
+  },
+  "quoteOperationTool": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "quoteOperationToolStep": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "quotePayment": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "quoteShipment": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "receipt": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "receiptFixedAssetLine": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "receiptLine": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "reimbursement": {
+    "read": [],
+    "write": ["invoicing"]
+  },
+  "reimbursementLine": {
+    "read": [],
+    "write": ["invoicing"]
+  },
+  "reimbursementLineDimension": {
+    "read": [],
+    "write": ["invoicing"]
+  },
+  "rentalAgreement": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "rentalAgreementCharge": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "rentalAgreementContact": {
+    "read": ["sales"],
+    "write": []
+  },
+  "rentalAgreementLine": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "rentalBillingPeriod": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "rentalLeaseScheduleLine": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "returnReason": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "revenueRecognitionRun": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "revenueRecognitionRunLine": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "revenueRecognitionSchedule": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "rework": {
+    "read": ["production"],
+    "write": ["production"]
+  },
+  "riskRegister": {
+    "read": [],
+    "write": ["quality"]
+  },
+  "salesInvoice": {
+    "read": ["invoicing"],
+    "write": ["invoicing"]
+  },
+  "salesInvoiceFundingAllocation": {
+    "read": ["invoicing"],
+    "write": []
+  },
+  "salesInvoiceLine": {
+    "read": ["invoicing"],
+    "write": ["invoicing"]
+  },
+  "salesInvoiceShipment": {
+    "read": ["invoicing"],
+    "write": ["invoicing"]
+  },
+  "salesOrder": {
+    "read": ["inventory", "invoicing", "sales"],
+    "write": ["sales"]
+  },
+  "salesOrderLine": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "salesOrderPayment": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "salesOrderShipment": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "salesOrderStatusHistory": {
+    "read": ["sales"],
+    "write": []
+  },
+  "salesOrderTransaction": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "salesReturnOrder": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "salesReturnOrderCreditLine": {
+    "read": [],
+    "write": ["invoicing"]
+  },
+  "salesReturnOrderLine": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "salesReturnOrderLineTrackedEntity": {
+    "read": [],
+    "write": ["sales"]
+  },
+  "salesRfq": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "salesRfqLine": {
+    "read": ["sales"],
+    "write": ["sales"]
+  },
+  "scrapReason": {
+    "read": [],
+    "write": ["production"]
+  },
+  "sequence": {
+    "read": ["settings"],
+    "write": ["settings"]
+  },
+  "service": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "serviceJob": {
+    "read": [],
+    "write": ["service"]
+  },
+  "serviceJobAssignment": {
+    "read": [],
+    "write": ["service"]
+  },
+  "serviceJobEstimateLine": {
+    "read": [],
+    "write": ["service"]
+  },
+  "serviceJobItem": {
+    "read": [],
+    "write": ["service"]
+  },
+  "serviceJobTime": {
+    "read": [],
+    "write": ["service"]
+  },
+  "shift": {
+    "read": [],
+    "write": ["people"]
+  },
+  "shipment": {
+    "read": ["inventory", "sales"],
+    "write": ["inventory", "sales"]
+  },
+  "shipmentFixedAssetLine": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "shipmentLine": {
+    "read": ["inventory", "sales"],
+    "write": ["inventory", "sales"]
+  },
+  "shippingMethod": {
+    "read": [],
+    "write": ["inventory"]
+  },
+  "shippingTerm": {
+    "read": [],
+    "write": ["inventory"]
+  },
+  "ssoConnection": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "ssoDomain": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "stockTransfer": {
+    "read": [],
+    "write": ["inventory"]
+  },
+  "stockTransferLine": {
+    "read": [],
+    "write": ["inventory"]
+  },
+  "storageType": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "storageUnit": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "suggestion": {
+    "read": ["resources"],
+    "write": ["resources"]
+  },
+  "supplier": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierAccount": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierBankAccount": {
+    "read": ["accounting"],
+    "write": ["accounting"]
+  },
+  "supplierContact": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierInteraction": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierLedger": {
+    "read": ["accounting"],
+    "write": []
+  },
+  "supplierLocation": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierPart": {
+    "read": ["parts", "purchasing"],
+    "write": ["parts"]
+  },
+  "supplierPartPrice": {
+    "read": ["parts", "purchasing"],
+    "write": ["parts"]
+  },
+  "supplierPayment": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierProcess": {
+    "read": ["purchasing", "resources", "sales"],
+    "write": ["purchasing", "resources"]
+  },
+  "supplierQuote": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierQuoteLine": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierQuoteLinePrice": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierShipping": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierTax": {
+    "read": ["purchasing"],
+    "write": ["purchasing"]
+  },
+  "supplierType": {
+    "read": [],
+    "write": ["purchasing"]
+  },
+  "supplyActual": {
+    "read": ["inventory", "parts"],
+    "write": ["inventory"]
+  },
+  "supplyForecast": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "tag": {
+    "read": [],
+    "write": ["settings"]
+  },
+  "terms": {
+    "read": ["purchasing", "sales", "settings"],
+    "write": ["settings"]
+  },
+  "timeCardEntry": {
+    "read": ["people"],
+    "write": ["people"]
+  },
+  "timesheetCertification": {
+    "read": ["projects"],
+    "write": []
+  },
+  "timesheetEntry": {
+    "read": ["projects"],
+    "write": ["projects"]
+  },
+  "timesheetEntryRevision": {
+    "read": ["projects"],
+    "write": []
+  },
+  "tool": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "trackedActivity": {
+    "read": [],
+    "write": ["inventory"]
+  },
+  "trackedActivityInput": {
+    "read": [],
+    "write": ["inventory"]
+  },
+  "trackedActivityOutput": {
+    "read": [],
+    "write": ["inventory"]
+  },
+  "trackedEntity": {
+    "read": [],
+    "write": ["inventory"]
+  },
+  "training": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "trainingAssignment": {
+    "read": ["people"],
+    "write": ["people"]
+  },
+  "trainingCompletion": {
+    "read": ["resources"],
+    "write": ["people", "resources"]
+  },
+  "trainingQuestion": {
+    "read": [],
+    "write": ["people"]
+  },
+  "unitOfMeasure": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "user": {
+    "read": [],
+    "write": ["users"]
+  },
+  "userAttribute": {
+    "read": ["resources"],
+    "write": ["resources"]
+  },
+  "userAttributeCategory": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "userAttributeValue": {
+    "read": ["resources"],
+    "write": ["resources"]
+  },
+  "userToCompany": {
+    "read": [],
+    "write": ["users"]
+  },
+  "warehouse": {
+    "read": [],
+    "write": ["parts"]
+  },
+  "warehouseTransfer": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "warehouseTransferLine": {
+    "read": ["inventory"],
+    "write": ["inventory"]
+  },
+  "webhook": {
+    "read": ["settings"],
+    "write": ["settings"]
+  },
+  "workCenter": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "workCenterProcess": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "workCenterReplacementPart": {
+    "read": ["resources"],
+    "write": ["resources"]
+  },
+  "workCenterShift": {
+    "read": [],
+    "write": ["resources"]
+  },
+  "workflow": {
+    "read": ["workflows"],
+    "write": ["workflows"]
+  },
+  "workflowRun": {
+    "read": ["workflows"],
+    "write": []
+  },
+  "workflowStepRun": {
+    "read": ["workflows"],
+    "write": []
+  },
+  "workflowTriggerEvent": {
+    "read": ["workflows"],
+    "write": ["workflows"]
+  },
+  "workflowVersion": {
+    "read": ["workflows"],
+    "write": ["workflows"]
+  }
+}

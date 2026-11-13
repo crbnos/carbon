@@ -73,6 +73,8 @@ export interface EngineLogger {
 }
 
 const UNPUBLISHED = "This workflow was unpublished before the run started.";
+const VERSION_NOT_PUBLISHED =
+  "This run's version is not the workflow's published version.";
 const NOT_ENTITLED = "Workflows are not enabled for this company's plan.";
 const NO_PERMISSIONS =
   "The permissions for the owner of this workflow could not be read.";
@@ -393,12 +395,24 @@ export async function executeWorkflowRun(params: {
       return { settled: "Skipped" as const };
     }
 
-    if (!context.workflowPublished) {
+    if (context.publishedVersionId === null) {
       await finishRun(db, {
         runId: payload.runId,
         companyId: payload.companyId,
         status: "Skipped",
         statusReason: UNPUBLISHED,
+        startedAt
+      });
+      return { settled: "Skipped" as const };
+    }
+
+    // The run executes as the owner, so only the version the owner published may run.
+    if (context.publishedVersionId !== context.run.workflowVersionId) {
+      await finishRun(db, {
+        runId: payload.runId,
+        companyId: payload.companyId,
+        status: "Skipped",
+        statusReason: VERSION_NOT_PUBLISHED,
         startedAt
       });
       return { settled: "Skipped" as const };

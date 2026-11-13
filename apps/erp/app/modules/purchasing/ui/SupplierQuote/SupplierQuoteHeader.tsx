@@ -56,6 +56,7 @@ import {
   useRouteData,
   useSupplierApprovalRequired
 } from "~/hooks";
+import { supplierQuoteToPurchaseOrderPermission } from "~/modules/shared/shared.utils";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import { isSupplierQuoteLocked } from "../../purchasing.models";
@@ -269,9 +270,9 @@ const SupplierQuoteHeader = () => {
                     <DropdownMenuTrigger asChild>
                       <Button
                         isDisabled={
-                          !permissions.has({
-                            "purchasing.supplierQuotes": "Edit"
-                          }) || !isSupplierApproved
+                          !permissions.has(
+                            supplierQuoteToPurchaseOrderPermission
+                          ) || !isSupplierApproved
                         }
                         variant="primary"
                         leftIcon={<LuShoppingCart />}
@@ -296,9 +297,9 @@ const SupplierQuoteHeader = () => {
                 <RecordAction slot="primary">
                   <Button
                     isDisabled={
-                      !permissions.has({
-                        "purchasing.supplierQuotes": "Edit"
-                      }) || !isSupplierApproved
+                      !permissions.has(
+                        supplierQuoteToPurchaseOrderPermission
+                      ) || !isSupplierApproved
                     }
                     variant="primary"
                     leftIcon={<LuShoppingCart />}

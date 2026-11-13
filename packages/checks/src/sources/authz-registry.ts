@@ -5,8 +5,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
-import type { SourceFile } from "../check";
-import { MOVED_TABLES_MIGRATION } from "../conformance/moved-tables-covered";
 import { ERP_ROUTES_DIR } from "../conformance/route-maps-to-page";
 
 /** The registry helper files `findStaleRegistryHelpers` compares; a missing one has no contents. */
@@ -22,14 +20,6 @@ export function loadRegistryHelperFiles(
       contents: existsSync(path) ? readFileSync(path, "utf-8") : undefined
     };
   });
-}
-
-/** The migration `findMovedTableGaps` reads. */
-export function loadMovedTablesMigration(root: string): SourceFile {
-  return {
-    file: MOVED_TABLES_MIGRATION,
-    contents: readFileSync(join(root, MOVED_TABLES_MIGRATION), "utf-8")
-  };
 }
 
 /**
