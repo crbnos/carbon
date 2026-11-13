@@ -4,12 +4,10 @@
 
 import { checkIn } from "@carbon/ee/license/check-in.server";
 import { CarbonEdition } from "@carbon/env";
-import { Edition, INTERNAL_EMAIL_DOMAINS } from "@carbon/utils";
+import { Edition } from "@carbon/utils";
 import { sql } from "kysely";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
-
-const STAFF_EMAILS = INTERNAL_EMAIL_DOMAINS.map((domain) => `%${domain}`);
 
 /**
  * Hourly; the check-in itself acts once a day, or on its back-off schedule
@@ -34,7 +32,7 @@ export const licenseCheckInFunction = inngest.createFunction(
                from "userToCompany" utc
                join "user" u on u."id" = utc."userId"
               where utc."role" = 'employee'
-                and not (u."email" ilike any(${STAFF_EMAILS}::text[]))) as "seatsUsed",
+                and u."email" not ilike '%@carbon.ms') as "seatsUsed",
             (select count(*)::int from "company") as "companiesCount"
         `.execute(getJobDatabaseClient());
         return rows[0] ?? { seatsUsed: 0, companiesCount: 0 };
