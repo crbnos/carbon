@@ -4,7 +4,7 @@
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { stripVTControlCharacters } from "node:util";
-import { box, intro, log, outro } from "@clack/prompts";
+import { box, cancel, intro, log, outro } from "@clack/prompts";
 import { execa } from "execa";
 import pc from "picocolors";
 import {
@@ -418,7 +418,11 @@ async function selectApps(opts: UpOpts): Promise<AppId[]> {
   // Before booting anything heavy.
   if (selected.includes("assembler")) {
     const missing = assemblerMissingPrerequisite();
-    if (missing) throw new Error(missing);
+    if (missing) {
+      // Not a throw: citty prints a thrown error with its stack, twice.
+      cancel(missing);
+      process.exit(1);
+    }
   }
   return selected;
 }
