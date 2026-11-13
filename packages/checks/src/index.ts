@@ -12,6 +12,12 @@ export type {
 export { findClobbers, objectRefs } from "./clobber";
 export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
+export {
+  findIntegrationsWithoutRule,
+  INTEGRATION_HAS_RULE,
+  type IntegrationDir,
+  type IntegrationRuleSources
+} from "./conformance/integration-has-rule";
 export { journalStatusFilter } from "./conformance/journal-status-filter";
 export { linguiMacroMisuse } from "./conformance/lingui-macro-misuse";
 export { moduleShape } from "./conformance/module-shape";
@@ -66,6 +72,7 @@ export {
   TEST_CHECKS,
   TS_CHECKS
 } from "./run";
+export { loadIntegrationRuleSources } from "./sources/cross-file";
 export { loadDbTableColumns } from "./sources/db-columns";
 export { loadEdgeFunctions } from "./sources/edge-functions";
 export {

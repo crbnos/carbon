@@ -4,6 +4,7 @@ paths:
   - "apps/erp/app/routes/api+/webhook.xero.ts"
   - "packages/ee/src/accounting/core/service.ts"
   - "packages/ee/src/accounting/providers/xero/**"
+  - "packages/ee/src/xero/**"
 ---
 
 # Xero Webhooks
@@ -35,14 +36,19 @@ because it uses `crypto` for HMAC.
 5. `JSON.parse` the body (parse failure → `401`), then validate with `WebhookSchema`
    (zod). Invalid shape → `401`.
 6. Group events by `tenantId`. Per tenant: `getAccountingIntegration(serviceRole,
-   tenantId, ProviderID.XERO)` to resolve the `companyId`; missing → record an error and
-   `continue`. **Tenant binding**: the resolved row is trusted only when its OWN stored
+   tenantId, ProviderID.XERO)` to resolve the `companyId`. When no row matches,
+   `getAccountingIntegration` **throws** ("No xero integration found for company or
+   tenant ..."); the per-tenant `catch` records that message in `errors` and moves to the
+   next tenant (the route's `if (!integration)` branch never runs). **Tenant binding**: the resolved row is trusted only when its OWN stored
    tenant (`getStoredTenantId` → `parseStoredCredentials(...).providerMetadata.tenantId`)
    equals the event's `tenantId` — `getAccountingIntegration` also matches on
    `companyId`, so an event naming a company id instead of a tenant would otherwise
    resolve that company. A mismatch records the same "Tenant ID not found in
-   integrations" error and `continue`s. Then `getProviderIntegration(...)` builds a
-   live `XeroProvider`.
+   integrations" error and `continue`s. **Sync-off gate**: if
+   `isAccountingSyncEnabled(integration.metadata)` is false (the drawer's Sync switch,
+   `metadata.settings.syncEnabled`; absent reads as on), log and `continue` before any
+   Xero call. The tenant is skipped silently — no error, no job, still HTTP 200. Then
+   `getProviderIntegration(...)` builds a live `XeroProvider`.
 7. For each event, **fetch the entity from Xero** to refine its type, build
    `AccountingEntity[]`, and if non-empty fire one background job per tenant via
    `trigger("sync-external-accounting", payload)`.
@@ -55,10 +61,11 @@ because it uses `crypto` for HMAC.
   raw `payloadText` keyed by `XERO_WEBHOOK_SECRET`, digest **base64**, compared to the
   header via `crypto.timingSafeEqual` (unequal lengths are a mismatch, not a throw).
 - **Fail-closed when unconfigured**: the action returns `401` before verification when
-  `XERO_WEBHOOK_SECRET` is unset (step 2). The env var is still declared optional
-  (`getEnv("XERO_WEBHOOK_SECRET", { isRequired: false, isSecret: true })` in
-  `packages/env/src/index.ts`) so an instance without Xero boots; it just cannot
-  receive Xero webhooks.
+  `XERO_WEBHOOK_SECRET` is unset (step 2). The env var is declared in
+  `packages/env/src/schema.ts` (group `xero`, `secret: true`, with no `required` and no
+  `needed`) and read by `getEnv("XERO_WEBHOOK_SECRET")` in `packages/env/src/index.ts`.
+  The route imports it from `@carbon/auth`, which re-exports `@carbon/env`. So an instance
+  without Xero boots; it just cannot receive Xero webhooks.
 
 ## Event payload (`WebhookSchema`)
 
@@ -85,8 +92,17 @@ The webhook only carries `CONTACT`/`INVOICE`; the route calls back to Xero via
 - **CONTACT** → `fetchContactType` GETs `/Contacts/{id}`, reads `IsCustomer`/`IsSupplier`.
   `customer` → pushes a `customer` entity; `supplier` → `vendor`; **both flags** → pushes
   *two* entities (`customer` + `vendor`). Neither flag → skipped.
-- **INVOICE** → `fetchInvoiceType` GETs `/Invoices/{id}`, reads `Type`:
+- **INVOICE** → `fetchInvoiceForSync` GETs `/Invoices/{id}`, reads `Type`:
   `ACCREC` (receivable) → `invoice`, `ACCPAY` (payable) → `bill`.
+- **Payment accelerator**: Xero sends no payment webhook, but paying an invoice fires an
+  INVOICE UPDATE. `fetchInvoiceForSync` also returns the invoice's `Payments[]` (Xero drops
+  voided payments from it). For each `PaymentID` the route pushes one `payment` entity with
+  `operation: "update"`. The entity id is `getXeroBillPaymentSyncEntityId(invoiceId,
+  paymentId)` for a bill (`bill:` prefix) or `getXeroPaymentSyncEntityId(invoiceId,
+  paymentId)` for an invoice (both in `providers/xero/entities/payment.ts`). The pull
+  sweep (`XeroProvider.listChanges` over `/Payments`) stays the correctness guarantee;
+  ledger idempotency dedupes the two. The route marks the ACCPAY case `VERIFY` against the
+  Xero sandbox. Void detection is left to the sweep.
 - `eventType` is lowercased into `AccountingEntity.operation` (`create|update|delete`).
 
 These syncronous fetches mean the handler is **not** a fast ack-only endpoint; a slow
@@ -108,10 +124,12 @@ downstream syncer architecture see `accounting-sync-handlers.md`.
 - Validation/parse failures return **401** (not 400) — only the intent handshake and the
   fully-processed case return 200.
 - The route fans out extra synchronous Xero GETs per event before responding.
+- A tenant whose integration has sync turned off is skipped without an error entry, so
+  the response can read `success: true, jobsTriggered: 0` for a delivery that did nothing.
 - `getAccountingIntegration` resolves by `companyId` first, then by the stored tenant
   (`metadata->credentials->>tenantId` or `metadata->credentials->providerMetadata->>tenantId`,
   each a separate parameterised `.eq()`; more than one company on one tenant resolves
-  to nothing). Because a company-id match also succeeds, the route re-checks the
+  to nothing, so it throws). Because a company-id match also succeeds, the route re-checks the
   resolved row's own tenant against the event (step 6).
 - Only `CONTACT` and `INVOICE` categories are accepted by the schema; any other category
   fails zod validation → 401.

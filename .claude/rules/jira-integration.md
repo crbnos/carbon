@@ -23,7 +23,8 @@ Code lives in `packages/ee/src/jira/`. Two export subpaths (see `packages/ee/pac
   category "Project Management", `active: !!JIRA_CLIENT_ID`). Registered in
   `packages/ee/src/index.ts` `integrations[]`. OAuth scopes: `read:jira-user`,
   `read:jira-work`, `write:jira-work`, `offline_access`. Also renders the
-  `SetupInstructions` (webhook URL + which events to subscribe + the "Secret" field).
+  `SetupInstructions` (webhook URL, the events "Issue updated" and "Issue deleted",
+  and the "Secret" field). Without "Issue deleted", a deleted Jira issue keeps its link.
   One setting: `webhookSigningSecret` (optional, `type: "secret"`, vaulted via
   `SECRET_KEYS.jira`; an empty field keeps the stored value). The drawer is only
   reachable after the OAuth install, so its Update button never installs Jira
@@ -46,7 +47,10 @@ Code lives in `packages/ee/src/jira/`. Two export subpaths (see `packages/ee/pac
 - `lib/richtext.ts` — `adfToTiptap` / `tiptapToAdf` (Jira uses ADF; Carbon notes are
   Tiptap) + `TiptapDocument` type. Jira description ⇄ Carbon task `notes`.
 - `lib/types.ts` — Zod schemas + types (`JiraIssue`, `JiraCredentials`, `JiraRemoteLink`, …).
-- `hooks.server.ts` — `jiraHealthcheck` (delegates to `client.healthcheck`).
+- `hooks.server.ts` — `jiraHealthcheck` (delegates to `client.healthcheck`),
+  `jiraOnInstall` (registered as both `onInstall` and `onUpdate` in
+  `packages/ee/src/hooks.server.ts`; converges the `jira-issue-sync` subscriptions) and
+  `jiraOnUninstall` (deletes them).
 
 ## Credentials
 
@@ -82,7 +86,8 @@ Every write and delete uses `getCarbonServiceRole()` (`writeLinks`,
   pulls the issue's fields, pushes the task's notes as the description, then a Carbon
   remote link); DELETE unlinks (Carbon DB first, then best-effort remote-link cleanup —
   finds the Carbon link by `application.name === "Carbon"` or
-  `globalId.startsWith("carbon-")`, not by reconstructing the URL); GET searches issues.
+  `globalId.startsWith("carbon-")`, not by reconstructing the URL); GET searches issues
+  (`searchIssues`; an empty `search` returns the most recent issues).
 - `integrations.jira.issue.create.ts` — POST creates a new issue (notes→ADF description)
   then links it (`linkNewIssue`); GET lists projects, and for a `projectKey` returns issue types +
   assignable users filtered to Carbon employees.
@@ -134,10 +139,10 @@ In Progress→`indeterminate`, Completed/Skipped→`done`. Jira changes status v
 ## UI (`apps/erp/app/components/ActionTasks/Jira/`)
 
 `IssueDialog.tsx` (tabbed Link/Create — resets tab to "link" on close, closes after
-unlink), `LinkIssue.tsx`, `CreateIssue.tsx`, shared by `IssueTask.tsx` and
-`ChangeNoticeActions.tsx`, rendered only when `integrations.has("jira")`. The dialog
-reads the record's `jiraIssue` (the link's `metadata`) and shows a refusal from
-`metadata.sync.refused`.
+unlink), `LinkIssue.tsx`, `CreateIssue.tsx`, shared by `IssueTask.tsx`,
+`ChangeNoticeActions.tsx` and the project element page (`ElementView.tsx`), rendered
+only when `integrations.has("jira")`. The dialog reads the record's `jiraIssue` (the
+link's `metadata`) and shows a refusal from `metadata.sync.refused`.
 
 ## Notes
 

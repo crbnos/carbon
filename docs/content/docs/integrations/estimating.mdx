@@ -36,6 +36,8 @@ Connect with an **API key** and a **webhook signing secret**. The API key authen
 
 Carbon stores imported <Term id="quote">quotes</Term> and <Term id="bom">BOMs</Term> as records that can be converted into <Term id="sales-order">sales orders</Term> and <Term id="job">jobs</Term>.
 
+An imported quote or sales order takes its location from the Paperless Parts facility it is sent from, matched by name. If no Carbon location has that name, Carbon uses the company's first location. A Paperless Parts contact that Carbon has not seen before reuses a Carbon contact with the same email when that contact is already on the customer, or when it is the only contact with that email. Otherwise Carbon creates a new contact.
+
 ## Related
 
 <Cards>

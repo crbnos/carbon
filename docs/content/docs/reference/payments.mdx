@@ -3,7 +3,7 @@ title: Payments
 description: Cash receipts, disbursements, and credit or debit memos — the posted transactions that settle AR and AP.
 ---
 
-A **payment** is a posted cash transaction that settles receivables or payables. A **Receipt** records incoming cash; a **Disbursement** records outgoing cash. A **credit or debit memo** adjusts a balance without moving cash. Payments and memos are independent documents with separate lifecycles, but both apply to invoices through an [invoice settlement](/docs/reference/invoices#settling-an-invoice). See [Invoices](/docs/reference/invoices) for the invoice-side view.
+A **payment** is a posted cash transaction that settles receivables or payables. A **Receipt** records incoming cash; a **Disbursement** records outgoing cash. A **credit or debit memo** adjusts a balance without moving cash. Payments and memos are independent documents with separate lifecycles, but both apply to invoices through an [invoice settlement](/docs/reference/invoices#settling-an-invoice). See [Invoices](/docs/reference/invoices) for the invoice-side view. When customers pay through [Stripe Connect](/docs/integrations/payments#stripe-connect), Carbon records their receipts for you.
 
 <Callout type="note">
 A payment is a transaction record, not an invoice field. Create the payment, stage its invoice applications, and post it. **Paid** is a derived invoice status based on posted settlements.

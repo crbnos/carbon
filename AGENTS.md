@@ -134,17 +134,24 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Changelog entries (authoring + the feed) | `.claude/rules/changelog-authoring.md` |
 | Writing/shipping a changelog entry (end to end) | `.claude/skills/changelog-entry/SKILL.md` |
 | Billing / Stripe | `.claude/rules/billing-system.md` + `packages/stripe/AGENTS.md` |
+| Stripe Connect (connected accounts, sending invoices through Stripe, recording Stripe payments) | `packages/ee/src/stripe-connect/AGENTS.md` + `packages/stripe/AGENTS.md` |
 | Deployment (SST) | `.claude/rules/sst-deployment-infrastructure.md` |
 | Audit log system | `.claude/rules/audit-log-system.md` |
 | Shipments / receipts UI | `.claude/rules/shipments-receipts-ui-patterns.md` |
 | AI chat / SDK | `.claude/rules/chat-ai-sdk-info.md` |
 | Docs content, glossary, in-app agent knowledge base | `.claude/rules/agent-knowledge-base.md` + `docs/content/AGENTS.md` |
 | **Integrations** | |
+| Adding or changing an integration (registry, config, settings, OAuth, secrets) | `.claude/rules/integrations-framework.md` |
 | Ramp integration (charges, accounting-provider sync) | `.claude/rules/ramp-integration.md` |
 | Jira integration | `.claude/rules/jira-integration.md` + `.claude/rules/issue-sync.md` |
 | Linear integration | `.claude/rules/linear-integration.md` + `.claude/rules/issue-sync.md` |
 | OEE providers / machine monitoring (Sense, loaded operation, unattributed machine time) | `.claude/rules/oee-provider.md` + `apps/erp/app/modules/production/AGENTS.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
+| Onshape (CAD sync connections and the Onshape panel: push parts, assemblies and releases) | `.claude/rules/onshape-panel.md` |
+| Mount integration (quality, publish actions) | `.claude/rules/mount-integration.md` |
+| Paperless Parts integration (quotes into sales orders) | `.claude/rules/paperless-parts-integration.md` |
+| Slack integration (assistant, notifications, workflow step) | `.claude/rules/slack-integration.md` + `.claude/rules/workflow-integrations.md` |
+| Email, Gmail and Google Calendar integrations (delivery method, Gmail sending, email-notification gate) | `.claude/rules/email-integrations.md` + `.claude/rules/workflow-integrations.md` + `.claude/rules/email-design.md` |
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
 | Shared dev containers (`crbn-shared`, database per worktree, pg_cron/pg_net forwarding, `--isolated`) | `.claude/rules/dev-shared-services.md` |
 | Client cache (`cachedClientLoader`, `useLoaderQuery`, `useAction`) | `.claude/rules/clientAction-patterns.md` + `packages/query/AGENTS.md` |

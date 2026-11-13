@@ -33,15 +33,18 @@ import {
 } from "@carbon/ee/slack.server";
 import { ERP_URL } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
+import { acquireLease, releaseLease } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import {
   enrollImplementation,
   getImplementationHub
 } from "@carbon/onboarding/server";
 import {
+  ConnectAccountSetupError,
   createConnectAccountLink,
   getOrCreateConnectAccount,
-  isStaleConnectAccountError
+  isStaleConnectAccountError,
+  isStripeError
 } from "@carbon/stripe/connect.server";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
@@ -576,6 +579,25 @@ export const startStripeConnectOnboarding = defineServiceFn({
     }
     const email = user.data.email;
 
+    // One onboarding start per company at a time: two clicks (two tabs, two
+    // admins) would each find no account and create one, and the second save
+    // would orphan the first. The second waits for the first, then reuses the
+    // account it saved. Without Redis it goes ahead unguarded: a rare
+    // duplicate beats refusing onboarding.
+    const leaseKey = `stripe-connect:onboarding:${companyId}`;
+    let lease = await acquireLease(leaseKey, 30_000);
+    for (let attempt = 0; lease.status === "held" && attempt < 40; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      lease = await acquireLease(leaseKey, 30_000);
+    }
+    if (lease.status === "held") {
+      return ctx.error(
+        "conflict",
+        "Stripe onboarding is already starting for this company. Try again in a moment."
+      );
+    }
+    const leaseOwner = lease.status === "acquired" ? lease.owner : null;
+
     try {
       let stripeAccountId = await getOrCreateConnectAccount(
         client,
@@ -628,22 +650,44 @@ export const startStripeConnectOnboarding = defineServiceFn({
       if (saved.error) {
         // Without the account id the callback fails with "No Stripe Connect
         // account found", after onboarding against an unrecorded account.
+        // Logged here and returned without its cause: an internal error's
+        // cause is shown to the user as its reason.
+        logger.error("Failed to save the Stripe Connect account id", {
+          companyId,
+          stripeAccountId,
+          error: saved.error
+        });
         return ctx.error(
           "internal",
-          `Failed to save Stripe Connect account id: ${saved.error.message}`,
-          saved.error
+          "Failed to save the Stripe Connect account"
         );
       }
 
       return { redirectUrl };
     } catch (error) {
+      if (error instanceof ConnectAccountSetupError) {
+        return ctx.error("validation", error.message, error);
+      }
+      // Only Stripe's own messages reach the user (they name what Stripe
+      // refused). Anything else can carry an account id or a database error,
+      // so it is logged and replaced.
+      if (!isStripeError(error)) {
+        logger.error("Failed to start Stripe Connect onboarding", {
+          companyId,
+          error
+        });
+        return ctx.error(
+          "internal",
+          "Failed to start Stripe Connect onboarding"
+        );
+      }
       const stripeError = error as {
         message?: string;
         code?: string;
         raw?: { code?: string };
       };
       const message =
-        stripeError.message || "Failed to initiate Stripe Connect onboarding";
+        stripeError.message || "Failed to start Stripe Connect onboarding";
       // Stripe's code for "your own account is not a Connect platform": an
       // administrator has to fix the platform, so a retry never helps.
       if (
@@ -653,6 +697,10 @@ export const startStripeConnectOnboarding = defineServiceFn({
         return ctx.error("unavailable", message, error);
       }
       return ctx.error("internal", message, error);
+    } finally {
+      if (leaseOwner) {
+        await releaseLease(leaseKey, leaseOwner).catch(() => undefined);
+      }
     }
   }
 });

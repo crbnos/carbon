@@ -74,12 +74,17 @@ async function cutOverAfterPosting(f: Fixture) {
     .execute();
 }
 
-async function voidLines(f: Fixture, paymentId: string) {
+async function voidLines(
+  f: Fixture,
+  paymentId: string,
+  { retainFee }: { retainFee?: boolean } = {}
+) {
   const { journalId } = await postPaymentTransaction(f.db, {
     ...f.args,
     today: "2026-09-12",
     type: "void",
-    paymentId
+    paymentId,
+    retainFee
   });
   const lines = await f.db
     .selectFrom("journalLine")
@@ -192,6 +197,54 @@ databaseTest(
       expect(
         lines.find((line) => line.accountId === f.account("bank"))?.amount
       ).toEqual(-148);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a void that keeps the processor fee books the fee again, paid from the bank",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      // Stripe refunds the 165 EUR receipt (150 base) and keeps its 2.2 EUR
+      // (2 base) fee: the books lose the whole 150 of cash, of which 2 stays
+      // the fee expense.
+      const { paymentId, feeAccount } = await postWithFee(f, { mapping: true });
+
+      expect(await voidLines(f, paymentId, { retainFee: true })).toEqual([
+        {
+          accountId: f.account("bank"),
+          amount: -2,
+          description: "Bank / Cash (processing fee kept)"
+        },
+        {
+          accountId: feeAccount,
+          amount: 2,
+          description: `${FEE_DESCRIPTION} (kept by the processor)`
+        },
+        {
+          accountId: f.account("control"),
+          amount: 100,
+          description: "VOID: Accounts Receivable"
+        },
+        {
+          accountId: f.account("control"),
+          amount: 50,
+          description: "VOID: Accounts Receivable (on-account credit)"
+        },
+        {
+          accountId: f.account("bank"),
+          amount: -148,
+          description: "VOID: Bank / Cash"
+        },
+        {
+          accountId: feeAccount,
+          amount: -2,
+          description: `VOID: ${FEE_DESCRIPTION}`
+        }
+      ]);
     } finally {
       await f.cleanup();
     }

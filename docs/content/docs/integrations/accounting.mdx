@@ -1,9 +1,9 @@
 ---
 title: Accounting
-description: Mirror invoices, bills, and GL journals to Xero, QuickBooks, or Rillet, and keep exchange rates current.
+description: Mirror invoices, bills, and GL journals to Xero or Rillet, and keep exchange rates current.
 ---
 
-Carbon synchronizes accounting data with **Xero**, **QuickBooks Online**, or **Rillet**. Ledger synchronization requires Enterprise Edition or the Carbon Cloud Business plan. The **Exchange Rates** service is available on every plan.
+Carbon synchronizes accounting data with **Xero** or **Rillet**. Ledger synchronization requires Enterprise Edition or the Carbon Cloud Business plan. The **Exchange Rates** service is available on every plan.
 
 ## How the sync works
 
@@ -13,19 +13,21 @@ Once **Sync** is on, Carbon sends **customers**, **vendors**, **items**, **sales
 
 <Callout type="note" title="Journal mirroring is automatic while sync is on">
 While **Sync** is on, Carbon mirrors every automated GL posting to the connected provider. Journals with a `Manual` source do not synchronize.
+
+Some journal types start off: returns, project journals (timesheets, issues, expenses, transfers, burden and close), service orders and service jobs, asset transfers, leases and revenue recognition. They sync after you save the **Posting Sync** tab.
 </Callout>
 
-A provider payment creates a Carbon payment and <Term id="invoice-settlement">invoice settlement</Term>, then posts to Carbon's <Term id="general-ledger">general ledger</Term>. Rillet, Xero and QuickBooks also accept outbound Carbon payments.
+A provider payment creates a Carbon payment and <Term id="invoice-settlement">invoice settlement</Term>, then posts to Carbon's <Term id="general-ledger">general ledger</Term>. Rillet and Xero also accept outbound Carbon payments.
 
 ## Connect a ledger
 
-Xero and QuickBooks Online use **OAuth**. Rillet uses a per-company **API key**. Step-by-step: [Connect Xero](/docs/integrations/setup/xero).
+Xero uses **OAuth**. Rillet uses a per-company **API key**. Step-by-step: [Connect Xero](/docs/integrations/setup/xero) or [Connect Rillet](/docs/integrations/setup/rillet).
 
 <Steps>
   <Step>
   ### Authorize the connection
 
-  Authorize Xero or QuickBooks through OAuth, or enter the Rillet connection fields below.
+  Authorize Xero through OAuth, or enter the Rillet connection fields below.
   </Step>
   <Step>
   ### Configure the sync
@@ -55,11 +57,11 @@ Rillet's connection fields:
   <Field name="API key" required>The Rillet API key that authenticates the connection. Stored as a secret.</Field>
   <Field name="Environment">**Production** (`api.rillet.com`) or **Sandbox** (`sandbox.api.rillet.com`).</Field>
   <Field name="Subsidiary ID">Optional. The Rillet subsidiary (entity) that Carbon posts into, for multi-entity ledgers.</Field>
-  <Field name="Webhook token">Optional secret. Inbound payment write-back stays off until this is set.</Field>
+  <Field name="Webhook token">Optional secret. With it, Rillet tells Carbon about an invoice payment at once. Without it, Carbon still pulls invoice and bill payments every 30 minutes.</Field>
 </FieldTable>
 
-<Callout type="warn" title="QuickBooks Online is not available yet">
-The QuickBooks Online card reads **Not Configured** and cannot be installed. On a self-hosted deployment, Xero needs `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET`; without them the connection fails with *Xero OAuth not configured*. See [Environment variables](/docs/platform/self-hosting/environment-variables). Rillet is always available because it authenticates with a per-company API key.
+<Callout type="warn" title="Self-hosted Xero needs its own OAuth app">
+On a self-hosted deployment, Xero needs `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET`; without them the connection fails with *Xero OAuth not configured*. See [Environment variables](/docs/platform/self-hosting/environment-variables). Rillet is always available because it authenticates with a per-company API key.
 </Callout>
 
 ## Configure the sync
@@ -68,7 +70,7 @@ An accounting integration has four tabs beyond the basic connection settings.
 
 <FieldTable>
   <Field name="Account Mapping">Map each Carbon posting account to a code in the provider's chart of accounts. Posted journals push using the mapped provider account. Use **Suggest with AI** or **Match by code** to fill the map, then resolve anything left unmapped.</Field>
-  <Field name="Dimensions">Map Carbon dimensions to the provider's tracking slots. Xero and QuickBooks expose two slots. Rillet sends every dimension on each line and provisions the matching fields automatically, so the slot editor does not apply to it.</Field>
+  <Field name="Dimensions">Map Carbon dimensions to the provider's tracking slots. Xero exposes two slots. Rillet sends every dimension on each line and provisions the matching fields automatically, so the slot editor does not apply to it.</Field>
   <Field name="Posting Sync">Choose how posted journals reach the ledger (see below).</Field>
   <Field name="Sync Activity">Watch every sync operation and retry the ones that failed (see below).</Field>
 </FieldTable>
@@ -98,6 +100,16 @@ Enable Exchange Rates to refresh currency rates daily. It requires no additional
 <Callout type="info">
 Carbon Cloud retrieves rates from **exchangeratesapi.io** with a **EUR** base, then converts them to each company's base currency.
 </Callout>
+
+<AgentContext>
+Default-off journal types (`POSTING_POLICY` entries with `defaultEnabled: false` in `packages/ee/src/accounting/core/models.ts`): Purchase Return Shipment, Sales Return Receipt, Sales Return Shipment, Timesheet, Project Issue, Project Expense, Project Transfer, Burden, Project Close, Revenue Recognition, Service Order, Service Job, Asset Transfer, Lease, Lease Run. Until the company's stored config enables one, `getJournalPostingPolicyDecision` (`core/posting.ts`) excludes its journals with `SOURCE_TYPE_DISABLED` and the message: Source type "`<type>`" is disabled — enable it in the accounting sync settings to push these journals. Saving the Posting Sync tab (`updatePostingSync`, `apps/erp/app/modules/settings/settings.server.ts`) writes `enabled: true` for every journal source type except Manual, so a save turns all of them on. `Manual` and `Opening Balance` journals never sync.
+
+Service job invoice lines: Carbon credits their revenue to the Service Revenue account default, so the synced invoice line uses the Service Revenue account from the posted journal, not the Sales account. Xero codes the line with that account; Rillet uses a second synthetic product for it. Warnings that park the invoice (`UNMAPPED_ACCOUNTS`):
+- "Cannot sync invoice: its posted journal does not name exactly one Service Revenue account — it is absent, posted to more than one account, or not a Revenue leaf account in the company group"
+- Xero only: "Cannot sync invoice: original Service Revenue account has no Xero mapping". Fix it on the Account Mapping tab, then retry in Sync Activity.
+
+Customer and vendor sync sends the email of a linked contact that has one. A contact's email is optional, and contacts with an email are read first (`contactsWithEmailFirst`, `core/utils.ts`).
+</AgentContext>
 
 ## Related
 

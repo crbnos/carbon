@@ -1,0 +1,116 @@
+---
+title: Connect Rillet
+plan: Business
+description: Connect your Rillet organization to Carbon with an API key, then turn on payment updates.
+---
+
+Connect Rillet to send Carbon's customers, vendors, sales invoices, bills and
+automated journals to your Rillet ledger, and bring payments recorded in Rillet
+back into Carbon.
+
+Rillet does not use a sign-in screen. You paste a Rillet API key into Carbon,
+and each Carbon company keeps its own key.
+
+**You need:** permission to change Settings in Carbon, and a Rillet login that
+can create API keys and webhooks in your Rillet organization.
+
+## Connect Rillet
+
+<Steps>
+  <Step>
+  ### Open Rillet in Carbon
+
+  Go to **Settings → Integrations** and press **Install** on the **Rillet** card.
+  Carbon opens the Rillet form, with the setup instructions at the top.
+
+  <Screenshot label="Carbon Settings → Integrations, the Rillet form with its setup instructions, API key and Environment fields" ratio="tall" />
+  </Step>
+  <Step>
+  ### Create an API key in Rillet
+
+  In Rillet, go to **Organization Settings → API access** and create a key.
+  Paste it into **API key**. Then set **Environment** to the Rillet environment
+  the key belongs to: **Production** (`api.rillet.com`) or **Sandbox**
+  (`sandbox.api.rillet.com`). A key works in one environment only.
+
+  If your Rillet organization has more than one entity, enter the entity's
+  UUID in **Subsidiary ID**. Carbon posts journals, invoices and bills into
+  that subsidiary. Leave it blank for a single-entity organization.
+  </Step>
+  <Step>
+  ### Add Carbon's reference types in Rillet
+
+  In Rillet, go to **Settings → External References** and add two reference
+  types with the slugs `carbon` and `carbon-company`. Rillet has no API for
+  this step, so Carbon cannot do it for you.
+  </Step>
+  <Step>
+  ### Connect the payment webhook (optional)
+
+  In Rillet, go to **Organization Settings → Webhooks** and create a webhook.
+  Point it at the URL in Carbon's setup instructions and subscribe it to
+  invoice payment events. Paste the webhook's token into **Webhook token**.
+  </Step>
+  <Step>
+  ### Install and finish the setup
+
+  Press **Install**. Sync starts off, so nothing reaches Rillet yet. Map your
+  accounts and turn on **Sync**, as shown on the
+  [Accounting](/docs/integrations/accounting#connect-a-ledger) page.
+  </Step>
+</Steps>
+
+<Callout type="warn" title="Invoices need the two reference types">
+Rillet requires external references on Carbon's invoices. Without the `carbon`
+and `carbon-company` reference types, invoices do not post. Customers, vendors
+and bills still sync, but Rillet does not tag them with their Carbon ids.
+</Callout>
+
+## What Carbon does in Rillet
+
+With the API key, Carbon:
+
+- creates and updates customers and vendors
+- posts sales invoices, bills and automated journals
+- reads your chart of accounts, so you can map Carbon accounts to Rillet
+  account codes
+- reads invoice and bill payments recorded in Rillet, and settles the
+  matching Carbon invoice or bill
+
+Carbon checks Rillet for new payments every 30 minutes, with or without the
+webhook. The webhook only makes invoice payments arrive sooner. Bill payments
+always arrive on the 30-minute check.
+
+## Running Carbon on your own servers?
+
+Rillet needs no Carbon-wide setup: there is no app to create and no
+environment variable to set. Each company enters its own API key.
+
+The webhook URL is `https://<your Carbon address>/api/webhook/rillet/<company id>`,
+and Carbon's setup instructions show it with your company id filled in. Rillet
+must be able to reach that address to deliver payment updates.
+
+<AgentContext>
+Source: `packages/ee/src/rillet/config.tsx` (settings, setup instructions, actions), `packages/ee/src/accounting/providers/rillet/provider.ts` (hosts, `validate`, `listChanges`), `apps/erp/app/routes/api+/webhook.rillet.$companyId.ts`, `apps/erp/app/routes/x+/settings+/integrations.$id.tsx` (install action).
+
+- Settings stored per company: `apiKey` (secret, vaulted, required at first install), `environment` (`production` | `sandbox`, default `production`), `subsidiaryId` (optional UUID), `webhookToken` (optional secret, vaulted). An empty secret field on a later save keeps the vaulted value.
+- Install with no API key fails with: "A credential is required to connect Rillet."
+- A new Rillet install writes `metadata.settings.syncEnabled = false`. The Sync switch stays locked until every Required account on the Account Mapping tab is mapped.
+- Health check: `rilletHealthcheck` calls `GET /accounts` with the key. A wrong key or a key from the other environment reads unhealthy.
+- Install and every settings save run `rilletOnInstall` / `onUpdate`, which converge the `rillet-sync` event subscriptions. Uninstall deletes them.
+- The form also offers two actions: **Import customers & vendors** (pulls Rillet customers and vendors into Carbon and links them, so later documents reuse them instead of creating duplicates; works while Sync is off) and **Push customers, vendors & items** (sends every Carbon customer, vendor and item with no Rillet counterpart).
+- Webhook route `POST /api/webhook/rillet/<companyId>`: answers 404 when Rillet is not installed or not active; 401 with "Webhook token not configured" when no token is saved; 401 when a signature header is missing or the HMAC-SHA256 signature (headers `X-Rillet-Signature`, `X-Rillet-Timestamp`, `X-Rillet-Id`, `X-Rillet-Entity`, `X-Rillet-Event`) does not match the token. Only entity `invoice` with event `payment-updated` triggers a sync; other events are acknowledged and ignored. While Sync is off, a verified delivery is acknowledged and ignored. `GET` on the URL returns `{ success: true }` as a reachability check.
+- Payments: the `accounting-pull-sweep` cron (every 30 minutes) pulls Rillet invoice payments (`/invoice-payments`) and bill payments (bills changed since the last pass, then each bill's payments) whether or not a webhook token is set. A payment pulls only for an invoice or bill that Carbon synced (it has a mapping), and only while receivables or payables are in **Documents** mode on the Posting Sync tab.
+- Dimensions: Rillet receives every dimension on every line and Carbon creates the matching Rillet Fields; the slot editor on the Dimensions tab does not apply to Rillet.
+</AgentContext>
+
+## Related
+
+<Cards>
+  <Card title="Accounting" href="/docs/integrations/accounting">
+    What syncs with Rillet, and the settings after you connect.
+  </Card>
+  <Card title="Setup guides" href="/docs/integrations/setup">
+    Connect your other apps.
+  </Card>
+</Cards>

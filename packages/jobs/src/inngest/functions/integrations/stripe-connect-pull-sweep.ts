@@ -27,8 +27,11 @@
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { recordStripeConnectPayment } from "@carbon/ee/stripe-connect.server";
-import type { ConnectInvoice } from "@carbon/stripe/connect.server";
-import { stripe } from "@carbon/stripe/stripe.server";
+import {
+  type ConnectInvoice,
+  isStripeConnectConfigured,
+  listPaidConnectInvoices
+} from "@carbon/stripe/connect.server";
 import { datetime } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import { inngest } from "../../client";
@@ -124,7 +127,7 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
 
             const since = storedCursor ?? fallbackCursor;
 
-            if (!stripe) {
+            if (!isStripeConnectConfigured()) {
               return {
                 companyId,
                 invoicesFound: 0,
@@ -141,23 +144,15 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
             // not just since the raw cursor — see CURSOR_LOOKBACK_SECONDS above.
             const queryFrom = pullWindowStart(since);
 
-            type StripeInvoice = Awaited<
-              ReturnType<typeof stripe.invoices.list>
-            >["data"][number];
-            const invoices: StripeInvoice[] = [];
+            const invoices: ConnectInvoice[] = [];
             let hasMore = true;
             let startingAfter: string | undefined;
 
             while (hasMore) {
-              const page = await stripe.invoices.list(
-                {
-                  status: "paid",
-                  created: { gte: queryFrom },
-                  limit: 100,
-                  ...(startingAfter ? { starting_after: startingAfter } : {})
-                },
-                { stripeAccount: stripeAccountId }
-              );
+              const page = await listPaidConnectInvoices(stripeAccountId, {
+                createdGte: queryFrom,
+                startingAfter
+              });
 
               invoices.push(...page.data);
               hasMore = page.has_more;
@@ -191,7 +186,7 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
                   companyId,
                   stripeAccountId,
                   integrationMetadata: metadata,
-                  stripeInvoice: invoice as ConnectInvoice
+                  stripeInvoice: invoice
                 });
 
                 if (result.status === "recorded") {

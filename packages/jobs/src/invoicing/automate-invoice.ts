@@ -148,6 +148,56 @@ export async function resolveInvoiceAutomation(
   return agreement.data?.effectiveInvoiceAutomation ?? null;
 }
 
+/**
+ * The mode a Send retry (`invoice-automate` with `resend`) uses. Through Stripe
+ * when that is how this invoice is sent: its source's mode, a failed Stripe
+ * send (`sentTo: "Stripe"` with no `sentAt`, stamped by the manual post), or a
+ * Stripe invoice already linked (Stripe sent it and only a later write failed,
+ * so an email would bill the customer twice). Otherwise by email, also for a
+ * mode that never sends and an invoice with no recurring source.
+ */
+export function resendInvoiceMode(params: {
+  configured: InvoiceAutomation | null;
+  sentTo: string | null;
+  hasStripeInvoice: boolean;
+}): "Post and Send via Stripe" | "Post and Email" {
+  return params.configured === "Post and Send via Stripe" ||
+    params.sentTo === "Stripe" ||
+    params.hasStripeInvoice
+    ? "Post and Send via Stripe"
+    : "Post and Email";
+}
+
+/** What `resendInvoiceMode` reads about an invoice's earlier send. */
+export async function getInvoiceSendChannel(
+  client: Client,
+  companyId: string,
+  invoiceId: string
+): Promise<{ sentTo: string | null; hasStripeInvoice: boolean }> {
+  const [invoice, linked] = await Promise.all([
+    client
+      .from("salesInvoice")
+      .select("sentTo")
+      .eq("id", invoiceId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("externalIntegrationMapping")
+      .select("externalId")
+      .eq("entityType", "salesInvoice")
+      .eq("entityId", invoiceId)
+      .eq("integration", STRIPE_CONNECT_INTEGRATION)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (invoice.error) throw new Error(invoice.error.message);
+  if (linked.error) throw new Error(linked.error.message);
+  return {
+    sentTo: invoice.data?.sentTo ?? null,
+    hasStripeInvoice: !!linked.data?.externalId
+  };
+}
+
 /** A drafted recurring invoice that invoice automation still has to run. */
 export type InvoiceToAutomate = {
   invoiceId: string;

@@ -299,7 +299,9 @@ missing, and the BOM lands on the assembly's make methods, sub-assemblies includ
 A push changes only what Onshape changed: lines a previous push wrote are updated or
 removed. A line you added by hand for a part Onshape's BOM also lists is taken over;
 its quantity follows Onshape, and its operation and scrap stay. A hand-added line for
-a part Onshape doesn't list is left alone.
+a part Onshape doesn't list is left alone. The materials of a method's
+**Corrections** are not BOM lines: a push never takes them over, changes or removes
+them.
 
 An assembly with more than 1,500 distinct parts is refused as a whole; **Push this
 level only** pushes its top-level BOM, with each sub-assembly as one line.

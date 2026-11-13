@@ -4,13 +4,15 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
+import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { getRequestOrigin, redirect, redirectExternal } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
-// The integration drawer POSTs and opens the URL it gets back; the callback's
-// `refresh` sends the browser here with a GET, to a new onboarding link.
+// The integration drawer POSTs and opens the URL it gets back. A GET can
+// create a Stripe account, so it is refused from another site; the callback
+// makes the new link itself when Stripe's onboarding link expires.
 async function handle({ request }: { request: Request }) {
   const api = await carbon(request);
   // Stripe sends the browser back here: the public origin, not request.url's.
@@ -45,6 +47,8 @@ async function handle({ request }: { request: Request }) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  // Writes on GET: a link on another site must not trigger it.
+  rejectCrossSiteNavigation(request);
   return handle({ request });
 }
 

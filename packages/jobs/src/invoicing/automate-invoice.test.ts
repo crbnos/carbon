@@ -90,6 +90,7 @@ import {
   invoiceEmailCc,
   invoiceSentStampFailed,
   postSalesInvoiceUnattended,
+  resendInvoiceMode,
   resolveInvoiceAutomation,
   sendPostedInvoiceViaStripe
 } from "./automate-invoice";
@@ -235,6 +236,49 @@ describe("resolveInvoiceAutomation", () => {
     expect(await resolveInvoiceAutomation(client, "co-1", "inv-1")).toBe(
       "Post and Email"
     );
+  });
+});
+
+describe("resendInvoiceMode", () => {
+  const base = (
+    overrides: Partial<Parameters<typeof resendInvoiceMode>[0]> = {}
+  ) => ({
+    configured: null,
+    sentTo: null,
+    hasStripeInvoice: false,
+    ...overrides
+  });
+
+  it("emails an invoice with no recurring source and no earlier Stripe send", () => {
+    expect(resendInvoiceMode(base())).toBe("Post and Email");
+  });
+
+  it("sends through Stripe when the source's mode is Stripe", () => {
+    expect(
+      resendInvoiceMode(base({ configured: "Post and Send via Stripe" }))
+    ).toBe("Post and Send via Stripe");
+  });
+
+  it("sends a manual invoice whose Stripe send failed through Stripe again", () => {
+    expect(resendInvoiceMode(base({ sentTo: "Stripe" }))).toBe(
+      "Post and Send via Stripe"
+    );
+  });
+
+  it("never emails an invoice Stripe already sent, whatever the source says", () => {
+    expect(
+      resendInvoiceMode(
+        base({ configured: "Post and Email", hasStripeInvoice: true })
+      )
+    ).toBe("Post and Send via Stripe");
+  });
+
+  it("emails when the source emails and nothing went to Stripe", () => {
+    expect(
+      resendInvoiceMode(
+        base({ configured: "Post and Email", sentTo: "ap@example.com" })
+      )
+    ).toBe("Post and Email");
   });
 });
 

@@ -1,0 +1,134 @@
+---
+title: Connect Linear
+plan: Business
+description: Connect Linear to Carbon with an API key, plus a webhook so changes made in Linear come back.
+---
+
+Connect Linear to link action tasks on Carbon's quality issues and change notices,
+and project elements, to Linear issues, so the two stay in step.
+
+**You need:** permission to change Settings in Carbon, and a Linear login that can
+create an API key and a webhook. Carbon makes every call to Linear with that API key,
+so it sees only the teams and issues the key's owner can see.
+
+## Connect Linear
+
+<Steps>
+  <Step>
+  ### Press Install in Carbon
+
+  Go to **Settings → Integrations** and press **Install** on the **Linear** card. The
+  Linear integration opens, with its setup instructions and the **API Key** field.
+
+  {/* Replace with /screens/setup-linear-install.png */}
+  <Screenshot label="Carbon Settings → Integrations, the Linear integration open with its setup instructions, webhook URL and API Key field" />
+  </Step>
+  <Step>
+  ### Create an API key in Linear
+
+  In Linear's settings, open **Security and access** and create a new API key. A
+  Linear API key begins with `lin_api`.
+  </Step>
+  <Step>
+  ### Paste the key into Carbon
+
+  Paste the key into **API Key** and press **Install**. The Linear card then says
+  **Installed**.
+  </Step>
+</Steps>
+
+## Recommended: updates from Linear
+
+Without a webhook, changes made in Linear don't come back to Carbon. Changes made in
+Carbon still reach Linear. Add the webhook so both directions work.
+
+<Steps>
+  <Step>
+  ### Create a webhook in Linear
+
+  In Linear's API settings, under **Webhooks**, press **New Webhook** and give it a
+  label. Paste the webhook URL shown in Carbon's Linear setup instructions into its
+  **URL** field. The webhook must send issue events. Carbon ignores every other kind.
+
+  {/* Replace with /screens/setup-linear-webhook.png */}
+  <Screenshot label="Linear API settings, a new webhook with a label and the Carbon URL" />
+  </Step>
+  <Step>
+  ### Paste the signing secret into Carbon
+
+  After you save the webhook, Linear shows a signing secret on the webhook's detail
+  page. Open the Linear integration in Carbon, paste it into **Webhook Signing
+  Secret** and press **Update**. Carbon then accepts only requests that Linear has
+  signed in the last minute.
+  </Step>
+</Steps>
+
+<Callout type="warn">
+Without a saved signing secret, Carbon still accepts the webhook but cannot tell that
+Linear sent it. Save the secret for every webhook.
+</Callout>
+
+## What Carbon can do in Linear
+
+With your API key, Carbon:
+
+- sees your teams, their members and their workflow states, to set an issue's state
+- finds Linear users by email address, to match assignees
+- sees, searches, creates and updates issues
+- adds a link back to the Carbon record on each linked issue, and removes it when you
+  unlink
+
+<details>
+<summary>The exact Linear API calls, for your Linear admin</summary>
+
+```
+viewer
+teams, team
+users
+workflowStates
+issues, issue, searchIssues
+issueCreate, issueUpdate
+attachments, attachmentCreate, attachmentDelete
+```
+
+</details>
+
+<AgentContext>
+Troubleshooting for the Linear setup.
+
+| What the user sees | Cause and fix |
+| --- | --- |
+| "Linear API Key must start with 'lin_api'" | The pasted value is not a Linear API key. Create a key under Security and access in Linear and paste it. |
+| "A credential is required to connect Linear." | Install was pressed with an empty API Key field. A signing secret alone does not count. |
+| The Linear card shows **Unhealthy** | Carbon's health check (`viewer { id }`) failed with the saved key, for example a revoked key. Paste a new key and press Update. A healthy result is cached for up to 5 hours, so a key revoked later can still show Healthy for a while. |
+| Linear's delivery log shows 400 "Linear is not installed for this company: check the company id in the webhook URL" | The webhook URL has the wrong company id. Copy the URL again from Carbon's Linear setup instructions. |
+| Linear's delivery log shows 400 "The Linear integration is not active for this company" | Linear was uninstalled in Carbon. Install it again. |
+| Linear's delivery log shows 401 | The signing secret in Carbon does not match the webhook, or the delivery is more than 60 seconds old (check the server clock). Copy the secret from the webhook's detail page again. |
+| Linking fails with "This issue is already linked to another record" | One Linear issue links to one Carbon record. Unlink it from the other record first. |
+
+Routes: webhook `POST /api/webhook/linear/<companyId>` (`apps/erp/app/routes/api+/webhook.linear.$companyId.ts`). Non-issue events and issue creates get a 200 and are ignored. Config: `packages/ee/src/linear/config.tsx`.
+</AgentContext>
+
+## Running Carbon on your own servers?
+
+Linear needs no app and no environment variables, so the steps above are the whole
+setup on your own servers too.
+
+Two things differ from Carbon Cloud:
+
+1. Linear must reach your Carbon address over the internet to deliver the webhook.
+   Carbon builds the webhook URL from the address in your browser, so open Carbon at
+   its public address before you copy it.
+2. Keep the server clock correct. With a signing secret saved, Carbon refuses a
+   delivery that is more than one minute from its own time.
+
+## Related
+
+<Cards>
+  <Card title="Project management" href="/docs/integrations/project-management#linear">
+    What Carbon syncs with Linear.
+  </Card>
+  <Card title="Setup guides" href="/docs/integrations/setup">
+    Connect your other apps.
+  </Card>
+</Cards>

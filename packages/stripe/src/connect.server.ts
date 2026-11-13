@@ -12,19 +12,50 @@ import {
   type ConnectInvoiceLineInput,
   expectedConnectInvoiceTotal
 } from "./connect-invoice";
-import { stripe } from "./stripe.server";
 
 export type { ConnectInvoiceLineInput } from "./connect-invoice";
 export { expectedConnectInvoiceTotal } from "./connect-invoice";
 
 const log = getLogger("stripe-connect");
 
+// Every Stripe Connect call (v2 accounts, and the v1 customers, invoices,
+// charges and login links on a connected account) goes through this one client
+// at the SDK's own API version, so the SDK's types describe what Stripe
+// returns. Platform billing (`stripe.server.ts`) stays on its older version
+// until its own Checkout and subscription changes are migrated.
 const stripeConnect = STRIPE_SECRET_KEY
   ? new Stripe(STRIPE_SECRET_KEY, {
       apiVersion: "2026-07-29.dahlia",
       typescript: true
     })
   : null;
+
+/** Whether the platform has a Stripe key, so Connect calls can run. */
+export function isStripeConnectConfigured(): boolean {
+  return stripeConnect !== null;
+}
+
+/**
+ * One page of the connected account's paid invoices created at or after
+ * `createdGte` (Unix seconds), oldest filter first as Stripe lists them.
+ */
+export async function listPaidConnectInvoices(
+  stripeAccountId: string,
+  params: { createdGte: number; startingAfter?: string }
+) {
+  if (!stripeConnect) {
+    throw new Error("Stripe secret key is not configured.");
+  }
+  return stripeConnect.invoices.list(
+    {
+      status: "paid",
+      created: { gte: params.createdGte },
+      limit: 100,
+      ...(params.startingAfter ? { starting_after: params.startingAfter } : {})
+    },
+    { stripeAccount: stripeAccountId }
+  );
+}
 
 function deriveConnectAccountMetadata(account: Stripe.V2.Core.Account) {
   const capabilities = account.configuration?.merchant?.capabilities;
@@ -46,12 +77,25 @@ function deriveConnectAccountMetadata(account: Stripe.V2.Core.Account) {
 }
 
 /**
+ * A refusal to create a Connect account that the user fixes in Carbon (for
+ * example, a company with no country). Its message is written for the user.
+ */
+export class ConnectAccountSetupError extends Error {
+  override name = "ConnectAccountSetupError";
+}
+
+/** Whether `err` came from the Stripe API (its message is Stripe's own). */
+export function isStripeError(err: unknown): boolean {
+  return err instanceof Stripe.errors.StripeError;
+}
+
+/**
  * Whether an error means a previously-created Connect account is no longer
  * usable from the platform's side (disconnected or deleted directly in
  * Stripe), as opposed to a transient failure (network, rate limit, outage).
  *
  * `resource_missing`/403/404 cover the account being gone outright. But an
- * Express account the merchant disconnected via their Stripe dashboard keeps
+ * account the merchant disconnected via their Stripe dashboard keeps
  * answering a bare `retrieve` — the "does not have access to account …
  * (Application access may have been revoked)" error only surfaces on calls
  * that need the deeper platform grant Stripe just pulled (an `include`d
@@ -150,26 +194,32 @@ export async function getOrCreateConnectAccount(
 
   const comp = company.data;
 
+  // Stripe fixes an account's country when it creates it, so a guessed
+  // country would leave a non-US company on a US account for good.
+  if (!comp.countryCode) {
+    throw new ConnectAccountSetupError(
+      "Set your company's country in Company Settings before you connect Stripe."
+    );
+  }
+
   const account = await stripeConnect.v2.core.accounts.create({
     contact_email: comp.email || undefined,
     display_name: comp.name,
     dashboard: STRIPE_CONNECT_ACCOUNT_CONFIG.dashboard,
     identity: {
-      country: comp.countryCode || "US",
+      country: comp.countryCode,
       entity_type: STRIPE_CONNECT_ACCOUNT_CONFIG.entityType,
       business_details: {
         registered_name: comp.name,
         phone: comp.phone || undefined,
-        address: comp.countryCode
-          ? {
-              line1: comp.addressLine1 || undefined,
-              line2: comp.addressLine2 || undefined,
-              city: comp.city || undefined,
-              state: comp.stateProvince || undefined,
-              postal_code: comp.postalCode || undefined,
-              country: comp.countryCode
-            }
-          : undefined
+        address: {
+          line1: comp.addressLine1 || undefined,
+          line2: comp.addressLine2 || undefined,
+          city: comp.city || undefined,
+          state: comp.stateProvince || undefined,
+          postal_code: comp.postalCode || undefined,
+          country: comp.countryCode
+        }
       }
     },
     configuration: {
@@ -281,22 +331,64 @@ export async function getConnectAccountStatus(stripeAccountId: string) {
   }
 }
 
-export async function createExpressDashboardLoginLink(
+const STRIPE_DASHBOARD_URL = "https://dashboard.stripe.com/";
+
+/**
+ * Where the seller views a connected account in Stripe. The dashboard an
+ * account gets is fixed when Stripe creates it, so this reads it from the
+ * account instead of `STRIPE_CONNECT_ACCOUNT_CONFIG`:
+ *
+ * - `full` (accounts created now): the seller signs in to the Stripe Dashboard
+ *   with their own Stripe login. Stripe has no login link for it.
+ * - `express` (accounts created before the switch to `full`): a single-use
+ *   login link to the Express Dashboard. Stripe creates login links for
+ *   Express accounts only.
+ *
+ * The retrieve `include`s the merchant configuration because a bare retrieve
+ * still answers for an account the seller disconnected from Carbon (see
+ * `isStaleConnectAccountError`). The thrown messages are shown to the user.
+ */
+export async function getConnectDashboardUrl(
   stripeAccountId: string
 ): Promise<string> {
-  if (!stripe) {
+  if (!stripeConnect) {
     throw new Error("Stripe secret key is not configured.");
   }
-  const loginLink = await stripe.accounts.createLoginLink(stripeAccountId);
-  return loginLink.url;
+
+  try {
+    const account = await stripeConnect.v2.core.accounts.retrieve(
+      stripeAccountId,
+      { include: ["configuration.merchant"] }
+    );
+
+    if (account.dashboard === "express") {
+      // Login links are a v1 API.
+      const loginLink =
+        await stripeConnect.accounts.createLoginLink(stripeAccountId);
+      return loginLink.url;
+    }
+
+    if (account.dashboard === "full") {
+      return STRIPE_DASHBOARD_URL;
+    }
+
+    log.error("Stripe Connect account has no dashboard Carbon can open", {
+      stripeAccountId,
+      dashboard: account.dashboard ?? null
+    });
+    throw new Error("This Stripe account has no Stripe Dashboard.");
+  } catch (err) {
+    if (isStaleConnectAccountError(err)) {
+      throw new Error("This Stripe account is no longer connected to Carbon.");
+    }
+    throw err;
+  }
 }
 
 // --- Invoicing against a connected account ---
 // Everything below operates on an existing Connect account (see above) to
-// create and send a Stripe invoice on its behalf. Same v1/v2 interop rule as
-// createExpressDashboardLoginLink: Invoicing is a v1-only API surface, so it
-// stays on the shared v1-pinned `stripe` client with `{ stripeAccount }`
-// rather than the v2 `stripeConnect` client used for account management.
+// create and send a Stripe invoice on its behalf. Invoicing is a v1 API, called
+// on the same `stripeConnect` client with `{ stripeAccount }`.
 
 // Stripe expresses amounts in a currency's smallest unit, and the number of
 // decimal places is currency-dependent — ¥1000 is `1000`, not `100000`. Anything
@@ -426,12 +518,12 @@ export async function retrieveConnectCustomer(
   stripeAccountId: string,
   stripeCustomerId: string
 ): Promise<Stripe.Customer | null> {
-  if (!stripe) {
+  if (!stripeConnect) {
     throw new Error("Stripe secret key is not configured.");
   }
 
   try {
-    const customer = await stripe.customers.retrieve(
+    const customer = await stripeConnect.customers.retrieve(
       stripeCustomerId,
       {},
       { stripeAccount: stripeAccountId }
@@ -465,11 +557,11 @@ export async function findConnectCustomersByEmail(
   stripeAccountId: string,
   email: string
 ): Promise<Stripe.Customer[]> {
-  if (!stripe) {
+  if (!stripeConnect) {
     throw new Error("Stripe secret key is not configured.");
   }
 
-  const matches = await stripe.customers.list(
+  const matches = await stripeConnect.customers.list(
     { email, limit: 2 },
     { stripeAccount: stripeAccountId }
   );
@@ -491,7 +583,7 @@ export async function upsertConnectCustomer(
   stripeCustomerId: string | null,
   input: ConnectCustomerInput
 ): Promise<string> {
-  if (!stripe) {
+  if (!stripeConnect) {
     throw new Error("Stripe secret key is not configured.");
   }
 
@@ -510,7 +602,7 @@ export async function upsertConnectCustomer(
   };
 
   if (stripeCustomerId) {
-    const updated = await stripe.customers.update(
+    const updated = await stripeConnect.customers.update(
       stripeCustomerId,
       payload,
       options
@@ -529,7 +621,7 @@ export async function upsertConnectCustomer(
     );
   }
 
-  const created = await stripe.customers.create(
+  const created = await stripeConnect.customers.create(
     {
       ...payload,
       invoice_prefix: toInvoicePrefix(input.readableId)
@@ -614,7 +706,7 @@ async function resolveConnectTaxRateId(
   stripeAccountId: string,
   percentage: number
 ): Promise<string> {
-  if (!stripe) {
+  if (!stripeConnect) {
     throw new Error("Stripe secret key is not configured.");
   }
 
@@ -627,7 +719,7 @@ async function resolveConnectTaxRateId(
   // `list` returns 10 per page by default. Matching against only the first page
   // is how an account ends up with a dozen identical 8.25% rates.
   let match: Stripe.TaxRate | undefined;
-  await stripe.taxRates
+  await stripeConnect.taxRates
     .list({ active: true, inclusive: false, limit: 100 }, options)
     .autoPagingEach((rate) => {
       if (rate.percentage === percentage) {
@@ -638,7 +730,7 @@ async function resolveConnectTaxRateId(
 
   const taxRate =
     match ??
-    (await stripe.taxRates.create(
+    (await stripeConnect.taxRates.create(
       {
         display_name: "Tax",
         description: `Carbon ${percentage}%`,
@@ -665,7 +757,7 @@ export async function createAndSendConnectInvoice(
   hostedInvoiceUrl: string | null;
   invoicePdf: string | null;
 }> {
-  if (!stripe) {
+  if (!stripeConnect) {
     throw new Error("Stripe secret key is not configured.");
   }
 
@@ -773,7 +865,7 @@ export async function createAndSendConnectInvoice(
   // invoice does not pick up unless it passes `pending_invoice_items_behavior:
   // "include"` — and any item left unconsumed silently lands on the next
   // invoice created for that customer. Attaching explicitly avoids both traps.
-  const invoice = await stripe.invoices.create(
+  const invoice = await stripeConnect.invoices.create(
     {
       customer: stripeCustomerId,
       currency,
@@ -805,7 +897,7 @@ export async function createAndSendConnectInvoice(
   // Sequential, not Promise.all: invoice items render in creation order, and a
   // reordered PDF would not match the Carbon invoice beside it.
   for (const [index, item] of items.entries()) {
-    await stripe.invoiceItems.create(
+    await stripeConnect.invoiceItems.create(
       { ...item, invoice: invoice.id! },
       { ...options, idempotencyKey: `${params.idempotencyKey}-item-${index}` }
     );
@@ -815,14 +907,14 @@ export async function createAndSendConnectInvoice(
   // this mapping is complete: whatever it says here is what the customer pays
   // and what `recordStripeConnectPayment` will settle against the Carbon
   // invoice. A silent divergence leaves a permanent residual balance.
-  const draft = await stripe.invoices.retrieve(invoice.id!, {}, options);
+  const draft = await stripeConnect.invoices.retrieve(invoice.id!, {}, options);
   const drift = Math.abs((draft.total ?? 0) - expectedMinor);
   // Carbon rounds tax once over the whole invoice; Stripe rounds per item. Each
   // item can therefore land a single minor unit either way, and Carbon forgives
   // sub-cent residuals (`INVOICE_DUST_THRESHOLD`). Anything past that is a
   // mapping bug, not rounding.
   if (drift > items.length) {
-    await stripe.invoices.del(invoice.id!, {}, options);
+    await stripeConnect.invoices.del(invoice.id!, {}, options);
     throw new Error(
       `the Stripe invoice totals ${fromStripeAmount(draft.total ?? 0, currency)} ${currency.toUpperCase()} but the Carbon invoice totals ${expected.total} — refusing to send`
     );
@@ -836,12 +928,12 @@ export async function createAndSendConnectInvoice(
     });
   }
 
-  const finalized = await stripe.invoices.finalizeInvoice(
+  const finalized = await stripeConnect.invoices.finalizeInvoice(
     invoice.id!,
     {},
     { ...options, idempotencyKey: `${params.idempotencyKey}-finalize` }
   );
-  const sent = await stripe.invoices.sendInvoice(
+  const sent = await stripeConnect.invoices.sendInvoice(
     finalized.id!,
     {},
     { ...options, idempotencyKey: `${params.idempotencyKey}-send` }
@@ -874,7 +966,7 @@ export function constructConnectWebhookEvent({
   body: string;
   signature: string;
 }) {
-  if (!stripe) {
+  if (!stripeConnect) {
     return {
       success: false as const,
       event: null,
@@ -891,7 +983,7 @@ export function constructConnectWebhookEvent({
   }
 
   try {
-    const event = stripe.webhooks.constructEvent(
+    const event = stripeConnect.webhooks.constructEvent(
       body,
       signature,
       STRIPE_CONNECT_WEBHOOK_SECRET
@@ -930,27 +1022,42 @@ export type ConnectInvoicePaymentDetails = {
    */
   settlementCurrency: string | null;
   /**
-   * The realized rate Stripe actually settled this payment's charge(s) at —
-   * `balance_transaction.exchange_rate`, converts FROM the charge's own
-   * currency TO the settlement currency — captured from the same balance
-   * transaction the fee conversion above already reads. `null` when no
-   * conversion happened (charge currency == settlement currency), in which
-   * case the caller should fall back to the invoice's own booked rate.
+   * The rate Stripe settled this payment's charge(s) at, in STRIPE's
+   * direction: `balance_transaction.exchange_rate`, settlement-currency units
+   * per charge-currency unit (charge amount × rate = settlement amount). It is
+   * not Carbon's direction (foreign units per base unit): the caller inverts
+   * it, and only when `settlementCurrency` is the company's base currency.
+   * `null` when no conversion happened (charge currency == settlement
+   * currency).
    */
   exchangeRate: number | null;
+  /**
+   * Every charge behind the invoice was refunded in full (`charge.refunded`).
+   * Stripe leaves such an invoice `paid`, so the caller must not record it as
+   * cash. False when there are no charges.
+   */
+  fullyRefunded: boolean;
+  /**
+   * Every paid payment on the invoice was recorded outside Stripe (marked
+   * paid in the Dashboard: an invoice payment with no charge or payment
+   * intent), so no money moved through Stripe. False when there are none.
+   */
+  paidOutsideStripe: boolean;
 };
 
 /**
  * The charges (and Stripe's fee) behind a paid invoice on a connected account.
  *
- * The shared v1 client is pinned to `2025-06-30.basil`, where `invoice.charge`
- * and `invoice.payment_intent` no longer exist — payments hang off
- * `invoice.payments` as InvoicePayment objects instead. The fee itself only
+ * Since `2025-03-31.basil`, `invoice.charge` and `invoice.payment_intent` no
+ * longer exist — payments hang off `invoice.payments` as InvoicePayment
+ * objects instead. The fee itself only
  * lives on the charge's balance transaction, so each payment costs one extra
  * expanded retrieve.
  *
- * Never throws: a fee we can't resolve returns `feeAmount: 0` with a logged
- * warning, because failing to book a fee must not cost us the payment itself.
+ * Throws only on a transient Stripe failure (rate limit, outage, dropped
+ * connection), so the caller retries. Any other failure returns `feeAmount: 0`
+ * with a logged warning, because failing to book a fee must not cost us the
+ * payment itself.
  */
 export async function getConnectInvoicePaymentDetails(
   stripeAccountId: string,
@@ -961,10 +1068,12 @@ export async function getConnectInvoicePaymentDetails(
     feeAmount: 0,
     feeCurrency: null,
     settlementCurrency: null,
-    exchangeRate: null
+    exchangeRate: null,
+    fullyRefunded: false,
+    paidOutsideStripe: false
   };
 
-  if (!stripe) return empty;
+  if (!stripeConnect) return empty;
 
   const options = { stripeAccount: stripeAccountId };
 
@@ -972,19 +1081,28 @@ export async function getConnectInvoicePaymentDetails(
     // Listed rather than read off the webhook's invoice snapshot: `payments` is
     // an expandable sub-list, so the delivered payload may carry only the first
     // page (or none at all).
-    const payments = await stripe.invoicePayments.list(
+    const payments = await stripeConnect.invoicePayments.list(
       { invoice: invoiceId, limit: 100 },
       options
     );
 
     const chargeIds: string[] = [];
-    let feeMinor = 0;
+    // In whole currency units, not minor units: a converted fee moves between
+    // currencies whose minor units differ (JPY has none, USD has cents).
+    let feeMajor = 0;
     let feeCurrency: string | null = null;
     let settlementCurrency: string | null = null;
     let exchangeRate: number | null = null;
+    let anyChargeKept = false;
+    let paidPayments = 0;
+    let paidOutside = 0;
 
     for (const payment of payments.data) {
       if (payment.status !== "paid") continue;
+      paidPayments++;
+      if (!payment.payment.charge && !payment.payment.payment_intent) {
+        paidOutside++;
+      }
 
       let charge: Stripe.Charge | null = null;
       const source = payment.payment;
@@ -992,7 +1110,7 @@ export async function getConnectInvoicePaymentDetails(
       if (source.charge) {
         const chargeId =
           typeof source.charge === "string" ? source.charge : source.charge.id;
-        charge = await stripe.charges.retrieve(
+        charge = await stripeConnect.charges.retrieve(
           chargeId,
           { expand: ["balance_transaction"] },
           options
@@ -1002,7 +1120,7 @@ export async function getConnectInvoicePaymentDetails(
           typeof source.payment_intent === "string"
             ? source.payment_intent
             : source.payment_intent.id;
-        const paymentIntent = await stripe.paymentIntents.retrieve(
+        const paymentIntent = await stripeConnect.paymentIntents.retrieve(
           paymentIntentId,
           { expand: ["latest_charge.balance_transaction"] },
           options
@@ -1015,6 +1133,7 @@ export async function getConnectInvoicePaymentDetails(
 
       if (!charge) continue;
       chargeIds.push(charge.id);
+      if (!charge.refunded) anyChargeKept = true;
 
       const balanceTransaction = charge.balance_transaction;
       if (balanceTransaction && typeof balanceTransaction !== "string") {
@@ -1029,7 +1148,7 @@ export async function getConnectInvoicePaymentDetails(
           // Same currency, or (rare) no rate to convert with — report the fee
           // as Stripe assessed it. The caller compares feeCurrency against the
           // invoice currency before booking.
-          feeMinor += balanceTransaction.fee;
+          feeMajor += fromStripeAmount(balanceTransaction.fee, txnCurrency);
           feeCurrency = txnCurrency;
         } else {
           // Stripe settled this charge into a different currency than it was
@@ -1041,7 +1160,9 @@ export async function getConnectInvoicePaymentDetails(
           // divide it back out rather than reaching for an unrelated FX rate.
           // feeCurrency becomes the charge's own currency, which for Stripe
           // Invoicing is always the invoice currency.
-          feeMinor += balanceTransaction.fee / balanceTransaction.exchange_rate;
+          feeMajor +=
+            fromStripeAmount(balanceTransaction.fee, txnCurrency) /
+            balanceTransaction.exchange_rate;
           feeCurrency = chargeCurrency;
           exchangeRate = balanceTransaction.exchange_rate;
         }
@@ -1050,12 +1171,30 @@ export async function getConnectInvoicePaymentDetails(
 
     return {
       chargeIds,
-      feeAmount: feeCurrency ? fromStripeAmount(feeMinor, feeCurrency) : 0,
+      feeAmount: feeCurrency
+        ? fromStripeAmount(
+            Math.round(feeMajor * 10 ** currencyExponent(feeCurrency)),
+            feeCurrency
+          )
+        : 0,
       feeCurrency,
       settlementCurrency,
-      exchangeRate
+      exchangeRate,
+      fullyRefunded: chargeIds.length > 0 && !anyChargeKept,
+      paidOutsideStripe: paidPayments > 0 && paidOutside === paidPayments
     };
   } catch (err) {
+    // A rate limit, an outage or a dropped connection passes on the next try.
+    // Thrown, the payment is retried (webhook 500, or the sweep holds its
+    // cursor). Swallowed, it would be booked with no fee and no charge ids,
+    // and a later refund or dispute could not find its invoice.
+    if (
+      err instanceof Stripe.errors.StripeRateLimitError ||
+      err instanceof Stripe.errors.StripeAPIError ||
+      err instanceof Stripe.errors.StripeConnectionError
+    ) {
+      throw err;
+    }
     log.warn("Failed to resolve Stripe Connect invoice payment details", {
       error: err,
       invoiceId,

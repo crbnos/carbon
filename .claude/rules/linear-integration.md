@@ -23,11 +23,17 @@ shared engine in `issue-sync.md`.
   URL `/api/webhook/linear/{companyId}` + where Linear shows the signing secret.
 - **Client:** `packages/ee/src/linear/lib/client.ts` — `LinearClient` over the Linear
   GraphQL API (`https://api.linear.app/graphql`, axios). Singleton `getLinearClient()`.
-  Every method takes `companyId` first; auth header is the raw `apiKey` read from the
-  company's `companyIntegration` row. Methods: `healthcheck`, `listTeams`, `listIssues`
-  (search by term), `getIssueById`, `createIssue`, `updateIssue`, `getUsers` ({email|id}),
+  Every method takes `companyId` first; auth header is the raw `apiKey`, which
+  `getAuthHeaders` reads from Vault (`resolveIntegrationSecrets`, service role) for the
+  company's `companyIntegration` row. Methods: `healthcheck` (`viewer { id }`),
+  `listTeams`, `listIssues` (search by term), `listRecentIssues` (the 10 most recently
+  updated), `getIssueById`, `createIssue`, `updateIssue`, `getUsers` ({email|id}),
   `listTeamMembers`, `getWorkflowState`, `createAttachmentLink`, `listAttachments`,
-  `removeAttachment`.
+  `removeIssueLink`, `removeAttachment`.
+- **Hooks:** `packages/ee/src/linear/hooks.server.ts` — `linearHealthcheck`,
+  `linearOnInstall` (registered as both `onInstall` and `onUpdate` in
+  `packages/ee/src/hooks.server.ts`; converges the `linear-issue-sync` subscriptions) and
+  `linearOnUninstall` (deletes them).
 - **Client fixes to keep:** `getUsers` sends a `UserFilter` (`email: { eqIgnoreCase }`,
   `id: { eq }`) and returns `[]` with no filter; an unfiltered call returns every user.
   `getWorkflowState(companyId, teamId, type)` filters by team AND type and takes the
@@ -77,6 +83,10 @@ One row per linked record, with the issue as `metadata` plus the sync snapshot. 
     the clock and `trigger`).
   - The settings action's "a credential is required" install check ignores
     `WEBHOOK_SIGNING_SECRET_KEY`, so a signing secret alone never satisfies it.
+- Before parsing, the route answers 200 and ignores every event that is not an `Issue`
+  `update` or `remove` (comments, labels, the back-link attachment, issue creates):
+  Linear disables a webhook that keeps failing. Each 400 names its `reason` in the
+  body, which Linear shows in the webhook's delivery log.
 - Webhook body schema is **minimal**: `event.data = { id, assigneeId? }` only (type
   `"Issue"`, action `"update"` or `"remove"`) — `packages/jobs/src/schemas.ts`
   `syncIssueFromLinearSchema`. The full issue is re-fetched, never trusted from the payload.
@@ -88,9 +98,13 @@ One row per linked record, with the issue as `metadata` plus the sync snapshot. 
 ## Outbound: Carbon → Linear
 
 - The POST/DELETE writes below are operations in `apps/erp/app/modules/shared/shared.server.ts`
-  (`createLinearIssue` / `linkLinearIssue` / `unlinkLinearIssue`), gated on the task's module
-  (`actionTaskPermissions`) and refused on a change notice whose workflow is locked.
-- **Link existing** `api+/integrations.linear.issue.link.ts`: GET search issues; POST
+  (`createLinearIssue` / `linkLinearIssue` / `unlinkLinearIssue`), for an NCR action task,
+  a change notice action task or a project element (`entityType`). Each is gated on the
+  record's module (`syncedEntityPermissions`, `@carbon/ee/issue-sync`) and refused on a
+  change notice whose workflow is locked or an element of a Closed project
+  (`editableActionTask`).
+- **Link existing** `api+/integrations.linear.issue.link.ts`: GET search issues
+  (`listIssues`; an empty `search` returns `listRecentIssues`); POST
   `linkExistingIssue` + a back-link attachment; DELETE unlink + best-effort remove the
   Linear attachment.
 - **Create new** `api+/integrations.linear.issue.create.ts`: GET teams (+ team members
@@ -102,10 +116,11 @@ One row per linked record, with the issue as `metadata` plus the sync snapshot. 
 ## UI
 
 `apps/erp/app/components/ActionTasks/Linear/{LinkIssue,CreateIssue,IssueDialog}.tsx`,
-shared by quality tasks (`IssueTask.tsx`) and change notice tasks
-(`ChangeNoticeActions.tsx`). The dialog reads the record's `linearIssue` (the link's
-`metadata`, batch-read by `getIssueActionTasks` / `getChangeNoticeActions`) and shows a
-refusal from `metadata.sync.refused`.
+shared by quality tasks (`IssueTask.tsx`), change notice tasks
+(`ChangeNoticeActions.tsx`) and the project element page (`ElementView.tsx`). The dialog
+reads the record's `linearIssue` (the link's `metadata`, batch-read by
+`getIssueActionTasks` / `getChangeNoticeActions`, and by `getRecordIssueLinks` for an
+element) and shows a refusal from `metadata.sync.refused`.
 
 ## Gotchas
 

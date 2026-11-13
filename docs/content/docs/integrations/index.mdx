@@ -1,6 +1,6 @@
 ---
 title: Integrations
-description: Connect Carbon to your accounting, CAD, project-management, estimating, and messaging tools.
+description: Connect Carbon to your accounting, CAD, project-management, estimating, quality, spend-management, and messaging tools.
 ---
 
 Carbon provides first-party integrations with third-party applications. Enable and configure them per company under **Settings → Integrations**.
@@ -15,13 +15,15 @@ Each integration has a system-wide **definition** and a per-company **activation
 - The **activation** is a `companyIntegration` record: an `active` flag plus a `metadata` object holding
   credentials and settings. Carbon validates this metadata against the definition before activation.
 
-Connections are established one of three ways, depending on the app:
+Connections are established in one of these ways, depending on the app:
 
 | Style | Apps | How |
 | --- | --- | --- |
 | Provider settings | Email | Pick a provider and fill in its fields. |
-| API key | Linear, Paperless Parts, Exchange Rates | Paste a key (and any options). |
-| OAuth | Xero, Jira, Onshape, Slack | Authorize Carbon with the provider; tokens are stored for you. |
+| API key | Linear, Paperless Parts, Rillet, Exchange Rates | Paste a key (and any options). |
+| Client credentials | Mount | Paste the client ID and secret Mount gives you (and any options). |
+| OAuth | Xero, Jira, Onshape, Slack, Ramp | Authorize Carbon with the provider; tokens are stored for you. |
+| Hosted onboarding | Stripe Connect | Carbon creates your Stripe account, then you finish onboarding on Stripe's site. |
 
 <Callout type="note">
 Disconnecting sets `active = false` but retains stored credentials. To remove credentials, clear the integration settings before disconnecting.
@@ -30,14 +32,14 @@ Disconnecting sets `active = false` but retains stored credentials. To remove cr
 ## What's available depends on your deployment
 
 <Callout type="warn">
-Available integrations depend on deployment configuration. **Xero**, **Jira**, and **Onshape** appear only when their OAuth clients are configured server-side; see [Environment variables](/docs/platform/self-hosting/environment-variables). **Slack** is unavailable in controlled (ITAR) environments.
+Available integrations depend on deployment configuration. **Xero**, **Jira**, **Onshape**, and **Ramp** appear only when their OAuth clients are configured server-side; see [Environment variables](/docs/platform/self-hosting/environment-variables). **Stripe Connect** appears only when `STRIPE_SECRET_KEY` is set. **Slack** is unavailable in controlled (ITAR) environments.
 </Callout>
 
 ## Browse by category
 
 <Cards>
   <Card title="Accounting" href="/docs/integrations/accounting">
-    Xero and automatic currency exchange rates.
+    Xero, Rillet and automatic currency exchange rates.
   </Card>
   <Card title="Project management" href="/docs/integrations/project-management">
     Push quality issues to Linear or Jira.
@@ -50,6 +52,15 @@ Available integrations depend on deployment configuration. **Xero**, **Jira**, a
   </Card>
   <Card title="Estimating & quoting" href="/docs/integrations/estimating">
     Pull quotes and BOMs from Paperless Parts.
+  </Card>
+  <Card title="Quality" href="/docs/integrations/quality">
+    Publish Carbon records to Mount.
+  </Card>
+  <Card title="Spend management" href="/docs/integrations/spend-management">
+    Keep purchase orders, bills and card spend in sync with Ramp.
+  </Card>
+  <Card title="Payments" href="/docs/integrations/payments">
+    Get paid on sales invoices by card or ACH through your own Stripe account.
   </Card>
   <Card title="Email" href="/docs/integrations/email">
     Send outbound email through server mail, Resend, or your own SMTP server.

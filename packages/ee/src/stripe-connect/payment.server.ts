@@ -11,6 +11,7 @@ import {
   countedProcessorFee,
   processorFeeAccount
 } from "@carbon/database/payment-processor-fee";
+import { acquireLease, withLease } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import {
@@ -22,6 +23,8 @@ import { datetime, isUniqueViolation } from "@carbon/utils";
 import { fromAbsolute, toCalendarDate } from "@internationalized/date";
 import { PostgresDriver, sql } from "kysely";
 import { createMappingService } from "../accounting/index";
+import { refundedChargePayments } from "./refund-attribution";
+import { carbonSettlementRate } from "./settlement-rate";
 
 const logger = getLogger("ee", "stripe-connect", "payments");
 
@@ -40,6 +43,50 @@ export type StripeConnectPaymentResult =
 export type StripeConnectVoidResult =
   | { status: "voided"; paymentIds: string[] }
   | { status: "skipped"; reason: string };
+
+const INVOICE_LEASE_MS = 60_000;
+const INVOICE_LEASE_RENEW_MS = 20_000;
+const INVOICE_LEASE_WAIT_MS = 250;
+const INVOICE_LEASE_ATTEMPTS = 20;
+
+/**
+ * Runs `work` while this process holds the Stripe invoice's lease. Stripe
+ * sends `invoice.paid` and `invoice.payment_succeeded` together, and the pull
+ * sweep can overlap a webhook: two deliveries reading the same recorded total
+ * would each record the same installment. Recording and voiding share the
+ * lease, so a refund cannot race the payment it reverses. A Redis lease holds
+ * no database connection, which the settlement and posting below each need.
+ * Waits up to about five seconds, then throws so the delivery is retried
+ * (webhook 500, or the sweep holds its cursor). Throws when Redis is down too:
+ * recording without the lease could book the cash twice.
+ */
+async function withStripeInvoiceLease<T>(
+  companyId: string,
+  stripeInvoiceId: string,
+  work: () => Promise<T>
+): Promise<T> {
+  const key = `stripe-connect:invoice:${companyId}:${stripeInvoiceId}`;
+  for (let attempt = 0; attempt < INVOICE_LEASE_ATTEMPTS; attempt++) {
+    const lease = await acquireLease(key, INVOICE_LEASE_MS);
+    if (lease.status === "acquired") {
+      return withLease(
+        key,
+        lease.owner,
+        { leaseMs: INVOICE_LEASE_MS, renewMs: INVOICE_LEASE_RENEW_MS },
+        work
+      );
+    }
+    if (lease.status === "unavailable") {
+      throw new Error(
+        `Redis is unavailable, so Stripe invoice ${stripeInvoiceId} cannot be recorded safely`
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, INVOICE_LEASE_WAIT_MS));
+  }
+  throw new Error(
+    `Another delivery is still processing Stripe invoice ${stripeInvoiceId}`
+  );
+}
 
 /**
  * Record a Stripe Connect invoice payment against its originating Carbon sales
@@ -65,12 +112,55 @@ export type StripeConnectVoidResult =
  *     invoice's current `amount_paid` and what's already been recorded, with
  *     the processing fee prorated to that delta's share of the total.
  *
- * Throws on *fixable* configuration problems (missing bank account, missing
- * service-charge account, missing sequence) so the caller returns non-2xx and
- * Stripe retries once the admin has corrected it. Returns `skipped` for
- * anything a retry could never fix, and for "nothing new to record".
+ * One delivery per Stripe invoice at a time (`withStripeInvoiceLease`).
+ *
+ * Throws on *fixable* problems so the caller returns non-2xx and Stripe
+ * retries: configuration (missing bank account, service-charge account or
+ * sequence), a settlement or posting that failed after the Draft was written
+ * (the retry resumes it), a transient Stripe failure, and a lease another
+ * delivery holds. Returns `skipped` for anything a retry could never fix, and
+ * for "nothing new to record": an invoice marked paid outside Stripe, one
+ * whose charges were all refunded, and one whose amount is already recorded
+ * (Voided payments count, so a refund is never recorded again).
  */
-export async function recordStripeConnectPayment({
+export async function recordStripeConnectPayment(args: {
+  companyId: string;
+  stripeAccountId: string;
+  integrationMetadata: Record<string, unknown>;
+  stripeInvoice: ConnectInvoice;
+}): Promise<StripeConnectPaymentResult> {
+  if (!args.stripeInvoice.id) {
+    return { status: "skipped", reason: "Stripe invoice has no id" };
+  }
+  return withStripeInvoiceLease(args.companyId, args.stripeInvoice.id, () =>
+    recordStripeConnectPaymentNow(args)
+  );
+}
+
+/**
+ * Marks a mapping whose `exchangeRate` is in Carbon's direction (foreign units
+ * per base unit). Mappings written before the fix hold Stripe's own rate.
+ */
+const CARBON_RATE_DIRECTION = "foreign-per-base";
+
+async function companyBaseCurrency(
+  serviceRole: ReturnType<typeof getCarbonServiceRole>,
+  companyId: string
+): Promise<string | null> {
+  const company = await serviceRole
+    .from("company")
+    .select("baseCurrencyCode")
+    .eq("id", companyId)
+    .single();
+  if (company.error || !company.data) {
+    throw new Error(
+      "Failed to load the company's base currency for the Stripe payment"
+    );
+  }
+  return company.data.baseCurrencyCode;
+}
+
+async function recordStripeConnectPaymentNow({
   companyId,
   stripeAccountId,
   integrationMetadata,
@@ -143,11 +233,21 @@ export async function recordStripeConnectPayment({
     "USD"
   ).toUpperCase();
 
-  const amountPaid = fromStripeAmount(stripeInvoice.amount_paid, currencyCode);
+  // Only the money that moved through Stripe is Stripe cash. `amount_paid`
+  // also counts what the seller marked paid outside Stripe; dahlia reports that
+  // part as `amount_paid_off_stripe` (an older webhook payload leaves it out,
+  // and `paidOutsideStripe` below still catches an invoice paid wholly outside).
+  const amountPaid = fromStripeAmount(
+    Math.max(
+      stripeInvoice.amount_paid - (stripeInvoice.amount_paid_off_stripe ?? 0),
+      0
+    ),
+    currencyCode
+  );
   if (amountPaid <= 0) {
     return {
       status: "skipped",
-      reason: `Stripe invoice ${stripeInvoiceId} reported no amount paid`
+      reason: `Stripe invoice ${stripeInvoiceId} reported no amount paid through Stripe`
     };
   }
 
@@ -208,9 +308,11 @@ export async function recordStripeConnectPayment({
         break;
       }
 
-      if (payment.status !== "Voided") {
-        recordedTotal += Number(payment.totalAmount ?? 0);
-      }
+      // A Voided payment still counts. Carbon voids one for a refund or a
+      // lost dispute, and Stripe leaves the invoice `paid`, so leaving it out
+      // would record the returned money again. A person who voided one by
+      // mistake records the payment by hand.
+      recordedTotal += Number(payment.totalAmount ?? 0);
     }
   }
 
@@ -245,6 +347,33 @@ export async function recordStripeConnectPayment({
     amountToRecord = resume.totalAmount;
     const meta = (resume.mapping.metadata ?? {}) as Record<string, unknown>;
     realizedExchangeRate = (meta.exchangeRate as number | null) ?? null;
+    if (
+      realizedExchangeRate !== null &&
+      meta.exchangeRateDirection !== CARBON_RATE_DIRECTION
+    ) {
+      // Recorded before the rate fix: the Draft holds Stripe's own rate, the
+      // wrong way round. It has not been posted, so correct it before it is.
+      realizedExchangeRate = carbonSettlementRate({
+        stripeRate: realizedExchangeRate,
+        settlementCurrency: (meta.settlementCurrency as string | null) ?? null,
+        baseCurrency: await companyBaseCurrency(serviceRole, companyId)
+      });
+      const corrected = await serviceRole
+        .from("payment")
+        .update({
+          exchangeRate:
+            realizedExchangeRate ??
+            (Number(salesInvoice.data.exchangeRate ?? 1) || 1)
+        })
+        .eq("id", paymentId)
+        .eq("companyId", companyId)
+        .eq("status", "Draft");
+      if (corrected.error) {
+        throw new Error(
+          `Failed to correct the exchange rate of Draft payment ${paymentId}`
+        );
+      }
+    }
 
     // The rules a journal rebuilt from the stored payment reads the fee by,
     // so the resumed posting and a later rebuild book the same fee. Every
@@ -304,7 +433,47 @@ export async function recordStripeConnectPayment({
       stripeAccountId,
       stripeInvoiceId
     );
-    realizedExchangeRate = feeDetails.exchangeRate;
+    // Marked paid in the Stripe Dashboard: the money did not move through
+    // Stripe, so it is not Stripe cash. The seller records it in Carbon.
+    if (feeDetails.paidOutsideStripe) {
+      return {
+        status: "skipped",
+        reason: `Stripe invoice ${stripeInvoiceId} was marked paid outside Stripe`
+      };
+    }
+    // Refunded before Carbon recorded it (the refund webhook found nothing to
+    // void): Stripe still reports the invoice paid, but no cash stayed.
+    if (feeDetails.fullyRefunded) {
+      return {
+        status: "skipped",
+        reason: `Every charge behind Stripe invoice ${stripeInvoiceId} was refunded`
+      };
+    }
+    // Stripe's rate is in Stripe's direction, and describes the cash only when
+    // Stripe settled into the base currency (`carbonSettlementRate`). Settled
+    // into any other currency, the cash is booked at the invoice's own rate.
+    if (feeDetails.exchangeRate && feeDetails.settlementCurrency) {
+      const baseCurrencyCode = await companyBaseCurrency(
+        serviceRole,
+        companyId
+      );
+      realizedExchangeRate = carbonSettlementRate({
+        stripeRate: feeDetails.exchangeRate,
+        settlementCurrency: feeDetails.settlementCurrency,
+        baseCurrency: baseCurrencyCode
+      });
+      if (realizedExchangeRate === null) {
+        logger.warn(
+          "Stripe settled the payment into a currency that is not the base currency; booking it at the invoice's exchange rate",
+          {
+            companyId,
+            stripeInvoiceId,
+            settlementCurrency: feeDetails.settlementCurrency,
+            baseCurrencyCode
+          }
+        );
+      }
+    }
 
     // Prorate the fee to this delta's share of the invoice's total collected
     // — feeDetails.feeAmount is the CUMULATIVE fee across every charge behind
@@ -405,6 +574,7 @@ export async function recordStripeConnectPayment({
       feeCurrency: journalFee ? currencyCode : feeDetails.feeCurrency,
       settlementCurrency: feeDetails.settlementCurrency,
       exchangeRate: realizedExchangeRate,
+      exchangeRateDirection: CARBON_RATE_DIRECTION,
       amountRecorded: amountToRecord,
       // The invoice's cumulative amount_paid at the moment THIS row was
       // linked — the running total the next delivery's delta is computed
@@ -428,7 +598,9 @@ export async function recordStripeConnectPayment({
         {
           metadata: mappingMetadata,
           createdBy: SYSTEM_USER,
-          allowDuplicateExternalId: isTopUp
+          // Any earlier mapping holds the invoice's one unique slot, also an
+          // orphaned one or one whose payment was voided.
+          allowDuplicateExternalId: existingMappings.length > 0
         }
       );
     } catch (err) {
@@ -511,17 +683,18 @@ export async function recordStripeConnectPayment({
       });
     } catch (err) {
       // The payment (and, for a fresh record, its mapping) already exist —
-      // only the settlement failed. Leave the Draft in place: it's resumable
-      // by the next delivery (webhook retry, or the pull sweep) via the
-      // `resume` path above, instead of being stranded forever behind the
-      // "already recorded" mapping check.
+      // only the settlement failed. The Draft stays, and the throw makes the
+      // delivery retry (webhook 500, or the sweep holds its cursor); the retry
+      // resumes it through the `resume` path above.
       logger.error("Failed to settle the Stripe Connect payment", {
         error: err,
         companyId,
         paymentId,
         stripeInvoiceId
       });
-      return { status: "recorded", paymentId };
+      throw new Error(
+        `Stripe payment ${paymentId} was recorded but could not be settled against its invoice`
+      );
     }
   } else {
     logger.warn(
@@ -537,16 +710,19 @@ export async function recordStripeConnectPayment({
   );
 
   if (posted.error) {
-    // The payment and its settlement are correct — only the posting failed, so
-    // leave the Draft in place for a human (or the next delivery's resume
-    // path) to post rather than losing the record.
+    // The payment and its settlement are correct — only the posting failed.
+    // The Draft stays, and the throw makes the delivery retry and resume it.
+    // A posting that can never pass (a closed period) keeps failing until a
+    // person posts the Draft or reopens the period; the sweep then moves on.
     logger.error("Failed to post the Stripe Connect payment", {
       error: posted.error,
       companyId,
       paymentId,
       stripeInvoiceId
     });
-    return { status: "recorded", paymentId };
+    throw new Error(
+      `Stripe payment ${paymentId} was recorded but could not be posted: ${posted.error.message}`
+    );
   }
 
   return { status: "recorded", paymentId };
@@ -584,20 +760,38 @@ export async function getStripeInvoiceIdForCharge(
  * Reverse a Stripe Connect payment via `post-payment`'s existing `void` op —
  * a FULL reversal that mirrors every journal line (including the fee line)
  * with a negated amount. Called for a full refund, a lost dispute, or an
- * invoice being voided on Stripe's side. Voids every non-Voided payment
- * mapped to the invoice (installment/partial-payment invoices can have more
- * than one — see `recordStripeConnectPayment`).
+ * invoice being voided on Stripe's side. For a refund or a dispute (`chargeId`)
+ * it voids only the payment that recorded that charge
+ * (`refundedChargePayments`); for a voided invoice, every Posted payment
+ * mapped to it (installment invoices can have more than one).
  *
  * There is no partial-reversal capability — a partial refund has no safe
  * automated GL treatment here and must be handled manually; callers should
  * not invoke this for one.
  */
-export async function voidStripeConnectPayment({
+export async function voidStripeConnectPayment(args: {
+  companyId: string;
+  stripeInvoiceId: string;
+  /**
+   * The refunded or disputed charge. Only the payment that recorded it is
+   * voided (`refundedChargePayments`); without it, every payment on the
+   * invoice is (the invoice was voided).
+   */
+  chargeId?: string;
+}): Promise<StripeConnectVoidResult> {
+  return withStripeInvoiceLease(args.companyId, args.stripeInvoiceId, () =>
+    voidStripeConnectPaymentNow(args)
+  );
+}
+
+async function voidStripeConnectPaymentNow({
   companyId,
-  stripeInvoiceId
+  stripeInvoiceId,
+  chargeId
 }: {
   companyId: string;
   stripeInvoiceId: string;
+  chargeId?: string;
 }): Promise<StripeConnectVoidResult> {
   const serviceRole = getCarbonServiceRole();
   const mappingService = createMappingService(_db, companyId);
@@ -614,7 +808,32 @@ export async function voidStripeConnectPayment({
     };
   }
 
-  const paymentIds = mappings.map((m) => m.entityId);
+  let paymentIds = mappings.map((m) => m.entityId);
+  if (chargeId) {
+    const attributed = refundedChargePayments(
+      mappings.map((m) => {
+        const meta = (m.metadata ?? {}) as Record<string, unknown>;
+        return {
+          paymentId: m.entityId,
+          createdAt: m.createdAt,
+          chargeIds: Array.isArray(meta.chargeIds)
+            ? (meta.chargeIds as string[])
+            : []
+        };
+      }),
+      chargeId
+    );
+    if (attributed.status === "manual") {
+      logger.warn("Stripe Connect refund needs manual handling", {
+        companyId,
+        stripeInvoiceId,
+        chargeId,
+        reason: attributed.reason
+      });
+      return { status: "skipped", reason: attributed.reason };
+    }
+    paymentIds = attributed.paymentIds;
+  }
   const existingPayments = await serviceRole
     .from("payment")
     .select("id, status")
@@ -642,7 +861,9 @@ export async function voidStripeConnectPayment({
     const voided = await posting(
       "post-payment",
       { db: _db, companyId, userId: SYSTEM_USER },
-      { type: "void", paymentId: payment.id }
+      // A refund or a lost dispute (`chargeId`): Stripe keeps its fee, so it
+      // stays an expense. A voided invoice charged nothing.
+      { type: "void", paymentId: payment.id, retainFee: !!chargeId }
     );
 
     if (voided.error) {

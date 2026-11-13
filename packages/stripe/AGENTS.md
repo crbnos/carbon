@@ -52,10 +52,28 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
 - **Redis cache**: subscription state cached by customer ID; `companyPlan` is the durable mirror
 - **GTM forwarding**: `gtm-events.server.ts` forwards invoice events to Google Tag Manager
 - **User-based pricing**: `updateSubscriptionQuantityForCompany()` syncs active user count (excludes `@carbon.ms`)
-- **Stripe API version**: `2025-06-30.basil` on the shared v1 `stripe` client
-  (`2026-07-29.dahlia` on the v2 `stripeConnect` client used for account management).
-  On basil, `invoice.charge` / `invoice.payment_intent` no longer exist — payments
-  hang off `invoice.payments` (see `getConnectInvoicePaymentDetails`)
+- **Stripe API versions — two clients, on purpose**: every Connect call (v2
+  accounts, and the v1 customers, tax rates, invoices, invoice payments, charges
+  and login links on a connected account) goes through `stripeConnect` in
+  `connect.server.ts` at `2026-07-29.dahlia`, the SDK's own version, so the SDK's
+  types describe what Stripe returns. Platform billing (`stripe.server.ts`, the
+  shared `stripe` client) stays on `2025-06-30.basil` behind a `@ts-expect-error`:
+  its types are dahlia's while Stripe answers in basil, and the breaking changes
+  between them are in billing (Discount `coupon` no longer expanded, flexible
+  billing mode the default for new subscriptions, Checkout `ui_mode` values), so
+  moving it is its own migration. Stripe's changelog lists no breaking change
+  between the two for any object Connect uses. Since basil, `invoice.charge` /
+  `invoice.payment_intent` do not exist — payments hang off `invoice.payments`
+  (see `getConnectInvoicePaymentDetails`)
+- **Webhook payload versions**: an endpoint's `api_version` is fixed when it is
+  created, and Stripe never changes it; unset, events come in the account's
+  default version. `stripe.register.ts` pins the platform endpoint to basil and
+  the Connect endpoint to dahlia, and warns when an existing endpoint differs
+  (recreate it to fix; it gets a new signing secret). `stripe.dev.ts` and
+  `stripe.register.ts` subscribe the Connect endpoint to every event
+  `webhook.stripe-connect.ts` handles: `invoice.paid`, `invoice.payment_succeeded`,
+  `invoice.payment_failed`, `invoice.marked_uncollectible`, `invoice.voided`,
+  `charge.refunded`, `charge.dispute.closed`, `account.updated`
 - **Two webhook endpoints, two secrets**: the platform endpoint
   (`/api/webhook/stripe`, `STRIPE_WEBHOOK_SECRET`, verified inside
   `processStripeEvent`) and the Connect endpoint (`/api/webhook/stripe-connect`,
@@ -96,6 +114,15 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
   today or later, are left unset, never replaced with "now"). A retry that
   straddles the company's midnight can still change them; Stripe then refuses
   it (a safe failure, never a duplicate) until the key expires
+- **Connect accounts**: `getOrCreateConnectAccount` creates the account from
+  `STRIPE_CONNECT_ACCOUNT_CONFIG` (`connect.constants.ts`): full Stripe Dashboard,
+  the seller pays Stripe's fees, Stripe carries losses. Stripe fixes the
+  dashboard and responsibilities at creation, so accounts created before the
+  switch from Express keep the Express dashboard and the platform keeps paying
+  their fees and covering their losses. `getConnectDashboardUrl` reads the
+  account's own `dashboard`: Express gets a single-use login link (Stripe makes
+  login links for Express accounts only), full gets `https://dashboard.stripe.com/`,
+  where the seller signs in with their own Stripe login
 - **Connect customers**: `upsertConnectCustomer` (create/update),
   `retrieveConnectCustomer` (null on missing OR `deleted`, so a stale mapping
   degrades instead of throwing), `findConnectCustomersByEmail` (`customers.list`,

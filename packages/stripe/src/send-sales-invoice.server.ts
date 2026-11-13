@@ -352,7 +352,7 @@ export async function sendPostedSalesInvoiceViaStripe(args: {
         .select("*")
         .eq("id", invoiceId)
         .eq("companyId", companyId)
-        .single(),
+        .maybeSingle(),
       // The view has no companyId; it is only read once the header above is
       // confirmed to belong to this company (an unscoped header throws).
       serviceRole
@@ -370,6 +370,18 @@ export async function sendPostedSalesInvoiceViaStripe(args: {
       error: salesInvoice.error
     });
     throw new Error("Failed to get sales invoice");
+  }
+
+  // A failed read must stop the send. Read as "no lines" or "no freight", it
+  // would bill the customer the wrong total, and the total check below is
+  // computed from the same read, so it would not catch it.
+  if (invoiceLines.error || shipment.error) {
+    logger.error("Failed to read the sales invoice lines or freight", {
+      companyId,
+      invoiceId,
+      error: invoiceLines.error ?? shipment.error
+    });
+    throw new Error("Failed to read the sales invoice lines");
   }
 
   const invoice = salesInvoice.data;
