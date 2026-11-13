@@ -420,7 +420,7 @@ the gate used in every loader/action. Two paths:
      `permissions:${userId}`; on miss, fetched via the `get_claims(uid, company)` RPC
      (`getCarbonServiceRole`) and cached. `makePermissionsFromClaims` shapes the result.
    - `getUserClaims` is additionally memoized **per read request** via
-     `oncePerRead` (`@carbon/logger/middleware.server`), so the several loaders a
+     `oncePerRead` (`@carbon/logger/context.server`), so the several loaders a
      page matches share one Redis GET. Read-gated on purpose: an action and its
      loader revalidation run in the same request, and memoizing there could let a
      gate pass on claims the action just revoked. The Supabase clients

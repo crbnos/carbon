@@ -246,7 +246,7 @@ async function listForMessage(
   try {
     return await read();
   } catch (error) {
-    logger.warn("Failed to list Mount options for a settings message", {
+    logger.warning("Failed to list Mount options for a settings message", {
       companyId,
       error
     });

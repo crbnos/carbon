@@ -221,8 +221,8 @@ export function extractQboErrorDetails(
 }
 
 /**
- * Creates, logs and throws an AccountingApiError from a failed QBO
- * response (parallel to throwXeroApiError).
+ * Throws an AccountingApiError from a failed QBO response (parallel to
+ * throwXeroApiError). The caller that handles it logs it.
  */
 export function throwQboApiError(
   operation: string,
@@ -234,19 +234,7 @@ export function throwQboApiError(
     response.data
   );
 
-  const error = new AccountingApiError("quickbooks", operation, details);
-
-  logger.error("QuickBooks Online API error", {
-    operation,
-    statusCode: details.statusCode,
-    statusText: details.statusText,
-    providerErrorType: details.providerErrorType,
-    providerErrorCode: details.providerErrorCode,
-    providerMessage: details.providerMessage,
-    validationErrors: details.validationErrors
-  });
-
-  throw error;
+  throw new AccountingApiError("quickbooks", operation, details);
 }
 
 /** The Intuit fault code carried by a thrown AccountingApiError, if any. */

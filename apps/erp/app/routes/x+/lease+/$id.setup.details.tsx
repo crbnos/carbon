@@ -7,7 +7,6 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
@@ -26,8 +25,6 @@ import { LeaseDetailsForm } from "~/modules/purchasing/ui/Leases";
 import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "lease-setup-details");
 
 /** Saves a Draft's details from setup step 1 and moves on to Assets. New
  *  dates move every asset's payment rows: `updateDraftLease` cuts them again
@@ -97,16 +94,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       } as Json
     });
   } catch (err) {
-    logger.error("lease details were not saved", {
-      companyId,
-      leaseId: id,
-      error: err
-    });
     throw redirect(
       path.to.leaseSetup(id, "details"),
       await flash(
         request,
-        error(err, getErrorMessage(err, "Failed to update lease"))
+        error(err, getErrorMessage(err, "Failed to update lease"), {
+          leaseId: id
+        })
       )
     );
   }

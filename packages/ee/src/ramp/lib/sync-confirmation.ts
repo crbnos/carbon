@@ -96,7 +96,7 @@ export async function confirmSyncs(
         successful: args.successful.length,
         failed: args.failed.length,
         idempotencyKey,
-        error: err.message
+        error: err
       });
       return;
     }

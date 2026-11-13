@@ -40,7 +40,7 @@ export async function getTravelerTarget(
   if (error) {
     log.error("get_traveler_target failed", {
       trackedEntityId: args.trackedEntityId,
-      error: error.message
+      error
     });
     return null;
   }

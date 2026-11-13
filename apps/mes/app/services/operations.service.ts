@@ -812,7 +812,7 @@ export async function finishJobOperation(
     .select("id, jobId");
 
   if (!result.error && result.data.length === 0) {
-    log.warn("finishJobOperation: job operation not found in company", {
+    log.warning("finishJobOperation: job operation not found in company", {
       companyId: args.companyId,
       jobOperationId: args.jobOperationId
     });
@@ -3004,7 +3004,7 @@ export async function insertAttributeRecord(
     .maybeSingle();
   if (step.error) return { error: step.error, refusal: null };
   if (!step.data) {
-    log.warn("insertAttributeRecord: step not found in company", {
+    log.warning("insertAttributeRecord: step not found in company", {
       companyId: data.companyId,
       jobOperationStepId: data.jobOperationStepId
     });
@@ -3392,7 +3392,7 @@ async function postEventTime(
       error: posted.error
     });
   } else if (posted.data.success === false) {
-    log.warn("A production event was not posted", {
+    log.warning("A production event was not posted", {
       companyId: caller.companyId,
       productionEventId,
       reason: posted.data.reason
@@ -3546,16 +3546,19 @@ async function verifyProductionEventRefs(
   ].filter(Boolean) as string[];
 
   if (missing.length > 0) {
-    log.warn("startProductionEvent: referenced record not found in company", {
-      companyId,
-      missing,
-      jobOperationId: args.jobOperationId,
-      workCenterId: args.workCenterId,
-      jobOperationBatchId: args.jobOperationBatchId,
-      trackedEntityId: args.trackedEntityId,
-      error:
-        operation.error ?? workCenter?.error ?? batch?.error ?? entity?.error
-    });
+    log.warning(
+      "startProductionEvent: referenced record not found in company",
+      {
+        companyId,
+        missing,
+        jobOperationId: args.jobOperationId,
+        workCenterId: args.workCenterId,
+        jobOperationBatchId: args.jobOperationBatchId,
+        trackedEntityId: args.trackedEntityId,
+        error:
+          operation.error ?? workCenter?.error ?? batch?.error ?? entity?.error
+      }
+    );
     return { ok: false, message: `${missing[0]} not found` };
   }
 

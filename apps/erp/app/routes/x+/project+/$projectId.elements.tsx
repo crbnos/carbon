@@ -204,14 +204,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (elements.error) {
-    logger.error("Failed to load project elements", {
-      companyId,
-      projectId,
-      error: elements.error
-    });
     throw redirect(
       path.to.projects,
-      await flash(request, error(elements.error, "Failed to load elements"))
+      await flash(
+        request,
+        error(elements.error, "Failed to load elements", { projectId })
+      )
     );
   }
   // Verification reads every element: a filter could hide an input.

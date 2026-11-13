@@ -1412,7 +1412,7 @@ export async function getActiveCustomerPortal(
     return { refusal: "error" };
   }
   if (!portal.data?.customerId) {
-    logger.warn("Customer portal refused: notFound", { id });
+    logger.warning("Customer portal refused: notFound", { id });
     return { refusal: "notFound" };
   }
 
@@ -1420,7 +1420,7 @@ export async function getActiveCustomerPortal(
     feature: "CUSTOMER_PORTALS"
   });
   if (!hasPlan) {
-    logger.warn("Customer portal refused: plan", {
+    logger.warning("Customer portal refused: plan", {
       id,
       companyId: portal.data.companyId
     });
@@ -1432,7 +1432,8 @@ export async function getActiveCustomerPortal(
     datetime.timestamp()
   );
   if (refusal) {
-    logger.warn(`Customer portal refused: ${refusal}`, {
+    logger.warning("Customer portal refused: {refusal}", {
+      refusal,
       id,
       companyId: portal.data.companyId
     });
@@ -14743,10 +14744,13 @@ export async function emailDigitalQuoteOrder(
   const companyId = ctx.company.id;
   const email = args.acceptedByEmail.trim();
   if (!z.string().email().safeParse(email).success) {
-    logger.warn("Skipped the order email: the acceptor's email is not valid", {
-      companyId,
-      salesOrderId: args.salesOrderId
-    });
+    logger.warning(
+      "Skipped the order email: the acceptor's email is not valid",
+      {
+        companyId,
+        salesOrderId: args.salesOrderId
+      }
+    );
     return;
   }
   try {

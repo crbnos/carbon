@@ -57,7 +57,7 @@ export function getSsoProviderIdFromSession(
   try {
     payload = decodeJwt(accessToken);
   } catch {
-    log.info(
+    log.warning(
       "SSO session check: access token could not be decoded; treating session as non-SSO"
     );
     return null;

@@ -38,7 +38,7 @@ async function countOutcome(
     logger.error("Could not count the {outcome} of webhook {webhookId}", {
       outcome,
       webhookId,
-      error: error.message
+      error
     });
   }
 }
@@ -87,9 +87,11 @@ export const webhookFunction = inngest.createFunction(
     await step.run("send-webhook", async () => {
       // Never log payload.url or the secret — a URL may still carry a token of
       // its own. webhookId identifies the webhook without leaking either.
-      logger.info(
-        `Firing ${body.type} webhook ${webhookId ?? "<unknown>"} for ${payload.data.table}`
-      );
+      logger.info("Firing a webhook", {
+        type: body.type,
+        webhookId,
+        table: payload.data.table
+      });
 
       // Serialised once: the signature covers these exact bytes, and the
       // receiver verifies the raw body it is sent. Signed per attempt, so a
@@ -104,9 +106,9 @@ export const webhookFunction = inngest.createFunction(
         : null;
       if (!secret) {
         // The subscription outlived its webhook row; nothing to deliver for.
-        logger.warn(
-          `No signing secret for webhook ${webhookId ?? "<unknown>"}; skipping delivery`
-        );
+        logger.warn("No signing secret for the webhook; skipping delivery", {
+          webhookId
+        });
         return;
       }
 
@@ -115,9 +117,7 @@ export const webhookFunction = inngest.createFunction(
       // refusal counts one failure and stops. A failed lookup is retried.
       const verdict = await checkWebhookUrl(payload.url);
       if (!verdict.ok && !verdict.retryable) {
-        logger.warn(
-          `Webhook ${webhookId ?? "<unknown>"} refused: ${verdict.reason}`
-        );
+        logger.warn("Webhook refused", { webhookId, reason: verdict.reason });
         if (webhookId) await countOutcome(webhookId, "error", logger);
         throw new NonRetriableError(verdict.reason);
       }

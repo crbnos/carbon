@@ -9,7 +9,6 @@ import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import { getDocumentType, storage } from "@carbon/files";
-import { getLogger } from "@carbon/logger";
 import { useAction, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -114,8 +113,6 @@ import {
 import { useItems } from "~/stores";
 import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
-
-const log = getLogger("mes", "service-job");
 
 export const handle: Handle = {
   realtime: [{ table: "serviceJob", column: "id", param: "jobId" }]
@@ -267,15 +264,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       values
     });
     if (update.error) {
-      log.error("Failed to update a service job", {
-        companyId,
-        jobId,
-        field,
-        error: update.error
-      });
       return data(
         {},
-        await flash(request, error(update.error, "Failed to save"))
+        await flash(
+          request,
+          error(update.error, "Failed to save", { jobId, field })
+        )
       );
     }
     return data({ success: true });

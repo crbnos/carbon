@@ -3,12 +3,8 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { getLogger } from "@carbon/logger";
-import { describeRequest } from "@carbon/logger/middleware.server";
-import {
-  annotateRequestSpan,
-  nameRequestSpan,
-  withSpan
-} from "@carbon/logger/tracing.server";
+import { describeRequest } from "@carbon/logger/context.server";
+import { annotateRequestSpan, withSpan } from "@carbon/logger/span";
 import {
   createMcpHandler,
   isLegacyRequest,
@@ -42,7 +38,7 @@ import {
   withErrorHandling
 } from "./types";
 
-const logger = getLogger("erp", "mcp");
+const logger = getLogger("ee", "mcp");
 
 /** search_tools results per call when the caller passes no `limit`. */
 const SEARCH_DEFAULT_LIMIT = 10;
@@ -91,7 +87,7 @@ export async function serveMcpRequest<Ctx extends McpContext>(
   return createMcpHandler(factory, {
     legacy: "reject",
     maxSubscriptions: 0,
-    onerror: (error) => logger.warn("MCP request refused", { error })
+    onerror: (error) => logger.warning("MCP request refused", { error })
   }).fetch(request);
 }
 
@@ -136,7 +132,6 @@ function buildMcpServer<Ctx extends McpContext>(
       };
       const call = operation ? `${tool} ${operation}` : tool;
       annotateRequestSpan(attributes);
-      nameRequestSpan(`POST /api/mcp ${call}`);
       describeRequest(call);
       return withSpan(`mcp ${call}`, attributes, () => handler(params));
     };
@@ -209,7 +204,7 @@ function buildMcpServer<Ctx extends McpContext>(
 
         if (missing.length > 0) {
           // A caller typo, not a server fault — warn, not error.
-          logger.warn("Tool not found", { names: missing });
+          logger.warning("Tool not found", { names: missing });
           sections.push(missing.map(notFound).join("\n"));
         }
 
@@ -247,7 +242,7 @@ function buildMcpServer<Ctx extends McpContext>(
       const { name, arguments: rawArgs, fields, truncate } = params;
       const capped = truncate !== false;
       if (!operationsByName.has(name)) {
-        logger.warn("Tool not found", { names: [name] });
+        logger.warning("Tool not found", { names: [name] });
         return {
           content: [{ type: "text" as const, text: notFound(name) }],
           isError: true

@@ -179,7 +179,7 @@ export async function runLocationSchedule(
     log.error("Batch pre-pass failed; members place individually", {
       locationId,
       companyId,
-      error: err instanceof Error ? err.message : String(err)
+      error: err
     });
   }
 
@@ -227,7 +227,7 @@ export async function runLocationSchedule(
         jobId: id,
         locationId,
         companyId,
-        error: err instanceof Error ? err.message : String(err)
+        error: err
       });
       failedJobIds.push(id);
     }
@@ -278,8 +278,13 @@ export async function runExpediteWhatIf(
       horizonEnd: now + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000,
       persist: false
     });
-  } catch {
+  } catch (err) {
     // fall through — the sim runs with per-member placement
+    log.warning("Batch pre-pass failed; members place individually", {
+      locationId,
+      companyId,
+      error: err
+    });
   }
 
   const engine = new SchedulingEngine({

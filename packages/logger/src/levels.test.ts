@@ -52,6 +52,9 @@ describe("resolveLevel", () => {
     process.env.NODE_ENV = "production";
     expect(resolveLevel("server")).toBe("info");
     expect(resolveLevel("browser")).toBe("warning");
+    process.env.NODE_ENV = "test";
+    expect(resolveLevel("server")).toBe("warning");
+    expect(resolveLevel("browser")).toBe("warning");
   });
 
   it("LOG_LEVEL overrides the default", () => {

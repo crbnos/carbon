@@ -6,15 +6,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { leaseLineValidator } from "~/modules/purchasing/purchasing.models";
 import { saveDraftLeaseLine } from "~/modules/purchasing/purchasing.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
-
-const logger = getLogger("erp", "lease-line-new");
 
 /** Adds an asset to a Draft lease (the setup wizard's Add Asset) and cuts
  *  its payment rows from the lease's terms, in one transaction. */
@@ -46,16 +43,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       line
     });
   } catch (err) {
-    logger.error("lease asset was not added", {
-      companyId,
-      leaseId: id,
-      error: err
-    });
     throw redirect(
       back,
       await flash(
         request,
-        error(err, getErrorMessage(err, "Failed to add the asset"))
+        error(err, getErrorMessage(err, "Failed to add the asset"), {
+          leaseId: id
+        })
       )
     );
   }

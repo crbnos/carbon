@@ -372,19 +372,20 @@ describe("CarbonFlagsProvider", () => {
     for (const value of store.data.values()) expect(value.etag).toBe('"v1"');
   });
 
-  it("sends warnings to onWarning with structured properties", async () => {
-    const warnings: [string, Record<string, unknown>][] = [];
-    const provider = new CarbonFlagsProvider({
-      endpoint: url,
-      onWarning: (message, properties) => warnings.push([message, properties])
-    });
+  it("warns with structured properties when a sync fails", async () => {
+    const provider = new CarbonFlagsProvider({ endpoint: url });
     await start(provider);
+    const warn = loggerWarning.mockClear();
     mode = "down";
     await provider.refresh();
-    expect(warnings).toEqual([
+    expect(warn.mock.calls).toEqual([
       [
         "Feature flags kept after a failed sync",
-        expect.objectContaining({ lastError: expect.stringMatching(/503/) })
+        expect.objectContaining({
+          error: expect.objectContaining({
+            message: expect.stringMatching(/503/)
+          })
+        })
       ]
     ]);
   });
@@ -407,29 +408,25 @@ describe("CarbonFlagsProvider", () => {
   });
 
   it("refuses http: off localhost, so the token never goes out unencrypted", async () => {
-    const warnings: string[] = [];
+    const warn = loggerWarning.mockClear();
     const read = await start(
       new CarbonFlagsProvider({
         endpoint: "http://flags.example.com/api/flags",
-        headers: "Authorization=Bearer%20secret",
-        onWarning: (message) => warnings.push(message)
+        headers: "Authorization=Bearer%20secret"
       })
     );
     expect(await read("cmp_123")).toBe(false);
-    expect(warnings).toHaveLength(1);
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it("refuses a file: endpoint with a warning and answers the defaults", async () => {
-    const warnings: string[] = [];
+    const warn = loggerWarning.mockClear();
     const provider = new CarbonFlagsProvider({
-      endpoint: "file:///etc/carbon/flags.json",
-      onWarning: (message) => warnings.push(message)
+      endpoint: "file:///etc/carbon/flags.json"
     });
     const read = await start(provider);
     expect(await read("cmp_123")).toBe(false);
-    expect(warnings).toEqual([
-      "CARBON_FLAGS_ENDPOINT must be an https: or data: URL (http: only on localhost); using the code defaults"
-    ]);
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it("warns once per archived flag that the code reads", async () => {

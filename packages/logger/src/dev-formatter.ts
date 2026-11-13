@@ -8,9 +8,10 @@ import {
   type LogRecord,
   type TextFormatter
 } from "@logtape/logtape";
+import { LOG_CONTEXT_KEYS } from "./context.server";
 
 // On every in-request record; useful in prod JSON, noise on each dev line.
-const AMBIENT_KEYS = new Set(["requestId"]);
+const AMBIENT_KEYS = new Set<string>(LOG_CONTEXT_KEYS);
 
 // Returns null for `{*}`, which already renders every property.
 function referencedKeys(raw: LogRecord["rawMessage"]): Set<string> | null {

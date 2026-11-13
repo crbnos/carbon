@@ -169,8 +169,8 @@ export function extractRilletErrorDetails(
 }
 
 /**
- * Creates, logs and throws an AccountingApiError from a failed Rillet
- * response (parallel to throwQboApiError / throwXeroApiError).
+ * Throws an AccountingApiError from a failed Rillet response (parallel to
+ * throwQboApiError / throwXeroApiError). The caller that handles it logs it.
  */
 export function throwRilletApiError(
   operation: string,
@@ -182,19 +182,7 @@ export function throwRilletApiError(
     response.data
   );
 
-  const error = new AccountingApiError("rillet", operation, details);
-
-  logger.error("Rillet API error", {
-    operation,
-    statusCode: details.statusCode,
-    statusText: details.statusText,
-    providerErrorType: details.providerErrorType,
-    providerErrorCode: details.providerErrorCode,
-    providerMessage: details.providerMessage,
-    validationErrors: details.validationErrors
-  });
-
-  throw error;
+  throw new AccountingApiError("rillet", operation, details);
 }
 
 /**

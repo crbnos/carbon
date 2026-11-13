@@ -1938,7 +1938,7 @@ export async function getJobMaterialShortfallByItem(
   if (successorStock.error) {
     // Read as no stock, every successor would show a shortage it may not
     // have: show the predecessor's own shortfall only.
-    logger.warn("Failed to read successor stock for the job materials", {
+    logger.warning("Failed to read successor stock for the job materials", {
       companyId,
       jobId,
       error: successorStock.error
@@ -9168,8 +9168,11 @@ async function notifyAssemblerInvalidate(modelUploadId: string) {
       body: JSON.stringify({ modelUploadId }),
       signal: AbortSignal.timeout(5000)
     });
-  } catch {
-    // swallow — best-effort
+  } catch (error) {
+    logger.warning("Failed to tell the assembler to invalidate its cache", {
+      modelUploadId,
+      error
+    });
   }
 }
 
@@ -14622,7 +14625,7 @@ export async function assignSerialNumbers(
   });
 }
 
-const sandboxLogger = getLogger("erp", "configuration-rule");
+const sandboxLogger = getLogger("erp", "production", "configuration-rule");
 
 /**
  * A stored configuration rule is the TypeScript body of `configure(params)`. It is
@@ -14640,9 +14643,7 @@ export async function importTypeScript(code: string): Promise<{
   try {
     javascript = transpileRule(code);
   } catch (error) {
-    sandboxLogger.error("configuration rule does not compile", {
-      error: String(error)
-    });
+    sandboxLogger.error("A configuration rule does not compile", { error });
   }
 
   return {
@@ -14651,15 +14652,13 @@ export async function importTypeScript(code: string): Promise<{
       try {
         return (await runConfigurationRule(javascript, params)) as T | null;
       } catch (error) {
-        sandboxLogger.error("configuration rule failed", {
-          error: String(error)
-        });
+        sandboxLogger.error("A configuration rule failed", { error });
         return null;
       }
     }
   };
 }
-const getMethodLogger = getLogger("erp", "get-method");
+const getMethodLogger = getLogger("erp", "production", "get-method");
 
 /**
  * An operation-step `description` as a tiptap doc for a jsonb column. The
@@ -16590,7 +16589,7 @@ export async function getMethod(
               return (result ?? defaultValue) as T;
             } catch (err) {
               getMethodLogger.error("configuration field resolver failed", {
-                error: String((err as Error)?.stack ?? err)
+                error: err
               });
               return defaultValue;
             }
@@ -18451,7 +18450,7 @@ export async function getMethod(
               return (result ?? defaultValue) as T;
             } catch (err) {
               getMethodLogger.error("configuration field resolver failed", {
-                error: String((err as Error)?.stack ?? err)
+                error: err
               });
               return defaultValue;
             }
@@ -18468,7 +18467,7 @@ export async function getMethod(
           node: MethodTreeItem,
           parentQuoteMakeMethodId: string | null
         ) {
-          getMethodLogger.debug("[traverseMethod]", {
+          getMethodLogger.debug("Traversing a method node", {
             isRoot: node.data.isRoot,
             itemId: node.data.itemId,
             methodType: node.data.methodType,
@@ -18948,7 +18947,7 @@ export async function getMethod(
               (child) => child!.data.methodType === "Make to Order"
             );
 
-            getMethodLogger.debug("[traverseMethod] materials", {
+            getMethodLogger.debug("Grouped the method node materials", {
               totalChildren: materialsWithConfiguredFields.length,
               madeMaterialsCount: madeMaterials.length,
               madeChildrenCount: madeChildren.length,
@@ -18980,17 +18979,14 @@ export async function getMethod(
                 const materialId = madeMaterialsWithIds[index]!.id;
                 const newMakeMethodId = newMakeMethodIds[index]!;
 
-                getMethodLogger.debug(
-                  "[traverseMethod] processing made child",
-                  {
-                    index,
-                    materialId,
-                    newMakeMethodId,
-                    childItemId: child!.data.itemId,
-                    parentItemId: itemId,
-                    willRecurse: child!.data.itemId !== itemId
-                  }
-                );
+                getMethodLogger.debug("Processing a made child material", {
+                  index,
+                  materialId,
+                  newMakeMethodId,
+                  childItemId: child!.data.itemId,
+                  parentItemId: itemId,
+                  willRecurse: child!.data.itemId !== itemId
+                });
 
                 // A configuration rule may have moved this line onto another
                 // made item; the sub-assembly under it is then that item's.
@@ -19021,10 +19017,13 @@ export async function getMethod(
         }
 
         function logTree(node: MethodTreeItem, depth = 0) {
-          getMethodLogger.debug(
-            "  ".repeat(depth) +
-              `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`
-          );
+          getMethodLogger.debug("Method tree node", {
+            depth,
+            itemId: node.data.itemId,
+            methodType: node.data.methodType,
+            isRoot: node.data.isRoot,
+            childCount: node.children.length
+          });
           for (const child of node.children) {
             logTree(child, depth + 1);
           }
@@ -19180,7 +19179,7 @@ export async function getMethod(
               return (result ?? defaultValue) as T;
             } catch (err) {
               getMethodLogger.error("configuration field resolver failed", {
-                error: String((err as Error)?.stack ?? err)
+                error: err
               });
               return defaultValue;
             }
@@ -25022,13 +25021,11 @@ async function hydrateConfiguration(
 
     return transformed;
   } catch (err) {
-    getMethodLogger.error("configuration transform failed", {
-      error: String((err as Error)?.stack ?? err)
-    });
+    getMethodLogger.error("configuration transform failed", { error: err });
     return configuration;
   }
 }
-const rescheduleJobLogger = getLogger("server-functions", "reschedule");
+const rescheduleJobLogger = getLogger("erp", "production", "reschedule");
 // Types
 type JobOperation = {
   id: string;
@@ -25419,7 +25416,7 @@ export async function rescheduleJob(
     .executeTakeFirst();
   if (!owned) throw new NotFoundError("Job not found");
 
-  rescheduleJobLogger.info(`🔰 Starting reschedule for job ${jobId}`);
+  rescheduleJobLogger.info("Starting a job reschedule", { jobId });
 
   const result = await db.transaction().execute(async (trx) => {
     // 1. Get job and all its operations with dependencies
@@ -25428,9 +25425,11 @@ export async function rescheduleJob(
       jobId
     );
 
-    rescheduleJobLogger.info(
-      `📊 Job has ${operations.length} operations, ${dependencies.length} dependencies`
-    );
+    rescheduleJobLogger.info("Loaded the job operations and dependencies", {
+      jobId,
+      operationCount: operations.length,
+      dependencyCount: dependencies.length
+    });
 
     // 2. Build dependency graph
     const graph = buildDependencyGraph(operations, dependencies);
@@ -25443,9 +25442,10 @@ export async function rescheduleJob(
     );
 
     const conflicts = scheduledOps.filter((op) => op.hasConflict);
-    rescheduleJobLogger.info(
-      `⚠️  Detected ${conflicts.length} scheduling conflicts`
-    );
+    rescheduleJobLogger.info("Detected scheduling conflicts", {
+      jobId,
+      conflictCount: conflicts.length
+    });
 
     // 4. Get affected work centers
     const workCenterIds = [
@@ -25456,9 +25456,10 @@ export async function rescheduleJob(
       )
     ];
 
-    rescheduleJobLogger.info(
-      `🏭 Affected work centers: ${workCenterIds.length}`
-    );
+    rescheduleJobLogger.info("Found the affected work centers", {
+      jobId,
+      workCenterCount: workCenterIds.length
+    });
 
     // 5. Recalculate priorities for each work center
     const prioritizedOps = await recalculatePriorities(
@@ -25488,7 +25489,10 @@ export async function rescheduleJob(
     }
     await updateRowsById(trx, "jobOperation", companyId, jobOperationUpdates);
 
-    rescheduleJobLogger.info(`✅ Updated ${prioritizedOps.length} operations`);
+    rescheduleJobLogger.info("Updated the job operations", {
+      jobId,
+      operationCount: prioritizedOps.length
+    });
 
     return {
       operationsUpdated: prioritizedOps.length,
@@ -26444,7 +26448,8 @@ async function syncShopTimesheet(
   });
 }
 const recalculateRequirementsLogger = getLogger(
-  "server-functions",
+  "erp",
+  "production",
   "recalculate"
 );
 export const recalculateRequirementsPermission = {
@@ -26462,7 +26467,12 @@ export async function recalculateRequirements(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  recalculateRequirementsLogger.info({ type, id, companyId, userId });
+  recalculateRequirementsLogger.info("Recalculating job requirements", {
+    type,
+    id,
+    companyId,
+    userId
+  });
 
   // Every read here goes over the direct connection: a PostgREST call costs
   // roughly ten times a statement, and this runs on every job save.
@@ -26493,7 +26503,8 @@ export async function recalculateRequirements(
 
         if (jobMaterial?.methodType !== "Make to Order") {
           recalculateRequirementsLogger.info(
-            `Job material ${jobMakeMethod.parentMaterialId} is not a 'Make' type. Skipping recalculation.`
+            "Skipped recalculation: the job material is not a Make type",
+            { jobMaterialId: jobMakeMethod.parentMaterialId }
           );
           return { success: true };
         }
@@ -26757,7 +26768,7 @@ const updateJobQuantities = async (
     }
   }
 };
-const triggerReworkLogger = getLogger("server-functions", "trigger-rework");
+const triggerReworkLogger = getLogger("erp", "production", "trigger-rework");
 
 interface TriggerReworkRequest {
   jobId: string;
@@ -26859,9 +26870,10 @@ async function cloneReworkOperations(
     triggeredAtJobOperationId
   );
 
-  triggerReworkLogger.info(
-    `📋 Rework path: ${operationPath.length} operations to clone`
-  );
+  triggerReworkLogger.info("Found the rework path", {
+    jobId,
+    operationCount: operationPath.length
+  });
 
   // 2. Create the rework record
   const [rework] = await trx
@@ -27012,7 +27024,10 @@ async function cloneReworkOperations(
     sourceToCloneMap.set(sourceOp.id, clonedOps[i]!.id);
   });
 
-  triggerReworkLogger.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
+  triggerReworkLogger.info("Cloned the rework operations", {
+    jobId,
+    operationCount: clonedOperationIds.length
+  });
 
   // 5b. Scope the copies to the serial units sent into the rework. Without
   //     these rows every open unit of the make method counts as not done at a
@@ -27156,9 +27171,10 @@ async function cloneReworkOperations(
     await trx.insertInto("jobOperationDependency").values(dagEdges).execute();
   }
 
-  triggerReworkLogger.info(
-    `🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`
-  );
+  triggerReworkLogger.info("Rewired the downstream dependencies", {
+    jobId,
+    dependencyCount: downstreamDeps.length
+  });
 
   // 8. Record a productionQuantity entry for the rework
   await trx
@@ -27261,9 +27277,11 @@ export async function triggerRework(
     "Inspection"
   );
 
-  triggerReworkLogger.info(
-    `🔰 Starting rework for job ${body.jobId}: go back to ${body.targetJobOperationId} from ${body.triggeredAtJobOperationId}`
-  );
+  triggerReworkLogger.info("Starting a job rework", {
+    jobId: body.jobId,
+    targetJobOperationId: body.targetJobOperationId,
+    triggeredAtJobOperationId: body.triggeredAtJobOperationId
+  });
 
   const result = await db.transaction().execute(async (trx) => {
     return await cloneReworkOperations(trx, body);

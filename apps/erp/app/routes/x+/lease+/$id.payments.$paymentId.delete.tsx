@@ -5,13 +5,10 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { deleteLeasePayment } from "~/modules/purchasing/purchasing.service";
 import { path, requestReferrer } from "~/utils/path";
-
-const logger = getLogger("erp", "lease-payment-delete");
 
 /** Deletes a payment row of a Draft lease. `deleteLeasePayment` refuses a
  *  lease that is not a Draft, and a row that is not on this lease. */
@@ -33,17 +30,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId
   });
   if (result.error) {
-    logger.error("lease payment was not deleted", {
-      companyId,
-      leaseId: id,
-      paymentId,
-      error: result.error
-    });
     throw redirect(
       back,
       await flash(
         request,
-        error(result.error, result.error.message || "Failed to delete payment")
+        error(
+          result.error,
+          result.error.message || "Failed to delete payment",
+          { leaseId: id, paymentId }
+        )
       )
     );
   }

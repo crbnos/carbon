@@ -45,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   if (!parseResult.success) {
-    logger.error("Validation error:", parseResult.error);
+    logger.error("Invalid selected lines", { id, error: parseResult.error });
     throw redirect(
       path.to.supplierQuoteDetails(id),
       await flash(request, error(null, "Invalid selected lines data"))

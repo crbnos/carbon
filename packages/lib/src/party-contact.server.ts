@@ -13,7 +13,7 @@ import {
   partyContactRequiredMessage
 } from "./party-contact";
 
-const logger = getLogger("erp", "party-contact");
+const logger = getLogger("lib", "party-contact");
 
 /**
  * Enforce the "party must have a reachable contact AND an identifiable
@@ -47,7 +47,7 @@ export async function checkPartyContactRequirement(
     .maybeSingle();
 
   if (settings.error || !settings.data) {
-    logger.warn("Party contact requirement skipped: settings unreadable", {
+    logger.warning("Party contact requirement skipped: settings unreadable", {
       companyId,
       kind: party.kind,
       partyId: party.id,
@@ -83,7 +83,7 @@ export async function checkPartyContactRequirement(
   // contact either. Skipping both halves on either error made one flaky query
   // hide the other half's real finding.
   if (contacts.error || locations.error) {
-    logger.warn("Party contact requirement partially skipped: read failed", {
+    logger.warning("Party contact requirement partially skipped: read failed", {
       companyId,
       kind: party.kind,
       partyId: party.id,
@@ -110,7 +110,7 @@ export async function checkPartyContactRequirement(
     .maybeSingle();
 
   if (named.error) {
-    logger.warn("Party contact requirement: party name unreadable", {
+    logger.warning("Party contact requirement: party name unreadable", {
       companyId,
       kind: party.kind,
       partyId: party.id,

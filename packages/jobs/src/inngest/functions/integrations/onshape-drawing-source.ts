@@ -201,7 +201,7 @@ export async function placeDrawingFiles(
     const result = await bucket.move(from, to);
     // A retried step finds the file already moved.
     if (result.error && (await bucket.info(to)).error) {
-      log.warn("Could not rename a drawing PDF", {
+      log.warning("Could not rename a drawing PDF", {
         companyId: input.companyId,
         from,
         to,

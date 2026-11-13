@@ -4455,7 +4455,11 @@ export const orderPlannedPurchases = defineServiceFn({
         });
       if (forecasts.error) {
         const message = `Failed to insert supply forecasts: ${forecasts.error.message}`;
-        logger.error(message, { companyId, locationId });
+        logger.error("Failed to insert supply forecasts", {
+          companyId,
+          locationId,
+          error: forecasts.error
+        });
         warnings.push(message);
       }
     }

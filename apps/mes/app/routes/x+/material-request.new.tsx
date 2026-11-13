@@ -7,14 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { createMaterialRequest } from "@carbon/database/material-request";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { userContext } from "~/context";
 import { materialRequestValidator } from "~/services/models";
 import { path, requestReferrer } from "~/utils/path";
-
-const logger = getLogger("mes", "material-request");
 
 export async function action({ request, context }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -43,16 +40,13 @@ export async function action({ request, context }: ActionFunctionArgs) {
   });
 
   if (result.error || !result.data) {
-    logger.error("Failed to create material request", {
-      companyId,
-      jobOperationId,
-      error: result.error
-    });
     throw redirect(
       requestReferrer(request) ?? path.to.active,
       await flash(
         request,
-        error(result.error, result.error ?? "Failed to request material")
+        error(result.error, result.error ?? "Failed to request material", {
+          jobOperationId
+        })
       )
     );
   }

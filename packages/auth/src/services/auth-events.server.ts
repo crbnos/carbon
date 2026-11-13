@@ -64,22 +64,10 @@ export function logAuthEvent(
     event === "permission_denied";
   const outcome = fields.outcome ?? (failed ? "failure" : "success");
   const payload = { authEvent: event, outcome, ...fields };
-  // Append the identity fields to the human-readable message so they are visible
-  // in the dev ANSI console (whose formatter renders only the message, not the
-  // structured properties). The properties above remain the machine-readable
-  // source of truth for JSONL / CloudWatch — this line is a readable echo, not a
-  // replacement.
-  const target = fields.targetUserId;
-  const message =
-    `auth.${event}` +
-    (fields.actor != null ? ` actor=${fields.actor}` : "") +
-    (target != null ? ` target=${String(target)}` : "") +
-    (fields.ip != null ? ` ip=${fields.ip}` : "") +
-    (fields.outcome != null || failed ? ` outcome=${outcome}` : "");
   if (outcome === "failure") {
-    log.warn(message, payload);
+    log.warning("Auth event {authEvent}", payload);
   } else {
-    log.info(message, payload);
+    log.info("Auth event {authEvent}", payload);
   }
 }
 

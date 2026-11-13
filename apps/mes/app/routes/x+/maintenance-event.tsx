@@ -60,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
       : null
   ]);
   if (!ownedDispatch.data || (ownedWorkCenter && !ownedWorkCenter.data)) {
-    logger.warn("Dispatch or work center not found in company", {
+    logger.warning("Dispatch or work center not found in company", {
       companyId,
       dispatchId,
       workCenterId,
@@ -175,18 +175,14 @@ export async function action({ request }: ActionFunctionArgs) {
       userId
     });
     if (posting.error) {
-      logger.error("Failed to post maintenance labor", {
-        companyId,
-        dispatchId,
-        error: posting.error
-      });
       return data(
         {},
         await flash(
           request,
           error(
             posting.error,
-            "Maintenance paused, but its labor cost did not post"
+            "Maintenance paused, but its labor cost did not post",
+            { dispatchId }
           )
         )
       );
@@ -233,14 +229,6 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       userId
     });
-    if (posting.error) {
-      logger.error("Failed to post maintenance labor", {
-        companyId,
-        dispatchId,
-        error: posting.error
-      });
-    }
-
     throw redirect(
       path.to.maintenance,
       await flash(
@@ -248,7 +236,8 @@ export async function action({ request }: ActionFunctionArgs) {
         posting.error
           ? error(
               posting.error,
-              "Maintenance completed, but its labor cost did not post"
+              "Maintenance completed, but its labor cost did not post",
+              { dispatchId }
             )
           : success("Maintenance completed")
       )

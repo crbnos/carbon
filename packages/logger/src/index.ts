@@ -2,6 +2,4 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-export type { Logger } from "@logtape/logtape";
-export { type CarbonLogLevel, LOG_LEVELS, parseLogLevel } from "./levels";
-export { CARBON_ROOT_CATEGORY, getLogger } from "./logger";
+export { getLogger, type Logger } from "./logger";

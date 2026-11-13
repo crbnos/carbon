@@ -5,14 +5,11 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { regenerateLeasePayments } from "~/modules/purchasing/purchasing.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
-
-const logger = getLogger("erp", "lease-payments-regenerate");
 
 /** Cuts a Draft lease's payment rows again from its terms, replacing every
  *  row (edited, added or deleted ones included). The rows are rounded to
@@ -36,16 +33,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       userId
     });
   } catch (err) {
-    logger.error("lease payment rows were not cut again", {
-      companyId,
-      leaseId: id,
-      error: err
-    });
     throw redirect(
       back,
       await flash(
         request,
-        error(err, getErrorMessage(err, "Failed to regenerate the payments"))
+        error(err, getErrorMessage(err, "Failed to regenerate the payments"), {
+          leaseId: id
+        })
       )
     );
   }

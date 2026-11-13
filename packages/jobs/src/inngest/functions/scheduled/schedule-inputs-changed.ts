@@ -437,7 +437,7 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
           log.error("Location regen failed", {
             companyId,
             locationId,
-            error: err instanceof Error ? err.message : String(err)
+            error: err
           });
           return null;
         }

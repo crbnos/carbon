@@ -3,8 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import { useState } from "react";
 import { useUser } from "./useUser";
+
+const logger = getLogger("erp", "next-item-id");
 
 export function useNextItemId(
   table: "Part" | "Service" | "Tool" | "Material" | "Consumable"
@@ -43,8 +46,12 @@ export function useNextItemId(
           } else {
             setId(`${prefix}${(1).toString().padStart(9, "0")}`);
           }
-          // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        } catch {
+        } catch (error) {
+          logger.warning("Failed to get the next item id", {
+            table,
+            prefix,
+            error
+          });
         } finally {
           setLoading(false);
         }
@@ -70,8 +77,12 @@ export function useNextItemId(
           } else {
             setId(`${prefix}${(1).toString().padStart(9, "0")}`);
           }
-          // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
-        } catch {
+        } catch (error) {
+          logger.warning("Failed to get the next item id", {
+            table,
+            prefix,
+            error
+          });
         } finally {
           setLoading(false);
         }

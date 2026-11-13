@@ -59,7 +59,7 @@ import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "accounting/activation/trial-balance");
+const logger = getLogger("erp", "accounting", "activation", "trial-balance");
 
 /**
  * The company's active accounting integration, when it can provide a trial
@@ -194,10 +194,6 @@ export async function action({ request }: ActionFunctionArgs) {
         lines: validation.data.lines
       });
     } catch (err) {
-      logger.error("Failed to save the trial balance", {
-        companyId,
-        error: err
-      });
       return data(
         {},
         await flash(
@@ -264,11 +260,6 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
     } catch (err) {
-      logger.error("Failed to pull the trial balance", {
-        companyId,
-        provider: provider.id,
-        error: err
-      });
       return data<TrialBalancePullResult>(
         {},
         await flash(
@@ -277,7 +268,8 @@ export async function action({ request }: ActionFunctionArgs) {
             err,
             isTrialBalancePullError(err)
               ? err.message
-              : getErrorMessage(err, "Failed to pull the trial balance")
+              : getErrorMessage(err, "Failed to pull the trial balance"),
+            { provider: provider.id }
           )
         )
       );
@@ -309,16 +301,13 @@ export async function action({ request }: ActionFunctionArgs) {
         ignored: validation.data.ignored
       });
     } catch (err) {
-      logger.error("Failed to ignore the invoice", {
-        companyId,
-        invoiceId: validation.data.invoiceId,
-        error: err
-      });
       return data(
         {},
         await flash(
           request,
-          error(err, getErrorMessage(err, "Failed to ignore the invoice"))
+          error(err, getErrorMessage(err, "Failed to ignore the invoice"), {
+            invoiceId: validation.data.invoiceId
+          })
         )
       );
     }
@@ -348,10 +337,6 @@ export async function action({ request }: ActionFunctionArgs) {
         cutoverDate: validation.data.cutoverDate
       });
     } catch (err) {
-      logger.error("Failed to apply Carbon's totals to the trial balance", {
-        companyId,
-        error: err
-      });
       return data(
         {},
         await flash(
@@ -397,10 +382,6 @@ export async function action({ request }: ActionFunctionArgs) {
             .in("number", numbers)
         : { data: [], error: null };
     if (accounts.error) {
-      logger.error("Failed to read the chart of accounts", {
-        companyId,
-        error: accounts.error
-      });
       return data<TrialBalanceImportResult>(
         {},
         await flash(
@@ -432,10 +413,6 @@ export async function action({ request }: ActionFunctionArgs) {
         lines: mapped.lines
       });
     } catch (err) {
-      logger.error("Failed to save the imported trial balance", {
-        companyId,
-        error: err
-      });
       return data<TrialBalanceImportResult>(
         {},
         await flash(

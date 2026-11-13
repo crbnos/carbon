@@ -790,9 +790,7 @@ export function AssemblyView({
     if (result && result.success === false) {
       log.error(
         "Failed to create inspection steps for non-conformance actions",
-        {
-          message: result.message
-        }
+        { reason: result.message }
       );
       toast.error(result.message ?? "Failed to create containment steps");
     }
@@ -3531,7 +3529,6 @@ function StepCompleteAction({
   const busy = fetcher.state !== "idle";
   const recordModal = useDisclosure();
 
-  // Find the existing record for this unit (if done)
   const record = (step.jobOperationStepRecord ?? []).find(
     (r) => r.index === activeIndex
   );

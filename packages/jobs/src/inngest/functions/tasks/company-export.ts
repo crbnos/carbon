@@ -154,7 +154,7 @@ export async function buildCompanyBackup(
       const shared = exclusions.summary.filter(
         (e) => byName.get(e.table)?.scopeColumn === "companyGroupId"
       );
-      log.warn("Company export skipping out-of-scope rows", {
+      log.warning("Company export skipping out-of-scope rows", {
         companyId,
         excludedRows: exclusions.summary,
         ...(shared.length > 0

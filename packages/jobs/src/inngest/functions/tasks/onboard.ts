@@ -35,12 +35,12 @@ export const onboardFunction = inngest.createFunction(
         ]);
 
         if (company.error) {
-          logger.error("Could not find company", company.error);
+          logger.error("Could not find company", { error: company.error });
           throw new Error(company.error.message);
         }
 
         if (user.error) {
-          logger.error("Could not find user", user.error);
+          logger.error("Could not find user", { error: user.error });
           throw new Error(user.error.message);
         }
 
@@ -51,12 +51,7 @@ export const onboardFunction = inngest.createFunction(
     switch (type) {
       case "lead":
         await step.run("create-resend-contact", async () => {
-          logger.info(
-            "Processing lead case for user:",
-            userId,
-            "company:",
-            companyId
-          );
+          logger.info("Processing a lead", { userId, companyId });
 
           // Skipped rather than attempted when Resend is not configured:
           // a self-hosted install has no marketing audience to add anyone
@@ -72,12 +67,9 @@ export const onboardFunction = inngest.createFunction(
                 unsubscribed: false,
                 audienceId
               });
-              logger.info(
-                "Successfully created resend contact for:",
-                user.email
-              );
+              logger.info("Created the Resend contact", { email: user.email });
             } catch (error) {
-              logger.error("Error creating resend contact", error);
+              logger.error("Failed to create the Resend contact", { error });
             }
           }
         });
@@ -110,9 +102,9 @@ export const onboardFunction = inngest.createFunction(
               temperature: 0.2
             });
             type = (object as any).type as "Warm" | "Cold";
-            logger.info("Generated type:", type);
+            logger.info("Generated a type", { type });
           } catch (error) {
-            logger.error("Error generating type", error);
+            logger.error("Failed to generate a type", { error });
           }
           return type;
         });
@@ -140,9 +132,9 @@ export const onboardFunction = inngest.createFunction(
                 }
               ]
             });
-            logger.info("Successfully sent Slack message:", slackResult);
+            logger.info("Sent the Slack message", { slackResult });
           } catch (error) {
-            logger.error("Error sending Slack message:", error);
+            logger.error("Failed to send the Slack message", { error });
           }
         });
 
@@ -170,12 +162,11 @@ export const onboardFunction = inngest.createFunction(
                 } as any)
                 .eq("id", userId);
 
-              logger.info("User update result:", updateResult);
+              logger.info("User update result", { updateResult });
               if (updateResult.error) {
-                logger.error(
-                  "Error updating user external ID:",
-                  updateResult.error
-                );
+                logger.error("Failed to update the user external ID", {
+                  error: updateResult.error
+                });
               } else {
                 logger.info("Successfully updated user external ID");
               }
@@ -210,18 +201,17 @@ export const onboardFunction = inngest.createFunction(
                   } as any)
                   .eq("id", companyId);
 
-                logger.info("Company update result:", updateResult);
+                logger.info("Company update result", { updateResult });
                 if (updateResult.error) {
-                  logger.error(
-                    "Error updating company external ID:",
-                    updateResult.error
-                  );
+                  logger.error("Failed to update the company external ID", {
+                    error: updateResult.error
+                  });
                 } else {
                   logger.info("Successfully updated company external ID");
                 }
               }
             } catch (error) {
-              logger.error("Error adding lead to CRM:", error);
+              logger.error("Failed to add the lead to the CRM", { error });
             }
           } else {
             logger.info("TWENTY_API_KEY not found, skipping CRM integration");
@@ -258,7 +248,7 @@ export const onboardFunction = inngest.createFunction(
               ]
             });
           } catch (error) {
-            logger.error("Error sending Slack message:", error);
+            logger.error("Failed to send the Slack message", { error });
           }
         });
 
@@ -269,7 +259,9 @@ export const onboardFunction = inngest.createFunction(
                 customerStatus: ["PILOT_FREE_TRIAL"]
               });
             } catch (error) {
-              logger.error("Error updating twenty customer status:", error);
+              logger.error("Failed to update the Twenty customer status", {
+                error
+              });
             }
           }
         });

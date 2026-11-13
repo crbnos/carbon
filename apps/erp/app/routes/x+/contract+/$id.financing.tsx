@@ -21,7 +21,6 @@ import {
   upsertContractFinancing,
   upsertPbpEvent
 } from "@carbon/ee/contract-financing.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -101,17 +100,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const db = getDatabaseClient();
 
   const refuse = async (err: unknown, message: string) => {
-    if (
-      !(err instanceof FinancingError) &&
-      !(err instanceof EntitlementError)
-    ) {
-      logger.error(message, { companyId, customerContractId: id, error: err });
-    }
     return data(
       { success: false },
       await flash(
         request,
-        error(err, err instanceof FinancingError ? err.message : message)
+        error(err, err instanceof FinancingError ? err.message : message, {
+          customerContractId: id
+        })
       )
     );
   };

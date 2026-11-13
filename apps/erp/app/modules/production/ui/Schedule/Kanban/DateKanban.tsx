@@ -146,7 +146,7 @@ function useDateUpdateFailureToast() {
         toastedKeys.current.add(key);
         // Surface a friendly, translated message; log the raw server detail.
         if (data?.error?.message)
-          logger.error("Reschedule failed", { error: data.error.message });
+          logger.error("Reschedule failed", { error: data.error });
         toastError(
           t`Couldn't reschedule the job. Please try again.`,
           data?.error

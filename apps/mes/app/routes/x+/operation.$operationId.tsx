@@ -131,7 +131,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null
   ]);
   if (!ownedOperation.data || (ownedEntity && !ownedEntity.data)) {
-    logger.warn("Operation or tracked entity not found in company", {
+    logger.warning("Operation or tracked entity not found in company", {
       companyId,
       operationId,
       trackedEntityId,
@@ -278,7 +278,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const op = operation.data?.[0];
   if (!op) {
-    logger.warn("Operation not found after the ownership check", {
+    logger.warning("Operation not found after the ownership check", {
       companyId,
       operationId
     });
@@ -320,17 +320,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // A partial read (members or planned lots missing) refuses too: the
     // completion form must not run on lots it could not read.
     if (!batchResult.data || batchResult.error) {
-      logger.error("Failed to read the operation's batch", {
-        companyId,
-        operationId,
-        batchId,
-        error: batchResult.error
-      });
       throw redirect(
         path.to.operations,
         await flash(
           request,
-          error(batchResult.error, "Failed to load the operation's batch")
+          error(batchResult.error, "Failed to load the operation's batch", {
+            operationId,
+            batchId
+          })
         )
       );
     }

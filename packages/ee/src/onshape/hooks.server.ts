@@ -223,7 +223,7 @@ export function onshapeHealthcheck(integrationId: OnshapeOAuthIntegrationId) {
         integrationId
       );
       if (!onshape.client) {
-        logger.warn("Onshape healthcheck: no client", {
+        logger.warning("Onshape healthcheck: no client", {
           companyId,
           integrationId,
           error: onshape.error
@@ -233,7 +233,7 @@ export function onshapeHealthcheck(integrationId: OnshapeOAuthIntegrationId) {
       await onshape.client.getCompanies();
       return true;
     } catch (error) {
-      logger.warn("Onshape healthcheck: request failed", {
+      logger.warning("Onshape healthcheck: request failed", {
         companyId,
         integrationId,
         error

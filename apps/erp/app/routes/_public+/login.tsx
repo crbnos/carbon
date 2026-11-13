@@ -87,6 +87,8 @@ import type { Result } from "~/types";
 import { setAppBadge } from "~/utils/app-badge";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "login");
+
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Login" }];
 };
@@ -315,9 +317,7 @@ export default function LoginRoute() {
     setAppBadge(0);
     import("localforage")
       .then((storage) => storage.default.clear())
-      .catch((error) =>
-        getLogger("erp", "login").warn("stored lists not cleared", { error })
-      );
+      .catch((error) => logger.warning("stored lists not cleared", { error }));
   }, []);
 
   const { t } = useLingui();
@@ -356,7 +356,7 @@ export default function LoginRoute() {
   const logoutReason = searchParams.get("reason");
   useEffect(() => {
     if (logoutReason) {
-      getLogger("erp", "login").warning(
+      logger.warning(
         "Session was destroyed server-side; see server logs for the full record",
         { reason: logoutReason }
       );

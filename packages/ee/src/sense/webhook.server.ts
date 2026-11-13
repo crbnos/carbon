@@ -54,10 +54,13 @@ export async function ensureSenseWebhook(
   const origin = webhookOrigin();
   if (!origin) {
     if (!repairOnly) {
-      logger.warn("Sense webhook not registered: Sense cannot reach the app", {
-        companyId,
-        appUrl: getAppUrl()
-      });
+      logger.warning(
+        "Sense webhook not registered: Sense cannot reach the app",
+        {
+          companyId,
+          appUrl: getAppUrl()
+        }
+      );
     }
     return false;
   }

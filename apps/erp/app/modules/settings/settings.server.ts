@@ -2463,7 +2463,7 @@ export const transitionSyncOperations = defineServiceFn({
       );
     }
     if (result.failures.length > 0) {
-      logger.warn("Sync operations were not transitioned", {
+      logger.warning("Sync operations were not transitioned", {
         companyId: ctx.company.id,
         to,
         failures: result.failures

@@ -11613,10 +11613,7 @@ export async function postStockTransfer(
   let expiredWarning: string | undefined;
   let splitEntityId: string | undefined;
 
-  logger.info({
-    function: "post-stock-transfer",
-    ...validatedPayload
-  });
+  logger.info("Posting a stock transfer", validatedPayload);
 
   switch (validatedPayload.type) {
     case "inventory": {
@@ -14466,7 +14463,7 @@ export async function postReceipt(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  logger.info({ type, receiptId, userId, companyId });
+  logger.info("Posting a receipt", { type, receiptId, userId, companyId });
   const fixedAssetWrites = new FixedAssetWrites();
   if (type === "post")
     await assertPostable(db, "receipt", receiptId, companyId);
@@ -16105,7 +16102,7 @@ export async function postReceipt(
             }
           );
           if (unaccrued.length > 0) {
-            logger.warn(
+            logger.warning(
               "Units invoiced before receipt have no GR/IR accrual; the receipt costs them at PO cost",
               {
                 companyId,
@@ -19293,7 +19290,7 @@ export async function postShipment(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  logger.info({ type, shipmentId, userId, companyId });
+  logger.info("Posting a shipment", { type, shipmentId, userId, companyId });
   const fixedAssetWrites = new FixedAssetWrites();
   if (type === "post")
     await assertPostable(db, "shipment", shipmentId, companyId);
@@ -20385,7 +20382,7 @@ export async function postShipment(
               });
 
               if (Object.keys(jobUpdates).length > 0) {
-                logger.info("Final job updates to be applied:", jobUpdates);
+                logger.info("Applying the final job updates", { jobUpdates });
                 await updateRowsById(
                   trx,
                   "job",
@@ -20850,10 +20847,9 @@ export async function postShipment(
               }
 
               if (Object.keys(jobOperationsUpdates).length > 0) {
-                logger.info(
-                  "Final job updates to be applied:",
+                logger.info("Applying the final job operation updates", {
                   jobOperationsUpdates
-                );
+                });
                 await updateRowsById(
                   trx,
                   "jobOperation",
@@ -22745,10 +22741,9 @@ export async function postShipment(
 
               // Update jobs to reverse shipped quantities
               if (Object.keys(jobUpdates).length > 0) {
-                logger.info(
-                  "Final job void updates to be applied:",
+                logger.info("Applying the final job void updates", {
                   jobUpdates
-                );
+                });
                 await updateRowsById(
                   trx,
                   "job",
@@ -23097,10 +23092,9 @@ export async function postShipment(
 
               // Update job operations to reset status
               if (Object.keys(jobOperationsUpdates).length > 0) {
-                logger.info(
-                  "Final job operation void updates to be applied:",
+                logger.info("Applying the final job operation void updates", {
                   jobOperationsUpdates
-                );
+                });
                 await updateRowsById(
                   trx,
                   "jobOperation",
@@ -30096,7 +30090,7 @@ export async function issueMaterial(
     userId: ctx.auditUserId
   };
 
-  logger.info(validatedPayload);
+  logger.info("Issuing material", validatedPayload);
 
   const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
     [];

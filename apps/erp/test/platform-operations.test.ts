@@ -8,9 +8,6 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() })
-}));
 // The plan lookup: this company's plan has no workflows.
 vi.mock("@carbon/ee/plan.server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/ee/plan.server")>()),

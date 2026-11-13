@@ -4360,7 +4360,7 @@ export const scanKanban = defineServiceFn({
         });
       }
       for (const warning of result.data?.warnings ?? []) {
-        logger.warn("A kanban job was released with a warning", {
+        logger.warning("A kanban job was released with a warning", {
           companyId,
           jobId,
           warning: warning.message

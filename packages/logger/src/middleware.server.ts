@@ -2,49 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { withContext } from "@logtape/logtape";
 import { createId } from "@paralleldrive/cuid2";
 import {
   createContext,
+  isRouteErrorResponse,
   type MiddlewareFunction,
   type RouterContextProvider
 } from "react-router";
 import {
+  addLogContext,
   getRequestContext,
+  isReadRequest,
   requestContextMiddleware,
   requestDetailContext
 } from "./context.server";
+import { ACCESS_LOG_CATEGORY, getLogger } from "./logger";
 import { isSensitiveKey, REDACTED, redactSearch } from "./redaction";
-import { annotateRequestSpan } from "./tracing.server";
-
-// Re-exported from the existing entry point rather than adding a new package
-// export subpath: Vite resolves a package's `exports` map once at dev-server
-// start, so a new subpath 500s until every running dev server is restarted.
-// TODO: once a restart is coordinated, add `"./context.server"` to this
-// package's `exports` and repoint the four importers (both apps' root.tsx,
-// auth's auth.server.ts and users.server.ts) at it, then drop this re-export.
-export {
-  currentRequest,
-  describeRequest,
-  getRequestContext,
-  getRouterContext,
-  isReadRequest,
-  oncePerRead,
-  oncePerRequest,
-  requestContextMiddleware
-} from "./context.server";
-
-import { getLogger } from "./logger";
-
-/**
- * Run `fn` inside a LogTape implicit-context scope so every log line emitted
- * within it carries `properties` — the same mechanism `requestIdMiddleware`
- * uses for `requestId`. Scopes nest and merge, so calling this inside a
- * request adds to the request's context rather than replacing it. Use it to
- * stamp identity that a whole request shares (e.g. `companyId`/`userId` once
- * auth resolves) instead of repeating the fields at every log call site.
- */
-export { withContext as withLogContext } from "@logtape/logtape";
+import { annotateRequestSpan } from "./span";
 
 export const REQUEST_ID_HEADER = "x-request-id";
 
@@ -124,89 +98,98 @@ async function captureRequestBody(request: Request): Promise<unknown> {
 export const requestIdContext = createContext<string | null>(null);
 
 /**
- * The current request's correlation id.
- *
- * Pass `context` explicitly from a loader/action, or omit it to read the
- * ambient request context published by `requestContextMiddleware` — which is
- * what makes this callable from a plain service function.
+ * The current request's correlation id: from `context` in a loader or action,
+ * or from the ambient request context anywhere else in the request.
  */
 export function getRequestId(context?: RouterContextProvider): string | null {
   if (context) return context.get(requestIdContext);
   return getRequestContext(requestIdContext) ?? null;
 }
 
-const log = getLogger("http");
+const log = getLogger(ACCESS_LOG_CATEGORY);
 
 /**
- * Assigns a cloud-agnostic request id (reuses an inbound `x-request-id`, else
- * generates one), echoes it on the response, and runs the rest of the request
- * inside a LogTape implicit-context scope so every `getLogger(...)` call in
- * loaders/actions/services during this request carries `{ requestId }`.
- *
- * Register FIRST in an app's `middleware` array so downstream middleware and
- * handlers run inside the context scope.
+ * Assigns a cloud-agnostic request id (an inbound `x-request-id`, else a new
+ * one), puts it on every log line of the request and on the response, and
+ * writes the access log. Runs inside `requestContextMiddleware`'s scope.
  */
-export const requestIdMiddleware: MiddlewareFunction<Response> = async (
+const requestIdMiddleware: MiddlewareFunction<Response> = async (
   { request, context },
   next
 ) => {
   const requestId = request.headers.get(REQUEST_ID_HEADER) ?? createId();
   context.set(requestIdContext, requestId);
+  addLogContext({ requestId });
 
   const { method } = request;
   const { pathname, search } = new URL(request.url);
   const start = performance.now();
 
-  // Capture the body only when debug is actually enabled — skips the clone +
-  // parse entirely at the prod `info` default. Done before `next()` so the
-  // clone happens while the stream is untouched.
+  // Before `next()`, while the body stream is untouched.
   const body = log.isEnabledFor("debug")
     ? await captureRequestBody(request)
     : undefined;
 
-  const response = await withContext({ requestId }, async () => {
-    const res = await next();
-    annotateRequestSpan({
-      "http.response.status_code": res.status,
-      "carbon.request_id": requestId,
-      // The client left before the response was ready, so a read's queries
-      // were cancelled and its status says nothing about the server.
-      ...(request.signal.aborted && { "carbon.request.abandoned": true })
-    });
-    // Debug-level so it is visible in dev but filtered by the prod `info`
-    // default — the pipeline is observable with zero migrated call sites.
-    // Rendered as a Morgan "dev"-style colored line in dev (see
-    // http-formatter.ts) and as a structured JSONL record in prod. When a
-    // request body was captured, it rides on the same record (`body`).
-    const detail = context.get(requestDetailContext);
-    log.debug(
-      detail
-        ? "{method} {pathname} {detail} → {status} in {responseTime}ms"
-        : "{method} {pathname} → {status} in {responseTime}ms",
-      {
-        method,
-        pathname,
-        ...(detail ? { detail } : {}),
-        search: redactSearch(search),
-        status: res.status,
-        responseTime: performance.now() - start,
-        ...(body === undefined ? {} : { body })
-      }
-    );
-    return res;
+  const response = await next();
+  annotateRequestSpan({
+    "http.response.status_code": response.status,
+    "carbon.request_id": requestId,
+    // The client left before the response was ready, so a read's queries
+    // were cancelled and its status says nothing about the server.
+    ...(request.signal.aborted && { "carbon.request.abandoned": true })
   });
+  // Debug, so the production `info` default leaves it out.
+  const detail = context.get(requestDetailContext);
+  log.debug(
+    detail
+      ? "{method} {pathname} {detail} → {status} in {responseTime}ms"
+      : "{method} {pathname} → {status} in {responseTime}ms",
+    {
+      method,
+      pathname,
+      ...(detail ? { detail } : {}),
+      search: redactSearch(search),
+      status: response.status,
+      responseTime: performance.now() - start,
+      ...(body === undefined ? {} : { body })
+    }
+  );
 
   response.headers.set(REQUEST_ID_HEADER, requestId);
   return response;
 };
 
 /**
- * The request scope in one middleware: publishes the request context
- * (`requestContextMiddleware`) and, inside it, assigns the request id and
- * writes the access log (`requestIdMiddleware`). Register FIRST in an app's
- * root `middleware`, so everything downstream runs inside both.
+ * The request scope: the request context, the request id on every log line,
+ * and the access log. Register FIRST in an app's root `middleware`, so
+ * everything downstream runs inside it.
  */
 export const requestMiddleware: MiddlewareFunction<Response> = (args, next) =>
-  requestContextMiddleware(args, () =>
-    Promise.resolve(requestIdMiddleware(args, next) as Response)
+  requestContextMiddleware(
+    args,
+    () => requestIdMiddleware(args, next) as Promise<Response>
   );
+
+const serverLog = getLogger("server");
+
+/**
+ * React Router's `handleError`: every app's `entry.server.tsx` re-exports it.
+ * A thrown `Response` or `data()` is control flow, logged (if at all) by the
+ * code that threw it. A read the client abandoned is not a failure; a write
+ * that failed after the client left still is. React Router may call it outside
+ * the request scope, so the request id is read from `context`.
+ */
+export function handleServerError(
+  error: unknown,
+  { request, context }: { request: Request; context?: RouterContextProvider }
+): void {
+  if (error instanceof Response || isRouteErrorResponse(error)) return;
+  if (request.signal.aborted && isReadRequest(request)) return;
+  const { pathname } = new URL(request.url);
+  serverLog.error("Unhandled error in {method} {pathname}", {
+    method: request.method,
+    pathname,
+    requestId: context?.get(requestIdContext) ?? undefined,
+    error
+  });
+}

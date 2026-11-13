@@ -171,7 +171,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (jobs.error) {
-    logger.error(jobs.error);
     throw redirect(
       path.to.priorityOperation,
       await flash(request, error(jobs.error, "Failed to fetch jobs"))
@@ -179,7 +178,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (unscheduledJobs.error) {
-    logger.error(unscheduledJobs.error);
     throw redirect(
       path.to.priorityOperation,
       await flash(
@@ -256,7 +254,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Jobs are already sorted by due date and priority from the SQL function
 
-  // Create columns based on view type
   let columns: Column[] = [];
   const todayDate = toCalendarDate(now(timezone));
 
@@ -308,7 +305,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       // Each week is exactly 7 days
       const currentWeekEnd = currentWeekStart.add({ days: 6 });
 
-      // Check if this week contains today
       const isTodayInWeek =
         todayDate.compare(currentWeekStart) >= 0 &&
         todayDate.compare(currentWeekEnd) <= 0;
@@ -371,7 +367,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
           dueDate.compare(monthStart) >= 0 &&
           dueDate.compare(monthEnd) <= 0
         ) {
-          // Find which week column this date belongs to
           // Weeks start on the 1st, 8th, 15th, 22nd, etc.
           let weekStart = monthStart;
           while (weekStart.compare(monthEnd) <= 0) {

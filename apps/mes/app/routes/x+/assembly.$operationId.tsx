@@ -78,7 +78,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (c) => c === "0" || c === companyId
     ) ?? false;
   if (!ownedOperation.data) {
-    logger.warn("Operation not found in company", {
+    logger.warning("Operation not found in company", {
       companyId,
       operationId,
       error: ownedOperation.error

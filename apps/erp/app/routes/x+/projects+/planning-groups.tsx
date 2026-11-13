@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -18,8 +17,6 @@ import PlanningGroupsUpgradeOverlay from "~/modules/projects/ui/PlanningGroups/P
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
-
-const logger = getLogger("erp", "planning-groups");
 
 export const handle: Handle = {
   breadcrumb: msg`Planning Groups`,
@@ -49,10 +46,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (groups.error) {
-    logger.error("Failed to load planning groups", {
-      companyId,
-      error: groups.error
-    });
     throw redirect(
       path.to.projects,
       await flash(

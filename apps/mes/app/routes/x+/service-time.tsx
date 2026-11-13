@@ -55,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .eq("companyId", companyId)
     .maybeSingle();
   if (!job.data) {
-    logger.warn("Service job not found in company", {
+    logger.warning("Service job not found in company", {
       companyId,
       serviceJobId,
       error: job.error
@@ -224,14 +224,12 @@ export async function action({ request }: ActionFunctionArgs) {
       userId
     });
     if (completed.error) {
-      logger.error("Failed to complete the service job", {
-        companyId,
-        serviceJobId,
-        error: completed.error
-      });
       return data(
         {},
-        await flash(request, error(completed.error, completed.error.message))
+        await flash(
+          request,
+          error(completed.error, completed.error.message, { serviceJobId })
+        )
       );
     }
 

@@ -815,7 +815,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             Object.assign(flattenedMetadata, freshStatus);
           }
         } else {
-          logger.warn(
+          logger.warning(
             "Stripe Connect account is no longer linked; hiding stale connection state",
             { companyId, stripeAccountId }
           );
@@ -1452,10 +1452,6 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
         }
       );
     } catch (clearError) {
-      logger.error("Could not clear the previous Onshape credentials", {
-        companyId,
-        error: clearError
-      });
       return data(
         {},
         await flash(
@@ -1502,17 +1498,14 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
       try {
         await onInstall(companyId);
       } catch (hookError) {
-        logger.error("onInstall hook failed for integration", {
-          integrationId,
-          error: hookError
-        });
         throw redirect(
           path.to.integrations,
           await flash(
             request,
             error(
               hookError,
-              `Installed ${integration.name}, but setup hook failed`
+              `Installed ${integration.name}, but setup hook failed`,
+              { integrationId }
             )
           )
         );

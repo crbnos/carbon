@@ -10,11 +10,8 @@ import {
   setWorkflowDispatch
 } from "@carbon/jobs/inngest";
 import { getLogger } from "@carbon/logger";
-import { describeRequest } from "@carbon/logger/middleware.server";
-import {
-  annotateRequestSpan,
-  nameRequestSpan
-} from "@carbon/logger/tracing.server";
+import { describeRequest } from "@carbon/logger/context.server";
+import { annotateRequestSpan } from "@carbon/logger/span";
 import { serve } from "inngest/remix";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { tableJobHandlers } from "~/utils/table-jobs.server";
@@ -115,7 +112,6 @@ export async function action(args: ActionFunctionArgs) {
   // Inngest only calls functions it registered, but the query string is the
   // caller's: an id that is not ours stays out of the span name.
   if (functionId && functionIds.has(functionId)) {
-    nameRequestSpan(`${args.request.method} /api/inngest ${functionId}`);
     describeRequest(functionId);
   }
   return handler(args);

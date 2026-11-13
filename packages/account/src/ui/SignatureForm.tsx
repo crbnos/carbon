@@ -34,7 +34,7 @@ import type { Account } from "../types";
 import type { SignaturePadHandle } from "./SignaturePad";
 import SignaturePad from "./SignaturePad";
 
-const logger = getLogger("erp", "signatureform");
+const logger = getLogger("account", "signature");
 
 /** Uploads are scaled to this height; the PDF prints them at most 40pt high. */
 const SIGNATURE_HEIGHT = 200;

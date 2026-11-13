@@ -107,7 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ownedEntities.error ||
     (ownedEntities.data ?? []).length !== submittedEntityIds.length
   ) {
-    logger.warn("Batch completion references records outside the batch", {
+    logger.warning("Batch completion references records outside the batch", {
       companyId,
       batchId,
       jobOperationId: foreignMember?.jobOperationId,

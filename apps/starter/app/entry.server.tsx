@@ -15,6 +15,8 @@ import type { EntryContext, RouterContextProvider } from "react-router";
 ensureLoggingConfigured();
 installFormBodyGuard();
 
+export { handleServerError as handleError } from "@carbon/logger/middleware.server";
+
 export const streamTimeout = 5_000;
 
 export default function handleRequest(
