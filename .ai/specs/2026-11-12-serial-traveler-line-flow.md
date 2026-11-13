@@ -62,21 +62,37 @@ The solution has 3 slices. This spec designs all 3. The plan builds slice 1 firs
 | Result unit | What MES does |
 |-------------|---------------|
 | `Reserved`, in a job (a unit in production) | Find the open operations of the unit's job make method. Open the one at the operator's work center for the day (`getMyPeopleAssignment`). If there is none, open the next open operation in routing order. If 2 or more match, show a short list. The link is `/x/operation/<id>?trackedEntityId=<unit>`. |
-| `Available` (a finished sub-assembly in stock) | Show the open operations at this location that still need the unit's item. The operator's work center comes first, then the earliest job due date. MES preselects the first row. One tap issues the unit and opens that operation. |
+| `Available` (a finished sub-assembly in stock) | Show the open operations at this location that still need the unit's item. For a serial job, "still need" means the operation's next unit does not yet hold its quantity of the item (the S5 rule). The operator's work center comes first, then the earliest job due date. MES preselects the first row. One tap issues the unit and opens that operation. |
 | `Available`, and no open operation needs its item | Show the unit's readable ID, item and bin, with a link to the ERP traceability graph. |
 | Any other status (`On Hold`, `Rejected`, `Scrapped`) | Show the status, and do nothing else. |
 | Not found in the company | Show "This label does not belong to a unit in this company". |
 
-**S5. Scan into the open operation.** On the job operation screen (`JobOperation.tsx`, `AssemblyView.tsx`), a traveler scan of an `Available` unit issues it into the open operation. The screen calls the existing route `issue-tracked-entity.tsx` with `parentTrackedEntityId` set to the operation's current unit. Before the issue, MES refuses a unit whose item has no `jobMaterial` on the operation's job make method. The message is "This job does not use <item>". A traveler scan of a unit that is already inside this job's unit opens that operation, with no issue. A traveler scan of a batch lot does not issue it: MES sends the operator to the Issue dialog, so a scan never consumes a whole lot. The MES layout wedge leaves traveler links alone on `/x/operation/` and `/x/assembly/`, so the operation screen gets them first.
+**S5. Scan into the open operation.** On the job operation screen (`JobOperation.tsx`, `AssemblyView.tsx`), a traveler scan of an `Available` unit issues it into the open operation. The screen calls the existing route `issue-tracked-entity.tsx` with `parentTrackedEntityId` set to the operation's current unit. Before the issue, MES refuses a unit whose item has no `jobMaterial` on the operation's job make method. The message is "This job does not use <item>". MES also refuses a unit when no material of its item still needs it. The rule has 2 cases:
+
+| Parent | A material still needs the item while |
+|--------|---------------------------------------|
+| A serial unit | Its quantity per unit is more than the item consumed into that unit. `Consume` edges count, less the parts an `Unconsume` gave back and less scrapped parts. |
+| Any other parent | `estimatedQuantity - quantityIssued` is more than 0. |
+
+The message is "This unit already has its <item>" for a serial unit, and "This job already has all its <item>" for any other parent. The server makes this check (`resolveTravelerMaterial`). The traveler route's chooser (S4) applies the same rule, so it never offers an operation that the issue then refuses. A failed read refuses the issue with "Could not check this unit. Try again.". A failed label lookup shows "Could not look up this label. Try again.", not "not found". A traveler scan of a unit that is already inside this job's unit opens that operation, with no issue. A traveler scan of a batch lot does not issue it: MES sends the operator to the Issue dialog, so a scan never consumes a whole lot. The MES layout wedge leaves traveler links alone on `/x/operation/` and `/x/assembly/`, so the operation screen gets them first.
 
 **S6. Labels at the pick and at the finish.**
 
-1. When a picking list moves from `Draft` to `In Progress`, Carbon prints one traveler for each output unit of each job on the list. The move can come from a status change or from the first pick (the `update_picking_list_status` trigger). A list that returns to `In Progress` from `Completed` or `Partial` prints nothing. The printer is the location's `inventory` printer context, through a new print source `PickingList`.
+1. When a picking list leaves `Draft`, Carbon prints one traveler for each output unit of each job on the list. The move can come from a status change or from a pick (the `update_picking_list_status` trigger). A pick that resolves every line takes the list straight to `Completed` or `Partial`, and that move prints too. The printer is the location's `inventory` printer context, through a new print source `PickingList`.
+   - The column `pickingList."travelersPrintedAt"` records the print. After each status change and each pick, one conditional UPDATE sets it (`claimTravelerPrint`, `@carbon/database/travelers`).
+   - The UPDATE changes the row only when the column is null and the status is not `Draft` or `Cancelled`. Only the call that changes the row prints. So two picks at the same moment print once, and a list that returns to `In Progress` prints nothing.
+   - If `travelerLabels` is off, Carbon does not set the column. So a company that turns the setting on later still gets travelers for a list that has not printed.
 2. The picking list gets a "Print travelers" action, for a lost or damaged label.
 3. When the last operation of a job's top-level make method completes, Carbon prints the unit's serial label. This happens only when the item's `itemSerialSequence.printLabelOnCompletion` is true. The printer is the work center's printer context.
 4. A company with `travelerLabels` on stops the existing first-operation print (`autoPrintFirstOperationLabel`). A company with it off keeps today's behavior.
 
-**S7. Required scans.** A new company setting `requireTrackedMaterialsIssued` is off by default. When it is on, MES refuses to complete an operation while a serial or batch `jobMaterial` of that operation has `quantityIssued` below its requirement. A material with no `jobOperationId` belongs to the last operation of its make method. The server checks in the completion routes `complete.tsx`, `end.$operationId.tsx` and `finish.tsx`. The client and the server use one shared helper. Batch completion (`batch.$batchId.complete.tsx`) is out of scope for slice 1. `QuantityModal` shows the missing parts and disables the button, in place of today's confirm checkbox. An operation with 2 or more serial sub-assemblies follows the same setting.
+**S7. Required scans.** A new company setting `requireTrackedMaterialsIssued` is off by default. When it is on, MES refuses to complete an operation while a serial or batch `jobMaterial` of that operation has `quantityIssued` below its requirement. A material with no `jobOperationId` belongs to the last operation of its make method. The server checks in every completion route, before it records anything:
+
+1. `complete.tsx`, `end.$operationId.tsx` and `finish.tsx`.
+2. The inspection lot routes `inspection-lot.$id.complete-passed.tsx` and `inspection-lot.$id.disposition.tsx`. A serial lot checks each unit it completes. The disposition route checks before it closes the lot.
+3. Batch completion `batch.$batchId.complete.tsx`. It checks every member and refuses the whole batch. The message names each member that is short. A batch pick adds to the member's `quantityIssued` and does not scan into one unit, so the check counts `quantityIssued` for every member, also a serial member.
+
+A failed read refuses with "Could not check the scanned parts". The client and the server use one shared helper. `QuantityModal` shows the missing parts and disables the button, in place of today's confirm checkbox. An operation with 2 or more serial sub-assemblies follows the same setting.
 
 **S8. Automatic picking lists.** A new company setting `autoPickingListOnRelease` is off by default. When it is on, `releaseCheckedJobs` calls the `generatePickingList` building block once for each released job, after the job is `Ready`. The picking list keeps today's destination: the lineside storage unit of each work center that uses the part. Water spiders carry the parts from Warehouse 1 to the stations. A failure to generate a list does not undo the release. Carbon adds a paragraph to `job.notes`, logs the error and returns a release warning. The MES Picking screen also shows unassigned lists at the operator's location, because a list made at release has no assignee.
 
@@ -209,7 +225,7 @@ Slice 3 adds no tables. It reads the genealogy, `productionEvent`, the nonconfor
 | Traveler route and chooser | `apps/mes/app/routes/x+/traveler.$trackedEntityId.tsx` | 1 |
 | Traveler scan on the operation screen, with the wrong-item refusal | `JobOperation.tsx`, `AssemblyView.tsx`, `issue-tracked-entity.tsx` | 1 |
 | IssueMaterialModal Scan tab reads the ID out of a traveler link | `IssueMaterialModal.tsx` | 1 |
-| Required-scan check | `apps/mes/app/services/operations.service.ts`; `complete.tsx`, `end.$operationId.tsx`, `finish.tsx`; `QuantityModal.tsx` | 1 |
+| Required-scan check | `apps/mes/app/services/operations.service.ts`; `complete.tsx`, `end.$operationId.tsx`, `finish.tsx`, `inspection-lot.$id.complete-passed.tsx`, `inspection-lot.$id.disposition.tsx`, `batch.$batchId.complete.tsx`; `QuantityModal.tsx` | 1 |
 | Travelers at the pick, "Print travelers" | `packages/printing` registry, print-job resolver `PickingList`, picking status and pick routes | 1 |
 | Finish label | `apps/mes/app/services/printing.server.ts` | 1 |
 | Picking list at release, through the `generatePickingList` building block | `releaseCheckedJobs` (`production.server.ts:278`), `production.service.ts` | 1 |
@@ -334,3 +350,6 @@ Slice 3:
 - 2026-11-12: Created. Questions Q1–Q4 answered by the user in the grill. Q5–Q11 take v1 defaults at the user's request, to revisit after the first test.
 - 2026-11-12: Planning corrections. Q12 answered by the user: picks go to station bins, so no staging column on `location`. Test data moves to the dev-only dataset `motor-line`. Added: the `PickingList` print source, the first-pick print trigger, unassigned picking lists in the MES, the batch-lot refusal, the wedge order, the ZPL QR size, the ambiguous raw-ID message, and the `materialRequest` foreign keys.
 - 2026-11-12: Rebuilt after the untracked `.ai` files were lost during execution; content unchanged. Status set to in-progress.
+- 2026-11-12: S6 item 1 changed after code review. The `travelersPrintedAt` claim replaces the Draft → In Progress rule. A pick that completes the list now prints, and two picks at once print once.
+- 2026-11-12: S7 changed after code review. A failed read of the next operation now refuses. The inspection lot routes and batch completion now run the required-scan check.
+- 2026-11-12: S4 and S5 changed after code review. A traveler scan no longer issues a part that the unit already has. The server refuses it with "This unit already has its <item>", and the S4 chooser follows the same rule. A failed label lookup now shows a retry message, not "not found".

@@ -4,8 +4,13 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  batchRequiredScanMessage,
+  issuedByJobMaterial,
+  lastOperationIds,
+  netTrackedInputs,
   type RequiredScanMaterial,
   requiredScanMessage,
+  requiredScanShortfall,
   unissuedTrackedMaterials
 } from "./trackedMaterials";
 
@@ -90,5 +95,131 @@ describe("unissuedTrackedMaterials", () => {
 describe("requiredScanMessage", () => {
   it("returns null when nothing is missing", () => {
     expect(requiredScanMessage([])).toBeNull();
+  });
+});
+
+describe("lastOperationIds", () => {
+  it("is last when only an operation of another make method depends on it", () => {
+    // op_2 feeds op_3 (same make method); op_3 feeds the parent's op_9.
+    const last = lastOperationIds(
+      [
+        { id: "op_2", jobMakeMethodId: "jmm_sub" },
+        { id: "op_3", jobMakeMethodId: "jmm_sub" }
+      ],
+      [
+        { dependsOnId: "op_2", jobMakeMethodId: "jmm_sub" },
+        { dependsOnId: "op_3", jobMakeMethodId: "jmm_top" }
+      ]
+    );
+    expect([...last]).toEqual(["op_3"]);
+  });
+});
+
+describe("netTrackedInputs", () => {
+  it("drops a scrapped input and one given back by an Unconsume", () => {
+    const inputs = [
+      { id: "chamber", status: "Consumed" },
+      { id: "nozzle", status: "Consumed" },
+      { id: "bolt", status: "Scrapped" }
+    ];
+    expect(
+      netTrackedInputs(inputs, [{ id: "nozzle" }]).map((i) => i.id)
+    ).toEqual(["chamber"]);
+  });
+
+  it("keeps an input consumed again after it was given back", () => {
+    const inputs = [
+      { id: "chamber", status: "Consumed" },
+      { id: "chamber", status: "Consumed" }
+    ];
+    expect(
+      netTrackedInputs(inputs, [{ id: "chamber" }]).map((i) => i.id)
+    ).toEqual(["chamber"]);
+  });
+});
+
+describe("issuedByJobMaterial", () => {
+  it("sums the scanned quantity per job material", () => {
+    const issued = issuedByJobMaterial([
+      { quantity: 1, activityAttributes: { "Job Material": "jm_1" } },
+      { quantity: 2, activityAttributes: { "Job Material": "jm_1" } },
+      { quantity: 5, activityAttributes: null }
+    ]);
+    expect([...issued]).toEqual([["jm_1", 3]]);
+  });
+});
+
+describe("requiredScanShortfall", () => {
+  const base = {
+    operationId: "op_2",
+    jobMakeMethodId: "jmm_1",
+    isLastOperation: false
+  };
+
+  it("refuses serial units when one of them is missing its part", () => {
+    // 3 units, 1 chamber each: unit A has it, B has 2 (counts 1), C has none.
+    const chamber = material();
+    const rows = requiredScanShortfall({
+      ...base,
+      materials: [chamber],
+      units: {
+        kind: "serial",
+        issuedByUnit: [
+          new Map([["jm_1", 1]]),
+          new Map([["jm_1", 2]]),
+          new Map()
+        ]
+      }
+    });
+    expect(rows).toEqual([{ material: chamber, issued: 2, required: 3 }]);
+  });
+
+  it("lets serial units through when each holds its part", () => {
+    expect(
+      requiredScanShortfall({
+        ...base,
+        materials: [material()],
+        units: {
+          kind: "serial",
+          issuedByUnit: [new Map([["jm_1", 1]]), new Map([["jm_1", 1]])]
+        }
+      })
+    ).toEqual([]);
+  });
+
+  it("counts the operation's issued quantity for a non-serial parent", () => {
+    const batch = material({ quantity: 2, quantityIssued: 3 });
+    expect(
+      requiredScanShortfall({
+        ...base,
+        materials: [batch],
+        units: { kind: "operation", unitsAfterCompletion: 2 }
+      })
+    ).toEqual([{ material: batch, issued: 3, required: 4 }]);
+  });
+});
+
+describe("batchRequiredScanMessage", () => {
+  it("names only the members that are short", () => {
+    expect(
+      batchRequiredScanMessage([
+        { label: "J000001", rows: [] },
+        {
+          label: "J000002",
+          rows: [
+            { itemReadableId: "CHAMBER", issued: 0, required: 2 },
+            { itemReadableId: "NOZZLE", issued: 1, required: 2 }
+          ]
+        }
+      ])
+    ).toBe(
+      "Scan in these parts first: J000002: CHAMBER (0 of 2), NOZZLE (1 of 2)"
+    );
+  });
+
+  it("returns null when no member is short", () => {
+    expect(
+      batchRequiredScanMessage([{ label: "J000001", rows: [] }])
+    ).toBeNull();
   });
 });

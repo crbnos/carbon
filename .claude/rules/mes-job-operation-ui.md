@@ -317,7 +317,7 @@ was printed from.
   | Target status | What the route does |
   |---|---|
   | `Reserved` (a unit in work) | `pickTravelerOperation` picks from the unit's open operations on the active list. An operation at the operator's work center (today's people assignment) wins, else the lowest `operationOrder`. One candidate redirects to `path.to.operation(id)?trackedEntityId=…`; 2 or more show a chooser (`chooseOperation`); none shows the unit's details |
-  | `Available` (a part to fit) | `travelerIssueCandidates` lists the open operations whose material of that item is still short. A material with no operation belongs to the last open operation of its make method. Operations at the operator's work center come first, then the earliest job due date. The `IssueChooser` issues the unit into the selected operation's next incomplete unit, then opens that operation. With no candidate, it shows the unit's details and storage unit |
+  | `Available` (a part to fit) | `travelerIssueCandidates` lists the open operations whose material of that item is still short. A material with no operation belongs to the last open operation of its make method. A serial make method (`perUnitMakeMethodIds`) skips the job-level check: once each candidate's next incomplete unit is known, the loader keeps it only when `pickTravelerMaterial` finds a material that unit still needs (`getUnitConsumption`, one read for every unit). Operations at the operator's work center come first, then the earliest job due date; the list is capped at 10 after that check. The `IssueChooser` issues the unit into the selected operation's next incomplete unit, then opens that operation. With no candidate, it shows the unit's details and storage unit |
   | Any other status | The unit's status |
 
 - **`useTravelerScan`** (`JobOperation/hooks/useTravelerScan.ts`) is the
@@ -333,8 +333,29 @@ was printed from.
   `parentTrackedEntityId` and exactly one child. `resolveTravelerMaterial`
   (`services/traveler.server.ts`) sets the material and quantity from the
   scanned unit. It refuses a unit that is not `Available`, an item the make
-  method does not use ("This job does not use …"), and a batch-tracked material
-  (batch lots issue from the Issue dialog).
+  method does not use ("This job does not use …"), an item no material still
+  needs, and a batch-tracked material (batch lots issue from the Issue dialog).
+  It is the gate; the chooser's filter only mirrors it.
+- **What still needs the item** (`pickTravelerMaterial`, `~/utils/traveler`,
+  tested). Only a material on this operation, then one with no operation, can
+  take the unit (each group in id order). A serial parent
+  (`jobMakeMethod.requiresSerialTracking`) takes a material while its
+  `quantity` (per unit) is more than what is consumed into that unit for it.
+  `getUnitConsumption` reads that per job material from the `Consume`
+  activities that output the unit (their `Job Material` attribute and input
+  quantities), less the `Unconsume` outputs, and leaves out a component that is
+  now `Scrapped`. Consumption booked to another material of the item (the Issue
+  dialog's issue by item makes a 0-quantity one) fills this operation's
+  materials first. Any other parent takes a material while
+  `jobMaterialShortfall` (`estimatedQuantity ?? quantity` less
+  `quantityIssued`) is above 0. With none left the refusal is "This unit
+  already has its <item>" (serial) or "This job already has all its <item>",
+  shown by `useTravelerScan` and the `IssueChooser` as a toast. A failed read
+  refuses with "Could not check this unit. Try again.".
+- **A failed lookup.** `findTrackedEntityByCode` logs and returns
+  `{ kind: "error" }` when either read fails, and `x+/traveler.resolve.tsx`
+  passes it as `status: "error"`. `useTravelerScan` shows "Could not look up
+  this label. Try again."; the layout wedge still shows its generic toast.
 - The Issue dialog's serial and batch fields also accept a traveler link and
   keep only its id.
 
@@ -346,15 +367,39 @@ while its serial or batch materials are not scanned in.
 - **The rule.** `unissuedTrackedMaterials` (`~/utils/trackedMaterials`, tested)
   lists the tracked materials of the make method that the operation consumes:
   its own materials, plus the materials with no operation when it is the last
-  operation (`isLastOperationOfMakeMethod`). A material is short while
+  operation (the screens read it with `isLastOperationOfMakeMethod`, the
+  server with `getLastOperationsOfMakeMethods`). A material is short while
   `quantityIssued` is less than `quantity` × the units after completion.
 - **The server check.** `getRequiredScanShortfall` (`services/operations.service.ts`)
   returns the refusal message ("Scan in these parts first: …",
   `requiredScanMessage`). A serial unit counts only what was scanned into that
-  unit (`getTrackedInputs`); a batch or untracked parent counts the operation's
-  `quantityIssued`. A failed read refuses ("Could not check the scanned parts").
-  `x+/complete.tsx`, `x+/end.$operationId.tsx` (every branch) and `x+/finish.tsx`
-  call it before they write.
+  unit; a batch or untracked parent counts the operation's `quantityIssued`.
+  Several serial units (an inspection lot) pass `trackedEntityIds`: each unit
+  must hold its parts, and the message sums them ("issued of required" over
+  the units). One set of reads covers every operation and unit: the
+  operations, their tracked materials, the last-operation read
+  (`getLastOperationsOfMakeMethods`, one `jobOperationDependency` query; the
+  decision is `lastOperationIds`) and the units' inputs through the batch
+  lineage RPCs (`netTrackedInputs`, `issuedByJobMaterial`; `getTrackedInputs`
+  nets the same way). A failed read of any of them, the last-operation read
+  included, refuses ("Could not check the scanned parts") and is logged.
+  `isLastOperationOfMakeMethod` still reads a failed lookup as "not last"; it
+  is for the screens and printing, never the gate.
+- **Where it runs**, before anything is recorded, beside `checkStrictBackflush`:
+  `x+/complete.tsx`, `x+/end.$operationId.tsx` (every branch), `x+/finish.tsx`,
+  `x+/inspection-lot.$id.complete-passed.tsx` and
+  `x+/inspection-lot.$id.disposition.tsx` (through `checkRequiredScans`,
+  `services/quality.server.ts`; the disposition checks the units it completes
+  before it closes the lot; a decision that completes no unit is not checked), and
+  `x+/batch.$batchId.complete.tsx` (`getBatchRequiredScanShortfall`).
+- **Batch completion.** Every member that is not excluded is checked in one
+  set of reads, and the whole batch is refused with the members that are
+  short, by job ("Scan in these parts first: J1: PART (0 of 2); …",
+  `batchRequiredScanMessage`). A batch pick (`trackedEntitiesToBatch`) adds to
+  each member's `jobMaterial.quantityIssued` and books into one WIP unit, not
+  per unit, so every member counts `quantityIssued`, a serial member too. A
+  `Completing` batch (phase 1 recorded its quantities) adds no units, and a
+  `Completed` one (a duplicate submit) is not checked.
 - **The modal.** The operation and assembly loaders pass `isLastOperation` and
   `requireTrackedMaterialsIssued` to `QuantityModal`. With the setting on, the
   Complete alert lists each short part ("issued of required") and Complete stays

@@ -36,8 +36,12 @@ import type { z } from "zod";
 import { erpPosting } from "~/services/erp";
 import { sanitize } from "~/utils/supabase";
 import {
+  batchRequiredScanMessage,
+  issuedByJobMaterial,
+  lastOperationIds,
+  netTrackedInputs,
   requiredScanMessage,
-  unissuedTrackedMaterials
+  requiredScanShortfall
 } from "~/utils/trackedMaterials";
 import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
@@ -367,132 +371,250 @@ export async function isLastOperationOfMakeMethod(
 const REQUIRED_SCAN_CHECK_FAILED = "Could not check the scanned parts";
 
 /**
- * When the company requires tracked materials to be issued, the message that
- * refuses completing `quantity` units of an operation whose serial or batch
- * materials are not yet scanned in. `message` is null when completion may go
- * ahead. A failed read refuses with a generic message rather than letting the
- * unit through.
+ * Which of these operations are the last of their make method, read in one
+ * query. Unlike `isLastOperationOfMakeMethod`, a failed read is returned as
+ * the error, so the caller can refuse instead of reading "not last".
  */
-export async function getRequiredScanShortfall(
+export async function getLastOperationsOfMakeMethods(
   client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    jobOperationId: string;
-    trackedEntityId?: string;
-    parentIsSerial: boolean;
-    quantity: number;
+  companyId: string,
+  operations: { id: string; jobMakeMethodId: string | null }[]
+): Promise<{ data: Set<string>; error: PostgrestError | null }> {
+  if (operations.length === 0) return { data: new Set(), error: null };
+  const dependencies = await client
+    .from("jobOperationDependency")
+    .select(
+      "dependsOnId, operation:jobOperation!jobOperationDependency_operationId_fk!inner(jobMakeMethodId)"
+    )
+    .in(
+      "dependsOnId",
+      operations.map((operation) => operation.id)
+    )
+    .eq("companyId", companyId);
+  if (dependencies.error) {
+    return { data: new Set(), error: dependencies.error };
   }
-): Promise<{ message: string | null; error: unknown | null }> {
-  const { companyId, jobOperationId, trackedEntityId, parentIsSerial } = args;
+  return {
+    data: lastOperationIds(
+      operations,
+      (dependencies.data ?? []).map((dependency) => ({
+        dependsOnId: dependency.dependsOnId,
+        jobMakeMethodId: dependency.operation?.jobMakeMethodId ?? null
+      }))
+    ),
+    error: null
+  };
+}
+
+/**
+ * The tracked inputs still inside each unit, per job material, read with the
+ * batch lineage RPCs (two calls for every unit). A failed read is returned as
+ * the error.
+ */
+async function getIssuedByUnit(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  trackedEntityIds: string[]
+): Promise<{ data: Map<string, Map<string, number>>; error: unknown }> {
+  const data = new Map<string, Map<string, number>>();
+  if (trackedEntityIds.length === 0) return { data, error: null };
+  const [inputs, outputs] = await Promise.all([
+    client.rpc("get_direct_descendants_of_tracked_entities_strict", {
+      p_tracked_entity_ids: trackedEntityIds,
+      p_company_id: companyId
+    }),
+    client.rpc("get_direct_ancestors_of_tracked_entities_strict", {
+      p_tracked_entity_ids: trackedEntityIds,
+      p_company_id: companyId
+    })
+  ]);
+  if (inputs.error || outputs.error) {
+    return { data, error: inputs.error ?? outputs.error };
+  }
+  const bySource = <T extends { sourceEntityId: string }>(rows: T[]) => {
+    const grouped = new Map<string, T[]>();
+    for (const row of rows) {
+      const list = grouped.get(row.sourceEntityId) ?? [];
+      list.push(row);
+      grouped.set(row.sourceEntityId, list);
+    }
+    return grouped;
+  };
+  const inputsByUnit = bySource(inputs.data ?? []);
+  const outputsByUnit = bySource(outputs.data ?? []);
+  for (const trackedEntityId of trackedEntityIds) {
+    data.set(
+      trackedEntityId,
+      issuedByJobMaterial(
+        netTrackedInputs(
+          inputsByUnit.get(trackedEntityId) ?? [],
+          outputsByUnit.get(trackedEntityId) ?? []
+        )
+      )
+    );
+  }
+  return { data, error: null };
+}
+
+export type RequiredScanCheck = {
+  jobOperationId: string;
+  /** Units this completion adds. Counted against the operation's
+   *  `quantityIssued` when `serialUnits` is not given. */
+  quantity: number;
+  /** Serial units being completed: each unit counts only what was scanned
+   *  into it. `null` is a unit with no id, which holds nothing. */
+  serialUnits?: (string | null)[];
+};
+
+export type RequiredScanShortRow = {
+  itemReadableId: string;
+  issued: number;
+  required: number;
+};
+
+/**
+ * When the company requires tracked materials to be issued, the short parts
+ * of each operation completion in `checks`, read with one query per table for
+ * all of them. `data` is empty when the setting is off. A failed read returns
+ * `error`, and the caller refuses with `REQUIRED_SCAN_CHECK_FAILED`.
+ */
+async function getRequiredScanShortfalls(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  checks: RequiredScanCheck[]
+): Promise<{
+  data: { jobOperationId: string; rows: RequiredScanShortRow[] }[];
+  error: unknown | null;
+}> {
+  const fail = (what: string, error: unknown) => {
+    log.error(`getRequiredScanShortfall: ${what} failed`, {
+      companyId,
+      jobOperationIds: checks.map((check) => check.jobOperationId),
+      error
+    });
+    return { data: [], error };
+  };
+
+  if (checks.length === 0) return { data: [], error: null };
 
   const settings = await client
     .from("companySettings")
     .select("requireTrackedMaterialsIssued")
     .eq("id", companyId)
     .maybeSingle();
-  if (settings.error) {
-    log.error("getRequiredScanShortfall: reading company settings failed", {
-      companyId,
-      jobOperationId,
-      error: settings.error
-    });
-    return { message: REQUIRED_SCAN_CHECK_FAILED, error: settings.error };
-  }
+  if (settings.error) return fail("reading company settings", settings.error);
   if (!settings.data?.requireTrackedMaterialsIssued) {
-    return { message: null, error: null };
+    return { data: [], error: null };
   }
 
-  const operation = await client
+  const operationIds = [
+    ...new Set(checks.map((check) => check.jobOperationId))
+  ];
+  const operations = await client
     .from("jobOperation")
-    .select("jobMakeMethodId, quantityComplete")
-    .eq("id", jobOperationId)
-    .eq("companyId", companyId)
-    .single();
-  if (operation.error || !operation.data) {
-    log.error("getRequiredScanShortfall: reading the job operation failed", {
-      companyId,
-      jobOperationId,
-      error: operation.error
-    });
-    return {
-      message: REQUIRED_SCAN_CHECK_FAILED,
-      error: operation.error ?? new Error("Job operation not found")
-    };
+    .select("id, jobMakeMethodId, quantityComplete")
+    .in("id", operationIds)
+    .eq("companyId", companyId);
+  if (operations.error) {
+    return fail("reading the job operations", operations.error);
   }
-  const { jobMakeMethodId, quantityComplete } = operation.data;
+  if ((operations.data ?? []).length !== operationIds.length) {
+    return fail(
+      "reading the job operations",
+      new Error("Job operation not found")
+    );
+  }
+  const operationById = new Map(
+    operations.data.map((operation) => [operation.id, operation])
+  );
   // Materials belong to a make method; an operation outside one consumes none.
-  if (!jobMakeMethodId) return { message: null, error: null };
+  const makeMethodIds = [
+    ...new Set(
+      operations.data
+        .map((operation) => operation.jobMakeMethodId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  if (makeMethodIds.length === 0) return { data: [], error: null };
 
-  const [materials, isLastOperation, trackedInputs] = await Promise.all([
+  const serialUnitIds = [
+    ...new Set(
+      checks.flatMap((check) =>
+        (check.serialUnits ?? []).filter((id): id is string => Boolean(id))
+      )
+    )
+  ];
+
+  const [materials, lastOperations, issuedByUnit] = await Promise.all([
     client
       .from("jobMaterial")
       .select(
         "id, itemId, jobMakeMethodId, jobOperationId, requiresSerialTracking, requiresBatchTracking, quantity, quantityIssued"
       )
-      .eq("jobMakeMethodId", jobMakeMethodId)
+      .in("jobMakeMethodId", makeMethodIds)
       .eq("companyId", companyId)
       .or("requiresSerialTracking.eq.true,requiresBatchTracking.eq.true"),
-    isLastOperationOfMakeMethod(client, jobOperationId, jobMakeMethodId),
-    parentIsSerial && trackedEntityId
-      ? getTrackedInputs(client, trackedEntityId)
-      : Promise.resolve({ data: [], error: null })
+    getLastOperationsOfMakeMethods(client, companyId, operations.data),
+    getIssuedByUnit(client, companyId, serialUnitIds)
   ]);
-  if (materials.error || trackedInputs.error) {
-    const error = materials.error ?? trackedInputs.error;
-    log.error("getRequiredScanShortfall: reading tracked materials failed", {
-      companyId,
-      jobOperationId,
-      error
-    });
-    return { message: REQUIRED_SCAN_CHECK_FAILED, error };
+  if (materials.error) {
+    return fail("reading tracked materials", materials.error);
+  }
+  if (lastOperations.error) {
+    return fail("reading the next operation", lastOperations.error);
+  }
+  if (issuedByUnit.error) {
+    return fail("reading the scanned parts", issuedByUnit.error);
   }
 
-  // A serial unit counts only what was scanned into this unit; a batch parent
-  // counts everything issued to the operation so far.
-  const issuedToUnit = new Map<string, number>();
-  if (parentIsSerial) {
-    for (const input of trackedInputs.data ?? []) {
-      const materialId = (
-        input.activityAttributes as TrackedActivityAttributes
-      )?.["Job Material"];
-      if (typeof materialId !== "string") continue;
-      issuedToUnit.set(
-        materialId,
-        (issuedToUnit.get(materialId) ?? 0) + Number(input.quantity ?? 0)
-      );
+  const shortfalls = checks.map((check) => {
+    const operation = operationById.get(check.jobOperationId)!;
+    if (!operation.jobMakeMethodId) {
+      return { jobOperationId: check.jobOperationId, short: [] };
     }
-  }
-  const candidates = (materials.data ?? []).map((material) =>
-    parentIsSerial
-      ? { ...material, quantityIssued: issuedToUnit.get(material.id) ?? 0 }
-      : material
-  );
-  const unitsAfterCompletion = parentIsSerial
-    ? 1
-    : (quantityComplete ?? 0) + args.quantity;
-
-  const unissued = unissuedTrackedMaterials({
-    materials: candidates,
-    operationId: jobOperationId,
-    jobMakeMethodId,
-    isLastOperation,
-    unitsAfterCompletion
+    const short = requiredScanShortfall({
+      materials: (materials.data ?? []).filter(
+        (material) => material.jobMakeMethodId === operation.jobMakeMethodId
+      ),
+      operationId: check.jobOperationId,
+      jobMakeMethodId: operation.jobMakeMethodId,
+      isLastOperation: lastOperations.data.has(check.jobOperationId),
+      units: check.serialUnits
+        ? {
+            kind: "serial",
+            issuedByUnit: check.serialUnits.map(
+              (id) => (id ? issuedByUnit.data.get(id) : undefined) ?? new Map()
+            )
+          }
+        : {
+            kind: "operation",
+            unitsAfterCompletion:
+              (operation.quantityComplete ?? 0) + check.quantity
+          }
+    });
+    return { jobOperationId: check.jobOperationId, short };
   });
-  if (unissued.length === 0) return { message: null, error: null };
 
+  const itemIds = [
+    ...new Set(
+      shortfalls.flatMap(({ short }) => short.map((row) => row.material.itemId))
+    )
+  ];
+  if (itemIds.length === 0) {
+    return {
+      data: shortfalls.map(({ jobOperationId }) => ({
+        jobOperationId,
+        rows: []
+      })),
+      error: null
+    };
+  }
   const items = await client
     .from("item")
     .select("id, readableId, readableIdWithRevision")
-    .in("id", Array.from(new Set(unissued.map((material) => material.itemId))))
+    .in("id", itemIds)
     .eq("companyId", companyId);
-  if (items.error) {
-    log.error("getRequiredScanShortfall: reading item ids failed", {
-      companyId,
-      jobOperationId,
-      error: items.error
-    });
-    return { message: REQUIRED_SCAN_CHECK_FAILED, error: items.error };
-  }
+  if (items.error) return fail("reading item ids", items.error);
   const readableIdById = new Map(
     (items.data ?? []).map((item) => [
       item.id,
@@ -501,11 +623,90 @@ export async function getRequiredScanShortfall(
   );
 
   return {
-    message: requiredScanMessage(
-      unissued.map((material) => ({
-        itemReadableId: readableIdById.get(material.itemId) ?? material.itemId,
-        issued: material.quantityIssued ?? 0,
-        required: (material.quantity ?? 0) * unitsAfterCompletion
+    data: shortfalls.map(({ jobOperationId, short }) => ({
+      jobOperationId,
+      rows: short.map((row) => ({
+        itemReadableId:
+          readableIdById.get(row.material.itemId) ?? row.material.itemId,
+        issued: row.issued,
+        required: row.required
+      }))
+    })),
+    error: null
+  };
+}
+
+/**
+ * When the company requires tracked materials to be issued, the message that
+ * refuses completing units of an operation whose serial or batch materials
+ * are not yet scanned in. `message` is null when completion may go ahead. A
+ * failed read refuses with a generic message rather than letting the unit
+ * through.
+ *
+ * A serial parent counts what was scanned into each unit: `trackedEntityIds`
+ * (several units, an inspection lot) or `trackedEntityId` (one unit). A batch
+ * or untracked parent counts the operation's `quantityIssued` for
+ * `quantityComplete + quantity` units.
+ */
+export async function getRequiredScanShortfall(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    jobOperationId: string;
+    trackedEntityId?: string;
+    trackedEntityIds?: string[];
+    parentIsSerial: boolean;
+    quantity: number;
+  }
+): Promise<{ message: string | null; error: unknown | null }> {
+  const result = await getRequiredScanShortfalls(client, args.companyId, [
+    {
+      jobOperationId: args.jobOperationId,
+      quantity: args.quantity,
+      serialUnits: args.parentIsSerial
+        ? (args.trackedEntityIds ?? [args.trackedEntityId ?? null])
+        : undefined
+    }
+  ]);
+  if (result.error) {
+    return { message: REQUIRED_SCAN_CHECK_FAILED, error: result.error };
+  }
+  return {
+    message: requiredScanMessage(result.data[0]?.rows ?? []),
+    error: null
+  };
+}
+
+/**
+ * The required-scan gate for a batch completion: every member is checked in
+ * one set of reads, and the message names each member that is short by its
+ * `label`. A batch issues a member's material against the member's
+ * `jobMaterial.quantityIssued`, never into one serial unit, so every member
+ * counts the operation's `quantityIssued`, serial-tracked members included.
+ */
+export async function getBatchRequiredScanShortfall(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    members: { jobOperationId: string; quantity: number; label: string }[];
+  }
+): Promise<{ message: string | null; error: unknown | null }> {
+  const result = await getRequiredScanShortfalls(
+    client,
+    args.companyId,
+    args.members.map((member) => ({
+      jobOperationId: member.jobOperationId,
+      quantity: member.quantity
+    }))
+  );
+  if (result.error) {
+    return { message: REQUIRED_SCAN_CHECK_FAILED, error: result.error };
+  }
+  return {
+    message: batchRequiredScanMessage(
+      args.members.map((member, index) => ({
+        label: member.label,
+        rows: result.data[index]?.rows ?? []
       }))
     ),
     error: null
@@ -2614,44 +2815,12 @@ export async function getTrackedInputs(
   // relieved its WIP and reopened the material requirement — so it must not
   // surface in the Unconsume/Scrap lists (which are built from these inputs).
   // Genealogy still sees it via the traceability lineage RPCs; this MES helper
-  // intentionally hides it.
-  if (inputs.data) {
-    inputs.data = inputs.data.filter((input) => input.status !== "Scrapped");
-  }
-
-  if (outputs.error || outputs.data.length === 0) return inputs;
-
-  // Handle circular references while keeping only unique entities that appear more times in inputs than outputs
-  const inputCounts = new Map<string, number>();
-  const outputCounts = new Map<string, number>();
-
-  // Count occurrences in inputs
-  inputs.data?.forEach((input) => {
-    inputCounts.set(input.id, (inputCounts.get(input.id) || 0) + 1);
-  });
-
-  // Count occurrences in outputs
-  outputs.data?.forEach((output) => {
-    outputCounts.set(output.id, (outputCounts.get(output.id) || 0) + 1);
-  });
-
-  // Track which IDs we've already included to avoid duplicates
-  const includedIds = new Set<string>();
-
-  const inputsWithoutCircularReferences = inputs.data?.filter((input) => {
-    const inputCount = inputCounts.get(input.id) || 0;
-    const outputCount = outputCounts.get(input.id) || 0;
-
-    // Only include if input count > output count and we haven't included this ID yet
-    if (inputCount > outputCount && !includedIds.has(input.id)) {
-      includedIds.add(input.id);
-      return true;
-    }
-    return false;
-  });
-
+  // intentionally hides it. An input given back by an Unconsume (it appears in
+  // outputs as often as in inputs) is no longer inside the unit either.
   return {
-    data: inputsWithoutCircularReferences,
+    data: inputs.data
+      ? netTrackedInputs(inputs.data, outputs.error ? [] : (outputs.data ?? []))
+      : inputs.data,
     error: inputs.error
   };
 }
