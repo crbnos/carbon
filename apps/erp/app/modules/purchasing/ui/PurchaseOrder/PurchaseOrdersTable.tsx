@@ -259,6 +259,32 @@ const PurchaseOrdersTable = memo(
           }
         },
         {
+          accessorKey: "shippedDate",
+          header: t`Shipped Date`,
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
+          meta: {
+            filter: {
+              type: "dateRange"
+            },
+            icon: <LuCalendar />
+          }
+        },
+        {
+          accessorKey: "expectedReceiptDate",
+          header: t`Expected Receipt Date`,
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
+          meta: {
+            filter: {
+              type: "dateRange"
+            },
+            icon: <LuCalendar />
+          }
+        },
+        {
           accessorKey: "orderTotal",
           header: t`Order Total`,
           cell: (item) => currencyFormatter.format(item.getValue<number>()),

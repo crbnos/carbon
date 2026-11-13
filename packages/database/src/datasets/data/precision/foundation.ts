@@ -336,42 +336,49 @@ export const CUSTOMER_CONTACTS = [
 export const SUPPLIERS = [
   {
     name: "Rock River Metals",
+    stage: "Production" as const,
     type: "Materials",
     phone: "+1-815-555-0110",
     website: "https://rockrivermetals.com"
   },
   {
     name: "Bluestem Alloys",
+    stage: "Production" as const,
     type: "Materials",
     phone: "+1-262-555-0220",
     website: "https://bluestemalloys.com"
   },
   {
     name: "Fastline Industrial Supply",
+    stage: "Qualified" as const,
     type: "Hardware",
     phone: "+1-847-555-0330",
     website: "https://fastlinesupply.com"
   },
   {
     name: "Midway Bearing & Seal",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+1-773-555-0440",
     website: "https://midwaybearing.com"
   },
   {
     name: "Anvil Finishing Group",
+    stage: "Production" as const,
     type: "Finishing",
     phone: "+1-815-555-0550",
     website: "https://anvilfinishing.com"
   },
   {
     name: "Forge Heat Treating",
+    stage: "Qualified" as const,
     type: "Heat Treating",
     phone: "+1-309-555-0660",
     website: "https://forgeheattreat.com"
   },
   {
     name: "Precision Gauge Services",
+    stage: "Production" as const,
     type: "Services",
     phone: "+1-608-555-0770",
     website: "https://precisiongauge.com"
@@ -387,6 +394,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Prairie Anodizing",
+    stage: "Sampling" as const,
     type: "Finishing",
     phone: "+1-217-555-0990",
     website: "https://prairieanodizing.com",
@@ -394,6 +402,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Cutrate Carbide",
+    stage: "Prospect" as const,
     type: "Tooling",
     phone: "+1-773-555-1010",
     website: "https://cutratecarbide.com",
@@ -401,6 +410,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Bavaria Werkzeugstahl GmbH",
+    stage: "Production" as const,
     type: "Materials",
     phone: "+49-89-555-1120",
     website: "https://bavaria-werkzeugstahl.de",

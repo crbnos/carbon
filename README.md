@@ -101,6 +101,13 @@ Manufacturing teams often run planning, production, quality and accounting in se
 
 Carbon puts ERP, MRP, MES and QMS in **one Postgres database you can inspect, own and extend**. Engineering, planning, production, quality and accounting update the same data, without synchronization jobs between separate product databases.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/where-carbon-fits-dark.webp" />
+    <img alt="Where Carbon fits: your sales tools (CRM and quoting, online store, customer portal) send orders in, and your factory (machines and robots, sensors and testing, your own software) gets work out, both through the Carbon API. In the middle, Carbon plans, runs and tracks the work: orders, planning, scheduling, shop floor, quality and inventory, all on one shared Postgres database. Analytics sees across all three." src=".github/assets/readme/where-carbon-fits-light.webp" width="900" />
+  </picture>
+</p>
+
 Carbon is an open-source alternative to [NetSuite](https://carbon.ms/compare/netsuite), [Epicor](https://carbon.ms/compare/epicor), [SAP Business One](https://carbon.ms/compare/sap-business-one), [Plex](https://carbon.ms/compare/plex), [Odoo](https://carbon.ms/compare/odoo) and [ERPNext](https://carbon.ms/compare/erpnext). It supports complex assembly, contract manufacturing, configure-to-order and high-mix, low-volume production. See [all comparisons](https://carbon.ms/compare).
 
 <br />
@@ -173,16 +180,20 @@ API keys and MCP are included with Business and Enterprise plans. Using them in 
 ERP and MES are React Router apps over a single Postgres database. Permissions (row-level security), computed totals and change events live in the database itself; background work runs through Inngest, which calls back into the ERP to execute jobs. The [architecture guide](https://docs.carbon.ms/docs/building/architecture) follows one click all the way down.
 
 <a href="https://docs.carbon.ms/docs/building/architecture">
-  <img alt="How Carbon fits together: shop floor, office and customers reach the MES and ERP, which read and write Postgres; subscribed writes queue Inngest jobs that run back in the ERP" src=".github/assets/readme/architecture.png" width="720" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/architecture-dark.webp" />
+    <img alt="How Carbon works: 1, shop floor staff, office staff, customers and suppliers, and your code and AI use Carbon; 2, inside Carbon, the MES for the shop floor and the ERP for the office, the API and MCP, both save to one shared database that decides who can see what and keeps totals correct, and screens update live; 3, after each save, background jobs send email and Slack, sync accounting, call webhooks, run workflows and sync Linear and Jira, plus search and the audit log." src=".github/assets/readme/architecture-light.webp" width="900" />
+  </picture>
 </a>
 
 ## Building E2E Systems
 
 Carbon is intended to be the core of a bespoke end-to-end manufacturing system. We provide an `apps/starter` and allow you to build a custom sales and shop-floor engine with Carbon at the center.
 
-![Carbon Functionality](https://github.com/user-attachments/assets/d73b3297-afb4-4bd4-a381-61b31a78aa38)
-
-![Carbon Architecture](https://github.com/user-attachments/assets/e5532a5f-609c-4404-8706-aa9bd59e180b)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/build-on-carbon-dark.webp" />
+  <img alt="Build on Carbon: 1, you connect your own app and scripts through the API, AI agents through MCP and reports through the Data API; 2, Carbon gives every way in the same permissions as the person or API key and the same actions the Carbon app uses, on one shared database; 3, Carbon tells others through webhooks, workflows and integrations such as Onshape, SolidWorks, Slack, Xero and Jira." src=".github/assets/readme/build-on-carbon-light.webp" width="900" />
+</picture>
 
 <br />
 
@@ -265,7 +276,7 @@ carbon
 
 ## Local Development
 
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/), [Node.js](https://nodejs.org) 24.22.1+ and [pnpm](https://pnpm.io) (via Corepack). On Windows, use WSL or Git Bash.
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/), [Node.js](https://nodejs.org) 24.22.1+ (see `.nvmrc`) and [pnpm](https://pnpm.io) (via Corepack). On Windows, use WSL or Git Bash.
 
 ```bash
 git clone https://github.com/crbnos/carbon.git && cd carbon
@@ -289,6 +300,41 @@ pnpm db:seed:dev -- --email test@carbon.ms --dataset satellite
 ```
 
 No external accounts are needed to run locally. Email, Google/Microsoft sign-in, Stripe, PostHog and AI providers are all optional and configured in `.env`; see [environment variables](https://docs.carbon.ms/docs/platform/self-hosting/environment-variables).
+
+### Claude Code cloud sessions and other agents
+
+Set `SESSION_SECRET` in the cloud environment’s secret settings before booting the stack (generate a value with `openssl rand -hex 32`).
+
+`scripts/cloud-dev.sh` boots the stack in a Claude Code cloud container: run it from the repo root, or from a `SessionStart` hook in your own Claude Code settings. It selects Node 24, starts `crbn up --no-portless` in the background and points `agent-browser` at the preinstalled Chrome. The ERP answers on `http://localhost:3000` a few minutes later. Its dev server listens about 40 s in, and from then on a request waits for the database instead of failing. Run by hand rather than from a hook, the script prints a file to `source` for the session's `PATH` and settings.
+
+To take the image pull (about 50 s on a fresh container) out of that wait, put this in the environment's Setup script (cloud environment menu, Edit). It installs dependencies, starts Docker and pulls the images the default stack boots, then stops; the environment keeps the result for new sessions, and the guard makes it harmless on a branch without the script:
+
+```bash
+cd carbon && [ -f scripts/cloud-dev.sh ] && bash scripts/cloud-dev.sh --prepare || true
+```
+
+Add `--database` to also keep a migrated and seeded database and Vite's dependency cache. It boots the whole stack once, through the login page and the app shell, which takes about 75 s with the images present, then stops everything with the Docker volumes and `apps/erp/node_modules/.vite` kept. A new session applies only the migrations its branch added, skips the RLS sync and the seed (about 30 s), and skips Vite's dependency pre-bundling (about 15 s). The default shared stack keeps a separate database for this checkout in the shared Postgres container; `crbn down` preserves that database and the shared services:
+
+```bash
+cd carbon && [ -f scripts/cloud-dev.sh ] && bash scripts/cloud-dev.sh --prepare --database || true
+```
+
+Seconds from boot start to the login page being served on a 4-core container, with the Docker daemon down and a cold page cache (as after a restore):
+
+| Kept by the environment | Login page | App shell |
+|---|---|---|
+| Nothing (a fresh container) | 152 | 168 |
+| The images | 74 | 88 |
+| The images and the database | 44 | 58 |
+| The images, the database and Vite's cache | 29 | 41 |
+
+The script sets `CARBON_DEV_CLOUD=1`, and only that switch turns on the container-only boot steps, so these cloud-specific behaviors do not apply to a developer’s own `pnpm dev`:
+
+- `crbn up` starts `dockerd` itself when it is installed but not running (root on Linux).
+- The ERP dev server starts before the database is migrated and holds requests until it is, and Vite warms up the login page and app shell at start.
+- The boot passes `--no-regen`: a fresh volume applies every migration, so the type and swagger regeneration would run in every new container (about 30 s) to rewrite committed generated files. The Database types workflow verifies that committed database types match the migrations.
+- `BOT_PROTECTION=none`, so `test@carbon.ms` can sign in from a script or a browser automation without the Cloudflare Turnstile widget.
+- A browser for checking the UI: Chrome is in the container (`/usr/bin/google-chrome`, which adds `--no-sandbox` for root) and the script installs `agent-browser`, the CLI the `/auth`, `/test` and `/smoke-test` skills drive it with (pinned by `AGENT_BROWSER_VERSION`; about 4 s, in the background at boot, or in `--prepare`), and sets `AGENT_BROWSER_EXECUTABLE_PATH`. From a cold browser, opening the login page, signing in as the bypass user and reaching the dashboard takes about 15 s; the next page about 8 s the first time.
 
 ### Worktrees and the `crbn` CLI
 

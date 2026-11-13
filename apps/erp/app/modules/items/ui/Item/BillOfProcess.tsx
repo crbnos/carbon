@@ -155,7 +155,7 @@ import type { action as newMethodOperationParameterAction } from "~/routes/x+/it
 import type { action as editMethodOperationStepAction } from "~/routes/x+/items+/methods+/operation.step.$id";
 import type { action as editMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.$id";
 import type { action as newMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.new";
-import { useItems, useTools } from "~/stores";
+import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
 import type {
@@ -2027,21 +2027,22 @@ function AttributesForm({
   // operation tool row is created server-side on attach when it doesn't exist
   // yet. Tools picked while CREATING a step are buffered here and attached
   // right after the step is created (see the effect below).
-  const allTools = useTools();
   const operationTools = useMemo(() => {
     const opToolByToolId = new Map(
       (tools ?? []).flatMap((tl) =>
         tl.toolId ? [[tl.toolId, tl] as const] : []
       )
     );
-    return allTools.map((tool) => ({
-      id: tool.id,
-      name: tool.readableIdWithRevision,
-      secondary: tool.name ?? undefined,
-      quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
-      primary: opToolByToolId.has(tool.id)
-    }));
-  }, [tools, allTools]);
+    return allItems
+      .filter((item) => item.type === "Tool" || opToolByToolId.has(item.id))
+      .map((tool) => ({
+        id: tool.id,
+        name: tool.readableIdWithRevision,
+        secondary: tool.name ?? undefined,
+        quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
+        primary: opToolByToolId.has(tool.id)
+      }));
+  }, [tools, allItems]);
   const [draftTools, setDraftTools] = useState<string[]>([]);
 
   const onUploadImage = useImageUpload("parts");
@@ -3033,7 +3034,7 @@ function StepTools({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
-  const allTools = useTools();
+  const [allItems] = useItems();
 
   // The whole tool LIBRARY is offered (keyed by tool item id) — an operation
   // needn't have a tool on its Tools tab first; picking one here creates the
@@ -3041,13 +3042,15 @@ function StepTools({
   const opToolByToolId = new Map(
     (tools ?? []).flatMap((tl) => (tl.toolId ? [[tl.toolId, tl] as const] : []))
   );
-  const stepTools = allTools.map((tool) => ({
-    id: tool.id,
-    name: tool.readableIdWithRevision,
-    secondary: tool.name ?? undefined,
-    quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
-    primary: opToolByToolId.has(tool.id)
-  }));
+  const stepTools = allItems
+    .filter((item) => item.type === "Tool" || opToolByToolId.has(item.id))
+    .map((tool) => ({
+      id: tool.id,
+      name: tool.readableIdWithRevision,
+      secondary: tool.name ?? undefined,
+      quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
+      primary: opToolByToolId.has(tool.id)
+    }));
 
   const linkedToolIds = (tools ?? [])
     .filter((tl) =>
@@ -3554,7 +3557,7 @@ function OperationPreview({
   tools: OperationTool[];
 }) {
   const { t } = useLingui();
-  const allTools = useTools();
+  const [allItems] = useItems();
   const [current, setCurrent] = useState(0);
   const [slideIdx, setSlideIdx] = useState(0);
   const [isViewingSlide, setIsViewingSlide] = useState(false);
@@ -3635,7 +3638,7 @@ function OperationPreview({
   )
     .map((pin, index) => {
       const tool = pin.toolId
-        ? allTools.find((x) => x.id === pin.toolId)
+        ? allItems.find((item) => item.id === pin.toolId)
         : undefined;
       return {
         pin,
@@ -3742,7 +3745,13 @@ function OperationPreview({
         annotations={slide?.annotations ?? []}
         toolNameById={
           isViewingSlide
-            ? new Map(allTools.map((tool) => [tool.id, tool.name]))
+            ? new Map(
+                pinLegend.flatMap(({ pin, toolName }) =>
+                  pin.toolId && toolName
+                    ? [[pin.toolId, toolName] as const]
+                    : []
+                )
+              )
             : undefined
         }
         onClose={() => setIsViewingSlide(false)}
@@ -3847,7 +3856,7 @@ function OperationPreview({
         </Subheading>
         {stepTools.length > 0 ? (
           stepTools.map((tl, i) => {
-            const tool = allTools.find((x) => x.id === tl.toolId);
+            const tool = allItems.find((item) => item.id === tl.toolId);
             return (
               <div key={tl.id ?? i} className="flex items-center gap-2 py-0.5">
                 <LuHammer className="size-3 shrink-0 text-muted-foreground" />
@@ -4004,9 +4013,10 @@ function ToolsListItem({
     }
   });
 
-  const tools = useTools();
-  const tool = tools.find((t) => t.id === toolId);
-  if (!tool || !id) return null;
+  const [items] = useItems();
+  const tool = items.find((item) => item.id === toolId);
+  if (!id) return null;
+  const toolLabel = tool?.readableIdWithRevision ?? toolId;
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -4062,11 +4072,9 @@ function ToolsListItem({
                 <LuHammer className="size-4" />
               </div>
               <VStack spacing={0}>
-                <span className="text-sm font-medium">
-                  {tool.readableIdWithRevision}
-                </span>
+                <span className="text-sm font-medium">{toolLabel}</span>
                 <span className="text-xs text-muted-foreground">
-                  {tool.name}
+                  {tool?.name}
                 </span>
               </VStack>
               <span className="text-base text-muted-foreground text-right">
@@ -4114,8 +4122,8 @@ function ToolsListItem({
       <ConfirmDelete
         action={path.to.deleteMethodOperationTool(id)}
         isOpen={deleteModalDisclosure.isOpen}
-        name={tool.readableIdWithRevision}
-        text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
+        name={toolLabel}
+        text={`Are you sure you want to delete ${toolLabel} from this operation? This cannot be undone.`}
         onCancel={() => {
           deleteModalDisclosure.onClose();
         }}

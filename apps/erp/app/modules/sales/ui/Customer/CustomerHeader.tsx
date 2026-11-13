@@ -26,6 +26,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { asColor } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuKeySquare, LuTrash } from "react-icons/lu";
@@ -76,9 +77,10 @@ const CustomerHeader = () => {
   const sharedCustomerData = useRouteData<{
     customerStatuses: CustomerStatus[];
   }>(path.to.customerRoot);
-  const customerStatus = sharedCustomerData?.customerStatuses?.find(
+  const status = sharedCustomerData?.customerStatuses?.find(
     (status) => status.id === routeData?.customer?.customerStatusId
-  )?.name;
+  );
+  const customerStatus = status?.name;
 
   const onUpdateTags = useCallback(
     (value: string[]) => {
@@ -157,7 +159,14 @@ const CustomerHeader = () => {
                   <Trans>Status</Trans>
                 </CardAttributeLabel>
                 <CardAttributeValue>
-                  {customerStatus ? <Enumerable value={customerStatus} /> : "-"}
+                  {customerStatus ? (
+                    <Enumerable
+                      value={customerStatus}
+                      color={asColor(status?.color)}
+                    />
+                  ) : (
+                    "-"
+                  )}
                 </CardAttributeValue>
               </CardAttribute>
               <CardAttribute>

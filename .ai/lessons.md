@@ -4855,6 +4855,26 @@ writer is a rule the other writers skip.
 (`packages/database/src/event-system/handlers/`), and any flag copied from a master
 record onto open documents.
 
+## Local database URLs must match Docker's loopback binding
+
+**Context:** The database types workflow runs `crbn migrate` against a fresh shared
+Postgres container on GitHub Actions.
+
+**Problem:** Compose publishes port 54322 on `127.0.0.1`, but `dbUrl()` emitted
+`localhost`. The Supabase CLI resolved that to `::1` and failed to connect after
+the migrations had already succeeded. Changing the URL to `127.0.0.1` exposed
+another CLI behavior: it treats that host and port as its own `supabase start`
+database and refuses to generate types without that container.
+
+**Rule:** Use `127.0.0.1` in generated host database URLs when the corresponding
+Docker port is bound to IPv4 loopback. For `supabase gen types --db-url`, set
+the CLI's `SUPABASE_DB_PORT` to a different port in that process so it honors
+the explicit URL as a direct connection. Keep URL expectations in the dev
+tests aligned with the binding.
+
+**Applies to:** `packages/dev/src/stack.ts`, database and pooler URLs from
+`renderEnv()`, and local CLI consumers such as database type generation.
+
 ## A React handler on a dialog also hears the dialogs opened from inside it
 
 **Context:** On phones every `Modal` and `Drawer` is a bottom sheet, and a sheet drags
@@ -4961,3 +4981,10 @@ root is `moduleIndexLoader`.
 - **Problem:** The first version refused whenever the document's own void refused, or when payments, memos or other documents still held it. Force delete exists for emergencies where a user error has broken that normal process, so those refusals left the Admin stuck.
 - **Rule:** In a force delete, a void's rule refusal is the trigger for `reverseDocumentByJournal`: negate its postings, adjust its stock back, restore its sources. Anything applied to the document is unapplied first (`unapplyForceDeleteSettlements`). To change a posted payment's journal, build it again with and without the change (`rebuildPaymentJournal`) and post the difference, rather than hand-building reversal lines.
 - **Applies to:** `invoicing.service.ts` force delete blocks, any future force delete type.
+
+## Parallel subagents each running the heavy checks exhaust the machine
+
+- **Context:** A review fanned out to six subagents. Each ran the `erp` typecheck, `generate:mcp` or a raw `tsc` in `apps/erp` to verify its own part.
+- **Problem:** The `erp` typecheck peaks near 10 GB and `generate:mcp` near 5 GB. Five of them at once took about 28 GB.
+- **Rule:** Only the main agent runs the heavy checks, once, after its subagents finish. Never raise `--max-old-space-size` to make one fit. `packages/dev/bin/heavy-lock` queues them machine-wide, so an extra run waits instead of running in parallel. A waiting run prints `heavy-lock: waiting for …`: that is the queue working, not a hang. Do not kill it.
+- **Applies to:** Any skill or workflow that dispatches subagents (review, execute, fix, conductor).

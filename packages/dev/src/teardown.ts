@@ -4,6 +4,8 @@
 
 import { existsSync } from "node:fs";
 import type { Task } from "@clack/prompts";
+import { livePid, upFile } from "../stack-state.js";
+import { waitUntil } from "./helpers.js";
 import { killOrphanedApps, killOrphanedStripe } from "./services/apps.js";
 import { destroyProject, flushDb, stopStack } from "./services/compose.js";
 import { releaseAliases } from "./services/portless.js";
@@ -35,6 +37,8 @@ export async function teardown(
   const volumes = (opts.volumes ?? false) || purge;
   const { slot } = stack;
   const failures: string[] = [];
+  // A `crbn up` in another shell; the one running this teardown is its own.
+  const upPid = livePid(upFile(stack.stateDir));
   const step = (
     title: string,
     run: () => Promise<string>,
@@ -58,6 +62,21 @@ export async function teardown(
 
   await tasks(
     [
+      step(
+        "Stop the running crbn up",
+        async () => {
+          // Its own teardown stops its dev servers; killed under it, they
+          // would be restarted by its supervisor.
+          process.kill(upPid!, "SIGINT");
+          const gone = await waitUntil(
+            async () => livePid(upFile(stack.stateDir)) !== upPid,
+            { timeoutMs: 60_000, intervalMs: 250 }
+          );
+          if (!gone) throw new Error(`crbn up (pid ${upPid}) did not exit`);
+          return `crbn up (pid ${upPid}) stopped`;
+        },
+        upPid !== null && upPid !== process.pid
+      ),
       step(`Stop ${stack.project}`, async () => {
         if (volumes || !hasFiles) {
           await destroyProject(stack.project, volumes);
@@ -83,7 +102,8 @@ export async function teardown(
       ),
       step("Stop the dev servers", async () => {
         // Their cwd holds the folder open: `git worktree remove` fails on it.
-        if (slot) await killOrphanedApps(slot.ports);
+        // stack.ports has localhost mode's pinned ports; the slot does not.
+        if (slot) await killOrphanedApps(stack.ports ?? slot.ports);
         if (hasFiles) await killOrphanedStripe(stack.root);
         return "dev servers stopped";
       }),

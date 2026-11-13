@@ -45,6 +45,7 @@ export type EntityKey =
   | "assetClass"
   | "customerType"
   | "customerStatus"
+  | "supplierStage"
   | "supplierType"
   | "itemPostingGroup"
   | "materialType"
@@ -164,6 +165,12 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
         route: path.to.newCustomerStatus,
         noun: t`customer status`,
         pluralNoun: t`customer statuses`
+      };
+    case "supplierStage":
+      return {
+        route: path.to.newSupplierStage,
+        noun: t`supplier stage`,
+        pluralNoun: t`supplier stages`
       };
     case "supplierType":
       return {

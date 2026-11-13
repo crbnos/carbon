@@ -30,6 +30,7 @@ import {
   SequenceOrCustomId,
   Submit,
   SupplierContact,
+  SupplierStage,
   SupplierStatus,
   SupplierType
 } from "~/components/Form";
@@ -188,6 +189,12 @@ const SupplierForm = ({
                     placeholder={t`Select Supplier Status`}
                     isReadOnly={supplierApprovalRequired}
                     termId="supplier-status"
+                  />
+                  <SupplierStage
+                    name="supplierStageId"
+                    label={t`Supplier Stage`}
+                    placeholder={t`Select Supplier Stage`}
+                    termId="supplier-stage"
                   />
                   <SupplierType
                     name="supplierTypeId"

@@ -9,6 +9,7 @@ import {
   isPurchaseOrderBulkDeletable,
   isPurchaseOrderForceDeleteConfirmed,
   isPurchaseOrderLocked,
+  isPurchaseOrderMissingPromisedDate,
   isPurchaseOrderPromisedDateEditable,
   leaseDetailsValidator,
   leaseDurationOf,
@@ -813,6 +814,40 @@ describe("supplierContactEmailRequiredValidator", () => {
       email: "test@example.com"
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("isPurchaseOrderMissingPromisedDate", () => {
+  const line = (promisedDate: string | null, type = "Part") => ({
+    purchaseOrderLineType: type,
+    promisedDate
+  });
+
+  it("finds a line with no date on an order with no date", () => {
+    expect(
+      isPurchaseOrderMissingPromisedDate([line("2026-12-01"), line(null)], null)
+    ).toBe(true);
+  });
+
+  it("lets the order's date cover every line", () => {
+    expect(
+      isPurchaseOrderMissingPromisedDate([line(null), line(null)], "2026-12-01")
+    ).toBe(false);
+  });
+
+  it("accepts lines that each have a date", () => {
+    expect(isPurchaseOrderMissingPromisedDate([line("2026-12-01")], null)).toBe(
+      false
+    );
+  });
+
+  it("skips Comment lines", () => {
+    expect(
+      isPurchaseOrderMissingPromisedDate(
+        [line("2026-12-01"), line(null, "Comment")],
+        null
+      )
+    ).toBe(false);
   });
 });
 

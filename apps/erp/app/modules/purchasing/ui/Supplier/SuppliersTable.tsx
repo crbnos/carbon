@@ -18,6 +18,7 @@ import {
   LuBookMarked,
   LuCalendar,
   LuEuro,
+  LuFlag,
   LuGlobe,
   LuHash,
   LuMail,
@@ -41,6 +42,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useSupplierStages } from "~/components/Form/SupplierStage";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
@@ -82,6 +84,7 @@ const SuppliersTable = memo(function SuppliersTable({
   const [selectedSupplier, setSelectedSupplier] =
     useState<SupplierListItem | null>(null);
   const supplierTypes = useSupplierTypes();
+  const supplierStages = useSupplierStages();
   const companySettings = useCompanySettings();
   const showSupplierReadableId =
     companySettings?.showSupplierReadableId ?? false;
@@ -134,6 +137,33 @@ const SuppliersTable = memo(function SuppliersTable({
             }))
           },
           icon: <LuStar />
+        }
+      },
+      {
+        accessorKey: "supplierStageId",
+        header: t`Stage`,
+        cell: ({ row }) => (
+          <Enumerable
+            value={row.original.stage ?? ""}
+            color={
+              supplierStages.find(
+                (s) => s.value === row.original.supplierStageId
+              )?.color
+            }
+          />
+        ),
+        meta: {
+          mobile: "P2",
+          icon: <LuFlag />,
+          sortBy: "stage",
+          exportValue: (row) => row.stage,
+          filter: {
+            type: "static",
+            options: supplierStages?.map((stage) => ({
+              value: stage.value,
+              label: <Enumerable value={stage.label} color={stage.color} />
+            }))
+          }
         }
       },
       {
@@ -394,7 +424,15 @@ const SuppliersTable = memo(function SuppliersTable({
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [supplierTypes, people, tags, customColumns, t, showSupplierReadableId]);
+  }, [
+    supplierTypes,
+    supplierStages,
+    people,
+    tags,
+    customColumns,
+    t,
+    showSupplierReadableId
+  ]);
 
   const renderContextMenu = useMemo(
     () => (row: SupplierRow) => (

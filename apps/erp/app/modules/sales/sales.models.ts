@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import { anyOf, type PageGate } from "@carbon/database/access";
 import {
   bicMatchesCountry,
+  colorNames,
   conditionAstFormField,
   equals,
   getBankFieldConfig,
@@ -279,7 +280,9 @@ export const customerShippingValidator = z.object({
 
 export const customerStatusValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  /** Empty keeps the color derived from the name. */
+  color: zfd.text(z.enum(colorNames).optional())
 });
 
 export const customerTypeValidator = z.object({
@@ -841,7 +844,8 @@ export const quoteFinalizeValidator = z
   .object({
     notification: z.enum(["Email", "None"]).optional(),
     customerContact: zfd.text(z.string().optional()),
-    cc: z.array(z.string()).optional()
+    cc: z.array(z.string()).optional(),
+    emailOrderOnAcceptance: zfd.checkbox()
   })
   .refine(
     (data) => (data.notification === "Email" ? data.customerContact : true),

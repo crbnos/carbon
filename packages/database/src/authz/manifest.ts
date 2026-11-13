@@ -1704,6 +1704,7 @@ export const manifest = {
     create: false,
     delete: false
   }),
+  supplierStage: company({ read: "employee" }),
   supplierType: company({ read: "member" }),
   supplyActual: company(),
   supplyForecast: company(),

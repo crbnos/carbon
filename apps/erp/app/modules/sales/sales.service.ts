@@ -185,7 +185,8 @@ import {
   getCurrentAccountingPeriod,
   isContactEmailRequired,
   refuseUnlessOwned,
-  resolveInventoryAccount
+  resolveInventoryAccount,
+  sendSalesOrderEmail
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
 import {
@@ -1236,7 +1237,7 @@ export async function getCustomerStatuses(
 ) {
   let query = client
     .from("customerStatus")
-    .select("id, name, customFields", {
+    .select("id, name, color, customFields", {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -1258,7 +1259,7 @@ export async function getCustomerStatusesList(
 ) {
   return client
     .from("customerStatus")
-    .select("id, name")
+    .select("id, name, color")
     .eq("companyId", companyId)
     .order("name");
 }
@@ -2530,13 +2531,17 @@ export async function finalizeQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
   userId: string,
-  companyId: string
+  companyId: string,
+  options: { emailOrderOnAcceptance?: boolean } = {}
 ) {
   const quoteUpdate = await requireAffected(
     client
       .from("quote")
       .update({
         status: "Sent",
+        ...(options.emailOrderOnAcceptance !== undefined && {
+          emailOrderOnAcceptance: options.emailOrderOnAcceptance
+        }),
         updatedAt: datetime.timestamp(),
         updatedBy: userId
       })
@@ -14729,6 +14734,53 @@ export async function notifyDigitalQuoteResponse(
     logger.error("Failed to notify the digital quote group", {
       companyId: ctx.company.id,
       quoteId,
+      error
+    });
+  }
+}
+
+/**
+ * Emails the order to whoever accepted the quote online, with the sales person
+ * on the email. Best-effort: a failure is logged and never undoes the order.
+ */
+export async function emailDigitalQuoteOrder(
+  ctx: ServiceContext,
+  args: {
+    salesOrderId: string;
+    acceptedBy: string;
+    acceptedByEmail: string;
+    documentFilePath: string;
+    fileName: string;
+  }
+): Promise<void> {
+  const companyId = ctx.company.id;
+  const email = args.acceptedByEmail.trim();
+  if (!z.string().email().safeParse(email).success) {
+    logger.warn("Skipped the order email: the acceptor's email is not valid", {
+      companyId,
+      salesOrderId: args.salesOrderId
+    });
+    return;
+  }
+  try {
+    const order = await getSalesOrder(ctx.asSystem.supabase, args.salesOrderId);
+    if (order.error) throw order.error;
+    const sent = await sendSalesOrderEmail({
+      salesOrderId: args.salesOrderId,
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      userId: order.data.salesPersonId ?? ctx.auditUserId,
+      recipient: { email, name: args.acceptedBy },
+      documentFilePath: args.documentFilePath,
+      fileName: args.fileName,
+      serviceRole: ctx.asSystem.supabase,
+      locales: ["en-US"]
+    });
+    if (!sent.success) throw new Error(sent.message);
+  } catch (error) {
+    logger.error("Failed to email the order after digital quote acceptance", {
+      companyId,
+      salesOrderId: args.salesOrderId,
       error
     });
   }

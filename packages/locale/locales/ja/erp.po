@@ -620,6 +620,10 @@ msgstr "{0} 件の支払"
 msgid "{0} per hour"
 msgstr "{0}/時間"
 
+#. placeholder {0}: row.usedIn.length
+msgid "{0} places"
+msgstr "{0}箇所"
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0}個の問題 — 公開済ではありません"
@@ -946,6 +950,9 @@ msgstr "{counted} がカウント済"
 msgid "{created} created, {updated} updated."
 msgstr "{created} 件作成、{updated} 件更新されました。"
 
+msgid "{created} created."
+msgstr "{created} 件作成しました。"
+
 msgid "{days}d"
 msgstr "{days}日"
 
@@ -1112,6 +1119,9 @@ msgstr "プロバイダーに {missingCount} 件の仕訳が不足していま�
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} 件の不足している仕訳と {mismatchCount} ヶ月のミスマッチ"
 
+msgid "{missingSupplier, plural, one {# ticked part needs a supplier. Choose one or untick it.} other {# ticked parts need a supplier. Choose one or untick them.}}"
+msgstr "{missingSupplier, plural, one {#件のチェックした部品に仕入先が必要です。仕入先を選択するか、チェックを外してください。} other {#件のチェックした部品に仕入先が必要です。仕入先を選択するか、チェックを外してください。}}"
+
 msgid "{name} at {station}"
 msgstr "{name}（{station}）"
 
@@ -1243,6 +1253,9 @@ msgstr "{ordered} 中 {received}"
 
 msgid "{ref} not found"
 msgstr "{ref}が見つかりません"
+
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, other {# 件の注文は開始日が今日より前のため作成されませんでした。今日から再スケジュールしてください。}}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
 msgstr "{rejectedQuantity} は却下として保留されます。"
@@ -2054,6 +2067,12 @@ msgstr "購買発注明細、問題、またはプロジェクト消費ジョブ
 msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
 msgstr "製造指図、発注書、請求書明細、タイムシート入力、または材料出庫がコストを請求するプロジェクト、またはプロジェクトとそのいずれかの要素。リリース済のプロジェクトおよび未開始または開始状態の請求可能要素のみを選択できます。"
 
+msgid "A promised date is optional to finalize"
+msgstr "確定に回答納期は任意です"
+
+msgid "A promised date is required to finalize"
+msgstr "確定には回答納期が必要です"
+
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
 msgstr "会計開始日前に日付した仮仕訳。会計を設定すると開始仕訳に置き換わり、その後は変更できません。"
 
@@ -2065,6 +2084,9 @@ msgstr "仕入先請求書は各期日ごとに作成され、各資産の支払
 
 msgid "A purchase invoice is posted"
 msgstr "仕入先請求書が転記されました"
+
+msgid "A purchase order cannot be finalized until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgstr "仕入先の回答納期が入るまで、発注書は確定できません。発注書に入力した日付はすべての明細に適用されます。仕入先が発注書の受領後に納期を回答する場合は、この設定をオフにしてください。"
 
 msgid "A purchase order is created"
 msgstr "発注書が作成されました"
@@ -2984,6 +3006,9 @@ msgstr "パラメータを追加（手順書のみ）"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
+
+msgid "Add a promised date before you finalize this purchase order."
+msgstr "この発注書を確定する前に、回答納期を追加してください。"
 
 msgid "Add a requirement"
 msgstr "要求事項を追加"
@@ -4738,6 +4763,10 @@ msgstr "ストレージタイプ: {0} を削除してもよろしいですか？
 msgid "Are you sure you want to delete the storage unit: {0}? This cannot be undone."
 msgstr "保管ユニット: {0} を削除してもよろしいですか?これは元に戻せません。"
 
+#. placeholder {0}: supplierStage.name
+msgid "Are you sure you want to delete the supplier stage: {0}? This cannot be undone."
+msgstr "仕入先段階「{0}」を削除してもよろしいですか？この操作は元に戻せません。"
+
 #. placeholder {0}: supplierType.name
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "仕入先タイプ: {0} を削除してもよろしいですか?これは元に戻せません。"
@@ -5900,6 +5929,9 @@ msgstr "機械をブロック"
 msgid "Blocks save until resolved"
 msgstr "解決されるまで保存をブロックします"
 
+msgid "Blue"
+msgstr "青"
+
 msgid "Board"
 msgstr "ボード"
 
@@ -6008,6 +6040,9 @@ msgstr "部品、BOM、工程表、原価計算をインポート — Carbonの�
 msgid "Broadcast reply to channel"
 msgstr "チャネルへの返信をブロードキャスト"
 
+msgid "Brown"
+msgstr "茶色"
+
 msgid "Browse library"
 msgstr "ライブラリを参照"
 
@@ -6076,6 +6111,9 @@ msgstr "ロールベースの教育訓練教材を構築"
 
 msgid "Build tailored, role-based training materials"
 msgstr "カスタマイズされたロールベースの教育訓練教材を構築"
+
+msgid "Builds"
+msgstr "製造"
 
 msgid "Built after this step"
 msgstr "このステップの後に構築"
@@ -6979,6 +7017,9 @@ msgstr "オプションを選択"
 msgid "Choose another file"
 msgstr "別のファイルを選択"
 
+msgid "Choose at least one part and a supplier."
+msgstr "部品を1つ以上と仕入先を選択してください。"
+
 msgid "Choose avatar"
 msgstr "アバターを選択"
 
@@ -6996,6 +7037,12 @@ msgstr "{unitName}の返却先を選択"
 
 msgid "Choose stock to move"
 msgstr "移動する在庫を選択"
+
+msgid "Choose supplier"
+msgstr "仕入先を選択"
+
+msgid "Choose suppliers"
+msgstr "仕入先を選択"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "当期または前3会計期間のいずれかの初日を選択してください。"
@@ -8728,6 +8775,9 @@ msgstr "{0}個の値を作成"
 msgid "Create {name}"
 msgstr "{name}を作成"
 
+msgid "Create {rfqCount} RFQs"
+msgstr "{rfqCount}件の見積依頼を作成"
+
 msgid "Create & Release"
 msgstr "作成 & リリース"
 
@@ -8862,6 +8912,9 @@ msgstr "交換を作成"
 
 msgid "Create Revision"
 msgstr "リビジョンを作成"
+
+msgid "Create RFQ"
+msgstr "見積依頼を作成"
 
 msgid "Create Rule"
 msgstr "ルールを作成"
@@ -9028,6 +9081,9 @@ msgstr "在庫転送明細を作成しました"
 msgid "Created storage type"
 msgstr "ストレージタイプを作成しました"
 
+msgid "Created supplier stage"
+msgstr "仕入先段階を作成しました"
+
 #. placeholder {0}: created.name
 msgid "Created supplier: {0}"
 msgstr "仕入先を作成しました: {0}"
@@ -9046,6 +9102,9 @@ msgstr "プロジェクトがリリース済のときに作成されます"
 
 msgid "Created work center"
 msgstr "作業区を作成しました"
+
+msgid "Creates {rfqCount, plural, one {# draft RFQ} other {# draft RFQs}}. Nothing goes to a supplier until you finalize."
+msgstr "{rfqCount, plural, one {#件の下書きの見積依頼を作成します。} other {#件の下書きの見積依頼を作成します。}}確定するまで、どの仕入先にも送信されません。"
 
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "まだクレジットされていない出荷数量に対して、仕入先クレジットメモの下書きを作成します"
@@ -10338,6 +10397,9 @@ msgstr "仕入先見積を削除"
 
 msgid "Delete Supplier Return"
 msgstr "仕入先返品を削除"
+
+msgid "Delete Supplier Stage"
+msgstr "仕入先段階を削除"
 
 msgid "Delete Supplier Type"
 msgstr "仕入先タイプを削除"
@@ -11828,6 +11890,9 @@ msgstr "仕入先部品を編集"
 msgid "Edit supplier process"
 msgstr "仕入先工法を編集"
 
+msgid "Edit Supplier Stage"
+msgstr "仕入先段階を編集"
+
 msgid "Edit Supplier Type"
 msgstr "仕入先タイプを編集"
 
@@ -11953,6 +12018,9 @@ msgstr "メール"
 
 msgid "Emails of the attendees (guests)"
 msgstr "参加者（ゲスト）のメールアドレス"
+
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
 
 msgid "Emoji"
 msgstr "絵文字"
@@ -13101,6 +13169,10 @@ msgid "Failed to create service: {0}"
 msgstr "サービスの作成に失敗しました: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create supplier stage: {0}"
+msgstr "仕入先段階の作成に失敗しました: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "仕入先を作成できませんでした: {0}"
 
@@ -13581,6 +13653,9 @@ msgstr "ファイナンシング"
 
 msgid "Financing Terms"
 msgstr "ファイナンス条件"
+
+msgid "Find a part"
+msgstr "部品を検索"
 
 msgid "Find an element"
 msgstr "要素を検索"
@@ -14461,6 +14536,12 @@ msgstr "全員にフルアクセスを付与するのではなく、各ユーザ
 msgid "Grants Ability"
 msgstr "スキルを付与"
 
+msgid "Gray"
+msgstr "グレー"
+
+msgid "Green"
+msgstr "緑"
+
 msgid "Grid layout"
 msgstr "グリッドレイアウト"
 
@@ -15244,6 +15325,10 @@ msgstr "受入検査"
 
 msgid "Inbox"
 msgstr "受信トレイ"
+
+#. placeholder {0}: row.itemReadableId
+msgid "Include {0}"
+msgstr "{0}を含める"
 
 msgid "Include bought components"
 msgstr "購買部品を含める"
@@ -16776,6 +16861,9 @@ msgstr "正確な一致のために空のままにしてください"
 msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
 msgstr "上限を設けない場合は空欄のままにしてください。上限を超えると、MESではスクラップまたは品質問題の登録のみが提示されます。"
 
+msgid "Leave empty to pick a color from the name"
+msgstr "空欄のままにすると、名前から色が選ばれます"
+
 msgid "Leave empty to use the account default"
 msgstr "空白のままにしてアカウントデフォルトを使用します"
 
@@ -16905,6 +16993,9 @@ msgstr "後入先出"
 
 msgid "Light"
 msgstr "ライト"
+
+msgid "Light Gray"
+msgstr "ライトグレー"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "ライト、ダーク、またはシステム設定に従う。"
@@ -21427,6 +21518,9 @@ msgstr "または、このシークレットを手動で入力します："
 msgid "Or focus the box or the handle and use the arrow keys (Shift for bigger steps)."
 msgstr "または、ボックスかハンドルにフォーカスして矢印キーを使用してください（大きく動かすには Shift を押します）。"
 
+msgid "Orange"
+msgstr "オレンジ"
+
 msgid "Order"
 msgstr "注文"
 
@@ -22415,6 +22509,9 @@ msgstr "WBSコードをピン留め"
 msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
 msgstr "ピンチまたはスクロールで拡大縮小 · ドラッグで移動 · ダブルタップでリセット"
 
+msgid "Pink"
+msgstr "ピンク"
+
 msgid "Pinned"
 msgstr "ピン留め"
 
@@ -23295,6 +23392,12 @@ msgstr "約束日"
 msgid "Promised Date"
 msgstr "回答納期"
 
+msgid "Promised date optional to finalize purchase orders"
+msgstr "発注書の確定時、回答納期は任意"
+
+msgid "Promised date required to finalize purchase orders"
+msgstr "発注書の確定時、回答納期は必須"
+
 msgid "Properties"
 msgstr "プロパティ"
 
@@ -23587,6 +23690,9 @@ msgstr "購買請求書"
 msgid "Purchasing Unit of Measure"
 msgstr "購買単位"
 
+msgid "Purple"
+msgstr "紫"
+
 msgid "Push"
 msgstr "プッシュ"
 
@@ -23855,6 +23961,9 @@ msgstr "見積承諾者メール"
 
 msgid "Quote expired"
 msgstr "見積期限切れ"
+
+msgid "Quote for"
+msgstr "見積対象"
 
 msgid "Quote ID"
 msgstr "見積ID"
@@ -24437,6 +24546,9 @@ msgstr "毎週繰り返し"
 
 msgid "Recurring per year"
 msgstr "毎年繰り返し"
+
+msgid "Red"
+msgstr "赤"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "赤は人手不足、緑は充足、琥珀色は必要人数以上の人員です。"
@@ -25133,6 +25245,9 @@ msgstr "リクエスト日付"
 msgid "Request Force Delete"
 msgstr ""
 
+msgid "Request Quote"
+msgstr "見積を依頼"
+
 msgid "Requested"
 msgstr "依頼済み"
 
@@ -25156,6 +25271,9 @@ msgstr "サインイン時に認証器アプリから6桁のコードが必要�
 
 msgid "Require a Customer Contact and Location"
 msgstr "得意先の担当者と拠点が必須"
+
+msgid "Require a Promised Date to Finalize Purchase Orders"
+msgstr "発注書の確定には回答納期を必須にする"
 
 msgid "Require a Signature to Approve Purchase Orders"
 msgstr "発注書を承認するには署名が必要です"
@@ -25265,6 +25383,12 @@ msgstr "修理が必要"
 
 msgid "Requires staffing"
 msgstr "スタッフが必要"
+
+msgid "Reschedule from today"
+msgstr "今日から再スケジュール"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "今日から再スケジュール（期日 {rescheduledDue}）"
 
 msgid "Reschedule tolerance"
 msgstr "再スケジュール許容日数"
@@ -26882,6 +27006,9 @@ msgstr ""
 msgid "Select all jobs"
 msgstr "すべての製造指図を選択"
 
+msgid "Select all parts"
+msgstr "すべての部品を選択"
+
 msgid "Select all rows"
 msgstr "すべての行を選択"
 
@@ -27040,6 +27167,9 @@ msgstr "シリアル {0} を選択"
 msgid "Select station"
 msgstr "ステーションを選択"
 
+msgid "Select Supplier Stage"
+msgstr "仕入先段階を選択"
+
 msgid "Select Supplier Status"
 msgstr "仕入先ステータスを選択"
 
@@ -27136,6 +27266,9 @@ msgstr "招待を送信"
 
 msgid "Send Notifications"
 msgstr "通知を送信"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "リマインダーを送信"
@@ -27730,6 +27863,9 @@ msgstr "発送済み {shippedOn}"
 
 msgid "Shipped <0/>"
 msgstr "出荷済み <0/>"
+
+msgid "Shipped Date"
+msgstr "出荷日"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "この得意先の出荷済明細のうち、返品待ち数量がある行"
@@ -28414,6 +28550,12 @@ msgstr "人員配置要求事項が無効になりました"
 
 msgid "Staffing requirement enabled"
 msgstr "スタッフ要求事項が有効化されました"
+
+msgid "Stage"
+msgstr "段階"
+
+msgid "Stages"
+msgstr "段階"
 
 msgid "Stand up hosting"
 msgstr "ホスティングをセットアップ"
@@ -29142,6 +29284,10 @@ msgstr "仕入先メール設定が更新されました"
 msgid "Supplier EORI"
 msgstr "仕入先EORI"
 
+#. placeholder {0}: row.itemReadableId
+msgid "Supplier for {0}"
+msgstr "{0} の仕入先"
+
 msgid "Supplier ID"
 msgstr "仕入先ID"
 
@@ -29283,6 +29429,21 @@ msgstr "仕入先RMA #"
 
 msgid "Supplier RMA Number"
 msgstr "仕入先RMA番号"
+
+msgid "supplier stage"
+msgstr "仕入先段階"
+
+msgid "Supplier stage"
+msgstr ""
+
+msgid "Supplier Stage"
+msgstr "仕入先段階"
+
+msgid "supplier stages"
+msgstr "仕入先段階"
+
+msgid "Supplier Stages"
+msgstr "仕入先段階"
 
 msgid "Supplier State and Postal Code"
 msgstr "仕入先都道府県と郵便番号"
@@ -31672,6 +31833,9 @@ msgstr "このパーツは廃止されています（在庫なし）。"
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "この部品は置き換えられ、「在庫のみ」に設定されています。スペア予備床にまで補充され、所要量とは無関係です。"
+
+msgid "This part only"
+msgstr "この部品のみ"
 
 msgid "This path only decides what runs next"
 msgstr "このパスは次に何が実行されるかだけを決定します"
@@ -34313,7 +34477,7 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "仕入先の回答が返信予定の日付。仕入先は見積依頼ポータルでこの日付を確認できます。Carbonはこの日付後の遅い回答の受け入れを中止します（設定可能）。"
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "購買担当者が品物を依頼した日です。仕入先は入荷回答納期として別の日を回答する場合があり、その後、納期として別の日を記録することもあります。"
+msgstr "購買担当者が品物を依頼した日です。仕入先は入荷回答納期に別の日付を回答し、納期には別の日付を転記することがあります。"
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "購買担当者がこの明細の品物を受入場所に必要とする日です。新しい明細は、発注の入荷希望納期から始まります。計画では、この日付を在庫の利用可能性と外注工程のスケジュールに使用します。"
@@ -34366,6 +34530,9 @@ msgstr "レンタルが開始されるとき、そしてそれに終了がある
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "仕入先が配達を約束した日時。計画はこの日付を使用して入庫在庫到着の予測を行います。"
 
+msgid "When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized."
+msgstr "仕入先が品物を出荷した日です。発注書の確定後は、出荷カードで編集できます。"
+
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "仕入先の価格設定が有効でなくなる日時。この日付以降にこの見積をPOに変換する場合、再見積が必要な場合があります。"
 
@@ -34404,6 +34571,9 @@ msgstr "かんばん使用時、完全なバーコードは1つではなく工�
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "あなたが配送を約束したいつ。計画はこれをフルフィルメントの需要-到期日として扱います。"
+
+msgid "When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date."
+msgstr "出荷方法に基づき、品物の到着を見込む日です。参考用であり、計画には影響しません。計画では回答納期を使用します。"
 
 msgid "When your fiscal and tax years start"
 msgstr "会計年度および税務年度の開始時期"
@@ -34467,6 +34637,9 @@ msgstr "この明細の商品が入荷時に在庫として格納される場所
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "この保全リクエストの発生元—作業者報告、スケジュール、状態監視トリガー、作業後検査。保全レポートのソース内訳を決定します。"
+
+msgid "Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use."
+msgstr "仕入先との取引の進捗段階です（例: 候補、認定済み）。この一覧は貴社が管理しており、承認や利用できる仕入先には影響しません。"
 
 msgid "Where you are today"
 msgstr "今日のあなたの状況"
@@ -34846,6 +35019,9 @@ msgstr "年度末決算"
 
 msgid "Yearly"
 msgstr "年次"
+
+msgid "Yellow"
+msgstr "黄色"
 
 msgid "Yes"
 msgstr "はい"

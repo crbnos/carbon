@@ -32,7 +32,7 @@ name: crbn-shared
 
 services:
   postgres:
-    image: supabase/postgres:17.6.1.166
+    image: supabase/postgres:17.6.1.166@sha256:b3bfedb107413abb3b8cb0d0874b0414a1dceb3d55bc0c778de6ad22d1f7dc86
     container_name: carbon-postgres
     restart: on-failure
     deploy:
@@ -100,7 +100,7 @@ services:
   # Same transaction semantics as production's Supavisor. No DB_NAME, so the
   # image writes the `*` database: any wt_ database routes with no setup.
   pgbouncer:
-    image: edoburu/pgbouncer:v1.25.2-p0
+    image: edoburu/pgbouncer:v1.25.2-p0@sha256:7d7a27d9e90985cab5cf42256f5c13a3120baa4b055b69df37beb272b89b2340
     container_name: carbon-pgbouncer
     restart: on-failure
     deploy:
@@ -134,7 +134,7 @@ services:
   # STORAGE_PUBLIC_URL: it is one URL for every tenant, so each Envoy sends its
   # worktree's API URL in Forwarded and X-Forwarded-Port instead.
   storage:
-    image: supabase/storage-api:v1.89.12
+    image: supabase/storage-api:v1.89.12@sha256:8526956cb462e9f7d392e9848ec77133b2769982ed614e9753cc687e8e4339a6
     container_name: carbon-storage
     restart: on-failure
     deploy:
@@ -175,7 +175,7 @@ services:
   # storage volume with no RLS. It shares a network with Storage alone, so a
   # worktree's containers can't ask it for another tenant's files.
   imgproxy:
-    image: darthsim/imgproxy:v4.0.21
+    image: darthsim/imgproxy:v4.0.21@sha256:69ae09dbc3349944564cb2f66cf35f80a4a9a78fda73d06061a337849520ab1f
     container_name: carbon-imgproxy
     restart: on-failure
     deploy:
@@ -194,7 +194,7 @@ services:
     networks: [storage-imgproxy]
 
   inbucket:
-    image: inbucket/inbucket:3.1.1
+    image: inbucket/inbucket:3.1.1@sha256:4a4c4cf553967e1863e4f48c828774786ac9ee73c53b3a3ecef10f66e5a2cdfb
     container_name: carbon-inbucket
     restart: on-failure
     deploy:
@@ -216,7 +216,7 @@ services:
   # REDIS_DATABASES: the slot pool, or more when a slot holds a higher index.
   # A change recreates only this container; the AOF on the volume keeps its keys.
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe
     container_name: carbon-redis
     restart: on-failure
     deploy:
@@ -252,7 +252,7 @@ services:
   # The code is what the crbn that booted last copied (usually the main
   # checkout's); `crbn up --full` gives a worktree its own runtime instead.
   edge-runtime:
-    image: supabase/edge-runtime:v1.77.9
+    image: supabase/edge-runtime:v1.77.9@sha256:6b850a2ccf0bf50ecac9accff8098095cd191c389c2a53c59b857aa0f53a8343
     container_name: carbon-edge-runtime
     restart: on-failure
     deploy:

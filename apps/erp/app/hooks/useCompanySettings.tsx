@@ -30,6 +30,7 @@ type CompanySettings = Partial<
     | "mrpRunTime"
     | "requireBackflushStorageUnit"
     | "requireCustomerContactEmail"
+    | "requirePromisedDateToFinalizePurchaseOrder"
     | "requireSupplierContactEmail"
     | "serialNumberTiming"
     | "showBomExplorerReadableId"

@@ -1426,5 +1426,6 @@
   "20261110050005_printing-grants-to-settings-page.sql",
   "20261110050010_module-keys-to-pages.sql",
   "20261110161530_method-corrections-policies.sql",
-  "20261110175143_job-corrections-policies.sql"
+  "20261110175143_job-corrections-policies.sql",
+  "20261111120202_supplier-stage-policies.sql"
 ]

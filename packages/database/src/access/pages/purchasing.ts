@@ -101,6 +101,13 @@ export const PAGES = [
     paths: ["/x/purchasing/quotes", "/x/supplier-quote/"]
   },
   {
+    id: "purchasing.supplierStages",
+    label: "Stages",
+    maxLevel: "Full",
+    tables: ["supplierStage"],
+    paths: ["/x/purchasing/supplier-stages"]
+  },
+  {
     id: "purchasing.types",
     label: "Types",
     maxLevel: "Full",

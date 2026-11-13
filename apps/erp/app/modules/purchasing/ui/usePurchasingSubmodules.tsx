@@ -96,6 +96,11 @@ export default function usePurchasingSubmodules() {
       name: t`Configure`,
       routes: [
         {
+          name: t`Stages`,
+          to: path.to.supplierStages,
+          icon: <LuListTodo />
+        },
+        {
           name: t`Types`,
           to: path.to.supplierTypes,
           icon: <LuStar />

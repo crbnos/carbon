@@ -43,7 +43,8 @@ export const SHARED_CONTAINERS = {
 /** A tenant's files in the shared Storage: <backend path>/<bucket>/<tenant>. */
 export const SHARED_STORAGE_FILES = "/var/lib/storage/stub";
 // The image crbn-shared's redis runs, used to read its volume.
-export const SHARED_REDIS_IMAGE = "redis:7-alpine";
+export const SHARED_REDIS_IMAGE =
+  "redis:7-alpine@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe";
 
 export const SHARED_POSTGRES_VOLUME = "carbon-postgres-data";
 export const SHARED_REDIS_VOLUME = "carbon-redis-data";

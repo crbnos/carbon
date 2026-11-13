@@ -88,7 +88,7 @@ single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`),
 shares `DOMAIN` — EU sets `eu`, see `authentication-system.md`), `AUTH_PROVIDERS`
 (`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
 `CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`. `IS_VERCEL` reads
-Vercel's own `VERCEL=1`. `BOT_PROTECTION` (`botid` | `turnstile`, unset = BotID for
+Vercel's own `VERCEL=1`. `BOT_PROTECTION` (`botid` | `turnstile` | `none`, unset = BotID for
 Cloud on Vercel, else Turnstile if keyed) picks the login bot check (see
 `authentication-system.md`).
 `SAML_ENABLED` / `SAML_PRIVATE_KEY` are NOT `@carbon/env` vars — they live in

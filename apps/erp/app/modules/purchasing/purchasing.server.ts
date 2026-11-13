@@ -3,8 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { InvalidInputError, raisedMessage } from "@carbon/api/errors";
-import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import {
+  CarbonError,
+  defineServiceFn,
+  refusalOf
+} from "@carbon/api/service-fn.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import {
   type Database,
   fetchAllByIds,
@@ -41,6 +45,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import {
   applyRate,
+  colorNames,
   datetime,
   deriveRate,
   groupBy,
@@ -61,6 +66,14 @@ import {
   postReceipt,
   RECEIPT_VOID_STOCK_MOVED_ERROR
 } from "~/modules/inventory/inventory.service";
+import { getMethodTreeArray, itemRule } from "~/modules/items/items.service";
+import {
+  classifyPlanningOrders,
+  invalidOrderDateMessage,
+  nothingOrderedMessage,
+  pastStartRefusalMessages,
+  type RefusedPlanningOrder
+} from "~/modules/production/production.models";
 import {
   assignPlanningActions,
   dismissPlanningActions,
@@ -69,6 +82,7 @@ import {
   runMRP,
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
+import { pegMovesForSettledActions } from "~/modules/projects/peg-transfer-plan";
 import {
   applyTransferPlanningActions,
   checkProjectBudget,
@@ -92,7 +106,10 @@ import { ERP_URL, path } from "~/utils/path";
 import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
+  findMergeablePlanningLine,
   findPlanningPurchaseOrder,
+  getRfqLinesFromMethod,
+  groupRequestQuoteLines,
   isIsoDate,
   isPurchaseOrderAmendable,
   isPurchaseOrderDateField,
@@ -111,6 +128,7 @@ import {
   PURCHASE_ORDER_REOPEN_STATUSES,
   plannedOrderValidator,
   planningPurchaseOrderWeek,
+  promisedDateOf,
   purchaseOrderDeleteRefusal,
   purchaseOrderEditRefusal,
   purchaseOrderForceDeleteApprovalRefusal,
@@ -124,6 +142,8 @@ import {
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
+  type RfqLineFromMethod,
+  requestQuoteValidator,
   selectedLineSchema,
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
@@ -2179,6 +2199,8 @@ export const updatePurchaseOrderDelivery = defineServiceFn({
     shippingMethodId: z.string().optional(),
     trackingNumber: z.string(),
     deliveryDate: z.string().optional(),
+    shippedDate: z.string().optional(),
+    expectedReceiptDate: z.string().optional(),
     receiptRequestedDate: z.string().optional(),
     receiptPromisedDate: z.string().optional(),
     dropShipment: z.boolean(),
@@ -3293,6 +3315,12 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
     );
     if (contactRule) return ctx.error("rule", contactRule);
 
+    const promisedDateRule = await service.requiredPromisedDateRefusal(
+      ctx,
+      purchaseOrderId
+    );
+    if (promisedDateRule) return ctx.error("rule", promisedDateRule);
+
     if (
       purchaseOrder.data.supplierId &&
       (await isApprovalRequired(system, "supplier", companyId))
@@ -3596,6 +3624,15 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       );
     }
 
+    // The date can be cleared while the order waits for approval.
+    if (decision === "Approved") {
+      const promisedDateRule = await service.requiredPromisedDateRefusal(
+        ctx,
+        purchaseOrderId
+      );
+      if (promisedDateRule) return ctx.error("rule", promisedDateRule);
+    }
+
     if (
       decision === "Approved" &&
       input.notification === "Email" &&
@@ -3812,7 +3849,13 @@ export const confirmReturnOrder = defineServiceFn({
  * order already has on the same date adds to that line. The quantity is
  * raised to the supplier part's minimum; the price is the supplier part's,
  * converted at today's rate (refused for a currency with no rate); the tax is
- * the supplier's. An item whose purchasing is blocked is skipped. The orders
+ * the supplier's. An item whose purchasing is blocked is skipped. An order
+ * with a date that is not a real `YYYY-MM-DD` day is named in `errors`. An
+ * order that starts (its order date, else its due date less the item's lead
+ * time) before the location's today is refused and listed in `refusedOrders`
+ * (item, segment and its index in the item's `orders`); the item's other
+ * orders are still placed. An order joins an existing line only
+ * when the line has the same conversion factor. The orders
  * raised keep their planning approval bypass, the supply forecast is
  * recorded, and the Order suggestions they answer are settled.
  *
@@ -3859,7 +3902,7 @@ export const orderPlannedPurchases = defineServiceFn({
     }
 
     const supplierIds = new Set<string>();
-    const itemIds = new Set<string>();
+    const itemIds = new Set(itemsToOrder.map((item) => item.id));
     const periodIds = new Set<string>();
     const allSupplyForecasts: Array<{
       itemId: string;
@@ -3890,12 +3933,99 @@ export const orderPlannedPurchases = defineServiceFn({
       periodId: string;
       planningSegmentId: string;
       purchaseOrderLineId: string;
+      quantity: number;
+      dueDate: string | null;
+      planningActionId?: string;
     }[] = [];
 
+    // Weeks are counted from the location's today, as the planning grid's are.
+    const asOf = datetime.today(
+      await getLocationTimeZone(client, locationId, companyId)
+    );
+    const today = asOf.toString();
+    const refusedOrders: RefusedPlanningOrder[] = [];
+    const invalidCountByItem = new Map<string, number>();
+
+    // Whether purchasing is blocked, and the lead time an order with no order
+    // date is dated by, for every item ordered, in one read.
+    const purchasingRows = await client
+      .from("itemReplenishment")
+      .select("itemId, purchasingBlocked, leadTime")
+      .in(
+        "itemId",
+        itemsToOrder.map((item) => item.id)
+      )
+      .eq("companyId", companyId);
+    const purchasingByItem = new Map(
+      (purchasingRows.data ?? []).map((row) => [row.itemId, row])
+    );
+
+    // Every id comes from the caller and the writes bypass RLS: the location
+    // and items must be this company's (supplyForecast upserts on
+    // (itemId, locationId, periodId, planningSegmentId) alone).
+    const location = await refuseUnlessOwned(ctx, "location", {
+      id: locationId
+    });
+    if (location) return location;
+    const ownedItems = await client
+      .from("item")
+      .select("id, readableId, readableIdWithRevision")
+      .in("id", Array.from(itemIds))
+      .eq("companyId", companyId);
+    if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
+      logger.error("Planning order references records outside company", {
+        companyId,
+        userId,
+        locationId,
+        itemIds: Array.from(itemIds),
+        error: ownedItems.error
+      });
+      return ctx.error("notFound", "Item not found");
+    }
+    const readableIdByItem = new Map(
+      ownedItems.data.map((item) => [
+        item.id,
+        item.readableIdWithRevision ?? item.readableId
+      ])
+    );
+    const readableIdOf = (itemId: string) =>
+      readableIdByItem.get(itemId) ?? itemId;
     for (const item of itemsToOrder) {
-      itemIds.add(item.id);
+      // Nothing of such an item can be placed, so no PO is raised for it.
+      const replenishment = purchasingByItem.get(item.id);
+      if (purchasingRows.error || !replenishment) {
+        errors.push(
+          `Failed to retrieve purchasing data for ${readableIdOf(item.id)}: ${
+            purchasingRows.error?.message ?? "No replenishment record"
+          }`
+        );
+        continue;
+      }
+      if (replenishment.purchasingBlocked) {
+        errors.push(`Purchasing is blocked for ${readableIdOf(item.id)}`);
+        continue;
+      }
+      const { invalid, past, placeable } = classifyPlanningOrders(
+        item.orders,
+        today,
+        replenishment.leadTime
+      );
+      if (invalid.length > 0) {
+        invalidCountByItem.set(
+          item.id,
+          (invalidCountByItem.get(item.id) ?? 0) + invalid.length
+        );
+      }
+      refusedOrders.push(
+        ...past.map((index) => ({
+          itemId: item.id,
+          planningSegmentId: item.planningSegmentId,
+          index
+        }))
+      );
       let itemHasUsableOrder = false;
-      for (const order of item.orders) {
+      for (const index of placeable) {
+        const order = item.orders[index]!;
         if (order.supplierId) supplierIds.add(order.supplierId);
         if (order.periodId) periodIds.add(order.periodId);
         if (order.supplierId && order.periodId) {
@@ -3910,34 +4040,20 @@ export const orderPlannedPurchases = defineServiceFn({
           itemHasUsableOrder = true;
         }
       }
-      if (!itemHasUsableOrder) {
+      if (placeable.length > 0 && !itemHasUsableOrder) {
         errors.push(
-          `Item ${item.id} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
+          `${readableIdOf(item.id)} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
         );
       }
     }
 
-    // Every id comes from the caller and the writes bypass RLS: the location
-    // and items must be this company's (supplyForecast upserts on
-    // (itemId, locationId, periodId, planningSegmentId) alone).
-    const location = await refuseUnlessOwned(ctx, "location", {
-      id: locationId
-    });
-    if (location) return location;
-    const ownedItems = await client
-      .from("item")
-      .select("id")
-      .in("id", Array.from(itemIds))
-      .eq("companyId", companyId);
-    if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
-      logger.error("Planning order references records outside company", {
-        companyId,
-        userId,
-        locationId,
-        itemIds: Array.from(itemIds),
-        error: ownedItems.error
-      });
-      return ctx.error("notFound", "Item not found");
+    const pastStartErrors = pastStartRefusalMessages(
+      refusedOrders,
+      readableIdOf,
+      today
+    );
+    for (const [itemId, count] of invalidCountByItem) {
+      errors.push(invalidOrderDateMessage(readableIdOf(itemId), count));
     }
 
     // An order in a project segment is charged to that project: the PO
@@ -4025,21 +4141,6 @@ export const orderPlannedPurchases = defineServiceFn({
     // Readable ids too, so the client can present a clickable toast.
     const poCache = new Map<string, { id: string; readableId: string }>();
 
-    // Whether purchasing is blocked, for every item ordered, in one read.
-    const purchasingRows = await client
-      .from("itemReplenishment")
-      .select("itemId, purchasingBlocked")
-      .in("itemId", Array.from(itemIds))
-      .eq("companyId", companyId);
-    const purchasingByItem = new Map(
-      (purchasingRows.data ?? []).map((row) => [row.itemId, row])
-    );
-
-    // Weeks are counted from the location's today, as the planning grid's are.
-    const asOf = datetime.today(
-      await getLocationTimeZone(client, locationId, companyId)
-    );
-
     // Every open PO an order may join, with its lines, in one read: the
     // suppliers' Draft / Planned purchase orders at this location, oldest
     // first. The lines tell which weeks a PO already covers, and which line a
@@ -4047,7 +4148,7 @@ export const orderPlannedPurchases = defineServiceFn({
     const openPurchaseOrders = await client
       .from("purchaseOrder")
       .select(
-        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, planningGroupId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
+        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, planningGroupId, requiredDate, purchaseQuantity, conversionFactor, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
       )
       .eq("companyId", companyId)
       .in("supplierId", Array.from(ordersBySupplier.keys()))
@@ -4157,22 +4258,6 @@ export const orderPlannedPurchases = defineServiceFn({
             (sp) => sp.itemId === itemId && sp.supplierId === supplierId
           );
 
-          const purchasingError =
-            purchasingRows.error ??
-            (purchasingByItem.has(itemId)
-              ? null
-              : { message: "No replenishment record" });
-          if (purchasingError) {
-            errors.push(
-              `Failed to retrieve purchasing data for item ${itemId}: ${purchasingError.message}`
-            );
-            continue;
-          }
-          if (purchasingByItem.get(itemId)?.purchasingBlocked) {
-            errors.push(`Purchasing is blocked for item ${itemId}`);
-            continue;
-          }
-
           const minimumOrderQuantity = supplierPart?.minimumOrderQuantity ?? 0;
           const adjustedQuantity =
             minimumOrderQuantity > 0 && order.quantity < minimumOrderQuantity
@@ -4186,12 +4271,10 @@ export const orderPlannedPurchases = defineServiceFn({
           const requiredDate = order.dueDate ?? null;
           const isGroupSegment =
             segments.planningGroupIds.has(planningSegmentId);
-          const existing = purchaseOrder.purchaseOrderLine.find(
-            (line) =>
-              line.itemId === itemId &&
-              line.requiredDate === requiredDate &&
-              (line.planningGroupId ?? line.projectId ?? "") ===
-                planningSegmentId
+          const conversionFactor = supplierPart?.conversionFactor ?? 1;
+          const existing = findMergeablePlanningLine(
+            purchaseOrder.purchaseOrderLine,
+            { itemId, requiredDate, planningSegmentId, conversionFactor }
           );
           let purchaseOrderLineId = existing?.id;
 
@@ -4217,7 +4300,7 @@ export const orderPlannedPurchases = defineServiceFn({
               .eq("companyId", companyId);
             if (updateLine.error) {
               errors.push(
-                `Failed to update PO line for item ${itemId}: ${updateLine.error.message}`
+                `Failed to update PO line for ${readableIdOf(itemId)}: ${updateLine.error.message}`
               );
               continue;
             }
@@ -4272,7 +4355,7 @@ export const orderPlannedPurchases = defineServiceFn({
                 supplierPart?.supplierUnitOfMeasureCode ??
                 order.unitOfMeasureCode,
               inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
-              conversionFactor: supplierPart?.conversionFactor ?? 1,
+              conversionFactor,
               supplierUnitPrice,
               exchangeRate: purchaseOrder.exchangeRate,
               taxPercent,
@@ -4291,7 +4374,7 @@ export const orderPlannedPurchases = defineServiceFn({
             });
             if (createLine.error) {
               errors.push(
-                `Failed to create PO line for item ${itemId}: ${createLine.error.message}`
+                `Failed to create PO line for ${readableIdOf(itemId)}: ${createLine.error.message}`
               );
               continue;
             }
@@ -4303,6 +4386,7 @@ export const orderPlannedPurchases = defineServiceFn({
               planningGroupId: isGroupSegment ? planningSegmentId : null,
               requiredDate,
               purchaseQuantity: adjustedQuantity,
+              conversionFactor,
               supplierUnitPrice,
               supplierShippingCost: 0,
               taxPercent,
@@ -4315,14 +4399,16 @@ export const orderPlannedPurchases = defineServiceFn({
             itemId,
             periodId: order.periodId,
             planningSegmentId,
-            purchaseOrderLineId: purchaseOrderLineId!
+            purchaseOrderLineId: purchaseOrderLineId!,
+            quantity: adjustedQuantity * conversionFactor,
+            dueDate: order.dueDate ?? null,
+            planningActionId: order.planningActionId
           });
           allSupplyForecasts.push({
             itemId,
             locationId,
             sourceType: "Purchase Order",
-            forecastQuantity:
-              order.quantity * (supplierPart?.conversionFactor ?? 1),
+            forecastQuantity: adjustedQuantity * conversionFactor,
             periodId: order.periodId,
             planningSegmentId,
             companyId,
@@ -4331,6 +4417,45 @@ export const orderPlannedPurchases = defineServiceFn({
           });
         }
       }
+    }
+
+    // Settled as soon as the lines exist, to keep short the window in which an
+    // MRP run could net a line and the settle then take it off again.
+    const warnings: string[] = [];
+    const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
+      companyId,
+      locationId,
+      userId,
+      type: "Order",
+      ordered
+    });
+    if (settled.error) {
+      // The PO lines stand; the suggestions clear on the next MRP run.
+      logger.error("Failed to settle ordered planning actions", {
+        companyId,
+        locationId,
+        error: settled.error
+      });
+      warnings.push(
+        "The orders were placed, but their suggestions were not updated. Recalculate before ordering them again."
+      );
+    } else if (segments.planningGroupIds.size > 0) {
+      // A grouped Order's pegs move to the PO lines that answered it. A
+      // failure leaves them on the action; the next MRP run re-pegs.
+      await moveActionPegsToSupply(ctx.asSystem.pg, {
+        companyId,
+        userId,
+        moves: pegMovesForSettledActions(
+          settled.data ?? [],
+          ordered.map((entry) => ({
+            supplyId: entry.purchaseOrderLineId,
+            quantity: entry.quantity,
+            dueDate: entry.dueDate
+          })),
+          "Purchase Order Line",
+          segments.planningGroupIds
+        )
+      });
     }
 
     if (allSupplyForecasts.length > 0) {
@@ -4343,7 +4468,7 @@ export const orderPlannedPurchases = defineServiceFn({
       if (forecasts.error) {
         const message = `Failed to insert supply forecasts: ${forecasts.error.message}`;
         logger.error(message, { companyId, locationId });
-        errors.push(message);
+        warnings.push(message);
       }
     }
 
@@ -4363,85 +4488,33 @@ export const orderPlannedPurchases = defineServiceFn({
       }
     }
 
-    const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
-      companyId,
-      locationId,
-      userId,
-      type: "Order",
-      ordered
-    });
-    if (settled.error) {
-      // The PO lines stand; the suggestions clear on the next MRP run.
-      logger.error("Failed to settle ordered planning actions", {
-        companyId,
-        locationId,
-        error: settled.error
-      });
-    } else if (segments.planningGroupIds.size > 0) {
-      // A grouped Order's pegs move to the PO line it created. A
-      // failure leaves them on the action; the next MRP run re-pegs.
-      const lineByOrder = new Map<string, string>();
-      for (const entry of ordered) {
-        const key = [
-          entry.itemId,
-          entry.periodId,
-          entry.planningSegmentId
-        ].join("\u0000");
-        if (!lineByOrder.has(key)) {
-          lineByOrder.set(key, entry.purchaseOrderLineId);
-        }
-      }
-      const moves = (settled.data ?? []).flatMap((action) => {
-        if (!segments.planningGroupIds.has(action.planningSegmentId)) {
-          return [];
-        }
-        const supplyId = lineByOrder.get(
-          [action.itemId, action.periodId, action.planningSegmentId].join(
-            "\u0000"
-          )
-        );
-        return supplyId
-          ? [
-              {
-                planningActionId: action.id,
-                supplyType: "Purchase Order Line" as const,
-                supplyId
-              }
-            ]
-          : [];
-      });
-      await moveActionPegsToSupply(ctx.asSystem.pg, {
-        companyId,
-        userId,
-        moves
-      });
-    }
-
-    if (errors.length > 0 && processedItems === 0) {
-      logger.error("Failed to process any planning orders", {
-        companyId,
-        locationId,
-        itemIds: Array.from(itemIds),
-        supplierIds: Array.from(supplierIds),
-        periodIds: Array.from(periodIds),
-        errors
-      });
+    const problems = [...errors, ...pastStartErrors];
+    if (processedItems === 0) {
+      if (problems.length > 0)
+        logger.error("Failed to process any planning orders", {
+          companyId,
+          locationId,
+          itemIds: Array.from(itemIds),
+          supplierIds: Array.from(supplierIds),
+          periodIds: Array.from(periodIds),
+          errors
+        });
       return ctx.error(
         "rule",
-        `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
-          errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
-        }`
+        problems.length === 0
+          ? "There were no orders to place"
+          : nothingOrderedMessage("orders", problems, errors.length === 0)
       );
     }
 
     return {
       message:
-        processedItems === itemsToOrder.length
-          ? `Successfully processed all ${processedItems} items`
-          : `Processed ${processedItems} of ${itemsToOrder.length} items. ${
-              errors.length
-            } errors occurred: ${errors.slice(0, 2).join("; ")}${
-              errors.length > 2 ? "..." : ""
+        problems.length === 0
+          ? `Successfully processed ${processedItems} orders`
+          : `Processed ${processedItems} orders. ${
+              problems.length
+            } errors occurred: ${problems.slice(0, 2).join("; ")}${
+              problems.length > 2 ? "..." : ""
             }`,
       processedItems,
       totalItems: itemsToOrder.length,
@@ -4449,6 +4522,8 @@ export const orderPlannedPurchases = defineServiceFn({
       purchaseOrders: Array.from(
         new Map(Array.from(poCache.values()).map((po) => [po.id, po])).values()
       ),
+      refusedOrders,
+      warnings,
       errors: errors.length > 0 ? errors : undefined
     };
   }
@@ -4521,7 +4596,7 @@ export const updatePlanningPurchaseOrderLine = defineServiceFn({
     }
     if (
       line.field === "dueDate" &&
-      service.promisedDateOf({
+      promisedDateOf({
         promisedDate: target.data.promisedDate,
         receiptPromisedDate:
           target.data.purchaseOrder?.purchaseOrderDelivery?.receiptPromisedDate
@@ -4753,7 +4828,7 @@ export const applyPlanningActions = defineServiceFn({
       }
       const datePromised =
         (row.type === "Expedite" || row.type === "Defer") &&
-        service.promisedDateOf(line) !== null;
+        promisedDateOf(line) !== null;
       if (
         !isPurchaseOrderEditableFromPlanning(line.purchaseOrderStatus) ||
         datePromised
@@ -6855,6 +6930,7 @@ export const createSupplier = defineServiceFn({
       .enum(["Active", "Inactive", "Pending", "Rejected"])
       .nullable()
       .optional(),
+    supplierStageId: z.string().optional(),
     supplierTypeId: z.string().optional(),
     accountManagerId: z.string().optional(),
     currencyCode: z.string().optional(),
@@ -6895,6 +6971,7 @@ export const updateSupplier = defineServiceFn({
         .enum(["Active", "Inactive", "Pending", "Rejected"])
         .nullable()
         .optional(),
+      supplierStageId: z.string().optional(),
       supplierTypeId: z.string().optional(),
       accountManagerId: z.string().optional(),
       currencyCode: z.string().optional(),
@@ -8329,5 +8406,290 @@ export const getLeaseRelatedDocuments = defineServiceFn({
         ctx.company.id
       )
     );
+  }
+});
+
+/**
+ * Get a supplier stage
+ *
+ * @mcp read
+ */
+export const getSupplierStage = defineServiceFn({
+  input: z.object({ supplierStageId: z.string() }),
+  permission: { "purchasing.supplierStages": "View" },
+  async run(ctx, { supplierStageId }) {
+    return unwrap(
+      ctx,
+      await service.getSupplierStage(
+        ctx.asCaller.supabase,
+        supplierStageId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get supplier stages
+ *
+ * @mcp read
+ */
+export const getSupplierStages = defineServiceFn({
+  input: z.object({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { "purchasing.supplierStages": "View" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getSupplierStages(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get supplier stages list
+ *
+ * @mcp read
+ */
+export const getSupplierStagesList = defineServiceFn({
+  input: z.object({}),
+  permission: { "purchasing.supplierStages": "View" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getSupplierStagesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Create a supplier stage
+ *
+ * @mcp
+ */
+export const createSupplierStage = defineServiceFn({
+  input: z.object({
+    name: z.string().trim().min(1),
+    color: z.enum(colorNames).nullish()
+  }),
+  permission: { "purchasing.supplierStages": "Create" },
+  async run(ctx, { name, color }) {
+    return unwrap(
+      ctx,
+      await service.insertSupplierStage(ctx.asCaller.supabase, {
+        name,
+        color: color ?? null,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Update a supplier stage
+ *
+ * @param color - A badge color. Leave out to keep the stage's color; null clears it.
+ *
+ * @mcp
+ */
+export const updateSupplierStage = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    name: z.string().trim().min(1),
+    color: z.enum(colorNames).nullish()
+  }),
+  permission: { "purchasing.supplierStages": "Edit" },
+  async run(ctx, { id, name, color }) {
+    return unwrap(
+      ctx,
+      await service.updateSupplierStage(ctx.asCaller.supabase, {
+        id,
+        name,
+        color,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Delete a supplier stage. Its suppliers keep their Supplier Status and lose the stage.
+ *
+ * @mcp destructive
+ */
+export const deleteSupplierStage = defineServiceFn({
+  input: z.object({ supplierStageId: z.string() }),
+  permission: { "purchasing.supplierStages": "Full" },
+  async run(ctx, { supplierStageId }) {
+    return unwrap(
+      ctx,
+      await service.deleteSupplierStage(
+        ctx.asCaller.supabase,
+        supplierStageId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * The parts an item's Request Quote offers: the item, and the parts to buy for
+ * one of it from its Active make method, or its latest version without one.
+ * Each has a supplier to start from: the preferred supplier, else the only
+ * supplier with a supplier part. Not published: it also needs View on the
+ * item's own page, which the tool manifest cannot express.
+ */
+export const getRequestQuoteRows = defineServiceFn({
+  input: z.object({ itemId: z.string().min(1) }),
+  // The item's own page is checked in `run`: a row rule cannot sit beside a page.
+  permission: { "purchasing.rfqs": "View" },
+
+  async run(ctx, { itemId }) {
+    const refused = await refusalOf(ctx, itemRule("View", { id: "itemId" }), {
+      itemId
+    });
+    if (refused) return refused;
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const item = await client
+      .from("item")
+      .select("id, readableIdWithRevision, name, replenishmentSystem")
+      .eq("id", itemId)
+      .eq("companyId", companyId)
+      .single();
+    if (item.error) return ctx.error("notFound", "Item not found");
+
+    const methods = await client
+      .from("makeMethod")
+      .select("id, status, version")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .order("version", { ascending: false });
+    if (methods.error) {
+      return ctx.error("internal", "Failed to read the methods", methods.error);
+    }
+    const method =
+      methods.data.find((m) => m.status === "Active") ?? methods.data[0];
+
+    let lines: RfqLineFromMethod[] = [];
+    if (method) {
+      const tree = await getMethodTreeArray(client, method.id);
+      if (tree.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the Bill of Material",
+          tree.error
+        );
+      }
+      lines = getRfqLinesFromMethod(
+        tree.data ?? [],
+        method.id,
+        item.data.readableIdWithRevision ?? ""
+      );
+    }
+
+    const itemIds = [itemId, ...lines.map((line) => line.itemId)];
+    const [replenishment, supplierParts] = await Promise.all([
+      fetchAllByIds(itemIds, (batch) =>
+        client
+          .from("itemReplenishment")
+          .select("itemId, preferredSupplierId")
+          .in("itemId", batch)
+          .eq("companyId", companyId)
+          .order("itemId")
+      ),
+      fetchAllByIds(itemIds, (batch) =>
+        client
+          .from("supplierPart")
+          .select("itemId, supplierId")
+          .in("itemId", batch)
+          .eq("companyId", companyId)
+          .order("id")
+      )
+    ]);
+    if (replenishment.error || supplierParts.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the suppliers",
+        replenishment.error ?? supplierParts.error
+      );
+    }
+
+    const preferred = new Map(
+      replenishment.data.map((r) => [r.itemId, r.preferredSupplierId])
+    );
+    const suppliersOf = new Map<string, string[]>();
+    for (const { itemId, supplierId } of supplierParts.data) {
+      suppliersOf.set(itemId, [...(suppliersOf.get(itemId) ?? []), supplierId]);
+    }
+    const defaultSupplierId = (id: string) => {
+      const supplierIds = suppliersOf.get(id);
+      return (
+        preferred.get(id) ??
+        (supplierIds?.length === 1 ? supplierIds[0] : null) ??
+        null
+      );
+    };
+
+    return {
+      item: {
+        id: item.data.id,
+        readableId: item.data.readableIdWithRevision ?? "",
+        name: item.data.name,
+        replenishmentSystem: item.data.replenishmentSystem,
+        defaultSupplierId: defaultSupplierId(itemId)
+      },
+      rows: lines.map((line) => ({
+        ...line,
+        defaultSupplierId: defaultSupplierId(line.itemId)
+      }))
+    };
+  }
+});
+
+/**
+ * Creates the Draft RFQs for an item or its Bill of Material, one per set of
+ * suppliers, in one transaction. Nothing goes to a supplier until each RFQ is
+ * finalized.
+ *
+ * @returns `rfqs`, the id and number of each new RFQ.
+ *
+ * @mcp
+ */
+export const requestQuoteFromItem = defineServiceFn({
+  input: requestQuoteValidator,
+  permission: { "purchasing.rfqs": "Create" },
+
+  async run(ctx, { locationId, lines }) {
+    const companyId = ctx.company.id;
+    const rfqDate = datetime
+      .today(await getCompanyTimeZone(ctx.asSystem.supabase, companyId))
+      .toString();
+    // `run` turns the building block's not-found refusal into a 400 with its message.
+    const rfqs = await run(ctx, "requestQuoteFromItem", () =>
+      service.insertRequestQuoteRfqs(ctx.asSystem.pg, {
+        companyId,
+        userId: ctx.auditUserId,
+        rfqDate,
+        locationId,
+        groups: groupRequestQuoteLines(lines)
+      })
+    );
+    if (rfqs instanceof CarbonError) return rfqs;
+    return { rfqs };
   }
 });

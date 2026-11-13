@@ -522,6 +522,7 @@ export const updatePurchasingSettings = defineServiceFn({
     requireSupplierContactEmail: z.boolean().optional(),
     includeSupplierPartFiles: z.boolean().optional(),
     requirePurchaseOrderApprovalSignature: z.boolean().optional(),
+    requirePromisedDateToFinalizePurchaseOrder: z.boolean().optional(),
     purchasePriceUpdateTiming: z
       .enum(purchasePriceUpdateTimingTypes)
       .optional(),

@@ -28,6 +28,8 @@ import { getCookieDomain } from "../utils/cookie";
  *   "not pinned" — the operator simply pins in again.
  * - BOUND to the company and the terminal's session user, so a cookie copied to
  *   another company name or another terminal is ignored.
+ * - RENEWED through a separate signed activity cookie, so an older heartbeat
+ *   response cannot overwrite a new operator's identity cookie.
  * - RE-VALIDATED against the database on every request (`resolveConsolePinIn`):
  *   the pinned user must still be an ACTIVE employee of THIS company and console
  *   mode must still be switched on. A signature only proves we issued the cookie,
@@ -35,21 +37,22 @@ import { getCookieDomain } from "../utils/cookie";
  */
 
 const CONSOLE_PIN_PREFIX = "console-pin-";
+const CONSOLE_PIN_ACTIVITY_PREFIX = "console-pin-activity-";
 const CONSOLE_PIN_MAX_AGE = 60 * 60; // 1 hour in seconds
 const CONSOLE_PIN_MAX_AGE_MS = CONSOLE_PIN_MAX_AGE * 1000;
 
 // A controlled environment (ITAR/CUI, NIST 3.1.10) drops a shared-console operator
-// to re-PIN after the standard idle-lock window instead of 1h. pinnedAt is refreshed
-// on every shell navigation (see MES x+/_layout loader), so this is an inactivity
-// window.
-const consolePinMaxAgeMs = () =>
+// to re-PIN after the standard idle-lock window instead of 1h. The separate
+// activity cookie is refreshed only on real user input.
+export const consolePinIdleMs = () =>
   CONTROLLED_ENVIRONMENT ? SESSION_IDLE_LOCK_MS : CONSOLE_PIN_MAX_AGE_MS;
 
 export interface ConsolePinIn {
   userId: string;
   name: string;
   avatarUrl: string | null;
-  pinnedAt: number; // unix timestamp ms
+  pinnedAt: number; // latest server-observed activity, unix timestamp ms
+  pinId: string;
 }
 
 interface StoredConsolePinIn extends ConsolePinIn {
@@ -57,10 +60,18 @@ interface StoredConsolePinIn extends ConsolePinIn {
   sessionUserId: string;
 }
 
+interface StoredConsolePinActivity {
+  companyId: string;
+  sessionUserId: string;
+  pinId: string;
+  lastActiveAt: number;
+}
+
 const isTestEdition = CarbonEdition === Edition.Test;
 const secure = isTestEdition || !!getCookieDomain(DOMAIN);
 
 const cookies = new Map<string, Cookie>();
+const activityCookies = new Map<string, Cookie>();
 
 function getConsolePinCookie(companyId: string): Cookie {
   let cookie = cookies.get(companyId);
@@ -70,10 +81,25 @@ function getConsolePinCookie(companyId: string): Cookie {
       path: "/",
       sameSite: isTestEdition ? "none" : "lax",
       secrets: [SESSION_SECRET!],
+      secure
+    });
+    cookies.set(companyId, cookie);
+  }
+  return cookie;
+}
+
+function getConsoleActivityCookie(companyId: string): Cookie {
+  let cookie = activityCookies.get(companyId);
+  if (!cookie) {
+    cookie = createCookie(`${CONSOLE_PIN_ACTIVITY_PREFIX}${companyId}`, {
+      httpOnly: true,
+      path: "/",
+      sameSite: isTestEdition ? "none" : "lax",
+      secrets: [SESSION_SECRET!],
       secure,
       maxAge: CONSOLE_PIN_MAX_AGE
     });
-    cookies.set(companyId, cookie);
+    activityCookies.set(companyId, cookie);
   }
   return cookie;
 }
@@ -89,7 +115,23 @@ function isStoredConsolePinIn(value: unknown): value is StoredConsolePinIn {
     typeof v.name === "string" &&
     (v.avatarUrl === null || typeof v.avatarUrl === "string") &&
     typeof v.pinnedAt === "number" &&
-    Number.isFinite(v.pinnedAt)
+    Number.isFinite(v.pinnedAt) &&
+    typeof v.pinId === "string" &&
+    v.pinId.length > 0
+  );
+}
+
+function isStoredConsolePinActivity(
+  value: unknown
+): value is StoredConsolePinActivity {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.companyId === "string" &&
+    typeof v.sessionUserId === "string" &&
+    typeof v.pinId === "string" &&
+    typeof v.lastActiveAt === "number" &&
+    Number.isFinite(v.lastActiveAt)
   );
 }
 
@@ -116,13 +158,27 @@ export async function readConsolePinInCookieUnverified(
   if (!isStoredConsolePinIn(parsed)) return null;
   if (parsed.companyId !== companyId) return null;
   if (parsed.sessionUserId !== sessionUserId) return null;
-  if (Date.now() - parsed.pinnedAt > consolePinMaxAgeMs()) return null;
+  let activity: unknown;
+  try {
+    activity = await getConsoleActivityCookie(companyId).parse(cookieHeader);
+  } catch {
+    // A missing or malformed activity cookie cannot extend the pin-in.
+  }
+  const lastActiveAt =
+    isStoredConsolePinActivity(activity) &&
+    activity.companyId === companyId &&
+    activity.sessionUserId === sessionUserId &&
+    activity.pinId === parsed.pinId
+      ? Math.max(parsed.pinnedAt, activity.lastActiveAt)
+      : parsed.pinnedAt;
+  if (Date.now() - lastActiveAt > consolePinIdleMs()) return null;
 
   return {
     userId: parsed.userId,
     name: parsed.name,
     avatarUrl: parsed.avatarUrl,
-    pinnedAt: parsed.pinnedAt
+    pinnedAt: lastActiveAt,
+    pinId: parsed.pinId
   };
 }
 
@@ -184,13 +240,28 @@ export function resolveConsolePinIn(
 export function setConsolePinIn(
   companyId: string,
   sessionUserId: string,
-  data: ConsolePinIn
+  data: Omit<ConsolePinIn, "pinId">
 ): Promise<string> {
   return getConsolePinCookie(companyId).serialize({
     ...data,
+    pinId: crypto.randomUUID(),
     companyId,
     sessionUserId
   } satisfies StoredConsolePinIn);
+}
+
+/** Activity can renew a PIN session without ever rewriting its identity cookie. */
+export function setConsolePinActivity(
+  companyId: string,
+  sessionUserId: string,
+  pinId: string
+): Promise<string> {
+  return getConsoleActivityCookie(companyId).serialize({
+    companyId,
+    sessionUserId,
+    pinId,
+    lastActiveAt: Date.now()
+  } satisfies StoredConsolePinActivity);
 }
 
 export function clearConsolePinIn(companyId: string): Promise<string> {

@@ -349,42 +349,49 @@ export const CUSTOMER_CONTACTS = [
 export const SUPPLIERS = [
   {
     name: "Meridian Magnetics",
+    stage: "Production" as const,
     type: "Magnets",
     phone: "+1-330-555-0510",
     website: "https://meridianmagnetics.com"
   },
   {
     name: "Copperline Wire Works",
+    stage: "Production" as const,
     type: "Electrical",
     phone: "+1-513-555-0620",
     website: "https://copperlinewire.com"
   },
   {
     name: "Lakeland Electrical Steel",
+    stage: "Qualified" as const,
     type: "Materials",
     phone: "+1-219-555-0730",
     website: "https://lakelandsteel.com"
   },
   {
     name: "Summit Bearing Supply",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+1-847-555-0840",
     website: "https://summitbearing.com"
   },
   {
     name: "Ironwood Fasteners",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+1-630-555-0950",
     website: "https://ironwoodfasteners.com"
   },
   {
     name: "Maumee Contract Machining",
+    stage: "Qualified" as const,
     type: "Contract Manufacturer",
     phone: "+1-419-555-1060",
     website: "https://maumeemachining.com"
   },
   {
     name: "Anchor Metrology Services",
+    stage: "Production" as const,
     type: "Services",
     phone: "+1-937-555-1170",
     website: "https://anchormetrology.com"
@@ -400,6 +407,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Amperon Winding Works",
+    stage: "Sampling" as const,
     type: "Electrical",
     phone: "+1-317-555-1390",
     website: "https://amperonwindings.com",
@@ -407,6 +415,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Budget Bearing Depot",
+    stage: "Prospect" as const,
     type: "Hardware",
     phone: "+1-614-555-1410",
     website: "https://budgetbearing.com",
@@ -414,6 +423,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Euromag Ferrite Werke GmbH",
+    stage: "Production" as const,
     type: "Magnets",
     phone: "+49-231-555-1520",
     website: "https://euromag-ferrite.de",
