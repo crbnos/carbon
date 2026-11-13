@@ -321,22 +321,25 @@ function bridgePrefix(
   );
 }
 
+// The linker's and pkg-config's default library directories, multiarch included.
+const LINUX_LIB_DIRS = [
+  "/usr/lib",
+  "/usr/lib64",
+  "/usr/local/lib",
+  "/usr/lib/x86_64-linux-gnu",
+  "/usr/lib/aarch64-linux-gnu"
+];
+
 /**
  * The planner links `-lopenblas` (`ndarray-linalg`'s `openblas-system`). On
  * macOS openblas-src adds only Homebrew's keg to the search path; elsewhere the
- * linker searches its default directories, multiarch ones included.
+ * linker searches its default directories.
  */
 function openblasInstalled(machine: MachineProbe): boolean {
   const dirs =
     machine.platform === "darwin"
       ? [join(homebrewOpt(machine, "openblas"), "lib")]
-      : [
-          "/usr/lib",
-          "/usr/lib64",
-          "/usr/local/lib",
-          "/usr/lib/x86_64-linux-gnu",
-          "/usr/lib/aarch64-linux-gnu"
-        ];
+      : LINUX_LIB_DIRS;
   return dirs.some((dir) =>
     ["libopenblas.dylib", "libopenblas.so", "libopenblas.a"].some((file) =>
       machine.exists(join(dir, file))
@@ -353,14 +356,23 @@ function onPath(machine: MachineProbe, command: string): boolean {
 /**
  * openblas-src's build-dependency openblas-build fetches over native-tls, which
  * is `openssl-sys` everywhere but macOS. Off macOS that crate finds OpenSSL
- * through `OPENSSL_DIR` or pkg-config only.
+ * through `OPENSSL_DIR`, `OPENSSL_LIB_DIR` with `OPENSSL_INCLUDE_DIR`, or
+ * pkg-config only.
  */
 function opensslInstalled(machine: MachineProbe): boolean {
+  const { env, exists } = machine;
   if (machine.platform === "darwin") return true;
-  if (machine.env.OPENSSL_DIR) return machine.exists(machine.env.OPENSSL_DIR);
+  if (env.OPENSSL_DIR) return exists(env.OPENSSL_DIR);
+  if (env.OPENSSL_LIB_DIR && env.OPENSSL_INCLUDE_DIR) {
+    return exists(env.OPENSSL_INCLUDE_DIR);
+  }
+  const pkgConfigDirs = [
+    ...(env.PKG_CONFIG_PATH ?? "").split(delimiter).filter(Boolean),
+    ...LINUX_LIB_DIRS.map((dir) => join(dir, "pkgconfig"))
+  ];
   return (
     onPath(machine, "pkg-config") &&
-    machine.exists("/usr/include/openssl/ssl.h")
+    pkgConfigDirs.some((dir) => exists(join(dir, "openssl.pc")))
   );
 }
 

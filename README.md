@@ -382,7 +382,7 @@ It builds on macOS and Linux. On Windows, run the stack inside WSL2 and follow t
    ./apps/assembler/scripts/build-occt.sh
    ```
 
-4. **Run it**: pick Assembler in `crbn up`. `crbn` first checks steps 1–3 and lists everything still missing, with the commands that install it. It then runs `cargo run --release -p assembler`, building into `~/.cache/carbon-cargo-target`, which every worktree shares: the first build takes several minutes, later ones rebuild only what changed. The `asm |` lines show the build and then the service; `curl -sf "$ASSEMBLER_SERVICE_URL/health"` (the URL is in your worktree's `.env.local`) answers once it is up. `crbn up --all` leaves the assembler out while anything is missing.
+4. **Run it**: pick Assembler in `crbn up`. `crbn` first checks steps 1–3 and lists everything still missing, with the commands that install it. It then runs `cargo run --release -p assembler`, building into `~/.cache/carbon-cargo-target`, which every worktree shares: the first build takes several minutes, later ones rebuild only what changed. The `asm |` lines show the build, then `assembler (rust) listening on …` once the service is up; from the worktree root, `curl -sf "$(sed -n 's/^ASSEMBLER_SERVICE_URL=//p' .env.local)/health"` checks it. `crbn up --all` leaves the assembler out while anything is missing.
 
 A library installed somewhere else: point the build at it with `FCL_PREFIX`, `DRACO_PREFIX` or `OCCT_PREFIX`.
 
