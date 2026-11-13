@@ -813,6 +813,9 @@ msgstr "सुधार: {correctionName}"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
 
+msgid "Could not look up this label. Try again."
+msgstr ""
+
 msgid "Country code"
 msgstr "देश कोड"
 

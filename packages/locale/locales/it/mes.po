@@ -813,6 +813,9 @@ msgstr "Correzione: {correctionName}"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Costo della manutenzione non pianificata, ultimi {0} giorni"
 
+msgid "Could not look up this label. Try again."
+msgstr ""
+
 msgid "Country code"
 msgstr "Prefisso internazionale"
 

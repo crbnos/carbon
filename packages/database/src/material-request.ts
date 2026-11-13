@@ -6,7 +6,8 @@
 // route. The MES reaches the ERP only through postings, so they live here.
 //
 // `@carbon/utils` depends on this package, so `requireAffected` and
-// `datetime.timestamp()` cannot be imported. The resolve write keeps the same
+// `datetime.timestamp()` cannot be imported. The caller passes the resolve
+// time as `at` (`datetime.timestamp()`). The resolve write keeps the same
 // contract inline: an update that changed no row returns the
 // `CARBON_NOT_APPLIED` error, so an RLS refusal reads as an error.
 
@@ -73,17 +74,16 @@ export async function createMaterialRequest(
 
 export async function resolveMaterialRequest(
   client: SupabaseClient<Database>,
-  args: { id: string; companyId: string; userId: string }
+  args: { id: string; companyId: string; userId: string; at: string }
 ): Promise<{ data: { id: string }[] | null; error: PostgrestError | null }> {
-  const now = new Date().toISOString();
   const result = await client
     .from("materialRequest")
     .update({
       status: "Resolved",
       resolvedBy: args.userId,
-      resolvedAt: now,
+      resolvedAt: args.at,
       updatedBy: args.userId,
-      updatedAt: now
+      updatedAt: args.at
     })
     .eq("id", args.id)
     .eq("companyId", args.companyId)

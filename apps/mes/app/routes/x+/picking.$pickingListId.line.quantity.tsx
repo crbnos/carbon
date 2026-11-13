@@ -5,11 +5,10 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { shouldPrintTravelers } from "@carbon/database/travelers";
 import type { ActionFunctionArgs } from "react-router";
 import { userContext } from "~/context";
 import { setPickingListLineQuantity } from "~/services/picking.service";
-import { autoPrintPickingListTravelers } from "~/services/printing.server";
+import { printTravelersOnStart } from "~/services/printing.server";
 
 export async function action({ context, request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -30,15 +29,6 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing pickingListLineId" };
   }
 
-  // A first pick moves a Draft list to In Progress in the trigger, which
-  // prints the travelers the status change would have printed.
-  const before = await serviceRole
-    .from("pickingList")
-    .select("id, status, locationId")
-    .eq("id", pickingListId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
   const result = await setPickingListLineQuantity(serviceRole, {
     pickingListLineId,
     quantity,
@@ -57,24 +47,14 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
     };
   }
 
-  // After the pick, so a print failure never blocks it.
-  if (before.data?.status === "Draft") {
-    const after = await serviceRole
-      .from("pickingList")
-      .select("status")
-      .eq("id", pickingListId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (shouldPrintTravelers(before.data.status, after.data?.status)) {
-      await autoPrintPickingListTravelers({
-        serviceRole,
-        pickingListId,
-        locationId: before.data.locationId,
-        companyId,
-        userId: effectiveUserId
-      });
-    }
-  }
+  // The pick can move the list out of Draft (the status trigger), which
+  // starts it. After the pick, so a print failure never blocks it.
+  await printTravelersOnStart({
+    serviceRole,
+    pickingListId,
+    companyId,
+    userId: effectiveUserId
+  });
 
   return { success: true, data: result.data };
 }

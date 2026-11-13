@@ -107,6 +107,7 @@ import {
   type StockTransferLineDraft
 } from "@carbon/database/stock-transfer";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
+import { claimTravelerPrint } from "@carbon/database/travelers";
 import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
@@ -8327,6 +8328,54 @@ export async function autoPrint(
     }
   } catch (error) {
     logger.error("Auto-print failed", { error });
+  }
+}
+
+/**
+ * Print a picking list's travelers once, after a status change or a pick.
+ * With `companySettings.travelerLabels` on, `claimTravelerPrint` sets the
+ * list's `travelersPrintedAt`; only the call that sets it prints. With the
+ * setting off nothing is claimed, so turning it on later still prints a list
+ * not yet claimed. Never throws: a print failure must not fail the pick.
+ */
+export async function printTravelersOnStart(
+  ctx: ServiceContext,
+  pickingListId: string
+) {
+  try {
+    const settings = await settingsService.getCompanySettings(
+      ctx.asSystem.supabase,
+      ctx.company.id
+    );
+    if (settings.data?.travelerLabels !== true) return;
+
+    const claim = await claimTravelerPrint(ctx.asSystem.supabase, {
+      pickingListId,
+      companyId: ctx.company.id,
+      at: datetime.timestamp()
+    });
+    if (claim.error) {
+      logger.error("Traveler print claim failed", {
+        companyId: ctx.company.id,
+        pickingListId,
+        error: claim.error
+      });
+      return;
+    }
+    if (!claim.claimed) return;
+
+    await autoPrint(ctx, {
+      sourceDocument: "PickingList",
+      sourceDocumentId: pickingListId,
+      locationId: claim.locationId,
+      context: "inventory"
+    });
+  } catch (error) {
+    logger.error("Traveler print failed", {
+      companyId: ctx.company.id,
+      pickingListId,
+      error
+    });
   }
 }
 

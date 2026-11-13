@@ -3,10 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { shouldPrintOperationLabel } from "@carbon/database/travelers";
+import {
+  claimTravelerPrint,
+  shouldPrintOperationLabel
+} from "@carbon/database/travelers";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { datetime } from "@carbon/utils";
 import {
   isFirstOperationOfMakeMethod,
   isLastOperationOfMakeMethod
@@ -59,51 +63,59 @@ export async function autoPrintOperationLabel({
 }) {
   try {
     if (!workCenterId || !jobMakeMethodId) return;
-    const [
-      { data: entity },
-      isFirstOperation,
-      isLastOperation,
-      { data: makeMethod },
-      { data: settings }
-    ] = await Promise.all([
-      serviceRole
-        .from("trackedEntity")
-        .select("id")
-        .eq("id", trackedEntityId)
-        .eq("companyId", companyId)
-        .maybeSingle(),
+    // Most completions are neither first nor last: they read the routing only.
+    const [isFirstOperation, isLastOperation] = await Promise.all([
       isFirstOperationOfMakeMethod(
         serviceRole,
         jobOperationId,
         jobMakeMethodId
       ),
-      isLastOperationOfMakeMethod(serviceRole, jobOperationId, jobMakeMethodId),
-      serviceRole
-        .from("jobMakeMethod")
-        .select("parentMaterialId, itemId")
-        .eq("id", jobMakeMethodId)
-        .eq("companyId", companyId)
-        .maybeSingle(),
-      serviceRole
-        .from("companySettings")
-        .select("travelerLabels")
-        .eq("id", companyId)
-        .maybeSingle()
+      isLastOperationOfMakeMethod(serviceRole, jobOperationId, jobMakeMethodId)
     ]);
+    if (!isFirstOperation && !isLastOperation) return;
+
+    const [{ data: entity }, { data: makeMethod }, { data: settings }] =
+      await Promise.all([
+        serviceRole
+          .from("trackedEntity")
+          .select("id")
+          .eq("id", trackedEntityId)
+          .eq("companyId", companyId)
+          .maybeSingle(),
+        serviceRole
+          .from("jobMakeMethod")
+          .select("parentMaterialId, itemId")
+          .eq("id", jobMakeMethodId)
+          .eq("companyId", companyId)
+          .maybeSingle(),
+        // `travelerLabels` decides only the first-operation print.
+        isFirstOperation
+          ? serviceRole
+              .from("companySettings")
+              .select("travelerLabels")
+              .eq("id", companyId)
+              .maybeSingle()
+          : { data: null }
+      ]);
     // Service-role read: an entity outside the caller's company prints nothing.
     if (!entity || !makeMethod) return;
 
-    const { data: sequence } = await serviceRole
-      .from("itemSerialSequence")
-      .select("printLabelOnCompletion")
-      .eq("itemId", makeMethod.itemId)
-      .eq("companyId", companyId)
-      .maybeSingle();
+    const isTopLevelMakeMethod = makeMethod.parentMaterialId === null;
+    // The finished-good label prints only at the last top-level operation.
+    const { data: sequence } =
+      isLastOperation && isTopLevelMakeMethod
+        ? await serviceRole
+            .from("itemSerialSequence")
+            .select("printLabelOnCompletion")
+            .eq("itemId", makeMethod.itemId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : { data: null };
 
     const print = shouldPrintOperationLabel({
       isFirstOperation,
       isLastOperation,
-      isTopLevelMakeMethod: makeMethod.parentMaterialId === null,
+      isTopLevelMakeMethod,
       travelerLabels: settings?.travelerLabels ?? false,
       printLabelOnCompletion: !!sequence?.printLabelOnCompletion
     });
@@ -141,23 +153,23 @@ export async function autoPrintOperationLabel({
 }
 
 /**
- * Triggers an auto-print of a picking list's travelers (one per unit of every
- * job on the list) when the company's `travelerLabels` switch is on and the
- * location's inventory printer has auto-print enabled. The caller decides when
- * a list starts (`shouldPrintTravelers`, `@carbon/database/travelers`).
+ * Prints a picking list's travelers (one per unit of every job on the list)
+ * once, after a status change or a pick. With `companySettings.travelerLabels`
+ * on, `claimTravelerPrint` (`@carbon/database/travelers`) sets the list's
+ * `travelersPrintedAt`; only the call that sets it prints, at the location's
+ * inventory printer when its auto-print is on. With the setting off nothing is
+ * claimed, so turning it on later still prints a list not yet claimed.
  *
- * Never throws: a print failure must not fail the status change.
+ * Never throws: a print failure must not fail the pick or the status change.
  */
-export async function autoPrintPickingListTravelers({
+export async function printTravelersOnStart({
   serviceRole,
   pickingListId,
-  locationId,
   companyId,
   userId
 }: {
   serviceRole: ServiceRole;
   pickingListId: string;
-  locationId: string;
   companyId: string;
   userId: string;
 }): Promise<void> {
@@ -168,6 +180,22 @@ export async function autoPrintPickingListTravelers({
       .eq("id", companyId)
       .maybeSingle();
     if (settings?.travelerLabels !== true) return;
+
+    const claim = await claimTravelerPrint(serviceRole, {
+      pickingListId,
+      companyId,
+      at: datetime.timestamp()
+    });
+    if (claim.error) {
+      log.error("Traveler print claim failed", {
+        companyId,
+        pickingListId,
+        error: claim.error
+      });
+      return;
+    }
+    if (!claim.claimed || !claim.locationId) return;
+    const locationId = claim.locationId;
 
     const config = await getCachedPrinterConfig(
       serviceRole,

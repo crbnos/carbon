@@ -2,23 +2,53 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Traveler print rules shared by the ERP (a picking list starts) and the MES
-// (an operation completes), plus the read the print job uses to find the
-// units a picking list's travelers print for.
+// Traveler print rules shared by the ERP and the MES: the claim of a picking
+// list's one traveler print, the operation label rule, and the read the print
+// job uses to find the units a picking list's travelers print for.
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types.ts";
 
+/** A list in one of these statuses has not started, so its travelers wait. */
+export const TRAVELER_UNSTARTED_STATUSES = ["Draft", "Cancelled"] as const;
+
 /**
- * Travelers print once, when a picking list leaves Draft for In Progress.
- * A list that returns to In Progress from Completed or Partial already
- * printed them.
+ * Claims the one print of a picking list's travelers. One conditional UPDATE
+ * sets `travelersPrintedAt` to `at` when the list has left Draft, is not
+ * Cancelled and has no `travelersPrintedAt` yet. Only the call that sets it
+ * gets `claimed: true`, so two picks at the same moment print once, and a
+ * pick that takes a list from Draft straight to Completed or Partial prints.
+ *
+ * Call it after the status write or the pick, with a client that can update
+ * the row whatever the caller's permissions (the service role). `at` is
+ * `datetime.timestamp()` (`@carbon/utils`), which this package cannot import.
+ * The manual Print travelers action does not claim, so a reprint always works.
  */
-export function shouldPrintTravelers(
-  previous: string | null | undefined,
-  next: string | null | undefined
-): boolean {
-  return previous === "Draft" && next === "In Progress";
+export async function claimTravelerPrint(
+  client: SupabaseClient<Database>,
+  args: { pickingListId: string; companyId: string; at: string }
+): Promise<{
+  claimed: boolean;
+  locationId: string | null;
+  error: PostgrestError | null;
+}> {
+  const result = await client
+    .from("pickingList")
+    .update({ travelersPrintedAt: args.at })
+    .eq("id", args.pickingListId)
+    .eq("companyId", args.companyId)
+    .is("travelersPrintedAt", null)
+    .not("status", "in", `(${TRAVELER_UNSTARTED_STATUSES.join(",")})`)
+    .select("locationId")
+    .maybeSingle();
+  if (result.error) {
+    return { claimed: false, locationId: null, error: result.error };
+  }
+  return {
+    claimed: result.data !== null,
+    locationId: result.data?.locationId ?? null,
+    error: null
+  };
 }
 
 export type OperationLabelInput = {

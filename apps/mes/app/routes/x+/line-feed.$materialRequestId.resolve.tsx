@@ -6,6 +6,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { resolveMaterialRequest } from "@carbon/database/material-request";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
 const logger = getLogger("mes", "line-feed-resolve");
@@ -24,7 +25,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = await resolveMaterialRequest(client, {
     id: materialRequestId,
     companyId,
-    userId
+    userId,
+    at: datetime.timestamp()
   });
 
   if (result.error) {

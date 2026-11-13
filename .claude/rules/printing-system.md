@@ -158,24 +158,33 @@ wrapped in try/catch that never blocks the parent op, then `trigger("print-job",
   | Last operation of the top-level make method (`parentMaterialId` null) | `itemSerialSequence.printLabelOnCompletion` is on for the item (the finished-good label) |
   | First operation of the make method | `companySettings.travelerLabels` is off. When it is on, the travelers printed at picking already carry the label |
 
-  "First" and "last" come from the routing (`services/operations.service.ts`).
+  "First" and "last" come from the routing (`services/operations.service.ts`), and are read first:
+  an operation that is neither prints nothing and reads nothing else. The company setting is read
+  only at a first operation, and `itemSerialSequence` only at the last operation of a top-level
+  make method.
   `isFirstOperationOfMakeMethod`: no `jobOperationDependency` predecessor in the same make method.
   `isLastOperationOfMakeMethod`: no operation of the same make method depends on this one.
   The operation and assembly views use the same checks. Counting the unit's `Operation <id>` markers
   reprinted a label at every later operation, because a unit completed there had one marker or none.
 - **Picking-list travelers.** When `companySettings.travelerLabels` is on, a picking list prints its
-  travelers (`sourceDocument: "PickingList"`, inventory context) once: when it moves from Draft to
-  In Progress (`shouldPrintTravelers`, `@carbon/database/travelers`). A list that returns to In Progress
-  from Completed or Partial does not print again. The print runs after the status write, so a print
-  failure never blocks the change. The callers:
+  travelers (`sourceDocument: "PickingList"`, inventory context) once, when it leaves Draft. A
+  status change or a pick can move it (the `update_picking_list_status` trigger), to In Progress
+  or straight to Completed or Partial. After each status write and each pick, one function per app
+  reads the setting, then calls `claimTravelerPrint` (`@carbon/database/travelers`) with the service
+  role. That is one conditional UPDATE: it sets `pickingList."travelersPrintedAt"` only when the
+  column is null and the status is not Draft or Cancelled. Only the call that sets it prints, so two
+  picks at once print once and a reopened list never prints again. With the setting off nothing is
+  claimed, so turning it on later still prints a list not yet claimed. The function never throws:
+  a print failure never fails the pick or the status change. The callers:
 
-  | App | Status change | First pick (the trigger moves a Draft list to In Progress) |
+  | App | Function | Called from |
   |---|---|---|
-  | ERP | `setPickingListStatus` → `service.autoPrint` | `pickPickingListLineChecked` / `pickPickingListLineEntity` read the status before and after the pick |
-  | MES | `x+/picking.$pickingListId.status.tsx` → `autoPrintPickingListTravelers` (`services/printing.server.ts`) | `x+/picking.$pickingListId.line.quantity.tsx` and `x+/picking.$pickingListId.tracked.$lineId.tsx`, the same before/after read |
+  | ERP | `printTravelersOnStart(ctx, pickingListId)` (`inventory.service.ts`) → `autoPrint` | `setPickingListStatus`, `pickPickingListLineChecked`, `pickPickingListLineEntity` |
+  | MES | `printTravelersOnStart` (`services/printing.server.ts`) | `x+/picking.$pickingListId.status.tsx` (both the finish and the other status changes), `x+/picking.$pickingListId.line.quantity.tsx`, `x+/picking.$pickingListId.tracked.$lineId.tsx` |
 
   The MES picking list header has a **Print travelers** `PrintButton` (every status except
-  Cancelled); its download routes are `file+/picking-list+/$id.travelers[.]{pdf,zpl}.tsx`.
+  Cancelled); its download routes are `file+/picking-list+/$id.travelers[.]{pdf,zpl}.tsx`. It does
+  not read `travelersPrintedAt`, so a reprint always works.
 
 ## Gotchas
 
