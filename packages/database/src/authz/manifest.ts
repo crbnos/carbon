@@ -146,6 +146,22 @@ const managedAttribute = through(
 );
 
 /**
+ * The operation and the item a material request names are the request's own
+ * company: their FKs are single-column (jobOperation and item have no unique
+ * (id, companyId) to point a composite FK at).
+ */
+const materialRequestReferences = and(
+  or(
+    isNull("jobOperationId"),
+    exists("jobOperation", "jobOperationId", "employee", { sameCompany: true })
+  ),
+  or(
+    isNull("itemId"),
+    exists("item", "itemId", "employee", { sameCompany: true })
+  )
+);
+
+/**
  * A project table, governed by projects_* (any employee reads) in its project's company.
  * `column` names the row's project, or its element with `via: "projectElement"`;
  * `project` itself passes "id".
@@ -1116,28 +1132,20 @@ export const manifest = {
   // requires createdBy to be the caller, so a request cannot be filed in
   // another user's name (and give that user the author's resolve right). A
   // line feeder (inventory_update) or its author resolves it. USING is also
-  // the CHECK, so an update never moves a row to another company.
+  // the CHECK, so an update never moves a row to another company, nor points
+  // it at another company's operation or item.
   materialRequest: company("inventory", {
-    // The operation and the item it names must be the request's own company:
-    // their FKs are single-column (jobOperation and item have no unique
-    // (id, companyId) to point a composite FK at).
     create: and(
       owner("createdBy"),
       inCompany("companyId", "employee"),
-      or(
-        isNull("jobOperationId"),
-        exists("jobOperation", "jobOperationId", "employee", {
-          sameCompany: true
-        })
-      ),
-      or(
-        isNull("itemId"),
-        exists("item", "itemId", "employee", { sameCompany: true })
-      )
+      materialRequestReferences
     ),
-    update: or(
-      inCompany("companyId", "inventory_update"),
-      and(owner("createdBy"), inCompany("companyId", "employee"))
+    update: and(
+      or(
+        inCompany("companyId", "inventory_update"),
+        and(owner("createdBy"), inCompany("companyId", "employee"))
+      ),
+      materialRequestReferences
     )
   }),
   materialSubstance: policies({
