@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { EPSILON, round } from "@carbon/utils";
+
 /**
  * The tracked entity id in a traveler link (`/x/traveler/<id>`). The label
  * holds the origin it was printed from, which need not be this deployment's
@@ -72,15 +74,92 @@ export function pickTravelerOperation({
   };
 }
 
+/** The job material fields the traveler issue rules read. */
+export type TravelerMaterial = {
+  id: string;
+  jobOperationId: string | null;
+  /** Quantity per unit of the make method. */
+  quantity: number | null;
+  estimatedQuantity: number | null;
+  quantityIssued: number | null;
+};
+
+/** What a job material still needs for the whole job. */
+export function jobMaterialShortfall(material: {
+  quantity: number | null;
+  estimatedQuantity: number | null;
+  quantityIssued: number | null;
+}): number {
+  const required = material.estimatedQuantity ?? material.quantity ?? 0;
+  return Math.max(0, round(required - (material.quantityIssued ?? 0)));
+}
+
+/**
+ * The material a traveler scan issues the scanned item into at one
+ * operation. Only a material on this operation, then one with no operation,
+ * can take it. A serial unit (`unitConsumed` set: what is consumed into the
+ * unit, per job material) takes a material while its quantity per unit is
+ * not consumed into that unit. Consumption booked to another material of the
+ * item (an Issue dialog issue by item makes one) fills this operation's
+ * materials first. Any other parent takes a material while the job still
+ * needs it.
+ */
+export function pickTravelerMaterial<T extends TravelerMaterial>({
+  materials,
+  jobOperationId,
+  unitConsumed
+}: {
+  /** Every material of the scanned item on the make method. */
+  materials: T[];
+  jobOperationId: string;
+  unitConsumed: Map<string, number> | null;
+}): { kind: "issue"; material: T } | { kind: "full" } | { kind: "notUsed" } {
+  const byId = (a: T, b: T) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const eligible = [
+    ...materials.filter((m) => m.jobOperationId === jobOperationId).sort(byId),
+    ...materials.filter((m) => m.jobOperationId === null).sort(byId)
+  ];
+  if (eligible.length === 0) return { kind: "notUsed" };
+
+  if (!unitConsumed) {
+    const material = eligible.find((m) => jobMaterialShortfall(m) > EPSILON);
+    return material ? { kind: "issue", material } : { kind: "full" };
+  }
+
+  const known = new Set(materials.map((m) => m.id));
+  let unattributed = 0;
+  for (const [materialId, consumed] of unitConsumed) {
+    if (!known.has(materialId)) unattributed += consumed;
+  }
+  for (const material of materials) {
+    const consumed = unitConsumed.get(material.id) ?? 0;
+    unattributed += Math.max(0, consumed - (material.quantity ?? 0));
+  }
+
+  for (const material of eligible) {
+    const consumed = unitConsumed.get(material.id) ?? 0;
+    let need = Math.max(0, round((material.quantity ?? 0) - consumed));
+    const covered = Math.min(need, unattributed);
+    need = round(need - covered);
+    unattributed = round(unattributed - covered);
+    if (need > EPSILON) return { kind: "issue", material };
+  }
+  return { kind: "full" };
+}
+
 /**
  * The open operations a scanned unit can be issued into, best first: those
  * with a material still short of its requirement. A material with no
- * operation belongs to the last open operation of its make method.
+ * operation belongs to the last open operation of its make method. A make
+ * method in `perUnitMakeMethodIds` builds serial units: its materials are not
+ * checked against the job here, because the caller checks each one against
+ * the unit it issues into (`pickTravelerMaterial`).
  */
 export function travelerIssueCandidates({
   operations,
   materials,
-  workCenterId
+  workCenterId,
+  perUnitMakeMethodIds
 }: {
   operations: {
     id: string;
@@ -98,6 +177,7 @@ export function travelerIssueCandidates({
     quantityIssued: number | null;
   }[];
   workCenterId: string | null;
+  perUnitMakeMethodIds?: Set<string>;
 }): string[] {
   const byId = new Map(
     operations.map((operation) => [operation.id, operation])
@@ -113,8 +193,12 @@ export function travelerIssueCandidates({
 
   const candidateIds = new Set<string>();
   for (const material of materials) {
-    const required = material.estimatedQuantity ?? material.quantity;
-    if ((material.quantityIssued ?? 0) >= required) continue;
+    if (
+      !perUnitMakeMethodIds?.has(material.jobMakeMethodId) &&
+      jobMaterialShortfall(material) <= EPSILON
+    ) {
+      continue;
+    }
     const operationId =
       material.jobOperationId ??
       lastByMakeMethod.get(material.jobMakeMethodId)?.id;

@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   parseTravelerCode,
+  pickTravelerMaterial,
   pickTravelerOperation,
   travelerIssueCandidates,
   travelerScanAction
@@ -141,6 +142,23 @@ describe("travelerIssueCandidates", () => {
     ).toEqual([]);
   });
 
+  it("leaves a serial make method's job-level shortfall to the per-unit check", () => {
+    expect(
+      travelerIssueCandidates({
+        operations,
+        materials: [
+          material({
+            jobMakeMethodId: "jmm_a",
+            jobOperationId: "op_a10",
+            quantityIssued: 1
+          })
+        ],
+        workCenterId: null,
+        perUnitMakeMethodIds: new Set(["jmm_a"])
+      })
+    ).toEqual(["op_a10"]);
+  });
+
   it("orders the station first, then due date with none last, then routing order", () => {
     expect(
       travelerIssueCandidates({
@@ -216,5 +234,94 @@ describe("travelerScanAction", () => {
         targetInProduction: true
       })
     ).toEqual({ kind: "navigate" });
+  });
+});
+
+describe("pickTravelerMaterial", () => {
+  // The merge station of the AJ-3 engine: 1 combustion chamber per unit.
+  const base = (overrides: {
+    id: string;
+    jobOperationId: string | null;
+    quantity?: number;
+    estimatedQuantity?: number | null;
+    quantityIssued?: number | null;
+  }) => ({
+    quantity: 1,
+    estimatedQuantity: 4,
+    quantityIssued: 0,
+    ...overrides
+  });
+  const atMerge = base({ id: "jm_cc", jobOperationId: "op_merge" });
+  const unassigned = base({ id: "jm_spare", jobOperationId: null });
+
+  it("refuses a second chamber for a unit that already has one", () => {
+    expect(
+      pickTravelerMaterial({
+        materials: [atMerge],
+        jobOperationId: "op_merge",
+        unitConsumed: new Map([["jm_cc", 1]])
+      })
+    ).toEqual({ kind: "full" });
+  });
+
+  it("issues into this operation's material while the unit still needs it", () => {
+    expect(
+      pickTravelerMaterial({
+        materials: [unassigned, atMerge],
+        jobOperationId: "op_merge",
+        unitConsumed: new Map()
+      })
+    ).toEqual({ kind: "issue", material: atMerge });
+  });
+
+  it("takes the unassigned material once this operation's is in the unit", () => {
+    expect(
+      pickTravelerMaterial({
+        materials: [atMerge, unassigned],
+        jobOperationId: "op_merge",
+        unitConsumed: new Map([["jm_cc", 1]])
+      })
+    ).toEqual({ kind: "issue", material: unassigned });
+  });
+
+  it("counts a chamber booked to another material of the item", () => {
+    // The Issue dialog's issue by item books to a new 0-quantity material.
+    expect(
+      pickTravelerMaterial({
+        materials: [
+          atMerge,
+          base({ id: "jm_extra", jobOperationId: "op_merge", quantity: 0 })
+        ],
+        jobOperationId: "op_merge",
+        unitConsumed: new Map([["jm_extra", 1]])
+      })
+    ).toEqual({ kind: "full" });
+  });
+
+  it("gives an untracked parent what the job has not issued", () => {
+    expect(
+      pickTravelerMaterial({
+        materials: [{ ...atMerge, quantityIssued: 3 }],
+        jobOperationId: "op_merge",
+        unitConsumed: null
+      })
+    ).toEqual({ kind: "issue", material: { ...atMerge, quantityIssued: 3 } });
+    expect(
+      pickTravelerMaterial({
+        materials: [{ ...atMerge, quantityIssued: 4 }],
+        jobOperationId: "op_merge",
+        unitConsumed: null
+      })
+    ).toEqual({ kind: "full" });
+  });
+
+  it("refuses an item only another operation uses", () => {
+    expect(
+      pickTravelerMaterial({
+        materials: [base({ id: "jm_other", jobOperationId: "op_test" })],
+        jobOperationId: "op_merge",
+        unitConsumed: new Map()
+      })
+    ).toEqual({ kind: "notUsed" });
   });
 });

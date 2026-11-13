@@ -13,7 +13,9 @@ import { parseTravelerCode, travelerScanAction } from "~/utils/traveler";
 /**
  * A traveler link scanned on an operation screen. An available unit is issued
  * into this operation, a unit already inside this job's unit opens that unit,
- * and anything else goes to the traveler route.
+ * and anything else goes to the traveler route. The issue route refuses a
+ * unit the current unit already has ("This unit already has its …"), and the
+ * hook shows that refusal as a toast.
  */
 export function useTravelerScan({
   operationId,
@@ -57,6 +59,10 @@ export function useTravelerScan({
     }
     processedLookup.current = result;
 
+    if (result.status === "error") {
+      toast.error(t`Could not look up this label. Try again.`);
+      return;
+    }
     if (result.status !== "found") {
       toast.error(t`This label does not belong to a unit in this company`);
       return;

@@ -477,6 +477,8 @@ export default function AuthenticatedRoute() {
       navigate(path.to.traveler(result.trackedEntityId));
     } else if (result.status === "ambiguous") {
       toast.error(t`This barcode matches more than one unit`);
+    } else if (result.status === "error") {
+      toast.error(t`Could not look up this label. Try again.`);
     } else {
       toast.error(t`Nothing on this page uses that barcode`);
     }

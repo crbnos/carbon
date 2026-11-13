@@ -70,14 +70,15 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Traveler scan: the scanned unit decides the material and quantity, so a
-  // wrong item is refused before the posting.
-  if (travelerScan && jobOperationId) {
+  // wrong item, or one the unit already has, is refused before the posting.
+  if (travelerScan && jobOperationId && parentTrackedEntityId) {
     const resolved = await resolveTravelerMaterial(
       await getCarbonServiceRole(),
       {
         companyId,
         jobOperationId,
-        trackedEntityId: children[0].trackedEntityId
+        trackedEntityId: children[0].trackedEntityId,
+        parentTrackedEntityId
       }
     );
     if ("refusal" in resolved) {

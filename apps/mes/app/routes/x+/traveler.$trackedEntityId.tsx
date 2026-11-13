@@ -6,6 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import { Button, Card, CardContent, toast } from "@carbon/react";
 import { datetime, redirect, resolveTrackedEntityBins } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -23,12 +24,16 @@ import {
   getNextIncompleteSerialEntity,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
-import { getTravelerTarget } from "~/services/traveler.server";
+import {
+  getTravelerTarget,
+  getUnitConsumption
+} from "~/services/traveler.server";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
 import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 import {
+  pickTravelerMaterial,
   pickTravelerOperation,
   travelerIssueCandidates
 } from "~/utils/traveler";
@@ -40,6 +45,8 @@ export const handle: Handle = {
 export const meta: MetaFunction = () => pageMeta("Traveler");
 
 const MAX_ISSUE_CANDIDATES = 10;
+
+const log = getLogger("mes", "traveler");
 
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
@@ -141,27 +148,50 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
 
   if (entity.status === "Available") {
     const makeMethodIds = [...new Set(rows.map((row) => row.jobMakeMethodId))];
-    const { data: materials } =
+    const [materialsRead, makeMethodsRead] = await Promise.all([
       entity.itemId && makeMethodIds.length > 0
-        ? await serviceRole
+        ? serviceRole
             .from("jobMaterial")
             .select(
-              "jobMakeMethodId, jobOperationId, quantity, estimatedQuantity, quantityIssued"
+              "id, jobMakeMethodId, jobOperationId, quantity, estimatedQuantity, quantityIssued"
             )
             .eq("itemId", entity.itemId)
             .in("jobMakeMethodId", makeMethodIds)
             .eq("companyId", companyId)
-        : { data: null };
+        : Promise.resolve({ data: [], error: null }),
+      makeMethodIds.length > 0
+        ? serviceRole
+            .from("jobMakeMethod")
+            .select("id, requiresSerialTracking")
+            .in("id", makeMethodIds)
+            .eq("companyId", companyId)
+        : Promise.resolve({ data: [], error: null })
+    ]);
+    if (materialsRead.error || makeMethodsRead.error) {
+      log.error("Could not read the job materials for a traveler", {
+        companyId,
+        trackedEntityId: entity.id,
+        error: materialsRead.error ?? makeMethodsRead.error
+      });
+    }
+    const materials = (materialsRead.data ?? []).flatMap((material) =>
+      material.jobMakeMethodId
+        ? [{ ...material, jobMakeMethodId: material.jobMakeMethodId }]
+        : []
+    );
+    // A serial make method is checked per unit below, once its unit is known.
+    const serialMakeMethodIds = new Set(
+      (makeMethodsRead.data ?? [])
+        .filter((method) => method.requiresSerialTracking)
+        .map((method) => method.id)
+    );
 
     const candidateIds = travelerIssueCandidates({
       operations: rows,
-      materials: (materials ?? []).flatMap((material) =>
-        material.jobMakeMethodId
-          ? [{ ...material, jobMakeMethodId: material.jobMakeMethodId }]
-          : []
-      ),
-      workCenterId
-    }).slice(0, MAX_ISSUE_CANDIDATES);
+      materials,
+      workCenterId,
+      perUnitMakeMethodIds: serialMakeMethodIds
+    });
 
     const rowsById = new Map(rows.map((row) => [row.id, row]));
     const candidateOperations = candidateIds.map((id) => rowsById.get(id)!);
@@ -212,7 +242,7 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
       scopeByOperation.set(row.jobOperationId, ids);
     }
 
-    const candidates = candidateOperations.flatMap((operation) => {
+    const withParents = candidateOperations.flatMap((operation) => {
       const scopedIds = scopeByOperation.get(operation.id) ?? null;
       const parent = getNextIncompleteSerialEntity(
         (unitsByMakeMethod.get(operation.jobMakeMethodId) ?? []).map(
@@ -225,6 +255,42 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
       );
       return parent ? [{ operation, parentTrackedEntityId: parent.id }] : [];
     });
+
+    // The issue route's rule (`resolveTravelerMaterial`): a serial unit that
+    // already has the item is no candidate. A failed read keeps the
+    // candidate; the issue route still refuses it.
+    const serialParentIds = withParents
+      .filter((candidate) =>
+        serialMakeMethodIds.has(candidate.operation.jobMakeMethodId)
+      )
+      .map((candidate) => candidate.parentTrackedEntityId);
+    const consumption = await getUnitConsumption(serviceRole, {
+      companyId,
+      unitIds: serialParentIds
+    });
+    const consumed = consumption.data;
+    const candidates = (
+      consumed
+        ? withParents.filter((candidate) => {
+            const isSerial = serialMakeMethodIds.has(
+              candidate.operation.jobMakeMethodId
+            );
+            const picked = pickTravelerMaterial({
+              materials: materials.filter(
+                (material) =>
+                  material.jobMakeMethodId ===
+                  candidate.operation.jobMakeMethodId
+              ),
+              jobOperationId: candidate.operation.id,
+              unitConsumed: isSerial
+                ? (consumed.get(candidate.parentTrackedEntityId) ??
+                  new Map<string, number>())
+                : null
+            });
+            return picked.kind === "issue";
+          })
+        : withParents
+    ).slice(0, MAX_ISSUE_CANDIDATES);
 
     if (candidates.length === 0) {
       const { data: ledgers } = await serviceRole

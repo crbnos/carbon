@@ -26,7 +26,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     code: id,
     companyId
   });
-  if (result.kind === "notFound" || result.kind === "ambiguous") {
+  if (
+    result.kind === "notFound" ||
+    result.kind === "ambiguous" ||
+    result.kind === "error"
+  ) {
     return { status: result.kind };
   }
 
