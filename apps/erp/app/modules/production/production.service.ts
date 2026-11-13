@@ -4610,6 +4610,7 @@ export async function assignJobSerialNumbersAtRelease(
  */
 export async function createReleasePickingList(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobId: string; companyId: string; userId: string }
 ): Promise<{ created: boolean; error: string | null }> {
   const { jobId, companyId, userId } = args;
@@ -4675,7 +4676,7 @@ export async function createReleasePickingList(
   const jobOperationIds = (operations.data ?? []).map((row) => row.id);
   if (jobOperationIds.length === 0) return { created: false, error: null };
 
-  const generated = await inventoryPostings.generatePickingList(client, {
+  const generated = await inventoryPostings.generatePickingList(client, db, {
     jobOperationIds,
     locationId: job.data.locationId,
     companyId,

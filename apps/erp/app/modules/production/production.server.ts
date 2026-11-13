@@ -374,6 +374,7 @@ export const releaseCheckedJobs = defineServiceFn({
       // job is already Ready, so a failure is a warning and a note on the job.
       const picking = await service.createReleasePickingList(
         ctx.asSystem.supabase,
+        ctx.asSystem.pg,
         { jobId: id, companyId, userId }
       );
       if (picking.error) {

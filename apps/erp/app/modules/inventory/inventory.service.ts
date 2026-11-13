@@ -6014,8 +6014,17 @@ class PickingReadError extends Error {
 export const NO_MATERIALS_TO_PICK =
   "No materials require picking for the selected operations";
 
+/**
+ * Build a Draft picking list for the given job operations at a location.
+ *
+ * Every read and every decision happens first, through `client`. Then one
+ * transaction on `db` takes the picking list number, inserts the header and
+ * inserts its lines, so a failure writes nothing. When no line needs picking
+ * it returns `NO_MATERIALS_TO_PICK` and writes nothing.
+ */
 export async function generatePickingList(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationIds: string[];
     locationId: string;
@@ -6031,44 +6040,7 @@ export async function generatePickingList(
     excludeMadeParts?: boolean;
   }
 ) {
-  // 1. Get the next sequence number
-  const sequenceResult = await settingsService.getNextSequence(
-    client,
-    "pickingList",
-    args.companyId
-  );
-  if (sequenceResult.error || !sequenceResult.data) {
-    return {
-      data: null,
-      error: sequenceResult.error ?? "Failed to get sequence"
-    };
-  }
-  const pickingListId = sequenceResult.data as string;
-
-  // 2. Create the picking list header
-  const headerInsert = await client
-    .from("pickingList")
-    .insert([
-      {
-        pickingListId,
-        status: "Draft" as const,
-        locationId: args.locationId,
-        assignee: args.assignee ?? null,
-        dueDate: args.dueDate ?? null,
-        companyId: args.companyId,
-        createdBy: args.createdBy
-      }
-    ])
-    .select("id, pickingListId")
-    .single();
-
-  if (headerInsert.error) {
-    return { data: null, error: headerInsert.error };
-  }
-
-  const plId = headerInsert.data.id;
-
-  // 3. Map each operation to its work center (for the lineside destination)
+  // 1. Map each operation to its work center (for the lineside destination)
   // and find the earliest selected operation of each make method (lowest
   // "order", id tie-break) — materials with no operation assignment attach to
   // it, mirroring get_picking_schedule's first-operation attribution.
@@ -6078,7 +6050,6 @@ export async function generatePickingList(
     .in("id", args.jobOperationIds);
 
   if (operations.error) {
-    await client.from("pickingList").delete().eq("id", plId);
     return { data: null, error: operations.error };
   }
 
@@ -6106,7 +6077,7 @@ export async function generatePickingList(
   }
   const makeMethodIds = Array.from(firstSelectedOpByMakeMethod.keys());
 
-  // 4. Get jobMaterial records with quantityToIssue > 0: those assigned to the
+  // 2. Get jobMaterial records with quantityToIssue > 0: those assigned to the
   // selected operations, plus unassigned ones (jobOperationId NULL — demanded
   // at every operation of their method in MES) on the selected make methods.
   const quoted = (ids: string[]) => ids.map((id) => `"${id}"`).join(",");
@@ -6127,7 +6098,6 @@ export async function generatePickingList(
   const materials = await materialsQuery;
 
   if (materials.error) {
-    await client.from("pickingList").delete().eq("id", plId);
     return { data: null, error: materials.error };
   }
 
@@ -6142,7 +6112,6 @@ export async function generatePickingList(
       .eq("companyId", args.companyId)
       .eq("replenishmentSystem", "Make");
     if (madeItems.error) {
-      await client.from("pickingList").delete().eq("id", plId);
       return { data: null, error: madeItems.error };
     }
     const made = new Set((madeItems.data ?? []).map((i) => i.id));
@@ -6171,7 +6140,6 @@ export async function generatePickingList(
       .eq("companyId", args.companyId)
       .in("itemId", materialItemIds);
     if (supersessions.error) {
-      await client.from("pickingList").delete().eq("id", plId);
       return { data: null, error: supersessions.error };
     }
     for (const row of supersessions.data ?? []) {
@@ -6196,7 +6164,6 @@ export async function generatePickingList(
     Array.from(new Set((materials.data ?? []).map((m) => m.jobId)))
   );
   if (jobStripes.error || !jobStripes.data) {
-    await client.from("pickingList").delete().eq("id", plId);
     return { data: null, error: jobStripes.error };
   }
   const stripesByJob = jobStripes.data;
@@ -6471,7 +6438,10 @@ export async function generatePickingList(
 
   // Lazily resolve (and cache) the lineside destination per work center. A
   // pick is a transfer from the warehouse source to this lineside shelf;
-  // production later consumes from it.
+  // production later consumes from it. The RPC may create the lineside storage
+  // unit, but it is a get-or-create (the next call returns the same unit), so
+  // it stays a read-phase call outside the transaction: a list that is not
+  // created leaves at most a lineside unit the next list reuses.
 
   const linesideByWorkCenter = new Map<string, string | null>();
   const resolveLineside = async (
@@ -6491,12 +6461,9 @@ export async function generatePickingList(
     return linesideId;
   };
 
-  // Accumulate all line rows and per-material FIFO allocations first, then write
-  // them in atomic batch inserts. On any insert error we delete the header,
-  // which cascades to lines and tracked-entity allocations (ON DELETE CASCADE),
-  // so a partially-built picking list can never survive.
+  // Build every line row first; nothing is written until all of them are
+  // known (step 4), so a failed read leaves no picking list behind.
   const lineRows: Array<{
-    pickingListId: string;
     jobId: string;
     jobMaterialId: string;
     jobOperationId: string | null;
@@ -6530,7 +6497,7 @@ export async function generatePickingList(
         ? (workCenterByOperation.get(effectiveOperationId) ?? null)
         : null;
 
-      // 5. Resolve the destination: the operation's work-center lineside shelf.
+      // Resolve the destination: the operation's work-center lineside shelf.
       const toStorageUnitId = await resolveLineside(opWorkCenterId);
 
       // The stock TEST uses total non-lineside on-hand (including the unassigned
@@ -6684,7 +6651,6 @@ export async function generatePickingList(
         }
 
         lineRows.push({
-          pickingListId: plId,
           jobId: mat.jobId,
           jobMaterialId: mat.id,
           jobOperationId: effectiveOperationId,
@@ -6704,41 +6670,67 @@ export async function generatePickingList(
     }
   } catch (err) {
     if (err instanceof PickingReadError) {
-      await client.from("pickingList").delete().eq("id", plId);
       return { data: null, error: err.postgrestError };
     }
     throw err;
   }
 
-  // 7. If no lines to pick, delete the empty header and report.
+  // 3. Nothing to pick: nothing was written, so there is nothing to undo.
   if (lineRows.length === 0) {
-    await client.from("pickingList").delete().eq("id", plId);
     return {
       data: null,
       error: NO_MATERIALS_TO_PICK
     };
   }
 
-  // 8. Atomic batch insert of all lines. Tracked lots are not pre-allocated;
-  // they're chosen at pick time via the TrackedEntityPicker.
-  const linesInsert = await client
-    .from("pickingListLine")
-    .insert(lineRows)
-    .select("id");
-
-  if (linesInsert.error || !linesInsert.data) {
-    await client.from("pickingList").delete().eq("id", plId); // cascade cleanup
-    return { data: null, error: linesInsert.error ?? "Failed to create lines" };
+  // 4. One transaction: the number, the header and every line. A failure rolls
+  // all of it back, so no header is ever left without its lines. Tracked lots
+  // are not pre-allocated; they're chosen at pick time via the
+  // TrackedEntityPicker.
+  try {
+    const created = await withTransaction(db, async (trx) => {
+      const pickingListId = await sequence.getNextSequence(
+        trx,
+        "pickingList",
+        args.companyId
+      );
+      const header = await trx
+        .insertInto("pickingList")
+        .values({
+          pickingListId,
+          status: "Draft",
+          locationId: args.locationId,
+          assignee: args.assignee ?? null,
+          dueDate: args.dueDate ?? null,
+          companyId: args.companyId,
+          createdBy: args.createdBy
+        })
+        .returning(["id", "pickingListId"])
+        .executeTakeFirstOrThrow();
+      await trx
+        .insertInto("pickingListLine")
+        .values(lineRows.map((row) => ({ ...row, pickingListId: header.id })))
+        .execute();
+      return header;
+    });
+    return {
+      data: {
+        id: created.id,
+        pickingListId: created.pickingListId
+      },
+      error: null
+    };
+  } catch (err) {
+    logger.error("Failed to create the picking list", {
+      companyId: args.companyId,
+      locationId: args.locationId,
+      error: err
+    });
+    return {
+      data: null,
+      error: getErrorMessage(err, "Failed to create the picking list")
+    };
   }
-
-  // 9. Return the created picking list
-  return {
-    data: {
-      id: plId,
-      pickingListId
-    },
-    error: null
-  };
 }
 
 /**

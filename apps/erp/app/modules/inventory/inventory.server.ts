@@ -7829,6 +7829,7 @@ export const generatePickingList = defineServiceFn({
       ctx,
       await service.generatePickingList(
         ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         payload(ctx, input).forUpsert() as never
       )
     );
