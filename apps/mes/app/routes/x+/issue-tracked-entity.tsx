@@ -117,7 +117,9 @@ export async function action({ request }: ActionFunctionArgs) {
           jobOperationStepId,
           unitNumber,
           overrideExpired,
-          overrideReason
+          overrideReason,
+          // The posting re-checks the requirement under a lock for a scan.
+          travelerScan
         }
   );
 

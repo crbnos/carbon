@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { fetchAllRecords } from "@carbon/database";
 import { getErrorMessage, requireAffected } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type ErpPostingInput, erpPosting } from "~/services/erp";
@@ -10,26 +11,37 @@ import { isPickingListLocked } from "~/services/models";
 
 export async function getAssignedPickingLists(
   client: SupabaseClient<Database>,
+  companyId: string,
   userId: string,
   locationId: string | undefined
 ) {
   const statuses = ["Draft", "In Progress"] as const;
 
   // A water spider works the lists assigned to them and the unassigned lists
-  // at their location.
+  // at their location, in the current company only (RLS admits every company
+  // the user belongs to). Both are paged with a stable order, so a location
+  // past the row cap still lists every open list before the sort below.
   const [assigned, unassigned] = await Promise.all([
-    client
-      .from("pickingLists")
-      .select("*")
-      .eq("assignee", userId)
-      .in("status", [...statuses]),
+    fetchAllRecords(() =>
+      client
+        .from("pickingLists")
+        .select("*")
+        .eq("companyId", companyId)
+        .eq("assignee", userId)
+        .in("status", [...statuses])
+        .order("id")
+    ),
     locationId
-      ? client
-          .from("pickingLists")
-          .select("*")
-          .is("assignee", null)
-          .eq("locationId", locationId)
-          .in("status", [...statuses])
+      ? fetchAllRecords(() =>
+          client
+            .from("pickingLists")
+            .select("*")
+            .eq("companyId", companyId)
+            .is("assignee", null)
+            .eq("locationId", locationId)
+            .in("status", [...statuses])
+            .order("id")
+        )
       : Promise.resolve({ data: [], error: null })
   ]);
 

@@ -39,11 +39,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companyId
   });
 
-  const targetInProduction = await isUnitInProduction(serviceRole, {
+  // A failed check cannot tell a unit still being built from a finished one,
+  // so the scan reports an error instead of issuing it.
+  const inProduction = await isUnitInProduction(serviceRole, {
     companyId,
     trackedEntityId: target?.trackedEntityId,
     jobMakeMethodId: target?.jobMakeMethodId
   });
+  if (inProduction.data === null) return { status: "error" as const };
 
   return {
     status: "found" as const,
@@ -51,6 +54,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     scannedStatus: result.entity.status,
     scannedItemId: result.entity.itemId,
     target,
-    targetInProduction
+    targetInProduction: inProduction.data
   };
 }

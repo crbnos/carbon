@@ -31,11 +31,12 @@ export const handle: Handle = {
 export const meta: MetaFunction = () => pageMeta("Picking");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, userId, companyId } = await requirePermissions(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
 
   const pickingLists = await getAssignedPickingLists(
     client,
+    companyId,
     effectiveUserId,
     context.get(userContext)?.locationId
   );

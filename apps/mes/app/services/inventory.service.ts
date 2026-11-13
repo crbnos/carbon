@@ -6,6 +6,8 @@ import { trackedEntityStripe } from "@carbon/api/stock-stripes";
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import {
+  fetchAllByIds,
+  fetchAllRecords,
   getLocationTimeZone,
   getNonNettableTrackedEntityIds
 } from "@carbon/database";
@@ -132,6 +134,47 @@ async function withoutNonNettableLots<
   return {
     ...lots,
     data: lots.data.filter((lot) => !quarantined.data?.has(lot.id))
+  };
+}
+
+/**
+ * The tracking type a traveler label prints for each unit, from its item's
+ * tracking type (Serial or Batch) — never from the unit's quantity, since a
+ * batch lot can hold 1 or 0.5. A unit's item is `itemId`, else its
+ * `sourceDocumentId` (as the print job resolves it). One paged read.
+ */
+export async function getLabelTrackingTypes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  units: { id: string; itemId: string | null; sourceDocumentId: string }[]
+): Promise<
+  | { data: Map<string, "Serial" | "Batch">; error: null }
+  | { data: null; error: unknown }
+> {
+  const itemIdOf = (unit: (typeof units)[number]) =>
+    unit.itemId ?? unit.sourceDocumentId;
+  const items = await fetchAllByIds(
+    [...new Set(units.map(itemIdOf))],
+    (batch) =>
+      client
+        .from("item")
+        .select("id, itemTrackingType")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+  );
+  if (items.error) return { data: null, error: items.error };
+  const typeByItem = new Map(
+    items.data.map((item) => [item.id, item.itemTrackingType])
+  );
+  return {
+    data: new Map(
+      units.map((unit) => [
+        unit.id,
+        typeByItem.get(itemIdOf(unit)) === "Batch" ? "Batch" : "Serial"
+      ])
+    ),
+    error: null
   };
 }
 
@@ -733,7 +776,9 @@ export async function insertManualInventoryAdjustment(
 /**
  * The line feeder's queue for one location: open material requests, lineside
  * shortages and outstanding transfer lines to a work center's storage unit,
- * plus the names the cards show.
+ * plus the names the cards show. Every source is paged with a stable order,
+ * so a location past the row cap still gets its oldest requests and largest
+ * shortages first from `buildLineFeedRows`.
  */
 export async function getLineFeed(
   client: SupabaseClient<Database>,
@@ -742,28 +787,40 @@ export async function getLineFeed(
   const { companyId, locationId } = args;
 
   const [requests, shortages, transfers] = await Promise.all([
-    client
-      .from("materialRequest")
-      .select(
-        "*, item(readableIdWithRevision), workCenter(name), jobOperation(job(jobId))"
-      )
-      .eq("status", "Open")
-      .eq("locationId", locationId)
-      .eq("companyId", companyId),
-    client.rpc("get_line_feed_shortages", {
-      p_location_id: locationId,
-      p_company_id: companyId
-    }),
-    client
-      .from("stockTransferLine")
-      .select(
-        "id, itemId, outstandingQuantity, createdAt, toStorageUnitId, stockTransfer!inner(id, stockTransferId, status, locationId), toStorageUnit:storageUnit!stockTransferLine_toStorageUnitId_fkey!inner(name, workCenterId)"
-      )
-      .eq("companyId", companyId)
-      .eq("stockTransfer.locationId", locationId)
-      .in("stockTransfer.status", ["Released", "In Progress"])
-      .gt("outstandingQuantity", 0)
-      .not("toStorageUnit.workCenterId", "is", null)
+    fetchAllRecords(() =>
+      client
+        .from("materialRequest")
+        .select(
+          "*, item(readableIdWithRevision), workCenter(name), jobOperation(job(jobId))"
+        )
+        .eq("status", "Open")
+        .eq("locationId", locationId)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllRecords(() =>
+      client
+        .rpc("get_line_feed_shortages", {
+          p_location_id: locationId,
+          p_company_id: companyId
+        })
+        .order("workCenterId")
+        .order("storageUnitId")
+        .order("itemId")
+    ),
+    fetchAllRecords(() =>
+      client
+        .from("stockTransferLine")
+        .select(
+          "id, itemId, outstandingQuantity, createdAt, toStorageUnitId, stockTransfer!inner(id, stockTransferId, status, locationId), toStorageUnit:storageUnit!stockTransferLine_toStorageUnitId_fkey!inner(name, workCenterId)"
+        )
+        .eq("companyId", companyId)
+        .eq("stockTransfer.locationId", locationId)
+        .in("stockTransfer.status", ["Released", "In Progress"])
+        .gt("outstandingQuantity", 0)
+        .not("toStorageUnit.workCenterId", "is", null)
+        .order("id")
+    )
   ]);
 
   const error = requests.error ?? shortages.error ?? transfers.error;
@@ -787,20 +844,22 @@ export async function getLineFeed(
   ];
 
   const [storageUnits, workCenters] = await Promise.all([
-    storageUnitIds.length
-      ? client
-          .from("storageUnit")
-          .select("id, name")
-          .in("id", storageUnitIds)
-          .eq("companyId", companyId)
-      : Promise.resolve({ data: [], error: null }),
-    workCenterIds.length
-      ? client
-          .from("workCenter")
-          .select("id, name")
-          .in("id", workCenterIds)
-          .eq("companyId", companyId)
-      : Promise.resolve({ data: [], error: null })
+    fetchAllByIds(storageUnitIds, (batch) =>
+      client
+        .from("storageUnit")
+        .select("id, name")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(workCenterIds, (batch) =>
+      client
+        .from("workCenter")
+        .select("id, name")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    )
   ]);
 
   const nameError = storageUnits.error ?? workCenters.error;

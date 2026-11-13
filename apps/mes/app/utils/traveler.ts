@@ -95,24 +95,37 @@ export function jobMaterialShortfall(material: {
 }
 
 /**
+ * What is consumed into a serial unit now, per job material and per item of
+ * the consumed components (`getUnitConsumption`).
+ */
+export type TravelerConsumption = {
+  materialId: string;
+  itemId: string | null;
+  quantity: number;
+};
+
+/**
  * The material a traveler scan issues the scanned item into at one
  * operation. Only a material on this operation, then one with no operation,
  * can take it. A serial unit (`unitConsumed` set: what is consumed into the
- * unit, per job material) takes a material while its quantity per unit is
- * not consumed into that unit. Consumption booked to another material of the
- * item (an Issue dialog issue by item makes one) fills this operation's
- * materials first. Any other parent takes a material while the job still
- * needs it.
+ * unit) takes a material while its quantity per unit is not consumed into
+ * that unit. Consumption of the scanned item booked to another material (an
+ * Issue dialog issue by item makes one) fills this operation's materials
+ * first. Consumption of any other item never fills them: a fitted bolt is not
+ * a chamber. Any other parent takes a material while the job still needs it.
  */
 export function pickTravelerMaterial<T extends TravelerMaterial>({
   materials,
   jobOperationId,
+  itemId,
   unitConsumed
 }: {
   /** Every material of the scanned item on the make method. */
   materials: T[];
   jobOperationId: string;
-  unitConsumed: Map<string, number> | null;
+  /** The scanned unit's item. */
+  itemId: string | null;
+  unitConsumed: TravelerConsumption[] | null;
 }): { kind: "issue"; material: T } | { kind: "full" } | { kind: "notUsed" } {
   const byId = (a: T, b: T) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   const eligible = [
@@ -127,17 +140,25 @@ export function pickTravelerMaterial<T extends TravelerMaterial>({
   }
 
   const known = new Set(materials.map((m) => m.id));
+  const consumedByMaterial = new Map<string, number>();
   let unattributed = 0;
-  for (const [materialId, consumed] of unitConsumed) {
-    if (!known.has(materialId)) unattributed += consumed;
+  for (const entry of unitConsumed) {
+    if (known.has(entry.materialId)) {
+      consumedByMaterial.set(
+        entry.materialId,
+        (consumedByMaterial.get(entry.materialId) ?? 0) + entry.quantity
+      );
+    } else if (itemId !== null && entry.itemId === itemId) {
+      unattributed += entry.quantity;
+    }
   }
   for (const material of materials) {
-    const consumed = unitConsumed.get(material.id) ?? 0;
+    const consumed = consumedByMaterial.get(material.id) ?? 0;
     unattributed += Math.max(0, consumed - (material.quantity ?? 0));
   }
 
   for (const material of eligible) {
-    const consumed = unitConsumed.get(material.id) ?? 0;
+    const consumed = consumedByMaterial.get(material.id) ?? 0;
     let need = Math.max(0, round((material.quantity ?? 0) - consumed));
     const covered = Math.min(need, unattributed);
     need = round(need - covered);
@@ -145,6 +166,20 @@ export function pickTravelerMaterial<T extends TravelerMaterial>({
     if (need > EPSILON) return { kind: "issue", material };
   }
   return { kind: "full" };
+}
+
+/**
+ * Whether an operation applies to a unit. A rework operation with scope rows
+ * (`jobOperationTrackedEntity`) applies only to the units listed; an
+ * operation with no rows applies to every unit.
+ */
+export function isUnitInOperationScope(
+  scopes: Map<string, Set<string>>,
+  operationId: string,
+  trackedEntityId: string
+): boolean {
+  const scoped = scopes.get(operationId);
+  return !scoped || scoped.has(trackedEntityId);
 }
 
 /**

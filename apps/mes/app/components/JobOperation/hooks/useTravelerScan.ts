@@ -10,12 +10,35 @@ import type { loader as resolveLoader } from "~/routes/x+/traveler.resolve";
 import { path } from "~/utils/path";
 import { parseTravelerCode, travelerScanAction } from "~/utils/traveler";
 
+/** The unit and step a traveler scan issues into. */
+type ScanContext = {
+  operationId: string;
+  jobMakeMethodId: string | null;
+  parentTrackedEntityId: string | undefined;
+  jobOperationStepId: string | undefined;
+  unitNumber: number | undefined;
+};
+
+function isSameScanContext(a: ScanContext, b: ScanContext) {
+  return (
+    a.operationId === b.operationId &&
+    a.jobMakeMethodId === b.jobMakeMethodId &&
+    a.parentTrackedEntityId === b.parentTrackedEntityId &&
+    a.jobOperationStepId === b.jobOperationStepId &&
+    a.unitNumber === b.unitNumber
+  );
+}
+
 /**
  * A traveler link scanned on an operation screen. An available unit is issued
  * into this operation, a unit already inside this job's unit opens that unit,
  * and anything else goes to the traveler route. The issue route refuses a
  * unit the current unit already has ("This unit already has its …"), and the
  * hook shows that refusal as a toast.
+ *
+ * A lookup is bound to the unit it was scanned for: when the operator moves
+ * to another unit (or step) before it returns, the result is dropped, so a
+ * component is never issued into a unit it was not scanned for.
  */
 export function useTravelerScan({
   operationId,
@@ -37,12 +60,26 @@ export function useTravelerScan({
   const lookupFetcher = useFetcher<typeof resolveLoader>();
   const issueFetcher = useFetcher<{ success: boolean; message: string }>();
 
+  const context: ScanContext = {
+    operationId,
+    jobMakeMethodId: jobMakeMethodId ?? null,
+    parentTrackedEntityId,
+    jobOperationStepId,
+    unitNumber
+  };
+  const currentContext = useRef(context);
+  currentContext.current = context;
+  // The context of the scan whose lookup is in flight.
+  const scanContext = useRef<ScanContext | null>(null);
+
   useKeyboardWedge({
     test: (input) => !!parseTravelerCode(input),
-    callback: (input) =>
-      lookupFetcher.load(
+    callback: (input) => {
+      scanContext.current = currentContext.current;
+      return lookupFetcher.load(
         `${path.to.travelerResolve}?code=${encodeURIComponent(input)}`
-      ),
+      );
+    },
     inTextFields: true,
     active
   });
@@ -59,6 +96,14 @@ export function useTravelerScan({
     }
     processedLookup.current = result;
 
+    const scanned = scanContext.current;
+    scanContext.current = null;
+    if (!scanned) return;
+    if (!isSameScanContext(scanned, currentContext.current)) {
+      toast.error(t`The unit changed. Scan again.`);
+      return;
+    }
+
     if (result.status === "error") {
       toast.error(t`Could not look up this label. Try again.`);
       return;
@@ -74,18 +119,18 @@ export function useTravelerScan({
       targetStatus: result.target?.status ?? null,
       targetJobMakeMethodId: result.target?.jobMakeMethodId ?? null,
       targetInProduction: result.targetInProduction ?? false,
-      operationJobMakeMethodId: jobMakeMethodId ?? null
+      operationJobMakeMethodId: scanned.jobMakeMethodId
     });
 
     if (action.kind === "issue") {
       issueFetcher.submit(
         JSON.stringify({
           travelerScan: true,
-          jobOperationId: operationId,
-          parentTrackedEntityId,
+          jobOperationId: scanned.operationId,
+          parentTrackedEntityId: scanned.parentTrackedEntityId,
           children: [{ trackedEntityId: result.trackedEntityId, quantity: 1 }],
-          jobOperationStepId,
-          unitNumber
+          jobOperationStepId: scanned.jobOperationStepId,
+          unitNumber: scanned.unitNumber
         }),
         {
           method: "post",
@@ -95,23 +140,12 @@ export function useTravelerScan({
       );
     } else if (action.kind === "open") {
       navigate(
-        `${path.to.operation(operationId)}?trackedEntityId=${action.trackedEntityId}`
+        `${path.to.operation(scanned.operationId)}?trackedEntityId=${action.trackedEntityId}`
       );
     } else {
       navigate(path.to.traveler(result.trackedEntityId));
     }
-  }, [
-    lookupFetcher.state,
-    lookupFetcher.data,
-    issueFetcher,
-    navigate,
-    operationId,
-    jobMakeMethodId,
-    parentTrackedEntityId,
-    jobOperationStepId,
-    unitNumber,
-    t
-  ]);
+  }, [lookupFetcher.state, lookupFetcher.data, issueFetcher, navigate, t]);
 
   const processedIssue = useRef<typeof issueFetcher.data | null>(null);
   useEffect(() => {

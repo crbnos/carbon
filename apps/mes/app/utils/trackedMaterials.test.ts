@@ -90,6 +90,28 @@ describe("unissuedTrackedMaterials", () => {
       )
     ).toEqual([]);
   });
+
+  it("compares decimal quantities at the internal scale", () => {
+    // 0.1 × 3 is 0.30000000000000004 in floating point; 0.3 issued is enough.
+    const batch = material({
+      requiresSerialTracking: false,
+      requiresBatchTracking: true,
+      quantity: 0.1,
+      quantityIssued: 0.3
+    });
+    expect(
+      unissuedTrackedMaterials(args([batch], { unitsAfterCompletion: 3 }))
+    ).toEqual([]);
+    expect(
+      requiredScanShortfall({
+        materials: [{ ...batch, quantityIssued: 0.2 }],
+        operationId: "op_2",
+        jobMakeMethodId: "jmm_1",
+        isLastOperation: false,
+        units: { kind: "operation", unitsAfterCompletion: 3 }
+      }).map(({ issued, required }) => ({ issued, required }))
+    ).toEqual([{ issued: 0.2, required: 0.3 }]);
+  });
 });
 
 describe("requiredScanMessage", () => {

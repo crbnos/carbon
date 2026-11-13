@@ -4,9 +4,14 @@
 
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { fetchAllByIds } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
-import { pickTravelerMaterial } from "~/utils/traveler";
+import {
+  isUnitInOperationScope,
+  pickTravelerMaterial,
+  type TravelerConsumption
+} from "~/utils/traveler";
 
 type ServiceRole = Awaited<ReturnType<typeof getCarbonServiceRole>>;
 
@@ -95,45 +100,53 @@ export async function findTrackedEntityByCode(
 }
 
 /**
- * What is consumed into each unit now, per job material: the inputs of the
- * `Consume` activities that output the unit, less the outputs of the
- * `Unconsume` activities that take it as input. A scrapped component is no
- * longer in the unit (its scrap reopened the requirement). Two reads, for
- * any number of units.
+ * What is consumed into each unit now, per job material and component item:
+ * the inputs of the `Consume` activities that output the unit, less the
+ * outputs of the `Unconsume` activities that take it as input. A scrapped
+ * component is no longer in the unit (its scrap reopened the requirement).
+ * Both reads are paged (100 units per request, every page), so a long
+ * history is never cut off at the row cap.
  */
 export async function getUnitConsumption(
   client: ServiceRole,
   args: { companyId: string; unitIds: string[] }
 ): Promise<
-  | { data: Map<string, Map<string, number>>; error: null }
+  | { data: Map<string, TravelerConsumption[]>; error: null }
   | { data: null; error: unknown }
 > {
-  const result = new Map<string, Map<string, number>>();
-  if (args.unitIds.length === 0) return { data: result, error: null };
+  const result = new Map<string, TravelerConsumption[]>();
+  const unitIds = [...new Set(args.unitIds)];
+  if (unitIds.length === 0) return { data: result, error: null };
 
   const [consumed, returned] = await Promise.all([
-    client
-      .from("trackedActivity")
-      .select(
-        "attributes, trackedActivityOutput!inner(trackedEntityId), trackedActivityInput(trackedEntityId, quantity, trackedEntity(status))"
-      )
-      .eq("type", "Consume")
-      .eq("companyId", args.companyId)
-      .in("trackedActivityOutput.trackedEntityId", args.unitIds),
-    client
-      .from("trackedActivity")
-      .select(
-        "attributes, trackedActivityInput!inner(trackedEntityId), trackedActivityOutput(trackedEntityId, quantity)"
-      )
-      .eq("type", "Unconsume")
-      .eq("companyId", args.companyId)
-      .in("trackedActivityInput.trackedEntityId", args.unitIds)
+    fetchAllByIds(unitIds, (batch) =>
+      client
+        .from("trackedActivity")
+        .select(
+          "id, attributes, trackedActivityOutput!inner(trackedEntityId), trackedActivityInput(trackedEntityId, quantity, trackedEntity(status, itemId))"
+        )
+        .eq("type", "Consume")
+        .eq("companyId", args.companyId)
+        .in("trackedActivityOutput.trackedEntityId", batch)
+        .order("id")
+    ),
+    fetchAllByIds(unitIds, (batch) =>
+      client
+        .from("trackedActivity")
+        .select(
+          "id, attributes, trackedActivityInput!inner(trackedEntityId), trackedActivityOutput(trackedEntityId, quantity)"
+        )
+        .eq("type", "Unconsume")
+        .eq("companyId", args.companyId)
+        .in("trackedActivityInput.trackedEntityId", batch)
+        .order("id")
+    )
   ]);
   if (consumed.error || returned.error) {
     const error = consumed.error ?? returned.error;
     log.error("Could not read what is consumed into the units", {
       companyId: args.companyId,
-      unitIds: args.unitIds,
+      unitIds,
       error
     });
     return { data: null, error };
@@ -143,6 +156,7 @@ export async function getUnitConsumption(
   // fitted again counts once.
   const net = new Map<string, number>();
   const scrapped = new Set<string>();
+  const itemOf = new Map<string, string | null>();
   const key = (unitId: string, materialId: string, componentId: string) =>
     JSON.stringify([unitId, materialId, componentId]);
   const materialOf = (attributes: unknown) => {
@@ -160,6 +174,7 @@ export async function getUnitConsumption(
         if (input.trackedEntity?.status === "Scrapped") {
           scrapped.add(input.trackedEntityId);
         }
+        itemOf.set(input.trackedEntityId, input.trackedEntity?.itemId ?? null);
         const k = key(
           output.trackedEntityId,
           materialId,
@@ -185,6 +200,8 @@ export async function getUnitConsumption(
     }
   }
 
+  // Summed per (unit, material, item).
+  const totals = new Map<string, number>();
   for (const [k, quantity] of net) {
     const [unitId, materialId, componentId] = JSON.parse(k) as [
       string,
@@ -192,11 +209,66 @@ export async function getUnitConsumption(
       string
     ];
     if (scrapped.has(componentId) || quantity <= 0) continue;
-    const byMaterial = result.get(unitId) ?? new Map<string, number>();
-    byMaterial.set(materialId, (byMaterial.get(materialId) ?? 0) + quantity);
-    result.set(unitId, byMaterial);
+    const t = JSON.stringify([
+      unitId,
+      materialId,
+      itemOf.get(componentId) ?? null
+    ]);
+    totals.set(t, (totals.get(t) ?? 0) + quantity);
+  }
+  for (const [t, quantity] of totals) {
+    const [unitId, materialId, itemId] = JSON.parse(t) as [
+      string,
+      string,
+      string | null
+    ];
+    const entries = result.get(unitId) ?? [];
+    entries.push({ materialId, itemId, quantity });
+    result.set(unitId, entries);
   }
   return { data: result, error: null };
+}
+
+/**
+ * The rework scope of each operation (`jobOperationTrackedEntity`): the units
+ * an operation applies to, keyed by operation. An operation with no rows is
+ * absent and applies to every unit (`isUnitInOperationScope`). One paged
+ * read for any number of operations.
+ */
+export async function getOperationScopes(
+  client: ServiceRole,
+  args: { companyId: string; operationIds: string[] }
+): Promise<
+  | { data: Map<string, Set<string>>; error: null }
+  | { data: null; error: unknown }
+> {
+  const scopes = new Map<string, Set<string>>();
+  const operationIds = [...new Set(args.operationIds)];
+  if (operationIds.length === 0) return { data: scopes, error: null };
+
+  const rows = await fetchAllByIds(operationIds, (batch) =>
+    client
+      .from("jobOperationTrackedEntity")
+      .select("jobOperationId, trackedEntityId")
+      .in("jobOperationId", batch)
+      .eq("companyId", args.companyId)
+      .order("jobOperationId")
+      .order("trackedEntityId")
+  );
+  if (rows.error) {
+    log.error("Could not read the rework scope of the operations", {
+      companyId: args.companyId,
+      operationIds,
+      error: rows.error
+    });
+    return { data: null, error: rows.error };
+  }
+  for (const row of rows.data) {
+    const ids = scopes.get(row.jobOperationId) ?? new Set<string>();
+    ids.add(row.trackedEntityId);
+    scopes.set(row.jobOperationId, ids);
+  }
+  return { data: scopes, error: null };
 }
 
 /**
@@ -298,9 +370,9 @@ export async function resolveTravelerMaterial(
   const picked = pickTravelerMaterial({
     materials: materialsRead.data ?? [],
     jobOperationId: args.jobOperationId,
+    itemId: unit.itemId,
     unitConsumed: parentIsSerial
-      ? (consumption.data?.get(args.parentTrackedEntityId) ??
-        new Map<string, number>())
+      ? (consumption.data?.get(args.parentTrackedEntityId) ?? [])
       : null
   });
   if (picked.kind === "notUsed") {
@@ -324,7 +396,9 @@ export async function resolveTravelerMaterial(
  * Whether a unit is still being built by its own job. A serial unit turns
  * Available after ANY completed operation, so status alone cannot tell a unit
  * between stations from a finished one: this checks the open operations of
- * the unit's own make method.
+ * the unit's own make method that apply to the unit (a rework operation
+ * applies only to the units sent into it). A failed read is an `error`, never
+ * "not in production": the caller cannot tell, so it must not issue the unit.
  */
 export async function isUnitInProduction(
   client: ServiceRole,
@@ -333,13 +407,16 @@ export async function isUnitInProduction(
     trackedEntityId: string | null | undefined;
     jobMakeMethodId: string | null | undefined;
   }
-): Promise<boolean> {
-  if (!args.trackedEntityId || !args.jobMakeMethodId) return false;
+): Promise<{ data: boolean; error: null } | { data: null; error: unknown }> {
+  if (!args.trackedEntityId || !args.jobMakeMethodId) {
+    return { data: false, error: null };
+  }
+  const trackedEntityId = args.trackedEntityId;
   const [entity, operations] = await Promise.all([
     client
       .from("trackedEntity")
       .select("id, status, attributes")
-      .eq("id", args.trackedEntityId)
+      .eq("id", trackedEntityId)
       .eq("companyId", args.companyId)
       .maybeSingle(),
     client
@@ -352,13 +429,38 @@ export async function isUnitInProduction(
   if (entity.error || operations.error) {
     log.error("Could not check whether the unit is in production", {
       companyId: args.companyId,
-      trackedEntityId: args.trackedEntityId,
+      trackedEntityId,
       error: entity.error ?? operations.error
     });
-    return false;
+    return { data: null, error: entity.error ?? operations.error };
   }
-  if (!entity.data) return false;
-  return (operations.data ?? []).some((op) =>
-    isSerialEntityIncompleteForOperation(entity.data as never, op.id)
-  );
+  if (!entity.data) return { data: false, error: null };
+  const open = operations.data ?? [];
+  if (open.length === 0) return { data: false, error: null };
+
+  const scopes = await getOperationScopes(client, {
+    companyId: args.companyId,
+    operationIds: open.map((op) => op.id)
+  });
+  if (scopes.error || !scopes.data) {
+    return { data: null, error: scopes.error };
+  }
+  const scopeData = scopes.data;
+  const unit = entity.data;
+  return {
+    data: open.some((op) =>
+      isSerialEntityIncompleteForOperation(
+        {
+          ...unit,
+          inOperationScope: isUnitInOperationScope(
+            scopeData,
+            op.id,
+            trackedEntityId
+          )
+        } as never,
+        op.id
+      )
+    ),
+    error: null
+  };
 }

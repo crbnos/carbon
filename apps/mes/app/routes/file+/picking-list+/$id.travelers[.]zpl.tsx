@@ -9,7 +9,8 @@ import { labelSizes, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getCompanySettings,
-  getDocumentTemplateConfig
+  getDocumentTemplateConfig,
+  getLabelTrackingTypes
 } from "~/services/inventory.service";
 import {
   getCompanyLogoForLabel,
@@ -46,6 +47,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const trackingTypes = await getLabelTrackingTypes(
+    client,
+    companyId,
+    trackedEntities.data ?? []
+  );
+  if (trackingTypes.error || !trackingTypes.data) {
+    return new Response(
+      `Could not read the items of picking list ${trackedEntities.readableId ?? id}`,
+      { status: 500 }
+    );
+  }
+
   const items = trackedEntities.data
     ?.map((tracking) => ({
       itemId: tracking.sourceDocumentReadableId ?? "",
@@ -53,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       number: tracking.readableId ?? "",
       trackedEntityId: tracking.id,
       quantity: tracking.quantity,
-      trackingType: tracking.quantity > 1 ? "Batch" : "Serial"
+      trackingType: trackingTypes.data.get(tracking.id) ?? "Serial"
     }))
     .sort((a, b) => {
       if (a.itemId === b.itemId) {

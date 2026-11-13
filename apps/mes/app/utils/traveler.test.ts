@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  isUnitInOperationScope,
   parseTravelerCode,
   pickTravelerMaterial,
   pickTravelerOperation,
@@ -253,13 +254,19 @@ describe("pickTravelerMaterial", () => {
   });
   const atMerge = base({ id: "jm_cc", jobOperationId: "op_merge" });
   const unassigned = base({ id: "jm_spare", jobOperationId: null });
+  const chamber = (materialId: string, quantity: number) => ({
+    materialId,
+    itemId: "item_chamber",
+    quantity
+  });
 
   it("refuses a second chamber for a unit that already has one", () => {
     expect(
       pickTravelerMaterial({
         materials: [atMerge],
         jobOperationId: "op_merge",
-        unitConsumed: new Map([["jm_cc", 1]])
+        itemId: "item_chamber",
+        unitConsumed: [chamber("jm_cc", 1)]
       })
     ).toEqual({ kind: "full" });
   });
@@ -269,7 +276,8 @@ describe("pickTravelerMaterial", () => {
       pickTravelerMaterial({
         materials: [unassigned, atMerge],
         jobOperationId: "op_merge",
-        unitConsumed: new Map()
+        itemId: "item_chamber",
+        unitConsumed: []
       })
     ).toEqual({ kind: "issue", material: atMerge });
   });
@@ -279,7 +287,8 @@ describe("pickTravelerMaterial", () => {
       pickTravelerMaterial({
         materials: [atMerge, unassigned],
         jobOperationId: "op_merge",
-        unitConsumed: new Map([["jm_cc", 1]])
+        itemId: "item_chamber",
+        unitConsumed: [chamber("jm_cc", 1)]
       })
     ).toEqual({ kind: "issue", material: unassigned });
   });
@@ -293,9 +302,25 @@ describe("pickTravelerMaterial", () => {
           base({ id: "jm_extra", jobOperationId: "op_merge", quantity: 0 })
         ],
         jobOperationId: "op_merge",
-        unitConsumed: new Map([["jm_extra", 1]])
+        itemId: "item_chamber",
+        unitConsumed: [chamber("jm_extra", 1)]
       })
     ).toEqual({ kind: "full" });
+  });
+
+  it("does not count a fitted bolt against the chamber", () => {
+    // The bolt was consumed into the unit through the bolt's own material,
+    // which is not a chamber material.
+    expect(
+      pickTravelerMaterial({
+        materials: [atMerge],
+        jobOperationId: "op_merge",
+        itemId: "item_chamber",
+        unitConsumed: [
+          { materialId: "jm_bolt", itemId: "item_bolt", quantity: 1 }
+        ]
+      })
+    ).toEqual({ kind: "issue", material: atMerge });
   });
 
   it("gives an untracked parent what the job has not issued", () => {
@@ -303,6 +328,7 @@ describe("pickTravelerMaterial", () => {
       pickTravelerMaterial({
         materials: [{ ...atMerge, quantityIssued: 3 }],
         jobOperationId: "op_merge",
+        itemId: "item_chamber",
         unitConsumed: null
       })
     ).toEqual({ kind: "issue", material: { ...atMerge, quantityIssued: 3 } });
@@ -310,6 +336,7 @@ describe("pickTravelerMaterial", () => {
       pickTravelerMaterial({
         materials: [{ ...atMerge, quantityIssued: 4 }],
         jobOperationId: "op_merge",
+        itemId: "item_chamber",
         unitConsumed: null
       })
     ).toEqual({ kind: "full" });
@@ -320,8 +347,22 @@ describe("pickTravelerMaterial", () => {
       pickTravelerMaterial({
         materials: [base({ id: "jm_other", jobOperationId: "op_test" })],
         jobOperationId: "op_merge",
-        unitConsumed: new Map()
+        itemId: "item_chamber",
+        unitConsumed: []
       })
     ).toEqual({ kind: "notUsed" });
+  });
+});
+
+describe("isUnitInOperationScope", () => {
+  const scopes = new Map([["op_rework", new Set(["te_b"])]]);
+
+  it("applies a rework operation only to the units sent into it", () => {
+    expect(isUnitInOperationScope(scopes, "op_rework", "te_b")).toBe(true);
+    expect(isUnitInOperationScope(scopes, "op_rework", "te_a")).toBe(false);
+  });
+
+  it("applies an operation with no scope rows to every unit", () => {
+    expect(isUnitInOperationScope(scopes, "op_paint", "te_a")).toBe(true);
   });
 });

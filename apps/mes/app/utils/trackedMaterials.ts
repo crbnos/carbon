@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { round } from "@carbon/utils";
+
 export type RequiredScanMaterial = {
   id: string | null;
   jobMakeMethodId: string | null;
@@ -43,9 +45,11 @@ export function unissuedTrackedMaterials<T extends RequiredScanMaterial>(args: {
       (material.jobOperationId === null && isLastOperation);
     if (!consumedHere) return false;
 
+    // At the internal quantity scale: 0.1 × 3 units is 0.30000000000000004
+    // in floating point, which would refuse a fully issued 0.3.
     return (
-      (material.quantityIssued ?? 0) <
-      (material.quantity ?? 0) * unitsAfterCompletion
+      round(material.quantityIssued ?? 0) <
+      round((material.quantity ?? 0) * unitsAfterCompletion)
     );
   });
 }
@@ -167,8 +171,8 @@ export function requiredScanShortfall<T extends RequiredScanMaterial>(args: {
       unitsAfterCompletion: units.unitsAfterCompletion
     }).map((material) => ({
       material,
-      issued: material.quantityIssued ?? 0,
-      required: (material.quantity ?? 0) * units.unitsAfterCompletion
+      issued: round(material.quantityIssued ?? 0),
+      required: round((material.quantity ?? 0) * units.unitsAfterCompletion)
     }));
   }
 
@@ -205,8 +209,8 @@ export function requiredScanShortfall<T extends RequiredScanMaterial>(args: {
       );
       return {
         material,
-        issued,
-        required: perUnit * units.issuedByUnit.length
+        issued: round(issued),
+        required: round(perUnit * units.issuedByUnit.length)
       };
     });
 }

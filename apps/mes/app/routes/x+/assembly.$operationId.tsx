@@ -211,7 +211,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
       : false,
     jobMakeMethodId
-      ? isLastOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+      ? isLastOperationOfMakeMethod(
+          serviceRole,
+          companyId,
+          operationId,
+          jobMakeMethodId
+        )
       : false
   ]);
 

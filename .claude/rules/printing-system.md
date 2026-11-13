@@ -31,7 +31,10 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 - `productLabel` — sources `Receipt, Shipment, Operation, Entity, Job, Split, StockTransfer, PickingList`;
   default zpl. A `PickingList` prints its travelers, in serial order
   (`getPickingListTravelerEntities`, `@carbon/database/travelers`). That is one label per live unit
-  (not Consumed, Rejected or Scrapped) of the top-level make method of each job on the list
+  (not Consumed, Rejected or Scrapped) of the top-level make method of each job on the list.
+  Every read in it is paged with a stable order. The MES download routes take each label's
+  tracking type from the item's tracking type (`getLabelTrackingTypes`, MES
+  `services/inventory.service.ts`), not from the unit's quantity
 - `kanbanCard` — source `Kanban`; default pdf, ZPL on media of 3" x 2" and up (see `kanban-system.md` → Labels)
 - `storageUnitLabel` — source `StorageUnit`; default zpl
 
@@ -77,7 +80,9 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
   `documentTemplate` (`documentType="trackingLabel"`) + logo so queued jobs match the customizer.
   ZPL requires a `labelSize.zpl` config (`requireZplCapable`). The default `trackingLabel` QR holds
   `{label.travelerUrl}`, the MES traveler link `${getMESUrl()}/x/traveler/<trackedEntityId>`
-  (`trackingLabel/vars.ts`). `ProductLabelZPL` sizes the QR slot from the value length (`qrModuleCount`). A kanban card needs media that
+  (`trackingLabel/vars.ts`). `ProductLabelZPL` sizes the QR slot from the value length (`qrModuleCount`) and
+  makes the module (the `^BQ` magnification) smaller until the code fits the label's width and the
+  height below its top (`fitQrModule`), so a long traveler URL is never cropped. A kanban card needs media that
   `canHoldKanbanLabel` accepts for ZPL; a PDF printer with smaller media prints the company's
   `kanbanLabelSize` instead.
 - If neither (`builtInRenderer === null`, no template) → job fails asking for a BinderyPress template.
@@ -156,26 +161,32 @@ wrapped in try/catch that never blocks the parent op, then `trigger("print-job",
   | Operation | Prints when |
   |---|---|
   | Last operation of the top-level make method (`parentMaterialId` null) | `itemSerialSequence.printLabelOnCompletion` is on for the item (the finished-good label) |
-  | First operation of the make method | `companySettings.travelerLabels` is off. When it is on, the travelers printed at picking already carry the label |
+  | First operation of the make method | `companySettings.travelerLabels` is off, OR no traveler has printed for the job (`travelerPrinted`: no picking list with a line for the job has `travelersPrintedAt`). A printed traveler already carries the label; a job whose travelers never printed gets the label |
 
   "First" and "last" come from the routing (`services/operations.service.ts`), and are read first:
   an operation that is neither prints nothing and reads nothing else. The company setting is read
-  only at a first operation, and `itemSerialSequence` only at the last operation of a top-level
-  make method.
+  only at a first operation, the picking lists only at a first operation with the setting on (a
+  failed read prints the label), and `itemSerialSequence` only at the last operation of a
+  top-level make method.
   `isFirstOperationOfMakeMethod`: no `jobOperationDependency` predecessor in the same make method.
-  `isLastOperationOfMakeMethod`: no operation of the same make method depends on this one.
+  `isLastOperationOfMakeMethod(client, companyId, operationId, jobMakeMethodId)`: no operation of
+  the same make method depends on this one (the dependency read is scoped by `companyId`).
   The operation and assembly views use the same checks. Counting the unit's `Operation <id>` markers
   reprinted a label at every later operation, because a unit completed there had one marker or none.
 - **Picking-list travelers.** When `companySettings.travelerLabels` is on, a picking list prints its
   travelers (`sourceDocument: "PickingList"`, inventory context) once, when it leaves Draft. A
   status change or a pick can move it (the `update_picking_list_status` trigger), to In Progress
   or straight to Completed or Partial. After each status write and each pick, one function per app
-  reads the setting, then calls `claimTravelerPrint` (`@carbon/database/travelers`) with the service
-  role. That is one conditional UPDATE: it sets `pickingList."travelersPrintedAt"` only when the
-  column is null and the status is not Draft or Cancelled. Only the call that sets it prints, so two
-  picks at once print once and a reopened list never prints again. With the setting off nothing is
-  claimed, so turning it on later still prints a list not yet claimed. The function never throws:
-  a print failure never fails the pick or the status change. The callers:
+  reads the setting and checks that the location's inventory printer has auto-print on. Only then
+  does it call `claimTravelerPrint` (`@carbon/database/travelers`) with the service role, right
+  before it queues `print-job`. The claim is one conditional UPDATE: it sets
+  `pickingList."travelersPrintedAt"` only when the column is null and the status is not Draft or
+  Cancelled. Only the call that sets it prints, so two picks at once print once and a reopened list
+  never prints again. With the setting or auto-print off nothing is claimed, so turning it on later
+  still prints a list not yet claimed. When the enqueue fails, the function gives the claim back
+  with `releaseTravelerPrintClaim` and the same `at`, so the next pick or status change tries again.
+  The function never throws: a print failure never fails the pick or the status change. The
+  callers:
 
   | App | Function | Called from |
   |---|---|---|

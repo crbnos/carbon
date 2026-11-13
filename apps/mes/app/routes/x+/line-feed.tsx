@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -52,7 +53,9 @@ const emptyLineFeed = {
   workCenterNames: {} as Record<string, string>,
   storageUnitNames: {} as Record<string, string>,
   jobReadableIds: {} as Record<string, string>,
-  stockTransferReadableIds: {} as Record<string, string>
+  stockTransferReadableIds: {} as Record<string, string>,
+  // A failed read is not an empty queue: the screen says so and offers a retry.
+  loadFailed: false
 };
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
@@ -69,10 +72,10 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       locationId,
       error: lineFeed.error
     });
-    return emptyLineFeed;
+    return { ...emptyLineFeed, loadFailed: true };
   }
 
-  return lineFeed.data;
+  return { ...lineFeed.data, loadFailed: false };
 }
 
 export default function LineFeedRoute() {
@@ -81,8 +84,10 @@ export default function LineFeedRoute() {
     workCenterNames,
     storageUnitNames,
     jobReadableIds,
-    stockTransferReadableIds
+    stockTransferReadableIds,
+    loadFailed
   } = useLoaderData<typeof loader>();
+  const revalidator = useRevalidator();
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -90,7 +95,21 @@ export default function LineFeedRoute() {
       <MesQueueHeader title={<Trans>Line feed</Trans>} />
 
       <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
-        {rows.length > 0 ? (
+        {loadFailed ? (
+          <MesEmptyState
+            className="flex-1 w-full h-[calc(100%-var(--header-height))]"
+            title={<Trans>Could not load the line feed</Trans>}
+            action={
+              <Button
+                isLoading={revalidator.state !== "idle"}
+                isDisabled={revalidator.state !== "idle"}
+                onClick={() => revalidator.revalidate()}
+              >
+                <Trans>Try again</Trans>
+              </Button>
+            }
+          />
+        ) : rows.length > 0 ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
             {rows.map((row) => (
               <LineFeedCard

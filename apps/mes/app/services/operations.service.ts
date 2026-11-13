@@ -353,6 +353,7 @@ export async function isFirstOperationOfMakeMethod(
  */
 export async function isLastOperationOfMakeMethod(
   client: SupabaseClient<Database>,
+  companyId: string,
   operationId: string,
   jobMakeMethodId: string
 ): Promise<boolean> {
@@ -362,6 +363,7 @@ export async function isLastOperationOfMakeMethod(
       "operation:jobOperation!jobOperationDependency_operationId_fk!inner(jobMakeMethodId)"
     )
     .eq("dependsOnId", operationId)
+    .eq("companyId", companyId)
     .eq("operation.jobMakeMethodId", jobMakeMethodId)
     .limit(1)
     .maybeSingle();
@@ -547,14 +549,19 @@ async function getRequiredScanShortfalls(
   ];
 
   const [materials, lastOperations, issuedByUnit] = await Promise.all([
-    client
-      .from("jobMaterial")
-      .select(
-        "id, itemId, jobMakeMethodId, jobOperationId, requiresSerialTracking, requiresBatchTracking, quantity, quantityIssued"
-      )
-      .in("jobMakeMethodId", makeMethodIds)
-      .eq("companyId", companyId)
-      .or("requiresSerialTracking.eq.true,requiresBatchTracking.eq.true"),
+    // Paged: a batch's members can hold more tracked materials than the row
+    // cap, and a truncated read would let a unit through without its scans.
+    fetchAllByIds(makeMethodIds, (batch) =>
+      client
+        .from("jobMaterial")
+        .select(
+          "id, itemId, jobMakeMethodId, jobOperationId, requiresSerialTracking, requiresBatchTracking, quantity, quantityIssued"
+        )
+        .in("jobMakeMethodId", batch)
+        .eq("companyId", companyId)
+        .or("requiresSerialTracking.eq.true,requiresBatchTracking.eq.true")
+        .order("id")
+    ),
     getLastOperationsOfMakeMethods(client, companyId, operations.data),
     getIssuedByUnit(client, companyId, serialUnitIds)
   ]);

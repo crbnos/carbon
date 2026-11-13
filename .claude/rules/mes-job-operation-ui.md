@@ -328,8 +328,26 @@ was printed from.
   1. An `Available` unit: the hook issues it into this operation.
   2. A unit whose target is `Reserved` on this operation's make method opens that unit here, with no issue.
   3. Anything else navigates to the traveler route.
+
+  The hook keeps the unit the scan was made for: the operation, the parent
+  unit, the step and the unit number. If any of them changes before the
+  lookup returns, the hook does not issue. It shows "The unit changed. Scan
+  again.".
+- **Rework scope.** An open operation tells you that a unit is still in
+  production only if the operation applies to that unit. An operation with
+  `jobOperationTrackedEntity` rows applies only to the units in those rows.
+  An operation with no rows applies to every unit. `getOperationScopes`
+  (`services/traveler.server.ts`) reads the rows of a set of operations in
+  one paged read. `isUnitInOperationScope` (`~/utils/traveler`) does the
+  check. The traveler route reads the rows once for all of its active
+  operations. It uses them for the open operations of the unit and for the
+  next unit of each issue candidate. `isUnitInProduction` reads them for the
+  open operations of the unit's make method. If that read fails, it returns
+  an error, not `false`. `x+/traveler.resolve.tsx` then returns
+  `status: "error"`, and the scan does not issue the unit.
 - **The issue.** Both the chooser and the hook post `travelerScan: true` to
-  `x+/issue-tracked-entity.tsx`. The route then needs `jobOperationId`,
+  `x+/issue-tracked-entity.tsx`. The route sends `travelerScan` on to the
+  `trackedEntitiesToOperation` posting. The route then needs `jobOperationId`,
   `parentTrackedEntityId` and exactly one child. `resolveTravelerMaterial`
   (`services/traveler.server.ts`) sets the material and quantity from the
   scanned unit. It refuses a unit that is not `Available`, an item the make
@@ -344,9 +362,12 @@ was printed from.
   `getUnitConsumption` reads that per job material from the `Consume`
   activities that output the unit (their `Job Material` attribute and input
   quantities), less the `Unconsume` outputs, and leaves out a component that is
-  now `Scrapped`. Consumption booked to another material of the item (the Issue
-  dialog's issue by item makes a 0-quantity one) fills this operation's
-  materials first. Any other parent takes a material while
+  now `Scrapped`. It gives one entry for each material and component item. It
+  reads every page of both histories (`fetchAllByIds`). Consumption of the
+  scanned item that is booked to another material fills the materials of this
+  operation first. (The Issue dialog's issue by item makes a 0-quantity
+  material.) Consumption of a different item never fills them. A fitted bolt
+  does not count as a chamber. Any other parent takes a material while
   `jobMaterialShortfall` (`estimatedQuantity ?? quantity` less
   `quantityIssued`) is above 0. With none left the refusal is "This unit
   already has its <item>" (serial) or "This job already has all its <item>",
@@ -369,7 +390,9 @@ while its serial or batch materials are not scanned in.
   its own materials, plus the materials with no operation when it is the last
   operation (the screens read it with `isLastOperationOfMakeMethod`, the
   server with `getLastOperationsOfMakeMethods`). A material is short while
-  `quantityIssued` is less than `quantity` × the units after completion.
+  `quantityIssued` is less than `quantity` × the units after completion. Both
+  sides are rounded to the internal quantity scale first (`round`,
+  `@carbon/utils`), so 0.3 issued covers 0.1 × 3 units.
 - **The server check.** `getRequiredScanShortfall` (`services/operations.service.ts`)
   returns the refusal message ("Scan in these parts first: …",
   `requiredScanMessage`). A serial unit counts only what was scanned into that
@@ -377,7 +400,8 @@ while its serial or batch materials are not scanned in.
   Several serial units (an inspection lot) pass `trackedEntityIds`: each unit
   must hold its parts, and the message sums them ("issued of required" over
   the units). One set of reads covers every operation and unit: the
-  operations, their tracked materials, the last-operation read
+  operations, their tracked materials (paged with `fetchAllByIds`, so a
+  batch past the row cap is never checked on a partial list), the last-operation read
   (`getLastOperationsOfMakeMethods`, one `jobOperationDependency` query; the
   decision is `lastOperationIds`) and the units' inputs through the batch
   lineage RPCs (`netTrackedInputs`, `issuedByJobMaterial`; `getTrackedInputs`
@@ -411,14 +435,23 @@ while its serial or batch materials are not scanned in.
   opens `NeedMaterialModal`, which posts an optional item and note to
   `x+/material-request.new.tsx`. The route calls `createMaterialRequest`
   (`@carbon/database/material-request`) with the user's client, so the
-  `materialRequest` RLS decides who may ask. The request sits at the operation's
+  `materialRequest` RLS decides who may ask: any employee of the company, as
+  the author (the insert requires `createdBy` to be the caller). The request sits at the operation's
   work center and that work center's location, else the operator's location.
 - **The line feed.** `x+/line-feed.tsx` (`path.to.lineFeed`, a sidebar queue,
   `alt+0`, `view: inventory`) shows the line feeder's queue at the operator's
   location. `getLineFeed` (`services/inventory.service.ts`) reads 3 sources, and
   `buildLineFeedRows` (`services/line-feed.ts`, tested) orders them:
   1. Open material requests, oldest first.
-  2. Lineside shortages (`get_line_feed_shortages`), largest first.
+  2. Lineside shortages (`get_line_feed_shortages`, newest definition
+     `20261113014205_line-feed-first-operation-stripes.sql`), largest first.
+     Required is the unissued Pull from Inventory material of open operations
+     at a work center; a material with no operation counts at the FIRST open
+     operation of its make method, where `generatePickingList` stages it. On
+     hand is the station bins' ledger without Rejected or Scrapped tracked
+     units, netted by stock stripe: a job of a project with project stock uses
+     its project's stock, then unassigned stock; every other job uses
+     unassigned stock only. `onHand` is the stock that can cover the demand.
   3. Outstanding stock transfer lines to a work center's storage unit, oldest first.
 - **Resolve.** A request card posts to `x+/line-feed.$materialRequestId.resolve.tsx`,
   which calls `resolveMaterialRequest` with the user's client. Only the

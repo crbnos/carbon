@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { getLocationTimeZone } from "@carbon/database";
+import { fetchAllRecords, getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { Button, Card, CardContent, toast } from "@carbon/react";
 import { datetime, redirect, resolveTrackedEntityBins } from "@carbon/utils";
@@ -25,6 +25,7 @@ import {
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import {
+  getOperationScopes,
   getTravelerTarget,
   getUnitConsumption
 } from "~/services/traveler.server";
@@ -33,6 +34,7 @@ import type { Handle } from "~/utils/handle";
 import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 import {
+  isUnitInOperationScope,
   pickTravelerMaterial,
   pickTravelerOperation,
   travelerIssueCandidates
@@ -56,28 +58,38 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const trackedEntityId = params.trackedEntityId;
   if (!trackedEntityId) return { kind: "notFound" as const };
 
-  const target = await getTravelerTarget(serviceRole, {
-    trackedEntityId,
-    companyId
-  });
+  // The reads that do not depend on the unit run beside the target lookup:
+  // the operator's station today and the active operations here.
+  const [target, workCenterId, active] = await Promise.all([
+    getTravelerTarget(serviceRole, { trackedEntityId, companyId }),
+    (async () => {
+      if (!locationId || !effectiveUserId) return null;
+      const today = datetime.today(
+        await getLocationTimeZone(serviceRole, locationId, companyId)
+      );
+      const assignment = await getMyPeopleAssignment(serviceRole, {
+        companyId,
+        employeeId: effectiveUserId,
+        date: today.toString()
+      });
+      return assignment.data?.[0]?.workCenterId ?? null;
+    })(),
+    locationId
+      ? getActiveJobOperationsByLocation(serviceRole, locationId, [])
+      : Promise.resolve(null)
+  ]);
   if (!target) return { kind: "notFound" as const };
 
-  const { data: entity } = await serviceRole
+  const { data: entityRow } = await serviceRole
     .from("trackedEntity")
-    .select("id, readableId, status, itemId, attributes")
+    .select(
+      "id, readableId, status, itemId, attributes, item(readableIdWithRevision, name)"
+    )
     .eq("id", target.trackedEntityId)
     .eq("companyId", companyId)
     .maybeSingle();
-  if (!entity) return { kind: "notFound" as const };
-
-  const { data: item } = entity.itemId
-    ? await serviceRole
-        .from("item")
-        .select("readableIdWithRevision, name")
-        .eq("id", entity.itemId)
-        .eq("companyId", companyId)
-        .maybeSingle()
-    : { data: null };
+  if (!entityRow) return { kind: "notFound" as const };
+  const { item, ...entity } = entityRow;
 
   const unit = {
     id: entity.id,
@@ -87,34 +99,35 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     itemName: item?.name ?? null
   };
 
-  const today = locationId
-    ? datetime.today(
-        await getLocationTimeZone(serviceRole, locationId, companyId)
-      )
-    : null;
-
-  const assignment =
-    effectiveUserId && today
-      ? await getMyPeopleAssignment(serviceRole, {
-          companyId,
-          employeeId: effectiveUserId,
-          date: today.toString()
-        })
-      : null;
-  const workCenterId = assignment?.data?.[0]?.workCenterId ?? null;
-
-  const active = locationId
-    ? await getActiveJobOperationsByLocation(serviceRole, locationId, [])
-    : null;
   const rows = (active?.data ?? []).map(makeDurations);
+
+  if (entity.status !== "Reserved" && entity.status !== "Available") {
+    return { kind: "status" as const, unit };
+  }
+
+  // The rework scope of every active operation, in one read: a rework
+  // operation applies only to the units sent into it. A failed read treats
+  // every operation as applying to every unit, so the unit reads as in
+  // production rather than free to issue.
+  const scopeRead = await getOperationScopes(serviceRole, {
+    companyId,
+    operationIds: rows.map((row) => row.id)
+  });
+  const scopes = scopeRead.data ?? new Map<string, Set<string>>();
+  const appliesTo = (operationId: string, entityId: string) =>
+    isUnitInOperationScope(scopes, operationId, entityId);
+  const isOpenFor = (operationId: string) =>
+    isSerialEntityIncompleteForOperation(
+      { ...entity, inOperationScope: appliesTo(operationId, entity.id) },
+      operationId
+    );
 
   // A serial unit turns Available after ANY completed operation, so a unit
   // whose own make method still has open operations for it is in production.
   const ownOpen = target.jobMakeMethodId
     ? rows.filter(
         (row) =>
-          row.jobMakeMethodId === target.jobMakeMethodId &&
-          isSerialEntityIncompleteForOperation(entity, row.id)
+          row.jobMakeMethodId === target.jobMakeMethodId && isOpenFor(row.id)
       )
     : [];
 
@@ -126,7 +139,7 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
       (row) =>
         (!target.jobMakeMethodId ||
           row.jobMakeMethodId === target.jobMakeMethodId) &&
-        isSerialEntityIncompleteForOperation(entity, row.id)
+        isOpenFor(row.id)
     );
 
     const picked = pickTravelerOperation({ operations: open, workCenterId });
@@ -199,12 +212,12 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
       ...new Set(candidateOperations.map((row) => row.jobMakeMethodId))
     ];
 
-    // Two reads for every candidate, as getTrackedEntitiesForOperation does
-    // for one: the units of each make method in unit-axis order, and the
-    // rework scope rows of each operation.
-    const [units, scope] =
+    // The units of each candidate make method in unit-axis order, every
+    // page, as getTrackedEntitiesForOperation reads them for one. The rework
+    // scope rows were read above.
+    const units =
       candidateOperations.length > 0
-        ? await Promise.all([
+        ? await fetchAllRecords(() =>
             serviceRole
               .from("trackedEntity")
               .select("*")
@@ -212,14 +225,16 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
               .eq("companyId", companyId)
               .order("createdAt", { ascending: true })
               .order("readableId", { ascending: true })
-              .order("id", { ascending: true }),
-            serviceRole
-              .from("jobOperationTrackedEntity")
-              .select("jobOperationId, trackedEntityId")
-              .in("jobOperationId", candidateIds)
-              .eq("companyId", companyId)
-          ])
-        : [{ data: [] }, { data: [] }];
+              .order("id", { ascending: true })
+          )
+        : { data: [], error: null };
+    if (units.error) {
+      log.error("Could not read the units of the candidate operations", {
+        companyId,
+        trackedEntityId: entity.id,
+        error: units.error
+      });
+    }
 
     const unitsByMakeMethod = new Map<
       string,
@@ -235,20 +250,12 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
       unitsByMakeMethod.set(makeMethodId, group);
     }
 
-    const scopeByOperation = new Map<string, Set<string>>();
-    for (const row of scope.data ?? []) {
-      const ids = scopeByOperation.get(row.jobOperationId) ?? new Set();
-      ids.add(row.trackedEntityId);
-      scopeByOperation.set(row.jobOperationId, ids);
-    }
-
     const withParents = candidateOperations.flatMap((operation) => {
-      const scopedIds = scopeByOperation.get(operation.id) ?? null;
       const parent = getNextIncompleteSerialEntity(
         (unitsByMakeMethod.get(operation.jobMakeMethodId) ?? []).map(
-          (entity) => ({
-            ...entity,
-            inOperationScope: scopedIds ? scopedIds.has(entity.id) : true
+          (candidate) => ({
+            ...candidate,
+            inOperationScope: appliesTo(operation.id, candidate.id)
           })
         ),
         operation.id
@@ -282,9 +289,9 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
                   candidate.operation.jobMakeMethodId
               ),
               jobOperationId: candidate.operation.id,
+              itemId: entity.itemId,
               unitConsumed: isSerial
-                ? (consumed.get(candidate.parentTrackedEntityId) ??
-                  new Map<string, number>())
+                ? (consumed.get(candidate.parentTrackedEntityId) ?? [])
                 : null
             });
             return picked.kind === "issue";
