@@ -3565,6 +3565,9 @@ msgstr "AI가 계정을 확실하게 매칭하지 못했습니다"
 msgid "AI Tokens"
 msgstr "AI 토큰"
 
+msgid "Air-gapped"
+msgstr ""
+
 msgid "Align on scope"
 msgstr "범위 정렬"
 
@@ -6509,6 +6512,9 @@ msgstr "Carbon 클라이언트를 찾을 수 없음"
 msgid "Carbon column"
 msgstr "Carbon 열"
 
+msgid "Carbon Enterprise license"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon은 회사가 운영하는 방식으로 구성되고, 데이터가 로드되며, 팀이 확신을 가지고 사용할 때입니다. 그럴 때 실제 운영을 시작할 준비가 완료됩니다."
 
@@ -6548,6 +6554,12 @@ msgstr "Carbon은 AI를 사용하여 {0}개의 매핑되지 않은 계정 각각
 
 msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 msgstr "회계를 활성화할 때 Carbon는 오늘의 계정 및 원가로 해당 전표를 작성합니다."
+
+msgid "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+msgstr ""
+
+msgid "CARBON_LICENSE is not set."
+msgstr ""
 
 msgid "Carbon-only"
 msgstr "Carbon 전용"
@@ -7164,6 +7176,9 @@ msgstr "CLIN"
 
 msgid "CLIN / SLIN"
 msgstr "CLIN / SLIN"
+
+msgid "Clock"
+msgstr ""
 
 msgid "Clock In"
 msgstr "작업 시작"
@@ -7841,6 +7856,9 @@ msgstr "회사에서 이미 사용 중인 외부 도구 연결"
 
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "메타데이터 URL 또는 원본 메타데이터 XML 중 정확히 하나를 붙여넣어 자격 증명 공급자를 연결합니다."
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "워크플로가 필요하기 전에 연결되었으므로 추가 권한이 필요합니다. 다시 연결하여 부여하세요 — 그 사이에 다른 모든 것은 계속 작동합니다."
@@ -14494,6 +14512,9 @@ msgstr "GR/IR 정산"
 msgid "GR/IR Clearing (default)"
 msgstr "GR/IR 정산(기본값)"
 
+msgid "Grace period ends"
+msgstr ""
+
 msgid "grade"
 msgstr "등급"
 
@@ -16631,6 +16652,12 @@ msgstr "마지막 교정"
 msgid "Last Calibration Date"
 msgstr "마지막 교정일"
 
+msgid "Last check-in"
+msgstr ""
+
+msgid "Last check-in error"
+msgstr ""
+
 msgid "Last day"
 msgstr "마지막 날"
 
@@ -16963,6 +16990,12 @@ msgstr "서비스 날짜가 있는 송장 라인 또는 리스 라인이 매출 
 
 msgid "Liability GL account credited when an invoice line with service dates, or a rental line, is billed before the revenue is earned; a recognition run releases it to revenue."
 msgstr "서비스 날짜가 있는 송장 라인 또는 리스 라인이 매출 창출 전에 송장이 발행될 때 차변에 기입되는 부채 계정과목으로, 인식 실행이 이를 매출로 해제합니다."
+
+msgid "License"
+msgstr ""
+
+msgid "Licensee"
+msgstr ""
 
 msgid "Lifecycle"
 msgstr "라이프사이클"
@@ -18431,6 +18464,9 @@ msgstr "초과 근무 증가"
 msgid "More records are waiting. Push again to continue."
 msgstr "더 많은 기록이 대기 중입니다. 계속하려면 다시 푸시하세요."
 
+msgid "More users than your license allows. Contact Carbon to add seats."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "{name}님, 아침이군요."
 
@@ -19809,6 +19845,9 @@ msgstr "아직 리스 실행이 전기되지 않았습니다"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "휴가 요소가 설정되지 않았습니다. 간접 프로젝트에서 시간 제외 요소를 열고 휴가를 켜세요."
 
+msgid "No license"
+msgstr ""
+
 msgid "No lines"
 msgstr "항목 없음"
 
@@ -20328,6 +20367,9 @@ msgstr "정산일 이전 날짜의 전기되지 않은 문서가 없습니다."
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "이 위치의 이 공정에서 시작되지 않은 배치 처리되지 않은 작업이 없습니다."
+
+msgid "No valid Carbon Enterprise license."
+msgstr ""
 
 msgid "No value"
 msgstr "값 없음"
@@ -21831,6 +21873,12 @@ msgstr "지불인"
 
 msgid "Paid Date"
 msgstr "지급일"
+
+msgid "Paid features are off."
+msgstr ""
+
+msgid "Paid features will turn off once licenses are enforced."
+msgstr ""
 
 msgid "Paid outside Carbon"
 msgstr "Carbon 외부에서 지불됨"
@@ -26899,6 +26947,9 @@ msgstr "검색..."
 msgid "Search…"
 msgstr "검색…"
 
+msgid "Seats licensed"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "완료할 시간(초)"
 
@@ -30719,6 +30770,15 @@ msgstr "리스이용자의 임차 자산 사용권 자산으로, 영업용 또�
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "판매유형 리스에서 임대인의 자산: 리스료와 보증되지 않은 잔존가치의 현재가치로, 매월 리스이자로 증가하며 각 리스료와 구매선택권 송장으로 감소합니다."
 
+msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
+msgstr ""
+
+msgid "The license could not be checked. Carbon tries again in a minute."
+msgstr ""
+
+msgid "The license could not be verified."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "고객을 추적하는 생애주기 단계"
 
@@ -31186,6 +31246,9 @@ msgstr "판매 대신 임대 목적으로 구축하거나 자본화할 개 단�
 
 msgid "the selected class"
 msgstr "선택한 클래스"
+
+msgid "The server clock moved back. Check its time."
+msgstr ""
 
 msgid "The service job opens when the receipt is posted."
 msgstr "입고가 전기되면 서비스 작업 지시가 생성됩니다."
@@ -31798,6 +31861,18 @@ msgstr "이 리스는 개방형입니다: 통지를 통해 종료될 수 있으�
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 msgstr "이 리스는 회계 설정 전에 시작되었습니다. 활성화하면 {0}에 기초 잔액을 전기합니다(또는 그 이후의 첫 미결 기간의 시작): 해당 날짜 기준의 각 자산의 사용권 자산, 그 상각액 및 리스 부채, 이익잉여금과의 차이. 이전 월은 전기됨으로 표시됩니다."
 
+msgid "This license has ended, and its grace period is over."
+msgstr ""
+
+msgid "This license was issued after the server's current time. Check the server clock."
+msgstr ""
+
+msgid "This license was not signed by Carbon, or its signing key is no longer valid."
+msgstr ""
+
+msgid "This license was revoked."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "이 라인은 일정 계획을 위한 라우팅이 없습니다."
 
@@ -31997,6 +32072,9 @@ msgstr "이 버전은 게시됨입니다."
 
 msgid "This version is published. Create a new version to edit."
 msgstr "이 버전은 게시됨입니다. 편집하려면 새 버전을 생성하세요."
+
+msgid "This version of Carbon cannot check the license's signing keys. Update Carbon."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "이 버전의 정의를 읽을 수 없습니다."
@@ -33122,6 +33200,9 @@ msgstr "알 수 없는 부품"
 msgid "Unknown variable {variable}"
 msgstr "알 수 없는 변수 {variable}"
 
+msgid "Unlimited"
+msgstr ""
+
 msgid "Unlimited functional support"
 msgstr "무제한 기능 지원"
 
@@ -33902,6 +33983,9 @@ msgstr "품목 마스터 보기"
 
 msgid "View Journal Entry"
 msgstr "분개 보기"
+
+msgid "View license"
+msgstr ""
 
 msgid "View list"
 msgstr "목록 보기"
@@ -35185,6 +35269,13 @@ msgstr "내 백업"
 msgid "Your books and how money flows."
 msgstr "귀사의 장부와 자금 흐름."
 
+msgid "Your Carbon Enterprise license has ended."
+msgstr ""
+
+#. placeholder {0}: formatDate(notice.until)
+msgid "Your Carbon Enterprise license has expired. The grace period ends {0}."
+msgstr ""
+
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "변경사항이 이 변경 통지로 릴리스된 새로운 초안 버전으로 이동합니다."
 
@@ -35241,6 +35332,9 @@ msgstr "최근 변경 사항을 저장할 수 없습니다. 이 페이지를 떠
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "법인명, 주소, 브랜딩, 문서 기본값"
+
+msgid "Your license hasn't reached the Carbon console in over 3 days."
+msgstr ""
 
 msgid "Your main point of contact"
 msgstr "주요 담당자"

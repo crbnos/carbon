@@ -6,6 +6,9 @@
     ".": "./src/index.ts",
     "./accounting": "./src/accounting/index.ts",
     "./api-keys.server": "./src/api-keys.server.ts",
+    "./license/check-in.server": "./src/license/check-in.server.ts",
+    "./license": "./src/license/entitlement.ts",
+    "./license.server": "./src/license/resolve.server.ts",
     "./approvals": "./src/approvals/index.ts",
     "./approvals.server": "./src/approvals/service.ts",
     "./approvals/document.server": "./src/approvals/document.server.ts",
@@ -82,6 +85,7 @@
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external react",
     "lint": "biome lint --write ",
+    "sync:licence-verifier": "node scripts/sync-licence-verifier.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

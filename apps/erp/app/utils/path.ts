@@ -1730,6 +1730,7 @@ export const path = {
       privacyPolicy: "https://carbon.ms/privacy",
       termsAndConditions: "https://carbon.ms/terms"
     },
+    license: `${x}/settings/license`,
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),
     locations: `${x}/resources/locations`,
     login: "/login",

@@ -3565,6 +3565,9 @@ msgstr "ИИ не смог уверенно сопоставить ни один
 msgid "AI Tokens"
 msgstr "Токены ИИ"
 
+msgid "Air-gapped"
+msgstr ""
+
 msgid "Align on scope"
 msgstr "Согласовать объем"
 
@@ -6509,6 +6512,9 @@ msgstr "Клиент Carbon не найден"
 msgid "Carbon column"
 msgstr "Столбец Carbon"
 
+msgid "Carbon Enterprise license"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon настроена так, как работает ваша организация, данные загружены, и ваша команда уверенно ею пользуется. Когда это так, вы готовы к запуску."
 
@@ -6548,6 +6554,12 @@ msgstr "Carbon будет использовать ИИ для определе�
 
 msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
 msgstr "Carbon записывает их операции при включении бухгалтерии с текущими счетами и себестоимостью."
+
+msgid "CARBON_LICENSE is not a valid license. Check that it was copied in full."
+msgstr ""
+
+msgid "CARBON_LICENSE is not set."
+msgstr ""
 
 msgid "Carbon-only"
 msgstr "Только для Carbon"
@@ -7164,6 +7176,9 @@ msgstr "CLIN"
 
 msgid "CLIN / SLIN"
 msgstr "CLIN / SLIN"
+
+msgid "Clock"
+msgstr ""
 
 msgid "Clock In"
 msgstr "Начало работы"
@@ -7841,6 +7856,9 @@ msgstr "Подключить внешние инструменты, которы
 
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "Подключите вашего поставщика удостоверений, вставив либо URL его метаданных, либо его необработанный XML-файл метаданных — ровно один из двух."
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "Соединение до рабочих процессов требовало дополнительных разрешений. Переподключитесь, чтобы предоставить их — остальное продолжит работать."
@@ -14494,6 +14512,9 @@ msgstr "GR/IR клиринг"
 msgid "GR/IR Clearing (default)"
 msgstr "GR/IR клиринг (по умолчанию)"
 
+msgid "Grace period ends"
+msgstr ""
+
 msgid "grade"
 msgstr "сорт"
 
@@ -16631,6 +16652,12 @@ msgstr "Последняя калибровка"
 msgid "Last Calibration Date"
 msgstr "Дата последней калибровки"
 
+msgid "Last check-in"
+msgstr ""
+
+msgid "Last check-in error"
+msgstr ""
+
 msgid "Last day"
 msgstr "Последний день"
 
@@ -16963,6 +16990,12 @@ msgstr "Обязательство, возникающее при выставл
 
 msgid "Liability GL account credited when an invoice line with service dates, or a rental line, is billed before the revenue is earned; a recognition run releases it to revenue."
 msgstr "Счет учета обязательств, возникающий при выставлении счета-фактуры со сроками услуги или аренды до получения выручки; процесс признания выручки переводит его в выручку."
+
+msgid "License"
+msgstr ""
+
+msgid "Licensee"
+msgstr ""
 
 msgid "Lifecycle"
 msgstr "Жизненный цикл"
@@ -18431,6 +18464,9 @@ msgstr "Больше переработки"
 msgid "More records are waiting. Push again to continue."
 msgstr "Больше записей ожидают. Отправьте еще раз, чтобы продолжить."
 
+msgid "More users than your license allows. Contact Carbon to add seats."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "Доброе утро, {name}."
 
@@ -19809,6 +19845,9 @@ msgstr "Ни один запуск аренды еще не проведен."
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Элемент отпуска не установлен. В косвенном проекте откройте элемент для отпуска и включите отпуск."
 
+msgid "No license"
+msgstr ""
+
 msgid "No lines"
 msgstr "Нет строк"
 
@@ -20328,6 +20367,9 @@ msgstr "Нет непроведенных документов, датирова
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "На этом процессе в этом месте нет неначатых, необработанных операций."
+
+msgid "No valid Carbon Enterprise license."
+msgstr ""
 
 msgid "No value"
 msgstr "Нет значения"
@@ -21831,6 +21873,12 @@ msgstr "Оплачено"
 
 msgid "Paid Date"
 msgstr "Дата оплаты"
+
+msgid "Paid features are off."
+msgstr ""
+
+msgid "Paid features will turn off once licenses are enforced."
+msgstr ""
 
 msgid "Paid outside Carbon"
 msgstr "Оплачено вне Carbon"
@@ -26899,6 +26947,9 @@ msgstr "Поиск..."
 msgid "Search…"
 msgstr "Поиск…"
 
+msgid "Seats licensed"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Секунды для завершения"
 
@@ -30719,6 +30770,15 @@ msgstr "Актив арендатора для права использован
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "Актив лизингодателя при финансовой аренде: текущая стоимость арендных платежей и не гарантированного остатка, увеличиваемая каждый месяц на сумму процентов по лизингу и уменьшаемая каждый платеж аренды и счет-фактуру по опциону покупки."
 
+msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
+msgstr ""
+
+msgid "The license could not be checked. Carbon tries again in a minute."
+msgstr ""
+
+msgid "The license could not be verified."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Этапы жизненного цикла, через которые вы отслеживаете покупателей"
 
@@ -31186,6 +31246,9 @@ msgstr "Класс основных средств, заранее создан�
 
 msgid "the selected class"
 msgstr "выбранный класс"
+
+msgid "The server clock moved back. Check its time."
+msgstr ""
 
 msgid "The service job opens when the receipt is posted."
 msgstr "Задача обслуживания открывается при проведении квитанции."
@@ -31798,6 +31861,18 @@ msgstr "Эта аренда без указания срока: она може�
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
 msgstr "Эта аренда началась до настройки бухгалтерии. При активации она проводит вводный остаток на {0} (или начало первого открытого периода после него): актив права пользования каждого актива, его амортизация и его обязательство по аренде на эту дату, с разницей в нераспределенную прибыль. Месяцы до этого помечены как проведено."
 
+msgid "This license has ended, and its grace period is over."
+msgstr ""
+
+msgid "This license was issued after the server's current time. Check the server clock."
+msgstr ""
+
+msgid "This license was not signed by Carbon, or its signing key is no longer valid."
+msgstr ""
+
+msgid "This license was revoked."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "На этой строке нет маршрута для планирования."
 
@@ -31997,6 +32072,9 @@ msgstr "Эта версия опубликована"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Эта версия опубликована. Создайте новую версию для редактирования."
+
+msgid "This version of Carbon cannot check the license's signing keys. Update Carbon."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "Определение этой версии не удалось прочитать."
@@ -33122,6 +33200,9 @@ msgstr "Неизвестная деталь"
 msgid "Unknown variable {variable}"
 msgstr "Неизвестная переменная {variable}"
 
+msgid "Unlimited"
+msgstr ""
+
 msgid "Unlimited functional support"
 msgstr "Неограниченная функциональная поддержка"
 
@@ -33902,6 +33983,9 @@ msgstr "Просмотр основных данных товара"
 
 msgid "View Journal Entry"
 msgstr "Просмотр Проводки"
+
+msgid "View license"
+msgstr ""
 
 msgid "View list"
 msgstr "Просмотреть список"
@@ -35185,6 +35269,13 @@ msgstr "Ваши резервные копии"
 msgid "Your books and how money flows."
 msgstr "Ваши книги и движение денежных средств."
 
+msgid "Your Carbon Enterprise license has ended."
+msgstr ""
+
+#. placeholder {0}: formatDate(notice.until)
+msgid "Your Carbon Enterprise license has expired. The grace period ends {0}."
+msgstr ""
+
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Ваши изменения переходят в новую версию черновика, которая будет выпущена с этим извещением об изменении."
 
@@ -35241,6 +35332,9 @@ msgstr "Ваши последние изменения не были сохра�
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "Ваше юридическое имя, адреса, брендинг и стандартные параметры документов"
+
+msgid "Your license hasn't reached the Carbon console in over 3 days."
+msgstr ""
 
 msgid "Your main point of contact"
 msgstr "Ваше основное контактное лицо"

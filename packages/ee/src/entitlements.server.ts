@@ -3,9 +3,11 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
+import { CarbonEdition } from "@carbon/env";
+import { Edition } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Feature } from "./plan";
-import { companyHasFeature } from "./plan.server";
+import { companyHasFeature, licenceAllowsAuthoring } from "./plan.server";
 
 /**
  * The commercial-feature LOCK. Call `requireEntitlement` at the top of every
@@ -20,11 +22,10 @@ import { companyHasFeature } from "./plan.server";
  * feature body it guards is commercial too, so there is nothing to route around.
  * (Same design as Twenty CRM's in-service `hasFeatureOrThrow` checks.)
  *
- * `companyHasFeature` is the single source of truth for "is this company
- * entitled" — Community edition is blocked, Enterprise/Test self-hosted pass,
- * Cloud is plan-based. It is also the ONE place the future license-key server
- * plugs in (a signed, server-bound validity token), so every feature inherits
- * that enforcement without touching a call site.
+ * Community is blocked, Test passes, Cloud is plan-based (`companyHasFeature`).
+ * Enterprise reads its verified licence and needs it ACTIVE to author: an
+ * expired licence in its grace period keeps features running but authors
+ * nothing new.
  *
  * Use `requireEntitlement` (throws) at AUTHORING entry points. Use the boolean
  * `companyHasFeature` directly on RUNTIME paths that must DEGRADE rather than
@@ -49,6 +50,10 @@ export async function requireEntitlement(
   companyId: string,
   feature: Feature
 ): Promise<void> {
-  if (await companyHasFeature(client, companyId, { feature })) return;
+  const allowed =
+    CarbonEdition === Edition.Enterprise
+      ? await licenceAllowsAuthoring({ feature })
+      : await companyHasFeature(client, companyId, { feature });
+  if (allowed) return;
   throw new EntitlementError(feature);
 }

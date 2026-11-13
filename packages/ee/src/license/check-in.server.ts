@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import { randomBytes } from "node:crypto";
+import { getEnv } from "@carbon/env";
+import { acquireLease, type LeaseAcquisition, withLease } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
+import { parseAbsolute, type ZonedDateTime } from "@internationalized/date";
+import { getInstallId } from "./install-id.server";
+import {
+  type LicenceInUse,
+  type LicenceResolver,
+  licenceResolver
+} from "./resolve.server";
+import { licenceRoots } from "./roots";
+import {
+  readStoredLicence,
+  type StoredLicence,
+  updateStoredLicence
+} from "./store.server";
+import type { RootKey, VerifyInput, VerifyOutput } from "./types";
+import { verify } from "./verifier.server";
+
+const logger = getLogger("ee", "licence");
+
+const LEASE_KEY = "licence:check-in";
+const LEASE_MS = 60_000;
+const TIMEOUT_MS = 15_000;
+const MAX_BACKOFF_HOURS = 24;
+
+export type CheckInOutcome =
+  | { skipped: "not-connected" | "held" | "not-due" }
+  | { status: "ok" | "revoked" | "failed"; error: string | null };
+
+export type CheckInCounts = { seatsUsed: number; companiesCount: number };
+
+export type CheckInDeps = {
+  resolver: Pick<LicenceResolver, "resolve" | "licenceInUse" | "clearCache">;
+  verify: (input: VerifyInput) => Promise<VerifyOutput>;
+  readStored: () => Promise<StoredLicence>;
+  updateStored: (patch: Partial<StoredLicence>) => Promise<unknown>;
+  acquireLease: (key: string, ms: number) => Promise<LeaseAcquisition>;
+  withLease: typeof withLease;
+  fetch: typeof fetch;
+  installId: () => Promise<string>;
+  appVersion: () => string;
+  roots: () => RootKey[];
+  now: () => ZonedDateTime;
+};
+
+/** Hours to wait after the n-th failure in a row: 1, 2, 4 … up to 24. */
+export const backoffHours = (failures: number) =>
+  Math.min(2 ** Math.max(failures - 1, 0), MAX_BACKOFF_HOURS);
+
+/**
+ * The daily check-in of a connected licence. It runs from
+ * the hourly job, never on a request path, and one process per install
+ * talks to the issuer at a time. `counts` runs only when a check-in is due.
+ */
+export class LicenceCheckIn {
+  constructor(private readonly deps: CheckInDeps) {}
+
+  async run(counts: () => Promise<CheckInCounts>): Promise<CheckInOutcome> {
+    await this.deps.resolver.resolve();
+    const inUse = this.deps.resolver.licenceInUse();
+    const checkInUrl = inUse?.checkInUrl;
+    if (inUse?.view.mode !== "connected" || !checkInUrl) {
+      return { skipped: "not-connected" };
+    }
+
+    const lease = await this.deps.acquireLease(LEASE_KEY, LEASE_MS);
+    if (lease.status === "held") return { skipped: "held" };
+    // Redis down: check in anyway. Two processes at once cost one extra renewal.
+    const work = () => this.checkIn(inUse, checkInUrl, counts);
+    return lease.status === "acquired"
+      ? this.deps.withLease(
+          LEASE_KEY,
+          lease.owner,
+          { leaseMs: LEASE_MS, renewMs: LEASE_MS / 3 },
+          work
+        )
+      : work();
+  }
+
+  private async checkIn(
+    inUse: LicenceInUse,
+    checkInUrl: string,
+    counts: () => Promise<CheckInCounts>
+  ): Promise<CheckInOutcome> {
+    const stored = await this.deps.readStored();
+    const at = this.deps.now();
+    if (
+      stored.nextCheckInAt &&
+      parseAbsolute(stored.nextCheckInAt, "UTC").compare(at) > 0
+    ) {
+      return { skipped: "not-due" };
+    }
+
+    const { seatsUsed, companiesCount } = await counts();
+    const nonce = randomBytes(16).toString("base64url");
+    let status: "ok" | "revoked" | "failed" = "failed";
+    let error: string | null = null;
+
+    try {
+      const res = await this.deps.fetch(checkInUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          v: 1,
+          license: inUse.signedLicense,
+          nonce,
+          instance_id: await this.deps.installId(),
+          seats_used: seatsUsed,
+          companies_count: companiesCount,
+          app_version: this.deps.appVersion()
+        }),
+        signal: AbortSignal.timeout(TIMEOUT_MS)
+      });
+      const body = res.ok
+        ? ((await res.json()) as { status?: string; envelope?: string })
+        : null;
+
+      if (!body) {
+        error = `HTTP ${res.status}`;
+      } else if (body.status === "revoked") {
+        status = "revoked";
+        await this.deps.updateStored({
+          revokedLicenseId: inUse.view.license_id,
+          sealed: null
+        });
+      } else if (body.status === "ok" && body.envelope) {
+        error = await this.install(body.envelope, inUse, nonce, stored);
+        if (!error) status = "ok";
+      } else {
+        error = body.status ?? "bad response";
+      }
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    }
+
+    const failures = status === "failed" ? stored.checkInFailures + 1 : 0;
+    const waitHours = status === "failed" ? backoffHours(failures) : 24;
+    await this.deps.updateStored({
+      lastCheckInAt: at.toAbsoluteString(),
+      lastCheckInStatus: status,
+      lastCheckInError: error,
+      checkInFailures: failures,
+      seatsUsed,
+      nextCheckInAt: at.add({ hours: waitHours }).toAbsoluteString()
+    });
+    this.deps.resolver.clearCache();
+    if (error) logger.warn("licence: check-in failed", { error, failures });
+    return { status, error };
+  }
+
+  private async install(
+    envelope: string,
+    inUse: LicenceInUse,
+    nonce: string,
+    stored: StoredLicence
+  ): Promise<string | null> {
+    const out = await this.deps.verify({
+      sealed: envelope,
+      key: inUse.key,
+      roots: this.deps.roots(),
+      state: stored.state,
+      now: this.deps.now().toAbsoluteString(),
+      context: "install"
+    });
+    await this.deps.updateStored({ state: out.state });
+    if (!out.ok) return out.error;
+    if (out.license.nonce !== nonce) return "ERR_NONCE_MISMATCH";
+    if (out.license.license_id !== inUse.view.license_id) {
+      return "ERR_LICENSE_MISMATCH";
+    }
+    await this.deps.updateStored({
+      sealed: envelope,
+      licenseId: out.license.license_id,
+      issuedAt: out.license.issued_at
+    });
+    return null;
+  }
+}
+
+export const licenceCheckIn = new LicenceCheckIn({
+  resolver: licenceResolver,
+  verify,
+  readStored: readStoredLicence,
+  updateStored: updateStoredLicence,
+  acquireLease,
+  withLease,
+  fetch: (...args) => fetch(...args),
+  installId: getInstallId,
+  appVersion: () => getEnv("CARBON_COMMIT_SHA") || "unknown",
+  roots: licenceRoots,
+  now: () => datetime.now("UTC")
+});
+
+export const checkIn = (counts: () => Promise<CheckInCounts>) =>
+  licenceCheckIn.run(counts);

@@ -18,6 +18,8 @@ vi.mock("@carbon/auth/company.server", () => ({
   isCarbonOwnedCompany
 }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: vi.fn() }));
+// Import-safety only: the licence store opens Redis at import.
+vi.mock("@carbon/kv", () => ({ redis: {} }));
 
 import { companyHasFeature } from "./plan.server";
 

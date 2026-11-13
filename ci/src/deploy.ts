@@ -45,6 +45,7 @@ export type Workspace = {
   // App Configuration
   auth_providers: string | null;
   carbon_edition: string | null;
+  carbon_license: string | null;
   cloudflare_turnstile_secret_key: string | null;
   cloudflare_turnstile_site_key: string | null;
   controlled_environment: string | null;
@@ -134,6 +135,7 @@ async function deploy(): Promise<void> {
         aws_region,
         aws,
         carbon_edition,
+        carbon_license,
         cert_arn_erp,
         cert_arn_mes,
         cloudflare_turnstile_secret_key,
@@ -313,6 +315,7 @@ async function deploy(): Promise<void> {
           ASSEMBLER_SERVICE_URL: assembler_service_url,
           AUTH_PROVIDERS: auth_providers ?? undefined,
           CARBON_EDITION: carbon_edition ?? "enterprise",
+          CARBON_LICENSE: carbon_license ?? undefined,
           CARBON_FLAGS_ENDPOINT: carbon_flags_endpoint,
           CERT_ARN_ERP: cert_arn_erp,
           CERT_ARN_MES: cert_arn_mes,
