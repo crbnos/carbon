@@ -11993,6 +11993,9 @@ msgstr "ईमेल सूचनाएँ आपकी कंपनी की �
 msgid "Email notifications not configured"
 msgstr "ईमेल सूचनाएं कॉन्फ़िगर नहीं की गई हैं"
 
+msgid "Email order on acceptance"
+msgstr ""
+
 msgid "Email recipients"
 msgstr "ईमेल प्राप्तकर्ता"
 
@@ -32711,6 +32714,9 @@ msgid "Traveler labels disabled"
 msgstr ""
 
 msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
 msgstr ""
 
 msgid "Traveler materials disabled"

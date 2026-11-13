@@ -11993,6 +11993,9 @@ msgstr "电子邮件通知不包含在贵公司的当前计划中；如果启用
 msgid "Email notifications not configured"
 msgstr "电子邮件通知未配置"
 
+msgid "Email order on acceptance"
+msgstr ""
+
 msgid "Email recipients"
 msgstr "电子邮件收件人"
 
@@ -32711,6 +32714,9 @@ msgid "Traveler labels disabled"
 msgstr ""
 
 msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
 msgstr ""
 
 msgid "Traveler materials disabled"

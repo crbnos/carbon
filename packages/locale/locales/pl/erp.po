@@ -11993,6 +11993,9 @@ msgstr "Powiadomienia e-mail nie są uwzględnione w bieżącym planie Twojej fi
 msgid "Email notifications not configured"
 msgstr "Powiadomienia e-mail nie są skonfigurowane"
 
+msgid "Email order on acceptance"
+msgstr ""
+
 msgid "Email recipients"
 msgstr "Odbiorcy e-mail"
 
@@ -32711,6 +32714,9 @@ msgid "Traveler labels disabled"
 msgstr ""
 
 msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
 msgstr ""
 
 msgid "Traveler materials disabled"

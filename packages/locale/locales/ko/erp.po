@@ -11993,6 +11993,9 @@ msgstr "이메일 알림은 회사의 현재 요금제에 포함되어 있지 �
 msgid "Email notifications not configured"
 msgstr "이메일 알림이 설정되지 않음"
 
+msgid "Email order on acceptance"
+msgstr ""
+
 msgid "Email recipients"
 msgstr "이메일 수신자"
 
@@ -32711,6 +32714,9 @@ msgid "Traveler labels disabled"
 msgstr ""
 
 msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
 msgstr ""
 
 msgid "Traveler materials disabled"

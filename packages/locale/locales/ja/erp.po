@@ -11993,6 +11993,9 @@ msgstr "メール通知はあなたの会社の現在のプランに含まれて
 msgid "Email notifications not configured"
 msgstr "メール通知が設定されていません"
 
+msgid "Email order on acceptance"
+msgstr ""
+
 msgid "Email recipients"
 msgstr "メール受信者"
 
@@ -32711,6 +32714,9 @@ msgid "Traveler labels disabled"
 msgstr ""
 
 msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
 msgstr ""
 
 msgid "Traveler materials disabled"

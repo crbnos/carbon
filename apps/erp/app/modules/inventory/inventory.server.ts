@@ -66,7 +66,6 @@ import {
   getLocationTimeZone,
   invokeCreate,
   invokePosting,
-  refuseKeyWithout,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
@@ -3982,8 +3981,8 @@ export const setPickingListStatus = defineServiceFn({
  *
  * @remarks
  * Opens a material request at the operation's work center, at that work
- * center's location. Any member of the company can ask; an API key needs
- * `create: inventory`. The item and note are optional.
+ * center's location. The item and note are optional. The MES "Need material"
+ * button writes through the same building block for any operator.
  *
  * @param jobOperationId - The job operation that needs the material.
  * @param itemId - The item it needs, when known.
@@ -3999,11 +3998,8 @@ export const createMaterialRequest = defineServiceFn({
     itemId: z.string().optional(),
     note: z.string().optional()
   }),
-  permission: {},
+  permission: { create: "inventory" },
   async run(ctx, { jobOperationId, itemId, note }) {
-    const keyRefused = refuseKeyWithout(ctx, { create: "inventory" });
-    if (keyRefused) return keyRefused;
-
     const created = await materialRequests.createMaterialRequest(
       ctx.asCaller.supabase,
       {
@@ -4028,9 +4024,8 @@ export const createMaterialRequest = defineServiceFn({
  * Resolve an open material request.
  *
  * @remarks
- * Marks the request Resolved. Only the requester or an inventory editor can
- * resolve it (the row's RLS); an API key needs `update: inventory`. A request
- * that is already resolved is refused.
+ * Marks the request Resolved. A request that is already resolved is refused.
+ * The MES line feeder screen resolves through the same building block.
  *
  * @param materialRequestId - The request to resolve.
  *
@@ -4038,11 +4033,8 @@ export const createMaterialRequest = defineServiceFn({
  */
 export const resolveMaterialRequest = defineServiceFn({
   input: z.object({ materialRequestId: z.string().min(1) }),
-  permission: {},
+  permission: { update: "inventory" },
   async run(ctx, { materialRequestId }) {
-    const keyRefused = refuseKeyWithout(ctx, { update: "inventory" });
-    if (keyRefused) return keyRefused;
-
     const resolved = await materialRequests.resolveMaterialRequest(
       ctx.asCaller.supabase,
       {
