@@ -276,7 +276,7 @@ describe("missingAssemblerDependencies", () => {
     "/usr/include/draco",
     "/usr/lib/x86_64-linux-gnu/libopenblas.so",
     "/usr/bin/pkg-config",
-    "/usr/include/openssl/ssl.h",
+    "/usr/lib/x86_64-linux-gnu/pkgconfig/openssl.pc",
     occtBuild
   ];
   const machine = ({
@@ -338,6 +338,35 @@ describe("missingAssemblerDependencies", () => {
       join(homedir(), ".cache/carbon-occt/8.0.0-p1")
     ];
     expect(missingAssemblerDependencies(machine({ files }))).toEqual(["occt"]);
+  });
+
+  it.each([
+    {
+      how: "a pkg-config file on PKG_CONFIG_PATH",
+      env: { PKG_CONFIG_PATH: "/opt/ssl/lib/pkgconfig" },
+      file: "/opt/ssl/lib/pkgconfig/openssl.pc"
+    },
+    {
+      how: "OPENSSL_LIB_DIR with OPENSSL_INCLUDE_DIR",
+      env: {
+        OPENSSL_LIB_DIR: "/opt/ssl/lib",
+        OPENSSL_INCLUDE_DIR: "/opt/ssl/include"
+      },
+      file: "/opt/ssl/include"
+    }
+  ])("finds OpenSSL installed elsewhere through $how", ({ env, file }) => {
+    const files = [
+      ...ubuntu.filter((path) => !path.endsWith("openssl.pc")),
+      file
+    ];
+    expect(
+      missingAssemblerDependencies(
+        machine({
+          env: { PATH: "/usr/bin", CARGO_HOME: "/cargo", ...env },
+          files
+        })
+      )
+    ).toEqual([]);
   });
 
   it("uses the *_PREFIX directories the build scripts honour", () => {
