@@ -201,7 +201,7 @@
     {"name":"inventory_getKanban","classification":"READ","schema":"49f4ee634a4f","response":"41ed6321d385","permission":"inventory:view","paginates":false},
     {"name":"inventory_getKanbanProjectedQuantities","classification":"READ","schema":"1716e9751e66","response":"98903cc375ce","permission":"inventory:view","paginates":false},
     {"name":"inventory_getKanbans","classification":"READ","schema":"5f8775d88bfd","response":"82f6bc80f593","permission":"inventory:view","paginates":true},
-    {"name":"inventory_getPickingList","classification":"READ","schema":"172a7bc99691","response":"bdbdc3b12cd7","permission":"inventory:view","paginates":false},
+    {"name":"inventory_getPickingList","classification":"READ","schema":"172a7bc99691","response":"0e09ad67eaae","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListAvailability","classification":"READ","schema":"172a7bc99691","response":"a2c799262a3c","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListLine","classification":"READ","schema":"e2b1df794940","response":"4599f17fed69","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListLines","classification":"READ","schema":"172a7bc99691","response":"00c5e9eff84d","permission":"inventory:view","paginates":false},
