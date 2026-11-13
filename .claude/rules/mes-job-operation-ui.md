@@ -317,7 +317,7 @@ was printed from.
   | Target status | What the route does |
   |---|---|
   | `Reserved` (a unit in work) | `pickTravelerOperation` picks from the unit's open operations on the active list. An operation at the operator's work center (today's people assignment) wins, else the lowest `operationOrder`. One candidate redirects to `path.to.operation(id)?trackedEntityId=…`; 2 or more show a chooser (`chooseOperation`); none shows the unit's details |
-  | `Available` (a part to fit) | `travelerIssueCandidates` lists the open operations whose material of that item is still short. A material with no operation belongs to the last open operation of its make method. A serial make method (`perUnitMakeMethodIds`) skips the job-level check: once each candidate's next incomplete unit is known, the loader keeps it only when `pickTravelerMaterial` finds a material that unit still needs (`getUnitConsumption`, one read for every unit). Operations at the operator's work center come first, then the earliest job due date; the list is capped at 10 after that check. The `IssueChooser` issues the unit into the selected operation's next incomplete unit, then opens that operation. With no candidate, it shows the unit's details and storage unit |
+  | `Available` (a part to fit) | `travelerIssueCandidates` lists the open operations whose material of that item is still short. A material with no operation belongs to the first open operation of its make method (lowest `order`, then id), where the picking list stages it. A serial make method (`perUnitMakeMethodIds`) skips the job-level check: once each candidate's next incomplete unit is known, the loader keeps it only when `pickTravelerMaterial` finds a material that unit still needs (`getUnitConsumption`, one read for every unit). Operations at the operator's work center come first, then the earliest job due date; the list is capped at 10 after that check. The `IssueChooser` issues the unit into the selected operation's next incomplete unit, then opens that operation. With no candidate, it shows the unit's details and storage unit |
   | Any other status | The unit's status |
 
 - **`useTravelerScan`** (`JobOperation/hooks/useTravelerScan.ts`) is the
@@ -387,9 +387,11 @@ while its serial or batch materials are not scanned in.
 
 - **The rule.** `unissuedTrackedMaterials` (`~/utils/trackedMaterials`, tested)
   lists the tracked materials of the make method that the operation consumes:
-  its own materials, plus the materials with no operation when it is the last
-  operation (the screens read it with `isLastOperationOfMakeMethod`, the
-  server with `getLastOperationsOfMakeMethods`). A material is short while
+  its own materials, plus the materials with no operation when it is the
+  first open operation of its make method (lowest `order`, then id: where
+  `generatePickingList` stages them and `get_line_feed_shortages` counts
+  them; the screens read it with `isFirstOpenOperationOfMakeMethod`, the
+  server with `getFirstOpenOperationsOfMakeMethods`). A material is short while
   `quantityIssued` is less than `quantity` × the units after completion. Both
   sides are rounded to the internal quantity scale first (`round`,
   `@carbon/utils`), so 0.3 issued covers 0.1 × 3 units.
@@ -401,14 +403,14 @@ while its serial or batch materials are not scanned in.
   must hold its parts, and the message sums them ("issued of required" over
   the units). One set of reads covers every operation and unit: the
   operations, their tracked materials (paged with `fetchAllByIds`, so a
-  batch past the row cap is never checked on a partial list), the last-operation read
-  (`getLastOperationsOfMakeMethods`, one `jobOperationDependency` query; the
-  decision is `lastOperationIds`) and the units' inputs through the batch
+  batch past the row cap is never checked on a partial list), the first-open-operation read
+  (`getFirstOpenOperationsOfMakeMethods`, one `jobOperation` query; the
+  decision is `firstOpenOperationIds`) and the units' inputs through the batch
   lineage RPCs (`netTrackedInputs`, `issuedByJobMaterial`; `getTrackedInputs`
-  nets the same way). A failed read of any of them, the last-operation read
+  nets the same way). A failed read of any of them, the first-open-operation read
   included, refuses ("Could not check the scanned parts") and is logged.
-  `isLastOperationOfMakeMethod` still reads a failed lookup as "not last"; it
-  is for the screens and printing, never the gate.
+  `isFirstOpenOperationOfMakeMethod` still reads a failed lookup as "not
+  first"; it is for the screens, never the gate.
 - **Where it runs**, before anything is recorded, beside `checkStrictBackflush`:
   `x+/complete.tsx`, `x+/end.$operationId.tsx` (every branch), `x+/finish.tsx`,
   `x+/inspection-lot.$id.complete-passed.tsx` and

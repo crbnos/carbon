@@ -5,8 +5,8 @@
 import { describe, expect, it } from "vitest";
 import {
   batchRequiredScanMessage,
+  firstOpenOperationIds,
   issuedByJobMaterial,
-  lastOperationIds,
   netTrackedInputs,
   type RequiredScanMaterial,
   requiredScanMessage,
@@ -34,20 +34,22 @@ const args = (
   materials,
   operationId: "op_2",
   jobMakeMethodId: "jmm_1",
-  isLastOperation: false,
+  isFirstOpenOperation: false,
   unitsAfterCompletion: 1,
   ...overrides
 });
 
 describe("unissuedTrackedMaterials", () => {
-  it("requires a material with no operation at the last operation", () => {
+  it("requires a material with no operation at the first open operation", () => {
     const unassigned = material({ jobOperationId: null });
     expect(
-      unissuedTrackedMaterials(args([unassigned], { isLastOperation: true }))
+      unissuedTrackedMaterials(
+        args([unassigned], { isFirstOpenOperation: true })
+      )
     ).toEqual([unassigned]);
   });
 
-  it("does not require a material with no operation before the last operation", () => {
+  it("does not require a material with no operation at a later operation", () => {
     const unassigned = material({ jobOperationId: null });
     const otherOperation = material({ id: "jm_2", jobOperationId: "op_1" });
     expect(
@@ -59,7 +61,7 @@ describe("unissuedTrackedMaterials", () => {
     expect(
       unissuedTrackedMaterials(
         args([material({ jobMakeMethodId: "jmm_sub" })], {
-          isLastOperation: true
+          isFirstOpenOperation: true
         })
       )
     ).toEqual([]);
@@ -107,7 +109,7 @@ describe("unissuedTrackedMaterials", () => {
         materials: [{ ...batch, quantityIssued: 0.2 }],
         operationId: "op_2",
         jobMakeMethodId: "jmm_1",
-        isLastOperation: false,
+        isFirstOpenOperation: false,
         units: { kind: "operation", unitsAfterCompletion: 3 }
       }).map(({ issued, required }) => ({ issued, required }))
     ).toEqual([{ issued: 0.2, required: 0.3 }]);
@@ -120,20 +122,31 @@ describe("requiredScanMessage", () => {
   });
 });
 
-describe("lastOperationIds", () => {
-  it("is last when only an operation of another make method depends on it", () => {
-    // op_2 feeds op_3 (same make method); op_3 feeds the parent's op_9.
-    const last = lastOperationIds(
-      [
-        { id: "op_2", jobMakeMethodId: "jmm_sub" },
-        { id: "op_3", jobMakeMethodId: "jmm_sub" }
-      ],
-      [
-        { dependsOnId: "op_2", jobMakeMethodId: "jmm_sub" },
-        { dependsOnId: "op_3", jobMakeMethodId: "jmm_top" }
-      ]
-    );
-    expect([...last]).toEqual(["op_3"]);
+describe("firstOpenOperationIds", () => {
+  it("picks the lowest order of each make method", () => {
+    // op_1 is Done, so the open operations start at op_2.
+    const first = firstOpenOperationIds([
+      { id: "op_3", jobMakeMethodId: "jmm_top", order: 3 },
+      { id: "op_2", jobMakeMethodId: "jmm_top", order: 2 },
+      { id: "op_9", jobMakeMethodId: "jmm_sub", order: 1 }
+    ]);
+    expect([...first].sort()).toEqual(["op_2", "op_9"]);
+  });
+
+  it("breaks a tie on order by id, as the line feed does", () => {
+    const first = firstOpenOperationIds([
+      { id: "op_b", jobMakeMethodId: "jmm_1", order: 1 },
+      { id: "op_a", jobMakeMethodId: "jmm_1", order: 1 }
+    ]);
+    expect([...first]).toEqual(["op_a"]);
+  });
+
+  it("leaves out an operation with no make method", () => {
+    expect([
+      ...firstOpenOperationIds([
+        { id: "op_1", jobMakeMethodId: null, order: 1 }
+      ])
+    ]).toEqual([]);
   });
 });
 
@@ -175,7 +188,7 @@ describe("requiredScanShortfall", () => {
   const base = {
     operationId: "op_2",
     jobMakeMethodId: "jmm_1",
-    isLastOperation: false
+    isFirstOpenOperation: false
   };
 
   it("refuses serial units when one of them is missing its part", () => {

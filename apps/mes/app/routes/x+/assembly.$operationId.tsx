@@ -35,8 +35,8 @@ import {
   getToolsByOperationId,
   getTrackedEntitiesForOperation,
   getWorkCenter,
-  isFirstOperationOfMakeMethod,
-  isLastOperationOfMakeMethod
+  isFirstOpenOperationOfMakeMethod,
+  isFirstOperationOfMakeMethod
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
@@ -125,7 +125,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     abilityWarning,
     openEvent,
     isFirstOperation,
-    isLastOperation
+    isFirstOpenOperation
   ] = await Promise.all([
     getJob(serviceRole, jobId),
     operationPromise,
@@ -211,7 +211,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
       : false,
     jobMakeMethodId
-      ? isLastOperationOfMakeMethod(
+      ? isFirstOpenOperationOfMakeMethod(
           serviceRole,
           companyId,
           operationId,
@@ -353,7 +353,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       jobMakeMethod?.data?.requiresSerialTracking ?? false,
     requiresBatchTracking: jobMakeMethod?.data?.requiresBatchTracking ?? false,
     isFirstOperation,
-    isLastOperation,
+    isFirstOpenOperation,
     requireTrackedMaterialsIssued,
     openEvent: openEvent.data ?? null,
     events: events.data ?? [],

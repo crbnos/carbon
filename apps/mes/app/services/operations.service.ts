@@ -37,8 +37,8 @@ import { erpPosting } from "~/services/erp";
 import { sanitize } from "~/utils/supabase";
 import {
   batchRequiredScanMessage,
+  firstOpenOperationIds,
   issuedByJobMaterial,
-  lastOperationIds,
   netTrackedInputs,
   requiredScanMessage,
   requiredScanShortfall
@@ -345,9 +345,9 @@ export async function isFirstOperationOfMakeMethod(
 }
 
 /**
- * Is this the last operation of its make method's routing? A material with no
- * jobOperationId is consumed here. Mirrors isFirstOperationOfMakeMethod: "last"
- * means no operation of the same make method depends on this one.
+ * Is this the last operation of its make method's routing? Mirrors
+ * isFirstOperationOfMakeMethod: "last" means no operation of the same make
+ * method depends on this one.
  *
  * Fails closed: an errored lookup reads as "not last".
  */
@@ -373,39 +373,43 @@ export async function isLastOperationOfMakeMethod(
 const REQUIRED_SCAN_CHECK_FAILED = "Could not check the scanned parts";
 
 /**
- * Which of these operations are the last of their make method, read in one
- * query. Unlike `isLastOperationOfMakeMethod`, a failed read is returned as
- * the error, so the caller can refuse instead of reading "not last".
+ * The first open operation of each of these make methods
+ * (`firstOpenOperationIds`), read in one query. A failed read is returned as
+ * the error, so the caller can refuse instead of reading "not first".
  */
-export async function getLastOperationsOfMakeMethods(
+export async function getFirstOpenOperationsOfMakeMethods(
   client: SupabaseClient<Database>,
   companyId: string,
-  operations: { id: string; jobMakeMethodId: string | null }[]
+  jobMakeMethodIds: string[]
 ): Promise<{ data: Set<string>; error: PostgrestError | null }> {
-  if (operations.length === 0) return { data: new Set(), error: null };
-  const dependencies = await client
-    .from("jobOperationDependency")
-    .select(
-      "dependsOnId, operation:jobOperation!jobOperationDependency_operationId_fk!inner(jobMakeMethodId)"
-    )
-    .in(
-      "dependsOnId",
-      operations.map((operation) => operation.id)
-    )
-    .eq("companyId", companyId);
-  if (dependencies.error) {
-    return { data: new Set(), error: dependencies.error };
+  if (jobMakeMethodIds.length === 0) return { data: new Set(), error: null };
+  const operations = await client
+    .from("jobOperation")
+    .select("id, jobMakeMethodId, order")
+    .in("jobMakeMethodId", jobMakeMethodIds)
+    .eq("companyId", companyId)
+    .not("status", "in", "(Done,Canceled)");
+  if (operations.error) {
+    return { data: new Set(), error: operations.error };
   }
-  return {
-    data: lastOperationIds(
-      operations,
-      (dependencies.data ?? []).map((dependency) => ({
-        dependsOnId: dependency.dependsOnId,
-        jobMakeMethodId: dependency.operation?.jobMakeMethodId ?? null
-      }))
-    ),
-    error: null
-  };
+  return { data: firstOpenOperationIds(operations.data ?? []), error: null };
+}
+
+/**
+ * Is this the first open operation of its make method? A material with no
+ * jobOperationId is consumed there. Fails closed: an errored lookup reads as
+ * "not first", and the server's required-scan check refuses on its own read.
+ */
+export async function isFirstOpenOperationOfMakeMethod(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operationId: string,
+  jobMakeMethodId: string
+): Promise<boolean> {
+  const first = await getFirstOpenOperationsOfMakeMethods(client, companyId, [
+    jobMakeMethodId
+  ]);
+  return !first.error && first.data.has(operationId);
 }
 
 /**
@@ -548,7 +552,7 @@ async function getRequiredScanShortfalls(
     )
   ];
 
-  const [materials, lastOperations, issuedByUnit] = await Promise.all([
+  const [materials, firstOpenOperations, issuedByUnit] = await Promise.all([
     // Paged: a batch's members can hold more tracked materials than the row
     // cap, and a truncated read would let a unit through without its scans.
     fetchAllByIds(makeMethodIds, (batch) =>
@@ -562,14 +566,14 @@ async function getRequiredScanShortfalls(
         .or("requiresSerialTracking.eq.true,requiresBatchTracking.eq.true")
         .order("id")
     ),
-    getLastOperationsOfMakeMethods(client, companyId, operations.data),
+    getFirstOpenOperationsOfMakeMethods(client, companyId, makeMethodIds),
     getIssuedByUnit(client, companyId, serialUnitIds)
   ]);
   if (materials.error) {
     return fail("reading tracked materials", materials.error);
   }
-  if (lastOperations.error) {
-    return fail("reading the next operation", lastOperations.error);
+  if (firstOpenOperations.error) {
+    return fail("reading the open operations", firstOpenOperations.error);
   }
   if (issuedByUnit.error) {
     return fail("reading the scanned parts", issuedByUnit.error);
@@ -586,7 +590,7 @@ async function getRequiredScanShortfalls(
       ),
       operationId: check.jobOperationId,
       jobMakeMethodId: operation.jobMakeMethodId,
-      isLastOperation: lastOperations.data.has(check.jobOperationId),
+      isFirstOpenOperation: firstOpenOperations.data.has(check.jobOperationId),
       units: check.serialUnits
         ? {
             kind: "serial",

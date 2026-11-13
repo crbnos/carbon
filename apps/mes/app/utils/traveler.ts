@@ -185,7 +185,8 @@ export function isUnitInOperationScope(
 /**
  * The open operations a scanned unit can be issued into, best first: those
  * with a material still short of its requirement. A material with no
- * operation belongs to the last open operation of its make method. A make
+ * operation belongs to the first open operation of its make method (lowest
+ * order, then id), where the picking list stages it. A make
  * method in `perUnitMakeMethodIds` builds serial units: its materials are not
  * checked against the job here, because the caller checks each one against
  * the unit it issues into (`pickTravelerMaterial`).
@@ -218,11 +219,16 @@ export function travelerIssueCandidates({
     operations.map((operation) => [operation.id, operation])
   );
 
-  const lastByMakeMethod = new Map<string, (typeof operations)[number]>();
+  const firstByMakeMethod = new Map<string, (typeof operations)[number]>();
   for (const operation of operations) {
-    const current = lastByMakeMethod.get(operation.jobMakeMethodId);
-    if (!current || operation.operationOrder > current.operationOrder) {
-      lastByMakeMethod.set(operation.jobMakeMethodId, operation);
+    const current = firstByMakeMethod.get(operation.jobMakeMethodId);
+    if (
+      !current ||
+      operation.operationOrder < current.operationOrder ||
+      (operation.operationOrder === current.operationOrder &&
+        operation.id < current.id)
+    ) {
+      firstByMakeMethod.set(operation.jobMakeMethodId, operation);
     }
   }
 
@@ -236,7 +242,7 @@ export function travelerIssueCandidates({
     }
     const operationId =
       material.jobOperationId ??
-      lastByMakeMethod.get(material.jobMakeMethodId)?.id;
+      firstByMakeMethod.get(material.jobMakeMethodId)?.id;
     if (!operationId || !byId.has(operationId)) continue;
     candidateIds.add(operationId);
   }

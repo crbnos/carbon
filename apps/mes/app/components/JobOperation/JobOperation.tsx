@@ -238,7 +238,7 @@ type JobOperationProps = {
   correctionName?: string | null;
   trackedEntities: TrackedEntity[];
   isFirstOperation: boolean;
-  isLastOperation?: boolean;
+  isFirstOpenOperation?: boolean;
   requireTrackedMaterialsIssued?: boolean;
   workCenter: Promise<
     PostgrestSingleResponse<{
@@ -276,7 +276,7 @@ export const JobOperation = ({
   correctionName,
   trackedEntities,
   isFirstOperation,
-  isLastOperation = false,
+  isFirstOpenOperation = false,
   requireTrackedMaterialsIssued = false,
   workCenter
 }: JobOperationProps) => {
@@ -3094,7 +3094,7 @@ export const JobOperation = ({
                   parentIsBatch={parentIsBatch}
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
-                  isLastOperation={isLastOperation}
+                  isFirstOpenOperation={isFirstOpenOperation}
                   requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
                   returnFocusRef={actionsSheetOpenerRef}
                   onClose={completeModal.onClose}

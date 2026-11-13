@@ -114,7 +114,7 @@ describe("travelerIssueCandidates", () => {
     ...overrides
   });
 
-  it("gives a material with no operation to the last open operation of its make method", () => {
+  it("gives a material with no operation to the first open operation of its make method", () => {
     expect(
       travelerIssueCandidates({
         operations,
@@ -123,7 +123,7 @@ describe("travelerIssueCandidates", () => {
         ],
         workCenterId: null
       })
-    ).toEqual(["op_a20"]);
+    ).toEqual(["op_a10"]);
   });
 
   it("skips a fully issued material and one whose operation is not open", () => {

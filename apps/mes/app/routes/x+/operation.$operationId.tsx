@@ -35,8 +35,8 @@ import {
   getThumbnailPathByItemId,
   getTrackedEntitiesForOperation,
   getWorkCenter,
+  isFirstOpenOperationOfMakeMethod,
   isFirstOperationOfMakeMethod,
-  isLastOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
@@ -197,7 +197,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companySettings,
     abilityWarning,
     isFirstOperation,
-    isLastOperation
+    isFirstOpenOperation
   ] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
       operationId,
@@ -246,7 +246,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
       : false,
     jobMakeMethodId
-      ? isLastOperationOfMakeMethod(
+      ? isFirstOpenOperationOfMakeMethod(
           serviceRole,
           companyId,
           operationId,
@@ -451,7 +451,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
     trackedEntities: trackedEntities?.data ?? [],
     isFirstOperation,
-    isLastOperation,
+    isFirstOpenOperation,
     requireTrackedMaterialsIssued,
     nonConformanceActions: getNonConformanceActions(serviceRole, {
       itemId: operation.data?.[0].itemId,
@@ -503,7 +503,7 @@ export default function OperationRoute() {
     correctionName,
     trackedEntities,
     isFirstOperation,
-    isLastOperation,
+    isFirstOpenOperation,
     requireTrackedMaterialsIssued,
     workCenter,
     nonConformanceActions
@@ -527,7 +527,7 @@ export default function OperationRoute() {
       method={jobMakeMethod}
       trackedEntities={trackedEntities}
       isFirstOperation={isFirstOperation}
-      isLastOperation={isLastOperation}
+      isFirstOpenOperation={isFirstOpenOperation}
       requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
       nonConformanceActions={nonConformanceActions}
       operation={operation}

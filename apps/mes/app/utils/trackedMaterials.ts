@@ -17,20 +17,20 @@ export type RequiredScanMaterial = {
 /**
  * The serial and batch materials an operation consumes that are not yet
  * issued for the units it will have completed. A material with no
- * operation is consumed at the last operation of its make method.
+ * operation is consumed at the first open operation of its make method.
  */
 export function unissuedTrackedMaterials<T extends RequiredScanMaterial>(args: {
   materials: T[];
   operationId: string;
   jobMakeMethodId: string;
-  isLastOperation: boolean;
+  isFirstOpenOperation: boolean;
   unitsAfterCompletion: number;
 }): T[] {
   const {
     materials,
     operationId,
     jobMakeMethodId,
-    isLastOperation,
+    isFirstOpenOperation,
     unitsAfterCompletion
   } = args;
 
@@ -42,7 +42,7 @@ export function unissuedTrackedMaterials<T extends RequiredScanMaterial>(args: {
 
     const consumedHere =
       material.jobOperationId === operationId ||
-      (material.jobOperationId === null && isLastOperation);
+      (material.jobOperationId === null && isFirstOpenOperation);
     if (!consumedHere) return false;
 
     // At the internal quantity scale: 0.1 × 3 units is 0.30000000000000004
@@ -64,30 +64,27 @@ export function requiredScanMessage(
 }
 
 /**
- * The operations that are the last of their make method: no operation of the
- * same make method depends on them. `dependencies` are the rows whose
- * `dependsOnId` is one of `operations`, with the dependent operation's make
- * method.
+ * The first open operation of each make method: the lowest `order`, then the
+ * lowest id. `operations` are the open (not Done or Canceled) operations of
+ * the make methods. A material with no operation is consumed there, where
+ * `generatePickingList` stages it and `get_line_feed_shortages` counts it.
  */
-export function lastOperationIds(
-  operations: { id: string; jobMakeMethodId: string | null }[],
-  dependencies: { dependsOnId: string; jobMakeMethodId: string | null }[]
+export function firstOpenOperationIds(
+  operations: { id: string; jobMakeMethodId: string | null; order: number }[]
 ): Set<string> {
-  const makeMethodById = new Map(
-    operations.map((operation) => [operation.id, operation.jobMakeMethodId])
-  );
-  const notLast = new Set<string>();
-  for (const dependency of dependencies) {
-    const makeMethodId = makeMethodById.get(dependency.dependsOnId);
-    if (makeMethodId && dependency.jobMakeMethodId === makeMethodId) {
-      notLast.add(dependency.dependsOnId);
+  const first = new Map<string, (typeof operations)[number]>();
+  for (const operation of operations) {
+    if (!operation.jobMakeMethodId) continue;
+    const current = first.get(operation.jobMakeMethodId);
+    if (
+      !current ||
+      operation.order < current.order ||
+      (operation.order === current.order && operation.id < current.id)
+    ) {
+      first.set(operation.jobMakeMethodId, operation);
     }
   }
-  return new Set(
-    operations
-      .filter((operation) => !notLast.has(operation.id))
-      .map((operation) => operation.id)
-  );
+  return new Set([...first.values()].map((operation) => operation.id));
 }
 
 /**
@@ -156,18 +153,23 @@ export function requiredScanShortfall<T extends RequiredScanMaterial>(args: {
   materials: T[];
   operationId: string;
   jobMakeMethodId: string;
-  isLastOperation: boolean;
+  isFirstOpenOperation: boolean;
   units: RequiredScanUnits;
 }): { material: T; issued: number; required: number }[] {
-  const { materials, operationId, jobMakeMethodId, isLastOperation, units } =
-    args;
+  const {
+    materials,
+    operationId,
+    jobMakeMethodId,
+    isFirstOpenOperation,
+    units
+  } = args;
 
   if (units.kind === "operation") {
     return unissuedTrackedMaterials({
       materials,
       operationId,
       jobMakeMethodId,
-      isLastOperation,
+      isFirstOpenOperation,
       unitsAfterCompletion: units.unitsAfterCompletion
     }).map((material) => ({
       material,
@@ -185,7 +187,7 @@ export function requiredScanShortfall<T extends RequiredScanMaterial>(args: {
       })),
       operationId,
       jobMakeMethodId,
-      isLastOperation,
+      isFirstOpenOperation,
       unitsAfterCompletion: 1
     });
     const unissuedIds = new Set(unissued.map((material) => material.id));

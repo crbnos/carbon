@@ -86,7 +86,7 @@ The message is "This unit already has its <item>" for a serial unit, and "This j
 3. When the last operation of a job's top-level make method completes, Carbon prints the unit's serial label. This happens only when the item's `itemSerialSequence.printLabelOnCompletion` is true. The printer is the work center's printer context.
 4. A company with `travelerLabels` on stops the existing first-operation print (`autoPrintFirstOperationLabel`). A company with it off keeps today's behavior.
 
-**S7. Required scans.** A new company setting `requireTrackedMaterialsIssued` is off by default. When it is on, MES refuses to complete an operation while a serial or batch `jobMaterial` of that operation has `quantityIssued` below its requirement. A material with no `jobOperationId` belongs to the last operation of its make method. The server checks in every completion route, before it records anything:
+**S7. Required scans.** A new company setting `requireTrackedMaterialsIssued` is off by default. When it is on, MES refuses to complete an operation while a serial or batch `jobMaterial` of that operation has `quantityIssued` below its requirement. A material with no `jobOperationId` belongs to the first open operation of its make method (lowest `order`, then id), where the picking list stages it and the line feed counts it. The server checks in every completion route, before it records anything:
 
 1. `complete.tsx`, `end.$operationId.tsx` and `finish.tsx`.
 2. The inspection lot routes `inspection-lot.$id.complete-passed.tsx` and `inspection-lot.$id.disposition.tsx`. A serial lot checks each unit it completes. The disposition route checks before it closes the lot.

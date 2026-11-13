@@ -53,7 +53,7 @@ const QUANTITY_FORMAT_OPTIONS: Intl.NumberFormatOptions = {
 
 export function QuantityModal({
   allStepsRecorded = true,
-  isLastOperation = false,
+  isFirstOpenOperation = false,
   laborProductionEvent,
   machineProductionEvent,
   materials = [],
@@ -72,7 +72,7 @@ export function QuantityModal({
   allStepsRecorded?: boolean;
   // The operation is the last of its make method, so it also consumes the
   // tracked materials that have no operation.
-  isLastOperation?: boolean;
+  isFirstOpenOperation?: boolean;
   laborProductionEvent: ProductionEvent | undefined;
   machineProductionEvent: ProductionEvent | undefined;
   materials?: JobMaterial[];
@@ -177,7 +177,7 @@ export function QuantityModal({
     materials,
     operationId: operation.id,
     jobMakeMethodId: operation.jobMakeMethodId,
-    isLastOperation: requireTrackedMaterialsIssued && isLastOperation,
+    isFirstOpenOperation: requireTrackedMaterialsIssued && isFirstOpenOperation,
     unitsAfterCompletion: totalPartsAfterCompletion
   });
   const hasUnissuedTrackedMaterials = missing.length > 0;

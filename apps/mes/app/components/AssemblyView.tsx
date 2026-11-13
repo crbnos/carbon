@@ -330,7 +330,7 @@ type Props = {
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
   isFirstOperation: boolean;
-  isLastOperation?: boolean;
+  isFirstOpenOperation?: boolean;
   requireTrackedMaterialsIssued?: boolean;
   openEvent: { id: string; startTime: string } | null;
   events: ProductionEvent[];
@@ -546,7 +546,7 @@ export function AssemblyView({
   requiresSerialTracking,
   requiresBatchTracking,
   isFirstOperation,
-  isLastOperation = false,
+  isFirstOpenOperation = false,
   requireTrackedMaterialsIssued = false,
   openEvent,
   events,
@@ -2851,7 +2851,7 @@ export function AssemblyView({
           laborProductionEvent={openByType("Labor")}
           machineProductionEvent={openByType("Machine")}
           allStepsRecorded={allStepsRecorded}
-          isLastOperation={isLastOperation}
+          isFirstOpenOperation={isFirstOpenOperation}
           requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
           onClose={completeModal.onClose}
         />
