@@ -18,6 +18,7 @@ import { isGeneratedAvatar, newGeneratedAvatar } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useState } from "react";
+import { LuUpload } from "react-icons/lu";
 import type { Account } from "../types";
 import AccountAvatar from "./AccountAvatar";
 import GeneratedAvatarPicker from "./GeneratedAvatarPicker";
@@ -138,7 +139,12 @@ const ProfilePhotoForm = ({
         >
           <Trans>Choose avatar</Trans>
         </Button>
-        <FileUpload accept="image/*" onChange={uploadImage} className="w-full">
+        <FileUpload
+          accept="image/*"
+          leftIcon={<LuUpload />}
+          onChange={uploadImage}
+          className="w-full"
+        >
           {uploadedPhotoPath ? t`Change` : t`Upload`}
         </FileUpload>
         {uploadedPhotoPath && (

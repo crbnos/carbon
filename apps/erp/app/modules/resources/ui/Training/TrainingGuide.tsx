@@ -104,6 +104,7 @@ const TrainingGuide = ({
         multiple={false}
         disabled={isBusy}
         className="mt-0"
+        phoneButtonVariant="primary"
       />
     ) : (
       <p className="text-sm text-muted-foreground">
