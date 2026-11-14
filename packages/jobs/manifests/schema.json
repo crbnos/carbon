@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261113015550",
+  "schemaVersion": "20261114162753",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-13T02:08:25.351Z",
+  "exportedAt": "2026-11-14T16:30:12.619Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -3935,7 +3935,8 @@
         "minimumReserveQuantity",
         "responsibleEmployee",
         "planningHorizonDays",
-        "allowCommonSupplyForProjects"
+        "allowCommonSupplyForProjects",
+        "planningTimeFenceDays"
       ]
     },
     {
@@ -4106,7 +4107,8 @@
         "requiresStaffing",
         "responsibleEmployee",
         "inspectionStorageUnitId",
-        "rejectedStorageUnitId"
+        "rejectedStorageUnitId",
+        "planningTimeFenceDays"
       ]
     },
     {
@@ -7540,6 +7542,36 @@
       ]
     },
     {
+      "name": "plannedOrder",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "itemId",
+        "locationId",
+        "planningSegmentId",
+        "orderType",
+        "status",
+        "quantity",
+        "scrapQuantity",
+        "quantityTrace",
+        "dueDate",
+        "releaseDate",
+        "periodId",
+        "splitIndex",
+        "lowLevelCode",
+        "supplierId",
+        "firmedBy",
+        "firmedAt",
+        "jobId",
+        "purchaseOrderLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "planningAction",
       "rows": 0,
       "columns": [
@@ -7572,7 +7604,8 @@
         "fromProjectId",
         "toProjectId",
         "projectStockTransferId",
-        "projectBorrowId"
+        "projectBorrowId",
+        "plannedOrderId"
       ]
     },
     {
