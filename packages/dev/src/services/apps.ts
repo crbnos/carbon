@@ -251,10 +251,9 @@ export function spawnApps(opts: {
 const ASSEMBLER_PREFIX = pc.yellow(pc.bold("asm | "));
 
 /** Where the one-time OCCT build lives: per machine, shared by every worktree. */
-function occtPrefix(): string {
+function occtPrefix(env: NodeJS.ProcessEnv = process.env): string {
   return (
-    process.env.OCCT_PREFIX ||
-    join(homedir(), ".cache", "carbon-occt", "8.0.0-p1")
+    env.OCCT_PREFIX || join(homedir(), ".cache", "carbon-occt", "8.0.0-p1")
   );
 }
 
@@ -264,71 +263,246 @@ function occtPrefix(): string {
  * `~/.cargo/env` yet, and that must not read as "Rust is missing".
  */
 export function cargoBinary(
-  env: NodeJS.ProcessEnv = process.env
+  env: NodeJS.ProcessEnv = process.env,
+  exists: (path: string) => boolean = existsSync
 ): string | null {
   for (const dir of (env.PATH ?? "").split(delimiter)) {
-    if (dir && existsSync(join(dir, "cargo"))) return join(dir, "cargo");
+    if (dir && exists(join(dir, "cargo"))) return join(dir, "cargo");
   }
   const fallback = join(
     env.CARGO_HOME || join(homedir(), ".cargo"),
     "bin",
     "cargo"
   );
-  return existsSync(fallback) ? fallback : null;
+  return exists(fallback) ? fallback : null;
+}
+
+export type AssemblerDependency =
+  | "rust"
+  | "compiler"
+  | "fcl"
+  | "draco"
+  | "openblas"
+  | "openssl"
+  | "occt";
+
+export type MachineProbe = {
+  env: NodeJS.ProcessEnv;
+  platform: NodeJS.Platform;
+  arch: string;
+  exists: (path: string) => boolean;
+};
+
+const thisMachine = (): MachineProbe => ({
+  env: process.env,
+  platform: process.platform,
+  arch: process.arch,
+  exists: existsSync
+});
+
+function homebrewOpt(machine: MachineProbe, formula: string): string {
+  return machine.arch === "arm64"
+    ? `/opt/homebrew/opt/${formula}`
+    : `/usr/local/opt/${formula}`;
 }
 
 /**
- * The FCL headers the `collision` crate compiles against, at the prefix its
- * build.rs resolves (`FCL_PREFIX`, else Homebrew's `opt` layout on macOS, else
- * `/usr`). Missing, the assembler build fails minutes in on a C++ include.
+ * The prefix a bridge crate's build.rs compiles against: `<KEY>_PREFIX`, else
+ * Homebrew's `opt` layout on macOS, else `/usr`.
  */
-function fclInstalled(env: NodeJS.ProcessEnv = process.env): boolean {
-  const prefix =
-    env.FCL_PREFIX ||
-    (process.platform === "darwin"
-      ? process.arch === "arm64"
-        ? "/opt/homebrew/opt/fcl"
-        : "/usr/local/opt/fcl"
-      : "/usr");
-  return existsSync(join(prefix, "include", "fcl"));
+function bridgePrefix(
+  machine: MachineProbe,
+  formula: string,
+  envKey: string
+): string {
+  return (
+    machine.env[`${envKey}_PREFIX`] ||
+    (machine.platform === "darwin" ? homebrewOpt(machine, formula) : "/usr")
+  );
+}
+
+// The linker's and pkg-config's default library directories, multiarch included.
+const LINUX_LIB_DIRS = [
+  "/usr/lib",
+  "/usr/lib64",
+  "/usr/local/lib",
+  "/usr/lib/x86_64-linux-gnu",
+  "/usr/lib/aarch64-linux-gnu"
+];
+
+/**
+ * The planner links `-lopenblas` (`ndarray-linalg`'s `openblas-system`). On
+ * macOS openblas-src adds only Homebrew's keg to the search path; elsewhere the
+ * linker searches its default directories.
+ */
+function openblasInstalled(machine: MachineProbe): boolean {
+  const dirs =
+    machine.platform === "darwin"
+      ? [join(homebrewOpt(machine, "openblas"), "lib")]
+      : LINUX_LIB_DIRS;
+  return dirs.some((dir) =>
+    ["libopenblas.dylib", "libopenblas.so", "libopenblas.a"].some((file) =>
+      machine.exists(join(dir, file))
+    )
+  );
+}
+
+function onPath(machine: MachineProbe, command: string): boolean {
+  return (machine.env.PATH ?? "")
+    .split(delimiter)
+    .some((dir) => dir && machine.exists(join(dir, command)));
 }
 
 /**
- * What the assembler still needs on this machine, as the message that says how
- * to install it, or null when Rust, FCL and the OCCT build are all present.
- * `crbn up` checks it before booting anything, because `cargo run --release`
- * would otherwise fail minutes in on a missing tool, header or library. It
- * never installs or builds them itself.
+ * openblas-src's build-dependency openblas-build fetches over native-tls, which
+ * is `openssl-sys` everywhere but macOS. Off macOS that crate finds OpenSSL
+ * through `OPENSSL_DIR`, `OPENSSL_LIB_DIR` with `OPENSSL_INCLUDE_DIR`, or
+ * pkg-config only.
  */
-export function assemblerMissingPrerequisite(): string | null {
+function opensslInstalled(machine: MachineProbe): boolean {
+  const { env, exists } = machine;
+  if (machine.platform === "darwin") return true;
+  if (env.OPENSSL_DIR) return exists(env.OPENSSL_DIR);
+  if (env.OPENSSL_LIB_DIR && env.OPENSSL_INCLUDE_DIR) {
+    return exists(env.OPENSSL_INCLUDE_DIR);
+  }
+  const pkgConfigDirs = [
+    ...(env.PKG_CONFIG_PATH ?? "").split(delimiter).filter(Boolean),
+    ...LINUX_LIB_DIRS.map((dir) => join(dir, "pkgconfig"))
+  ];
+  return (
+    onPath(machine, "pkg-config") &&
+    pkgConfigDirs.some((dir) => exists(join(dir, "openssl.pc")))
+  );
+}
+
+/**
+ * Every native dependency the assembler's build still lacks on this machine,
+ * all at once, so one install round covers them. OCCT counts as built where
+ * occt-bridge's build.rs would use it: `OCCT_PREFIX`, else the cache holding
+ * `lib/libTKernel.a`. On macOS the C++ compiler comes with Homebrew's
+ * Command Line Tools, so only other platforms check for it.
+ */
+export function missingAssemblerDependencies(
+  machine: MachineProbe = thisMachine()
+): AssemblerDependency[] {
+  const { env, exists } = machine;
+  const found: Record<AssemblerDependency, boolean> = {
+    rust: cargoBinary(env, exists) !== null,
+    compiler:
+      machine.platform === "darwin" ||
+      Boolean(env.CXX) ||
+      onPath(machine, "c++"),
+    fcl: exists(join(bridgePrefix(machine, "fcl", "FCL"), "include", "fcl")),
+    draco: exists(
+      join(bridgePrefix(machine, "draco", "DRACO"), "include", "draco")
+    ),
+    openblas: openblasInstalled(machine),
+    openssl: opensslInstalled(machine),
+    occt: env.OCCT_PREFIX
+      ? exists(env.OCCT_PREFIX)
+      : exists(join(occtPrefix(env), "lib", "libTKernel.a"))
+  };
+  return (Object.keys(found) as AssemblerDependency[]).filter(
+    (dependency) => !found[dependency]
+  );
+}
+
+const DEPENDENCY_LABELS: Record<AssemblerDependency, string> = {
+  rust: "Rust (cargo)",
+  compiler: "a C++ compiler",
+  fcl: "FCL, the collision library",
+  draco: "Draco, the mesh compression library",
+  openblas: "OpenBLAS, the planner's linear algebra",
+  openssl: "OpenSSL headers and pkg-config, for openblas-src's build",
+  occt: "the OCCT build"
+};
+
+const HOMEBREW_PACKAGES: Partial<Record<AssemblerDependency, string>> = {
+  fcl: "fcl",
+  draco: "draco",
+  openblas: "openblas"
+};
+
+const APT_PACKAGES: Partial<Record<AssemblerDependency, string>> = {
+  compiler: "build-essential",
+  fcl: "libfcl-dev",
+  draco: "libdraco-dev",
+  openblas: "libopenblas-dev",
+  openssl: "pkg-config libssl-dev"
+};
+
+function missingOcctBuildTools(machine: MachineProbe): string[] {
+  const macOS = machine.platform === "darwin";
+  return [
+    ...(onPath(machine, "cmake") ? [] : ["cmake"]),
+    ...(onPath(machine, "ninja") ? [] : [macOS ? "ninja" : "ninja-build"])
+  ];
+}
+
+/**
+ * What the assembler still needs on this machine, as one message that lists
+ * every missing dependency and the commands that install them, or null when
+ * nothing is missing. `crbn up` checks it before booting anything, because
+ * `cargo run --release` would otherwise fail minutes in on a missing tool,
+ * header or library. It never installs or builds them itself.
+ */
+export function assemblerMissingPrerequisite(
+  machine: MachineProbe = thisMachine()
+): string | null {
   const instead = "  then re-run, or run without the assembler app.";
-  if (cargoBinary() === null) {
+  if (machine.platform === "win32") {
     return [
-      "Assembler selected, but Rust (cargo) isn't installed.",
-      "  install it once per machine:",
-      "    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
+      "Assembler selected, but it builds on macOS and Linux only.",
+      "  On Windows, run crbn inside WSL2 and follow the Linux steps in the",
+      "  README (Optional: the assembler geometry service),",
       instead
     ].join("\n");
   }
-  if (!fclInstalled()) {
-    return [
-      "Assembler selected, but the FCL collision library isn't installed.",
-      "  install it once per machine (pulls libccd, eigen, octomap):",
-      "    brew install fcl            # Linux: libfcl-dev, or set FCL_PREFIX",
-      instead
-    ].join("\n");
-  }
-  if (!existsSync(occtPrefix())) {
-    return [
-      "Assembler selected, but its OCCT dependency isn't built.",
-      `  expected: ${occtPrefix()}`,
-      "  build it once per machine (~15-30 min, every worktree shares it):",
-      "    brew install cmake ninja   # once; the script needs cmake",
-      "    apps/assembler/scripts/build-occt.sh",
-      instead
-    ].join("\n");
-  }
-  return null;
+  const missing = missingAssemblerDependencies(machine);
+  if (missing.length === 0) return null;
+
+  const macOS = machine.platform === "darwin";
+  const packages = [
+    ...missing.map((dependency) =>
+      macOS ? HOMEBREW_PACKAGES[dependency] : APT_PACKAGES[dependency]
+    ),
+    ...(missing.includes("occt") ? missingOcctBuildTools(machine) : [])
+  ]
+    .filter(Boolean)
+    .join(" ");
+  // OCCT comes last: build-occt.sh needs the compiler, cmake and ninja.
+  const steps = [
+    ...(packages
+      ? [
+          macOS
+            ? `brew install ${packages}`
+            : `sudo apt install ${packages}   # Debian/Ubuntu; elsewhere the same libraries from your package manager`
+        ]
+      : []),
+    ...(missing.includes("rust")
+      ? [
+          `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh${macOS ? "" : "   # not apt's cargo: too old"}`
+        ]
+      : []),
+    ...(missing.includes("occt")
+      ? [
+          "apps/assembler/scripts/build-occt.sh   # ~15-30 min, every worktree shares it"
+        ]
+      : []),
+    "crbn up   # pick Assembler again"
+  ];
+  return [
+    "Assembler selected, but this machine is missing:",
+    ...missing.map((dependency) =>
+      dependency === "occt"
+        ? `  - ${DEPENDENCY_LABELS.occt} (${occtPrefix(machine.env)})`
+        : `  - ${DEPENDENCY_LABELS[dependency]}`
+    ),
+    "Run every step, in order, from the repo root (once per machine):",
+    ...steps.map((step, index) => `  ${index + 1}. ${step}`),
+    "Or run crbn up without the assembler app."
+  ].join("\n");
 }
 
 /**
@@ -402,9 +576,8 @@ export function spawnAssembler(opts: {
   // the apps (keys are asm:-prefixed, so sharing the logical DB is safe).
   const appEnv = spawnAppEnv(root, "assembler");
   // ASSEMBLER_DEV_MODE=true also disables TLS verification in the service, so
-  // portless's self-signed CA needs no extra trust wiring. Passing
-  // REDIS_URL points the service at the stateless Redis-backed job +
-  // result store; unset (no worktree REDIS_URL) => in-memory, single-process.
+  // portless's self-signed CA needs no extra trust wiring. REDIS_URL is the
+  // service's job + result store; without it the service refuses to start.
   // Put cargo's own directory first on PATH, so rustc and the rustup proxies
   // resolve even when cargo was found only in ~/.cargo/bin.
   const pathEnv = appEnv.PATH ?? process.env.PATH ?? "";
