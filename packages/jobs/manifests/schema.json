@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261113015550",
+  "schemaVersion": "20261114175315",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-13T02:08:25.351Z",
+  "exportedAt": "2026-11-14T17:57:14.834Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -4718,6 +4718,65 @@
         "customerPartRevision",
         "tags"
       ]
+    },
+    {
+      "name": "scimConnection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "tokenHash",
+        "tokenPreview",
+        "defaultEmployeeTypeId",
+        "defaultLocationId",
+        "lastRequestAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "scimGroup",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "connectionId",
+        "displayName",
+        "externalId",
+        "employeeTypeId",
+        "priority",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "scimUser",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "connectionId",
+        "userId",
+        "userName",
+        "externalId",
+        "email",
+        "givenName",
+        "familyName",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "scimGroupMember",
+      "rows": 0,
+      "columns": ["groupId", "scimUserId", "companyId"]
     },
     {
       "name": "shift",

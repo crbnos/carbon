@@ -518,6 +518,10 @@ msgstr "{0} 行"
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "{0} 名成员"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1470,6 +1474,9 @@ msgstr "1 个作业已创建"
 
 msgid "1 line"
 msgstr "1 行"
+
+msgid "1 member"
+msgstr "1 名成员"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1个零件已跳过——它已有未结的工单"
@@ -3034,6 +3041,9 @@ msgstr "通过在登录时要求身份验证器应用的代码来添加额外的
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "添加工序部分，列出每个工艺路线工序及其预期时间和扫码条码。"
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "自动从 Okta 或 Microsoft Entra ID 添加和移除成员，使 IT 团队办理离职的人员失去 Carbon 的访问权限。"
 
 msgid "Add another option"
 msgstr "再添加一个选项"
@@ -7015,6 +7025,9 @@ msgstr "选择供应商"
 msgid "Choose suppliers"
 msgstr "选择供应商"
 
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "请为每个组选择其成员所属的员工类型。如果某人属于多个组，则以级别较高的组为准。"
+
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "选择当前期间或之前 3 个期间中任意一个的第一天。"
 
@@ -9888,6 +9901,9 @@ msgstr "默认抄送"
 msgid "Default CC Recipients"
 msgstr "默认抄送收件人"
 
+msgid "Default employee type"
+msgstr "默认员工类型"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "固定资产处置获利时贷记的默认GL账户。"
 
@@ -9905,6 +9921,9 @@ msgstr "定期折旧处理的默认总账费用科目"
 
 msgid "Default horizon (days)"
 msgstr "默认计划周期（天数）"
+
+msgid "Default location"
+msgstr "默认地点"
 
 msgid "Default Method"
 msgstr "默认方法"
@@ -12029,6 +12048,10 @@ msgstr "员工报销应付"
 msgid "Employee Type"
 msgstr "员工类型"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} 的员工类型"
+
 msgid "Employee Types"
 msgstr "员工类型"
 
@@ -12315,6 +12338,9 @@ msgstr "输入来自您的身份验证器应用的6位数代码"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "输入您的身份验证器应用中的 6 位数字代码以继续。"
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "请在身份提供商的预配设置中输入基础 URL 和此令牌。此令牌仅显示一次。"
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "输入您的私有 OAuth 应用程序的 Onshape URL、客户端 ID 和客户端密钥，然后保存。"
@@ -14211,6 +14237,9 @@ msgstr "根据原材料的属性生成原材料ID和描述。"
 msgid "Generate Picking List"
 msgstr "生成拣货单"
 
+msgid "Generate token"
+msgstr "生成令牌"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "从运动计划生成了{created}个步骤"
 
@@ -14541,6 +14570,9 @@ msgstr "分组依据"
 
 msgid "Group by material"
 msgstr "按材料分组"
+
+msgid "Group Mappings"
+msgstr "群组映射"
 
 msgid "Group Members"
 msgstr "群组成员"
@@ -14909,6 +14941,9 @@ msgstr "此量具必须多久重新校准一次；与上次校准日期结合自
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "此维护的重复频率——每日、每周、每月、循环盘点；每日会显示星期选择器，其他则使用更简单的间隔计算。"
+
+msgid "How SCIM works"
+msgstr "SCIM 的工作原理"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "在此工序上，为使多个操作能够共享一个生产批次，每个原材料属性必须匹配的严格程度。"
@@ -16665,6 +16700,9 @@ msgstr "最后推送：{lastPushed}"
 msgid "Last Quarter"
 msgstr "上一季度"
 
+msgid "Last request"
+msgstr "最近请求"
+
 msgid "Last run"
 msgstr "最后运行"
 
@@ -16912,6 +16950,9 @@ msgstr "允许成员通过您的身份提供商使用 SAML 登录。"
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "允许具有项目库存的项目在此地点使用此物料的备用未分配库存"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "允许您的身份提供商通过 SCIM 添加、更新和移除成员。"
 
 msgid "Let's Build"
 msgstr "让我们构建"
@@ -18087,6 +18128,9 @@ msgstr "成员"
 
 msgid "Members"
 msgstr "成员"
+
+msgid "Members in no mapped group get this type"
+msgstr "不属于任何已映射群组的成员将获得此类型"
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "成员在MRP中合并需求。该组必须位于项目的地点"
@@ -23467,6 +23511,12 @@ msgstr "临时凭证"
 msgid "Provisional rate"
 msgstr "暂定费率"
 
+msgid "Provisioned members"
+msgstr "已预配的成员"
+
+msgid "Provisioning"
+msgstr "预配"
+
 msgid "PTO"
 msgstr "PTO"
 
@@ -24613,11 +24663,17 @@ msgstr "从条款重新生成"
 msgid "Regenerate payments from the terms?"
 msgstr "从条款重新生成付款？"
 
+msgid "Regenerate SCIM token"
+msgstr "重新生成 SCIM 令牌"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "立即为该地点重新生成排程。它也会在最后一次排程变化后约30秒自动运行（编辑是批处理的，因此几次快速变化会触发单次重新生成）。"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "从 3D 模型重新生成缩略图"
+
+msgid "Regenerate token"
+msgstr "重新生成令牌"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "从动作计划重新生成了 {created} 个步骤"
@@ -26634,6 +26690,15 @@ msgstr "计划冲突"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "排程冲突：工序无法满足到期日"
 
+msgid "SCIM base URL"
+msgstr "SCIM 基础 URL"
+
+msgid "SCIM Connection"
+msgstr "SCIM 连接"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM 预配"
+
 msgid "Scope"
 msgstr "范围"
 
@@ -27626,6 +27691,9 @@ msgstr "设置会计以使用报表、凭证、会计期间、折旧等。"
 
 msgid "Set up authenticator app"
 msgstr "设置身份验证器应用"
+
+msgid "Set up SCIM"
+msgstr "设置 SCIM"
 
 msgid "Set up the right way"
 msgstr "以正确的方式设置"
@@ -30296,6 +30364,9 @@ msgstr "您交易的货币及其汇率"
 msgid "The current plan changed under this change request"
 msgstr "此更改请求下的当前计划已更改"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "当前令牌将立即失效。在身份提供商中输入新令牌之前，预配将停止。"
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "客户实际上购买该单位。从开始时该单位就离开您的固定资产，销售被记录，并在整个期限内赚取应收款上的利息。"
 
@@ -32343,6 +32414,9 @@ msgstr "切换侧边栏"
 msgid "Toggle views"
 msgstr "切换视图"
 
+msgid "Token"
+msgstr "令牌"
+
 msgid "Tol-"
 msgstr "容差-"
 
@@ -32773,8 +32847,14 @@ msgstr "重试"
 msgid "Tuesday"
 msgstr "星期二"
 
+msgid "Turn off"
+msgstr "关闭"
+
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr "关闭 SCIM 预配"
 
 msgid "Turn On"
 msgstr "打开"
@@ -35230,6 +35310,15 @@ msgstr "正在准备您的导出文件。准备就绪后我们将通知您。"
 msgid "Your GL accounts"
 msgstr "您的总账科目"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "身份提供商会添加、更新和删除其管理的成员。"
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "身份提供商不能再添加或移除成员。其已预配的成员保持不变，重新设置 SCIM 时将从上次中断处继续。"
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "您的身份提供商会使用下方的默认员工类型和地点创建成员。推送分组后，请将分组映射到员工类型。"
+
 msgid "your Implementation Lead"
 msgstr "你的实施负责人"
 
@@ -35280,6 +35369,9 @@ msgstr "您的真实数据已加载，您已检查样本并批准了它。"
 
 msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
+
+msgid "Your SCIM token"
+msgstr "您的 SCIM 令牌"
 
 msgid "Your session was locked after inactivity."
 msgstr "你的会话因不活动而被已锁定。"

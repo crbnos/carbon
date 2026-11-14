@@ -518,6 +518,10 @@ msgstr "{0} строк"
 msgid "{0} lines to map"
 msgstr "{0} строк для сопоставления"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "Участников: {0}"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1470,6 +1474,9 @@ msgstr "1 задание создано"
 
 msgid "1 line"
 msgstr "1 строка"
+
+msgid "1 member"
+msgstr "1 участник"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 деталь пропущена — у неё уже есть открытое задание"
@@ -3034,6 +3041,9 @@ msgstr "Добавьте дополнительный уровень безоп�
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "Добавить раздел операций, перечисляющий каждую операцию маршрута с ожидаемыми временами и сканируемыми штрих-кодами."
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Добавляйте и убирайте участников автоматически из Okta или Microsoft Entra ID, чтобы сотрудники, которых IT-отдел отключает, теряли доступ к Carbon."
 
 msgid "Add another option"
 msgstr "Добавить другой вариант"
@@ -7015,6 +7025,9 @@ msgstr "Выберите поставщика"
 msgid "Choose suppliers"
 msgstr "Выберите поставщиков"
 
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "Выберите тип сотрудника, который каждая группа присваивает своим участникам. Если сотрудник состоит в нескольких группах, применяется тип из группы с более высоким приоритетом."
+
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Выберите первый день текущего периода или одного из 3 периодов перед ним."
 
@@ -9888,6 +9901,9 @@ msgstr "CC по умолчанию"
 msgid "Default CC Recipients"
 msgstr "Получатели CC по умолчанию"
 
+msgid "Default employee type"
+msgstr "Тип сотрудника по умолчанию"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Счет учета по умолчанию, кредитуемый при выбытии основного средства, приносящем прибыль."
 
@@ -9905,6 +9921,9 @@ msgstr "Счет расходов главной книги по умолчан�
 
 msgid "Default horizon (days)"
 msgstr "Горизонт планирования по умолчанию (дней)"
+
+msgid "Default location"
+msgstr "Площадка по умолчанию"
 
 msgid "Default Method"
 msgstr "Метод по умолчанию"
@@ -12029,6 +12048,10 @@ msgstr "Кредиторская задолженность за возмеще�
 msgid "Employee Type"
 msgstr "Тип сотрудника"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "Тип сотрудника для {0}"
+
 msgid "Employee Types"
 msgstr "Типы сотрудников"
 
@@ -12315,6 +12338,9 @@ msgstr "Введите 6-значный код из приложения аут�
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Введите 6-значный код из приложения-аутентификатора, чтобы продолжить."
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "Введите базовый URL и этот токен в настройках автоматического создания учётных записей у вашего поставщика удостоверений. Этот токен показывается один раз."
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Введите URL Onshape, ID клиента и клиентский секрет вашего приватного OAuth приложения, затем сохраните."
@@ -14211,6 +14237,9 @@ msgstr "Генерируйте идентификаторы материалов
 msgid "Generate Picking List"
 msgstr "Создать лист отбора"
 
+msgid "Generate token"
+msgstr "Создать токен"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "Сгенерировано {created} шагов из плана движения"
 
@@ -14541,6 +14570,9 @@ msgstr "Группировать по"
 
 msgid "Group by material"
 msgstr "Группировать по материалу"
+
+msgid "Group Mappings"
+msgstr "Сопоставления групп"
 
 msgid "Group Members"
 msgstr "Члены группы"
@@ -14909,6 +14941,9 @@ msgstr "Как часто это средство измерения должн�
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Как часто это техобслуживание повторяется — Ежедневно, Еженедельно, Ежемесячно, На циклический пересчет; выбор «Ежедневно» показывает селектор дня недели, остальные используют более простую математику интервалов."
+
+msgid "How SCIM works"
+msgstr "Как работает SCIM"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Насколько строго должны совпадать свойства материала для размещения операций в одной серии на этом процессе."
@@ -16665,6 +16700,9 @@ msgstr "Последний раз передано {lastPushed}"
 msgid "Last Quarter"
 msgstr "Последний квартал"
 
+msgid "Last request"
+msgstr "Последний запрос"
+
 msgid "Last run"
 msgstr "Последний запуск"
 
@@ -16912,6 +16950,9 @@ msgstr "Позвольте членам входить через вашего �
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "Позволить проектам с проектным запасом использовать свободный неприсвоенный запас этого элемента в этом месте"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "Позвольте вашему поставщику удостоверений добавлять, обновлять и убирать участников через SCIM."
 
 msgid "Let's Build"
 msgstr "Начнём производство"
@@ -18087,6 +18128,9 @@ msgstr "Участник"
 
 msgid "Members"
 msgstr "Участники"
+
+msgid "Members in no mapped group get this type"
+msgstr "Участники, не входящие ни в одну сопоставленную группу, получают этот тип"
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "Члены консолидируют спрос вместе в MRP. Группа должна находиться на площадке проекта"
@@ -23467,6 +23511,12 @@ msgstr "Предварительная операция"
 msgid "Provisional rate"
 msgstr "Предварительная ставка"
 
+msgid "Provisioned members"
+msgstr "Синхронизированные участники"
+
+msgid "Provisioning"
+msgstr "Автоматическое создание учётных записей"
+
 msgid "PTO"
 msgstr "PTO"
 
@@ -24613,11 +24663,17 @@ msgstr "Пересчитать из условий"
 msgid "Regenerate payments from the terms?"
 msgstr "Пересчитать платежи из условий?"
 
+msgid "Regenerate SCIM token"
+msgstr "Создать токен SCIM заново"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Пересчитать график для этой площадки сейчас. Пересчет также выполняется автоматически примерно через 30 секунд после последнего изменения в планировании (изменения группируются, поэтому несколько быстрых изменений запускают один пересчет)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Восстановить миниатюру из 3D модели"
+
+msgid "Regenerate token"
+msgstr "Создать токен заново"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "Переформировано {created} шагов из плана движения"
@@ -26634,6 +26690,15 @@ msgstr "Конфликт расписания"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "Конфликт планирования: операции не могут уложиться в срок выполнения"
 
+msgid "SCIM base URL"
+msgstr "Базовый URL SCIM"
+
+msgid "SCIM Connection"
+msgstr "Подключение SCIM"
+
+msgid "SCIM Provisioning"
+msgstr "Автоматическое создание учётных записей SCIM"
+
 msgid "Scope"
 msgstr "Область действия"
 
@@ -27626,6 +27691,9 @@ msgstr "Настройте бухгалтерию для использован�
 
 msgid "Set up authenticator app"
 msgstr "Установить приложение аутентификации"
+
+msgid "Set up SCIM"
+msgstr "Настроить SCIM"
 
 msgid "Set up the right way"
 msgstr "Правильная настройка"
@@ -30296,6 +30364,9 @@ msgstr "Валюты, в которых вы торгуете, и их курс�
 msgid "The current plan changed under this change request"
 msgstr "Текущий план изменился в соответствии с этим запросом на изменение"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "Текущий токен перестанет работать сразу. Автоматическое создание учётных записей будет остановлено, пока вы не введёте новый токен у поставщика удостоверений."
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "Покупатель фактически покупает единицу. При начислении она исключается из основных средств, продажа регистрируется, и проценты начисляются на дебиторскую задолженность в течение срока."
 
@@ -32343,6 +32414,9 @@ msgstr "Переключить боковую панель"
 msgid "Toggle views"
 msgstr "Переключить представления"
 
+msgid "Token"
+msgstr "Токен"
+
 msgid "Tol-"
 msgstr "Тол-"
 
@@ -32773,8 +32847,14 @@ msgstr "Повторить попытку"
 msgid "Tuesday"
 msgstr "Вторник"
 
+msgid "Turn off"
+msgstr "Отключить"
+
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr "Отключить автоматическое создание учётных записей SCIM"
 
 msgid "Turn On"
 msgstr "Включить"
@@ -35227,6 +35307,15 @@ msgstr "Экспорт готовится. Мы уведомим вас, ког�
 msgid "Your GL accounts"
 msgstr "Ваши счета ГЛ"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "Ваш поставщик удостоверений добавляет, обновляет и удаляет участников, которыми он управляет."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "Ваш поставщик удостоверений больше не может добавлять или убирать участников. Участники, которых он создал, остаются без изменений, а при повторной настройке SCIM процесс продолжается с того места, где остановился."
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "Ваш провайдер удостоверений создаёт пользователей с типом сотрудника и площадкой по умолчанию, указанными ниже. Сопоставьте его группы с типами сотрудников после того, как он их передаст."
+
 msgid "your Implementation Lead"
 msgstr "ваш руководитель внедрения"
 
@@ -35277,6 +35366,9 @@ msgstr "Ваши реальные данные загружены, вы пров
 
 msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
+
+msgid "Your SCIM token"
+msgstr "Ваш токен SCIM"
 
 msgid "Your session was locked after inactivity."
 msgstr "Ваш сеанс был заблокирован из-за неактивности."

@@ -518,6 +518,10 @@ msgstr "{0} पंक्तियां"
 msgid "{0} lines to map"
 msgstr "{0} लाइनें मैप करने के लिए"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "{0} सदस्य"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1470,6 +1474,9 @@ msgstr "1 नौकरी बनाई गई"
 
 msgid "1 line"
 msgstr "1 पंक्ति"
+
+msgid "1 member"
+msgstr "1 सदस्य"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 पार्ट छोड़ा गया — इसके पास पहले से एक खुला जॉब है"
@@ -3034,6 +3041,9 @@ msgstr "साइन इन करते समय एक प्रमाणक 
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "एक ऑपरेशन सेक्शन जोड़ें जो प्रत्येक रूटिंग ऑपरेशन को उसके अपेक्षित समय और स्कैन बारकोड के साथ सूचीबद्ध करता है।"
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Okta या Microsoft Entra ID से सदस्यों को अपने-आप जोड़ें और निकालें, ताकि आपका IT विभाग जिन लोगों को हटाता है, उनकी Carbon तक पहुँच खत्म हो जाए।"
 
 msgid "Add another option"
 msgstr "एक और विकल्प जोड़ें"
@@ -7015,6 +7025,9 @@ msgstr "आपूर्तिकर्ता चुनें"
 msgid "Choose suppliers"
 msgstr "आपूर्तिकर्ता चुनें"
 
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "प्रत्येक समूह अपने सदस्यों को जो कर्मचारी प्रकार देता है, उसे चुनें। यदि कोई व्यक्ति एक से अधिक समूहों में है, तो उच्च स्तर वाले समूह का प्रकार लागू होगा।"
+
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "वर्तमान अवधि के पहले दिन या उससे पहले की 3 अवधियों में से किसी एक के पहले दिन को चुनें।"
 
@@ -9888,6 +9901,9 @@ msgstr "डिफ़ॉल्ट cc"
 msgid "Default CC Recipients"
 msgstr "डिफ़ॉल्ट CC प्राप्तकर्ता"
 
+msgid "Default employee type"
+msgstr "डिफ़ॉल्ट कर्मचारी प्रकार"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "डिफ़ॉल्ट GL खाता जिसमें एक स्थिर-संपत्ति के निपटान के परिणामस्वरूप लाभ में क्रेडिट किया जाता है।"
 
@@ -9905,6 +9921,9 @@ msgstr "आवधिक मूल्यह्रास रन के लिए �
 
 msgid "Default horizon (days)"
 msgstr "डिफ़ॉल्ट क्षितिज (दिन)"
+
+msgid "Default location"
+msgstr "डिफ़ॉल्ट स्थान"
 
 msgid "Default Method"
 msgstr "डिफ़ॉल्ट विधि"
@@ -12029,6 +12048,10 @@ msgstr "कर्मचारी प्रतिपूर्ति देय"
 msgid "Employee Type"
 msgstr "कर्मचारी प्रकार"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} के लिए कर्मचारी प्रकार"
+
 msgid "Employee Types"
 msgstr "कर्मचारी प्रकार"
 
@@ -12315,6 +12338,9 @@ msgstr "अपने प्रमाणकर्ता ऐप से 6-अंक
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "पुनः शुरू करने के लिए अपने ऑथेंटिकेटर ऐप से 6-अंकीय कोड दर्ज करें।"
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "अपने पहचान प्रदाता की प्रोविज़निंग सेटिंग्स में बेस URL और यह टोकन दर्ज करें। यह टोकन केवल एक बार दिखाया जाता है।"
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "अपने निजी OAuth एप्लिकेशन का Onshape URL, क्लाइंट ID और क्लाइंट सीक्रेट दर्ज करें, फिर सहेजें।"
@@ -14211,6 +14237,9 @@ msgstr "सामग्री के गुणों के आधार पर 
 msgid "Generate Picking List"
 msgstr "पिकिंग सूची जेनरेट करें"
 
+msgid "Generate token"
+msgstr "टोकन बनाएँ"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "गति योजना से {created} चरण उत्पन्न किए गए"
 
@@ -14541,6 +14570,9 @@ msgstr "द्वारा समूह"
 
 msgid "Group by material"
 msgstr "सामग्री के अनुसार समूह बनाएं"
+
+msgid "Group Mappings"
+msgstr "ग्रुप मैपिंग"
 
 msgid "Group Members"
 msgstr "समूह सदस्य"
@@ -14909,6 +14941,9 @@ msgstr "यह गेज कितनी बार पुनः-अंशां�
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "यह रखरखाव कितनी बार दोहराया जाता है — दैनिक, साप्ताहिक, मासिक, चक्रीय गणना पर; दैनिक सप्ताह-की-दिन चयनकर्ता को प्रकट करता है, अन्य सरल अंतराल गणित का उपयोग करते हैं।"
+
+msgid "How SCIM works"
+msgstr "SCIM कैसे काम करता है"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "ऑपरेशन को इस प्रक्रिया पर एक बैच साझा करने के लिए प्रत्येक सामग्री संपत्ति कितनी सख्ती से मेल खानी चाहिए।"
@@ -16665,6 +16700,9 @@ msgstr "अंतिम बार पुश किया गया: {lastPushed}
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
 
+msgid "Last request"
+msgstr "आखिरी अनुरोध"
+
 msgid "Last run"
 msgstr "अंतिम रन"
 
@@ -16912,6 +16950,9 @@ msgstr "अपने सदस्यों को SAML के साथ अप�
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "परियोजना स्टॉक वाली परियोजनाओं को इस स्थान पर इस आइटम का अप्रयुक्त अनिर्दिष्ट स्टॉक का उपयोग करने दें"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "आपका पहचान प्रदाता SCIM के ज़रिए सदस्यों को जोड़ने, अपडेट करने और निकालने दें।"
 
 msgid "Let's Build"
 msgstr "चलिए निर्माण करें"
@@ -18087,6 +18128,9 @@ msgstr "सदस्य"
 
 msgid "Members"
 msgstr "सदस्य"
+
+msgid "Members in no mapped group get this type"
+msgstr "जो सदस्य किसी भी मैप किए गए ग्रुप में नहीं हैं, उन्हें यह प्रकार मिलेगा"
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "सदस्य MRP में अपनी मांग को एक साथ समायोजित करते हैं। समूह परियोजना के स्थान पर होना चाहिए"
@@ -23467,6 +23511,12 @@ msgstr "अनंतिम जर्नल"
 msgid "Provisional rate"
 msgstr "अनंतिम दर"
 
+msgid "Provisioned members"
+msgstr "प्रावधानित सदस्य"
+
+msgid "Provisioning"
+msgstr "प्रोविज़निंग"
+
 msgid "PTO"
 msgstr "PTO"
 
@@ -24613,11 +24663,17 @@ msgstr "शर्तों से पुनः उत्पन्न करे�
 msgid "Regenerate payments from the terms?"
 msgstr "शर्तों से भुगतान पुनः उत्पन्न करें?"
 
+msgid "Regenerate SCIM token"
+msgstr "SCIM टोकन फिर से बनाएँ"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "इस स्थान के लिए अभी शेड्यूल फिर से जेनरेट करें। यह अंतिम शेड्यूलिंग परिवर्तन के लगभग 30 सेकंड बाद स्वचालित रूप से भी चलता है (संपादन बैच किए जाते हैं, इसलिए कई त्वरित परिवर्तन एकल पुनर्जनन को ट्रिगर करते हैं)।"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D मॉडल से थंबनेल पुनः उत्पन्न करें"
+
+msgid "Regenerate token"
+msgstr "टोकन फिर से बनाएँ"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "गति योजना से {created} चरण पुनर्जीवित किए गए"
@@ -26634,6 +26690,15 @@ msgstr "शेड्यूलिंग संघर्ष"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "शेड्यूलिंग संघर्ष: ऑपरेशन नियत तिथि तक पूरे नहीं हो सकते"
 
+msgid "SCIM base URL"
+msgstr "SCIM बेस URL"
+
+msgid "SCIM Connection"
+msgstr "SCIM कनेक्शन"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM प्रोविज़निंग"
+
 msgid "Scope"
 msgstr "दायरा"
 
@@ -27626,6 +27691,9 @@ msgstr "लेखांकन को रिपोर्ट, जर्नल प�
 
 msgid "Set up authenticator app"
 msgstr "प्रमाणकर्ता ऐप सेटअप करें"
+
+msgid "Set up SCIM"
+msgstr "SCIM सेट अप करें"
 
 msgid "Set up the right way"
 msgstr "सही तरीके से सेटअप करें"
@@ -30296,6 +30364,9 @@ msgstr "आप जिन मुद्राओं में व्यापा�
 msgid "The current plan changed under this change request"
 msgstr "इस परिवर्तन अनुरोध के तहत वर्तमान योजना बदल गई"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "मौजूदा टोकन तुरंत काम करना बंद कर देगा। जब तक आप अपने पहचान प्रदाता में नया टोकन दर्ज नहीं करते, प्रोविज़निंग रुकी रहेगी।"
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "ग्राहक प्रभावी रूप से इकाई को खरीदता है। यह शुरुआत में आपकी अचल संपत्ति से बाहर निकल जाता है, बिक्री दर्ज की जाती है, और अवधि के दौरान प्राप्य पर ब्याज अर्जित होता है।"
 
@@ -32343,6 +32414,9 @@ msgstr "साइडबार टॉगल करें"
 msgid "Toggle views"
 msgstr "दृश्य टॉगल करें"
 
+msgid "Token"
+msgstr "टोकन"
+
 msgid "Tol-"
 msgstr "Tol-"
 
@@ -32773,8 +32847,14 @@ msgstr "फिर से कोशिश करें"
 msgid "Tuesday"
 msgstr "मंगलवार"
 
+msgid "Turn off"
+msgstr "बंद करें"
+
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr "SCIM प्रोविज़निंग बंद करें"
 
 msgid "Turn On"
 msgstr "चालू करें"
@@ -35230,6 +35310,15 @@ msgstr "आपका निर्यात तैयार किया जा �
 msgid "Your GL accounts"
 msgstr "आपके GL खाते"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "आपका पहचान प्रदाता उसके द्वारा प्रबंधित सदस्यों को जोड़ता, अपडेट करता और हटाता है।"
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "आपका पहचान प्रदाता अब सदस्य न तो जोड़ सकता है और न ही निकाल सकता है। उसके द्वारा प्रावधानित सदस्य जैसे हैं वैसे ही रहते हैं, और SCIM को दोबारा सेट करने पर वहीं से जारी रहता है जहाँ यह रुका था।"
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "आपका पहचान प्रदाता नीचे दिए गए डिफ़ॉल्ट कर्मचारी प्रकार और स्थान के साथ सदस्य बनाता है। उसके समूह भेजे जाने के बाद, उन्हें कर्मचारी प्रकारों से मैप करें।"
+
 msgid "your Implementation Lead"
 msgstr "आपके कार्यान्वयन नेता"
 
@@ -35280,6 +35369,9 @@ msgstr "आपका वास्तविक डेटा लोड हो ग�
 
 msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
+
+msgid "Your SCIM token"
+msgstr "आपका SCIM टोकन"
 
 msgid "Your session was locked after inactivity."
 msgstr "निष्क्रियता के बाद आपका सत्र लॉक कर दिया गया।"

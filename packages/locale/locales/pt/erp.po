@@ -518,6 +518,10 @@ msgstr "{0} linhas"
 msgid "{0} lines to map"
 msgstr "{0} linhas para mapear"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "{0} membros"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1470,6 +1474,9 @@ msgstr "1 trabalho criado"
 
 msgid "1 line"
 msgstr "1 linha"
+
+msgid "1 member"
+msgstr "1 membro"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 peça ignorada — ela já tem um trabalho aberto"
@@ -3034,6 +3041,9 @@ msgstr "Adicione uma camada extra de segurança exigindo um código de um aplica
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "Adicionar uma seção de operações que lista cada operação do roteiro de produção com seus tempos esperados e códigos de barras para escanear."
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Adicione e remova membros automaticamente pelo Okta ou pelo Microsoft Entra ID, para que as pessoas que sua equipe de TI desliga percam o acesso ao Carbon."
 
 msgid "Add another option"
 msgstr "Adicionar outra opção"
@@ -7015,6 +7025,9 @@ msgstr "Escolher fornecedor"
 msgid "Choose suppliers"
 msgstr "Escolher fornecedores"
 
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "Escolha o tipo de funcionário que cada grupo atribui aos seus membros. Se alguém estiver em mais de um grupo, vale o tipo do grupo de nível mais alto."
+
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Escolha o primeiro dia do período atual ou de um dos 3 períodos anteriores."
 
@@ -9888,6 +9901,9 @@ msgstr "CC padrão"
 msgid "Default CC Recipients"
 msgstr "Destinatários CC Padrão"
 
+msgid "Default employee type"
+msgstr "Tipo de funcionário padrão"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Conta contábil padrão creditada quando a baixa de um ativo fixo resulta em ganho."
 
@@ -9905,6 +9921,9 @@ msgstr "Conta de despesa contábil padrão para processamentos periódicos de de
 
 msgid "Default horizon (days)"
 msgstr "Horizonte padrão (dias)"
+
+msgid "Default location"
+msgstr "Local padrão"
 
 msgid "Default Method"
 msgstr "Método Padrão"
@@ -12029,6 +12048,10 @@ msgstr "Contas a Pagar - Reembolsos de Funcionários"
 msgid "Employee Type"
 msgstr "Tipo de Funcionário"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "Tipo de funcionário para {0}"
+
 msgid "Employee Types"
 msgstr "Tipos de Funcionários"
 
@@ -12315,6 +12338,9 @@ msgstr "Digite o código de 6 dígitos do seu aplicativo autenticador"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Introduza o código de 6 dígitos da sua aplicação autenticadora para continuar."
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "Insira a URL base e este token nas configurações de provisionamento do seu provedor de identidade. Este token é exibido apenas uma vez."
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Insira a URL do Onshape, o ID do cliente e o segredo do cliente de seu aplicativo OAuth privado e depois salve."
@@ -14211,6 +14237,9 @@ msgstr "Gerar IDs de material e descrições com base nas propriedades do materi
 msgid "Generate Picking List"
 msgstr "Gerar lista de separação"
 
+msgid "Generate token"
+msgstr "Gerar token"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "Geradas {created} etapas a partir do plano de movimento"
 
@@ -14541,6 +14570,9 @@ msgstr "Agrupar por"
 
 msgid "Group by material"
 msgstr "Agrupar por material"
+
+msgid "Group Mappings"
+msgstr "Mapeamentos de grupos"
 
 msgid "Group Members"
 msgstr "Membros do Grupo"
@@ -14909,6 +14941,9 @@ msgstr "Com que frequência este instrumento de medição deve ser recalibrado; 
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Com que frequência esta manutenção se repete — Diário, Semanal, Mensal, Na Contagem cíclica; Diário revela o seletor de dia da semana, os outros usam cálculo de intervalo mais simples."
+
+msgid "How SCIM works"
+msgstr "Como o SCIM funciona"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Quão rigorosamente cada propriedade do material deve coincidir para operações compartilharem um lote de produção neste processo."
@@ -16665,6 +16700,9 @@ msgstr "Último envio em {lastPushed}"
 msgid "Last Quarter"
 msgstr "Último Trimestre"
 
+msgid "Last request"
+msgstr "Última solicitação"
+
 msgid "Last run"
 msgstr "Última execução"
 
@@ -16912,6 +16950,9 @@ msgstr "Permita que os membros façam login através do seu provedor de identida
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "Permitir que projetos com estoque de projeto usem estoque não atribuído deste item neste local"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "Permita que seu provedor de identidade adicione, atualize e remova membros com SCIM."
 
 msgid "Let's Build"
 msgstr "Vamos Construir"
@@ -18087,6 +18128,9 @@ msgstr "Membro"
 
 msgid "Members"
 msgstr "Membros"
+
+msgid "Members in no mapped group get this type"
+msgstr "Membros que não estão em nenhum grupo mapeado recebem este tipo"
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "Os membros líquidam sua demanda conjuntamente no MRP. O grupo deve estar no local do projeto"
@@ -23467,6 +23511,12 @@ msgstr "Diário provisório"
 msgid "Provisional rate"
 msgstr "Taxa provisória"
 
+msgid "Provisioned members"
+msgstr "Membros provisionados"
+
+msgid "Provisioning"
+msgstr "Provisionamento"
+
 msgid "PTO"
 msgstr "PTO"
 
@@ -24613,11 +24663,17 @@ msgstr "Regenerar a partir dos termos"
 msgid "Regenerate payments from the terms?"
 msgstr "Regenerar pagamentos a partir dos termos?"
 
+msgid "Regenerate SCIM token"
+msgstr "Gerar novo token SCIM"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Regenere a programação para este local agora. Ele também é executado automaticamente cerca de 30 segundos após a última alteração de programação (as edições são em lote, então várias alterações rápidas acionam uma única regeneração)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Regenerar miniatura do modelo 3D"
+
+msgid "Regenerate token"
+msgstr "Gerar novo token"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "Etapas {created} regeneradas do plano de movimento"
@@ -26634,6 +26690,15 @@ msgstr "Conflito de agendamento"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "Conflito de programação: as operações não podem cumprir a data de vencimento"
 
+msgid "SCIM base URL"
+msgstr "URL base do SCIM"
+
+msgid "SCIM Connection"
+msgstr "Conexão SCIM"
+
+msgid "SCIM Provisioning"
+msgstr "Provisionamento SCIM"
+
 msgid "Scope"
 msgstr "Âmbito"
 
@@ -27626,6 +27691,9 @@ msgstr "Configure a contabilidade para usar relatórios, lançamentos de diário
 
 msgid "Set up authenticator app"
 msgstr "Configurar aplicativo autenticador"
+
+msgid "Set up SCIM"
+msgstr "Configurar SCIM"
 
 msgid "Set up the right way"
 msgstr "Configure da forma correta"
@@ -30296,6 +30364,9 @@ msgstr "As moedas em que você negocia e suas taxas"
 msgid "The current plan changed under this change request"
 msgstr "O plano atual mudou sob esta solicitação de mudança"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "O token atual deixa de funcionar imediatamente. O provisionamento para até que você insira o novo token no seu provedor de identidade."
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "O cliente efetivamente compra a unidade. Sai do seu ativo fixo no início, a venda é contabilizada, e juros são auferidos sobre o recebível ao longo do prazo."
 
@@ -32343,6 +32414,9 @@ msgstr "Alternar barra lateral"
 msgid "Toggle views"
 msgstr "Alternar visualizações"
 
+msgid "Token"
+msgstr "Token"
+
 msgid "Tol-"
 msgstr "Tol-"
 
@@ -32773,8 +32847,14 @@ msgstr "Tente novamente"
 msgid "Tuesday"
 msgstr "Terça-feira"
 
+msgid "Turn off"
+msgstr "Desativar"
+
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr "Desativar provisionamento SCIM"
 
 msgid "Turn On"
 msgstr "Ativar"
@@ -35227,6 +35307,15 @@ msgstr "Sua exportação está sendo preparada. Avisaremos quando estiver pronta
 msgid "Your GL accounts"
 msgstr "Suas contas contábeis"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "Seu provedor de identidade adiciona, atualiza e remove os membros que ele gerencia."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "Seu provedor de identidade não pode mais adicionar ou remover membros. Os membros que ele provisionou permanecem como estão, e ao configurar o SCIM novamente, a configuração continua de onde parou."
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "Seu provedor de identidade cria membros com o tipo de funcionário e o local padrão abaixo. Mapeie os grupos dele para tipos de funcionário depois que ele os enviar."
+
 msgid "your Implementation Lead"
 msgstr "seu Gerente de Implementação"
 
@@ -35277,6 +35366,9 @@ msgstr "Os seus dados reais foram carregados e você verificou uma amostra e apr
 
 msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
+
+msgid "Your SCIM token"
+msgstr "Seu token SCIM"
 
 msgid "Your session was locked after inactivity."
 msgstr "A sua sessão foi bloqueada após inatividade."

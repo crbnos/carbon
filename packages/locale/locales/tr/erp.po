@@ -518,6 +518,10 @@ msgstr "{0} satır"
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "{0} üye"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1470,6 +1474,9 @@ msgstr "1 iş oluşturuldu"
 
 msgid "1 line"
 msgstr "1 satır"
+
+msgid "1 member"
+msgstr "1 üye"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 parça atlandı — zaten açık bir işi var"
@@ -3034,6 +3041,9 @@ msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan kod isteyerek güv
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "Her rota operasyonunun beklenen zamanlarını ve tarama barkodlarını listeleyen bir operasyonlar bölümü ekleyin."
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Okta veya Microsoft Entra ID'den üyeleri otomatik olarak ekleyin ve kaldırın; BT ekibinizin işten çıkardığı kişiler Carbon'a erişimini kaybetsin."
 
 msgid "Add another option"
 msgstr "Başka bir seçenek ekle"
@@ -7015,6 +7025,9 @@ msgstr "Tedarikçi seçin"
 msgid "Choose suppliers"
 msgstr "Tedarikçileri seçin"
 
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "Her grubun üyelerine vereceği çalışan türünü seçin. Bir kişi birden fazla grupta yer alıyorsa, daha üst düzeydeki grubun türü geçerli olur."
+
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Geçerli dönem veya bundan önceki 3 dönemden birinin ilk gününü seçin."
 
@@ -9888,6 +9901,9 @@ msgstr "Varsayılan cc"
 msgid "Default CC Recipients"
 msgstr "Varsayılan Bilgi Ekleyicileri"
 
+msgid "Default employee type"
+msgstr "Varsayılan çalışan türü"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Sabit bir varlığın elden çıkarılması sonucunda kar elde edildiğinde alacak kaydedilen varsayılan GL hesabı."
 
@@ -9905,6 +9921,9 @@ msgstr "Periyodik amortisman çalışmaları için varsayılan muhasebe gideri h
 
 msgid "Default horizon (days)"
 msgstr "Varsayılan ufuk (gün)"
+
+msgid "Default location"
+msgstr "Varsayılan lokasyon"
 
 msgid "Default Method"
 msgstr "Varsayılan Yöntem"
@@ -12029,6 +12048,10 @@ msgstr "Çalışan Geri Ödeme Borçları"
 msgid "Employee Type"
 msgstr "Çalışan Türü"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} için çalışan türü"
+
 msgid "Employee Types"
 msgstr "Çalışan Tipleri"
 
@@ -12315,6 +12338,9 @@ msgstr "Doğrulayıcı uygulamanızdaki 6 haneli kodu girin"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Devam etmek için kimlik doğrulayıcı uygulamanızdan 6 haneli kodu girin."
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "Temel URL'yi ve bu token'ı kimlik sağlayıcınızın kullanıcı sağlama ayarlarına girin. Bu token yalnızca bir kez gösterilir."
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Özel OAuth uygulamanızın Onshape URL'sini, istemci ID'sini ve istemci gizli anahtarını girin, ardından kaydedin."
@@ -14211,6 +14237,9 @@ msgstr "Malzemenin özelliklerine göre malzeme kimlikleri ve açıklamaları ol
 msgid "Generate Picking List"
 msgstr "Toplama listesi oluştur"
 
+msgid "Generate token"
+msgstr "Token oluştur"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "{created} adım hareket planından oluşturuldu"
 
@@ -14541,6 +14570,9 @@ msgstr "Grupla"
 
 msgid "Group by material"
 msgstr "Malzemeye göre grupla"
+
+msgid "Group Mappings"
+msgstr "Grup Eşlemeleri"
 
 msgid "Group Members"
 msgstr "Üye Grupları"
@@ -14909,6 +14941,9 @@ msgstr "Bu ölçüm aletinin ne sıklıkla kalibre edilmesi gerektiği; Son Kali
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Bu bakım ne sıklıkla tekrarlanır — Günlük, Haftalık, Aylık, Periyodik Sayımında; Günlük seçim haftanın günü seçicisini gösterir, diğerleri daha basit aralık matematiğini kullanır."
+
+msgid "How SCIM works"
+msgstr "SCIM nasıl çalışır"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Bu operasyon üzerinde bir partide paylaşmak için her malzeme özelliğinin ne kadar katı eşleşmesi gerekir."
@@ -16665,6 +16700,9 @@ msgstr "Son gönderim: {lastPushed}"
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
 
+msgid "Last request"
+msgstr "Son istek"
+
 msgid "Last run"
 msgstr "Son çalışma"
 
@@ -16912,6 +16950,9 @@ msgstr "Üyelerin SAML ile kimlik sağlayıcınız üzerinden oturum açmasını
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "Proje stoklu projelerin bu lokasyondaki bu öğenin atanmamış stokunu kullanmasına izin verin"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "Kimlik sağlayıcınızın SCIM ile üyeleri ekleyip güncellemesine ve kaldırmasına izin verin."
 
 msgid "Let's Build"
 msgstr "Üretelim"
@@ -18087,6 +18128,9 @@ msgstr "Üye"
 
 msgid "Members"
 msgstr "Üyeler"
+
+msgid "Members in no mapped group get this type"
+msgstr "Hiçbir eşlenmiş grupta olmayan üyeler bu türü alır"
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "Üyeler taleplerini MRP'de birlikte netleştirirler. Grup, projenin bulunduğu lokasyonda olmalıdır."
@@ -23467,6 +23511,12 @@ msgstr "Geçici muhasebe fişi"
 msgid "Provisional rate"
 msgstr "Geçici Oran"
 
+msgid "Provisioned members"
+msgstr "Sağlanan üyeler"
+
+msgid "Provisioning"
+msgstr "Kullanıcı sağlama"
+
 msgid "PTO"
 msgstr "PTO"
 
@@ -24613,11 +24663,17 @@ msgstr "Koşullardan Yeniden Oluştur"
 msgid "Regenerate payments from the terms?"
 msgstr "Ödemeler koşullardan yeniden oluşturulsun mu?"
 
+msgid "Regenerate SCIM token"
+msgstr "SCIM token'ını yeniden oluştur"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Bu lokasyon için çizelgeyi şimdi yeniden oluşturun. Son çizelgeleme değişikliğinden yaklaşık 30 saniye sonra da otomatik olarak çalışır (düzenlemeler toplu halde yapılır, bu nedenle birkaç hızlı değişiklik tek bir yeniden oluşturmayı tetikler)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D modelinden Küçük resim yeniden oluştur"
+
+msgid "Regenerate token"
+msgstr "Token'ı yeniden oluştur"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "{created} adım hareket planından yeniden oluşturuldu"
@@ -26634,6 +26690,15 @@ msgstr "Zamanlama Çakışması"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "Çizelgeleme çakışması: operasyonlar son tarihe yetişemiyor"
 
+msgid "SCIM base URL"
+msgstr "SCIM temel URL'si"
+
+msgid "SCIM Connection"
+msgstr "SCIM Bağlantısı"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM Kullanıcı Sağlama"
+
 msgid "Scope"
 msgstr "Kapsam"
 
@@ -27626,6 +27691,9 @@ msgstr "Raporlar, muhasebe fişleri, muhasebe dönemleri, amortisman çalıştı
 
 msgid "Set up authenticator app"
 msgstr "Doğrulayıcı uygulamayı ayarla"
+
+msgid "Set up SCIM"
+msgstr "SCIM'i ayarlayın"
 
 msgid "Set up the right way"
 msgstr "Doğru şekilde ayarla"
@@ -30296,6 +30364,9 @@ msgstr "Ticaret yaptığınız para birimleri ve bunların oranları"
 msgid "The current plan changed under this change request"
 msgstr "Bu değişiklik isteği altında mevcut plan değiştirilmiştir"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "Mevcut token hemen çalışmayı bırakır. Yeni token'ı kimlik sağlayıcınıza girene kadar kullanıcı sağlama durur."
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "Müşteri birim'i etkili bir şekilde satın alır. Başlangıçta sabit kıymetlerinizden çıkar, satış muhasebeleştirilir ve dönem boyunca alacak üzerinden faiz kazanılır."
 
@@ -32343,6 +32414,9 @@ msgstr "Kenar çubuğunu aç/kapat"
 msgid "Toggle views"
 msgstr "Görünümleri değiştir"
 
+msgid "Token"
+msgstr "Token"
+
 msgid "Tol-"
 msgstr "Tol-"
 
@@ -32773,8 +32847,14 @@ msgstr "Tekrar deneyin"
 msgid "Tuesday"
 msgstr "Salı"
 
+msgid "Turn off"
+msgstr "Kapat"
+
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr "SCIM kullanıcı sağlamayı kapat"
 
 msgid "Turn On"
 msgstr "Aç"
@@ -35227,6 +35307,15 @@ msgstr "Dışa aktarımınız hazırlanıyor. Hazır olduğunda size haber verec
 msgid "Your GL accounts"
 msgstr "Muhasebe hesaplarınız"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "Kimlik sağlayıcınız, yönettiği üyeleri ekler, günceller ve kaldırır."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "Kimlik sağlayıcınız artık üye ekleyemez veya kaldıramaz. Onun sağladığı üyeler olduğu gibi kalır ve SCIM'i yeniden ayarlamak, kaldığı yerden devam eder."
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "Kimlik sağlayıcınız, üyeleri aşağıdaki varsayılan çalışan türü ve lokasyonla oluşturur. Gruplarını gönderdikten sonra çalışan türlerine eşleyin."
+
 msgid "your Implementation Lead"
 msgstr "sizin Uygulama Müdürünüz"
 
@@ -35277,6 +35366,9 @@ msgstr "Gerçek verileriniz yüklendi ve bir örneği kontrol ederek onayladın�
 
 msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
+
+msgid "Your SCIM token"
+msgstr "SCIM belirteciniz"
 
 msgid "Your session was locked after inactivity."
 msgstr "Oturumunuz hareketsizlikten sonra kilitlendi."

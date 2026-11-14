@@ -4971,3 +4971,33 @@ redirects (purchase orders, and the other records with a `/details` index).
 **Rule:** Before a script that calls the local Supabase API over portless, wake the stack (one request to the ERP URL), then run it with `NODE_EXTRA_CA_CERTS=$HOME/.portless/ca.pem`.
 
 **Applies to:** `pnpm db:seed:dev`, and any `tsx` script that calls `SUPABASE_URL` on a portless stack.
+
+## A PostgREST 416 has no error code in supabase-js: check the status
+
+**Context:** SCIM `listUsers` / `listGroups` page with `.range()` and `count: "exact"`. A `startIndex` past the last row makes PostgREST answer 416 (`PGRST103`); the fix first matched `error.code === "PGRST103"` (2026-11-05).
+
+**Problem:** Through Kong the 416 body arrived cut short (`{"`). supabase-js could not parse it, so `error` was `{ message: '{"' }` with no `code`, and the request still answered 500. Unit tests never saw it; only a live request did. The builder is also mutable, so re-reading the count from the same `query` after `.range()` reuses the range.
+
+**Rule:** Recognize an out-of-range page by `result.status === 416` (keep the code as a fallback), and build the count read from a query factory, not the builder you already ranged.
+
+**Applies to:** any supabase-js read that pages by offset with `.range()` (`packages/ee/src/scim/engine.server.ts` `isOffsetPastEnd`).
+
+## PostgREST `ilike` reads `*` as a wildcard
+
+**Context:** The SCIM endpoint matched `userName` with `.ilike("userName", escaped)` to compare without case (2026-10-30).
+
+**Problem:** Escaping `%` and `_` is not enough. PostgREST also reads `*` as an alias of `%`, and `*` is legal in an email local part. A filter for `a*@acme.com` matched `ab@acme.com`, so an identity provider could link the wrong person, and the duplicate check refused a new `userName` that only looked like an existing one.
+
+**Rule:** For an exact match without case on a value someone else sends, compare `lower(column) = lower(value)` over Kysely (`sql.ref`), or store a lowercased column. Never use `.ilike` or `.like` for equality.
+
+**Applies to:** every `.ilike(` / `.like(` in `apps/*/app` and `packages/*/src` whose value is not a search the user typed.
+
+## An external system must not see success before Carbon acts on it
+
+**Context:** SCIM deactivation stored `scimUser.active = false` first, then ran `deactivateUser` and the API-key delete, and answered 200 whatever they returned (2026-10-30).
+
+**Problem:** If a step failed, the identity provider saw success and never sent the change again. The person kept their membership or their API key, which is the exact access the feature exists to remove.
+
+**Rule:** When a caller retries only on failure (an IdP, a webhook sender), store the new state after the side effects that grant or remove access succeed. Answer 5xx when one of them fails, so the retry runs them again. Each step must be idempotent.
+
+**Applies to:** `packages/ee/src/scim/engine.server.ts` and any inbound sync or webhook handler that changes access.

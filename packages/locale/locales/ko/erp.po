@@ -518,6 +518,10 @@ msgstr "{0} 라인"
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "구성원 {0}명"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1470,6 +1474,9 @@ msgstr "1개 작업이 생성됨"
 
 msgid "1 line"
 msgstr "1 라인"
+
+msgid "1 member"
+msgstr "구성원 1명"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1개 부품이 건너뜀 — 이미 활성 작업이 있음"
@@ -3034,6 +3041,9 @@ msgstr "로그인할 때 인증 앱의 코드를 입력하도록 요구하여 �
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "각 라우팅 공정의 예상 시간과 스캔 바코드를 나열하는 공정 섹션을 추가합니다."
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Okta 또는 Microsoft Entra ID에서 구성원을 자동으로 추가하고 제거하여, IT 팀이 퇴사 처리한 사람이 Carbon에 대한 접근 권한을 잃도록 합니다."
 
 msgid "Add another option"
 msgstr "옵션 추가"
@@ -7015,6 +7025,9 @@ msgstr "공급업체 선택"
 msgid "Choose suppliers"
 msgstr "공급업체 선택"
 
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "각 그룹이 구성원에게 부여할 직원 유형을 선택하세요. 한 사람이 둘 이상의 그룹에 속해 있으면 상위 그룹의 설정이 적용됩니다."
+
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "현재 기간 또는 그 이전 3개 기간 중 하나의 첫 날을 선택하세요."
 
@@ -9888,6 +9901,9 @@ msgstr "기본 참조자"
 msgid "Default CC Recipients"
 msgstr "기본 참조(CC) 수신자"
 
+msgid "Default employee type"
+msgstr "기본 직원 유형"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "고정자산 처분으로 이익이 발생할 때 입금되는 기본 GL 계정입니다."
 
@@ -9905,6 +9921,9 @@ msgstr "정기 감가상각 처리에 대한 기본 총계정원장 비용 계�
 
 msgid "Default horizon (days)"
 msgstr "기본 호라이즌(일)"
+
+msgid "Default location"
+msgstr "기본 사업장"
 
 msgid "Default Method"
 msgstr "기본 방법"
@@ -12029,6 +12048,10 @@ msgstr "직원 환급금 매입채무"
 msgid "Employee Type"
 msgstr "직원 유형"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0}의 직원 유형"
+
 msgid "Employee Types"
 msgstr "직원 유형"
 
@@ -12315,6 +12338,9 @@ msgstr "인증자 앱에서 6자리 코드를 입력하세요"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "계속하려면 인증 앱의 6자리 코드를 입력하세요."
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "ID 공급자의 프로비저닝 설정에 기본 URL과 이 토큰을 입력하세요. 이 토큰은 한 번만 표시됩니다."
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "개인 OAuth 애플리케이션의 Onshape URL, 클라이언트 ID 및 클라이언트 암호를 입력한 후 저장하세요."
@@ -14211,6 +14237,9 @@ msgstr "자재 속성을 기반으로 자재 ID와 설명을 생성합니다."
 msgid "Generate Picking List"
 msgstr "피킹 리스트 생성"
 
+msgid "Generate token"
+msgstr "토큰 생성"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "동작 계획에서 {created}개 단계 생성"
 
@@ -14541,6 +14570,9 @@ msgstr "그룹화 기준"
 
 msgid "Group by material"
 msgstr "재료별로 그룹화"
+
+msgid "Group Mappings"
+msgstr "그룹 매핑"
 
 msgid "Group Members"
 msgstr "그룹 구성원"
@@ -14909,6 +14941,9 @@ msgstr "이 계측기를 재교정해야 하는 빈도입니다. 마지막 교�
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "이 유지보수가 반복되는 빈도입니다 — 매일, 매주, 매월, 순환 실사 시; 매일을 선택하면 요일 선택 옵션이 표시되고 나머지는 더 간단한 간격 계산을 사용합니다."
+
+msgid "How SCIM works"
+msgstr "SCIM 작동 방식"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "이 공정에서 공정이 배치를 공유하기 위해 각 자재 속성이 얼마나 엄격하게 일치해야 하는지"
@@ -16665,6 +16700,9 @@ msgstr "마지막 푸시: {lastPushed}"
 msgid "Last Quarter"
 msgstr "지난 분기"
 
+msgid "Last request"
+msgstr "마지막 요청"
+
 msgid "Last run"
 msgstr "최근 실행"
 
@@ -16912,6 +16950,9 @@ msgstr "멤버가 SAML을 통한 ID 제공자로 로그인하도록 허용합니
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "프로젝트 주식이 있는 프로젝트가 이 위치에서 이 항목의 예비 미할당 주식을 사용하도록 허용"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "ID 공급자가 SCIM을 통해 구성원을 추가, 업데이트, 제거하도록 하세요."
 
 msgid "Let's Build"
 msgstr "제조해 봅시다"
@@ -18087,6 +18128,9 @@ msgstr "구성원"
 
 msgid "Members"
 msgstr "구성원"
+
+msgid "Members in no mapped group get this type"
+msgstr "매핑된 그룹에 속하지 않은 구성원은 이 유형을 받습니다."
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "구성원들이 MRP에서 소요량을 함께 순계산합니다. 그룹은 프로젝트의 사업장에 있어야 합니다."
@@ -23467,6 +23511,12 @@ msgstr "임시 전표"
 msgid "Provisional rate"
 msgstr "임시 요율"
 
+msgid "Provisioned members"
+msgstr "프로비저닝된 구성원"
+
+msgid "Provisioning"
+msgstr "프로비저닝"
+
 msgid "PTO"
 msgstr "휴가"
 
@@ -24613,11 +24663,17 @@ msgstr "조건에서 재생성"
 msgid "Regenerate payments from the terms?"
 msgstr "조건에서 지불을 재생성하시겠습니까?"
 
+msgid "Regenerate SCIM token"
+msgstr "SCIM 토큰 재생성"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "이 사업장의 일정을 지금 다시 생성하세요. 마지막 일정 변경 후 약 30초에 자동으로 실행됩니다(편집이 일괄 처리되므로 여러 빠른 변경으로 인해 단일 재생성이 트리거됩니다)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D 모델에서 썸네일 재생성"
+
+msgid "Regenerate token"
+msgstr "토큰 재생성"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "모션 계획에서 {created}개 단계 재생성함"
@@ -26634,6 +26690,15 @@ msgstr "스케줄링 충돌"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "일정 충돌: 공정으로는 마감일을 맞출 수 없음"
 
+msgid "SCIM base URL"
+msgstr "SCIM 기본 URL"
+
+msgid "SCIM Connection"
+msgstr "SCIM 연결"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM 프로비저닝"
+
 msgid "Scope"
 msgstr "범위"
 
@@ -27626,6 +27691,9 @@ msgstr "보고서, 전표, 회계 기간, 감가상각 실행 등을 사용하�
 
 msgid "Set up authenticator app"
 msgstr "인증자 앱 설정"
+
+msgid "Set up SCIM"
+msgstr "SCIM 설정"
 
 msgid "Set up the right way"
 msgstr "올바른 방식으로 설정하기"
@@ -30296,6 +30364,9 @@ msgstr "거래에 사용하는 통화와 환율"
 msgid "The current plan changed under this change request"
 msgstr "현재 계획이 이 변경 요청에서 변경되었습니다"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "현재 토큰은 즉시 작동을 멈춥니다. ID 공급자에 새 토큰을 입력할 때까지 프로비저닝이 중단됩니다."
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "고객이 실질적으로 개를 구매합니다. 개시일에 귀사의 고정자산에서 제거되고, 판매가 전기되며, 약관 기간 동안 미수금에 대한 이자가 발생합니다."
 
@@ -32343,6 +32414,9 @@ msgstr "사이드바 전환"
 msgid "Toggle views"
 msgstr "보기 전환"
 
+msgid "Token"
+msgstr "토큰"
+
 msgid "Tol-"
 msgstr "공차-"
 
@@ -32773,8 +32847,14 @@ msgstr "다시 시도"
 msgid "Tuesday"
 msgstr "화요일"
 
+msgid "Turn off"
+msgstr "끄기"
+
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr "SCIM 프로비저닝 끄기"
 
 msgid "Turn On"
 msgstr "켜기"
@@ -35227,6 +35307,15 @@ msgstr "내보내기를 준비하고 있습니다. 준비가 끝나면 알려 �
 msgid "Your GL accounts"
 msgstr "총계정원장 계정"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "ID 공급자가 관리하는 구성원을 추가, 업데이트, 삭제합니다."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "ID 제공자는 더 이상 멤버를 추가하거나 제거할 수 없습니다. 프로비저닝한 멤버는 그대로 유지되며, SCIM을 다시 설정하면 중단된 지점부터 이어집니다."
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "아이덴티티 제공자는 아래의 기본 직원 유형과 사업장으로 구성원을 만듭니다. 제공자가 그룹을 보낸 뒤에는 그 그룹을 직원 유형에 매핑하세요."
+
 msgid "your Implementation Lead"
 msgstr "귀사의 실행 리드"
 
@@ -35277,6 +35366,9 @@ msgstr "실제 데이터가 로드되었고 샘플을 확인하여 승인했습�
 
 msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
+
+msgid "Your SCIM token"
+msgstr "SCIM 토큰"
 
 msgid "Your session was locked after inactivity."
 msgstr "세션이 비활성으로 인해 잠겼습니다."

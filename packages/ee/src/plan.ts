@@ -41,7 +41,10 @@ export const FEATURE_PLANS = {
   // Cost Plus billing, Percent Complete revenue and the contract loss provision.
   PROJECT_REVENUE: [Plan.Business, Plan.Partner],
   // Indirect rates, burden, earned value and project budget control (spec 2026-10-09, Q1).
-  GOVERNMENT_CONTRACTING: [Plan.Business, Plan.Partner]
+  GOVERNMENT_CONTRACTING: [Plan.Business, Plan.Partner],
+  // SCIM 2.0 provisioning: an identity provider adds, updates and removes
+  // employees at /scim/v2 (`@carbon/ee/scim.server`).
+  SCIM: [Plan.Business, Plan.Partner]
 } as const satisfies Record<string, Plan[]>;
 
 export type Feature = keyof typeof FEATURE_PLANS;

@@ -518,6 +518,10 @@ msgstr "{0} 明細"
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "メンバー {0} 名"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1470,6 +1474,9 @@ msgstr "1件のジョブが作成されました"
 
 msgid "1 line"
 msgstr "1明細"
+
+msgid "1 member"
+msgstr "メンバー 1 名"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1個の部品はスキップ済 — 既に進行中の製造指図があります"
@@ -3034,6 +3041,9 @@ msgstr "認証器アプリからのコードを要求することで、サイン
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "各工順工程とその予想時間及びスキャンバーコードをリストアップした工程セクションを追加します。"
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Okta または Microsoft Entra ID からメンバーを自動的に追加・除去します。IT チームが退職処理を行った人は、Carbon へのアクセス権を失います。"
 
 msgid "Add another option"
 msgstr "別のオプションを追加"
@@ -7015,6 +7025,9 @@ msgstr "仕入先を選択"
 msgid "Choose suppliers"
 msgstr "仕入先を選択"
 
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "各グループがメンバーに付与する従業員タイプを選択してください。複数のグループに所属している場合は、上位のグループの設定が優先されます。"
+
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "当期または前3会計期間のいずれかの初日を選択してください。"
 
@@ -9888,6 +9901,9 @@ msgstr "デフォルトCC"
 msgid "Default CC Recipients"
 msgstr "デフォルトCC受信者"
 
+msgid "Default employee type"
+msgstr "既定の従業員タイプ"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "固定資産の除却により利益が生じた場合にクレジットされるデフォルト勘定科目"
 
@@ -9905,6 +9921,9 @@ msgstr "定期的な減価償却実行のデフォルトGL費用勘定科目"
 
 msgid "Default horizon (days)"
 msgstr "デフォルト計画期間（日数）"
+
+msgid "Default location"
+msgstr "既定の拠点"
 
 msgid "Default Method"
 msgstr "デフォルト方法"
@@ -12029,6 +12048,10 @@ msgstr "従業員払戻金"
 msgid "Employee Type"
 msgstr "従業員タイプ"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} の従業員タイプ"
+
 msgid "Employee Types"
 msgstr "従業員タイプ"
 
@@ -12315,6 +12338,9 @@ msgstr "認証アプリから6桁のコードを入力してください"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "認証器アプリから6桁のコードを入力して再開します。"
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "IDプロバイダーのプロビジョニング設定に、ベースURLとこのトークンを入力してください。このトークンは一度だけ表示されます。"
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "プライベートOAuthアプリケーションのOnshape URL、クライアントID、クライアントシークレットを入力して保存します。"
@@ -14211,6 +14237,9 @@ msgstr "材料のプロパティに基づいて材料IDと説明を生成しま�
 msgid "Generate Picking List"
 msgstr "ピッキングリストを生成"
 
+msgid "Generate token"
+msgstr "トークンを生成"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "モーションプランから {created} ステップを生成"
 
@@ -14541,6 +14570,9 @@ msgstr "グループ化"
 
 msgid "Group by material"
 msgstr "材料でグループ化"
+
+msgid "Group Mappings"
+msgstr "グループマッピング"
 
 msgid "Group Members"
 msgstr "グループメンバー"
@@ -14909,6 +14941,9 @@ msgstr "この測定器をどのくらい頻繁に再校正する必要がある
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "この保全がどのくらい頻繁に繰り返されるか — 毎日、毎週、毎月、循環棚卸時。毎日の場合は曜日セレクタが表示され、その他は単純な間隔計算を使用します"
+
+msgid "How SCIM works"
+msgstr "SCIM の仕組み"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "このプロセスで工程がバッチを共有する場合、各材料特性がどの程度厳密に一致する必要があるか"
@@ -16665,6 +16700,9 @@ msgstr "最終プッシュ: {lastPushed}"
 msgid "Last Quarter"
 msgstr "前四半期"
 
+msgid "Last request"
+msgstr "最終リクエスト"
+
 msgid "Last run"
 msgstr "最後の実行"
 
@@ -16912,6 +16950,9 @@ msgstr "SAMLを使用してIDプロバイダーを通じてメンバーがサイ
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "この拠点のこの品目の予備未割当在庫を使用するプロジェクト在庫を持つプロジェクトを許可"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "IDプロバイダーが SCIM を使ってメンバーを追加、更新、除去できるようにします。"
 
 msgid "Let's Build"
 msgstr "ビルドしましょう"
@@ -18087,6 +18128,9 @@ msgstr "メンバー"
 
 msgid "Members"
 msgstr "メンバー"
+
+msgid "Members in no mapped group get this type"
+msgstr "割り当て済みのグループに属さないメンバーには、このタイプが適用されます。"
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "メンバーはMRPで所要量を相殺します。グループはプロジェクトの拠点にある必要があります"
@@ -23467,6 +23511,12 @@ msgstr "仮仕訳"
 msgid "Provisional rate"
 msgstr "暫定レート"
 
+msgid "Provisioned members"
+msgstr "プロビジョニング済みメンバー"
+
+msgid "Provisioning"
+msgstr "プロビジョニング"
+
 msgid "PTO"
 msgstr "PTO"
 
@@ -24613,11 +24663,17 @@ msgstr "支払条件から再生成"
 msgid "Regenerate payments from the terms?"
 msgstr "支払条件から支払を再生成しますか？"
 
+msgid "Regenerate SCIM token"
+msgstr "SCIM トークンを再生成"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "この拠点のスケジュールを今すぐ再生成してください。最後のスケジュール変更から約30秒後に自動的にも実行されます（編集はバッチ処理されるため、いくつかの迅速な変更により1つの再生成がトリガーされます）。"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3Dモデルからサムネイルを再生成"
+
+msgid "Regenerate token"
+msgstr "トークンを再生成"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "モーション計画から{created}個のステップを再生成しました"
@@ -26634,6 +26690,15 @@ msgstr "スケジュール競合"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "スケジュールの競合：工程では期日に間に合わせられません"
 
+msgid "SCIM base URL"
+msgstr "SCIM ベースURL"
+
+msgid "SCIM Connection"
+msgstr "SCIM 接続"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM プロビジョニング"
+
 msgid "Scope"
 msgstr "スコープ"
 
@@ -27626,6 +27691,9 @@ msgstr "レポート、仕訳、会計期間、減価償却実行などを使用
 
 msgid "Set up authenticator app"
 msgstr "認証アプリをセットアップ"
+
+msgid "Set up SCIM"
+msgstr "SCIM を設定"
 
 msgid "Set up the right way"
 msgstr "正しい方法でセットアップ"
@@ -30296,6 +30364,9 @@ msgstr "あなたが取引する通貨とそのレート"
 msgid "The current plan changed under this change request"
 msgstr "この変更要求の下で現在の計画が変更されました"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "現在のトークンは直ちに使えなくなります。IDプロバイダーに新しいトークンを入力するまで、プロビジョニングは停止します。"
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "得意先は事実上その単位を購入します。開始時点で固定資産から外れ、販売が記録され、契約期間にわたって受取利息が発生します。"
 
@@ -32343,6 +32414,9 @@ msgstr "サイドバーを切り替え"
 msgid "Toggle views"
 msgstr "ビューを切り替える"
 
+msgid "Token"
+msgstr "トークン"
+
 msgid "Tol-"
 msgstr "許容差-"
 
@@ -32773,8 +32847,14 @@ msgstr "もう一度お試しください"
 msgid "Tuesday"
 msgstr "火曜日"
 
+msgid "Turn off"
+msgstr "オフにする"
+
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn off SCIM provisioning"
+msgstr "SCIM プロビジョニングをオフにする"
 
 msgid "Turn On"
 msgstr "オンにする"
@@ -35227,6 +35307,15 @@ msgstr "エクスポートを準備しています。準備ができたら通知
 msgid "Your GL accounts"
 msgstr "あなたのGL勘定"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "IDプロバイダーは、管理対象のメンバーを追加、更新、削除します。"
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "ID プロバイダーはメンバーを追加または除去できなくなります。プロビジョニング済みのメンバーはそのまま維持され、SCIM を再設定すると中断したところから再開されます。"
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "IDプロバイダーは、下記のデフォルトの従業員タイプと拠点でメンバーを作成します。プッシュ後に、そのグループを従業員タイプに対応付けてください。"
+
 msgid "your Implementation Lead"
 msgstr "あなたの実施リード"
 
@@ -35277,6 +35366,9 @@ msgstr "あなたの実際のデータが読み込まれ、サンプルを確認
 
 msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
+
+msgid "Your SCIM token"
+msgstr "SCIMトークン"
 
 msgid "Your session was locked after inactivity."
 msgstr "非アクティブのためセッションがロック中になりました。"
