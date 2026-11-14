@@ -7,7 +7,7 @@
 
 services:
   postgres:
-    image: supabase/postgres:17.6.1.166
+    image: supabase/postgres:17.6.1.166@sha256:b3bfedb107413abb3b8cb0d0874b0414a1dceb3d55bc0c778de6ad22d1f7dc86
     restart: on-failure
     deploy:
       resources:
@@ -81,7 +81,7 @@ services:
   # SUPABASE_DB_URL. PgBouncer rather than Supavisor: the same transaction
   # semantics in a few MB.
   pgbouncer:
-    image: edoburu/pgbouncer:v1.25.2-p0
+    image: edoburu/pgbouncer:v1.25.2-p0@sha256:7d7a27d9e90985cab5cf42256f5c13a3120baa4b055b69df37beb272b89b2340
     restart: on-failure
     deploy:
       resources:
@@ -110,7 +110,7 @@ services:
       MAX_CLIENT_CONN: 200
 
   storage:
-    image: supabase/storage-api:v1.89.12
+    image: supabase/storage-api:v1.89.12@sha256:8526956cb462e9f7d392e9848ec77133b2769982ed614e9753cc687e8e4339a6
     restart: on-failure
     # "storage" is also the shared Storage on carbon-shared, where Envoy is too.
     networks:
@@ -159,7 +159,7 @@ services:
   # Internal only — never publish a port: direct imgproxy access reads the
   # storage volume with no RLS.
   imgproxy:
-    image: darthsim/imgproxy:v4.0.21
+    image: darthsim/imgproxy:v4.0.21@sha256:69ae09dbc3349944564cb2f66cf35f80a4a9a78fda73d06061a337849520ab1f
     restart: on-failure
     profiles: ["full"]
     deploy:
@@ -182,7 +182,7 @@ services:
       - storage:/var/lib/storage:z
 
   inbucket:
-    image: inbucket/inbucket:3.1.1
+    image: inbucket/inbucket:3.1.1@sha256:4a4c4cf553967e1863e4f48c828774786ac9ee73c53b3a3ecef10f66e5a2cdfb
     restart: on-failure
     # "inbucket" is also the shared Inbucket on carbon-shared, where GoTrue is too.
     networks:

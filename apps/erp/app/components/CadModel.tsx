@@ -517,7 +517,7 @@ const CadModelUpload = ({
           {!isReadOnly && (
             <div {...getRootProps()}>
               <input {...getInputProps()} name="file" className="sr-only" />
-              <Button variant="secondary" leftIcon={<LuCloudUpload />}>
+              <Button variant="primary" leftIcon={<LuCloudUpload />}>
                 <Trans>Upload</Trans>
               </Button>
             </div>

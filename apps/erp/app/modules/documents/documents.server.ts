@@ -180,9 +180,13 @@ export const cancelModelOptimize = defineServiceFn({
             : {},
           signal: AbortSignal.timeout(5000)
         }
-      ).catch(() => {
+      ).catch((error) => {
         // The row is already Failed. A missed cancel only means the compute
         // finishes and flips it to Success, and that artifact is real.
+        logger.warning("Failed to cancel the assembler optimise job", {
+          modelUploadId,
+          error
+        });
       });
     }
 

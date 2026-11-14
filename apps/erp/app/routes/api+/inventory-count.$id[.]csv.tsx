@@ -14,7 +14,7 @@ import {
 } from "~/modules/inventory/inventory.utils";
 import { getDatabaseClient } from "~/services/database.server";
 
-const logger = getLogger("erp", "api/inventory-count.csv");
+const logger = getLogger("erp", "inventory", "count-csv");
 
 // One row per unit of a count, in the columns the count import reads. A
 // blind count leaves out the units not counted yet and the Missing ones.

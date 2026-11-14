@@ -51,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId
     );
     if (!canViewProjects) {
-      logger.warn("Refused the revisions of another user's entry", {
+      logger.warning("Refused the revisions of another user's entry", {
         companyId,
         entryId
       });

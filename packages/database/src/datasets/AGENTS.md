@@ -160,6 +160,12 @@ only reads those and reports; the `RULES` order is the order violations are list
 in, not a dependency. A new check goes in its slice's rule; a fact two slices share
 goes in the index.
 
+A dataset with `walkthrough: true` (today only the dev-only `motor-line`) gets
+only the structural rules (`WALKTHROUGH_RULES`), with coverage off, and no
+`coverage.ts` floors (`coverageFloorsFor`). `datasetScope` refuses it with an
+`industryId` or with rows in a slice whose rules do not run. See
+`.claude/rules/onboarding-company-templates.md` → Walkthrough datasets.
+
 `db:check:datasets` runs `validateDataset` first with no database (it still blocks when the
 stack is down), then applies each dataset to a scratch company, asserts the `COVERAGE_FLOORS`
 row counts (plus that dataset's `DATASET_COVERAGE_FLOORS`), and rolls back. On failure it prints the violation list or the error plus the last

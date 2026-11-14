@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import {
   type Driver,
   Kysely,
@@ -15,6 +16,8 @@ import {
 import type { KyselifyDatabase } from "kysely-supabase";
 import * as pg from "pg";
 import type { Database as SupabaseDatabase } from "./types";
+
+const logger = getLogger("database");
 
 export type KyselyDatabase = KyselifyDatabase<SupabaseDatabase>;
 export type DB = KyselyDatabase;
@@ -149,7 +152,7 @@ function createPostgresConnectionPool(connections: number): pg.Pool {
   // pg-pool purges the broken client before emitting 'error'; the listener
   // exists because an unlistened EventEmitter 'error' crashes the process.
   pool.on("error", (err) => {
-    console.error("postgres pool: idle client error", err);
+    logger.error("Postgres pool idle client error", { error: err });
   });
   return pool;
 }

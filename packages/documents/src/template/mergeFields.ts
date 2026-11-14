@@ -277,6 +277,7 @@ const TRACKING_LABEL_MERGE_FIELDS = [
   value("label.trackingType", "Tracking Type", "Label"),
   value("label.number", "Serial / Batch Number", "Label"),
   value("label.trackedEntityId", "Tracked Entity ID", "Label"),
+  value("label.travelerUrl", "Traveler Link", "Label"),
   value("company.name", "Company Name", "Company"),
   value("company.city", "Company City", "Company"),
   value("company.country", "Company Country", "Company")

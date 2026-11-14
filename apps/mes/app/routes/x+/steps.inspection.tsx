@@ -72,12 +72,15 @@ export async function action({ request }: ActionFunctionArgs) {
         (operations.data ?? []).length !== operationIds.length ||
         (actions.data ?? []).length !== actionIds.length
       ) {
-        logger.warn("Inspection steps reference records outside the company", {
-          companyId,
-          operationIds,
-          actionIds,
-          error: operations.error ?? actions.error
-        });
+        logger.warning(
+          "Inspection steps reference records outside the company",
+          {
+            companyId,
+            operationIds,
+            actionIds,
+            error: operations.error ?? actions.error
+          }
+        );
         return data(
           { success: false, message: "Operation not found" },
           { status: 404 }

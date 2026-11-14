@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.customers,
       await flash(
         request,
-        error(customerDelete.error, customerDelete.error.message)
+        error(customerDelete.error, "Failed to delete the customer")
       )
     );
   }

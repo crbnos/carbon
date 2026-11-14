@@ -50,7 +50,7 @@ import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "accounting/chart-import");
+const logger = getLogger("erp", "accounting", "chart-import");
 
 export const handle: Handle = {
   breadcrumb: msg`Import Chart of Accounts`,
@@ -170,10 +170,6 @@ export async function action({ request }: ActionFunctionArgs) {
       review: { plan, rows: chart.rows, accounts, companies: ctx.companies }
     };
   } catch (err) {
-    logger.error("Failed to plan the chart of accounts import", {
-      companyId,
-      error: err
-    });
     return data(
       { files, review: null },
       await flash(request, error(err, "Failed to read the chart of accounts"))

@@ -237,6 +237,7 @@ export const MERGE_FIELD_NAMES: Record<string, MessageDescriptor> = {
   Transfer: msg`Transfer`,
   "Transfer Date": msg`Transfer Date`,
   "Transfer Number": msg`Transfer Number`,
+  "Traveler Link": msg`Traveler Link`,
   "Unit Price": msg`Unit Price`,
   "Unit of Measure": msg`Unit of Measure`
 };

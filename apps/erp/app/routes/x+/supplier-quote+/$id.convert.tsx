@@ -8,7 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { selectedLinesValidator } from "~/modules/purchasing/purchasing.models";
 import {
@@ -45,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   if (!parseResult.success) {
-    logger.error("Validation error:", parseResult.error);
+    logger.error("Invalid selected lines", { id, error: parseResult.error });
     throw redirect(
       path.to.supplierQuoteDetails(id),
       await flash(request, error(null, "Invalid selected lines data"))
@@ -107,10 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.supplierQuoteDetails(id),
       await flash(
         request,
-        error(
-          convert.error,
-          getErrorMessage(convert.error, "Failed to convert quote to order")
-        )
+        error(convert.error, "Failed to convert quote to order")
       )
     );
   }

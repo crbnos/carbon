@@ -58,19 +58,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .maybeSingle();
 
   if (peg.error || !peg.data || peg.data.state !== "Soft") {
-    if (peg.error) {
-      logger.error("Failed to load the peg", {
-        companyId,
-        projectId,
-        pegId,
-        error: peg.error
-      });
-    }
     throw redirect(
       path.to.projectPegging(projectId),
       await flash(
         request,
-        error(peg.error, "The peg has changed. Reload the page.")
+        error(peg.error, "The peg has changed. Reload the page.", {
+          projectId,
+          pegId
+        })
       )
     );
   }

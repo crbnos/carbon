@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { fixedAssetAttachJobValidator } from "~/modules/accounting/accounting.models";
@@ -121,13 +121,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (result.error) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
-      await flash(
-        request,
-        error(
-          result.error,
-          getErrorMessage(result.error, "Failed to attach the job")
-        )
-      )
+      await flash(request, error(result.error, "Failed to attach the job"))
     );
   }
 

@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -16,8 +15,6 @@ import LaborCategoriesTable from "~/modules/projects/ui/LaborCategories/LaborCat
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
-
-const logger = getLogger("erp", "labor-categories");
 
 export const handle: Handle = {
   breadcrumb: msg`Labor Categories`,
@@ -45,10 +42,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (categories.error) {
-    logger.error("Failed to load labor categories", {
-      companyId,
-      error: categories.error
-    });
     throw redirect(
       path.to.projects,
       await flash(

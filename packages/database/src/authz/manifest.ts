@@ -146,6 +146,22 @@ const managedAttribute = through(
 );
 
 /**
+ * The operation and the item a material request names are the request's own
+ * company: their FKs are single-column (jobOperation and item have no unique
+ * (id, companyId) to point a composite FK at).
+ */
+const materialRequestReferences = and(
+  or(
+    isNull("jobOperationId"),
+    exists("jobOperation", "jobOperationId", "employee", { sameCompany: true })
+  ),
+  or(
+    isNull("itemId"),
+    exists("item", "itemId", "employee", { sameCompany: true })
+  )
+);
+
+/**
  * A project table, governed by projects_* (any employee reads) in its project's company.
  * `column` names the row's project, or its element with `via: "projectElement"`;
  * `project` itself passes "id".
@@ -229,7 +245,15 @@ export const manifest = {
   agentThread: policies({
     all: and(owner("userId"), inCompany("companyId", "employee"))
   }),
-  apiKey: company("settings", { read: "settings_view" }),
+  // Keys are written only by the server (createApiKey / updateApiKey / revokeApiKey,
+  // gated on users_update). A key acts as its createdBy with its scopes, so a write
+  // through the API would let a caller pick both, and the key hash, themselves.
+  apiKey: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   apiKeyRateLimit: policies({
     select: exists("apiKey", "apiKeyId", "settings_view")
   }),
@@ -1111,6 +1135,26 @@ export const manifest = {
     insert: inCompany("companyId", "parts_create"),
     update: inCompany("companyId", "parts_update"),
     delete: inCompany("companyId", "parts_delete")
+  }),
+  // Any employee raises a "Need material" request, as its author: the insert
+  // requires createdBy to be the caller, so a request cannot be filed in
+  // another user's name (and give that user the author's resolve right). A
+  // line feeder (inventory_update) or its author resolves it. USING is also
+  // the CHECK, so an update never moves a row to another company, nor points
+  // it at another company's operation or item.
+  materialRequest: company("inventory", {
+    create: and(
+      owner("createdBy"),
+      inCompany("companyId", "employee"),
+      materialRequestReferences
+    ),
+    update: and(
+      or(
+        inCompany("companyId", "inventory_update"),
+        and(owner("createdBy"), inCompany("companyId", "employee"))
+      ),
+      materialRequestReferences
+    )
   }),
   materialSubstance: policies({
     select: or(isNull("companyId"), inCompany("companyId", "parts_view")),

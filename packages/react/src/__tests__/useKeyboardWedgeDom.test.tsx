@@ -217,4 +217,23 @@ describe("useKeyboardWedge", () => {
     await act(async () => settle());
     expect(pending).toBe(false);
   });
+
+  it("stays pending while onUnrecognized runs, and ignores a second scan meanwhile", async () => {
+    let settle: () => void = () => undefined;
+    const onUnrecognized = vi.fn(
+      () => new Promise<void>((resolve) => (settle = resolve))
+    );
+    mount({ test: () => false, callback: vi.fn(), onUnrecognized });
+
+    act(() => void scan("LOT-2026-0042"));
+    expect(pending).toBe(true);
+
+    vi.advanceTimersByTime(1000);
+    const second = scan("LOT-2026-0042");
+    expect(onUnrecognized).toHaveBeenCalledTimes(1);
+    expect(second?.defaultPrevented).toBe(true);
+
+    await act(async () => settle());
+    expect(pending).toBe(false);
+  });
 });

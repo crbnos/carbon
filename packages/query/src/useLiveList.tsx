@@ -248,7 +248,7 @@ export function LiveLists({
         // An absolute instant, only ever compared with another one.
         await idb.setItem(storedAtKey(key), Date.now());
       } catch (error) {
-        logger.warn("live list not stored", { list: list.name, error });
+        logger.warning("live list not stored", { list: list.name, error });
       }
     },
     [queryClient, storage, companyId, userId]
@@ -305,7 +305,7 @@ export function LiveLists({
       if (error?.code === NOT_A_MEMBER) {
         // The user left this company while the page was open: nothing of its
         // lists stays in memory or on the device.
-        logger.warn("live lists dropped: no longer a member", { companyId });
+        logger.warning("live lists dropped: no longer a member", { companyId });
         // Memory first, and without storage: a blocked or failing IndexedDB
         // must not leave the company's rows on the page.
         for (const list of lists) {
@@ -320,7 +320,7 @@ export function LiveLists({
             )
           );
         } catch (error) {
-          logger.warn("stored live lists not removed", { companyId, error });
+          logger.warning("stored live lists not removed", { companyId, error });
         }
         return;
       }
@@ -426,7 +426,7 @@ export function LiveLists({
           })
         );
       } catch (error) {
-        logger.warn("stored live lists not read", { error });
+        logger.warning("stored live lists not read", { error });
       }
       if (cancelled || !ready) return;
       await sync(lists);
@@ -458,11 +458,11 @@ export function LiveLists({
         try {
           await prune(await storage());
         } catch (error) {
-          logger.warn("stored live lists not pruned", { error });
+          logger.warning("stored live lists not pruned", { error });
         }
         if (document.visibilityState === "visible") await sync(lists);
       })().catch((error) =>
-        logger.warn("live list background check failed", { error })
+        logger.warning("live list background check failed", { error })
       );
     }, BACKGROUND_CHECK_MS);
     return () => clearInterval(timer);

@@ -23,7 +23,7 @@
 # terminal had died back to life on each Docker start.
 services:
   gotrue:
-    image: supabase/gotrue:v2.197.0
+    image: supabase/gotrue:v2.197.0@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b
     restart: on-failure
     # On carbon-shared every worktree's gotrue answers to "gotrue", so
     # Envoy reaches it by this alias, which only this project has.
@@ -83,10 +83,10 @@ services:
       - "host.docker.internal:host-gateway"
       - "${DOMAIN}:host-gateway"
     volumes:
-      - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
+      - ${PORTLESS_CA_FILE:-${HOME}/.portless/ca.pem}:/etc/ssl/certs/portless-ca.pem:ro
 
   postgrest:
-    image: postgrest/postgrest:v13.0.8
+    image: postgrest/postgrest:v13.0.8@sha256:d09618df2b7b9547c80a076c2f4045b326be8d7ac06060d263caefec1334e3c9
     restart: on-failure
     # On carbon-shared every worktree's postgrest answers to "postgrest", so
     # Envoy reaches it by this alias, which only this project has.
@@ -120,7 +120,7 @@ services:
       PGRST_APP_SETTINGS_JWT_EXP: 3600
 
   realtime:
-    image: supabase/realtime:v2.148.3
+    image: supabase/realtime:v2.148.3@sha256:25cf375b9b7cb71d90cdf6e04a1a30996e39a8df866ebd0525bba1d959edc8d6
     restart: on-failure
     deploy:
       resources:
@@ -156,7 +156,7 @@ services:
       DISABLE_HEALTHCHECK_LOGGING: "true"
 
   meta:
-    image: supabase/postgres-meta:v0.100.0
+    image: supabase/postgres-meta:v0.100.0@sha256:145325b7e39f8ef4931d6e8cfd3f6f4d655de09d72a2ccc96d9513542c2202bd
     restart: on-failure
     # On carbon-shared every worktree's meta answers to "meta", so
     # Envoy reaches it by this alias, which only this project has.
@@ -180,7 +180,7 @@ services:
       PG_META_DB_PASSWORD: postgres
 
   studio:
-    image: supabase/studio:2026.11.02-sha-a05e7ec
+    image: supabase/studio:2026.11.02-sha-a05e7ec@sha256:727a7f37b15f4c76c44e0d765e6be231d8d71c67f2933b2df8c6cbcc9b04c5d0
     restart: on-failure
     deploy:
       resources:
@@ -217,7 +217,7 @@ services:
   # them. Without it (the default) Envoy sends /functions/v1/ to crbn-shared's
   # carbon-edge-runtime, which serves the functions crbn last copied.
   edge-runtime:
-    image: supabase/edge-runtime:v1.77.9
+    image: supabase/edge-runtime:v1.77.9@sha256:6b850a2ccf0bf50ecac9accff8098095cd191c389c2a53c59b857aa0f53a8343
     restart: on-failure
     profiles: ["full"]
     # Envoy reaches it by this alias: on carbon-shared, the bare name
@@ -256,7 +256,7 @@ services:
   # alias keeps internal URLs (http://kong:8000 in the config row, Studio, the
   # edge runtime) working.
   api-gw:
-    image: envoyproxy/envoy:v1.39.6
+    image: envoyproxy/envoy:v1.39.6@sha256:1fde8efee875e4e4f6a39a90fe49d9338e1caacce5762034ef9fb4bbb9ad6aed
     restart: on-failure
     deploy:
       resources:
@@ -311,7 +311,7 @@ services:
       - ./packages/dev/docker/envoy/docker-entrypoint.sh:/docker-entrypoint.sh:ro
 
   inngest:
-    image: inngest/inngest:v1.19.4
+    image: inngest/inngest:v1.19.4@sha256:d53a2edc9f1d5d9185fdb3a36f840a81533c19ba67109aed3a1b852f2db838d6
     restart: on-failure
     networks:
       default: {}
@@ -337,7 +337,7 @@ services:
       - "${INNGEST_TLS_HOST}:host-gateway"
     volumes:
       - inngest:/data
-      - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
+      - ${PORTLESS_CA_FILE:-${HOME}/.portless/ca.pem}:/etc/ssl/certs/portless-ca.pem:ro
 
 networks:
   carbon-shared:

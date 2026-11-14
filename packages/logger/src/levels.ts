@@ -41,19 +41,19 @@ export function parseLogLevel(
 }
 
 /**
- * Resolve the effective level for a runtime from `LOG_LEVEL`, with a sensible
- * default derived from `NODE_ENV`. Browser production is quieter (`warning`)
- * since client logs reach the user's devtools.
+ * The effective level for a runtime: `LOG_LEVEL`, else a default from
+ * `NODE_ENV`. Browser production is quieter (`warning`) since client logs reach
+ * the user's devtools; a test run shows only what went wrong.
  */
 export function resolveLevel(runtime: "server" | "browser"): CarbonLogLevel {
-  const isProd = readEnv("NODE_ENV") === "production";
+  const nodeEnv = readEnv("NODE_ENV");
   const fallback: CarbonLogLevel =
-    runtime === "browser"
-      ? isProd
-        ? "warning"
-        : "debug"
-      : isProd
-        ? "info"
-        : "debug";
+    nodeEnv === "test"
+      ? "warning"
+      : nodeEnv !== "production"
+        ? "debug"
+        : runtime === "browser"
+          ? "warning"
+          : "info";
   return parseLogLevel(readEnv("LOG_LEVEL"), fallback);
 }

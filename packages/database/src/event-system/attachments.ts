@@ -240,6 +240,7 @@ export const attachments = {
   makeMethod: { events: true },
   material: { statement: ["broadcast_table_changes"] },
   materialForm: { statement: ["broadcast_table_changes"] },
+  materialRequest: { statement: ["broadcast_table_changes"] },
   materialSubstance: { statement: ["broadcast_table_changes"] },
   materialType: { statement: ["broadcast_reference_changes"] },
   memo: { after: ["sync_advance_document_sequence"], events: true },

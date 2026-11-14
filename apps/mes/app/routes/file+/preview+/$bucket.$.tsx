@@ -58,7 +58,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   // slash-bounded), not a loose substring — `.includes(companyId)` lets
   // `<otherCo>/.../<yourCompanyId>.pdf` serve another company's private file.
   if (isUnsafeStoragePath(path)) {
-    log.warn("Refused a storage path that escapes its prefix", {
+    log.warning("Refused a storage path that escapes its prefix", {
       companyId,
       bucket,
       path
@@ -70,7 +70,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     decodedPath.startsWith(`${companyId}/`) ||
     decodedPath.includes(`/${companyId}/`);
   if (!ownsPath) {
-    log.warn("Refused file preview outside the caller's company", {
+    log.warning("Refused file preview outside the caller's company", {
       companyId,
       bucket,
       path
@@ -91,7 +91,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     bucket !== "public" &&
     bucket !== TEMP_STAGING_BUCKET
   ) {
-    log.warn("Refused file preview from another bucket", {
+    log.warning("Refused file preview from another bucket", {
       companyId,
       bucket
     });

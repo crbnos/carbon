@@ -3,7 +3,10 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+const logger = getLogger("ee", "accounting");
 
 /**
  * Resolve the composite `payment` external ids for a bare provider payment id.
@@ -41,9 +44,12 @@ export async function findPaymentCompositesByRemoteId(
     .like("externalId", `%${suffix}`);
 
   if (result.error) {
-    console.error(
-      `[PAYMENT TOMBSTONE] ${args.companyId}/${args.integration}: failed to resolve composites for payment ${args.paymentRemoteId}: ${result.error.message}`
-    );
+    logger.error("Payment tombstone failed to resolve composites for payment", {
+      companyId: args.companyId,
+      integration: args.integration,
+      paymentRemoteId: args.paymentRemoteId,
+      error: result.error
+    });
     return [];
   }
 

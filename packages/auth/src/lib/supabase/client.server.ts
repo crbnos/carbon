@@ -7,8 +7,8 @@ import {
   currentRequest,
   isReadRequest,
   oncePerRequest
-} from "@carbon/logger/middleware.server";
-import { startSpan } from "@carbon/logger/tracing.server";
+} from "@carbon/logger/context.server";
+import { startSpan } from "@carbon/logger/span";
 import { async } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SignJWT } from "jose";

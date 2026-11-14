@@ -157,7 +157,10 @@ function TrainingContent() {
       const response = await fetch(path.to.bulkUpdateTraining, {
         method: "post",
         body: formData
-      }).catch(() => null);
+      }).catch((error) => {
+        logger.warning("Failed to save the training content", { id, error });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         error?: { message: string } | null;
       } | null;

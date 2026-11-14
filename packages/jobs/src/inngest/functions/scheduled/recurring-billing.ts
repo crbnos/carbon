@@ -109,9 +109,7 @@ export const recurringBillingFunction = inngest.createFunction(
       );
     };
     const scheduled = await step.run("find-companies", async () => {
-      logger.info(
-        `Scheduled recurring billing started: ${datetime.timestamp()}`
-      );
+      logger.info("Scheduled recurring billing started");
 
       // One query for every company with an Active agreement or contract,
       // rather than a step per company that then finds nothing to bill.
@@ -271,16 +269,19 @@ export const recurringBillingFunction = inngest.createFunction(
                   }
                 );
               }
-              logger.info(
-                drafted.invoices.length > 0
-                  ? `Drafted ${drafted.invoices.length} rental invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
-                  : `Nothing due for ${company.name} as of ${asOf}`
-              );
+              logger.info("Drafted rental invoices", {
+                companyId: company.id,
+                asOf,
+                count: drafted.invoices.length,
+                invoiceIds: drafted.invoiceIds
+              });
               // Early-return credits are Draft credit memos a person posts.
               if (drafted.creditMemos.length > 0) {
-                logger.info(
-                  `Drafted ${drafted.creditMemos.length} rental credit memo(s) for ${company.name} as of ${asOf}`
-                );
+                logger.info("Drafted rental credit memos", {
+                  companyId: company.id,
+                  asOf,
+                  count: drafted.creditMemos.length
+                });
               }
 
               return {
@@ -332,7 +333,8 @@ export const recurringBillingFunction = inngest.createFunction(
               );
               if (result.gated) {
                 logger.info(
-                  `Cost Plus items skipped for ${company.name}: the company does not have Project Revenue`
+                  "Cost Plus items skipped: the company does not have Project Revenue",
+                  { companyId: company.id }
                 );
               }
               return { asOf, ...result };
@@ -380,11 +382,12 @@ export const recurringBillingFunction = inngest.createFunction(
                   }
                 );
               }
-              logger.info(
-                drafted.invoices.length > 0
-                  ? `Drafted ${drafted.invoices.length} project billing invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
-                  : `No project billing invoices due for ${company.name} as of ${asOf}`
-              );
+              logger.info("Drafted project billing invoices", {
+                companyId: company.id,
+                asOf,
+                count: drafted.invoices.length,
+                invoiceIds: drafted.invoiceIds
+              });
 
               return {
                 asOf,
@@ -445,11 +448,12 @@ export const recurringBillingFunction = inngest.createFunction(
                   }
                 );
               }
-              logger.info(
-                drafted.invoices.length > 0
-                  ? `Drafted ${drafted.invoices.length} contract invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
-                  : `No contract invoices due for ${company.name} as of ${asOf}`
-              );
+              logger.info("Drafted contract invoices", {
+                companyId: company.id,
+                asOf,
+                count: drafted.invoices.length,
+                invoiceIds: drafted.invoiceIds
+              });
 
               return {
                 invoices: drafted.invoices,
@@ -556,11 +560,12 @@ export const recurringBillingFunction = inngest.createFunction(
                   error: failure.error
                 });
               }
-              logger.info(
-                drafted.invoices.length > 0
-                  ? `Drafted ${drafted.invoices.length} lease invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
-                  : `No lease payments due for ${company.name} as of ${asOf}`
-              );
+              logger.info("Drafted lease invoices", {
+                companyId: company.id,
+                asOf,
+                count: drafted.invoices.length,
+                invoiceIds: drafted.invoiceIds
+              });
 
               return {
                 invoices: drafted.invoices,
@@ -609,7 +614,10 @@ export const recurringBillingFunction = inngest.createFunction(
               today
             );
             if (expired > 0) {
-              logger.info(`Expired ${expired} lease(s) for ${company.name}`);
+              logger.info("Expired leases", {
+                companyId: company.id,
+                count: expired
+              });
             }
             return expired;
           });

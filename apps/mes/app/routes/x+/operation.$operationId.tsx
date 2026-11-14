@@ -35,6 +35,7 @@ import {
   getThumbnailPathByItemId,
   getTrackedEntitiesForOperation,
   getWorkCenter,
+  isFirstOpenOperationOfMakeMethod,
   isFirstOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
@@ -130,7 +131,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null
   ]);
   if (!ownedOperation.data || (ownedEntity && !ownedEntity.data)) {
-    logger.warn("Operation or tracked entity not found in company", {
+    logger.warning("Operation or tracked entity not found in company", {
       companyId,
       operationId,
       trackedEntityId,
@@ -195,7 +196,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     bomIdMap,
     companySettings,
     abilityWarning,
-    isFirstOperation
+    isFirstOperation,
+    isFirstOpenOperation
   ] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
       operationId,
@@ -242,6 +244,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
     jobMakeMethodId
       ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+      : false,
+    jobMakeMethodId
+      ? isFirstOpenOperationOfMakeMethod(
+          serviceRole,
+          companyId,
+          operationId,
+          jobMakeMethodId
+        )
       : false
   ]);
 
@@ -268,7 +278,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const op = operation.data?.[0];
   if (!op) {
-    logger.warn("Operation not found after the ownership check", {
+    logger.warning("Operation not found after the ownership check", {
       companyId,
       operationId
     });
@@ -310,17 +320,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // A partial read (members or planned lots missing) refuses too: the
     // completion form must not run on lots it could not read.
     if (!batchResult.data || batchResult.error) {
-      logger.error("Failed to read the operation's batch", {
-        companyId,
-        operationId,
-        batchId,
-        error: batchResult.error
-      });
       throw redirect(
         path.to.operations,
         await flash(
           request,
-          error(batchResult.error, "Failed to load the operation's batch")
+          error(batchResult.error, "Failed to load the operation's batch", {
+            operationId,
+            batchId
+          })
         )
       );
     }
@@ -369,6 +376,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     inventoryShelfLife?.expiredEntityPolicy ?? "Block";
   const autoSelectMaterialWithoutPickingList =
     companySettings.data?.autoSelectMaterialWithoutPickingList ?? false;
+  const requireTrackedMaterialsIssued =
+    companySettings.data?.requireTrackedMaterialsIssued ?? false;
 
   // Is this the first operation in the routing? A serial unit only earns a
   // printed label when it is completed at its first operation, so:
@@ -439,6 +448,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
     trackedEntities: trackedEntities?.data ?? [],
     isFirstOperation,
+    isFirstOpenOperation,
+    requireTrackedMaterialsIssued,
     nonConformanceActions: getNonConformanceActions(serviceRole, {
       itemId: operation.data?.[0].itemId,
       processId: operation.data?.[0].processId,
@@ -489,6 +500,8 @@ export default function OperationRoute() {
     correctionName,
     trackedEntities,
     isFirstOperation,
+    isFirstOpenOperation,
+    requireTrackedMaterialsIssued,
     workCenter,
     nonConformanceActions
   } = useLoaderData<typeof loader>();
@@ -511,6 +524,8 @@ export default function OperationRoute() {
       method={jobMakeMethod}
       trackedEntities={trackedEntities}
       isFirstOperation={isFirstOperation}
+      isFirstOpenOperation={isFirstOpenOperation}
+      requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
       nonConformanceActions={nonConformanceActions}
       operation={operation}
       procedure={procedure}

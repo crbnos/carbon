@@ -1661,7 +1661,7 @@ export async function unpackBackupArchive(
   }
   return { name, assetErrors };
 }
-const log = getLogger("erp", "backups");
+const log = getLogger("erp", "settings", "backups");
 
 /**
  * Backups are a Business/Enterprise feature (`BACKUPS`), plus an escape hatch for
@@ -1706,10 +1706,13 @@ export async function getCompanyBackups(
     try {
       catalog = await getCompanyTableCatalog(db);
     } catch (err) {
-      log.warn("Backups: live compatibility unavailable — listing without it", {
-        companyId,
-        error: err instanceof Error ? err.message : String(err)
-      });
+      log.warning(
+        "Backups: live compatibility unavailable — listing without it",
+        {
+          companyId,
+          error: err
+        }
+      );
     }
   }
 
@@ -1815,7 +1818,7 @@ export async function purgeCorruptedRows(
         company.data.companyGroupId ?? null
       )
     );
-  log.warn("Backups: purged out-of-scope rows before restore", {
+  log.warning("Backups: purged out-of-scope rows before restore", {
     companyId,
     deleted: result.deleted
   });
@@ -2207,7 +2210,7 @@ export async function getCompanyLogoForLabel(
     countryCode: data.countryCode
   };
 }
-const logger = getLogger("erp", "oee-devices");
+const logger = getLogger("erp", "settings", "oee-devices");
 
 // Picking a work center revalidates the tab, and a mapping change does not
 // change the provider's device list. A short TTL keeps those revalidations off
@@ -2580,7 +2583,6 @@ export async function getCachedCompanyIntegrations(
     // Fallback to old key format for backwards compatibility
     cached = await redis.get(cacheKey);
     if (cached !== null && cached !== undefined) {
-      // Log the type and content for debugging
       logger.info("Cache hit", {
         cacheKey,
         type: typeof cached,
@@ -3873,7 +3875,7 @@ export function resolveShippingDefault({
   }
   return candidates[0]!.id;
 }
-const seedCompanyLogger = getLogger("erp", "seed-company");
+const seedCompanyLogger = getLogger("erp", "settings", "seed-company");
 
 export const seedCompanyInput = z.object({
   parentCompanyId: z.string().optional(),
@@ -3895,7 +3897,7 @@ export async function seedCompany(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  seedCompanyLogger.info({
+  seedCompanyLogger.info("Seeding a company", {
     companyId,
     userId,
     parentCompanyId,
@@ -4615,7 +4617,12 @@ function escapeAttribute(value: string) {
 }
 
 type ItemRevisionStatus = Database["public"]["Enums"]["itemRevisionStatus"];
-const onshapeDraftMethodLogger = getLogger("erp", "onshape", "draft-method");
+const onshapeDraftMethodLogger = getLogger(
+  "erp",
+  "settings",
+  "onshape",
+  "draft-method"
+);
 
 /**
  * Why the assembly push, or the sync connection's BOM sync (`syncMakeMethod`),
@@ -4873,7 +4880,7 @@ export type OwnedMethodLine = {
   /** Ownership row metadata; `makeMethodId` names the line's method. */
   metadata: Record<string, unknown>;
 };
-const onshapePushLogger = getLogger("erp", "onshape", "push");
+const onshapePushLogger = getLogger("erp", "settings", "onshape", "push");
 
 /**
  * Replace an item's Onshape link in one transaction: delete any row for this
@@ -5514,7 +5521,7 @@ export async function applyExistingItemFields(
   }
   return { values: merged?.ok ? merged.values : null, error: null };
 }
-const onshapeOauthLogger = getLogger("erp", "onshape", "oauth");
+const onshapeOauthLogger = getLogger("erp", "settings", "onshape", "oauth");
 
 /** Absolute integrations-page URL on this request's origin. */
 function integrationsUrl(request: Request) {
@@ -9012,6 +9019,7 @@ export async function pushOnshapeRelease(
 }
 export const onshapePanelFieldsLogger = getLogger(
   "erp",
+  "settings",
   "onshape",
   "panel-fields"
 );

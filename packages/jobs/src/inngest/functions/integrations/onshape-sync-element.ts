@@ -16,6 +16,7 @@ import {
 import type { OnshapeOAuthIntegrationId } from "@carbon/ee/onshape/integration-id";
 import { getAppUrl } from "@carbon/env";
 import { TEMP_STAGING_BUCKET } from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import { datetime, getFileSizeLimit } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError } from "inngest";
@@ -37,6 +38,8 @@ import {
   partSourceId,
   reusableModelUploadId
 } from "./onshape-source-keys";
+
+const logger = getLogger("jobs", "onshape-sync-element");
 
 export {
   assemblySourceKeyAt,
@@ -278,7 +281,7 @@ export async function runOnshapeElementSync(
           )
         );
     if ("tooLarge" in fetched) {
-      console.warn(`onshape sync: skipping oversized model ${label}`);
+      logger.warning("Skipping an oversized Onshape model", { label });
       return {
         modelUploadId: null,
         documentIds: [],
@@ -415,10 +418,10 @@ async function assemblySourceKey(
         await client.getWorkspaceSourceStates(input.documentId, input.versionId)
       ).assemblies;
     } catch (error) {
-      console.warn(
-        `onshape sync: could not read the source state of ${label}; exporting`,
+      logger.warning("Could not read the Onshape source state; exporting", {
+        label,
         error
-      );
+      });
       return null;
     }
   }
@@ -493,10 +496,10 @@ async function recordModelSource(
     { onConflict: "entityType,entityId,integration,companyId" }
   );
   if (written.error) {
-    console.warn(
-      `onshape sync: could not record the model source of ${input.itemId}`,
-      written.error
-    );
+    logger.warning("Could not record the model source", {
+      itemId: input.itemId,
+      error: written.error
+    });
   }
 }
 
@@ -638,10 +641,7 @@ async function registerTranslationWebhook(
     });
     return webhook.id;
   } catch (error) {
-    console.warn(
-      `onshape sync: no translation webhook for ${label}; polling`,
-      error
-    );
+    logger.warning("No Onshape translation webhook; polling", { label, error });
     return null;
   }
 }
@@ -656,10 +656,10 @@ async function deleteTranslationWebhook(
     const client = await getClient();
     await client.deleteWebhook(webhookId);
   } catch (error) {
-    console.warn(
-      `onshape sync: could not delete the translation webhook for ${label}`,
+    logger.warning("Could not delete the Onshape translation webhook", {
+      label,
       error
-    );
+    });
   }
 }
 
@@ -766,9 +766,9 @@ async function downloadPdf(
     return new Uint8Array(buffer);
   } catch (error) {
     if (error instanceof OnshapeAssetTooLargeError) {
-      console.warn(
-        `onshape sync: skipping oversized drawing ${translation.id}`
-      );
+      logger.warning("Skipping an oversized Onshape drawing", {
+        translationId: translation.id
+      });
       return null;
     }
     throw error;

@@ -70,8 +70,8 @@ export function projectOutputs(
   } catch (cause) {
     // Shaping is a convenience over the raw result; losing it must never lose the
     // call that already happened.
-    logger.warn("Could not project an integration response", {
-      message: cause instanceof Error ? cause.message : ""
+    logger.warning("Could not project an integration response", {
+      error: cause
     });
     // Nothing was shaped, so nothing is known to have come back.
     return { count: countOf([]) };

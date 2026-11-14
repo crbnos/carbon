@@ -40,6 +40,7 @@ import {
   unreleasedChangeOrderItemsMessage,
   withLockNotice
 } from "~/modules/items/items.service";
+import { pegMovesForSettledActions } from "~/modules/projects/peg-transfer-plan";
 import {
   applyTransferPlanningActions,
   getPlanningSegmentOwners,
@@ -56,8 +57,10 @@ import {
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
+  getLocationTimeZone,
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
+import { decodeCursor } from "~/utils/cursor";
 import {
   invokeCreate,
   invokePosting,
@@ -71,11 +74,13 @@ import {
   baseJobOperationValidator,
   bulkJobValidator,
   CANCELLABLE_JOB_STATUSES,
+  classifyPlanningOrders,
   copyPeopleBoardValidator,
   copyPeopleWeekValidator,
   deadlineTypes,
   getAssemblyModelState,
   getDueDateForColumn,
+  invalidOrderDateMessage,
   isAssemblyPlanRunning,
   isBatchDissolvable,
   isJobBulkReleasable,
@@ -88,7 +93,9 @@ import {
   jobStatus,
   jobValidator,
   makeToAssetItemError,
+  nothingOrderedMessage,
   PLANNING_EDITABLE_JOB_STATUSES,
+  pastStartRefusalMessages,
   peopleAbsenceRangeValidator,
   peopleAbsenceValidator,
   peopleAssignmentValidator,
@@ -100,10 +107,12 @@ import {
   peopleWeekAssignValidator,
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator,
+  planningOrderStart,
   procedureStatus,
   productionEventValidator,
   productionOrderValidator,
   productionQuantityValidator,
+  type RefusedPlanningOrder,
   SCHEDULED_JOB_STATUSES,
   salesOrderToJobValidator,
   scheduleJobUpdateValidator,
@@ -358,6 +367,46 @@ export const releaseCheckedJobs = defineServiceFn({
           jobId: id,
           message:
             "The job is released, but its serial numbers could not be assigned"
+        });
+      }
+
+      // Under autoPickingListOnRelease the job gets its picking list now. The
+      // job is already Ready, so a failure is a warning and a note on the job.
+      const picking = await service.createReleasePickingList(
+        ctx.asSystem.supabase,
+        ctx.asSystem.pg,
+        { jobId: id, companyId, userId }
+      );
+      if (picking.error) {
+        logger.error("Picking list at release failed", {
+          companyId,
+          jobId: id,
+          error: picking.error
+        });
+        try {
+          const noted = await service.appendJobNoteParagraph(ctx.asSystem.pg, {
+            jobId: id,
+            companyId,
+            text: `Carbon released the job but could not create its picking list: ${picking.error}`
+          });
+          if (!noted) {
+            logger.error("Failed to note the picking list failure on the job", {
+              companyId,
+              jobId: id,
+              error: "No job row matched"
+            });
+          }
+        } catch (error) {
+          logger.error("Failed to note the picking list failure on the job", {
+            companyId,
+            jobId: id,
+            error
+          });
+        }
+        warnings.push({
+          jobId: id,
+          message:
+            "The job is released, but its picking list could not be created"
         });
       }
 
@@ -4386,11 +4435,16 @@ export const markPersonAbsentRange = defineServiceFn({
  * `updatePlannedJob` or Apply. The location and every item must
  * be this company's. Per item: one whose manufacturing is blocked, needs
  * configuration or is held by an unreleased change notice is skipped and
- * named in `errors`; each order becomes a
- * Planned job (ASAP or Soft Deadline) at the location with the item's method.
- * Then the Make suggestions those orders answer are settled, the jobs' supply
- * is recorded per week (`supplyForecast`) and their requirements are
- * recalculated. An item with no orders is counted as already planned (it has
+ * named in `errors`. An order with a date that is not a real `YYYY-MM-DD` day
+ * is named in `errors`. An order that starts (its start date, else its due
+ * date less the item's lead time) before the location's today is refused and
+ * listed in `refusedOrders` (item, segment and its index in the item's
+ * `orders`). The item's other orders are still made. Each
+ * becomes a Planned job (ASAP or Soft Deadline) at the location with the
+ * item's method; the Make suggestions the orders answer are settled by the
+ * quantity ordered. A job whose method could not be copied is kept and named
+ * in `warnings`. The jobs' supply is recorded per week (`supplyForecast`) and
+ * their requirements are recalculated. An item with no orders is counted as already planned (it has
  * an open job) or as needing nothing. When not one item could be ordered the
  * call fails with the first errors.
  *
@@ -4436,7 +4490,7 @@ export const orderPlannedJobs = defineServiceFn({
         .maybeSingle(),
       client
         .from("item")
-        .select("id")
+        .select("id, readableId, readableIdWithRevision")
         .in("id", itemIds)
         .eq("companyId", companyId)
     ]);
@@ -4454,6 +4508,18 @@ export const orderPlannedJobs = defineServiceFn({
       });
       return ctx.error("notFound", "Not found");
     }
+    const readableIdByItem = new Map(
+      ownedItems.data.map((item) => [
+        item.id,
+        item.readableIdWithRevision ?? item.readableId
+      ])
+    );
+    const readableIdOf = (itemId: string) =>
+      readableIdByItem.get(itemId) ?? itemId;
+    const today = datetime
+      .today(await getLocationTimeZone(client, locationId, companyId))
+      .toString();
+    const refusedOrders: RefusedPlanningOrder[] = [];
 
     // A job in a project segment is charged to that project and receives
     // its output into the project's stock. A job in a planning group
@@ -4475,7 +4541,8 @@ export const orderPlannedJobs = defineServiceFn({
       return ctx.error("notFound", "Project not found");
     }
 
-    const createdJobs: { id: string; readableId: string }[] = [];
+    const createdJobs: { itemId: string; id: string; readableId: string }[] =
+      [];
     const itemsWithoutOrders: string[] = [];
     const supplyByKey = new Map<
       string,
@@ -4498,13 +4565,17 @@ export const orderPlannedJobs = defineServiceFn({
       periodId: string;
       planningSegmentId: string;
       jobId: string;
+      quantity: number;
+      dueDate: string | null;
+      planningActionId?: string;
     }[] = [];
     const errors: string[] = [];
-    let processedItems = 0;
+    // A job kept without its method: the planner must Get Method on it.
+    const warnings: string[] = [];
 
     const manufacturingRows = await client
       .from("itemReplenishment")
-      .select("itemId, manufacturingBlocked, requiresConfiguration")
+      .select("itemId, manufacturingBlocked, requiresConfiguration, leadTime")
       .in(
         "itemId",
         items.flatMap((item) => (item.orders.length > 0 ? [item.id] : []))
@@ -4543,30 +4614,52 @@ export const orderPlannedJobs = defineServiceFn({
       const manufacturing = manufacturingByItem.get(item.id);
       if (manufacturingRows.error || !manufacturing) {
         errors.push(
-          `Failed to retrieve manufacturing data for item ${item.id}: ${
+          `Failed to retrieve manufacturing data for ${readableIdOf(item.id)}: ${
             manufacturingRows.error?.message ?? "No replenishment record"
           }`
         );
         continue;
       }
       if (manufacturing.manufacturingBlocked) {
-        errors.push(`Manufacturing is blocked for item ${item.id}`);
+        errors.push(`Manufacturing is blocked for ${readableIdOf(item.id)}`);
         continue;
       }
       if (manufacturing.requiresConfiguration) {
-        errors.push(`Manufacturing requires configuration for item ${item.id}`);
+        errors.push(
+          `Manufacturing requires configuration for ${readableIdOf(item.id)}`
+        );
         continue;
       }
 
-      let itemProcessed = false;
-      for (const order of item.orders) {
+      const leadTime = manufacturing.leadTime;
+      const { invalid, past, placeable } = classifyPlanningOrders(
+        item.orders,
+        today,
+        leadTime
+      );
+      const readableId = readableIdOf(item.id);
+      if (invalid.length > 0) {
+        errors.push(invalidOrderDateMessage(readableId, invalid.length));
+      }
+      if (past.length > 0) {
+        refusedOrders.push(
+          ...past.map((index) => ({
+            itemId: item.id,
+            planningSegmentId: item.planningSegmentId,
+            index
+          }))
+        );
+      }
+
+      for (const index of placeable) {
+        const order = item.orders[index]!;
         const created = await service.insertJob(
           client,
           db,
           {
             itemId: item.id,
             quantity: order.quantity,
-            startDate: order.startDate ?? undefined,
+            startDate: planningOrderStart(order, leadTime) ?? undefined,
             dueDate: order.dueDate ?? undefined,
             deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
             status: "Planned",
@@ -4588,33 +4681,23 @@ export const orderPlannedJobs = defineServiceFn({
         if (created.error || !created.data?.id) {
           errors.push(
             created.error
-              ? `Failed to create job for item ${item.id}: ${created.error.message}`
-              : `Job was not returned after creation for item ${item.id}`
+              ? `Failed to create job for ${readableIdOf(item.id)}: ${created.error.message}`
+              : `Job was not returned after creation for ${readableIdOf(item.id)}`
           );
           continue;
         }
         const id = created.data.id;
-
-        const method = await service.upsertJobMethod(client, db, "itemToJob", {
-          sourceId: item.id,
-          targetId: id,
-          companyId,
-          userId
-        });
-        if (method.error) {
-          errors.push(
-            `Failed to create job method for item ${item.id}: ${method.error.message}`
-          );
-          continue;
-        }
-
-        createdJobs.push({ id, readableId: created.data.jobId ?? "" });
-        itemProcessed = true;
+        const readableId = created.data.jobId ?? "";
+        createdJobs.push({ itemId: item.id, id, readableId });
+        // the job is supply from here on, with or without its method
         ordered.push({
           itemId: item.id,
           periodId: order.periodId,
           planningSegmentId: item.planningSegmentId,
-          jobId: id
+          jobId: id,
+          quantity: order.quantity,
+          dueDate: order.dueDate ?? null,
+          planningActionId: order.planningActionId
         });
         const key = [item.id, order.periodId, item.planningSegmentId].join(
           "\u001f"
@@ -4635,10 +4718,11 @@ export const orderPlannedJobs = defineServiceFn({
           });
         }
       }
-      if (itemProcessed) processedItems++;
     }
-    for (const error of errors) logger.error(error, { companyId, locationId });
 
+    // Settled as soon as the jobs exist, before their methods, to keep short
+    // the window in which an MRP run could net a job and the settle then take
+    // it off the suggestion a second time.
     const settled = await service.settleNewSupplyPlanningActions(db, {
       companyId,
       locationId,
@@ -4653,39 +4737,56 @@ export const orderPlannedJobs = defineServiceFn({
         locationId,
         error: settled.error
       });
+      warnings.push(
+        "The jobs were created, but their suggestions were not updated. Recalculate before making them again."
+      );
     } else if (segments.planningGroupIds.size > 0) {
-      // A grouped Make's pegs move to the job it created. A failure
+      // A grouped Make's pegs move to the jobs that answered it. A failure
       // leaves them on the action; the next MRP run re-pegs.
-      const jobByOrder = new Map<string, string>();
-      for (const entry of ordered) {
-        const key = [
-          entry.itemId,
-          entry.periodId,
-          entry.planningSegmentId
-        ].join("\u0000");
-        if (!jobByOrder.has(key)) jobByOrder.set(key, entry.jobId);
-      }
-      const moves = (settled.data ?? []).flatMap((action) => {
-        if (!segments.planningGroupIds.has(action.planningSegmentId)) {
-          return [];
-        }
-        const supplyId = jobByOrder.get(
-          [action.itemId, action.periodId, action.planningSegmentId].join(
-            "\u0000"
-          )
-        );
-        return supplyId
-          ? [
-              {
-                planningActionId: action.id,
-                supplyType: "Job" as const,
-                supplyId
-              }
-            ]
-          : [];
+      await moveActionPegsToSupply(db, {
+        companyId,
+        userId,
+        moves: pegMovesForSettledActions(
+          settled.data ?? [],
+          ordered.map((entry) => ({
+            supplyId: entry.jobId,
+            quantity: entry.quantity,
+            dueDate: entry.dueDate
+          })),
+          "Job",
+          segments.planningGroupIds
+        )
       });
-      await moveActionPegsToSupply(db, { companyId, userId, moves });
     }
+
+    // A job is made once it exists: one whose method fails stays, named in
+    // `warnings`, so a retry cannot make it a second time. This also
+    // recalculates each job's requirements.
+    for (const job of createdJobs) {
+      const method = await service.upsertJobMethod(client, db, "itemToJob", {
+        sourceId: job.itemId,
+        targetId: job.id,
+        companyId,
+        userId
+      });
+      if (method.error) {
+        logger.error("Failed to create a planned job's method", {
+          companyId,
+          jobId: job.id,
+          error: method.error
+        });
+        warnings.push(
+          `${job.readableId} was created, but its method or requirements could not be completed. Open it and use Get Method.`
+        );
+      }
+    }
+    const processedItems = new Set(createdJobs.map((job) => job.itemId)).size;
+    for (const reason of errors)
+      logger.error("Planning could not create a job: {reason}", {
+        reason,
+        companyId,
+        locationId
+      });
 
     if (supplyByKey.size > 0) {
       const forecasts = await client
@@ -4695,26 +4796,8 @@ export const orderPlannedJobs = defineServiceFn({
           ignoreDuplicates: false
         });
       if (forecasts.error) {
-        errors.push(
+        warnings.push(
           `Failed to insert supply forecasts: ${forecasts.error.message}`
-        );
-      }
-    }
-
-    for (const job of createdJobs) {
-      const recalc = await service.recalculateJobRequirements(client, db, {
-        id: job.id,
-        companyId,
-        userId
-      });
-      if (recalc.error) {
-        logger.error("Failed to recalculate a planned job", {
-          companyId,
-          jobId: job.id,
-          error: recalc.error
-        });
-        errors.push(
-          `Created job ${job.id}, but its requirements could not be recalculated`
         );
       }
     }
@@ -4734,21 +4817,25 @@ export const orderPlannedJobs = defineServiceFn({
       }
     }
 
-    if (errors.length > 0 && processedItems === 0) {
+    const problems = [
+      ...errors,
+      ...pastStartRefusalMessages(refusedOrders, readableIdOf, today)
+    ];
+    if (problems.length > 0 && processedItems === 0) {
       return ctx.error(
         "rule",
-        `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
-          errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
-        }`
+        nothingOrderedMessage("jobs", problems, errors.length === 0)
       );
     }
 
     return {
-      jobs: createdJobs,
+      jobs: createdJobs.map(({ id, readableId }) => ({ id, readableId })),
       alreadyPlannedItemCount: alreadyPlannedItemIds.size,
       noDemandItemCount: itemsWithoutOrders.length - alreadyPlannedItemIds.size,
       processedItems,
       totalItems: items.length,
+      refusedOrders,
+      warnings,
       errors
     };
   }
@@ -6698,6 +6785,82 @@ export const getDemandProjections = defineServiceFn({
         payload(ctx, input).build() as never
       )
     );
+  }
+});
+
+/**
+ * Get dated demand forecasts for a management report
+ *
+ * @remarks Returns one row per item and week for the selected location. Forecast
+ * quantity is the original planner forecast; consumed quantity is the portion
+ * matched to open sales orders or job materials by MRP. Remaining quantity is
+ * their nonnegative difference.
+ * Results are ordered by week and item in fixed pages of 100. Pass nextCursor
+ * from one response as cursor on the next request; null means the report is complete.
+ *
+ * @param locationId - Location whose forecasts to read.
+ * @param itemId - Optional item to narrow the report.
+ * @param startDate - Optional first week start date, in YYYY-MM-DD format.
+ * @param endDate - Optional last week start date, in YYYY-MM-DD format.
+ * @param cursor - Opaque nextCursor returned by the previous page.
+ * @mcp read
+ */
+export const getDemandForecastReport = defineServiceFn({
+  input: z.object({
+    locationId: z.string().min(1),
+    itemId: z.string().min(1).optional(),
+    startDate: z.iso.date().optional(),
+    endDate: z.iso.date().optional(),
+    cursor: z.string().min(1).optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    if (input.startDate && input.endDate && input.startDate > input.endDate) {
+      return ctx.error("validation", "startDate must be on or before endDate");
+    }
+    const cursorKeys = [
+      "demandForecastReport:v1",
+      ctx.company.id,
+      input.locationId,
+      input.itemId ?? "",
+      input.startDate ?? "",
+      input.endDate ?? ""
+    ];
+    const cursor = decodeCursor(input.cursor ?? null);
+    const cursorStartDate = cursor?.values[0];
+    const cursorItemId = cursor?.values[1];
+    if (
+      input.cursor &&
+      (!cursor ||
+        cursor.keys.length !== cursorKeys.length ||
+        cursor.keys.some((key, index) => key !== cursorKeys[index]) ||
+        cursor.values.length !== 2 ||
+        typeof cursorStartDate !== "string" ||
+        !z.iso.date().safeParse(cursorStartDate).success ||
+        typeof cursorItemId !== "string" ||
+        !cursorItemId ||
+        !cursor.id)
+    ) {
+      return ctx.error("validation", "Invalid demand forecast cursor");
+    }
+    return service.getDemandForecastReport(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      locationId: input.locationId,
+      itemId: input.itemId,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      cursorKeys,
+      after:
+        typeof cursorStartDate === "string" &&
+        typeof cursorItemId === "string" &&
+        cursor
+          ? {
+              startDate: cursorStartDate,
+              itemId: cursorItemId,
+              id: cursor.id
+            }
+          : undefined
+    });
   }
 });
 

@@ -4102,7 +4102,7 @@ export const decideDocumentForceDelete = defineServiceFn({
               // The postings report refusals as server errors too, so any
               // void failure falls back to the reversal by journal; a real
               // fault fails that step as well, and the claim is released.
-              logger.warn(
+              logger.warning(
                 "Force delete: the void refused, reversing by journal",
                 {
                   documentId: document.id,

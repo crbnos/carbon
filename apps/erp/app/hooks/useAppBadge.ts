@@ -53,7 +53,7 @@ export function useAppBadge({ userId }: { userId: string }) {
       .is("digestedInto", null);
     if (run !== latest.current) return;
     if (error) {
-      logger.warn("Failed to count unread notifications for the badge", {
+      logger.warning("Failed to count unread notifications for the badge", {
         error
       });
       return;

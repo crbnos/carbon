@@ -9,7 +9,7 @@
 // Every operation is a POST. The splat forwards the request to the oRPC OpenAPIHandler
 // after resolving the API key into context. No CORS: keys must not live in browsers.
 
-import { nameRequestSpan } from "@carbon/logger/tracing.server";
+import { nameRequestSpan } from "@carbon/logger/span";
 import type { ActionFunctionArgs } from "react-router";
 import { resolveApiKeyContext } from "./lib/authenticate.server";
 

@@ -133,6 +133,7 @@ import {
 import { ruleError, sanitize } from "~/utils/supabase";
 import { toTiptapDoc } from "../shared/shared.models";
 import { updateSortOrder } from "../shared/sort-order";
+import { planPegTransfer, type SupplyShare } from "./peg-transfer-plan";
 import { buildProjectCipRow, writeProjectCipRows } from "./project-cip";
 import { ProjectCloseError, relieveProjectWipAtClose } from "./project-close";
 import { postProjectJournal } from "./project-journal";
@@ -14988,11 +14989,13 @@ export async function getPlanningSegmentOwners(
 
 /**
  * Projects Phase 3: an applied grouped Order or Make moves the pegs of its
- * planning action to the PO line or job it created, so the project costs
- * show the commitment at once instead of at the next MRP run. One
+ * planning action to the PO lines or jobs it created, so the project costs
+ * show the commitment at once instead of at the next MRP run. Each action's
+ * pegs are split across its supplies by quantity (`planPegTransfer`); what
+ * they do not cover stays on an action still open for a remainder. One
  * transaction for the whole batch:
  * 1. supersede the actions' current pegs,
- * 2. insert copies on the new supply.
+ * 2. insert their pieces on the new supplies (and the action).
  * A peg is never updated in place; the history keeps the planned peg.
  */
 export async function moveActionPegsToSupply(
@@ -15003,15 +15006,19 @@ export async function moveActionPegsToSupply(
     moves: {
       planningActionId: string;
       supplyType: "Purchase Order Line" | "Job";
-      supplyId: string;
+      supplies: SupplyShare[];
+      /** The action is still open for a remainder its supplies do not cover. */
+      keepRemainder: boolean;
     }[];
   }
 ): Promise<{ moved: number; error: string | null }> {
   const { companyId, userId } = args;
-  const supplyByAction = new Map(
-    args.moves.map((move) => [move.planningActionId, move])
+  const moveByAction = new Map(
+    args.moves
+      .filter((move) => move.supplies.length > 0)
+      .map((move) => [move.planningActionId, move])
   );
-  if (supplyByAction.size === 0) return { moved: 0, error: null };
+  if (moveByAction.size === 0) return { moved: 0, error: null };
   try {
     const moved = await db.transaction().execute(async (trx) => {
       const superseded = await trx
@@ -15019,7 +15026,7 @@ export async function moveActionPegsToSupply(
         .set({ supersededAt: sql<string>`now()` })
         .where("companyId", "=", companyId)
         .where("supplyType", "=", "Planning Action")
-        .where("supplyId", "in", [...supplyByAction.keys()])
+        .where("supplyId", "in", [...moveByAction.keys()])
         .where("supersededAt", "is", null)
         .returning([
           "planningGroupId",
@@ -15037,31 +15044,49 @@ export async function moveActionPegsToSupply(
         ])
         .execute();
       if (superseded.length === 0) return 0;
-      await trx
-        .insertInto("projectPeg")
-        .values(
-          superseded.map((peg) => {
-            const move = supplyByAction.get(peg.supplyId)!;
-            return {
-              companyId,
-              planningGroupId: peg.planningGroupId,
-              itemId: peg.itemId,
-              locationId: peg.locationId,
-              supplyType: move.supplyType,
-              supplyId: move.supplyId,
-              projectId: peg.projectId,
-              projectElementId: peg.projectElementId,
-              demandSourceType: peg.demandSourceType,
-              demandSourceId: peg.demandSourceId,
-              parentPegId: peg.parentPegId,
-              quantity: peg.quantity,
-              needDate: peg.needDate,
-              state: peg.state,
-              createdBy: userId
-            };
-          })
-        )
-        .execute();
+
+      const pegsByAction = new Map<string, typeof superseded>();
+      for (const peg of superseded) {
+        const pegs = pegsByAction.get(peg.supplyId);
+        if (pegs) pegs.push(peg);
+        else pegsByAction.set(peg.supplyId, [peg]);
+      }
+      const rows = [...pegsByAction].flatMap(([actionId, pegs]) => {
+        const move = moveByAction.get(actionId)!;
+        return planPegTransfer(
+          pegs.map((peg) => ({
+            quantity: Number(peg.quantity),
+            needDate: peg.needDate
+          })),
+          move.supplies,
+          move.keepRemainder
+        ).map((split) => {
+          const peg = pegs[split.pegIndex]!;
+          return {
+            companyId,
+            planningGroupId: peg.planningGroupId,
+            itemId: peg.itemId,
+            locationId: peg.locationId,
+            supplyType:
+              split.supplyId === null
+                ? ("Planning Action" as const)
+                : move.supplyType,
+            supplyId: split.supplyId ?? actionId,
+            projectId: peg.projectId,
+            projectElementId: peg.projectElementId,
+            demandSourceType: peg.demandSourceType,
+            demandSourceId: peg.demandSourceId,
+            parentPegId: peg.parentPegId,
+            quantity: split.quantity,
+            needDate: peg.needDate,
+            state: peg.state,
+            createdBy: userId
+          };
+        });
+      });
+      if (rows.length > 0) {
+        await trx.insertInto("projectPeg").values(rows).execute();
+      }
       return superseded.length;
     });
     return { moved, error: null };
@@ -15069,7 +15094,7 @@ export async function moveActionPegsToSupply(
     const message = err instanceof Error ? err.message : String(err);
     logger.error("Failed to move planning action pegs to their supply", {
       companyId,
-      planningActionIds: [...supplyByAction.keys()],
+      planningActionIds: [...moveByAction.keys()],
       error: message
     });
     return { moved: 0, error: message };

@@ -47,9 +47,6 @@ vi.mock("@carbon/auth/client.server", () => ({
   })
 }));
 vi.mock("@carbon/jobs", () => ({ trigger: vi.fn() }));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() })
-}));
 
 import { trigger } from "@carbon/jobs";
 import { action } from "./webhook.sense.$companyId";

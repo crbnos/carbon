@@ -27820,6 +27820,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemSerialSequences.serialNumberTiming"
           },
           {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.printLabelOnCompletion"
+          },
+          {
             $ref: "#/parameters/rowFilter.itemSerialSequences.itemReadableId"
           },
           {
@@ -28090,6 +28093,9 @@ export default {
             $ref: "#/parameters/rowFilter.pickingList.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.pickingList.travelersPrintedAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -28188,6 +28194,9 @@ export default {
             $ref: "#/parameters/rowFilter.pickingList.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.pickingList.travelersPrintedAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -28238,6 +28247,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pickingList.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pickingList.travelersPrintedAt"
           },
           {
             $ref: "#/parameters/body.pickingList"
@@ -90964,6 +90976,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemSerialSequence.serialNumberTiming"
           },
           {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.printLabelOnCompletion"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -91062,6 +91077,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemSerialSequence.serialNumberTiming"
           },
           {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.printLabelOnCompletion"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -91112,6 +91130,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemSerialSequence.serialNumberTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.printLabelOnCompletion"
           },
           {
             $ref: "#/parameters/body.itemSerialSequence"
@@ -119980,6 +120001,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.travelerLabels"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireTrackedMaterialsIssued"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.autoPickingListOnRelease"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -120321,6 +120351,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.travelerLabels"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireTrackedMaterialsIssued"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.autoPickingListOnRelease"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -120614,6 +120653,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.travelerLabels"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireTrackedMaterialsIssued"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.autoPickingListOnRelease"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -122719,6 +122767,222 @@ export default {
           }
         },
         tags: ["documentEdit"]
+      }
+    },
+    "/materialRequest": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.resolvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.resolvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialRequest"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["materialRequest"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.materialRequest"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["materialRequest"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.resolvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.resolvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["materialRequest"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.resolvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.resolvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.materialRequest"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["materialRequest"]
       }
     },
     "/salesOrderTransaction": {
@@ -126271,6 +126535,74 @@ export default {
           }
         },
         tags: ["(rpc) get_project_burden_summary"]
+      }
+    },
+    "/rpc/get_line_feed_shortages": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_line_feed_shortages"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_location_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_location_id", "p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_line_feed_shortages"]
       }
     },
     "/rpc/get_method_tree": {
@@ -131499,6 +131831,74 @@ export default {
           }
         },
         tags: ["(rpc) secure_audit_log_table"]
+      }
+    },
+    "/rpc/get_traveler_target": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_tracked_entity_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_traveler_target"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_tracked_entity_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_tracked_entity_id", "p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_traveler_target"]
       }
     },
     "/rpc/project_planning_segment": {
@@ -153071,6 +153471,10 @@ export default {
           format: "text",
           type: "string"
         },
+        printLabelOnCompletion: {
+          format: "boolean",
+          type: "boolean"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -153217,6 +153621,10 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        travelersPrintedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -182535,7 +182943,8 @@ export default {
         "size",
         "step",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "printLabelOnCompletion"
       ],
       properties: {
         id: {
@@ -182603,6 +183012,11 @@ export default {
         serialNumberTiming: {
           format: "text",
           type: "string"
+        },
+        printLabelOnCompletion: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -196614,7 +197028,10 @@ export default {
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
         "includeSupplierPartFiles",
-        "requirePromisedDateToFinalizePurchaseOrder"
+        "requirePromisedDateToFinalizePurchaseOrder",
+        "travelerLabels",
+        "requireTrackedMaterialsIssued",
+        "autoPickingListOnRelease"
       ],
       properties: {
         id: {
@@ -197113,6 +197530,21 @@ export default {
           type: "boolean"
         },
         requirePromisedDateToFinalizePurchaseOrder: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        travelerLabels: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        requireTrackedMaterialsIssued: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        autoPickingListOnRelease: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -197950,6 +198382,92 @@ export default {
         },
         settings: {
           format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    materialRequest: {
+      required: [
+        "id",
+        "companyId",
+        "locationId",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('mreq'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          format: "text",
+          type: "string"
+        },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        note: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Open",
+          enum: ["Open", "Resolved"],
+          format: 'public."materialRequestStatus"',
+          type: "string"
+        },
+        resolvedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        resolvedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         },
         createdBy: {
           description:
@@ -212733,6 +213251,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.itemSerialSequences.printLabelOnCompletion": {
+      name: "printLabelOnCompletion",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.itemSerialSequences.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -212903,6 +213427,12 @@ export default {
     },
     "rowFilter.pickingList.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pickingList.travelersPrintedAt": {
+      name: "travelersPrintedAt",
       required: false,
       in: "query",
       type: "string"
@@ -245496,6 +246026,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.itemSerialSequence.printLabelOnCompletion": {
+      name: "printLabelOnCompletion",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.batchProperty": {
       name: "batchProperty",
       description: "batchProperty",
@@ -261683,6 +262219,24 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.travelerLabels": {
+      name: "travelerLabels",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireTrackedMaterialsIssued": {
+      name: "requireTrackedMaterialsIssued",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.autoPickingListOnRelease": {
+      name: "autoPickingListOnRelease",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.part": {
       name: "part",
       description: "part",
@@ -262599,6 +263153,99 @@ export default {
       type: "string"
     },
     "rowFilter.documentEdit.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.materialRequest": {
+      name: "materialRequest",
+      description: "materialRequest",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialRequest"
+      }
+    },
+    "rowFilter.materialRequest.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.note": {
+      name: "note",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.resolvedBy": {
+      name: "resolvedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.resolvedAt": {
+      name: "resolvedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materialRequest.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",

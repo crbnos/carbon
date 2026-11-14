@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { LabelDownloadModal } from "@carbon/printing/ui";
 import {
   Button,
@@ -71,6 +72,8 @@ type StorageUnitsTableProps = {
   parentIdsWithChildren: string[];
   initialExpanded: string[];
 };
+
+const logger = getLogger("erp", "inventory", "storage-units-table");
 
 const StorageUnitsTable = memo(
   ({
@@ -201,9 +204,12 @@ const StorageUnitsTable = memo(
               : new Set([...prev].filter((id) => present.has(id)))
           );
         })
-        .catch(() => {
+        .catch((error) => {
           // A failed read leaves the children as shown; the next reload
           // reads them again.
+          logger.warning("Failed to reload the storage unit children", {
+            error
+          });
         });
       return () => {
         stale = true;

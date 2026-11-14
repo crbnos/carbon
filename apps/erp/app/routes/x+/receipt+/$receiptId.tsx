@@ -192,7 +192,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         })
           .then((lines) => {
             if (lines === null) {
-              logger.warn(
+              logger.warning(
                 "A line's project cannot take the charge: no inspection marks",
                 { companyId, receiptId }
               );

@@ -123,7 +123,7 @@ export const mountPublishFunction = inngest.createFunction(
         );
 
         if (result.status === "inactive") {
-          log.warn("Mount integration missing or inactive", { companyId });
+          log.warning("Mount integration missing or inactive", { companyId });
           return { skipped: "integration-inactive" as const };
         }
 

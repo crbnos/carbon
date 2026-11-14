@@ -41,7 +41,7 @@ import {
 import { supportedModelTypes } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { oncePerRead } from "@carbon/logger/middleware.server";
+import { oncePerRead } from "@carbon/logger/context.server";
 import { NotificationEvent } from "@carbon/notifications";
 import {
   datetime,
@@ -10956,7 +10956,7 @@ export async function syncMakeMethod(
     case "onshape": {
       const { type, makeMethodId, data } = payload;
 
-      logger.info({
+      logger.info("Syncing a make method from Onshape", {
         type,
         makeMethodId,
         data,
@@ -11024,8 +11024,7 @@ export async function syncMakeMethod(
         throw new Error("Failed to fetch make methods");
       }
 
-      logger.info({
-        action: "fetched_active_make_methods",
+      logger.info("Fetched the active make methods", {
         count: existingMakeMethods.data?.length ?? 0,
         data: existingMakeMethods.data
       });
@@ -11128,8 +11127,7 @@ export async function syncMakeMethod(
           const maxVersion = Number(allVersions.data?.version ?? 0);
           const newVersion = maxVersion + 1;
 
-          logger.info({
-            action: "creating_top_level_draft",
+          logger.info("Creating the top-level draft make method", {
             itemId: topLevelItemId,
             maxVersion,
             newVersion
@@ -11430,8 +11428,7 @@ export async function syncMakeMethod(
                 existingMakeMethodsByItemId.get(itemId) ||
                 newlyCreatedMakeMethodsByItemId.get(itemId);
 
-              logger.info({
-                action: "processing_item",
+              logger.info("Processing an item", {
                 itemId,
                 partId,
                 isMade,
@@ -11465,8 +11462,7 @@ export async function syncMakeMethod(
                         .execute()
                     );
 
-                    logger.info({
-                      action: "check_existing_draft",
+                    logger.info("Checked for an existing draft make method", {
                       itemId,
                       companyId,
                       existingDraft: existingDraft ?? null
@@ -11499,8 +11495,7 @@ export async function syncMakeMethod(
                       const maxVersion = Number(maxVersionRow?.version ?? 0);
                       const newVersion = maxVersion + 1;
 
-                      logger.info({
-                        action: "creating_child_draft",
+                      logger.info("Creating a child draft make method", {
                         itemId,
                         companyId,
                         maxVersionRow: maxVersionRow ?? null,

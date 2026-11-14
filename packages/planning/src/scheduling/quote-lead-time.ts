@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import {
   fromAbsolute,
   parseDate,
@@ -44,6 +45,8 @@ import {
   type FiniteSchedulingContext,
   WorkCenterSelector
 } from "./work-center-selector.ts";
+
+const log = getLogger("planning", "quote-lead-time");
 
 const DAY_MS = 24 * 3_600_000;
 /** Same fallback MRP uses when an item has no itemReplenishment.leadTime. */
@@ -685,8 +688,13 @@ export async function runQuoteLeadTimeWhatIf(params: {
       horizonEnd: now + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000,
       persist: false
     });
-  } catch {
+  } catch (err) {
     // fall through — the sim runs with per-member placement
+    log.warning("Batch pre-pass failed; members place individually", {
+      locationId,
+      companyId,
+      error: err
+    });
   }
 
   const selector = new WorkCenterSelector(provider, locationId);

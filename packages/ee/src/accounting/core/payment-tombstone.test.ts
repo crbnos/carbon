@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { findPaymentCompositesByRemoteId } from "./payment-tombstone";
 
 /**
@@ -90,10 +90,7 @@ describe("findPaymentCompositesByRemoteId", () => {
     ).toEqual(["bill:bill-9:bp-1"]);
   });
 
-  it("returns [] (logged) on a query error rather than fabricating a void", async () => {
-    const errorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
+  it("returns [] on a query error rather than fabricating a void", async () => {
     const { client } = makeClient(null, { message: "boom" });
 
     expect(
@@ -103,8 +100,6 @@ describe("findPaymentCompositesByRemoteId", () => {
         paymentRemoteId: "bp-1"
       })
     ).toEqual([]);
-    expect(errorSpy).toHaveBeenCalled();
-    errorSpy.mockRestore();
   });
 
   it("returns [] when nothing maps (never synced / not ours)", async () => {

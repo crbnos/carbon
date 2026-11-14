@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MAINTENANCE_MODE, POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
+import "@carbon/logger/configure.server";
+import { POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
 import { installFormBodyGuard } from "@carbon/auth/middleware/form-body.server";
 import {
   getNonce,
@@ -11,17 +12,12 @@ import {
 import { getProcessPool } from "@carbon/database/client";
 import { initFlags } from "@carbon/env/flags.server";
 import { redisFlagsStore } from "@carbon/kv";
-import { getLogger } from "@carbon/logger";
-import { ensureLoggingConfigured } from "@carbon/logger/config.server";
-import { getRequestId } from "@carbon/logger/middleware.server";
 import { createTracing } from "@carbon/logger/tracing.server";
 import { async } from "@carbon/utils";
 import { attachDatabasePool, waitUntil } from "@vercel/functions";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 import type { EntryContext, RouterContextProvider } from "react-router";
-import { isRouteErrorResponse } from "react-router";
 
-ensureLoggingConfigured();
 installFormBodyGuard();
 
 // Vercel freezes an instance once its response is sent: keep it up until idle
@@ -40,48 +36,10 @@ export const instrumentations = createTracing({
 // Feature flags: every process reads the shared copy in Redis and syncs it in
 // the background. Until the first document loads, each flag answers its
 // registry default.
-const flagsLog = getLogger("mes", "flags");
 void initFlags({
   store: redisFlagsStore,
-  waitUntil: process.env.VERCEL ? waitUntil : undefined,
-  // Structured, so Axiom can alert on stale flags (`ageMs`) and archived reads.
-  onWarning: (message, properties) => flagsLog.warn(message, properties)
+  waitUntil: process.env.VERCEL ? waitUntil : undefined
 });
-
-const log = getLogger("mes");
-
-// Process-level safety net: errors that escape the request lifecycle entirely
-// (background promises, timers, event emitters) never reach React Router's
-// `handleError`, so without this they crash or vanish with no context. Log them
-// with a stack. Guarded on a global so HMR/re-import doesn't stack duplicate
-// listeners (which would trip Node's MaxListeners warning).
-const globalForProcessHandlers = globalThis as typeof globalThis & {
-  __carbonProcessErrorHandlers?: boolean;
-};
-if (
-  typeof process !== "undefined" &&
-  !globalForProcessHandlers.__carbonProcessErrorHandlers
-) {
-  globalForProcessHandlers.__carbonProcessErrorHandlers = true;
-  process.on("unhandledRejection", (reason) => {
-    log.error("Unhandled promise rejection: {message}", {
-      message: reason instanceof Error ? reason.message : String(reason),
-      error: reason
-    });
-  });
-  process.on("uncaughtException", (error) => {
-    log.error("Uncaught exception: {message}", {
-      message: error.message,
-      error
-    });
-    // An uncaught exception leaves the process in an undefined, possibly
-    // corrupted state. These apps are long-lived services, so we exit and let
-    // the supervisor restart a clean worker rather than serving from a broken
-    // one. (unhandledRejection is left log-only: a stray rejection is usually
-    // recoverable and crashing the whole server on each one is worse.)
-    process.exit(1);
-  });
-}
 
 export const streamTimeout = 60_000;
 
@@ -130,40 +88,7 @@ function applySecurityHeaders(headers: Headers, nonce: string) {
   });
 }
 
-/**
- * React Router v7 server error hook: fires with the actual error thrown by any
- * loader/action/render that RR catches — the "why" behind a `GET 500 …` line
- * that the access-log middleware (which only sees the final status) can't.
- *
- * We skip control-flow throws (redirects, and intentional Response throws like
- * 401/403/404 from `requirePermissions`) and client-aborted requests, logging
- * only genuine 5xx server failures. `requestId` correlates with the `[http]`
- * access-log line for the same request.
- */
-export function handleError(
-  error: unknown,
-  {
-    request,
-    context
-  }: { request: Request; params: unknown; context: RouterContextProvider }
-) {
-  // Client navigated away / cancelled mid-flight — not a real failure.
-  if (request.signal.aborted) return;
-  // Every request is a 503 during maintenance; that is not a failure to log.
-  if (MAINTENANCE_MODE) return;
-  // Redirects and intentional Response throws are control flow, not errors.
-  if (error instanceof Response && error.status < 500) return;
-  if (isRouteErrorResponse(error) && error.status < 500) return;
-
-  const { pathname } = new URL(request.url);
-  log.error("Unhandled error in {method} {pathname}: {message}", {
-    method: request.method,
-    pathname,
-    requestId: getRequestId(context),
-    message: error instanceof Error ? error.message : String(error),
-    error
-  });
-}
+export { handleServerError as handleError } from "@carbon/logger/middleware.server";
 
 export default function handleRequest(
   request: Request,

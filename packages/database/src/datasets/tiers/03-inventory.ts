@@ -61,7 +61,13 @@ export async function runTier3(ctx: Ctx): Promise<void> {
 
   // ── Opening itemLedger entries (positive adjustments) ─────────────────────
   ctx.log("opening inventory balances");
+  // A lot that names its shelf carries its own opening row (lots loop below),
+  // so that (item, shelf)'s untracked row is skipped.
+  const lotted = new Set(
+    data.onHandTracked.filter((s) => s.shelf).map((s) => `${s.item}@${s.shelf}`)
+  );
   for (const entry of data.openingStock) {
+    if (lotted.has(`${entry.item}@${entry.shelf}`)) continue;
     const itemRef = need(ctx.refs.items, entry.item);
     const shelfId = need(ctx.refs.shelves, entry.shelf);
 
@@ -121,6 +127,20 @@ export async function runTier3(ctx: Ctx): Promise<void> {
           updatedBy: userId
         }
       );
+      if (stock.shelf) {
+        await insertRow(ctx, "itemLedger", {
+          entryType: "Positive Adjmt.",
+          documentType: "Inventory Receipt",
+          itemId: itemRef.id,
+          locationId: plantId,
+          storageUnitId: need(ctx.refs.shelves, stock.shelf),
+          trackedEntityId: ctx.refs.misc[`te:${entity.readableId}`],
+          quantity: entity.quantity,
+          companyId,
+          createdBy: userId,
+          comment: "Opening balance"
+        });
+      }
       if (entity.status === "Scrapped") await scrapLot(ctx, entity, itemRef);
     }
   }
@@ -152,6 +172,8 @@ export async function runTier3(ctx: Ctx): Promise<void> {
       itemId: itemRef.id,
       replenishmentSystem: system,
       quantity: kb.qty,
+      replenishmentLevel:
+        system === "Transfer" ? kb.replenishmentLevel : undefined,
       locationId: plantId,
       supplierId:
         system === "Buy" && kb.supplier !== undefined

@@ -244,7 +244,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     try {
       await onConnect({ accessToken: tokens.accessToken, metadata });
     } catch (err) {
-      logger.warn("Integration connect hook failed: {detail}", {
+      logger.warning("Integration connect hook failed: {detail}", {
         pieceName,
         detail: describeError(err)
       });

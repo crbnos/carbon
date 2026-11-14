@@ -2,17 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { AsyncLocalStorage } from "node:async_hooks";
 import { configureSync, reset } from "@logtape/logtape";
 import { createLogRecorder } from "@logtape/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  addLogContext,
+  describeRequest,
+  withRequestLogContext
+} from "./context.server";
 import { getLogger } from "./logger";
 import {
-  describeRequest,
   getRequestId,
+  handleServerError,
   REQUEST_ID_HEADER,
   requestIdContext,
-  requestIdMiddleware,
   requestMiddleware
 } from "./middleware.server";
 
@@ -32,8 +35,7 @@ beforeEach(() => {
   recorder.clear();
   configureSync({
     reset: true,
-    contextLocalStorage: new AsyncLocalStorage(),
-    sinks: { recorder: recorder.sink },
+    sinks: { recorder: withRequestLogContext(recorder.sink) },
     loggers: [
       { category: ["carbon"], lowestLevel: "trace", sinks: ["recorder"] }
     ]
@@ -44,13 +46,13 @@ afterEach(async () => {
   await reset();
 });
 
-describe("requestIdMiddleware", () => {
+describe("requestMiddleware", () => {
   it("generates and echoes a request id", async () => {
     const request = new Request("http://x/dashboard");
     const context = makeContext();
     const next = async () => new Response("ok");
 
-    const res = (await requestIdMiddleware(
+    const res = (await requestMiddleware(
       { request, context } as never,
       next
     )) as Response;
@@ -65,7 +67,7 @@ describe("requestIdMiddleware", () => {
       headers: { [REQUEST_ID_HEADER]: "abc-123" }
     });
     const context = makeContext();
-    const res = (await requestIdMiddleware(
+    const res = (await requestMiddleware(
       { request, context } as never,
       async () => new Response("ok")
     )) as Response;
@@ -73,25 +75,30 @@ describe("requestIdMiddleware", () => {
     expect(getRequestId(context)).toBe("abc-123");
   });
 
-  it("propagates the request id into logs emitted inside the handler (ALS)", async () => {
+  it("puts the request id and identity on logs written inside the request, a log's own value winning", async () => {
     const request = new Request("http://x/dashboard", {
       headers: { [REQUEST_ID_HEADER]: "trace-me" }
     });
     const next = async () => {
+      addLogContext({ companyId: "c1", userId: "u1" });
       getLogger("erp", "sales").info("did a thing");
+      getLogger("erp", "sales").info("for another company", {
+        companyId: "c2"
+      });
       return new Response("ok");
     };
 
-    await requestIdMiddleware(
-      { request, context: makeContext() } as never,
-      next
-    );
+    await requestMiddleware({ request, context: makeContext() } as never, next);
 
-    const record = recorder.records.find(
+    const [record, other] = recorder.records.filter(
       (r) => r.category.join(".") === "carbon.erp.sales"
     );
-    expect(record).toBeDefined();
-    expect(record?.properties.requestId).toBe("trace-me");
+    expect(record?.properties).toEqual({
+      requestId: "trace-me",
+      companyId: "c1",
+      userId: "u1"
+    });
+    expect(other?.properties.companyId).toBe("c2");
   });
 });
 
@@ -110,7 +117,7 @@ function jsonRequest(body: string) {
   });
 }
 
-describe("requestIdMiddleware body logging", () => {
+describe("requestMiddleware body logging", () => {
   it("captures a JSON body and redacts sensitive fields", async () => {
     const request = jsonRequest(
       JSON.stringify({
@@ -119,7 +126,7 @@ describe("requestIdMiddleware body logging", () => {
         nested: { token: "t" }
       })
     );
-    await requestIdMiddleware(
+    await requestMiddleware(
       { request, context: makeContext() } as never,
       async () => new Response("ok")
     );
@@ -134,7 +141,7 @@ describe("requestIdMiddleware body logging", () => {
   it("leaves the body stream intact for the handler", async () => {
     const request = jsonRequest(JSON.stringify({ hello: "world" }));
     let handlerSaw: unknown;
-    await requestIdMiddleware(
+    await requestMiddleware(
       { request, context: makeContext() } as never,
       async () => {
         handlerSaw = await request.json();
@@ -156,7 +163,7 @@ describe("requestIdMiddleware body logging", () => {
         "content-length": String(body.length)
       }
     });
-    await requestIdMiddleware(
+    await requestMiddleware(
       { request, context: makeContext() } as never,
       async () => new Response("ok")
     );
@@ -175,7 +182,7 @@ describe("requestIdMiddleware body logging", () => {
         "content-length": "5"
       }
     });
-    await requestIdMiddleware(
+    await requestMiddleware(
       { request, context: makeContext() } as never,
       async () => new Response("ok")
     );
@@ -193,7 +200,7 @@ describe("requestIdMiddleware body logging", () => {
         "content-length": String(64 * 1024)
       }
     });
-    await requestIdMiddleware(
+    await requestMiddleware(
       { request, context: makeContext() } as never,
       async () => new Response("ok")
     );
@@ -204,7 +211,7 @@ describe("requestIdMiddleware body logging", () => {
 
   it("adds no body for GET requests", async () => {
     const request = new Request("http://x/dashboard");
-    await requestIdMiddleware(
+    await requestMiddleware(
       { request, context: makeContext() } as never,
       async () => new Response("ok")
     );
@@ -213,7 +220,7 @@ describe("requestIdMiddleware body logging", () => {
 
   it("captures the query string and redacts sensitive params", async () => {
     const request = new Request("http://x/callback?ref=home&token=abc123");
-    await requestIdMiddleware(
+    await requestMiddleware(
       { request, context: makeContext() } as never,
       async () => new Response("ok")
     );
@@ -225,7 +232,7 @@ describe("requestIdMiddleware body logging", () => {
 
   it("logs an empty search for a query-less request", async () => {
     const request = new Request("http://x/dashboard");
-    await requestIdMiddleware(
+    await requestMiddleware(
       { request, context: makeContext() } as never,
       async () => new Response("ok")
     );
@@ -278,5 +285,27 @@ describe("describeRequest", () => {
       (record) => record.properties.pathname === "/dashboard"
     );
     expect(access?.properties).not.toHaveProperty("detail");
+  });
+});
+
+describe("handleServerError", () => {
+  const aborted = (method: string) => {
+    const controller = new AbortController();
+    controller.abort();
+    return new Request("http://x/sales", { method, signal: controller.signal });
+  };
+  const logged = () => recorder.records.map((r) => r.properties.pathname);
+
+  it("logs a failed write even after the client left", () => {
+    handleServerError(new Error("boom"), { request: aborted("POST") });
+    expect(logged()).toEqual(["/sales"]);
+  });
+
+  it("skips a read the client abandoned and a thrown response", () => {
+    handleServerError(new Error("boom"), { request: aborted("GET") });
+    handleServerError(new Response(null, { status: 503 }), {
+      request: new Request("http://x/sales")
+    });
+    expect(logged()).toEqual([]);
   });
 });

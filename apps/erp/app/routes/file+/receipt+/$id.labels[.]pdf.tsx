@@ -35,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (company.error) {
-    logger.error(company.error);
+    logger.error("Failed to load the company", { error: company.error });
     throw new Error("Failed to load company");
   }
 
@@ -46,7 +46,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const labelSizeId =
     labelParam || companySettings.data?.productLabelSize || "avery5163";
 
-  // Find the label size configuration
   let labelSize = labelSizes.find((size) => size.id === labelSizeId);
 
   if (!labelSize) {

@@ -22,7 +22,7 @@ export async function proxyToErp(request: Request, path: string | undefined) {
   const erp = new URL(`${getAppUrl()}/`);
   const target = new URL(`${path ?? ""}${new URL(request.url).search}`, erp);
   if (target.origin !== erp.origin || !target.pathname.startsWith("/api/")) {
-    log.warn("Refused a proxy request to {path}", { path });
+    log.warning("Refused a proxy request to {path}", { path });
     return new Response("Not found", { status: 404 });
   }
 

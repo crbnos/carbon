@@ -55,7 +55,7 @@ Key columns (both, unless noted):
 - Code inserts an `address` row first, then the location (`name`, `addressId`, ...).
 
 ### `address`
-`id` (default `xid()`), `addressLine1/2`, `city`, `state`, `postalCode`, `countryCode` INTEGER → `country.id`, `phone`, `fax`, `companyId`.
+`id` (default `xid()`), `addressLine1/2`, `city`, `state`, `postalCode`, `countryCode` TEXT → `country.alpha2` (ISO 3166-1; see `20240928155702_country-codes.sql`), `phone`, `fax`, `companyId`.
 
 ### `customerPayment` / `supplierPayment` (1:1, PK = entityId)
 `invoice<Entity>Id` (can differ for billing), `invoice<Entity>LocationId`, `invoice<Entity>ContactId`, `paymentTermId`, `currencyCode`, audit. (These invoice-contact pointers are separate from and unrelated to the dropped `invoicingContactId`.)

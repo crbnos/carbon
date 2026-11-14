@@ -33,10 +33,6 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   const { client, companyId, userId, refs } = ctx;
   const plantId = refs.locations.Plant ?? ctx.locationId;
   const paymentTermId = ctx.refs.misc.paymentTermId;
-  const shippingMethodId = need(
-    ctx.refs.shippingMethods,
-    data.demandOrder.shippingMethod
-  );
 
   // ── 1. itemPlanning: Buy items → Fixed Reorder Quantity ─────────────────────
   ctx.log("itemPlanning — Buy items reorder policy");
@@ -73,65 +69,72 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   // ── 3. Open Sales Order → MRP picks it up as demandActual ───────────────────
   // openSalesOrderLines filters on salesOrder.status IN ('To Ship','To Ship and Invoice').
   // quantityToSend is GENERATED ALWAYS from (saleQuantity - quantitySent) — do not insert it.
-  // promisedDate must fall inside the 48-week planning horizon.
-  ctx.log("SO — open order for buy-item demand");
+  // promisedDate must fall inside the 48-week planning horizon. A walkthrough
+  // dataset has no demand order.
   const order = data.demandOrder;
-  const customerId = need(refs.customers, order.customer, "customer");
-  const customerLocationId = need(
-    refs.misc,
-    `cloc:${order.customer}`,
-    "customer location"
-  );
+  if (order) {
+    ctx.log("SO — open order for buy-item demand");
+    const shippingMethodId = need(
+      ctx.refs.shippingMethods,
+      order.shippingMethod
+    );
+    const customerId = need(refs.customers, order.customer, "customer");
+    const customerLocationId = need(
+      refs.misc,
+      `cloc:${order.customer}`,
+      "customer location"
+    );
 
-  const promisedDate = resolveDate(ctx.anchor, order.promisedDateOffset);
+    const promisedDate = resolveDate(ctx.anchor, order.promisedDateOffset);
 
-  // Every sales order needs an opportunity — /x/sales-order/:id loads it and
-  // throws when it is missing, so an order seeded without one can never be
-  // opened. Tier 04 does the same for the orders it writes.
-  const opportunityId = await insertId(ctx, "opportunity", { customerId });
+    // Every sales order needs an opportunity — /x/sales-order/:id loads it and
+    // throws when it is missing, so an order seeded without one can never be
+    // opened. Tier 04 does the same for the orders it writes.
+    const opportunityId = await insertId(ctx, "opportunity", { customerId });
 
-  const soId = await nextSequence(ctx, "salesOrder");
-  const so = await insertId(ctx, "salesOrder", {
-    salesOrderId: soId,
-    status: order.status,
-    customerId,
-    customerLocationId,
-    locationId: plantId,
-    currencyCode: order.currencyCode,
-    opportunityId,
-    orderDate: resolveDate(ctx.anchor, 0)
-  });
-  await insertRow(ctx, "salesOrderPayment", {
-    id: so,
-    paymentTermId,
-    companyId
-  });
-  await insertRow(ctx, "salesOrderShipment", {
-    id: so,
-    locationId: plantId,
-    shippingMethodId,
-    customerId,
-    customerLocationId,
-    companyId
-  });
-  for (const line of order.lines) {
-    const item = need(refs.items, line.item, "demand order item");
-    await insertId(ctx, "salesOrderLine", {
-      salesOrderId: so,
-      salesOrderLineType: line.salesOrderLineType,
-      itemId: item.id,
-      description: item.name,
-      saleQuantity: line.saleQuantity,
-      unitPrice: item.unitCost * line.unitPriceMultiplier,
-      unitOfMeasureCode: line.unitOfMeasureCode,
+    const soId = await nextSequence(ctx, "salesOrder");
+    const so = await insertId(ctx, "salesOrder", {
+      salesOrderId: soId,
+      status: order.status,
+      customerId,
+      customerLocationId,
       locationId: plantId,
-      methodType: line.methodType,
-      promisedDate,
-      status: line.status,
-      sortOrder: line.sortOrder
+      currencyCode: order.currencyCode,
+      opportunityId,
+      orderDate: resolveDate(ctx.anchor, 0)
     });
+    await insertRow(ctx, "salesOrderPayment", {
+      id: so,
+      paymentTermId,
+      companyId
+    });
+    await insertRow(ctx, "salesOrderShipment", {
+      id: so,
+      locationId: plantId,
+      shippingMethodId,
+      customerId,
+      customerLocationId,
+      companyId
+    });
+    for (const line of order.lines) {
+      const item = need(refs.items, line.item, "demand order item");
+      await insertId(ctx, "salesOrderLine", {
+        salesOrderId: so,
+        salesOrderLineType: line.salesOrderLineType,
+        itemId: item.id,
+        description: item.name,
+        saleQuantity: line.saleQuantity,
+        unitPrice: item.unitCost * line.unitPriceMultiplier,
+        unitOfMeasureCode: line.unitOfMeasureCode,
+        locationId: plantId,
+        methodType: line.methodType,
+        promisedDate,
+        status: line.status,
+        sortOrder: line.sortOrder
+      });
+    }
+    ctx.refs.documents[order.ref] = so;
   }
-  ctx.refs.documents[order.ref] = so;
 
   // ── 4. demandProjection → /x/production/projections ─────────────────────────
   // getOrCreatePeriods(today, WEEKS_TO_PROJECT) keys periods on startDate +

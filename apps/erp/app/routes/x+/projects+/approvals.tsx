@@ -78,10 +78,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       getContractBillingLines(client, { companyId })
     ]);
     if (items.error) {
-      logger.error("Failed to load billable items", {
-        companyId,
-        error: items.error
-      });
       throw redirect(
         path.to.projects,
         await flash(

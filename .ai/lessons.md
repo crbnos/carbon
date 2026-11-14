@@ -4845,6 +4845,26 @@ writer is a rule the other writers skip.
 (`packages/database/src/event-system/handlers/`), and any flag copied from a master
 record onto open documents.
 
+## Local database URLs must match Docker's loopback binding
+
+**Context:** The database types workflow runs `crbn migrate` against a fresh shared
+Postgres container on GitHub Actions.
+
+**Problem:** Compose publishes port 54322 on `127.0.0.1`, but `dbUrl()` emitted
+`localhost`. The Supabase CLI resolved that to `::1` and failed to connect after
+the migrations had already succeeded. Changing the URL to `127.0.0.1` exposed
+another CLI behavior: it treats that host and port as its own `supabase start`
+database and refuses to generate types without that container.
+
+**Rule:** Use `127.0.0.1` in generated host database URLs when the corresponding
+Docker port is bound to IPv4 loopback. For `supabase gen types --db-url`, set
+the CLI's `SUPABASE_DB_PORT` to a different port in that process so it honors
+the explicit URL as a direct connection. Keep URL expectations in the dev
+tests aligned with the binding.
+
+**Applies to:** `packages/dev/src/stack.ts`, database and pooler URLs from
+`renderEnv()`, and local CLI consumers such as database type generation.
+
 ## A React handler on a dialog also hears the dialogs opened from inside it
 
 **Context:** On phones every `Modal` and `Drawer` is a bottom sheet, and a sheet drags
@@ -4941,6 +4961,16 @@ redirects (purchase orders, and the other records with a `/details` index).
 - **Problem:** The `erp` typecheck peaks near 10 GB and `generate:mcp` near 5 GB. Five of them at once took about 28 GB.
 - **Rule:** Only the main agent runs the heavy checks, once, after its subagents finish. Never raise `--max-old-space-size` to make one fit. `packages/dev/bin/heavy-lock` queues them machine-wide, so an extra run waits instead of running in parallel. A waiting run prints `heavy-lock: waiting for …`: that is the queue working, not a hang. Do not kill it.
 - **Applies to:** Any skill or workflow that dispatches subagents (review, execute, fix, conductor).
+
+## `db:seed:dev` under portless needs the local CA, and a hibernated stack
+
+**Context:** Seeding `motor-line` for the serial traveler (2026-11-12) on a portless stack (`https://api.<prefix>.dev`).
+
+**Problem:** `pnpm db:seed:dev` failed with "Failed to create user: fetch failed". Two causes stacked: the stack had hibernated (gotrue and the API gateway were exited, `crbn status` shows "hibernated"), and Node's `fetch` refused the portless certificate (`SELF_SIGNED_CERT_IN_CHAIN`). `curl` worked, because it trusts the system store; Node does not. The dev servers get `NODE_EXTRA_CA_CERTS` from `packages/dev/src/services/apps.ts`, but a script run from a shell does not.
+
+**Rule:** Before a script that calls the local Supabase API over portless, wake the stack (one request to the ERP URL), then run it with `NODE_EXTRA_CA_CERTS=$HOME/.portless/ca.pem`.
+
+**Applies to:** `pnpm db:seed:dev`, and any `tsx` script that calls `SUPABASE_URL` on a portless stack.
 
 ## A PostgREST 416 has no error code in supabase-js: check the status
 

@@ -1615,7 +1615,7 @@ export async function getAppShell(
   };
 }
 
-const signalsLogger = getLogger("erp", "implementation-signals");
+const signalsLogger = getLogger("erp", "shared", "implementation-signals");
 
 // A day, not forever: wiping a company's data (a demo template revert, a
 // restore) can make a signal false again, and this bounds how long the hub
@@ -1643,7 +1643,7 @@ export async function getImplementationSignals(
     if (cached) known = JSON.parse(cached) as Partial<Signals>;
   } catch (error) {
     // Redis is an optimisation here; without it, probe everything.
-    signalsLogger.warn("Could not read cached implementation signals", {
+    signalsLogger.warning("Could not read cached implementation signals", {
       companyId,
       error
     });
@@ -1663,7 +1663,7 @@ export async function getImplementationSignals(
         IMPLEMENTATION_SIGNALS_TTL_SECONDS
       );
     } catch (error) {
-      signalsLogger.warn("Could not cache implementation signals", {
+      signalsLogger.warning("Could not cache implementation signals", {
         companyId,
         error
       });
@@ -2678,7 +2678,7 @@ export function classifyStockRow(params: {
     }
   };
 }
-const importCsvTableLogger = getLogger("server-functions", "import-csv");
+const importCsvTableLogger = getLogger("erp", "shared", "import-csv");
 
 type Rec = Record<string, string>;
 
@@ -5397,8 +5397,7 @@ export async function importStockQuantities(
     planned.push(decision.row);
   }
 
-  importCsvTableLogger.info({
-    function: "import-stock-quantities",
+  importCsvTableLogger.info("Planned the stock quantity import", {
     table,
     trackingType: STOCK_IMPORT_TRACKING_TYPE[table],
     totalRecords: mappedRecords.length,
@@ -6918,7 +6917,7 @@ export async function importCsvTable(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  importCsvTableLogger.info({
+  importCsvTableLogger.info("Importing a CSV file", {
     table,
     filePath,
     columnMappings,
@@ -7125,11 +7124,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          customerInserts: customerInserts.length,
-          customerUpdates: customerUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            customerInserts: customerInserts.length,
+            customerUpdates: customerUpdates.length
+          }
+        );
         summary.inserted += customerInserts.length;
         summary.updated += customerUpdates.length;
 
@@ -7327,11 +7330,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          supplierInserts: supplierInserts.length,
-          supplierUpdates: supplierUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            supplierInserts: supplierInserts.length,
+            supplierUpdates: supplierUpdates.length
+          }
+        );
         summary.inserted += supplierInserts.length;
         summary.updated += supplierUpdates.length;
 
@@ -8023,13 +8030,17 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          itemInserts: itemInserts.length,
-          itemUpdates: itemUpdates.length,
-          materialInserts: Object.keys(materialPartialInserts).length,
-          materialUpdates: materialUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            itemInserts: itemInserts.length,
+            itemUpdates: itemUpdates.length,
+            materialInserts: Object.keys(materialPartialInserts).length,
+            materialUpdates: materialUpdates.length
+          }
+        );
 
         if (itemUpdates.length > 0) {
           const currentItems = await trx
@@ -8228,12 +8239,16 @@ export async function importCsvTable(
         summary.inserted += contactInserts.length;
         summary.updated += contactUpdates.length;
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          contactInserts: contactInserts.length,
-          contactUpdates: contactUpdates.length,
-          customerContactInserts: customerContactInserts.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            contactInserts: contactInserts.length,
+            contactUpdates: contactUpdates.length,
+            customerContactInserts: customerContactInserts.length
+          }
+        );
 
         if (contactInserts.length > 0) {
           const inserted = await inChunks(contactInserts, (rows) =>
@@ -8395,12 +8410,16 @@ export async function importCsvTable(
         summary.inserted += contactInserts.length;
         summary.updated += contactUpdates.length;
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          contactInserts: contactInserts.length,
-          contactUpdates: contactUpdates.length,
-          supplierContactInserts: supplierContactInserts.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            contactInserts: contactInserts.length,
+            contactUpdates: contactUpdates.length,
+            supplierContactInserts: supplierContactInserts.length
+          }
+        );
 
         if (contactInserts.length > 0) {
           const inserted = await inChunks(contactInserts, (rows) =>
@@ -8501,11 +8520,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          workCenterInserts: workCenterInserts.length,
-          workCenterUpdates: workCenterUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            workCenterInserts: workCenterInserts.length,
+            workCenterUpdates: workCenterUpdates.length
+          }
+        );
 
         if (workCenterInserts.length > 0) {
           const inserted = await inChunks(workCenterInserts, (rows) =>
@@ -8607,11 +8630,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          processInserts: processInserts.length,
-          processUpdates: processUpdates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            processInserts: processInserts.length,
+            processUpdates: processUpdates.length
+          }
+        );
 
         if (processInserts.length > 0) {
           const inserted = await inChunks(processInserts, (rows) =>
@@ -8921,11 +8948,15 @@ export async function importCsvTable(
           }
         }
 
-        importCsvTableLogger.info({
-          totalRecords: mappedRecords.length,
-          storageUnitInserts: inserts.length,
-          storageUnitUpdates: updates.length
-        });
+        importCsvTableLogger.info(
+          "Split the CSV rows into inserts and updates",
+          {
+            table,
+            totalRecords: mappedRecords.length,
+            storageUnitInserts: inserts.length,
+            storageUnitUpdates: updates.length
+          }
+        );
         summary.inserted += inserts.length;
         summary.updated += updates.length;
 
@@ -9095,7 +9126,7 @@ export async function importCsvTable(
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
-const convertDocumentLogger = getLogger("server-functions", "convert");
+const convertDocumentLogger = getLogger("erp", "shared", "convert");
 
 export const convertInput = z.discriminatedUnion("type", [
   z.object({
@@ -11485,7 +11516,7 @@ export function fromServerFn(
 ): CarbonError {
   return serverFnRefusal(ctx, error, fallback);
 }
-const createDocumentLogger = getLogger("server-functions", "create");
+const createDocumentLogger = getLogger("erp", "shared", "create");
 
 // Resolves a fallback location when a caller omits locationId, so creating a
 // blank shipment degrades gracefully instead of failing payload validation.
@@ -11579,7 +11610,7 @@ export async function createDocument(
     case "nonConformanceTasks": {
       const { id } = payload;
 
-      createDocumentLogger.info({ type, id });
+      createDocumentLogger.info("Creating a {type} document", { type, id });
 
       const [nonConformance, actionTasks, approvalTasks, existingReviewers] =
         await inOrder([
@@ -11745,7 +11776,7 @@ export async function createDocument(
             });
           }
 
-          createDocumentLogger.debug({
+          createDocumentLogger.debug("Built the issue investigation content", {
             description: nonConformance.data?.description,
             insertedContent
           });
@@ -11814,7 +11845,12 @@ export async function createDocument(
       // releasing several jobs can put them on one PO per supplier.
       const purchaseOrderIdsBySupplierId: Record<string, string> = {};
 
-      createDocumentLogger.info({ type, jobId, companyId, userId });
+      createDocumentLogger.info("Creating a {type} document", {
+        type,
+        jobId,
+        companyId,
+        userId
+      });
       const [job, jobOperations] = await inOrder([
         () => maybeSingle(db, "job", { id: jobId, companyId }),
         () =>
@@ -12206,7 +12242,12 @@ export async function createDocument(
     case "receiptDefault": {
       const { locationId } = payload;
       let createdDocumentId;
-      createDocumentLogger.info({ type, locationId, companyId, userId });
+      createDocumentLogger.info("Creating a {type} document", {
+        type,
+        locationId,
+        companyId,
+        userId
+      });
       const id = await db.transaction().execute(async (trx) => {
         createdDocumentId = await getNextSequence(trx, "receipt", companyId);
         const newReceipt = await trx
@@ -12234,7 +12275,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         purchaseOrderId,
@@ -12554,7 +12595,7 @@ export async function createDocument(
     case "receiptFromInboundTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         warehouseTransferId,
@@ -12727,8 +12768,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         salesReturnOrderId,
@@ -12928,7 +12968,7 @@ export async function createDocument(
     case "receiptFromWarehouseTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         warehouseTransferId,
@@ -13103,7 +13143,7 @@ export async function createDocument(
     case "receiptLineSplit": {
       const { receiptId, receiptLineId, quantity, locationId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         locationId,
         receiptId,
@@ -13121,7 +13161,9 @@ export async function createDocument(
           })
       ]);
 
-      createDocumentLogger.debug({ trackedEntities });
+      createDocumentLogger.debug("Loaded the receipt line tracked entities", {
+        trackedEntities
+      });
 
       if (!receiptLine.data) throw new NotFoundError("Receipt line not found");
 
@@ -13229,7 +13271,12 @@ export async function createDocument(
     case "shipmentDefault": {
       let createdDocumentId;
       const { locationId } = payload;
-      createDocumentLogger.info({ type, companyId, locationId, userId });
+      createDocumentLogger.info("Creating a {type} document", {
+        type,
+        companyId,
+        locationId,
+        userId
+      });
       const effectiveLocationId =
         locationId ?? (await getFallbackLocationId(db, companyId, userId));
 
@@ -13257,7 +13304,7 @@ export async function createDocument(
     case "shipmentFromWarehouseTransfer": {
       const { warehouseTransferId, shipmentId: existingShipmentId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         warehouseTransferId,
@@ -13433,8 +13480,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         salesReturnOrderId,
@@ -13679,8 +13725,7 @@ export async function createDocument(
         locationId: userLocationId
       } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         purchaseReturnOrderId,
@@ -13970,7 +14015,7 @@ export async function createDocument(
         locationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         locationId,
@@ -14162,7 +14207,7 @@ export async function createDocument(
         locationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         locationId,
@@ -14564,7 +14609,7 @@ export async function createDocument(
         locationId
       } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         locationId,
@@ -14847,7 +14892,7 @@ export async function createDocument(
     case "shipmentLineSplit": {
       const { shipmentId, shipmentLineId, quantity, locationId } = payload;
 
-      createDocumentLogger.info({
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         locationId,
         shipmentId,
@@ -14898,8 +14943,7 @@ export async function createDocument(
       // Pending units. A per-unit shortcut adds (or ticks) its unit on it.
       const { rentalAgreementId, rentalAgreementLineId } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         rentalAgreementId,
@@ -15054,8 +15098,7 @@ export async function createDocument(
       // it to the project. A per-CLIN shortcut adds its line to the Draft.
       const { customerContractId, customerContractLineId } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         customerContractId,
@@ -15270,8 +15313,7 @@ export async function createDocument(
       // per-unit shortcut adds (or ticks) its unit on it.
       const { rentalAgreementId, rentalAgreementLineId } = payload;
 
-      createDocumentLogger.info({
-        function: "create",
+      createDocumentLogger.info("Creating a {type} document", {
         type,
         companyId,
         rentalAgreementId,

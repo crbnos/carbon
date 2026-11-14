@@ -61,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
       requestReferrer(request) ?? path.to.active,
       await flash(
         request,
-        error(result.error, result.message ?? "Failed to create quality issue")
+        error(result.error, "Failed to create quality issue")
       )
     );
   }

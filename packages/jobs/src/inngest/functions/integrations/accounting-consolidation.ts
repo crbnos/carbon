@@ -29,6 +29,7 @@ import {
   type SyncOperation,
   type XeroProvider
 } from "@carbon/ee/accounting";
+import { getLogger } from "@carbon/logger";
 /**
  * Daily-consolidation cron (posting sync, spec Phase B §6).
  *
@@ -88,6 +89,8 @@ import {
   partitionConsolidationOperations,
   toIsoDateString
 } from "./accounting-sync-operations";
+
+const logger = getLogger("jobs", "accounting-consolidation");
 
 /** Same bound as the drain: 25 iterations × claim batch of 20 = 500 ops. */
 const MAX_CLAIM_ITERATIONS = 25;
@@ -354,8 +357,9 @@ async function consolidateCompany(args: {
 
   summary.held = partition.held.length;
   if (partition.held.length > 0) {
-    console.info(
-      `[CONSOLIDATION] Holding ${partition.held.length} journal operation(s) dated ${today} or later for ${companyId}/${providerId}; they become claimable again once stale`
+    logger.info(
+      "Holding journal operations dated today or later; they become claimable again once stale",
+      { companyId, providerId, held: partition.held.length, today }
     );
   }
 
@@ -431,8 +435,9 @@ async function consolidateCompany(args: {
       // claim) — reserve its marker now
       const lateMarker = await enqueueMarker(group);
       if (lateMarker.error || !lateMarker.data) {
-        console.error(
-          `[CONSOLIDATION] Could not reserve marker for late batch ${batchKey}; leaving ${operations.length} operation(s) In Flight for the next run`
+        logger.error(
+          "Could not reserve a marker for a late batch; leaving its operations In Flight for the next run",
+          { companyId, providerId, batchKey, operations: operations.length }
         );
         continue;
       }
@@ -475,9 +480,13 @@ async function consolidateCompany(args: {
       if (skipReason) {
         // Terminal for this attempt, same as the drain's handling of
         // shouldSync skips
-        console.info(
-          `[CONSOLIDATION] Skipping journal ${journal.id} for ${date}: ${skipReason}`
-        );
+        logger.info("Skipping a journal in consolidation", {
+          companyId,
+          providerId,
+          journalId: journal.id,
+          date,
+          reason: skipReason
+        });
         summary.membersSkipped++;
         await completeOperation(client, {
           id: operation.id,

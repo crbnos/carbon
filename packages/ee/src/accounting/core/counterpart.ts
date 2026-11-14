@@ -228,7 +228,7 @@ function logDecision(
   const message = "Counterpart will create a new remote record";
   const payload = { ...context, reason: decision.reason, rung: decision.rung };
   if (decision.reason === "ambiguous" || decision.reason === "claimed") {
-    logger.warn(message, payload);
+    logger.warning(message, payload);
   } else {
     logger.info(message, payload);
   }

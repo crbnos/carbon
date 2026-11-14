@@ -7,6 +7,7 @@ import {
   type RampClient,
   type RampReimbursement
 } from "@carbon/ee/ramp.server";
+import { getLogger } from "@carbon/logger";
 import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
   isRampEntityInScope,
@@ -25,6 +26,8 @@ import {
   resolveRampSyncOperations,
   type SyncItem
 } from "./ramp-sync-shared";
+
+const logger = getLogger("jobs", "ramp-sync");
 
 export async function syncRampReimbursements(
   ctx: RampSyncContext,
@@ -77,10 +80,10 @@ export async function syncRampReimbursements(
       }
     }
   } catch (familyError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: reimbursements drain failed`,
-      familyError
-    );
+    logger.error("Ramp reimbursements drain failed", {
+      companyId,
+      error: familyError
+    });
     recordRampFamilyError(result, familyError);
   }
 
@@ -91,10 +94,11 @@ export async function syncRampReimbursements(
       failed
     });
   } catch (confirmError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: REIMBURSEMENT_SYNC confirm failed`,
-      confirmError
-    );
+    logger.error("Ramp reimbursement sync confirm failed", {
+      companyId,
+      syncType: "REIMBURSEMENT_SYNC",
+      error: confirmError
+    });
     result.confirmError =
       confirmError instanceof Error
         ? confirmError.message

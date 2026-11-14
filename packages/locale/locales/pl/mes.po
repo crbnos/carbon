@@ -63,6 +63,11 @@ msgstr "{0} h"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} nie ma numeru partii. Ustaw go w partii produkcyjnej lub zleceniu w Carbon, a następnie zakończ."
 
+#. placeholder {0}: result.unit.readableId
+#. placeholder {1}: result.unit.status
+msgid "{0} is {1}"
+msgstr ""
+
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} jest zamknięte. Jego czas nie może się zmienić."
@@ -168,6 +173,9 @@ msgstr "{hour} h"
 
 msgid "{hours} h"
 msgstr "{hours} godz."
+
+msgid "{issued} of {required}"
+msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, po terminie"
@@ -346,6 +354,9 @@ msgstr "Dodano"
 msgid "Adjustment Type"
 msgstr "Typ korekty"
 
+msgid "Age"
+msgstr ""
+
 msgid "All"
 msgstr "Wszystkie"
 
@@ -376,6 +387,9 @@ msgstr "Przydziel jednostki z błędami"
 
 msgid "Allocate units"
 msgstr "Przydziel jednostki"
+
+msgid "Any part"
+msgstr ""
 
 msgid "Appearance"
 msgstr "Wygląd"
@@ -624,6 +638,13 @@ msgstr "Wybierz awatara"
 msgid "Choose how Carbon reaches you."
 msgstr "Wybierz, jak Carbon się z tobą komunikuje."
 
+#. placeholder {0}: unit.readableId
+msgid "Choose the operation to issue {0} into"
+msgstr ""
+
+msgid "Choose the operation to open for this unit"
+msgstr ""
+
 msgid "Clear"
 msgstr "Wyczyść"
 
@@ -792,6 +813,12 @@ msgstr "Korekta: {correctionName}"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Koszt nieplanowanego utrzymania ruchu, ostatnie {0} dni"
 
+msgid "Could not load the line feed"
+msgstr ""
+
+msgid "Could not look up this label. Try again."
+msgstr ""
+
 msgid "Country code"
 msgstr "Kod kraju"
 
@@ -956,7 +983,7 @@ msgstr "Termin"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Termin {0}"
 
@@ -1110,6 +1137,9 @@ msgstr "Nie udało się zarejestrować przyrządu pomiarowego"
 
 msgid "Failed to register passkey"
 msgstr "Nie udało się zarejestrować klucza dostępu"
+
+msgid "Failed to resolve request"
+msgstr ""
 
 msgid "Failed to save measurement"
 msgstr "Nie udało się zapisać pomiaru"
@@ -1357,6 +1387,10 @@ msgstr "Wydaj kolejny materiał"
 msgid "Issue Material"
 msgstr "Wydaj materiał"
 
+#. placeholder {0}: selected.operation.jobReadableId
+msgid "Issue to {0}"
+msgstr ""
+
 msgid "Issue Type"
 msgstr "Typ problemu"
 
@@ -1473,6 +1507,9 @@ msgstr "Jasno, ciemno, lub zgodnie z ustawieniami systemu."
 
 msgid "Line"
 msgstr "Pozycja"
+
+msgid "Line feed"
+msgstr ""
 
 msgid "lines"
 msgstr "linie"
@@ -1601,6 +1638,9 @@ msgstr "Znaleziono dopasowanie: {matchedId}"
 msgid "matches"
 msgstr "pasuje do"
 
+msgid "Material requested"
+msgstr ""
+
 msgid "Materials"
 msgstr "Materiały"
 
@@ -1668,6 +1708,9 @@ msgstr "Nazwa"
 
 msgid "Navigation"
 msgstr "Nawigacja"
+
+msgid "Need material"
+msgstr ""
 
 msgid "New"
 msgstr "Nowy"
@@ -1817,8 +1860,8 @@ msgstr "Nie zarejestrowano żadnych kluczy dostępu jeszcze."
 msgid "No photos yet"
 msgstr "Jeszcze nie dodano zdjęć"
 
-msgid "No picking lists assigned"
-msgstr "Brak przydzielonych list kompletacyjnych"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "Brak skonfigurowanej drukarki"
@@ -1868,6 +1911,9 @@ msgstr "Na tej stronie nie są dostępne żadne skróty."
 msgid "No spare parts added yet"
 msgstr "Nie dodano jeszcze części zamiennych"
 
+msgid "No station"
+msgstr ""
+
 msgid "No stock"
 msgstr "Brak zapasu"
 
@@ -1913,6 +1959,9 @@ msgstr "Nie ustawione"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Zapas niedostępny do użycia. MRP i planowanie go nie uwzględniają, a kompletacja z niego nie pobiera."
 
+msgid "Note"
+msgstr ""
+
 msgid "Notes"
 msgstr "Notatki"
 
@@ -1931,6 +1980,9 @@ msgstr "Nic nie działa"
 
 msgid "Nothing scheduled at this work center"
 msgstr "Nic nie zaplanowano na tym stanowisku roboczym"
+
+msgid "Nothing to feed"
+msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "Nic do braków"
@@ -2242,6 +2294,9 @@ msgstr "Drukuj"
 msgid "Print batch list"
 msgstr "Drukuj listę partii produkcyjnych"
 
+msgid "Print travelers"
+msgstr ""
+
 msgid "Printed on the purchase orders you approve."
 msgstr "Drukuje się na zamówieniach zakupu, które zatwierdzasz."
 
@@ -2445,6 +2500,12 @@ msgstr "Ponownie otwórz podzespół i utwórz zastępczą jednostkę"
 msgid "Repairable"
 msgstr "Do naprawy"
 
+msgid "Request"
+msgstr ""
+
+msgid "Request material"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Wymaga 6-cyfrowego kodu z aplikacji uwierzytelniającej podczas logowania."
 
@@ -2459,6 +2520,9 @@ msgstr "Wymagane: {quantityToPick}{unitSuffix}, pobrano: {quantityPicked}{unitSu
 
 msgid "Resolution"
 msgstr "Rozwiązanie"
+
+msgid "Resolve"
+msgstr ""
 
 msgid "Result"
 msgstr "Wynik"
@@ -2534,6 +2598,9 @@ msgstr "Skanuj {partName}"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Skanuj jednostkę śledzoną, aby dodać pierwszą kolumnę próby."
+
+msgid "Scan in these parts first"
+msgstr ""
 
 msgid "Scan or enter a serial"
 msgstr "Skanuj lub wprowadź numer seryjny"
@@ -2785,6 +2852,9 @@ msgstr "Brakuje"
 msgid "Short pick {itemName}"
 msgstr "Krótki pick {itemName}"
 
+msgid "Shortage"
+msgstr ""
+
 msgid "Show description"
 msgstr "Pokaż opis"
 
@@ -2941,6 +3011,12 @@ msgstr "Kroki"
 msgid "Steps are missing"
 msgstr "Brakuje kroków"
 
+msgid "Stock transfer"
+msgstr ""
+
+msgid "Storage unit"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "Jednostka magazynowa"
 
@@ -3061,6 +3137,9 @@ msgstr "Partia będzie nadal dyspozycjonowana, ale nie można utworzyć NCR, dop
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Czasomierz i zakończenie są wspólne dla wszystkich {0} zleceń produkcyjnych. Kroki, materiały i pliki tutaj należą do tego zlecenia produkcyjnego."
 
+msgid "The unit changed. Scan again."
+msgstr ""
+
 msgid "The values break a rule on this record."
 msgstr "Wartości naruszają regułę dla tego rekordu."
 
@@ -3094,6 +3173,9 @@ msgstr "Na specyfikacji materiałowej znajdują się materiały śledzone po num
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Te pozycje mają jeszcze materiał do wybrania. Zakończenie teraz oznaczy listę jako Częściowa."
 
+msgid "This barcode matches more than one unit"
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "Ta partia produkcyjna nie ma instrukcji roboczych."
 
@@ -3111,6 +3193,9 @@ msgstr "To jest kontrola zgodny / niezgodny. Naciśnij P lub F."
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "To zlecenie produkcyjne nie ma stawki rozliczeniowej. Poproś biuro, aby je ustawiło zanim czas będzie rozliczany."
+
+msgid "This label does not belong to a unit in this company"
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."
@@ -3244,6 +3329,15 @@ msgstr "Numer śledzenia"
 
 msgid "Training"
 msgstr "Szkolenie"
+
+msgid "Transfer"
+msgstr ""
+
+msgid "Traveler"
+msgstr ""
+
+msgid "Try again"
+msgstr ""
 
 msgid "Two-factor authentication"
 msgstr "Uwierzytelnianie dwuskładnikowe"
@@ -3395,11 +3489,17 @@ msgstr "Wyświetl zlecenie utrzymania ruchu"
 msgid "View or open"
 msgstr "Wyświetl lub otwórz"
 
+msgid "View Traceability"
+msgstr ""
+
 msgid "Warranty"
 msgstr "Gwarancja"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Wysłaliśmy Ci link logowania i 6-cyfrowy kod. Kliknij link lub wpisz kod tutaj."
+
+msgid "What do you need?"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Co to jest {translatedTerm}?"

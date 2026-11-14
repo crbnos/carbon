@@ -27,7 +27,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     updatedBy: userId
   });
   if (update.error) {
-    logger.error("Failed to update item cost", update.error);
+    logger.error("Failed to update item cost", {
+      itemId,
+      error: update.error
+    });
     return {
       error: "Failed to update item cost"
     };

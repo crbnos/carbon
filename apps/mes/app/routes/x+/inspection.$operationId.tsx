@@ -92,7 +92,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .eq("companyId", companyId)
     .maybeSingle();
   if (scopedOperation.error || !scopedOperation.data) {
-    logger.warn("Job operation not found for company", {
+    logger.warning("Job operation not found for company", {
       companyId,
       operationId,
       error: scopedOperation.error

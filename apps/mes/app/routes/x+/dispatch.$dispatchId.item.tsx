@@ -64,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .maybeSingle()
     ]);
     if (!dispatch.data || !item.data) {
-      logger.warn("Dispatch or item not found for company", {
+      logger.warning("Dispatch or item not found for company", {
         companyId,
         dispatchId,
         itemId,

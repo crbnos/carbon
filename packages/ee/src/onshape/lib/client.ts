@@ -1171,7 +1171,7 @@ export async function getOnshapeClient(
       const lease = await acquireLease(leaseKey, REFRESH_LEASE_MS);
 
       if (lease.status === "unavailable") {
-        logger.warn("Refreshing the Onshape token without a lock", {
+        logger.warning("Refreshing the Onshape token without a lock", {
           companyId,
           integrationId
         });

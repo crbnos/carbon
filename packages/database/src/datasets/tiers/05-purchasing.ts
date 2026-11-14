@@ -255,144 +255,155 @@ export async function runTier5(ctx: Ctx): Promise<void> {
   }
 
   // ── RFQ: 2 lines, finalized (Requested), fanned out to 3 suppliers ────────
-  ctx.log("purchasing RFQ — Requested (3 suppliers)");
-  const rfqReadableId = await nextSequence(ctx, "purchasingRfq");
-  const rfq = await insertId(ctx, "purchasingRfq", {
-    rfqId: rfqReadableId,
-    status: data.rfqHeader.status,
-    employeeId: ctx.userId,
-    assignee: data.rfqHeader.assignee === "self" ? userId : undefined,
-    locationId: plantId,
-    rfqDate: resolveDate(ctx.anchor, data.rfqHeader.rfqDateOffset),
-    // The KPI chart and list sort on createdAt; a seed-time stamp is one spike.
-    createdAt: resolveTimestamp(
-      ctx.anchor,
-      data.rfqHeader.rfqDateOffset,
-      "09:00:00"
-    ),
-    expirationDate: resolveDate(ctx.anchor, data.rfqHeader.expirationOffset),
-    notes: RICH(data.rfqHeader.notes),
-    internalNotes: RICH(data.rfqHeader.internalNotes)
-  });
-  ctx.refs.documents[data.rfqHeader.ref] = rfq;
-
-  let rfqLineOrder = 1;
-  for (const spec of data.rfqLines) {
-    const item = need(ctx.refs.items, spec.item);
-    await insertId(ctx, "purchasingRfqLine", {
-      purchasingRfqId: rfq,
-      itemId: item.id,
-      description: spec.description,
-      quantity: data.rfqQuantityBreaks,
-      purchaseUnitOfMeasureCode: "EA",
-      inventoryUnitOfMeasureCode: "EA",
-      conversionFactor: 1,
-      order: rfqLineOrder++
-    });
-  }
-
-  // ── One Active supplier quote per RFQ supplier, linked back to the RFQ ────
+  // A walkthrough dataset has no RFQ (rfqHeader null), so none of this runs.
+  const rfqHeader = data.rfqHeader;
+  let rfq = "";
   let winningInteractionId = "";
-  for (const spec of data.rfqQuotes) {
-    const quoteStatus = spec.status ?? "Active";
-    ctx.log(`supplier quote — ${spec.supplier} (${quoteStatus})`);
-    const supplierId = need(ctx.refs.suppliers, spec.supplier);
-
-    await insertId(ctx, "purchasingRfqSupplier", {
-      purchasingRfqId: rfq,
-      supplierId
-    });
-
-    const interactionId = await insertId(ctx, "supplierInteraction", {
-      supplierId
-    });
-    const quoteReadableId = await nextSequence(ctx, "supplierQuote");
-    const quoteId = await insertId(ctx, "supplierQuote", {
-      supplierQuoteId: quoteReadableId,
-      supplierQuoteType: "Purchase",
-      status: quoteStatus,
-      supplierId,
-      supplierContactId: need(ctx.refs.contacts, `sc:${spec.supplier}`),
-      supplierLocationId: need(ctx.refs.misc, `sloc:${spec.supplier}`),
-      supplierReference: spec.supplierReference,
-      supplierInteractionId: interactionId,
-      assignee: spec.assignee === "self" ? userId : undefined,
-      quotedDate: resolveDate(ctx.anchor, SUPPLIER_QUOTE_QUOTED_OFFSET),
+  if (rfqHeader) {
+    ctx.log("purchasing RFQ — Requested (3 suppliers)");
+    const rfqReadableId = await nextSequence(ctx, "purchasingRfq");
+    rfq = await insertId(ctx, "purchasingRfq", {
+      rfqId: rfqReadableId,
+      status: rfqHeader.status,
+      employeeId: ctx.userId,
+      assignee: rfqHeader.assignee === "self" ? userId : undefined,
+      locationId: plantId,
+      rfqDate: resolveDate(ctx.anchor, rfqHeader.rfqDateOffset),
+      // The KPI chart and list sort on createdAt; a seed-time stamp is one spike.
       createdAt: resolveTimestamp(
         ctx.anchor,
-        SUPPLIER_QUOTE_QUOTED_OFFSET,
-        "10:00:00"
+        rfqHeader.rfqDateOffset,
+        "09:00:00"
       ),
-      expirationDate: resolveDate(ctx.anchor, SUPPLIER_QUOTE_EXPIRATION_OFFSET),
-      currencyCode: "USD",
-      exchangeRate: 1,
-      externalNotes: RICH(`Quote against ${rfqReadableId}. Prices FOB origin.`)
+      expirationDate: resolveDate(ctx.anchor, rfqHeader.expirationOffset),
+      notes: RICH(rfqHeader.notes),
+      internalNotes: RICH(rfqHeader.internalNotes)
     });
+    ctx.refs.documents[rfqHeader.ref] = rfq;
 
-    // Same two steps as supplier-quote finalize: create the external link, then
-    // point the quote at it — that id is what /share/supplier-quote/:id reads.
-    // No fixed id — externalLink's PK is global, so a literal collides on the
-    // second company to get this dataset. Let the column default mint it.
-    const linkId = await insertId(ctx, "externalLink", {
-      documentType: "SupplierQuote",
-      documentId: quoteId,
-      supplierId,
-      expiresAt: resolveTimestamp(
-        ctx.anchor,
-        SUPPLIER_QUOTE_EXPIRATION_OFFSET,
-        SUPPLIER_QUOTE_EXPIRATION_TIME_OF_DAY
-      )
-    });
-    await ctx.client.query(
-      `UPDATE "supplierQuote" SET "externalLinkId" = $1 WHERE id = $2 AND "companyId" = $3`,
-      [linkId, quoteId, ctx.companyId]
-    );
-    ctx.refs.misc[`sqlink:${spec.key}`] = linkId;
-
-    let quoteLineSort = 1;
-    for (const line of spec.lines) {
-      const item = need(ctx.refs.items, line.item);
-      const quoteLineId = await insertId(ctx, "supplierQuoteLine", {
-        supplierQuoteId: quoteId,
-        supplierQuoteLineType: "Part",
+    let rfqLineOrder = 1;
+    for (const spec of data.rfqLines) {
+      const item = need(ctx.refs.items, spec.item);
+      await insertId(ctx, "purchasingRfqLine", {
+        purchasingRfqId: rfq,
         itemId: item.id,
-        description: item.name,
-        supplierPartId: line.supplierPartId,
+        description: spec.description,
         quantity: data.rfqQuantityBreaks,
         purchaseUnitOfMeasureCode: "EA",
         inventoryUnitOfMeasureCode: "EA",
         conversionFactor: 1,
-        sortOrder: quoteLineSort++
+        order: rfqLineOrder++
       });
-
-      // A short break list would silently drop a tier from the comparison.
-      if (line.breaks.length !== data.rfqQuantityBreaks.length) {
-        throw new Error(
-          `Seed: ${spec.key}/${line.item} must price every quantity break`
-        );
-      }
-
-      for (const [index, [unitPrice, leadTime]] of line.breaks.entries()) {
-        await insertRow(ctx, "supplierQuoteLinePrice", {
-          supplierQuoteId: quoteId,
-          supplierQuoteLineId: quoteLineId,
-          quantity: data.rfqQuantityBreaks[index],
-          supplierUnitPrice: unitPrice,
-          leadTime,
-          exchangeRate: 1,
-          supplierShippingCost: spec.shippingCost,
-          supplierTaxAmount: 0
-        });
-      }
     }
 
-    await insertRow(ctx, "purchasingRfqToSupplierQuote", {
-      purchasingRfqId: rfq,
-      supplierQuoteId: quoteId
-    });
-    ctx.refs.documents[`sq:${spec.key}`] = quoteId;
+    // ── One Active supplier quote per RFQ supplier, linked back to the RFQ ────
+    for (const spec of data.rfqQuotes) {
+      const quoteStatus = spec.status ?? "Active";
+      ctx.log(`supplier quote — ${spec.supplier} (${quoteStatus})`);
+      const supplierId = need(ctx.refs.suppliers, spec.supplier);
 
-    if (spec.key === data.rfqWinningQuote) winningInteractionId = interactionId;
+      await insertId(ctx, "purchasingRfqSupplier", {
+        purchasingRfqId: rfq,
+        supplierId
+      });
+
+      const interactionId = await insertId(ctx, "supplierInteraction", {
+        supplierId
+      });
+      const quoteReadableId = await nextSequence(ctx, "supplierQuote");
+      const quoteId = await insertId(ctx, "supplierQuote", {
+        supplierQuoteId: quoteReadableId,
+        supplierQuoteType: "Purchase",
+        status: quoteStatus,
+        supplierId,
+        supplierContactId: need(ctx.refs.contacts, `sc:${spec.supplier}`),
+        supplierLocationId: need(ctx.refs.misc, `sloc:${spec.supplier}`),
+        supplierReference: spec.supplierReference,
+        supplierInteractionId: interactionId,
+        assignee: spec.assignee === "self" ? userId : undefined,
+        quotedDate: resolveDate(ctx.anchor, SUPPLIER_QUOTE_QUOTED_OFFSET),
+        createdAt: resolveTimestamp(
+          ctx.anchor,
+          SUPPLIER_QUOTE_QUOTED_OFFSET,
+          "10:00:00"
+        ),
+        expirationDate: resolveDate(
+          ctx.anchor,
+          SUPPLIER_QUOTE_EXPIRATION_OFFSET
+        ),
+        currencyCode: "USD",
+        exchangeRate: 1,
+        externalNotes: RICH(
+          `Quote against ${rfqReadableId}. Prices FOB origin.`
+        )
+      });
+
+      // Same two steps as supplier-quote finalize: create the external link, then
+      // point the quote at it — that id is what /share/supplier-quote/:id reads.
+      // No fixed id — externalLink's PK is global, so a literal collides on the
+      // second company to get this dataset. Let the column default mint it.
+      const linkId = await insertId(ctx, "externalLink", {
+        documentType: "SupplierQuote",
+        documentId: quoteId,
+        supplierId,
+        expiresAt: resolveTimestamp(
+          ctx.anchor,
+          SUPPLIER_QUOTE_EXPIRATION_OFFSET,
+          SUPPLIER_QUOTE_EXPIRATION_TIME_OF_DAY
+        )
+      });
+      await ctx.client.query(
+        `UPDATE "supplierQuote" SET "externalLinkId" = $1 WHERE id = $2 AND "companyId" = $3`,
+        [linkId, quoteId, ctx.companyId]
+      );
+      ctx.refs.misc[`sqlink:${spec.key}`] = linkId;
+
+      let quoteLineSort = 1;
+      for (const line of spec.lines) {
+        const item = need(ctx.refs.items, line.item);
+        const quoteLineId = await insertId(ctx, "supplierQuoteLine", {
+          supplierQuoteId: quoteId,
+          supplierQuoteLineType: "Part",
+          itemId: item.id,
+          description: item.name,
+          supplierPartId: line.supplierPartId,
+          quantity: data.rfqQuantityBreaks,
+          purchaseUnitOfMeasureCode: "EA",
+          inventoryUnitOfMeasureCode: "EA",
+          conversionFactor: 1,
+          sortOrder: quoteLineSort++
+        });
+
+        // A short break list would silently drop a tier from the comparison.
+        if (line.breaks.length !== data.rfqQuantityBreaks.length) {
+          throw new Error(
+            `Seed: ${spec.key}/${line.item} must price every quantity break`
+          );
+        }
+
+        for (const [index, [unitPrice, leadTime]] of line.breaks.entries()) {
+          await insertRow(ctx, "supplierQuoteLinePrice", {
+            supplierQuoteId: quoteId,
+            supplierQuoteLineId: quoteLineId,
+            quantity: data.rfqQuantityBreaks[index],
+            supplierUnitPrice: unitPrice,
+            leadTime,
+            exchangeRate: 1,
+            supplierShippingCost: spec.shippingCost,
+            supplierTaxAmount: 0
+          });
+        }
+      }
+
+      await insertRow(ctx, "purchasingRfqToSupplierQuote", {
+        purchasingRfqId: rfq,
+        supplierQuoteId: quoteId
+      });
+      ctx.refs.documents[`sq:${spec.key}`] = quoteId;
+
+      if (spec.key === data.rfqWinningQuote)
+        winningInteractionId = interactionId;
+    }
   }
 
   // Same shape as a quote created from the supplier screen. No externalLink —
@@ -452,78 +463,80 @@ export async function runTier5(ctx: Ctx): Promise<void> {
     ctx.refs.documents[`sq:${spec.key}`] = quoteId;
   }
 
-  // ── Purchase orders converted from the winning quote ──────────────────────
-  // The convert server function reuses the quote's supplier interaction, and a PO
-  // with nothing received and nothing invoiced is exactly the state post-receipt
-  // and post-purchase-invoice call "To Receive and Invoice".
-  const winner = data.rfqQuotes.find((q) => q.key === data.rfqWinningQuote);
-  if (!winner) {
-    throw new Error(`Seed: unknown winning quote "${data.rfqWinningQuote}"`);
-  }
-  const orderBreak = data.rfqQuantityBreaks.indexOf(data.rfqOrderQuantity);
-  if (orderBreak === -1) {
-    throw new Error(`Seed: no quantity break for ${data.rfqOrderQuantity}`);
-  }
-
-  for (const spec of data.purchaseOrders) {
-    if (spec.source !== "winningQuote") continue;
-    ctx.log(spec.log);
-
-    const poReadableId = await nextSequence(ctx, "purchaseOrder");
-    const poId = await insertId(ctx, "purchaseOrder", {
-      purchaseOrderId: poReadableId,
-      purchaseOrderType: spec.purchaseOrderType,
-      status: spec.status,
-      supplierId: need(ctx.refs.suppliers, winner.supplier),
-      supplierContactId: need(ctx.refs.contacts, `sc:${winner.supplier}`),
-      supplierReference: winner.supplierReference,
-      supplierInteractionId: winningInteractionId,
-      currencyCode: spec.currencyCode,
-      exchangeRate: spec.exchangeRate,
-      orderDate: resolveDate(ctx.anchor, spec.orderDateOffset)
-    });
-    await insertRow(ctx, "purchaseOrderDelivery", {
-      id: poId,
-      locationId: plantId,
-      shippingMethodId,
-      companyId
-    });
-    await insertRow(ctx, "purchaseOrderPayment", {
-      id: poId,
-      paymentTermId,
-      companyId
-    });
-
-    let poLineSort = 1;
-    for (const line of winner.lines) {
-      const item = need(ctx.refs.items, line.item);
-      const orderPrice = line.breaks[orderBreak];
-      if (!orderPrice) {
-        throw new Error(
-          `Seed: ${line.item} has no price at ${data.rfqOrderQuantity}`
-        );
-      }
-      await insertId(ctx, "purchaseOrderLine", {
-        purchaseOrderId: poId,
-        purchaseOrderLineType: "Part",
-        itemId: item.id,
-        description: item.name,
-        purchaseQuantity: data.rfqOrderQuantity,
-        supplierUnitPrice: orderPrice[0],
-        supplierShippingCost: winner.shippingCost,
-        exchangeRate: 1,
-        inventoryUnitOfMeasureCode: "EA",
-        purchaseUnitOfMeasureCode: "EA",
-        locationId: plantId,
-        sortOrder: poLineSort++
-      });
+  if (rfqHeader) {
+    // ── Purchase orders converted from the winning quote ──────────────────────
+    // The convert server function reuses the quote's supplier interaction, and a PO
+    // with nothing received and nothing invoiced is exactly the state post-receipt
+    // and post-purchase-invoice call "To Receive and Invoice".
+    const winner = data.rfqQuotes.find((q) => q.key === data.rfqWinningQuote);
+    if (!winner) {
+      throw new Error(`Seed: unknown winning quote "${data.rfqWinningQuote}"`);
+    }
+    const orderBreak = data.rfqQuantityBreaks.indexOf(data.rfqOrderQuantity);
+    if (orderBreak === -1) {
+      throw new Error(`Seed: no quantity break for ${data.rfqOrderQuantity}`);
     }
 
-    await insertRow(ctx, "purchasingRfqToPurchaseOrder", {
-      purchasingRfqId: rfq,
-      purchaseOrderId: poId
-    });
-    ctx.refs.documents[`po:sq-${data.rfqWinningQuote}`] = poId;
+    for (const spec of data.purchaseOrders) {
+      if (spec.source !== "winningQuote") continue;
+      ctx.log(spec.log);
+
+      const poReadableId = await nextSequence(ctx, "purchaseOrder");
+      const poId = await insertId(ctx, "purchaseOrder", {
+        purchaseOrderId: poReadableId,
+        purchaseOrderType: spec.purchaseOrderType,
+        status: spec.status,
+        supplierId: need(ctx.refs.suppliers, winner.supplier),
+        supplierContactId: need(ctx.refs.contacts, `sc:${winner.supplier}`),
+        supplierReference: winner.supplierReference,
+        supplierInteractionId: winningInteractionId,
+        currencyCode: spec.currencyCode,
+        exchangeRate: spec.exchangeRate,
+        orderDate: resolveDate(ctx.anchor, spec.orderDateOffset)
+      });
+      await insertRow(ctx, "purchaseOrderDelivery", {
+        id: poId,
+        locationId: plantId,
+        shippingMethodId,
+        companyId
+      });
+      await insertRow(ctx, "purchaseOrderPayment", {
+        id: poId,
+        paymentTermId,
+        companyId
+      });
+
+      let poLineSort = 1;
+      for (const line of winner.lines) {
+        const item = need(ctx.refs.items, line.item);
+        const orderPrice = line.breaks[orderBreak];
+        if (!orderPrice) {
+          throw new Error(
+            `Seed: ${line.item} has no price at ${data.rfqOrderQuantity}`
+          );
+        }
+        await insertId(ctx, "purchaseOrderLine", {
+          purchaseOrderId: poId,
+          purchaseOrderLineType: "Part",
+          itemId: item.id,
+          description: item.name,
+          purchaseQuantity: data.rfqOrderQuantity,
+          supplierUnitPrice: orderPrice[0],
+          supplierShippingCost: winner.shippingCost,
+          exchangeRate: 1,
+          inventoryUnitOfMeasureCode: "EA",
+          purchaseUnitOfMeasureCode: "EA",
+          locationId: plantId,
+          sortOrder: poLineSort++
+        });
+      }
+
+      await insertRow(ctx, "purchasingRfqToPurchaseOrder", {
+        purchasingRfqId: rfq,
+        purchaseOrderId: poId
+      });
+      ctx.refs.documents[`po:sq-${data.rfqWinningQuote}`] = poId;
+    }
   }
 
   // Lines + suppliers only; neither was ever sent. Cancel clears the assignee.

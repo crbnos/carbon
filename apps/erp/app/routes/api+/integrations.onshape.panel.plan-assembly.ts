@@ -163,7 +163,7 @@ export async function action({ request }: ActionFunctionArgs) {
       missingColumns,
       bom: describeBomPayload(bom)
     };
-    logger.warn("Onshape BOM is missing required columns", {
+    logger.warning("Onshape BOM is missing required columns", {
       companyId,
       ...diagnostics
     });
@@ -428,7 +428,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
     assemblyElementIds = new Set(assemblies.map((element) => element.id));
   } catch (error) {
-    logger.warn("Onshape assembly list failed", {
+    logger.warning("Onshape assembly list failed", {
       companyId,
       documentId,
       error
@@ -523,7 +523,11 @@ export async function action({ request }: ActionFunctionArgs) {
         try {
           return await read();
         } catch (error) {
-          logger.warn("Onshape state read failed", { companyId, label, error });
+          logger.warning("Onshape state read failed", {
+            companyId,
+            label,
+            error
+          });
           return null;
         }
       }
@@ -576,7 +580,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
   } catch (error) {
-    logger.warn("Current file check failed", { companyId, error });
+    logger.warning("Current file check failed", { companyId, error });
     fileWarnings.push(
       "Carbon couldn't check which files the items already have, so every pick counts as an export."
     );

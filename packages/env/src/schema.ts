@@ -307,8 +307,8 @@ export const schema = define({
   },
   BOT_PROTECTION: {
     group: "auth",
-    description: "Login bot check: botid or turnstile",
-    type: z.enum(["botid", "turnstile"])
+    description: "Login bot check: botid, turnstile or none",
+    type: z.enum(["botid", "turnstile", "none"])
   },
   CLOUDFLARE_TURNSTILE_SITE_KEY: {
     group: "auth",

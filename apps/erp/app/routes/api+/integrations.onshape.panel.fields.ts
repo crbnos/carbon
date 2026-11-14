@@ -174,7 +174,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         detected: { item: detected.item, quantity: detected.quantity }
       };
     } catch (error) {
-      logger.warn("Failed to read the BOM columns for the Fields page", {
+      logger.warning("Failed to read the BOM columns for the Fields page", {
         companyId,
         documentId,
         elementId,
@@ -208,7 +208,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const [integration, definitions, options, links] = reads;
   if (links.error) {
-    logger.warn("Failed to count the panel's item links", {
+    logger.warning("Failed to count the panel's item links", {
       companyId,
       error: links.error
     });

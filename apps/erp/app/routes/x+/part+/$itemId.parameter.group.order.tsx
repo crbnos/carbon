@@ -27,7 +27,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   ).validate(formData);
 
   if (validation.error) {
-    logger.error(validation.error);
+    logger.error("Invalid configuration parameter group order", {
+      itemId,
+      error: validation.error
+    });
     return {
       success: false,
       error: "Invalid form data"
@@ -39,7 +42,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (upsert.error) {
-    logger.error(upsert.error);
+    logger.error("Failed to reorder configuration parameter groups", {
+      itemId,
+      error: upsert.error
+    });
     return {
       success: false,
       error: upsert.error.message

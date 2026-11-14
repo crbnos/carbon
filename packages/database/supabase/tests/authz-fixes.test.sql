@@ -40,7 +40,7 @@ DECLARE
   bank text; customer_a text; draft_payment text; posted_payment text;
   note_id text; view_id text; category_a text; category_b text;
   attribute_a text; attribute_b text; attribute_locked text;
-  companies text[]; n int;
+  api_key_a text; companies text[]; n int;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Authz A ' || id(), 'system') RETURNING id INTO group_a;
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Authz B ' || id(), 'system') RETURNING id INTO group_b;
@@ -61,7 +61,11 @@ BEGIN
       'resources_update', jsonb_build_array(company_a),
       'invoicing_update', jsonb_build_array(company_a),
       'documents_view', jsonb_build_array(company_a, company_b),  -- names a company u is not in
-      'inventory_view', jsonb_build_array('0')                    -- the old global wildcard
+      'inventory_view', jsonb_build_array('0'),                   -- the old global wildcard
+      'settings_view', jsonb_build_array(company_a),
+      'settings_create', jsonb_build_array(company_a),
+      'settings_update', jsonb_build_array(company_a),
+      'settings_delete', jsonb_build_array(company_a)
     )),
     (w, '{}'::jsonb), (v, '{}'::jsonb), (c, '{}'::jsonb);
 
@@ -76,6 +80,10 @@ BEGIN
     VALUES ('AUTHZ-P-' || id(), 'Receipt', customer_a, '2026-09-01', 'USD', 10, bank, company_a, 'system', 'Posted')
     RETURNING id INTO posted_payment;
 
+  INSERT INTO "apiKey" (name, "companyId", "createdBy", "keyHash", scopes)
+    VALUES ('Authz key', company_a, 'system', md5('crbn_authz_' || id()),
+            jsonb_build_object('sales_view', jsonb_build_array(company_a)))
+    RETURNING id INTO api_key_a;
   INSERT INTO note ("documentId", note, "companyId", "createdBy") VALUES ('doc', 'hello', company_a, u)
     RETURNING id INTO note_id;
   INSERT INTO "tableView" (name, "table", "companyId", "createdBy") VALUES ('mine', 'item', company_a, u)
@@ -109,6 +117,31 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
   RAISE NOTICE 'PASS memberships cannot be written through the API';
+
+  -- ── apiKey: no write through the API, whatever the caller's permissions ──
+  -- A key acts as its createdBy with its scopes, and its keyHash is a plain SHA-256,
+  -- so a caller who could write the row would mint a key with any scope. Only the
+  -- users_update-gated service functions write it, with the service role.
+  ASSERT NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'apiKey' AND cmd <> 'SELECT'
+  ), 'apiKey has a write policy';
+  ASSERT EXISTS (SELECT 1 FROM "apiKey" WHERE id = api_key_a), 'settings_view still lists keys';
+  BEGIN
+    INSERT INTO "apiKey" (name, "companyId", "createdBy", "keyHash", scopes)
+      VALUES ('Forged', company_a, u, md5('crbn_forged'),
+              jsonb_build_object('accounting_delete', jsonb_build_array(company_a)));
+    RAISE EXCEPTION 'an API key was created through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE "apiKey" SET scopes = jsonb_build_object('accounting_delete', jsonb_build_array(company_a)),
+    "keyHash" = md5('crbn_forged');
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 0, 'an API key was re-scoped through the API';
+  DELETE FROM "apiKey";
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 0, 'an API key was deleted through the API';
+  RAISE NOTICE 'PASS API keys cannot be written through the API';
 
   -- ── Owner-only rows: the author edits, but cannot move the row into another company ──
   UPDATE note SET note = 'edited' WHERE id = note_id;

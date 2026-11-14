@@ -73,10 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (result.error) {
     return data(
       {},
-      await flash(
-        request,
-        error(result.error, result.error.message ?? "Failed to delete period")
-      )
+      await flash(request, error(result.error, "Failed to delete period"))
     );
   }
 

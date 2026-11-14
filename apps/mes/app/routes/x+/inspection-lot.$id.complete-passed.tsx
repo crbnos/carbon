@@ -15,6 +15,7 @@ import {
   returnPickedRemainders
 } from "~/services/operations.service";
 import {
+  checkRequiredScans,
   checkStrictBackflush,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
@@ -117,6 +118,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
         `Passed units (${candidates.length}) exceed the operation's remaining quantity (${state.opRemaining}) — quantities were already recorded from the actions menu`
       );
     }
+    const scanCheck = await checkRequiredScans(serviceRole, {
+      jobOperationId: state.jobOperationId,
+      quantity: candidates.length,
+      requiresSerialTracking: true,
+      trackedEntityIds: candidates.map((c) => c.trackedEntityId),
+      companyId
+    });
+    if (scanCheck.message) {
+      return fail(scanCheck.error, scanCheck.message);
+    }
     const backflushCheck = await checkStrictBackflush({
       jobOperationId: state.jobOperationId,
       quantity: candidates.length,
@@ -165,6 +176,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (quantity <= 0) {
     return fail(null, "No passed units to complete");
+  }
+
+  const scanCheck = await checkRequiredScans(serviceRole, {
+    jobOperationId: state.jobOperationId,
+    quantity,
+    requiresSerialTracking: false,
+    trackedEntityIds: [],
+    companyId
+  });
+  if (scanCheck.message) {
+    return fail(scanCheck.error, scanCheck.message);
   }
 
   const backflushCheck = await checkStrictBackflush({

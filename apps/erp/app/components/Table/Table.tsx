@@ -88,7 +88,9 @@ import { readRowId } from "./infiniteRowsStore";
 import {
   columnsDiffer,
   columnsForTable,
+  isPresetNavigation,
   parseRememberedTableState,
+  queryToRemember,
   type RememberedTableState,
   rememberedQuery,
   type TableColumnsState,
@@ -674,7 +676,14 @@ const Table = <T extends object>({
       previousQuery.current = { search: location.search, view };
       return;
     }
-    if (!previous || previous.view || location.state?.restoreRememberedTable) {
+    const preset = isPresetNavigation(
+      params,
+      !!location.state?.restoreRememberedTable
+    );
+    if (
+      !preset &&
+      (!previous || previous.view || location.state?.restoreRememberedTable)
+    ) {
       const next = rememberedQuery(params, remembered.current, false);
       if (next) {
         const search = `?${next}`;
@@ -700,8 +709,7 @@ const Table = <T extends object>({
       columnVisibility,
       columnOrder,
       columnPinning,
-      filters: params.getAll("filter").filter(Boolean),
-      sorts: params.getAll("sort").filter(Boolean)
+      ...queryToRemember(params, remembered.current, preset)
     };
     try {
       if (

@@ -311,7 +311,9 @@ async function getAccountMappingTabData(
   // what loaded and log the cause.
   for (const result of [mappings, unmapped, proposals, allAccounts, blocking]) {
     if (result.error) {
-      console.error("Failed to load account mapping data:", result.error);
+      logger.error("Failed to load account mapping data", {
+        error: result.error
+      });
     }
   }
 
@@ -391,7 +393,9 @@ async function getDimensionSyncTabData(
   // loaded and log the cause.
   for (const result of [dimensionsResult, mappingsResult, unmappedResult]) {
     if (result.error) {
-      console.error("Failed to load dimension sync data:", result.error);
+      logger.error("Failed to load dimension sync data", {
+        error: result.error
+      });
     }
   }
 
@@ -417,7 +421,7 @@ async function getDimensionSyncTabData(
       }))
     });
   } catch (err) {
-    console.error("Failed to resolve dimension value labels:", err);
+    logger.error("Failed to resolve dimension value labels", { error: err });
   }
 
   const mappings = mappingRows.map((mapping) => ({
@@ -671,7 +675,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     if (operations.error) {
       // Don't block the settings drawer on an inbox failure — render the
       // tab empty and log the cause.
-      console.error("Failed to load sync operations:", operations.error);
+      logger.error("Failed to load sync operations", {
+        error: operations.error
+      });
     }
 
     let tieOut: {
@@ -809,7 +815,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             Object.assign(flattenedMetadata, freshStatus);
           }
         } else {
-          logger.warn(
+          logger.warning(
             "Stripe Connect account is no longer linked; hiding stale connection state",
             { companyId, stripeAccountId }
           );
@@ -901,10 +907,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // stays empty.)
       chartAccounts = await provider.listChartOfAccounts();
     } catch (error) {
-      console.error(
-        "Failed to fetch QuickBooks Online accounts for settings:",
+      logger.error("Failed to fetch QuickBooks Online accounts for settings", {
         error
-      );
+      });
       // Continue without chart accounts — the Account Mapping tab renders
       // with Carbon accounts only
     }
@@ -930,7 +935,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // returned by listChartOfAccounts.
       chartAccounts = await provider.listChartOfAccounts();
     } catch (error) {
-      console.error("Failed to fetch Rillet accounts for settings:", error);
+      logger.error("Failed to fetch Rillet accounts for settings", { error });
       // Continue without chart accounts — the Account Mapping tab renders
       // with Carbon accounts only
     }
@@ -1447,10 +1452,6 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
         }
       );
     } catch (clearError) {
-      logger.error("Could not clear the previous Onshape credentials", {
-        companyId,
-        error: clearError
-      });
       return data(
         {},
         await flash(
@@ -1497,17 +1498,14 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
       try {
         await onInstall(companyId);
       } catch (hookError) {
-        logger.error("onInstall hook failed for integration", {
-          integrationId,
-          error: hookError
-        });
         throw redirect(
           path.to.integrations,
           await flash(
             request,
             error(
               hookError,
-              `Installed ${integration.name}, but setup hook failed`
+              `Installed ${integration.name}, but setup hook failed`,
+              { integrationId }
             )
           )
         );

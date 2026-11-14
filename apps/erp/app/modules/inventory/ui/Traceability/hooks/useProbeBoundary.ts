@@ -2,9 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { type MutableRefObject, useEffect } from "react";
 import { TRACE_API } from "../constants";
 import type { LineagePayload } from "../utils";
+
+const logger = getLogger("erp", "inventory", "traceability", "probe-boundary");
 
 type Boundary = { incoming: Set<string>; outgoing: Set<string> };
 
@@ -66,8 +69,12 @@ export function useProbeBoundary({
             markExhausted(ent.id);
           }
         })
-        .catch(() => {
-          // probe fail = silently leave indicator off
+        .catch((error) => {
+          // A failed probe leaves the expand indicator off.
+          logger.warning("Failed to probe a tracked entity boundary", {
+            trackedEntityId: ent.id,
+            error
+          });
         });
     }
 

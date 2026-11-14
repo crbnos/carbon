@@ -336,6 +336,14 @@ export const COVERAGE = {
       "all three"
     )
   },
+  materialRequestStatus: {
+    values: enumValues("materialRequestStatus"),
+    missing: matrix(
+      "production status matrix",
+      "material request with status",
+      "both"
+    )
+  },
   pickingListStatus: {
     values: enumValues("pickingListStatus", {
       Draft: NOT_AUTHORABLE,
@@ -736,8 +744,10 @@ export function documentRefs(dataset: Dataset): DocumentRefs {
   for (const quote of p.rfqQuotes) {
     register(`purchasing.rfqQuotes "${quote.key}"`, `sq:${quote.key}`);
   }
-  register("purchasing.rfqHeader", p.rfqHeader.ref);
-  register("purchasing", `po:sq-${p.rfqWinningQuote}`);
+  if (p.rfqHeader) {
+    register("purchasing.rfqHeader", p.rfqHeader.ref);
+    register("purchasing", `po:sq-${p.rfqWinningQuote}`);
+  }
   for (const rfq of p.lifecycleRfqs) {
     register(`purchasing.lifecycleRfqs "${rfq.ref}"`, rfq.ref);
   }
@@ -767,10 +777,12 @@ export function documentRefs(dataset: Dataset): DocumentRefs {
     register(`production.jobs "${job.key}"`, `job:${job.key}`);
     seenBy.jobs.push(count);
   }
-  register(
-    "production.genealogyAssembly",
-    dataset.production.genealogyAssembly.ref
-  );
+  if (dataset.production.genealogyAssembly) {
+    register(
+      "production.genealogyAssembly",
+      dataset.production.genealogyAssembly.ref
+    );
+  }
 
   for (const insp of dataset.quality.inspections) {
     register(`quality.inspections "${insp.ref}"`, insp.ref);
@@ -806,7 +818,9 @@ export function documentRefs(dataset: Dataset): DocumentRefs {
   }
   seenBy.workflowRuns = count;
 
-  register("planning.demandOrder", dataset.planning.demandOrder.ref);
+  if (dataset.planning.demandOrder) {
+    register("planning.demandOrder", dataset.planning.demandOrder.ref);
+  }
 
   return {
     duplicates,
@@ -886,8 +900,8 @@ export function floorState(
       if (status === "In Progress" && op.workCenter) active.add(op.workCenter);
     }
   }
-  const eventsJob = jobByKey.get(production.eventsJobKey);
-  if (eventsJob) {
+  const eventsJob = jobByKey.get(production.eventsJobKey ?? "");
+  if (eventsJob && production.openEvent) {
     const workCenter = rootOpsOf(eventsJob.item)[
       production.openEvent.operationOrder - 1
     ]?.workCenter;
@@ -897,7 +911,7 @@ export function floorState(
     }
   }
   let batchLeadWithoutWorkCenter = false;
-  const batchLead = production.batch.members[0];
+  const batchLead = production.batch?.members[0];
   const batchLeadJob = batchLead && jobByKey.get(batchLead.job);
   if (batchLead && batchLeadJob) {
     const workCenter = rootOpsOf(batchLeadJob.item)[batchLead.order - 1]
@@ -1165,7 +1179,11 @@ export function buildIndex(dataset: Dataset): DatasetIndex {
     workCenter: workCenters,
     maintainedWorkCenter: new Set([...workCenters, f.hqWorkCenter.name]),
     warehouse: new Set(f.warehouses.map((w) => w.key)),
-    shelf: new Set(f.shelves.map((s) => s.name)),
+    // Tier 01 registers each work center's shelf as `wc:<name>`.
+    shelf: new Set([
+      ...f.shelves.map((s) => s.name),
+      ...f.workCenters.map((w) => `wc:${w.name}`)
+    ]),
     shift: new Set(f.shifts.map((shift) => shift.name)),
     storageType: new Set(f.storageTypes),
     customerType: new Set(f.customerTypes),
@@ -1240,6 +1258,10 @@ export function buildIndex(dataset: Dataset): DatasetIndex {
 export type ValidationCtx = {
   readonly dataset: Dataset;
   readonly ix: DatasetIndex;
+  /** `Dataset.walkthrough`: the demo coverage checks do not apply. */
+  readonly walkthrough: boolean;
+  /** `checkCoverage`, skipped for a walkthrough dataset. */
+  cover(exhibited: Partial<Record<CoverageKey, ReadonlySet<string>>>): void;
   readonly violations: string[];
   fail(message: string): void;
   need(kind: RefKind, where: string, id: string): void;
@@ -1255,11 +1277,16 @@ export function createContext(dataset: Dataset): ValidationCtx {
   const fail = (message: string) => {
     violations.push(message);
   };
+  const walkthrough = dataset.walkthrough === true;
   return {
     dataset,
     ix,
     violations,
+    walkthrough,
     fail,
+    cover(exhibited) {
+      if (!walkthrough) checkCoverage(fail, exhibited);
+    },
     need(kind, where, id) {
       if (!ix.refs[kind].has(id)) {
         fail(`${where}: unknown ${REF_LABELS[kind]} "${id}"`);
@@ -1347,6 +1374,7 @@ export function foundation(ctx: ValidationCtx): void {
     ["production.jobs", dataset.production.jobs],
     ["production.genealogyInputs", dataset.production.genealogyInputs],
     ["production.pickingLists", dataset.production.pickingLists],
+    ["production.materialRequests", dataset.production.materialRequests],
     ["quality.workflows", dataset.quality.workflows],
     ["quality.nonConformances", dataset.quality.nonConformances],
     ["quality.inspections", dataset.quality.inspections],
@@ -1368,8 +1396,11 @@ export function foundation(ctx: ValidationCtx): void {
     ["planning.makeItemIds", dataset.planning.makeItemIds],
     ["planning.demandProjections", dataset.planning.demandProjections]
   ];
-  for (const [where, arr] of nonEmpty) {
-    if (arr.length === 0) fail(`${where}: must not be empty`);
+  // Coverage: a walkthrough dataset leaves most of these empty.
+  if (!ctx.walkthrough) {
+    for (const [where, arr] of nonEmpty) {
+      if (arr.length === 0) fail(`${where}: must not be empty`);
+    }
   }
 
   if (!f.shippingMethods.includes(f.defaultShippingMethod)) {
@@ -1412,7 +1443,7 @@ export function foundation(ctx: ValidationCtx): void {
       fail(`${where}: hoursPerWeek ${partner.hoursPerWeek} must be 1–168`);
     }
   }
-  if (f.partners.length < MIN_PARTNERS) {
+  if (!ctx.walkthrough && f.partners.length < MIN_PARTNERS) {
     fail(
       `foundation.partners: ${f.partners.length} partners, need ≥ ${MIN_PARTNERS} (Resources › Partners)`
     );
@@ -1442,7 +1473,7 @@ export function foundation(ctx: ValidationCtx): void {
   }
   // Convention: every dataset showcases at least one EUR supplier so the FX
   // and multi-currency purchasing screens have a party to render.
-  if (!f.suppliers.some((s) => s.currencyCode === "EUR")) {
+  if (!ctx.walkthrough && !f.suppliers.some((s) => s.currencyCode === "EUR")) {
     fail(`foundation.suppliers: no supplier with currencyCode "EUR"`);
   }
 
@@ -1615,12 +1646,12 @@ export function foundation(ctx: ValidationCtx): void {
   const withParameters = f.procedures.filter(
     (proc) => (proc.parameters ?? []).length > 0
   ).length;
-  if (withParameters < MIN_PROCEDURES_WITH_PARAMETERS) {
+  if (!ctx.walkthrough && withParameters < MIN_PROCEDURES_WITH_PARAMETERS) {
     fail(
       `foundation.procedures: ${withParameters} procedures carry parameters, need ≥ ${MIN_PROCEDURES_WITH_PARAMETERS} (procedure Parameters tab)`
     );
   }
-  checkCoverage(fail, { procedureStatus: seenProcedureStatuses });
+  ctx.cover({ procedureStatus: seenProcedureStatuses });
 
   // A party's own address (a foreign buyer an export rule must see).
   for (const [bucket, parties] of [
@@ -1702,8 +1733,14 @@ export function items(ctx: ValidationCtx): void {
     if (!makePartIds.has(method.readableId)) {
       fail(`${where}: not a makePart readableId`);
     }
+    const bopOrders = new Set(method.bop.map((op) => op.order));
     for (const line of method.bom) {
       need("item", `${where} bom`, line.component);
+      if (line.operation !== undefined && !bopOrders.has(line.operation)) {
+        fail(
+          `${where} bom "${line.component}": operation ${line.operation} is not a bop order`
+        );
+      }
     }
     for (const op of method.bop) {
       need("process", `${where} bop order ${op.order}`, op.process);
@@ -1732,7 +1769,7 @@ export function items(ctx: ValidationCtx): void {
     need("item", "items.supplierLinks", link.item);
   }
 
-  if (dataset.items.inspectionPlans.length === 0) {
+  if (!ctx.walkthrough && dataset.items.inspectionPlans.length === 0) {
     fail(
       `items.inspectionPlans: empty — the MES inspection view needs an Inspection operation with a plan`
     );
@@ -1877,15 +1914,20 @@ export function items(ctx: ValidationCtx): void {
     }
   }
   // The Pricing Rules list shows both rule types and a quantity break.
-  for (const ruleType of ["Discount", "Markup"] as const) {
+  for (const ruleType of ctx.walkthrough
+    ? []
+    : (["Discount", "Markup"] as const)) {
     if (!dataset.items.pricingRules.some((r) => r.ruleType === ruleType)) {
       fail(`items.pricingRules: no ${ruleType} rule`);
     }
   }
-  if (!dataset.items.pricingRules.some((r) => r.minQuantity !== undefined)) {
+  if (
+    !ctx.walkthrough &&
+    !dataset.items.pricingRules.some((r) => r.minQuantity !== undefined)
+  ) {
     fail("items.pricingRules: no quantity-break rule (minQuantity)");
   }
-  if (dataset.items.pricingRules.length < 3) {
+  if (!ctx.walkthrough && dataset.items.pricingRules.length < 3) {
     fail(
       `items.pricingRules: ${dataset.items.pricingRules.length} rules, need ≥ 3`
     );
@@ -1893,7 +1935,9 @@ export function items(ctx: ValidationCtx): void {
 
   // Convention: every dataset showcases one configurable make part.
   if (!dataset.items.configuration) {
-    fail(`items.configuration: missing — every dataset showcases one`);
+    if (!ctx.walkthrough) {
+      fail(`items.configuration: missing — every dataset showcases one`);
+    }
   } else {
     const cfg = dataset.items.configuration;
     const where = `items.configuration "${cfg.item}"`;
@@ -2253,6 +2297,29 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
   const trackedStatuses = new Set<string>();
   for (const tracked of dataset.inventory.onHandTracked) {
     need("item", "inventory.onHandTracked", tracked.item);
+    if (tracked.shelf !== undefined) {
+      // Tier 03 writes the opening ledger per lot at this shelf, so the lots
+      // must be live and must add up to the (item, shelf) opening stock.
+      const where = `inventory.onHandTracked "${tracked.item}" shelf`;
+      need("shelf", where, tracked.shelf);
+      if (tracked.entities.some((entity) => entity.status === "Scrapped")) {
+        fail(`${where}: a Scrapped entity cannot sit on a tracked shelf`);
+      }
+      // Compared at database precision: 0.1 + 0.2 is not 0.3 in floats.
+      const lotSum = round(
+        tracked.entities.reduce((sum, e) => sum + e.quantity, 0)
+      );
+      const opening = round(
+        dataset.inventory.openingStock
+          .filter((s) => s.item === tracked.item && s.shelf === tracked.shelf)
+          .reduce((sum, s) => sum + s.qty, 0)
+      );
+      if (lotSum !== opening) {
+        fail(
+          `${where}: entity quantities sum to ${lotSum}, not the openingStock ${opening} at "${tracked.shelf}"`
+        );
+      }
+    }
     for (const entity of tracked.entities) {
       if (trackedEntityQty.has(entity.readableId)) {
         fail(
@@ -2301,7 +2368,7 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
     }
   }
 
-  checkCoverage(fail, { trackedEntityStatus: trackedStatuses });
+  ctx.cover({ trackedEntityStatus: trackedStatuses });
 
   // A kanban may not name a non-nettable shelf, as createKanban refuses.
   const isNonNettableShelf = nonNettableShelfTest(dataset.foundation);
@@ -2334,6 +2401,19 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
         if (kanban.fromShelf === kanban.toShelf) {
           fail(`${where}: Transfer kanban's shelves must differ`);
         }
+      }
+    }
+    if (kanban.replenishmentLevel !== undefined) {
+      if (system !== "Transfer") {
+        fail(`${where}: replenishmentLevel is set on a ${system} kanban`);
+      }
+      if (
+        !Number.isInteger(kanban.replenishmentLevel) ||
+        kanban.replenishmentLevel < 0
+      ) {
+        fail(
+          `${where}: replenishmentLevel ${kanban.replenishmentLevel} is not an integer of 0 or more`
+        );
       }
     }
   }
@@ -3264,6 +3344,8 @@ export function commercial(ctx: ValidationCtx): void {
   const { dataset, fail, need, needCustomer } = ctx;
   const f = dataset.foundation;
   const cfg = dataset.items.configuration;
+  // A missing configuration is reported by the items rule.
+  if (!cfg) return;
   const cfgWhere = `items.configuration "${cfg.item}"`;
   const method = dataset.items.methods.find((m) => m.readableId === cfg.item);
   const parameterByKey = new Map(cfg.parameters.map((p) => [p.key, p]));
@@ -3477,13 +3559,15 @@ export function commercial(ctx: ValidationCtx): void {
   }
 
   const p = dataset.purchasing;
-  checkAssignee(
-    `purchasing.rfqHeader "${p.rfqHeader.ref}"`,
-    p.rfqHeader.assignee,
-    p.rfqHeader.status,
-    OPEN_PURCHASING_RFQ_STATUSES,
-    "purchasingRfq"
-  );
+  if (p.rfqHeader) {
+    checkAssignee(
+      `purchasing.rfqHeader "${p.rfqHeader.ref}"`,
+      p.rfqHeader.assignee,
+      p.rfqHeader.status,
+      OPEN_PURCHASING_RFQ_STATUSES,
+      "purchasingRfq"
+    );
+  }
   // Tier 05 assigns every Draft lifecycle RFQ to the applying user.
   assigned.purchasingRfq += p.lifecycleRfqs.filter(
     (rfq) => rfq.status === "Draft"
@@ -3834,7 +3918,7 @@ export function purchasing(ctx: ValidationCtx): void {
     purchaseInvoice: new Set<string>(),
     purchaseReturn: new Set<string>(),
     supplierQuote: new Set<string>(),
-    purchasingRfq: new Set<string>([p.rfqHeader.status])
+    purchasingRfq: new Set<string>(p.rfqHeader ? [p.rfqHeader.status] : [])
   };
   const { activeSuppliers, suppliersWithContacts } = ix;
   const needActiveSupplier = (where: string, name: string) => {
@@ -4228,12 +4312,55 @@ export function jobs(ctx: ValidationCtx): void {
   const seenOperationStatuses = new Set<string>();
   const seenQuantityTypes = new Set<string>();
   const { documentRefs } = ix;
+  // Every other tracked entity the dataset seeds, by readableId: tier 06
+  // inserts each job serial as its own entity, so a serial equal to one of
+  // these would put two entities under one id.
+  const otherTrackedIds = new Map<string, string>();
+  for (const id of ix.lots.onHandIds) {
+    otherTrackedIds.set(id, "an inventory.onHandTracked readableId");
+  }
+  for (const id of ix.lots.receiptLotIds) {
+    otherTrackedIds.set(id, "a purchasing receipt lotNumber");
+  }
+  for (const input of dataset.production.genealogyInputs) {
+    otherTrackedIds.set(
+      input.readableId,
+      "a production.genealogyInputs readableId"
+    );
+  }
+  if (dataset.production.genealogyAssembly) {
+    otherTrackedIds.set(
+      dataset.production.genealogyAssembly.serial.readableId,
+      "the production.genealogyAssembly serial readableId"
+    );
+  }
+  const jobSerials = new Set<string>();
   for (const [jobIndex, job] of dataset.production.jobs.entries()) {
     const seen = documentRefs.seenBy.jobs[jobIndex]!;
     const where = `production.jobs "${job.key}"`;
     if (jobKeys.has(job.key)) fail(`${where}: duplicate job key`);
     jobKeys.add(job.key);
     need("item", where, job.item);
+    if (job.serials !== undefined) {
+      if (ix.trackingByItem.get(job.item) !== "Serial") {
+        fail(`${where}: serials on "${job.item}", which is not Serial-tracked`);
+      }
+      if (job.serials.length !== job.quantity) {
+        fail(
+          `${where}: serials has ${job.serials.length} entries, not the job quantity ${job.quantity}`
+        );
+      }
+      for (const serial of job.serials) {
+        if (jobSerials.has(serial)) {
+          fail(`${where}: serials "${serial}" repeats across jobs`);
+        }
+        jobSerials.add(serial);
+        const collision = otherTrackedIds.get(serial);
+        if (collision !== undefined) {
+          fail(`${where}: serials "${serial}" is ${collision}`);
+        }
+      }
+    }
     const orderRefs = [job.salesOrder, job.salesOrderLine, job.customer];
     const orderRefCount = orderRefs.filter((r) => r !== undefined).length;
     if (orderRefCount !== 0 && orderRefCount !== 3) {
@@ -4348,12 +4475,12 @@ export function jobs(ctx: ValidationCtx): void {
     jobOperationOverride: seenOperationStatuses,
     productionQuantityType: seenQuantityTypes
   });
-  if (!jobKeys.has(dataset.production.eventsJobKey)) {
+  if (!jobKeys.has(dataset.production.eventsJobKey ?? "")) {
     fail(
       `production.eventsJobKey "${dataset.production.eventsJobKey}" is not a job key`
     );
   }
-  if (!jobKeys.has(dataset.production.genealogyJobKey)) {
+  if (!jobKeys.has(dataset.production.genealogyJobKey ?? "")) {
     fail(
       `production.genealogyJobKey "${dataset.production.genealogyJobKey}" is not a job key`
     );
@@ -4364,8 +4491,9 @@ export function eventsJobAndPicking(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
   const { jobByKey, isTracked } = ix;
   const { componentsOf, rootOpCountOf } = ix.bom;
-  const eventsJob = jobByKey.get(dataset.production.eventsJobKey);
-  if (eventsJob) {
+  const { openEvent, rework } = dataset.production;
+  const eventsJob = jobByKey.get(dataset.production.eventsJobKey ?? "");
+  if (eventsJob && openEvent && rework) {
     const eventsOpCount = rootOpCountOf(eventsJob.item);
     const checkEventsOrder = (label: string, order: number) => {
       if (!Number.isInteger(order) || order < 1 || order > eventsOpCount) {
@@ -4374,17 +4502,15 @@ export function eventsJobAndPicking(ctx: ValidationCtx): void {
         );
       }
     };
-    checkEventsOrder("openEvent", dataset.production.openEvent.operationOrder);
+    checkEventsOrder("openEvent", openEvent.operationOrder);
     const openEventOverride = (eventsJob.operationOverrides ?? []).find(
-      (override) =>
-        override.order === dataset.production.openEvent.operationOrder
+      (override) => override.order === openEvent.operationOrder
     );
     if (openEventOverride?.status !== "In Progress") {
       fail(
-        `production.openEvent: operation ${dataset.production.openEvent.operationOrder} is not overridden to "In Progress" on job "${eventsJob.key}"`
+        `production.openEvent: operation ${openEvent.operationOrder} is not overridden to "In Progress" on job "${eventsJob.key}"`
       );
     }
-    const rework = dataset.production.rework;
     checkEventsOrder("rework target", rework.targetOperationOrder);
     checkEventsOrder("rework triggeredAt", rework.triggeredAtOperationOrder);
     if (rework.targetOperationOrder > rework.triggeredAtOperationOrder) {
@@ -4463,6 +4589,41 @@ export function eventsJobAndPicking(ctx: ValidationCtx): void {
     }
   }
   checkCoverage(fail, { pickingListStatus: seenPickingStatuses });
+
+  // A floor call is raised on work the floor has: an open, released job.
+  const seenRequestStatuses = new Set<string>();
+  for (const [
+    index,
+    request
+  ] of dataset.production.materialRequests.entries()) {
+    const where = `production.materialRequests[${index}]`;
+    seenRequestStatuses.add(request.status);
+    const job = jobByKey.get(request.job);
+    if (!job) {
+      fail(`${where}: unknown job key "${request.job}"`);
+      continue;
+    }
+    if (!RELEASED_OPEN_JOB_STATUSES.has(job.status)) {
+      fail(
+        `${where}: job "${request.job}" is ${job.status}, not an open released job`
+      );
+    }
+    const opCount = rootOpCountOf(job.item);
+    if (
+      !Number.isInteger(request.operationOrder) ||
+      request.operationOrder < 1 ||
+      request.operationOrder > opCount
+    ) {
+      fail(
+        `${where}: operationOrder ${request.operationOrder} is not within the ${opCount} root operations of "${job.item}"`
+      );
+    }
+    if (request.item !== undefined) need("item", where, request.item);
+    if (request.note !== undefined && !request.note.trim()) {
+      fail(`${where}: empty note`);
+    }
+  }
+  checkCoverage(fail, { materialRequestStatus: seenRequestStatuses });
 }
 
 export function genealogy(ctx: ValidationCtx): void {
@@ -4488,13 +4649,10 @@ export function genealogy(ctx: ValidationCtx): void {
     }
     genealogyIds.add(input.readableId);
   }
-  need(
-    "item",
-    "production.genealogyAssembly",
-    dataset.production.genealogyAssembly.item
-  );
-  const assemblySerialId =
-    dataset.production.genealogyAssembly.serial.readableId;
+  const genealogyAssembly = dataset.production.genealogyAssembly;
+  if (!genealogyAssembly) return;
+  need("item", "production.genealogyAssembly", genealogyAssembly.item);
+  const assemblySerialId = genealogyAssembly.serial.readableId;
   if (
     lots.onHandIds.has(assemblySerialId) ||
     lots.receiptLotIds.has(assemblySerialId) ||
@@ -4662,69 +4820,72 @@ export function floor(ctx: ValidationCtx): void {
   }
 
   // The batch, as batch-operations' create would accept it.
-  const members = production.batch.members;
-  if (members.length < 2) {
-    fail(`production.batch: ${members.length} members, need ≥ 2`);
-  }
-  const memberJobs = new Set<string>();
-  const memberProcesses = new Set<string>();
-  for (const member of members) {
-    const where = `production.batch member "${member.job}"`;
-    if (memberJobs.has(member.job)) {
-      fail(`${where}: members come from different jobs`);
+  const batch = production.batch;
+  if (batch) {
+    const members = batch.members;
+    if (members.length < 2) {
+      fail(`production.batch: ${members.length} members, need ≥ 2`);
     }
-    memberJobs.add(member.job);
-    const job = jobByKey.get(member.job);
-    if (!job) {
-      fail(`${where}: unknown job key`);
-      continue;
-    }
-    if (!RELEASED_OPEN_JOB_STATUSES.has(job.status)) {
-      fail(`${where}: job is ${job.status}, not released`);
-    }
-    if (member.job === production.eventsJobKey) {
-      fail(`${where}: the events job's operations carry production events`);
-    }
-    const op = rootOpsOf(job.item)[member.order - 1];
-    if (!op) {
-      fail(`${where}: no root operation at position ${member.order}`);
-      continue;
-    }
-    memberProcesses.add(op.process);
-    const override = (job.operationOverrides ?? []).find(
-      (o) => o.order === member.order
-    );
-    if (
-      (override?.status &&
-        !UNSTARTED_OPERATION_STATUSES.has(override.status)) ||
-      override?.running
-    ) {
-      fail(`${where}: operation ${member.order} has already started`);
-    }
-    // The running batch timer puts every member on the floor.
-    if (job.status !== "In Progress") {
-      fail(`${where}: the batch is running, so its job is "In Progress"`);
-    }
-    for (let order = 1; order < member.order; order += 1) {
-      const earlier = (job.operationOverrides ?? []).find(
-        (o) => o.order === order
+    const memberJobs = new Set<string>();
+    const memberProcesses = new Set<string>();
+    for (const member of members) {
+      const where = `production.batch member "${member.job}"`;
+      if (memberJobs.has(member.job)) {
+        fail(`${where}: members come from different jobs`);
+      }
+      memberJobs.add(member.job);
+      const job = jobByKey.get(member.job);
+      if (!job) {
+        fail(`${where}: unknown job key`);
+        continue;
+      }
+      if (!RELEASED_OPEN_JOB_STATUSES.has(job.status)) {
+        fail(`${where}: job is ${job.status}, not released`);
+      }
+      if (member.job === production.eventsJobKey) {
+        fail(`${where}: the events job's operations carry production events`);
+      }
+      const op = rootOpsOf(job.item)[member.order - 1];
+      if (!op) {
+        fail(`${where}: no root operation at position ${member.order}`);
+        continue;
+      }
+      memberProcesses.add(op.process);
+      const override = (job.operationOverrides ?? []).find(
+        (o) => o.order === member.order
       );
-      if (earlier?.status !== "Done") {
-        fail(
-          `${where}: operation ${order} runs before the batched operation ${member.order}, so it must be Done`
+      if (
+        (override?.status &&
+          !UNSTARTED_OPERATION_STATUSES.has(override.status)) ||
+        override?.running
+      ) {
+        fail(`${where}: operation ${member.order} has already started`);
+      }
+      // The running batch timer puts every member on the floor.
+      if (job.status !== "In Progress") {
+        fail(`${where}: the batch is running, so its job is "In Progress"`);
+      }
+      for (let order = 1; order < member.order; order += 1) {
+        const earlier = (job.operationOverrides ?? []).find(
+          (o) => o.order === order
         );
+        if (earlier?.status !== "Done") {
+          fail(
+            `${where}: operation ${order} runs before the batched operation ${member.order}, so it must be Done`
+          );
+        }
       }
     }
-  }
-  if (!TIME_OF_DAY.test(production.batch.running.startTimeOfDay)) {
-    fail(
-      `production.batch.running: startTimeOfDay "${production.batch.running.startTimeOfDay}" is not HH:MM:SS`
-    );
-  }
-  if (memberProcesses.size > 1) {
-    fail(
-      `production.batch: members span processes ${[...memberProcesses].join(", ")} — a batch runs one`
-    );
+    if (!TIME_OF_DAY.test(batch.running.startTimeOfDay)) {
+      fail(
+        `production.batch.running: startTimeOfDay "${batch.running.startTimeOfDay}" is not HH:MM:SS`
+      );
+    }
+    if (memberProcesses.size > 1) {
+      fail(
+        `production.batch: members span processes ${[...memberProcesses].join(", ")} — a batch runs one`
+      );
+    }
   }
 
   // The 3D instruction plays on the item's Assembly operation.
@@ -4902,11 +5063,12 @@ export function assembly(ctx: ValidationCtx): void {
   const { toolIds } = ix;
   const { componentsOf } = ix.bom;
   const assembly = dataset.items.assembly;
-  if (assembly && dataset.industryId) {
-    const graph = loadAssemblyGraph(dataset.industryId, assembly.model);
+  const assetIndustryId = dataset.assetIndustryId ?? dataset.industryId;
+  if (assembly && assetIndustryId) {
+    const graph = loadAssemblyGraph(assetIndustryId, assembly.model);
     if (!graph) {
       fail(
-        `items.assembly: no bundled graph at assets/${dataset.industryId}/models/${assembly.model}.graph.json`
+        `items.assembly: no bundled graph at assets/${assetIndustryId}/models/${assembly.model}.graph.json`
       );
     } else {
       if (assembly.componentCount !== graph.componentCount) {
@@ -7210,7 +7372,7 @@ export function maintenance(ctx: ValidationCtx): void {
   // Closed production events per day, by work center — what the MTBF KPI
   // divides by that day's reactive failures.
   const eventWorkCentersByDay = new Map<number, Set<string>>();
-  const eventsJobSpec = jobByKey.get(dataset.production.eventsJobKey);
+  const eventsJobSpec = jobByKey.get(dataset.production.eventsJobKey ?? "");
   if (eventsJobSpec) {
     rootOpsOf(eventsJobSpec.item)
       .slice(0, 2)
@@ -7679,7 +7841,7 @@ export function settingsSurfaces(ctx: ValidationCtx): void {
       }
     });
   });
-  checkCoverage(fail, { userAttributeType: attributeTypes });
+  ctx.cover({ userAttributeType: attributeTypes });
 
   const fieldKeys = new Set<string>();
   ops.customFields.forEach((field, index) => {
@@ -7700,7 +7862,7 @@ export function settingsSurfaces(ctx: ValidationCtx): void {
       fail(`${where}: listOptions must be non-empty and non-blank`);
     }
   });
-  checkCoverage(fail, {
+  ctx.cover({
     customField: new Set(
       ops.customFields.map((field) => `${field.table}|${field.dataType}`)
     )
@@ -7823,7 +7985,7 @@ export function settingsSurfaces(ctx: ValidationCtx): void {
       fail(`${where}: today's print is after ${OPEN_EVENT_TIME} UTC`);
     }
   });
-  checkCoverage(fail, {
+  ctx.cover({
     printJobStatus: printStatuses,
     printJobOrigin: printOrigins
   });
@@ -8009,27 +8171,43 @@ export function planning(ctx: ValidationCtx): void {
     need("item", "planning.demandProjections", projection.readableId);
   }
   const order = dataset.planning.demandOrder;
-  needCustomer("planning.demandOrder", order.customer);
-  if (!dataset.foundation.shippingMethods.includes(order.shippingMethod)) {
-    fail(
-      `planning.demandOrder: unknown shipping method "${order.shippingMethod}"`
-    );
+  if (order) {
+    needCustomer("planning.demandOrder", order.customer);
+    if (!dataset.foundation.shippingMethods.includes(order.shippingMethod)) {
+      fail(
+        `planning.demandOrder: unknown shipping method "${order.shippingMethod}"`
+      );
+    }
+    if (
+      order.promisedDateOffset < 0 ||
+      order.promisedDateOffset >= HORIZON_DAYS
+    ) {
+      fail(
+        `planning.demandOrder: promisedDateOffset ${order.promisedDateOffset} outside the ${HORIZON_DAYS}-day planning horizon`
+      );
+    }
+    for (const line of order.lines)
+      need("item", "planning.demandOrder", line.item);
   }
-  if (
-    order.promisedDateOffset < 0 ||
-    order.promisedDateOffset >= HORIZON_DAYS
-  ) {
-    fail(
-      `planning.demandOrder: promisedDateOffset ${order.promisedDateOffset} outside the ${HORIZON_DAYS}-day planning horizon`
-    );
-  }
-  for (const line of order.lines)
-    need("item", "planning.demandOrder", line.item);
 
   const hq = dataset.planning.hq;
   const buyPartIds = new Set(dataset.items.buyParts.map((p) => p.readableId));
   for (const id of hq.reorderItemIds)
     need("item", "planning.hq.reorderItemIds", id);
+  for (const projection of hq.demandProjections) {
+    if (!makePartIds.has(projection.readableId)) {
+      fail(
+        `planning.hq.demandProjections: "${projection.readableId}" is not a make part`
+      );
+    }
+    if (projection.quantities.length > HORIZON_DAYS / 7) {
+      fail(
+        `planning.hq.demandProjections "${projection.readableId}": more weeks than the planning horizon`
+      );
+    }
+  }
+  // Coverage: every planning screen at HQ has a row.
+  if (ctx.walkthrough) return;
   if (!hq.reorderItemIds.some((id) => makePartIds.has(id))) {
     fail(
       "planning.hq.reorderItemIds: no make part, so production Material Planning at HQ is empty"
@@ -8043,18 +8221,6 @@ export function planning(ctx: ValidationCtx): void {
   if (hq.demandProjections.length === 0) {
     fail("planning.hq.demandProjections: must not be empty");
   }
-  for (const projection of hq.demandProjections) {
-    if (!makePartIds.has(projection.readableId)) {
-      fail(
-        `planning.hq.demandProjections: "${projection.readableId}" is not a make part`
-      );
-    }
-    if (projection.quantities.length > HORIZON_DAYS / 7) {
-      fail(
-        `planning.hq.demandProjections "${projection.readableId}": more weeks than the planning horizon`
-      );
-    }
-  }
 }
 
 /** Every unit code the dataset names is a catalog unit the apply can add. */
@@ -8066,7 +8232,117 @@ export function unitsOfMeasure(ctx: ValidationCtx): void {
   }
 }
 
+/**
+ * Which rules a dataset gets. A walkthrough is dev-only (no industryId), and
+ * the slices whose rules skip it must stay empty, so nothing goes unchecked.
+ * Every other dataset must carry each job, RFQ and demand story.
+ */
+export function datasetScope(ctx: ValidationCtx): void {
+  const { dataset, fail } = ctx;
+  const production = dataset.production;
+  const stories: Array<[string, unknown]> = [
+    ["purchasing.rfqHeader", dataset.purchasing.rfqHeader],
+    ["production.genealogyAssembly", production.genealogyAssembly],
+    ["production.eventsJobKey", production.eventsJobKey],
+    ["production.genealogyJobKey", production.genealogyJobKey],
+    ["production.openEvent", production.openEvent],
+    ["production.batch", production.batch],
+    ["production.rework", production.rework],
+    ["planning.demandOrder", dataset.planning.demandOrder]
+  ];
+  if (!ctx.walkthrough) {
+    for (const [where, value] of stories) {
+      if (value === null)
+        fail(`${where}: missing — only a walkthrough omits it`);
+    }
+    return;
+  }
+  if (dataset.industryId !== null) {
+    fail(
+      `walkthrough: a walkthrough dataset is dev-only, so its industryId must be null, not "${dataset.industryId}"`
+    );
+  }
+  for (const [where, value] of stories) {
+    if (value !== null) fail(`${where}: a walkthrough dataset leaves it null`);
+  }
+  const { sales, purchasing, quality, accounting, ops, items } = dataset;
+  const unchecked: Array<[string, ReadonlyArray<unknown>]> = [
+    ["items.enforcementRules", items.enforcementRules],
+    ["sales.opportunities", sales.opportunities],
+    ["sales.statusOrders", sales.statusOrders],
+    ["sales.releasedOrders", sales.releasedOrders],
+    ["sales.salesReturns", sales.salesReturns],
+    ["sales.contracts", sales.contracts],
+    ["sales.customerPortals", sales.customerPortals],
+    ["sales.customerBankAccounts", sales.customerBankAccounts],
+    ["sales.customerAssets", sales.customerAssets],
+    ["sales.serviceJobs", sales.serviceJobs],
+    ["sales.rentalAgreements", sales.rentalAgreements],
+    ["purchasing.rfqLines", purchasing.rfqLines],
+    ["purchasing.rfqQuotes", purchasing.rfqQuotes],
+    ["purchasing.lifecycleRfqs", purchasing.lifecycleRfqs],
+    ["purchasing.purchaseOrders", purchasing.purchaseOrders],
+    [
+      "purchasing.standaloneSupplierQuotes",
+      purchasing.standaloneSupplierQuotes
+    ],
+    ["purchasing.purchaseReturns", purchasing.purchaseReturns],
+    ["purchasing.approvalRules", purchasing.approvalRules],
+    ["purchasing.approvalRequests", purchasing.approvalRequests],
+    ["purchasing.supplierBankAccounts", purchasing.supplierBankAccounts],
+    ["production.jobs", production.jobs],
+    ["production.shifts", production.shifts],
+    ["production.genealogyInputs", production.genealogyInputs],
+    ["production.pickingLists", production.pickingLists],
+    ["production.materialRequests", production.materialRequests],
+    ["quality.workflows", quality.workflows],
+    ["quality.nonConformances", quality.nonConformances],
+    ["quality.inspections", quality.inspections],
+    ["quality.qualityDocuments", quality.qualityDocuments],
+    ["quality.gauges", quality.gauges],
+    ["quality.risks", quality.risks],
+    ["changeOrders.changeOrders", dataset.changeOrders.changeOrders],
+    ["accounting.fixedAssets", accounting.fixedAssets],
+    ["accounting.journalEntries", accounting.journalEntries],
+    ["accounting.payments", accounting.payments],
+    ["accounting.memos", accounting.memos],
+    ["accounting.projects", accounting.projects],
+    ["accounting.planningGroups", accounting.planningGroups ?? []],
+    ["accounting.indirectPools", accounting.indirectPools],
+    ["accounting.laborCategories", accounting.laborCategories],
+    ["accounting.timesheetEntries", accounting.timesheetEntries],
+    ["accounting.closeTasks", accounting.closeTasks],
+    ["accounting.exchangeRateOverrides", accounting.exchangeRateOverrides],
+    ["ops.printJobs", ops.printJobs],
+    ["ops.maintenanceSchedules", ops.maintenanceSchedules],
+    ["ops.maintenanceDispatches", ops.maintenanceDispatches],
+    ["ops.replacementParts", ops.replacementParts],
+    ["ops.trainings", ops.trainings],
+    ["ops.timecards", ops.timecards],
+    ["ops.peopleAssignments", ops.peopleAssignments],
+    ["ops.peopleAbsences", ops.peopleAbsences],
+    ["ops.suggestions", ops.suggestions],
+    ["ops.notes", ops.notes],
+    ["workflows.runs", dataset.workflows.runs],
+    [
+      "workflows.build",
+      dataset.workflows.build({ ownerId: "owner", issueTypeId: "issueType" })
+    ]
+  ];
+  for (const [where, arr] of unchecked) {
+    if (arr.length > 0) {
+      fail(
+        `${where}: a walkthrough dataset leaves it empty — its rules do not run`
+      );
+    }
+  }
+  if (items.assembly) {
+    fail("items.assembly: a walkthrough dataset has no assembly");
+  }
+}
+
 const RULES: Rule[] = [
+  datasetScope,
   unitsOfMeasure,
   itemIdentity,
   foundation,
@@ -8105,8 +8381,28 @@ const RULES: Rule[] = [
   planning
 ];
 
+/**
+ * The structural rules: names resolve, stock adds up, serials do not collide.
+ * A walkthrough dataset (`Dataset.walkthrough`) gets only these, with their
+ * coverage checks off (`ValidationCtx.cover`).
+ */
+const WALKTHROUGH_RULES: Rule[] = [
+  datasetScope,
+  unitsOfMeasure,
+  itemIdentity,
+  foundation,
+  items,
+  openingStock,
+  batchProperties,
+  trackedStockAndMovements,
+  uniqueDocumentRefs,
+  netOnHand,
+  settingsSurfaces,
+  planning
+];
+
 export function validateDataset(dataset: Dataset): string[] {
   const ctx = createContext(dataset);
-  for (const rule of RULES) rule(ctx);
+  for (const rule of ctx.walkthrough ? WALKTHROUGH_RULES : RULES) rule(ctx);
   return ctx.violations;
 }

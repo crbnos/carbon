@@ -156,7 +156,7 @@ export default function OnboardingPlan() {
     [locale]
   );
 
-  logger.info({ companyId });
+  logger.info("Showing the plans", { companyId });
   const fetcher = useFetcher<typeof action>();
 
   // Starter/Business come from the DB (self-checkout via Stripe). Enterprise is
