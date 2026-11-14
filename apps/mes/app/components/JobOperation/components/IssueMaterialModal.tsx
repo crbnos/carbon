@@ -640,7 +640,13 @@ function IssueMaterialBody({
       readableId?: string;
       remainingQuantity?: number;
     }>;
+    overIssue?: boolean;
   }>();
+  // The server refused the issue because the requirement is already filled.
+  // The footer button then reads "Issue anyway" and confirms; the scanner's
+  // Enter key never does, so a second scan cannot issue past the requirement.
+  const [overIssueRefusal, setOverIssueRefusal] = useState<string | null>(null);
+  const confirmOverIssue = useRef(false);
   const unconsumeFetcher = useFetcher<{ success: boolean; message: string }>();
   const inventoryFetcher = useFetcher<{
     success?: boolean;
@@ -971,6 +977,10 @@ function IssueMaterialBody({
         ...(jobOperationStepId ? { jobOperationStepId } : {}),
         ...(unitNumber !== undefined ? { unitNumber } : {})
       };
+      const overIssueFields = confirmOverIssue.current
+        ? { allowOverIssue: true }
+        : {};
+      confirmOverIssue.current = false;
       const payload = material?.id
         ? {
             materialId: material.id,
@@ -980,7 +990,8 @@ function IssueMaterialBody({
               quantity: 1
             })),
             ...contextFields,
-            ...overrideFields
+            ...overrideFields,
+            ...overIssueFields
           }
         : {
             jobOperationId: operationId,
@@ -1052,6 +1063,10 @@ function IssueMaterialBody({
         ...(jobOperationStepId ? { jobOperationStepId } : {}),
         ...(unitNumber !== undefined ? { unitNumber } : {})
       };
+      const overIssueFields = confirmOverIssue.current
+        ? { allowOverIssue: true }
+        : {};
+      confirmOverIssue.current = false;
       const payload = batchId
         ? {
             batchId,
@@ -1071,7 +1086,8 @@ function IssueMaterialBody({
                 quantity: bn.quantity
               })),
               ...contextFields,
-              ...overrideFields
+              ...overrideFields,
+              ...overIssueFields
             }
           : {
               jobOperationId: operationId,
@@ -1169,6 +1185,14 @@ function IssueMaterialBody({
     unconsumeFetcher
   ]);
 
+  // A refusal belongs to the selection it was made for: a new scan or another
+  // material starts again without it. (Closing the dialog unmounts this body.)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the selection resets the refusal
+  useEffect(() => {
+    setOverIssueRefusal(null);
+    confirmOverIssue.current = false;
+  }, [selectedSerialNumbers, selectedBatchNumbers, material?.id]);
+
   // Handle fetcher responses
   const processedFetcherData = useRef<typeof fetcher.data | null>(null);
 
@@ -1214,6 +1238,8 @@ function IssueMaterialBody({
             toast.success(fetcher.data.message);
           }
         }
+      } else if (fetcher.data.overIssue) {
+        setOverIssueRefusal(fetcher.data.message);
       } else if (fetcher.data.message) {
         toast.error(fetcher.data.message);
       }
@@ -2085,6 +2111,14 @@ function IssueMaterialBody({
                   </AlertDescription>
                 </Alert>
               )}
+              {overIssueRefusal && activeTab !== "unconsume" && (
+                <Alert variant="warning">
+                  <AlertTitle>{overIssueRefusal}</AlertTitle>
+                  <AlertDescription>
+                    Nothing was issued. Issue more only to replace a part.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </ModalBody>
           <ModalFooter>
@@ -2114,17 +2148,17 @@ function IssueMaterialBody({
               <Button
                 variant="primary"
                 size="lg"
-                onClick={
-                  trackingType === "Serial"
-                    ? handleSubmitSerial
-                    : handleSubmitBatch
-                }
+                onClick={() => {
+                  confirmOverIssue.current = overIssueRefusal !== null;
+                  if (trackingType === "Serial") handleSubmitSerial();
+                  else handleSubmitBatch();
+                }}
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={
                   fetcher.state !== "idle" || !selectedItemId || isLoadingItem
                 }
               >
-                Issue
+                {overIssueRefusal ? "Issue anyway" : "Issue"}
               </Button>
             )}
           </ModalFooter>

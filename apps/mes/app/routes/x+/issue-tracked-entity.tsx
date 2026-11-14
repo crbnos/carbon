@@ -37,7 +37,8 @@ export async function action({ request }: ActionFunctionArgs) {
     unitNumber,
     overrideExpired,
     overrideReason,
-    travelerScan
+    travelerScan,
+    allowOverIssue
   } = validation.data;
   let { materialId, itemId, children } = validation.data;
 
@@ -119,14 +120,17 @@ export async function action({ request }: ActionFunctionArgs) {
           overrideExpired,
           overrideReason,
           // The posting re-checks the requirement under a lock for a scan.
-          travelerScan
+          travelerScan,
+          allowOverIssue
         }
   );
 
   if (issued.error) {
     log.error("Failed to issue material", { error: issued.error });
     const message = issued.error.message || "Failed to issue material";
-    return data({ success: false, message }, { status: 400 });
+    // The requirement is already filled: the dialog asks before issuing more.
+    const overIssue = issued.error.body.overIssue === true;
+    return data({ success: false, message, overIssue }, { status: 400 });
   }
 
   const splitEntities = issued.data?.splitEntities || [];

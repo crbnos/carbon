@@ -29224,16 +29224,14 @@ async function assertUnitsNotInProduction(
 }
 
 /**
- * The re-check a traveler scan makes under the job material's row lock. A
- * serial parent (its make method requires serial tracking) needs the
- * material's quantity per unit: what is consumed into the parent for this
- * material now (`Consume` inputs less `Unconsume` outputs per component,
- * without scrapped components) must be below it. Any other parent needs the
- * job's remaining quantity (`estimatedQuantity`, else `quantity`, less
- * `quantityIssued`) above zero. The MES `resolveTravelerMaterial` makes the
- * same test before the posting; this one is authoritative.
+ * What a job material's requirement still needs, read under its row lock. A
+ * serial parent (its make method requires serial tracking) counts per unit:
+ * the material's quantity per unit less what is consumed into the parent for
+ * this material now (`Consume` inputs less `Unconsume` outputs per component,
+ * without scrapped components). Any other parent counts for the job:
+ * `estimatedQuantity`, else `quantity`, less `quantityIssued`.
  */
-async function assertTravelerRequirementOpen(
+async function openRequirement(
   trx: Transaction<KyselyDatabase>,
   {
     companyId,
@@ -29244,7 +29242,7 @@ async function assertTravelerRequirementOpen(
     jobMaterial: Selectable<KyselyDatabase["jobMaterial"]>;
     parentTrackedEntityId: string;
   }
-): Promise<void> {
+): Promise<{ required: number; remaining: number; perUnit: boolean }> {
   const makeMethod = await trx
     .selectFrom("jobMakeMethod")
     .select("requiresSerialTracking")
@@ -29256,13 +29254,11 @@ async function assertTravelerRequirementOpen(
     const required = Number(
       jobMaterial.estimatedQuantity ?? jobMaterial.quantity ?? 0
     );
-    const remaining = round(required - Number(jobMaterial.quantityIssued ?? 0));
-    if (remaining <= EPSILON) {
-      throw new InvalidInputError(
-        `This job already has all its ${jobMaterial.description || "material"}`
-      );
-    }
-    return;
+    return {
+      required,
+      remaining: round(required - Number(jobMaterial.quantityIssued ?? 0)),
+      perUnit: false
+    };
   }
 
   const consumed = await sql<{ quantity: string | number | null }>`
@@ -29300,14 +29296,76 @@ async function assertTravelerRequirementOpen(
     WHERE te."status" <> 'Scrapped'
   `.execute(trx);
 
-  const remaining = round(
-    Number(jobMaterial.quantity ?? 0) - Number(consumed.rows[0]?.quantity ?? 0)
-  );
+  const required = Number(jobMaterial.quantity ?? 0);
+  return {
+    required,
+    remaining: round(required - Number(consumed.rows[0]?.quantity ?? 0)),
+    perUnit: true
+  };
+}
+
+/** "This job already has all its …", or the unit's wording for a serial parent. */
+function requirementFilledMessage(
+  jobMaterial: Selectable<KyselyDatabase["jobMaterial"]>,
+  perUnit: boolean
+): string {
+  const name = jobMaterial.description || "material";
+  return perUnit
+    ? `This unit already has its ${name}`
+    : `This job already has all its ${name}`;
+}
+
+/**
+ * The re-check a traveler scan makes under the job material's row lock: the
+ * requirement (`openRequirement`) must still need something. The MES
+ * `resolveTravelerMaterial` makes the same test before the posting; this one
+ * is authoritative.
+ */
+async function assertTravelerRequirementOpen(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    jobMaterial: Selectable<KyselyDatabase["jobMaterial"]>;
+    parentTrackedEntityId: string;
+  }
+): Promise<void> {
+  const { remaining, perUnit } = await openRequirement(trx, args);
   if (remaining <= EPSILON) {
     throw new InvalidInputError(
-      `This unit already has its ${jobMaterial.description || "material"}`
+      requirementFilledMessage(args.jobMaterial, perUnit)
     );
   }
+}
+
+/**
+ * The Issue dialog's check under the job material's row lock: `quantity` must
+ * fit in what the requirement still needs. The refusal carries
+ * `overIssue: true`, so the dialog can ask the operator to confirm and send
+ * the issue again with `allowOverIssue` (a replacement part). An unplanned
+ * material has no requirement, so it is never refused.
+ */
+async function assertIssueWithinRequirement(
+  trx: Transaction<KyselyDatabase>,
+  {
+    quantity,
+    ...args
+  }: {
+    companyId: string;
+    jobMaterial: Selectable<KyselyDatabase["jobMaterial"]>;
+    parentTrackedEntityId: string;
+    quantity: number;
+  }
+): Promise<void> {
+  const { required, remaining, perUnit } = await openRequirement(trx, args);
+  if (required <= EPSILON || quantity - remaining <= EPSILON) return;
+  throw new InvalidInputError(
+    remaining <= EPSILON
+      ? requirementFilledMessage(args.jobMaterial, perUnit)
+      : `This ${perUnit ? "unit" : "job"} needs only ${remaining} more of ${
+          args.jobMaterial.description || "material"
+        }`,
+    { overIssue: true }
+  );
 }
 
 // The per-operation tracked-consumption write sequence, extracted verbatim from
@@ -29327,6 +29385,7 @@ async function consumeTrackedEntitiesIntoOperation(
     overrideExpired,
     overrideReason,
     travelerScan,
+    refuseOverIssue,
     companyId,
     userId,
     companyToday,
@@ -29350,6 +29409,12 @@ async function consumeTrackedEntitiesIntoOperation(
      * Batch members and the Issue dialog leave it off.
      */
     travelerScan?: boolean;
+    /**
+     * The Issue dialog, not yet confirmed: lock the job material and refuse
+     * an issue larger than its requirement still needs
+     * (`assertIssueWithinRequirement`). Batch members leave it off.
+     */
+    refuseOverIssue?: boolean;
     companyId: string;
     userId: string;
     companyToday: CalendarDate;
@@ -29427,15 +29492,17 @@ async function consumeTrackedEntitiesIntoOperation(
   const firstTrackedEntity = trackedEntities[0];
 
   if (materialId) {
-    // Existing behavior: fetch the jobMaterial. A traveler scan locks it, so
-    // two scans into the same requirement run one after the other and the
-    // second reads what the first consumed.
+    // Existing behavior: fetch the jobMaterial. A requirement check locks it,
+    // so two issues into the same requirement run one after the other and
+    // the second reads what the first consumed.
     let jobMaterialQuery = trx
       .selectFrom("jobMaterial")
       .where("id", "=", materialId)
       .where("companyId", "=", companyId)
       .selectAll();
-    if (travelerScan) jobMaterialQuery = jobMaterialQuery.forUpdate();
+    if (travelerScan || refuseOverIssue) {
+      jobMaterialQuery = jobMaterialQuery.forUpdate();
+    }
     jobMaterial = await jobMaterialQuery.executeTakeFirst();
 
     if (
@@ -29447,6 +29514,19 @@ async function consumeTrackedEntitiesIntoOperation(
         companyId,
         jobMaterial,
         parentTrackedEntityId
+      });
+    }
+
+    if (
+      refuseOverIssue &&
+      jobMaterial &&
+      firstTrackedEntity?.sourceDocumentId === jobMaterial.itemId
+    ) {
+      await assertIssueWithinRequirement(trx, {
+        companyId,
+        jobMaterial,
+        parentTrackedEntityId,
+        quantity: roundedChildTotal(children)
       });
     }
 
@@ -32215,6 +32295,7 @@ export async function issueMaterial(
         overrideExpired,
         overrideReason,
         travelerScan,
+        allowOverIssue,
         companyId,
         userId
       } = validatedPayload;
@@ -32260,6 +32341,8 @@ export async function issueMaterial(
           overrideExpired,
           overrideReason,
           travelerScan,
+          // A scan has its own check; the dialog is refused until confirmed.
+          refuseOverIssue: !travelerScan && !allowOverIssue,
           companyId,
           userId,
           companyToday,
