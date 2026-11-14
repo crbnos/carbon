@@ -1141,6 +1141,7 @@ async function getOrCreateDemandPeriods(
       periods.map((p) => p.startDate)
     )
     .where("periodType", "=", periodType)
+    .orderBy("startDate")
     .execute();
 
   if (existingPeriods.length === periods.length) {
@@ -1177,12 +1178,16 @@ async function getOrCreateDemandPeriods(
       .execute();
   });
 
-  return [...existingPeriods, ...created].map((p) => ({
-    id: p.id,
-    // pg returns DATE columns as JS Date objects; normalize to "YYYY-MM-DD"
-    startDate: parseDate(toIsoDate(p.startDate)!),
-    endDate: parseDate(toIsoDate(p.endDate)!),
-    periodType: p.periodType,
-    createdAt: p.createdAt
-  }));
+  // The engine indexes periods by position, so a partial create (existing
+  // weeks plus new ones) is put back in date order.
+  return [...existingPeriods, ...created]
+    .map((p) => ({
+      id: p.id,
+      // pg returns DATE columns as JS Date objects; normalize to "YYYY-MM-DD"
+      startDate: parseDate(toIsoDate(p.startDate)!),
+      endDate: parseDate(toIsoDate(p.endDate)!),
+      periodType: p.periodType,
+      createdAt: p.createdAt
+    }))
+    .sort((a, b) => a.startDate.compare(b.startDate));
 }
