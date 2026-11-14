@@ -14922,6 +14922,9 @@ msgstr "Combien ont été réellement prélevés ?"
 msgid "How many, and the rate each one bills."
 msgstr "Combien, et le tarif que chacun facture."
 
+msgid "How MRP sizes new supply for this item at this location."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "À quelle fréquence le client est facturé, et à partir de quand. Les factures ci-dessous suivent."
 
@@ -22711,6 +22714,9 @@ msgstr ""
 msgid "Planning time fence (days)"
 msgstr ""
 
+msgid "Planning window"
+msgstr ""
+
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Limite inférieure de la planification pour une quantité de réapprovisionnement suggérée; différente du MOQ d'un fournisseur, qui se trouve sur l'enregistrement pièce-fournisseur."
 
@@ -25185,6 +25191,9 @@ msgstr "Point de commande"
 
 msgid "Reorder Point:"
 msgstr "Point de commande :"
+
+msgid "Reorder policy"
+msgstr ""
 
 msgid "Reorder Policy"
 msgstr "Politique de réapprovisionnement"
@@ -34805,6 +34814,9 @@ msgstr "Quel événement de production démarre l'horloge de durée de vie — p
 
 msgid "Which operation was this?"
 msgstr "De quelle opération s'agissait-il ?"
+
+msgid "Which suggestions the planning pages show, and which planned orders MRP holds still."
+msgstr ""
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Tant que cette intervention est ouverte, le poste de travail n'est pas disponible pour la planification (jusqu'à l'heure de fin prévue, ou jusqu'à ce que l'intervention soit terminée)."

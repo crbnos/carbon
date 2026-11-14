@@ -12701,6 +12701,22 @@ const editablePlannedOrderStatuses = sql.join(
 );
 
 /**
+ * The company's planning lock: the one MRP's planned-order write, the
+ * worklist write and the settle take. A person's change to a planned order
+ * takes it first, so it never lands between a run's read and its write (an
+ * unfirmed row could then clash with an order the run inserts on the same
+ * natural key, and fail the run).
+ */
+async function lockCompanyPlanning(
+  trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  companyId: string
+) {
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`planning-actions:${companyId}`}, 0))`.execute(
+    trx
+  );
+}
+
+/**
  * Firm a Planned order: a person now holds it, and MRP no longer changes its
  * quantity or dates. Only a Planned row changes; returns whether it did.
  */
@@ -12709,21 +12725,24 @@ export async function firmPlannedOrder(
   args: { id: string; companyId: string; userId: string }
 ): Promise<boolean> {
   const now = datetime.timestamp();
-  const rows = await db
-    .updateTable("plannedOrder")
-    .set({
-      status: "Firm",
-      firmedBy: args.userId,
-      firmedAt: now,
-      updatedBy: args.userId,
-      updatedAt: now
-    })
-    .where("id", "=", args.id)
-    .where("companyId", "=", args.companyId)
-    .where("status", "=", "Planned")
-    .returning("id")
-    .execute();
-  return rows.length > 0;
+  return withTransaction(db, async (trx) => {
+    await lockCompanyPlanning(trx, args.companyId);
+    const rows = await trx
+      .updateTable("plannedOrder")
+      .set({
+        status: "Firm",
+        firmedBy: args.userId,
+        firmedAt: now,
+        updatedBy: args.userId,
+        updatedAt: now
+      })
+      .where("id", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Planned")
+      .returning("id")
+      .execute();
+    return rows.length > 0;
+  });
 }
 
 /**
@@ -12750,7 +12769,7 @@ export async function unfirmPlannedOrder(
     AND o."periodId" = po."periodId"
     AND o."status" = 'Planned'
   `;
-  const result = await sql<{ id: string }>`
+  const query = sql<{ id: string }>`
     UPDATE "plannedOrder" po
     SET "status" = 'Planned',
         "firmedBy" = NULL,
@@ -12769,8 +12788,12 @@ export async function unfirmPlannedOrder(
       AND po."companyId" = ${args.companyId}
       AND po."status" = 'Firm'
     RETURNING po."id"
-  `.execute(db);
-  return result.rows.length > 0;
+  `;
+  return withTransaction(db, async (trx) => {
+    await lockCompanyPlanning(trx, args.companyId);
+    const result = await query.execute(trx);
+    return result.rows.length > 0;
+  });
 }
 
 /** A person's edit of one planned order: a new quantity, a new due date, or both. */
@@ -12802,7 +12825,7 @@ export async function updatePlannedOrders(
         sql`(${edit.id}::text, ${edit.quantity ?? null}::numeric, ${edit.dueDate ?? null}::date)`
     )
   );
-  const result = await sql<{ id: string }>`
+  const query = sql<{ id: string }>`
     UPDATE "plannedOrder" po
     SET "quantity" = COALESCE(v."quantity", po."quantity"),
         "scrapQuantity" = CASE
@@ -12838,8 +12861,13 @@ export async function updatePlannedOrders(
       AND po."companyId" = ${args.companyId}
       AND po."status" IN (${editablePlannedOrderStatuses})
     RETURNING po."id"
-  `.execute(db);
-  return result.rows.map((row) => row.id);
+  `;
+  // joins the caller's transaction when there is one (the apply path)
+  return withTransaction(db, async (trx) => {
+    await lockCompanyPlanning(trx, args.companyId);
+    const result = await query.execute(trx);
+    return result.rows.map((row) => row.id);
+  });
 }
 
 /** A change action on a planned order, as Apply reads it. */
@@ -12898,7 +12926,9 @@ export async function applyPlannedOrderPlanningActions(
   const now = datetime.timestamp();
 
   await db.transaction().execute(async (trx) => {
-    // 1. lock the targets: a convert waits for this apply, and the reverse
+    // 1. lock the targets: a convert or an MRP run waits for this apply, and
+    // the reverse
+    await lockCompanyPlanning(trx, companyId);
     const orders = await trx
       .selectFrom("plannedOrder")
       .select(["id", "orderType", "status"])

@@ -14922,6 +14922,9 @@ msgstr "Сколько было фактически подобрано?"
 msgid "How many, and the rate each one bills."
 msgstr "Количество и тариф для каждого выставления счета."
 
+msgid "How MRP sizes new supply for this item at this location."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "Как часто и когда выставляются счета покупателю. Приведенные ниже счета-фактуры следуют этому графику."
 
@@ -22711,6 +22714,9 @@ msgstr ""
 msgid "Planning time fence (days)"
 msgstr ""
 
+msgid "Planning window"
+msgstr ""
+
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Нижняя граница планирования предлагаемого количества пополнения; отличается от минимального количества заказа поставщика, которое находится в карточке поставщик-номенклатура."
 
@@ -25185,6 +25191,9 @@ msgstr "Точка заказа"
 
 msgid "Reorder Point:"
 msgstr "Точка заказа:"
+
+msgid "Reorder policy"
+msgstr ""
 
 msgid "Reorder Policy"
 msgstr "Политика переупорядочения"
@@ -34805,6 +34814,9 @@ msgstr "Какое производственное событие запуск�
 
 msgid "Which operation was this?"
 msgstr "Какая это была операция?"
+
+msgid "Which suggestions the planning pages show, and which planned orders MRP holds still."
+msgstr ""
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Пока это отправление открыто, рабочий центр недоступен для расписания (до запланированного времени окончания или до завершения отправления)."

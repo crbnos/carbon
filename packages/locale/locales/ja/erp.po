@@ -14922,6 +14922,9 @@ msgstr "実際にはいくつ選ばれましたか？"
 msgid "How many, and the rate each one bills."
 msgstr "数量と請求料率"
 
+msgid "How MRP sizes new supply for this item at this location."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "得意先がどのくらいの頻度で請求されるか、いつから。以下の請求書が続きます。"
 
@@ -22711,6 +22714,9 @@ msgstr ""
 msgid "Planning time fence (days)"
 msgstr ""
 
+msgid "Planning window"
+msgstr ""
+
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "計画の発注提案数量の下限。仕入先部品レコードにある仕入先のMOQとは別。"
 
@@ -25185,6 +25191,9 @@ msgstr "発注点"
 
 msgid "Reorder Point:"
 msgstr "発注点:"
+
+msgid "Reorder policy"
+msgstr ""
 
 msgid "Reorder Policy"
 msgstr "再注文ポリシー"
@@ -34805,6 +34814,9 @@ msgstr "どの製造イベントが保存期間時計を開始するか — た�
 
 msgid "Which operation was this?"
 msgstr "これはどの工程でしたか?"
+
+msgid "Which suggestions the planning pages show, and which planned orders MRP holds still."
+msgstr ""
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "このディスパッチがオープンの間、作業区はスケジュールに対して利用できません（計画終了時刻まで、またはディスパッチが完了するまで）。"

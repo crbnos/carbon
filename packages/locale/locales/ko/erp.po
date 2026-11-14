@@ -14922,6 +14922,9 @@ msgstr "실제로 몇 개를 피킹했습니까?"
 msgid "How many, and the rate each one bills."
 msgstr "수량 및 각각의 청구 요금"
 
+msgid "How MRP sizes new supply for this item at this location."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "고객이 송장을 받는 빈도 및 시기입니다. 아래 송장들을 참조하세요."
 
@@ -22711,6 +22714,9 @@ msgstr ""
 msgid "Planning time fence (days)"
 msgstr ""
 
+msgid "Planning window"
+msgstr ""
+
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "계획에서 제안하는 보충 수량의 하한선으로, 공급업체-부품 레코드에 있는 공급업체의 MOQ와는 별개입니다."
 
@@ -25185,6 +25191,9 @@ msgstr "재주문점"
 
 msgid "Reorder Point:"
 msgstr "재주문점:"
+
+msgid "Reorder policy"
+msgstr ""
 
 msgid "Reorder Policy"
 msgstr "재주문 정책"
@@ -34805,6 +34814,9 @@ msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 �
 
 msgid "Which operation was this?"
 msgstr "어떤 공정이었나요?"
+
+msgid "Which suggestions the planning pages show, and which planned orders MRP holds still."
+msgstr ""
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "이 유지보수 지시가 열려 있는 동안 작업장은 일정에 사용할 수 없습니다(계획된 종료 시간까지 또는 지시가 완료될 때까지)."

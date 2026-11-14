@@ -14922,6 +14922,9 @@ msgstr "Gerçekte kaç tane toplandı?"
 msgid "How many, and the rate each one bills."
 msgstr "Kaç tane ve her birinin faturalama oranı."
 
+msgid "How MRP sizes new supply for this item at this location."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "Müşteriye ne sıklıkla fatura gönderilir ve ne zaman başlayıp gönderilir. Aşağıdaki faturalar bunu takip eder."
 
@@ -22711,6 +22714,9 @@ msgstr ""
 msgid "Planning time fence (days)"
 msgstr ""
 
+msgid "Planning window"
+msgstr ""
+
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Önerilen yenileme miktarı üzerinde planlamanın alt sınırı; bir tedarikçinin MOQ'sından farklı olan, tedarikçi parçası kaydında bulunan."
 
@@ -25185,6 +25191,9 @@ msgstr "Yeniden Sipariş Noktası"
 
 msgid "Reorder Point:"
 msgstr "Yeniden Sipariş Noktası:"
+
+msgid "Reorder policy"
+msgstr ""
 
 msgid "Reorder Policy"
 msgstr "Yeniden Sipariş Politikası"
@@ -34805,6 +34814,9 @@ msgstr "Hangi üretim olayı raf ömrü saatini başlatır — örneğin, doldur
 
 msgid "Which operation was this?"
 msgstr "Bu hangi operasyondu?"
+
+msgid "Which suggestions the planning pages show, and which planned orders MRP holds still."
+msgstr ""
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Bu sevkiyat açık olsa da, iş merkezi plana kullanılamaz (planlanan bitiş saatine veya sevkiyat tamamlanana kadar)."

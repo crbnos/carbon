@@ -14922,6 +14922,9 @@ msgstr "कितने वास्तव में चुने गए?"
 msgid "How many, and the rate each one bills."
 msgstr "कितने, और वह दर जिस पर प्रत्येक बिल करता है।"
 
+msgid "How MRP sizes new supply for this item at this location."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "ग्राहक को कितनी बार चालान भेजा जाता है, और कब से। नीचे दिए गए चालान अनुसरण करते हैं।"
 
@@ -22711,6 +22714,9 @@ msgstr ""
 msgid "Planning time fence (days)"
 msgstr ""
 
+msgid "Planning window"
+msgstr ""
+
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "सुझाए गए पुनः भरण मात्रा पर योजना की निचली सीमा; एक आपूर्तिकर्ता के MOQ से अलग, जो आपूर्तिकर्ता-भाग रिकॉर्ड पर रहता है।"
 
@@ -25185,6 +25191,9 @@ msgstr "पुनः ऑर्डर बिंदु"
 
 msgid "Reorder Point:"
 msgstr "पुनः ऑर्डर बिंदु:"
+
+msgid "Reorder policy"
+msgstr ""
 
 msgid "Reorder Policy"
 msgstr "पुनः ऑर्डर नीति"
@@ -34805,6 +34814,9 @@ msgstr "कौन सी विनिर्माण घटना शेल्�
 
 msgid "Which operation was this?"
 msgstr "यह कौन-सा ऑपरेशन था?"
+
+msgid "Which suggestions the planning pages show, and which planned orders MRP holds still."
+msgstr ""
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "जबकि यह रखरखाव कार्य खुला है, वर्क सेंटर शेड्यूल के लिए अनुपलब्ध है (योजनाबद्ध समाप्ति समय तक, या जब तक रखरखाव कार्य पूर्ण नहीं हो जाता)।"
