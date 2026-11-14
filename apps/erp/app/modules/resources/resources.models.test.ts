@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   getYouTubeVideoId,
   isValidTrainingGuideKey,
+  newTrainingAssignees,
   TRAINING_CERTIFICATE_MAX_BYTES,
   trainingAssignmentValidator,
   trainingGuideKeyPrefix,
@@ -142,5 +143,27 @@ describe("workCenterFormValidator", () => {
     {}
   ])("accepts %o", (fields) => {
     expect(shiftsError(fields)).toBeUndefined();
+  });
+});
+
+describe("newTrainingAssignees", () => {
+  it("tells no one when the groups did not change", () => {
+    // Saving the drawer without an edit sent everyone the assignment again.
+    expect(newTrainingAssignees(["u1", "u2"], ["u2", "u1"])).toEqual([]);
+  });
+
+  it("tells no one when people were only removed", () => {
+    expect(newTrainingAssignees(["u1", "u2"], ["u1"])).toEqual([]);
+  });
+
+  it("tells only the people a save added", () => {
+    expect(newTrainingAssignees(["u1", "u2"], ["u1", "u2", "u3"])).toEqual([
+      "u3"
+    ]);
+  });
+
+  it("tells a person once when an added group repeats them", () => {
+    // users_for_groups lists a person once per group they are in.
+    expect(newTrainingAssignees(["u1"], ["u1", "u4", "u4"])).toEqual(["u4"]);
   });
 });

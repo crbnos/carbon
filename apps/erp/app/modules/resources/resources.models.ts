@@ -500,6 +500,15 @@ export const trainingCertificateAccept = {
 
 export const TRAINING_CERTIFICATE_MAX_BYTES = 10 * 1024 * 1024;
 
+/**
+ * The people an edit of a training assignment adds: assigned now and not
+ * before. Only they hear about it; everyone else already did.
+ */
+export function newTrainingAssignees(before: string[], after: string[]) {
+  const assigned = new Set(before);
+  return [...new Set(after)].filter((userId) => !assigned.has(userId));
+}
+
 const trainingCertificateExtensions = Object.values(trainingCertificateAccept)
   .flat()
   .map((extension) => extension.slice(1));
