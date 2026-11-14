@@ -7,7 +7,6 @@ import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import type { MethodType } from "@carbon/database/mrp-engine";
-import { lockCompanyMrpRun } from "@carbon/database/planning-lock";
 import type { WriteGroupPegs } from "@carbon/ee/pegging";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -39,6 +38,7 @@ import {
   generatePlanningActions,
   loadOpenSupplyDetails
 } from "./planning-actions.ts";
+import { withCompanyMrpRunLock } from "./run-lock.ts";
 
 const logger = getLogger("planning", "mrp");
 
@@ -133,8 +133,9 @@ export async function runMrp(
 
   // One run per company at a time: two overlapping runs would each change
   // the planned orders the other planned from, and both would plan again
-  // until they ran out of attempts. The MRP run lock is held by this
-  // transaction, which does nothing else, until the run ends (a throw rolls
+  // until they ran out of attempts. A waiting run polls for the MRP run lock
+  // and holds no connection between tries; once granted, the lock is held by
+  // a transaction that does nothing else until the run ends (a throw rolls
   // it back and releases the lock). The run's work goes on other
   // connections, so its Phase-7 write commits on its own and the worklist
   // reads it over PostgREST.
@@ -143,10 +144,9 @@ export async function runMrp(
   // planning lock only while it holds the run lock (its two writes), and a
   // person's firm, edit, apply or convert takes the planning lock only, so
   // nothing holding the planning lock ever waits for the run lock.
-  return db.transaction().execute(async (runLock) => {
-    await lockCompanyMrpRun(runLock, companyId);
-    return runMrpLocked(client, db, parsedPayload, deps);
-  });
+  return withCompanyMrpRunLock(db, companyId, () =>
+    runMrpLocked(client, db, parsedPayload, deps)
+  );
 }
 
 async function runMrpLocked(
@@ -185,6 +185,7 @@ async function runMrpLocked(
         plannedOrderSignals,
         plannedOrderChangeActions,
         newSupplyByRow: plannedSupplyByRow,
+        documentChangeActionsByRow,
         planningGroups,
         planningGroupsEnabled,
         planningGroupRows,
@@ -219,6 +220,7 @@ async function runMrpLocked(
           userId,
           commonSurplusDraws,
           newSupplyByRow,
+          documentChangeActionsByRow,
           plannedOrderChangeActions,
           plannedOrderSignals,
           plannedOrderIdByKey,
@@ -634,7 +636,8 @@ async function loadPlanAndWrite(
     heldPlannedOrderIds,
     plannedOrderSignals,
     plannedOrderChangeActions,
-    newSupplyByRow
+    newSupplyByRow,
+    documentChangeActionsByRow
   } = planCompany({
     companyId,
     userId,
@@ -861,6 +864,7 @@ async function loadPlanAndWrite(
       plannedOrderSignals,
       plannedOrderChangeActions,
       newSupplyByRow,
+      documentChangeActionsByRow,
       planningGroups,
       planningGroupsEnabled,
       planningGroupRows,

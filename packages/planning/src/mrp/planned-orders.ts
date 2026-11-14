@@ -208,6 +208,15 @@ export type PlanSupplyResult = {
    * them per type and week into one action that names no planned order.
    */
   newSupplyByRow: Map<string, ChangeCandidate[]>;
+  /**
+   * The change actions (Expedite, Defer, Cancel, Decrease) on the open jobs
+   * and PO lines of each planned key, as the engine sized the key: with its
+   * held planned orders as supply. A key the hook planned is present even
+   * with an empty list. The worklist takes them for a row in
+   * `newSupplyByRow`, so its change actions and its Order / Make come from one
+   * sizing; the RPC row's projection has no planned order in it.
+   */
+  documentChangeActionsByRow: Map<string, ChangeCandidate[]>;
 };
 
 type PlanSupplyArgs = Parameters<
@@ -370,23 +379,33 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
   // their quantity and dates and count as supply.
   const heldByKey = new Map<string, ExistingPlannedOrder[]>();
   // Held orders of an item MRP no longer plans (deactivated, superseded,
-  // built as Make to Order, no planning row): kept, never supply, never
-  // exploded, each with a Cancel for a person to decide. Deleting a Firm or
-  // fence-held order silently would undo a planner's decision.
-  const ineligibleHeld: ExistingPlannedOrder[] = [];
+  // built as Make to Order, no planning row), or no longer plans as this
+  // type (a Make order of an item now bought, a Buy order of one now made):
+  // kept, never supply, never exploded, each with a Cancel for a person to
+  // decide. Deleting a Firm or fence-held order silently would undo a
+  // planner's decision.
+  const ineligibleHeld: { order: ExistingPlannedOrder; reason: string }[] = [];
   for (const order of inputs.existingPlannedOrders) {
     if ((order.planningSegmentId || COMMON_SEGMENT) !== COMMON_SEGMENT) {
       continue;
     }
     const eligible = eligibleOf(order.locationId, order.itemId);
+    const fenceDays = fenceDaysAt(order.locationId, order.itemId);
     if (!eligible) {
-      const fenceDays = fenceDaysAt(order.locationId, order.itemId);
       if (isPlannedOrderHeld(order, fenceDays, todayDate)) {
-        ineligibleHeld.push(order);
+        ineligibleHeld.push({
+          order,
+          reason: "Item is no longer planned by MRP"
+        });
       }
       continue;
     }
-    if (!isPlannedOrderHeld(order, fenceDaysOf(eligible.policy), todayDate)) {
+    if (!isPlannedOrderHeld(order, fenceDays, todayDate)) {
+      continue;
+    }
+    const wrongType = wrongTypeReason(order.orderType, eligible.kind);
+    if (wrongType) {
+      ineligibleHeld.push({ order, reason: wrongType });
       continue;
     }
     const key = makeLocationItemKey(order.locationId, order.itemId);
@@ -406,7 +425,7 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
   const plannedOrders: GeneratedPlannedOrder[] = [];
   const plannedOrderSignals: PlannedOrderSignal[] = [];
   const plannedOrderChangeActions: PlannedOrderChangeAction[] =
-    ineligibleHeld.map((order) => ({
+    ineligibleHeld.map(({ order, reason }) => ({
       itemId: order.itemId,
       locationId: order.locationId,
       planningSegmentId: COMMON_SEGMENT,
@@ -423,10 +442,11 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       requiresManualAction: false,
       supplierId: order.orderType === "Buy" ? order.supplierId : null,
       policyName: null,
-      reason: "Item is no longer planned by MRP",
+      reason,
       triggerValues: null
     }));
   const newSupplyByRow = new Map<string, ChangeCandidate[]>();
+  const documentChangeActionsByRow = new Map<string, ChangeCandidate[]>();
 
   const planSupply = (args: PlanSupplyArgs): PlannedSupplyResult | null => {
     const { locationId, itemId } = args;
@@ -501,6 +521,12 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       todayDate
     });
 
+    documentChangeActionsByRow.set(
+      rowKey,
+      changeActions.filter(
+        (action) => action.purchaseOrderLineId || action.jobId
+      )
+    );
     for (const action of changeActions) {
       if (!action.plannedOrderId) continue;
       plannedOrderChangeActions.push({
@@ -672,7 +698,9 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     }
 
     // An Increase on a job or a Make planned order needs components for the
-    // extra quantity, from the order's start.
+    // extra quantity, from the order's start: a held order's stored release
+    // date (where its own quantity explodes), a job's due date less the lead
+    // time.
     for (const candidate of rowSupply) {
       if (candidate.type !== "Increase") continue;
       const target = supplyTarget(candidate);
@@ -691,7 +719,9 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       const delta = explosionOf(candidate.suggestedQuantity) - before;
       if (delta <= 0) continue;
       explosions.push({
-        releasePeriodIndex: periodIndexOn(addDays(order.dueDate, -leadTime)),
+        releasePeriodIndex: periodIndexOn(
+          heldOrder?.releaseDate ?? addDays(order.dueDate, -leadTime)
+        ),
         quantity: delta,
         contributorPeriodIndex: periodIndexById.get(candidate.periodId) ?? 0
       });
@@ -707,13 +737,32 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       plannedOrders,
       heldPlannedOrderIds: [
         ...[...heldByKey.values()].flat(),
-        ...ineligibleHeld
+        ...ineligibleHeld.map(({ order }) => order)
       ].map((order) => order.id),
       plannedOrderSignals,
       plannedOrderChangeActions,
-      newSupplyByRow
+      newSupplyByRow,
+      documentChangeActionsByRow
     })
   };
+}
+
+/**
+ * Why a held order of an item MRP plans is no longer one it plans: a Make
+ * order of an item now bought, or a Buy order of an item now made. Null when
+ * the type matches (a reserved Transfer order is left as it is).
+ */
+function wrongTypeReason(
+  orderType: ExistingPlannedOrder["orderType"],
+  kind: "Order" | "Make"
+): string | null {
+  if (orderType === "Make" && kind !== "Make") {
+    return "The item is no longer made";
+  }
+  if (orderType === "Buy" && kind !== "Order") {
+    return "The item is no longer bought";
+  }
+  return null;
 }
 
 /** A new Order or Make from the sizing: new supply with no order behind it. */

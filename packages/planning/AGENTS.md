@@ -75,7 +75,9 @@ true surplus. **Golden test:** `plan-company.test.ts` snapshots `planCompany` on
 snapshot to make a test pass; a change there means the change broke the "no project stock,
 identical output" invariant. `plan-company.project.json` pins the segment spec case.
 `planCompany` also takes `plannedOrderInputs` (MRP v2 Phase 2a) and returns `plannedOrders`,
-`heldPlannedOrderIds`, `plannedOrderSignals`, `plannedOrderChangeActions` and `newSupplyByRow`.
+`heldPlannedOrderIds`, `plannedOrderSignals`, `plannedOrderChangeActions`, `newSupplyByRow` and
+`documentChangeActionsByRow` (the engine's change actions on each planned row's open jobs and PO lines, sized with
+the held planned orders as supply).
 Without the input it plans exactly as before (the golden test runs without it).
 Netting segments (`planningSegmentId`, `''` = common) are described in
 `.claude/rules/mrp-system.md` → *Project netting segments*. `planCompany` also returns
@@ -96,19 +98,22 @@ with no group (the golden test asserts it). Planning groups and pegging are in
 
 `lockCompanyPlanning(trx, companyId)` (`@carbon/database/planning-lock`) is the one per-company advisory lock
 (`planning-actions:<companyId>`) every planned-order and planning-action writer takes first, the
-ERP's settle / convert / firm / edit / apply included. `lockCompanyMrpRun` (`mrp-run:<companyId>`, same file) serialises
-`runMrp` per company: a transaction that does nothing else holds it for the whole run, while the run works on
-other connections. Lock order is always the run lock, then the planning lock; a person takes only the planning
+ERP's settle / convert / firm / edit / apply included. `tryLockCompanyMrpRun` (`mrp-run:<companyId>`, same file) serialises
+`runMrp` per company through `withCompanyMrpRunLock` (`src/mrp/run-lock.ts`): each try is its own short transaction
+(`pg_try_advisory_xact_lock`) that ends at once when refused, with 250 ms between tries, so a waiting run holds no
+connection; the granted try's transaction does nothing else and stays open for the whole run, while the run works on
+other connections. After 120 s of waiting the run goes ahead without the run lock (a warning); the planning lock and
+the planned-order snapshot checks still guard its writes. Lock order is always the run lock, then the planning lock; a person takes only the planning
 lock, so the two cannot deadlock (`mrp.write.test.ts`). `runMrp` reads the planned orders FIRST
 (`loadPlannedOrderSnapshot`: the database's `now()`, then the Planned and Firm rows), then the
 other inputs (`loadPlannedOrderInputs`, Kysely), and passes the engine's planned-order outputs to
 `generatePlanningActions`. The time fence is `@carbon/utils` `resolvePlanningTimeFenceDays` /
 `isPlannedOrderHeld`, shared with the planning drawers.
 
-Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId, commonSurplusDraws, newSupplyByRow?, plannedOrderChangeActions?, plannedOrderSignals?, plannedOrderIdByKey?, heldPlannedOrderIds?, … })`
+Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId, commonSurplusDraws, newSupplyByRow?, documentChangeActionsByRow?, plannedOrderChangeActions?, plannedOrderSignals?, plannedOrderIdByKey?, heldPlannedOrderIds?, … })`
 (`src/mrp/planning-actions.ts` — the planning action messages, Order / Make / Expedite / Defer /
 Increase / Decrease / Cancel / Release / Transfer, one row's set computed by the pure
-`deriveRowActions` (a project segment is lot-for-lot; each draw is a Transfer; a row the engine planned takes its Order / Make from `newSupplyByRow`; `plannedOrderActions` adds the change actions on held planned orders and the fence Expedites), diff-written to `planningAction` in one transaction that holds a
+`deriveRowActions` (a project segment is lot-for-lot; each draw is a Transfer; a row the engine planned takes its Order / Make from `newSupplyByRow` and its change actions on jobs and PO lines from `documentChangeActionsByRow`, so both come from one sizing that counts held planned orders; `plannedOrderActions` adds the change actions on held planned orders and the fence Expedites), diff-written to `planningAction` in one transaction that holds a
 per-company `pg_advisory_xact_lock` across the read and the write (`writePlanningActions`), which first checks the
 planned orders against the Phase-7 write's committed snapshot; `runMrp` calls it after its
 Phase-7 commit, inside the same retried attempt. With `pegging` (PLANNING_GROUPS only), `memberMoveCandidates` first adds

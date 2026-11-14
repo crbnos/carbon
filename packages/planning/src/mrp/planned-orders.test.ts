@@ -700,6 +700,226 @@ describe("planned orders in planCompany", () => {
     expect(childDemand(outputs)).toEqual([["w2", 6]]);
   });
 
+  // Planned under a 14-day lead time (release 11-23, week 2); the item's
+  // lead time is now 7. The Firm 3 explodes from its stored release week, and
+  // so does the extra 4 of its Increase to 7 (not 12-07 less 7: week 3).
+  it("explodes an Increase on a held Make order at the order's release week", () => {
+    const outputs = planCompany(
+      base({
+        salesOrderLines: [sale("2026-12-07", 7)],
+        planned: {
+          existingPlannedOrders: [
+            heldOrder({
+              id: "plo_2",
+              status: "Firm",
+              quantity: 3,
+              dueDate: "2026-12-07",
+              releaseDate: "2026-11-23",
+              periodId: "w4"
+            })
+          ]
+        }
+      })
+    );
+    expect(
+      (outputs.newSupplyByRow.get(ROW) ?? []).map((candidate) => [
+        candidate.type,
+        candidate.plannedOrderId,
+        candidate.suggestedQuantity
+      ])
+    ).toEqual([
+      ["Increase", "plo_2", 7],
+      ["Make", "plo_2", 3]
+    ]);
+    expect(childDemand(outputs)).toEqual([["w2", 14]]);
+  });
+
+  // The Firm 100 due in week 2 covers the need of 100 there, so the job due
+  // in week 5 is not needed: the worklist takes the engine's Cancel on it,
+  // not the Expedite the RPC row's projection (no planned order in it)
+  // would raise, and the week's Make is the Firm order.
+  it("takes the change actions on a row's jobs from the engine's sizing", () => {
+    const job = {
+      jobId: "job_1",
+      quantity: 100,
+      dueDate: "2026-12-14",
+      requiresManualAction: false,
+      release: null
+    };
+    const outputs = planCompany(
+      base({
+        salesOrderLines: [sale("2026-11-23", 100)],
+        productionLines: [
+          {
+            id: "job_1",
+            itemId: "item_p",
+            locationId: "loc_1",
+            quantityToReceive: 100,
+            dueDate: "2026-12-14",
+            deadlineType: "Hard Deadline"
+          }
+        ],
+        planned: {
+          openSupplyOrders: new Map([[ROW, [job]]]),
+          existingPlannedOrders: [
+            heldOrder({
+              id: "plo_2",
+              status: "Firm",
+              quantity: 100,
+              dueDate: "2026-11-23",
+              releaseDate: "2026-11-16",
+              periodId: "w2"
+            })
+          ]
+        }
+      })
+    );
+    const actions = deriveRowActions({
+      // the planning RPC's week columns: the job's 100 lands in week 5
+      row: {
+        id: "item_p",
+        planningSegmentId: "",
+        reorderingPolicy: "Demand-Based Reorder",
+        reorderPoint: 0,
+        reorderQuantity: 0,
+        minimumOrderQuantity: 0,
+        maximumOrderQuantity: 0,
+        orderMultiple: 0,
+        lotSize: 0,
+        maximumInventoryQuantity: 0,
+        demandAccumulationPeriod: 1,
+        demandAccumulationSafetyStock: 0,
+        leadTime: 7,
+        quantityOnHand: 0,
+        quantityToOrder: 0,
+        supersessionMode: null,
+        minimumReserveQuantity: 0,
+        week1: 0,
+        week2: -100,
+        week3: -100,
+        week4: -100,
+        week5: 0,
+        week6: 0
+      } as unknown as Parameters<typeof deriveRowActions>[0]["row"],
+      kind: "Make",
+      periods: PERIODS,
+      demandByPeriod: new Map([["w2", 100]]),
+      openOrders: [job],
+      onHand: 0,
+      draws: [],
+      toleranceDays: 7,
+      todayDate: TODAY,
+      engineSupply: outputs.newSupplyByRow.get(ROW),
+      engineChangeActions: outputs.documentChangeActionsByRow.get(ROW)
+    });
+    expect(actions).toEqual([
+      {
+        type: "Make",
+        periodId: "w2",
+        suggestedQuantity: 100,
+        suggestedDate: "2026-11-23",
+        horizonDate: "2026-11-23",
+        latestOrderDate: "2026-11-16",
+        isASAP: false,
+        purchaseOrderLineId: null,
+        jobId: null,
+        plannedOrderId: null,
+        requiresManualAction: false,
+        supplierId: null,
+        policyName: null,
+        reason: null,
+        triggerValues: null,
+        planningSegmentId: ""
+      },
+      {
+        type: "Cancel",
+        periodId: "w5",
+        suggestedQuantity: 100,
+        suggestedDate: "2026-12-14",
+        horizonDate: "2026-12-14",
+        latestOrderDate: null,
+        isASAP: false,
+        purchaseOrderLineId: null,
+        jobId: "job_1",
+        plannedOrderId: null,
+        requiresManualAction: false,
+        supplierId: null,
+        policyName: null,
+        reason: expect.any(String),
+        triggerValues: null,
+        planningSegmentId: ""
+      }
+    ]);
+  });
+
+  // A planner's held order of the type the item is no longer planned as:
+  // kept and cancelled by a person, never supply or exploded.
+  it.each([
+    [
+      "a Firm Make order of an item now bought",
+      "Buy" as const,
+      heldOrder({ status: "Firm" }),
+      "Order"
+    ],
+    [
+      "a Firm Buy order of an item now made",
+      "Make" as const,
+      heldOrder({ status: "Firm", orderType: "Buy", supplierId: "sup_1" }),
+      "Make"
+    ]
+  ])(
+    "keeps %s and raises a Cancel on it",
+    (_name, replenishmentSystem, order, newType) => {
+      const outputs = planCompany(
+        base({
+          parent: { replenishmentSystem },
+          items: [
+            { id: "item_p", replenishmentSystem },
+            { id: "item_c", replenishmentSystem: "Buy" }
+          ],
+          salesOrderLines: [sale("2026-11-30", 3)],
+          planned: { existingPlannedOrders: [order] }
+        })
+      );
+      expect(outputs.plannedOrderChangeActions).toEqual([
+        {
+          itemId: "item_p",
+          locationId: "loc_1",
+          planningSegmentId: "",
+          type: "Cancel",
+          periodId: "w2",
+          suggestedQuantity: 5,
+          suggestedDate: "2026-11-27",
+          horizonDate: "2026-11-27",
+          latestOrderDate: null,
+          isASAP: false,
+          purchaseOrderLineId: null,
+          jobId: null,
+          plannedOrderId: "plo_1",
+          requiresManualAction: false,
+          supplierId: order.orderType === "Buy" ? "sup_1" : null,
+          policyName: null,
+          reason: expect.any(String),
+          triggerValues: null
+        }
+      ]);
+      expect(outputs.heldPlannedOrderIds).toEqual(["plo_1"]);
+      // the need of 3 is planned as the item's own type; the held order is
+      // neither its supply nor offered for conversion
+      expect(
+        (outputs.newSupplyByRow.get(ROW) ?? []).map((candidate) => [
+          candidate.type,
+          candidate.plannedOrderId ?? null,
+          candidate.suggestedQuantity
+        ])
+      ).toEqual([[newType, null, 3]]);
+      // only a new Make explodes: 3 × 2 from its release week
+      expect(childDemand(outputs)).toEqual(
+        newType === "Make" ? [["w2", 6]] : []
+      );
+    }
+  );
+
   // The held Planned row owns split 0 of week 4, so the new order of the
   // same week takes split 1 and never overwrites it.
   it("gives a new order a split index a held Planned order does not use", () => {

@@ -1365,7 +1365,8 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
       heldPlannedOrderIds: [],
       plannedOrderSignals: [],
       plannedOrderChangeActions: [],
-      newSupplyByRow: new Map()
+      newSupplyByRow: new Map(),
+      documentChangeActionsByRow: new Map()
     })
   };
 }

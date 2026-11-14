@@ -2451,6 +2451,20 @@ describe("plannedOrderActions", () => {
     ).toEqual([cancel]);
   });
 
+  // The engine plans past the worklist's weeks: a Firm order due after the
+  // last one still gets its Cancel, in the last week, with its own date.
+  it("puts a held order's action due after the last week in the last week", () => {
+    const late = {
+      ...cancel,
+      periodId: "p60",
+      suggestedDate: "2027-11-01",
+      horizonDate: "2027-11-01"
+    };
+    expect(base({ changeActions: [late] })).toEqual([
+      { ...late, periodId: "p5" }
+    ]);
+  });
+
   it("keeps one action per planned order: a Cancel beats an Expedite", () => {
     const expedite = { ...cancel, type: "Expedite" as const };
     const decrease = { ...cancel, type: "Decrease" as const };

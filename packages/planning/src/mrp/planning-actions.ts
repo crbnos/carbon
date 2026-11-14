@@ -943,10 +943,17 @@ export type DeriveRowActionsInput = {
   /**
    * MRP v2: the row's new supply as the engine sized it with planned orders
    * (`planCompany`'s `newSupplyByRow`): each new Order / Make and each
-   * Increase. When set it replaces the sizing of the RPC row; the change
-   * actions on the open jobs and PO lines still come from the RPC row.
+   * Increase. When set it replaces the sizing of the RPC row.
    */
   engineSupply?: ChangeCandidate[];
+  /**
+   * MRP v2: the change actions on the row's open jobs and PO lines as the
+   * engine sized them (`planCompany`'s `documentChangeActionsByRow`), with
+   * the held planned orders as supply. With `engineSupply` they replace the
+   * RPC row's: its projection has no planned order in it, so it would
+   * Expedite a job a Firm order already covers.
+   */
+  engineChangeActions?: ChangeCandidate[];
 };
 
 /**
@@ -981,26 +988,33 @@ export function deriveRowActions(
 
   const drawByPeriod = drawsByPeriod(isProjectSegment ? input.draws : []);
 
-  const { changeActions, newSupply: rpcSupply } = sizeRowSupply({
-    kind,
-    isProjectSegment,
-    supersessionMode: row.supersessionMode,
-    quantityToOrder: row.quantityToOrder,
-    minimumReserveQuantity: row.minimumReserveQuantity,
-    quantityOnHand: row.quantityOnHand,
-    onHand: input.onHand,
-    draws: input.draws,
-    periods,
-    projections: periods.map(
-      (_, i) => Number(row[`week${i + 1}` as keyof typeof row]) || 0
-    ),
-    demandByPeriod,
-    openOrders,
-    policy: row,
-    preferredSupplierId: (row as RpcPlanningRow).preferredSupplierId ?? null,
-    toleranceDays,
-    todayDate
-  });
+  const { changeActions: rpcChangeActions, newSupply: rpcSupply } =
+    sizeRowSupply({
+      kind,
+      isProjectSegment,
+      supersessionMode: row.supersessionMode,
+      quantityToOrder: row.quantityToOrder,
+      minimumReserveQuantity: row.minimumReserveQuantity,
+      quantityOnHand: row.quantityOnHand,
+      onHand: input.onHand,
+      draws: input.draws,
+      periods,
+      projections: periods.map(
+        (_, i) => Number(row[`week${i + 1}` as keyof typeof row]) || 0
+      ),
+      demandByPeriod,
+      openOrders,
+      policy: row,
+      preferredSupplierId: (row as RpcPlanningRow).preferredSupplierId ?? null,
+      toleranceDays,
+      todayDate
+    });
+  // A row the engine planned takes its change actions and its new supply
+  // from the engine's one sizing; any other row keeps the RPC row's.
+  const changeActions =
+    input.engineSupply && input.engineChangeActions
+      ? input.engineChangeActions
+      : rpcChangeActions;
   const merged = input.engineSupply
     ? engineNewSupply(input.engineSupply, changeActions)
     : rpcSupply;
@@ -1125,7 +1139,9 @@ const CHANGE_PRECEDENCE: Partial<Record<PlanningActionType, number>> = {
  * held planned order with no demand left gets its Cancel).
  *
  * 1. Each change action the engine raised on a held planned order
- *    (Expedite, Defer, Decrease, Cancel). Only a held order gets one.
+ *    (Expedite, Defer, Decrease, Cancel). Only a held order gets one. The
+ *    engine plans past the worklist's last week; an action in a later week
+ *    goes in the last week, with its own date, so a person still sees it.
  * 2. An Expedite for each new planned order the time fence moved, to the
  *    date it is needed (`expediteTo`; never before today, as
  *    `deriveChangeActions` dates a need). Its quantity is the order's.
@@ -1156,11 +1172,17 @@ export function plannedOrderActions(args: {
     return match;
   };
 
+  const periodIds = new Set(periods.map((p) => p.id));
+  const lastPeriodId = periods.at(-1)?.id;
   const actions: Omit<PlanningActionCandidate, "assignee">[] = [];
   for (const action of args.changeActions) {
     if (!action.plannedOrderId) continue;
     if (!args.heldPlannedOrderIds.has(action.plannedOrderId)) continue;
-    actions.push({ ...action, requiresManualAction: false });
+    const periodId =
+      periodIds.has(action.periodId) || !lastPeriodId
+        ? action.periodId
+        : lastPeriodId;
+    actions.push({ ...action, periodId, requiresManualAction: false });
   }
 
   // The new orders by natural key. A held Firm order may share a new order's
@@ -1272,6 +1294,12 @@ export async function generatePlanningActions(
      * and Increase actions from it instead of sizing the RPC row again.
      */
     newSupplyByRow?: ReadonlyMap<string, ChangeCandidate[]>;
+    /**
+     * MRP v2: the engine's change actions on the open jobs and PO lines of
+     * each row in `newSupplyByRow`. Such a row takes them instead of the RPC
+     * row's (`deriveRowActions`' `engineChangeActions`).
+     */
+    documentChangeActionsByRow?: ReadonlyMap<string, ChangeCandidate[]>;
     /** MRP v2: the engine's change actions on held planned orders. */
     plannedOrderChangeActions?: PlannedOrderChangeAction[];
     /** MRP v2: the new planned orders the time fence moved. */
@@ -1543,7 +1571,8 @@ export async function generatePlanningActions(
         draws: drawsByItemLocation.get(key) ?? [],
         toleranceDays,
         todayDate,
-        engineSupply: args.newSupplyByRow?.get(key)
+        engineSupply: args.newSupplyByRow?.get(key),
+        engineChangeActions: args.documentChangeActionsByRow?.get(key)
       });
 
       leadTimeByItemLocation.set(

@@ -28,12 +28,16 @@ export type LoggedStep = {
  * records every statement and applies the ones the writers send: the
  * planned-order check (the Planned and Firm rows), a read by status, the
  * DELETE (by id and status), the `UPDATE … FROM (VALUES …)` and the
- * INSERT … RETURNING. Any other statement reads nothing. `log` also records
- * each transaction's begin, commit and rollback, per connection.
+ * INSERT … RETURNING. A try of an advisory lock is refused while
+ * `lockBusyTries` is above 0 (each try counts it down), else granted. Any
+ * other statement reads nothing. `log` also records each transaction's
+ * begin, commit and rollback, per connection.
  */
 export class RecordingDriver implements Driver {
   readonly sent: CompiledQuery[] = [];
   readonly log: LoggedStep[] = [];
+  /** How many more tries of an advisory lock another session wins. */
+  lockBusyTries = 0;
   private nextId = 1;
   private connections = 0;
   private readonly connectionIds = new WeakMap<DatabaseConnection, number>();
@@ -55,6 +59,13 @@ export class RecordingDriver implements Driver {
   private apply(query: CompiledQuery): unknown[] {
     const params = query.parameters as unknown[];
     const sqlText = query.sql;
+    if (sqlText.includes("pg_try_advisory_xact_lock")) {
+      if (this.lockBusyTries > 0) {
+        this.lockBusyTries--;
+        return [{ locked: false }];
+      }
+      return [{ locked: true }];
+    }
     if (sqlText.includes('"createdSinceRead"')) {
       return this.rows
         .filter((row) => row.status === "Planned" || row.status === "Firm")
@@ -176,7 +187,7 @@ export function recordingDatabase(rows: Row[] = []) {
 
 /** What a statement is, for asserting the order of a write. */
 export function kindOf(step: { sql: string; parameters: readonly unknown[] }) {
-  if (step.sql.includes("pg_advisory_xact_lock")) {
+  if (step.sql.includes("advisory_xact_lock")) {
     const key = String(step.parameters[0] ?? "");
     return key.startsWith("mrp-run:") ? "run lock" : "lock";
   }
