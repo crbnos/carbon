@@ -67,6 +67,17 @@ On a unit treated as a sale, rent and the purchase option credit net investment 
 Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
 </Callout>
 
+## Changing a posted line's account
+
+A posted line coded to the wrong account can move to another without a void. Open the line and click **Change GL Account**, then pick the new account. Carbon posts a journal dated on the invoice's posting date that moves the line's posted amount from its old account to the new one, with the line's dimensions, and shows the new account on the line. Voiding the invoice later reverses the change with the rest of the posting.
+
+- **Sales invoices:** a line whose revenue posted to the Sales account moves to another Revenue account. Deferred service, contract, rental, service job and fixed asset lines cannot change account.
+- **Purchase invoices:** a **G/L Account** line moves to another Expense account. Item, fixed asset and lease lines, and a line charged to a project, cannot change account.
+- **Period:** the period of the invoice's posting date must be Open. In a Locked period, unlock it first; in a Closed one, [reopen it](/docs/reference/period-close#reopening).
+- **Permission:** invoicing update and accounting update. No approval is asked for.
+- **Before the cutover:** an invoice dated before the accounting cutover cannot change account; record a journal entry instead.
+- **Accounting sync:** an invoice already synced to an accounting provider keeps its original account there.
+
 ## Settling an invoice
 
 A posted invoice is settled by applying another posted document. An **invoice settlement** links that document to the invoice for a specified amount.
@@ -133,6 +144,12 @@ A database guard (same wording for sales invoices). Once an invoice leaves Draft
 
 ### "Cannot modify a confirmed purchase invoice." / "Cannot modify a locked sales invoice."
 Invoices lock the moment they leave Draft; posted numbers can't be edited in place. To change a posted invoice, void it and raise a new one (or issue a credit/debit note).
+
+### "Accounting period … is closed. Reopen it before changing the account."
+Changing a posted line's account posts on the invoice's posting date, and that period is Closed. Reopen the periods from the most recent back to this one, change the account, then close them again. A Locked period says "… is locked. Unlock it before changing the account."
+
+### "Only a line whose revenue posted to the Sales account can change account…" / "Only a G/L Account line can change account…"
+The line posts through accounts that schedules, inventory or assets read. Record a journal entry to move the amount instead.
 
 ### "Applications can only be edited while the payment is Draft"
 Once a payment is posted, its invoice applications are frozen. Reverse the payment and re-enter it to change how it's applied.

@@ -1901,6 +1901,9 @@ msgstr "A job's start date changes"
 msgid "A job's status changes"
 msgstr "A job's status changes"
 
+msgid "A journal dated on the invoice's posting date moves the line's posted amount to the new account. The period must be open."
+msgstr "A journal dated on the invoice's posting date moves the line's posted amount to the new account. The period must be open."
+
 msgid "A labor category sets the cost and bill rates of the people in it."
 msgstr "A labor category sets the cost and bill rates of the people in it."
 
@@ -2576,6 +2579,9 @@ msgstr "Account & Details"
 
 msgid "Account balances with debits and credits"
 msgstr "Account balances with debits and credits"
+
+msgid "Account changed"
+msgstr "Account changed"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Account for advance payments made before goods or services are received"
@@ -6672,6 +6678,9 @@ msgstr "Champions"
 msgid "Change"
 msgstr "Change"
 
+msgid "Change Account"
+msgstr "Change Account"
+
 msgid "Change cancelled"
 msgstr "Change cancelled"
 
@@ -6680,6 +6689,9 @@ msgstr "Change Date"
 
 msgid "Change Document"
 msgstr "Change Document"
+
+msgid "Change GL Account"
+msgstr "Change GL Account"
 
 msgid "Change Inspection Plan"
 msgstr "Change Inspection Plan"
@@ -18929,6 +18941,9 @@ msgstr "New Gauge Calibration Record"
 msgid "New Gauge Type"
 msgstr "New Gauge Type"
 
+msgid "New GL Account"
+msgstr "New GL Account"
+
 msgid "New Group"
 msgstr "New Group"
 
@@ -25124,6 +25139,9 @@ msgstr "Reopen"
 msgid "Reopen as Revision"
 msgstr "Reopen as Revision"
 
+msgid "Reopen Period"
+msgstr "Reopen Period"
+
 msgid "Reopen Training"
 msgstr "Reopen Training"
 
@@ -27081,6 +27099,9 @@ msgstr "Select all rows"
 
 msgid "Select all service lines"
 msgstr "Select all service lines"
+
+msgid "Select an account"
+msgstr "Select an account"
 
 msgid "Select an action…"
 msgstr "Select an action…"

@@ -90,6 +90,7 @@ import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
 import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { ChangeInvoiceLineAccount } from "../InvoiceLineAccount/ChangeInvoiceLineAccount";
 
 type PurchaseInvoiceLineFormProps = {
   initialValues: z.infer<typeof purchaseInvoiceLineValidator> & {
@@ -127,6 +128,14 @@ const PurchaseInvoiceLineForm = ({
   const isEditable = ["Draft"].includes(
     routeData?.purchaseInvoice?.status ?? ""
   );
+  // A posted line's account changes through a correcting journal.
+  const canChangeAccount =
+    !!routeData?.purchaseInvoice?.postingDate &&
+    !["Draft", "Pending", "Voided"].includes(
+      routeData?.purchaseInvoice?.status ?? ""
+    ) &&
+    permissions.can("update", "invoicing") &&
+    permissions.can("update", "accounting");
   // Settlement decimals come from the document currency's row (loader data);
   // 2 is only the last resort for a currency-less document
   // The loader's currency row is the primary source — it is correct on first
@@ -651,6 +660,15 @@ const PurchaseInvoiceLineForm = ({
                         <Trans>Lease</Trans>
                       </TabsTrigger>
                     </TabsList>
+                  )}
+                  {isEditing && isGLAccount && canChangeAccount && (
+                    <ChangeInvoiceLineAccount
+                      action={path.to.purchaseInvoiceLineAccount(
+                        invoiceId,
+                        initialValues.id!
+                      )}
+                      accountClass="Expense"
+                    />
                   )}
                 </div>
               </HStack>

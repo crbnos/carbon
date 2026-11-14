@@ -53,7 +53,7 @@ import { Link, useLoaderData, useNavigate } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { EmployeeAvatar } from "~/components";
-import { useCurrencyFormatter } from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import type { PeriodCloseTaskView } from "~/modules/accounting/accounting.service";
 import {
   existingDraftRunId,
@@ -113,6 +113,7 @@ const closeForm = z.object({
     "skipTask",
     "lock",
     "unlock",
+    "reopen",
     "create-revenue-run",
     "create-lease-run",
     "create-depreciation-run",
@@ -149,6 +150,13 @@ export async function action(args: ActionFunctionArgs) {
       return api.accounting.lockPeriod({ periodId });
     case "unlock":
       return api.accounting.unlockPeriod({ periodId });
+    case "reopen": {
+      const result = await api.accounting.reopenPeriod({ periodId });
+      if (result.error) return result;
+      return respond(args.request, result).redirect(path.to.accountingPeriods, {
+        message: "Period reopened"
+      });
+    }
     case "compute-burden":
       return api.accounting.computePeriodBurden({ periodId });
     case "close-earned-value":
@@ -192,6 +200,12 @@ export default function AccountingPeriodCloseRoute() {
   const { checklist, period } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const closeFetcher = useAction<typeof action>();
+  const reopenFetcher = useAction<typeof action>();
+  const permissions = usePermissions();
+  const isClosed = period?.closeStatus === "Closed";
+  const canReopen =
+    permissions.can("update", "accounting") &&
+    permissions.can("delete", "accounting");
 
   const periodLabel =
     period && period.fiscalYear && period.periodNumber
@@ -262,17 +276,33 @@ export default function AccountingPeriodCloseRoute() {
           </Table>
         </ModalBody>
         <ModalFooter>
-          <closeFetcher.Form method="post">
-            <input type="hidden" name="intent" value="close" />
-            <Button
-              type="submit"
-              leftIcon={<LuLock />}
-              isDisabled={!checklist.canClose}
-              isLoading={closeFetcher.state !== "idle"}
-            >
-              <Trans>Close Period</Trans>
-            </Button>
-          </closeFetcher.Form>
+          {isClosed ? (
+            canReopen && (
+              <reopenFetcher.Form method="post">
+                <input type="hidden" name="intent" value="reopen" />
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  leftIcon={<LuLockOpen />}
+                  isLoading={reopenFetcher.state !== "idle"}
+                >
+                  <Trans>Reopen Period</Trans>
+                </Button>
+              </reopenFetcher.Form>
+            )
+          ) : (
+            <closeFetcher.Form method="post">
+              <input type="hidden" name="intent" value="close" />
+              <Button
+                type="submit"
+                leftIcon={<LuLock />}
+                isDisabled={!checklist.canClose}
+                isLoading={closeFetcher.state !== "idle"}
+              >
+                <Trans>Close Period</Trans>
+              </Button>
+            </closeFetcher.Form>
+          )}
         </ModalFooter>
       </ModalContent>
     </Modal>

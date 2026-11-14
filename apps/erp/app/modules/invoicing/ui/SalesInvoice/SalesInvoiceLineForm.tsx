@@ -88,6 +88,7 @@ import {
   isItemlessServiceLine,
   isSalesInvoiceLocked
 } from "../../invoicing.models";
+import { ChangeInvoiceLineAccount } from "../InvoiceLineAccount/ChangeInvoiceLineAccount";
 import ContractInvoiceLineSource from "./ContractInvoiceLineSource";
 import RentalInvoiceLineSummary from "./RentalInvoiceLineSummary";
 
@@ -175,6 +176,14 @@ const SalesInvoiceItemLineForm = ({
 
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isEditable = !isLocked;
+  // A posted line's account changes through a correcting journal.
+  const canChangeAccount =
+    !!routeData?.salesInvoice?.postingDate &&
+    !["Draft", "Pending", "Voided"].includes(
+      routeData?.salesInvoice?.status ?? ""
+    ) &&
+    permissions.can("update", "invoicing") &&
+    permissions.can("update", "accounting");
 
   // A Service line with no item is a service job's labor or fixed price
   // line: no item, no method and no location, only its description, quantity,
@@ -580,6 +589,15 @@ const SalesInvoiceItemLineForm = ({
                         <Trans>Asset</Trans>
                       </TabsTrigger>
                     </TabsList>
+                  )}
+                  {isEditing && !isFixedAsset && canChangeAccount && (
+                    <ChangeInvoiceLineAccount
+                      action={path.to.salesInvoiceLineAccount(
+                        invoiceId,
+                        initialValues.id!
+                      )}
+                      accountClass="Revenue"
+                    />
                   )}
                 </div>
               </HStack>

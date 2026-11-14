@@ -93,7 +93,18 @@ Periods close and reopen in order. Closing refuses if any **earlier** period isn
 
 ## Reopening
 
+To reopen a period, open **Accounting → Periods**, choose **View Period** on the Closed period, and click **Reopen Period**. The button needs accounting update and delete permission. Reopen the most recent Closed period first and work backwards to the month you need.
+
 Reopening (`reopenAccountingPeriod`) flips a **Closed** period back to **Open**, clears its `closedAt`/`closedBy`, and deletes the balance snapshots the close wrote (its own and any later snapshot that embedded it, since snapshots are cumulative through their period's end date). After reopening, postings into the month resume and the balance reads fall back to a full-history scan until the period is closed again. A period that isn't Closed can't be reopened.
+
+### Correcting a historical period
+
+A reopened period takes postings dated in it again. New invoices, receipts and voids post with today's date, so they never land in a past month. Two corrections post into it:
+
+1. A manual journal entry with a posting date in the period.
+2. A changed account on a posted invoice line (**Change GL Account** on the line), which posts on the invoice's original posting date. See [Invoices](/docs/reference/invoices#changing-a-posted-lines-account).
+
+Then lock and close each period again, oldest first. The close checklist runs again for each one.
 
 Unlocking (`unlockAccountingPeriod`) is the milder inverse: it moves **Locked** back to **Open** so operational documents can post again, clearing `lockedAt`/`lockedBy`. It writes no snapshots and touches no balances.
 

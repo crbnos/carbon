@@ -1901,6 +1901,9 @@ msgstr "किसी नौकरी की प्रारंभ तिथि �
 msgid "A job's status changes"
 msgstr "किसी नौकरी की स्थिति में परिवर्तन"
 
+msgid "A journal dated on the invoice's posting date moves the line's posted amount to the new account. The period must be open."
+msgstr ""
+
 msgid "A labor category sets the cost and bill rates of the people in it."
 msgstr "एक श्रम श्रेणी इसमें लोगों की लागत और बिलिंग दरें निर्धारित करती है।"
 
@@ -2576,6 +2579,9 @@ msgstr "खाता और विवरण"
 
 msgid "Account balances with debits and credits"
 msgstr "नामे और जमा के साथ खाता शेष राशि"
+
+msgid "Account changed"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "माल या सेवाएं प्राप्त होने से पहले किए गए अग्रिम भुगतान के लिए खाता।"
@@ -6672,6 +6678,9 @@ msgstr "चैंपियन"
 msgid "Change"
 msgstr "बदलें"
 
+msgid "Change Account"
+msgstr ""
+
 msgid "Change cancelled"
 msgstr "परिवर्तन रद्द"
 
@@ -6680,6 +6689,9 @@ msgstr "तिथि बदलें"
 
 msgid "Change Document"
 msgstr "परिवर्तन दस्तावेज़"
+
+msgid "Change GL Account"
+msgstr ""
 
 msgid "Change Inspection Plan"
 msgstr "निरीक्षण योजना बदलें"
@@ -18929,6 +18941,9 @@ msgstr "नया गेज अंशांकन रिकॉर्ड"
 msgid "New Gauge Type"
 msgstr "नया गेज प्रकार"
 
+msgid "New GL Account"
+msgstr ""
+
 msgid "New Group"
 msgstr "नया समूह"
 
@@ -25124,6 +25139,9 @@ msgstr "फिर से खोलें"
 msgid "Reopen as Revision"
 msgstr "रिवीजन के रूप में फिर से खोलें"
 
+msgid "Reopen Period"
+msgstr ""
+
 msgid "Reopen Training"
 msgstr "प्रशिक्षण फिर से खोलें"
 
@@ -27081,6 +27099,9 @@ msgstr "सभी पंक्तियाँ चुनें"
 
 msgid "Select all service lines"
 msgstr "सभी सेवा पंक्तियाँ चुनें"
+
+msgid "Select an account"
+msgstr ""
 
 msgid "Select an action…"
 msgstr "एक क्रिया चुनें…"

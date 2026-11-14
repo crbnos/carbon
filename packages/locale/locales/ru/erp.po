@@ -1901,6 +1901,9 @@ msgstr "Дата начала работы изменяется"
 msgid "A job's status changes"
 msgstr "Статус работы изменяется"
 
+msgid "A journal dated on the invoice's posting date moves the line's posted amount to the new account. The period must be open."
+msgstr ""
+
 msgid "A labor category sets the cost and bill rates of the people in it."
 msgstr "Категория труда устанавливает стоимость и ставки выставления счетов для людей в ней."
 
@@ -2576,6 +2579,9 @@ msgstr "Счет и детали"
 
 msgid "Account balances with debits and credits"
 msgstr "Остатки счетов с дебетами и кредитами"
+
+msgid "Account changed"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Учет авансовых платежей, произведенных до получения товаров или услуг."
@@ -6672,6 +6678,9 @@ msgstr "Чемпионы"
 msgid "Change"
 msgstr "Изменить"
 
+msgid "Change Account"
+msgstr ""
+
 msgid "Change cancelled"
 msgstr "Изменение отменено"
 
@@ -6680,6 +6689,9 @@ msgstr "Изменить дату"
 
 msgid "Change Document"
 msgstr "Изменить документ"
+
+msgid "Change GL Account"
+msgstr ""
 
 msgid "Change Inspection Plan"
 msgstr "Изменить план контроля"
@@ -18929,6 +18941,9 @@ msgstr "Новая запись о калибровке средства изм�
 msgid "New Gauge Type"
 msgstr "Новый тип средства измерения"
 
+msgid "New GL Account"
+msgstr ""
+
 msgid "New Group"
 msgstr "Новая группа"
 
@@ -25124,6 +25139,9 @@ msgstr "Открыть заново"
 msgid "Reopen as Revision"
 msgstr "Открыть заново как ревизию"
 
+msgid "Reopen Period"
+msgstr ""
+
 msgid "Reopen Training"
 msgstr "Открыть заново обучение"
 
@@ -27081,6 +27099,9 @@ msgstr "Выбрать все строки"
 
 msgid "Select all service lines"
 msgstr "Выбрать все строки услуг"
+
+msgid "Select an account"
+msgstr ""
 
 msgid "Select an action…"
 msgstr "Выберите действие…"

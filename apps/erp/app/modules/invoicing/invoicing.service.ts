@@ -58,7 +58,11 @@ import {
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
 import type { AccountClass, AccountType } from "@carbon/database/ledger";
-import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
+import {
+  accountTypeFromClass,
+  debitSigned,
+  isAccountClass
+} from "@carbon/database/ledger";
 import { readPaymentProcessorFees } from "@carbon/database/payment-processor-fee";
 import type { MemoJournalLine } from "@carbon/database/posting";
 import {
@@ -267,6 +271,7 @@ import {
   partyDimensionValuesFrom,
   refuseUnlessOwned,
   refuseVoidBeforeCutover,
+  resolveAccountingPeriod,
   resolveInventoryAccount,
   SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   salesInvoiceStandIns,
@@ -20561,5 +20566,707 @@ export async function reverseRecognizedRevenue(
       .where("id", "in", ids)
       .execute();
     return schedules.length;
+  });
+}
+
+// ── Invoice line account change ──────────────────────────────────────────────
+// A posted invoice line's account changes through a correcting journal, never by
+// editing the posting: the journal moves the line's posted amount from the
+// account it sits on to the new one, dated on the original posting's date.
+
+/** The description prefix of both lines an account change writes. The role
+ *  readers (`classifyAccountingPostingRole`) match descriptions exactly, so
+ *  these lines take no role. */
+export const LINE_ACCOUNT_CHANGE_PREFIX = "Account change: ";
+
+export const LINE_ACCOUNT_CHANGE_BEFORE_CUTOVER_ERROR =
+  "This invoice is from before your accounting cutover. Record a journal entry to correct it instead.";
+
+/** One journal line an invoice's postings wrote, as an account change reads it. */
+export type InvoiceLineLeg = {
+  id: string;
+  accountId: string | null;
+  accountClass: AccountClass | null;
+  /** Natural-balance signed, as stored. */
+  amount: number;
+  quantity: number;
+  description: string | null;
+  documentType: Database["public"]["Enums"]["journalLineDocumentType"] | null;
+  documentId: string | null;
+  externalDocumentId: string | null;
+  documentLineReference: string | null;
+  journalLineReference: string;
+  accountDefaultRole: string | null;
+  postingDate: string;
+  /** The line's dimension values, by entity type. */
+  dimensions: Readonly<Record<string, string>>;
+};
+
+/** What the posting wrote for the invoice line, from the line's own fields. */
+export type InvoiceLinePositionTarget = {
+  /** The account the line's amount sits on now. */
+  accountId: string;
+  quantity: number;
+  documentLineReference: string | null;
+  /** The posted amount, debit-signed: a revenue credit is negative. */
+  amount: number;
+  /** The dimension values the posting gave the line, by entity type. */
+  dimensions: Readonly<Record<string, string | null>>;
+};
+
+export type InvoiceLinePosition = {
+  /** A leg of the group that holds the amount. The change copies its keys
+   *  and dimensions. */
+  leg: InvoiceLineLeg & { accountId: string; accountClass: AccountClass };
+  /** What the group holds on the account, debit-signed. */
+  amount: number;
+  /** The date of the posting that wrote the group. */
+  postingDate: string;
+  /** Every leg of the group, on any account. */
+  groupLegIds: string[];
+};
+
+const legValue = (leg: InvoiceLineLeg) =>
+  leg.accountClass ? debitSigned(leg.accountClass, Number(leg.amount)) : 0;
+
+/**
+ * The group of journal lines (one `journalLineReference`) that holds this
+ * invoice line's posted amount on `target.accountId`, or null.
+ *
+ * A posting writes no link from a journal line to its invoice line, so the
+ * group is matched on what the posting copies from the line: the quantity,
+ * the order line reference and the amount's sign, and only a group whose
+ * amount is still on the account (an earlier change moved it off). When
+ * several groups match, the line's dimensions and then its amount decide.
+ * Groups still tied after that are the same in every key: either one is the
+ * line's.
+ */
+export function findInvoiceLinePosition(
+  legs: readonly InvoiceLineLeg[],
+  target: InvoiceLinePositionTarget
+): InvoiceLinePosition | null {
+  if (equals(target.amount, 0)) return null;
+  const onAccount = (leg: InvoiceLineLeg) =>
+    leg.accountId === target.accountId && leg.accountClass !== null;
+
+  // What each group holds on the account now: its posting, every change into
+  // and out of it, and a void.
+  const held = new Map<string, number>();
+  for (const leg of legs) {
+    if (!onAccount(leg)) continue;
+    held.set(
+      leg.journalLineReference,
+      round((held.get(leg.journalLineReference) ?? 0) + legValue(leg))
+    );
+  }
+
+  const groups = new Set<string>();
+  let candidates = legs.filter((leg) => {
+    if (!onAccount(leg)) return false;
+    if (leg.description?.startsWith("VOID: ")) return false;
+    if (!equals(Number(leg.quantity), round(target.quantity))) return false;
+    if ((leg.documentLineReference ?? null) !== target.documentLineReference) {
+      return false;
+    }
+    const value = legValue(leg);
+    if (equals(value, 0) || Math.sign(value) !== Math.sign(target.amount)) {
+      return false;
+    }
+    if (!equals(held.get(leg.journalLineReference) ?? 0, value)) return false;
+    if (groups.has(leg.journalLineReference)) return false;
+    groups.add(leg.journalLineReference);
+    return true;
+  });
+
+  const matchesDimensions = (leg: InvoiceLineLeg) =>
+    Object.entries(target.dimensions).every(
+      ([entityType, value]) =>
+        !(entityType in leg.dimensions) ||
+        leg.dimensions[entityType] === (value ?? undefined)
+    );
+  if (candidates.length > 1) candidates = candidates.filter(matchesDimensions);
+  if (candidates.length > 1) {
+    candidates = candidates.filter((leg) =>
+      equals(legValue(leg), target.amount)
+    );
+  }
+  const leg = [...candidates].sort((a, b) =>
+    a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+  )[0];
+  if (!leg?.accountId || !leg.accountClass) return null;
+
+  const group = legs.filter(
+    (row) => row.journalLineReference === leg.journalLineReference
+  );
+  return {
+    leg: { ...leg, accountId: leg.accountId, accountClass: leg.accountClass },
+    amount: held.get(leg.journalLineReference) ?? 0,
+    postingDate: group
+      .map((row) => row.postingDate)
+      .reduce((a, b) => (b < a ? b : a)),
+    groupLegIds: group.map((row) => row.id)
+  };
+}
+
+export type LineAccountChangeLine = Omit<
+  Database["public"]["Tables"]["journalLine"]["Insert"],
+  "id" | "journalId"
+>;
+
+/**
+ * The two lines that move a group's amount: the amount off the account it
+ * sits on, and onto the new one. Both carry the group's document keys, so a
+ * void of the invoice reverses them with the posting, and a later change finds
+ * the new line as it found the posting.
+ */
+export function buildLineAccountChangeLines(
+  position: InvoiceLinePosition,
+  to: { accountId: string; accountClass: AccountClass },
+  companyId: string
+): LineAccountChangeLine[] {
+  const { leg, amount } = position;
+  const keys = {
+    description: `${LINE_ACCOUNT_CHANGE_PREFIX}${leg.description ?? ""}`,
+    documentType: leg.documentType,
+    documentId: leg.documentId,
+    externalDocumentId: leg.externalDocumentId,
+    documentLineReference: leg.documentLineReference,
+    journalLineReference: leg.journalLineReference,
+    companyId
+  };
+  return [
+    {
+      ...keys,
+      accountId: leg.accountId,
+      // A stand-in line's role goes with its reversal, as a void's does.
+      accountDefaultRole: leg.accountDefaultRole,
+      amount: debitSigned(leg.accountClass, -amount),
+      quantity: -Number(leg.quantity)
+    },
+    {
+      ...keys,
+      accountId: to.accountId,
+      amount: debitSigned(to.accountClass, amount),
+      quantity: Number(leg.quantity)
+    }
+  ];
+}
+
+type PeriodNameFields = {
+  fiscalYear: number | null;
+  periodNumber: number | null;
+  startDate: string;
+  endDate: string;
+};
+
+/** "FY2026 · Period 3", as the period close screen names a period. */
+export function accountingPeriodName(period: PeriodNameFields): string {
+  return period.fiscalYear && period.periodNumber
+    ? `FY${period.fiscalYear} · Period ${period.periodNumber}`
+    : `${period.startDate} to ${period.endDate}`;
+}
+
+/** Why an account change cannot post into the original posting's period,
+ *  naming it, or null while it is Open. */
+export function lineAccountChangePeriodRefusal(
+  period: PeriodNameFields & {
+    closeStatus: string;
+    closedAt: string | Date | null;
+  }
+): string | null {
+  const name = accountingPeriodName(period);
+  if (period.closeStatus === "Closed" || period.closedAt) {
+    return `Accounting period ${name} is closed. Reopen it before changing the account.`;
+  }
+  if (period.closeStatus === "Locked") {
+    return `Accounting period ${name} is locked. Unlock it before changing the account.`;
+  }
+  return null;
+}
+
+export const changeInvoiceLineAccountInput = z.object({
+  side: z.enum(["sales", "purchase"]),
+  invoiceId: z.string().min(1),
+  lineId: z.string().min(1),
+  accountId: z.string().min(1)
+});
+
+const LINE_ACCOUNT_SIDES = {
+  sales: {
+    label: "Sales Invoice",
+    sourceType: "Sales Invoice",
+    accountClass: "Revenue"
+  },
+  purchase: {
+    label: "Purchase Invoice",
+    sourceType: "Purchase Invoice",
+    accountClass: "Expense"
+  }
+} as const;
+
+/** Posted, as a void reads it: a posting date and not Draft, Pending or
+ *  Voided. */
+const isPostedInvoice = (invoice: {
+  status: string;
+  postingDate: string | null;
+}) =>
+  !!invoice.postingDate &&
+  !["Draft", "Pending", "Voided"].includes(invoice.status);
+
+type LineAccountFacts = {
+  invoice: {
+    id: string;
+    invoiceId: string;
+    status: string;
+    postingDate: string | null;
+  };
+  /** The accounts the line's amount may sit on, in the order to look. */
+  accountIds: string[];
+  target: Omit<InvoiceLinePositionTarget, "accountId">;
+};
+
+/** A sales line's posted revenue: its Sales Account leg as the posting
+ *  computed it. Only a line whose revenue went straight to the Sales Account
+ *  can change account; every other kind posts through accounts a schedule,
+ *  a position or an asset reads. */
+async function salesLineAccountFacts(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  invoiceId: string,
+  lineId: string
+): Promise<LineAccountFacts> {
+  const invoice = await trx
+    .selectFrom("salesInvoice")
+    .select(["id", "invoiceId", "status", "postingDate"])
+    .where("id", "=", invoiceId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!invoice) throw new NotFoundError("Sales invoice not found");
+
+  const [lines, shipment] = await inOrder([
+    () => many(trx, "salesInvoiceLine", { invoiceId, companyId }),
+    () =>
+      maybeSingle(
+        trx,
+        "salesInvoiceShipment",
+        { companyId, id: invoiceId },
+        { columns: ["shippingCost"] }
+      )
+  ]);
+  if (lines.error) throw new Error("Failed to fetch sales invoice lines");
+  if (shipment.error) throw new Error("Failed to fetch sales invoice shipment");
+  const line = lines.data.find((row) => row.id === lineId);
+  if (!line) throw new NotFoundError("Sales invoice line not found");
+  if (line.invoiceLineType === "Comment") {
+    throw new InvalidInputError("A comment line posts nothing to change.");
+  }
+  if (postingLineRevenue(line).book !== "sales") {
+    throw new InvalidInputError(
+      "Only a line whose revenue posted to the Sales account can change account. Deferred, contract, rental, service job and fixed asset lines post through accounts their schedules and assets read."
+    );
+  }
+
+  const allocations = allocateSalesHeaderShipping(
+    lines.data,
+    shipment.data?.shippingCost ?? 0
+  );
+  const amounts = roundSalesPostingAmounts({
+    ...line,
+    allocatedHeaderShipping: allocations.get(line.id) ?? 0
+  });
+  return {
+    invoice: {
+      ...invoice,
+      postingDate: invoice.postingDate ? String(invoice.postingDate) : null
+    },
+    // A line that never changed account names no account of its own, or one
+    // it was converted with; its revenue is on the Sales Account it posted to.
+    accountIds: line.accountId ? [line.accountId] : [],
+    target: {
+      quantity: line.quantity,
+      documentLineReference: line.salesOrderLineId
+        ? journalReference.to.salesInvoice(line.salesOrderLineId)
+        : null,
+      amount: debitSigned("Revenue", amounts.salesRevenueBase),
+      dimensions: {
+        Item: line.itemId ?? null,
+        Location: line.locationId ?? null,
+        Project: line.projectId ?? null
+      }
+    }
+  };
+}
+
+/** A purchase line's posted cost: the debit of a G/L Account line, as the
+ *  posting computed it. Item, fixed asset and lease lines post through
+ *  inventory, receipts, assets and leases, which read those accounts. */
+async function purchaseLineAccountFacts(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  invoiceId: string,
+  lineId: string
+): Promise<LineAccountFacts> {
+  const invoice = await trx
+    .selectFrom("purchaseInvoice")
+    .select(["id", "invoiceId", "status", "postingDate", "exchangeRate"])
+    .where("id", "=", invoiceId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!invoice) throw new NotFoundError("Purchase invoice not found");
+
+  const [lines, delivery] = await inOrder([
+    () => many(trx, "purchaseInvoiceLine", { invoiceId, companyId }),
+    () =>
+      maybeSingle(
+        trx,
+        "purchaseInvoiceDelivery",
+        { companyId, id: invoiceId },
+        { columns: ["supplierShippingCost"] }
+      )
+  ]);
+  if (lines.error) throw new Error("Failed to fetch purchase invoice lines");
+  if (delivery.error) {
+    throw new Error("Failed to fetch purchase invoice delivery");
+  }
+  const line = lines.data.find((row) => row.id === lineId);
+  if (!line) throw new NotFoundError("Purchase invoice line not found");
+  if (line.invoiceLineType !== "G/L Account" || !line.accountId) {
+    throw new InvalidInputError(
+      "Only a G/L Account line can change account. Item, fixed asset and lease lines post through inventory, asset and lease accounts."
+    );
+  }
+
+  const amounts = calculatePurchasePostingAmounts({
+    lines: lines.data,
+    exchangeRate: invoice.exchangeRate ?? 1,
+    supplierShippingCost: delivery.data?.supplierShippingCost ?? 0
+  }).find((row) => row.id === line.id);
+  if (!amounts) throw new Error("Failed to compute the line's posted amount");
+  return {
+    invoice: {
+      ...invoice,
+      postingDate: invoice.postingDate ? String(invoice.postingDate) : null
+    },
+    accountIds: [line.accountId],
+    target: {
+      quantity: amounts.inventoryQuantity,
+      documentLineReference: line.purchaseOrderLineId
+        ? journalReference.to.purchaseInvoice(line.purchaseOrderLineId)
+        : null,
+      // The posting debits the line's account.
+      amount: round(amounts.totalBaseCost),
+      dimensions: {
+        Location: line.locationId ?? null,
+        CostCenter: line.costCenterId ?? null,
+        Project: line.projectId ?? null,
+        ProjectElement: line.projectElementId ?? null
+      }
+    }
+  };
+}
+
+/** Every journal line the invoice's own postings wrote (the posting, a void,
+ *  account changes), with its account's class, its journal's date and its
+ *  dimensions. */
+async function invoiceLineLegs(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  invoiceId: string,
+  sourceType: "Sales Invoice" | "Purchase Invoice"
+): Promise<InvoiceLineLeg[]> {
+  const rows = await trx
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .leftJoin("account", "account.id", "journalLine.accountId")
+    .select([
+      "journalLine.id",
+      "journalLine.accountId",
+      "journalLine.amount",
+      "journalLine.quantity",
+      "journalLine.description",
+      "journalLine.documentType",
+      "journalLine.documentId",
+      "journalLine.externalDocumentId",
+      "journalLine.documentLineReference",
+      "journalLine.journalLineReference",
+      "journalLine.accountDefaultRole",
+      sql<string>`"journal"."postingDate"::text`.as("postingDate"),
+      "account.class as accountClass"
+    ])
+    .where("journalLine.companyId", "=", companyId)
+    .where("journalLine.documentType", "=", "Invoice")
+    .where("journalLine.documentId", "=", invoiceId)
+    .where("journal.sourceType", "=", sourceType)
+    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .execute();
+  if (rows.length === 0) return [];
+
+  const dimensionRows = await trx
+    .selectFrom("journalLineDimension")
+    .innerJoin("dimension", "dimension.id", "journalLineDimension.dimensionId")
+    .select([
+      "journalLineDimension.journalLineId",
+      "journalLineDimension.valueId",
+      "dimension.entityType"
+    ])
+    .where("journalLineDimension.companyId", "=", companyId)
+    .where(
+      "journalLineDimension.journalLineId",
+      "in",
+      rows.map((row) => row.id)
+    )
+    .execute();
+  const dimensions = new Map<string, Record<string, string>>();
+  for (const row of dimensionRows) {
+    const values = dimensions.get(row.journalLineId) ?? {};
+    values[row.entityType] = row.valueId;
+    dimensions.set(row.journalLineId, values);
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    accountClass: isAccountClass(row.accountClass) ? row.accountClass : null,
+    amount: Number(row.amount),
+    quantity: Number(row.quantity),
+    dimensions: dimensions.get(row.id) ?? {}
+  }));
+}
+
+/**
+ * Changes the account of a posted invoice line: one journal, dated on the
+ * original posting's date in its period, that moves the line's posted amount
+ * from the account it sits on to `accountId`, with the posting's dimensions
+ * and document keys, then records the new account on the line. The period
+ * must be Open. Refused before the accounting cutover's date, for a line
+ * charged to a project, and for a line an intercompany elimination reads.
+ */
+export async function changeInvoiceLineAccount(
+  ctx: ServiceContext,
+  raw: z.input<typeof changeInvoiceLineAccountInput>
+) {
+  const { side, invoiceId, lineId, accountId } =
+    changeInvoiceLineAccountInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { label, sourceType, accountClass } = LINE_ACCOUNT_SIDES[side];
+
+  const postingStatus = await journalPostingStatus(db, companyId);
+
+  return db.transaction().execute(async (trx) => {
+    await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+    // Each reads the invoice FOR UPDATE: a void or a second change waits.
+    const facts =
+      side === "sales"
+        ? await salesLineAccountFacts(trx, companyId, invoiceId, lineId)
+        : await purchaseLineAccountFacts(trx, companyId, invoiceId, lineId);
+    if (!isPostedInvoice(facts.invoice)) {
+      throw new InvalidInputError(
+        facts.invoice.status === "Voided"
+          ? "A voided invoice's lines cannot change account."
+          : "Only a posted invoice's lines can change account. Edit the line while the invoice is a Draft."
+      );
+    }
+    // Before the cutover another system kept the books: the invoice's journal
+    // was superseded by the opening balance.
+    await refuseVoidBeforeCutover(
+      trx,
+      companyId,
+      facts.invoice.postingDate,
+      LINE_ACCOUNT_CHANGE_BEFORE_CUTOVER_ERROR
+    );
+
+    const to = await trx
+      .selectFrom("account")
+      .select(["id", "class", "active", "isGroup"])
+      .where("id", "=", accountId)
+      .where("companyGroupId", "=", ctx.company.groupId)
+      .executeTakeFirst();
+    if (!to || !to.active || to.isGroup || to.class !== accountClass) {
+      throw new InvalidInputError(
+        `Choose an active ${accountClass} account that is not a group.`
+      );
+    }
+
+    // The project ledger holds a charged line's cost against the project's
+    // account, which replaced the line's own.
+    const projectCharge = await trx
+      .selectFrom("projectLedger")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("documentId", "=", invoiceId)
+      .where("documentLineId", "=", lineId)
+      .executeTakeFirst();
+    if (projectCharge) {
+      throw new InvalidInputError(
+        "This line is charged to a project, which posted it to the project's account. Record a journal entry to correct it instead."
+      );
+    }
+
+    const legs = await invoiceLineLegs(trx, companyId, invoiceId, sourceType);
+    // A sales line that never changed account: its revenue is on the account
+    // the posting's Sales Account legs name.
+    const accountIds = [
+      ...new Set([
+        ...facts.accountIds,
+        ...(side === "sales"
+          ? legs
+              .filter((leg) => leg.description === "Sales Account")
+              .map((leg) => leg.accountId)
+              .filter((id): id is string => !!id)
+          : [])
+      ])
+    ];
+    let position: InvoiceLinePosition | null = null;
+    for (const from of accountIds) {
+      position = findInvoiceLinePosition(legs, {
+        ...facts.target,
+        accountId: from
+      });
+      if (position) break;
+    }
+    if (!position) {
+      throw new InvalidInputError(
+        "This line's posted amount could not be found on its account, so it cannot change account. Record a journal entry to correct it instead."
+      );
+    }
+    if (position.leg.accountId === to.id) {
+      throw new InvalidInputError(
+        "The line is already posted to this account."
+      );
+    }
+
+    const eliminated = await trx
+      .selectFrom("intercompanyEliminationLine")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("journalLineId", "in", position.groupLegIds)
+      .executeTakeFirst();
+    if (eliminated) {
+      throw new InvalidInputError(
+        "Intercompany eliminations read this line's posted account, so it cannot change. Record a journal entry to correct it instead."
+      );
+    }
+
+    // Dated on the original posting, in its period, which must be Open. A
+    // Provisional journal has no period.
+    const postingDate = position.postingDate;
+    let accountingPeriodId: string | null = null;
+    if (postingStatus === "Posted") {
+      const period = await trx
+        .selectFrom("accountingPeriod")
+        .select([
+          "closeStatus",
+          "closedAt",
+          "fiscalYear",
+          "periodNumber",
+          sql<string>`"startDate"::text`.as("startDate"),
+          sql<string>`"endDate"::text`.as("endDate")
+        ])
+        .where("companyId", "=", companyId)
+        .where("startDate", "<=", postingDate)
+        .where("endDate", ">=", postingDate)
+        .orderBy("startDate")
+        // FOR UPDATE, as `resolveAccountingPeriod` locks it next: two
+        // changes that each held a share lock would deadlock on the upgrade.
+        .forUpdate()
+        .executeTakeFirst();
+      const refusal = period ? lineAccountChangePeriodRefusal(period) : null;
+      if (refusal) throw new InvalidInputError(refusal);
+      accountingPeriodId = (
+        await resolveAccountingPeriod(trx, companyId, postingDate, "historical")
+      ).id;
+    }
+
+    const lines = buildLineAccountChangeLines(
+      position,
+      { accountId: to.id, accountClass },
+      companyId
+    );
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+    const journal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
+        accountingPeriodId,
+        description: `Account change ${label} ${facts.invoice.invoiceId}`,
+        postingDate,
+        companyId,
+        sourceType,
+        status: postingStatus,
+        postedAt: datetime.timestamp(),
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+    const lineIds = await allocateJournalLineIds(trx, lines.length);
+    await trx
+      .insertInto("journalLine")
+      .values(
+        lines.map((line, index) => ({
+          ...line,
+          id: lineIds[index]!,
+          journalId: journal.id,
+          createdBy: userId
+        }))
+      )
+      .execute();
+    // Both lines carry the posted line's dimensions, so every report by
+    // dimension moves with the account.
+    for (const changeLineId of lineIds) {
+      await copyJournalLineDimensions(trx, {
+        companyId,
+        reversals: [
+          { originalLineId: position.leg.id, reversingLineId: changeLineId }
+        ]
+      });
+    }
+
+    const lineUpdate = {
+      accountId: to.id,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    };
+    const recorded =
+      side === "sales"
+        ? await trx
+            .updateTable("salesInvoiceLine")
+            .set(lineUpdate)
+            .where("id", "=", lineId)
+            .where("invoiceId", "=", invoiceId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : await trx
+            .updateTable("purchaseInvoiceLine")
+            .set(lineUpdate)
+            .where("id", "=", lineId)
+            .where("invoiceId", "=", invoiceId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+    if (Number(recorded.numUpdatedRows) !== 1) {
+      throw new Error("Failed to record the line's new account");
+    }
+
+    return {
+      invoiceId,
+      lineId,
+      journalId: journal.id,
+      journalEntryId,
+      fromAccountId: position.leg.accountId,
+      toAccountId: to.id,
+      amount: Math.abs(position.amount),
+      postingDate
+    };
   });
 }

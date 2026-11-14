@@ -1901,6 +1901,9 @@ msgstr "Das Startdatum eines Auftrags ändert sich"
 msgid "A job's status changes"
 msgstr "Der Status eines Auftrags ändert sich"
 
+msgid "A journal dated on the invoice's posting date moves the line's posted amount to the new account. The period must be open."
+msgstr ""
+
 msgid "A labor category sets the cost and bill rates of the people in it."
 msgstr "Eine Personalkategorie legt die Kosten- und Abrechnungssätze des Personals darin fest."
 
@@ -2576,6 +2579,9 @@ msgstr "Konto & Details"
 
 msgid "Account balances with debits and credits"
 msgstr "Kontosalden mit Soll und Haben"
+
+msgid "Account changed"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Konten Sie für Vorschusszahlungen, die vor Lieferung von Waren oder Dienstleistungen getätigt werden."
@@ -6672,6 +6678,9 @@ msgstr "Fachleute"
 msgid "Change"
 msgstr "Ändern"
 
+msgid "Change Account"
+msgstr ""
+
 msgid "Change cancelled"
 msgstr "Änderung storniert"
 
@@ -6680,6 +6689,9 @@ msgstr "Änderungsdatum"
 
 msgid "Change Document"
 msgstr "Dokument ändern"
+
+msgid "Change GL Account"
+msgstr ""
 
 msgid "Change Inspection Plan"
 msgstr "Prüfplan ändern"
@@ -18929,6 +18941,9 @@ msgstr "Neues Prüfmittel-Kalibrierprotokoll"
 msgid "New Gauge Type"
 msgstr "Neue Prüfmittelart"
 
+msgid "New GL Account"
+msgstr ""
+
 msgid "New Group"
 msgstr "Neue Gruppe"
 
@@ -25124,6 +25139,9 @@ msgstr "Wieder öffnen"
 msgid "Reopen as Revision"
 msgstr "Wieder öffnen als Revision"
 
+msgid "Reopen Period"
+msgstr ""
+
 msgid "Reopen Training"
 msgstr "Schulung wieder öffnen"
 
@@ -27081,6 +27099,9 @@ msgstr "Alle Zeilen auswählen"
 
 msgid "Select all service lines"
 msgstr "Alle Dienstleistungspositionen auswählen"
+
+msgid "Select an account"
+msgstr ""
 
 msgid "Select an action…"
 msgstr "Aktion auswählen…"

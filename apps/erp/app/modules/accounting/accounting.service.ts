@@ -3742,6 +3742,7 @@ export async function closePeriodWithChecklist(
   );
 }
 
+/** Not published: `accounting_reopenPeriod` runs it. */
 export async function reopenAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
