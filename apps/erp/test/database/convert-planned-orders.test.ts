@@ -61,6 +61,7 @@ async function plannedOrder(
     periodId?: string;
     firm?: boolean;
     quantity?: number;
+    dueDate?: string;
   },
   key: string
 ): Promise<string> {
@@ -79,7 +80,7 @@ async function plannedOrder(
         firmedBy: overrides.firm ? USER : null,
         firmedAt: overrides.firm ? f.today : null,
         quantity: overrides.quantity ?? 10,
-        dueDate: "2299-01-05",
+        dueDate: overrides.dueDate ?? "2299-01-05",
         releaseDate: "2299-01-01",
         periodId: overrides.periodId ?? week1,
         splitIndex: overrides.splitIndex ?? 0,
@@ -177,6 +178,7 @@ async function read(id: string) {
     .selectFrom("plannedOrder")
     .select([
       "status",
+      "quantity",
       "jobId",
       "purchaseOrderLineId",
       "firmedBy",
@@ -184,7 +186,8 @@ async function read(id: string) {
     ])
     .where("id", "=", id)
     .where("companyId", "=", f.companyId)
-    .executeTakeFirstOrThrow();
+    .executeTakeFirstOrThrow()
+    .then((row) => ({ ...row, quantity: Number(row.quantity) }));
 }
 
 describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
@@ -647,6 +650,87 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
       expect(await convert("2299-01-01")).toEqual([]);
       expect(await convert("2299-01-10")).toEqual([
         { id: overdue, jobId, purchaseOrderLineId: null }
+      ]);
+    }
+  );
+
+  databaseTest(
+    "a smaller job that names a Firm planned order takes its quantity off and leaves it Firm",
+    async () => {
+      const firm = await plannedOrder(
+        { orderType: "Make", firm: true, quantity: 100 },
+        "reduce-firm"
+      );
+      const smaller = await job("reduce-40");
+      const converted = await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [document(smaller, { plannedOrderId: firm, quantity: 40 })]
+      });
+      expect(converted).toEqual([]);
+      expect(await read(firm)).toMatchObject({
+        status: "Firm",
+        quantity: 60,
+        jobId: null,
+        firmedBy: USER
+      });
+
+      // a job of all that is left converts it
+      const rest = await job("reduce-60");
+      await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [document(rest, { plannedOrderId: firm, quantity: 60 })]
+      });
+      expect(await read(firm)).toMatchObject({
+        status: "Converted",
+        quantity: 60,
+        jobId: rest,
+        firmedBy: null
+      });
+    }
+  );
+
+  databaseTest(
+    "a job of the whole quantity converts the Firm planned order it names",
+    async () => {
+      const firm = await plannedOrder(
+        { orderType: "Make", firm: true, quantity: 100 },
+        "whole-firm"
+      );
+      const whole = await job("whole-100");
+      await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [document(whole, { plannedOrderId: firm, quantity: 100 })]
+      });
+      expect(await read(firm)).toMatchObject({
+        status: "Converted",
+        quantity: 100,
+        jobId: whole
+      });
+    }
+  );
+
+  databaseTest(
+    "a job with no id converts a planned order of its week by due date, not by its stored week",
+    async () => {
+      // stored in week 1, due in week 2: it is week 2's
+      const moved = await plannedOrder(
+        { orderType: "Make", dueDate: "2299-01-10" },
+        "stored-week-1"
+      );
+      const jobId = await job("due-week-2");
+      const convert = (periodId: string) =>
+        convertPlannedOrdersForActions(f.db, {
+          companyId: f.companyId,
+          userId: USER,
+          asOf: "2299-01-01",
+          documents: [{ ...document(jobId), periodId }]
+        });
+      expect(await convert(week1)).toEqual([]);
+      expect(await convert(week2)).toEqual([
+        { id: moved, jobId, purchaseOrderLineId: null }
       ]);
     }
   );

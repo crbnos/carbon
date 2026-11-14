@@ -584,6 +584,12 @@ describe("suggestions from the week's planned orders", () => {
     splitIndex: 0,
     ...overrides
   });
+  // the page's weeks; today (2026-09-30) is in the first
+  const weeks = [
+    { id: "w0", startDate: "2026-09-27", endDate: "2026-10-03" },
+    { id: "w1", startDate: "2026-10-04", endDate: "2026-10-10" },
+    { id: "w2", startDate: "2026-10-11", endDate: "2026-10-17" }
+  ];
 
   it("offers one job per unconverted planned order of the week, Firm included", () => {
     expect(
@@ -591,7 +597,7 @@ describe("suggestions from the week's planned orders", () => {
         [
           action({
             type: "Make",
-            suggestedQuantity: 30,
+            suggestedQuantity: 24,
             policyName: "Demand-Based Reorder",
             isASAP: false
           })
@@ -599,6 +605,7 @@ describe("suggestions from the week's planned orders", () => {
         {
           item: { lotSize: 10 },
           todayDate: "2026-09-30",
+          weeks,
           plannedOrders: [
             plannedOrder({
               id: "late",
@@ -609,7 +616,12 @@ describe("suggestions from the week's planned orders", () => {
             }),
             plannedOrder({ id: "firm", status: "Firm", quantity: 20 }),
             plannedOrder({ id: "done", status: "Converted", quantity: 99 }),
-            plannedOrder({ id: "next-week", periodId: "w2", quantity: 50 })
+            plannedOrder({
+              id: "next-week",
+              periodId: "w2",
+              quantity: 50,
+              dueDate: "2026-10-13"
+            })
           ]
         }
       )
@@ -640,6 +652,8 @@ describe("suggestions from the week's planned orders", () => {
   it("converts a Buy planned order to whole purchase units", () => {
     const [order] = plannedOrdersFromActions([action({ suggestedQuantity: 25 })], {
       conversionFactor: 12,
+      weeks,
+      todayDate: "2026-09-30",
       plannedOrders: [plannedOrder({ id: "buy", quantity: 25 })]
     });
     expect(order).toMatchObject({
@@ -651,26 +665,28 @@ describe("suggestions from the week's planned orders", () => {
     });
   });
 
-  // MRP sizes an overdue planned order in the current week; the row keeps the
-  // week of its due date.
-  it("offers the current week's action its overdue planned orders too", () => {
+  // MRP counts an overdue planned order in the first week, whatever week the
+  // row is stored in.
+  it("offers the first week's action its overdue planned orders too", () => {
     const orders = productionOrdersFromActions(
-      [action({ type: "Make", periodId: "w2", suggestedQuantity: 9 })],
+      [action({ type: "Make", periodId: "w0", suggestedQuantity: 9 })],
       {
-        currentWeek: { id: "w2", endDate: "2026-10-10" },
+        todayDate: "2026-09-30",
+        weeks,
         plannedOrders: [
-          plannedOrder({ id: "overdue", periodId: "w1", quantity: 4 }),
           plannedOrder({
-            id: "this-week",
-            periodId: "w2",
-            quantity: 5,
-            dueDate: "2026-10-09"
+            id: "overdue",
+            periodId: "older",
+            quantity: 4,
+            dueDate: "2026-09-20"
           }),
           plannedOrder({
-            id: "next-week",
-            periodId: "w3",
-            dueDate: "2026-10-12"
-          })
+            id: "this-week",
+            periodId: "w0",
+            quantity: 5,
+            dueDate: "2026-10-02"
+          }),
+          plannedOrder({ id: "next-week", periodId: "w1" })
         ]
       }
     );
@@ -680,17 +696,75 @@ describe("suggestions from the week's planned orders", () => {
     ]);
   });
 
-  it("leaves an older week's planned order to its own week when the action's week is not the current one", () => {
+  it("counts a planned order in the week of its due date, not its stored week", () => {
     const orders = productionOrdersFromActions(
       [action({ type: "Make", periodId: "w2", suggestedQuantity: 5 })],
       {
-        currentWeek: { id: "w1", endDate: "2026-10-03" },
+        todayDate: "2026-09-30",
+        weeks,
         plannedOrders: [
-          plannedOrder({ id: "older", periodId: "w1", quantity: 4 })
+          // stored in w1, due in w2
+          plannedOrder({
+            id: "moved",
+            periodId: "w1",
+            quantity: 5,
+            dueDate: "2026-10-12"
+          }),
+          // overdue: the first week's, never a later one's
+          plannedOrder({ id: "overdue", periodId: "w2", dueDate: "2026-09-20" }),
+          // past the last week: no week's
+          plannedOrder({ id: "beyond", periodId: "w2", dueDate: "2026-10-20" })
         ]
       }
     );
-    expect(orders.map((order) => order.plannedOrderId)).toEqual([undefined]);
+    expect(orders.map((order) => order.plannedOrderId)).toEqual(["moved"]);
+  });
+
+  // MRP leaves a held order it cancels out of the week's total: offering it
+  // would make it again.
+  it("leaves out a planned order MRP is cancelling", () => {
+    const orders = productionOrdersFromActions(
+      [action({ type: "Make", suggestedQuantity: 6 })],
+      {
+        todayDate: "2026-09-30",
+        weeks,
+        rowActions: [
+          { type: "Cancel", status: "Open", plannedOrderId: "cancelling" },
+          // a Cancel already applied is history
+          { type: "Cancel", status: "Actioned", plannedOrderId: "kept" }
+        ],
+        plannedOrders: [
+          plannedOrder({ id: "kept" }),
+          plannedOrder({
+            id: "cancelling",
+            status: "Firm",
+            quantity: 20,
+            splitIndex: 1
+          })
+        ]
+      }
+    );
+    expect(
+      orders.map(({ quantity, plannedOrderId }) => ({ quantity, plannedOrderId }))
+    ).toEqual([{ quantity: 6, plannedOrderId: "kept" }]);
+  });
+
+  it("splits the action by its policy, naming no planned order, when the week's planned orders do not add up to it", () => {
+    const orders = productionOrdersFromActions(
+      [action({ type: "Make", suggestedQuantity: 20, policyName: "Demand-Based Reorder" })],
+      {
+        item: { lotSize: 10 },
+        todayDate: "2026-09-30",
+        weeks,
+        plannedOrders: [plannedOrder({ quantity: 6 })]
+      }
+    );
+    expect(
+      orders.map(({ quantity, plannedOrderId }) => ({ quantity, plannedOrderId }))
+    ).toEqual([
+      { quantity: 10, plannedOrderId: undefined },
+      { quantity: 10, plannedOrderId: undefined }
+    ]);
   });
 
   it("splits the action by its policy when its week has no planned order", () => {
@@ -698,7 +772,9 @@ describe("suggestions from the week's planned orders", () => {
       [action({ type: "Make", suggestedQuantity: 20, policyName: "Demand-Based Reorder" })],
       {
         item: { lotSize: 10 },
-        plannedOrders: [plannedOrder({ periodId: "w2" })]
+        todayDate: "2026-09-30",
+        weeks,
+        plannedOrders: [plannedOrder({ periodId: "w2", dueDate: "2026-10-13" })]
       }
     );
     expect(

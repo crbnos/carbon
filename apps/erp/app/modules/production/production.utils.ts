@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { fetchAll } from "@carbon/database/fetch-all";
 import { resolvePlanningTimeFenceDays } from "@carbon/utils";
 import type { AssemblyStep } from "@carbon/viewer";
 import { isPlanFlagged } from "@carbon/viewer/steps";
@@ -160,11 +161,36 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
 const DRAWER_PLANNED_ORDER_COLUMNS =
   "id, itemId, periodId, splitIndex, status, orderType, quantity, scrapQuantity, quantityTrace, dueDate, releaseDate, firmedAt" as const;
 
+/** The Planned and Firm planned orders of a location and type, in the
+ *  common segment: a Converted row is its job or PO line now. */
+function plannedOrdersQuery(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; locationId: string; orderType: "Make" | "Buy" }
+) {
+  return client
+    .from("plannedOrder")
+    .select(DRAWER_PLANNED_ORDER_COLUMNS)
+    .eq("companyId", args.companyId)
+    .eq("locationId", args.locationId)
+    .eq("orderType", args.orderType)
+    .eq("planningSegmentId", "")
+    .in("status", ["Planned", "Firm"]);
+}
+
+export type DrawerPlannedOrder = NonNullable<
+  Awaited<ReturnType<typeof plannedOrdersQuery>>["data"]
+>[number];
+
+type PlannedOrderRead =
+  | { data: DrawerPlannedOrder[]; error: null }
+  | { data: null; error: Error };
+
 /**
  * The Planned and Firm planned orders of one item at one location, by due
  * date: the rows of the drawer's Planned Orders grid. Planned orders exist
  * only in the common segment. A Converted row is its job or PO line now, which
- * the drawer lists as an open order.
+ * the drawer lists as an open order. Paged, so production's `max_rows` (1000)
+ * never cuts an item with many short orders.
  */
 export async function getDrawerPlannedOrders(
   client: SupabaseClient<Database>,
@@ -174,23 +200,16 @@ export async function getDrawerPlannedOrders(
     locationId: string;
     orderType: "Make" | "Buy";
   }
-) {
-  return client
-    .from("plannedOrder")
-    .select(DRAWER_PLANNED_ORDER_COLUMNS)
-    .eq("companyId", args.companyId)
-    .eq("itemId", args.itemId)
-    .eq("locationId", args.locationId)
-    .eq("orderType", args.orderType)
-    .eq("planningSegmentId", "")
-    .in("status", ["Planned", "Firm"])
-    .order("dueDate", { ascending: true })
-    .order("id", { ascending: true });
+): Promise<PlannedOrderRead> {
+  const read = await fetchAll<DrawerPlannedOrder>(() =>
+    plannedOrdersQuery(client, args)
+      .eq("itemId", args.itemId)
+      .order("dueDate", { ascending: true })
+      .order("id", { ascending: true })
+  );
+  if (read.error) return { data: null, error: new Error(read.error.message) };
+  return { data: read.data ?? [], error: null };
 }
-
-export type DrawerPlannedOrder = NonNullable<
-  Awaited<ReturnType<typeof getDrawerPlannedOrders>>["data"]
->[number];
 
 /** Item ids per request: the ids travel in the URL (`in.(…)`). */
 const PLANNED_ORDER_ITEM_CHUNK = 100;
@@ -198,8 +217,9 @@ const PLANNED_ORDER_ITEM_CHUNK = 100;
 /**
  * The Planned and Firm planned orders of many items at one location, for a
  * bulk Make / Order on the planning grids: each suggested order of a row then
- * names the planned order it stands for. One request per 100 items, so a
- * large selection never builds a URL the gateway refuses.
+ * names the planned order it stands for. 100 items per request, so a large
+ * selection never builds a URL the gateway refuses, and each request paged
+ * by id, so production's `max_rows` (1000) never cuts it short.
  */
 export async function getRowPlannedOrders(
   client: SupabaseClient<Database>,
@@ -209,9 +229,7 @@ export async function getRowPlannedOrders(
     orderType: "Make" | "Buy";
     itemIds: string[];
   }
-): Promise<
-  { data: DrawerPlannedOrder[]; error: null } | { data: null; error: Error }
-> {
+): Promise<PlannedOrderRead> {
   const itemIds = [...new Set(args.itemIds)];
   const chunks: string[][] = [];
   for (let i = 0; i < itemIds.length; i += PLANNED_ORDER_ITEM_CHUNK) {
@@ -219,15 +237,11 @@ export async function getRowPlannedOrders(
   }
   const reads = await Promise.all(
     chunks.map((ids) =>
-      client
-        .from("plannedOrder")
-        .select(DRAWER_PLANNED_ORDER_COLUMNS)
-        .eq("companyId", args.companyId)
-        .in("itemId", ids)
-        .eq("locationId", args.locationId)
-        .eq("orderType", args.orderType)
-        .eq("planningSegmentId", "")
-        .in("status", ["Planned", "Firm"])
+      fetchAll<DrawerPlannedOrder>(() =>
+        plannedOrdersQuery(client, args)
+          .in("itemId", ids)
+          .order("id", { ascending: true })
+      )
     )
   );
   const failed = reads.find((read) => read.error)?.error;

@@ -262,15 +262,21 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         periodId: nextWeek
       });
 
-      // no weekly period holds the new date: the order keeps its week
+      // no weekly period holds the new date: refused, nothing changes
       const kept = await plannedOrder("no-week", { splitIndex: 1 });
       const outside = await updatePlannedOrder(f.service, {
         id: kept,
+        quantity: 15,
         dueDate: "2297-03-01"
       });
-      expect(outside.error).toBeNull();
+      expect(outside.error).toMatchObject({
+        category: "validation",
+        message: "Pick a due date inside the planning horizon"
+      });
       expect(await read(kept)).toMatchObject({
-        dueDate: "2297-03-01",
+        status: "Planned",
+        quantity: 10,
+        dueDate: "2297-01-05",
         periodId: week
       });
 
@@ -328,6 +334,25 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         releaseDate: "2297-01-04"
       });
       expect(await actionStatus(actionId)).toBe("Actioned");
+    }
+  );
+
+  databaseTest(
+    "an applied Defer to a date no planning week holds is refused and stays Open",
+    async () => {
+      const id = await plannedOrder("defer-outside");
+      const actionId = await changeAction("Defer", id, { date: "2297-03-01" });
+
+      const result = await applyPlanningActions(f.service, {
+        planningActionIds: [actionId]
+      });
+      expect(result.data?.applied).toEqual([]);
+      expect(await read(id)).toMatchObject({
+        status: "Planned",
+        dueDate: "2297-01-05",
+        periodId: week
+      });
+      expect(await actionStatus(actionId)).toBe("Open");
     }
   );
 

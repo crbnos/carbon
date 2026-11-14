@@ -349,18 +349,21 @@ const ProductionPlanningTable = ({
   // Increase, and summed each week — one job per planned order of the
   // action's week when it has any. They seed the drawer, size the Make
   // button, and are what a bulk Create Jobs submits for rows never opened.
-  const currentWeek = useMemo(
-    () =>
-      periods[0] ? { id: periods[0].id, endDate: periods[0].endDate } : null,
-    [periods]
-  );
   const ordersForRow = useCallback(
-    (row: ProductionPlanningItem, plannedOrders?: DrawerPlannedOrder[]) =>
-      productionOrdersFromActions(
-        openNewSupplyActions(actionsByRowKey.get(planningRowKey(row)), "Make"),
-        { item: row, todayDate: locationToday, plannedOrders, currentWeek }
-      ),
-    [actionsByRowKey, locationToday, currentWeek]
+    (row: ProductionPlanningItem, plannedOrders?: DrawerPlannedOrder[]) => {
+      const rowActions = actionsByRowKey.get(planningRowKey(row));
+      return productionOrdersFromActions(
+        openNewSupplyActions(rowActions, "Make"),
+        {
+          item: row,
+          todayDate: locationToday,
+          plannedOrders,
+          rowActions,
+          weeks: periods
+        }
+      );
+    },
+    [actionsByRowKey, locationToday, periods]
   );
   const ordersByRowKey = useMemo(
     () =>

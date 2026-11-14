@@ -5467,7 +5467,8 @@ export const unfirmPlannedOrder = defineServiceFn({
  *
  * @remarks
  * The edit firms the order, so MRP keeps the planner's numbers. A new due
- * date moves the release date by the same number of days. A Make planned
+ * date moves the release date by the same number of days, and must fall in
+ * a planning week (else a validation error). A Make planned
  * order needs `update: production`, a Buy planned order `update: purchasing`.
  * A Converted order is refused.
  */
@@ -5481,17 +5482,20 @@ export const updatePlannedOrder = defineServiceFn({
     }
     const order = await service.readPlannedOrderForChange(ctx, id);
     if (order instanceof CarbonError) return order;
-    const changed = await service.catchInternal(
-      ctx,
-      "Failed to update the planned order",
-      () =>
-        service.updatePlannedOrders(ctx.asSystem.pg, {
-          companyId: ctx.company.id,
-          userId: ctx.auditUserId,
-          edits: [{ id, quantity, dueDate }]
-        })
-    );
-    if (changed instanceof CarbonError) return changed;
+    let changed: string[];
+    try {
+      changed = await service.updatePlannedOrders(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        edits: [{ id, quantity, dueDate }]
+      });
+    } catch (err) {
+      // a due date no planning week holds: the order would have no week
+      if (err instanceof service.PlannedOrderOutsideHorizonError) {
+        return ctx.error("validation", err.message);
+      }
+      return ctx.error("internal", "Failed to update the planned order", err);
+    }
     if (changed.length === 0) {
       return ctx.error(
         "conflict",

@@ -16,8 +16,10 @@
 
 import type { Database, Json } from "@carbon/database";
 import {
+  equals,
   type OrderSizingParams,
   orderSizingRules,
+  plannedOrderWeekIndex,
   RoundingMode,
   round,
   splitIntoOrders
@@ -124,41 +126,71 @@ export type SuggestablePlannedOrder = {
   splitIndex?: number | null;
 };
 
-/** The planning page's first week (the current one): it also holds every
- *  overdue planned order, as MRP's sizing does. */
-export type PlanningCurrentWeek = { id: string; endDate: string };
+/** One of the planning page's weeks, in order; the first holds today. */
+export type PlanningWeek = { id: string; startDate: string; endDate: string };
+
+/** A planning action of the row, as far as it names a planned order. */
+export type RowPlanningAction = {
+  type: string;
+  status: string;
+  plannedOrderId?: string | null;
+};
+
+/** Where a week's planned orders come from. */
+type PlannedOrderContext = {
+  plannedOrders?: SuggestablePlannedOrder[];
+  /** Every action of the row: a Cancel on a planned order leaves it out. */
+  rowActions?: RowPlanningAction[];
+  weeks?: PlanningWeek[];
+  /** Today on the location's calendar (else the first week's start). */
+  todayDate?: string;
+};
 
 /**
- * Whether a planned order belongs to an action's week: its own week, or —
- * for the current week's action — any week before it. MRP sizes an overdue
- * order in the current week, while the row keeps the week of its due date.
+ * The planned orders MRP is cancelling. MRP leaves a held order it cancels
+ * out of its week's Order / Make total, so offering it would order it again.
+ * A dismissed Cancel counts too: the dismissal does not put the order back in
+ * the total.
  */
-export function isPlannedOrderOfWeek(
-  order: Pick<SuggestablePlannedOrder, "periodId" | "dueDate">,
-  periodId: string,
-  currentWeek: PlanningCurrentWeek | null | undefined
-): boolean {
-  if (order.periodId === periodId) return true;
-  // ISO dates order as strings
-  return currentWeek?.id === periodId && order.dueDate <= currentWeek.endDate;
+function plannedOrdersBeingCancelled(
+  actions: RowPlanningAction[] | undefined
+): Set<string> {
+  return new Set(
+    (actions ?? []).flatMap((action) =>
+      action.type === "Cancel" &&
+      (action.status === "Open" || action.status === "Dismissed") &&
+      action.plannedOrderId
+        ? [action.plannedOrderId]
+        : []
+    )
+  );
 }
 
 /**
  * The unconverted planned orders of an action's week, in the order MRP split
- * them: by due date, then `splitIndex`. MRP sums the week's planned orders
- * into the action (Planned, Firm and fence-held alike), so they ARE its
- * orders — each one is offered as itself and converts by its id.
+ * them: by due date, then `splitIndex`. A planned order counts in the week
+ * `plannedOrderWeekIndex` gives it (overdue in the first week, else the week
+ * of its due date) — MRP's own rule — and not in its stored week. One MRP is
+ * cancelling is left out. An action whose week is not on the page has none.
  */
 function plannedOrdersOfWeek(
   action: NewSupplyActionFields,
-  plannedOrders: SuggestablePlannedOrder[] | undefined,
-  currentWeek: PlanningCurrentWeek | null | undefined
+  context: PlannedOrderContext
 ): SuggestablePlannedOrder[] {
-  return (plannedOrders ?? [])
+  // the page's weeks in date order, so the first is the one holding today
+  const weeks = [...(context.weeks ?? [])].sort((a, b) =>
+    a.startDate.localeCompare(b.startDate)
+  );
+  const index = weeks.findIndex((week) => week.id === action.periodId);
+  if (index < 0) return [];
+  const today = context.todayDate ?? weeks[0].startDate;
+  const cancelled = plannedOrdersBeingCancelled(context.rowActions);
+  return (context.plannedOrders ?? [])
     .filter(
       (order) =>
-        isPlannedOrderOfWeek(order, action.periodId, currentWeek) &&
-        (order.status === "Planned" || order.status === "Firm")
+        (order.status === "Planned" || order.status === "Firm") &&
+        !cancelled.has(order.id) &&
+        plannedOrderWeekIndex(order.dueDate, weeks, today) === index
     )
     .sort(
       (a, b) =>
@@ -169,15 +201,17 @@ function plannedOrdersOfWeek(
 }
 
 /**
- * An action's orders: one per unconverted planned order of its week when it
- * has any, else the action split by its policy (`ordersOf`).
+ * An action's orders: one per unconverted planned order of its week when
+ * they add up to the action, else the action split by its policy
+ * (`ordersOf`). When they do not add up (an order placed since the run, a
+ * planned order changed), the split names no planned order and the order
+ * placed converts one by quantity.
  */
 function suggestionsOf(
   action: NewSupplyActionFields,
   item: ItemOrderSizing,
-  todayDate: string | undefined,
-  plannedOrders: SuggestablePlannedOrder[] | undefined,
-  currentWeek: PlanningCurrentWeek | null | undefined
+  asapToday: string | undefined,
+  context: PlannedOrderContext
 ): {
   quantity: number;
   startDate: string;
@@ -185,13 +219,16 @@ function suggestionsOf(
   isASAP: boolean;
   plannedOrderId?: string;
 }[] {
-  const week = plannedOrdersOfWeek(action, plannedOrders, currentWeek);
-  if (week.length === 0) return ordersOf(action, item, todayDate);
+  const week = plannedOrdersOfWeek(action, context);
+  const total = week.reduce((sum, order) => sum + Number(order.quantity), 0);
+  if (week.length === 0 || !equals(total, Number(action.suggestedQuantity))) {
+    return ordersOf(action, item, asapToday);
+  }
   return week.map((order) => ({
     quantity: Number(order.quantity),
     startDate: order.releaseDate,
     dueDate: order.dueDate,
-    isASAP: isOrderASAP(action, order.releaseDate, todayDate),
+    isASAP: isOrderASAP(action, order.releaseDate, asapToday),
     plannedOrderId: order.id
   }));
 }
@@ -228,33 +265,32 @@ export function productionOrdersFromActions(
   context: {
     /** The item's sizing fields. */
     item?: ItemOrderSizing;
-    /** Today on the location's calendar, to judge each job's ASAP. */
+    /** Today on the location's calendar, to judge each job's ASAP and the
+     *  week an overdue planned order counts in. */
     todayDate?: string;
     /** The row's Make planned orders (none outside the common segment). */
     plannedOrders?: SuggestablePlannedOrder[];
-    /** The page's first week, which also holds the overdue planned orders. */
-    currentWeek?: PlanningCurrentWeek | null;
+    /** Every planning action of the row. */
+    rowActions?: RowPlanningAction[];
+    /** The page's weeks: a planned order counts in the week of its due date. */
+    weeks?: PlanningWeek[];
   } = {}
 ): ProductionOrder[] {
   return actions.flatMap((action) =>
-    suggestionsOf(
-      action,
-      context.item ?? {},
-      context.todayDate,
-      context.plannedOrders,
-      context.currentWeek
-    ).map((batch) => ({
-      startDate: batch.startDate,
-      dueDate: batch.dueDate,
-      periodId: action.periodId,
-      quantity: batch.quantity,
-      isASAP: batch.isASAP,
-      planningActionId: action.id,
-      plannedOrderId: batch.plannedOrderId,
-      policyName: action.policyName ?? undefined,
-      reason: action.reason ?? undefined,
-      triggerValues: triggerValuesOf(action.triggerValues)
-    }))
+    suggestionsOf(action, context.item ?? {}, context.todayDate, context).map(
+      (batch) => ({
+        startDate: batch.startDate,
+        dueDate: batch.dueDate,
+        periodId: action.periodId,
+        quantity: batch.quantity,
+        isASAP: batch.isASAP,
+        planningActionId: action.id,
+        plannedOrderId: batch.plannedOrderId,
+        policyName: action.policyName ?? undefined,
+        reason: action.reason ?? undefined,
+        triggerValues: triggerValuesOf(action.triggerValues)
+      })
+    )
   );
 }
 
@@ -279,36 +315,37 @@ export function plannedOrdersFromActions(
     unitOfMeasureCode?: string;
     /** The row's Buy planned orders (none outside the common segment). */
     plannedOrders?: SuggestablePlannedOrder[];
-    /** The page's first week, which also holds the overdue planned orders. */
-    currentWeek?: PlanningCurrentWeek | null;
+    /** Every planning action of the row. */
+    rowActions?: RowPlanningAction[];
+    /** The page's weeks: a planned order counts in the week of its due date. */
+    weeks?: PlanningWeek[];
+    /** Today on the location's calendar: the week an overdue planned order
+     *  counts in. A purchase order has no ASAP. */
+    todayDate?: string;
   }
 ): PlannedOrder[] {
   const { conversionFactor } = context;
   return actions.flatMap((action) =>
-    suggestionsOf(
-      action,
-      context.item ?? {},
-      undefined,
-      context.plannedOrders,
-      context.currentWeek
-    ).map((batch) => ({
-      startDate: batch.startDate,
-      dueDate: batch.dueDate,
-      periodId: action.periodId,
-      quantity:
-        conversionFactor > 0
-          ? round(batch.quantity / conversionFactor, 0, RoundingMode.Up)
-          : batch.quantity,
-      supplierId: context.supplierId ?? action.supplierId ?? undefined,
-      planningActionId: action.id,
-      plannedOrderId: batch.plannedOrderId,
-      itemReadableId: context.itemReadableId,
-      description: context.description,
-      unitOfMeasureCode: context.unitOfMeasureCode,
-      policyName: action.policyName ?? undefined,
-      reason: action.reason ?? undefined,
-      triggerValues: triggerValuesOf(action.triggerValues)
-    }))
+    suggestionsOf(action, context.item ?? {}, undefined, context).map(
+      (batch) => ({
+        startDate: batch.startDate,
+        dueDate: batch.dueDate,
+        periodId: action.periodId,
+        quantity:
+          conversionFactor > 0
+            ? round(batch.quantity / conversionFactor, 0, RoundingMode.Up)
+            : batch.quantity,
+        supplierId: context.supplierId ?? action.supplierId ?? undefined,
+        planningActionId: action.id,
+        plannedOrderId: batch.plannedOrderId,
+        itemReadableId: context.itemReadableId,
+        description: context.description,
+        unitOfMeasureCode: context.unitOfMeasureCode,
+        policyName: action.policyName ?? undefined,
+        reason: action.reason ?? undefined,
+        triggerValues: triggerValuesOf(action.triggerValues)
+      })
+    )
   );
 }
 

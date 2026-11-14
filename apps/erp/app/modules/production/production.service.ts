@@ -148,6 +148,7 @@ import {
   mustViolations,
   nameSimilarity,
   planBatchCompletion,
+  plannedOrderWeekIndex,
   requireAffected,
   resolveBatchRules,
   round,
@@ -175,6 +176,7 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import {
   type ExpressionBuilder,
   type QueryCreator,
+  type RawBuilder,
   sql,
   type Transaction
 } from "kysely";
@@ -12399,7 +12401,8 @@ export async function settleNewSupplyPlanningActions(
     userId: string;
     type: "Order" | "Make";
     /** Today on the location's calendar: the current week's action also
-     *  converts the overdue planned orders, as MRP sizes them there. */
+     *  converts the overdue planned orders, as MRP sizes them there
+     *  (`plannedOrderWeekIndex`). */
     asOf?: string;
     /** One per order placed, in the action's units (inventory units for an
      *  Order); the segment defaults to common (''). `jobId` (Make) or
@@ -12572,9 +12575,6 @@ export type ConvertiblePlannedOrder = {
   dueDate: string;
 };
 
-const sameQuantity = (a: number, b: number) =>
-  Number(a.toFixed(5)) === Number(b.toFixed(5));
-
 const conversionKey = (
   row: Pick<
     PlannedOrderConversion,
@@ -12592,56 +12592,105 @@ const conversionKey = (
 const bySplit = (a: ConvertiblePlannedOrder, b: ConvertiblePlannedOrder) =>
   a.splitIndex - b.splitIndex || a.id.localeCompare(b.id);
 
+/** One weekly period, as the convert reads it. */
+export type ConversionWeek = { id: string; startDate: string; endDate: string };
+
 /**
- * Which planned order each document converts. Pure; no planned order is
- * converted twice.
+ * The weeks a convert sorts planned orders into: the first holds `today`
+ * when there is one. Without `today` no planned order is overdue.
+ */
+export type ConversionCalendar = {
+  weeks: ConversionWeek[];
+  today: string | null;
+};
+
+/**
+ * The week a planned order counts in for the convert: MRP's own rule,
+ * `plannedOrderWeekIndex` — an overdue order in the current week, else the
+ * week holding its due date. Null when no week of the calendar holds it.
+ */
+function conversionWeekOf(
+  dueDate: string,
+  calendar: ConversionCalendar
+): string | null {
+  // without today, judge it on its own due date: never overdue
+  const index = plannedOrderWeekIndex(
+    dueDate,
+    calendar.weeks,
+    calendar.today ?? dueDate
+  );
+  return index === null ? null : (calendar.weeks[index]?.id ?? null);
+}
+
+/**
+ * Which planned order each document converts, and which it only reduces.
+ * Pure; no planned order is converted twice.
  *
- * 1. A document that names its planned order converts that one, and only
- *    while it is still Planned or Firm, of the same item, location and type.
- *    A stale id converts nothing.
+ * 1. A document that names its planned order converts that one, while it is
+ *    still Planned or Firm, of the same item, location and type. A stale id
+ *    converts nothing. A document SMALLER than the order it names converts
+ *    nothing either: it takes its quantity off the order (`reductions`, the
+ *    quantity left), which keeps its status. Several documents naming one
+ *    order count together; the one that reaches its quantity converts it.
  * 2. The other documents convert the planned orders of their week left over,
  *    per (item, location, segment, week, type): first each to one of equal
  *    quantity (Planned before Firm, then `splitIndex`), then each one left to
  *    the next Planned order by `splitIndex`. A Firm order is the planner's
- *    number, so only its id or its quantity converts it. The current week
- *    (`currentWeek`) also holds every overdue planned order, whatever week it
- *    is stored in: MRP sizes it, and sums it into the action, there.
+ *    number, so only its id or its quantity converts it. A planned order
+ *    counts in the week `conversionWeekOf` gives it, so the current week also
+ *    holds every overdue one: MRP sizes it, and sums it into the action,
+ *    there. Without a calendar, its stored week.
  */
 export function matchPlannedOrdersToDocuments(
   documents: PlannedOrderConversion[],
   candidates: ConvertiblePlannedOrder[],
-  currentWeek?: { periodId: string; endDate: string } | null
-): { plannedOrderId: string; documentId: string }[] {
+  calendar?: ConversionCalendar | null
+): {
+  conversions: { plannedOrderId: string; documentId: string }[];
+  reductions: { plannedOrderId: string; quantity: number }[];
+} {
   const byId = new Map(candidates.map((row) => [row.id, row]));
   const claimed = new Set<string>();
-  const matches: { plannedOrderId: string; documentId: string }[] = [];
+  const conversions: { plannedOrderId: string; documentId: string }[] = [];
   const claim = (row: ConvertiblePlannedOrder, documentId: string) => {
     claimed.add(row.id);
-    matches.push({ plannedOrderId: row.id, documentId });
+    conversions.push({ plannedOrderId: row.id, documentId });
   };
 
+  // the quantity of a named planned order its documents have not covered
+  const left = new Map<string, number>();
   for (const document of documents) {
     if (!document.plannedOrderId) continue;
     const row = byId.get(document.plannedOrderId);
     if (
-      row &&
-      !claimed.has(row.id) &&
-      row.orderType === document.orderType &&
-      row.itemId === document.itemId &&
-      row.locationId === document.locationId
+      !row ||
+      claimed.has(row.id) ||
+      row.orderType !== document.orderType ||
+      row.itemId !== document.itemId ||
+      row.locationId !== document.locationId
     ) {
-      claim(row, document.documentId);
+      continue;
     }
+    const remainder = round(
+      (left.get(row.id) ?? row.quantity) - document.quantity
+    );
+    if (remainder > 0) {
+      left.set(row.id, remainder);
+      continue;
+    }
+    left.delete(row.id);
+    claim(row, document.documentId);
   }
+  const isTaken = (row: ConvertiblePlannedOrder) =>
+    claimed.has(row.id) || left.has(row.id);
 
   const candidatesByKey = new Map<string, ConvertiblePlannedOrder[]>();
   for (const row of candidates) {
     if (row.orderType === "Transfer") continue;
-    // ISO dates order as strings
-    const periodId =
-      currentWeek && row.dueDate <= currentWeek.endDate
-        ? currentWeek.periodId
-        : row.periodId;
+    const periodId = calendar
+      ? conversionWeekOf(row.dueDate, calendar)
+      : row.periodId;
+    if (!periodId) continue;
     const key = conversionKey({ ...row, periodId, orderType: row.orderType });
     const list = candidatesByKey.get(key);
     if (list) list.push(row);
@@ -12652,10 +12701,7 @@ export function matchPlannedOrdersToDocuments(
   const unmatched: PlannedOrderConversion[] = [];
   for (const document of unnamed) {
     const equal = (candidatesByKey.get(conversionKey(document)) ?? [])
-      .filter(
-        (row) =>
-          !claimed.has(row.id) && sameQuantity(row.quantity, document.quantity)
-      )
+      .filter((row) => !isTaken(row) && equals(row.quantity, document.quantity))
       .sort(
         (a, b) =>
           Number(a.status === "Firm") - Number(b.status === "Firm") ||
@@ -12666,11 +12712,32 @@ export function matchPlannedOrdersToDocuments(
   }
   for (const document of unmatched) {
     const next = (candidatesByKey.get(conversionKey(document)) ?? [])
-      .filter((row) => !claimed.has(row.id) && row.status === "Planned")
+      .filter((row) => !isTaken(row) && row.status === "Planned")
       .sort(bySplit)[0];
     if (next) claim(next, document.documentId);
   }
-  return matches;
+  return {
+    conversions,
+    reductions: [...left].map(([plannedOrderId, quantity]) => ({
+      plannedOrderId,
+      quantity
+    }))
+  };
+}
+
+/**
+ * The scrap of a Make planned order at a new quantity, from the item's scrap
+ * rate, as `insertJob` derives a job's; a Buy order carries none. `quantity`
+ * is the SQL of the new quantity.
+ */
+function restatedPlannedOrderScrap(quantity: RawBuilder<unknown>) {
+  return sql`CASE
+    WHEN po."orderType" = 'Make' THEN CEIL(${quantity} * COALESCE((
+      SELECT ir."scrapPercentage" FROM "itemReplenishment" ir
+      WHERE ir."itemId" = po."itemId" AND ir."companyId" = po."companyId"
+    ), 0))
+    ELSE 0
+  END`;
 }
 
 /**
@@ -12681,20 +12748,26 @@ export function matchPlannedOrdersToDocuments(
  * Firm). Its Open and Dismissed change actions are deleted: the job or PO
  * line is the order now, and MRP raises its actions on that.
  *
+ * A document smaller than the planned order it names does not convert it:
+ * the order keeps its status (a Firm one stays Firm) and drops to the
+ * quantity left, its Make scrap restated as `updatePlannedOrders` does.
+ *
  * A planned order no document stands for stays as it is, and the next MRP run
  * sizes it again. Two orders merged into one PO line are two documents, so
  * both planned orders point at that line.
  *
- * One read (`FOR UPDATE`), one update and one delete for the batch. Throws on
- * failure; call it inside the transaction that settles the actions
- * (`withTransaction` joins one), under the planning lock.
+ * One read of the weeks, one read (`FOR UPDATE`), one update per kind of
+ * change and one delete for the batch. Throws on failure; call it inside the
+ * transaction that settles the actions (`withTransaction` joins one), under
+ * the planning lock.
  */
 export async function convertPlannedOrdersForActions(
   db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;
     userId: string;
-    /** Today on the location's calendar, to find the current week. */
+    /** Today on the location's calendar: the week holding it also holds
+     *  every overdue planned order. */
     asOf?: string;
     documents: PlannedOrderConversion[];
   }
@@ -12718,59 +12791,59 @@ export async function convertPlannedOrdersForActions(
   ];
 
   return withTransaction(db, async (trx) => {
-    // The current week, when a document settled its action: its planned
-    // orders include every overdue one.
-    const keyPeriodIds = [...new Set(keys.map((key) => key.periodId))];
-    const currentWeek =
-      args.asOf && keyPeriodIds.length > 0
-        ? await trx
-            .selectFrom("period")
-            .select(["id", "endDate"])
-            .where("id", "in", keyPeriodIds)
-            .where("startDate", "<=", args.asOf)
-            .where("endDate", ">=", args.asOf)
-            .executeTakeFirst()
-        : undefined;
+    const calendar = await readConversionCalendar(trx, {
+      periodIds: [...new Set(keys.map((key) => key.periodId))],
+      asOf: args.asOf
+    });
+    const weekById = new Map(calendar.weeks.map((week) => [week.id, week]));
+    const currentWeekId = calendar.today ? calendar.weeks[0]?.id : undefined;
+    // each key's week, by due date: the current one from the first day of
+    // time, as it holds every overdue planned order
+    const keyFilters = keys.flatMap((key) => {
+      const week = weekById.get(key.periodId);
+      return week ? [{ key, week }] : [];
+    });
 
-    const candidates = await trx
-      .selectFrom("plannedOrder")
-      .select([
-        "id",
-        "itemId",
-        "locationId",
-        "planningSegmentId",
-        "periodId",
-        "orderType",
-        "status",
-        "quantity",
-        "splitIndex",
-        "dueDate"
-      ])
-      .where("companyId", "=", args.companyId)
-      .where("status", "in", ["Planned", "Firm"])
-      .where((eb) =>
-        eb.or([
-          ...(namedIds.length > 0 ? [eb("id", "in", namedIds)] : []),
-          ...keys.map((key) =>
-            eb.and([
-              eb("itemId", "=", key.itemId),
-              eb("locationId", "=", key.locationId),
-              eb("planningSegmentId", "=", key.planningSegmentId),
-              key.periodId === currentWeek?.id
-                ? eb.or([
-                    eb("periodId", "=", key.periodId),
-                    eb("dueDate", "<=", currentWeek.endDate)
-                  ])
-                : eb("periodId", "=", key.periodId),
-              eb("orderType", "=", key.orderType)
+    const candidates =
+      namedIds.length === 0 && keyFilters.length === 0
+        ? []
+        : await trx
+            .selectFrom("plannedOrder")
+            .select([
+              "id",
+              "itemId",
+              "locationId",
+              "planningSegmentId",
+              "periodId",
+              "orderType",
+              "status",
+              "quantity",
+              "splitIndex",
+              "dueDate"
             ])
-          )
-        ])
-      )
-      .forUpdate()
-      .execute();
+            .where("companyId", "=", args.companyId)
+            .where("status", "in", ["Planned", "Firm"])
+            .where((eb) =>
+              eb.or([
+                ...(namedIds.length > 0 ? [eb("id", "in", namedIds)] : []),
+                ...keyFilters.map(({ key, week }) =>
+                  eb.and([
+                    eb("itemId", "=", key.itemId),
+                    eb("locationId", "=", key.locationId),
+                    eb("planningSegmentId", "=", key.planningSegmentId),
+                    eb("orderType", "=", key.orderType),
+                    eb("dueDate", "<=", week.endDate),
+                    ...(week.id === currentWeekId
+                      ? []
+                      : [eb("dueDate", ">=", week.startDate)])
+                  ])
+                )
+              ])
+            )
+            .forUpdate()
+            .execute();
 
-    const matches = matchPlannedOrdersToDocuments(
+    const { conversions, reductions } = matchPlannedOrdersToDocuments(
       args.documents,
       candidates.map((row) => ({
         ...row,
@@ -12779,14 +12852,34 @@ export async function convertPlannedOrdersForActions(
         splitIndex: Number(row.splitIndex),
         dueDate: String(row.dueDate)
       })),
-      currentWeek
-        ? { periodId: currentWeek.id, endDate: String(currentWeek.endDate) }
-        : null
+      calendar
     );
-    if (matches.length === 0) return [];
+    const now = datetime.timestamp();
+
+    if (reductions.length > 0) {
+      const values = sql.join(
+        reductions.map(
+          (reduction) =>
+            sql`(${reduction.plannedOrderId}::text, ${reduction.quantity}::numeric)`
+        )
+      );
+      await sql`
+        UPDATE "plannedOrder" po
+        SET
+          "quantity" = v."quantity",
+          "scrapQuantity" = ${restatedPlannedOrderScrap(sql`v."quantity"`)},
+          "updatedBy" = ${args.userId},
+          "updatedAt" = ${now}
+        FROM (VALUES ${values}) v ("id", "quantity")
+        WHERE po.id = v.id
+          AND po."companyId" = ${args.companyId}
+          AND po."status" IN ('Planned', 'Firm')
+      `.execute(trx);
+    }
+    if (conversions.length === 0) return [];
 
     const values = sql.join(
-      matches.map(
+      conversions.map(
         (match) =>
           sql`(${match.plannedOrderId}::text, ${match.documentId}::text)`
       )
@@ -12804,7 +12897,7 @@ export async function convertPlannedOrdersForActions(
         "firmedBy" = NULL,
         "firmedAt" = NULL,
         "updatedBy" = ${args.userId},
-        "updatedAt" = ${datetime.timestamp()}
+        "updatedAt" = ${now}
       FROM (VALUES ${values}) v ("id", "documentId")
       WHERE po.id = v.id
         AND po."companyId" = ${args.companyId}
@@ -12823,6 +12916,62 @@ export async function convertPlannedOrdersForActions(
     }
     return converted.rows;
   });
+}
+
+/**
+ * The weeks a convert sorts planned orders into, in date order: given
+ * `asOf`, the weekly period holding it first (it holds every overdue planned
+ * order), then the settled actions' later weeks. Without a period holding
+ * `asOf`, the settled actions' weeks and no planned order is overdue.
+ */
+async function readConversionCalendar(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  args: { periodIds: string[]; asOf?: string }
+): Promise<ConversionCalendar> {
+  if (args.periodIds.length === 0) return { weeks: [], today: null };
+  const asOf = args.asOf;
+  const rows = await db
+    .selectFrom("period")
+    .select(["id", "startDate", "endDate"])
+    .where("periodType", "=", "Week")
+    .where((eb) =>
+      eb.or([
+        eb("id", "in", args.periodIds),
+        ...(asOf
+          ? [eb.and([eb("startDate", "<=", asOf), eb("endDate", ">=", asOf)])]
+          : [])
+      ])
+    )
+    .orderBy("startDate")
+    .orderBy("id")
+    .execute();
+  const all = rows.map((row) => ({
+    id: row.id,
+    startDate: String(row.startDate),
+    endDate: String(row.endDate)
+  }));
+  const holdsToday = (week: ConversionWeek) =>
+    !!asOf && week.startDate <= asOf && week.endDate >= asOf;
+  // one current week: a settled action's own if it holds today
+  const current =
+    all.find((week) => holdsToday(week) && args.periodIds.includes(week.id)) ??
+    all.find(holdsToday);
+  if (!current) {
+    return {
+      weeks: all.filter((week) => args.periodIds.includes(week.id)),
+      today: null
+    };
+  }
+  // a week before the current one holds nothing: what was due then is
+  // overdue, and counts in the current week
+  const later = all.filter(
+    // ISO dates order as strings
+    (week) =>
+      week !== current &&
+      args.periodIds.includes(week.id) &&
+      week.startDate > current.startDate
+  );
+  return { weeks: [current, ...later], today: asOf ?? null };
 }
 
 /** A planned order as a person's change reads it. */
@@ -12969,15 +13118,52 @@ export type PlannedOrderEdit = {
   dueDate?: string | null;
 };
 
+/** The refusal of a planned order due date no planning week holds. */
+export const PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE =
+  "Pick a due date inside the planning horizon";
+
+/** A planned order edit to a due date no weekly period holds. */
+export class PlannedOrderOutsideHorizonError extends Error {
+  constructor(readonly dueDates: string[]) {
+    super(PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE);
+    this.name = "PlannedOrderOutsideHorizonError";
+  }
+}
+
+/**
+ * The due dates no weekly `period` holds. A planned order belongs to the week
+ * of its due date, so it cannot move to one of these.
+ */
+export async function plannedOrderDueDatesWithoutWeek(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  dueDates: string[]
+): Promise<string[]> {
+  const dates = [...new Set(dueDates)];
+  if (dates.length === 0) return [];
+  const result = await sql<{ dueDate: string }>`
+    SELECT d::text AS "dueDate"
+    FROM unnest(${dates}::date[]) AS d
+    WHERE NOT EXISTS (
+      SELECT 1 FROM "period" p
+      WHERE p."periodType" = 'Week'
+        AND p."startDate" <= d
+        AND p."endDate" >= d
+    )
+  `.execute(db);
+  return result.rows.map((row) => String(row.dueDate));
+}
+
 /**
  * Edit planned orders in ONE statement. Each edit firms its row (a person now
  * holds it); a row already Firm keeps who firmed it. A moved due date moves
  * the release date by the same number of days, so the lead time between them
- * stays, and moves the row to the weekly period that holds the new due date
- * (it keeps its period when none does). A new quantity of a Make order
- * restates `scrapQuantity` from the item's scrap rate, as `updatePlanningJob`
- * does for a job; a Buy order carries no scrap. Only Planned and Firm rows change. Returns the ids it
- * changed. Throws on failure; call it inside the caller's transaction.
+ * stays, and moves the row to the weekly period that holds the new due date;
+ * a due date no weekly period holds is refused
+ * (`PlannedOrderOutsideHorizonError`) and nothing changes. A new quantity of
+ * a Make order restates `scrapQuantity` from the item's scrap rate, as
+ * `updatePlanningJob` does for a job; a Buy order carries no scrap. Only
+ * Planned and Firm rows change. Returns the ids it changed. Throws on
+ * failure; call it inside the caller's transaction.
  */
 export async function updatePlannedOrders(
   db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
@@ -12996,24 +13182,20 @@ export async function updatePlannedOrders(
     SET "quantity" = COALESCE(v."quantity", po."quantity"),
         "scrapQuantity" = CASE
           WHEN v."quantity" IS NULL THEN po."scrapQuantity"
-          WHEN po."orderType" = 'Make' THEN CEIL(v."quantity" * COALESCE((
-            SELECT ir."scrapPercentage" FROM "itemReplenishment" ir
-            WHERE ir."itemId" = po."itemId" AND ir."companyId" = po."companyId"
-          ), 0))
-          ELSE 0
+          ELSE ${restatedPlannedOrderScrap(sql`v."quantity"`)}
         END,
         "dueDate" = COALESCE(v."dueDate", po."dueDate"),
-        -- the week of the new due date; the old week when no period holds it
+        -- the week of the new due date (checked to exist before the write)
         "periodId" = CASE
           WHEN v."dueDate" IS NULL THEN po."periodId"
-          ELSE COALESCE((
+          ELSE (
             SELECT p."id" FROM "period" p
             WHERE p."periodType" = 'Week'
               AND p."startDate" <= v."dueDate"
               AND p."endDate" >= v."dueDate"
             ORDER BY p."startDate" DESC, p."id"
             LIMIT 1
-          ), po."periodId")
+          )
         END,
         "releaseDate" = po."releaseDate"
           + (COALESCE(v."dueDate", po."dueDate") - po."dueDate"),
@@ -13031,6 +13213,11 @@ export async function updatePlannedOrders(
   // joins the caller's transaction when there is one (the apply path)
   return withTransaction(db, async (trx) => {
     await lockCompanyPlanning(trx, args.companyId);
+    const outside = await plannedOrderDueDatesWithoutWeek(
+      trx,
+      args.edits.flatMap((edit) => (edit.dueDate ? [edit.dueDate] : []))
+    );
+    if (outside.length > 0) throw new PlannedOrderOutsideHorizonError(outside);
     const result = await query.execute(trx);
     return result.rows.map((row) => row.id);
   });
@@ -13136,7 +13323,10 @@ export async function applyPlannedOrderPlanningActions(
       now
     });
     const toRelease: string[] = [];
-    const edits = new Map<string, PlannedOrderEdit & { actionIds: string[] }>();
+    const edits = new Map<
+      string,
+      PlannedOrderEdit & { actionIds: string[]; dateActionId?: string }
+    >();
     const cancels = new Map<string, string[]>();
     for (const action of eligible) {
       const claim = claimed.get(action.planningActionId);
@@ -13173,6 +13363,7 @@ export async function applyPlannedOrderPlanningActions(
           continue;
         }
         edit.dueDate = suggestedDate;
+        edit.dateActionId = action.planningActionId;
       } else {
         if (suggestedQuantity === null || !(suggestedQuantity > 0)) {
           refuse("It suggests no quantity");
@@ -13186,6 +13377,30 @@ export async function applyPlannedOrderPlanningActions(
       }
       edit.actionIds.push(action.planningActionId);
       edits.set(action.plannedOrderId, edit);
+    }
+
+    // a date no planning week holds is refused, the order's other edit stays
+    const outside = new Set(
+      await plannedOrderDueDatesWithoutWeek(
+        trx,
+        [...edits.values()].flatMap((edit) =>
+          edit.dueDate ? [edit.dueDate] : []
+        )
+      )
+    );
+    for (const [plannedOrderId, edit] of edits) {
+      if (!edit.dueDate || !outside.has(edit.dueDate) || !edit.dateActionId) {
+        continue;
+      }
+      const actionId = edit.dateActionId;
+      toRelease.push(actionId);
+      result.refused.push({
+        id: actionId,
+        message: PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE
+      });
+      edit.dueDate = undefined;
+      edit.actionIds = edit.actionIds.filter((id) => id !== actionId);
+      if (edit.actionIds.length === 0) edits.delete(plannedOrderId);
     }
 
     // 3. write: the edits, then the cancels (a Cancel wins over an edit of

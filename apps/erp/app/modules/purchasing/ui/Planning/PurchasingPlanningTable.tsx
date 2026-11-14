@@ -390,11 +390,6 @@ const PlanningTable = memo(
     // as an Increase, and summed each week — one order per planned order of
     // the action's week when it has any. They seed the drawer, size the
     // Order button, and are what a bulk order submits for rows never opened.
-    const currentWeek = useMemo(
-      () =>
-        periods[0] ? { id: periods[0].id, endDate: periods[0].endDate } : null,
-      [periods]
-    );
     const plannedOrdersFor = useCallback(
       (
         row: PurchasingPlanningItem,
@@ -402,11 +397,9 @@ const PlanningTable = memo(
       ): PlannedOrder[] => {
         const supplierId = suppliersMap[row.id];
         const item = items.find((item) => item.id === row.id);
+        const rowActions = actionsByRowKey.get(planningRowKey(row));
         return plannedOrdersFromActions(
-          openNewSupplyActions(
-            actionsByRowKey.get(planningRowKey(row)),
-            "Order"
-          ),
+          openNewSupplyActions(rowActions, "Order"),
           {
             conversionFactor: supplierConversionFactor(
               row.suppliers,
@@ -418,11 +411,13 @@ const PlanningTable = memo(
             description: item?.name,
             unitOfMeasureCode: item?.unitOfMeasureCode,
             plannedOrders,
-            currentWeek
+            rowActions,
+            weeks: periods,
+            todayDate: locationToday
           }
         );
       },
-      [actionsByRowKey, items, suppliersMap, currentWeek]
+      [actionsByRowKey, items, suppliersMap, periods, locationToday]
     );
 
     const ordersByRowKey = useMemo(
