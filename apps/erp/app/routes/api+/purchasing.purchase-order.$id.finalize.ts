@@ -10,6 +10,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   getPurchaseOrder,
+  getPurchaseOrderLines,
   getSupplier
 } from "~/modules/purchasing/purchasing.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
@@ -29,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) {
     return data(
-      { purchaseOrder: null, defaultCc: [] as string[] },
+      { purchaseOrder: null, defaultCc: [] as string[], hasLines: false },
       { status: 400 }
     );
   }
@@ -42,23 +43,39 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       error: purchaseOrder.error
     });
     return data(
-      { purchaseOrder: null, defaultCc: [] as string[] },
+      { purchaseOrder: null, defaultCc: [] as string[], hasLines: false },
       { status: purchaseOrder.error ? 500 : 404 }
     );
   }
 
-  const [supplier, companySettings] = await Promise.all([
+  const [supplier, companySettings, lines] = await Promise.all([
     purchaseOrder.data.supplierId
       ? getSupplier(client, purchaseOrder.data.supplierId)
       : null,
-    getCompanySettings(getCarbonServiceRole(), companyId)
+    getCompanySettings(getCarbonServiceRole(), companyId),
+    getPurchaseOrderLines(client, id)
   ]);
+  if (lines.error) {
+    logger.error("Failed to read purchase order lines to finalize", {
+      companyId,
+      purchaseOrderId: id,
+      error: lines.error
+    });
+    return data(
+      { purchaseOrder: null, defaultCc: [] as string[], hasLines: false },
+      { status: 500 }
+    );
+  }
 
   const defaultCc = supplier?.data?.defaultCc?.length
     ? supplier.data.defaultCc
     : (companySettings.data?.defaultSupplierCc ?? []);
 
-  return { purchaseOrder: purchaseOrder.data, defaultCc };
+  return {
+    purchaseOrder: purchaseOrder.data,
+    defaultCc,
+    hasLines: (lines.data?.length ?? 0) > 0
+  };
 }
 
 export const clientLoader = cachedClientLoader<typeof loader>();

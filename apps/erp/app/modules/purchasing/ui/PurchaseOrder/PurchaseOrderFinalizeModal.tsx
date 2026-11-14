@@ -45,6 +45,8 @@ type PurchaseOrderFinalizeModalProps = {
   resolvedAttachments?: ResolvedAttachmentItem[];
   /** Why this order cannot be finalized yet. It disables the Finalize button. */
   refusal?: string | null;
+  /** Supplied by off-page finalize flows, where the PO page's line guard is absent. */
+  hasLines?: boolean;
 };
 
 const PurchaseOrderFinalizeModal = ({
@@ -73,13 +75,15 @@ const PurchaseOrderFinalizeBody = ({
   fetcher,
   defaultCc = [],
   resolvedAttachments = [],
-  refusal = null
+  refusal = null,
+  hasLines = true
 }: Omit<PurchaseOrderFinalizeModalProps, "open">) => {
   const params = useParams();
   const orderId = purchaseOrderId ?? params.orderId;
   if (!orderId) throw new Error("orderId not found");
 
   const { t } = useLingui();
+  const finalizationRefusal = hasLines ? refusal : t`Add at least one line.`;
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
 
@@ -108,9 +112,9 @@ const PurchaseOrderFinalizeBody = ({
       </ModalHeader>
       <ModalBody>
         <VStack spacing={4}>
-          {refusal && (
+          {finalizationRefusal && (
             <Alert variant="destructive">
-              <AlertTitle>{refusal}</AlertTitle>
+              <AlertTitle>{finalizationRefusal}</AlertTitle>
             </Alert>
           )}
           <p className="text-sm text-muted-foreground">
@@ -170,7 +174,8 @@ const PurchaseOrderFinalizeBody = ({
         <Button
           type="submit"
           isDisabled={
-            !!refusal || (notificationType === "Email" && contactMissingEmail)
+            !!finalizationRefusal ||
+            (notificationType === "Email" && contactMissingEmail)
           }
         >
           <Trans>Finalize</Trans>
