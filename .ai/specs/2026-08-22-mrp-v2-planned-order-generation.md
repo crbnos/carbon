@@ -1,37 +1,28 @@
-# MRP v2: Live Planned-Order MRP — Generation, Cascade, Capacity & Simulation
+# MRP v2: Planned-Order MRP — Generation, Cascade, Capacity & Simulation
 
-> Status: phased — **Phase 1 implemented** (PR #1601); Phases 2+ designed, not started
+> Status: **Phase 1 implemented** (PR #1601). **Phase 2a** fully specified, not started.
+> Phases 2b and 2c designed, not started.
 > Author: Brad Barbin (with Claude)
-> Date: 2026-08-22 (re-scoped into phases 2026-09-08)
-> Scope: **now phased.** Originally written as a single "game-changer v1" that shipped
-> everything at once. As of **2026-09-08** (Brad) it is re-scoped into delivery phases
-> so the highest-value, lowest-complexity slice ships first:
+> Date: 2026-08-22 (phased 2026-09-08; Phase 2 split into 2a/2b/2c 2026-11-14)
 >
-> - **Phase 1 — Planning Action Messages & Buyer/Planner Assignment (ships first; fully
->   specified in §P1 below).** MRP stops emitting only "Order": it emits a full set of
->   assignable, dismissible **planning actions** — `Order`, `Make`, `Expedite`,
->   `Defer`, `Cancel`, `Increase`, `Decrease` — persisted in a focused `planningAction`
->   table and routed to a responsible buyer/planner via an inheritance ladder. Built on
->   the **current** per-item netting; **no** planned-order cascade, **no** Firm
->   lifecycle, **no** capacity/simulation. This is the 80/20.
-> - **Phases 2+ — the full planned-order vision (everything from "## TLDR" / "Proposed
->   Solution" onward, now DEFERRED).** The multi-level planned-order cascade +
->   lot-sizing, the Planned→Firm→Released lifecycle, pegging, continuous regen,
->   rough-cut capacity, what-if/CTP, the self-explaining plan, programmable release, and
->   the calm-by-default layer (§9). All of that design is preserved below as the
->   phase-2+ record; Phase 1's `planningAction` table is forward-compatible with it
->   (see §P1.9).
+> The spec has 2 parts:
 >
-> **Read §P1 first for what ships now.** Everything after "## TLDR" describes Phases 2+
-> unless §P1 cites it.
+> - **§P1 — Phase 1: Planning Action Messages & Buyer/Planner Assignment (shipped).**
+>   MRP emits assignable, dismissible planning actions (`Order`, `Make`, `Expedite`,
+>   `Defer`, `Cancel`, `Increase`, `Decrease`) in the `planningAction` table, routed to
+>   a responsible buyer or planner. It runs on the per-item netting.
+> - **Phase 2 — Planned-order MRP.** A `plannedOrder` layer, the buffer-policy
+>   cascade, lot-sized explosion, Firm, the time fence, Convert and pegging (2a). Then
+>   live replanning, rough-cut capacity and capable-to-promise (2b). Then workflow
+>   automation, notifications, agent tools and suggested projections (2c).
 
-# §P1 — Phase 1: Planning Action Messages & Buyer/Planner Assignment (ships first)
+# §P1 — Phase 1: Planning Action Messages & Buyer/Planner Assignment (shipped)
 
-> **This is Phase 1 — the slice that ships now.** Resolved with Brad on 2026-09-08 (run
+> **This is Phase 1 — shipped in PR #1601.** Resolved with Brad on 2026-09-08 (run
 > record: `.ai/runs/2026-09-08-mrp-planning-actions.md`; research:
 > `.ai/research/mrp-planning-actions.md` — SAP, Dynamics 365 SCM + Business Central,
-> NetSuite, Epicor, Infor SyteLine/LN). Everything from "## TLDR" onward is the Phase 2+
-> vision, deferred.
+> NetSuite, Epicor, Infor SyteLine/LN). Phase 2 follows §P1, from
+> "# Phase 2 — Planned-order MRP".
 
 ## P1.0 TLDR
 
@@ -46,7 +37,7 @@ uncommitted supply, review-on-document for anything already sent to a supplier.
 
 Phase 1 deliberately builds on the **current** per-item netting. It does **not** include
 the multi-level planned-order cascade, the Planned→Firm→Released lifecycle, rough-cut
-capacity, or what-if/CTP — those are Phases 2+ (the rest of this spec). This is the
+capacity, or what-if/CTP — those are Phase 2 (after §P1). This is the
 80/20: the whole user-visible outcome (a full, assignable action worklist) at a fraction
 of the full-vision build.
 
@@ -65,7 +56,7 @@ of the full-vision build.
   document on committed supply.
 - Gate reschedule noise with a single company tolerance.
 
-**Does NOT (deferred to Phases 2+):**
+**Does NOT (deferred to Phase 2):**
 
 - The multi-level **planned-order cascade** (a parent's reorder need generating child
   demand before a job exists — the original MRP-v2 problem statement). Phase 1 Order/Make
@@ -374,21 +365,18 @@ prerequisite for persistence/assignment.
 | Acting | **Recommendation; existing subsystem executes.** Apply on uncommitted supply; navigate on committed | Committed = external commitment (sent PO / released job); silent edits there are wrong. Change-order/notify automation deferred. |
 | Noise gating | **One company `rescheduleToleranceDays` (7)**, no qty dampener | 80/20 — date reschedules are the dominant noise; qty deltas already partly rounded. |
 | Suggestion source of truth | **Persisted `planningAction`**; keep live projection columns | Grid and worklist can't disagree; refreshes per run (assignment prerequisite). |
-| Reorder-sizing home | **Pure TS function shared by engine + client** (four existing policies) | The engine must produce the Order/Make quantity the grid shows; today the logic is duplicated in SQL (`calculate_quantity_to_order`) + client (`calculateOrders`). Aligns with the Phase-2 `computePlannedOrderQuantity` decision; POQ not required for Phase 1. |
+| Reorder-sizing home | **Pure TS function shared by engine + client** (four existing policies) | The engine must produce the Order/Make quantity the grid shows; today the logic is duplicated in SQL (`calculate_quantity_to_order`) + client (`calculateOrders`). Phase 2a extends this function (`computePlanningOrders`) to size the planned orders; POQ is Phase 2c. |
 | UI | **Extend the two existing planning pages** + one printer-style settings screen | Copy precedent; no new module. |
 
 ## P1.9 Relationship to the Phase 2 planned-order model
 
 Phase 1 is forward-compatible with the `plannedOrder` design below:
 
-- Phase 2's `plannedOrder.exceptionType` (`Release/Expedite/DeExpedite/Cancel/…`) is the
-  same action vocabulary; Phase 1's `planningActionType` uses user-facing names for the
-  same concepts (`Order/Make` ≈ `Release` + planned-order generation; `Defer` ≈
-  `DeExpedite`).
-- When Phase 2 lands the cascade + lifecycle, a `planningAction` can gain an optional
-  `plannedOrderId` reference (an Order/Make action becomes "release this planned order"),
-  while change actions keep targeting real open documents. The assignment ladder,
-  worklist, filters, and acting-on-messages built in Phase 1 are reused unchanged.
+- Phase 2 adds no action types. It reuses `planningActionType` (§2a.5).
+- Phase 2a adds `plannedOrderId` to `planningAction`. An Order or Make action then
+  converts its planned order. A change action can also target a Firm or fence-held
+  planned order. The assignment ladder, worklist, filters and apply flow of Phase 1
+  stay unchanged.
 - Nothing in Phase 1 has to be torn out for Phase 2.
 
 ## P1.10 Phase 1 Acceptance Criteria
@@ -434,7 +422,7 @@ Phase 1 is forward-compatible with the `plannedOrder` design below:
 
 - [x] **Scope vs the full MRP-v2 build?** — **Phased.** Ship action messages +
       assignment first (Phase 1); defer the planned-order cascade/lifecycle/capacity/
-      simulation to Phases 2+ of this spec.
+      simulation to Phase 2 of this spec.
 - [x] **Persistence: full plannedOrder lifecycle or focused table?** — **Focused
       `planningAction` table, no Firm lifecycle**, diff-write, all types persisted.
 - [x] **Assignment axis?** — **Unified `responsibleEmployee` inheritance tree**
@@ -456,641 +444,628 @@ Phase 1 is forward-compatible with the `plannedOrder` design below:
 
 ---
 
-> **Everything below is the Phase 2+ vision** — the full planned-order MRP. Preserved as
-> the design record; **not** what ships in Phase 1. Where Phase 1 diverges, §P1 above is
-> authoritative.
+# Phase 2 — Planned-order MRP
+
+> Phase 1 (§P1) shipped the planning-action worklist on the current per-item netting.
+> Phase 2 gives MRP a real planned-order layer. It ships in 3 parts:
+>
+> | Part | Scope | Status |
+> |------|-------|--------|
+> | **2a** | `plannedOrder`, buffer-policy cascade, lot-sized explosion with scrap, Firm, time fence, Convert, pegging, one number on every planning surface | Fully specified. Ships first. |
+> | **2b** | Live replanning, open jobs dated at the scheduler's projected finish, rough-cut capacity, capable-to-promise, the cascade tree and time-phased matrix, the calm worklist | Designed. Starts after 2a. |
+> | **2c** | Programmable conversion through workflows, automation rails, planning notifications, agent data tools, suggested demand projections, Period of Supply lot-sizing | Designed. Starts after 2b. |
+>
+> Research: `.ai/research/mrp-v2-phase-2-planned-orders.md` (SAP, Dynamics 365,
+> Oracle, NetSuite, Epicor) and `.ai/research/mrp-v2-planner-ui.md`. Engine numbers:
+> `.ai/research/2026-08-12-mrp-findings.md`.
+
+## Terms
+
+This spec uses one term per concept.
+
+| Term | Meaning |
+|------|---------|
+| **Planned order** | A `plannedOrder` row: the supply that MRP suggests for one item, location, segment and week. MRP can change or delete it on any run. |
+| **Planned job / Planned PO** | A real `job` or `purchaseOrder` in its first status, `Planned`. Converting a planned order creates one. Do not confuse it with a planned order. |
+| **Firm** | A planned order that a person locked. MRP must not change its quantity or dates. MRP raises planning actions on it instead. This is the SAP and Oracle meaning. Dynamics 365 calls this state "Approved". |
+| **Fence-held** | A planned order whose release date falls inside the planning time fence. MRP treats it like a Firm order for the run. Nothing stores this state. MRP computes it on each run. |
+| **Convert** | Create the Planned job or Planned PO line from a planned order. SAP uses the same word. |
+| **Release** | The existing Phase 1 action: move a Planned job or Planned PO to its next status. Phase 2 does not change it. |
+| **Lot-sized quantity** | The order quantity after the item's reorder policy and order rules round the net requirement. |
+| **Explosion quantity** | The lot-sized quantity plus the item's scrap allowance. MRP explodes this quantity to the components. |
+| **Netting segment** | `planningSegmentId`: `''` for common stock, a project id, or a planning-group id. |
+| **Peg** | A `projectPeg` row: it links one piece of supply to the demand it covers. |
 
 ## TLDR
 
-Carbon's "MRP" today only **nets existing demand against supply per item** and
-suggests a reorder quantity for each item independently. It does **not** generate
-planned orders, and it does **not** cascade a parent's replenishment need down the
-BOM. A Make item whose only need comes from its reorder policy (e.g. COMMS-001,
-"Make 5") produces **zero** dependent demand for its components (ANT-PATCH-01) until
-a human physically creates the parent job.
+Carbon's MRP nets existing demand against supply and suggests a reorder quantity per
+item. It has 2 defects:
 
-This spec moves Carbon to **MRP v2**: a first-class, disposable **planned-order**
-layer generated by the engine in one low-level-code (LLC) sweep — each item's net
-requirement becomes a lot-sized planned order whose components explode into the next
-level's gross requirements, with dates, pegging, and a Planned → Firm → Released
-lifecycle.
+1. **A buffer need does not explode.** If a Make item is short only because of its
+   reorder policy, MRP creates no demand for its components. The demand appears only
+   after a person creates the parent job.
+2. **MRP explodes the raw need, not the lot-sized quantity.** If the shop needs 3 and
+   the batch size is 5, MRP plans components for 3. The job needs components for 5.
 
-And it goes past parity. Every system in the research runs MRP as a batch report
-planners learn to distrust. Carbon's engine now runs a full company in **~0.3–0.5 s**
-(`.ai/research/2026-08-12-mrp-findings.md`), lives **in the same Node process and
-package as the finite scheduler** (`@carbon/planning`), and sits next to a
-customer-programmable workflow engine and an in-app agent whose data-tool mechanism
-is already built. v1 therefore ships MRP that is:
+Phase 2a fixes both. MRP plans each item once, in low-level-code order. For each
+shortage, it creates a planned order with the lot-sized quantity. Then it explodes the
+explosion quantity to the components, in the same run. A buffer need and a sales order
+get the same treatment. SAP and Dynamics 365 work the same way.
 
-1. **Live** — regenerated within ~30 s of any demand/supply change (the scheduler's
-   debounced-wave pattern, cloned), with the 3-hour cron demoted to a drift backstop.
-2. **Capacity-honest** — open-job supply is netted at the scheduler's
-   `projectedCompletionAt` (the simulated truth), not the due date; and every
-   regenerated plan is priced against work-center hours (rough-cut capacity), so
-   overload is an exception, not a surprise.
-3. **Simulatable** — a what-if mode runs the whole engine against a hypothetical
-   demand line with zero writes and returns the plan delta + promise date:
-   capable-to-promise from the quote screen.
-4. **Self-explaining** — every planned order carries its lot-sizing derivation, the
-   worklist shows what changed since the planner's last review and why, and the
-   in-app agent can answer "why is it telling me to order 50?" over live plan data.
-5. **Programmable** — planned orders are a workflow trigger entity with a
-   release operation, so each shop writes its own auto-release guardrails.
+Planned orders are suggestions until a person converts them. A planner can firm a
+planned order to keep their numbers. A per-item time fence holds near-term orders
+still. MRP pegs every planned order to the demand it covers, so the planner can see
+why it exists.
 
-All of it is wrapped in **calm-by-default mechanics** (§9), because a live,
-message-emitting planner is only a feature if it is pleasant under pressure: the
-primary action is **one-click Release** (the old "Make" muscle memory, preserved);
-the worklist **never reorders under the planner's hands** (plan updates arrive as a
-banner, not a rug-pull); exceptions computed from defaulted or unmaintained inputs
-are **confidence-gated** instead of screaming; capacity problems are attributed to
-the **bucket that caused them**, not painted across ten rows; and automation ships
-**paused-by-default with a dry-run mode, a release cap, and a daily ledger**.
-
-The one-line pitch: *every competitor's MRP is a nightly batch report; Carbon's is a
-live simulation you can interrogate — and it stays calm while being live.*
+Phases 2b and 2c build on this layer. 2b makes the plan live and capacity-aware. 2c
+makes it programmable.
 
 ## Problem Statement
 
-### The engine only cascades *actual* demand
+### The engine only cascades actual demand
 
-`explodeBom` (`packages/database/supabase/functions/lib/mrp-engine.ts:171`, reached
-from Node via the `@carbon/database/mrp-engine` barrel) is a correct multi-level
-explosion: it computes low-level codes, walks items level-by-level, nets each against
-on-hand, and explodes the shortfall to children with lead-time offset. But it only
-cascades what is already in `grossDemand`, and `grossDemand` is seeded
-(`packages/planning/src/mrp/mrp.ts`, Phase 4) from exactly three **actual**
+`explodeBom` (`packages/database/src/mrp-engine.ts:260`) is a correct multi-level
+explosion. It computes low-level codes and walks items level by level. It nets each
+item against on-hand and explodes the shortfall to the children with a lead-time
+offset. But it explodes only what is already in `grossDemand`.
+
+`planCompany` (`packages/planning/src/mrp/plan-company.ts`) fills `grossDemand` from 6
 sources:
 
-- `openSalesOrderLines` — sales-order demand
-- `openJobMaterialLines` — materials of **already-created** jobs (Planned/Ready/In Progress/Paused)
-- `demandProjection` — planner-entered forecasts
+1. Open sales-order lines (`:585`).
+2. Materials of jobs that already exist (`:645`).
+3. Project materials (`:694`).
+4. Project borrows (`:738`).
+5. The unconsumed part of `demandProjection` (`:834`).
+6. The Consume First redirect (`:952`).
 
-A reorder-policy need is **not** among them. COMMS-001's "Make 5" is computed
-independently, at display time, in SQL — `calculate_quantity_to_order(...)` inside
-the `get_production_planning` / `get_purchasing_planning` RPCs — and never flows back
-into the engine as demand. So the engine sees `grossDemand = 0` for COMMS-001, nets
-nothing, explodes nothing, and ANT-PATCH-01 stays at 0.
+A reorder-policy need is not one of them. `generatePlanningActions` sizes the Order and
+Make actions after the engine has finished (`mrp.ts:658`). So the engine sees no demand
+for the parent and explodes nothing to its components.
 
 ### Reproduction (verified against `Carbon Development`, 2026-08-22)
 
-1. Planning grid: ANT-PATCH-01 demand = 0.
-2. "Make 5" on COMMS-001 → creates a real Planned job `J000010` (qty 5) whose material
-   lines are TXRX-SBAND ×5, **ANT-PATCH-01 ×10** (BOM qty 2), MAT-KAPTON ×2.5.
-3. Next MRP run reads those job materials via `openJobMaterialLines` → ANT-PATCH-01
-   demand = 10.
+1. The planning grid shows demand 0 for ANT-PATCH-01.
+2. "Make 5" on COMMS-001 creates a Planned job `J000010` (quantity 5). Its material
+   lines are TXRX-SBAND ×5, **ANT-PATCH-01 ×10** (BOM quantity 2) and MAT-KAPTON ×2.5.
+3. The next MRP run reads those job materials through `openJobMaterialLines`.
+   ANT-PATCH-01 demand becomes 10.
 
-The dependent demand is arithmetically correct (2 antennas × 5 subsystems) but it
-only appears **after** the parent job is materialized — the requirement is
-manufactured before its dependency is ever computed.
+The dependent demand is correct, but it appears only after the parent job exists. On
+2026-11-14 the code on `main` still behaves this way.
 
-### Secondary defects this exposes
+### Secondary defects
 
-- **Explosion uses raw net requirement, not the lot-sized order quantity**
-  (`mrp-engine.ts:269`, `child.quantity * netRequirement`). Once planned orders are
-  lot-sized (make 5 to hit a reorder qty when only 3 are needed), children must be
-  exploded against the **order quantity (5)**, or they are under-demanded.
-- **No planned-order persistence.** "Make" immediately materializes a real Planned
-  `job`; MRP then deletes all `supplyForecast` rows every run (Phase 7,
-  `mrp.ts:903-1019`, unconditional, no `forecastMethod` filter) because there is no
-  durable planned-order layer to reconcile against. There is no "review the plan,
-  then release it" state — the plan and reality are the same object.
-- **Lot-sizing logic is duplicated.** It lives in SQL (`calculate_quantity_to_order`)
-  and is **already** hand-mirrored on the client
-  (`apps/erp/app/modules/items/ui/Item/ItemReorderPolicy.tsx:236`, comment: mirrors
-  `calculate_quantity_to_order` "exactly"). Adding a third copy in the engine without a
-  shared pure function guarantees drift.
+- **Raw-need explosion.** `mrp-engine.ts:428` computes
+  `child.quantity * netRequirement` (net at `:410`). If lot-sizing rounds 3 up to 5,
+  the components are short by 2 parents' worth.
+- **No scrap.** MRP applies no scrap. Job creation applies each item's
+  `scrapPercentage` through `computeJobQuantities`
+  (`packages/database/src/job-quantities-engine.ts`). So MRP plans fewer components
+  than the job needs.
+- **No planned-order layer.** "Make" creates a Planned job at once. MRP deletes every
+  `supplyForecast` row on each run (`mrp.ts:529`) because no durable planned order
+  exists to reconcile against.
+- **Two copies of lot-sizing.** SQL `calculate_quantity_to_order` and TS
+  `computePlanningOrders` (`packages/utils/src/planning-sizing.ts:252`) hold the same
+  rules. A parity test pins them (`planning-sizing.test.ts:404`). A third copy in the
+  engine would drift.
 
 ### Why parity is not the target
 
-Even fixed, a textbook MRP inherits the three failures that make SMBs abandon MRP:
+A textbook MRP fixes the defects above but keeps 4 failures that make small shops
+abandon MRP. Phases 2b and 2c answer them.
 
-- **Staleness** — a 3-hourly plan is wrong for up to 3 hours after every change;
-  planners route around it. (Dynamics went regenerative-only *because* its engine got
-  fast enough to rerun during office hours; ours reruns in under a second.)
-- **The fixed-lead-time lie** — MRP dates open-job supply at the due date; the finite
-  scheduler *knows* the real projected finish (`job.projectedCompletionAt`, dual
-  dates, this branch). Netting against the polite fiction produces reschedule
-  messages the planner can see are wrong.
-- **Black-box distrust** — a suggestion with no derivation, no diff since yesterday,
-  and no way to ask "why" gets ignored. Pegging alone (an audit *table*) does not fix
-  this; a rendered explanation does.
+| Failure | Answer |
+|---------|--------|
+| **Staleness.** A plan that runs every 3 hours is wrong for up to 3 hours after each change. | 2b: live replanning. The engine runs a full company in about 0.3–0.5 s. |
+| **The fixed-lead-time lie.** MRP dates open-job supply at the due date. The finite scheduler knows the projected finish (`job.projectedCompletionAt`). | 2b: net open jobs at the projected finish. |
+| **Black-box distrust.** A suggestion with no derivation gets ignored. | 2a: the lot-sizing trace and pegs. 2b: the change banner. 2c: the agent. |
+| **Exception fatigue on dirty inputs.** Defaulted lead times and stale POs flood the worklist. | 2b: confidence-gated actions and the readiness panel. |
 
-And a fourth failure this spec explicitly designs against, because a *live* MRP
-amplifies it: **exception fatigue on dirty inputs**. Every real MRP rollout drowns in
-past-due and reschedule messages computed from defaulted lead times, unmaintained
-routings, and stale open POs. A system that is confidently wrong at high frequency is
-worse than a dumb one. §9 is the answer.
+Carbon is the only surveyed system whose MRP and finite scheduler share one process,
+one language and one package (`@carbon/planning`). Phase 2b uses that.
 
-Carbon is the only system in the survey whose MRP and finite scheduler share a
-process, a language, and a package. v1 exploits that.
+## Proposed Solution — Phase 2a
 
-> **Research:** `.ai/research/mrp-v2-planner-ui.md` (SAP, Oracle, NetSuite, Dynamics
-> 365, Infor LN/M3, Katana, MRPeasy, Fishbowl, + canonical APICS). The eight systems
-> are near-unanimous on the **data/workflow model** (planned order → firm → release,
-> LLC single-pass explosion of the *lot-sized* qty, pegging, action messages, the
-> six-row time-phased record) — we adopt it and its **standard terminology** verbatim.
-> They diverge on **UI**: the SMB tools hide the time-phased grid behind a single
-> **stockout / order-by date** and present each shortage as a **dated, urgency-sorted,
-> decision-ready row** with one-click Make/Buy → draft → approve. We take the
-> enterprise model, lead the UI with the SMB dated-decision pattern, and go past both
-> with the live/capacity/simulation/explainability layer above. Note the research
-> also warns that the SMB tools deliberately expose **no firm flag** — their audience
-> does not think in APICS lifecycle terms. §9's progressive disclosure is how we keep
-> the enterprise model without making SMB users learn it.
-> Engine findings: `.ai/research/2026-08-12-mrp-findings.md`.
+### 2a.1 The engine sweep
 
-## Proposed Solution
+MRP plans each (location, segment, item) once, in strict low-level-code order. A
+single sweep is enough for an acyclic BOM. The low-level code puts every item after all
+of its parents, so all of its dependent demand is in place before MRP plans it. The
+existing `for (level = 0..maxLevel)` loop in `explodeBom` is that sweep. The existing
+cycle break stays: MRP plans cycle members last, as leaves.
 
-### 1. The engine algorithm (one LLC sweep = N levels)
-
-MRP v2 is inherently multi-level: a Make parent's planned order releases demand for
-its Make children, recursively, until the branch bottoms out at Buy items or on-hand
-coverage. A single sweep in strict **low-level-code order** is provably sufficient for
-acyclic BOMs, because LLC guarantees every item is visited only after **all** its
-parents (across all BOMs) have deposited their dependent demand. `explodeBom`'s
-existing `for (level = 0..maxLevel)` loop already *is* that N-level sweep; cycles are
-already broken deterministically (`mrp-engine.ts:189-211`, cycle members planned last
-as leaves).
-
-What changes: at each item, when the sweep reaches its level, do the full APICS
-netting-and-release step, not just "explode pre-existing demand":
+At each item, the sweep does the full net, size and explode step:
 
 ```
 for level in 0..maxLevel:
-  for each (location, item) at this level, in LLC order:
-    grossReq   = dependent demand exploded from parents (already accumulated)
-               + independent demand (sales orders, demand projections)
-               + reorder-policy requirement          # NEW: seed reorder need here
-    scheduledReceipts = open jobs/POs + Firm/Released planned orders
-      # open-JOB receipt date = job.projectedCompletionAt ?? dueDate   # NEW: simulated truth
-      # open-PO receipt date  = promised/required date (as today)
-    netReq     = max(0, grossReq - onHand - scheduledReceipts)   # period-phased
-    if netReq > 0:
-      { orderQty, trace } = computePlannedOrderQuantity(netReq, policy, params)  # NEW: lot-size + trace
-      dueDate     = period need date
-      releaseDate = workingDayOffset(dueDate, -leadTime, locationCalendar)       # NEW: calendar math
-      emit plannedOrder(item, orderQty, dueDate, releaseDate, trace,
-                        confidence = f(input readiness flags))                   # NEW: §9c
-      record pegs (plannedOrder ← the demand rows it covers, incl. job materials)
-      if item is Make:
-        for each child in BOM(item):
-          childReq = child.quantity * orderQty        # NEW: explode ORDER QTY, not netReq
-          grossDemand[child, releaseDate period] += childReq
-          record peg (child demand ← this plannedOrder)
-    carry running on-hand forward (orderQty is supply for this item; leftover stocks)
-after the sweep:
-  roughCutCapacity(plannedMakeOrders)                 # NEW: RCCP pass (see §3) — bucket-attributed
-  deriveActionMessages(plannedOrders, openJobs, openPOs)  # confidence-gated (§9c)
+  for each (location, segment, item) at this level:
+    grossReq  = dependent demand from parents (already accumulated)
+              + independent demand (the 6 sources above)
+    bufferReq = the reorder policy's need (reorder point, safety stock, maximum)  # NEW
+    receipts  = open jobs + open PO lines + Firm and fence-held planned orders
+    onHand    = quantityOnHand - quantityNonNettable
+    for each period:
+      netReq = max(0, grossReq + bufferReq - onHand - receipts)   # period-phased
+      if netReq > 0 and item is outside the fence for this need date:
+        { orders, trace } = computePlanningOrders(...)            # EXTENDED: one net requirement in, a trace out
+        for each order (one per batch or split):
+          dueDate     = the period's need date (per-batch dating, #1912)
+          releaseDate = working-day offset of dueDate by the lead time
+          emit plannedOrder(quantity = order.quantity, trace, segment, makeMethodId)
+          peg the order to the demand it covers
+          if item is Make:
+            explosionQty = order.quantity + scrapAllowance(order.quantity, item.scrapPercentage)
+            for each child in bomChildren(item):                 # skips quantity-0 lines
+              childQty = child.quantity * explosionQty            # FIX: was * netReq
+              childQty += scrapAllowance(childQty, child.scrapPercentage) unless child is Make to Order
+              grossDemand[child, releaseDate period, segment] += childQty
+      carry projected on-hand forward (order surplus is stock for later periods)
 ```
 
-Key correctness points, all settled:
+Rules:
 
-- **Explode the lot-sized order quantity**, not `netReq` — fixes the under-demand
-  defect. The single most important engine change.
-- **Reorder need is injected at the item's own level**, after parent demand has
-  accumulated, so an item's total requirement is complete before it is planned once.
-- **Open-job supply is dated at `projectedCompletionAt`** (fallback `dueDate` when the
-  scheduler hasn't projected it). This is what makes Delay/Expedite messages
-  *simulation-derived*: "SO-1042 will be short because J000010 is projected 4 days
-  late" is computed from the forward simulation, not date arithmetic. POs keep their
-  promised/required date.
-- **Firm/Released planned orders are fixed supply** — not regenerated, but a Make firm
-  order **still explodes** its components. Released orders' supply comes from the real
-  job/PO (`openProductionOrders`/`openPurchaseOrderLines`); the planned-order row is
-  retired.
-- **Dates are working-day dates.** `releaseDate` (and every backward offset in the
-  cascade) is computed over the location calendar using the same availability-ladder
-  day math the scheduler's need-by pass uses (`calendar-utils` /
-  `resolveLocationWindows`, same package) — never naive day subtraction. An order-by
-  date never lands on a day the plant is closed. For Buy items, supplier lead time
-  remains calendar days (that is the purchasing convention), but the resulting release
-  date snaps backward to the nearest working day.
-- **Lot-sizing is one pure function** — `computePlannedOrderQuantity(netReq, policy,
-  params)` covering the five policies (Manual / Demand-Based / Fixed Reorder Quantity /
-  Maximum Quantity / **Period-of-Supply (POQ)**, net-new) and min/max OQ,
-  `orderMultiple`, `lotSize`, `maximumInventoryQuantity`. It lives in a client-safe,
-  dependency-free module (recommend `@carbon/utils`, next to the precision helpers it
-  uses — whole-unit ceils via `round(x, 0, Up)`), unit-tested in vitest, imported by
-  the engine and the client preview. **It returns `{ quantity, trace }`** — the trace
-  is the ordered list of steps that produced the number (`policy branch → raw need →
-  each modifier applied → final`), persisted on the order and rendered in the UI
-  (§6). The existing SQL `calculate_quantity_to_order` **stays** for the live grid; a
-  parity test pins the two.
+- **Explode the explosion quantity.** This is the core fix. It follows SAP and
+  Dynamics 365: lot-size first, then explode.
+- **Scrap uses the job rule.** The engine applies `scrapAllowance` the way
+  `computeJobQuantities` does: whole units, rounded up, from the item's
+  `scrapPercentage`. A child that is Make to Order adds no scrap to its own target.
+  The plan and the converted job then agree.
+- **The buffer need joins at the item's own level.** All parent demand is in place
+  first, so MRP plans the item once. The 3 buffer policies (Demand-Based Reorder
+  safety stock, Fixed Reorder Quantity reorder point, Maximum Quantity) seed it.
+  Manual Reorder seeds nothing.
+- **Surplus is stock.** If an order of 5 covers a need of 3, the 2 extra units are
+  projected on-hand for the next periods. MRP does not plan them again.
+- **One sizing function.** Extend `computePlanningOrders` to size one net
+  requirement and to return a trace. Keep the SQL `calculate_quantity_to_order` for
+  rows with no planned order (§2a.8). The parity test stays.
+- **Keep the Phase 1 sizing rules.** These rules work as they do today: batch size,
+  order multiple, `maximumPerOrder`, frozen orders (`isOrderFrozen`), and per-batch
+  dating for Demand-Based Reorder (#1912).
+- **Dates are working days.** `releaseDate` uses the location calendar and the same
+  day math as the scheduler's need-by pass (`calendar-utils`). A Buy lead time stays
+  in calendar days, and the release date moves back to the nearest working day.
+- **Open-job supply keeps its current date in 2a.** `jobCompletionDate`
+  (`supply-date.ts:62`) does not change until 2b.
 
-### 2. Continuous planning — the plan is never stale
+### 2a.2 Netting segments, supersession and configured BOMs
 
-Clone the scheduler's proven notify → debounce → regen pattern
-(`notifyScheduleInputsChanged` → `carbon/schedule.inputs.changed` →
-`scheduleReplanWaveFunction`, debounce 30 s, concurrency 1 per company):
+- **A planned order belongs to one segment.** `plannedOrder.planningSegmentId` is part
+  of its natural key.
+- **A component inherits its parent's segment.** The child's demand nets in that
+  segment. The existing common-surplus rule applies: a project segment can draw the
+  common segment's true surplus unless `itemPlanning.allowCommonSupplyForProjects` is
+  false.
+- **Project segments stay lot-for-lot**, as Phase 1 does (`planning-actions.ts:1591`).
+  So a project order has no surplus to place.
+- **Planning groups** keep their segment rule and their feature gate. `@carbon/planning`
+  gets the group pegging functions through `MrpDeps` (`mrp.ts:336-352`), as today.
+- **Consume First.** A lot-sized parent explodes through the redirected BOM, in whole
+  assemblies, in the common segment only. This follows SAP discontinuation: MRP uses the
+  old part's stock first, then moves the rest of the demand to the successor.
+- **Configured BOMs.** The sweep reads children only through `bomChildren`, so a
+  quantity-0 configuration line never explodes.
+- **Make to Order children.** A Make child with method type Make to Order gets no
+  planned order of its own. Its demand passes through to its own children, and job
+  creation spawns its subjob when the parent converts. SAP and NetSuite treat a phantom
+  the same way.
 
-- **Emitter:** `notifyPlanningInputsChanged(companyId, kind, reason, entityId?)` in
-  `production.service.ts`, `kind ∈ salesOrder | purchaseOrder | job | inventory |
-  bom | itemPlanning | demandProjection | plannedOrder`. `reason` is human-readable
-  ("SO-1042 quantity changed") and lands on the run record for the diff banner (§6).
-- **Call sites (chokepoints, not triggers):** SO line create/update/delete + SO status
-  transitions; PO line create/update/delete + status; job status transitions and
-  quantity/date edits; receipt/shipment/adjustment posting (inventory moved);
-  `methodMaterial` writes (BOM changed); `itemPlanning`/`itemReplenishment` edits;
-  `demandProjection` edits; planned-order Firm/Release actions (re-peg around them).
-- **Inngest listeners (MARK/WAVE, exactly like the scheduler):**
-  - `markPlanningStaleFunction` — immediate, no debounce: upserts the one-row-per-
-    company `planningState` (`lastInputAt`, `lastInputKind`, `lastInputReason`) so
-    every surface can honestly show "Plan updating — SO-1042 changed" during the
-    debounce window instead of pretending to be current.
-  - `planningRegenFunction` — **debounce 30 s, concurrency 1 per company** — calls
-    `runMrp(serviceRole, getJobDatabaseClient(), { type: "company", ... })`
-    in-process. At ~0.3–0.5 s per run, the worst case (a busy company saturating the
-    debounce) is ~2 runs/minute — negligible.
-- **The 3-hour cron stays** as the drift backstop (an emitter call site can be missed;
-  time passes and periods roll), exactly as `nightly-replan.ts` backstops the
-  scheduler's event path.
-- **The planning time fence (§ Data Model) is the nervousness guard** that makes
-  continuous regen safe: inside the firm horizon (a location-wide default with a
-  per-item `itemPlanning` override) the engine auto-firms, so near-term rows stop
-  churning no matter how often the plan regenerates. The two features justify each
-  other.
-- **Every run writes a `planningRun` row** (trigger kind + reason, timing, diff
-  counts, capacity summary). The worklist header shows "Plan updated 2 min ago —
-  cause: SO-1042 quantity changed". The manual Recalculate button stays (it now also
-  serves as "run it right now, skip the debounce").
+### 2a.3 Lifecycle: Planned, Firm, Converted
 
-**Continuous does not mean restless.** The regen updates the database; it never
-updates a worklist the planner is looking at. See §9b — plan updates reach open
-sessions as a banner, not a re-render.
+```
+          firm (a person)               convert
+Planned ─────────────────────▶ Firm ───────────────▶ Converted
+   │  ◀───────────────────────   │
+   │        unfirm               │
+   └──────────── convert ────────┴──▶ Converted
+```
 
-### 3. Rough-cut capacity (RCCP) — overload is an exception, not a surprise
+- **Planned.** MRP owns the row. Each run updates it in place, keeps it, or deletes it
+  (§2a.6).
+- **Firm.** A person owns the row. MRP never changes its quantity or dates. It counts
+  as fixed supply, and it still explodes to its components. If MRP disagrees, it raises
+  a planning action on the order (§2a.5). `firmedBy` holds the user. A manual edit to a
+  planned order's quantity or dates firms it, as in SAP.
+- **Converted.** The Planned job or Planned PO line exists. `jobId` or
+  `purchaseOrderLineId` points at it. MRP reads that document as supply from now on and
+  never touches the converted row again.
 
-After the sweep, price the plan against real machine hours. Both inputs are already
-in this package:
+The worklist does not ask the user to learn "Firm". If a planner edits a quantity or a
+date, the drawer asks once: *"Keep your numbers through plan updates?"* Yes firms the
+order. The status chip still says "Firm".
 
-- **Work content per planned Make order** = the item's active routing operation times
-  (setup + max(labor, machine) per op, the scheduler's own duration convention) ×
-  order quantity, bucketed into the order's release→due window per work center.
-- **Available hours per work center per week** = the availability ladder
-  (`resolveWorkCenterWindows`: `alwaysOn` → `workCenterShift` → location shifts →
-  stock week), minus maintenance-dispatch downtime — the exact windows the finite
-  scheduler places against.
+### 2a.4 The planning time fence
 
-**Overload is attributed to the bucket, never sprayed across orders.** Where
-cumulative planned work content + already-reserved hours (`capacityReservation` work
-hours for live jobs) exceed available hours, the run's `loadSummary` records **one
-capacity exception per (work center, week)** — "CNC-1, week of Sep 7: 14 h over" —
-with the contributing orders listed inside it. The worklist's capacity strip renders
-those bucket rows; contributing planned orders get only a **secondary
-`capacityConstrained` badge** (a column, never their primary `exceptionType`), so one
-missing shift is one red row, not ten. One problem = one row = one fix.
+The fence keeps near-term orders still. It is a number of working days from today:
 
-This is deliberately **rough-cut**: no sequencing, no operation dependencies, no
-labor gating — those belong to the finite scheduler after Release. RCCP's job is the
-planner-level early warning, and the UI labels it "rough-cut" wherever it appears.
-Scenario-mode finite scheduling of planned orders (`capacityReservation.scenarioId`
-is already reserved for this) is explicitly deferred.
+```sql
+ALTER TABLE "location"     ADD COLUMN "planningTimeFenceDays" INTEGER NOT NULL DEFAULT 0
+  CHECK ("planningTimeFenceDays" >= 0);
+ALTER TABLE "itemPlanning" ADD COLUMN "planningTimeFenceDays" INTEGER
+  CHECK ("planningTimeFenceDays" >= 0);   -- NULL = use the location's value
+```
 
-### 4. What-if / capable-to-promise — the plan is a simulator
+MRP resolves `COALESCE(itemPlanning."planningTimeFenceDays",
+location."planningTimeFenceDays", 0)` per item. `0` means no fence. An explicit item
+`0` takes a volatile item out of a location-wide fence. SAP, Oracle and Dynamics 365
+all set the fence per item. The fence is not `planningHorizonDays`, which is a display
+filter (`20261006130004_planning-horizon.sql`).
 
-`runMrp` gains a **simulation mode**: `runPlanningWhatIf(client, db, { companyId,
-locationId, hypothetical: { itemId, quantity, dueDate, salesOrderLineId? } })` runs
-the identical sweep + RCCP against live inputs **plus the hypothetical demand line**,
-**persists nothing**, and returns:
+MRP tests each order's **release date** against the fence, as Dynamics 365 Planning
+Optimization does. Inside the fence:
 
-- the **plan delta** — planned orders that would be created/changed vs the live plan
-  (the diff is cheap because planned orders have deterministic identities, §5);
-- the **promise date** — the hypothetical's cascade-feasible completion: longest
-  release→due chain through the exploded tree on real calendars, honoring on-hand and
-  scheduled receipts;
-- the **capacity impact** — RCCP buckets that flip into overload;
-- the **estimated cost** — Σ (buy orders × last/supplier price) + (make orders ×
-  standard cost estimate) for the net-new orders;
-- the **assumption list** — rendered verbatim in the result panel: *"assumes current
-  plan is released on time; material + rough-cut capacity feasible; shop queue not
-  simulated"*. The promise is labeled **plan-based** everywhere it appears; the
-  finite-schedule answer post-release remains the expedite what-if.
+1. **An existing Planned order is fence-held.** MRP keeps its quantity and dates and
+   counts it as fixed supply. Its status stays Planned. Nothing stores the hold. MRP
+   computes it again on each run, as SAP does with fence firming.
+2. **A new need creates an order at the fence end.** MRP dates the new planned order on
+   the first working day after the fence. It raises an Expedite action on that order,
+   with the real need date as `suggestedDate`. This is SAP firming type 1.
+3. **A fence-held order with no demand left stays.** MRP raises a Cancel action on it.
+   It does not delete it silently, because someone may already have bought parts for
+   it. Applying the Cancel deletes the order.
 
-This is the `runExpediteWhatIf` pattern (`run-schedule.ts:159` — simulate with
-`persist: false`, return the projection) applied to planning. Surfaced from the quote
-line and sales-order line (§10) and as `POST api/planning/what-if`.
+Because the fence is computed, a fence-held order cannot outlive its demand without a
+visible Cancel action. No cleanup sweep is needed.
 
-### 5. Persisted planned-order layer — durable, diffable, idempotent
+### 2a.5 Planning actions over planned orders
 
-A new `plannedOrder` table is the engine's durable output; `plannedOrderPeg` records
-supply→demand links for two-way pegging; `planningRun` records each regeneration.
-`supplyForecast` is superseded by `plannedOrder` on the Make/Buy planning path; the
-unconditional `supplyForecast` delete goes away with it.
+Phase 2a reuses the Phase 1 worklist (`planningAction`). It adds no action types.
 
-**Regen is a diff-write, not delete-and-recreate.** Each generated order carries a
-deterministic natural key `(companyId, itemId, locationId, orderType, periodId,
-splitIndex)` (splitIndex > 0 only when max-OQ splitting produces multiple orders in
-one bucket). The Phase-7 transaction upserts on that key: matched Planned rows are
-**updated in place only when a value actually changed** (id and `createdAt` stable,
-`updatedAt` bumps only on real change), unmatched Planned rows are deleted, new rows
-inserted. Firm rows are left untouched (re-pegged around); Released rows are never
-touched. This one mechanism buys four features:
+| Action | Phase 2a source | Applying it |
+|--------|-----------------|-------------|
+| **Order** / **Make** | One per Planned or Firm planned order. `plannedOrderId` points at it. | Converts the planned order (§2a.7). |
+| **Expedite** / **Defer** / **Increase** / **Decrease** / **Cancel** on an open job or PO line | `deriveChangeActions`, as in Phase 1. | As in Phase 1. |
+| **Expedite** / **Defer** / **Increase** / **Decrease** / **Cancel** on a Firm or fence-held planned order | `deriveChangeActions`, extended to targets of type planned order. | Edits the planned order. The edit firms it. Cancel deletes it. Never `requiresManualAction`. |
+| **Release**, **Transfer**, **Borrow** | Unchanged. | Unchanged. |
 
-- **Idempotency** — two consecutive runs with unchanged inputs produce byte-identical
-  rows (the acceptance test), not new ids that merely look the same.
-- **Plan diffing** — "changed since your last review" = rows with
-  `updatedAt/createdAt > reviewedAt`, plus the run's deleted-count; the `planningRun`
-  row stores `created/updated/deleted/unchanged` counts and the trigger reason.
-- **Workflow-trigger hygiene** — the event-system record triggers on `plannedOrder`
-  only fire for genuine changes, so continuous regen does not spam customer workflows.
-- **Optimistic concurrency** — a mutation submitted from a stale worklist is detected
-  by comparing the row's `updatedAt` (§9b) instead of silently acting on changed data.
+The Order or Make quantity is the planned order's quantity. So the grid, the worklist
+and the drawer show one number. The owner ladder, the tolerance gate
+(`rescheduleToleranceDays`), the frozen-order rule and the read-time horizon apply
+unchanged.
 
-### 6. A plan that explains itself
+### 2a.6 Persistence and regeneration
 
-Three deterministic layers plus the agent:
+`plannedOrder` is the durable output of the sweep. Each Planned row has a natural key:
+`(companyId, itemId, locationId, planningSegmentId, orderType, periodId, splitIndex)`.
+`splitIndex` is above 0 only when `maximumPerOrder` or batch sizing splits one week's
+need into more than one order.
 
-- **Lot-sizing trace** — `plannedOrder.quantityTrace` (JSONB, written from the pure
-  function's `trace`) renders in the drawer as e.g. *"Net requirement 3 → Fixed
-  Reorder Quantity 5 → order multiple 5 → **5**"*. No AI involved; it is the
-  function's own arithmetic, shown.
-- **Peg popover** — "why does this exist?" (up: the demand rows it covers, including
-  job materials and reorder policy) / "what does it drive?" (down: child planned
-  orders), with lot-sizing surplus surfaced as a labeled **"quantity without source"**
-  node so over-production is explainable.
-- **Plan diff banner** — the worklist header reads the latest `planningRun` vs the
-  planner's `reviewedAt` marks: *"Since your last review: 3 new, 2 rescheduled in,
-  1 canceled — latest cause: SO-1042 quantity changed."* Nervousness becomes something
-  planners watch, not fear.
-- **Ask the plan (agent data tools)** — the gated data tools were REMOVED from the agent on
-  2026-09-30 (they had never shipped); restore them from the commit that deleted them
-  (`git log -S AGENT_DATA_TOOLS_ENABLED`) rather than flipping a flag. As they were built:
-  `search_tools`/`describe_tool`/`call_tool` execute READ-classified MCP tools via the
-  direct executor. v1 work: ensure the new planning reads (`getPlannedOrders`,
-  `getPlannedOrderCascade`, `getItemTimePhasedPlan`, `getPlanningRun`) are
-  READ-classified in the MCP tool metadata, and add a planning page to the docs → agent
-  KB so the assistant knows the standard terminology. The flagship question — "why is
-  it telling me to order 50 of ANT-PATCH-01?" — is answered from pegs + trace, in
-  prose.
+The Phase 7 transaction diff-writes `plannedOrder`:
 
-### 7. Programmable release — planned orders × the workflow engine
+1. If a generated order matches a Planned row on the natural key, update the row only
+   when a value changed. The id and `createdAt` stay the same.
+2. Insert each generated order that matches no row.
+3. Delete each Planned row that matches no generated order, unless it is fence-held
+   (§2a.4 rule 3).
+4. Leave Firm and Converted rows alone.
 
-- **Trigger entity:** register `plannedOrder` in the workflow catalog
-  (`packages/workflows/src/catalog/entities.ts` — it is a real table, so record events
-  work; watch columns `status`, `exceptionType`, `dueDate`, `quantity`) and regen the
-  catalog. The diff-write regen (§5) keeps these events meaningful.
-- **Moment:** `planning.exceptionRaised` — raised (via `raiseMoment`) when a row
-  transitions into an exception state during regen, carrying order + exception
-  outputs, for shops that want to react to messages rather than row changes.
-- **Operations:** add `releasePlannedOrder` and `firmPlannedOrder` workflow operations
-  (`catalog/operations.ts`), so a customer can author: *"when a Buy planned order is
-  created with estimated cost < $500, supplier is approved, and release date is within
-  7 days → release it and Slack #purchasing."* This is the progressive-autopilot
-  path: suggestion → guardrailed auto-release → per-category autopilot, authored by
-  the shop, not hard-coded by us.
-- **Safety rails are not optional** — every planning automation runs inside the
-  pause/dry-run/cap controls of §9f, and everything autopilot does lands in a daily
-  ledger. Automation you can't instantly stop is automation nobody enables.
-- **Notifications:** new `NotificationEvent.PlanningExceptions` — a digest of
-  **normal-confidence** Past-due/Delay exceptions and **newly overloaded capacity
-  buckets** per location planner, following the `JobsProjectedLate` digest precedent
-  (InApp default; Email/Slack opt-in — note: channels are InApp/Email/Slack; there is
-  no SMS). Low-confidence messages (§9c) never notify. A second event,
-  `NotificationEvent.PlannedOrdersAwaitingRelease`, backs the cross-team handoff
-  (§9g).
+The same transaction writes the pegs (§2a.9). If the run fails, the previous plan
+stays. `generatePlanningActions` runs after the commit, under its advisory lock, as in
+Phase 1. Two runs with the same inputs produce the same rows, ids included.
 
-### 8. Suggested demand projections — feed the cascade, refuse to guess
+`plannedOrder` replaces `supplyForecast` on the planning path. The `planning.update`
+routes stop writing `supplyForecast`, and MRP drops the unconditional delete at
+`mrp.ts:529`.
 
-`demandProjection` is today 100% manual, which caps the quality of everything
-downstream. v1 adds **suggested** projections — never auto-applied:
+### 2a.7 Convert
 
-- `getSuggestedDemandProjection(client, { itemId, locationId })` computes a trailing
-  13-week weekly average (+ simple trend) from `demandActual` history
-  (`sourceType = 'Sales Order'`), reusing the usage stats machinery
-  (`usageLast30Days`/`usageLast90Days` already exist on `get_inventory_quantities`).
-- **The honesty gate:** when history is intermittent/lumpy (coefficient of variation
-  above a single named constant — recommend `SUGGESTION_MAX_CV = 0.8`), the service
-  returns a refusal, and the UI shows the history sparkline with *"demand is too
-  irregular for a simple average — no suggestion"* instead of a number. A refusal
-  preserves trust; a bad number spends it. (Croston-style intermittent-demand models
-  are the deferred upgrade, not a v1 hack.)
-- `DemandProjectionForm` shows accepted suggestions as a ghost row per week with
-  one-click Apply (per week / per quarter). Applied rows are ordinary
-  `demandProjection` rows with `forecastMethod = 'suggested'` and `confidence`
-  populated (the column already exists and has never been used).
+Applying an Order or Make action converts its planned order. So does the Convert
+button in the drawer. The row's button keeps the words "Make" and "Order", so the
+Phase 1 muscle memory stays.
 
-### 9. Calm by default — the annoyance guards
+- **Make.** The service creates a Planned job through the existing path (`insertJob`
+  and `upsertJobMethod`). That path reads the item's make method again. If the method
+  changed after the run that exploded the planned order, the drawer shows the
+  difference before the user confirms. SAP copies the planned components by default.
+  Carbon reads the method again because the job-creation path already does it.
+- **Buy.** The service adds a line to a Planned PO for the planned order's supplier and
+  location. One Planned PO collects every converted line with the same supplier and
+  location, as NetSuite does. Extend `orderPlannedPurchases` for this.
+- **After either one**, the planned order becomes Converted, and the action becomes
+  Actioned. The next run reads the job or PO line as supply. It does not count the
+  planned order again.
+- **Partial conversion is deferred.** To convert part of an order, edit the quantity
+  first. The edit firms the order.
 
-The five differentiators make the planner *louder*; this section is what keeps it
-*calm*. Every mechanism here is deterministic product mechanics — no AI involved.
+### 2a.8 One number on every planning surface
 
-**a. One-click Release; the lifecycle is progressive disclosure.** The worklist row's
-primary button is **Release** and it does what "Make 5" did: creates the job/PO
-immediately from the planned values — no drawer, no draft step. The draft-review
-drawer interposes **only when the order carries warnings** (`lowConfidence`,
-`capacityConstrained`, or a Cancel/Decrease exception); a "Release & edit…" secondary
-action opens it on demand. **Firm never appears as an unprompted verb**: editing a
-Planned order's qty/date in the drawer asks once, in plain language — *"Keep your
-numbers through plan updates?"* — and yes = Firm (`firmedBy` = the user). The status
-chip still says "Firm" (standard terminology stays in the data and power surfaces);
-nobody is required to learn it before it applies to them.
+`get_production_planning` and `get_purchasing_planning` read `plannedOrder` as the plan.
+For an item that has a current planned order, `quantityToOrder` is the planned-order
+total. `calculate_quantity_to_order` fills only the items that have no planned order,
+for example an item that got demand after the last run.
 
-**b. The worklist never moves under the planner.** The worklist **does not
-live-revalidate**. Data loads once; regens happen underneath; a lightweight watcher
-on `planningRun` (+ `planningState` for the in-debounce window) drives a quiet
-banner — *"Plan updating — SO-1042 changed"* → *"Plan updated — 3 changes ·
-Refresh"*. Rows never reorder, appear, or change value except on explicit refresh
-(the GitHub "branch was updated" pattern; SAP ships MD05-vs-MD04 for the same
-reason). Mutations (release, firm, batch ops) submit with the loaded rows'
-`updatedAt` and the server rejects drifted rows individually — the response
-reconciles explicitly: *"2 of 12 selected orders changed since you loaded — review
-these 2; the other 10 succeeded."* Never silent, never all-or-nothing.
+### 2a.9 Pegging
 
-**c. Confidence-gated exceptions + the readiness preflight.** An exception computed
-from a guess is a guess. During each run the engine computes per-item **readiness
-flags** from data that already exists: lead time never maintained
-(`itemReplenishment.updatedBy IS NULL` on the default), routings with zero times,
-Make items with no active BOM/routing, and demand/supply rows pinned on stale open
-POs (due > 60 days past). Orders and messages derived from flagged inputs get
-`lowConfidence = true` + a `confidenceNote` (*"computed from the default 7-day lead
-time"*). Low-confidence messages are **excluded from the default worklist filter and
-from every notification digest** — visible only in an "All messages" view, badged
-with their reason. A **Planning readiness** panel (linked from the worklist header
-and shown before the first-ever run) summarizes the company-wide counts — *"34 items
-on the default lead time · 14 open POs older than 60 days · 6 routings with no
-times"* — each deep-linking to a pre-filtered list where the existing edit/close
-actions fix the input. Day one is a to-do list, not a wall of red.
+Phase 2a extends the existing `projectPeg` table instead of adding a second peg table.
 
-**d. Capacity blames the bucket** — specified in §3: one exception per (work center,
-week) in the capacity strip; contributing orders get only the secondary
-`capacityConstrained` badge. `'Overload'` is deliberately **not** a value of
-`plannedOrderException`.
+- `planningGroupId` and `projectId` become nullable. A peg in the common segment has
+  both null. A CHECK keeps the planning-group rules for pegs in a group segment.
+- `projectPegSupplyType` gains `'Planned Order'`. `supplyId` holds the planned order's
+  id.
+- `demandForecastSourceType` gains `'Planned Order'`. A component's peg names its
+  parent planned order as the demand. `parentPegId` links the chain up to the
+  independent demand.
+- A buffer need pegs to a demand source of type `'Reorder Policy'` (new enum value)
+  with the `itemPlanning` row as `demandSourceId`.
+- The table name stays `projectPeg`. The planning-group writer, the views, the RLS
+  policies and the backup manifest all use that name. A rename adds risk and changes no
+  behavior.
+- The MRP writer supersedes only the pegs whose values changed, with the existing
+  `diffPegs`. A run with no changes writes no peg rows. The common-segment writer lives
+  in `@carbon/planning`. The planning-group logic stays in `@carbon/ee/pegging`.
+- A lot-size surplus pegs to nothing. The drawer shows it as "quantity without source",
+  the SAP term.
 
-**e. Auto-firmed orders can't become zombies.** Firm rows carry provenance
-(`firmedBy` = userId or `'system'`, `firmedAt`). Each regen re-pegs Firm rows; a Firm
-order whose pegged demand has vanished gets `exceptionType = 'Cancel'`, and the
-worklist offers a one-click sweep — **"Return N orphaned orders to planning"**
-(unfirm + delete; the next regen recreates only what's still needed). The sweep
-defaults to system-firmed rows; user-firmed orphans show the Cancel message but are
-never swept without the owner.
+Pegs are soft: one supply can serve many demands. A Make to Order job linked to a sales
+order line stays the hard-peg case, as today.
 
-**f. Autopilot ships with rails.** Three company-level settings gate the planning
-workflow operations (`releasePlannedOrder`/`firmPlannedOrder`):
-`planningAutomationsPaused` (one switch stops everything, instantly),
-`planningAutomationsDryRun` (**default ON** — the operation logs what it *would*
-have done to workflow run history as Skipped-with-reason, so a new rule earns trust
-before it spends money), and `planningAutomationMaxReleasesPerRun` (cap per regen
-cycle; excess queues with a notice). Everything autopilot actually does appears in a
-daily **autopilot ledger** section of the `PlanningExceptions` digest: *"Auto-released
-7 buy orders totaling $1,840 under rule 'small fasteners'."*
+### 2a.10 Explain the number
 
-**g. Chain release is a handoff, not a half-working button.** Releasing a cascade
-that crosses the make/buy permission boundary: the whole chain is **firmed** in one
-transaction (the decision is locked), the caller's permitted side is released, and
-the remaining Firm orders notify the counterpart team
-(`PlannedOrdersAwaitingRelease`) with a deep link to their worklist pre-filtered to
-that chain. Segregation of duties as a feature: production decides the plan is real;
-purchasing controls the spend.
+The planned order stores the trace from `computePlanningOrders` in `quantityTrace`. The
+drawer shows it as a line, for example *"Net requirement 3 → Fixed Reorder Quantity 5 →
+order multiple 5 → scrap +1 → explode 6"*. A peg popover answers "why does this exist?"
+(the demand it covers) and "what does it drive?" (its child planned orders).
 
-**h. One number everywhere.** The planning grid RPCs read `plannedOrder` as the plan
-source; for an item with a current planned order, `quantityToOrder` **is** the
-planned-order total — the live SQL recompute (`calculate_quantity_to_order`) fills
-only items with no planned order (e.g. newly demanded since the last regen). While
-`planningState.lastInputAt > planningRun.completedAt`, every planning surface shows
-the same "Plan updating…" indicator instead of letting two numbers disagree silently.
+## Proposed Solution — Phase 2b
 
-**i. Suggestions refuse to guess** — specified in §8 (the CV gate).
+### 2b.1 Live replanning
 
-### 10. UI: quantity-sorted worklist → live, pegged, date-driven plan
+Copy the scheduler's notify, debounce and replan pattern (`notifyScheduleInputsChanged`
+→ `carbon/schedule.inputs.changed` → `scheduleReplanWaveFunction`).
 
-Design principle from the research: **the row is a dated decision, not a number.**
-The default surface is decision-ready and urgency-sorted; the enterprise time-phased
-grid is a drill-down for when a planner needs to see *why*.
+- **Emitter.** `notifyPlanningInputsChanged(companyId, kind, reason, entityId?)` in
+  `production.service.ts`. `kind` is one of `salesOrder`, `purchaseOrder`, `job`,
+  `inventory`, `bom`, `itemPlanning`, `demandProjection`, `plannedOrder`. `reason` is a
+  readable cause, for example "SO-1042 quantity changed".
+- **Call sites.** These service functions call the emitter:
+  1. Sales-order line writes and status changes.
+  2. PO line writes and status changes.
+  3. Job status changes and job quantity or date edits.
+  4. Receipt, shipment and adjustment posting.
+  5. `methodMaterial` writes.
+  6. `itemPlanning` and `itemReplenishment` edits.
+  7. `demandProjection` edits.
+  8. Planned-order firm, edit and convert.
+- **Inngest listeners.**
+  - `markPlanningStaleFunction` runs at once. It upserts the one row per company in
+    `planningState` (`lastInputAt`, `lastInputKind`, `lastInputReason`).
+  - `planningRegenFunction` debounces 30 s, with concurrency 1 per company. It calls
+    `runMrp` in-process. At 0.3–0.5 s per run, a busy company costs about 2 runs per
+    minute at most.
+- **The 3-hourly cron and the daily `mrpRunTime` stay** as the backstop for a missed
+  call site and for the weekly roll.
+- **Every run writes a `planningRun` row**: trigger, cause, timing, change counts and
+  the rough-cut load. Keep the newest 200 rows per company.
 
-Routes: `apps/erp/app/routes/x+/production+/planning.tsx` (+ purchasing) and the
-components under `apps/erp/app/modules/{production,purchasing}/ui/Planning/`.
+The time fence (§2a.4) is the guard that makes live replanning safe. Near-term orders
+stop moving however often the plan runs.
 
-1. **Plan worklist (new default).** One row per `plannedOrder` (make **and** buy):
-   item, supplier/work center (resolved), shortage qty, a single **stockout /
-   order-by date**, suggested (lot-sized) qty, estimated cost, status, and one
-   **action chip**. **Sorted by urgency (order-by date), not quantity**; default
-   filter = action-needed rows at **normal confidence** (§9c). Primary action:
-   **one-click Release** (§9a); secondary: "Release & edit…", **Firm** (via the
-   plain-language lock prompt), **batch-select ≤ 50** (Katana), **mark-reviewed**.
-   Header: the **live banner** (§9b: "Plan updating…" / "Plan updated — N changes ·
-   Refresh"), the **plan-diff banner** (§6), the **capacity strip** (bucket rows from
-   `loadSummary`, labeled "rough-cut", §3/§9d), and a **readiness link** when
-   readiness counts are non-zero (§9c). Saved views: "Action messages",
-   "All messages" (includes low-confidence, badged), "Orphaned firm orders" (§9e).
-2. **Cascade / pegging tree.** Indented, rooted at independent demand → planned
-   order → dependent planned orders → buys, reusing the existing job/method BOM-tree
-   rendering. Each level shows its **order-by date** pointing at the child planned
-   order or linked PO. Row action: **Release the whole chain** (with the §9g handoff
-   across the make/buy boundary). Peg popover per §6; "quantity without source"
-   nodes labeled.
-3. **Item time-phased matrix (expert drill-down).** The full six canonical rows per
-   bucket — **Gross Requirements / Scheduled Receipts / Projected Available Balance /
-   Net Requirements / Planned Order Receipts / Planned Order Releases** — plus a
-   SAP-style running-available-balance line view. Never the landing page.
-4. **`ProductionPlanningOrderDrawer`** — opens on "Release & edit…", row click, or a
-   warning-bearing Release; contains **Firm/unfirm** (lock prompt), cascade-release,
-   **mark-reviewed**, the **lot-sizing trace**, `confidenceNote` when low-confidence,
-   and the peg popover; edits act on planned orders.
-5. **Planning readiness panel** (§9c) — worklist-header link + first-run interstitial;
-   counts with deep links to pre-filtered fix-it lists.
-6. **Capable-to-promise entry** — a "Can we make it?" action on the quote line and
-   sales-order line drawers → panel showing promise date, the would-be order tree,
-   capacity impact, estimated cost, **and the assumption list** (§4), labeled
-   plan-based.
-7. **Suggested projections** in `DemandProjectionForm` per §8, including the
-   too-lumpy refusal state with sparkline.
-8. **Automation settings** — the pause/dry-run/cap controls (§9f) on the production
-   settings page, plus the autopilot ledger in the digest.
+### 2b.2 Open jobs at the projected finish
 
-Make/buy stay on two pages for v1, cross-linked across the boundary in the cascade
-tree (and bridged by the §9g handoff).
+`jobCompletionDate` (`supply-date.ts:62`) returns `job.projectedCompletionAt` when the
+scheduler has set it. Else it returns the due date, as today. `openProductionOrders`
+exposes `projectedCompletionAt`. The MRP rule allows no other place to date supply, so
+this one function and this one view are the whole change.
 
-**Pegging semantics:** `plannedOrderPeg` is **soft** pegging (a supply may serve many
-demands). Carbon already carries the **hard-peg** case — an MTO `job.salesOrderLineId`
-dedicates supply to one demand — which the tree renders as a fixed link.
+A job that the scheduler projects late then gets an Expedite action through
+`deriveChangeActions`, with no new action type. Dynamics 365 has netted late orders at
+their expected completion since 2023. Applying a job Expedite still goes through
+`updateJob({ dueDate })` and `notifyScheduleInputsChanged`. The scheduler owns job
+dates. MRP only recommends.
 
-### Design Decisions
+### 2b.3 Rough-cut capacity
+
+After the sweep, MRP prices the planned Make orders against work-center hours:
+
+- **Work content** of a planned order = the active routing's operation times (setup +
+  max(labor, machine) per operation) × the order quantity. MRP spreads it over the
+  order's release-to-due window, per work center.
+- **Available hours** per work center per week come from the availability ladder
+  (`resolveWorkCenterWindows`), minus maintenance downtime and the hours that
+  `capacityReservation` already holds for live jobs.
+
+MRP records **one capacity exception per (work center, week)** in
+`planningRun.loadSummary`, with the contributing orders inside it. Each contributing
+planned order gets a secondary `capacityConstrained` badge. One missing shift shows as
+one row. MRP moves no order on its own. SAP's Manage Work Center Capacity and pMRP work
+the same way. The UI labels it "rough-cut" everywhere. Scenario finite scheduling of
+planned orders is deferred.
+
+### 2b.4 Capable-to-promise
+
+Extend `runQuoteLeadTimeWhatIf` (`scheduling/quote-lead-time.ts:626`). Do not write a
+second what-if engine. The extended call runs the 2a sweep and the rough-cut pass
+against live inputs plus one hypothetical demand line. It writes nothing. It returns:
+
+1. The **promise date**: the latest finish along the exploded tree, on real calendars.
+2. The **plan change**: the planned orders that the line would add or change.
+3. The **capacity impact**: the weeks that would go over capacity.
+4. The **estimated cost** of the new orders.
+5. The **assumptions**, rendered word for word: *"assumes the current plan converts on
+   time; material and rough-cut capacity only; shop queue not simulated"*.
+
+The quote line and the sales-order line get a "Can we make it?" action. The panel says
+"plan-based" everywhere. It writes a date to the line only when the user accepts it,
+as NetSuite's Earliest Item Availability does.
+
+### 2b.5 The calm worklist
+
+- **The worklist never moves under the planner.** It does not revalidate live. A
+  watcher on `planningRun` and `planningState` shows a banner: *"Plan updating —
+  SO-1042 changed"*, then *"Plan updated — 3 changes · Refresh"*. Rows change only on
+  Refresh.
+- **Stale submissions are caught.** Each mutation sends the loaded rows' `updatedAt`.
+  The server rejects each changed row on its own and reports it: *"2 of 12 selected
+  orders changed since you loaded them. Review these 2. The other 10 succeeded."*
+- **Confidence gating.** Each run computes readiness flags per item:
+  1. The lead time was never maintained.
+  2. A routing has zero times.
+  3. A Make item has no active BOM or routing.
+  4. An open PO is more than 60 days past due.
+
+  An action from a flagged input gets `lowConfidence = true` and a `confidenceNote`,
+  for example *"computed from the default 7-day lead time"*. The default filter and
+  every digest leave these actions out. An "All messages" view shows them with a badge.
+- **Readiness panel.** It shows the company-wide counts of the 4 flags. Each count
+  links to a filtered list where the user can fix the input. It also shows before the
+  first run.
+- **Change banner and mark-reviewed.** The header compares the latest `planningRun`
+  with the planner's `reviewedAt`: *"Since your last review: 3 new, 2 moved earlier,
+  1 cancelled. Latest cause: SO-1042 quantity changed."*
+- **Chain conversion across teams.** Converting a cascade that crosses the make/buy
+  permission boundary firms the whole chain in one transaction. It converts the side
+  the user may convert. It notifies the other team with
+  `NotificationEvent.PlannedOrdersAwaitingRelease`, with a link to the chain.
+
+### 2b.6 Cascade tree and time-phased matrix
+
+- **Cascade tree.** Independent demand → planned order → child planned orders → buys.
+  It reuses the job and method BOM-tree rendering. Each level shows its order-by date.
+  The row action converts the whole chain (§2b.5).
+- **Time-phased matrix.** An expert drill-down per item, never the landing page. It has
+  the 6 standard rows per week: Gross Requirements, Scheduled Receipts, Projected
+  Available Balance, Net Requirements, Planned Order Receipts, Planned Order Releases.
+
+## Proposed Solution — Phase 2c
+
+### 2c.1 Programmable conversion
+
+- **Trigger entity.** Register `plannedOrder` in the workflow catalog
+  (`packages/workflows/src/catalog/entities.ts`). Watch `status`, `dueDate` and
+  `quantity`. Do not watch `capacityConstrained`, because regeneration flips it. The
+  diff-write keeps these events meaningful.
+- **Moment.** `planning.actionRaised` fires when a run opens a new planning action on a
+  planned order.
+- **Operations.** `convertPlannedOrder` and `firmPlannedOrder` in
+  `catalog/operations.ts`. A shop can then write a rule like *"if a Buy planned order
+  costs under $500 and its supplier is approved, convert it and post to Slack"*.
+
+### 2c.2 Automation rails
+
+Three `companySettings` columns gate both planning operations:
+
+```sql
+ALTER TABLE "companySettings"
+  ADD COLUMN "planningAutomationsPaused" BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN "planningAutomationsDryRun" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN "planningAutomationMaxConversionsPerRun" INTEGER NOT NULL DEFAULT 25
+    CHECK ("planningAutomationMaxConversionsPerRun" >= 0);
+```
+
+1. If `planningAutomationsPaused` is true, skip the operation and log the reason.
+2. If `planningAutomationsDryRun` is true, log the action as Skipped with the reason,
+   and create nothing. Dry run is on by default.
+3. If the run reaches the cap, queue the rest and show a notice.
+
+A daily autopilot ledger in the planning digest lists everything that automation
+converted.
+
+### 2c.3 Notifications
+
+- `NotificationEvent.PlanningExceptions` sends a digest per location planner. It holds
+  new normal-confidence actions, new over-capacity weeks and the autopilot ledger. In-app
+  is on by default. Email and Slack are opt-in. Low-confidence actions never notify.
+
+### 2c.4 Agent data tools
+
+Restore the agent data tools from the commit that removed them on 2026-09-30
+(`git log -S AGENT_DATA_TOOLS_ENABLED`). Classify the planning reads
+(`getPlannedOrders`, `getPlannedOrderCascade`, `getItemTimePhasedPlan`,
+`getPlanningRun`) as READ in the MCP tool metadata. Add a planning page to the docs so
+the agent knows the terms. The agent answers *"why is it telling me to order 50 of
+ANT-PATCH-01?"* from the pegs and the trace.
+
+### 2c.5 Suggested demand projections
+
+`getSuggestedDemandProjection(client, { itemId, locationId })` computes a trailing
+13-week average, with a simple trend, from `demandActual` sales-order history.
+
+- If the history is too irregular (coefficient of variation above
+  `SUGGESTION_MAX_CV = 0.8`), the service refuses. The UI shows the history sparkline
+  and *"demand is too irregular for a simple average"*, with no number.
+- `DemandProjectionForm` shows each suggestion as a ghost row with Apply. An applied row
+  is an ordinary `demandProjection` row with `forecastMethod = 'suggested'` and a
+  `confidence` value.
+
+### 2c.6 Period of Supply lot-sizing
+
+Add Period of Supply as a fifth `reorderingPolicy`. It orders the net requirements of
+the next N periods in one order. It lives only in `computePlanningOrders`. It has no
+SQL twin, because every item with this policy has a planned order (§2a.8).
+
+## Design Decisions
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Planned order = new entity vs reuse `supplyForecast` | **New `plannedOrder` table** | `supplyForecast` is a period-bucketed aggregate with no identity, status, dates, or pegging. A planned order must be individually firmable, releasable, peggable, and diffable. |
-| Single LLC sweep vs N fixpoint passes | **Single LLC sweep** | LLC guarantees parents-before-children; the existing `for level` loop already provides the N-level walk. Cycles are broken deterministically today; that logic is reused unchanged. |
-| Explosion quantity | **Lot-sized order quantity**, not raw net requirement | A reorder round-up (make 5, need 3) must pull 5× the component qty. Fixes `mrp-engine.ts:269`. |
-| Lot-sizing home | **Pure TS fn in `@carbon/utils` returning `{quantity, trace}`**; keep SQL `calculate_quantity_to_order` | Engine + client preview import one dependency-free, unit-tested function; the trace powers the explain panel for free. SQL stays for the live grid; a parity test pins them. |
-| Materialize on plan vs on release | **Planned orders are disposable; real `job`/PO created only on Release** | Enables "review then commit," removes the `supplyForecast` wipe, and lets regen own the plan. The core behavioral shift. |
-| Release UX | **One-click Release from the row (old "Make" muscle memory); draft drawer interposes only on warnings** | The lifecycle is a data-model asset, not a UI toll. The research's SMB cluster has no lifecycle *because* their audience won't pay ceremony; progressive disclosure keeps both audiences. |
-| Firm exposure | **Firm is entered via a plain-language lock prompt on edit; `firmedBy`/`firmedAt` provenance; chip keeps the standard term** | Standard terminology survives in data and power surfaces; nobody must learn APICS to keep an edit. Provenance separates system auto-firm from human intent (enables §9e). |
-| Regen write strategy | **Diff-write on a deterministic natural key** `(itemId, locationId, orderType, periodId, splitIndex)`, partial-unique on Planned rows | One mechanism buys idempotency (stable ids), plan diffing (`updatedAt` is honest), workflow-trigger hygiene (no event spam), and optimistic concurrency for stale-session mutations. Delete-recreate would break all four. |
-| Worklist freshness model | **No live revalidation; `planningRun`/`planningState` watcher banner; explicit Refresh; per-row `updatedAt` optimistic concurrency with explicit reconciliation** | A live plan must not mean a moving worklist. SAP splits MD04/MD05 for this exact reason; we get both surfaces from one table by controlling revalidation. |
-| Run cadence | **Event-driven continuous** (`carbon/planning.inputs.changed`, MARK stamp + debounce 30 s WAVE, concurrency 1/company) + 3-hour cron as drift backstop | The engine costs ~0.3–0.5 s/company; the scheduler's MARK/WAVE pattern is proven on this branch. Staleness is MRP's #1 practical failure; we can simply delete it. |
-| Open-job supply dating | **`job.projectedCompletionAt` (fallback `dueDate`)** | Dual dates exist on this branch; netting against the simulated finish makes Delay/Expedite messages true. The scheduler stays the owner of job dates. |
-| Capacity in the plan | **Rough-cut in every run; exceptions attributed per (work center, week) bucket in `loadSummary`; contributing orders get a secondary `capacityConstrained` badge, never their primary exception** | One capacity problem must render as one row with one fix, not ten red orders. Full scenario finite-scheduling (`scenarioId`) is deferred — RCCP is the planner-level early warning, honestly labeled. |
-| Exception confidence | **Readiness flags computed per run; messages from flagged inputs are `lowConfidence` + `confidenceNote`, excluded from default filters and all digests; a Planning readiness panel drives fixing the inputs** | A live MRP on dirty data is confidently wrong at high frequency — the worst failure mode. Gating by input quality turns day one from a wall of red into a to-do list, without hiding anything (the "All messages" view keeps it inspectable). |
-| What-if / CTP | **`runPlanningWhatIf` — full sweep + RCCP with a hypothetical demand line, `persist: false`, returns plan delta + promise date + capacity impact + cost + explicit assumption list** | The `runExpediteWhatIf` pattern applied to planning. v1 promise = material + rough-cut feasible, labeled "plan-based", assumptions rendered verbatim so the number can't silently become a guarantee. |
-| Firm order semantics | **Firm survives regen, counts as fixed supply, still explodes its BOM; editable qty/date; orphaned Firm rows get a Cancel exception + one-click return-to-planning sweep (system-firmed by default)** | Standard firm-planned-order behavior, plus a way out: auto-firm without orphan cleanup manufactures zombie orders nobody owns. |
-| Buy items | **Also get planned orders** (planned PO) | The cascade crosses make→buy on every branch; unified model required for end-to-end pegging. |
-| Transfer orders | **`'Transfer'` reserved in `plannedOrderType` now; generation deferred** | Every surveyed system types make/buy/transfer; `warehouseTransfer` is the natural release target. Reserving the enum value now avoids a migration later; DRP-style multi-location netting is real scope and explicitly deferred. |
-| Pegging storage | **`plannedOrderPeg`** (polymorphic demand source, **including `jobId`** for job-material demand) + convenience `parentPlannedOrderId` | `openJobMaterialLines` is one of the three real demand seeds — without a job source, pegging breaks on day one for any shop with open jobs. Mirrors `demandForecastSource` (which has `jobId`). |
-| Date math | **Working-day offsets over the availability ladder** (`calendar-utils` day math, location calendar), never naive day subtraction | An order-by date on a closed day is an instant credibility loss; the need-by calculator already does this math in the same package. Buy lead times stay calendar days, release date snaps to a working day. |
-| Cross-permission cascade release | **Firm the whole chain, release the permitted side, notify the counterpart team (`PlannedOrdersAwaitingRelease`) with a pre-filtered link** | A half-working button is worse than a handoff. Segregation of duties (production decides, purchasing spends) is what enterprise buyers expect anyway. |
-| Automation safety | **Company-level pause switch, dry-run mode (default ON), per-run release cap; daily autopilot ledger in the digest** | A customer's bad rule + a fat-fingered projection must not create 40 POs overnight. Dry-run-by-default means every new rule earns trust before it spends money. |
-| Plan vs grid coherence | **Grid `quantityToOrder` = the planned-order total when a plan exists; live SQL only fills no-plan rows; a shared "Plan updating…" indicator from `planningState`** | Two numbers for the same item is a screenshot-and-file-a-bug generator. One number, one staleness signal, everywhere. |
-| Run scope | **Full company regenerative run** (event + cron + manual) | Regenerative-only is the industry direction (Dynamics); the engine is fast enough. Scoped/incremental regen is unnecessary complexity at 0.3 s. |
-| Freshness of the SQL grid | **Keep `calculate_quantity_to_order` + RPCs in v1** (bounded by the coherence rule above) | The live-recompute grid keeps "reload and it's right" for no-plan rows while the planned-order surfaces take over; retiring it is deferred. |
-| Terminology | **Adopt standard MRP terms verbatim** — planned order, firm planned order, release, low-level code, gross-to-net, planned order receipt/release, pegging (single/full, soft/hard), action message | All eight systems + APICS agree; planners recognize them. Progressive disclosure (§9a) keeps the terms from becoming homework. |
-| Action-message model | **v1: full standard set** (Release / Expedite / De-expedite / Cancel / Increase / Decrease / Past-due / Delay), computed over planned orders **and** real open jobs/POs; single highest-priority message on the line; capacity is bucket-level, not a message value | Research §6: the plan is worked as a message queue; reschedule/cancel apply to open orders. Job messages are simulation-derived (projected supply dating). |
-| Planning time fence / auto-firm | **v1: full auto-firm** inside a firm horizon resolved per item — `itemPlanning."planningTimeFenceDays"` (nullable override) else `location."planningTimeFenceDays"` else 0 — evaluated on **release/start date**; auto-firms carry `firmedBy='system'` for the orphan sweep | The nervousness guard that makes continuous regen safe. Per-item fence placement is the enterprise standard (SAP material master, Oracle item attribute, Dynamics coverage group); the location default is the flat-default-plus-override shape Carbon config prefers. Dynamics' order-date-vs-due-date firming is a documented trap — fence on release date. |
-| Time-phased matrix vs derived date | **Lead with a single stockout/order-by date; full six-row matrix is a drill-down** | SMB pattern; the grid stays for power users. |
-| Lot-sizing policies | **v1: the four existing `reorderingPolicy` values mapped to standard names + period-of-supply/POQ** | Manual→Manual, Demand-Based→lot-for-lot, Fixed Reorder Qty→FOQ, Maximum Quantity→min/max, + POQ (TS-only, no SQL parity row). |
-| Explainability | **Deterministic first (trace + pegs + diff), agent on top** | The trace and diff are free byproducts of the pure function and the diff-write; the agent data-tool mechanism already exists behind `AGENT_DATA_TOOLS_ENABLED` and planning reads are READ-class. |
-| Programmable release | **`plannedOrder` as a workflow trigger entity + `planning.exceptionRaised` moment + `releasePlannedOrder`/`firmPlannedOrder` operations, all inside the §9f rails** | The shop authors its own auto-release guardrails; we never hard-code release policy. Catalog is table-driven; `plannedOrder` is a real table so record events work. |
-| Demand suggestions | **Trailing-average suggested `demandProjection` rows, planner-applied, `forecastMethod='suggested'`, `confidence` populated; CV gate refuses lumpy history** | A visible, editable average the planner approves beats an opaque model — and a refusal beats a bad number. No statistical library in v1. |
-| Worklist quality-of-life | **v1: mark-reviewed, batch-release, exception digest notifications** | SAP "accept results", Katana batch-release, Fishbowl alerts — via Carbon's notification system. |
+| Phasing | **2a / 2b / 2c**, as in the table at the top | 2a fixes both defects with the smallest new surface. The live, capacity and automation layers need 2a's planned orders first. |
+| Planned order entity | **New `plannedOrder` table** | `supplyForecast` is a weekly aggregate with no identity, status or peg. A planned order must be firmable, convertible, peggable and diffable. |
+| Sweep | **One low-level-code sweep**, reusing the `explodeBom` loop and its cycle break | The low-level code puts every parent first. One pass is enough. |
+| Explosion quantity | **Lot-sized quantity plus scrap** | SAP and Dynamics 365 lot-size first, then explode. Scrap matches `computeJobQuantities`, so the plan and the job agree. |
+| Buffer needs | **Seed the 3 buffer policies at the item's own level** | SAP MRP and Dynamics 365 treat safety stock as a requirement. Their planned orders explode like any other. |
+| Sizing home | **Extend `computePlanningOrders`**; keep the SQL twin for no-plan rows | One TS function already exists, with a parity test. A new function would drift. |
+| Firm meaning | **Firm = MRP must not change it** (SAP, Oracle) | It is the standard meaning. The glossary notes that Dynamics 365 says "Approved". |
+| Who firms | **Only a person.** A manual edit firms the order. | SAP sets its firm flag on a manual change. |
+| Time fence | **Computed on each run, never stored.** Per item, with a location default. Working days. Tested on the release date. | SAP computes fence firming per run. A stored system firm outlives its demand and needs a cleanup sweep. |
+| New need inside the fence | **Order at the fence end plus an Expedite action** (SAP firming type 1) | The planner gets an order to act on. Creating nothing hides it. |
+| Fence-held order with no demand | **Keep it and raise Cancel** | Someone may have bought parts for it. A silent delete hides that. |
+| Turning a planned order into a document | **"Convert"**, not "Release" | Carbon already uses Release for a Planned job or PO. SAP calls this step conversion. |
+| Components at conversion | **Read the make method again, and show a difference** | It reuses the job-creation path. The difference covers the risk that SAP's copy-by-default avoids. |
+| PO grouping | **Supplier and location** (NetSuite) | Every vendor groups by supplier. Location keeps receiving correct. |
+| Partial conversion | **Deferred.** Edit the quantity first. | SAP supports it, but the edit-then-convert path covers it. |
+| Planning actions | **Reuse `planningAction`.** Order and Make point at `plannedOrderId`. No new action types. | One worklist, one owner ladder, one tolerance. Expedite already covers a late job. |
+| Pegging | **Extend `projectPeg`**: nullable group and project, a `'Planned Order'` supply type | One peg model and one id prefix. Its supersede history is a better design than a new table. |
+| Peg history volume | **Supersede only changed pegs** (`diffPegs`) | A run with no changes writes no rows. |
+| Segment of a component | **The parent's segment**, with the existing common-surplus rule | It matches Carbon's segment rule and Oracle Fusion's netting order. |
+| Project-segment lot size | **Lot-for-lot**, as today | No surplus to place. |
+| Make to Order children | **No planned order; demand passes through** | Job creation spawns the subjob. SAP and NetSuite treat phantoms this way. |
+| Regeneration write | **Diff-write on a natural key that includes the segment** | Stable ids give idempotency, honest change counts, clean workflow events and stale-row detection. |
+| Supply dating | **2a: unchanged. 2b: `projectedCompletionAt`, else the due date** | One function and one view own supply dates. |
+| Run cadence | **2b: event-driven with a 30 s debounce; the cron stays as backstop** | A full run costs about 0.3–0.5 s. SAP MRP Live and Dynamics 365 regenerate. |
+| Capacity | **2b: rough-cut, one exception per (work center, week), no automatic move** | SAP's capacity app and pMRP. One problem, one row. |
+| Capable-to-promise | **2b: extend `runQuoteLeadTimeWhatIf`; write a date only when the user accepts** | It reuses the existing what-if. NetSuite writes the date only on accept. |
+| Confidence | **2b: flag actions from unmaintained inputs; leave them out of defaults and digests** | A live plan on dirty data is wrong at high frequency. |
+| Automation | **2c: workflow entity and operations, inside pause, dry-run (on by default) and a cap** | Each shop writes its own rules. A bad rule must not create 40 POs overnight. |
+| Transfer orders | **Reserve `'Transfer'` in `plannedOrderType`; generate nothing** | Multi-location planning is its own spec. |
+| Demand time fence | **None in Phase 2** | Forecast consumption covers most of the need. |
+| Make and buy pages | **Two pages, cross-linked in the cascade tree** | A unified page is deferred. |
 
 ## Data Model Changes
 
-Four new tables/objects + one enum value + one location column + three settings
-columns. (RLS uses the current `get_companies_with_employee_role()` /
-`get_companies_with_employee_permission()` helpers — the template's `has_role()` is
-deprecated.)
+### Phase 2a
 
 ```sql
--- Order type includes Transfer (reserved; not generated in v1)
-CREATE TYPE "plannedOrderType" AS ENUM ('Make', 'Buy', 'Transfer');
-CREATE TYPE "plannedOrderStatus" AS ENUM ('Planned', 'Firm', 'Released');
--- NOTE: no 'Overload' value — capacity exceptions are bucket-level (planningRun.loadSummary)
-CREATE TYPE "plannedOrderException" AS ENUM (
-  'Release', 'Expedite', 'DeExpedite', 'Cancel', 'Increase', 'Decrease',
-  'PastDue', 'Delay'
-);
+CREATE TYPE "plannedOrderType" AS ENUM ('Make', 'Buy', 'Transfer');   -- Transfer: reserved, not generated
+CREATE TYPE "plannedOrderStatus" AS ENUM ('Planned', 'Firm', 'Converted');
 
--- The MRP-generated planned order. Disposable when status = 'Planned'.
 CREATE TABLE "plannedOrder" (
     "id" TEXT NOT NULL DEFAULT id('plo'),
     "companyId" TEXT NOT NULL,
 
     "itemId" TEXT NOT NULL,
     "locationId" TEXT NOT NULL,
+    "planningSegmentId" TEXT NOT NULL DEFAULT '',      -- '' = common
     "orderType" "plannedOrderType" NOT NULL,
     "status" "plannedOrderStatus" NOT NULL DEFAULT 'Planned',
 
-    "quantity" NUMERIC NOT NULL,                       -- lot-sized order quantity
-    "quantityTrace" JSONB,                             -- lot-sizing derivation (from computePlannedOrderQuantity)
-    "dueDate" DATE NOT NULL,                           -- receipt must land by
-    "releaseDate" DATE NOT NULL,                       -- working-day offset of dueDate - leadTime
-    "periodId" TEXT NOT NULL,                          -- weekly bucket (get-or-create; part of natural key)
-    "splitIndex" INTEGER NOT NULL DEFAULT 0,           -- >0 when max-OQ splits one bucket into N orders
+    "quantity" NUMERIC NOT NULL CHECK ("quantity" > 0), -- lot-sized quantity (good units)
+    "scrapQuantity" NUMERIC NOT NULL DEFAULT 0,        -- added to quantity for the explosion
+    "quantityTrace" JSONB,                             -- from computePlanningOrders
+    "dueDate" DATE NOT NULL,
+    "releaseDate" DATE NOT NULL,                       -- working-day offset of dueDate by the lead time
+    "periodId" TEXT NOT NULL,                          -- weekly bucket; part of the natural key
+    "splitIndex" INTEGER NOT NULL DEFAULT 0,
     "lowLevelCode" INTEGER NOT NULL DEFAULT 0,
 
-    "parentPlannedOrderId" TEXT,                       -- cascade convenience pointer (nullable)
-    "exceptionType" "plannedOrderException",           -- highest-priority action message (nullable)
-    "suggestedDate" DATE,                              -- engine's recommended new date for Expedite/De-expedite
-    "capacityConstrained" BOOLEAN NOT NULL DEFAULT false, -- secondary badge; bucket detail lives in planningRun.loadSummary
-    "lowConfidence" BOOLEAN NOT NULL DEFAULT false,    -- derived from readiness flags on its inputs (§9c)
-    "confidenceNote" TEXT,                             -- e.g. 'computed from the default 7-day lead time'
-    "reviewedAt" TIMESTAMP WITH TIME ZONE,             -- planner "accepted/marked reviewed"
+    "supplierId" TEXT,                                 -- Buy: resolved preferred supplier
+    "makeMethodId" TEXT,                               -- Make: the method the run exploded
 
-    "firmedBy" TEXT,                                   -- userId, or 'system' for time-fence auto-firm
+    "firmedBy" TEXT REFERENCES "user"("id"),           -- set only by a person
     "firmedAt" TIMESTAMP WITH TIME ZONE,
 
-    -- Set when Released:
-    "jobId" TEXT,
-    "purchaseOrderLineId" TEXT,
+    "jobId" TEXT,                                      -- set on Convert (Make)
+    "purchaseOrderLineId" TEXT,                        -- set on Convert (Buy)
 
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -1098,72 +1073,67 @@ CREATE TABLE "plannedOrder" (
     "updatedAt" TIMESTAMP WITH TIME ZONE,
 
     PRIMARY KEY ("id", "companyId"),
-    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+    CONSTRAINT "plannedOrder_firm_chk" CHECK (("status" = 'Firm') = ("firmedBy" IS NOT NULL)),
+    CONSTRAINT "plannedOrder_converted_chk" CHECK (
+      ("status" = 'Converted') = ("jobId" IS NOT NULL OR "purchaseOrderLineId" IS NOT NULL)
+    )
 );
 CREATE INDEX "plannedOrder_companyId_idx" ON "plannedOrder" ("companyId");
 CREATE INDEX "plannedOrder_item_loc_idx" ON "plannedOrder" ("companyId", "itemId", "locationId");
 CREATE INDEX "plannedOrder_status_idx" ON "plannedOrder" ("companyId", "status");
-CREATE INDEX "plannedOrder_parent_idx" ON "plannedOrder" ("parentPlannedOrderId");
 CREATE INDEX "plannedOrder_createdBy_idx" ON "plannedOrder" ("createdBy");
--- Deterministic regen identity: uniqueness enforced only for engine-owned rows
 CREATE UNIQUE INDEX "plannedOrder_natural_key_idx" ON "plannedOrder"
-  ("companyId", "itemId", "locationId", "orderType", "periodId", "splitIndex")
+  ("companyId", "itemId", "locationId", "planningSegmentId", "orderType", "periodId", "splitIndex")
   WHERE "status" = 'Planned';
+```
 
--- Pegging: which demand a planned order covers. Polymorphic demand source, exactly one set.
-CREATE TABLE "plannedOrderPeg" (
-    "id" TEXT NOT NULL DEFAULT id('peg'),
-    "companyId" TEXT NOT NULL,
+Other Phase 2a changes:
 
-    "plannedOrderId" TEXT NOT NULL,                    -- the supply
-    "quantity" NUMERIC NOT NULL,                       -- how much of the order is for this demand
+1. Add the time-fence columns of §2a.4.
+2. Add `plannedOrderId` to `planningAction`. Change `planningAction_change_target_chk`:
+   - Order and Make: `purchaseOrderLineId` and `jobId` are null. `plannedOrderId` may
+     be set.
+   - Every change type: exactly one of `purchaseOrderLineId`, `jobId` and
+     `plannedOrderId` is set.
+3. Add `plannedOrderId` to the `COALESCE` of `planningAction_natural_key_idx`, before
+   `periodId`.
+4. Make `projectPeg.planningGroupId` and `projectPeg.projectId` nullable. Add a CHECK:
+   both are null, or `planningGroupId` is set.
+5. Add `'Planned Order'` to `projectPegSupplyType`. Add `'Planned Order'` and
+   `'Reorder Policy'` to `demandForecastSourceType`. Put each `ALTER TYPE ... ADD VALUE`
+   in its own migration, before the migration that uses the value.
+6. Give `plannedOrder` the four RLS policies of `planningAction`: SELECT through
+   `get_companies_with_employee_role()`, writes through the production and purchasing
+   permissions.
+7. Redefine every view that reads `projectPeg`, `location` or `itemPlanning` with
+   `SELECT *`, so it picks up the new columns.
+8. Add `plannedOrder` to the company backup manifest and to the demo datasets.
 
-    -- exactly one of:
-    "salesOrderLineId" TEXT,
-    "jobId" TEXT,                                      -- job-material demand (mirrors demandForecastSource)
-    "parentPlannedOrderId" TEXT,                       -- dependent demand from a parent order
-    "demandProjectionId" TEXT,
-    "reorderPolicy" BOOLEAN,                           -- true = reorder-point/safety-stock-driven (independent)
+### Phase 2b
 
-    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
-    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    "updatedBy" TEXT REFERENCES "user"("id"),
-    "updatedAt" TIMESTAMP WITH TIME ZONE,
-
-    PRIMARY KEY ("id", "companyId"),
-    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
-    -- + CHECK: exactly one demand source set (five-way)
-);
-CREATE INDEX "plannedOrderPeg_companyId_idx" ON "plannedOrderPeg" ("companyId");
-CREATE INDEX "plannedOrderPeg_order_idx" ON "plannedOrderPeg" ("plannedOrderId");
-CREATE INDEX "plannedOrderPeg_createdBy_idx" ON "plannedOrderPeg" ("createdBy");
-
--- One row per regeneration: freshness, cause, diff counts, rough-cut load.
+```sql
 CREATE TABLE "planningRun" (
     "id" TEXT NOT NULL DEFAULT id('prun'),
     "companyId" TEXT NOT NULL,
     "trigger" TEXT NOT NULL,                           -- 'event' | 'cron' | 'manual'
-    "triggerKind" TEXT,                                -- emitter kind (salesOrder, job, ...)
-    "triggerReason" TEXT,                              -- human-readable cause for the banner
+    "triggerKind" TEXT,
+    "triggerReason" TEXT,
     "startedAt" TIMESTAMP WITH TIME ZONE NOT NULL,
     "completedAt" TIMESTAMP WITH TIME ZONE,
     "ordersCreated" INTEGER NOT NULL DEFAULT 0,
     "ordersUpdated" INTEGER NOT NULL DEFAULT 0,
     "ordersDeleted" INTEGER NOT NULL DEFAULT 0,
     "ordersUnchanged" INTEGER NOT NULL DEFAULT 0,
-    "loadSummary" JSONB,                               -- RCCP: per (workCenterId, weekStart) {available, reserved, planned, contributingOrderIds}
+    "loadSummary" JSONB,                               -- per (workCenterId, weekStart): available, reserved, planned, contributing order ids
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     PRIMARY KEY ("id", "companyId"),
     FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
 );
 CREATE INDEX "planningRun_companyId_idx" ON "planningRun" ("companyId", "createdAt" DESC);
--- Retention: keep the newest N (e.g. 200) runs per company; prune in the regen function.
 
--- One row per company: input freshness for the "Plan updating…" indicator (§9b/§9h).
--- Maintained by markPlanningStaleFunction (MARK) and cleared/compared against
--- planningRun.completedAt. System-written; SELECT-only for employees.
-CREATE TABLE "planningState" (
+CREATE TABLE "planningState" (                         -- one row per company; service-role writes
     "companyId" TEXT NOT NULL,
     "lastInputAt" TIMESTAMP WITH TIME ZONE,
     "lastInputKind" TEXT,
@@ -1171,470 +1141,325 @@ CREATE TABLE "planningState" (
     PRIMARY KEY ("companyId"),
     FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
 );
+
+ALTER TABLE "plannedOrder"
+  ADD COLUMN "capacityConstrained" BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN "reviewedAt" TIMESTAMP WITH TIME ZONE;
+ALTER TABLE "planningAction"
+  ADD COLUMN "lowConfidence" BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN "confidenceNote" TEXT;
 ```
 
-Automation rails (§9f) — three columns on `companySettings`:
+`openProductionOrders` exposes `projectedCompletionAt`. `planningState` is SELECT-only
+for employees.
 
-```sql
-ALTER TABLE "companySettings"
-  ADD COLUMN "planningAutomationsPaused" BOOLEAN NOT NULL DEFAULT false,
-  ADD COLUMN "planningAutomationsDryRun" BOOLEAN NOT NULL DEFAULT true,   -- safe by default
-  ADD COLUMN "planningAutomationMaxReleasesPerRun" INTEGER NOT NULL DEFAULT 25;
-```
+### Phase 2c
 
-All new tables need the four standard RLS policies (`plannedOrder`: SELECT via
-`get_companies_with_employee_role()`, writes via `production_*` / `purchasing_*`; the
-peg and run tables mirror it; `planningState` is SELECT-only for employees,
-service-role-written). `plannedOrder` additionally gets the event-system
-record-change trigger (`attach dispatch_event_batch`) so workflow record events fire.
-
-**Planning time fence (auto-firm) — location default, per-item override.** Two
-columns:
-
-```sql
-ALTER TABLE "location"     ADD COLUMN "planningTimeFenceDays" INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE "itemPlanning" ADD COLUMN "planningTimeFenceDays" INTEGER;  -- NULL = inherit location
-```
-
-`itemPlanning` is already the per-(item, location) planning-behavior home
-(`reorderingPolicy`, `demandAccumulationPeriod`, `demandReschedulingPeriod`), so the
-fence completes that field family, and the engine reads `itemPlanning` per item for
-lot-sizing anyway. The engine resolves
-`COALESCE(itemPlanning."planningTimeFenceDays", location."planningTimeFenceDays", 0)`
-per item. Inside the resolved horizon it **auto-firms** planned orders (`firmedBy =
-'system'`) and does not create/reschedule freely, evaluated on the order's **release
-date**, not its due date (the documented Dynamics trap). `0` = manual-firm-only — and
-an explicit per-item `0` opts a volatile item out of a location-wide fence. This
-placement mirrors the enterprise standard (SAP: material master; Oracle: item
-attribute; Dynamics: the item's coverage group) while the location default keeps
-zero-config shops from maintaining it per item. Manual firm/unfirm remains
-available. Orphaned auto-firms are handled by the §9e sweep.
-
-**Action messages span open orders (v1).** Expedite / De-expedite / Cancel /
-Increase / Decrease apply not just to Planned orders but to **real open jobs/POs**
-whose dates/quantities no longer match net requirements — derived per run from the
-plan (not persisted per open order); `plannedOrder.exceptionType` carries them for
-planned orders. Because open-job supply is dated at `projectedCompletionAt`, a job
-message means "the simulation says this will actually be late/early", not "the due
-date differs". Messages derived from low-readiness inputs are confidence-gated
-(§9c). **Applying** a job reschedule routes through `notifyScheduleInputsChanged` /
-`updateJobOperationDueDate` — the finite scheduler owns
-`jobOperation.startDate`/`projectedCompletionAt` and `job.projectedCompletionAt`; a
-PO reschedule edits the PO line's promised/required date. The message is MRP's
-recommendation; the owning subsystem executes it.
-
-**Relationship to existing planning tables:** `demandForecast` (BOM-derived child
-demand) remains the engine's demand output, now pegged to a parent `plannedOrder`.
-`plannedOrder` supersedes `supplyForecast` on the planning path; the Make/Buy
-`planning.update` routes stop writing `supplyForecast`, and MRP's unconditional
-`supplyForecast` delete (Phase 7) is removed. `demandActual`/`supplyActual` (real
-docs) are unchanged. `demandProjection` gains no columns (suggestions are ordinary
-rows with `forecastMethod = 'suggested'`).
+The 3 `companySettings` columns of §2c.2. `plannedOrder` gets the event-system
+record-change trigger, so workflow record events fire.
 
 ## API / Service Changes
 
-**Engine (`packages/planning/src/`)**
+### Phase 2a
 
-- New `lot-sizing` in `@carbon/utils`: pure
-  `computePlannedOrderQuantity(netRequirement, policy, params): { quantity, trace }` —
-  five policy branches (four ported from `calculate_quantity_to_order` + POQ), plus
-  min/max OQ, `orderMultiple`, `lotSize`, `maximumInventoryQuantity`. Parity test vs
-  the SQL fn on a fixture matrix (POQ is TS-only).
-- `explodeBom` → extended (or a new `generatePlannedOrders`) to run the fused
-  net→lot-size→release→explode step per LLC level; explode the **order quantity**;
-  date open-job supply at `projectedCompletionAt ?? dueDate`; compute release dates
-  via working-day offsets over the location calendar (shared `calendar-utils` day
-  math); emit `plannedOrder` + `plannedOrderPeg` (including `jobId` pegs); treat
-  Firm/Released as fixed supply; stamp `lowConfidence`/`confidenceNote` from the
-  readiness flags.
-- New `readiness.ts`: computes the per-item readiness flags (default lead time via
-  `itemReplenishment.updatedBy IS NULL`, zero-time routings, missing BOM/routing for
-  Make items, stale open POs > 60 days past due) — used by the engine for confidence
-  gating and by `getPlanningReadiness` for the panel.
-- New `rough-cut-capacity.ts`: prices planned Make orders (routing durations × qty)
-  plus live `capacityReservation` hours against `resolveWorkCenterWindows` buckets;
-  returns the bucket-level load table (with contributing order ids) + the
-  `capacityConstrained` order set. Pure over injected inputs; vitest-tested.
-- New `action-messages.ts`: derives the standard message set over planned orders and
-  open jobs/POs; single highest-priority message per line; confidence-gated.
-- `runMrp` Phase-7 write: within the existing atomic Kysely transaction, **diff-write**
-  `plannedOrder` on the natural key (update-if-changed / insert / delete-unmatched
-  Planned rows + their pegs), keep Firm/Released (re-peg; orphan-flag), write the
-  `planningRun` row (+ prune old runs), drop the `supplyForecast` delete.
-- New `runPlanningWhatIf(client, db, params)`: the sweep + RCCP with an injected
-  hypothetical demand line, `persist: false`; returns `{ promiseDate, planDelta,
-  capacityImpact, estimatedCost, assumptions }`.
-- All relocated/new value-bearing math stays under `@carbon/checks` coverage
-  (`packages/planning/src` is already in the TS source set on this branch); no
-  scale literals, whole-unit ceils via `round(x, 0, Up)`.
+**Engine (`packages/planning/src/mrp/`, `packages/database/src/mrp-engine.ts`,
+`packages/utils/src/planning-sizing.ts`)**
 
-**Jobs (`packages/jobs`)**
+- Extend `computePlanningOrders` to size one net requirement for one period and return
+  `{ orders, trace }`. Keep every Phase 1 rule. Keep the parity test.
+- Extend `explodeBom` (or add `generatePlannedOrders` next to it) to run the §2a.1 step
+  per level: buffer seed, sizing, scrap, explosion, surplus carry, segment, fence.
+- Read existing `plannedOrder` rows in Phase 1–2 loads. Firm and fence-held rows are
+  fixed supply.
+- In the Phase 7 transaction, diff-write `plannedOrder` and the pegs (§2a.6, §2a.9).
+  Drop the `supplyForecast` delete.
+- Extend `deriveChangeActions` to planned-order targets. Make `generatePlanningActions`
+  derive Order and Make actions from planned orders.
+- Keep every new value-bearing calculation under the `@carbon/checks` precision rules:
+  no scale literals, whole units through `round(x, 0, Up)`.
 
-- New Inngest functions on `carbon/planning.inputs.changed`:
-  `markPlanningStaleFunction` (immediate; upserts `planningState`) and
-  `planningRegenFunction` (debounce 30 s, concurrency 1 per company; calls `runMrp`
-  in-process). The existing 3-hour cron stays as backstop.
-- New event `carbon/planning.inputs.changed` in `packages/lib/src/events.ts`; emitter
-  `notifyPlanningInputsChanged` in `production.service.ts` (pattern:
-  `notifyScheduleInputsChanged`), called from the chokepoints listed in §2.
+**ERP services (`production.server.ts`, `purchasing.server.ts`, their `.service.ts`
+files)**
 
-**ERP services (`apps/erp/app/modules/production` + `purchasing`)**
+- `convertPlannedOrder({ id, updatedAt })`: the §2a.7 flow. It binds to the row by id
+  and `companyId`, and it accepts only a Planned or Firm row.
+- `firmPlannedOrder`, `unfirmPlannedOrder`, `updatePlannedOrder` (an edit firms the
+  row), `deletePlannedOrder` (only through an applied Cancel).
+- `getPlannedOrders` (the worklist query) and `getPlannedOrderPegs(id)` (the popover).
+- The `planning.update` routes act on planned orders. They stop writing
+  `supplyForecast`.
 
-- `releasePlannedOrder(client, { id, ... })` — Make → `insertJob` + `upsertJobMethod`
-  (the current Make path) and mark the order `Released`/link `jobId`; Buy → create PO
-  line. One-click from the row (no draft) unless warnings (§9a).
-  `releasePlannedOrderCascade(rootId)` — firm the whole chain in one transaction,
-  release the caller's permitted side, notify the counterpart
-  (`PlannedOrdersAwaitingRelease`) for the rest (§9g).
-- `firmPlannedOrder` / `unfirmPlannedOrder` (set/clear `firmedBy`/`firmedAt`),
-  `updatePlannedOrder` (qty/date on Firm), `markPlannedOrdersReviewed(ids)`,
-  `returnOrphanedFirmOrdersToPlanning(ids?)` (the §9e sweep; defaults to
-  system-firmed orphans).
-- All planned-order mutations take the caller's loaded `updatedAt` per row and reject
-  drifted rows individually with a reconciliation payload (§9b).
-- `getPlannedOrders` (worklist, `GenericQueryFilters`; default filter excludes
-  `lowConfidence`), `getPlannedOrderCascade(rootId)` (peg tree),
-  `getItemTimePhasedPlan(itemId, locationId)` (the MRP matrix),
-  `getLatestPlanningRun(locationId?)`, `getPlanDiffSince(reviewedAt)`,
-  `getPlanningReadiness(companyId)` (the §9c panel), `getPlanningState(companyId)`.
-- `getSuggestedDemandProjection(client, { itemId, locationId })` (§8, with the CV
-  refusal shape).
-- Replace the drawer's `planning.update` "order" action semantics: it
-  firms/edits/releases planned orders rather than creating jobs + `supplyForecast`.
-- New route `POST api/planning/what-if` → `runPlanningWhatIf` (permission
-  `view: "production"` or `view: "sales"` for the quote-side entry).
+**RPCs:** `get_production_planning` and `get_purchasing_planning` follow §2a.8.
 
-**Workflow catalog (`packages/workflows`)**
+### Phase 2b
 
-- `entities.ts`: add `plannedOrder` (watch: `status`, `exceptionType`, `dueDate`,
-  `quantity` — deliberately NOT `capacityConstrained`/`lowConfidence`, which flip on
-  regen); regen + check the catalog.
-- `moments.ts`: add `planning.exceptionRaised` + its `raiseMoment` call site in the
-  regen path (CI enforces the pairing).
-- `operations.ts`: add `releasePlannedOrder`, `firmPlannedOrder` (wrapping the ERP
-  services above). **Both check the §9f rails first**: paused → skip with reason;
-  dry-run → log the would-be action to workflow run history as Skipped-with-reason;
-  cap → release up to the cap, queue the rest with a notice.
+- `packages/lib/src/events.ts`: the event `carbon/planning.inputs.changed`.
+- `production.service.ts`: `notifyPlanningInputsChanged`, called from the §2b.1 call
+  sites.
+- `packages/jobs`: `markPlanningStaleFunction` and `planningRegenFunction`.
+- `rough-cut-capacity.ts`: a pure function over injected inputs. It returns the load per
+  (work center, week) and the constrained order set.
+- `readiness.ts`: the 4 readiness flags, used by the engine and by
+  `getPlanningReadiness`.
+- `supply-date.ts`: `jobCompletionDate` per §2b.2.
+- `runQuoteLeadTimeWhatIf`: the §2b.4 extension. A route `POST api/planning/what-if`
+  calls it (permission `view: "production"`, or `view: "sales"` from a quote).
+- `convertPlannedOrderChain(rootId)`, `markPlannedOrdersReviewed(ids)`,
+  `getPlannedOrderCascade(rootId)`, `getItemTimePhasedPlan(itemId, locationId)`,
+  `getLatestPlanningRun(locationId?)`, `getPlanningState(companyId)`.
+- Every planned-order mutation takes the loaded `updatedAt` per row and reports drifted
+  rows one by one.
+- `NotificationEvent.PlannedOrdersAwaitingRelease`.
 
-**Notifications (`packages/notifications` + `packages/jobs`)**
+### Phase 2c
 
-- `NotificationEvent.PlanningExceptions` (topic: Planning) — digest of
-  normal-confidence PastDue/Delay exceptions + newly overloaded capacity buckets +
-  the daily autopilot ledger (§9f); InApp default, Email/Slack opt-in.
-- `NotificationEvent.PlannedOrdersAwaitingRelease` (topic: Planning) — the §9g
-  cross-team handoff, deep link to the pre-filtered worklist.
-
-**Agent (`apps/erp/app/modules/agent`)**
-
-- Restore the agent data tools (removed 2026-09-30, see "Ask the plan" above) and enable
-  them (READ-only classification + blocklist enforced in the tool itself). Verify the new planning service reads are
-  READ-classified in `tool-metadata.json` (regen via `pnpm run generate:mcp`); add a
-  planning-concepts docs page so the KB regeneration teaches the agent the standard
-  terminology.
-
-**RPCs:** `get_production_planning` / `get_purchasing_planning` read `plannedOrder`
-as the supply/plan source (still union real `supplyActual`); for items with a current
-planned order, `quantityToOrder` **is** the planned-order total, and
-`calculate_quantity_to_order` computes only for items with no current plan (§9h).
+- Workflow catalog: the entity, moment and operations of §2c.1. Each operation checks
+  the §2c.2 rails first.
+- `NotificationEvent.PlanningExceptions`.
+- Agent: restore the data tools. Run `pnpm run generate:mcp` after the READ
+  classification.
+- `getSuggestedDemandProjection`.
+- `computePlanningOrders`: the Period of Supply branch.
 
 ## UI Changes
 
-Covered in §10. Files: `apps/erp/app/routes/x+/production+/planning.tsx` (+
-purchasing), `apps/erp/app/modules/{production,purchasing}/ui/Planning/`,
-`ProductionPlanningOrderDrawer`, `DemandProjectionForm`, quote/SO line drawers (CTP
-entry), the planning readiness panel, the automation settings (production settings
-page), and the worklist's live/diff banners + capacity strip. No new top-level routes
-except `api+/planning.what-if.ts`.
+### Phase 2a
+
+Files: `apps/erp/app/routes/x+/production+/planning.tsx` and the purchasing twin,
+`apps/erp/app/modules/{production,purchasing}/ui/Planning/`,
+`ProductionPlanningOrderDrawer`, `ItemPlanningForm`, the location form.
+
+1. **Worklist rows.** Each Order and Make row shows its planned order: quantity,
+   order-by date, status chip (Planned / Firm), and a fence-held marker. The button
+   still says Make or Order, and it converts.
+2. **Drawer.** It shows the lot-sizing trace, the peg popover, "quantity without
+   source", and Firm / Unfirm. An edit asks *"Keep your numbers through plan
+   updates?"*. On Convert of a Make order, it shows the make-method difference when the
+   method changed.
+3. **Settings.** `planningTimeFenceDays` on the location form and on the item Planning
+   tab, with the inherited value as the placeholder.
+
+### Phase 2b
+
+- The live banner and the change banner.
+- The capacity strip.
+- The readiness panel and its link.
+- The cascade tree and the time-phased matrix.
+- The "Can we make it?" panel on the quote line and the sales-order line.
+- The "All messages" view.
+
+### Phase 2c
+
+The automation settings (pause, dry run, cap) on the production settings page, the
+autopilot ledger in the digest, and the suggested-projection rows in
+`DemandProjectionForm`.
 
 ## Acceptance Criteria
 
-**Core cascade**
+### Phase 2a — core cascade
 
-- [ ] With COMMS-001 on a reorder policy and **no job created**, an MRP run produces a
-      `plannedOrder` for COMMS-001 (qty per lot-sizing) **and** a pegged dependent
-      `plannedOrder`/demand for ANT-PATCH-01 (×2) and its downstream materials —
-      visible before any job exists.
-- [ ] The cascade is correct to full depth: COMMS (Make) → ANT-PATCH-01 (Make) →
-      MAT-CF-LAM / MAT-KAPTON (Buy), each pegged to its parent.
-- [ ] Explosion uses the lot-sized order quantity: a reorder round-up on the parent
-      pulls the rounded quantity of each component (regression test for
-      `mrp-engine.ts:269`).
-- [ ] Firm a planned order → it survives the next regen and still explodes its
-      components; Planned orders are diff-written each run.
-- [ ] Release a planned order → creates the real `job`/PO, marks the order
-      `Released`, and the next run does not double-count it.
-- [ ] `computePlannedOrderQuantity` unit tests cover all five policies + min/max OQ,
-      `orderMultiple`, `lotSize`, `maximumInventoryQuantity`; the parity test matches
-      `calculate_quantity_to_order` on the fixture matrix; **every result includes a
-      trace** whose steps recompute to the final quantity.
-- [ ] **Planning time fence**: with a non-zero `location.planningTimeFenceDays`,
-      planned orders whose release date falls inside it are auto-firmed with
-      `firmedBy='system'` and survive regen; a per-item
-      `itemPlanning.planningTimeFenceDays` wins over the location default in both
-      directions (longer fence, and an explicit `0` exempting the item); resolved 0 =
-      manual-firm-only.
-- [ ] **Action messages over open orders**: a live open job/PO due earlier/later than
-      its net requirement surfaces an Expedite/De-expedite/Cancel message; applying a
-      job reschedule routes through `notifyScheduleInputsChanged` /
-      `updateJobOperationDueDate`; a PO reschedule edits the PO line date.
-- [ ] **Pegging completeness**: a planned component order covering an existing job's
-      material line carries a `jobId` peg (fixture: open job + component shortage).
+- [ ] COMMS-001 has a reorder policy and no job. One MRP run creates a planned order for
+      COMMS-001 and pegged planned orders or demand for ANT-PATCH-01 (×2 per parent) and
+      its materials. No job exists yet.
+- [ ] The cascade reaches full depth: COMMS-001 (Make) → ANT-PATCH-01 (Make) →
+      MAT-CF-LAM and MAT-KAPTON (Buy). MRP pegs each order to its parent.
+- [ ] Need 3, batch size 5, BOM quantity 2: the component demand is 10, not 6
+      (regression test for `mrp-engine.ts:428`).
+- [ ] The 2 surplus parents count as projected on-hand. A need of 2 next week creates
+      no new planned order.
+- [ ] Parent `scrapPercentage` 10 on an order of 10: the explosion quantity is 11. The
+      component demand equals the job material quantity that `computeJobQuantities`
+      gives for the same order.
+- [ ] Each of the 3 buffer policies on a Make item creates a planned order that
+      explodes. Manual Reorder creates none.
+- [ ] `computePlanningOrders` returns a trace whose steps recompute to the final
+      quantity. The SQL parity test is green.
+- [ ] Batch size, order multiple, `maximumPerOrder`, frozen orders and per-batch dating
+      give the same quantities and dates as Phase 1 on the Phase 1 fixtures.
 
-**Identity, idempotency, atomicity**
+### Phase 2a — segments, supersession, configured BOMs
 
-- [ ] Two consecutive runs with no input changes produce **byte-identical
-      `plannedOrder` rows including ids** (diff-write proof), and zero workflow record
-      events fire on the second run.
-- [ ] A failed run leaves the prior plan intact (atomic transaction, fault-injection
-      test as in the 2026-08-12 hardening).
-- [ ] `releaseDate` never lands on a non-working day for the location (fixture with a
-      weekend-spanning lead time); Buy lead time offsets in calendar days then snaps
-      backward to a working day.
+- [ ] A project parent's component nets in the project segment. It draws common
+      surplus only if `allowCommonSupplyForProjects` allows it.
+- [ ] A project planned order is lot-for-lot.
+- [ ] A parent whose component has a Consume First successor explodes through the
+      redirect, in whole assemblies.
+- [ ] A configured item explodes only its default configuration's lines.
+- [ ] A Make to Order Make child gets no planned order. Its own children get the demand.
 
-**Live plan**
+### Phase 2a — lifecycle and fence
 
-- [ ] Editing a sales-order line quantity triggers `carbon/planning.inputs.changed`;
-      `planningState` is stamped immediately (MARK); within the debounce window a new
-      `planningRun` row exists with `trigger='event'`, `triggerReason` naming the SO;
-      the worklist banner shows both states ("Plan updating…" → "Plan updated").
-- [ ] The 3-hour cron still runs and records `trigger='cron'` runs.
-- [ ] `planningRun` diff counts match a hand-computed fixture (N created, M updated,
-      K deleted, rest unchanged).
+- [ ] A Firm order survives regeneration with its quantity and dates. It still explodes.
+- [ ] Editing a planned order's quantity firms it, with `firmedBy` = the user.
+- [ ] Fence 10 days: an existing Planned order with a release date on day 8 keeps its
+      quantity and dates across a run that would change them. Its status stays Planned.
+      No column stores the hold.
+- [ ] Fence 10 days: a new need on day 6 creates a planned order dated on the first
+      working day after day 10, and an Expedite action with `suggestedDate` = day 6.
+- [ ] Fence 10 days: a fence-held order loses its demand. It stays, and it gets a Cancel
+      action. Applying the Cancel deletes it. The next run does not create it again.
+- [ ] Outside the fence, the run deletes a Planned order that loses its demand.
+- [ ] An item `planningTimeFenceDays` wins over the location value in both directions,
+      including an explicit 0.
 
-**Calm & control (§9)**
+### Phase 2a — actions, conversion and one number
 
-- [ ] **One-click Release**: a warning-free row's Release button creates the job/PO
-      with no intermediate drawer; a `lowConfidence` or `capacityConstrained` row
-      opens the drawer instead.
-- [ ] **Stable worklist**: with the worklist open, a regen that changes 5 rows causes
-      zero visible row changes; the banner appears; Refresh shows the new state.
-      Releasing a row whose `updatedAt` drifted returns the reconciliation payload
-      (browser test: edit an SO mid-session, then batch-release — 10 succeed, 2
-      reported as drifted).
-- [ ] **Confidence gating**: an item on the never-maintained default lead time
-      produces orders/messages with `lowConfidence = true` + `confidenceNote`; they
-      are absent from the default worklist filter and from the digest; visible and
-      badged in "All messages". Setting a real lead time clears the flag on the next
-      run.
-- [ ] **Readiness panel**: on the satellite dataset with seeded defects (default lead
-      times, one stale PO, one zero-time routing), the panel shows correct counts and
-      each deep link lands on the pre-filtered list.
-- [ ] **Bucket-attributed capacity**: a fixture whose planned Make orders exceed one
-      work center's ladder hours in one week produces exactly ONE capacity exception
-      row (that work center + week) in the capacity strip with the contributing
-      orders listed inside; those orders get `capacityConstrained = true` but keep
-      their `exceptionType` untouched; adding a `workCenterShift` clears both on the
-      next run.
-- [ ] **Orphaned firm sweep**: cancel the demand behind a system-firmed order → next
-      regen flags it `Cancel`; the sweep returns it to planning and the subsequent
-      regen does not recreate it. A user-firmed orphan shows the message but is not
-      swept by default.
-- [ ] **Autopilot rails**: with dry-run ON (the default), an auto-release workflow
-      logs Skipped-with-reason and creates nothing; with dry-run OFF and a cap of 2,
-      a regen producing 5 qualifying orders releases 2 and queues 3 with a notice;
-      the pause switch stops the operation entirely; the digest's autopilot ledger
-      lists what was released.
-- [ ] **Chain handoff**: a production user without `purchasing_create` releases a
-      mixed cascade → make orders release, the buy orders become Firm, and purchasing
-      receives `PlannedOrdersAwaitingRelease` with a deep link showing exactly those
-      orders.
-- [ ] **One number**: an item with a current planned order shows the same quantity in
-      the planning grid (`quantityToOrder`) and the worklist; during the debounce
-      window both surfaces show the "Plan updating…" indicator.
+- [ ] Each Planned and Firm order has one Order or Make action with `plannedOrderId` and
+      the same quantity.
+- [ ] Converting a Make order creates a Planned job through `insertJob` and
+      `upsertJobMethod`. The order becomes Converted, and the action becomes Actioned.
+      The next run counts the job once.
+- [ ] Converting a Make order whose make method changed after the run shows the
+      difference before the user confirms.
+- [ ] Converting 3 Buy orders with the same supplier and location gives one Planned PO
+      with 3 lines. A different location gives a second PO.
+- [ ] A Defer action on a Firm planned order edits it and keeps it Firm.
+      `requiresManualAction` is false.
+- [ ] For an item with a planned order, `quantityToOrder` in the grid equals the
+      planned-order total. An item with no planned order still uses
+      `calculate_quantity_to_order`.
 
-**Capacity honesty**
+### Phase 2a — identity, pegs and atomicity
 
-- [ ] Open-job supply is dated at `projectedCompletionAt` when present: a job the
-      scheduler projects 1 week late produces a Delay message on the dependent
-      demand even though its `dueDate` is on time.
+- [ ] Two runs with unchanged inputs produce identical `plannedOrder` rows, ids
+      included, and write no new peg rows.
+- [ ] A failed run leaves the previous plan and pegs unchanged (fault-injection test).
+- [ ] A common-segment peg has null `planningGroupId` and `projectId`. The
+      planning-group tests stay green.
+- [ ] `releaseDate` never falls on a closed day for the location.
 
-**Simulation / CTP**
+### Phase 2b
 
-- [ ] `runPlanningWhatIf` with a hypothetical SO line returns a promise date, the
-      net-new planned-order tree, capacity impact, estimated cost, and the assumption
-      list — and **writes nothing** (row counts across `plannedOrder`/
-      `plannedOrderPeg`/`planningRun`/forecast tables identical before/after).
-- [ ] The quote-line "Can we make it?" panel renders the what-if result — including
-      the assumptions, verbatim — end-to-end in the browser.
+- [ ] An SO line edit stamps `planningState` at once. Within the debounce window, a
+      `planningRun` row exists with `trigger = 'event'` and the SO named in the reason.
+- [ ] The cron still runs and records `trigger = 'cron'`.
+- [ ] A job that the scheduler projects 1 week late, with an on-time due date, gets an
+      Expedite action.
+- [ ] Planned Make orders over one work center's hours in one week give exactly one
+      capacity exception. The contributing orders get `capacityConstrained`. Adding a
+      shift clears both on the next run.
+- [ ] The what-if returns a promise date, the plan change, the capacity impact, the
+      cost and the assumptions. It writes nothing (row counts are identical before and
+      after). The quote panel renders the assumptions word for word.
+- [ ] With the worklist open, a run that changes 5 rows changes no visible row. The
+      banner appears. A batch convert with 2 drifted rows converts 10 and reports 2.
+- [ ] An item on the default lead time gives `lowConfidence` actions with a note. They
+      are absent from the default filter and the digest.
+- [ ] A production user without purchasing rights converts a mixed chain. The Make
+      orders convert, the Buy orders become Firm, and purchasing gets the notification.
 
-**Explainability**
+### Phase 2c
 
-- [ ] The drawer renders the lot-sizing trace for a Fixed-Reorder-Quantity +
-      order-multiple fixture exactly as the pure function's trace states it.
-- [ ] Mark-reviewed persists (`reviewedAt`); the diff banner counts only changes after
-      the newest `reviewedAt`.
-- [ ] With data tools enabled, the in-app agent answers "why is there a planned order
-      for ANT-PATCH-01?" using the planning reads (browser verification; READ-only —
-      an attempted write tool call is refused by classification).
+- [ ] With dry run on, an auto-convert workflow logs Skipped and creates nothing. With
+      dry run off and a cap of 2, a run with 5 matches converts 2 and queues 3. Pause
+      stops the operation.
+- [ ] `pnpm run check:workflow-catalog` is green.
+- [ ] The digest reaches the planner. Low-confidence actions never notify.
+- [ ] The agent answers "why is there a planned order for ANT-PATCH-01?" from the pegs
+      and trace. The agent refuses a write tool call.
+- [ ] A steady history gives the hand-computed 13-week average. A history with CV above
+      0.8 gives the refusal and the sparkline.
 
-**Programmable release + notifications**
+### Gates (every part)
 
-- [ ] A workflow on `plannedOrder.created` with conditions (orderType Buy, cost
-      threshold, release window) that calls `releasePlannedOrder` auto-releases the
-      fixture order (rails permitting) and is visible in workflow run history; the
-      diff-write prevents re-fires on unchanged regens.
-- [ ] `planning.exceptionRaised` fires when an order transitions into PastDue on a
-      fixture; catalog check (`pnpm run check:workflow-catalog`) is green.
-- [ ] A `PlanningExceptions` digest reaches the planner (InApp) when new
-      normal-confidence exceptions or overloaded buckets appear; low-confidence
-      messages never notify.
-
-**Suggested projections**
-
-- [ ] `getSuggestedDemandProjection` matches a hand-computed trailing-13-week average
-      on steady fixture history; applying a suggestion writes `demandProjection` rows
-      with `forecastMethod='suggested'` and populated `confidence`; the next run
-      consumes them like any projection.
-- [ ] On a lumpy fixture (CV > `SUGGESTION_MAX_CV`), the service returns the refusal
-      and the UI shows the sparkline + "too irregular" state, with no number.
-
-**Gates**
-
-- [ ] `pnpm --filter @carbon/ee test` (engine + readiness + RCCP + what-if +
-      lot-sizing) and `pnpm --filter @carbon/utils test` green; scoped ERP + jobs
-      typecheck green; `pnpm run generate:types` committed; catalog + MCP metadata
-      regenerated.
-- [ ] Browser: worklist (live banner, diff banner, capacity strip, readiness link,
-      one-click release, stable-under-regen behavior), cascade tree (incl. the
-      cross-team handoff), time-phased matrix, drawer (trace, confidence note,
-      firm/release, mark-reviewed), readiness panel, CTP panel, automation settings,
-      and suggested projections render for the satellite dataset; Release/Firm/batch-
-      release work end-to-end.
+- [ ] `pnpm --filter @carbon/planning test`, `pnpm --filter @carbon/utils test` and
+      `pnpm --filter @carbon/ee test` are green.
+- [ ] The scoped ERP and jobs typecheck is green. `pnpm run generate:types` output is
+      committed.
+- [ ] `pnpm db:check:datasets` and `pnpm db:check:backups` pass.
+- [ ] Browser check on the satellite dataset for the part's UI.
+- [ ] The glossary has "Planned Order", "Firm" (with the Dynamics 365 note) and
+      "Convert".
 
 ## Risks
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Continuous regen churns the near-term plan ("nervousness") | Med-High | The planning time fence auto-firms inside the horizon; the worklist never re-renders under the user (§9b) — churn reaches sessions only as a banner; the diff banner makes it visible and attributed; debounce 30 s + concurrency 1/company caps run frequency. |
-| Confidence gating hides a real problem behind a "low confidence" badge | Med | Nothing is deleted — the "All messages" view shows everything, badged with the reason; the readiness panel actively drives fixing the inputs that cause gating; gating criteria are few, explicit, and deterministic. |
-| Regen ↔ workflow event feedback loop (a workflow's release triggers a regen which fires events…) | Med | Release/firm are terminal for the row (Firm/Released rows are never regenerated); watch columns are limited (and exclude the regen-flipped flags); the diff-write emits nothing for unchanged rows; the §9f cap bounds any loop's blast radius. Add a loop test: auto-release workflow + regen converges in one cycle. |
-| RCCP over/under-states load (no sequencing, no labor gating) | Med | It is rough-cut by design and labeled so in the UI; bucket attribution keeps a miss localized to one row; it uses the same ladder windows and reservation hours as the scheduler, so the direction is right. Finite scenario scheduling is the deferred upgrade path. |
-| CTP promise date read as a guarantee | Med | The assumption list is part of the API result and rendered verbatim; the label is "plan-based promise" everywhere; post-release the expedite what-if gives the finite answer. |
-| Lot-sizing drift between the TS fn and SQL `calculate_quantity_to_order` | Med | One pure fn + parity test over a fixture matrix; TS is canonical, SQL is the mirror; §9h shrinks the SQL path to no-plan rows only. |
-| Behavior change: "Make" no longer instantly creates a job | Low-Med | §9a: one-click Release from the row IS the old behavior for warning-free orders; the drawer only interposes when the system has something to say. Release notes cover the status chip. |
-| Plan row-count explosion (every BOM level of every item) | Med | Default filters (normal-confidence action rows), pagination; the peg tree is opt-in drill-down; diff-write keeps table growth bounded (rows are reused, not re-minted). |
-| Scheduler interaction (MRP recommends, scheduler owns job dates) | Med-High | Hard boundary: MRP writes planned-order dates only; job reschedules route through `notifyScheduleInputsChanged`/`updateJobOperationDueDate`; integration test covers the loop (MRP Delay message → apply → wave regen → next run sees new `projectedCompletionAt`). |
-| Netting on `projectedCompletionAt` makes MRP output depend on scheduler freshness | Med | Fallback to `dueDate` when no projection; the scheduler's own event-driven wave + nightly replan keep projections fresh; `planningRun` records staleness cause if needed. |
-| Customer automation misfires (bad rule, fat-fingered forecast) | Med | §9f: dry-run default ON, per-run cap, instant pause, daily ledger. Worst case with defaults is a log entry, not a purchase. |
-| Agent data exposure | Low-Med | The direct executor already enforces READ classification + blocklist; planning reads are read-only; no write tools are exposed in v1. |
-| Migrating off `supplyForecast` breaks the grid mid-flight | Med | Sequence: land `plannedOrder` + engine + grid read first; remove `supplyForecast` writes/delete last, same PR series. |
-| Performance of the fused sweep + RCCP + readiness at scale | Low-Med | The 8M-row tenant runs in ~0.3 s today; RCCP and readiness are O(orders × ops) / O(items) over in-memory data; batch writes (500/chunk) as Phase-7 does; the findings doc's benchmark harness re-verifies. |
-| Cycle handling regressions | Low | Reuse the existing cycle-as-leaf logic (`mrp-engine.ts:189-211`) unchanged; keep its regression tests. |
+| Planned and Planned job read as the same thing | Med | The Terms table, the glossary entries, and status chips that say "Planned order" in full on the worklist. |
+| Regeneration churns near-term orders | Med-High | The fence holds them. 2b adds the stable worklist and the change banner. |
+| Peg volume grows with every run | Med | `diffPegs` supersedes only changed pegs. An unchanged run writes nothing. |
+| `projectPeg` changes break planning groups | Med | The CHECK keeps the group rule. The planning-group tests run in the 2a gate. |
+| Lot-sizing drift between TS and SQL | Med | One TS function and the parity test. §2a.8 shrinks the SQL path to no-plan rows. |
+| The plan and the converted job disagree | Med | Scrap uses the job rule. Convert shows the make-method difference. |
+| Row count grows (every level of every item) | Med | Default filters, paging, and the natural key reuses rows. |
+| MRP and the scheduler fight over job dates (2b) | Med-High | MRP recommends only. Job date changes go through `updateJob` and `notifyScheduleInputsChanged`. A loop test covers it. |
+| MRP output depends on scheduler freshness (2b) | Med | Fall back to the due date. The scheduler's own wave and nightly replan keep projections fresh. |
+| Confidence gating hides a real problem (2b) | Med | Nothing is deleted. "All messages" shows every action. The readiness panel drives the fix. |
+| Capable-to-promise read as a guarantee (2b) | Med | The assumptions are part of the result. The label says "plan-based" everywhere. |
+| Automation misfires (2c) | Med | Dry run on by default, a cap, a pause and a daily ledger. |
+| Workflow and regeneration feed each other (2c) | Med | Converted rows never regenerate. The watch list excludes regenerated flags. A loop test converges in one cycle. |
+| Removing `supplyForecast` breaks the grid mid-change | Med | Land `plannedOrder`, the engine and the grid read first. Remove the `supplyForecast` writes last, in the same PR series. |
 
-## Deferred (explicitly post-v1)
+## Deferred
 
-- **Scenario finite scheduling of planned orders** — simulate the released plan
-  through the full scheduling engine under `capacityReservation.scenarioId` (the
-  column is already reserved for this). RCCP is the v1 capacity answer.
-- **Planned Transfer generation (DRP)** — the `'Transfer'` enum value is reserved and
-  `warehouseTransfer` is the release target, but multi-location netting logic is its
-  own spec.
-- **Statistical forecasting beyond trailing average** (seasonality, Croston for
-  intermittent demand — the principled answer to the CV-gate refusals) — the
-  suggested-projection plumbing is the v1 foundation.
-- **Unified make+buy plan page** — two cross-linked pages in v1, bridged by the §9g
-  handoff.
-- **Retiring the SQL live grid** (`calculate_quantity_to_order` + week-column RPCs) —
-  §9h already shrinks it to no-plan rows; full retirement once the planned-order
-  surfaces have fully taken over.
+Each item below is out of Phase 2. Pick one up as its own spec or as a later phase.
+"Depends on" names the part that must ship first.
+
+| # | Item | Why deferred | Depends on | Start from |
+|---|------|--------------|------------|------------|
+| D1 | **Scenario planning.** Saved, named scenarios that change the inputs (demand +20%, quotes as won, a supplier 2 weeks late, an added shift, a new lead time). Each scenario runs MRP and rough-cut capacity on its own copy. The UI compares it with the live plan (extra orders, cost, overloaded weeks, late sales orders). An optional step applies the scenario to the live plan. | Phase 2b's one-line what-if covers the urgent question. Saved scenarios need their own data model and research. | 2b (what-if and rough-cut capacity) | Research SAP pMRP simulation, Dynamics 365 multiple master plans and Oracle plan copies. Reuse `planCompany` (pure) with changed inputs. Follow the scenario rules in `.ai/specs/implemented/2026-08-12-forecast-first-finite-scheduling.md` §7. |
+| D2 | **Scenario finite scheduling.** Run the planned orders through the full finite scheduler, stored under `capacityReservation.scenarioId`. | Rough-cut capacity is the Phase 2 answer. | 2b, and D1 for the scenario model | `capacityReservation.scenarioId` (reserved, unused). The bracket scenarios in the finite-scheduling spec §7. |
+| D3 | **Partial conversion** of a planned order. | Editing the quantity before Convert covers it. | 2a | SAP partial conversion: the remainder stays Firm with its dependent demand (`.ai/research/mrp-v2-phase-2-planned-orders.md`). |
+| D4 | **A per-component "plan in common" switch** under a project parent. | `allowCommonSupplyForProjects` covers drawing common surplus. Planning a component in the common segment is a new rule. | 2a | SAP collective requirements on the BOM item; Oracle "Allow Use of Common Supplies"; Dynamics 365 BOM line types (research file, pattern 8). |
+| D5 | **Planned transfers** between locations. | Multi-location netting is its own design. | 2a | `'Transfer'` is reserved in `plannedOrderType`. `warehouseTransfer` is the conversion target. |
+| D6 | **A demand time fence.** Inside it, MRP ignores forecast and counts only real orders. | Forecast consumption covers most of the need. | 2a | Oracle and NetSuite demand fences (research file, question 3). |
+| D7 | **Statistical forecasting** beyond the trailing average (seasonality, Croston for irregular demand). | The 2c average and its refusal come first. | 2c | `getSuggestedDemandProjection` and its CV refusal. |
+| D8 | **A unified make and buy plan page.** | Two cross-linked pages work for Phase 2. | 2b (cascade tree) | The two planning routes and the cascade tree. |
+| D9 | **Retiring the SQL grid** (`calculate_quantity_to_order` and the week-column RPCs). | §2a.8 already limits it to items with no planned order. | 2a and 2b, in use for a while | §2a.8. Remove the SQL twin and its parity test together. |
 
 ## Open Questions
 
-> All resolved 2026-08-22 (Brad accepted the recommendations). Kept as the decision
-> record.
->
-> **Note (2026-09-08):** the questions in this section belong to the **Phase 2+** vision.
-> **Phase 1's** open questions and their resolutions live in **§P1.11**.
+> All resolved. The record below gives the current answer to each question.
 
-- [x] **Materialize-on-release vs keep materialize-on-Make?** — **Resolved: true
-      planned-order layer.** Real `job`/PO created only on Release; Planned orders are
-      disposable. Removes the `supplyForecast` wipe.
-- [x] **Buy planned orders in v1?** — **Resolved: include Buy.** Pegging is incomplete
-      without it.
-- [x] **Make/Buy: unified plan page or two cross-linked pages?** — **Resolved: two
-      pages for v1, cross-linked** in the cascade tree.
-- [x] **Retire the live SQL grid recompute?** — **Resolved: keep in v1**, bounded by
-      the §9h coherence rule.
-- [x] **Firm-order editability** — **Resolved: editable qty/date** (Firm = "I own this
-      order").
-- [x] **Reorder-policy netting parity** — **Resolved: the parity fixture matrix is the
-      acceptance gate.**
-
-### Raised by the research pass — resolved 2026-08-22 (robust v1: all included)
-
-- [x] **Planning time fence / auto-firm** — **Resolved: full auto-firm in v1**,
-      evaluated on release date, `firmedBy='system'`. Placement revised 2026-08-22
-      (Brad): `itemPlanning.planningTimeFenceDays` per-item override +
-      `location.planningTimeFenceDays` default, matching the enterprise per-item
-      standard and `itemPlanning`'s existing planning-behavior field family.
-- [x] **Action messages on real open jobs/POs** — **Resolved: in v1**, with the
-      scheduler-interaction path via `notifyScheduleInputsChanged`.
-- [x] **Period-of-supply / POQ lot-sizing** — **Resolved: in v1** (TS-only fifth
-      policy).
-- [x] **Worklist quality-of-life** — **Resolved: all in v1** (mark-reviewed,
-      batch-release, exception notifications).
-
-### Raised by the game-changer review — resolved 2026-08-22 (Brad: build these in v1)
-
-- [x] **Continuous event-driven regen vs cron-only?** — **Resolved: continuous in
-      v1.** `carbon/planning.inputs.changed` + MARK/WAVE (stamp + debounce 30 s +
-      concurrency 1/company), cron demoted to backstop. Justified by the measured
-      ~0.3–0.5 s full-company run.
-- [x] **Net open-job supply at due date or projected completion?** — **Resolved:
-      `projectedCompletionAt` (fallback `dueDate`).** Dual dates exist on this branch;
-      simulation-derived Delay/Expedite messages are the point.
-- [x] **Capacity in v1: none, rough-cut, or full scenario scheduling?** — **Resolved:
-      rough-cut in v1**; scenario engine deferred.
-- [x] **What-if/CTP in v1?** — **Resolved: yes** — `runPlanningWhatIf`
-      (`persist: false`, plan delta + plan-based promise date), surfaced on quote/SO
-      lines.
-- [x] **Delete-recreate vs diff-write regen?** — **Resolved: diff-write on a
-      deterministic natural key** — required by idempotency, plan diffing,
-      workflow-trigger hygiene, and optimistic concurrency simultaneously.
-- [x] **Peg sources** — **Resolved: add `jobId`** (job-material demand, mirroring
-      `demandForecastSource`); five-way exactly-one CHECK.
-- [x] **Transfer order type** — **Resolved: reserve `'Transfer'` in the enum now;
-      generation deferred.**
-- [x] **Date math** — **Resolved: working-day offsets over the availability ladder**,
-      shared with the scheduler's need-by calculator; never naive day subtraction.
-- [x] **Explainability scope** — **Resolved: trace + pegs + diff banner in v1;
-      agent data tools enabled in v1** (mechanism already built, READ-only enforced).
-- [x] **Workflow integration scope** — **Resolved: `plannedOrder` trigger entity +
-      `planning.exceptionRaised` moment + release/firm operations in v1.**
-- [x] **Suggested demand projections in v1?** — **Resolved: yes, trailing-average
-      suggestions, planner-applied**; statistical models deferred.
-
-### Raised by the annoyance review — resolved 2026-08-22 (Brad: implement the fixes)
-
-- [x] **Does the review lifecycle tax the old one-click flow?** — **Resolved:
-      one-click Release from the row is the primary action**; the draft drawer
-      interposes only on warnings; Firm is entered via a plain-language lock prompt.
-- [x] **Does the live plan move under the planner?** — **Resolved: no live
-      revalidation on the worklist.** `planningRun`/`planningState` watcher banner +
-      explicit Refresh; per-row optimistic concurrency with explicit reconciliation
-      on batch ops.
-- [x] **How do we avoid the day-one wall of red?** — **Resolved: confidence-gated
-      exceptions + the planning readiness panel.** Low-confidence messages are
-      excluded from defaults and digests, never deleted.
-- [x] **Order-attributed vs bucket-attributed overload?** — **Resolved: bucket.**
-      One exception per (work center, week) in `loadSummary`; orders carry only a
-      secondary `capacityConstrained` badge; `'Overload'` removed from the exception
-      enum.
-- [x] **Auto-firm zombie orders?** — **Resolved: `firmedBy` provenance + Cancel
-      exception on orphaned Firm rows + one-click return-to-planning sweep**
-      (system-firmed by default).
-- [x] **Automation blast radius?** — **Resolved: company-level pause / dry-run
-      (default ON) / per-run cap + daily autopilot ledger.**
-- [x] **Cascade release across the make/buy permission boundary?** — **Resolved:
-      firm the chain, release the permitted side, notify the counterpart**
-      (`PlannedOrdersAwaitingRelease`).
-- [x] **Two numbers during the debounce window?** — **Resolved: grid reads the
-      planned order when one exists; live SQL only for no-plan rows; shared "Plan
-      updating…" indicator from `planningState`.**
-- [x] **Bad suggestions on lumpy demand?** — **Resolved: CV gate refuses with the
-      sparkline** instead of suggesting; Croston-class models deferred.
-- [x] **CTP over-trust?** — **Resolved: the assumption list is part of the API
-      result and rendered verbatim; "plan-based" label everywhere.**
+- [x] **Materialize on plan or on conversion?** — A true planned-order layer. A real job
+      or PO exists only after Convert. Planned orders are disposable.
+- [x] **Buy planned orders?** — Yes. Pegging needs them.
+- [x] **One plan page or two?** — Two, cross-linked in the cascade tree (2b).
+- [x] **Retire the SQL grid?** — No. It fills only items with no planned order.
+- [x] **Can a Firm order be edited?** — Yes. Firm means "a person owns this order".
+- [x] **Split Phase 2?** — Yes: 2a, 2b, 2c, as in the table at the top.
+- [x] **Reuse Phase 1 code or write new functions?** — Reuse `computePlanningOrders`,
+      `deriveChangeActions`, `planningAction`, `projectPeg` and
+      `runQuoteLeadTimeWhatIf`.
+- [x] **Store fence firming or compute it?** — Compute it on each run. Only a person
+      firms an order.
+- [x] **A new need inside the fence?** — Plan it at the fence end and raise Expedite.
+- [x] **A fence-held order with no demand?** — Keep it and raise Cancel.
+- [x] **Components at conversion?** — Read the make method again and show a difference.
+- [x] **Where do pegs live?** — In `projectPeg`, extended.
+- [x] **A demand time fence?** — Not in Phase 2.
+- [x] **Scrap in planned orders?** — Yes, with the `computeJobQuantities` rule.
+- [x] **The word for planned order → document?** — Convert. Release stays the Phase 1
+      action on a Planned job or PO.
+- [x] **Which date does the fence test?** — The release date, in working days.
+- [x] **Action messages on real open jobs and POs?** — Yes, through the Phase 1
+      `deriveChangeActions`.
+- [x] **Live replanning or cron only?** — Live in 2b. The cron stays as backstop.
+- [x] **Open-job supply at the due date or the projected finish?** — The projected
+      finish in 2b, else the due date.
+- [x] **Capacity: none, rough-cut or finite?** — Rough-cut in 2b. Finite scenario
+      scheduling is deferred.
+- [x] **Capable-to-promise?** — Yes, in 2b, on `runQuoteLeadTimeWhatIf`.
+- [x] **Delete-and-recreate or diff-write?** — Diff-write on a natural key.
+- [x] **Transfer orders?** — Reserve the enum value. Generate nothing.
+- [x] **Date math?** — Working days over the location calendar.
+- [x] **Explainability?** — Trace and pegs in 2a. Change banner in 2b. Agent in 2c.
+- [x] **Workflow integration?** — 2c, inside the automation rails.
+- [x] **Suggested demand projections?** — 2c, with the irregular-demand refusal.
+- [x] **Period of Supply lot-sizing?** — 2c, TS only.
+- [x] **Does the review lifecycle slow the old one-click flow?** — No. The row button
+      still says Make or Order and converts in one click.
+- [x] **Does the live plan move under the planner?** — No. 2b uses a banner and an
+      explicit Refresh.
+- [x] **How do we avoid a wall of red on day one?** — 2b confidence gating and the
+      readiness panel.
+- [x] **Capacity per order or per bucket?** — Per (work center, week) bucket.
+- [x] **Automation blast radius?** — 2c pause, dry run (on by default), cap and ledger.
+- [x] **A chain that crosses the make/buy permission boundary?** — Firm the chain,
+      convert the permitted side, notify the other team (2b).
+- [x] **Two numbers during the debounce window?** — 2a: the grid reads the planned
+      order. 2b: one "Plan updating…" indicator.
+- [x] **Capable-to-promise over-trust?** — The assumptions are part of the result.
 
 ## Changelog
 
@@ -1722,3 +1547,11 @@ except `api+/planning.what-if.ts`.
   planning horizon / time fence (`.ai/plans/2026-10-01-planning-horizon.md`) and a
   company-chosen daily MRP run time. Phases 2+ are unchanged and not started, so this
   spec stays out of `implemented/`.
+- **2026-11-14**: Phase 2 rewritten from `.ai/research/mrp-v2-phase-2-planned-orders.md`
+  and the code on `main`. Split into 2a/2b/2c. Decisions: reuse `computePlanningOrders`,
+  `deriveChangeActions`, `planningAction`, `projectPeg` and `runQuoteLeadTimeWhatIf`;
+  fence firming computed per run (no `firmedBy='system'`, no orphan sweep); new need
+  inside the fence planned at the fence end with Expedite; "Convert" replaces "Release"
+  for planned order → document; conversion reads the make method again; scrap with the
+  `computeJobQuantities` rule; netting segments, Consume First, configured BOMs and
+  Phase 1 sizing rules respected; no demand time fence.
