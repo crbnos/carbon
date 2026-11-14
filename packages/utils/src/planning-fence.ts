@@ -46,3 +46,27 @@ export function isPlannedOrderHeld(
     ) <= 0
   );
 }
+
+/**
+ * The week a planned order counts in, as supply and in its week's Order or
+ * Make action: an overdue order (due before today) counts in the first week;
+ * otherwise the week that holds its due date; past the last week, none
+ * (null). `weeks` are consecutive and the first holds today. The MRP engine,
+ * the planning drawers and the conversion all use this one rule, so an order
+ * is offered in the same week its action counts it.
+ */
+export function plannedOrderWeekIndex(
+  dueDate: string,
+  weeks: { startDate: string; endDate: string }[],
+  todayDate: string
+): number | null {
+  const due = parseDate(dueDate);
+  if (weeks.length === 0) return null;
+  if (due.compare(parseDate(todayDate)) < 0) return 0;
+  const index = weeks.findIndex(
+    (week) =>
+      parseDate(week.startDate).compare(due) <= 0 &&
+      parseDate(week.endDate).compare(due) >= 0
+  );
+  return index < 0 ? null : index;
+}

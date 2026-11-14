@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isPlannedOrderHeld,
+  plannedOrderWeekIndex,
   planningTimeFenceDate,
   resolvePlanningTimeFenceDays
 } from "./planning-fence";
@@ -64,5 +65,25 @@ describe("isPlannedOrderHeld", () => {
         today
       )
     ).toBe(false);
+  });
+});
+
+describe("plannedOrderWeekIndex", () => {
+  const today = "2026-11-14";
+  const weeks = [
+    { startDate: "2026-11-08", endDate: "2026-11-14" },
+    { startDate: "2026-11-15", endDate: "2026-11-21" }
+  ];
+  it.each([
+    ["2026-10-01", 0],
+    ["2026-11-14", 0],
+    ["2026-11-15", 1],
+    ["2026-11-21", 1],
+    ["2026-11-22", null]
+  ])("a due date of %s counts in week %s", (dueDate, expected) => {
+    expect(plannedOrderWeekIndex(dueDate, weeks, today)).toBe(expected);
+  });
+  it("counts in no week when there are no weeks", () => {
+    expect(plannedOrderWeekIndex("2026-11-14", [], today)).toBe(null);
   });
 });
