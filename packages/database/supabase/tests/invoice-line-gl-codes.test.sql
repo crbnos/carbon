@@ -23,7 +23,9 @@ DECLARE
   purchase_invoice_a text;
   revenue_a text;
   revenue_b text;
+  revenue_default text;
   expense_a text;
+  default_values jsonb;
   user_id text := gen_random_uuid()::text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy")
@@ -49,8 +51,22 @@ BEGIN
     VALUES ('4100', 'Revenue B', 'Revenue', 'Income Statement', group_id, 'system')
     RETURNING id INTO revenue_b;
   INSERT INTO account (number, name, class, "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('4200', 'Default Sales', 'Revenue', 'Income Statement', group_id, 'system')
+    RETURNING id INTO revenue_default;
+  INSERT INTO account (number, name, class, "incomeBalance", "companyGroupId", "createdBy")
     VALUES ('5000', 'Expense A', 'Expense', 'Income Statement', group_id, 'system')
     RETURNING id INTO expense_a;
+
+  -- Fill the unrelated required defaults with a same-group account. The
+  -- lookup under test reads only salesAccount.
+  SELECT jsonb_object_agg(attname, revenue_default)
+    INTO default_values
+    FROM pg_attribute
+    WHERE attrelid = 'public."accountDefault"'::regclass
+      AND attnum > 0 AND NOT attisdropped AND attnotnull;
+  default_values := default_values || jsonb_build_object('companyId', company_a);
+  INSERT INTO "accountDefault"
+    SELECT (jsonb_populate_record(NULL::"accountDefault", default_values)).*;
 
   INSERT INTO "salesInvoice" ("invoiceId", "customerId", "currencyCode",
       "exchangeRate", "companyId", "createdBy", status)
@@ -87,8 +103,8 @@ BEGIN
   SET LOCAL ROLE authenticated;
 
   ASSERT (SELECT "glCodes" FROM public.get_invoice_line_gl_codes(
-    company_a, 'sales', ARRAY[sales_invoice_a])) = '4000, 4100',
-    'Sales codes are distinct, sorted, and omit unassigned lines';
+    company_a, 'sales', ARRAY[sales_invoice_a])) = '4000, 4100, 4200',
+    'Sales codes are distinct, sorted, and use the default for ordinary unassigned lines';
   ASSERT (SELECT "glCodes" FROM public.get_invoice_line_gl_codes(
     company_a, 'purchase', ARRAY[purchase_invoice_a])) = '5000',
     'Purchase codes come from its lines';

@@ -2,7 +2,7 @@
 -- Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 -- including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
--- A user with invoicing access can see the account numbers assigned to that
+-- A user with invoicing access can see the account numbers used by that
 -- company's invoice lines without needing chart-of-accounts access.
 CREATE OR REPLACE FUNCTION public.get_invoice_line_gl_codes(
   company_id text,
@@ -23,8 +23,18 @@ BEGIN
 
   RETURN QUERY
   WITH invoice_lines AS (
-    SELECT line."invoiceId", line."accountId"
+    SELECT line."invoiceId",
+      COALESCE(line."accountId", CASE
+        WHEN line."invoiceLineType" <> 'Comment'
+          AND line."customerContractLineId" IS NULL
+          AND line."rentalAgreementId" IS NULL
+          AND line."serviceJobId" IS NULL
+          AND line."serviceStartDate" IS NULL
+          AND line."serviceEndDate" IS NULL
+        THEN defaults."salesAccount"
+      END) AS "accountId"
     FROM "salesInvoiceLine" line
+    LEFT JOIN "accountDefault" defaults ON defaults."companyId" = line."companyId"
     WHERE invoice_type = 'sales'
       AND line."companyId" = company_id
       AND line."invoiceId" = ANY(invoice_ids)
