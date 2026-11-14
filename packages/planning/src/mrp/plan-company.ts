@@ -1086,7 +1086,6 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     groupSegments,
     ...(plannedSupply
       ? {
-          periodStartDates: input.periods.map((p) => p.startDate),
           planSupply: plannedSupply.planSupply,
           extraPlanningKeys: plannedSupply.extraPlanningKeys,
           scrapRateByItem: new Map(input.plannedOrderInputs?.scrapRateByItem)

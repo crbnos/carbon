@@ -104,12 +104,19 @@ export async function action(args: ActionFunctionArgs) {
         assignee: form.assignee ?? undefined
       });
     case "firmPlannedOrder":
-      return planning.firmPlannedOrder({ id: form.id });
+      return planning.firmPlannedOrder({
+        id: form.id,
+        locationId: form.locationId
+      });
     case "unfirmPlannedOrder":
-      return planning.unfirmPlannedOrder({ id: form.id });
+      return planning.unfirmPlannedOrder({
+        id: form.id,
+        locationId: form.locationId
+      });
     case "updatePlannedOrder":
       return planning.updatePlannedOrder({
         id: form.id,
+        locationId: form.locationId,
         quantity: form.quantity,
         dueDate: form.dueDate
       });

@@ -13256,26 +13256,29 @@ async function readConversionCalendar(
 /** A planned order as a person's change reads it. */
 export type PlannedOrderForChange = {
   id: string;
+  locationId: string;
   orderType: "Make" | "Buy" | "Transfer";
   status: "Planned" | "Firm" | "Converted";
 };
 
 /**
- * Read one planned order of this company for a person's change (firm,
- * unfirm, edit) and check that the caller may change it. The order type
+ * Read one planned order of this company at `locationId` for a person's
+ * change (firm, unfirm, edit) and check that the caller may change it. An
+ * order at another location is a conflict, as `readPlanningJob`. The order type
  * decides the permission: a Make planned order needs `update: production`, a
  * Buy planned order `update: purchasing`. A Converted row is refused, because
  * its job or PO line is the order now.
  */
 export async function readPlannedOrderForChange(
   ctx: ServiceContext,
-  id: string
+  id: string,
+  locationId: string
 ): Promise<PlannedOrderForChange | CarbonError> {
   let row: PlannedOrderForChange | undefined;
   try {
     row = await ctx.asSystem.pg
       .selectFrom("plannedOrder")
-      .select(["id", "orderType", "status"])
+      .select(["id", "locationId", "orderType", "status"])
       .where("id", "=", id)
       .where("companyId", "=", ctx.company.id)
       .executeTakeFirst();
@@ -13283,6 +13286,10 @@ export async function readPlannedOrderForChange(
     return ctx.error("internal", "Failed to read the planned order", err);
   }
   if (!row) return ctx.error("notFound", "Planned order not found");
+  // The drawer lists one location's planned orders.
+  if (row.locationId !== locationId) {
+    return ctx.error("conflict", "This planned order is for another location.");
+  }
   if (row.orderType === "Transfer") {
     return ctx.error("rule", "A Transfer planned order cannot be changed");
   }

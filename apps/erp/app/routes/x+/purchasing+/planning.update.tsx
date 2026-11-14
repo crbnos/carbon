@@ -98,15 +98,24 @@ export async function action(args: ActionFunctionArgs) {
     // Planned orders are production's operations; a Buy one needs
     // `update: purchasing`, which the operation checks.
     case "firmPlannedOrder":
-      return respond(await api.production.firmPlannedOrder({ id: request.id }));
+      return respond(
+        await api.production.firmPlannedOrder({
+          id: request.id,
+          locationId: request.locationId
+        })
+      );
     case "unfirmPlannedOrder":
       return respond(
-        await api.production.unfirmPlannedOrder({ id: request.id })
+        await api.production.unfirmPlannedOrder({
+          id: request.id,
+          locationId: request.locationId
+        })
       );
     case "updatePlannedOrder":
       return respond(
         await api.production.updatePlannedOrder({
           id: request.id,
+          locationId: request.locationId,
           quantity: request.quantity,
           dueDate: request.dueDate
         })

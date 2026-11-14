@@ -101,11 +101,6 @@ export type BomExplosionInput = {
    */
   groupSegments?: ReadonlySet<string>;
   /**
-   * MRP v2: the start date (YYYY-MM-DD) of each period, in `periods` order,
-   * for a `planSupply` hook that dates its orders. The engine does not read it.
-   */
-  periodStartDates?: string[];
-  /**
    * MRP v2: plans the new supply of one common key (no Consume First
    * redirect). Called once per key, when its gross demand is complete. The
    * returned explosions replace the explosion of the raw net requirement.

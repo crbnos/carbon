@@ -103,8 +103,14 @@ export function isPlannedOrderEditable(status: string | null | undefined) {
   );
 }
 
-/** Firm or unfirm one planned order. */
-export const plannedOrderIdValidator = z.object({ id: z.string().min(1) });
+/**
+ * Firm or unfirm one planned order. `locationId` is the drawer's location: an
+ * order at another location is refused.
+ */
+export const plannedOrderIdValidator = z.object({
+  id: z.string().min(1),
+  locationId: z.string().min(1)
+});
 
 /**
  * Edit one planned order's quantity or due date. The edit firms the row; a
@@ -112,6 +118,7 @@ export const plannedOrderIdValidator = z.object({ id: z.string().min(1) });
  */
 export const updatePlannedOrderValidator = z.object({
   id: z.string().min(1),
+  locationId: z.string().min(1),
   quantity: z.number().positive().optional(),
   dueDate: z
     .string()

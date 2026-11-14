@@ -8,7 +8,7 @@ import {
   plannedOrderWeekIndex,
   planningTimeFenceDate,
   resolvePlanningTimeFenceDays
-} from "./planning-fence";
+} from "./planning-time-fence";
 
 describe("resolvePlanningTimeFenceDays", () => {
   it.each([

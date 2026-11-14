@@ -739,7 +739,7 @@ export const itemPlanningValidator = z
     minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
     maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
     orderMultiple: zfd.numeric(z.number().min(1)).optional(),
-    // The planning horizon (time fence) in days from today: the planning grids
+    // The planning horizon in days from today: the planning grids
     // surface only the actions and suggested orders that fall inside it. Empty
     // = inherit the company default, else no fence; 0 = no fence for this item
     // even when the company has a default.

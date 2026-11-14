@@ -205,13 +205,19 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
     async () => {
       const id = await plannedOrder("firm");
 
-      const firmed = await firmPlannedOrder(service, { id });
+      const firmed = await firmPlannedOrder(service, {
+        id,
+        locationId: f.locationId
+      });
       expect(firmed.error).toBeNull();
       const afterFirm = await read(id);
       expect(afterFirm).toMatchObject({ status: "Firm", firmedBy: USER });
       expect(afterFirm?.firmedAt).not.toBeNull();
 
-      const unfirmed = await unfirmPlannedOrder(service, { id });
+      const unfirmed = await unfirmPlannedOrder(service, {
+        id,
+        locationId: f.locationId
+      });
       expect(unfirmed.error).toBeNull();
       expect(await read(id)).toMatchObject({
         status: "Planned",
@@ -230,7 +236,10 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
       // first one was Firm
       await plannedOrder("mrp");
 
-      const unfirmed = await unfirmPlannedOrder(service, { id: firm });
+      const unfirmed = await unfirmPlannedOrder(service, {
+        id: firm,
+        locationId: f.locationId
+      });
       expect(unfirmed.error).toBeNull();
       expect(await read(firm)).toMatchObject({
         status: "Planned",
@@ -246,6 +255,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
 
       const result = await updatePlannedOrder(service, {
         id,
+        locationId: f.locationId,
         quantity: 12,
         dueDate: "2297-01-12"
       });
@@ -262,11 +272,33 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
   );
 
   databaseTest(
+    "a planned order at another location is refused and left as it is",
+    async () => {
+      const id = await plannedOrder("other-location");
+      const elsewhere = { id, locationId: f.otherLocationId };
+
+      for (const result of [
+        await firmPlannedOrder(service, elsewhere),
+        await unfirmPlannedOrder(service, elsewhere),
+        await updatePlannedOrder(service, { ...elsewhere, quantity: 12 })
+      ]) {
+        expect(result.error).toMatchObject({ category: "conflict" });
+      }
+      expect(await read(id)).toMatchObject({
+        status: "Planned",
+        quantity: 10,
+        firmedBy: null
+      });
+    }
+  );
+
+  databaseTest(
     "a moved due date moves the order to the week that holds it",
     async () => {
       const moved = await plannedOrder("next-week");
       const result = await updatePlannedOrder(service, {
         id: moved,
+        locationId: f.locationId,
         dueDate: "2297-01-10"
       });
       expect(result.error).toBeNull();
@@ -279,6 +311,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
       const kept = await plannedOrder("no-week", { splitIndex: 1 });
       const outside = await updatePlannedOrder(service, {
         id: kept,
+        locationId: f.locationId,
         quantity: 15,
         dueDate: "2297-03-01"
       });
@@ -295,7 +328,11 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
 
       // a quantity edit alone leaves the week as it is
       const sized = await plannedOrder("quantity-only", { splitIndex: 2 });
-      await updatePlannedOrder(service, { id: sized, quantity: 20 });
+      await updatePlannedOrder(service, {
+        id: sized,
+        locationId: f.locationId,
+        quantity: 20
+      });
       expect(await read(sized)).toMatchObject({ quantity: 20, periodId: week });
     }
   );
@@ -397,7 +434,10 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         jobId: await job("converted")
       });
 
-      const firmed = await firmPlannedOrder(service, { id });
+      const firmed = await firmPlannedOrder(service, {
+        id,
+        locationId: f.locationId
+      });
       expect(firmed.error).toMatchObject({ category: "rule" });
 
       const actionId = await changeAction("Increase", id, { quantity: 15 });
@@ -440,11 +480,17 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         kv: () => ({}) as never
       });
 
-      const refused = await firmPlannedOrder(purchaser, { id: make });
+      const refused = await firmPlannedOrder(purchaser, {
+        id: make,
+        locationId: f.locationId
+      });
       expect(refused.error).toMatchObject({ category: "forbidden" });
       expect(await read(make)).toMatchObject({ status: "Planned" });
 
-      const allowed = await firmPlannedOrder(purchaser, { id: buy });
+      const allowed = await firmPlannedOrder(purchaser, {
+        id: buy,
+        locationId: f.locationId
+      });
       expect(allowed.error).toBeNull();
       expect(await read(buy)).toMatchObject({ status: "Firm" });
     }
@@ -573,6 +619,7 @@ describe.skipIf(!client)("a planned order change re-plans", () => {
 
       const edited = await updatePlannedOrder(planner("production"), {
         id: planned.id,
+        locationId: f.locationId,
         quantity: 8
       });
       expect(edited.error).toBeNull();

@@ -5395,8 +5395,8 @@ export const firmPlannedOrder = defineServiceFn({
   input: plannedOrderIdValidator,
   // The planned order's type decides the permission: the body checks it.
   permission: {},
-  async run(ctx, { id }) {
-    const order = await service.readPlannedOrderForChange(ctx, id);
+  async run(ctx, { id, locationId }) {
+    const order = await service.readPlannedOrderForChange(ctx, id, locationId);
     if (order instanceof CarbonError) return order;
     const done = {
       id,
@@ -5439,8 +5439,8 @@ export const unfirmPlannedOrder = defineServiceFn({
   input: plannedOrderIdValidator,
   // The planned order's type decides the permission: the body checks it.
   permission: {},
-  async run(ctx, { id }) {
-    const order = await service.readPlannedOrderForChange(ctx, id);
+  async run(ctx, { id, locationId }) {
+    const order = await service.readPlannedOrderForChange(ctx, id, locationId);
     if (order instanceof CarbonError) return order;
     const done = {
       id,
@@ -5484,11 +5484,11 @@ export const updatePlannedOrder = defineServiceFn({
   input: updatePlannedOrderValidator,
   // The planned order's type decides the permission: the body checks it.
   permission: {},
-  async run(ctx, { id, quantity, dueDate }) {
+  async run(ctx, { id, locationId, quantity, dueDate }) {
     if (quantity === undefined && dueDate === undefined) {
       return ctx.error("validation", "Change the quantity or the due date");
     }
-    const order = await service.readPlannedOrderForChange(ctx, id);
+    const order = await service.readPlannedOrderForChange(ctx, id, locationId);
     if (order instanceof CarbonError) return order;
     let changed: string[];
     try {
