@@ -102,7 +102,7 @@ ERP's settle / convert / firm / edit / apply included. `tryLockCompanyMrpRun` (`
 `runMrp` per company through `withCompanyMrpRunLock` (`src/mrp/run-lock.ts`): each try is its own short transaction
 (`pg_try_advisory_xact_lock`) that ends at once when refused, with 250 ms between tries, so a waiting run holds no
 connection; the granted try's transaction does nothing else and stays open for the whole run, while the run works on
-other connections. After 120 s of waiting the run goes ahead without the run lock (a warning); the planning lock and
+other connections. After 15 s of waiting the run goes ahead without the run lock (a warning); the planning lock and
 the planned-order snapshot checks still guard its writes. Lock order is always the run lock, then the planning lock; a person takes only the planning
 lock, so the two cannot deadlock (`mrp.write.test.ts`). `runMrp` reads the planned orders FIRST
 (`loadPlannedOrderSnapshot`: the database's `now()`, then the Planned and Firm rows), then the

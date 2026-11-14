@@ -16,8 +16,14 @@ import type { Kysely } from "kysely";
 
 /** The wait between two tries of the run lock. */
 export const RUN_LOCK_POLL_MS = 250;
-/** How long a run waits for the run lock before it runs without it. */
-export const RUN_LOCK_MAX_WAIT_MS = 120_000;
+/**
+ * How long a run waits for the run lock before it runs without it. Short on
+ * purpose: inline callers (job release, a PO status change, an item save)
+ * await their run, so a long queue would hold the request. Past the wait the
+ * snapshot checks under the planning lock still stop a run from overwriting
+ * a change; an overlap costs a retry, not correctness.
+ */
+export const RUN_LOCK_MAX_WAIT_MS = 15_000;
 
 export type RunLockOptions = {
   pollMs?: number;
