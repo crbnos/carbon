@@ -17,8 +17,9 @@ to plan materials.
   `pg`/Kysely, so it must never reach a browser bundle.
 - MUST reach shared DB logic through `@carbon/database` subpath barrels
   (types → `@carbon/database`, postgres → `@carbon/database/client`,
-  `explodeBom` → `@carbon/database/mrp-engine`, plus `./methods`,
-  `./fetch-all`, `./supersession-pick`). Date/time math comes from
+  `explodeBom` → `@carbon/database/mrp-engine`, the company planning lock →
+  `@carbon/database/planning-lock`, plus `./methods`, `./fetch-all`,
+  `./supersession-pick`). Date/time math comes from
   `@carbon/utils` (`datetime`); logging from `@carbon/logger`
   (`getLogger("planning", "mrp" | "schedule")`).
 

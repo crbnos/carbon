@@ -640,6 +640,21 @@ Then `explodeBom` explodes each explosion to the children of the key:
 A Buy planned order carries no scrap and explodes nothing. A "Buy and Make" item plans
 purchases, as in Phase 1.
 
+The raw-need path adds scrap too in an MRP run, because `runMrp` always passes
+`scrapRateByItem`. This path serves every Make key with no planned order, for example
+the project and planning-group segments and the Make to Order children. The rules are
+the same as for job creation (`computeJobQuantities`):
+
+1. The parent explodes its net requirement plus its own scrap.
+2. Each child adds its own scrap.
+3. A Make to Order child that is made adds no scrap there. It adds its scrap when its
+   own net requirement explodes.
+
+Before this change, a part under a Make to Order subassembly was short by the scrap
+of the subassembly. The scrap rates come from `itemReplenishment.scrapPercentage` of
+the items that have an `itemPlanning` row. Every other item has the rate 0. `getMethod`
+passes no rates, so it adds no scrap.
+
 Rules:
 
 - **Explode the explosion quantity.** This is the core fix. It follows SAP and
@@ -656,6 +671,10 @@ Rules:
   Phase 1 sizing rules stay: batch size, order multiple, `maximumPerOrder`, frozen
   orders (`isOrderFrozen`), and per-batch dating for Demand-Based Reorder (#1912). The
   SQL `calculate_quantity_to_order` does not change.
+- **A planned order is never frozen.** `isOrderFrozen` returns false for an open order
+  with a `plannedOrderId`. No document exists, so nothing is in production or on the
+  way. A Firm order due inside its lead time therefore still gets an Expedite or an
+  Increase.
 - **Dates are calendar days.** The release date is the due date less the lead time in
   calendar days (the `latestOrderDate` of the sizing). Working days move to 2b (§2b.7).
 - **Open-job supply keeps its current date.** `jobCompletionDate` (`supply-date.ts`)
@@ -738,6 +757,10 @@ location-wide fence. SAP, Oracle and Dynamics 365 all set the fence per item. Th
 fence is not `planningHorizonDays`, which is a display filter
 (`20261006130004_planning-horizon.sql`).
 
+One rule in `@carbon/utils` (`planning-fence.ts`) gives the fence days
+(`resolvePlanningTimeFenceDays`) and the hold (`isPlannedOrderHeld`). The engine and the
+drawer both call it, so the "Fence" marker always shows what MRP holds.
+
 A planned order is **held** in a run when one of these is true:
 
 1. Its status is Firm.
@@ -745,7 +768,8 @@ A planned order is **held** in a run when one of these is true:
    today + the fence days.
 
 A held order keeps its quantity and dates and counts as fixed supply. A held Make order
-still explodes. Nothing stores the hold of a Planned order. MRP computes it again on
+still explodes. A held order is also part of the Order or Make of its week, so a person
+can convert it (§2a.5). Nothing stores the hold of a Planned order. MRP computes it again on
 each run, as SAP does with fence firming. The drawer marks a held Planned order with
 "Fence".
 
@@ -771,7 +795,7 @@ outlive its demand without a visible Cancel action. No cleanup sweep is necessar
 
 | Action | 2a source | Applying it |
 |--------|-----------|-------------|
-| **Order** / **Make** | The new planned orders of the row (`newSupplyByRow`), summed per week as in Phase 1. The action names no planned order. It covers every planned order of its week. | Creates the Planned jobs or PO lines and converts the planned orders of the week (§2a.7). |
+| **Order** / **Make** | The planned orders of the row that are still to convert (`newSupplyByRow`), summed per week as in Phase 1. These are the new planned orders and the held planned orders that MRP does not cancel. The action names no planned order. It covers every planned order of its week. | Creates the Planned jobs or PO lines and converts the planned orders that they stand for (§2a.7). |
 | **Expedite** / **Defer** / **Increase** / **Decrease** / **Cancel** on an open job or PO line | `deriveChangeActions`, as in Phase 1. | As in Phase 1. |
 | **Expedite** / **Defer** / **Increase** / **Decrease** / **Cancel** on a held planned order | `sizeRowSupply`, with the held order as an open order. `plannedOrderId` names it. | Edits the planned order, and the edit firms it. Cancel deletes it. Never `requiresManualAction`. |
 | **Expedite** on a planned order that the fence moved | The fence signal (§2a.4). | Moves the due date and the release date, and firms the order. |
@@ -788,11 +812,19 @@ Rules:
 - The worklist takes the Order or Make of a row from its planned orders only when the
   engine planned the row. The worklist sizes every other row from its RPC row, as in
   Phase 1.
-- The owner ladder, the tolerance gate (`rescheduleToleranceDays`), the frozen-order
-  rule and the read-time horizon apply unchanged.
+- Each engine Order or Make candidate stands for one planned order. A held one names
+  its `plannedOrderId`. A new one gets its id from `withPlannedOrderIds` after the
+  write. The worklist drops the id when it sums the candidates into the stored action.
+- A held order adds no new order. Sizing already counted it as supply. It joins the
+  Order or Make of its week with its own quantity and dates, and with the policy of its
+  stored `quantityTrace`.
+- The owner ladder, the tolerance gate (`rescheduleToleranceDays`) and the read-time
+  horizon apply unchanged. The frozen-order rule applies to jobs and PO lines only
+  (§2a.1).
 
-So the Order or Make quantity of a week equals the total of its new planned orders. The
-row's Order / Make button, the drawer and the worklist show one number.
+So the Order or Make quantity of a week equals the total of its planned orders that are
+still to convert. The row's Order / Make button, the drawer and the worklist show one
+number.
 
 ### 2a.6 Persistence and regeneration
 
@@ -803,18 +835,40 @@ splitIndex)`, through the partial index `plannedOrder_natural_key_idx`
 numbers the new orders of one type in one week, by due date and then quantity. It skips
 the indexes of held Planned rows.
 
+Each attempt of a run reads the planned orders before all other inputs
+(`loadPlannedOrderSnapshot` in `mrp.ts`). The snapshot holds the database clock `now()`
+and the id, status and `updatedAt` of each Planned and Firm row.
+
 The Phase 7 transaction of `runMrp` calls `writePlannedOrderDiff`
 (`planned-order-write.ts`) as its first statement:
 
 1. Take the company planning lock (below).
-2. Read the Planned rows of the company at the planned locations.
-3. If a generated order matches a Planned row on the natural key, update the row only
+2. Compare the planned orders with the snapshot (`plannedOrdersChangedSince`). If a
+   person or another run changed them, throw `PlannedOrdersChangedError` before any
+   write.
+3. Read the Planned rows of the company at the planned locations.
+4. If a generated order matches a Planned row on the natural key, update the row only
    when a value changed. The id and `createdAt` stay.
-4. Insert each generated order that matches no row.
-5. Delete each Planned row that matches no generated order, unless it is held.
-6. Leave Firm, Converted and held rows alone. Each DELETE and UPDATE checks
+5. Insert each generated order that matches no row.
+6. Delete each Planned row that matches no generated order, unless it is held.
+7. Leave Firm, Converted and held rows alone. Each DELETE and UPDATE checks
    `status = 'Planned'` on the row again.
-7. Return the id of each natural key, for the worklist.
+8. Return the id of each natural key, for the worklist.
+
+Step 2 finds these changes with no clock compare in TypeScript:
+
+| Change | What step 2 sees |
+|--------|------------------|
+| Firm, unfirm, edit | A different `updatedAt` or status on a loaded row |
+| Convert | A loaded row that is no longer Planned or Firm |
+| Cancel | A loaded id that is gone |
+| An insert by another run | A row created after the snapshot `now()` |
+
+The error rolls back the Phase 7 transaction. `retryOnPlannedOrderChange` then reads,
+plans and writes again. After 3 attempts (`MAX_PLAN_ATTEMPTS`) the run fails with the
+message "Run MRP again". It retries no other error. Without the check, a convert that
+committed between the read and the write of a run was lost. The run planned the
+converted week again, which gave a second Make.
 
 The writes are set-based: one DELETE, one `UPDATE … FROM (VALUES …)` and one INSERT per
 500 rows, each scoped by `companyId`. Two runs with the same inputs write nothing the
@@ -825,39 +879,78 @@ the previous plan stays. `generatePlanningActions` runs after the commit, in its
 transaction, as in Phase 1.
 
 **The planning lock.** Each writer of planned orders or planning actions first takes
-`pg_advisory_xact_lock(hashtextextended('planning-actions:<companyId>', 0))`:
+`pg_advisory_xact_lock(hashtextextended('planning-actions:<companyId>', 0))`. One
+helper holds it: `lockCompanyPlanning` in `@carbon/database/planning-lock`. The
+planning package and the ERP both import it, so no writer can use another key.
 
 | Writer | Where |
 |--------|-------|
-| The planned-order write of a run | `writePlannedOrderDiff` → `lockCompanyPlanning` (`planning-actions.ts`) |
+| The planned-order write of a run | `writePlannedOrderDiff` |
 | The worklist write | `generatePlanningActions` |
 | The settle and the convert | `settleNewSupplyPlanningActions` (`production.service.ts`) |
 | Firm, unfirm, edit, and apply on a planned order | `firmPlannedOrder`, `unfirmPlannedOrder`, `updatePlannedOrders`, `applyPlannedOrderPlanningActions` (`production.service.ts`) |
 
-So a change by a person never lands between the read and the write of a run.
+The lock puts the writes in a sequence. The run reads its inputs before it takes the
+lock. So a change by a person after that read does not get lost: step 2 sees it, and
+the run plans again.
 
 `supplyForecast` stays in 2a. The `planning.update` routes still write it, and MRP
 still deletes it in Phase 7. §2b.7 replaces it.
 
 ### 2a.7 Convert
 
-An order placed against an Order or Make action converts the planned orders of its
-week. The row's Order / Make button and the drawer's button both place orders through
-`orderPlannedJobs` or `orderPlannedPurchases`, as in Phase 1. 2a adds no separate
-Convert button.
+An order placed against an Order or Make action converts the planned order that it
+stands for. The row's Order / Make button and the drawer's button both place orders
+through `orderPlannedJobs` or `orderPlannedPurchases`, as in Phase 1. 2a adds no
+separate Convert button.
+
+**Suggested orders.** In the common segment, the drawer offers one suggested order for
+each unconverted planned order (Planned or Firm) of the action's week. Each suggested
+order has the quantity, the dates and the `plannedOrderId` of its planned order. They
+are in due-date order, then in `splitIndex` order. A week with no planned order splits
+its action by its policy, as in Phase 1.
+
+- The action of the current week (the first period of the page) also takes each
+  overdue planned order (`isPlannedOrderOfWeek`). MRP sizes an overdue order in the
+  current week and sums it into that action. The planned order keeps the week of its
+  due date (`periodId`).
+- The drawers get the planned orders from `DrawerPlannedOrders` (`onOrdersLoaded`). The
+  drawer reads them again after an order is placed (`refreshKey`).
+- A bulk Make or Order on rows that no drawer opened reads them with
+  `getRowPlannedOrders` (`production.utils.ts`), 100 items per request.
+
+**The steps.**
 
 1. The order operation creates the Planned jobs (`insertJob`, then `upsertJobMethod`)
    or the PO lines, as in Phase 1. One PO per supplier per week collects the lines
    (`findPlanningPurchaseOrder`).
-2. `settleNewSupplyPlanningActions` settles each action by the quantity ordered against
+2. The operation sends each order with its `plannedOrderId`, and `asOf` = the
+   location's today, to `settleNewSupplyPlanningActions`.
+3. `settleNewSupplyPlanningActions` settles each action by the quantity ordered against
    it.
-3. In the same transaction, under the planning lock, `convertPlannedOrdersForActions`
-   links the documents to the planned orders. For each settled action, it takes the
-   Planned and Firm planned orders of the same item, location, segment, week and type,
-   in `splitIndex` order. The first document goes to the first planned order, the
-   second to the second.
-4. Each linked row becomes Converted, with its `jobId` or `purchaseOrderLineId`. A Firm
+4. In the same transaction, under the planning lock, `convertPlannedOrdersForActions`
+   reads the candidate planned orders `FOR UPDATE`.
+5. The pure `matchPlannedOrdersToDocuments` gives each document its planned order (the
+   rules below).
+6. Each matched row becomes Converted, with its `jobId` or `purchaseOrderLineId`. A Firm
    row loses its firm stamp.
+7. `convertPlannedOrdersForActions` deletes the Open and Dismissed change actions on
+   each converted row. The job or PO line is the order now. MRP raises its actions on
+   that document.
+
+**The match rules.** No planned order converts twice.
+
+1. If a document names its planned order, it converts that one. The row must still be
+   Planned or Firm, with the same item, location and type. A stale id converts nothing.
+2. Each other document takes a planned order of the week of the action that it settled,
+   with the same item, location, segment and type. The current week (the period that
+   holds `asOf`) also holds each overdue planned order.
+3. In that week, a document first takes a planned order of equal quantity. A Planned
+   order comes before a Firm order, then the lower `splitIndex` comes first.
+4. A document with no equal quantity takes the next Planned order by `splitIndex`.
+
+A Firm order converts only by its id or by an equal quantity. The Firm quantity is the
+planner's number, so a smaller job never takes it.
 
 If no document is left for a planned order, the order stays as it is. The next MRP run
 sizes it again. Two orders merged into one PO line are two orders placed, so both
@@ -1314,14 +1407,17 @@ record-change trigger, so workflow record events fire.
 
 | File | Change |
 |------|--------|
-| `mrp-engine.ts` | `explodeBom` takes the optional `planSupply`, `extraPlanningKeys`, `scrapRateByItem` and `periodStartDates`. New type `PlannedSupplyResult`. |
+| `mrp-engine.ts` | `explodeBom` takes the optional `planSupply`, `extraPlanningKeys`, `scrapRateByItem` and `periodStartDates`. New type `PlannedSupplyResult`. With `scrapRateByItem`, the raw-need path adds scrap too (§2a.1). |
 | `row-sizing.ts` (new) | `sizeRowSupply(input)` → `{ changeActions, newSupply }`, moved out of `deriveRowActions`, with `deriveChangeActions`, `convertOrdersToIncreases` and their helpers. |
 | `open-supply-orders.ts` (new) | `buildOpenSupplyOrders(...)`, moved out of `generatePlanningActions`, with `releaseByDate`, `earlierRelease` and the commitment checks. |
-| `planned-orders.ts` (new) | `createPlanSupply(inputs)` → `{ planSupply, extraPlanningKeys, result }`, and `plannedOrderNaturalKey`. |
+| `planned-orders.ts` (new) | `createPlanSupply(inputs)` → `{ planSupply, extraPlanningKeys, result }`, `plannedOrderNaturalKey` and `withPlannedOrderIds`. |
 | `plan-company.ts` | Input `plannedOrderInputs`. Outputs `plannedOrders`, `heldPlannedOrderIds`, `plannedOrderSignals`, `plannedOrderChangeActions` and `newSupplyByRow`. |
-| `mrp.ts` | `loadPlannedOrderInputs` reads the policies, the fences, the tolerance, the open-supply details and the Planned and Firm planned orders through Kysely. Phase 7 calls `writePlannedOrderDiff` first. The `supplyForecast` delete stays. |
-| `planned-order-write.ts` (new) | `diffPlannedOrders` (pure) and `writePlannedOrderDiff(trx, …)` (§2a.6). |
-| `planning-actions.ts` | `deriveRowActions` takes `engineSupply`. New: `plannedOrderActions`, `onePerPlannedOrder`, `lockCompanyPlanning`. The natural key targets `purchaseOrderLineId ?? jobId ?? plannedOrderId`, and the diff writes `plannedOrderId`. |
+| `mrp.ts` | `loadPlannedOrderSnapshot` reads the database clock and the Planned and Firm planned orders first. `loadPlannedOrderInputs` then reads the policies, the fences, the tolerance and the open-supply details through Kysely. Phase 7 calls `writePlannedOrderDiff` first. `retryOnPlannedOrderChange` runs each attempt (`loadPlanAndWrite`). The `supplyForecast` delete stays. |
+| `planned-order-write.ts` (new) | `diffPlannedOrders` (pure) and `writePlannedOrderDiff(trx, …)` (§2a.6). Also `plannedOrdersChangedSince` (pure), `PlannedOrdersChangedError`, `retryOnPlannedOrderChange` and `MAX_PLAN_ATTEMPTS` (3). |
+| `planning-actions.ts` | `deriveRowActions` takes `engineSupply`. New: `plannedOrderActions`, `onePerPlannedOrder`. The natural key targets `purchaseOrderLineId ?? jobId ?? plannedOrderId`, and the diff writes `plannedOrderId`. |
+| `row-sizing.ts` | `isOrderFrozen` is false for a planned order. |
+| `packages/database/src/planning-lock.ts` (new, `@carbon/database/planning-lock`) | `lockCompanyPlanning(db, companyId)` and `planningLockKey`: the one company planning lock (§2a.6). |
+| `packages/utils/src/planning-fence.ts` (new, `@carbon/utils`) | `resolvePlanningTimeFenceDays`, `planningTimeFenceDate` and `isPlannedOrderHeld`: the one time-fence rule (§2a.4). |
 
 Every new value-bearing calculation follows the `@carbon/checks` precision rules: no
 scale literals, whole units through `scrapAllowance`.
@@ -1330,7 +1426,9 @@ scale literals, whole units through `scrapAllowance`.
 
 | Function | File | What it does |
 |----------|------|--------------|
-| `convertPlannedOrdersForActions(db, …)` | `production.service.ts` | Converts the planned orders of each settled Order or Make (§2a.7). `settleNewSupplyPlanningActions` calls it in its transaction. |
+| `settleNewSupplyPlanningActions(db, …)` | `production.service.ts` | Takes `asOf` and a `plannedOrderId` per order. It settles the actions, then converts in the same transaction (§2a.7). |
+| `convertPlannedOrdersForActions(db, …)` | `production.service.ts` | Converts the planned order of each new job or PO line, and deletes the open change actions on it (§2a.7). `settleNewSupplyPlanningActions` calls it in its transaction. |
+| `matchPlannedOrdersToDocuments` | `production.service.ts` | Pure. The match rules of §2a.7. |
 | `readPlannedOrderForChange(ctx, id)` | `production.service.ts` | Reads one planned order by `id` and `companyId`. It refuses a Transfer or Converted row. It checks `update: production` for Make and `update: purchasing` for Buy. |
 | `firmPlannedOrder` / `unfirmPlannedOrder` | `production.service.ts` | Planned → Firm with the firm stamp, and back. Unfirm takes the next free `splitIndex` when its key is taken. |
 | `updatePlannedOrders(db, …)` | `production.service.ts` | One statement for many edits. Each edit firms its row. A new due date moves the release date by the same days and moves the row to the week that holds it. A new Make quantity restates `scrapQuantity`. |
@@ -1338,13 +1436,22 @@ scale literals, whole units through `scrapAllowance`.
 | `firmPlannedOrder`, `unfirmPlannedOrder`, `updatePlannedOrder` | `production.server.ts` | The operations. `permission: {}`, because the type of the planned order decides the permission inside the body. Not published to MCP. |
 | `applyPlanningActions` | `production.server.ts`, `purchasing.server.ts` | Sends each action with `plannedOrderId` to `applyPlannedOrderPlanningActions` (Make or Buy). A Cancel on a planned order needs no delete permission, because a planned order is not a document. |
 | `getDrawerPlannedOrders`, `getPlanningTimeFenceDays` | `production.utils.ts` | The browser reads of the drawer. |
+| `getRowPlannedOrders` | `production.utils.ts` | The browser read of a bulk Make or Order: the planned orders of many items, 100 items per request. |
+| `productionOrdersFromActions`, `plannedOrdersFromActions` | `ui/Planning/planned-orders-from-actions.ts` | Take `plannedOrders` and `currentWeek`. They give one suggested order per planned order of the week (§2a.7). |
 
 The two `planning.update` routes accept the actions `firmPlannedOrder`,
 `unfirmPlannedOrder` and `updatePlannedOrder`. The purchasing route calls the
 production operations.
 
-`itemPlanningValidator` and `locationValidator` accept `planningTimeFenceDays`.
-`upsertItemPlanning` and the location upsert save it.
+`itemPlanningValidator` and `locationValidator` accept `planningTimeFenceDays`, and
+`productionOrderValidator` and the purchasing `plannedOrderValidator` accept
+`plannedOrderId`. `upsertItemPlanning` and `upsertLocation` save the fence. The column
+of `location` is NOT NULL:
+
+- `upsertLocation` inserts a new location with no fence as 0.
+- An update without the fence keeps the stored value. So an API or MCP call to
+  `updateLocation` with no fence does not clear it.
+- The location form route always sends the fence. An empty field saves 0.
 
 These functions of the first design are not built in 2a:
 
@@ -1413,10 +1520,13 @@ order drawers, `ItemPlanningForm`, `LocationForm`.
    A held Planned order shows "Fence". A cell edit of the quantity or the due date
    saves at once. For a Planned order, the drawer first asks *"Keep your numbers
    through plan updates?"*.
-2. **Worklist lines.** An action on a planned order shows "Planned order" as its
+2. **Suggested orders.** Suggested Jobs and Suggested Orders show one row per
+   unconverted planned order of the action's week (§2a.7). Each row converts its own
+   planned order when the planner places it.
+3. **Worklist lines.** An action on a planned order shows "Planned order" as its
    target. It is always Apply, never "Review on document" (`planningActionNeedsReview`).
    It can be dismissed, reopened and assigned like any change action.
-3. **Settings.** `planningTimeFenceDays` on the location form, and on the item Planning
+4. **Settings.** `planningTimeFenceDays` on the location form, and on the item Planning
    form in its "Planning window" group, with the location value as the placeholder. A
    new item revision does not copy the item value.
 
@@ -1445,8 +1555,11 @@ autopilot ledger in the digest, and the suggested-projection rows in
 ## Acceptance Criteria
 
 Evidence for 2a: `planned-orders.test.ts`, `planned-order-write.write.test.ts`,
-`planning-actions.test.ts`, `mrp-engine.test.ts`, and the database tests
-`convert-planned-orders.test.ts` and `planned-order-firm.test.ts`. The baseline compare
+`planning-actions.test.ts`, `mrp-engine.test.ts`, `planning-fence.test.ts`
+(`@carbon/utils`), `apps/erp/test/planned-orders-from-actions.test.ts`, and the
+database tests `planned-order-write.database.test.ts`, `convert-planned-orders.test.ts`,
+`planned-order-firm.test.ts`, `planning-grid-planned-order-actions.test.ts` and
+`location-planning-fence.test.ts`. A database test runs only with a local database. The baseline compare
 of Task 15 (`.context/mrp-baseline/compare.md`, Carbon Development) explained every
 changed action. The criteria that moved to 2b are under Phase 2b.
 
@@ -1456,9 +1569,9 @@ changed action. The criteria that moved to 2b are under Phase 2b.
       for it and demand for its components. No job exists yet. (`planned-orders.test.ts`
       "plans a buffer need with no demand and explodes it to the child"; SAT-1000 in the
       baseline compare.)
-- [ ] The cascade reaches full depth: a Make parent → a Make child with its own planned
-      order → bought parts. *No test has a Make child with its own planned order. In
-      the baseline dataset the subassemblies are Make to Order.*
+- [x] The cascade reaches full depth: a Make parent → a Make child with its own planned
+      order → bought parts. (`planned-orders.test.ts` "plans a Make child from the
+      parent's buffer order, and its bought part from the child's order")
 - [x] Need 3, batch size 5, BOM quantity 2: the component demand is 10, not 6.
       (`mrp-engine.test.ts` "explodes a planned order of 5 for a need of 3…";
       `planned-orders.test.ts` "explodes the lot-sized quantity at the release week…")
@@ -1466,17 +1579,19 @@ changed action. The criteria that moved to 2b are under Phase 2b.
       no new planned order. (same `planned-orders.test.ts` case)
 - [x] Parent scrap rate 0.1 on an order of 10: the explosion quantity is 11.
       (`planned-orders.test.ts` "explodes the parent's scrap with the order")
-- [ ] The component demand equals the job material quantity that `computeJobQuantities`
-      gives for the same order. *No test compares the two. No item in the demo datasets
-      has a scrap percentage.*
+- [x] The component demand equals the job material quantity that `computeJobQuantities`
+      gives for the same order. The part under a Make to Order child matches the
+      subjob too. (`planned-orders.test.ts` "explosion parity with job creation")
 - [x] A child gets its own scrap, except a Make to Order child that is made.
       (`mrp-engine.test.ts` "adds a child's scrap to a planned explosion…")
-- [ ] Each buffer policy on a Make item creates a planned order that explodes. Manual
-      Reorder creates none. *Only Fixed Reorder Quantity has a test.*
-- [ ] Each planned order stores a trace whose values give its quantity, scrap and
-      explosion quantity. The SQL parity test is green. *The scrap test reads
-      `quantityTrace.explosionQuantity`. The parity test runs in the full gate (Task
-      17).*
+- [x] Each buffer policy on a Make item creates a planned order that explodes. Manual
+      Reorder creates none. (`planned-orders.test.ts` "buffer policies": Maximum
+      Quantity and Fixed Reorder Quantity plan and explode with no demand. Manual
+      Reorder and Demand-Based Reorder plan nothing with no demand, as §2a.1 says.)
+- [x] Each planned order stores a trace whose values give its quantity, scrap and
+      explosion quantity. The SQL parity test is green. (`planned-orders.test.ts`
+      "stores a trace whose quantity, scrap and explosion give the order";
+      `planning-sizing.test.ts` "parity with SQL calculate_quantity_to_order".)
 - [x] With no fence and no held orders, the engine gives the same Make quantities as
       the worklist sizing. (`planned-orders.test.ts` "sizes the same Make quantities as
       the planning worklist with no fence"; the `deriveRowActions` tests did not change
@@ -1493,8 +1608,8 @@ changed action. The criteria that moved to 2b are under Phase 2b.
       planning row")
 - [x] A Make to Order Make child gets no planned order. Its own children get the demand.
       (`planned-orders.test.ts` "plans no order for a child built as Make to Order")
-- [ ] A configured item explodes only the lines of its default configuration. *No
-      planned-order test. The hook reads the same `bomChildren` map as Phase 1.*
+- [x] A configured item explodes only the lines of its default configuration.
+      (`planned-orders.test.ts` "never gives demand to a quantity-0 BOM line")
 
 ### Phase 2a — lifecycle and fence
 
@@ -1521,33 +1636,53 @@ changed action. The criteria that moved to 2b are under Phase 2b.
       the Cancel deletes it and its action. (`planned-orders.test.ts` "cancels a held
       planned order nothing needs…"; `planned-order-firm.test.ts` "an applied Cancel
       deletes the planned order and its action")
-- [ ] The next run does not create the cancelled order again. *No test.*
+- [x] The next run does not create the cancelled order again. (`planned-orders.test.ts`
+      "does not plan a cancelled order again")
 - [x] Outside the fence, the run deletes a Planned order that lost its demand.
       (`planned-order-write.write.test.ts`)
-- [ ] An item `planningTimeFenceDays` wins over the location value in both directions,
-      including an explicit 0. *The code uses the item value when it is not null. No
-      test covers an explicit item 0.*
+- [x] An item `planningTimeFenceDays` wins over the location value in both directions,
+      including an explicit 0. (`planning-fence.test.ts` "resolvePlanningTimeFenceDays";
+      `planned-orders.test.ts` "an explicit item fence of 0 opts out of the location's"
+      and "a missing item fence takes the location's")
+- [x] An update of a location without the fence keeps the stored fence.
+      (`location-planning-fence.test.ts`)
 
 ### Phase 2a — actions, conversion and one number
 
-- [x] The Order or Make action of a week sums the new planned orders of the week and
-      names no planned order. (`planning-actions.test.ts` "uses the engine's orders,
-      summed per week, naming no planned order")
+- [x] The Order or Make action of a week sums the planned orders of the week that are
+      still to convert, new and held, and names no planned order.
+      (`planning-actions.test.ts` "uses the engine's orders, summed per week, naming no
+      planned order" and "sums a held planned order into its week's Make";
+      `planned-orders.test.ts` "offers a held order for conversion as its week's Make")
+- [x] A planned order is never frozen. A Firm order due inside its lead time gets an
+      Increase, not a second Make. (`planned-orders.test.ts` "increases a Firm order
+      due inside its lead time")
 - [x] Each planned order gets one change action at most. A Cancel beats an Expedite.
       (`planning-actions.test.ts` "keeps one action per planned order…")
 - [x] A Make that creates 2 jobs converts both planned orders, in split order. A Firm
-      order converts too and loses its firm stamp. Another week's order is left alone.
-      (`convert-planned-orders.test.ts`)
+      order converts by its id and loses its firm stamp. Another week's order is left
+      alone. (`convert-planned-orders.test.ts`)
+- [x] A job that names its planned order converts that one. A stale or mismatched id
+      converts nothing. A job with no id converts the planned order of its own quantity
+      first, and a smaller job never converts a Firm order. The current week's job
+      converts an overdue planned order of an older week. Converting deletes the Open
+      and Dismissed change actions on the order. (`convert-planned-orders.test.ts`)
+- [x] The suggested orders are one per unconverted planned order of the week, Firm
+      included. The current week's action also offers the overdue planned orders.
+      (`planned-orders-from-actions.test.ts` "suggestions from the week's planned
+      orders")
 - [x] An Order converts its Buy planned order to the PO line.
       (`convert-planned-orders.test.ts`)
-- [ ] The next run counts the converted job once. *No test.*
+- [x] The next run counts the converted job once. (`planned-orders.test.ts` "counts a
+      converted order once, as its job")
 - [x] A Defer applied on a planned order moves both dates and firms the order. A
       Converted order refuses the action, and the action stays Open.
       (`planned-order-firm.test.ts`)
 - [x] The type of the planned order decides the permission. (`planned-order-firm.test.ts`
       "the planned order's type decides the permission")
-- [ ] An Actions filter keeps a grid row whose only action is on a planned order. *No
-      automated test. The browser check (Task 18) covers it.*
+- [x] An Actions filter keeps a grid row whose only action is on a planned order.
+      (`planning-grid-planned-order-actions.test.ts` "keeps each row whose only action is
+      on a planned order of the grid's type")
 
 ### Phase 2a — identity and atomicity
 
@@ -1556,8 +1691,12 @@ changed action. The criteria that moved to 2b are under Phase 2b.
       whose values did not change")
 - [x] The planned-order write takes the company planning lock before any other
       statement. (`planned-order-write.write.test.ts`)
-- [ ] A failed run leaves the previous planned orders unchanged (fault-injection test).
-      *The write is in the Phase 7 transaction. No fault-injection test.*
+- [x] A failed run leaves the previous planned orders unchanged (fault-injection test).
+      (`planned-order-write.database.test.ts` "leaves the previous planned orders
+      unchanged when a later statement fails")
+- [x] A run whose planned orders changed after its read writes nothing and plans again,
+      up to 3 attempts. (`planned-order-write.write.test.ts` "the planned-order check
+      before the write", "plannedOrdersChangedSince" and "retryOnPlannedOrderChange")
 
 ### Phase 2b
 
@@ -1623,8 +1762,9 @@ changed action. The criteria that moved to 2b are under Phase 2b.
 | Lot-sizing drift between TS and SQL | Med | The engine and the worklist share `sizeRowSupply`, with the parity test. In 2a the base RPC `quantityToOrder` still sizes in SQL, but no grid column shows it. §2b.7 shrinks the SQL path to no-plan rows. |
 | A Firm order of an item that later becomes ineligible (2a) | Med | MRP neither counts it as supply nor deletes it, because only eligible keys read held orders. The drawer still lists it. Unfirm or Convert it by hand. A later change counts it as supply (D10). |
 | The engine plans 72 weeks, the worklist reads 48 (2a) | Low | A planned order due after week 48 gets no action and no Order or Make on the worklist. It stays in `plannedOrder` until a run moves it inside 48 weeks. |
-| Scrap is not tested on demo data (2a) | Low | No item in the demo datasets has a scrap percentage, so the baseline compare showed no scrap. Unit tests cover the parent and the child scrap. |
+| Scrap is not tested on demo data (2a) | Low | No item in the demo datasets has a scrap percentage, so the baseline compare showed no scrap. Unit tests cover the parent scrap, the child scrap and the parity with job creation (`computeJobQuantities`). |
 | Calendar-day dates in 2a | Low | A release date or a fence end can fall on a closed day. §2b.7 moves both to working days. |
+| People change planned orders during each attempt of a run (2a) | Low | The run plans again after each change, up to 3 attempts. Then it fails with "Run MRP again", and the next run picks up the changes. |
 | The plan and the converted job disagree | Med | Scrap uses the job rule. Convert shows the make-method difference. |
 | Row count grows (every level of every item) | Med | Default filters, paging, and the natural key reuses rows. |
 | MRP and the scheduler fight over job dates (2b) | Med-High | MRP recommends only. Job date changes go through `updateJob` and `notifyScheduleInputsChanged`. A loop test covers it. |
