@@ -29251,17 +29251,15 @@ async function openRequirement(
     .executeTakeFirst();
 
   if (!makeMethod?.requiresSerialTracking) {
-    const required = Number(
-      jobMaterial.estimatedQuantity ?? jobMaterial.quantity ?? 0
-    );
+    const required = jobMaterial.estimatedQuantity ?? jobMaterial.quantity ?? 0;
     return {
       required,
-      remaining: round(required - Number(jobMaterial.quantityIssued ?? 0)),
+      remaining: round(required - (jobMaterial.quantityIssued ?? 0)),
       perUnit: false
     };
   }
 
-  const consumed = await sql<{ quantity: string | number | null }>`
+  const consumed = await sql<{ quantity: number | null }>`
     WITH "fitted" AS (
       SELECT tai."trackedEntityId", SUM(tai."quantity") AS "quantity"
       FROM "trackedActivity" ta
@@ -29296,10 +29294,10 @@ async function openRequirement(
     WHERE te."status" <> 'Scrapped'
   `.execute(trx);
 
-  const required = Number(jobMaterial.quantity ?? 0);
+  const required = jobMaterial.quantity ?? 0;
   return {
     required,
-    remaining: round(required - Number(consumed.rows[0]?.quantity ?? 0)),
+    remaining: round(required - (consumed.rows[0]?.quantity ?? 0)),
     perUnit: true
   };
 }
