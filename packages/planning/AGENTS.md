@@ -93,18 +93,16 @@ with no group (the golden test asserts it). Planning groups and pegging are in
 | `src/mrp/planned-orders.ts` | `createPlanSupply(inputs)` (pure): the `planSupply` hook `explodeBom` calls per eligible common key, `extraPlanningKeys`, and the accumulated `result()`; `plannedOrderNaturalKey`; `withPlannedOrderIds`; the input/output types (`PlannedOrderInputs`, `GeneratedPlannedOrder`, `PlannedOrderSignal`, …). Every planned order still to convert — each new one and each held one MRP does not Cancel — is one Order / Make in `newSupplyByRow`, naming it by `plannedOrderKey` and (held, or new once written) `plannedOrderId`; the worklist sums them per type and week into one action that names none |
 | `src/mrp/row-sizing.ts` | `sizeRowSupply` — the new-supply sizing of one row, shared by the engine hook and `deriveRowActions` — with `deriveChangeActions`, `convertOrdersToIncreases`, `projectionsWithExpedites`, `isOrderFrozen` (never a planned order), the date helpers |
 | `src/mrp/open-supply-orders.ts` | `buildOpenSupplyOrders` (pure): open PO lines and jobs as `OpenSupplyOrder`s, with `releaseByDate`, `earlierRelease`, `itemLocationSegmentKey` |
-| `src/mrp/planned-order-write.ts` | `diffPlannedOrders` (pure) and `writePlannedOrderDiff(trx, …)` — the first statement of `runMrp`'s Phase-7 transaction; takes the planning lock, then, given the run's `snapshot`, throws `PlannedOrdersChangedError` before any write when `plannedOrdersChangedSince` (pure) sees a change; never touches Firm / Converted / held rows. `assertPlannedOrdersUnchanged` is that check; `readPlannedOrderSnapshot` reads, at the end of the Phase-7 transaction, what the run committed, and `writePlanningActions` checks against it too. `retryOnPlannedOrderChange` re-runs `runMrp`'s load → plan → write → worklist up to `MAX_PLAN_ATTEMPTS` (3) times |
+| `src/mrp/planned-order-write.ts` | `diffPlannedOrders` (pure) and `writePlannedOrderDiff(trx, …)` — the first statement of `runMrp`'s Phase-7 transaction; takes the planning lock, then, given the run's `snapshot`, throws `PlannedOrdersChangedError` before any write when `plannedOrdersChangedSince` (pure) sees a change; never touches Firm / Converted / held rows. `assertPlannedOrdersUnchanged` is that check; `readPlannedOrderSnapshot` reads, at the end of the Phase-7 transaction, what the run committed, and `writePlanningActions` checks against it too. `retryOnPlannedOrderChange` re-runs `runMrp`'s load → plan → write → worklist up to `MAX_PLAN_ATTEMPTS` (5) times in all, with a random pause of up to `MAX_RETRY_PAUSE_MS` (250 ms) between attempts so overlapping runs stop retrying in step |
 | `src/mrp/planning-action-types.ts` | the shared action types (`PlanningActionCandidate`, `OpenSupplyOrder` with `plannedOrderId`, `ChangeCandidate`) |
 
 `lockCompanyPlanning(trx, companyId)` (`@carbon/database/planning-lock`) is the one per-company advisory lock
 (`planning-actions:<companyId>`) every planned-order and planning-action writer takes first, the
-ERP's settle / convert / firm / edit / apply included. `tryLockCompanyMrpRun` (`mrp-run:<companyId>`, same file) serialises
-`runMrp` per company through `withCompanyMrpRunLock` (`src/mrp/run-lock.ts`): each try is its own short transaction
-(`pg_try_advisory_xact_lock`) that ends at once when refused, with 250 ms between tries, so a waiting run holds no
-connection; the granted try's transaction does nothing else and stays open for the whole run, while the run works on
-other connections. After 15 s of waiting the run goes ahead without the run lock (a warning); the planning lock and
-the planned-order snapshot checks still guard its writes. Lock order is always the run lock, then the planning lock; a person takes only the planning
-lock, so the two cannot deadlock (`mrp.write.test.ts`). `runMrp` reads the planned orders FIRST
+ERP's settle / convert / firm / edit / apply included. The module exports only it and `planningLockKey`. Nothing
+locks a whole MRP run: a lock held on one connection while the run worked on others hung a run on a one-connection
+pool. Runs and a person's changes may overlap; each run's two writes (the Phase-7 transaction and the worklist) take
+the planning lock and check the planned orders against the run's snapshot first, and an attempt that sees a change
+plans again (`retryOnPlannedOrderChange`). `runMrp` reads the planned orders FIRST
 (`loadPlannedOrderSnapshot`: the database's `now()`, then the Planned and Firm rows), then the
 other inputs (`loadPlannedOrderInputs`, Kysely), and passes the engine's planned-order outputs to
 `generatePlanningActions`. The time fence is `@carbon/utils` `resolvePlanningTimeFenceDays` /

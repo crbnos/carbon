@@ -3561,6 +3561,35 @@ export async function runMRP(
   }
 }
 
+/**
+ * Re-plan after a person changes what MRP plans from: an item's planning
+ * settings, or a planned order (firm, unfirm, edit, an applied action). The
+ * planning pages list MRP's stored suggestions, so without a run they kept
+ * the old ones until the next scheduled run. Every run is company-wide; the
+ * scope is only logged. A failed run is logged and never fails the change.
+ */
+export async function replanAfterChange(
+  ctx: ServiceContext,
+  change: { itemId: string } | { plannedOrderIds: string[] }
+) {
+  const scope =
+    "itemId" in change
+      ? { type: "item" as const, id: change.itemId }
+      : { type: "company" as const, id: ctx.company.id };
+  const mrp = await runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
+    ...scope,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId
+  });
+  if (mrp.error) {
+    logger.error("MRP failed after a planning input changed", {
+      companyId: ctx.company.id,
+      ...change,
+      error: mrp.error
+    });
+  }
+}
+
 export async function updateJobBatchNumber(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -12670,10 +12699,12 @@ function conversionWeekOf(
  *    document SMALLER than the order it names converts nothing: it takes its
  *    quantity off the order (`reductions`, the quantity left), which keeps
  *    its status. Several documents naming one order count together; the one
- *    that reaches its quantity converts it. A document whose id is stale (the
- *    order is gone, no longer Planned or Firm, or of another item, location,
- *    segment or type) or names an order an earlier document of the batch
- *    converted goes on as one that names none.
+ *    that reaches its quantity converts it; one LARGER than what is left of
+ *    it also takes the excess off its week's next Planned orders, as in 2. A
+ *    document whose id is stale (the order is gone, no longer Planned or
+ *    Firm, or of another item, location, segment or type) or names an order
+ *    an earlier document of the batch converted goes on as one that names
+ *    none.
  * 2. The other documents convert the planned orders of their week left over,
  *    per (item, location, segment, week, type): first each to one of equal
  *    quantity (Planned before Firm, then `splitIndex`), then each one left to
@@ -12710,6 +12741,43 @@ export function matchPlannedOrdersToDocuments(
 
   // the quantity of a planned order its documents have not covered
   const left = new Map<string, number>();
+
+  const candidatesByKey = new Map<string, ConvertiblePlannedOrder[]>();
+  for (const row of candidates) {
+    if (row.orderType === "Transfer") continue;
+    const periodId = calendar
+      ? conversionWeekOf(row.dueDate, calendar)
+      : row.periodId;
+    if (!periodId) continue;
+    const key = conversionKey({ ...row, periodId, orderType: row.orderType });
+    const list = candidatesByKey.get(key);
+    if (list) list.push(row);
+    else candidatesByKey.set(key, [row]);
+  }
+  // the document's week's Planned orders not yet converted, by `splitIndex`
+  const plannedOfWeek = (document: PlannedOrderConversion) =>
+    (candidatesByKey.get(documentConversionKey(document, calendar)) ?? [])
+      .filter((row) => !claimed.has(row.id) && row.status === "Planned")
+      .sort(bySplit);
+  // A document larger than the order it converts is also the supply of the
+  // week's next Planned orders: MRP would count it there, so they shrink or
+  // go. Only Planned rows are passed: a Firm order is the planner's number.
+  const takeExcess = (excess: number, rows: ConvertiblePlannedOrder[]) => {
+    for (const row of rows) {
+      if (excess <= 0) break;
+      const quantity = left.get(row.id) ?? row.quantity;
+      const rest = round(quantity - excess);
+      if (rest > 0) {
+        left.set(row.id, rest);
+        break;
+      }
+      left.delete(row.id);
+      claimed.add(row.id);
+      deletions.push(row.id);
+      excess = round(excess - quantity);
+    }
+  };
+
   // named documents whose planned order they cannot convert
   const unconvertible = new Set<PlannedOrderConversion>();
   for (const document of documents) {
@@ -12735,22 +12803,10 @@ export function matchPlannedOrdersToDocuments(
     }
     left.delete(row.id);
     claim(row, document.documentId);
+    takeExcess(-remainder, plannedOfWeek(document));
   }
   const isTaken = (row: ConvertiblePlannedOrder) =>
     claimed.has(row.id) || left.has(row.id);
-
-  const candidatesByKey = new Map<string, ConvertiblePlannedOrder[]>();
-  for (const row of candidates) {
-    if (row.orderType === "Transfer") continue;
-    const periodId = calendar
-      ? conversionWeekOf(row.dueDate, calendar)
-      : row.periodId;
-    if (!periodId) continue;
-    const key = conversionKey({ ...row, periodId, orderType: row.orderType });
-    const list = candidatesByKey.get(key);
-    if (list) list.push(row);
-    else candidatesByKey.set(key, [row]);
-  }
 
   const unnamed = documents.filter(
     (document) => !document.plannedOrderId || unconvertible.has(document)
@@ -12774,11 +12830,7 @@ export function matchPlannedOrdersToDocuments(
   // it is; one that reaches it converts it. Later documents count against
   // what the earlier ones left.
   for (const document of unmatched) {
-    const [next, ...following] = (
-      candidatesByKey.get(documentConversionKey(document, calendar)) ?? []
-    )
-      .filter((row) => !claimed.has(row.id) && row.status === "Planned")
-      .sort(bySplit);
+    const [next, ...following] = plannedOfWeek(document);
     if (!next) continue;
     const remainder = round(
       (left.get(next.id) ?? next.quantity) - document.quantity
@@ -12789,22 +12841,7 @@ export function matchPlannedOrdersToDocuments(
     }
     left.delete(next.id);
     claim(next, document.documentId);
-    // A larger document is also the supply of the week's next Planned
-    // orders: MRP would count it there, so they shrink or go.
-    let excess = -remainder;
-    for (const row of following) {
-      if (excess <= 0) break;
-      const quantity = left.get(row.id) ?? row.quantity;
-      const rest = round(quantity - excess);
-      if (rest > 0) {
-        left.set(row.id, rest);
-        break;
-      }
-      left.delete(row.id);
-      claimed.add(row.id);
-      deletions.push(row.id);
-      excess = round(excess - quantity);
-    }
+    takeExcess(-remainder, following);
   }
   return {
     conversions,
@@ -12845,9 +12882,9 @@ function restatedPlannedOrderScrap(quantity: RawBuilder<unknown>) {
  * scrap restated as `updatePlannedOrders` does. Its Open and Dismissed change
  * actions are deleted too: they were sized for the old quantity, and an
  * Increase applied later would put back what the document already covers.
- * A document larger than the Planned order it falls back to reduces the
- * week's next Planned orders the same way, and deletes one it covers whole
- * (its actions cascade).
+ * A document larger than the planned order it names or falls back to
+ * reduces the week's next Planned orders the same way, and deletes one it
+ * covers whole (its actions cascade).
  *
  * A planned order no document stands for stays as it is, and the next MRP run
  * sizes it again. Two orders merged into one PO line are two documents, so

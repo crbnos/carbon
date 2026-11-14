@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { useRevalidator } from "@carbon/query";
 import {
   Button,
   Modal,
@@ -70,7 +71,9 @@ type PlannedOrderChangeResult = {
  * The drawer's Planned Orders section: the item's Planned and Firm planned
  * orders at the location, read with the user's client as the open jobs and
  * PO lines are. Firm / Unfirm and a cell edit post to `planning.update`. An
- * edit of a Planned order firms it, so the drawer asks first.
+ * edit of a Planned order firms it, so the drawer asks first. Each change
+ * re-plans on the server, so a successful one reloads the page's data: the
+ * item's actions and the row's Make / Order quantity.
  */
 export function DrawerPlannedOrders({
   title,
@@ -89,6 +92,7 @@ export function DrawerPlannedOrders({
   const { t } = useLingui();
   const { carbon } = useCarbon();
   const { company } = useUser();
+  const { revalidate } = useRevalidator();
   const isCommonSegment = !planningSegmentId;
 
   const [orders, setOrders] = useState<DrawerPlannedOrder[] | null | Error>(
@@ -225,6 +229,9 @@ export function DrawerPlannedOrders({
           .json()
           .catch(() => null)) as PlannedOrderChangeResult | null;
         if (response.ok && !result?.error && result?.success !== false) {
+          // A plain fetch bypasses the router, and the server re-planned:
+          // reload the actions and the grid row behind the drawer.
+          void revalidate();
           return null;
         }
         return (
@@ -236,7 +243,7 @@ export function DrawerPlannedOrders({
         return t`Failed to update the planned order`;
       }
     },
-    [locationId, t, updatePath]
+    [locationId, revalidate, t, updatePath]
   );
 
   // ── The question an edit of a Planned order asks first ───────────────────

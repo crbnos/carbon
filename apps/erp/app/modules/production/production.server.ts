@@ -147,19 +147,7 @@ export const replanAfterItemChange = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, { itemId }) {
-    const mrp = await service.runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
-      type: "item",
-      id: itemId,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    });
-    if (mrp.error) {
-      logger.error("MRP failed after an item's planning settings changed", {
-        companyId: ctx.company.id,
-        itemId,
-        error: mrp.error
-      });
-    }
+    await service.replanAfterChange(ctx, { itemId });
   }
 });
 
@@ -5005,7 +4993,9 @@ const CHANGE_ACTION_TYPES = [
  * gives its claim back. An action on a Make planned order edits that order
  * in one transaction: Expedite / Defer set its due date (the release date
  * moves by the same days), Increase / Decrease its quantity, and the order
- * becomes Firm; Cancel deletes it. With no `type`, an Open Transfer or Borrow creates a
+ * becomes Firm; Cancel deletes it. When any such action applied, MRP runs
+ * once the batch is written (`replanAfterChange`), as after a firm or an
+ * edit. With no `type`, an Open Transfer or Borrow creates a
  * Draft project stock transfer (`applyTransferPlanningActions`, which needs
  * `update: projects`). Returns what was `applied`, the `transfers` created,
  * what needs review, `warnings` (applied, with a follow-up step that failed)
@@ -5088,6 +5078,18 @@ export const applyPlanningActions = defineServiceFn({
 
     const eligible: { planningActionId: string; row: PlanningActionRow }[] = [];
     const plannedOrderTargets: service.PlannedOrderPlanningAction[] = [];
+    // An applied action changed these planned orders, so the supply MRP
+    // counts: it re-plans once the whole batch is written, as a firm or an
+    // edit does, and before the answer so the page reads the new actions.
+    const changedPlannedOrderIds: string[] = [];
+    const replanned = async <T>(result: T): Promise<T> => {
+      if (changedPlannedOrderIds.length > 0) {
+        await service.replanAfterChange(ctx, {
+          plannedOrderIds: changedPlannedOrderIds
+        });
+      }
+      return result;
+    };
     for (const planningActionId of planningActionIds) {
       if (transferIdSet.has(planningActionId)) continue;
       const row = rowById.get(planningActionId);
@@ -5156,6 +5158,12 @@ export const applyPlanningActions = defineServiceFn({
         );
       }
       applied.push(...outcome.applied);
+      const appliedIds = new Set(outcome.applied);
+      changedPlannedOrderIds.push(
+        ...plannedOrderTargets
+          .filter((target) => appliedIds.has(target.planningActionId))
+          .map((target) => target.plannedOrderId)
+      );
       for (const id of outcome.alreadyApplied) {
         errors.push(`Planning action ${id} was already applied`);
       }
@@ -5179,7 +5187,7 @@ export const applyPlanningActions = defineServiceFn({
               .execute()
           : []
     );
-    if (jobs instanceof CarbonError) return jobs;
+    if (jobs instanceof CarbonError) return replanned(jobs);
     const jobStatusById = new Map(jobs.map((job) => [job.id, job.status]));
 
     const toClaim: typeof eligible = [];
@@ -5221,10 +5229,12 @@ export const applyPlanningActions = defineServiceFn({
           }))
         });
       } catch (err) {
-        return ctx.error(
-          "internal",
-          `Failed to reschedule jobs: ${getErrorMessage(err, "unknown error")}`,
-          err
+        return replanned(
+          ctx.error(
+            "internal",
+            `Failed to reschedule jobs: ${getErrorMessage(err, "unknown error")}`,
+            err
+          )
         );
       }
       applied.push(...outcome.applied);
@@ -5365,7 +5375,7 @@ export const applyPlanningActions = defineServiceFn({
       { concurrency: 3 }
     );
 
-    return {
+    return replanned({
       applied,
       // The Draft project stock transfers the applied Transfers and Borrows
       // created, for the toast's links.
@@ -5373,7 +5383,7 @@ export const applyPlanningActions = defineServiceFn({
       requiresManualAction,
       warnings,
       errors
-    };
+    });
   }
 });
 /**
@@ -5392,19 +5402,7 @@ export const replanAfterPlannedOrderChange = defineServiceFn({
   permission: { update: "inventory" },
 
   async run(ctx, { plannedOrderId }) {
-    const mrp = await service.runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
-      type: "company",
-      id: ctx.company.id,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    });
-    if (mrp.error) {
-      logger.error("MRP failed after a planned order changed", {
-        companyId: ctx.company.id,
-        plannedOrderId,
-        error: mrp.error
-      });
-    }
+    await service.replanAfterChange(ctx, { plannedOrderIds: [plannedOrderId] });
   }
 });
 

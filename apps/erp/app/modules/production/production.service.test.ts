@@ -395,6 +395,42 @@ describe("matchPlannedOrdersToDocuments", () => {
     });
   });
 
+  it("takes the excess of a larger job that names its planned order off the week's next Planned orders", () => {
+    // 80 naming A (50): A converted, 30 off B (50 → 20); the Firm order stays
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { quantity: 80, plannedOrderId: "A" })],
+        [
+          plannedOrder("A", { splitIndex: 0, quantity: 50 }),
+          plannedOrder("F", { splitIndex: 1, quantity: 50, status: "Firm" }),
+          plannedOrder("B", { splitIndex: 2, quantity: 50 })
+        ]
+      )
+    ).toEqual({
+      conversions: [{ plannedOrderId: "A", documentId: "job" }],
+      reductions: [{ plannedOrderId: "B", quantity: 20 }],
+      deletions: []
+    });
+  });
+
+  it("deletes the Planned orders a larger named job covers whole", () => {
+    // 120 naming B (50): B converted, A (50) deleted, 20 off C (50 → 30)
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { quantity: 120, plannedOrderId: "B" })],
+        [
+          plannedOrder("A", { splitIndex: 0, quantity: 50 }),
+          plannedOrder("B", { splitIndex: 1, quantity: 50 }),
+          plannedOrder("C", { splitIndex: 2, quantity: 50 })
+        ]
+      )
+    ).toEqual({
+      conversions: [{ plannedOrderId: "B", documentId: "job" }],
+      reductions: [{ plannedOrderId: "C", quantity: 30 }],
+      deletions: ["A"]
+    });
+  });
+
   it("never takes a larger job's excess off a Firm order", () => {
     expect(
       matchPlannedOrdersToDocuments(

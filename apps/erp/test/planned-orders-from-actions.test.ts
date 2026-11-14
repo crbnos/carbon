@@ -784,6 +784,44 @@ describe("suggestions from the week's planned orders", () => {
     ]);
   });
 
+  // A dismissed action of last week still counted the overdue orders: the
+  // current week's action does not, so it must not offer them.
+  it("keeps the overdue planned orders off the current week's action when last week's action was dismissed", () => {
+    const orders = productionOrdersFromActions(
+      [action({ id: "current", type: "Make", periodId: "w0", suggestedQuantity: 5 })],
+      {
+        todayDate: "2026-09-30",
+        weeks,
+        rowActions: [
+          {
+            type: "Make",
+            status: "Dismissed",
+            periodId: "last-week",
+            suggestedDate: "2026-09-24"
+          },
+          { type: "Make", status: "Open", periodId: "w0", suggestedDate: "2026-10-01" }
+        ],
+        plannedOrders: [
+          plannedOrder({
+            id: "overdue",
+            periodId: "last-week",
+            quantity: 4,
+            dueDate: "2026-09-24"
+          }),
+          plannedOrder({
+            id: "this-week",
+            periodId: "w0",
+            quantity: 5,
+            dueDate: "2026-10-02"
+          })
+        ]
+      }
+    );
+    expect(
+      orders.map(({ plannedOrderId, quantity }) => ({ plannedOrderId, quantity }))
+    ).toEqual([{ plannedOrderId: "this-week", quantity: 5 }]);
+  });
+
   it("offers an action of a later week not on the page no planned order", () => {
     const orders = productionOrdersFromActions(
       [

@@ -635,6 +635,33 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
   );
 
   databaseTest(
+    "a job larger than the planned order it names takes the excess off the week's next Planned order",
+    async () => {
+      const a = await plannedOrder(
+        { orderType: "Make", splitIndex: 0, quantity: 50 },
+        "named-a"
+      );
+      const b = await plannedOrder(
+        { orderType: "Make", splitIndex: 1, quantity: 50 },
+        "named-b"
+      );
+      const jobId = await job("named-80");
+      await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [document(jobId, { plannedOrderId: a, quantity: 80 })]
+      });
+      // 80 = A 50 (converted) + 30 of B
+      expect(await read(a)).toMatchObject({ status: "Converted", jobId });
+      expect(await read(b)).toMatchObject({
+        status: "Planned",
+        quantity: 20,
+        jobId: null
+      });
+    }
+  );
+
+  databaseTest(
     "reducing a planned order deletes its open and dismissed change actions",
     async () => {
       const firm = await plannedOrder(

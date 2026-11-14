@@ -224,7 +224,7 @@ Phase-7 write) and throws on failure.
      `demandForecast`/`demandForecastSource`/`supplyForecast` + actual inserts
      run in ONE Kysely transaction — a failed run leaves prior planning data
      intact. An attempt whose planned orders changed since it read them rolls
-     back and plans again, up to 3 attempts (*Planned orders* below).
+     back and plans again, up to 5 attempts (*Planned orders* below).
    - **Key encoding**: every composite map key goes through `makeKey` /
      `makeLocationItemKey` / `makeActualKey` in `packages/database/src/mrp-engine.ts` (joined on
      `KEY_SEP = "\x1f"`). Never build `${a}-${b}` keys — ids are caller-supplied
@@ -533,8 +533,10 @@ working-day dates.
   loaded id missing) and another run's insert (a row created after the read).
   Then `writePlannedOrderDiff` throws `PlannedOrdersChangedError` before any
   write, the Phase-7 transaction rolls back, and `retryOnPlannedOrderChange` plans
-  again — up to `MAX_PLAN_ATTEMPTS` (3) attempts in all, then the run fails with
-  "Run MRP again". Any other error is not retried. Without it a convert that
+  again — up to `MAX_PLAN_ATTEMPTS` (5) attempts in all, with a random pause of
+  up to `MAX_RETRY_PAUSE_MS` (250 ms) between them so overlapping runs stop
+  retrying in step, then the run fails with "Run MRP again". Any other error is
+  not retried. Without it a convert that
   committed between the run's read and its write was overwritten (a converted
   week planned again is a second Make). Tested in `planned-order-write.write.test.ts`.
 - **Diff-write.** `writePlannedOrderDiff(trx, …)` (`planned-order-write.ts`) is the
@@ -561,6 +563,9 @@ working-day dates.
   inputs are read before it, so a person's change made after that read is caught
   by the snapshot check above and the run plans again (an unfirm could otherwise
   clash with a row the run inserts on the same key, and a convert be overwritten).
+  It is the only lock: nothing locks a whole run (a run lock held on one
+  connection while the run worked on others hung a run on a one-connection
+  pool), so runs overlap and part through the retry above.
 - **Worklist.** `generatePlanningActions` takes `newSupplyByRow`; for a row the
   engine planned, `deriveRowActions` uses it (`engineSupply`) instead of the RPC
   row's sizing — so the Order / Make total of a week equals its planned orders
@@ -583,8 +588,13 @@ working-day dates.
   (`productionOrdersFromActions` / `plannedOrdersFromActions` given
   `plannedOrders`, `planned-orders-from-actions.ts`); the current week's action
   (the page's first period) also takes every overdue planned order
-  (`isPlannedOrderOfWeek`), because MRP sizes and sums it there. A week with no
-  planned order is split by its policy as before. The drawers get the planned
+  (`plannedOrderWeekIndex`, `@carbon/utils`), because MRP sizes and sums it
+  there — unless the row has an Order / Make of a week already past (the week
+  turned before MRP ran again), Open OR Dismissed: that action counted the
+  overdue orders, so the current week's action takes only its own week's
+  (`hasPastWeekAction`, which reads the row's actions, not just the offered
+  ones), and a dismissed one's overdue orders are offered nowhere. A week with
+  no planned order is split by its policy as before. The drawers get the planned
   orders from `DrawerPlannedOrders`' `onOrdersLoaded` (re-read through
   `refreshKey` after an order is placed); a bulk Make / Order on rows never
   opened reads them with `getRowPlannedOrders` (`production.utils.ts`, 100 items
@@ -596,14 +606,24 @@ working-day dates.
   candidates `FOR UPDATE` and matches them with the pure
   `matchPlannedOrdersToDocuments`:
   1. A document that names its planned order converts that one, while it is
-     still Planned / Firm with the same item, location and type. A stale id
-     converts nothing.
+     still Planned / Firm with the same item, location, segment and type. One
+     SMALLER than what is left of it only takes its quantity off (the order
+     keeps its status; several documents naming one order count together).
+     One LARGER converts it and takes the excess off its week's next Planned
+     orders by `splitIndex`, as in 2. A stale id (gone, converted, another
+     item / location / segment / type, or converted earlier in the batch)
+     falls back to 2.
   2. Each other document takes a planned order of the week of the action it
      settled, per (item, location, segment, week, type) — the current week
      (the period holding `asOf`) also holding every overdue planned order:
      first one of EQUAL quantity (Planned before Firm, then `splitIndex`), then
-     the next Planned one by `splitIndex`. A Firm order converts only by id or
-     equal quantity, so a smaller job never takes it. No row converts twice.
+     the next Planned one by `splitIndex`, which a smaller document only
+     reduces. A LARGER document converts it and is also the supply of the
+     week's next Planned orders: each drops by what is left of the excess, and
+     one the excess covers whole is deleted (its actions cascade). A Firm order
+     converts only by id or equal quantity, so a smaller job never takes it,
+     and an excess never touches it. No row converts twice. A reduced order's
+     Make scrap is restated and its Open / Dismissed change actions deleted.
   Converted rows get `jobId` / `purchaseOrderLineId`, lose `firmedBy` /
   `firmedAt` (the CHECK), and their Open / Dismissed change actions are deleted
   (the document is the order now; MRP raises actions on it). One read, one
@@ -631,7 +651,16 @@ working-day dates.
   refused claims). A Cancel on a Buy planned order needs no `delete: purchasing`:
   it is a suggestion, not a document. Both `planning.update` routes take
   `firmPlannedOrder` / `unfirmPlannedOrder` / `updatePlannedOrder` (purchasing calls
-  the production operations). Pinned by `apps/erp/test/database/planned-order-firm.test.ts`.
+  the production operations).
+  **Every change re-plans.** Firm, unfirm and edit run MRP once the change commits
+  (`replanAfterPlannedOrderChange`), and `applyPlanningActions` in both modules
+  runs it once the whole batch is written when at least one action on a planned
+  order applied — all through `replanAfterChange` (`production.service.ts`, the one
+  building block `replanAfterItemChange` uses too). Without it the week's Order /
+  Make kept the old total until the next scheduled run. A failed run is logged and
+  never fails the change. `DrawerPlannedOrders` revalidates the page after a
+  successful post, so the item's actions and the row's Make / Order quantity
+  follow. Pinned by `apps/erp/test/database/planned-order-firm.test.ts`.
 - **UI.** Both order drawers render `DrawerPlannedOrders` (Planned Orders section,
   above Suggested Jobs / Orders, common segment only): `getDrawerPlannedOrders`
   and `getPlanningTimeFenceDays` (`production.utils.ts`, browser reads with the

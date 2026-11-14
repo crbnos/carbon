@@ -76,6 +76,7 @@ import {
   getPlanningActionsByIds,
   type PlannedOrderPlanningAction,
   reopenDismissedPlanningActions,
+  replanAfterChange,
   runMRP,
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
@@ -4670,7 +4671,8 @@ type PlanningLine = {
  * `apply` takes any of them; the others only their own. An action on a Buy
  * planned order edits that order instead: Expedite / Defer set its due date
  * (the release date moves by the same days), Increase / Decrease its
- * quantity, and the order becomes Firm; Cancel deletes it. An action whose
+ * quantity, and the order becomes Firm; Cancel deletes it; when any such
+ * action applied, MRP runs once the batch is written. An action whose
  * order is in approval or sent, or whose date the supplier promised, is
  * listed in `requiresManualAction` to review on the order. With `apply`, an
  * Open Transfer or Borrow creates a Draft project stock transfer
@@ -4744,6 +4746,18 @@ export const applyPlanningActions = defineServiceFn({
       row: (typeof actionRows.data)[number];
     }[] = [];
     const plannedOrderTargets: PlannedOrderPlanningAction[] = [];
+    // An applied action changed these planned orders, so the supply MRP
+    // counts: it re-plans once the whole batch is written, as a firm or an
+    // edit does, and before the answer so the page reads the new actions.
+    const changedPlannedOrderIds: string[] = [];
+    const replanned = async <T>(result: T): Promise<T> => {
+      if (changedPlannedOrderIds.length > 0) {
+        await replanAfterChange(ctx, {
+          plannedOrderIds: changedPlannedOrderIds
+        });
+      }
+      return result;
+    };
     for (const planningActionId of ids) {
       if (transferIdSet.has(planningActionId)) continue;
       const row = rowById.get(planningActionId);
@@ -4815,6 +4829,12 @@ export const applyPlanningActions = defineServiceFn({
         );
       }
       applied.push(...plannedOutcome.applied);
+      const appliedIds = new Set(plannedOutcome.applied);
+      changedPlannedOrderIds.push(
+        ...plannedOrderTargets
+          .filter((target) => appliedIds.has(target.planningActionId))
+          .map((target) => target.plannedOrderId)
+      );
       for (const id of plannedOutcome.alreadyApplied) {
         errors.push(`Planning action ${id} was already applied`);
       }
@@ -4854,10 +4874,12 @@ export const applyPlanningActions = defineServiceFn({
           : [];
       lineById = new Map(lines.map((line) => [line.id, line]));
     } catch (err) {
-      return ctx.error(
-        "internal",
-        "Failed to read the planning actions' purchase order lines",
-        err
+      return replanned(
+        ctx.error(
+          "internal",
+          "Failed to read the planning actions' purchase order lines",
+          err
+        )
       );
     }
 
@@ -4926,12 +4948,14 @@ export const applyPlanningActions = defineServiceFn({
         }))
       });
     } catch (err) {
-      return ctx.error(
-        "internal",
-        `Failed to apply planning actions: ${
-          err instanceof Error ? err.message : "unknown error"
-        }`,
-        err
+      return replanned(
+        ctx.error(
+          "internal",
+          `Failed to apply planning actions: ${
+            err instanceof Error ? err.message : "unknown error"
+          }`,
+          err
+        )
       );
     }
     applied.push(...outcome.applied);
@@ -4962,7 +4986,7 @@ export const applyPlanningActions = defineServiceFn({
       );
     }
     if (errors.length > 0) messageParts.push(`${errors.length} failed`);
-    return {
+    return replanned({
       success:
         errors.length === 0 && !(applied.length === 0 && manualCount > 0),
       message: messageParts.join("; "),
@@ -4970,7 +4994,7 @@ export const applyPlanningActions = defineServiceFn({
       transfers: transferOutcome.transfers,
       requiresManualAction,
       errors: errors.length > 0 ? errors : undefined
-    };
+    });
   }
 });
 /**

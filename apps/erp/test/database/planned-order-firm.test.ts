@@ -12,8 +12,7 @@ import {
   createServiceContext,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect } from "vitest";
+import { afterEach, beforeEach, describe, expect } from "vitest";
 import { runMRP } from "../../app/modules/production/production.service";
 import {
   applyPlanningActions,
@@ -34,19 +33,12 @@ import {
   USER
 } from "./fixtures/always-post";
 import { systemServiceOf } from "./fixtures/handles";
-import {
-  connectLocalTestPool,
-  databaseTest,
-  hasLocalDatabase
-} from "./fixtures/local-database";
+import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 let f: Fixture;
-// A firm, unfirm or edit runs MRP after it, and MRP holds its run lock on one
-// connection while it works on others: these operations get a pool.
-let pg: Kysely<KyselyDatabase>;
-// The system over `pg`, with no Supabase client: MRP fails at its first
-// read, and the change must stand.
+// The system with no Supabase client: the MRP run a change starts fails at
+// its first read, and the change must stand.
 let service: ServiceContext;
 let week: string;
 let nextWeek: string;
@@ -168,19 +160,11 @@ async function actionStatus(id: string) {
   return row?.status ?? null;
 }
 
-beforeAll(() => {
-  if (hasLocalDatabase) pg = connectLocalTestPool();
-});
-
-afterAll(async () => {
-  await pg?.destroy();
-});
-
 describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
   beforeEach(async () => {
     f = await alwaysPostFixture();
     service = systemServiceOf(
-      { db: pg, companyId: f.companyId, userId: USER },
+      { db: f.db, companyId: f.companyId, userId: USER },
       f.service.company.groupId
     );
     week = `${f.prefix}-week`;
@@ -452,7 +436,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         // the operations read and write through `pg` only
         caller: {} as never,
         system: () => ({}) as never,
-        pg: () => pg,
+        pg: () => f.db,
         kv: () => ({}) as never
       });
 
@@ -478,81 +462,158 @@ describe.skipIf(!client)("a planned order change re-plans", () => {
     await f.cleanup();
   });
 
+  // A planner who may change planned orders of the module, and may not run
+  // MRP on their own.
+  function planner(module: "production" | "purchasing") {
+    const all = [f.companyId];
+    return createServiceContext({
+      actor: {
+        type: "user",
+        userId: USER,
+        permissions: {
+          [module]: { view: all, create: all, update: all, delete: all }
+        }
+      },
+      company: { id: f.companyId, groupId: f.service.company.groupId },
+      caller: client!,
+      system: () => client!,
+      pg: () => f.db,
+      kv: () => {
+        throw new Error("No planned order operation reads the cache");
+      }
+    });
+  }
+
+  // Below a reorder point of 1 with no stock, MRP plans the item one order
+  // of 5: returns it.
+  async function plannedOrderOfFive(itemId: string) {
+    await seed(f, (trx) =>
+      trx
+        .updateTable("itemPlanning")
+        .set({
+          reorderingPolicy: "Fixed Reorder Quantity",
+          reorderPoint: 1,
+          reorderQuantity: 5
+        })
+        .where("companyId", "=", f.companyId)
+        .where("locationId", "=", f.locationId)
+        .where("itemId", "=", itemId)
+        .execute()
+    );
+    const run = await runMRP(client!, f.db, {
+      type: "company",
+      id: f.companyId,
+      companyId: f.companyId,
+      userId: USER
+    });
+    expect(run.error).toBeNull();
+    return f.db
+      .selectFrom("plannedOrder")
+      .select(["id", "periodId", "dueDate"])
+      .where("companyId", "=", f.companyId)
+      .where("itemId", "=", itemId)
+      .executeTakeFirstOrThrow();
+  }
+
+  // The item's Open Order / Make actions, by week.
+  function newSupply(itemId: string) {
+    return f.db
+      .selectFrom("planningAction")
+      .select(["type", "periodId", "suggestedQuantity"])
+      .where("companyId", "=", f.companyId)
+      .where("itemId", "=", itemId)
+      .where("type", "in", ["Make", "Order"])
+      .where("status", "=", "Open")
+      .execute()
+      .then((rows) =>
+        rows.map((row) => ({
+          ...row,
+          suggestedQuantity: Number(row.suggestedQuantity)
+        }))
+      );
+  }
+
+  // An Open Increase to 8 on the planned order, as MRP raises on a held one.
+  async function increaseToEight(
+    itemId: string,
+    planned: { id: string; periodId: string; dueDate: string }
+  ) {
+    const id = `${f.prefix}-action-increase-${planned.id}`;
+    await seed(f, (trx) =>
+      trx
+        .insertInto("planningAction")
+        .values({
+          id,
+          companyId: f.companyId,
+          type: "Increase",
+          status: "Open",
+          itemId,
+          locationId: f.locationId,
+          periodId: planned.periodId,
+          planningSegmentId: "",
+          plannedOrderId: planned.id,
+          requiresManualAction: false,
+          suggestedQuantity: 8,
+          suggestedDate: planned.dueDate,
+          horizonDate: f.today,
+          createdBy: USER
+        })
+        .execute()
+    );
+    return id;
+  }
+
   databaseTest(
     "an edited quantity is the week's Make once the edit returns",
     async () => {
-      // a planner who may change Make planned orders, and may not run MRP
-      // on their own
-      const all = [f.companyId];
-      const ctx = createServiceContext({
-        actor: {
-          type: "user",
-          userId: USER,
-          permissions: {
-            production: { view: all, create: all, update: all, delete: all }
-          }
-        },
-        company: { id: f.companyId, groupId: f.service.company.groupId },
-        caller: client!,
-        system: () => client!,
-        pg: () => pg,
-        kv: () => {
-          throw new Error("No planned order operation reads the cache");
-        }
-      });
-      // below a reorder point of 1 with no stock: MRP plans one order of 5
-      await seed(f, (trx) =>
-        trx
-          .updateTable("itemPlanning")
-          .set({
-            reorderingPolicy: "Fixed Reorder Quantity",
-            reorderPoint: 1,
-            reorderQuantity: 5
-          })
-          .where("companyId", "=", f.companyId)
-          .where("locationId", "=", f.locationId)
-          .where("itemId", "=", f.assemblyId)
-          .execute()
-      );
-      const run = await runMRP(client!, pg, {
-        type: "company",
-        id: f.companyId,
-        companyId: f.companyId,
-        userId: USER
-      });
-      expect(run.error).toBeNull();
-      const planned = await f.db
-        .selectFrom("plannedOrder")
-        .select(["id", "periodId"])
-        .where("companyId", "=", f.companyId)
-        .where("itemId", "=", f.assemblyId)
-        .executeTakeFirstOrThrow();
-      const makes = () =>
-        f.db
-          .selectFrom("planningAction")
-          .select(["periodId", "suggestedQuantity"])
-          .where("companyId", "=", f.companyId)
-          .where("itemId", "=", f.assemblyId)
-          .where("type", "=", "Make")
-          .where("status", "=", "Open")
-          .execute()
-          .then((rows) =>
-            rows.map((row) => ({
-              ...row,
-              suggestedQuantity: Number(row.suggestedQuantity)
-            }))
-          );
-      expect(await makes()).toEqual([
-        { periodId: planned.periodId, suggestedQuantity: 5 }
+      const planned = await plannedOrderOfFive(f.assemblyId);
+      expect(await newSupply(f.assemblyId)).toEqual([
+        { type: "Make", periodId: planned.periodId, suggestedQuantity: 5 }
       ]);
 
-      const edited = await updatePlannedOrder(ctx, {
+      const edited = await updatePlannedOrder(planner("production"), {
         id: planned.id,
         quantity: 8
       });
       expect(edited.error).toBeNull();
-      expect(await makes()).toEqual([
-        { periodId: planned.periodId, suggestedQuantity: 8 }
+      expect(await newSupply(f.assemblyId)).toEqual([
+        { type: "Make", periodId: planned.periodId, suggestedQuantity: 8 }
+      ]);
+    }
+  );
+
+  databaseTest(
+    "an applied Increase on a Make planned order is the week's Make once Apply returns",
+    async () => {
+      const planned = await plannedOrderOfFive(f.assemblyId);
+      const actionId = await increaseToEight(f.assemblyId, planned);
+
+      const applied = await applyPlanningActions(planner("production"), {
+        planningActionIds: [actionId]
+      });
+      expect(applied.data).toMatchObject({ applied: [actionId], errors: [] });
+      expect(await newSupply(f.assemblyId)).toEqual([
+        { type: "Make", periodId: planned.periodId, suggestedQuantity: 8 }
+      ]);
+    }
+  );
+
+  databaseTest(
+    "an applied Increase on a Buy planned order is the week's Order once Apply returns",
+    async () => {
+      const planned = await plannedOrderOfFive(f.partId);
+      expect(await newSupply(f.partId)).toEqual([
+        { type: "Order", periodId: planned.periodId, suggestedQuantity: 5 }
+      ]);
+      const actionId = await increaseToEight(f.partId, planned);
+
+      const applied = await applyPurchasingPlanningActions(
+        planner("purchasing"),
+        { planningActionIds: [actionId], type: "apply" }
+      );
+      expect(applied.data).toMatchObject({ applied: [actionId] });
+      expect(await newSupply(f.partId)).toEqual([
+        { type: "Order", periodId: planned.periodId, suggestedQuantity: 8 }
       ]);
     }
   );

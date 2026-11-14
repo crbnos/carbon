@@ -129,11 +129,16 @@ export type SuggestablePlannedOrder = {
 /** One of the planning page's weeks, in order; the first holds today. */
 export type PlanningWeek = { id: string; startDate: string; endDate: string };
 
-/** A planning action of the row, as far as it names a planned order. */
+/** A planning action of the row, as far as it names a planned order or a
+ *  week. */
 export type RowPlanningAction = {
   type: string;
   status: string;
   plannedOrderId?: string | null;
+  purchaseOrderLineId?: string | null;
+  jobId?: string | null;
+  periodId?: string;
+  suggestedDate?: string;
 };
 
 /** Where a week's planned orders come from. */
@@ -144,7 +149,7 @@ type PlannedOrderContext = {
   weeks?: PlanningWeek[];
   /** Today on the location's calendar (else the first week's start). */
   todayDate?: string;
-  /** An action of a week already past is among the actions offered. */
+  /** The row has an Open or Dismissed action of a week already past. */
   hasPastWeekAction?: boolean;
 };
 
@@ -184,9 +189,10 @@ function sortedWeeks(weeks: PlanningWeek[] | undefined): PlanningWeek[] {
  *
  * An action of a week already past (the week turned before MRP ran again)
  * counted only what is overdue now: the planned orders due before the first
- * week. The current week's action counted those too only when no such action
- * is offered beside it; with one, it takes the orders due inside the first
- * week, so no planned order is offered twice.
+ * week. The current week's action counted those too only when the row has no
+ * such action, Open or Dismissed; with one, it takes the orders due inside
+ * the first week, so no planned order is offered twice, and a dismissed one's
+ * orders are not offered at all.
  */
 function plannedOrdersOfWeek(
   action: NewSupplyActionFields,
@@ -251,13 +257,32 @@ function isPastWeekAction(
   );
 }
 
-/** Whether an action of a week already past is among the actions offered. */
+/**
+ * Whether the row has an Order / Make of a week already past, Open or
+ * Dismissed: MRP counted the overdue planned orders in that action, not in
+ * the current week's, and a dismissal does not move them back. `actions` are
+ * the ones offered; `rowActions` every action of the row.
+ */
 function hasPastWeekAction(
+  type: "Order" | "Make",
   actions: NewSupplyActionFields[],
+  rowActions: RowPlanningAction[] | undefined,
   weeks: PlanningWeek[] | undefined
 ): boolean {
   const sorted = sortedWeeks(weeks);
-  return actions.some((action) => isPastWeekAction(action, sorted));
+  const ofRow = (rowActions ?? []).flatMap((action) =>
+    action.type === type &&
+    (action.status === "Open" || action.status === "Dismissed") &&
+    !action.purchaseOrderLineId &&
+    !action.jobId &&
+    action.periodId !== undefined &&
+    action.suggestedDate !== undefined
+      ? [{ periodId: action.periodId, suggestedDate: action.suggestedDate }]
+      : []
+  );
+  return [...actions, ...ofRow].some((action) =>
+    isPastWeekAction(action, sorted)
+  );
 }
 
 /**
@@ -338,7 +363,12 @@ export function productionOrdersFromActions(
 ): ProductionOrder[] {
   const weekContext = {
     ...context,
-    hasPastWeekAction: hasPastWeekAction(actions, context.weeks)
+    hasPastWeekAction: hasPastWeekAction(
+      "Make",
+      actions,
+      context.rowActions,
+      context.weeks
+    )
   };
   return actions.flatMap((action) =>
     suggestionsOf(
@@ -394,7 +424,12 @@ export function plannedOrdersFromActions(
   const { conversionFactor } = context;
   const weekContext = {
     ...context,
-    hasPastWeekAction: hasPastWeekAction(actions, context.weeks)
+    hasPastWeekAction: hasPastWeekAction(
+      "Order",
+      actions,
+      context.rowActions,
+      context.weeks
+    )
   };
   return actions.flatMap((action) =>
     suggestionsOf(action, context.item ?? {}, undefined, weekContext).map(
