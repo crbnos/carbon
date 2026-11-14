@@ -1057,7 +1057,7 @@ export const completeProjectMilestone = defineServiceFn({
       });
     } catch (err) {
       logger.error("Failed to write the milestone baseline", {
-        err,
+        error: err,
         milestoneId: result.data.id
       });
       return { ...result.data, baselineFailed: true };

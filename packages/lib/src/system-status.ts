@@ -44,21 +44,21 @@ export async function fetchSystemStatus(
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
     });
     if (!response.ok) {
-      log.warn("System status request failed with {status}", {
+      log.warning("System status request failed with {status}", {
         status: response.status
       });
       return null;
     }
     const parsed = systemStatusValidator.safeParse(await response.json());
     if (!parsed.success) {
-      log.warn("System status document is not valid", {
+      log.warning("System status document is not valid", {
         issues: parsed.error.issues
       });
       return null;
     }
     return parsed.data;
   } catch (error) {
-    log.warn("System status request failed", { error });
+    log.warning("System status request failed", { error });
     return null;
   }
 }

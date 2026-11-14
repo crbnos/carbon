@@ -6,15 +6,24 @@ import { getLogger } from "@carbon/logger";
 import { describeCause } from "@carbon/utils";
 import type { Result } from "../types";
 
-const log = getLogger("auth");
+const logger = getLogger("auth", "result");
 
-export function error(error: any, message = "Request failed"): Result {
-  // The dev text formatter prints only the message template, never unreferenced
-  // properties — so the cause must be a `{error}` placeholder or it is silently
-  // dropped. Braces in the message are escaped so they aren't read as placeholders.
+/**
+ * A failed result for the user, logged once here: `context` carries what the
+ * log line needs beyond the request's own identity (the record it was about).
+ */
+export function error(
+  error: any,
+  message = "Request failed",
+  context?: Record<string, unknown>
+): Result {
+  // The caller's message is the template, so its failures group as one error.
+  // A brace in it is text, not a placeholder.
   if (error) {
-    const template = message.replaceAll("{", "{{").replaceAll("}", "}}");
-    log.error(`${template}: {error}`, { error });
+    logger.error(message.replaceAll("{", "{{").replaceAll("}", "}}"), {
+      ...context,
+      error
+    });
   }
 
   const reason = describeCause(error);

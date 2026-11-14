@@ -35,10 +35,9 @@ export async function action({ request }: ActionFunctionArgs) {
       verifyCurrent,
       await flash(
         request,
-        error(
-          verifyCurrent.error,
-          `Failed to get current sequence for ${table}`
-        )
+        error(verifyCurrent.error, "Failed to get the current sequence", {
+          table
+        })
       )
     );
   }

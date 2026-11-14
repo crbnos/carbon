@@ -488,7 +488,10 @@ function DeactivateWorkCenterBody({
       .eq("workCenterId", workCenter.id!)
       .eq("companyId", company?.id);
     if (error) {
-      logger.error(error);
+      logger.error("Failed to load the active operations of a work center", {
+        workCenterId: workCenter.id,
+        error
+      });
     }
 
     if (data) {

@@ -93,10 +93,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.rentalAgreementSetup(id, "details"),
       await flash(
         request,
-        error(
-          update.error,
-          update.error.message || "Failed to update rental agreement"
-        )
+        error(update.error, "Failed to update rental agreement")
       )
     );
   }

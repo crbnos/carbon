@@ -79,7 +79,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
 
   // Photos and PDFs only: CAD models and drawings can be export-controlled.
   if (!customerPortalServesFile(path)) {
-    logger.warn("Customer portal refused a file type it does not serve", {
+    logger.warning("Customer portal refused a file type it does not serve", {
       companyId: shareCompanyId,
       path
     });
@@ -126,7 +126,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     return new Response(null, { status: 500 });
   }
   if (!fileRecord.data) {
-    logger.warn("Customer portal refused a file no step recorded", {
+    logger.warning("Customer portal refused a file no step recorded", {
       companyId: shareCompanyId,
       operationId,
       path

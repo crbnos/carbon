@@ -2,12 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { NotFoundError, ServerFnError } from "./errors";
-
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn() })
-}));
 
 import { CarbonError, createServiceContext } from "./service-fn.server";
 import { paged, payload, run, unwrap } from "./service-tools.server";

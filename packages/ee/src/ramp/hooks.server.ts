@@ -5,6 +5,7 @@
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/lib/trigger";
+import { getLogger } from "@carbon/logger";
 import { SpendProviderID } from "../accounting/core/models";
 import { ensureProviderSubscriptions } from "../accounting/core/subscriptions";
 import { resolveCapabilities } from "../sync/capabilities";
@@ -28,6 +29,8 @@ import {
   pushProjects
 } from "./lib/service";
 import { patchRampAccountingConnectionProvider } from "./lib/state";
+
+const logger = getLogger("ee", "ramp");
 
 /**
  * Ramp integration lifecycle hooks (server-only). Registered in
@@ -79,15 +82,16 @@ async function convergeRamp(
       resolveCapabilities(resolveRampModeProfile(metadata).capabilities)
     );
     if (enabled.length > 0) {
-      console.log(
-        `[ramp] enabled ${enabled.join(", ")} for company ${companyId} — Ramp cannot create a vendor without a contact email and a country`
+      logger.info(
+        "Enabled party-contact requirements; Ramp cannot create a vendor without a contact email and a country",
+        { companyId, enabled }
       );
     }
   } catch (err) {
-    console.error(
-      `[ramp] could not enable party-contact requirements for company ${companyId}:`,
-      (err as Error).message
-    );
+    logger.error("Could not enable Ramp party-contact requirements", {
+      companyId,
+      error: err
+    });
   }
 
   // Only the seat-holder may create the accounting connection. In push-only
@@ -117,9 +121,9 @@ async function convergeRamp(
         resolveConnectedProviderName(await client.getAccountingConnections())
       );
     } catch (err) {
-      console.warn(
-        `[ramp] could not refresh the accounting connection owner for company ${companyId}; leaving the stored value`,
-        err
+      logger.warning(
+        "Could not refresh the Ramp accounting connection owner; leaving the stored value",
+        { companyId, error: err }
       );
     }
   }
@@ -139,9 +143,9 @@ async function convergeRamp(
   try {
     await ensureRampWebhook(serviceRole, companyId, getAppUrl());
   } catch (err) {
-    console.warn(
-      `[ramp] webhook registration failed for company ${companyId}; continuing install (hourly sweep covers correctness)`,
-      err
+    logger.warning(
+      "Ramp webhook registration failed; continuing install (hourly sweep covers correctness)",
+      { companyId, error: err }
     );
   }
 
@@ -197,20 +201,20 @@ async function convergeRamp(
     try {
       await pushCostCenters(serviceRole, companyId);
     } catch (err) {
-      console.warn(
-        `[ramp] cost-center push failed for company ${companyId}; continuing convergence`,
-        err
-      );
+      logger.warning("Ramp cost-center push failed; continuing convergence", {
+        companyId,
+        error: err
+      });
     }
     // Converge the Project field + its options — a second custom field, kept
     // independent of the cost-center one. Same fail-soft stance: the sweep retries.
     try {
       await pushProjects(serviceRole, companyId);
     } catch (err) {
-      console.warn(
-        `[ramp] project push failed for company ${companyId}; continuing convergence`,
-        err
-      );
+      logger.warning("Ramp project push failed; continuing convergence", {
+        companyId,
+        error: err
+      });
     }
   }
 
@@ -225,9 +229,9 @@ async function convergeRamp(
       reason: opts.syncReason
     });
   } catch (err) {
-    console.warn(
-      `[ramp] initial sync enqueue failed for company ${companyId}; the hourly sweep will cover it`,
-      err
+    logger.warning(
+      "Ramp initial sync enqueue failed; the hourly sweep will cover it",
+      { companyId, error: err }
     );
   }
 }
@@ -261,11 +265,10 @@ export async function rampOnUninstall(companyId: string): Promise<void> {
         await client.deleteWebhook(metadata.webhookId);
       } catch (err) {
         // Tolerate a missing webhook (already deleted).
-        console.error(
-          `[ramp] failed to delete webhook on uninstall (company ${companyId}): ${
-            (err as Error).message
-          }`
-        );
+        logger.error("Failed to delete Ramp webhook on uninstall", {
+          companyId,
+          error: err
+        });
       }
     }
 
@@ -294,20 +297,21 @@ export async function rampOnUninstall(companyId: string): Promise<void> {
         if (live.some(isCarbonConnection)) {
           await client.deleteAccountingConnection();
         } else if (foreign) {
-          console.warn(
-            `[ramp] leaving the accounting connection in place for company ${companyId}: it is held by ${
-              foreign.remote_provider_name ?? "another system"
-            }, not Carbon`
+          logger.warning(
+            "Leaving the Ramp accounting connection in place: it is held by another system, not Carbon",
+            {
+              companyId,
+              holder: foreign.remote_provider_name ?? "another system"
+            }
           );
         }
       }
     } catch (err) {
       // Tolerate — the connection may already be gone.
-      console.error(
-        `[ramp] failed to delete accounting connection on uninstall (company ${companyId}): ${
-          (err as Error).message
-        }`
-      );
+      logger.error("Failed to delete Ramp accounting connection on uninstall", {
+        companyId,
+        error: err
+      });
     }
   }
 
@@ -319,10 +323,9 @@ export async function rampOnUninstall(companyId: string): Promise<void> {
   try {
     await clearRampConnectionMetadata(serviceRole, companyId);
   } catch (err) {
-    console.error(
-      `[ramp] failed to clear stored webhook/connection metadata on uninstall (company ${companyId}): ${
-        (err as Error).message
-      }`
+    logger.error(
+      "Failed to clear stored Ramp webhook/connection metadata on uninstall",
+      { companyId, error: err }
     );
   }
 }

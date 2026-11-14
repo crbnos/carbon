@@ -668,9 +668,11 @@ export async function walkWorkflow(params: {
     return { status: settled, error };
   });
 
-  logger.info(
-    `Workflow run ${payload.runId} ${finished.status.toLowerCase()} after ${executions} steps`
-  );
+  logger.info("Workflow run finished", {
+    runId: payload.runId,
+    status: finished.status,
+    steps: executions
+  });
 
   return { ...finished, steps: executions };
 }

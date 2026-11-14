@@ -13,6 +13,7 @@ import {
   syncAuditSubscriptions
 } from "@carbon/ee/audit.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { Button, RecordOutlet, ScrollArea } from "@carbon/react";
 import { redirectExternal } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -30,6 +31,8 @@ import {
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "settings", "audit-logs");
+
 export const handle: Handle = {
   breadcrumb: msg`Audit Log`,
   to: path.to.auditLog
@@ -40,12 +43,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  // Check if audit log is enabled for this company
   let enabled = false;
   try {
     enabled = await isAuditLogEnabled(client, companyId);
-  } catch {
+  } catch (error) {
     // Table might not exist yet, that's ok
+    logger.warning("Failed to read whether the audit log is enabled", {
+      error
+    });
   }
 
   const serviceRole = getCarbonServiceRole();
@@ -59,8 +64,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     try {
       await enableAuditLog(serviceRole, companyId);
       enabled = true;
-    } catch {
+    } catch (error) {
       // Best-effort; the write path degrades gracefully if it can't enable here.
+      logger.warning("Failed to enable the audit log", { companyId, error });
     }
   }
 
@@ -68,8 +74,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (enabled) {
     try {
       await syncAuditSubscriptions(client, companyId);
-    } catch {
+    } catch (error) {
       // Subscription sync failure is non-critical
+      logger.warning("Failed to sync audit log subscriptions", { error });
     }
   }
 
@@ -78,8 +85,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (enabled) {
     try {
       archives = await getAuditLogArchives(serviceRole, companyId);
-    } catch {
+    } catch (error) {
       // Archives table might not exist
+      logger.warning("Failed to load audit log archives", { error });
     }
   }
 

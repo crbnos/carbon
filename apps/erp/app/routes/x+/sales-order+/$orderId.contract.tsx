@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime, getErrorMessage, redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { createContractFromSalesOrderValidator } from "~/modules/sales/sales.models";
 import { createContractFromSalesOrder } from "~/modules/sales/sales.service";
@@ -51,10 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } catch (err) {
     throw redirect(
       path.to.salesOrderDetails(orderId),
-      await flash(
-        request,
-        error(err, getErrorMessage(err, "Failed to create contract"))
-      )
+      await flash(request, error(err, "Failed to create contract"))
     );
   }
 

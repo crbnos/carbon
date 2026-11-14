@@ -5,6 +5,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getOnshapeClient } from "@carbon/ee/onshape";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { inngest } from "../../client";
@@ -25,6 +26,8 @@ import {
   type SyncOnshapeDrawingInput,
   type SyncOnshapeElementInput
 } from "./onshape-sync-element";
+
+const logger = getLogger("jobs", "onshape-revision-sync");
 
 // Go-forward sync: one released Onshape revision ->
 // attach its CAD model to the matching Carbon item. LINK-ONLY (never creates
@@ -282,7 +285,7 @@ export const onshapeRevisionSyncFunction = inngest.createFunction(
     // asset sync on and the integration is active. Runs every execution so
     // flipping the toggle off also kills an in-flight retry.
     if (!(await isOnshapeAssetSyncEnabled(carbon, payload.companyId))) {
-      console.log("onshape-revision-sync: skipped (disabled or inactive)", {
+      logger.info("Onshape revision sync skipped: sync disabled or inactive", {
         companyId: payload.companyId,
         partNumber: payload.partNumber
       });

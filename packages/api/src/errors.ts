@@ -5,7 +5,7 @@
 import { getLogger } from "@carbon/logger";
 import { isZodError, summarizeZodIssues } from "@carbon/utils";
 
-const logger = getLogger("server-functions");
+const logger = getLogger("api");
 
 /** `message` is empty when the failure came from the data layer, so raw
  *  constraint text never reaches a toast. `body` carries structured extras. */
@@ -130,7 +130,12 @@ export function toServerFnError(
   // A refusal the caller caused (bad input, missing record, no permission) is
   // expected traffic; only a server failure is an error.
   if (error.status >= 500) logger.error("{name} failed", { name, error: err });
-  else logger.warn(`${name} refused`, { status: error.status, error: err });
+  else
+    logger.warning("{name} refused", {
+      name,
+      status: error.status,
+      error: err
+    });
   return error;
 }
 

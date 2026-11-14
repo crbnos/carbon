@@ -51,7 +51,7 @@ export async function isSignInBrowser(request: Request): Promise<boolean> {
   if (!DOMAIN) {
     if (!warnedUnbound) {
       warnedUnbound = true;
-      log.warn(
+      log.warning(
         "DOMAIN is unset: the ERP and MES share no cookie, so sign-in links are not bound to the browser that asked."
       );
     }

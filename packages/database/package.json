@@ -105,6 +105,7 @@
   "sideEffects": false,
   "version": "0.0.0",
   "dependencies": {
+    "@carbon/logger": "workspace:*",
     "@internationalized/date": "catalog:",
     "@jitl/quickjs-singlefile-browser-release-sync": "0.32.0",
     "@supabase/supabase-js": "catalog:",

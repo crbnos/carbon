@@ -4781,7 +4781,12 @@ export const orderPlannedJobs = defineServiceFn({
       }
     }
     const processedItems = new Set(createdJobs.map((job) => job.itemId)).size;
-    for (const error of errors) logger.error(error, { companyId, locationId });
+    for (const reason of errors)
+      logger.error("Planning could not create a job: {reason}", {
+        reason,
+        companyId,
+        locationId
+      });
 
     if (supplyByKey.size > 0) {
       const forecasts = await client

@@ -41,9 +41,6 @@ vi.mock("@carbon/jobs", async () => ({
   ).syncIssueFromLinearSchema,
   trigger: vi.fn()
 }));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ info: vi.fn(), error: vi.fn(), warning: vi.fn() })
-}));
 
 import { trigger } from "@carbon/jobs";
 import { action } from "./webhook.linear.$companyId";

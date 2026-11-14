@@ -296,7 +296,7 @@ export async function submitAssemblerJob(opts: {
   // step (and its concurrency slot) asleep in the meantime.
   if (response.status === 429) {
     const retryAfter = Number(response.headers.get("retry-after")) || 15;
-    logger.warn(`assembler /v1/${action} busy (429); retrying`, { jobId });
+    logger.warn("Assembler busy (429); retrying", { action, jobId });
     throw new RetryAfterError(
       `Assembler service busy for ${action}`,
       `${retryAfter}s`
@@ -708,7 +708,8 @@ export async function runAssemblerJob(
     resubmits += 1;
     runningSince = null;
     waits = 0;
-    logger.warn(`assembler ${action} resubmitted`, {
+    logger.warn("Assembler job resubmitted", {
+      action,
       jobId,
       reason: decision.reason,
       resubmits

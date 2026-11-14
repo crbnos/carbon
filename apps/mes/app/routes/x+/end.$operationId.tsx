@@ -68,7 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (jobOperation.data?.companyId !== companyId) {
-    logger.warn("Job operation does not belong to company", {
+    logger.warning("Job operation does not belong to company", {
       companyId,
       operationId
     });

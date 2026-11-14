@@ -2651,7 +2651,7 @@ export async function postMaintenanceLabor(
   return null;
 }
 
-const trainingLogger = getLogger("erp", "training-completion");
+const trainingLogger = getLogger("erp", "resources", "training-completion");
 
 // An external assignment (no training) is always open and one-time.
 type AssignmentForCompletion = {

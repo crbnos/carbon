@@ -46,7 +46,7 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
     .eq("companyId", companyId)
     .maybeSingle();
   if (current.error || !current.data) {
-    logger.warn("Picking list not found for company", {
+    logger.warning("Picking list not found for company", {
       companyId,
       pickingListId,
       error: current.error

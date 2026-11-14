@@ -221,10 +221,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   // restarts them — so it is an error to retry, not a sign-out. Only a
   // missing user row ends the session.
   if (user.error) {
-    log.warn("App shell read failed", {
+    log.warning("App shell read failed", {
       userId,
       companyId,
-      userError: user.error.message
+      error: user.error
     });
     throw data("Carbon could not load your account. Try again in a moment.", {
       status: 503

@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .maybeSingle();
 
   if (!jobOpRow) {
-    logger.warn("Job operation not found for company", {
+    logger.warning("Job operation not found for company", {
       companyId,
       jobOperationId
     });
@@ -126,7 +126,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (issued.error) {
     const context = { companyId, jobOperationId, itemId, error: issued.error };
     if (issued.error.status < 500) {
-      logger.warn("Material issue refused", context);
+      logger.warning("Material issue refused", context);
       return { success: false, message: issued.error.message };
     }
     logger.error("Failed to issue material", context);

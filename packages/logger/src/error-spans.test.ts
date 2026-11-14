@@ -12,6 +12,11 @@ import { afterAll, expect, it } from "vitest";
 import { ensureLoggingConfigured } from "./config.server";
 import { getLogger } from "./logger";
 
+// The exit-on-uncaught-exception handler must not end the test worker.
+(globalThis as Record<PropertyKey, unknown>)[
+  Symbol.for("carbon.logging.process-handlers")
+] = true;
+
 const exporter = new InMemorySpanExporter();
 new NodeTracerProvider({
   spanProcessors: [new SimpleSpanProcessor(exporter)]

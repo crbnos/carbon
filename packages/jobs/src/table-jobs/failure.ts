@@ -41,7 +41,7 @@ export async function failTableJob({
     companyId,
     jobId,
     ...context,
-    error: error.message
+    error
   });
   try {
     await notifyTableJobUser(notification);

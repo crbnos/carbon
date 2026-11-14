@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { oncePerRead } from "@carbon/logger/middleware.server";
+import { oncePerRead } from "@carbon/logger/context.server";
 import { Edition } from "@carbon/utils";
 import { type Cookie, createCookie } from "react-router";
 import {

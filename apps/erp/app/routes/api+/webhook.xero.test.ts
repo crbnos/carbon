@@ -16,9 +16,6 @@ vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: () => ({})
 }));
 vi.mock("@carbon/jobs", () => ({ trigger: vi.fn() }));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ info: vi.fn(), error: vi.fn(), warning: vi.fn() })
-}));
 
 const getAccountingIntegration = vi.fn();
 const getProviderIntegration = vi.fn();

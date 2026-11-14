@@ -73,7 +73,7 @@ export const syncFunction = inngest.createFunction(
   async ({ event, step, runId, logger }) => {
     const payload = SyncPayloadSchema.parse(event.data);
 
-    logger.info(`Processing ${payload.records.length} sync events`);
+    logger.info("Processing sync events", { count: payload.records.length });
 
     // Scopes the ledger idempotency keys to this delivery: Inngest retries
     // reuse the same event id (absorbed), later deliveries get fresh keys

@@ -445,7 +445,6 @@ export class JiraClient {
         }
       );
 
-      // Fetch the full issue details
       return this.getIssue(companyId, response.key);
     } catch (e) {
       logger.error("Error creating Jira issue", { error: e });
@@ -548,9 +547,10 @@ export class JiraClient {
       );
 
       if (!transition) {
-        logger.warn(
-          `No transition found to ${targetCategory} for issue ${issueId}`
-        );
+        logger.warning("No transition found to the target status category", {
+          targetCategory,
+          issueId
+        });
         return false;
       }
 

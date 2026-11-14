@@ -15,7 +15,7 @@ import { getIntegration } from "~/modules/settings/settings.service";
 // verifyJiraWebhook.
 export const config = { runtime: "nodejs" };
 
-const logger = getLogger("erp", "webhook-jira-companyid");
+const logger = getLogger("erp", "webhook", "jira");
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { companyId } = params;

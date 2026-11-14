@@ -150,7 +150,6 @@
   "no-integration-id-branching::packages/ee/src/workflows/catalog/actions.ts::\"email\", \"slack\"",
   "no-integration-id-branching::packages/ee/src/workflows/definition/catalog.ts::\"email\", \"slack\"",
   "no-integration-id-branching::packages/jobs/src/inngest/functions/integrations/accounting-outbound-sweep.ts::=== \"rillet\"",
-  "no-interpolated-error-log::packages/auth/src/utils/result.ts::log.error(`${",
   "no-legacy-rls::20230123004206_claims.sql::has_company_permission(",
   "no-legacy-rls::20230123004317_companies-rls.sql::has_company_permission(",
   "no-legacy-rls::20230123004339_employee-types.sql::has_company_permission(",

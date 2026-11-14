@@ -52,8 +52,8 @@ never cancelled). Outside a request (scripts, module-level clients) nothing is b
   fail at once with an `AbortError` in `{ error }`, never retried. Not tied to the signal:
   actions, table writes even on a GET (an OAuth callback saving its tokens), auth and
   edge-function calls. Error and warning logs from such an abandoned read are dropped
-  (`liveRequest` filter in `@carbon/logger`'s `config.server.ts`), the stance `handleError`
-  already takes. **On Vercel the signal never aborts**: Vercel only aborts it with
+  (`liveRequest` filter in `@carbon/logger`'s `config.server.ts`), the stance
+  `handleServerError` (each app's `handleError`) takes. **On Vercel the signal never aborts**: Vercel only aborts it with
   `supportsCancellation` in `vercel.json`, which also terminates the function when the client
   disconnects — the app is one function, so actions would die mid-write. Do not enable it.
   Cancellation therefore applies on ECS and self-hosted only.

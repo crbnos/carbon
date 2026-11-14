@@ -57,7 +57,7 @@ async function archiveCompanyLogs(
     return { recordsArchived: 0, recordsDeleted: 0 };
   }
 
-  log.info(`Archiving ${records.length} records for company ${companyId}`);
+  log.info("Archiving audit log records", { count: records.length, companyId });
 
   // Convert to JSONL format
   const jsonl = records.map((r) => JSON.stringify(r)).join("\n");
@@ -143,9 +143,9 @@ export const auditArchiveFunction = inngest.createFunction(
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
 
-      logger.info(
-        `Archiving audit logs older than ${cutoffDate.toISOString()}`
-      );
+      logger.info("Archiving audit logs older than {cutoffDate}", {
+        cutoffDate: cutoffDate.toISOString()
+      });
 
       // Get companies with audit logs enabled
       const { data: companies, error: companiesError } = await client

@@ -51,9 +51,7 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
   async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
     const scheduled = await step.run("find-companies", async () => {
-      logger.info(
-        `Scheduled revenue recognition proposal started: ${datetime.timestamp()}`
-      );
+      logger.info("Scheduled revenue recognition proposal started");
 
       const proposing = await companiesToPropose(getJobDatabaseClient())
         .execute()
@@ -105,7 +103,13 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
 
             if (existing) {
               logger.info(
-                `Skipped ${company.name}: a draft ${type} run for ${periodEnd} already exists (${existing.id})`
+                "Skipped: a draft run for the period already exists",
+                {
+                  companyId: company.id,
+                  type,
+                  periodEnd,
+                  runId: existing.id
+                }
               );
               return;
             }
@@ -120,11 +124,19 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
               }
             );
 
-            logger.info(
-              proposal
-                ? `Proposed ${proposal.runId} (${proposal.lineCount} lines) for ${company.name}`
-                : `Nothing to post in a ${type} run for ${company.name}`
-            );
+            if (proposal) {
+              logger.info("Proposed a run", {
+                companyId: company.id,
+                type,
+                runId: proposal.runId,
+                lineCount: proposal.lineCount
+              });
+            } else {
+              logger.info("Nothing to post in the run", {
+                companyId: company.id,
+                type
+              });
+            }
           });
         } catch (error) {
           logger.error("Failed to propose a {type} run for company {company}", {

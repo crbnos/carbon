@@ -2,6 +2,7 @@
   "name": "@carbon/utils",
   "dependencies": {
     "@carbon/database": "workspace:*",
+    "@carbon/logger": "workspace:*",
     "@internationalized/date": "catalog:",
     "cookie": "catalog:",
     "humanize-duration": "3.35.0",

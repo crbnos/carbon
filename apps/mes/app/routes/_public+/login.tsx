@@ -80,6 +80,8 @@ import { data, useFetcher, useLoaderData, useSearchParams } from "react-router";
 
 import { path } from "~/utils/path";
 
+const logger = getLogger("mes", "login");
+
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Login" }];
 };
@@ -238,7 +240,7 @@ export async function action({ request }: ActionFunctionArgs) {
         reason: "magic link send failed"
       });
       const message = getMagicLinkErrorMessage(magicLink.error);
-      getLogger("mes", "login").error("Failed to send magic link", {
+      logger.error("Failed to send magic link", {
         error: magicLink.error
       });
       return data(
@@ -267,9 +269,7 @@ export default function LoginRoute() {
   useEffect(() => {
     import("localforage")
       .then((storage) => storage.default.clear())
-      .catch((error) =>
-        getLogger("mes", "login").warn("stored lists not cleared", { error })
-      );
+      .catch((error) => logger.warning("stored lists not cleared", { error }));
   }, []);
 
   const { t } = useLingui();

@@ -30,7 +30,7 @@ export const workflowMomentFunction = inngest.createFunction(
 
     const match = WORKFLOW_EVENTS[payload.moment]?.match;
     if (!match || !("moment" in match)) {
-      logger.warn(`Unknown workflow moment: ${payload.moment}`);
+      logger.warn("Unknown workflow moment", { moment: payload.moment });
       return { queued: 0, blocked: 0 };
     }
 

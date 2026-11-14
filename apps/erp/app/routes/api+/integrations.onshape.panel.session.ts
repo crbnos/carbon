@@ -67,7 +67,7 @@ async function switchCompany(request: Request) {
 
   const target = choices.data.find(({ id }) => id === parsed.data.companyId);
   if (!target) {
-    logger.warn("Refused an Onshape panel company switch", {
+    logger.warning("Refused an Onshape panel company switch", {
       companyId,
       userId,
       targetCompanyId: parsed.data.companyId
@@ -86,12 +86,15 @@ async function switchCompany(request: Request) {
     ssoProviderId
   });
   if (gate !== "open") {
-    logger.warn("An account gate held back an Onshape panel company switch", {
-      companyId,
-      userId,
-      targetCompanyId: target.id,
-      gate
-    });
+    logger.warning(
+      "An account gate held back an Onshape panel company switch",
+      {
+        companyId,
+        userId,
+        targetCompanyId: target.id,
+        gate
+      }
+    );
     return gate === "setup-required"
       ? data(
           {

@@ -10,8 +10,7 @@ import {
   updateCutoverAccumulatedDepreciation
 } from "@carbon/database/accounting-cutover-reads";
 import { validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -26,8 +25,6 @@ import {
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "accounting/activation/fixed-assets");
 
 export const handle: Handle = {
   breadcrumb: msg`Fixed Assets`,
@@ -97,19 +94,13 @@ export async function action({ request }: ActionFunctionArgs) {
       accumulatedDepreciation: validation.data.accumulatedDepreciation
     });
   } catch (err) {
-    logger.error("Failed to save the accumulated depreciation", {
-      companyId,
-      fixedAssetId: validation.data.fixedAssetId,
-      error: err
-    });
     return data(
       {},
       await flash(
         request,
-        error(
-          err,
-          getErrorMessage(err, "Failed to save the accumulated depreciation")
-        )
+        error(err, "Failed to save the accumulated depreciation", {
+          fixedAssetId: validation.data.fixedAssetId
+        })
       )
     );
   }

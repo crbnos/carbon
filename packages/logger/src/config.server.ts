@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { AsyncLocalStorage } from "node:async_hooks";
 import {
   configureSync,
   getConsoleSink,
@@ -10,16 +9,24 @@ import {
   type Sink
 } from "@logtape/logtape";
 import { redactByField } from "@logtape/redaction";
-import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { isAbandonedRead } from "./context.server";
+import { SpanStatusCode } from "@opentelemetry/api";
+import { isAbandonedRead, withRequestLogContext } from "./context.server";
 import { devFormatter } from "./dev-formatter";
 import { readEnv } from "./env";
 import { httpDevFormatter } from "./http-formatter";
 import { type CarbonLogLevel, resolveLevel } from "./levels";
-import { CARBON_ROOT_CATEGORY } from "./logger";
+import {
+  ACCESS_LOG_CATEGORY,
+  CARBON_ROOT_CATEGORY,
+  getLogger,
+  META_LOGGER
+} from "./logger";
 import { maskRedactedField, REDACT_FIELD_PATTERNS } from "./redaction";
+import { tracer } from "./span";
 
 const CONFIGURED = Symbol.for("carbon.logging.configured");
+// Its own flag: a test that resets CONFIGURED to reconfigure must not stack listeners.
+const PROCESS_HANDLERS = Symbol.for("carbon.logging.process-handlers");
 
 /**
  * A cancelled call: the AbortError itself, or what supabase-js makes of it — a
@@ -49,15 +56,6 @@ export type ConfigureLoggingOptions = {
 };
 
 /**
- * Configure LogTape for a Node server once per process.
- *
- * - dev  → `devFormatter` (colored terminal)
- * - prod → `getJsonLinesFormatter()` (JSONL, no ANSI), field-redacted
- *
- * Idempotent: a `globalThis` flag survives Vite SSR module re-evaluation, and
- * `reset: true` means a re-eval race reconfigures instead of throwing.
- */
-/**
  * Every error-level log also becomes a span in the trace of the request that
  * logged it, so the trace store can count and alert on them. Console logs stay
  * on the host; without this an error the app handled (a refusal it turned into
@@ -74,7 +72,7 @@ const errorSpans: Sink = (record) => {
       ? record.rawMessage
       : record.rawMessage.join("{}")
   ).slice(0, 300);
-  const span = trace.getTracer("carbon").startSpan(`log ${record.level}`, {
+  const span = tracer().startSpan(`log ${record.level}`, {
     attributes: {
       "log.category": record.category.join("."),
       "log.message": message
@@ -84,6 +82,16 @@ const errorSpans: Sink = (record) => {
   span.end();
 };
 
+/**
+ * Configure LogTape for a Node server once per process, and log the process's
+ * unhandled rejections and uncaught exceptions (the second exits).
+ *
+ * - dev  → `devFormatter` (colored terminal)
+ * - prod → `getJsonLinesFormatter()` (JSONL, no ANSI), field-redacted
+ *
+ * Idempotent: a `globalThis` flag survives Vite SSR module re-evaluation, and
+ * `reset: true` means a re-eval race reconfigures instead of throwing.
+ */
 export function ensureLoggingConfigured(
   options: ConfigureLoggingOptions = {}
 ): void {
@@ -95,7 +103,7 @@ export function ensureLoggingConfigured(
   const pretty = options.pretty ?? !isProd;
 
   const formatter = pretty ? devFormatter : getJsonLinesFormatter();
-  const consoleSink = getConsoleSink({ formatter });
+  const consoleSink = withRequestLogContext(getConsoleSink({ formatter }));
   // Redact sensitive field names (password, token, secret, …) before records
   // reach the sink. Cheap: matches field names, not values. Masks rather than
   // deletes, and skips email/phone/address — see ./redaction.ts.
@@ -106,21 +114,18 @@ export function ensureLoggingConfigured(
         action: maskRedactedField
       });
 
-  // HTTP access logs (`requestIdMiddleware`) get their own sink: a Morgan
-  // "dev"-style colored line in dev, the same structured+redacted sink as
-  // everything else in prod (still JSONL — no separate treatment needed there).
+  // The access log is a Morgan "dev"-style line in dev, ordinary JSONL in prod.
   const httpSink = pretty
-    ? getConsoleSink({ formatter: httpDevFormatter })
+    ? withRequestLogContext(getConsoleSink({ formatter: httpDevFormatter }))
     : sink;
 
   configureSync({
     reset: true,
-    contextLocalStorage: new AsyncLocalStorage(),
     sinks: { console: sink, httpConsole: httpSink, errorSpans },
     filters: {
       // Once the client of a read has gone, its database reads are cancelled
       // and each comes back as an AbortError. Those are not failures, the same
-      // stance `handleError` takes on an aborted request. Anything else logged
+      // stance `handleServerError` takes on an aborted read. Anything else logged
       // after the client left (a write that failed) still gets through.
       liveRequest: (record) =>
         !(
@@ -136,19 +141,28 @@ export function ensureLoggingConfigured(
         filters: ["liveRequest"]
       },
       {
-        category: [CARBON_ROOT_CATEGORY, "http"],
+        category: [CARBON_ROOT_CATEGORY, ACCESS_LOG_CATEGORY],
         lowestLevel: level,
         sinks: ["httpConsole"],
         // Don't also emit through the root "console" sink — one line per request.
         parentSinks: "override"
       },
-      {
-        category: ["logtape", "meta"],
-        lowestLevel: "warning",
-        sinks: ["console"]
-      }
+      META_LOGGER
     ]
   });
 
   g[CONFIGURED] = true;
+
+  if (g[PROCESS_HANDLERS]) return;
+  g[PROCESS_HANDLERS] = true;
+  const log = getLogger("logger", "server");
+  process.on("unhandledRejection", (reason) => {
+    log.error("Unhandled promise rejection", { error: reason });
+  });
+  // The process state is unknown after an uncaught exception: exit and let the
+  // supervisor start a clean one. A stray rejection is usually recoverable.
+  process.on("uncaughtException", (error) => {
+    log.error("Uncaught exception", { error });
+    process.exit(1);
+  });
 }

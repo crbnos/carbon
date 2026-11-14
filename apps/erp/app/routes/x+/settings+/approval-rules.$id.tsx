@@ -113,10 +113,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       `${path.to.approvalRule(id)}?${getParams(request)}`,
       await flash(
         request,
-        error(
-          result.error,
-          result.error?.message ?? "Failed to update approval rule."
-        )
+        error(result.error, "Failed to update approval rule.")
       )
     );
   }

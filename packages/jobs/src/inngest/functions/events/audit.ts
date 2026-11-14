@@ -68,7 +68,9 @@ export const auditFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const payload = AuditPayloadSchema.parse(event.data);
 
-    logger.info(`Processing ${payload.records.length} audit log events`);
+    logger.info("Processing audit log events", {
+      count: payload.records.length
+    });
 
     const results = {
       inserted: 0,
@@ -86,7 +88,9 @@ export const auditFunction = inngest.createFunction(
       AuditRecord[]
     ][]) {
       if (!companyId || companyId === "undefined") {
-        logger.info(`Skipping ${records.length} records: missing companyId`);
+        logger.info("Skipping records with no companyId", {
+          count: records.length
+        });
         results.skipped += records.length;
         continue;
       }
@@ -94,7 +98,6 @@ export const auditFunction = inngest.createFunction(
       const companyResult = await step.run(`audit-${companyId}`, async () => {
         const stepResults = { inserted: 0, skipped: 0, failed: 0 };
 
-        // Check if company has audit logs enabled
         const { data: company } = await client
           .from("company")
           .select("auditLogEnabled")
@@ -104,9 +107,10 @@ export const auditFunction = inngest.createFunction(
         if (
           !(company as { auditLogEnabled: boolean } | null)?.auditLogEnabled
         ) {
-          logger.info(
-            `Skipping ${records.length} records: audit logging disabled for company ${companyId}`
-          );
+          logger.info("Skipping records: audit logging is disabled", {
+            count: records.length,
+            companyId
+          });
           stepResults.skipped += records.length;
           return stepResults;
         }
@@ -117,15 +121,17 @@ export const auditFunction = inngest.createFunction(
           const tableName = record.event.table;
 
           if (!isAuditableTable(tableName)) {
-            logger.info(`Skipping: table "${tableName}" is not auditable`);
+            logger.info("Skipping a table that is not auditable", {
+              tableName
+            });
             stepResults.skipped++;
             continue;
           }
 
           if (record.event.operation === "TRUNCATE") {
-            logger.info(
-              `Skipping: TRUNCATE on "${tableName}" is not meaningful`
-            );
+            logger.info("Skipping a TRUNCATE, which is not meaningful", {
+              tableName
+            });
             stepResults.skipped++;
             continue;
           }
@@ -150,9 +156,11 @@ export const auditFunction = inngest.createFunction(
               );
 
               if (!diff) {
-                logger.info(
-                  `Skipping: no meaningful diff for UPDATE on "${tableName}" record ${record.event.recordId}`
-                );
+                logger.info("Skipping an UPDATE with no meaningful diff", {
+                  tableName,
+                  recordId: record.event.recordId,
+                  companyId
+                });
                 stepResults.skipped++;
                 continue;
               }
@@ -166,9 +174,9 @@ export const auditFunction = inngest.createFunction(
             const entityConfigs = getEntityConfigsForTable(tableName);
 
             if (entityConfigs.length === 0) {
-              logger.info(
-                `Skipping: no entity config found for table "${tableName}"`
-              );
+              logger.info("Skipping a table with no entity config", {
+                tableName
+              });
               stepResults.skipped++;
               continue;
             }
@@ -185,9 +193,10 @@ export const auditFunction = inngest.createFunction(
                 record.event.operation === "INSERT" &&
                 isExtensionTable(tableConfig)
               ) {
-                logger.info(
-                  `Skipping: INSERT on extension table "${tableName}" for entity "${entityType}"`
-                );
+                logger.info("Skipping an INSERT on an extension table", {
+                  tableName,
+                  entityType
+                });
                 continue;
               }
 
@@ -243,8 +252,14 @@ export const auditFunction = inngest.createFunction(
                 ];
 
                 if (entityIds.length === 0) {
-                  logger.info(
-                    `Skipping: could not resolve entity ID from ${columns.join(", ")} for "${tableName}" record ${record.event.recordId}`
+                  logger.warn(
+                    "Skipping a record: could not resolve its entity ID",
+                    {
+                      columns,
+                      tableName,
+                      recordId: record.event.recordId,
+                      companyId
+                    }
                   );
                   continue;
                 }
@@ -291,16 +306,25 @@ export const auditFunction = inngest.createFunction(
                   entriesCreatedForRecord++;
                 } else {
                   logger.info(
-                    `Skipping: no parent entity found via junction "${junction}" for "${tableName}" record ${record.event.recordId} (entity: ${entityType})`
+                    "Skipping a record: no parent entity found via the junction",
+                    {
+                      junction,
+                      tableName,
+                      recordId: record.event.recordId,
+                      entityType,
+                      companyId
+                    }
                   );
                 }
               }
             }
 
             if (entriesCreatedForRecord === 0) {
-              logger.info(
-                `Skipping: could not resolve any entity for "${tableName}" record ${record.event.recordId}`
-              );
+              logger.warn("Skipping a record: could not resolve any entity", {
+                tableName,
+                recordId: record.event.recordId,
+                companyId
+              });
               stepResults.skipped++;
             }
           } catch (error) {

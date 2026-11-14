@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .maybeSingle();
 
   if (lineResult.error || !lineResult.data) {
-    logger.warn("Picking line not found for company", {
+    logger.warning("Picking line not found for company", {
       companyId,
       lineId,
       error: lineResult.error

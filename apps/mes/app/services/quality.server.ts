@@ -120,7 +120,7 @@ export async function createQualityIssue(
       : null
   ]);
   if (issueType && (issueType.error || !issueType.data)) {
-    logger.warn("Quality issue type not found for company", {
+    logger.warning("Quality issue type not found for company", {
       companyId,
       nonConformanceTypeId: args.nonConformanceTypeId,
       error: issueType.error
@@ -132,7 +132,7 @@ export async function createQualityIssue(
     };
   }
   if (inspection && (inspection.error || !inspection.data)) {
-    logger.warn("Inspection not found for company", {
+    logger.warning("Inspection not found for company", {
       companyId,
       inspectionId: args.inspectionId,
       error: inspection.error
@@ -312,7 +312,7 @@ export async function getInspectionOutcomeState(
   const inspection = inspectionResult.data as any;
   // getInspection reads with the service role by id alone.
   if (inspection.companyId !== args.companyId) {
-    logger.warn("Inspection not found for company", {
+    logger.warning("Inspection not found for company", {
       companyId: args.companyId,
       inspectionId: args.inspectionId
     });
