@@ -531,6 +531,7 @@ const PurchaseOrdersTable = memo(
             disabled={
               !row.id ||
               !["Draft", "Planned"].includes(row.status ?? "") ||
+              !row.receivableQuantity ||
               !permissions.can("view", "purchasing") ||
               !permissions.can("create", "purchasing") ||
               !permissions.can("update", "purchasing")
@@ -670,7 +671,6 @@ function ListFinalizeModal({
       purchaseOrderId={purchaseOrderId}
       purchaseOrder={defaults.data.purchaseOrder}
       defaultCc={defaults.data.defaultCc}
-      hasLines={defaults.data.hasLines}
       fetcher={fetcher}
       open={open}
       onClose={onClose}

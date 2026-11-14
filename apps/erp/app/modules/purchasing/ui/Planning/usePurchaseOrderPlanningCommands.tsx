@@ -197,7 +197,6 @@ function PlanningFinalizeModal({
       purchaseOrderId={purchaseOrderId}
       purchaseOrder={defaults.data.purchaseOrder}
       defaultCc={defaults.data.defaultCc}
-      hasLines={defaults.data.hasLines}
       fetcher={fetcher}
       open={open}
       onClose={onClose}
