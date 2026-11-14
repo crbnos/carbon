@@ -7,7 +7,7 @@ paths:
   - "packages/database/src/mrp-engine.ts"
   - "packages/database/src/mrp-netting-sequence.ts"
   - "packages/utils/src/planning-sizing.ts"
-  - "packages/utils/src/planning-fence.ts"
+  - "packages/utils/src/planning-time-fence.ts"
   - "packages/database/src/planning-lock.ts"
   - "apps/erp/app/modules/{production,purchasing}/ui/Planning/**"
   - "apps/erp/app/modules/production/planning-action-claims.ts"
@@ -156,8 +156,8 @@ Phase-7 write) and throws on failure.
    `type: "company" | "location" | "item" | "job" | "purchaseOrder" |
    "salesOrder"`, `id?` (required for non-company), `companyId`, `userId`.
    Computation engine is
-   `packages/database/src/mrp-engine.ts` (`explodeBom(...)`, `@carbon/database/mrp-engine`),
-   also used by `getMethod` (`production.service.ts`).
+   `packages/database/src/mrp-engine.ts` (`explodeBom(...)`, `@carbon/database/mrp-engine`);
+   `plan-company.ts` is its only caller.
 
    - **Periods**: generates/fetches weekly `period` rows 72 weeks forward from
      today on the company's clock (`WEEKS_TO_FORECAST = 18 * 4`, `"Week"`
@@ -244,7 +244,7 @@ Phase-7 write) and throws on failure.
      planned short by the subassembly's scrap). This holds in every segment.
      The rates are `itemReplenishment.scrapPercentage` of the items with an
      `itemPlanning` row (`loadPlannedOrderInputs`); any other item counts 0.
-     `getMethod` passes no rates and adds no scrap. Pinned by the
+     Without `scrapRateByItem`, `explodeBom` adds no scrap. Pinned by the
      `mrp-engine.test.ts` scrap cases and `planned-orders.test.ts` "explosion
      parity with job creation". A line with quantity 0 is left out
      (`bomChildren`, `packages/planning/src/mrp/bom-children.ts`), never
@@ -473,8 +473,8 @@ working-day dates.
   lead-time offset), plus the run's scrap on that explosion (*BOM explosion*
   above).
 - **The hook.** `explodeBom` takes optional `planSupply`, `extraPlanningKeys`,
-  `scrapRateByItem`, `periodStartDates`; without them it is exactly Phase 1
-  (`getMethod`, and the golden test, call it that way). `scrapRateByItem` also
+  `scrapRateByItem`; without them it is exactly Phase 1 (the golden test,
+  `plan-company.test.ts`, runs it that way). `scrapRateByItem` also
   adds scrap on the raw-need path (*BOM explosion* above). `planSupply` is called once
   per common key with no Consume First redirect, after its gross demand is complete;
   null = Phase 1 path for the key. It returns `PlannedSupplyResult.explosions`
@@ -502,7 +502,7 @@ working-day dates.
   supplier. `runMrp` always passes `plannedOrderInputs` (`loadPlannedOrderInputs`,
   Kysely reads; the existing planned orders come from the run's snapshot, below);
   `planCompany` without them plans exactly as Phase 1.
-- **Held and the time fence.** One rule, `@carbon/utils` `planning-fence.ts`,
+- **Held and the time fence.** One rule, `@carbon/utils` `planning-time-fence.ts`,
   shared by the engine and the drawer's "Fence" marker:
   `resolvePlanningTimeFenceDays(item, location)` = `itemPlanning.planningTimeFenceDays` ??
   `location.planningTimeFenceDays` ?? 0, calendar days, 0 = no fence (the item's
@@ -647,9 +647,10 @@ working-day dates.
   week's planned orders").
 - **Firm / unfirm / edit / apply** (`production.service.ts`, operations in
   `production.server.ts`, NOT published to MCP): `readPlannedOrderForChange`
-  checks `update: production` for a Make order and `update: purchasing` for a Buy
-  order (`permission: {}` on the operation, the body decides), refuses Transfer and
-  Converted. `firmPlannedOrder` Planned → Firm with `firmedBy` / `firmedAt`;
+  refuses an order at another location than the posted `locationId` (`conflict`,
+  as `readPlanningJob` does for a job), checks `update: production` for a Make
+  order and `update: purchasing` for a Buy order (`permission: {}` on the
+  operation, the body decides), refuses Transfer and Converted. `firmPlannedOrder` Planned → Firm with `firmedBy` / `firmedAt`;
   `unfirmPlannedOrder` back, taking the next free `splitIndex` when MRP planned
   the same key meanwhile; `updatePlannedOrders` (one statement) sets quantity and /
   or due date and FIRMS the row (keeps an existing firm stamp) — a new due date

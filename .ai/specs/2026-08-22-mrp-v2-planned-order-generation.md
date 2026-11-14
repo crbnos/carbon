@@ -1,8 +1,8 @@
 # MRP v2: Planned-Order MRP — Generation, Cascade, Capacity & Simulation
 
-> Status: **Phase 1 implemented** (PR #1601). **Phase 2a built** on
-> `naveenkash/mrp-v2-research`, with 4 parts moved to 2b (§2b.7). Phases 2b and 2c
-> designed, not started.
+> Status: **Phase 1 implemented** (PR #1601). **Phase 2a implemented** on the MRP v2
+> Phase 2a PR. 4 parts moved to 2b (§2b.7). Phases 2b and 2c are designed and not
+> started.
 > Author: Brad Barbin (with Claude)
 > Date: 2026-08-22 (phased 2026-09-08; Phase 2 split into 2a/2b/2c 2026-11-14)
 >
@@ -571,7 +571,7 @@ one language and one package (`@carbon/planning`). Phase 2b uses that.
 
 ## Proposed Solution — Phase 2a
 
-> **Status: built** on `naveenkash/mrp-v2-research` (plan
+> **Status: implemented** on the MRP v2 Phase 2a PR (plan
 > `.ai/plans/2026-11-14-mrp-v2-phase-2a.md`). This part describes the code as built.
 >
 > 4 parts of the first 2a design moved to 2b (agreed 2026-11-14). §2b.7 holds them:
@@ -596,9 +596,8 @@ leaves.
 | `planSupply` | The hook. It plans the new supply of one common key. `explodeBom` calls it once per key, when the gross demand of the key is complete. If it returns null, the key runs the Phase 1 path. |
 | `extraPlanningKeys` | Common keys that the level loop visits even with no gross demand. |
 | `scrapRateByItem` | The scrap rate of each child, for a planned explosion. |
-| `periodStartDates` | The start date of each period, for the hook. The engine does not read it. |
 
-Without these inputs, `explodeBom` behaves as in Phase 1. `getMethod` calls it that way.
+Without these inputs, `explodeBom` behaves as in Phase 1.
 
 `planCompany` builds the hook with `createPlanSupply`
 (`packages/planning/src/mrp/planned-orders.ts`) when it gets `plannedOrderInputs`.
@@ -652,8 +651,8 @@ the same as for job creation (`computeJobQuantities`):
 
 Before this change, a part under a Make to Order subassembly was short by the scrap
 of the subassembly. The scrap rates come from `itemReplenishment.scrapPercentage` of
-the items that have an `itemPlanning` row. Every other item has the rate 0. `getMethod`
-passes no rates, so it adds no scrap.
+the items that have an `itemPlanning` row. Every other item has the rate 0. Without
+`scrapRateByItem`, `explodeBom` adds no scrap.
 
 Rules:
 
@@ -757,7 +756,7 @@ location-wide fence. SAP, Oracle and Dynamics 365 all set the fence per item. Th
 fence is not `planningHorizonDays`, which is a display filter
 (`20261006130004_planning-horizon.sql`).
 
-One rule in `@carbon/utils` (`planning-fence.ts`) gives the fence days
+One rule in `@carbon/utils` (`planning-time-fence.ts`) gives the fence days
 (`resolvePlanningTimeFenceDays`) and the hold (`isPlannedOrderHeld`). The engine and the
 drawer both call it, so the "Fence" marker always shows what MRP holds.
 
@@ -1407,7 +1406,7 @@ record-change trigger, so workflow record events fire.
 
 | File | Change |
 |------|--------|
-| `mrp-engine.ts` | `explodeBom` takes the optional `planSupply`, `extraPlanningKeys`, `scrapRateByItem` and `periodStartDates`. New type `PlannedSupplyResult`. With `scrapRateByItem`, the raw-need path adds scrap too (§2a.1). |
+| `mrp-engine.ts` | `explodeBom` takes the optional `planSupply`, `extraPlanningKeys` and `scrapRateByItem`. New type `PlannedSupplyResult`. With `scrapRateByItem`, the raw-need path adds scrap too (§2a.1). |
 | `row-sizing.ts` (new) | `sizeRowSupply(input)` → `{ changeActions, newSupply }`, moved out of `deriveRowActions`, with `deriveChangeActions`, `convertOrdersToIncreases` and their helpers. |
 | `open-supply-orders.ts` (new) | `buildOpenSupplyOrders(...)`, moved out of `generatePlanningActions`, with `releaseByDate`, `earlierRelease` and the commitment checks. |
 | `planned-orders.ts` (new) | `createPlanSupply(inputs)` → `{ planSupply, extraPlanningKeys, result }`, `plannedOrderNaturalKey` and `withPlannedOrderIds`. |
@@ -1417,7 +1416,7 @@ record-change trigger, so workflow record events fire.
 | `planning-actions.ts` | `deriveRowActions` takes `engineSupply`. New: `plannedOrderActions`, `onePerPlannedOrder`. The natural key targets `purchaseOrderLineId ?? jobId ?? plannedOrderId`, and the diff writes `plannedOrderId`. |
 | `row-sizing.ts` | `isOrderFrozen` is false for a planned order. |
 | `packages/database/src/planning-lock.ts` (new, `@carbon/database/planning-lock`) | `lockCompanyPlanning(db, companyId)` and `planningLockKey`: the one company planning lock (§2a.6). |
-| `packages/utils/src/planning-fence.ts` (new, `@carbon/utils`) | `resolvePlanningTimeFenceDays`, `planningTimeFenceDate` and `isPlannedOrderHeld`: the one time-fence rule (§2a.4). |
+| `packages/utils/src/planning-time-fence.ts` (new, `@carbon/utils`) | `resolvePlanningTimeFenceDays`, `planningTimeFenceDate` and `isPlannedOrderHeld`: the one time-fence rule (§2a.4). |
 
 Every new value-bearing calculation follows the `@carbon/checks` precision rules: no
 scale literals, whole units through `scrapAllowance`.
@@ -1555,7 +1554,7 @@ autopilot ledger in the digest, and the suggested-projection rows in
 ## Acceptance Criteria
 
 Evidence for 2a: `planned-orders.test.ts`, `planned-order-write.write.test.ts`,
-`planning-actions.test.ts`, `mrp-engine.test.ts`, `planning-fence.test.ts`
+`planning-actions.test.ts`, `mrp-engine.test.ts`, `planning-time-fence.test.ts`
 (`@carbon/utils`), `apps/erp/test/planned-orders-from-actions.test.ts`, and the
 database tests `planned-order-write.database.test.ts`, `convert-planned-orders.test.ts`,
 `planned-order-firm.test.ts`, `planning-grid-planned-order-actions.test.ts` and
@@ -1641,7 +1640,7 @@ changed action. The criteria that moved to 2b are under Phase 2b.
 - [x] Outside the fence, the run deletes a Planned order that lost its demand.
       (`planned-order-write.write.test.ts`)
 - [x] An item `planningTimeFenceDays` wins over the location value in both directions,
-      including an explicit 0. (`planning-fence.test.ts` "resolvePlanningTimeFenceDays";
+      including an explicit 0. (`planning-time-fence.test.ts` "resolvePlanningTimeFenceDays";
       `planned-orders.test.ts` "an explicit item fence of 0 opts out of the location's"
       and "a missing item fence takes the location's")
 - [x] An update of a location without the fence keeps the stored fence.
@@ -1946,7 +1945,7 @@ Each item below is out of Phase 2. Pick one up as its own spec or as a later pha
   for planned order → document; conversion reads the make method again; scrap with the
   `computeJobQuantities` rule; netting segments, Consume First, configured BOMs and
   Phase 1 sizing rules respected; no demand time fence.
-- **2026-11-14**: Phase 2a built on `naveenkash/mrp-v2-research` (plan
+- **2026-11-14**: Phase 2a implemented on the MRP v2 Phase 2a PR (plan
   `.ai/plans/2026-11-14-mrp-v2-phase-2a.md`). The spec now describes the code. 4 parts
   moved to 2b (§2b.7): pegging, the `supplyForecast` replacement, the grid SQL
   quantities and working-day dates. Changes from the first 2a design:

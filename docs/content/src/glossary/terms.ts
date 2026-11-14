@@ -1341,7 +1341,7 @@ export const terms = {
   },
   "firm-planned-order": {
     term: msg`Firm`,
-    definition: msg`A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP. Dynamics 365 calls this state Approved.`,
+    definition: msg`A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP.`,
     aliases: ["firm"]
   },
   "convert-planned-order": {
