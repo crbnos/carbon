@@ -164,6 +164,21 @@ export function resolveProjectTreatment(
 }
 
 /**
+ * Why an expense entry (Charge cost) dated `entryDate` cannot post, or null.
+ * Under Capitalize a cost builds the asset under construction, and the asset's
+ * cost sources have no expense entry. `postProjectExpense` refuses with it;
+ * the element page disables Charge cost with it for today's date.
+ */
+export function projectExpenseRefusal(
+  ctx: ProjectPostingContext,
+  entryDate: string
+): string | null {
+  return resolveProjectTreatment(ctx, entryDate) === "Capitalize"
+    ? "An expense entry cannot charge a capital project. Use a charge or a purchase invoice."
+    : null;
+}
+
+/**
  * The treatment and account a charge posts to on `postingDate`
  * (`YYYY-MM-DD`). The nearest element (itself, then its ancestors) whose
  * treatment is in effect on the date decides; else the project does.

@@ -5273,3 +5273,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A UI hint for a posting's refusal calls the posting's rule, at every entry point
+
+**Context:** Charge cost on the element page posts an expense entry, and `postProjectExpense` refuses one whose treatment on the entry date is Capitalize.
+
+**Problem:** The first write-up disabled the action on the project's treatment. The treatment resolves per element: the element, then its ancestors whose override is in effect on the date, then the project. A project-level check would refuse an element that expenses its own cost and offer the action on a capital element under an Expense project. The action also opened from a third place, the plan card's Charge button, beside the two menus the write-up named.
+
+**Rule:** Move the posting's check into a pure function of the posting context and the date. The posting refuses with it, and the loader calls it on the context the posting loads (`loadProjectPostingContexts`), never on a copy of the rule. Before gating an action, grep its opener (`charging.open`) for every entry point and give each the same disabled state and reason. Keep the server refusal while any input the UI does not fix (a date the user can change) can change the outcome.
+
+**Applies to:** `projectExpenseRefusal` / `getChargeCostRefusal`, and any action the UI disables with a reason the server decides by cost treatment or date.

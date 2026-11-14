@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect } from "vitest";
-import { postProjectExpense } from "../../../app/modules/projects/projects.service";
+import {
+  getChargeCostRefusal,
+  postProjectExpense
+} from "../../../app/modules/projects/projects.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
@@ -259,6 +262,96 @@ databaseTest(
       expect(await credits(next)).toEqual([
         [f.account("employee-payable"), 25]
       ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+const CAPITAL_REFUSAL =
+  "An expense entry cannot charge a capital project. Use a charge or a purchase invoice.";
+
+databaseTest(
+  "an expense on a Capitalize element is refused and writes nothing, and the element page reads the same refusal",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const refusalOn = (date: string) =>
+        getChargeCostRefusal(f.db, {
+          companyId: f.companyId,
+          projectId: f.projectId,
+          elementId: f.elementId,
+          date
+        });
+      expect(await refusalOn("2026-10-05")).toBeNull();
+
+      await f.addCapitalAsset({ status: "Under Construction" });
+      expect(await refusalOn("2026-10-05")).toBe(CAPITAL_REFUSAL);
+
+      const entry = await f.db
+        .insertInto("projectExpenseEntry")
+        .values({
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          employeeId: "system",
+          entryDate: "2026-10-05",
+          description: "Mileage",
+          amount: 40,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const result = await invokePosting(
+        handlesOf(f.ctx),
+        "post-project-expense",
+        { projectExpenseEntryId: entry.id },
+        postProjectExpense
+      );
+      expect(result.error?.status).toBeLessThan(500);
+      expect(result.error?.message).toBe(CAPITAL_REFUSAL);
+
+      const journals = await f.db
+        .selectFrom("journal")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(journals).toEqual([]);
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(ledger).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the element page's refusal follows the element's own dated treatment, not the project's",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.db
+        .updateTable("projectElement")
+        .set({
+          costTreatment: "Capitalize",
+          costTreatmentEffectiveFrom: "2026-10-01"
+        })
+        .where("id", "=", f.elementId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const refusalOn = (date: string) =>
+        getChargeCostRefusal(f.db, {
+          companyId: f.companyId,
+          projectId: f.projectId,
+          elementId: f.elementId,
+          date
+        });
+      expect(await refusalOn("2026-09-30")).toBeNull();
+      expect(await refusalOn("2026-10-01")).toBe(CAPITAL_REFUSAL);
     } finally {
       await f.cleanup();
     }

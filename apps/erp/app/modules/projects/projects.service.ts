@@ -146,6 +146,7 @@ import {
   loadProjectPostingContexts,
   loadReturnableIssueRows,
   ProjectChargeError,
+  projectExpenseRefusal,
   projectPostingKey,
   resolveProjectPostingAccount,
   resolveProjectTreatment,
@@ -7384,11 +7385,10 @@ export async function postProjectExpense(
           accountId: original.accountId
         }
       : resolveProjectPostingAccount(context, entry.entryDate);
-    if (!original?.accountId && resolved.treatment === "Capitalize") {
-      throw new ProjectChargeError(
-        "An expense entry cannot charge a capital project. Use a charge or a purchase invoice."
-      );
-    }
+    const refusal = original?.accountId
+      ? null
+      : projectExpenseRefusal(context, entry.entryDate);
+    if (refusal) throw new ProjectChargeError(refusal);
     const isStatistical =
       !original?.accountId && resolved.treatment === "Statistical";
     const amount = round(Number(entry.amount));
@@ -13244,6 +13244,39 @@ export async function getProjectCostTotals(
 }
 
 /**
+ * Why an expense entry on the element dated `date` would be refused, by the
+ * rule `postProjectExpense` applies (`projectExpenseRefusal`), or null. Null
+ * too when the element has no row yet or the read fails: the posting still
+ * refuses.
+ */
+export async function getChargeCostRefusal(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    projectId: string;
+    elementId: string;
+    date: string;
+  }
+): Promise<string | null> {
+  try {
+    const contexts = await loadProjectPostingContexts(db, args.companyId, [
+      { projectId: args.projectId, projectElementId: args.elementId }
+    ]);
+    const context = contexts.get(
+      projectPostingKey(args.projectId, args.elementId)
+    );
+    return context ? projectExpenseRefusal(context, args.date) : null;
+  } catch (error) {
+    logger.error("Failed to read the element's cost treatment", {
+      companyId: args.companyId,
+      elementId: args.elementId,
+      error
+    });
+    return null;
+  }
+}
+
+/**
  * Everything the element page (the peek and the full page) shows, read in
  * parallel: the element, every element of its project (for the children,
  * the parent pickers and the subtree roll-up), its comments, its plan lines,
@@ -13345,6 +13378,15 @@ export async function getProjectElementPage(
     }
     costRates.set(rate.laborCategoryId, Number(rate.costRate));
   }
+
+  // Charge cost posts an expense entry, dated today by default. Started here,
+  // read at the end: it never rejects.
+  const chargeCostRefusal = getChargeCostRefusal(db, {
+    companyId: args.companyId,
+    projectId: args.projectId,
+    elementId: args.elementId,
+    date: today
+  });
 
   const [verification, qualityDocuments, itemHistory] = await Promise.all([
     getProjectVerification(client, {
@@ -13451,7 +13493,8 @@ export async function getProjectElementPage(
       ...verification.data,
       qualityDocuments: qualityDocuments.data ?? [],
       itemFields,
-      itemHistory: itemHistory.data ?? null
+      itemHistory: itemHistory.data ?? null,
+      chargeCostRefusal: await chargeCostRefusal
     },
     error: null
   };
