@@ -204,21 +204,6 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
   );
 
   databaseTest(
-    "an issue of more kits than the job still needs is refused whole",
-    async () => {
-      const job = await jobNeedingOneKit("many");
-
-      const issued = await job.issueKits(3);
-
-      expect(issued.error?.message).toBe(
-        "This job needs only 1 more of Station kit"
-      );
-      expect(issued.error).toMatchObject({ body: { overIssue: true } });
-      expect(await job.state()).toEqual({ issued: 0, leftInLot: 5 });
-    }
-  );
-
-  databaseTest(
     "a replacement for a scrapped kit is issued without a confirmation",
     async () => {
       const job = await jobNeedingOneKit("scrapped");

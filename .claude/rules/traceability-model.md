@@ -230,10 +230,8 @@ the MES traveler scan) it also locks the `jobMaterial` `FOR UPDATE` and refuses 
 requirement is already filled (`assertTravelerRequirementOpen`): for a serial parent, the
 material's per-unit quantity less what is consumed into that parent for the material; for
 any other parent, `estimatedQuantity` (else `quantity`) less `quantityIssued`. The Issue dialog
-(no `travelerScan`) takes the same lock and refuses an issue larger than what that requirement
-still needs (`assertIssueWithinRequirement`), with `overIssue: true` in the error body; the
-dialog then shows "Issue anyway" and sends the issue again with `allowOverIssue` (a replacement
-part). An unplanned material (requirement 0) and batch members are not checked. The **return** of the un-consumed
+gets the same lock and refusal for a planned material; the refusal carries `overIssue: true`, and
+the dialog's "Issue anyway" sends the issue again with `allowOverIssue`. The **return** of the un-consumed
 remainder runs via `post-picking`'s sweep cases `returnJobRemainders` (at job complete — both
 policies — and at job cancel, with `cancelling: true`, before the status flips) / `returnOperationRemainders` (at operation Done: the whole job's remainder when
 that operation completed the job, otherwise only when
