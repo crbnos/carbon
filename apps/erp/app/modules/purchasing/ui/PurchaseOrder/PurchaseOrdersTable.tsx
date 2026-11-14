@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLoaderQuery } from "@carbon/query";
 import {
   BarProgress,
   Checkbox,
@@ -23,6 +24,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
+  LuCheckCheck,
   LuContainer,
   LuCopy,
   LuCreditCard,
@@ -36,6 +38,7 @@ import {
   LuTruck,
   LuUser
 } from "react-icons/lu";
+import { useFetcher } from "react-router";
 import {
   DateTime,
   EmployeeAvatar,
@@ -60,8 +63,10 @@ import {
   purchaseOrderStatusType
 } from "~/modules/purchasing/purchasing.models";
 import type { PurchaseOrderListItem } from "~/modules/purchasing/types";
+import type { loader as finalizeDefaultsLoader } from "~/routes/api+/purchasing.purchase-order.$id.finalize";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
+import PurchaseOrderFinalizeModal from "./PurchaseOrderFinalizeModal";
 import PurchasingStatus from "./PurchasingStatus";
 import { usePurchaseOrder } from "./usePurchaseOrder";
 
@@ -81,8 +86,11 @@ const PurchaseOrdersTable = memo(
 
     const [selectedPurchaseOrder, setSelectedPurchaseOrder] =
       useState<PurchaseOrderListItem | null>(null);
+    const [finalizeOrderId, setFinalizeOrderId] = useState<string | null>(null);
+    const finalizeFetcher = useFetcher();
 
     const deletePurchaseOrderModal = useDisclosure();
+    const finalizePurchaseOrderModal = useDisclosure();
 
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
@@ -521,6 +529,24 @@ const PurchaseOrdersTable = memo(
 
           <MenuItem
             disabled={
+              !row.id ||
+              !["Draft", "Planned"].includes(row.status ?? "") ||
+              !permissions.can("view", "purchasing") ||
+              !permissions.can("create", "purchasing") ||
+              !permissions.can("update", "purchasing")
+            }
+            onClick={() => {
+              if (!row.id) return;
+              setFinalizeOrderId(row.id);
+              finalizePurchaseOrderModal.onOpen();
+            }}
+          >
+            <MenuIcon icon={<LuCheckCheck />} />
+            <Trans>Finalize</Trans>
+          </MenuItem>
+
+          <MenuItem
+            disabled={
               !["To Receive", "To Receive and Invoice"].includes(
                 row.status ?? ""
               ) || !permissions.can("update", "inventory")
@@ -549,7 +575,14 @@ const PurchaseOrdersTable = memo(
           </MenuItem>
         </>
       ),
-      [deletePurchaseOrderModal, edit, fetcher, permissions, receive]
+      [
+        deletePurchaseOrderModal,
+        edit,
+        fetcher,
+        finalizePurchaseOrderModal,
+        permissions,
+        receive
+      ]
     );
 
     const lineItemRows =
@@ -587,6 +620,15 @@ const PurchaseOrdersTable = memo(
           withSelectableRows
         />
 
+        {finalizeOrderId && (
+          <ListFinalizeModal
+            purchaseOrderId={finalizeOrderId}
+            fetcher={finalizeFetcher}
+            open={finalizePurchaseOrderModal.isOpen}
+            onClose={finalizePurchaseOrderModal.onClose}
+          />
+        )}
+
         {selectedPurchaseOrder && selectedPurchaseOrder.id && (
           <ConfirmDelete
             action={path.to.deletePurchaseOrder(selectedPurchaseOrder.id)}
@@ -606,5 +648,33 @@ const PurchaseOrdersTable = memo(
   }
 );
 PurchaseOrdersTable.displayName = "PurchaseOrdersTable";
+
+function ListFinalizeModal({
+  purchaseOrderId,
+  fetcher,
+  open,
+  onClose
+}: {
+  purchaseOrderId: string;
+  fetcher: ReturnType<typeof useFetcher>;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const defaults = useLoaderQuery<typeof finalizeDefaultsLoader>(
+    path.to.api.purchaseOrderFinalize(purchaseOrderId)
+  );
+  if (!defaults.data?.purchaseOrder) return null;
+
+  return (
+    <PurchaseOrderFinalizeModal
+      purchaseOrderId={purchaseOrderId}
+      purchaseOrder={defaults.data.purchaseOrder}
+      defaultCc={defaults.data.defaultCc}
+      fetcher={fetcher}
+      open={open}
+      onClose={onClose}
+    />
+  );
+}
 
 export default PurchaseOrdersTable;
