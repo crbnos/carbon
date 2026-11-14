@@ -65,6 +65,7 @@ pnpm --filter erp test -- people   # vitest filters by file path
 - `clockIn` / `clockOut` / `getTimeCardEntries` / `getWeeklyHoursForEmployees` — time tracking
 - `getClockedInEmployees` / `getScheduledEmployeesToday` — real-time workforce status
 - `getAttribute` / `getAttributeCategories` / `insertAttribute` / `updateAttribute` — custom fields
+- `employeeJobHiddenFields` (`people.utils.ts`) — the fields the person Job form posts without showing them (Labor Category and Timesheet Required until the company has a labor category, FLSA Status and Officer outside DCAA), each with its saved value. A flag posts `"on"` only when it is on, because `zfd.checkbox()` refuses `""` and the browser's validation then blocks Save with no message
 
 ## Operations (`people.server.ts`)
 

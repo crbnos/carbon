@@ -5273,3 +5273,10 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A hidden checkbox posts "" for off, and `zfd.checkbox()` refuses it
+
+- **Context:** The person Job form hides Officer outside DCAA timekeeping and Timesheet Required until the company has a labor category. It posted each hidden flag as a `Hidden` field with its saved value, `"on"` or `""`.
+- **Problem:** `zfd.checkbox()` accepts `"on"`, a missing value or a boolean, and refuses `""`. `ValidatedForm` validated the post in the browser, so Save did nothing and showed no message: the error belonged to a field the user could not see.
+- **Rule:** Post a hidden boolean the way a checkbox posts it: `"on"` when it is on, and no field when it is off. Render the `Hidden` only when the value is on. An absent flag reads as off, which is then the saved value.
+- **Applies to:** every `Hidden` field whose validator uses `zfd.checkbox()`; `employeeJobHiddenFields` (`apps/erp/app/modules/people/people.utils.ts`).
