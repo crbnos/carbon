@@ -29253,10 +29253,8 @@ async function assertTravelerRequirementOpen(
     .executeTakeFirst();
 
   if (!makeMethod?.requiresSerialTracking) {
-    const required = Number(
-      jobMaterial.estimatedQuantity ?? jobMaterial.quantity ?? 0
-    );
-    const remaining = round(required - Number(jobMaterial.quantityIssued ?? 0));
+    const required = jobMaterial.estimatedQuantity ?? jobMaterial.quantity ?? 0;
+    const remaining = round(required - (jobMaterial.quantityIssued ?? 0));
     if (remaining <= EPSILON) {
       throw new InvalidInputError(
         `This job already has all its ${jobMaterial.description || "material"}`
@@ -29265,7 +29263,7 @@ async function assertTravelerRequirementOpen(
     return;
   }
 
-  const consumed = await sql<{ quantity: string | number | null }>`
+  const consumed = await sql<{ quantity: number | null }>`
     WITH "fitted" AS (
       SELECT tai."trackedEntityId", SUM(tai."quantity") AS "quantity"
       FROM "trackedActivity" ta
@@ -29301,7 +29299,7 @@ async function assertTravelerRequirementOpen(
   `.execute(trx);
 
   const remaining = round(
-    Number(jobMaterial.quantity ?? 0) - Number(consumed.rows[0]?.quantity ?? 0)
+    (jobMaterial.quantity ?? 0) - (consumed.rows[0]?.quantity ?? 0)
   );
   if (remaining <= EPSILON) {
     throw new InvalidInputError(
