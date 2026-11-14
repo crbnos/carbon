@@ -128,10 +128,13 @@ export type BomExplosionInput = {
    */
   extraPlanningKeys?: string[];
   /**
-   * MRP v2: the scrap rate per item. A `planSupply` explosion adds the
-   * child's scrap (`scrapAllowance`) to the child's quantity, except for a
-   * Make to Order child that is made: its own job carries its scrap.
-   * Absent: no child scrap. The Phase 1 path never adds scrap.
+   * MRP v2: the scrap rate per item. Every explosion then sizes as job
+   * creation does (`computeJobQuantities`): a `planSupply` explosion already
+   * holds the parent's scrap, and the raw-need path explodes the net
+   * requirement plus the parent's own scrap (`scrapAllowance`). Each child
+   * adds its own scrap, except a Make to Order child that is made: it is
+   * exploded through the raw-need path, which adds its scrap there.
+   * Absent (`getMethod`): no scrap anywhere, as in Phase 1.
    */
   scrapRateByItem?: Map<string, number>;
 };
@@ -486,6 +489,13 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
       // explodes its planned orders below instead of the raw need.
       if (planned || netRequirement <= 0 || effRepSys !== "Make") continue;
 
+      // With scrap rates (MRP v2) the need is made as a job would make it:
+      // the net requirement plus the parent's scrap.
+      const explosionQty = scrapRateByItem
+        ? netRequirement +
+          scrapAllowance(netRequirement, scrapRateByItem.get(itemId) ?? 0)
+        : netRequirement;
+
       const children = explodable.get(itemId) ?? [];
       for (const child of children) {
         const childEffRepSys = effectiveReplenishment(
@@ -497,7 +507,16 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
         const isInlineProduction =
           child.methodType === "Make to Order" && childEffRepSys === "Make";
 
-        const childQty = child.quantity * netRequirement;
+        // A child that is made inline adds its scrap when it explodes.
+        const childTarget = child.quantity * explosionQty;
+        const childQty =
+          scrapRateByItem && !isInlineProduction
+            ? childTarget +
+              scrapAllowance(
+                childTarget,
+                scrapRateByItem.get(child.itemId) ?? 0
+              )
+            : childTarget;
         const childLeadTimeDays = leadTimeByItem.get(child.itemId) ?? 7;
         const childLeadTimeWeeks = Math.ceil(childLeadTimeDays / 7);
 

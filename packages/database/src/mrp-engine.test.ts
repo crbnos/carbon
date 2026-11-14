@@ -1125,3 +1125,63 @@ it("runs the Phase 1 path for a key the hook returns null for", () => {
     onHand: 1
   });
 });
+
+// A need of 10 for the parent (scrap 10%) is made as a job of 10 + 1 = 11:
+// the bought child (2 per, scrap 15%) needs 22 + ceil(3.3) = 26; the made
+// Make to Order child gets 11 with no scrap, and its own subjob adds
+// ceil(2.2) = 3, so its leaf needs 14. Without rates nothing adds scrap.
+it.each([
+  ["with scrap rates", true, { bought: 26, made: 11, leaf: 14 }],
+  ["without scrap rates (getMethod)", false, { bought: 20, made: 10, leaf: 10 }]
+] as const)(
+  "explodeBom sizes a raw need's children as job creation does, %s",
+  (_name, withRates, expected) => {
+    const { grossDemand } = explodeBom({
+      grossDemand: new Map([[makeKey("loc", "p1", "parent"), 10]]),
+      bomByItem: new Map<string, BomChild[]>([
+        [
+          "parent",
+          [
+            {
+              itemId: "bought",
+              quantity: 2,
+              methodType: "Pull from Inventory"
+            },
+            { itemId: "made", quantity: 1, methodType: "Make to Order" }
+          ]
+        ],
+        [
+          "made",
+          [{ itemId: "leaf", quantity: 1, methodType: "Pull from Inventory" }]
+        ]
+      ]),
+      replenishmentSystemByItem: new Map([
+        ["parent", "Make"],
+        ["bought", "Buy"],
+        ["made", "Make"],
+        ["leaf", "Buy"]
+      ]),
+      leadTimeByItem: new Map([
+        ["bought", 0],
+        ["made", 0],
+        ["leaf", 0]
+      ]),
+      periods: [{ id: "p1" }],
+      onHandByLocationItem: new Map(),
+      jobSupplyByLocationPeriodItem: new Map(),
+      topLevelContributors: new Map(),
+      scrapRateByItem: withRates
+        ? new Map([
+            ["parent", 0.1],
+            ["bought", 0.15],
+            ["made", 0.2]
+          ])
+        : undefined
+    });
+    expect({
+      bought: grossDemand.get(makeKey("loc", "p1", "bought")),
+      made: grossDemand.get(makeKey("loc", "p1", "made")),
+      leaf: grossDemand.get(makeKey("loc", "p1", "leaf"))
+    }).toEqual(expected);
+  }
+);
