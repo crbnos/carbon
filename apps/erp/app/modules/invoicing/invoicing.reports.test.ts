@@ -4,7 +4,11 @@
 
 import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
-import { aggregateSpend, previousPeriod } from "./invoicing.reports";
+import {
+  aggregateSpend,
+  agingCsvTable,
+  previousPeriod
+} from "./invoicing.reports";
 
 describe("previousPeriod", () => {
   it("returns the equal-length window immediately before the range", () => {
@@ -89,6 +93,120 @@ describe("aggregateSpend", () => {
     ]);
     expect(result).toEqual([
       { partyId: "c2", total: 75, previousTotal: 0, variance: null }
+    ]);
+  });
+});
+
+describe("agingCsvTable", () => {
+  const aging = [
+    {
+      partyId: "sup-1",
+      paymentTerm: "Net 30",
+      current: 1000,
+      bucket1: 500,
+      bucket2: 0,
+      bucket3: 0,
+      bucket4: 0,
+      unapplied: 0,
+      total: 1500
+    }
+  ];
+  const open = [
+    {
+      partyId: "sup-1",
+      documentNumber: "PI-123",
+      documentType: "Invoice",
+      dateDue: "2026-11-30",
+      openInBase: 1500,
+      supplierReference: "SUP-9"
+    },
+    {
+      partyId: "sup-1",
+      documentNumber: "DR-7",
+      documentType: "Debit Memo",
+      dateDue: null,
+      openInBase: -500,
+      supplierReference: null
+    }
+  ];
+  const partyNameById = new Map([["sup-1", "Acme"]]);
+
+  it("writes every open document under its counterparty, naming the party on each row", () => {
+    const { fields, rows } = agingCsvTable({
+      partyHeader: "Supplier",
+      partyNameById,
+      aging,
+      open,
+      bucketDays: [30, 60, 90],
+      withSupplierReference: true
+    });
+    expect(fields).toEqual([
+      "Supplier",
+      "Document",
+      "Document Type",
+      "Supplier Invoice Number",
+      "Due Date",
+      "Payment Term",
+      "Current",
+      "1-30",
+      "31-60",
+      "61-90",
+      "90+",
+      "Unapplied",
+      "Total"
+    ]);
+    expect(rows).toEqual([
+      ["Acme", "", "", "", "", "Net 30", 1000, 500, 0, 0, 0, 0, 1500],
+      [
+        "Acme",
+        "PI-123",
+        "Invoice",
+        "SUP-9",
+        "2026-11-30",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        1500
+      ],
+      ["Acme", "DR-7", "Debit Memo", "", "", "", "", "", "", "", "", "", -500]
+    ]);
+  });
+
+  it("omits the supplier reference column on the AR side and falls back to the id for an unknown party", () => {
+    const { fields, rows } = agingCsvTable({
+      partyHeader: "Customer",
+      partyNameById: new Map(),
+      aging,
+      open: open.slice(0, 1),
+      bucketDays: [15, 45, 75],
+      withSupplierReference: false
+    });
+    expect(fields.slice(0, 5)).toEqual([
+      "Customer",
+      "Document",
+      "Document Type",
+      "Due Date",
+      "Payment Term"
+    ]);
+    expect(fields.slice(6, 10)).toEqual(["1-15", "16-45", "46-75", "75+"]);
+    expect(rows[0][0]).toBe("sup-1");
+    expect(rows[1]).toEqual([
+      "sup-1",
+      "PI-123",
+      "Invoice",
+      "2026-11-30",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      1500
     ]);
   });
 });

@@ -5290,7 +5290,7 @@ export async function getApTieOut(
     .single();
 }
 
-export async function getArOpenByCustomer(
+export function getArOpenByCustomer(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string
@@ -5301,7 +5301,7 @@ export async function getArOpenByCustomer(
   });
 }
 
-export async function getApOpenBySupplier(
+export function getApOpenBySupplier(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string
@@ -5319,7 +5319,39 @@ export type AgingOptions = {
   bucketDays?: [number, number, number];
 };
 
-export async function getArAging(
+function parseBuckets(raw: string | null): [number, number, number] {
+  const parts = (raw ?? "").split(",").map((n) => Number.parseInt(n, 10));
+  if (parts.length === 3 && parts.every((n) => Number.isFinite(n) && n > 0)) {
+    return [parts[0], parts[1], parts[2]];
+  }
+  return [30, 60, 90];
+}
+
+/**
+ * The AR/AP aging pages, the receivables/payables workbenches and their CSV
+ * downloads all read the same three query params, so they parse them here:
+ * `asOfDate` (default: today in the company's time zone), `agingMethod` and
+ * `bucketDays` ("30,60,90"). A bad value falls back to the default — a stale
+ * bookmark must not 500.
+ */
+export async function getAgingParams(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  request: Request
+) {
+  const url = new URL(request.url);
+  const asOfDate =
+    url.searchParams.get("asOfDate") ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  const agingMethod: "dueDate" | "documentDate" =
+    url.searchParams.get("agingMethod") === "documentDate"
+      ? "documentDate"
+      : "dueDate";
+  const bucketDays = parseBuckets(url.searchParams.get("bucketDays"));
+  return { asOfDate, agingMethod, bucketDays };
+}
+
+export function getArAging(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string,
@@ -5336,7 +5368,7 @@ export async function getArAging(
   });
 }
 
-export async function getApAging(
+export function getApAging(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string,
