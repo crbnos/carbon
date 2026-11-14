@@ -4522,7 +4522,10 @@ export async function settleErpScrapApprovals(
     } else {
       // The write may have committed before its answer was lost: the record
       // stays with no `postedAt`, rather than posted scrap with no approval.
-      logger.warn("Scrap write failed without a refusal; approval kept", args);
+      logger.warning(
+        "Scrap write failed without a refusal; approval kept",
+        args
+      );
     }
   } catch (error) {
     logger.error("Failed to settle a scrap approval", {

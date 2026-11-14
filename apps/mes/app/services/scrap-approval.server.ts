@@ -241,7 +241,7 @@ export async function postScrapWithApproval<T>(args: {
       // Not a refusal: the ERP may have committed before the answer was
       // lost. The record stays, unconfirmed, rather than a posted scrap
       // with no approval.
-      logger.warn("Scrap posting failed without a refusal; approval kept", {
+      logger.warning("Scrap posting failed without a refusal; approval kept", {
         companyId,
         scrapRequestId: recorded.scrapRequestId,
         status: posted.error.status
