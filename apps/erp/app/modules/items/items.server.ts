@@ -622,7 +622,8 @@ export const createPart = defineServiceFn({
  * @remarks
  * `id` is the item id or the part number. A full replace: an optional field
  * left out is cleared (`upsertPart`), including the default storage unit and
- * shelf life.
+ * shelf life. It never changes whether the part is active: `setItemActive`
+ * does.
  *
  * @mcp
  */
@@ -648,7 +649,8 @@ export const updatePart = defineServiceFn({
  *
  * @remarks
  * `id` is the item id or the tool number. A full replace: an optional field
- * left out is cleared (`upsertTool`).
+ * left out is cleared (`upsertTool`). It never changes whether the tool is
+ * active: `setItemActive` does.
  *
  * @mcp
  */
@@ -4226,6 +4228,8 @@ export const createConsumable = defineServiceFn({
  *
  * @remarks
  * Creates a consumable (item row and consumable row) or updates one; on update `id` is the item id (uuid) or the consumable's readable id and the write is a full…
+ * An update never changes whether the consumable is active: `setItemActive`
+ * does.
  *
  * @mcp
  */
@@ -5594,6 +5598,8 @@ export const createMaterial = defineServiceFn({
  *
  * @remarks
  * Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size
+ * An update never changes whether the material is active: `setItemActive`
+ * does.
  *
  * @mcp
  */
@@ -6036,7 +6042,8 @@ export const createService = defineServiceFn({
  * Update a service
  *
  * @remarks
- * Creates a service (item row and service row) or updates one
+ * Creates a service (item row and service row) or updates one. An update never
+ * changes whether the service is active: `setItemActive` does.
  *
  * @mcp
  */

@@ -20,8 +20,11 @@ import {
   setItemActive,
   setItemPostingGroup,
   setItemSourcing,
+  updateConsumable,
   updateItem,
-  updateItemPlanning
+  updateItemPlanning,
+  updatePart,
+  updateTool
 } from "../app/modules/items/items.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
@@ -182,6 +185,67 @@ describe("setItemActive", () => {
 
     expect(result.error).toBeNull();
     expect(writes).toMatchObject([{ op: "update", values: { active: false } }]);
+  });
+});
+
+describe("details saves", () => {
+  const details = {
+    id: "i1",
+    name: "Bracket",
+    replenishmentSystem: "Buy",
+    defaultMethodType: "Pull from Inventory",
+    itemTrackingType: "Inventory",
+    unitOfMeasureCode: "EA"
+  } as const;
+
+  /** The item row once a save's item writes have landed on it. */
+  function itemAfter(row: Record<string, unknown>, writes: Write[]) {
+    return writes
+      .filter((write) => write.table === "item" && write.op === "update")
+      .reduce((item, write) => ({ ...item, ...(write.values as object) }), row);
+  }
+
+  it.each([
+    ["updatePart", (ctx: any) => updatePart(ctx, { ...details, revision: "0" })],
+    ["updateTool", (ctx: any) => updateTool(ctx, { ...details, revision: "0" })],
+    ["updateConsumable", (ctx: any) => updateConsumable(ctx, details)]
+  ])("%s leaves an inactive item inactive", async (_name, save) => {
+    const stored = { id: "i1", readableId: "P1", active: false };
+    const { client, writes } = fakeClient({ item: stored });
+
+    const result = await save(contextFor(client));
+
+    expect(result.error).toBeNull();
+    expect(itemAfter(stored, writes)).toMatchObject({
+      name: "Bracket",
+      active: false
+    });
+  });
+
+  it("leaves a part an unreleased change notice created inactive", async () => {
+    // Only release, or setItemActive once the notice is released, may activate it.
+    const stored = {
+      id: "i1",
+      readableId: "P1",
+      active: false,
+      changeOrderId: "co-1"
+    };
+    const { client, writes } = fakeClient({
+      item: stored,
+      changeOrder: [{ id: "co-1", changeOrderId: "ECO-1", status: "Draft" }]
+    });
+
+    const result = await updatePart(contextFor(client), {
+      ...details,
+      revision: "A"
+    });
+
+    expect(result.error).toBeNull();
+    expect(itemAfter(stored, writes)).toMatchObject({
+      name: "Bracket",
+      active: false,
+      changeOrderId: "co-1"
+    });
   });
 });
 

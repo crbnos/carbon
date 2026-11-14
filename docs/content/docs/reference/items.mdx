@@ -16,7 +16,7 @@ Item type, replenishment system, and tracking type determine whether the item is
   <Field name="Default method type" type="enum">The default per-line fulfillment: *Purchase to Order*, *Pull from Inventory*, or *Make to Order*.</Field>
   <Field name="Tracking type" type="enum">*Inventory*, *Non-Inventory*, *Serial*, or *Batch*.</Field>
   <Field name="Unit of measure" type="reference">The stock unit.</Field>
-  <Field name="Active" type="boolean">Whether it can be used on new documents.</Field>
+  <Field name="Active" type="boolean">Whether it can be used on new documents. Saving the item's details leaves it as it is. An item a change notice created cannot be activated until the notice is released.</Field>
 </FieldTable>
 
 <Callout type="note">
