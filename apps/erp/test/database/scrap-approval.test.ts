@@ -568,6 +568,39 @@ describeLocal("scrap approval", () => {
     expect(rework.error).toBeNull();
   });
 
+  it("refuses a direct Scrap row that names another company's operation", async () => {
+    // No rule in this company; the operation is a second company's.
+    await scrapRules();
+    const other = await alwaysPostFixture();
+    try {
+      const otherJob = await jobFixture(other);
+      const scrapped = async () =>
+        (
+          await other.db
+            .selectFrom("jobOperation")
+            .select("quantityScrapped")
+            .where("id", "=", otherJob.operationId)
+            .executeTakeFirstOrThrow()
+        ).quantityScrapped;
+      const before = await scrapped();
+
+      const inserted = await keyClient
+        .from("productionQuantity")
+        .insert({
+          jobOperationId: otherJob.operationId,
+          type: "Scrap",
+          quantity: 1,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .select("id");
+      expect(inserted.error?.code).toBe("42501");
+      expect(await scrapped()).toBe(before);
+    } finally {
+      await other.cleanup();
+    }
+  }, 60_000);
+
   it("allows direct scrap with no rule on, and removing it with one on", async () => {
     await scrapRules();
     const before = await scrappedOnOperation();

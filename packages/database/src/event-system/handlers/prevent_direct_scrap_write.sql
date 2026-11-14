@@ -20,6 +20,17 @@ BEGIN
     IF p_new->>'type' IS DISTINCT FROM 'Scrap' THEN
       RETURN;
     END IF;
+    -- The operation's totals follow the row as the system, past this guard:
+    -- a row naming another company's operation would change that company's
+    -- scrap without its rules.
+    IF EXISTS (
+      SELECT 1 FROM "jobOperation"
+      WHERE "id" = p_new->>'jobOperationId'
+        AND "companyId" IS DISTINCT FROM p_new->>'companyId'
+    ) THEN
+      RAISE EXCEPTION 'The operation is not in this company.'
+        USING ERRCODE = 'insufficient_privilege';
+    END IF;
   ELSIF COALESCE((p_new->>'quantityScrapped')::numeric, 0)
     = COALESCE((p_old->>'quantityScrapped')::numeric, 0) THEN
     RETURN;
