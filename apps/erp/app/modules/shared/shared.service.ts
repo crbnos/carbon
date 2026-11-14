@@ -214,6 +214,7 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
+import { importJournalEntries } from "./journal-entry-import";
 import { importPayrollTotals } from "./payroll-total-import";
 import {
   type assignableTables,
@@ -5746,7 +5747,8 @@ export const importCsvInput = z.object({
     "inventoryQuantity",
     "batchQuantity",
     "serialQuantity",
-    "payrollPeriodTotal"
+    "payrollPeriodTotal",
+    "journalEntry"
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
@@ -9098,6 +9100,10 @@ export async function importCsvTable(
         userId,
         summary
       });
+      break;
+    }
+    case "journalEntry": {
+      await importJournalEntries(ctx, { mappedRecords, summary });
       break;
     }
     default: {

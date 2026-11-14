@@ -43,6 +43,7 @@ Bulk import is available only for supported entities. Import each entity from th
   <Field name="Work Centers">From the work centers list, including labor, machine, and overhead rates and a location.</Field>
   <Field name="Processes">From the processes list.</Field>
   <Field name="Inventory, Batch, and Serial Quantities">From **Inventory → Quantities**. Adds opening stock for items that already exist, one import per <Term id="item-tracking-type">tracking type</Term>. See [Opening stock](#opening-stock).</Field>
+  <Field name="Journal Entries">From **Accounting → Journal Entries**. Creates manual journal entries from another accounting system's journals, one row per journal line. See [Journal entries](#journal-entries).</Field>
 </FieldTable>
 
 The **Bulk Import** menu on the parts and tools lists also offers three **method** imports that load bills of materials and operations: **BOM**, **Operations**, and **Parts with Methods**, which creates parts and their full BOM and routing together. These are row-typed CSVs: each row is tagged `PART`, `BOM`, `BOP`, `STEP`, `TOOL`, or `PARAM` and names its parent part.
@@ -119,6 +120,36 @@ Rules shared by all three:
 Inventory-tracked rows have no natural key, so every valid row posts, every time. Importing the same file twice doubles the quantities. Batch and serial rows are protected: a batch or serial number that already exists on that item (in any status) is **skipped**, and a number repeated in the file is skipped after its first row. The same serial number on two different items is allowed.
 </Callout>
 
+## Journal entries
+
+The **Accounting → Journal Entries** list imports journals from another accounting system. Each row is one journal line, and the rows that share a **Journal Reference** become one journal entry. Every journal is created, saved and posted the way a manual journal entry is: it takes the next journal entry number, its source is **Manual**, and the period rules of a manual entry apply.
+
+<FieldTable>
+  <Field name="Journal Reference" required>The journal's number in the other system. Rows with the same reference are one journal. With no Journal Description, the reference is the journal's description.</Field>
+  <Field name="Posting Date" required>Written `YYYY-MM-DD`. Every row of a journal must have the same date.</Field>
+  <Field name="Account Number" required>The number of an active account in your chart of accounts. Group accounts are not accepted.</Field>
+  <Field name="Debit and Credit">Each row has a debit or a credit, not both. Write amounts with a point for decimals and no thousands separator, such as `1234.56`. Amounts are in your base currency.</Field>
+  <Field name="Line Description">The line's memo.</Field>
+  <Field name="Journal Description">The description of the whole journal entry.</Field>
+  <Field name="Status">**Draft**, as a new manual journal entry starts, or **Posted**. Leave the column unmapped and choose the Default in the wizard to set every journal of the file. Every row of a journal must have the same status.</Field>
+  <Field name="Dimension 1–3 and Dimension 1–3 Value">Up to three [dimension](/docs/reference/dimensions) tags per line. Each Value column holds the value by name, for example a class or a region. In the wizard, leave the Dimension column unmapped and choose the dimension as its Default, so every line of the file uses that dimension.</Field>
+</FieldTable>
+
+A journal is imported whole or not at all:
+
+- Each journal must balance: its debits equal its credits. A journal that does not balance is refused, and the reason names its reference and both totals.
+- An unknown account number or dimension value refuses its row and holds back the rest of that journal.
+- A journal dated in a **Closed** period is refused with "Accounting period is closed. Reopen it before posting." Reopen the period first. A **Locked** period accepts the journal, as it accepts a manual journal entry.
+- A **Posted** journal needs accounting to be set up. A **Draft** journal does not.
+
+Every row of a refused journal is listed under the rows to fix, so the file you download from the results holds whole journals. Each imported journal records its reference. When you import the same file again, its journals are **skipped**, and the reason names the journal entry each one became.
+
+<Callout type="warn" title="History before the accounting cutover counts in your balances">
+A Posted journal dated before your accounting cutover counts in every balance and report, together with the opening balance journal that setting up accounting posts. If that opening balance already holds the other system's trial balance, importing the same history as well counts it twice.
+</Callout>
+
+Journals import one at a time, in the order their references first appear in the file. A large history imports faster in several files, for example one file per month.
+
 ## Errors and partial failures
 
 Import handles validation failures per row. Invalid rows are reported while valid rows continue. Results include:
@@ -132,7 +163,7 @@ A BOM, Operations, or Parts with Methods import counts **parts** as inserted and
 Because the results carry each failed row's original cells, the wizard's results view shows you exactly which rows to fix without re-parsing your file. A hard failure (the file can't be downloaded, or an unexpected database error) is the only case that fails the whole import and returns an error message instead of a per-row report.
 
 <Callout type="warn" title="Import bypasses row-level security by design">
-The import function writes with a privileged database connection that bypasses RLS, so your **permission to import is checked once**, up front, when you submit: sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes, inventory for storage units and opening stock. If you lack that module's update permission, the import is refused before any write. Opening stock imports also need inventory create permission, the same as a manual inventory adjustment.
+The import function writes with a privileged database connection that bypasses RLS, so your **permission to import is checked once**, up front, when you submit: sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes, inventory for storage units and opening stock, accounting for journal entries. If you lack that module's update permission, the import is refused before any write. Opening stock imports also need inventory create permission, the same as a manual inventory adjustment, and journal entry imports need accounting create permission, the same as a new manual journal entry.
 </Callout>
 
 ## Related
@@ -143,6 +174,7 @@ The import function writes with a privileged database connection that bypasses R
   <Card title="Suppliers and customers" href="/docs/reference/suppliers-and-customers">The partner records the customer and supplier importers create, including their addresses and terms.</Card>
   <Card title="Work centers" href="/docs/reference/work-centers">The capacity records the work-center importer creates.</Card>
   <Card title="Inventory" href="/docs/reference/inventory">On-hand quantities and the manual adjustments the opening-stock imports post.</Card>
+  <Card title="Accounting" href="/docs/reference/accounting">Journals, periods and the accounting cutover the journal entry import follows.</Card>
 </Cards>
 
 <AgentContext>
@@ -154,7 +186,7 @@ The gates and quiet defaults that surprise people during an import.
 The import URL's `tableId` isn't a key of `importPermissions`, so the route rejects it before any work (`import.$tableId.tsx:16-17`). Import from the entity's own list-screen **Bulk Import** button, which only appears on supported tables, rather than hitting the route directly.
 
 ### The import is refused before any row is written
-The importer bypasses row-level security, so your **module update permission is checked once, up front** on submit (`import.$tableId.tsx:20-22`): sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes, inventory for storage units and opening stock. Opening stock also needs inventory create permission. Without the required permission the whole import is refused. Get the permission, then re-submit.
+The importer bypasses row-level security, so your **module update permission is checked once, up front** on submit (`import.$tableId.tsx:20-22`): sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes, inventory for storage units and opening stock, accounting for journal entries. Opening stock also needs inventory create permission, and journal entries accounting create permission. Without the required permission the whole import is refused. Get the permission, then re-submit.
 
 ### A fixed-asset CSV is rejected
 `fixedAsset` has a models entry but is **not** in the import's own table enum, so it's rejected. Create fixed assets in the app. Individual BOM material lines (`methodMaterial`) are likewise not wired up — use the BOM/method imports or the app.
@@ -170,6 +202,12 @@ The Inventory Quantities import has no natural key: every valid row posts a Posi
 
 ### An opening-stock row says the item is tracked differently
 Each opening-stock import accepts one tracking type (Inventory, Batch, or Serial). The error names the import to use instead; move the row to that file.
+
+### A journal entry was not imported
+Every row of a refused journal carries the reason. "Journal … does not balance" means its debits and credits differ: fix the amounts. "Account … was not found in the chart of accounts" means the number is not an active posting account: create or activate the account, or correct the number. "Accounting period is closed. Reopen it before posting." means the posting date is in a Closed period: reopen it from the periods screen, then import again. "Set up accounting before you post journals, runs or period closes." means a Posted journal was imported before accounting is set up: import it as a Draft, or set up accounting first.
+
+### A journal entry was skipped as imported before
+An earlier import of a row with the same Journal Reference created a journal entry that still exists, and the reason names it. To import a corrected journal, delete that journal entry while it is a Draft, or give the corrected journal a new reference.
 
 ### My custom fields are blank after import
 Import writes standard fields plus documented side-tables (address, payment, supplier-part, cost) only — it does **not** map into per-company custom fields. Set those on the record's form after importing.
