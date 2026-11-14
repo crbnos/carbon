@@ -38,7 +38,6 @@ import {
   generatePlanningActions,
   loadOpenSupplyDetails
 } from "./planning-actions.ts";
-import { withCompanyMrpRunLock } from "./run-lock.ts";
 
 const logger = getLogger("planning", "mrp");
 
@@ -129,24 +128,14 @@ export async function runMrp(
   deps?: MrpDeps
 ): Promise<MrpResult> {
   const parsedPayload = payloadValidator.parse(payload);
-  const { companyId } = parsedPayload;
 
-  // One run per company at a time: two overlapping runs would each change
-  // the planned orders the other planned from, and both would plan again
-  // until they ran out of attempts. A waiting run polls for the MRP run lock
-  // and holds no connection between tries; once granted, the lock is held by
-  // a transaction that does nothing else until the run ends (a throw rolls
-  // it back and releases the lock). The run's work goes on other
-  // connections, so its Phase-7 write commits on its own and the worklist
-  // reads it over PostgREST.
-  //
-  // Lock order: the MRP run lock, then the planning lock. The run takes the
-  // planning lock only while it holds the run lock (its two writes), and a
-  // person's firm, edit, apply or convert takes the planning lock only, so
-  // nothing holding the planning lock ever waits for the run lock.
-  return withCompanyMrpRunLock(db, companyId, () =>
-    runMrpLocked(client, db, parsedPayload, deps)
-  );
+  // No lock spans the whole run: a run holds no connection it does not use,
+  // so it works on any pool size (a lock held on one connection while the
+  // run works on another hung a run on a one-connection pool). Its two writes
+  // take the planning lock and first check the planned orders against what
+  // the run read (or wrote); an overlapping run or a person's change makes
+  // the attempt plan again (`retryOnPlannedOrderChange`), never overwrite.
+  return runMrpLocked(client, db, parsedPayload, deps);
 }
 
 async function runMrpLocked(

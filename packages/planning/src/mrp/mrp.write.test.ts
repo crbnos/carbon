@@ -19,9 +19,10 @@ const unreachable = new Proxy(
 ) as SupabaseClient<Database>;
 
 describe("runMrp", () => {
-  // Two runs of one company at once would keep changing each other's planned
-  // orders and both fail after three attempts; the run lock queues them.
-  it("holds the company's MRP run lock from before its first read until it fails", async () => {
+  // A run holds no lock or connection across its whole length: a lock held on
+  // one connection while the run worked on another hung a run on a
+  // one-connection pool. A run that fails on its first read has sent nothing.
+  it("takes no lock before its first read, and leaves nothing open when it fails", async () => {
     const { db, driver } = recordingDatabase();
     await expect(
       runMrp(unreachable, db, {
@@ -32,23 +33,11 @@ describe("runMrp", () => {
       })
     ).rejects.toThrow("PostgREST is unreachable");
 
-    const [first, lock] = driver.log;
-    expect([first, lock].map((step) => step && kindOf(step))).toEqual([
-      "begin",
-      "run lock"
-    ]);
-    expect(lock?.parameters).toEqual(["mrp-run:co-1"]);
-    // The lock's transaction does nothing else and ends last: the run's own
-    // reads and writes are on other connections.
-    const onLockConnection = driver.log.filter(
-      (step) => step.connection === first?.connection
+    expect(driver.log.map(kindOf)).not.toContain("lock");
+    const begins = driver.log.filter((step) => kindOf(step) === "begin");
+    const ends = driver.log.filter((step) =>
+      ["commit", "rollback"].includes(kindOf(step))
     );
-    expect(onLockConnection.map(kindOf)).toEqual([
-      "begin",
-      "run lock",
-      "rollback"
-    ]);
-    expect(driver.log.at(-1)).toBe(onLockConnection.at(-1));
-    expect(driver.log.length).toBeGreaterThan(3);
+    expect(ends.length).toBe(begins.length);
   });
 });

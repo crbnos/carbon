@@ -319,7 +319,7 @@ describe("retryOnPlannedOrderChange", () => {
     expect([result, attempts]).toEqual(["written", [1, 2]]);
   });
 
-  it("gives up after three changed attempts", async () => {
+  it("gives up after five changed attempts", async () => {
     const attempts: number[] = [];
     await expect(
       retryOnPlannedOrderChange(async (attempt) => {
@@ -327,7 +327,7 @@ describe("retryOnPlannedOrderChange", () => {
         throw new PlannedOrdersChangedError();
       })
     ).rejects.toMatchObject({ cause: expect.any(PlannedOrdersChangedError) });
-    expect(attempts).toEqual([1, 2, 3]);
+    expect(attempts).toEqual([1, 2, 3, 4, 5]);
   });
 
   it("does not retry any other failure", async () => {

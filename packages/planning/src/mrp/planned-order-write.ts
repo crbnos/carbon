@@ -21,7 +21,9 @@ import { jsonEquals } from "./planning-actions.ts";
 const BATCH_SIZE = 500;
 
 /** How many times a run reads and plans again when its planned orders changed. */
-export const MAX_PLAN_ATTEMPTS = 3;
+export const MAX_PLAN_ATTEMPTS = 5;
+/** The longest random pause between two attempts, so overlapping runs part. */
+export const MAX_RETRY_PAUSE_MS = 250;
 
 /**
  * `plannedOrder.updatedAt` as UTC text, the same way in the snapshot and the
@@ -173,6 +175,11 @@ export async function retryOnPlannedOrderChange<T>(
           { cause: err }
         );
       }
+      // a random pause, so two runs that keep changing each other's planned
+      // orders stop retrying in step
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.floor(Math.random() * MAX_RETRY_PAUSE_MS))
+      );
     }
   }
 }

@@ -187,10 +187,7 @@ export function recordingDatabase(rows: Row[] = []) {
 
 /** What a statement is, for asserting the order of a write. */
 export function kindOf(step: { sql: string; parameters: readonly unknown[] }) {
-  if (step.sql.includes("advisory_xact_lock")) {
-    const key = String(step.parameters[0] ?? "");
-    return key.startsWith("mrp-run:") ? "run lock" : "lock";
-  }
+  if (step.sql.includes("advisory_xact_lock")) return "lock";
   if (step.sql.includes('"createdSinceRead"')) return "check";
   return step.sql.trimStart().split(/\s/)[0]!.toLowerCase();
 }
