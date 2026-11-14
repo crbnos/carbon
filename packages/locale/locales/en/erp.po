@@ -18746,6 +18746,14 @@ msgstr "Net Investment in Leases"
 msgid "Net Investment in Leases (default)"
 msgstr "Net Investment in Leases (default)"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "Net of {0} already paid as a prepayment."
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "Net of {0} already received as a deposit."
+
 msgid "Net right-of-use asset"
 msgstr "Net right-of-use asset"
 

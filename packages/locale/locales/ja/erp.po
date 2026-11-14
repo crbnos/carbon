@@ -18746,6 +18746,14 @@ msgstr "リース投資純額"
 msgid "Net Investment in Leases (default)"
 msgstr "リース投資純額（デフォルト）"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "前払金として支払済みの {0} を差し引いた金額です。"
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "前受金として受領済みの {0} を差し引いた金額です。"
+
 msgid "Net right-of-use asset"
 msgstr "純使用権資産"
 

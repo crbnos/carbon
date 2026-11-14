@@ -18746,6 +18746,14 @@ msgstr "Чистые инвестиции в лизинг"
 msgid "Net Investment in Leases (default)"
 msgstr "Чистые инвестиции в лизинг (по умолчанию)"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "За вычетом {0}, уже уплаченных в качестве предоплаты."
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "За вычетом {0}, уже полученных в качестве авансового платежа."
+
 msgid "Net right-of-use asset"
 msgstr "Чистый актив права использования"
 

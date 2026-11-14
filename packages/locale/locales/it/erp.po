@@ -18746,6 +18746,14 @@ msgstr "Investimento netto in locazioni"
 msgid "Net Investment in Leases (default)"
 msgstr "Investimento netto in locazioni (predefinito)"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "Al netto di {0} già pagati come acconto."
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "Al netto di {0} già ricevuti come deposito."
+
 msgid "Net right-of-use asset"
 msgstr "Cespite netto per diritto d'uso"
 

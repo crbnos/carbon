@@ -18746,6 +18746,14 @@ msgstr "租赁净投资"
 msgid "Net Investment in Leases (default)"
 msgstr "租赁净投资（默认）"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "已扣除作为预付款支付的 {0}。"
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "已扣除作为押金收到的 {0}。"
+
 msgid "Net right-of-use asset"
 msgstr "使用权资产净额"
 

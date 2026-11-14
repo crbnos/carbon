@@ -18746,6 +18746,14 @@ msgstr "Netto inwestycja w leasingi"
 msgid "Net Investment in Leases (default)"
 msgstr "Netto inwestycja w leasingi (domyślnie)"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "Po odliczeniu {0} już wpłaconych jako zaliczka."
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "Po odliczeniu {0} już otrzymanych jako zaliczka."
+
 msgid "Net right-of-use asset"
 msgstr "Netto prawo do użytkowania aktywów"
 
