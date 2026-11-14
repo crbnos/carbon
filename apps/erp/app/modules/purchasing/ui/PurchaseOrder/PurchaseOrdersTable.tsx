@@ -531,7 +531,6 @@ const PurchaseOrdersTable = memo(
             disabled={
               !row.id ||
               !["Draft", "Planned"].includes(row.status ?? "") ||
-              !row.receivableQuantity ||
               !permissions.can("view", "purchasing") ||
               !permissions.can("create", "purchasing") ||
               !permissions.can("update", "purchasing")
