@@ -24006,8 +24006,8 @@ export type Database = {
           createdAt: string
           createdBy: string
           exclusions: Json
+          hubVersion: Database["public"]["Enums"]["implementationHubVersion"]
           id: string
-          layout: Database["public"]["Enums"]["implementationLayout"]
           signedAt: string | null
           signedBy: string | null
           status: Database["public"]["Enums"]["implementationStatus"]
@@ -24022,8 +24022,8 @@ export type Database = {
           createdAt?: string
           createdBy: string
           exclusions?: Json
+          hubVersion?: Database["public"]["Enums"]["implementationHubVersion"]
           id: string
-          layout?: Database["public"]["Enums"]["implementationLayout"]
           signedAt?: string | null
           signedBy?: string | null
           status?: Database["public"]["Enums"]["implementationStatus"]
@@ -24038,8 +24038,8 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           exclusions?: Json
+          hubVersion?: Database["public"]["Enums"]["implementationHubVersion"]
           id?: string
-          layout?: Database["public"]["Enums"]["implementationLayout"]
           signedAt?: string | null
           signedBy?: string | null
           status?: Database["public"]["Enums"]["implementationStatus"]
@@ -115118,7 +115118,7 @@ export type Database = {
       glAccountClass: "Asset" | "Liability" | "Equity" | "Revenue" | "Expense"
       glConsolidatedRate: "Average" | "Current" | "Historical"
       glIncomeBalance: "Balance Sheet" | "Income Statement"
-      implementationLayout: "Company Plan" | "Personal Pages"
+      implementationHubVersion: "1.0" | "2.0"
       implementationSource:
         | "customer"
         | "staff"
