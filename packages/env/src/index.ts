@@ -37,7 +37,7 @@ const source: Record<string, string | undefined> =
 if (!isBrowser && !source.VITEST && !source.SKIP_ENV_VALIDATION) {
   const report = validateEnv(source);
   if (report.fatal) throw new Error(formatReport(report));
-  // biome-ignore lint/suspicious/noConsole: @carbon/logger depends on this package
+  // biome-ignore lint/suspicious/noConsole: a multi-line report for whoever starts the server; a log line would quote and escape it
   if (report.problems.length) console.warn(formatReport(report));
 }
 
@@ -129,7 +129,8 @@ export const MAINTENANCE_MODE = parseBoolean(getEnv("MAINTENANCE_MODE"), false);
 // self-hosted install), so the server's own settings, such as its mail, are
 // theirs to share across their companies. Anything else, unset included, is
 // Carbon Cloud's "multi": many customers, one server.
-export const SINGLE_TENANT = getEnv("TENANT_TYPE") === "single";
+export const TENANT_TYPE = getEnv("TENANT_TYPE");
+export const SINGLE_TENANT = TENANT_TYPE === "single";
 
 export const SYSTEM_STATUS_URL = getEnv("SYSTEM_STATUS_URL");
 
@@ -405,6 +406,7 @@ export function getBrowserEnv() {
     RAMP_CLIENT_ID,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
+    TENANT_TYPE,
     APP_ENV,
     APP_URL,
     VERCEL_ENV,

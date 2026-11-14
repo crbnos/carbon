@@ -70,7 +70,28 @@ const SupplierQuoteCompareDrawer = ({
   isOpen,
   onClose,
   purchasingRfqId
-}: SupplierQuoteCompareDrawerProps) => {
+}: SupplierQuoteCompareDrawerProps) => (
+  <Drawer
+    open={isOpen}
+    onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}
+  >
+    <DrawerContent size="xl">
+      <SupplierQuoteCompareBody
+        onClose={onClose}
+        purchasingRfqId={purchasingRfqId}
+      />
+    </DrawerContent>
+  </Drawer>
+);
+
+const SupplierQuoteCompareBody = ({
+  onClose,
+  purchasingRfqId
+}: Omit<SupplierQuoteCompareDrawerProps, "isOpen">) => {
   const { t } = useLingui();
   const [step, setStep] = useState<DrawerStep>("compare");
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
@@ -91,25 +112,10 @@ const SupplierQuoteCompareDrawer = ({
 
   // Load comparison data when drawer opens
   useEffect(() => {
-    if (
-      isOpen &&
-      purchasingRfqId &&
-      fetcher.state === "idle" &&
-      !fetcher.data
-    ) {
+    if (purchasingRfqId && fetcher.state === "idle" && !fetcher.data) {
       fetcher.load(path.to.purchasingRfqCompare(purchasingRfqId));
     }
-  }, [isOpen, purchasingRfqId, fetcher]);
-
-  // Reset state when drawer closes
-  useEffect(() => {
-    if (!isOpen) {
-      setStep("compare");
-      setSelectedQuoteId(null);
-      setSelectedQuantityTier(null);
-      setSelectedLines({});
-    }
-  }, [isOpen]);
+  }, [purchasingRfqId, fetcher]);
 
   const quotes = fetcher.data?.quotes ?? [];
   const lines = fetcher.data?.lines ?? [];
@@ -183,154 +189,145 @@ const SupplierQuoteCompareDrawer = ({
   const isLoading = fetcher.state === "loading";
 
   return (
-    <Drawer
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
-    >
-      <DrawerContent size="xl">
-        <DrawerHeader>
-          <HStack className="w-full justify-between">
-            <HStack>
-              {step === "select-items" && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={<LuArrowLeft />}
-                  onClick={handleBackToCompare}
-                >
-                  <Trans>Back</Trans>
-                </Button>
-              )}
-              <VStack spacing={0} className="items-start">
-                <DrawerTitle>
-                  {step === "compare"
-                    ? t`Compare Supplier Quotes`
-                    : `Create Order from ${
-                        selectedQuote?.supplier?.name ??
-                        selectedQuote?.supplierQuoteId
-                      }`}
-                </DrawerTitle>
-                {step === "compare" && totalQuotes > 0 && (
-                  <span className="text-sm text-muted-foreground">
-                    {submittedQuotes} out of {totalQuotes} submitted
-                  </span>
-                )}
-              </VStack>
-            </HStack>
-
-            {/* Quantity tier selector in Step 1 */}
-            {step === "compare" && quantityTiers.length > 1 && (
-              <HStack>
-                <span className="text-sm text-muted-foreground">
-                  <Trans>Compare at quantity:</Trans>
-                </span>
-                <Select
-                  value={String(selectedQuantityTier ?? "")}
-                  onValueChange={(value) =>
-                    setSelectedQuantityTier(Number(value))
-                  }
-                >
-                  <SelectTrigger
-                    className="w-[120px]"
-                    aria-label={t`Compare at quantity`}
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {quantityTiers.map((qty) => (
-                      <SelectItem key={qty} value={String(qty)}>
-                        {qty}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </HStack>
-            )}
-          </HStack>
-        </DrawerHeader>
-
-        <DrawerBody>
-          {isLoading ? (
-            <div className="flex w-full h-full items-center justify-center">
-              <Spinner className="h-10 w-10" />
-            </div>
-          ) : quotes.length === 0 ? (
-            <div className="flex w-full h-full items-center justify-center">
-              <VStack spacing={2} className="text-center">
-                <Heading size="h4">
-                  <Trans>No Active Quotes</Trans>
-                </Heading>
-                <p className="text-muted-foreground">
-                  <Trans>
-                    There are no active supplier quotes to compare for this RFQ.
-                  </Trans>
-                </p>
-              </VStack>
-            </div>
-          ) : step === "compare" ? (
-            <ComparisonView
-              quotes={quotes}
-              lines={lines}
-              prices={prices}
-              selectedQuoteId={selectedQuoteId}
-              selectedQuantityTier={selectedQuantityTier}
-              onQuoteSelect={handleQuoteSelect}
-              formatter={formatter}
-            />
-          ) : (
-            <LineSelectionView
-              quote={selectedQuote!}
-              lines={selectedQuoteLines}
-              prices={selectedQuotePrices}
-              selectedLines={selectedLines}
-              setSelectedLines={setSelectedLines}
-              formatter={formatter}
-            />
-          )}
-        </DrawerBody>
-
-        <DrawerFooter>
-          <HStack className="w-full justify-between">
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-
-            {step === "compare" ? (
+    <>
+      <DrawerHeader>
+        <HStack className="w-full justify-between">
+          <HStack>
+            {step === "select-items" && (
               <Button
-                onClick={handleProceedToSelectItems}
-                isDisabled={!selectedQuoteId}
+                variant="ghost"
+                size="sm"
+                leftIcon={<LuArrowLeft />}
+                onClick={handleBackToCompare}
               >
-                Select Items →
+                <Trans>Back</Trans>
               </Button>
-            ) : (
-              <Form
-                action={path.to.convertSupplierQuoteToOrder(selectedQuoteId!)}
-                method="post"
-              >
-                <input
-                  type="hidden"
-                  name="selectedLines"
-                  value={JSON.stringify(selectedLines)}
-                />
-                <Button
-                  type="submit"
-                  isDisabled={
-                    isSubmitting || Object.keys(selectedLines).length === 0
-                  }
-                  isLoading={isSubmitting}
-                >
-                  Create Order ({formatter.format(orderTotal)})
-                </Button>
-              </Form>
             )}
+            <VStack spacing={0} className="items-start">
+              <DrawerTitle>
+                {step === "compare"
+                  ? t`Compare Supplier Quotes`
+                  : `Create Order from ${
+                      selectedQuote?.supplier?.name ??
+                      selectedQuote?.supplierQuoteId
+                    }`}
+              </DrawerTitle>
+              {step === "compare" && totalQuotes > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {submittedQuotes} out of {totalQuotes} submitted
+                </span>
+              )}
+            </VStack>
           </HStack>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+
+          {/* Quantity tier selector in Step 1 */}
+          {step === "compare" && quantityTiers.length > 1 && (
+            <HStack>
+              <span className="text-sm text-muted-foreground">
+                <Trans>Compare at quantity:</Trans>
+              </span>
+              <Select
+                value={String(selectedQuantityTier ?? "")}
+                onValueChange={(value) =>
+                  setSelectedQuantityTier(Number(value))
+                }
+              >
+                <SelectTrigger
+                  className="w-[120px]"
+                  aria-label={t`Compare at quantity`}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {quantityTiers.map((qty) => (
+                    <SelectItem key={qty} value={String(qty)}>
+                      {qty}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </HStack>
+          )}
+        </HStack>
+      </DrawerHeader>
+
+      <DrawerBody>
+        {isLoading ? (
+          <div className="flex w-full h-full items-center justify-center">
+            <Spinner className="h-10 w-10" />
+          </div>
+        ) : quotes.length === 0 ? (
+          <div className="flex w-full h-full items-center justify-center">
+            <VStack spacing={2} className="text-center">
+              <Heading size="h4">
+                <Trans>No Active Quotes</Trans>
+              </Heading>
+              <p className="text-muted-foreground">
+                <Trans>
+                  There are no active supplier quotes to compare for this RFQ.
+                </Trans>
+              </p>
+            </VStack>
+          </div>
+        ) : step === "compare" ? (
+          <ComparisonView
+            quotes={quotes}
+            lines={lines}
+            prices={prices}
+            selectedQuoteId={selectedQuoteId}
+            selectedQuantityTier={selectedQuantityTier}
+            onQuoteSelect={handleQuoteSelect}
+            formatter={formatter}
+          />
+        ) : (
+          <LineSelectionView
+            quote={selectedQuote!}
+            lines={selectedQuoteLines}
+            prices={selectedQuotePrices}
+            selectedLines={selectedLines}
+            setSelectedLines={setSelectedLines}
+            formatter={formatter}
+          />
+        )}
+      </DrawerBody>
+
+      <DrawerFooter>
+        <HStack className="w-full justify-between">
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+
+          {step === "compare" ? (
+            <Button
+              onClick={handleProceedToSelectItems}
+              isDisabled={!selectedQuoteId}
+            >
+              Select Items →
+            </Button>
+          ) : (
+            <Form
+              action={path.to.convertSupplierQuoteToOrder(selectedQuoteId!)}
+              method="post"
+            >
+              <input
+                type="hidden"
+                name="selectedLines"
+                value={JSON.stringify(selectedLines)}
+              />
+              <Button
+                type="submit"
+                isDisabled={
+                  isSubmitting || Object.keys(selectedLines).length === 0
+                }
+                isLoading={isSubmitting}
+              >
+                Create Order ({formatter.format(orderTotal)})
+              </Button>
+            </Form>
+          )}
+        </HStack>
+      </DrawerFooter>
+    </>
   );
 };
 

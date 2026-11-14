@@ -268,37 +268,36 @@ const IndirectRateRuns = ({
         }
       />
 
-      {disclosure.isOpen && (
-        <Confirm
-          action={action}
-          title={mode === "run" ? t`Run Period` : t`Run True-Up`}
-          text={
-            mode === "run"
-              ? t`Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines.`
-              : t`Burden fiscal year ${fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines.`
-          }
-          confirmText={mode === "run" ? t`Run Period` : t`Run True-Up`}
-          onCancel={disclosure.onClose}
-          onSubmit={disclosure.onClose}
-          details={
-            <div className="flex flex-col gap-2 pt-4">
-              <span className="text-sm font-medium">
-                <Trans>Locked period</Trans>
-              </span>
-              <Select
-                aria-label={t`Locked period`}
-                value={periodId}
-                options={periodOptions}
-                onChange={(value) => setPeriodId(value)}
-              />
-            </div>
-          }
-        >
-          <input type="hidden" name="intent" value={mode} />
-          <input type="hidden" name="accountingPeriodId" value={periodId} />
-          <input type="hidden" name="fiscalYear" value={fiscalYear} />
-        </Confirm>
-      )}
+      <Confirm
+        isOpen={disclosure.isOpen}
+        action={action}
+        title={mode === "run" ? t`Run Period` : t`Run True-Up`}
+        text={
+          mode === "run"
+            ? t`Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines.`
+            : t`Burden fiscal year ${fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines.`
+        }
+        confirmText={mode === "run" ? t`Run Period` : t`Run True-Up`}
+        onCancel={disclosure.onClose}
+        onSubmit={disclosure.onClose}
+        details={
+          <div className="flex flex-col gap-2 pt-4">
+            <span className="text-sm font-medium">
+              <Trans>Locked period</Trans>
+            </span>
+            <Select
+              aria-label={t`Locked period`}
+              value={periodId}
+              options={periodOptions}
+              onChange={(value) => setPeriodId(value)}
+            />
+          </div>
+        }
+      >
+        <input type="hidden" name="intent" value={mode} />
+        <input type="hidden" name="accountingPeriodId" value={periodId} />
+        <input type="hidden" name="fiscalYear" value={fiscalYear} />
+      </Confirm>
     </>
   );
 };

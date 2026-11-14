@@ -32,7 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   Tr,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
@@ -92,8 +92,8 @@ const CurrencyForm = ({
 }: CurrencyFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
   const { locale } = useLocale();
   const resetFetcher = useFetcher<{}>();
 
@@ -149,7 +149,7 @@ const CurrencyForm = ({
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

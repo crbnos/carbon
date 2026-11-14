@@ -5,8 +5,8 @@
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import type { getStorageTypesList } from "~/modules/inventory/inventory.service";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { path } from "~/utils/path";
@@ -15,14 +15,13 @@ import { useEmptyState } from "./emptyStates";
 type StorageTypesSelectProps = Omit<CreatableMultiSelectProps, "options">;
 
 const StorageTypes = (props: StorageTypesSelectProps) => {
-  const newTypeModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useStorageTypes();
 
   const emptyMessage = useEmptyState("storageType", {
-    onCreate: () => newTypeModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -34,19 +33,19 @@ const StorageTypes = (props: StorageTypesSelectProps) => {
         {...props}
         label={props?.label ?? "Storage Types"}
         onCreateOption={(option) => {
-          newTypeModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newTypeModal.isOpen && (
+      {create.item !== null && (
         <StorageTypeForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newTypeModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
-          initialValues={{ name: created, nonNettable: false }}
+          initialValues={{ name: create.item, nonNettable: false }}
         />
       )}
     </>

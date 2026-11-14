@@ -9,6 +9,7 @@ import {
   HStack,
   MenuIcon,
   MenuItem,
+  NonNettableBadge,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -43,6 +44,7 @@ import {
 } from "~/components";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions, useRouteData, useUrlParams } from "~/hooks";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import type { JobMaterialPick } from "~/modules/inventory/inventory.service";
 import { type Item, useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -107,6 +109,7 @@ const JobMaterialsTable = memo(
   }: JobMaterialsTableProps) => {
     const { jobId } = useParams();
     const { t } = useLingui();
+    const nonNettable = useNonNettableStorageUnits();
     if (!jobId) throw new Error("Job ID is required");
 
     // orderStatus is a derived value, not a real column, so its URL filter is
@@ -431,6 +434,10 @@ const JobMaterialsTable = memo(
                     ? t`WIP`
                     : t`Default Storage Unit`)}
               </Badge>
+              {row.original.storageUnitId &&
+                nonNettable.has(row.original.storageUnitId) && (
+                  <NonNettableBadge />
+                )}
             </HStack>
           )
         },
@@ -679,7 +686,8 @@ const JobMaterialsTable = memo(
       jobItemIdSet,
       orderStatusByMaterialId,
       picksByMaterialId,
-      consumeFirstByItemId
+      consumeFirstByItemId,
+      nonNettable
     ]);
 
     const renderContextMenu = useMemo(() => {

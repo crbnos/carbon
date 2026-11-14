@@ -5,8 +5,8 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import { useUser } from "~/hooks/useUser";
 import type { getCostCentersList } from "~/modules/accounting/accounting.service";
 import CostCenterForm from "~/modules/accounting/ui/CostCenters/CostCenterForm";
@@ -17,15 +17,14 @@ type CostCenterSelectProps = Omit<ComboboxProps, "options">;
 
 const CostCenter = (props: CostCenterSelectProps) => {
   const { id: userId } = useUser();
-  const newCostCenterModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
 
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useCostCenters();
 
   const emptyMessage = useEmptyState("costCenter", {
-    onCreate: () => newCostCenterModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -37,20 +36,20 @@ const CostCenter = (props: CostCenterSelectProps) => {
         {...props}
         label={props?.label ?? "Cost Center"}
         onCreateOption={(option) => {
-          newCostCenterModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newCostCenterModal.isOpen && (
+      {create.item !== null && (
         <CostCenterForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newCostCenterModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             ownerId: userId
           }}
         />

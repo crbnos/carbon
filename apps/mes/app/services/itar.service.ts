@@ -156,7 +156,10 @@ export async function recordItarCertification({
       }
     ]);
   } catch (err) {
-    logger.warn(`[itar] audit write skipped for ${type} cert`, { error: err });
+    logger.warning("Audit write skipped for a {type} certification", {
+      type,
+      error: err
+    });
   }
 
   return { error: null };

@@ -584,7 +584,9 @@ that forgets them silently plans without groups.
 - **Grouped supply.** A PO line or job made for the group carries `planningGroupId` and no
   `projectId` (`purchaseOrderLine_owner_check`, `job_owner_check`). Applying an Order or Make in
   a group segment creates it (`getPlanningSegmentOwners`, `projects.service.ts`), and
-  `moveActionPegsToSupply` moves the action's pegs onto the new supply in one transaction.
+  `moveActionPegsToSupply` splits the action's pegs across the supplies that answered it,
+  by quantity, in one transaction (`planPegTransfer`); what they do not cover stays on an
+  action still open for a remainder.
 - **Peg states.** `projectPeg` rows are versioned: a row is never updated in place. A new row
   supersedes the old one (`supersededAt`, `supersededByRunId`). The writes in place are
   `itemLedgerId` on the Hard row a receipt just made and a Manual peg's `exception`.

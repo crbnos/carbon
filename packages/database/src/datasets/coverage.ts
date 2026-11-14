@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Dataset } from "./types.ts";
+
 /**
  * Row-count floors, so a tier that silently writes nothing fails. Counts are absolute
  * (bootstrap rows included). Floor = the smallest count any dataset produced
@@ -68,20 +70,21 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   eventSystemSubscription: 18,
   exchangeRateOverride: 1,
   externalLink: 7,
-  fixedAsset: 6,
+  fixedAsset: 9,
   fixedAssetDisposal: 1,
   fixedAssetUsageLog: 2,
   gauge: 3,
   gaugeCalibrationRecord: 4,
   group: 23, // min 29
   holiday: 3,
-  inspection: 4,
+  inspection: 5,
   inspectionDocument: 3,
   inspectionFeature: 6,
   inspectionHistory: 2,
   inspectionMeasurement: 12,
   inspectionSample: 6,
   inspectionSamplingPlan: 8,
+  inspectionTrackedEntity: 1,
   inventoryCount: 2,
   inventoryCountLine: 11,
   invoiceSettlement: 6,
@@ -128,6 +131,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   materialFinish: 2,
   materialForm: 1,
   materialGrade: 3,
+  materialRequest: 2,
   materialSubstance: 2,
   materialType: 1,
   memo: 4,
@@ -211,6 +215,11 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   quoteShipment: 8,
   receipt: 6,
   receiptLine: 7,
+  rentalAgreement: 2,
+  rentalAgreementCharge: 1,
+  rentalAgreementContact: 1,
+  rentalAgreementLine: 3,
+  rentalBillingPeriod: 2,
   rework: 1,
   riskRegister: 5,
   salesInvoice: 9,
@@ -235,6 +244,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   serviceJobTime: 8,
   shift: 2,
   shipment: 5,
+  shipmentFixedAssetLine: 1,
   shipmentLine: 5,
   shippingMethod: 5,
   shippingTerm: 4,
@@ -257,6 +267,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierQuoteLinePrice: 17, // min 22
   supplierShipping: 11,
   supplierTax: 11,
+  supplierStage: 4,
   supplierType: 6,
   tag: 5,
   timeCardEntry: 6,
@@ -309,6 +320,16 @@ export const DATASET_COVERAGE_FLOORS: Record<string, Record<string, number>> = {
     projectPeg: 8
   }
 };
+
+/**
+ * The floors one dataset must meet. A walkthrough dataset (`Dataset.walkthrough`)
+ * is a single product by design, so it has none: the drift check still applies
+ * it and rolls it back, but counts nothing.
+ */
+export function coverageFloorsFor(dataset: Dataset): Record<string, number> {
+  if (dataset.walkthrough) return {};
+  return { ...COVERAGE_FLOORS, ...DATASET_COVERAGE_FLOORS[dataset.key] };
+}
 
 /**
  * `$1` = scratch company id. Group-scoped dimension rows are exact: the scratch

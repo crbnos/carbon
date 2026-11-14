@@ -16,13 +16,12 @@ import { fileURLToPath } from "node:url";
 import { execa } from "execa";
 import pg from "pg";
 import {
-  type JwtCreds,
-  readDevJwt,
-  recordedStackMode,
+  SHARED_CONTAINERS,
   SHARED_DB_PORT,
   SHARED_STORAGE_ADMIN_PORT,
-  worktreeDatabaseName
-} from "../worktree.js";
+  SHARED_STORAGE_FILES
+} from "../topology.js";
+import { type JwtCreds, readDevJwt } from "../worktree.js";
 
 const TEMPLATE = "carbon_template";
 const FORWARDING_SQL = readFileSync(
@@ -66,12 +65,11 @@ export function dropDatabaseSql(database: string): string {
 
 async function asAdmin<T>(
   database: string,
-  fn: (c: pg.Client) => Promise<T>,
-  port = SHARED_DB_PORT
+  fn: (c: pg.Client) => Promise<T>
 ): Promise<T> {
   const client = new pg.Client({
     host: "127.0.0.1",
-    port,
+    port: SHARED_DB_PORT,
     user: "supabase_admin",
     password: "postgres",
     database
@@ -93,7 +91,7 @@ const databaseExists = (c: pg.Client, name: string) =>
 // launcher and the pg_net worker always hold 2 to `postgres`. So for one
 // moment `postgres` takes no new connections, the 2 workers end (Postgres
 // starts them again), and the clone runs. Only on a new volume.
-export async function ensureTemplate(): Promise<void> {
+async function ensureTemplate(): Promise<void> {
   if (await asAdmin("postgres", (c) => databaseExists(c, TEMPLATE))) return;
   await asAdmin("postgres", async (c) => {
     await c.query("CREATE EXTENSION IF NOT EXISTS pg_cron");
@@ -118,11 +116,21 @@ export async function ensureTemplate(): Promise<void> {
   });
 }
 
+/** A shared-mode worktree's data: its database, cloned from the template,
+ *  and its Storage tenant. True when this call cloned the database. */
+export async function provisionWorktreeData(
+  database: string,
+  jwt: JwtCreds
+): Promise<boolean> {
+  await ensureTemplate();
+  const created = await createWorktreeDatabase(database);
+  await registerStorageTenant(database, jwt);
+  return created;
+}
+
 /** Creates the worktree database, and (again) its forwarding triggers.
  *  Returns false when the database already exists. */
-export async function createWorktreeDatabase(
-  database: string
-): Promise<boolean> {
+async function createWorktreeDatabase(database: string): Promise<boolean> {
   const sql = createDatabaseSql(database);
   const grants = databaseGrantsSql(database);
   const created = await asAdmin("postgres", async (c) => {
@@ -149,15 +157,12 @@ export async function createWorktreeDatabase(
 // cron.unschedule deletes the job in C, where triggers don't fire, and a
 // restore loads cron.job with triggers off. crbn runs this after each
 // migration run and each restore.
-export async function syncWorktreeCron(
-  database: string,
-  port = SHARED_DB_PORT
-): Promise<void> {
+export async function syncWorktreeCron(database: string): Promise<void> {
   checkName(database);
-  await asAdmin(database, (c) => c.query("SELECT crbn.sync_cron()"), port);
+  await asAdmin(database, (c) => c.query("SELECT crbn.sync_cron()"));
 }
 
-export async function dropWorktreeDatabase(database: string): Promise<void> {
+async function dropWorktreeDatabase(database: string): Promise<void> {
   const sql = dropDatabaseSql(database);
   await asAdmin("postgres", async (c) => {
     await c.query(sql);
@@ -187,7 +192,7 @@ const storageAdmin = (path: string) =>
 // The tenant id is the database name. Storage connects as
 // supabase_storage_admin, as the single-tenant stack does, and runs its own
 // migrations in the tenant database when the tenant registers.
-export async function registerStorageTenant(
+async function registerStorageTenant(
   database: string,
   jwt: JwtCreds
 ): Promise<void> {
@@ -199,7 +204,7 @@ export async function registerStorageTenant(
       anonKey: jwt.anonKey,
       serviceKey: jwt.serviceKey,
       jwtSecret: jwt.secret,
-      databaseUrl: `postgres://supabase_storage_admin:postgres@carbon-postgres:5432/${database}`
+      databaseUrl: `postgres://supabase_storage_admin:postgres@${SHARED_CONTAINERS.postgres}:5432/${database}`
     })
   });
   const created = await fetch(
@@ -219,7 +224,7 @@ export async function registerStorageTenant(
   }
 }
 
-export async function deleteStorageTenant(
+async function deleteStorageTenant(
   database: string,
   jwt: JwtCreds
 ): Promise<void> {
@@ -234,38 +239,18 @@ export async function deleteStorageTenant(
   // Storage keeps a tenant's files under <GLOBAL_S3_BUCKET>/<tenant>/.
   await execa("docker", [
     "exec",
-    "carbon-storage",
+    SHARED_CONTAINERS.storage,
     "rm",
     "-rf",
-    `/var/lib/storage/stub/${database}`
+    `${SHARED_STORAGE_FILES}/${database}`
   ]);
 }
 
-/**
- * Drops a shared-mode worktree's database and Storage tenant: its data. Does
- * nothing for an isolated worktree, whose data is its project's volumes.
- * Throws when the shared containers are not reachable; `crbn prune` drops a
- * database that no slot owns, so a failed drop is not lost.
- */
-export async function dropWorktreeData(slug: string): Promise<boolean> {
-  if (recordedStackMode(slug) !== "shared") return false;
-  const database = worktreeDatabaseName(slug);
+/** Drops a shared-mode worktree's data: its database and Storage tenant.
+ *  Throws when the shared containers are not reachable. */
+export async function dropWorktreeData(database: string): Promise<void> {
   await deleteStorageTenant(database, readDevJwt());
   await dropWorktreeDatabase(database);
-  return true;
-}
-
-/** dropWorktreeData that warns instead of throwing, for teardown paths. */
-export async function tryDropWorktreeData(
-  slug: string
-): Promise<string | null> {
-  try {
-    return (await dropWorktreeData(slug))
-      ? `dropped ${worktreeDatabaseName(slug)}`
-      : null;
-  } catch (err) {
-    return `could not drop ${worktreeDatabaseName(slug)} (${(err as Error).message}); \`crbn prune\` drops it later`;
-  }
 }
 
 /** Connections to the shared Postgres, and the worktree's pg_net requests

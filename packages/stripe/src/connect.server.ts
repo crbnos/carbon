@@ -17,7 +17,7 @@ import { stripe } from "./stripe.server";
 export type { ConnectInvoiceLineInput } from "./connect-invoice";
 export { expectedConnectInvoiceTotal } from "./connect-invoice";
 
-const log = getLogger("stripe-connect");
+const log = getLogger("stripe", "connect");
 
 const stripeConnect = STRIPE_SECRET_KEY
   ? new Stripe(STRIPE_SECRET_KEY, {
@@ -130,7 +130,7 @@ export async function getOrCreateConnectAccount(
       return stripeAccountId;
     }
 
-    log.warn(
+    log.warning(
       "Stripe Connect account is no longer linked (disconnected or deleted directly in Stripe); creating a new account",
       { companyId, stripeAccountId }
     );
@@ -829,11 +829,14 @@ export async function createAndSendConnectInvoice(
   }
   // TODO: Accounting journal entry for this?
   if (drift > 0) {
-    log.warn("Stripe Connect invoice total differs from Carbon by rounding", {
-      stripeAccountId,
-      invoiceId: invoice.id,
-      driftMinorUnits: drift
-    });
+    log.warning(
+      "Stripe Connect invoice total differs from Carbon by rounding",
+      {
+        stripeAccountId,
+        invoiceId: invoice.id,
+        driftMinorUnits: drift
+      }
+    );
   }
 
   const finalized = await stripe.invoices.finalizeInvoice(
@@ -1056,7 +1059,7 @@ export async function getConnectInvoicePaymentDetails(
       exchangeRate
     };
   } catch (err) {
-    log.warn("Failed to resolve Stripe Connect invoice payment details", {
+    log.warning("Failed to resolve Stripe Connect invoice payment details", {
       error: err,
       invoiceId,
       stripeAccountId

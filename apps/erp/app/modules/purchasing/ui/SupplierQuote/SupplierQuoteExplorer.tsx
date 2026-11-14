@@ -83,7 +83,6 @@ export default function SupplierQuoteExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -175,15 +174,18 @@ export default function SupplierQuoteExplorer() {
           )}
         </div>
       </VStack>
-      {newSupplierQuoteLineDisclosure.isOpen && (
+      {newSupplierQuoteLineDisclosure.openCount > 0 && (
         <SupplierQuoteLineForm
+          key={newSupplierQuoteLineDisclosure.openCount}
+          open={newSupplierQuoteLineDisclosure.isOpen}
           initialValues={supplierQuoteLineInitialValues}
           type="modal"
           onClose={newSupplierQuoteLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && deleteLine?.id && (
+      {deleteLine?.id && (
         <DeleteSupplierQuoteLine
+          isOpen={deleteLineDisclosure.isOpen}
           line={{
             itemId: deleteLine?.itemId ?? "",
             id: deleteLine.id

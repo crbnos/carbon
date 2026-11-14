@@ -188,7 +188,11 @@ export const auditConfig = {
         supplier: {
           role: "root",
           snapshotFields: {
-            supplierTypeId: { table: "supplierType", displayColumns: ["name"] }
+            supplierTypeId: { table: "supplierType", displayColumns: ["name"] },
+            supplierStageId: {
+              table: "supplierStage",
+              displayColumns: ["name"]
+            }
           }
         },
         supplierPayment: { role: "extension" }, // PK = supplierId
@@ -936,6 +940,7 @@ export const fkDisplayRegistry: {
   supplier: ["name"],
   supplierLocation: ["name"],
   supplierQuote: ["supplierQuoteId"],
+  supplierStage: ["name"],
   supplierType: ["name"],
   trackedEntity: ["readableId"],
   unitOfMeasure: ["name"],

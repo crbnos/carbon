@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { fixedAssetValidator } from "~/modules/accounting/accounting.models";
@@ -50,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewFixedAssetRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     fixedAssetClassId: "",
@@ -64,7 +64,8 @@ export default function NewFixedAssetRoute() {
 
   return (
     <FixedAssetForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
     />
   );

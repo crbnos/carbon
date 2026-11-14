@@ -74,7 +74,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     success: true,
     documentId: id,
     itemId: documentResult.data.partId ?? null,
-    drawingNumber: documentResult.data.content?.drawingNumber ?? null,
+    name: documentResult.data.content?.name ?? null,
     /** Each row: `id` / `featureId` = inspectionFeature id; `balloonId` = balloon when placed. */
     measurements: planResult.data ?? []
   });

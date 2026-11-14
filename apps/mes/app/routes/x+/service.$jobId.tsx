@@ -9,7 +9,6 @@ import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import { getDocumentType, storage } from "@carbon/files";
-import { getLogger } from "@carbon/logger";
 import { useAction, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -115,8 +114,6 @@ import { useItems } from "~/stores";
 import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
-const log = getLogger("mes", "service-job");
-
 export const handle: Handle = {
   realtime: [{ table: "serviceJob", column: "id", param: "jobId" }]
 };
@@ -192,7 +189,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (returned.error) {
       return data(
         {},
-        await flash(request, error(returned.error, returned.error.message))
+        await flash(
+          request,
+          error(returned.error, "Failed to return the part", {
+            serviceJobItemId
+          })
+        )
       );
     }
     return data(
@@ -267,15 +269,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       values
     });
     if (update.error) {
-      log.error("Failed to update a service job", {
-        companyId,
-        jobId,
-        field,
-        error: update.error
-      });
       return data(
         {},
-        await flash(request, error(update.error, "Failed to save"))
+        await flash(
+          request,
+          error(update.error, "Failed to save", { jobId, field })
+        )
       );
     }
     return data({ success: true });
@@ -997,58 +996,55 @@ export default function ServiceJobRoute() {
         </WorkRecordPane>
       </WorkRecordShell>
 
-      {addPart.isOpen && (
-        <ServiceJobAddPartModal
-          serviceJobId={job.id}
-          itemOptions={itemOptions}
-          onClose={addPart.onClose}
-        />
-      )}
-      {confirmComplete && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) setConfirmComplete(false);
-          }}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>{t`Complete ${job.serviceJobId}?`}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              {isRunningHere ? (
-                <Trans>
-                  This stops your clock and posts the job's time. The job can no
-                  longer change.
-                </Trans>
-              ) : (
-                <Trans>
-                  This posts the job's time. The job can no longer change.
-                </Trans>
-              )}
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={() => setConfirmComplete(false)}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                size="lg"
-                isLoading={isBusy}
-                onClick={() => {
-                  submitClock("Complete");
-                  setConfirmComplete(false);
-                }}
-              >
-                <Trans>Complete</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <ServiceJobAddPartModal
+        open={addPart.isOpen}
+        serviceJobId={job.id}
+        itemOptions={itemOptions}
+        onClose={addPart.onClose}
+      />
+      <Modal
+        open={confirmComplete}
+        onOpenChange={(open) => {
+          if (!open) setConfirmComplete(false);
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{t`Complete ${job.serviceJobId}?`}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            {isRunningHere ? (
+              <Trans>
+                This stops your clock and posts the job's time. The job can no
+                longer change.
+              </Trans>
+            ) : (
+              <Trans>
+                This posts the job's time. The job can no longer change.
+              </Trans>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => setConfirmComplete(false)}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              size="lg"
+              isLoading={isBusy}
+              onClick={() => {
+                submitClock("Complete");
+                setConfirmComplete(false);
+              }}
+            >
+              <Trans>Complete</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 }

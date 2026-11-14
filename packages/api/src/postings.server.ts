@@ -28,10 +28,12 @@ import type {
   postServiceJobInput,
   postTimesheetInput,
   recalculateInput,
+  rejectInspectionInput,
   SaveTimesheetEntryResult,
   SubmitTimesheetWeekResult,
   saveTimesheetEntryInput,
   submitTimesheetWeekInput,
+  triggerCorrectionInput,
   triggerReworkInput
 } from "./postings";
 
@@ -226,6 +228,14 @@ export type PostingContract = {
     input: z.input<typeof recalculateInput>;
     output: { success: boolean };
   };
+  "trigger-correction": {
+    input: z.input<typeof triggerCorrectionInput>;
+    output: {
+      success: boolean;
+      reworkId: string;
+      operationIds: string[];
+    };
+  };
   "trigger-rework": {
     input: z.input<typeof triggerReworkInput>;
     output: {
@@ -234,6 +244,10 @@ export type PostingContract = {
       clonedOperationIds: string[];
       operationsCloned: number;
     };
+  };
+  "reject-inspection": {
+    input: z.input<typeof rejectInspectionInput>;
+    output: { id: string; issueId: string | null };
   };
   "save-timesheet-entry": {
     input: z.input<typeof saveTimesheetEntryInput>;

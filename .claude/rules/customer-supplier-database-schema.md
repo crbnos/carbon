@@ -55,7 +55,7 @@ Key columns (both, unless noted):
 - Code inserts an `address` row first, then the location (`name`, `addressId`, ...).
 
 ### `address`
-`id` (default `xid()`), `addressLine1/2`, `city`, `state`, `postalCode`, `countryCode` INTEGER → `country.id`, `phone`, `fax`, `companyId`.
+`id` (default `xid()`), `addressLine1/2`, `city`, `state`, `postalCode`, `countryCode` TEXT → `country.alpha2` (ISO 3166-1; see `20240928155702_country-codes.sql`), `phone`, `fax`, `companyId`.
 
 ### `customerPayment` / `supplierPayment` (1:1, PK = entityId)
 `invoice<Entity>Id` (can differ for billing), `invoice<Entity>LocationId`, `invoice<Entity>ContactId`, `paymentTermId`, `currencyCode`, audit. (These invoice-contact pointers are separate from and unrelated to the dropped `invoicingContactId`.)
@@ -83,6 +83,7 @@ RLS is gated by company employee permissions (newest standardized policies in `2
 
 ## Gotchas
 - **No `invoicingContactId`** on `customer`/`supplier` — only `salesContactId`/`purchasingContactId`. Don't reintroduce it.
+- **`supplier.supplierStageId`** → `supplierStage`, a per-company list of onboarding stages (employees only). It is separate from `supplierStatus` and gates nothing.
 - **Status is asymmetric:** customer = FK table, supplier = inline enum. Don't assume a `supplierStatus` table exists.
 - **`contact.email` is nullable and not unique.** Don't assume NOT NULL or a unique constraint.
 - **`externalId` is not a column** — query `externalIntegrationMapping` (or the view's computed field).

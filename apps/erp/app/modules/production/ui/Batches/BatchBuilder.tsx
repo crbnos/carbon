@@ -299,6 +299,7 @@ type CandidatesResponse = {
 };
 
 export function BatchBuilder({
+  open = true,
   onClose,
   defaultLocationId,
   initialLocationId,
@@ -308,6 +309,7 @@ export function BatchBuilder({
   workCenters,
   batch
 }: {
+  open?: boolean;
   onClose: () => void;
   defaultLocationId: string;
   initialLocationId?: string | null;
@@ -873,7 +875,7 @@ export function BatchBuilder({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -1039,18 +1041,17 @@ export function BatchBuilder({
           </HStack>
         </DrawerFooter>
       </DrawerContent>
-      {createReleaseOpen && (
-        <BatchReleaseModal
-          target={{ jobIds: [...new Set(selected.map((c) => c.jobId))] }}
-          title={t`Create & release batch`}
-          confirmLabel={t`Create & Release`}
-          onClose={() => setCreateReleaseOpen(false)}
-          onConfirm={(purchaseOrdersBySupplierId) => {
-            submit(undefined, { release: true, purchaseOrdersBySupplierId });
-            setCreateReleaseOpen(false);
-          }}
-        />
-      )}
+      <BatchReleaseModal
+        open={createReleaseOpen}
+        target={{ jobIds: [...new Set(selected.map((c) => c.jobId))] }}
+        title={t`Create & release batch`}
+        confirmLabel={t`Create & Release`}
+        onClose={() => setCreateReleaseOpen(false)}
+        onConfirm={(purchaseOrdersBySupplierId) => {
+          submit(undefined, { release: true, purchaseOrdersBySupplierId });
+          setCreateReleaseOpen(false);
+        }}
+      />
     </Drawer>
   );
 }

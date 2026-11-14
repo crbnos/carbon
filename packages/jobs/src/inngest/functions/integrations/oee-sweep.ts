@@ -14,8 +14,11 @@
  */
 import { getIntegrationIdsByRole } from "@carbon/ee";
 import { repairOeeWebhook } from "@carbon/ee/oee.server";
+import { getLogger } from "@carbon/logger";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+
+const logger = getLogger("jobs", "oee-sweep");
 
 export const oeeSweepFunction = inngest.createFunction(
   { id: "oee-sweep", retries: 2 },
@@ -64,10 +67,11 @@ export const oeeSweepFunction = inngest.createFunction(
           }
         } catch (error) {
           // The sync still runs on this sweep; the next sweep tries again.
-          console.warn(
-            `[OEE SWEEP] ${target.companyId}/${target.integration}: webhook not repaired`,
+          logger.warning("OEE webhook not repaired", {
+            companyId: target.companyId,
+            integration: target.integration,
             error
-          );
+          });
         }
       }
       return done;

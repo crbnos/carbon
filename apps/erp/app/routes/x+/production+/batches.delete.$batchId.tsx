@@ -5,8 +5,8 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useCloseRoute } from "@carbon/react";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { useRouteDialog } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
@@ -64,13 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (result.error) {
     throw redirect(
       path.to.operationBatches,
-      await flash(
-        request,
-        error(
-          result.error,
-          getErrorMessage(result.error, "Failed to dissolve batch")
-        )
-      )
+      await flash(request, error(result.error, "Failed to dissolve batch"))
     );
   }
 
@@ -85,7 +79,7 @@ export default function DeleteBatchRoute() {
   const { batchId } = useParams();
   const { t } = useLingui();
   const navigate = useNavigate();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   if (!batchId) return null;
 
   return (
@@ -94,7 +88,8 @@ export default function DeleteBatchRoute() {
       name={batch.readableId}
       deleteText={t`Dissolve`}
       text={t`Dissolving ${batch.readableId} returns its ${memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead.`}
-      onCancel={() => closeRoute()}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
       onSubmit={() => navigate(path.to.operationBatches)}
     />
   );

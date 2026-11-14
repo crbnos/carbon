@@ -66,12 +66,14 @@ type SupplierQuoteLineFormProps = {
     itemType: MethodItemType;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const SupplierQuoteLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: SupplierQuoteLineFormProps) => {
   const { t } = useLingui();
@@ -211,6 +213,7 @@ const SupplierQuoteLineForm = ({
       >
         <ModalCardProvider type={type}>
           <ModalCard
+            open={open}
             onClose={onClose}
             defaultCollapsed={false}
             isCollapsible={isEditing}
@@ -490,8 +493,9 @@ const SupplierQuoteLineForm = ({
           </ModalCard>
         </ModalCardProvider>
       </Tabs>
-      {isEditing && deleteDisclosure.isOpen && initialValues.id && (
+      {isEditing && initialValues.id && (
         <DeleteSupplierQuoteLine
+          isOpen={deleteDisclosure.isOpen}
           line={{
             itemId: itemData.itemId ?? "",
             id: initialValues.id

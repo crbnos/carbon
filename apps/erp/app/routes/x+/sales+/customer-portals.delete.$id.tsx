@@ -7,10 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { deleteCustomerPortal } from "@carbon/ee/customer-portals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getCustomerPortal } from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
@@ -86,20 +87,20 @@ export default function DeleteCustomerPortalRoute() {
   const { t } = useLingui();
   const { id } = useParams();
   const { customerPortal } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.customerPortals);
 
   if (!customerPortal) return null;
   if (!id) throw notFound("id not found");
 
   const customerName = customerPortal.customer?.name || "Unknown Customer";
-  const onCancel = () => navigate(path.to.customerPortals);
 
   return (
     <ConfirmDelete
       action={path.to.deleteCustomerPortal(id)}
       name={customerName}
       text={t`Are you sure you want to delete the customer portal for: ${customerName}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

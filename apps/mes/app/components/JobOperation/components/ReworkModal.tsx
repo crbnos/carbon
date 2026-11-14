@@ -172,8 +172,6 @@ export function ReworkModal({
       ? JSON.stringify([selectedBatchId])
       : undefined;
 
-  if (!isOpen) return null;
-
   return (
     <Modal
       open={isOpen}

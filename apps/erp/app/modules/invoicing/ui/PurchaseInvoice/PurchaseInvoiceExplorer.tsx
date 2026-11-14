@@ -98,11 +98,6 @@ export default function PurchaseInvoiceExplorer() {
     deleteLineDisclosure.onOpen();
   };
 
-  const onDeleteCancel = () => {
-    setDeleteLine(null);
-    deleteLineDisclosure.onClose();
-  };
-
   const lines = purchaseInvoiceData?.purchaseInvoiceLines ?? [];
   const unmappedLines = lines.filter(
     (line) => !line.itemId && line.invoiceLineType === "Comment"
@@ -221,28 +216,30 @@ export default function PurchaseInvoiceExplorer() {
           )}
         </div>
       </VStack>
-      {newPurchaseInvoiceLineDisclosure.isOpen && (
+      {newPurchaseInvoiceLineDisclosure.openCount > 0 && (
         <PurchaseInvoiceLineForm
+          key={newPurchaseInvoiceLineDisclosure.openCount}
+          open={newPurchaseInvoiceLineDisclosure.isOpen}
           initialValues={purchaseInvoiceLineInitialValues}
           type="modal"
           onClose={newPurchaseInvoiceLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
+      {deleteLine && (
         <DeletePurchaseInvoiceLine
-          line={deleteLine!}
-          onCancel={onDeleteCancel}
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={deleteLineDisclosure.onClose}
         />
       )}
-      {mapLinesDisclosure.isOpen && (
-        <MapExtractedInvoiceLinesModal
-          invoiceId={invoiceId}
-          supplierId={
-            purchaseInvoiceData?.purchaseInvoice?.supplierId ?? undefined
-          }
-          onClose={mapLinesDisclosure.onClose}
-        />
-      )}
+      <MapExtractedInvoiceLinesModal
+        invoiceId={invoiceId}
+        supplierId={
+          purchaseInvoiceData?.purchaseInvoice?.supplierId ?? undefined
+        }
+        open={mapLinesDisclosure.isOpen}
+        onClose={mapLinesDisclosure.onClose}
+      />
     </>
   );
 }

@@ -316,6 +316,17 @@ export function useOperation({
       return;
     }
 
+    // Exactly one unit can be worked here (one left, or the only unit a
+    // correction or rework operation was scoped to): there is nothing to
+    // choose, so select it instead of asking for a scan.
+    if (uncompletedEntities.length === 1) {
+      const onlyUnit = uncompletedEntities[0]!;
+      arrivalPromptedRef.current = true;
+      heldEntityRef.current = onlyUnit.id;
+      if (trackedEntityParam !== onlyUnit.id) onAdvanceToUnit?.(onlyUnit);
+      return;
+    }
+
     // Prompt scan/select once on arrival — even when a stale/auto-seeded
     // ?trackedEntityId is present, which would otherwise read as "already working
     // a unit".

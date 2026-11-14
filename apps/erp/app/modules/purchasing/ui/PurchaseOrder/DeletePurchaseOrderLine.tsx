@@ -12,9 +12,11 @@ import type { PurchaseOrderLine } from "../../types";
 
 export default function DeletePurchaseOrderLine({
   line,
+  isOpen = true,
   onCancel
 }: {
   line: PurchaseOrderLine;
+  isOpen?: boolean;
   onCancel: () => void;
 }) {
   const { t } = useLingui();
@@ -28,6 +30,7 @@ export default function DeletePurchaseOrderLine({
   return (
     <ConfirmDelete
       action={path.to.deletePurchaseOrderLine(orderId, line.id)}
+      isOpen={isOpen}
       name={itemReadableId ?? "this line"}
       text={t`Are you sure you want to delete the line: ${itemReadableId}? This cannot be undone.`}
       onCancel={onCancel}

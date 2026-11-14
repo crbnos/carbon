@@ -83,7 +83,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error: issued.error
       });
       return data(
-        { success: false, message: "Failed to issue tracked items" },
+        {
+          success: false,
+          message: issued.error.message || "Failed to issue tracked items"
+        },
         { status: 400 }
       );
     }
@@ -106,7 +109,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error: issued.error
       });
       return data(
-        { success: false, message: "Failed to issue from inventory" },
+        {
+          success: false,
+          message: issued.error.message || "Failed to issue from inventory"
+        },
         { status: 400 }
       );
     }

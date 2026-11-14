@@ -52,12 +52,28 @@ type BulkEditPermissionsProps = {
 };
 
 const BulkEditPermissions = ({
-  userIds,
   isOpen,
+  onClose,
+  ...props
+}: BulkEditPermissionsProps) => (
+  <Drawer
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+    open={isOpen}
+  >
+    <DrawerContent>
+      <BulkEditPermissionsBody onClose={onClose} {...props} />
+    </DrawerContent>
+  </Drawer>
+);
+
+const BulkEditPermissionsBody = ({
+  userIds,
   allMatching,
   allMatchingFetcher,
   onClose
-}: BulkEditPermissionsProps) => {
+}: Omit<BulkEditPermissionsProps, "isOpen">) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const emptyPermissionsFetcher = useLoaderQuery<{
@@ -105,91 +121,82 @@ const BulkEditPermissions = ({
   const hasModules = Object.keys(modules).length > 0;
 
   return (
-    <Drawer
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-      open={isOpen}
+    <ValidatedForm
+      validator={
+        allMatching
+          ? bulkPermissionsAllMatchingValidator
+          : bulkPermissionsValidator
+      }
+      method="post"
+      action={path.to.bulkEditPermissions}
+      // Every matching user runs in the background: the route answers
+      // data, not a redirect, so it posts through a fetcher.
+      fetcher={allMatching ? allMatchingFetcher : undefined}
+      onSubmit={onClose}
+      defaultValues={{ userIds }}
+      className="flex flex-col h-full"
     >
-      <DrawerContent>
-        <ValidatedForm
-          validator={
-            allMatching
-              ? bulkPermissionsAllMatchingValidator
-              : bulkPermissionsValidator
-          }
-          method="post"
-          action={path.to.bulkEditPermissions}
-          // Every matching user runs in the background: the route answers
-          // data, not a redirect, so it posts through a fetcher.
-          fetcher={allMatching ? allMatchingFetcher : undefined}
-          onSubmit={onClose}
-          defaultValues={{ userIds }}
-          className="flex flex-col h-full"
-        >
-          <DrawerHeader>
-            <DrawerTitle>
-              <Trans>Edit Permissions</Trans>
-            </DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
-            <VStack spacing={4}>
-              <div className="border border-border p-4 w-full rounded-lg">
-                <Radios
-                  name="editType"
-                  label={t`Type of Permission Update`}
-                  termId="bulk-permissions-update-type"
-                  options={[
-                    {
-                      label: t`Add Permissions`,
-                      value: "add"
-                    },
-                    {
-                      label: t`Update Permissions`,
-                      value: "update"
-                    }
-                  ]}
-                />
-              </div>
+      <DrawerHeader>
+        <DrawerTitle>
+          <Trans>Edit Permissions</Trans>
+        </DrawerTitle>
+      </DrawerHeader>
+      <DrawerBody>
+        <VStack spacing={4}>
+          <div className="border border-border p-4 w-full rounded-lg">
+            <Radios
+              name="editType"
+              label={t`Type of Permission Update`}
+              termId="bulk-permissions-update-type"
+              options={[
+                {
+                  label: t`Add Permissions`,
+                  value: "add"
+                },
+                {
+                  label: t`Update Permissions`,
+                  value: "update"
+                }
+              ]}
+            />
+          </div>
 
-              {allMatching ? (
-                <>
-                  <AllMatchingUsersNote />
-                  <Hidden
-                    name="allMatching"
-                    value={JSON.stringify(allMatchingRequest(allMatching))}
-                  />
-                </>
-              ) : (
-                <Employees
-                  name="userIds"
-                  selectionsMaxHeight={"calc(100vh - 330px)"}
-                  label={t`Users to Update`}
-                />
-              )}
+          {allMatching ? (
+            <>
+              <AllMatchingUsersNote />
+              <Hidden
+                name="allMatching"
+                value={JSON.stringify(allMatchingRequest(allMatching))}
+              />
+            </>
+          ) : (
+            <Employees
+              name="userIds"
+              selectionsMaxHeight={"calc(100vh - 330px)"}
+              label={t`Users to Update`}
+            />
+          )}
 
-              {hasModules && (
-                <PermissionMatrix
-                  matrix={matrix}
-                  isDisabled={!canEditPermissions}
-                />
-              )}
-              <Hidden name="data" value={permissionsData} />
-            </VStack>
-          </DrawerBody>
-          <DrawerFooter>
-            <HStack>
-              <Submit isDisabled={!canEditPermissions}>
-                <Trans>Save</Trans>
-              </Submit>
-              <Button size="md" variant="solid" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-            </HStack>
-          </DrawerFooter>
-        </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+          {hasModules && (
+            <PermissionMatrix
+              matrix={matrix}
+              isDisabled={!canEditPermissions}
+            />
+          )}
+          <Hidden name="data" value={permissionsData} />
+        </VStack>
+      </DrawerBody>
+      <DrawerFooter>
+        <HStack>
+          <Submit isDisabled={!canEditPermissions}>
+            <Trans>Save</Trans>
+          </Submit>
+          <Button size="md" variant="solid" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+        </HStack>
+      </DrawerFooter>
+    </ValidatedForm>
   );
 };
 

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import type { OutletProps } from "react-router";
 import {
   Outlet,
@@ -10,6 +10,11 @@ import {
   useMatches,
   useParams
 } from "react-router";
+import {
+  createRouteDialogScope,
+  DialogDepthContext,
+  RouteDialogScopeContext
+} from "./RouteDialogScope";
 
 /** The `$param` names in a flat-routes route id (`…/$orderId.$lineId.details`). */
 export function routeParamNames(routeId: string): string[] {
@@ -32,7 +37,15 @@ export function routeParamNames(routeId: string): string[] {
  * properties) is outside the outlet and stays mounted.
  */
 export function RecordOutlet(props: OutletProps) {
-  return <Outlet key={useRecordOutletKey()} {...props} />;
+  const key = useRecordOutletKey();
+  const [scope] = useState(createRouteDialogScope);
+  return (
+    <RouteDialogScopeContext.Provider value={scope}>
+      <DialogDepthContext.Provider value={0}>
+        <Outlet key={key} {...props} />
+      </DialogDepthContext.Provider>
+    </RouteDialogScopeContext.Provider>
+  );
 }
 
 /** The key `RecordOutlet` gives its page: the params of the route shown in it. */

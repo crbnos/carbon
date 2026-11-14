@@ -57,10 +57,15 @@ type ItemScopeType = "all" | "item" | "group";
 
 type PricingRuleFormProps = {
   initialValues: z.infer<typeof pricingRuleValidator>;
+  open?: boolean;
   onClose: () => void;
 };
 
-const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
+const PricingRuleForm = ({
+  initialValues,
+  open = true,
+  onClose
+}: PricingRuleFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { company } = useUser();
@@ -103,7 +108,7 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

@@ -111,7 +111,6 @@ describe("spawnApps supervisor (integration)", () => {
   });
 
   afterEach(async () => {
-    // Make sure no real child process is left running, then clean up.
     active?.controller.abort();
     await active?.done.catch(() => {});
     active = undefined;
@@ -137,7 +136,6 @@ describe("spawnApps supervisor (integration)", () => {
     );
     expect(stderr.join("")).not.toContain("giving up");
 
-    // Clean programmatic shutdown resolves the stack.
     controller.abort();
     await expect(done).resolves.toBeUndefined();
   }, 20_000);

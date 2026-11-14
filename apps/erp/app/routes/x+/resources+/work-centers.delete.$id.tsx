@@ -7,10 +7,11 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useResourceReferenceLabels } from "~/modules/resources/ui/useResourceReferenceLabels";
 import { path } from "~/utils/path";
@@ -65,14 +66,13 @@ export async function action(args: ActionFunctionArgs) {
 export default function DeleteWorkCenterRoute() {
   const { id } = useParams();
   const { workCenter, references } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.workCenters);
   const { t } = useLingui();
   const usages = useResourceReferenceLabels(references);
 
   if (!workCenter) return null;
   if (!id) throw new Error("id is not found");
 
-  const onCancel = () => navigate(path.to.workCenters);
   const name = workCenter.name;
 
   return (
@@ -85,7 +85,8 @@ export default function DeleteWorkCenterRoute() {
           : t`Are you sure you want to permanently delete the work center: ${name}? This cannot be undone.`
       }
       isDisabled={!!usages}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

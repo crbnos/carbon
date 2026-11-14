@@ -4,6 +4,10 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  batchPropertyColumnKey,
+  batchPropertyColumns,
+  batchPropertyFilter,
+  batchPropertyValue,
   inventoryCountLineState,
   isShippableEntityStatus,
   type NonNettableUnit,
@@ -29,9 +33,13 @@ describe("shippableEntityStatuses", () => {
     );
   });
 
-  it("ships returned stock, On Hold, back to the customer on a sales return", () => {
-    expect(shippableEntityStatuses("Sales Return Order")).toEqual(["On Hold"]);
-    expect(isShippableEntityStatus("Sales Return Order", "Available")).toBe(
+  it("ships returned stock (On Hold) and serviced units (Available) back to the customer on a sales return", () => {
+    expect(shippableEntityStatuses("Sales Return Order")).toEqual([
+      "On Hold",
+      "Available"
+    ]);
+    // A unit that already left on a shipment cannot ship again.
+    expect(isShippableEntityStatus("Sales Return Order", "Consumed")).toBe(
       false
     );
   });
@@ -172,5 +180,107 @@ describe("inventoryCountLineState", () => {
     expect(
       inventoryCountLineState({ countedQuantity: 1, foundDuringCount: false })
     ).toBe("Found");
+  });
+});
+
+describe("batch property columns", () => {
+  const property = (
+    id: string,
+    itemId: string,
+    label: string,
+    dataType: "text" | "numeric" | "boolean" | "list" | "date" = "text",
+    listOptions: string[] | null = null
+  ) => ({ id, itemId, label, dataType, listOptions });
+
+  it("gives one column to a label several items share", () => {
+    const columns = batchPropertyColumns([
+      property("bp1", "AL6061", "Heat number"),
+      property("bp2", "SS304", "Heat Number "),
+      property("bp3", "SS304", "Mill cert received", "boolean")
+    ]);
+
+    expect(columns.map((c) => [c.key, c.label, c.properties])).toEqual([
+      [
+        "property.heat-number",
+        "Heat number",
+        [
+          { id: "bp1", itemId: "AL6061" },
+          { id: "bp2", itemId: "SS304" }
+        ]
+      ],
+      [
+        "property.mill-cert-received",
+        "Mill cert received",
+        [{ id: "bp3", itemId: "SS304" }]
+      ]
+    ]);
+  });
+
+  it("keeps no filter separator in the key", () => {
+    expect(
+      batchPropertyColumnKey("Melt country (DFARS 252.225-7009): code")
+    ).toBe("property.melt-country-dfars-252-225-7009-code");
+  });
+
+  it("reads a label whose items disagree on the type as text", () => {
+    const [column] = batchPropertyColumns([
+      property("bp1", "A", "Grade", "list", ["A", "B"]),
+      property("bp2", "B", "Grade", "list", ["B", "C"]),
+      property("bp3", "C", "Grade", "numeric")
+    ]);
+
+    expect(column.dataType).toBe("text");
+    expect(column.listOptions).toEqual(["A", "B", "C"]);
+  });
+
+  it("reads the value of the row's own item", () => {
+    const [column] = batchPropertyColumns([
+      property("bp1", "A", "Heat number"),
+      property("bp2", "B", "Heat number")
+    ]);
+
+    expect(
+      batchPropertyValue(column, {
+        itemId: "B",
+        attributes: { bp1: "stale", bp2: "H-42" }
+      })
+    ).toBe("H-42");
+    expect(
+      batchPropertyValue(column, { itemId: "C", attributes: { bp1: "H-1" } })
+    ).toBeUndefined();
+  });
+
+  it("filters a value on every item with the label", () => {
+    const [column] = batchPropertyColumns([
+      property("bp1", "A", "Heat number"),
+      property("bp2", "B", "Heat number")
+    ]);
+
+    expect(batchPropertyFilter(column, "in", 'H-42,H "7"')).toBe(
+      'attributes->>bp1.in.("H-42","H \\"7\\""),attributes->>bp2.in.("H-42","H \\"7\\"")'
+    );
+  });
+
+  it("finds a yes/no property never set when filtering No", () => {
+    const [column] = batchPropertyColumns([
+      property("bp1", "A", "Mill cert received", "boolean")
+    ]);
+
+    expect(batchPropertyFilter(column, "eq", "false")).toBe(
+      'attributes->>bp1.in.("false"),and(itemId.eq."A",attributes->>bp1.is.null)'
+    );
+    expect(batchPropertyFilter(column, "eq", "true")).toBe(
+      'attributes->>bp1.in.("true")'
+    );
+  });
+
+  it("bounds a date range on either side", () => {
+    const [column] = batchPropertyColumns([
+      property("bp1", "A", "Formation date", "date")
+    ]);
+
+    expect(batchPropertyFilter(column, "between", "2026-01-01,")).toBe(
+      'and(attributes->>bp1.gte."2026-01-01")'
+    );
   });
 });

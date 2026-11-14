@@ -25,7 +25,7 @@ async function completeJob(f: Fixture, lineId: string) {
 }
 
 databaseTest(
-  "shipping a repaired unit back writes no journal, counts it shipped, puts its asset In Service and completes the RMA; a void undoes it",
+  "shipping a repaired unit back writes no journal, counts it shipped, consumes its serial, puts its asset In Service and completes the RMA; a void undoes it",
   async () => {
     const f = await serviceReturnFixture();
     try {
@@ -36,6 +36,12 @@ databaseTest(
       const [lineId] = lineIds as [string];
       const received = await f.receive(rmaId, { [lineId]: serialId });
       expect(received.posted.error).toBeNull();
+      const serialAtDepot = await f.db
+        .selectFrom("trackedEntity")
+        .select("status")
+        .where("id", "=", serialId)
+        .executeTakeFirstOrThrow();
+      expect(serialAtDepot.status).toBe("Available");
 
       // The job is still open: there is nothing to ship back yet.
       await expect(f.shipBack(rmaId)).rejects.toThrow(
@@ -88,7 +94,7 @@ databaseTest(
         .select("status")
         .where("id", "=", serialId)
         .executeTakeFirstOrThrow();
-      expect(serialAfter.status).toBe("Consumed");
+      expect(serialAfter.status).toBe("Available");
       expect(await f.rmaStatus(rmaId)).toBe("In Progress");
     } finally {
       await f.cleanup();

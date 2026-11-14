@@ -151,7 +151,6 @@ const CustomFieldCategoryDetail = ({
   };
 
   const onDeleteCancel = () => {
-    setSelectedCustomField(undefined);
     deleteModal.onClose();
   };
 

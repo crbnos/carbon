@@ -9,8 +9,8 @@ import {
 } from "@carbon/database/ratelimit";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { oncePerRequest } from "@carbon/logger/middleware.server";
-import { annotateRequestSpan } from "@carbon/logger/tracing.server";
+import { addLogContext, oncePerRequest } from "@carbon/logger/context.server";
+import { annotateRequestSpan } from "@carbon/logger/span";
 import { Edition, getClientIp, Plan, redirect, safePath } from "@carbon/utils";
 import {
   isAuthRetryableFetchError,
@@ -233,6 +233,7 @@ export async function requirePermissions(
       const companyId = apiKeyData.companyId;
       const companyGroupId = apiKeyData.companyGroupId;
       const userId = apiKeyData.createdBy;
+      addLogContext({ companyId, userId });
 
       // Check expiration
       if (apiKeyData.expiresAt && new Date(apiKeyData.expiresAt) < new Date()) {
@@ -344,6 +345,7 @@ export async function requirePermissions(
 
   const authSession = await requireAuthSession(request);
   const { accessToken, companyId, companyGroupId, email, userId } = authSession;
+  addLogContext({ companyId, userId });
   const consoleMode = authSession.console === companyId;
 
   const myClaims = await getUserClaims(userId, companyId);

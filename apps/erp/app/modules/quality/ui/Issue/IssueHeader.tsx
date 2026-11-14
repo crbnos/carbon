@@ -206,21 +206,19 @@ const IssueHeader = () => {
           </>
         }
       />
-      {deleteIssueModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteIssue(id)}
-          isOpen={deleteIssueModal.isOpen}
-          name={routeData?.nonConformance?.nonConformanceId!}
-          text={t`Are you sure you want to delete ${routeData?.nonConformance
-            ?.nonConformanceId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteIssueModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteIssueModal.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteIssue(id)}
+        isOpen={deleteIssueModal.isOpen}
+        name={routeData?.nonConformance?.nonConformanceId!}
+        text={t`Are you sure you want to delete ${routeData?.nonConformance
+          ?.nonConformanceId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteIssueModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteIssueModal.onClose();
+        }}
+      />
       {documentEdit.modal}
     </>
   );

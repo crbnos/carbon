@@ -6,16 +6,27 @@ import { Badge, cn, HStack } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
+import { DateTime } from "~/components";
 import type { Activity, TrackedEntity } from "~/modules/inventory/types";
 import { ACTIVITY_KIND_META, activityKindFor } from "./metadata";
 import TrackedEntityStatus from "./TrackedEntityStatus";
-import { entityHeadline, type LineagePayload, sourceLinkHref } from "./utils";
+import {
+  type ActivityOrder,
+  compareActivityDates,
+  entityHeadline,
+  type LineagePayload,
+  sourceLinkHref
+} from "./utils";
+
+export type { ActivityOrder };
 
 type Props = {
   payload: LineagePayload;
   rootId: string;
   selectedId?: string | null;
   onSelect?: (id: string) => void;
+  /** The order of an entity's activities, by their date. */
+  activityOrder?: ActivityOrder;
 };
 
 type Row = {
@@ -32,7 +43,8 @@ export function TraceabilityTable({
   payload,
   rootId,
   selectedId,
-  onSelect
+  onSelect,
+  activityOrder = "newest"
 }: Props) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -119,7 +131,17 @@ export function TraceabilityTable({
 
       if (collapsed.has(id)) return;
 
-      const children = downstream.get(id) ?? [];
+      // An entity's children are its activities: list them by date.
+      const children = [...(downstream.get(id) ?? [])];
+      if (entityById.has(id)) {
+        children.sort((a, b) =>
+          compareActivityDates(
+            activityById.get(a.targetId)?.createdAt,
+            activityById.get(b.targetId)?.createdAt,
+            activityOrder
+          )
+        );
+      }
       children.forEach((c, idx) => {
         walk(
           c.targetId,
@@ -133,7 +155,7 @@ export function TraceabilityTable({
 
     walk(rootId, 0);
     return out;
-  }, [rootId, downstream, entityById, collapsed]);
+  }, [rootId, downstream, entityById, activityById, collapsed, activityOrder]);
 
   const toggle = (id: string) =>
     setCollapsed((prev) => {
@@ -289,6 +311,7 @@ function TreeRow({
             <LuExternalLink className="w-3.5 h-3.5" />
           </Link>
         )}
+        <CreatedAt value={row.isReference ? null : entity.createdAt} />
       </button>
     );
   }
@@ -360,7 +383,18 @@ function TreeRow({
           <LuExternalLink className="w-3.5 h-3.5" />
         </Link>
       )}
+      <CreatedAt value={row.isReference ? null : activity.createdAt} />
     </button>
+  );
+}
+
+// The row's created date, in a fixed-width column so dates line up. A
+// reference row repeats a row already shown, so it leaves the column empty.
+function CreatedAt({ value }: { value: string | null | undefined }) {
+  return (
+    <span className="hidden w-36 shrink-0 text-right text-xs tabular-nums text-muted-foreground md:inline">
+      {value ? <DateTime value={value} /> : null}
+    </span>
   );
 }
 

@@ -29,6 +29,8 @@ import {
 
 type PaymentApplicationsProps = {
   isRefund?: boolean;
+  isDepositRefund?: boolean;
+  isDeposit?: boolean;
   // An employee payee: every target is a reimbursement.
   isReimbursement?: boolean;
   applications: PaymentApplication[];
@@ -53,6 +55,11 @@ function invoiceLabel(a: PaymentApplication) {
       | null;
     targetSalesInvoiceId?: string | null;
     targetPurchaseInvoiceId?: string | null;
+    targetPaymentId?: string | null;
+    targetPayment?:
+      | { paymentId?: string | null }
+      | { paymentId?: string | null }[]
+      | null;
     targetMemoId?: string | null;
     targetMemo?:
       | { memoId?: string | null }
@@ -75,6 +82,10 @@ function invoiceLabel(a: PaymentApplication) {
     (Array.isArray(rec.targetReimbursement)
       ? rec.targetReimbursement[0]?.reimbursementId
       : rec.targetReimbursement?.reimbursementId) ??
+    (Array.isArray(rec.targetPayment)
+      ? rec.targetPayment[0]?.paymentId
+      : rec.targetPayment?.paymentId) ??
+    rec.targetPaymentId ??
     rec.targetSalesInvoiceId ??
     rec.targetPurchaseInvoiceId ??
     rec.targetMemoId ??
@@ -84,6 +95,8 @@ function invoiceLabel(a: PaymentApplication) {
 
 const PaymentApplications = ({
   isRefund = false,
+  isDepositRefund = false,
+  isDeposit = false,
   isReimbursement = false,
   applications: splits,
   paymentCurrency,
@@ -106,13 +119,14 @@ const PaymentApplications = ({
   // currency at rate 1 — the common case — so they appear only when one isn't.
   const isForeign = paymentCurrency !== baseCurrency;
   const hasFx =
-    isForeign ||
-    applications.some(
-      (a) =>
-        Number(a.targetExchangeRate) !== 1 ||
-        a.sourceRates.some((rate) => rate !== 1) ||
-        Number(a.fxGainLossAmount ?? 0) !== 0
-    );
+    !isDepositRefund &&
+    (isForeign ||
+      applications.some(
+        (a) =>
+          Number(a.targetExchangeRate) !== 1 ||
+          a.sourceRates.some((rate) => rate !== 1) ||
+          Number(a.fxGainLossAmount ?? 0) !== 0
+      ));
   const columnCount = 3 + (hasAdjustments ? 2 : 0) + (hasFx ? 3 : 0);
 
   return (
@@ -127,7 +141,9 @@ const PaymentApplications = ({
           <Thead>
             <Tr className="[&>th]:whitespace-nowrap">
               <Th>
-                {isReimbursement ? (
+                {isDepositRefund ? (
+                  <Trans>Payment</Trans>
+                ) : isReimbursement ? (
                   <Trans>Reimbursement</Trans>
                 ) : isRefund ? (
                   <Trans>Memo</Trans>
@@ -173,7 +189,17 @@ const PaymentApplications = ({
                   colSpan={columnCount}
                   className="text-center text-muted-foreground"
                 >
-                  <Trans>No applications. Payment will be on-account.</Trans>
+                  {isDepositRefund ? (
+                    <Trans>
+                      Posting refunds the advances held for this document.
+                    </Trans>
+                  ) : isDeposit ? (
+                    <Trans>
+                      Unapplied cash is held as an advance for this document.
+                    </Trans>
+                  ) : (
+                    <Trans>No applications. Payment will be on-account.</Trans>
+                  )}
                 </Td>
               </Tr>
             ) : (
@@ -194,6 +220,10 @@ const PaymentApplications = ({
                       </Hyperlink>
                     ) : a.targetMemoId ? (
                       <Hyperlink to={path.to.memo(a.targetMemoId)}>
+                        {invoiceLabel(a)}
+                      </Hyperlink>
+                    ) : a.targetPaymentId ? (
+                      <Hyperlink to={path.to.payment(a.targetPaymentId)}>
                         {invoiceLabel(a)}
                       </Hyperlink>
                     ) : a.targetReimbursementId ? (

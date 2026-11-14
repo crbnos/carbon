@@ -72,6 +72,7 @@ type RentalAgreementLineFormProps = {
   /** Close the modal on submit — only when the modal is page state; as its
    *  own route, closing navigates away and would cancel the post. */
   closeOnSubmit?: boolean;
+  open?: boolean;
   onClose?: () => void;
 };
 
@@ -87,6 +88,7 @@ const RentalAgreementLineForm = ({
   isLocked = false,
   type = "modal",
   closeOnSubmit = false,
+  open = true,
   onClose
 }: RentalAgreementLineFormProps) => {
   const { t } = useLingui();
@@ -192,7 +194,7 @@ const RentalAgreementLineForm = ({
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard open={open} onClose={onClose}>
         <ModalCardContent size="xlarge">
           <ValidatedForm
             defaultValues={initialValues}
@@ -379,8 +381,9 @@ const RentalAgreementLineForm = ({
       </ModalCard>
       {/* Outside the line's form: a form inside another form's React tree
           would bubble its submit through the portal to the outer one. */}
-      {showOverride && lease && initialValues.id && (
+      {lease && initialValues.id && (
         <LeaseClassificationOverrideModal
+          open={showOverride}
           rentalAgreementId={initialValues.rentalAgreementId}
           lineId={initialValues.id}
           classification={lease.classification}

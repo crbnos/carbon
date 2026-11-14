@@ -13,6 +13,7 @@ import {
   cn,
   Heading,
   IconButton,
+  NonNettableBadge,
   Progress,
   Separator,
   Table,
@@ -21,12 +22,13 @@ import {
   Tfoot,
   Th,
   Thead,
-  Tr
+  Tr,
+  useDisclosure
 } from "@carbon/react";
 import { distinctItemText, formatDate, groupBy, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { Fragment, Suspense, useCallback, useState } from "react";
+import { Fragment, Suspense, useState } from "react";
 import { FaCheck, FaTrash } from "react-icons/fa";
 import {
   LuActivity,
@@ -140,7 +142,8 @@ export function BatchOverview({
     );
   };
   const [recordingKey, setRecordingKey] = useState<string | null>(null);
-  const closeRecord = useCallback(() => setRecordingKey(null), []);
+  const recordModal = useDisclosure();
+  const closeRecord = recordModal.onClose;
   // Descriptions start open, as on the job's own step list.
   const [collapsedSteps, setCollapsedSteps] = useState<Set<string>>(
     () => new Set()
@@ -271,7 +274,10 @@ export function BatchOverview({
                                         allRecorded ? "ghost" : "secondary"
                                       }
                                       rightIcon={<LuCircleCheck />}
-                                      onClick={() => setRecordingKey(step.key)}
+                                      onClick={() => {
+                                        setRecordingKey(step.key);
+                                        recordModal.onOpen();
+                                      }}
                                     >
                                       {allRecorded ? (
                                         <Trans>Update</Trans>
@@ -328,6 +334,7 @@ export function BatchOverview({
                         );
                         return step ? (
                           <BatchRecordModal
+                            open={recordModal.isOpen}
                             batchId={batch.id as string}
                             step={step}
                             members={inJobOrder(step.perMember)}
@@ -751,6 +758,9 @@ export function BatchOverview({
                                   <LuMapPin className="size-3.5" />
                                   {m.storageUnitName}
                                 </span>
+                              )}
+                              {m.storageUnitEffectiveNettable === false && (
+                                <NonNettableBadge className="ml-1.5" />
                               )}
                             </Td>
                             <Td

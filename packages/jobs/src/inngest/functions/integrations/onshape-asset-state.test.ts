@@ -12,12 +12,17 @@ import type {
   TiedDrawing
 } from "./onshape-asset-state";
 import {
+  currentDrawingFiles,
   currentModels,
   documentStateKey,
+  drawingFileKey,
   drawingTargetSourceKey,
+  outOfDateFiles,
   planDrawingFiles,
+  rowsWithFiles,
   sourceStateReads,
-  sourceStateStamps
+  sourceStateStamps,
+  uncheckedFiles
 } from "./onshape-asset-state";
 import { assemblySourceKeyAt, partSourceId } from "./onshape-source-keys";
 
@@ -396,5 +401,111 @@ describe("sourceStateReads with drawing rows", () => {
       { documentId: "d", wvmId: "w1" },
       { documentId: "root", wvmId: "rw" }
     ]);
+  });
+});
+
+describe("the review's current-file checks", () => {
+  const bracket: DrawingTargetRow = {
+    itemId: "brk",
+    partNumber: "BRK-010",
+    kind: "partstudio",
+    documentId: "d",
+    wvm: "w",
+    wvmId: "w1",
+    elementId: "ps",
+    partId: "JHD",
+    configuration: null
+  };
+  const tied: TiedDrawing = {
+    documentId: "d",
+    wvm: "w",
+    wvmId: "w1",
+    drawingElementId: "drw",
+    name: "Bracket drawing",
+    microversionId: "mv-1",
+    targets: [bracket]
+  };
+  const drawingKey = drawingFileKey({ itemId: "brk", drawingElementId: "drw" });
+  const fileName = "Bracket drawing.pdf";
+  const holding = (sourceKey: string | null): DrawingRecords => ({
+    records: { brk: { drw: { sourceKey, fileName } } },
+    files: { brk: [fileName] }
+  });
+  const currentKey = drawingTargetSourceKey(tied, bracket, states);
+
+  it("finds a drawing current only when its state matches and the PDF is stored", () => {
+    expect(currentDrawingFiles([tied], states, holding(currentKey))).toEqual([
+      drawingKey
+    ]);
+    expect(
+      currentDrawingFiles([tied], states, holding("an-earlier-key"))
+    ).toEqual([]);
+    expect(
+      currentDrawingFiles([tied], states, {
+        ...holding(currentKey),
+        files: {}
+      })
+    ).toEqual([]);
+  });
+
+  it("reads only the rows whose item holds a model or a stored drawing", () => {
+    const fresh = model({ itemId: "new", partNumber: "NEW-001" });
+    const unstored = { ...tied, drawingElementId: "gone" };
+    expect(
+      rowsWithFiles(
+        { models: [model(), fresh], drawings: [tied, unstored] },
+        { models: records(), drawings: holding(currentKey) }
+      )
+    ).toEqual({ models: [model()], drawings: [tied] });
+  });
+
+  it("names an earlier Onshape export and a drawing recorded at an earlier state as out of date", () => {
+    expect(
+      outOfDateFiles(
+        { models: [model()], drawings: [tied] },
+        {
+          models: records({ modelUploadIds: { brk: "onshape-earlier" } }),
+          drawings: holding("an-earlier-key")
+        },
+        { models: [], drawings: [] }
+      )
+    ).toEqual({ models: ["brk"], drawings: [drawingKey] });
+  });
+
+  it("leaves current files and a model uploaded by hand out of the out-of-date list", () => {
+    expect(
+      outOfDateFiles(
+        { models: [model()], drawings: [tied] },
+        {
+          models: records({ modelUploadIds: { brk: "manual-upload" } }),
+          drawings: holding(currentKey)
+        },
+        { models: [], drawings: [drawingKey] }
+      )
+    ).toEqual({ models: [], drawings: [] });
+  });
+
+  it("names held files whose workspace was not read as unchecked, not out of date", () => {
+    const rows = { models: [model()], drawings: [tied] };
+    const held = {
+      models: records({ modelUploadIds: { brk: "onshape-earlier" } }),
+      drawings: holding("an-earlier-key")
+    };
+    const unchecked = uncheckedFiles(rows, held, { documents: {} });
+    expect(unchecked).toEqual({ models: ["brk"], drawings: [drawingKey] });
+    expect(
+      outOfDateFiles(rows, held, { models: [], drawings: [] }, unchecked)
+    ).toEqual({ models: [], drawings: [] });
+  });
+
+  it("names a drawing Onshape reported no state for as unchecked", () => {
+    const stateless = { ...tied, microversionId: null };
+    expect(
+      uncheckedFiles(
+        { models: [], drawings: [stateless] },
+        { models: records(), drawings: holding("an-earlier-key") },
+        states
+      )
+    ).toEqual({ models: [], drawings: [drawingKey] });
   });
 });

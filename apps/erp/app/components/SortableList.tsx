@@ -5,6 +5,7 @@
 "use client";
 
 import {
+  afterDialogCloses,
   BottomSheet,
   BottomSheetBody,
   BottomSheetContent,
@@ -26,6 +27,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  useDisclosure,
   useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -140,7 +142,7 @@ function SortableListItem<T>({
   const { t } = useLingui();
   const { isPhone } = useViewport();
   const [isDragging, setIsDragging] = useState(false);
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const deleteModal = useDisclosure();
   const isDraggable = !isExpanded && !isReadOnly;
   const dragControls = useDragControls();
   const itemRef = useRef<HTMLDivElement>(null);
@@ -218,7 +220,7 @@ function SortableListItem<T>({
     // Phones: a flat row. Tapping it opens the editor in a sheet, holding it
     // opens its menu, and only the grip reorders — a drag anywhere on the
     // card would fight the page's scroll.
-    const onDelete = isReadOnly ? undefined : () => setIsConfirmingDelete(true);
+    const onDelete = isReadOnly ? undefined : deleteModal.onOpen;
     return (
       <Reorder.Item
         as="div"
@@ -341,45 +343,42 @@ function SortableListItem<T>({
         >
           {renderExtra?.(item)}
         </PhoneRowContext.Provider>
-        {isConfirmingDelete && (
-          <Modal
-            open
-            onOpenChange={(open) => {
-              if (!open) setIsConfirmingDelete(false);
-            }}
-          >
-            <ModalOverlay />
-            <ModalContent>
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Delete this line?</Trans>
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <p className="text-sm text-muted-foreground">
-                  <Trans>This cannot be undone.</Trans>
-                </p>
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  variant="secondary"
-                  onClick={() => setIsConfirmingDelete(false)}
-                >
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    setIsConfirmingDelete(false);
-                    onRemoveItem(item.id);
-                  }}
-                >
-                  <Trans>Delete</Trans>
-                </Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        )}
+        <Modal
+          open={deleteModal.isOpen}
+          onOpenChange={(open) => {
+            if (!open) deleteModal.onClose();
+          }}
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Delete this line?</Trans>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-muted-foreground">
+                <Trans>This cannot be undone.</Trans>
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={deleteModal.onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  deleteModal.onClose();
+                  // Removing the row unmounts this modal: wait until it has
+                  // animated closed.
+                  afterDialogCloses(() => onRemoveItem(item.id));
+                }}
+              >
+                <Trans>Delete</Trans>
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </Reorder.Item>
     );
   }

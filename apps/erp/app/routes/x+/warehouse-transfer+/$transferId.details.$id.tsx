@@ -7,7 +7,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
@@ -111,7 +111,7 @@ export default function WarehouseTransferLineDetailsRoute() {
     notes: warehouseTransferLine.notes ?? ""
   };
 
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <div className="flex flex-col gap-4 pb-16 w-full">
@@ -119,7 +119,8 @@ export default function WarehouseTransferLineDetailsRoute() {
         key={initialValues.id}
         initialValues={initialValues}
         warehouseTransfer={warehouseTransferLine.warehouseTransfer!}
-        onClose={() => closeRoute()}
+        open={dialog.open}
+        onClose={dialog.close}
       />
     </div>
   );

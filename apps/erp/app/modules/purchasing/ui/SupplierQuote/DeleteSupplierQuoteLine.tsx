@@ -10,9 +10,11 @@ import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
 export default function DeleteSupplierQuoteLine({
+  isOpen,
   line,
   onCancel
 }: {
+  isOpen?: boolean;
   line: { itemId: string; id: string };
   onCancel: () => void;
 }) {
@@ -27,6 +29,7 @@ export default function DeleteSupplierQuoteLine({
   return (
     <ConfirmDelete
       action={path.to.deleteSupplierQuoteLine(id, line.id)}
+      isOpen={isOpen}
       name={itemReadableId ?? "this line"}
       text={t`Are you sure you want to delete the line: ${itemReadableId}? This cannot be undone.`}
       onCancel={onCancel}

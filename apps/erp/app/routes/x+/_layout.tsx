@@ -88,6 +88,7 @@ import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
 import { useChangelogPanel } from "~/hooks/useChangelogPanel";
+import { usePersistentNavigation } from "~/hooks/usePersistentNavigation";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people/people.service";
@@ -106,6 +107,7 @@ import {
   getItarCertificationStatus
 } from "~/modules/users/users.service";
 import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
+import { useUIStore } from "~/stores/ui";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("erp", "auth");
@@ -160,11 +162,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   //   request.headers.get("x-vercel-id")
   // );
 
-  // console.log({
-  //   computeRegion,
-  //   proxyRegion,
-  // });
-
   const client = getCarbonForRequest(accessToken, request);
 
   // The user's and the company's rows, in one round trip. Started here so the
@@ -209,11 +206,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return { checkStates: [], signals: null };
     });
   const auditLogEnabled = isAuditLogEnabled(client, companyId).catch(
-    () => false
+    (error) => {
+      log.warning("Failed to read whether the audit log is enabled", {
+        companyId,
+        error
+      });
+      return false;
+    }
   );
   // Streamed, not awaited; each catches for the same early-exit reason.
   // Whether this user dismissed it is a user flag, read client-side.
-  const changelog = getCachedChangelogPanelEntry().catch(() => null);
+  const changelog = getCachedChangelogPanelEntry().catch((error) => {
+    log.warning("Failed to load the changelog entry", { error });
+    return null;
+  });
 
   // Parallelize all requests
   const [shell, stripeCustomer, plan, customFields, claims, itarCertification] =
@@ -254,11 +260,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // people to the login page mid-call; an error page they can retry keeps
   // them signed in.
   if (user.error || groups.error) {
-    log.warn("App shell read failed", {
+    log.warning("App shell read failed", {
       userId,
       companyId,
-      userError: user.error?.message ?? null,
-      groupsError: groups.error?.message ?? null
+      error: user.error ?? groups.error
     });
     throw data("Carbon could not load your account. Try again in a moment.", {
       status: 503
@@ -273,7 +278,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // (get_claims returned nothing); no user row means the account is gone.
     const reason = !claims ? "no-claims" : "no-user-row";
 
-    log.warn("Destroying auth session in x+/_layout loader", {
+    log.warning("Destroying auth session in x+/_layout loader", {
       userId,
       companyId,
       reason,
@@ -463,6 +468,8 @@ export default function AuthenticatedRoute() {
   useNProgress();
   const themeStyle = useThemeStyle();
   const mode = useMode();
+  const isRailOpen = useUIStore((state) => state.isRailOpen);
+  const setRailOpen = useUIStore((state) => state.setRailOpen);
   useKeyboardWedge({
     test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL)
   });
@@ -551,6 +558,8 @@ export default function AuthenticatedRoute() {
     />
   ) : null;
 
+  usePersistentNavigation(userId, companyId, !itarScreen && !mfaScreen);
+
   return (
     <div className="h-[100dvh] flex flex-col">
       {/* Idle lock conceals the app (3.1.10). Not shown over the ITAR/MFA gates —
@@ -580,7 +589,8 @@ export default function AuthenticatedRoute() {
               <TooltipProvider>
                 <ThemeStyleProvider value={themeStyle}>
                   <SidebarProvider
-                    defaultOpen={false}
+                    open={isRailOpen}
+                    onOpenChange={setRailOpen}
                     className="h-screen min-h-0"
                     style={themeStyle?.frame[mode]}
                   >

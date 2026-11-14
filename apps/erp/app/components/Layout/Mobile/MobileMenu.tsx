@@ -34,19 +34,16 @@ import {
   getImplementationNavItem,
   ImplementationData
 } from "~/hooks/useImplementationNavItem";
-import {
-  useAllModules,
-  useModules,
-  useSettingsModule
-} from "~/hooks/useModules";
+import { useModuleLinks } from "~/hooks/useModuleSubmodules";
+import { useAllModules, useSettingsModule } from "~/hooks/useModules";
 import { path } from "~/utils/path";
+import { getModule } from "~/utils/submodule-visibility";
 import { AddCompanyModal } from "../Navigation/AddCompanyModal";
 import { useCompactModuleSidebar } from "../Navigation/CollapsibleSidebar";
 import {
   useCompanyGroups,
   useCompanySwitchRedirect
 } from "../Navigation/CompanySwitcher";
-import { getModule } from "../Navigation/PrimaryNavigation";
 import {
   SheetNavStyleProvider,
   SidebarPresentationProvider
@@ -104,7 +101,7 @@ function MenuRowContent({
 function ModuleRows({ currentKey }: { currentKey: string | null }) {
   const { i18n } = useLingui();
   const { pathname } = useLocation();
-  const modules = useModules();
+  const modules = useModuleLinks();
   const settingsModule = useSettingsModule();
   const isHome = pathname === path.to.authenticatedRoot;
 
@@ -269,7 +266,7 @@ function ModuleFinder({
   onPick: (to: string) => void;
 }) {
   const { t } = useLingui();
-  const modules = useModules();
+  const modules = useModuleLinks();
   const settingsModule = useSettingsModule();
   const all = settingsModule ? [...modules, settingsModule] : modules;
 

@@ -410,14 +410,13 @@ export function DimensionMapping({
         </MappingSection>
       </DrawerBody>
 
-      {showMatchDrawer && (
-        <MatchByNameDrawer
-          proposals={proposals}
-          dimensionName={dimensionName}
-          canUpdate={canUpdate}
-          onClose={() => setShowMatchDrawer(false)}
-        />
-      )}
+      <MatchByNameDrawer
+        open={showMatchDrawer}
+        proposals={proposals}
+        dimensionName={dimensionName}
+        canUpdate={canUpdate}
+        onClose={() => setShowMatchDrawer(false)}
+      />
     </>
   );
 }
@@ -717,11 +716,13 @@ function DimensionValueMappingRowForm({
  * fields (mirroring the account-mapping MatchByCodeDrawer).
  */
 function MatchByNameDrawer({
+  open = true,
   proposals,
   dimensionName,
   canUpdate,
   onClose
 }: {
+  open?: boolean;
   proposals: DimensionValueMatchProposalRow[];
   dimensionName: (dimensionId: string) => string;
   canUpdate: boolean;
@@ -769,7 +770,7 @@ function MatchByNameDrawer({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

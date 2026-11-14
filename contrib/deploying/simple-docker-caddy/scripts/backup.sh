@@ -23,7 +23,8 @@ mkdir -p "$BACKUP_DIR"
 log() { printf '\033[0;36m[backup]\033[0m %s\n' "$*"; }
 
 # ── Postgres logical dump (password read from the in-container secret) ────────
-PG_CID="$(docker ps -q -f "name=${STACK_NAME}_postgres" | head -1)"
+# Exact service label: a name filter for ${STACK_NAME}_postgres also matches ${STACK_NAME}_postgrest.
+PG_CID="$(docker ps -q -f "label=com.docker.swarm.service.name=${STACK_NAME}_postgres" | head -1)"
 [ -n "$PG_CID" ] || { echo "postgres task not running"; exit 1; }
 
 log "Dumping database -> db.sql.gz"

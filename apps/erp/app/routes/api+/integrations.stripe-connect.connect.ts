@@ -33,10 +33,7 @@ async function handle({ request }: { request: Request }) {
     }
     throw redirect(
       path.to.integrations,
-      await flash(
-        request,
-        error(result.error, result.error.title ?? result.error.message)
-      )
+      await flash(request, error(result.error, "Failed to connect Stripe"))
     );
   }
 

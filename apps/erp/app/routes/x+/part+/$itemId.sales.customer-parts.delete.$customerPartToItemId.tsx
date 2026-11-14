@@ -5,10 +5,11 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteItemCustomerPart,
@@ -77,14 +78,13 @@ export default function DeleteCustomerPartRoute() {
   const { t } = useLingui();
   const { itemId, customerPartToItemId } = useParams();
   const { customerPart } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+
+  if (!itemId) throw notFound("Could not find itemId");
+  const dialog = useRouteDialog(path.to.partSales(itemId));
 
   if (!customerPart) return null;
-  if (!itemId) throw notFound("Could not find itemId");
   if (!customerPartToItemId)
     throw notFound("Could not find customerPartToItemId");
-
-  const onCancel = () => navigate(path.to.partSales(itemId));
 
   return (
     <ConfirmDelete
@@ -93,7 +93,8 @@ export default function DeleteCustomerPartRoute() {
       text={t`Are you sure you want to delete the customer part for ${
         customerPart?.customer?.name ?? ""
       }? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

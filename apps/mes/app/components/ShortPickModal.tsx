@@ -19,7 +19,32 @@ import { useFetcher } from "react-router";
 import { pickQuantityValidator } from "~/services/models";
 import { path } from "~/utils/path";
 
+type ShortPickModalProps = {
+  pickingListId: string;
+  lineId: string;
+  itemName: string;
+  quantityToPick: number;
+  quantityPicked: number;
+  unitOfMeasureCode?: string | null;
+  open?: boolean;
+  onClose: () => void;
+};
+
 export function ShortPickModal({
+  open = true,
+  onClose,
+  ...props
+}: ShortPickModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalContent>
+        <ShortPickBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function ShortPickBody({
   pickingListId,
   lineId,
   itemName,
@@ -27,15 +52,7 @@ export function ShortPickModal({
   quantityPicked,
   unitOfMeasureCode,
   onClose
-}: {
-  pickingListId: string;
-  lineId: string;
-  itemName: string;
-  quantityToPick: number;
-  quantityPicked: number;
-  unitOfMeasureCode?: string | null;
-  onClose: () => void;
-}) {
+}: Omit<ShortPickModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useFetcher<{ success: boolean; message?: string }>();
   const [quantity, setQuantity] = useState(
@@ -51,56 +68,52 @@ export function ShortPickModal({
   }, [fetcher.state, onClose]);
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.pickingLineQuantity(pickingListId)}
-          validator={pickQuantityValidator}
-          defaultValues={{
-            pickingListLineId: lineId,
-            quantity,
-            markShort: "true"
-          }}
-          fetcher={fetcher}
-          onSubmit={() => {
-            submitted.current = true;
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>{t`Short pick ${itemName}`}</ModalTitle>
-            <ModalDescription>
-              <Trans>How many were actually picked?</Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="pickingListLineId" />
-            <Hidden name="markShort" value="true" />
-            <NumberControlled
-              name="quantity"
-              label={
-                unitOfMeasureCode
-                  ? `${t`Picked quantity`} (${unitOfMeasureCode})`
-                  : t`Picked quantity`
-              }
-              value={quantity}
-              onChange={setQuantity}
-              minValue={0}
-              maxValue={quantityToPick}
-              size="lg"
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" size="lg" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button type="submit" size="lg" isLoading={isSubmitting}>
-              <Trans>Mark Short</Trans>
-            </Button>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+    <ValidatedForm
+      method="post"
+      action={path.to.pickingLineQuantity(pickingListId)}
+      validator={pickQuantityValidator}
+      defaultValues={{
+        pickingListLineId: lineId,
+        quantity,
+        markShort: "true"
+      }}
+      fetcher={fetcher}
+      onSubmit={() => {
+        submitted.current = true;
+      }}
+    >
+      <ModalHeader>
+        <ModalTitle>{t`Short pick ${itemName}`}</ModalTitle>
+        <ModalDescription>
+          <Trans>How many were actually picked?</Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="pickingListLineId" />
+        <Hidden name="markShort" value="true" />
+        <NumberControlled
+          name="quantity"
+          label={
+            unitOfMeasureCode
+              ? `${t`Picked quantity`} (${unitOfMeasureCode})`
+              : t`Picked quantity`
+          }
+          value={quantity}
+          onChange={setQuantity}
+          minValue={0}
+          maxValue={quantityToPick}
+          size="lg"
+        />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" size="lg" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button type="submit" size="lg" isLoading={isSubmitting}>
+          <Trans>Mark Short</Trans>
+        </Button>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

@@ -4,8 +4,8 @@
 
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
-import { useDisclosure } from "@carbon/react";
-import { useRef, useState } from "react";
+import { useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
 import { useCustomerTypes } from "./CustomerType";
 import { useEmptyState } from "./emptyStates";
@@ -13,15 +13,13 @@ import { useEmptyState } from "./emptyStates";
 type CustomerTypesSelectProps = Omit<CreatableMultiSelectProps, "options">;
 
 const CustomerTypes = (props: CustomerTypesSelectProps) => {
-  const newCustomerTypeModal = useDisclosure();
-
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useCustomerTypes();
 
   const emptyMessage = useEmptyState("customerType", {
-    onCreate: () => newCustomerTypeModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -33,20 +31,20 @@ const CustomerTypes = (props: CustomerTypesSelectProps) => {
         label={props?.label ?? "Customer Types"}
         emptyMessage={emptyMessage}
         onCreateOption={(option) => {
-          newCustomerTypeModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newCustomerTypeModal.isOpen && (
+      {create.item !== null && (
         <CustomerTypeForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newCustomerTypeModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created
+            name: create.item
           }}
         />
       )}

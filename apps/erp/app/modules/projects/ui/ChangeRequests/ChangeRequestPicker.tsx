@@ -123,12 +123,11 @@ export function ChangeRequestPicker({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      {isOpening && (
-        <NewChangeRequestModal
-          projectId={projectId}
-          onClose={() => setIsOpening(false)}
-        />
-      )}
+      <NewChangeRequestModal
+        open={isOpening}
+        projectId={projectId}
+        onClose={() => setIsOpening(false)}
+      />
     </>
   );
 }

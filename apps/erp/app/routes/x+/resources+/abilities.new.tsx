@@ -5,8 +5,9 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { abilityValidator } from "~/modules/resources/resources.models";
 import { getProcessesWithoutAbility } from "~/modules/resources/resources.service";
 import { AbilityForm } from "~/modules/resources/ui";
@@ -39,8 +40,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function NewAbilityRoute() {
   const { processes } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.abilities);
+  const dialog = useRouteDialog(path.to.abilities);
 
   const initialValues = {
     processId: "",
@@ -49,7 +49,8 @@ export default function NewAbilityRoute() {
 
   return (
     <AbilityForm
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
       processes={processes}
     />

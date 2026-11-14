@@ -20,13 +20,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  // Get existing credential IDs to populate excludeCredentials (prevents duplicates)
+  // Existing credentials populate excludeCredentials (prevents duplicates)
   const { data: existing } = await (serviceRole as any)
     .from("passkeyCredential")
-    .select("id")
+    .select("id, transports")
     .eq("userId", userId);
-
-  const existingIds: string[] = (existing ?? []).map((c: any) => c.id);
 
   // Get user display name
   const { data: userData } = await (serviceRole as any)
@@ -44,7 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
       userId,
       email,
       displayName || email,
-      existingIds
+      existing ?? []
     );
     return data(options);
   } catch (e: any) {

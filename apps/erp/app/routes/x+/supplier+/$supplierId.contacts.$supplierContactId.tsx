@@ -12,9 +12,10 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useCompanySettings } from "~/hooks";
 import {
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
@@ -112,10 +113,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditSupplierContactRoute() {
   const { contact } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
 
   const { supplierId } = useParams();
   if (!supplierId) throw new Error("supplierId not found");
+  const dialog = useRouteDialog(path.to.supplierContacts(supplierId));
   const companySettings = useCompanySettings();
 
   const initialValues = {
@@ -140,7 +141,8 @@ export default function EditSupplierContactRoute() {
       key={initialValues.id}
       supplierId={supplierId}
       initialValues={initialValues}
-      onClose={() => navigate(path.to.supplierContacts(supplierId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

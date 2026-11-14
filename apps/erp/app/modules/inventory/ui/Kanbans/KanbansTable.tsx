@@ -560,72 +560,68 @@ const KanbansTable = memo(
           withSavedView
           withSelectableRows
         />
-        {printerModal.isOpen && (
-          <Modal
-            open
-            onOpenChange={(open) => {
-              if (!open) printerModal.onClose();
-            }}
-          >
-            <ModalContent>
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Select Printer</Trans>
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <div className="flex flex-col gap-1">
-                  {printerRoutes.map((route) => (
-                    <button
-                      type="button"
-                      key={route.id}
-                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
-                        selectedPrinterId === route.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted"
-                      }`}
-                      onClick={() => setSelectedPrinterId(route.id)}
-                    >
-                      <LuPrinter className="size-4 text-muted-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium">
-                          {route.name}
-                        </span>
-                        <span className="text-xs text-muted-foreground ml-2 uppercase">
-                          {route.format}
-                        </span>
-                        {route.mediaSizeId && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            {route.mediaSizeId}
-                          </span>
-                        )}
-                      </div>
-                      {selectedPrinterId === route.id && (
-                        <LuCheck className="size-4 text-primary shrink-0" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <HStack>
-                  <Button
-                    variant="primary"
-                    leftIcon={<LuPrinter />}
-                    isLoading={isPrinting}
-                    disabled={!selectedPrinterId || isPrinting}
-                    onClick={handleConfirmPrint}
+        <Modal
+          open={printerModal.isOpen}
+          onOpenChange={(open) => {
+            if (!open) printerModal.onClose();
+          }}
+        >
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Select Printer</Trans>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <div className="flex flex-col gap-1">
+                {printerRoutes.map((route) => (
+                  <button
+                    type="button"
+                    key={route.id}
+                    className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                      selectedPrinterId === route.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:bg-muted"
+                    }`}
+                    onClick={() => setSelectedPrinterId(route.id)}
                   >
-                    <Trans>Print {printIds.length} Kanbans</Trans>
-                  </Button>
-                  <Button variant="solid" onClick={printerModal.onClose}>
-                    <Trans>Cancel</Trans>
-                  </Button>
-                </HStack>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        )}
+                    <LuPrinter className="size-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{route.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2 uppercase">
+                        {route.format}
+                      </span>
+                      {route.mediaSizeId && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {route.mediaSizeId}
+                        </span>
+                      )}
+                    </div>
+                    {selectedPrinterId === route.id && (
+                      <LuCheck className="size-4 text-primary shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <HStack>
+                <Button
+                  variant="primary"
+                  leftIcon={<LuPrinter />}
+                  isLoading={isPrinting}
+                  disabled={!selectedPrinterId || isPrinting}
+                  onClick={handleConfirmPrint}
+                >
+                  <Trans>Print {printIds.length} Kanbans</Trans>
+                </Button>
+                <Button variant="solid" onClick={printerModal.onClose}>
+                  <Trans>Cancel</Trans>
+                </Button>
+              </HStack>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </KanbanQrCodeProvider>
     );
   }

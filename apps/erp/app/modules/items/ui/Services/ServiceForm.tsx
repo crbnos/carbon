@@ -42,19 +42,22 @@ import {
 type ServiceFormProps = {
   initialValues: z.infer<typeof serviceValidator> & { tags: string[] };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const ServiceForm = ({
   initialValues,
   type = "card",
+  open = true,
   onClose
 }: ServiceFormProps) => {
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
   const { t } = useLingui();
 
   useEffect(() => {
-    if (type !== "modal") return;
+    // Stays mounted while it animates closed: close and toast once.
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -62,7 +65,7 @@ const ServiceForm = ({
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(t`Failed to create service: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
@@ -89,7 +92,7 @@ const ServiceForm = ({
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard open={open} onClose={onClose}>
         <ModalCardContent size="large">
           <ValidatedForm
             action={isEditing ? undefined : path.to.newService}

@@ -170,7 +170,6 @@ const QuoteMakeMethodTools = () => {
     configuratorModal.onClose();
     const sourceId = selectedConfigureItemId;
     setSelectedConfigureItemId(null);
-    setConfigurationParameters({ groups: [], parameters: [] });
     fetcher.submit(
       {
         type: "item",
@@ -293,95 +292,45 @@ const QuoteMakeMethodTools = () => {
             </HStack>
           </Menubar>
         )}
-      {getMethodModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              getMethodModal.onClose();
-            }
-          }}
-        >
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              fetcher={fetcher}
-              action={path.to.quoteMethodGet}
-              validator={getMethodValidator}
-              onSubmit={getMethodModal.onClose}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Get Method</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  <Trans>
-                    Overwrite the quote method with the source method
-                  </Trans>
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                {isQuoteLineMethod ? (
-                  <Tabs defaultValue="item" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 mb-4">
-                      <TabsTrigger value="item">
-                        <LuBlocks className="mr-2" /> Item
-                      </TabsTrigger>
-                      <TabsTrigger value="quote">
-                        <RiProgress4Line className="mr-2" />
-                        Quote
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="item">
-                      <Hidden name="type" value="item" />
-                      <Hidden name="targetId" value={`${quoteId}:${lineId}`} />
-                      <VStack spacing={4}>
-                        {hasMethods && (
-                          <Alert variant="destructive">
-                            <LuTriangleAlert className="h-4 w-4" />
-                            <AlertTitle>
-                              <Trans>
-                                This will overwrite the existing quote method
-                              </Trans>
-                            </AlertTitle>
-                          </Alert>
-                        )}
-                        <Item
-                          name="sourceId"
-                          label={t`Source Method`}
-                          type={(line?.itemType ?? "Part") as "Part"}
-                          blacklist={configurableItemIds}
-                          includeInactive={includeInactive === true}
-                          locationId={routeData?.quote?.locationId ?? undefined}
-                          replenishmentSystem="Make"
-                        />
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="include-inactive"
-                            checked={includeInactive}
-                            onCheckedChange={setIncludeInactive}
-                          />
-                          <label
-                            htmlFor="include-inactive"
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            Include Inactive
-                          </label>
-                        </div>
-
-                        <AdvancedSection onChange={setHasMethodParts} />
-                      </VStack>
-                    </TabsContent>
-                    <TabsContent value="quote">
-                      <Hidden name="type" value="quoteLine" />
-                      <Hidden name="targetId" value={`${quoteId}:${lineId}`} />
-                      <QuoteLineMethodForm />
-                    </TabsContent>
-                  </Tabs>
-                ) : (
-                  <>
-                    <Hidden name="type" value="method" />
-                    <Hidden name="targetId" value={methodId!} />
+      <Modal
+        open={getMethodModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            getMethodModal.onClose();
+          }
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            fetcher={fetcher}
+            action={path.to.quoteMethodGet}
+            validator={getMethodValidator}
+            onSubmit={getMethodModal.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Get Method</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>Overwrite the quote method with the source method</Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              {isQuoteLineMethod ? (
+                <Tabs defaultValue="item" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="item">
+                      <LuBlocks className="mr-2" /> Item
+                    </TabsTrigger>
+                    <TabsTrigger value="quote">
+                      <RiProgress4Line className="mr-2" />
+                      Quote
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="item">
+                    <Hidden name="type" value="item" />
+                    <Hidden name="targetId" value={`${quoteId}:${lineId}`} />
                     <VStack spacing={4}>
                       {hasMethods && (
                         <Alert variant="destructive">
@@ -418,225 +367,262 @@ const QuoteMakeMethodTools = () => {
 
                       <AdvancedSection onChange={setHasMethodParts} />
                     </VStack>
-                  </>
-                )}
-              </ModalBody>
-              <ModalFooter>
-                <Button onClick={getMethodModal.onClose} variant="secondary">
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit
-                  isDisabled={!hasMethodParts}
-                  variant={hasMethods ? "destructive" : "primary"}
-                >
-                  <Trans>Confirm</Trans>
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
-      {saveMethodModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              saveMethodModal.onClose();
-            }
-          }}
-        >
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              fetcher={fetcher}
-              action={path.to.quoteMethodSave}
-              validator={getMethodValidator}
-              defaultValues={{
-                sourceId: isQuoteLineMethod
-                  ? (line?.itemId ?? undefined)
-                  : undefined,
-                // @ts-expect-error
-                itemId: isQuoteLineMethod
-                  ? (line?.itemId ?? undefined)
-                  : undefined
-              }}
-              onSubmit={saveMethodModal.onClose}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Save Method</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  <Trans>
-                    Overwrite the target manufacturing method with the quote
-                    method
-                  </Trans>
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                {isQuoteLineMethod ? (
-                  <>
-                    <Hidden name="type" value="item" />
-                    <Hidden name="sourceId" value={`${quoteId}:${lineId}`} />
-                  </>
-                ) : (
-                  <>
-                    <Hidden name="type" value="method" />
-                    <Hidden name="sourceId" value={methodId!} />
-                  </>
-                )}
-
-                <VStack spacing={4}>
-                  <Alert variant="destructive">
-                    <LuTriangleAlert className="h-4 w-4" />
-                    <AlertTitle>
-                      <Trans>
-                        This will overwrite the existing manufacturing method
-                        and the latest versions of all subassemblies.
-                      </Trans>
-                    </AlertTitle>
-                  </Alert>
-                  <Item
-                    name="itemId"
-                    label={t`Target Method`}
-                    type={(line?.itemType ?? "Part") as "Part"}
-                    blacklist={configurableItemIds}
-                    locationId={routeData?.quote?.locationId ?? undefined}
-                    onChange={(value) => {
-                      if (value) {
-                        getMakeMethods(value?.value);
-                      } else {
-                        setMakeMethods([]);
-                        setSelectedMakeMethod(null);
-                      }
-                    }}
-                    includeInactive={includeInactive === true}
-                    replenishmentSystem="Make"
-                  />
-                  <SelectControlled
-                    name="targetId"
-                    options={makeMethods}
-                    label={t`Version`}
-                    value={selectedMakeMethod ?? undefined}
-                    onChange={(value) => {
-                      if (value) {
-                        setSelectedMakeMethod(value?.value);
-                      } else {
-                        setSelectedMakeMethod(null);
-                      }
-                    }}
-                    placeholder={
-                      makeMethods.length === 0
-                        ? t`No draft versions available`
-                        : undefined
-                    }
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="include-inactive"
-                      checked={includeInactive}
-                      onCheckedChange={setIncludeInactive}
+                  </TabsContent>
+                  <TabsContent value="quote">
+                    <Hidden name="type" value="quoteLine" />
+                    <Hidden name="targetId" value={`${quoteId}:${lineId}`} />
+                    <QuoteLineMethodForm />
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <>
+                  <Hidden name="type" value="method" />
+                  <Hidden name="targetId" value={methodId!} />
+                  <VStack spacing={4}>
+                    {hasMethods && (
+                      <Alert variant="destructive">
+                        <LuTriangleAlert className="h-4 w-4" />
+                        <AlertTitle>
+                          <Trans>
+                            This will overwrite the existing quote method
+                          </Trans>
+                        </AlertTitle>
+                      </Alert>
+                    )}
+                    <Item
+                      name="sourceId"
+                      label={t`Source Method`}
+                      type={(line?.itemType ?? "Part") as "Part"}
+                      blacklist={configurableItemIds}
+                      includeInactive={includeInactive === true}
+                      locationId={routeData?.quote?.locationId ?? undefined}
+                      replenishmentSystem="Make"
                     />
-                    <label
-                      htmlFor="include-inactive"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Include Inactive
-                    </label>
-                  </div>
-                  <AdvancedSection onChange={setHasMethodParts} />
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <Button onClick={saveMethodModal.onClose} variant="secondary">
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit
-                  isDisabled={!selectedMakeMethod || !hasMethodParts}
-                  variant={hasMethods ? "destructive" : "primary"}
-                >
-                  <Trans>Confirm</Trans>
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
-      {configureSelectModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              configureSelectModal.onClose();
-            }
-          }}
-        >
-          <ModalContent>
-            <ValidatedForm validator={getMethodValidator}>
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Configure Item</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  <Trans>Select an item to configure</Trans>
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <Item
-                  name="sourceId"
-                  label={t`Item`}
-                  value={selectedConfigureItemId ?? undefined}
-                  type={(line?.itemType ?? "Part") as "Part"}
-                  includeInactive={includeInactive === true}
-                  whitelist={configurableItemIds}
-                  locationId={routeData?.quote?.locationId ?? undefined}
-                  replenishmentSystem="Make"
-                  onChange={(value) => {
-                    setSelectedConfigureItemId(value?.value ?? null);
-                  }}
-                />
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  onClick={configureSelectModal.onClose}
-                  variant="secondary"
-                >
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Button
-                  isDisabled={!selectedConfigureItemId}
-                  onClick={() =>
-                    handleConfigureItemSelect(selectedConfigureItemId)
-                  }
-                >
-                  <Trans>Next</Trans>
-                </Button>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
-      {configuratorModal.isOpen && (
-        <ConfiguratorModal
-          open
-          destructive
-          initialValues={
-            line?.configuration
-              ? (line.configuration as Record<string, any>)
-              : {}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="include-inactive"
+                        checked={includeInactive}
+                        onCheckedChange={setIncludeInactive}
+                      />
+                      <label
+                        htmlFor="include-inactive"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Include Inactive
+                      </label>
+                    </div>
+
+                    <AdvancedSection onChange={setHasMethodParts} />
+                  </VStack>
+                </>
+              )}
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={getMethodModal.onClose} variant="secondary">
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit
+                isDisabled={!hasMethodParts}
+                variant={hasMethods ? "destructive" : "primary"}
+              >
+                <Trans>Confirm</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
+      <Modal
+        open={saveMethodModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            saveMethodModal.onClose();
           }
-          groups={configurationParameters.groups}
-          parameters={configurationParameters.parameters}
-          onClose={() => {
-            configuratorModal.onClose();
-            setSelectedConfigureItemId(null);
-            setConfigurationParameters({ groups: [], parameters: [] });
-          }}
-          onSubmit={(config: Record<string, any>) => {
-            saveConfiguration(config);
-          }}
-        />
-      )}
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            fetcher={fetcher}
+            action={path.to.quoteMethodSave}
+            validator={getMethodValidator}
+            defaultValues={{
+              sourceId: isQuoteLineMethod
+                ? (line?.itemId ?? undefined)
+                : undefined,
+              // @ts-expect-error
+              itemId: isQuoteLineMethod
+                ? (line?.itemId ?? undefined)
+                : undefined
+            }}
+            onSubmit={saveMethodModal.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Save Method</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>
+                  Overwrite the target manufacturing method with the quote
+                  method
+                </Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              {isQuoteLineMethod ? (
+                <>
+                  <Hidden name="type" value="item" />
+                  <Hidden name="sourceId" value={`${quoteId}:${lineId}`} />
+                </>
+              ) : (
+                <>
+                  <Hidden name="type" value="method" />
+                  <Hidden name="sourceId" value={methodId!} />
+                </>
+              )}
+
+              <VStack spacing={4}>
+                <Alert variant="destructive">
+                  <LuTriangleAlert className="h-4 w-4" />
+                  <AlertTitle>
+                    <Trans>
+                      This will overwrite the existing manufacturing method and
+                      the latest versions of all subassemblies.
+                    </Trans>
+                  </AlertTitle>
+                </Alert>
+                <Item
+                  name="itemId"
+                  label={t`Target Method`}
+                  type={(line?.itemType ?? "Part") as "Part"}
+                  blacklist={configurableItemIds}
+                  locationId={routeData?.quote?.locationId ?? undefined}
+                  onChange={(value) => {
+                    if (value) {
+                      getMakeMethods(value?.value);
+                    } else {
+                      setMakeMethods([]);
+                      setSelectedMakeMethod(null);
+                    }
+                  }}
+                  includeInactive={includeInactive === true}
+                  replenishmentSystem="Make"
+                />
+                <SelectControlled
+                  name="targetId"
+                  options={makeMethods}
+                  label={t`Version`}
+                  value={selectedMakeMethod ?? undefined}
+                  onChange={(value) => {
+                    if (value) {
+                      setSelectedMakeMethod(value?.value);
+                    } else {
+                      setSelectedMakeMethod(null);
+                    }
+                  }}
+                  placeholder={
+                    makeMethods.length === 0
+                      ? t`No draft versions available`
+                      : undefined
+                  }
+                />
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-inactive"
+                    checked={includeInactive}
+                    onCheckedChange={setIncludeInactive}
+                  />
+                  <label
+                    htmlFor="include-inactive"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Include Inactive
+                  </label>
+                </div>
+                <AdvancedSection onChange={setHasMethodParts} />
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={saveMethodModal.onClose} variant="secondary">
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit
+                isDisabled={!selectedMakeMethod || !hasMethodParts}
+                variant={hasMethods ? "destructive" : "primary"}
+              >
+                <Trans>Confirm</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
+      <Modal
+        open={configureSelectModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            configureSelectModal.onClose();
+          }
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm validator={getMethodValidator}>
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Configure Item</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>Select an item to configure</Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Item
+                name="sourceId"
+                label={t`Item`}
+                value={selectedConfigureItemId ?? undefined}
+                type={(line?.itemType ?? "Part") as "Part"}
+                includeInactive={includeInactive === true}
+                whitelist={configurableItemIds}
+                locationId={routeData?.quote?.locationId ?? undefined}
+                replenishmentSystem="Make"
+                onChange={(value) => {
+                  setSelectedConfigureItemId(value?.value ?? null);
+                }}
+              />
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                onClick={configureSelectModal.onClose}
+                variant="secondary"
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                isDisabled={!selectedConfigureItemId}
+                onClick={() =>
+                  handleConfigureItemSelect(selectedConfigureItemId)
+                }
+              >
+                <Trans>Next</Trans>
+              </Button>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
+      <ConfiguratorModal
+        open={configuratorModal.isOpen}
+        destructive
+        initialValues={
+          line?.configuration ? (line.configuration as Record<string, any>) : {}
+        }
+        groups={configurationParameters.groups}
+        parameters={configurationParameters.parameters}
+        onClose={() => {
+          configuratorModal.onClose();
+          setSelectedConfigureItemId(null);
+        }}
+        onSubmit={(config: Record<string, any>) => {
+          saveConfiguration(config);
+        }}
+      />
     </Fragment>
   );
 };

@@ -13,7 +13,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -48,7 +48,7 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
   // plan. When gated (Community / Starter), every invite defaults to the seeded
   // Admin type — "everyone is an admin".
   const { isGated: permissionsGated } = usePlanGate({ feature: "PERMISSIONS" });
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const formFetcher = useFetcher<Result>();
   const employeeTypeFetcher = useLoaderQuery<
     Awaited<ReturnType<typeof getEmployeeTypes>>
@@ -69,9 +69,9 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
 
   return (
     <Modal
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
-        if (!open) closeRoute();
+        if (!open) dialog.close();
       }}
     >
       <ModalOverlay />

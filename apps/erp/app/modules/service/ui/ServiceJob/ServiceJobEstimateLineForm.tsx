@@ -47,6 +47,7 @@ type ServiceJobEstimateLineFormProps = {
   /** The job's bill rate per hour: a Labor line's price. */
   laborBillRate: number | null;
   isLocked: boolean;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -61,6 +62,7 @@ const ServiceJobEstimateLineForm = ({
   initialValues,
   laborBillRate,
   isLocked,
+  open = true,
   onClose
 }: ServiceJobEstimateLineFormProps) => {
   const { t } = useLingui();
@@ -89,7 +91,7 @@ const ServiceJobEstimateLineForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

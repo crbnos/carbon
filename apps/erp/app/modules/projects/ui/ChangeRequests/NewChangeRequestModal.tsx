@@ -25,9 +25,11 @@ import { projectChangeRequestValidator } from "../../projects.models";
  * change request picker.
  */
 export function NewChangeRequestModal({
+  open = true,
   projectId,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   onClose: () => void;
 }) {
@@ -36,7 +38,7 @@ export function NewChangeRequestModal({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

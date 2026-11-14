@@ -96,7 +96,6 @@ export default function PurchaseReturnOrderExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -146,86 +145,87 @@ export default function PurchaseReturnOrderExplorer() {
           </Button>
         </div>
       </VStack>
-      {chooseSourceDisclosure.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) chooseSourceDisclosure.onClose();
-          }}
-        >
-          <ModalContent size="small">
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Add Line Item</Trans>
-              </ModalTitle>
-              <ModalDescription>
-                <Trans>Choose how to add lines to this return.</Trans>
-              </ModalDescription>
-            </ModalHeader>
-            <ModalBody>
-              <VStack spacing={2}>
-                <button
-                  type="button"
-                  className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!canAddFromReceipt}
-                  onClick={onChooseFromReceipt}
-                >
-                  <LuFileInput className="mt-0.5 size-5 text-muted-foreground shrink-0" />
-                  <VStack spacing={0} className="min-w-0">
-                    <span className="text-sm font-medium">
-                      <Trans>Add from receipt</Trans>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {canAddFromReceipt ? (
-                        <Trans>
-                          Select posted receipt lines from this supplier to
-                          return.
-                        </Trans>
-                      ) : (
-                        <Trans>
-                          Set a supplier on this return to add from a receipt.
-                        </Trans>
-                      )}
-                    </span>
-                  </VStack>
-                </button>
-                <button
-                  type="button"
-                  className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50"
-                  onClick={onChooseManual}
-                >
-                  <LuCirclePlus className="mt-0.5 size-5 text-muted-foreground shrink-0" />
-                  <VStack spacing={0} className="min-w-0">
-                    <span className="text-sm font-medium">
-                      <Trans>Add manually</Trans>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      <Trans>Enter an item and quantity yourself.</Trans>
-                    </span>
-                  </VStack>
-                </button>
-              </VStack>
-            </ModalBody>
-          </ModalContent>
-        </Modal>
-      )}
-      {newLineDisclosure.isOpen && (
+      <Modal
+        open={chooseSourceDisclosure.isOpen}
+        onOpenChange={(open) => {
+          if (!open) chooseSourceDisclosure.onClose();
+        }}
+      >
+        <ModalContent size="small">
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Add Line Item</Trans>
+            </ModalTitle>
+            <ModalDescription>
+              <Trans>Choose how to add lines to this return.</Trans>
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <VStack spacing={2}>
+              <button
+                type="button"
+                className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!canAddFromReceipt}
+                onClick={onChooseFromReceipt}
+              >
+                <LuFileInput className="mt-0.5 size-5 text-muted-foreground shrink-0" />
+                <VStack spacing={0} className="min-w-0">
+                  <span className="text-sm font-medium">
+                    <Trans>Add from receipt</Trans>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {canAddFromReceipt ? (
+                      <Trans>
+                        Select posted receipt lines from this supplier to
+                        return.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Set a supplier on this return to add from a receipt.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+              </button>
+              <button
+                type="button"
+                className="w-full flex items-start gap-3 p-3 border rounded-lg text-left hover:bg-accent/50"
+                onClick={onChooseManual}
+              >
+                <LuCirclePlus className="mt-0.5 size-5 text-muted-foreground shrink-0" />
+                <VStack spacing={0} className="min-w-0">
+                  <span className="text-sm font-medium">
+                    <Trans>Add manually</Trans>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    <Trans>Enter an item and quantity yourself.</Trans>
+                  </span>
+                </VStack>
+              </button>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+      {newLineDisclosure.openCount > 0 && (
         <PurchaseReturnOrderLineForm
+          key={`newLineDisclosure-${newLineDisclosure.openCount}`}
+          open={newLineDisclosure.isOpen}
           initialValues={lineInitialValues}
           type="modal"
           onClose={newLineDisclosure.onClose}
         />
       )}
-      {fromDocumentDisclosure.isOpen &&
-        routeData?.purchaseReturnOrder?.supplierId && (
-          <ReturnableReceiptLinesModal
-            supplierId={routeData.purchaseReturnOrder.supplierId}
-            purchaseOrderId={routeData.purchaseReturnOrder.purchaseOrderId}
-            onClose={fromDocumentDisclosure.onClose}
-          />
-        )}
-      {deleteLineDisclosure.isOpen && deleteLine && (
+      {routeData?.purchaseReturnOrder?.supplierId && (
+        <ReturnableReceiptLinesModal
+          supplierId={routeData.purchaseReturnOrder.supplierId}
+          purchaseOrderId={routeData.purchaseReturnOrder.purchaseOrderId}
+          open={fromDocumentDisclosure.isOpen}
+          onClose={fromDocumentDisclosure.onClose}
+        />
+      )}
+      {deleteLine && (
         <ConfirmDelete
+          isOpen={deleteLineDisclosure.isOpen}
           action={path.to.deletePurchaseReturnOrderLine(
             orderId,
             deleteLine.id!

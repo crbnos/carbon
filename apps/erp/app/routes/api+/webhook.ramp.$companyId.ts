@@ -18,7 +18,7 @@ import { data } from "react-router";
 // verifyRampWebhookSignature.
 export const config = { runtime: "nodejs" };
 
-const logger = getLogger("erp", "webhook-ramp");
+const logger = getLogger("erp", "webhook", "ramp");
 
 /**
  * Receives Ramp webhook deliveries for one company. Ramp is registered against
@@ -75,7 +75,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // log content by POSTing in a loop. Nothing attacker-controlled is recorded
   // here; `companyId` comes from the URL the install registered.
   if (!signature || !metadata.webhookSecret) {
-    logger.warn("Ramp webhook rejected before signature check", {
+    logger.warning("Ramp webhook rejected before signature check", {
       companyId,
       reason: !signature ? "no-signature-header" : "no-stored-secret"
     });
@@ -87,7 +87,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     secret: metadata.webhookSecret
   });
   if (!verified) {
-    logger.warn("Ramp webhook signature mismatch", { companyId });
+    logger.warning("Ramp webhook signature mismatch", { companyId });
     return data({ success: false }, { status: 401 });
   }
 

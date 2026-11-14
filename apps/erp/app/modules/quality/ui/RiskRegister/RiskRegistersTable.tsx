@@ -84,7 +84,6 @@ const RiskRegistersTable = memo((props: RiskRegistersTableProps) => {
   );
 
   const onCancel = useCallback(() => {
-    setSelectedRisk(null);
     deleteModal.onClose();
   }, [deleteModal]);
 

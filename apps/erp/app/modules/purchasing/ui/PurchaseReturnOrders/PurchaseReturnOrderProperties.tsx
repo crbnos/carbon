@@ -529,48 +529,46 @@ const PurchaseReturnOrderProperties = () => {
         />
       </VStack>
 
-      {unlinkDisclosure.isOpen && (
-        <Modal
-          open={unlinkDisclosure.isOpen}
-          onOpenChange={(open) => {
-            if (!open) unlinkDisclosure.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Unlink return from purchase order?</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  This will remove the link between{" "}
-                  {routeData?.purchaseReturnOrder?.purchaseReturnOrderId} and
-                  its purchase order. The return will no longer appear under the
-                  purchase order.
-                </Trans>
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={unlinkDisclosure.onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                variant="destructive"
-                leftIcon={<LuUnlink2 className="w-3 h-3" />}
-                onClick={() => {
-                  onUpdate("purchaseOrderId", null);
-                  unlinkDisclosure.onClose();
-                }}
-              >
-                <Trans>Unlink</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={unlinkDisclosure.isOpen}
+        onOpenChange={(open) => {
+          if (!open) unlinkDisclosure.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Unlink return from purchase order?</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                This will remove the link between{" "}
+                {routeData?.purchaseReturnOrder?.purchaseReturnOrderId} and its
+                purchase order. The return will no longer appear under the
+                purchase order.
+              </Trans>
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={unlinkDisclosure.onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              variant="destructive"
+              leftIcon={<LuUnlink2 className="w-3 h-3" />}
+              onClick={() => {
+                onUpdate("purchaseOrderId", null);
+                unlinkDisclosure.onClose();
+              }}
+            >
+              <Trans>Unlink</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <CustomFormInlineFields
         customFields={

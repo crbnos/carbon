@@ -779,25 +779,26 @@ function ShipmentLineItem({
           onSerialNumbersChange={onSerialNumbersChange}
         />
       )}
-      {splitDisclosure.isOpen && (
-        <SplitShipmentLineModal line={line} onClose={splitDisclosure.onClose} />
-      )}
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          name="Shipment Line"
-          text="Are you sure you want to delete this shipment line?"
-          action={path.to.shipmentLineDelete(line.id!)}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <SplitShipmentLineModal
+        open={splitDisclosure.isOpen}
+        line={line}
+        onClose={splitDisclosure.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteDisclosure.isOpen}
+        name="Shipment Line"
+        text="Are you sure you want to delete this shipment line?"
+        action={path.to.shipmentLineDelete(line.id!)}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </div>
   );
 }
 
 // The statuses lines.tracking accepts for this shipment's source: On Hold
-// returned stock on a sales return, Available or Rejected units on a supplier
-// return, Available stock otherwise.
+// returned stock or an Available serviced unit on a sales return, Available
+// or Rejected units on a supplier return, Available stock otherwise.
 export function isShippable(
   shipment: Pick<Shipment, "sourceDocument"> | undefined,
   status: unknown
@@ -1509,52 +1510,61 @@ function SerialForm({
   );
 }
 
+type SplitShipmentLineModalProps = {
+  line: ShipmentLine;
+  open: boolean;
+  onClose: () => void;
+};
+
 function SplitShipmentLineModal({
+  open,
+  onClose,
+  ...props
+}: SplitShipmentLineModalProps) {
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <SplitShipmentLineBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function SplitShipmentLineBody({
   line,
   onClose
-}: {
-  line: ShipmentLine;
-  onClose: () => void;
-}) {
+}: Omit<SplitShipmentLineModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useAction<typeof shipmentLinesSplitAction>({
     onSuccess: onClose
   });
   return (
-    <Modal open onOpenChange={onClose}>
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.shipmentLineSplit}
-          validator={splitValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>Split Shipment Line</ModalTitle>
-            <ModalDescription>
-              Select the quantity that you'd like to split into a new line.
-            </ModalDescription>
-          </ModalHeader>
+    <ValidatedForm
+      method="post"
+      action={path.to.shipmentLineSplit}
+      validator={splitValidator}
+      fetcher={fetcher}
+    >
+      <ModalHeader>
+        <ModalTitle>Split Shipment Line</ModalTitle>
+        <ModalDescription>
+          Select the quantity that you'd like to split into a new line.
+        </ModalDescription>
+      </ModalHeader>
 
-          <ModalBody>
-            <input type="hidden" name="documentId" value={line.shipmentId!} />
-            <input type="hidden" name="documentLineId" value={line.id!} />
-            <input
-              type="hidden"
-              name="locationId"
-              value={line.locationId ?? ""}
-            />
-            <Number name="quantity" label={t`Quantity`} minValue={0.0001} />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit>Split Line</Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalBody>
+        <input type="hidden" name="documentId" value={line.shipmentId!} />
+        <input type="hidden" name="documentLineId" value={line.id!} />
+        <input type="hidden" name="locationId" value={line.locationId ?? ""} />
+        <Number name="quantity" label={t`Quantity`} minValue={0.0001} />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit>Split Line</Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

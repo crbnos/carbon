@@ -5,8 +5,8 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import { batchRuleInitialValues } from "~/modules/resources/resources.models";
 import type { getProcessesList } from "~/modules/resources/resources.service";
 import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
@@ -39,15 +39,14 @@ const Process = ({
   options: optionsOverride,
   ...props
 }: ProcessSelectProps) => {
-  const newProcessModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const fetched = useProcesses();
   const sourceOptions = optionsOverride ?? fetched;
 
   const emptyMessage = useEmptyState("process", {
-    onCreate: () => newProcessModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -63,20 +62,20 @@ const Process = ({
         inline={props.inline ? ProcessPreview : undefined}
         label={props?.label ?? "Work Center"}
         onCreateOption={(option) => {
-          newProcessModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newProcessModal.isOpen && (
+      {create.item !== null && (
         <ProcessForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newProcessModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             processType: "Process",
             defaultStandardFactor: "Minutes/Piece",
             completeAllOnScan: false,

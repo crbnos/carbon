@@ -306,11 +306,9 @@ const SupplierQuotesTable = memo(
             text={`Are you sure you want to delete ${selectedSupplierQuote.supplierQuoteId!}? This cannot be undone.`}
             onCancel={() => {
               deleteSupplierQuoteModal.onClose();
-              setSelectedSupplierQuote(null);
             }}
             onSubmit={() => {
               deleteSupplierQuoteModal.onClose();
-              setSelectedSupplierQuote(null);
             }}
           />
         )}

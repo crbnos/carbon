@@ -78,10 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
         {},
         await flash(
           request,
-          error(
-            result.error,
-            result.error.message || "Failed to update default accounts"
-          )
+          error(result.error, "Failed to update default accounts")
         )
       );
     }

@@ -54,7 +54,13 @@ export function SlideAnnotator({
   const wrapperRef = useRef<HTMLDivElement>(null);
   // The pin currently being dragged, and a flag that suppresses the click fired right after
   // a drag so releasing a pin over the image doesn't also drop a new pin.
-  const drag = useRef<{ id: string; moved: boolean } | null>(null);
+  const drag = useRef<{
+    id: string;
+    moved: boolean;
+    button: HTMLButtonElement;
+    origin: { x: number; y: number };
+    point?: { x: number; y: number };
+  } | null>(null);
   const justDragged = useRef(false);
 
   // Reseed from the source every time the annotator opens for a slide.
@@ -100,15 +106,31 @@ export function SlideAnnotator({
     const point = toFraction(e.clientX, e.clientY);
     if (!point) return;
     drag.current.moved = true;
-    const id = drag.current.id;
-    setPins((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, x: point.x, y: point.y } : p))
-    );
+    drag.current.point = point;
+    drag.current.button.style.left = `${point.x * 100}%`;
+    drag.current.button.style.top = `${point.y * 100}%`;
   };
 
   const endDrag = () => {
-    if (drag.current?.moved) justDragged.current = true;
+    const ended = drag.current;
     drag.current = null;
+    if (!ended?.moved) return;
+    justDragged.current = true;
+    const point = ended.point;
+    if (!point) return;
+    setPins((prev) =>
+      prev.map((p) =>
+        p.id === ended.id ? { ...p, x: point.x, y: point.y } : p
+      )
+    );
+  };
+
+  const cancelDrag = () => {
+    const cancelled = drag.current;
+    drag.current = null;
+    if (!cancelled?.moved) return;
+    cancelled.button.style.left = `${cancelled.origin.x * 100}%`;
+    cancelled.button.style.top = `${cancelled.origin.y * 100}%`;
   };
 
   const updateSelected = (patch: Partial<SlideAnnotation>) => {
@@ -145,7 +167,7 @@ export function SlideAnnotator({
                 onClick={addPin}
                 onPointerMove={onPointerMove}
                 onPointerUp={endDrag}
-                onPointerCancel={endDrag}
+                onPointerCancel={cancelDrag}
               >
                 <img
                   src={imageUrl}
@@ -161,13 +183,22 @@ export function SlideAnnotator({
                     onPointerDown={(e) => {
                       e.stopPropagation();
                       (e.target as Element).setPointerCapture?.(e.pointerId);
-                      drag.current = { id: pin.id, moved: false };
+                      drag.current = {
+                        id: pin.id,
+                        moved: false,
+                        button: e.currentTarget,
+                        origin: { x: pin.x, y: pin.y }
+                      };
                       setSelectedId(pin.id);
                     }}
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // A captured drag releases its click here, not on the image.
+                      justDragged.current = false;
+                    }}
                     className={cn(
                       "absolute flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-xs font-semibold text-white shadow-md",
-                      "cursor-grab active:cursor-grabbing",
+                      "cursor-grab touch-none active:cursor-grabbing",
                       selectedId === pin.id
                         ? "border-white ring-2 ring-white/60"
                         : "border-white/70"

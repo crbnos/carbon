@@ -149,8 +149,9 @@ export default function RiskRegisterCard({
         )}
       </CardContent>
 
-      {formDisclosure.isOpen && (
+      {formDisclosure.openCount > 0 && (
         <RiskRegisterForm
+          key={`risk-form-${formDisclosure.openCount}`}
           open={formDisclosure.isOpen}
           onClose={() => {
             formDisclosure.onClose();
@@ -187,17 +188,15 @@ export default function RiskRegisterCard({
         />
       )}
 
-      {selectedRisk && deleteDisclosure.isOpen && (
+      {selectedRisk && (
         <Confirm
           isOpen={deleteDisclosure.isOpen}
           confirmText={t`Delete`}
           onCancel={() => {
             deleteDisclosure.onClose();
-            setSelectedRisk(undefined);
           }}
           onSubmit={() => {
             deleteDisclosure.onClose();
-            setSelectedRisk(undefined);
             fetchRisks();
           }}
           title={t`Delete Risk`}

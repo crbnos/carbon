@@ -19,7 +19,7 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
@@ -44,12 +44,14 @@ import type { Customer } from "../../types";
 type CustomerFormProps = {
   initialValues: z.infer<typeof customerValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const CustomerForm = ({
   initialValues,
   type = "card",
+  open = true,
   onClose
 }: CustomerFormProps) => {
   const { t } = useLingui();
@@ -66,7 +68,7 @@ const CustomerForm = ({
   const handledSuccessRef = useRef(false);
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       if (handledSuccessRef.current) return;
@@ -100,17 +102,19 @@ const CustomerForm = ({
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(t`Failed to create customer: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, t, type, setCustomers]);
+  }, [fetcher.data, fetcher.state, onClose, open, t, type, setCustomers]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !permissions.can("update", "sales")
     : !permissions.can("create", "sales");
 
+  const Wrapper = type === "card" ? "div" : Fragment;
+
   return (
-    <div>
+    <Wrapper>
       <ModalCardProvider type={type}>
-        <ModalCard onClose={onClose}>
+        <ModalCard open={open} onClose={onClose}>
           <ModalCardContent size="medium">
             <ValidatedForm
               method="post"
@@ -223,7 +227,7 @@ const CustomerForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
-    </div>
+    </Wrapper>
   );
 };
 

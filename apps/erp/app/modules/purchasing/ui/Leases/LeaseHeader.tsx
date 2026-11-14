@@ -294,8 +294,9 @@ const LeaseHeader = ({
         </HStack>
       </div>
 
-      {current && confirm.isOpen && (
+      {current && (
         <Confirm
+          isOpen={confirm.isOpen}
           action={current.action}
           title={current.title}
           text={current.text}
@@ -310,26 +311,23 @@ const LeaseHeader = ({
         </Confirm>
       )}
 
-      {modify.isOpen && (
-        <LeaseModifyModal
-          lease={lease}
-          lines={lines}
-          payments={payments}
-          schedule={schedule}
-          onClose={modify.onClose}
-        />
-      )}
+      <LeaseModifyModal
+        lease={lease}
+        lines={lines}
+        payments={payments}
+        schedule={schedule}
+        open={modify.isOpen}
+        onClose={modify.onClose}
+      />
 
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteLease(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={readableId}
-          text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteLease(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={readableId}
+        text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </>
   );
 };

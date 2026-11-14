@@ -651,6 +651,7 @@ type LeaseClassificationOverrideModalProps = {
   rentalAgreementId: string;
   lineId: string;
   classification: LeaseClassificationValue;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -659,6 +660,7 @@ export function LeaseClassificationOverrideModal({
   rentalAgreementId,
   lineId,
   classification,
+  open = true,
   onClose
 }: LeaseClassificationOverrideModalProps) {
   const { t } = useLingui();
@@ -671,7 +673,7 @@ export function LeaseClassificationOverrideModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

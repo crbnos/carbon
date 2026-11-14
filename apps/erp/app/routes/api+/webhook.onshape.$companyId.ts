@@ -10,9 +10,12 @@ import {
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import { trigger } from "@carbon/jobs";
 import { inngest } from "@carbon/lib/inngest";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+
+const logger = getLogger("erp", "webhook", "onshape");
 
 // Inbound receiver for Onshape lifecycle webhooks (mirrors
 // webhook.jira.$companyId.ts / webhook.linear.$companyId.ts).
@@ -79,7 +82,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   try {
     body = await request.json();
   } catch (parseError) {
-    console.error("Onshape webhook: body is not valid JSON", parseError);
+    logger.error("Onshape webhook body is not valid JSON", {
+      companyId,
+      error: parseError
+    });
     return data(
       { success: false, error: "Invalid JSON body" },
       { status: 400 }
@@ -109,10 +115,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("active", true)
       .limit(1);
     if (connection.error) {
-      console.error(
-        "Onshape webhook: integration query failed",
-        connection.error
-      );
+      logger.error("Onshape webhook integration query failed", {
+        error: connection.error
+      });
       return data(
         { success: false, error: "Integration query failed" },
         { status: 400 }
@@ -137,10 +142,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const integration = await getOnshapeIntegration(serviceRole, companyId);
 
   if (integration.error) {
-    console.error(
-      "Onshape webhook: integration query failed",
-      integration.error
-    );
+    logger.error("Onshape webhook integration query failed", {
+      companyId,
+      error: integration.error
+    });
     return data(
       { success: false, error: "Integration query failed" },
       { status: 400 }
@@ -169,7 +174,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     unknown
   >;
   if (integrationMetadata.assetSyncEnabled !== true) {
-    console.log("Onshape webhook: asset sync disabled; ignoring event", {
+    logger.info("Onshape webhook ignored: asset sync is off", {
       companyId
     });
     return { success: true };
@@ -186,7 +191,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     revisionId
   } = parsed.data;
 
-  console.log("Onshape webhook received", {
+  logger.info("Onshape webhook received", {
     companyId,
     event,
     messageId,
@@ -215,8 +220,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         !elementId ||
         typeof elementType !== "number"
       ) {
-        console.warn(
-          "Onshape webhook: revision.created missing required fields; skipping dispatch",
+        logger.warning(
+          "Onshape revision.created is missing required fields; not dispatched",
           { companyId, messageId, partNumber }
         );
         break;

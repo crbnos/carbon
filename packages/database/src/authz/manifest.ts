@@ -146,6 +146,22 @@ const managedAttribute = through(
 );
 
 /**
+ * The operation and the item a material request names are the request's own
+ * company: their FKs are single-column (jobOperation and item have no unique
+ * (id, companyId) to point a composite FK at).
+ */
+const materialRequestReferences = and(
+  or(
+    isNull("jobOperationId"),
+    exists("jobOperation", "jobOperationId", "employee", { sameCompany: true })
+  ),
+  or(
+    isNull("itemId"),
+    exists("item", "itemId", "employee", { sameCompany: true })
+  )
+);
+
+/**
  * A project table, governed by projects_* (any employee reads) in its project's company.
  * `column` names the row's project, or its element with `via: "projectElement"`;
  * `project` itself passes "id".
@@ -229,7 +245,15 @@ export const manifest = {
   agentThread: policies({
     all: and(owner("userId"), inCompany("companyId", "employee"))
   }),
-  apiKey: company("settings", { read: "settings_view" }),
+  // Keys are written only by the server (createApiKey / updateApiKey / revokeApiKey,
+  // gated on users_update). A key acts as its createdBy with its scopes, so a write
+  // through the API would let a caller pick both, and the key hash, themselves.
+  apiKey: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   apiKeyRateLimit: policies({
     select: exists("apiKey", "apiKeyId", "settings_view")
   }),
@@ -719,6 +743,10 @@ export const manifest = {
   fixedAssetTransfer: company("accounting", { read: "accounting_view" }),
   fixedAssetUsageLog: company("accounting", { read: "accounting_view" }),
   fixture: serviceOnly(),
+  // The Admin force-delete override for invoices, receipts and payments:
+  // written and read only by the service functions, which check that the
+  // caller is an Admin.
+  forceDeleteRequest: serviceOnly(),
   fulfillment: company("sales", {
     read: anyOf("inventory_view", "sales_view"),
     create: anyOf("inventory_create", "sales_create")
@@ -756,6 +784,7 @@ export const manifest = {
   industry: policies({ select: authenticated }),
   inspection: company("quality", { read: "quality_view" }),
   inspectionDocument: company("quality"),
+  inspectionDocumentParameter: company("quality"),
   inspectionFeature: company("quality"),
   inspectionHistory: company("quality", {
     read: "quality_view",
@@ -765,6 +794,7 @@ export const manifest = {
   inspectionMeasurement: company("quality", { read: "quality_view" }),
   inspectionSample: company("quality", { read: "quality_view" }),
   inspectionSamplingPlan: company("quality", { read: "quality_view" }),
+  inspectionTrackedEntity: company("quality", { read: "quality_view" }),
   integration: policies({ select: authenticated }),
   // Read-only to API roles: a user-written row could claim another company's Slack
   // team_id or point secretRef at someone else's vault secret. The server writes it
@@ -912,6 +942,8 @@ export const manifest = {
     read: anyOf("parts_view", "sales_view")
   }),
   job: company("production"),
+  jobCorrection: company("production"),
+  jobCorrectionTrigger: company("production"),
   jobFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
@@ -936,6 +968,10 @@ export const manifest = {
   jobOperationStepRecord: company("production", { create: "employee" }),
   jobOperationStepSlide: company("production"),
   jobOperationTool: company("production"),
+  // Written by the trigger-rework posting only (system connection).
+  jobOperationTrackedEntity: policies({
+    select: inCompany("companyId", "employee")
+  }),
   jobOperationToolStep: policies({
     select: exists("jobOperationTool", "jobOperationToolId", "employee"),
     insert: exists(
@@ -1100,6 +1136,26 @@ export const manifest = {
     update: inCompany("companyId", "parts_update"),
     delete: inCompany("companyId", "parts_delete")
   }),
+  // Any employee raises a "Need material" request, as its author: the insert
+  // requires createdBy to be the caller, so a request cannot be filed in
+  // another user's name (and give that user the author's resolve right). A
+  // line feeder (inventory_update) or its author resolves it. USING is also
+  // the CHECK, so an update never moves a row to another company, nor points
+  // it at another company's operation or item.
+  materialRequest: company("inventory", {
+    create: and(
+      owner("createdBy"),
+      inCompany("companyId", "employee"),
+      materialRequestReferences
+    ),
+    update: and(
+      or(
+        inCompany("companyId", "inventory_update"),
+        and(owner("createdBy"), inCompany("companyId", "employee"))
+      ),
+      materialRequestReferences
+    )
+  }),
   materialSubstance: policies({
     select: or(isNull("companyId"), inCompany("companyId", "parts_view")),
     insert: inCompany("companyId", "parts_create"),
@@ -1127,6 +1183,8 @@ export const manifest = {
       inCompany("companyId", "invoicing_delete")
     )
   }),
+  methodCorrection: company("parts", { read: "parts_view" }),
+  methodCorrectionTrigger: company("parts", { read: "parts_view" }),
   methodMaterial: company("parts", { read: "parts_view" }),
   methodMaterialStep: policies({
     select: exists("methodMaterial", "methodMaterialId", "employee"),
@@ -1393,6 +1451,9 @@ export const manifest = {
     insert: owner("userId"),
     delete: owner("userId")
   }),
+  // The Admin force-delete override: written and read only by the service
+  // functions, which check that the caller is an Admin.
+  purchaseOrderForceDeleteRequest: serviceOnly(),
   purchaseOrderLine: company("purchasing", { read: "purchasing_view" }),
   // The versions an approval request keeps: written by the amendment
   // re-submit and read by the rejection, both through Kysely.
@@ -1789,6 +1850,7 @@ export const manifest = {
     create: false,
     delete: false
   }),
+  supplierStage: company("purchasing"),
   supplierType: company("purchasing", { read: "member" }),
   supplyActual: policies({
     select: or(

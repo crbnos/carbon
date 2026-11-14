@@ -27,13 +27,19 @@ export async function action(args: ActionFunctionArgs) {
     createNcr: input.data.createNcr !== "false",
     reason: input.data.reason
   });
-  if (result.error || !result.data.issueId) {
+  if (result.error) return result;
+  if (!result.data.issueId) {
     return respond(args.request, result).redirect(path.to.inspection(id), {
       message: "Lot rejected"
     });
   }
   return respond(args.request, result).redirect(
     path.to.issue(result.data.issueId),
-    { message: "Lot rejected — NCR opened" }
+    {
+      message:
+        "ncrOpened" in result.data
+          ? "Lot rejected — NCR opened"
+          : "Lot rejected"
+    }
   );
 }

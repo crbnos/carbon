@@ -384,6 +384,13 @@ resources:
                               key: X-Forwarded-Prefix
                               value: /functions/v1/
                             append_action: ADD_IF_ABSENT
+                          # carbon: the shared edge runtime serves every
+                          # worktree; this tells it which API the call came
+                          # from. Overwritten, so a client can't name another.
+                          - header:
+                              key: x-carbon-api
+                              value: ${FUNCTIONS_API_URL}
+                            append_action: OVERWRITE_IF_EXISTS_OR_ADD
                         typed_per_filter_config:
                           # Functions handle CORS themselves, as on the platform:
                           # preflights reach the function, responses pass unchanged.

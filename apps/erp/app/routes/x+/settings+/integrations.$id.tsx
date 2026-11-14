@@ -76,7 +76,7 @@ import { validationError, validator } from "@carbon/form";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { Badge } from "@carbon/react";
+import { Badge, useRouteDialog } from "@carbon/react";
 import {
   getConnectAccountStatus,
   isConnectAccountStillLinked
@@ -89,7 +89,6 @@ import {
   data,
   Link,
   useLoaderData,
-  useNavigate,
   useParams,
   useSearchParams
 } from "react-router";
@@ -312,7 +311,9 @@ async function getAccountMappingTabData(
   // what loaded and log the cause.
   for (const result of [mappings, unmapped, proposals, allAccounts, blocking]) {
     if (result.error) {
-      console.error("Failed to load account mapping data:", result.error);
+      logger.error("Failed to load account mapping data", {
+        error: result.error
+      });
     }
   }
 
@@ -392,7 +393,9 @@ async function getDimensionSyncTabData(
   // loaded and log the cause.
   for (const result of [dimensionsResult, mappingsResult, unmappedResult]) {
     if (result.error) {
-      console.error("Failed to load dimension sync data:", result.error);
+      logger.error("Failed to load dimension sync data", {
+        error: result.error
+      });
     }
   }
 
@@ -418,7 +421,7 @@ async function getDimensionSyncTabData(
       }))
     });
   } catch (err) {
-    console.error("Failed to resolve dimension value labels:", err);
+    logger.error("Failed to resolve dimension value labels", { error: err });
   }
 
   const mappings = mappingRows.map((mapping) => ({
@@ -672,7 +675,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     if (operations.error) {
       // Don't block the settings drawer on an inbox failure — render the
       // tab empty and log the cause.
-      console.error("Failed to load sync operations:", operations.error);
+      logger.error("Failed to load sync operations", {
+        error: operations.error
+      });
     }
 
     let tieOut: {
@@ -810,7 +815,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             Object.assign(flattenedMetadata, freshStatus);
           }
         } else {
-          logger.warn(
+          logger.warning(
             "Stripe Connect account is no longer linked; hiding stale connection state",
             { companyId, stripeAccountId }
           );
@@ -902,10 +907,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // stays empty.)
       chartAccounts = await provider.listChartOfAccounts();
     } catch (error) {
-      console.error(
-        "Failed to fetch QuickBooks Online accounts for settings:",
+      logger.error("Failed to fetch QuickBooks Online accounts for settings", {
         error
-      );
+      });
       // Continue without chart accounts — the Account Mapping tab renders
       // with Carbon accounts only
     }
@@ -931,7 +935,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // returned by listChartOfAccounts.
       chartAccounts = await provider.listChartOfAccounts();
     } catch (error) {
-      console.error("Failed to fetch Rillet accounts for settings:", error);
+      logger.error("Failed to fetch Rillet accounts for settings", { error });
       // Continue without chart accounts — the Account Mapping tab renders
       // with Carbon accounts only
     }
@@ -1269,6 +1273,20 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // Fetch existing metadata so we merge form settings without
   // overwriting credentials and syncConfig
   const existing = await getIntegration(client, integrationId, companyId);
+
+  // A switched-off integration (`active: false` on its config) shows a
+  // disabled Install button; this refuses the same install posted directly. A
+  // company that already has it installed can still save and uninstall.
+  if (!integration.active && existing.data?.active !== true) {
+    throw redirect(
+      path.to.integrations,
+      await flash(
+        request,
+        error(null, `${integration.name} isn't available on this platform`)
+      )
+    );
+  }
+
   const existingMetadata =
     (existing.data?.metadata as Record<string, unknown>) ?? {};
 
@@ -1434,10 +1452,6 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
         }
       );
     } catch (clearError) {
-      logger.error("Could not clear the previous Onshape credentials", {
-        companyId,
-        error: clearError
-      });
       return data(
         {},
         await flash(
@@ -1484,17 +1498,14 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
       try {
         await onInstall(companyId);
       } catch (hookError) {
-        logger.error("onInstall hook failed for integration", {
-          integrationId,
-          error: hookError
-        });
         throw redirect(
           path.to.integrations,
           await flash(
             request,
             error(
               hookError,
-              `Installed ${integration.name}, but setup hook failed`
+              `Installed ${integration.name}, but setup hook failed`,
+              { integrationId }
             )
           )
         );
@@ -1638,7 +1649,7 @@ export default function IntegrationRoute() {
     devices
   } = useLoaderData<typeof loader>();
 
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.integrations);
   const [searchParams] = useSearchParams();
   const { id: integrationId } = useParams();
 
@@ -1795,7 +1806,8 @@ export default function IntegrationRoute() {
             onActionStarted: mountActions.onActionStarted
           }
         : {})}
-      onClose={() => navigate(path.to.integrations)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

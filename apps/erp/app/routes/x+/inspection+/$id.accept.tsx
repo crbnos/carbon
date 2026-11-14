@@ -26,9 +26,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     decision: "Accept",
     companyId,
     dispositionedBy: userId,
-    // ERP verdict carries no production posting — Receipt lots only. Job Operation
+    // ERP verdict carries no production posting — Receipt and Manual lots only. Job Operation
     // lots are dispositioned (with their physical outcome) by the MES route.
-    requireSource: "Receipt"
+    requireSource: ["Receipt", "Manual"]
   });
 
   if (result.error) {

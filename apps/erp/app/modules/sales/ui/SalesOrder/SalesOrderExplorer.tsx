@@ -176,7 +176,6 @@ export default function SalesOrderExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -268,15 +267,21 @@ export default function SalesOrderExplorer() {
           )}
         </div>
       </VStack>
-      {newSalesOrderLineDisclosure.isOpen && (
+      {newSalesOrderLineDisclosure.openCount > 0 && (
         <SalesOrderLineForm
+          key={newSalesOrderLineDisclosure.openCount}
+          open={newSalesOrderLineDisclosure.isOpen}
           initialValues={salesOrderLineInitialValues}
           type="modal"
           onClose={newSalesOrderLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeleteSalesOrderLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLine && (
+        <DeleteSalesOrderLine
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={onDeleteCancel}
+        />
       )}
     </>
   );

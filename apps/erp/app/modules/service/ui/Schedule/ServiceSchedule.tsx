@@ -10,7 +10,7 @@ import {
   getLocalTimeZone
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFetchers, useSubmit } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import {
@@ -21,6 +21,7 @@ import {
   ScheduleMatrixDnd
 } from "~/components/ScheduleMatrix";
 import { usePermissions } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { PeopleChip } from "~/modules/production/ui/Schedule/People/PeopleChip";
 import {
   buildAbsentSet,
@@ -143,7 +144,7 @@ export function ServiceSchedule({
   useScheduleFeedback();
   const canEdit = permissions.can("update", "service");
   const canUnassign = permissions.can("delete", "service");
-  const [openAssignmentId, setOpenAssignmentId] = useState<string | null>(null);
+  const assignmentDialog = useDrawerItem<string>();
 
   const today = calendarToday(
     locationTimeZone ?? getLocalTimeZone()
@@ -288,8 +289,8 @@ export function ServiceSchedule({
     return t`${name} on ${day}`;
   };
 
-  const openAssignment = openAssignmentId
-    ? assignmentById.get(openAssignmentId)
+  const openAssignment = assignmentDialog.item
+    ? assignmentById.get(assignmentDialog.item)
     : undefined;
 
   return (
@@ -393,7 +394,7 @@ export function ServiceSchedule({
                                 assignment={assignment}
                                 isLocked={locked}
                                 onOpen={() =>
-                                  setOpenAssignmentId(assignment.id)
+                                  assignmentDialog.open(assignment.id)
                                 }
                               />
                             </MatrixChip>
@@ -447,11 +448,11 @@ export function ServiceSchedule({
       />
       {openAssignment && (
         <AssignmentModal
-          key={openAssignment.id}
+          open={assignmentDialog.isOpen}
           assignment={openAssignment}
           employeeName={employeeNameById.get(openAssignment.employeeId) ?? null}
           isDisabled={!canEdit || isServiceJobLocked(openAssignment.status)}
-          onClose={() => setOpenAssignmentId(null)}
+          onClose={assignmentDialog.close}
         />
       )}
     </ScheduleMatrixDnd>

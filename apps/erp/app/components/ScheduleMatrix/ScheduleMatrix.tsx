@@ -14,8 +14,9 @@ import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   pointerWithin,
+  TouchSensor,
   useDraggable,
   useDroppable,
   useSensor,
@@ -26,6 +27,10 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import {
+  MOUSE_SENSOR_OPTIONS,
+  TOUCH_SENSOR_OPTIONS
+} from "~/utils/drag-sensors";
+import {
   MATRIX_OUTSIDE,
   type MatrixDragSource,
   type MatrixDropTarget,
@@ -34,12 +39,6 @@ import {
   matrixCellId,
   resolveMatrixDrop
 } from "./resolveMatrixDrop";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render. The distance lets a click
-// on a chip's cell still open the cell's modal; once a drag starts, dnd-kit
-// swallows the click its pointerup makes.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
 
 // A pointer drag lands on the cell under the pointer; a keyboard drag has no
 // pointer, so it lands on the nearest cell.
@@ -84,7 +83,8 @@ export function ScheduleMatrixDnd({
   const { t } = useLingui();
   const [activeChipId, setActiveChipId] = useState<string | null>(null);
   const sensors = useSensors(
-    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    useSensor(MouseSensor, MOUSE_SENSOR_OPTIONS),
+    useSensor(TouchSensor, TOUCH_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
   );
 
@@ -215,7 +215,8 @@ export function MatrixChip({
       {...listeners}
       className={cn(
         "inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        !disabled && "cursor-grab active:cursor-grabbing",
+        !disabled &&
+          "cursor-grab touch-manipulation pointer-coarse:select-none [-webkit-touch-callout:none] active:cursor-grabbing",
         isDragging && "opacity-40",
         className
       )}

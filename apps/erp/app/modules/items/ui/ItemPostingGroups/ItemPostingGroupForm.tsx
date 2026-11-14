@@ -55,7 +55,7 @@ const ItemPostingGroupForm = ({
     : !permissions.can("create", "parts");
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -65,7 +65,7 @@ const ItemPostingGroupForm = ({
         t`Failed to create item group: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   return (
     <ModalDrawerProvider type={type}>

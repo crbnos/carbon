@@ -400,7 +400,9 @@ export const updateItemsSettings = defineServiceFn({
  * unit draws its serial number (when the job is created, when it is released,
  * or the first time the unit is worked on, scrapped or received), and whether
  * one location requires an assigned operator before the scheduler places work
- * there. The staffing rule lives on the location row and is written for the
+ * there, whether travelers print at the pick, whether an operation needs its
+ * tracked parts issued before completion, and whether releasing a job creates
+ * its picking list. The staffing rule lives on the location row and is written for the
  * company's own location only, so a settings admin without the resources
  * permission can still set it. Changing it re-plans the location.
  *
@@ -415,6 +417,9 @@ export const updateProductionSettings = defineServiceFn({
     includeOperationsOnTraveler: z.boolean().optional(),
     autoSelectMaterialWithoutPickingList: z.boolean().optional(),
     serialNumberTiming: z.enum(serialNumberTimings).optional(),
+    travelerLabels: z.boolean().optional(),
+    requireTrackedMaterialsIssued: z.boolean().optional(),
+    autoPickingListOnRelease: z.boolean().optional(),
     locationStaffing: z
       .object({
         locationId: z.string().min(1),
@@ -510,6 +515,7 @@ export const updatePurchasingSettings = defineServiceFn({
     requireSupplierContactEmail: z.boolean().optional(),
     includeSupplierPartFiles: z.boolean().optional(),
     requirePurchaseOrderApprovalSignature: z.boolean().optional(),
+    requirePromisedDateToFinalizePurchaseOrder: z.boolean().optional(),
     purchasePriceUpdateTiming: z
       .enum(purchasePriceUpdateTimingTypes)
       .optional(),
@@ -558,7 +564,12 @@ export const updatePurchasingSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether an inspection needs a
  * second person to sign it off, the sampling standard inspection plans use,
  * the open-issue target on the quality dashboard, and who is notified when a
- * gauge goes out of calibration.
+ * gauge goes out of calibration. Then one location's goods-in storage units:
+ * the inspection storage unit received parts wait in, and the rejected
+ * storage unit rejected stock moves to (null clears one). Each must be an
+ * active storage unit at that location. A location is a
+ * resources record: without the resources update permission it is refused.
+ * The location and the company settings are written in one transaction.
  *
  * @mcp
  */
@@ -567,18 +578,88 @@ export const updateQualitySettings = defineServiceFn({
     enforceInspectionFourEyes: z.boolean().optional(),
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
     qualityIssueTarget: z.number().int().min(0).optional(),
-    gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional()
+    gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional(),
+    locationGoodsInStorage: z
+      .object({
+        locationId: z.string().min(1),
+        inspectionStorageUnitId: z.string().nullable().optional(),
+        rejectedStorageUnitId: z.string().nullable().optional()
+      })
+      .optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
-    const saved = await service.saveCompanySettings(
-      ctx,
-      input,
-      "Failed to update quality settings"
-    );
-    return saved ?? input;
+    const { locationGoodsInStorage: location, ...settings } = input;
+
+    if (location) {
+      // The write below runs as the system, so it checks what the location's
+      // row-level security (resources update) would have.
+      if (!ctx.can({ update: "resources" })) {
+        return ctx.error(
+          "forbidden",
+          "You do not have permission to change this location"
+        );
+      }
+      const ids = [
+        location.inspectionStorageUnitId,
+        location.rejectedStorageUnitId
+      ].filter((id): id is string => !!id);
+      if (ids.length > 0) {
+        const units = await ctx.asCaller.supabase
+          .from("storageUnit")
+          .select("id, locationId, active")
+          .eq("companyId", ctx.company.id)
+          .in("id", ids);
+        if (units.error) {
+          return ctx.error(
+            "internal",
+            "Failed to read storage units",
+            units.error
+          );
+        }
+        const unitById = new Map(units.data.map((unit) => [unit.id, unit]));
+        if (
+          ids.some((id) => unitById.get(id)?.locationId !== location.locationId)
+        ) {
+          return ctx.error("rule", "Choose a storage unit at this location.");
+        }
+        if (ids.some((id) => unitById.get(id)?.active !== true)) {
+          return ctx.error("rule", "Choose an active storage unit.");
+        }
+      }
+    }
+
+    const saved = await ctx.transaction(async (tx) => {
+      if (location) {
+        const row = await service.setLocationGoodsInStorage(tx.asSystem.pg, {
+          companyId: ctx.company.id,
+          locationId: location.locationId,
+          inspectionStorageUnitId: location.inspectionStorageUnitId,
+          rejectedStorageUnitId: location.rejectedStorageUnitId,
+          userId: ctx.auditUserId
+        });
+        if (!row) return tx.error("notFound", "Location not found");
+        if (row === "sameUnit") {
+          return tx.error(
+            "rule",
+            "Use different storage units for inspection and rejected stock."
+          );
+        }
+      }
+      const written = await service.saveCompanySettingsIn(
+        tx.asSystem.pg,
+        ctx.company.id,
+        settings
+      );
+      if (!written) {
+        return tx.error("internal", "Failed to update quality settings");
+      }
+      return input;
+    });
+    if (saved.error) return saved.error;
+    return input;
   }
 });
 
@@ -1949,7 +2030,7 @@ export const createApiKey = defineServiceFn({
     const rawKey = `crbn_${nanoid()}`;
     let created: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
-      created = await upsertApiKey(ctx.asCaller.supabase, {
+      created = await upsertApiKey(ctx.asSystem.supabase, {
         name,
         scopes,
         expiresAt: expiresAt || undefined,
@@ -1985,8 +2066,9 @@ export const updateApiKey = defineServiceFn({
   async run(ctx, { id, name, scopes, expiresAt, rateLimit }) {
     let updated: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
-      updated = await upsertApiKey(ctx.asCaller.supabase, {
+      updated = await upsertApiKey(ctx.asSystem.supabase, {
         id,
+        companyId: ctx.company.id,
         name,
         scopes,
         expiresAt: expiresAt || undefined,
@@ -2019,7 +2101,7 @@ export const revokeApiKey = defineServiceFn({
     const keyHash = await service.invalidateApiKeyCache(id, ctx.company.id);
     let deleted: Awaited<ReturnType<typeof deleteApiKey>>;
     try {
-      deleted = await deleteApiKey(ctx.asCaller.supabase, id);
+      deleted = await deleteApiKey(ctx.asSystem.supabase, id, ctx.company.id);
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
     }
@@ -2381,7 +2463,7 @@ export const transitionSyncOperations = defineServiceFn({
       );
     }
     if (result.failures.length > 0) {
-      logger.warn("Sync operations were not transitioned", {
+      logger.warning("Sync operations were not transitioned", {
         companyId: ctx.company.id,
         to,
         failures: result.failures
@@ -3281,6 +3363,12 @@ export const createItemSerialSequence = defineServiceFn({
       .describe(
         "When this item's units draw their serial numbers. Omit or null to follow the company setting."
       ),
+    printLabelOnCompletion: z
+      .boolean()
+      .optional()
+      .describe(
+        "Print the serial label when the job's last operation completes."
+      ),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -3321,6 +3409,12 @@ export const updateItemSerialSequence = defineServiceFn({
         .optional()
         .describe(
           "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
+        ),
+      printLabelOnCompletion: z
+        .boolean()
+        .optional()
+        .describe(
+          "Print the serial label when the job's last operation completes."
         ),
       id: z
         .string()

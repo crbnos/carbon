@@ -21,7 +21,7 @@ import {
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { LuPlus, LuRotateCcw, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Table } from "~/components";
@@ -40,6 +40,7 @@ import {
   useCompanyToday,
   useCurrencyDecimals,
   useDateFormatter,
+  useDrawerItem,
   usePermissions
 } from "~/hooks";
 import { path } from "~/utils/path";
@@ -96,7 +97,12 @@ const ContractRevenueGrid = ({
   const today = useCompanyToday();
   const resetFetcher = useFetcher<{}>();
   const addMonth = useDisclosure();
-  const [deleting, setDeleting] = useState<MonthRow | null>(null);
+  const {
+    item: deleting,
+    isOpen: isDeleting,
+    open: openDelete,
+    close: closeDelete
+  } = useDrawerItem<MonthRow>();
 
   const contractId = contract.id!;
   const { currencyCode } = contract;
@@ -243,13 +249,13 @@ const ContractRevenueGrid = ({
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         destructive
         disabled={!canEdit}
-        onClick={() => setDeleting(row)}
+        onClick={() => openDelete(row)}
       >
         <MenuIcon icon={<LuTrash />} />
         <Trans>Delete Month</Trans>
       </MenuItem>
     ),
-    [canEdit]
+    [canEdit, openDelete]
   );
 
   const gridColumns = useMemo(
@@ -348,35 +354,35 @@ const ContractRevenueGrid = ({
         </p>
       </div>
 
-      {addMonth.isOpen && (
-        <ContractAmountsModal
-          intent="addMonth"
-          action={action}
-          title={<Trans>Add Month</Trans>}
-          description={
-            <Trans>
-              Each amount starts at what the line has left to recognize.
-            </Trans>
-          }
-          lines={lines}
-          defaults={revenueResiduals}
-          defaultDate={
-            lastMonth ? nextMonth(lastMonth) : (contract.startDate ?? today)
-          }
-          currencyCode={currencyCode}
-          onClose={addMonth.onClose}
-        />
-      )}
+      <ContractAmountsModal
+        open={addMonth.isOpen}
+        intent="addMonth"
+        action={action}
+        title={<Trans>Add Month</Trans>}
+        description={
+          <Trans>
+            Each amount starts at what the line has left to recognize.
+          </Trans>
+        }
+        lines={lines}
+        defaults={revenueResiduals}
+        defaultDate={
+          lastMonth ? nextMonth(lastMonth) : (contract.startDate ?? today)
+        }
+        currencyCode={currencyCode}
+        onClose={addMonth.onClose}
+      />
 
       {deleting && (
         <ConfirmDelete
           action={action}
+          isOpen={isDeleting}
           fields={{ intent: "deleteMonth", periodStart: deleting.periodStart }}
           name={monthLabel(deleting.periodStart)}
           title={t`Delete ${monthLabel(deleting.periodStart)}`}
           text={t`Its revenue goes back to what each line has left to recognize.`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          onCancel={closeDelete}
+          onSubmit={closeDelete}
         />
       )}
     </div>

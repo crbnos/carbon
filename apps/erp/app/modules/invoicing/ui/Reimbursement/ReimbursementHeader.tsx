@@ -157,20 +157,21 @@ const ReimbursementHeader = () => {
         }
       />
 
-      {canPay && payModal.isOpen && (
+      {canPay && (
         <PayExpenseModal
+          open={payModal.isOpen}
           id={reimbursement.id}
           displayId={reimbursement.reimbursementId}
           currencyCode={reimbursement.currencyCode}
           balanceDue={balanceDue}
           defaultBankAccount={routeData?.defaultBankAccount ?? ""}
-          open={payModal.isOpen}
           onClose={payModal.onClose}
         />
       )}
 
-      {canVoid && voidModal.isOpen && (
+      {canVoid && (
         <Confirm
+          isOpen={voidModal.isOpen}
           action={path.to.reimbursementVoid(reimbursement.id)}
           title={t`Void Reimbursement`}
           text={t`Are you sure you want to void ${reimbursement.reimbursementId}? This posts a reversing journal entry and cannot be undone.`}

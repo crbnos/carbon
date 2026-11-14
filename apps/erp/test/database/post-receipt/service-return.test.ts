@@ -83,7 +83,7 @@ databaseTest(
 );
 
 databaseTest(
-  "a Return for Warranty serial opens a Warranty job, its asset goes At Depot, and the serial stays Consumed",
+  "a Return for Warranty serial opens a Warranty job, its asset goes At Depot, and the serial goes from Consumed to Available",
   async () => {
     const f = await serviceReturnFixture();
     try {
@@ -122,7 +122,7 @@ databaseTest(
         .select("status")
         .where("id", "=", serialId)
         .executeTakeFirstOrThrow();
-      expect(serial.status).toBe("Consumed");
+      expect(serial.status).toBe("Available");
       const activity = await f.db
         .selectFrom("trackedActivity")
         .innerJoin(
@@ -158,7 +158,7 @@ databaseTest(
 );
 
 databaseTest(
-  "voiding the receipt before any work cancels the job and returns the RMA to To Receive",
+  "voiding the receipt before any work cancels the job, sets the serial back to Consumed and returns the RMA to To Receive",
   async () => {
     const f = await serviceReturnFixture();
     try {
@@ -183,6 +183,12 @@ databaseTest(
         .where("trackedEntityId", "=", serialId)
         .executeTakeFirstOrThrow();
       expect(asset.status).toBe("In Service");
+      const serial = await f.db
+        .selectFrom("trackedEntity")
+        .select("status")
+        .where("id", "=", serialId)
+        .executeTakeFirstOrThrow();
+      expect(serial.status).toBe("Consumed");
       expect(await f.returnLines(rmaId)).toEqual([
         { id: lineId, quantityReceived: 0, quantityShipped: 0 }
       ]);

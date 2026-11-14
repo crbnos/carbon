@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { shippingMethodValidator } from "~/modules/inventory/inventory.models";
 import type { ShippingCarrier } from "~/modules/inventory/types";
@@ -39,7 +39,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewShippingMethodsRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     name: "",
@@ -49,7 +49,8 @@ export default function NewShippingMethodsRoute() {
   return (
     <ShippingMethodForm
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

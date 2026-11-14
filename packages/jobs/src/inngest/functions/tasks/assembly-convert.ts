@@ -128,8 +128,12 @@ export const assemblyConvertFunction = inngest.createFunction(
           if (!info.error && etag) {
             contentHash = `${etag}-${info.data?.size ?? 0}`;
           }
-        } catch {
+        } catch (error) {
           // optimization only
+          logger.warn(
+            "Could not read the source file info; converting without a content hash",
+            { jobId: job.id, companyId, error }
+          );
         }
 
         return {

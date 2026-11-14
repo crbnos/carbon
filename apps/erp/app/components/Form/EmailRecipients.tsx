@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useField } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { cachedApiQuery, RefreshRate } from "@carbon/query";
 import {
   Badge,
@@ -35,6 +36,8 @@ import { LuUsers } from "react-icons/lu";
 import type { User, UserSelectGroup } from "~/modules/users/types";
 import { isValidEmail } from "~/utils/form";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "email-recipients");
 
 type EmailRecipientsProps = {
   name: string;
@@ -226,8 +229,12 @@ export default function EmailRecipients({
           emails: string[];
         }>(path.to.api.userSelectGroupEmails(option.id));
         addEmails(groupEmails);
-      } catch {
+      } catch (error) {
         // leave the input as-is — selecting again retries
+        logger.warning("Failed to load the group's emails", {
+          groupId: option.id,
+          error
+        });
       }
     }
     setInputValue("");

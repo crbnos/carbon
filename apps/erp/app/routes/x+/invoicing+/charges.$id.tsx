@@ -21,13 +21,14 @@ import {
   Thead,
   Tr,
   useDisclosure,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { formatDate, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm } from "~/components/Modals";
@@ -202,7 +203,7 @@ export default function ChargeDetailRoute() {
   } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const { locale } = useLocale();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.charges);
   const permissions = usePermissions();
   const voidModal = useDisclosure();
   const currencyFormatter = useCurrencyFormatter({
@@ -249,9 +250,9 @@ export default function ChargeDetailRoute() {
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
-        if (!open) navigate(path.to.charges);
+        if (!open) dialog.close();
       }}
     >
       <DrawerContent size="lg">
@@ -401,17 +402,15 @@ export default function ChargeDetailRoute() {
                 <Trans>Void</Trans>
               </Button>
             )}
-            <Button
-              variant="secondary"
-              onClick={() => navigate(path.to.charges)}
-            >
+            <Button variant="secondary" onClick={dialog.close}>
               {t`Close`}
             </Button>
           </HStack>
         </DrawerFooter>
       </DrawerContent>
-      {canVoid && voidModal.isOpen && (
+      {canVoid && (
         <Confirm
+          isOpen={voidModal.isOpen}
           action={path.to.chargeVoid(charge.id)}
           title={t`Void Charge`}
           text={t`Are you sure you want to void ${charge.chargeId}? This posts a reversing journal entry and cannot be undone.`}

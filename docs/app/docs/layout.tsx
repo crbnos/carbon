@@ -130,6 +130,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     label: "Accounting",
     slugs: [
       "accounting",
+      "accounting-workflows",
       "financial-reports",
       "period-close",
       "dimensions",

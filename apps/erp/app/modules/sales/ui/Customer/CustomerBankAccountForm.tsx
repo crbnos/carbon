@@ -13,7 +13,6 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
-  useCloseRoute,
   VStack
 } from "@carbon/react";
 import type { AccountLabelKey, BankCodeLabelKey } from "@carbon/utils";
@@ -51,7 +50,6 @@ const CustomerBankAccountForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
-  const closeRoute = useCloseRoute();
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
 
@@ -90,13 +88,7 @@ const CustomerBankAccountForm = ({
       <ModalDrawer
         open={open}
         onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            if (type === "modal") {
-              onClose?.();
-            } else {
-              closeRoute();
-            }
-          }
+          if (!isOpen) onClose?.();
         }}
       >
         <ModalDrawerContent>

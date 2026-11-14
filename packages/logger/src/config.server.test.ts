@@ -9,6 +9,10 @@ import { runInRequestContext } from "./context.server";
 import { getLogger } from "./logger";
 
 const CONFIGURED = Symbol.for("carbon.logging.configured");
+// The exit-on-uncaught-exception handler must not end the test worker.
+(globalThis as Record<PropertyKey, unknown>)[
+  Symbol.for("carbon.logging.process-handlers")
+] = true;
 
 afterEach(() => {
   delete (globalThis as Record<PropertyKey, unknown>)[CONFIGURED];

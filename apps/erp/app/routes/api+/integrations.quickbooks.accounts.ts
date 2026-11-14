@@ -9,8 +9,11 @@ import {
   ProviderID,
   type QboProvider
 } from "@carbon/ee/accounting";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
+
+const logger = getLogger("erp", "integrations", "quickbooks-accounts");
 
 export const config = {
   runtime: "nodejs"
@@ -59,7 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     return data({ accounts: options });
   } catch (error) {
-    console.error("Failed to fetch QuickBooks Online accounts:", error);
+    logger.error("Failed to fetch QuickBooks Online accounts", { error });
     return data(
       {
         error:

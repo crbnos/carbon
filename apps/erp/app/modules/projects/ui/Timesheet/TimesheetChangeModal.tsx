@@ -32,6 +32,7 @@ export type TimesheetChangeReasons = {
  * refusal keeps the modal open (the save toasts the server's message).
  */
 export function TimesheetChangeModal({
+  open = true,
   label,
   previousHours,
   hours,
@@ -40,6 +41,7 @@ export function TimesheetChangeModal({
   onConfirm,
   onCancel
 }: {
+  open?: boolean;
   /** The charge number and date of the cell. */
   label: string;
   /** The saved hours, or null for a new entry. */
@@ -56,7 +58,7 @@ export function TimesheetChangeModal({
   const after = formatQuantity(hours);
 
   return (
-    <Modal open onOpenChange={(open) => !open && onCancel()}>
+    <Modal open={open} onOpenChange={(open) => !open && onCancel()}>
       <ModalOverlay />
       <ModalContent>
         <ValidatedForm

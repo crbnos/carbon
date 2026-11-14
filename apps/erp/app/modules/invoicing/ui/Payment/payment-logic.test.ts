@@ -688,6 +688,17 @@ describe("applications history", () => {
     ]);
   });
 
+  it("counts a refund of a prior advance as cash applied by the refund", () => {
+    const refunds = [
+      split({
+        targetSalesInvoiceId: null,
+        targetPaymentId: "advance",
+        sourcePaymentId: "advance"
+      })
+    ];
+    expect(unappliedPaymentCash(44, refunds)).toBe(0);
+  });
+
   it("counts only this payment's own cash against its unapplied amount", () => {
     expect(unappliedPaymentCash(44, splits)).toBe(0);
   });

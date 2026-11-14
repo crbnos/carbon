@@ -96,6 +96,10 @@ A customer receipt can also be a <Term id="customer-deposit">customer deposit</T
 
 A **"Refund to Customer"** with **"Refund deposit for"** pays the balance back, and that picker also lists closed documents that still hold a deposit.
 
+The supplier side is the mirror. On a **"Payment to Supplier"**, pick one of that supplier's open purchase orders under **"Prepayment for"**, and its unapplied cash posts to **Supplier Prepayments** (an asset) instead of as an on-account debit inside payables. It is applied like any other credit, but only to invoices of that purchase order. A **"Refund from Supplier"** with **"Refund prepayment for"** takes the balance back, and that picker also lists completed orders that still hold a prepayment.
+
+A refund linked to a deposit or prepayment document automatically consumes that document's remaining advances, oldest first, when you post it. It cannot exceed the outstanding advance, and it cannot also refund a memo. The refund releases each advance's original account and carrying value; any difference from the cash received or paid posts as an exchange gain or loss. The applications and Documents panels link to the original payments. Voiding the refund restores their availability; void the refund before voiding an advance it consumed.
+
 <Screenshot label="Payment from Customer form with the Deposit for picker open, listing the customer's open sales orders and rental agreements" caption="Deposit for narrows to the selected customer's open documents." />
 
 <Callout type="success">

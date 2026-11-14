@@ -19,7 +19,7 @@ import { BATCH_STATUS_COLOR_MAP } from "@carbon/utils";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   LuCalendar,
   LuCirclePlay,
@@ -42,6 +42,7 @@ import {
   useBulkStartToast
 } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import type { action as releaseBatchesAction } from "~/routes/x+/production+/batches.release";
 import {
   bulkSelectionBody,
@@ -126,10 +127,8 @@ const BatchesTable = memo(({ data, count, infinite }: BatchesTableProps) => {
   const { submit: submitBatchIntent } = useBatchRelease();
   // The row action opens the Release dialog (member-job checks + PO choice)
   // instead of releasing straight away.
-  const [releaseTarget, setReleaseTarget] = useState<{
-    id: string;
-    readableId: string;
-  } | null>(null);
+  const releaseTarget = useDrawerItem<{ id: string; readableId: string }>();
+  const { open: openReleaseTarget } = releaseTarget;
 
   // "Delete" is the server fn's dissolve — offered while the batch is Planned or
   // Active (a started batch must be completed; Completed batches are history).
@@ -150,7 +149,7 @@ const BatchesTable = memo(({ data, count, infinite }: BatchesTableProps) => {
           <MenuItem
             disabled={!canUpdate}
             onClick={() =>
-              setReleaseTarget({ id: row.id, readableId: row.readableId })
+              openReleaseTarget({ id: row.id, readableId: row.readableId })
             }
           >
             <MenuIcon icon={<LuCirclePlay />} />
@@ -178,7 +177,7 @@ const BatchesTable = memo(({ data, count, infinite }: BatchesTableProps) => {
         </MenuItem>
       </>
     ),
-    [navigate, canUpdate, submitBatchIntent, t]
+    [navigate, canUpdate, submitBatchIntent, openReleaseTarget, t]
   );
 
   // Bulk dissolve for the selected rows — Planned/Active batches only (a
@@ -531,15 +530,21 @@ const BatchesTable = memo(({ data, count, infinite }: BatchesTableProps) => {
         getRowId={(row) => row.id}
         title={t`Batches`}
       />
-      {releaseTarget && (
+      {releaseTarget.item && (
         <BatchReleaseModal
-          target={{ batchId: releaseTarget.id }}
-          title={t`Release batch ${releaseTarget.readableId}`}
+          key={releaseTarget.key}
+          open={releaseTarget.isOpen}
+          target={{ batchId: releaseTarget.item.id }}
+          title={t`Release batch ${releaseTarget.item.readableId}`}
           confirmLabel={t`Release Batch`}
-          onClose={() => setReleaseTarget(null)}
+          onClose={releaseTarget.close}
           onConfirm={(purchaseOrders) => {
-            submitBatchIntent("release", releaseTarget.id, purchaseOrders);
-            setReleaseTarget(null);
+            submitBatchIntent(
+              "release",
+              releaseTarget.item!.id,
+              purchaseOrders
+            );
+            releaseTarget.close();
           }}
         />
       )}

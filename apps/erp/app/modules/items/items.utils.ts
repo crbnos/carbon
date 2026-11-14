@@ -18,6 +18,16 @@ import { lookupBuyPriceFromMap } from "../shared/shared.utils";
 
 const logger = getLogger("erp", "items");
 
+/**
+ * The units a unit picker offers: the active ones, and the unit already chosen
+ * even when it has been turned off, so a record that uses it still shows it.
+ */
+export function selectableUnitsOfMeasure<
+  T extends { value: string; active: boolean }
+>(units: readonly T[], selected?: string | null): T[] {
+  return units.filter((unit) => unit.active || unit.value === selected);
+}
+
 // getNextRevision — numeric → +1, A → …→ Z → AA, AA → AB, etc.
 export function getNextRevision(maxRevision: string): string {
   if (/^\d+$/.test(maxRevision)) {

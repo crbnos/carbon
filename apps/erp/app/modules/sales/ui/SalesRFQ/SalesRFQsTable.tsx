@@ -311,11 +311,9 @@ const SalesRFQsTable = memo((props: SalesRFQsTableProps) => {
           text={t`Are you sure you want to delete ${selectedSalesRFQ.rfqId!}? This cannot be undone.`}
           onCancel={() => {
             deleteSalesRFQModal.onClose();
-            setSelectedSalesRFQ(null);
           }}
           onSubmit={() => {
             deleteSalesRFQModal.onClose();
-            setSelectedSalesRFQ(null);
           }}
         />
       )}

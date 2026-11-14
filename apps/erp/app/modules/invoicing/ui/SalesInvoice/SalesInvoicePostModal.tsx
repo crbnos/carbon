@@ -70,8 +70,24 @@ type SalesInvoicePostModalProps = {
 };
 
 const SalesInvoicePostModal = ({
-  fetcher,
   isOpen,
+  onClose,
+  ...props
+}: SalesInvoicePostModalProps) => (
+  <Modal
+    open={isOpen}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent>
+      <SalesInvoicePostBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const SalesInvoicePostBody = ({
+  fetcher,
   onClose,
   invoiceId,
   linesToShip,
@@ -79,7 +95,7 @@ const SalesInvoicePostModal = ({
   customerContactId,
   dateDue,
   defaultCc = []
-}: SalesInvoicePostModalProps) => {
+}: Omit<SalesInvoicePostModalProps, "isOpen">) => {
   const { t } = useLingui();
   const hasLinesToShip = linesToShip.length > 0;
   const integrations = useIntegrations();
@@ -164,184 +180,172 @@ const SalesInvoicePostModal = ({
       resolution.state === "missing-email");
 
   return (
-    <Modal
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      method="post"
+      validator={salesInvoicePostValidator}
+      action={path.to.salesInvoicePost(invoiceId)}
+      defaultValues={{
+        notification: notificationType,
+        customerContact: customerContactId ?? undefined,
+        cc: defaultCc,
+        stripeDueDate:
+          isStripe && needsStripeDueDate
+            ? companyToday.add({ days: 30 }).toString()
+            : undefined
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          validator={salesInvoicePostValidator}
-          action={path.to.salesInvoicePost(invoiceId)}
-          defaultValues={{
-            notification: notificationType,
-            customerContact: customerContactId ?? undefined,
-            cc: defaultCc,
-            stripeDueDate:
-              isStripe && needsStripeDueDate
-                ? companyToday.add({ days: 30 }).toString()
-                : undefined
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Post Invoice</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              {hasLinesToShip ? (
-                <>
-                  A shipment will be automatically created and posted for the
-                  items below.
-                </>
-              ) : (
-                <>Are you sure you want to post this invoice?</>
-              )}
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              {hasLinesToShip && (
-                <div className="w-full">
-                  <Table>
-                    <Thead>
-                      <Tr>
-                        <Th>
-                          <Trans>Item</Trans>
-                        </Th>
-                        <Th className="text-right">Quantity</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {linesToShip.map((line) => (
-                        <Tr key={line.itemId} className="text-sm">
-                          <Td>
-                            <VStack spacing={0}>
-                              <span>{line.itemReadableId}</span>
-                              {distinctItemText(
-                                line.itemReadableId,
-                                line.description
-                              ) && (
-                                <span className="text-xs text-muted-foreground">
-                                  {line.description}
-                                </span>
-                              )}
-                            </VStack>
-                          </Td>
-                          <Td className="text-right">{line.quantity}</Td>
-                        </Tr>
-                      ))}
-                    </Tbody>
-                  </Table>
-                </div>
-              )}
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Post Invoice</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          {hasLinesToShip ? (
+            <>
+              A shipment will be automatically created and posted for the items
+              below.
+            </>
+          ) : (
+            <>Are you sure you want to post this invoice?</>
+          )}
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          {hasLinesToShip && (
+            <div className="w-full">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>
+                      <Trans>Item</Trans>
+                    </Th>
+                    <Th className="text-right">Quantity</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {linesToShip.map((line) => (
+                    <Tr key={line.itemId} className="text-sm">
+                      <Td>
+                        <VStack spacing={0}>
+                          <span>{line.itemReadableId}</span>
+                          {distinctItemText(
+                            line.itemReadableId,
+                            line.description
+                          ) && (
+                            <span className="text-xs text-muted-foreground">
+                              {line.description}
+                            </span>
+                          )}
+                        </VStack>
+                      </Td>
+                      <Td className="text-right">{line.quantity}</Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+          )}
 
-              {(canEmail || canStripe) && (
-                <SelectControlled
-                  label={t`Send Via`}
-                  name="notification"
-                  options={[
-                    {
-                      label: "None",
-                      value: "None"
-                    },
-                    ...(canEmail
-                      ? [
-                          {
-                            label: "Email",
-                            value: "Email"
-                          }
-                        ]
-                      : []),
-                    ...(canStripe
-                      ? [
-                          {
-                            label: "Stripe",
-                            value: "Stripe"
-                          }
-                        ]
-                      : [])
-                  ]}
-                  value={notificationType}
-                  onChange={(t) => {
-                    if (t)
-                      setNotificationType(
-                        t.value as "Email" | "Stripe" | "None"
-                      );
-                  }}
-                />
-              )}
+          {(canEmail || canStripe) && (
+            <SelectControlled
+              label={t`Send Via`}
+              name="notification"
+              options={[
+                {
+                  label: "None",
+                  value: "None"
+                },
+                ...(canEmail
+                  ? [
+                      {
+                        label: "Email",
+                        value: "Email"
+                      }
+                    ]
+                  : []),
+                ...(canStripe
+                  ? [
+                      {
+                        label: "Stripe",
+                        value: "Stripe"
+                      }
+                    ]
+                  : [])
+              ]}
+              value={notificationType}
+              onChange={(t) => {
+                if (t)
+                  setNotificationType(t.value as "Email" | "Stripe" | "None");
+              }}
+            />
+          )}
 
-              {(notificationType === "Email" ||
-                notificationType === "Stripe") && (
-                <CustomerContact
-                  name="customerContact"
-                  customer={customerId ?? undefined}
-                  warnIfNoEmail={notificationType === "Email"}
-                  onMissingEmailChange={setContactMissingEmail}
-                  onChange={(contact) => {
-                    setContactId(contact?.id ?? null);
-                    // A different contact may have an email of its own, so
-                    // drop anything typed for the previous one.
-                    setStripeEmail("");
-                    setCommittedEmail(undefined);
-                  }}
-                />
-              )}
-              {isStripe && contactId && (
-                <StripeCustomerPanel
-                  resolution={resolution}
-                  isLoading={isResolving}
-                  email={stripeEmail}
-                  onEmailChange={setStripeEmail}
-                  onEmailCommit={(email) => {
-                    // Re-resolve once an address exists: Stripe may already
-                    // have a customer under it, and linking beats duplicating.
-                    if (email.includes("@")) setCommittedEmail(email);
-                  }}
-                />
-              )}
-              {isStripe && committedEmail && (
-                <Hidden name="stripeContactEmail" value={committedEmail} />
-              )}
-              {isStripe && needsStripeDueDate && (
-                <DatePicker
-                  name="stripeDueDate"
-                  label={t`Stripe Due Date`}
-                  helperText={t`This invoice has no usable due date — choose one for Stripe.`}
-                  minValue={minStripeDueDate}
-                  maxValue={maxStripeDueDate}
-                  isRequired
-                />
-              )}
-              {notificationType === "Email" && (
-                <EmailRecipients name="cc" label={t`CC`} type="employee" />
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <HStack>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                isDisabled={
-                  fetcher.state !== "idle" ||
-                  isStripeBlocked ||
-                  (notificationType === "Email" && contactMissingEmail)
-                }
-                isLoading={fetcher.state !== "idle"}
-                type="submit"
-              >
-                {hasLinesToShip ? "Post and Ship Invoice" : "Post Invoice"}
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          {(notificationType === "Email" || notificationType === "Stripe") && (
+            <CustomerContact
+              name="customerContact"
+              customer={customerId ?? undefined}
+              warnIfNoEmail={notificationType === "Email"}
+              onMissingEmailChange={setContactMissingEmail}
+              onChange={(contact) => {
+                setContactId(contact?.id ?? null);
+                // A different contact may have an email of its own, so
+                // drop anything typed for the previous one.
+                setStripeEmail("");
+                setCommittedEmail(undefined);
+              }}
+            />
+          )}
+          {isStripe && contactId && (
+            <StripeCustomerPanel
+              resolution={resolution}
+              isLoading={isResolving}
+              email={stripeEmail}
+              onEmailChange={setStripeEmail}
+              onEmailCommit={(email) => {
+                // Re-resolve once an address exists: Stripe may already
+                // have a customer under it, and linking beats duplicating.
+                if (email.includes("@")) setCommittedEmail(email);
+              }}
+            />
+          )}
+          {isStripe && committedEmail && (
+            <Hidden name="stripeContactEmail" value={committedEmail} />
+          )}
+          {isStripe && needsStripeDueDate && (
+            <DatePicker
+              name="stripeDueDate"
+              label={t`Stripe Due Date`}
+              helperText={t`This invoice has no usable due date — choose one for Stripe.`}
+              minValue={minStripeDueDate}
+              maxValue={maxStripeDueDate}
+              isRequired
+            />
+          )}
+          {notificationType === "Email" && (
+            <EmailRecipients name="cc" label={t`CC`} type="employee" />
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <HStack>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <Button
+            isDisabled={
+              fetcher.state !== "idle" ||
+              isStripeBlocked ||
+              (notificationType === "Email" && contactMissingEmail)
+            }
+            isLoading={fetcher.state !== "idle"}
+            type="submit"
+          >
+            {hasLinesToShip ? "Post and Ship Invoice" : "Post Invoice"}
+          </Button>
+        </HStack>
+      </ModalFooter>
+    </ValidatedForm>
   );
 };
 

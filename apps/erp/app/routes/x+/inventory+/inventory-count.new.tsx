@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { inventoryCountValidator } from "~/modules/inventory/inventory.models";
 import { InventoryCountForm } from "~/modules/inventory/ui";
@@ -31,12 +31,13 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewInventoryCountRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <InventoryCountForm
       initialValues={{ locationId: "", isBlind: false }}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

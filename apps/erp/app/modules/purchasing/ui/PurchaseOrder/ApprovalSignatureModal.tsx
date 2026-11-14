@@ -20,15 +20,17 @@ import { Trans } from "@lingui/react/macro";
  * approve purchase orders and the approver has none on file.
  */
 export default function ApprovalSignatureModal({
+  open = true,
   onClose
 }: {
+  open?: boolean;
   onClose: () => void;
 }) {
   const openAccountSettings = useAccountSettings((s) => s.open);
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

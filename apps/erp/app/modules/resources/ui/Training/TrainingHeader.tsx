@@ -42,6 +42,11 @@ const TrainingHeader = () => {
   const [nextStatus, setNextStatus] = useState<
     "Active" | "Archived" | "Draft" | null
   >(null);
+  const statusDisclosure = useDisclosure();
+  const openStatusDialog = (next: "Active" | "Archived" | "Draft") => {
+    setNextStatus(next);
+    statusDisclosure.onOpen();
+  };
 
   const statusDialog = {
     Active: {
@@ -69,7 +74,7 @@ const TrainingHeader = () => {
     <>
       <DropdownMenuItem
         disabled={isDraft || !canUpdate}
-        onClick={() => setNextStatus("Draft")}
+        onClick={() => openStatusDialog("Draft")}
       >
         <DropdownMenuIcon icon={<LuLoaderCircle />} />
         <Trans>Reopen</Trans>
@@ -105,7 +110,7 @@ const TrainingHeader = () => {
                   variant="secondary"
                   leftIcon={<LuArchive />}
                   isDisabled={!canUpdate}
-                  onClick={() => setNextStatus("Archived")}
+                  onClick={() => openStatusDialog("Archived")}
                 >
                   <Trans>Archive</Trans>
                 </Button>
@@ -116,7 +121,7 @@ const TrainingHeader = () => {
                 <Button
                   variant="primary"
                   isDisabled={!canUpdate}
-                  onClick={() => setNextStatus("Active")}
+                  onClick={() => openStatusDialog("Active")}
                 >
                   <Trans>Publish</Trans>
                 </Button>
@@ -132,28 +137,27 @@ const TrainingHeader = () => {
           text={statusDialog[nextStatus].text}
           confirmText={statusDialog[nextStatus].confirmText}
           confirmVariant={nextStatus === "Archived" ? "destructive" : undefined}
-          onCancel={() => setNextStatus(null)}
-          onSubmit={() => setNextStatus(null)}
+          isOpen={statusDisclosure.isOpen}
+          onCancel={statusDisclosure.onClose}
+          onSubmit={statusDisclosure.onClose}
         >
           <input type="hidden" name="ids" value={id} />
           <input type="hidden" name="field" value="status" />
           <input type="hidden" name="value" value={nextStatus} />
         </Confirm>
       )}
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteTraining(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={routeData?.training?.name ?? "training"}
-          text={t`Are you sure you want to delete ${routeData?.training?.name}? This cannot be undone.`}
-          onCancel={() => {
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteTraining(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={routeData?.training?.name ?? "training"}
+        text={t`Are you sure you want to delete ${routeData?.training?.name}? This cannot be undone.`}
+        onCancel={() => {
+          deleteDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteDisclosure.onClose();
+        }}
+      />
     </>
   );
 };

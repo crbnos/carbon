@@ -3,9 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { DocumentEditType } from "@carbon/documents/template";
-import { DropdownMenuIcon, DropdownMenuItem } from "@carbon/react";
+import {
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { lazy, type ReactNode, Suspense, useState } from "react";
+import { lazy, type ReactNode, Suspense } from "react";
 import { LuFilePen } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { DOCUMENT_EDIT_RECORDS } from "~/modules/settings/settings.utils";
@@ -23,21 +27,23 @@ export function useDocumentEditModal(
   documentId: string | undefined
 ): { canEdit: boolean; openEditor: () => void; modal: ReactNode } {
   const permissions = usePermissions();
-  const [open, setOpen] = useState(false);
+  const editor = useDisclosure();
   const canEdit =
     Boolean(documentId) &&
     permissions.can("update", DOCUMENT_EDIT_RECORDS[documentType].module);
 
   return {
     canEdit,
-    openEditor: () => setOpen(true),
+    openEditor: editor.onOpen,
     modal:
-      canEdit && documentId && open ? (
+      canEdit && documentId && editor.openCount > 0 ? (
         <Suspense fallback={null}>
           <DocumentEditModal
+            key={editor.openCount}
             documentType={documentType}
             documentId={documentId}
-            onClose={() => setOpen(false)}
+            open={editor.isOpen}
+            onClose={editor.onClose}
           />
         </Suspense>
       ) : null

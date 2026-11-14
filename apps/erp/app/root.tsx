@@ -155,6 +155,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     STRIPE_CONNECT_ENABLED,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
+    TENANT_TYPE,
     DEFAULT_LANGUAGE,
     VERCEL_ENV,
     VERCEL_URL,
@@ -190,6 +191,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         STRIPE_CONNECT_ENABLED,
         SUPABASE_ANON_KEY,
         SUPABASE_URL,
+        TENANT_TYPE,
         VERCEL_ENV,
         VERCEL_URL,
         XERO_CLIENT_ID

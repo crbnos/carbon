@@ -82,6 +82,7 @@ export type TrackedEntitySelection = {
 export type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 export type TrackedEntityPickerProps = {
+  open?: boolean;
   /** Serial = qty 1 per lot; Batch = pick a partial quantity. */
   trackingType: "Serial" | "Batch";
   /** Control size: ERP passes "md" (default); MES passes "lg" (touch UI). */
@@ -149,6 +150,20 @@ function sortEntities(
 }
 
 export function TrackedEntityPicker({
+  open = true,
+  onClose,
+  ...props
+}: TrackedEntityPickerProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalContent>
+        <TrackedEntityPickerBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function TrackedEntityPickerBody({
   trackingType,
   entities,
   quantityRequired,
@@ -160,7 +175,7 @@ export function TrackedEntityPicker({
   defaultOrder = "Default",
   onSelect,
   onClose
-}: TrackedEntityPickerProps) {
+}: Omit<TrackedEntityPickerProps, "open">) {
   const { t } = useLingui();
   const [activeTab, setActiveTab] = useState("scan");
   const [order, setOrder] = useState<TrackedEntityPickOrder>(defaultOrder);
@@ -213,153 +228,151 @@ export function TrackedEntityPicker({
   const matchedId = scanMatch?.readableId ?? scanMatch?.trackedEntityId;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>{title ?? t`Pick tracked item`}</ModalTitle>
-          {description && <ModalDescription>{description}</ModalDescription>}
-        </ModalHeader>
-        <ModalBody>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="scan" className="leading-none">
-                <LuQrCode className="mr-2 shrink-0" />
-                {t`Scan`}
-              </TabsTrigger>
-              <TabsTrigger value="select" className="leading-none">
-                <LuList className="mr-2 shrink-0" />
-                {t`Select`}
-              </TabsTrigger>
-            </TabsList>
+    <>
+      <ModalHeader>
+        <ModalTitle>{title ?? t`Pick tracked item`}</ModalTitle>
+        {description && <ModalDescription>{description}</ModalDescription>}
+      </ModalHeader>
+      <ModalBody>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="scan" className="leading-none">
+              <LuQrCode className="mr-2 shrink-0" />
+              {t`Scan`}
+            </TabsTrigger>
+            <TabsTrigger value="select" className="leading-none">
+              <LuList className="mr-2 shrink-0" />
+              {t`Select`}
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="scan" className="mt-2">
-              <VStack spacing={4}>
-                <InputGroup>
-                  <Input
-                    autoFocus
-                    size={size}
-                    placeholder={t`Scan or enter tracking number`}
-                    aria-label={t`Tracking number`}
-                    aria-invalid={scan && !scanMatch ? true : undefined}
-                    aria-describedby={scan ? scanStatusId : undefined}
-                    value={scan}
-                    onChange={(e) => setScan(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        const match = matchScan(e.currentTarget.value);
-                        if (match) {
-                          confirm(match);
-                          setScan("");
-                        }
+          <TabsContent value="scan" className="mt-2">
+            <VStack spacing={4}>
+              <InputGroup>
+                <Input
+                  autoFocus
+                  size={size}
+                  placeholder={t`Scan or enter tracking number`}
+                  aria-label={t`Tracking number`}
+                  aria-invalid={scan && !scanMatch ? true : undefined}
+                  aria-describedby={scan ? scanStatusId : undefined}
+                  value={scan}
+                  onChange={(e) => setScan(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const match = matchScan(e.currentTarget.value);
+                      if (match) {
+                        confirm(match);
+                        setScan("");
                       }
-                    }}
-                  />
-                  <InputRightElement>
-                    {scan &&
-                      (scanMatch ? (
-                        <LuCheck aria-hidden className="text-emerald-500" />
-                      ) : (
-                        <LuX aria-hidden className="text-red-500" />
-                      ))}
-                  </InputRightElement>
-                </InputGroup>
-                {/* The icon above says it by colour; this says it in words. */}
-                <span id={scanStatusId} role="status" className="sr-only">
-                  {scan
-                    ? scanMatch
-                      ? t`Match found: ${matchedId}`
-                      : t`No match`
-                    : ""}
-                </span>
-                {scanMatch && isBlocked(scanMatch) && (
-                  <p className="text-sm text-red-600">
-                    {t`This lot is expired and can't be picked.`}
-                  </p>
-                )}
-              </VStack>
-            </TabsContent>
-
-            <TabsContent value="select" className="mt-2">
-              <VStack spacing={3} className="w-full">
-                <div className="w-full">
-                  <Combobox
-                    asButton
-                    size={size}
-                    value={order}
-                    options={orderOptions}
-                    onChange={(value) =>
-                      setOrder((value as TrackedEntityPickOrder) ?? "Default")
                     }
-                  />
-                </div>
-                <ScrollArea className="max-h-[44dvh] w-full">
-                  <VStack spacing={2} className="w-full">
-                    {ordered.length === 0 ? (
-                      <p className="w-full text-center text-muted-foreground text-xs py-6">
-                        {t`No available tracked entities found`}
-                      </p>
+                  }}
+                />
+                <InputRightElement>
+                  {scan &&
+                    (scanMatch ? (
+                      <LuCheck aria-hidden className="text-emerald-500" />
                     ) : (
-                      ordered.map((e) => {
-                        const exp = expiryState(
-                          e.expirationDate,
-                          nearExpiryWarningDays
-                        );
-                        const blocked = isBlocked(e);
-                        return (
-                          <HStack
-                            key={e.trackedEntityId}
-                            className={cn(
-                              "w-full justify-between p-3 border rounded-lg",
-                              blocked && "opacity-50"
-                            )}
-                          >
-                            <VStack spacing={0} className="min-w-0 items-start">
-                              <p className="text-base font-medium truncate">
-                                {e.readableId ?? e.trackedEntityId}
-                              </p>
-                              <HStack
-                                spacing={2}
-                                className="text-xs text-muted-foreground"
-                              >
-                                <span className="tabular-nums">
-                                  {e.availableQuantity} {t`available`}
-                                </span>
-                                {e.storageUnitName && (
-                                  <span>· {e.storageUnitName}</span>
-                                )}
-                                {e.expirationDate && (
-                                  <ExpiryBadge
-                                    state={exp}
-                                    date={e.expirationDate}
-                                  />
-                                )}
-                              </HStack>
-                            </VStack>
-                            <Button
-                              size={size}
-                              variant="secondary"
-                              isDisabled={blocked}
-                              onClick={() => confirm(e)}
+                      <LuX aria-hidden className="text-red-500" />
+                    ))}
+                </InputRightElement>
+              </InputGroup>
+              {/* The icon above says it by colour; this says it in words. */}
+              <span id={scanStatusId} role="status" className="sr-only">
+                {scan
+                  ? scanMatch
+                    ? t`Match found: ${matchedId}`
+                    : t`No match`
+                  : ""}
+              </span>
+              {scanMatch && isBlocked(scanMatch) && (
+                <p className="text-sm text-red-600">
+                  {t`This lot is expired and can't be picked.`}
+                </p>
+              )}
+            </VStack>
+          </TabsContent>
+
+          <TabsContent value="select" className="mt-2">
+            <VStack spacing={3} className="w-full">
+              <div className="w-full">
+                <Combobox
+                  asButton
+                  size={size}
+                  value={order}
+                  options={orderOptions}
+                  onChange={(value) =>
+                    setOrder((value as TrackedEntityPickOrder) ?? "Default")
+                  }
+                />
+              </div>
+              <ScrollArea className="max-h-[44dvh] w-full">
+                <VStack spacing={2} className="w-full">
+                  {ordered.length === 0 ? (
+                    <p className="w-full text-center text-muted-foreground text-xs py-6">
+                      {t`No available tracked entities found`}
+                    </p>
+                  ) : (
+                    ordered.map((e) => {
+                      const exp = expiryState(
+                        e.expirationDate,
+                        nearExpiryWarningDays
+                      );
+                      const blocked = isBlocked(e);
+                      return (
+                        <HStack
+                          key={e.trackedEntityId}
+                          className={cn(
+                            "w-full justify-between p-3 border rounded-lg",
+                            blocked && "opacity-50"
+                          )}
+                        >
+                          <VStack spacing={0} className="min-w-0 items-start">
+                            <p className="text-base font-medium truncate">
+                              {e.readableId ?? e.trackedEntityId}
+                            </p>
+                            <HStack
+                              spacing={2}
+                              className="text-xs text-muted-foreground"
                             >
-                              {t`Pick`}
-                            </Button>
-                          </HStack>
-                        );
-                      })
-                    )}
-                  </VStack>
-                </ScrollArea>
-              </VStack>
-            </TabsContent>
-          </Tabs>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" size={size} onClick={onClose}>
-            {t`Cancel`}
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+                              <span className="tabular-nums">
+                                {e.availableQuantity} {t`available`}
+                              </span>
+                              {e.storageUnitName && (
+                                <span>· {e.storageUnitName}</span>
+                              )}
+                              {e.expirationDate && (
+                                <ExpiryBadge
+                                  state={exp}
+                                  date={e.expirationDate}
+                                />
+                              )}
+                            </HStack>
+                          </VStack>
+                          <Button
+                            size={size}
+                            variant="secondary"
+                            isDisabled={blocked}
+                            onClick={() => confirm(e)}
+                          >
+                            {t`Pick`}
+                          </Button>
+                        </HStack>
+                      );
+                    })
+                  )}
+                </VStack>
+              </ScrollArea>
+            </VStack>
+          </TabsContent>
+        </Tabs>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" size={size} onClick={onClose}>
+          {t`Cancel`}
+        </Button>
+      </ModalFooter>
+    </>
   );
 }
 

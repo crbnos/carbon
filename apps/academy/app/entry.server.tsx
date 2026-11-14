@@ -2,18 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import "@carbon/logger/configure.server";
 import { POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
 import { installFormBodyGuard } from "@carbon/auth/middleware/form-body.server";
 import {
   getNonce,
   setStrictContentSecurityPolicy
 } from "@carbon/auth/middleware/security.server";
-import { ensureLoggingConfigured } from "@carbon/logger/config.server";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 import type { EntryContext, RouterContextProvider } from "react-router";
 
-ensureLoggingConfigured();
 installFormBodyGuard();
+
+export { handleServerError as handleError } from "@carbon/logger/middleware.server";
 
 export const streamTimeout = 5_000;
 

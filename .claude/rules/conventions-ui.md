@@ -192,6 +192,46 @@ codebase settled on:
   (`apps/erp/app/utils/meta.ts`; MES `apps/mes/app/utils/meta.ts`), and every
   page has one `<h1>` (`RecordHeader`'s title is it on record pages).
 
+## Modals and Drawers
+
+A dialog stays mounted and closes through its `open` prop; Radix then plays the
+closing animation and unmounts the content. Follow these, in this order. They
+use what Radix and React Router already provide; do not add timers, DOM lookups
+or counters to get the same effect.
+
+1. **Pass the condition as `open` / `isOpen`.** Never `{x.isOpen && <Dialog />}`
+   or `if (!isOpen) return null`: both remove the dialog before it can animate.
+2. **Per-open state goes inside the content.** Radix unmounts
+   `ModalContent` / `DrawerContent` on close, so anything in it starts fresh on
+   each open. Keep hooks, fetchers and effects in a body component rendered
+   there; the exported component is a thin shell (`ConfirmDelete.tsx`,
+   `ContractLineBuildModal.tsx`). No `key`, no guard, no `if (open)` effect.
+3. **A dialog that shows a record** keeps it until the next open:
+   `{item && <D open={isOpen} item={item} />}`, and do not clear `item` on close
+   (`useDrawerItem`).
+4. **A route rendered as a dialog** uses `useRouteDialog()` and passes
+   `open={dialog.open}` / `onClose={dialog.close}`.
+5. **`key` means record identity** (`key={record.id}`, when the record can change
+   while the dialog stays open). A `key` that counts opens
+   (`{d.openCount > 0 && <D key={d.openCount} open={d.isOpen} />}`) is the
+   fallback for state that cannot move into the content: a `ModalCard` form,
+   whose state is shared with its card mode, and a dialog whose `Modal` or
+   `ModalContent` props read that state (`size`, `onOpenChange`,
+   `onCloseAutoFocus`).
+6. **A dialog that closes as it submits keeps its fetcher in the shell when the
+   action redirects.** React Router does not follow a redirect for a fetcher
+   that has unmounted (`DocumentSwitchModal`). Close from the fetcher's result
+   instead when you can (`ConfigurationEditor`).
+7. **On phones every modal and drawer is a bottom sheet.** `ModalContent` and
+   `DrawerContent` render a `BottomSheetContent` there (drag down to close),
+   keeping the modal's or drawer's own header, body and footer, so a call site
+   writes a plain `Modal` / `Drawer` (account settings and search are plain
+   modals). Use `BottomSheet` directly only for UI that exists on phones alone
+   (the profile sheet, menus). A sheet drags down from its grabber or its
+   header; a control in the header does not start a drag. A dialog that keeps
+   itself open on a press outside (`onInteractOutside` calls `preventDefault`)
+   also stays open on a drag: the sheet springs back.
+
 ## Popovers inside Drawers / Dialogs
 
 `Combobox`, `CreatableCombobox`, `CreatableMultiSelect`, `MultiSelect`, and
@@ -281,6 +321,31 @@ pseudo-element if the visual is smaller.
   `tailwindcss-animate`, `animation-timing-function`. Don't hand-type
   `ease-[cubic-bezier(...)]`. Motion props take the array form,
   `ease: [0.23, 1, 0.32, 1]`.
+
+- **Motion scale — use these, not new values.** Pick the row for the element;
+  the shared components already follow it, so copy them rather than
+  re-deriving numbers.
+
+  | Element | Enter | Exit | Easing |
+  |---|---|---|---|
+  | Button press, small state toggle | 100–150ms | same | `ease-out` (`active:scale-[0.98]`) |
+  | Tooltip, small popover | 150ms | same | `ease-out` |
+  | Dropdown, select, popover, context menu, hover card | 150ms (the `animate-in` default) | same | `ease-out`, scaling from the trigger (`origin-(--radix-…-transform-origin)`) |
+  | Modal (`Modal`, `ModalDrawer` as modal) | 200ms | 150ms | `ease-out`, `zoom-in-95` + fade; stays centred |
+  | Drawer / bottom sheet (`Drawer`, `BottomSheet`), and every modal and drawer on a phone | 300ms | 200ms | `ease-drawer`, slide in and out from the same edge; on a phone `ModalContent` / `DrawerContent` render `BottomSheetContent`, so they move as one sheet |
+  | Moving something already on screen | 200–300ms | — | `ease-in-out` |
+
+  Rules behind it: exit is faster than enter; never `ease-in` on UI; never
+  `scale(0)` (start at 0.95 with opacity); keep UI motion under 300ms except
+  drawers; don't animate what a keyboard shortcut opens (`data-instant`);
+  reduced motion keeps fades and drops movement (handled in `theme.css`).
+  A Radix dialog's parts must close in the same time: Radix removes the
+  portal when the outer element (the modal backdrop, the drawer's portal div)
+  ends its animation.
+  Put a duration on the state it is for (`data-[state=open]:duration-300
+  data-[state=closed]:duration-200`): `animate-in` / `animate-out` set their
+  own 150ms duration, and a plain `duration-*` loses to them — the drawer's
+  "300ms" open ran at 150ms until it moved onto the state variant.
 
 ```typescript
 // Preferred

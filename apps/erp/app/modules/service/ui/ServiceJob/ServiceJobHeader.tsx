@@ -455,8 +455,9 @@ const ServiceJobHeader = () => {
           </>
         }
       />
-      {sendModal.isOpen && job && (
+      {job && (
         <EstimateSendModal
+          open={sendModal.isOpen}
           jobId={jobId}
           serviceJobId={job.serviceJobId}
           customerId={job.customerId}
@@ -464,92 +465,88 @@ const ServiceJobHeader = () => {
           onClose={sendModal.onClose}
         />
       )}
-      {completeModal.isOpen && (
-        <ServiceJobActionModal
-          title={<Trans>Complete {job?.serviceJobId}</Trans>}
-          description={
-            hasRunningClock ? (
-              <Trans>A clock is still running on this job.</Trans>
-            ) : (
-              <Trans>
-                The job closes. Its time and parts cannot change until it is
-                reopened.
-              </Trans>
-            )
-          }
-          submitLabel={
-            hasRunningClock ? (
-              <Trans>Stop clock and complete</Trans>
-            ) : (
-              <Trans>Complete</Trans>
-            )
-          }
-          needsFixedPrice={needsFixedPrice}
-          isPending={isCompleting}
-          onConfirm={confirmComplete}
-          onClose={completeModal.onClose}
-        />
-      )}
-      {invoiceModal.isOpen && (
-        <ServiceJobActionModal
-          title={<Trans>Invoice {job?.serviceJobId}</Trans>}
-          description={
+      <ServiceJobActionModal
+        open={completeModal.isOpen}
+        title={<Trans>Complete {job?.serviceJobId}</Trans>}
+        description={
+          hasRunningClock ? (
+            <Trans>A clock is still running on this job.</Trans>
+          ) : (
             <Trans>
-              A draft sales invoice is created for the job, and the job becomes
-              Invoiced.
+              The job closes. Its time and parts cannot change until it is
+              reopened.
             </Trans>
-          }
-          submitLabel={<Trans>Create Invoice</Trans>}
-          needsFixedPrice={needsFixedPrice}
-          isPending={invoiceFetcher.state !== "idle"}
-          onConfirm={confirmInvoice}
-          onClose={invoiceModal.onClose}
-        />
-      )}
-      {cancelModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) cancelModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Cancel {job?.serviceJobId}</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  The job closes without work. A job with time entries or issued
-                  parts cannot be cancelled.
-                </Trans>
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={cancelModal.onClose}>
-                <Trans>Keep Job</Trans>
-              </Button>
-              <statusFetcher.Form
-                method="post"
-                action={path.to.serviceJobStatus(jobId)}
+          )
+        }
+        submitLabel={
+          hasRunningClock ? (
+            <Trans>Stop clock and complete</Trans>
+          ) : (
+            <Trans>Complete</Trans>
+          )
+        }
+        needsFixedPrice={needsFixedPrice}
+        isPending={isCompleting}
+        onConfirm={confirmComplete}
+        onClose={completeModal.onClose}
+      />
+      <ServiceJobActionModal
+        open={invoiceModal.isOpen}
+        title={<Trans>Invoice {job?.serviceJobId}</Trans>}
+        description={
+          <Trans>
+            A draft sales invoice is created for the job, and the job becomes
+            Invoiced.
+          </Trans>
+        }
+        submitLabel={<Trans>Create Invoice</Trans>}
+        needsFixedPrice={needsFixedPrice}
+        isPending={invoiceFetcher.state !== "idle"}
+        onConfirm={confirmInvoice}
+        onClose={invoiceModal.onClose}
+      />
+      <Modal
+        open={cancelModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) cancelModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Cancel {job?.serviceJobId}</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                The job closes without work. A job with time entries or issued
+                parts cannot be cancelled.
+              </Trans>
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={cancelModal.onClose}>
+              <Trans>Keep Job</Trans>
+            </Button>
+            <statusFetcher.Form
+              method="post"
+              action={path.to.serviceJobStatus(jobId)}
+            >
+              <input type="hidden" name="action" value="Cancel" />
+              <Button
+                type="submit"
+                variant="destructive"
+                isDisabled={statusFetcher.state !== "idle"}
+                isLoading={statusFetcher.state !== "idle"}
               >
-                <input type="hidden" name="action" value="Cancel" />
-                <Button
-                  type="submit"
-                  variant="destructive"
-                  isDisabled={statusFetcher.state !== "idle"}
-                  isLoading={statusFetcher.state !== "idle"}
-                >
-                  <Trans>Cancel Job</Trans>
-                </Button>
-              </statusFetcher.Form>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+                <Trans>Cancel Job</Trans>
+              </Button>
+            </statusFetcher.Form>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 };

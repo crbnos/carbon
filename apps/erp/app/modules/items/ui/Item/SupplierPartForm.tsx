@@ -126,6 +126,7 @@ type SupplierPartFormProps = {
   selectItem?: boolean;
   // Items the picker leaves out: those the supplier already has a supplier part for.
   excludeItemIds?: string[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -137,6 +138,7 @@ const SupplierPartForm = ({
   purchasingHistory = [],
   selectItem = false,
   excludeItemIds,
+  open = true,
   onClose
 }: SupplierPartFormProps) => {
   const permissions = usePermissions();
@@ -231,7 +233,7 @@ const SupplierPartForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

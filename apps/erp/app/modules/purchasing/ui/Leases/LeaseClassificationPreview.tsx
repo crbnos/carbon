@@ -18,10 +18,9 @@ import { formatPercent } from "@carbon/utils";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
-import { useState } from "react";
 import { LuCircleCheck, LuCircleMinus } from "react-icons/lu";
 import Money from "~/components/Money";
-import { usePermissions } from "~/hooks";
+import { useDrawerItem, usePermissions } from "~/hooks";
 import {
   LeaseClassificationOverrideModal,
   RemoveClassificationOverride
@@ -108,7 +107,7 @@ export function LeaseClassificationPreview({
   const permissions = usePermissions();
   const label = useLesseeClassificationLabel();
   const description = useLesseeClassificationDescription();
-  const [overriding, setOverriding] = useState<AssetPreview | null>(null);
+  const overriding = useDrawerItem<AssetPreview>();
 
   const { assets, errors } = assetClassificationPreviews(
     lease,
@@ -354,7 +353,7 @@ export function LeaseClassificationPreview({
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => setOverriding(asset)}
+                      onClick={() => overriding.open(asset)}
                     >
                       <Trans>Override</Trans>
                     </Button>
@@ -366,12 +365,13 @@ export function LeaseClassificationPreview({
         </Tbody>
       </Table>
 
-      {overriding && lease.id && (
+      {overriding.item && lease.id && (
         <LeaseClassificationOverrideModal
           leaseId={lease.id}
-          line={overriding.line}
-          classification={overriding.preview.applied}
-          onClose={() => setOverriding(null)}
+          line={overriding.item.line}
+          classification={overriding.item.preview.applied}
+          open={overriding.isOpen}
+          onClose={overriding.close}
         />
       )}
     </div>

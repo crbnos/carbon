@@ -43,6 +43,7 @@ const PRESERVED_TABLES = new Set([
   "returnReason",
   "scrapReason",
   "sequence",
+  "supplierStage",
   "unitOfMeasure",
   "userToCompany",
   // Accounting records with trigger-enforced immutability (Posted journals
@@ -117,7 +118,9 @@ const PARENT_CHECK_TABLES = [
   "trainingAssignment",
   // projectCostRelief_source_check: a Cost Relief schedule row OR a project
   // close journal (journal is preserved, the schedule row is not)
-  "projectCostRelief"
+  "projectCostRelief",
+  // shipmentFixedAssetLine_source_check: a sales order line OR a rental line
+  "shipmentFixedAssetLine"
 ];
 
 type ForeignKey = {

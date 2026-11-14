@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { Database } from "@carbon/database";
 import type { ApprovalRequest } from "@carbon/ee/approvals";
 import { getPendingApprovalsForApprover } from "@carbon/ee/approvals.server";
 import { useLoaderQuery } from "@carbon/query";
@@ -60,7 +61,8 @@ import {
   LuFile,
   LuInbox,
   LuLayoutList,
-  LuPackageSearch
+  LuPackageSearch,
+  LuShieldAlert
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
@@ -144,12 +146,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .map((approval: ApprovalRequest) => approval.documentId!)
       .filter((id): id is string => !!id) ?? [];
 
+  // Purchase order force deletes waiting for this Admin (another Admin asked).
+  const approvalForceDeleteIds =
+    pendingApprovals.data
+      ?.filter(
+        (approval: ApprovalRequest) =>
+          approval.documentType === "purchaseOrderForceDelete" &&
+          approval.documentId
+      )
+      .map((approval: ApprovalRequest) => approval.documentId!)
+      .filter((id): id is string => !!id) ?? [];
+
+  // Invoice, receipt and payment force deletes waiting for this Admin.
+  const approvalDocumentForceDeleteIds =
+    pendingApprovals.data
+      ?.filter(
+        (approval: ApprovalRequest) =>
+          approval.documentType === "documentForceDelete" && approval.documentId
+      )
+      .map((approval: ApprovalRequest) => approval.documentId!)
+      .filter((id): id is string => !!id) ?? [];
+
   const [
     openPurchaseOrders,
     openPurchaseInvoices,
     openSupplierQuotes,
     purchaseOrdersNeedingApproval,
-    suppliersNeedingApproval
+    suppliersNeedingApproval,
+    forceDeletesNeedingApproval,
+    documentForceDeletesNeedingApproval
   ] = await Promise.all([
     client
       .from("purchaseOrder")
@@ -192,6 +217,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .eq("supplierStatus", "Pending")
           .eq("companyId", companyId)
           .in("id", approvalSupplierIds)
+      : { data: [], error: null },
+    // Service role: the request table is serviceOnly.
+    approvalForceDeleteIds.length > 0
+      ? serviceRole
+          .from("purchaseOrderForceDeleteRequest")
+          .select(
+            "id, purchaseOrderId, purchaseOrderReadableId, requestedBy, createdAt, purchaseOrder(supplierId)"
+          )
+          .in("status", ["Pending", "Approving"])
+          .eq("companyId", companyId)
+          .in("id", approvalForceDeleteIds)
+      : { data: [], error: null },
+    approvalDocumentForceDeleteIds.length > 0
+      ? serviceRole
+          .from("forceDeleteRequest")
+          .select("id, documentType, documentId, documentReadableId")
+          .in("status", ["Pending", "Approving"])
+          .eq("companyId", companyId)
+          .in("id", approvalDocumentForceDeleteIds)
       : { data: [], error: null }
   ]);
 
@@ -207,6 +251,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     openPurchaseInvoices: openPurchaseInvoices,
     purchaseOrdersNeedingApproval: purchaseOrdersNeedingApproval,
     suppliersNeedingApproval: suppliersNeedingApproval,
+    forceDeletesNeedingApproval: forceDeletesNeedingApproval,
+    documentForceDeletesNeedingApproval: documentForceDeletesNeedingApproval,
     assignedToMe: assignedToMePromise
   };
 }
@@ -218,6 +264,8 @@ export default function PurchaseDashboard() {
     openPurchaseInvoices,
     purchaseOrdersNeedingApproval,
     suppliersNeedingApproval,
+    forceDeletesNeedingApproval,
+    documentForceDeletesNeedingApproval,
     assignedToMe
   } = useLoaderData<typeof loader>();
 
@@ -688,6 +736,29 @@ export default function PurchaseDashboard() {
                     suppliersNeedingApproval={
                       suppliersNeedingApproval.data ?? []
                     }
+                    forceDeletesNeedingApproval={[
+                      ...(forceDeletesNeedingApproval.data ?? []).map(
+                        (request) => ({
+                          id: request.id,
+                          readableId: request.purchaseOrderReadableId,
+                          to: request.purchaseOrderId
+                            ? path.to.purchaseOrder(request.purchaseOrderId)
+                            : null,
+                          supplierId: request.purchaseOrder?.supplierId ?? null
+                        })
+                      ),
+                      ...(documentForceDeletesNeedingApproval.data ?? []).map(
+                        (request) => ({
+                          id: request.id,
+                          readableId: request.documentReadableId,
+                          to: forceDeleteDocumentPath(
+                            request.documentType,
+                            request.documentId
+                          ),
+                          supplierId: null
+                        })
+                      )
+                    ]}
                   />
                 )}
               </Await>
@@ -701,14 +772,45 @@ export default function PurchaseDashboard() {
 
 type AssignedDocument = {
   id: string;
-  type: "purchaseOrder" | "supplierQuote" | "purchaseInvoice" | "supplier";
+  type:
+    | "purchaseOrder"
+    | "supplierQuote"
+    | "purchaseInvoice"
+    | "supplier"
+    | "purchaseOrderForceDelete";
   [key: string]: unknown;
 };
+
+type ForceDeleteApproval = {
+  id: string;
+  readableId: string;
+  /** The record's page; null once a purchase order is gone. */
+  to: string | null;
+  supplierId: string | null;
+};
+
+/** A force deleted document's page, by its type. */
+function forceDeleteDocumentPath(
+  documentType: Database["public"]["Enums"]["forceDeleteDocumentType"],
+  documentId: string
+): string {
+  switch (documentType) {
+    case "purchaseInvoice":
+      return path.to.purchaseInvoiceDetails(documentId);
+    case "salesInvoice":
+      return path.to.salesInvoiceDetails(documentId);
+    case "receipt":
+      return path.to.receiptDetails(documentId);
+    case "payment":
+      return path.to.payment(documentId);
+  }
+}
 
 function AssignedDocumentsTable({
   assignedDocs,
   purchaseOrdersNeedingApproval,
-  suppliersNeedingApproval
+  suppliersNeedingApproval,
+  forceDeletesNeedingApproval
 }: {
   assignedDocs: Array<{ id: string; type: string; [key: string]: unknown }>;
   purchaseOrdersNeedingApproval: Array<{
@@ -724,6 +826,7 @@ function AssignedDocumentsTable({
     name: string;
     supplierStatus: string | null;
   }>;
+  forceDeletesNeedingApproval: ForceDeleteApproval[];
 }) {
   // Merge assigned docs with purchase orders needing approval
   // Deduplicate: if a PO is both assigned and needs approval, prefer the assigned version
@@ -745,7 +848,13 @@ function AssignedDocumentsTable({
     type: "supplier" as const
   }));
 
+  const forceDeleteDocs = forceDeletesNeedingApproval.map((doc) => ({
+    ...doc,
+    type: "purchaseOrderForceDelete" as const
+  }));
+
   const allDocs = [
+    ...forceDeleteDocs,
     ...assignedDocs,
     ...approvalDocs,
     ...supplierDocs
@@ -803,9 +912,40 @@ function DocumentRow({ doc }: { doc: AssignedDocument }) {
           }
         />
       );
+    case "purchaseOrderForceDelete":
+      return (
+        <ForceDeleteApprovalRow doc={doc as unknown as ForceDeleteApproval} />
+      );
     default:
       return null;
   }
+}
+
+function ForceDeleteApprovalRow({ doc }: { doc: ForceDeleteApproval }) {
+  return (
+    <Tr>
+      <Td>
+        {doc.to ? (
+          <Hyperlink className="max-md:min-h-11" to={doc.to}>
+            <HStack spacing={1}>
+              <LuShieldAlert className="size-4" />
+              <span>{doc.readableId}</span>
+            </HStack>
+          </Hyperlink>
+        ) : (
+          <span>{doc.readableId}</span>
+        )}
+      </Td>
+      <Td>
+        <Badge variant="red">
+          <Trans>Force delete</Trans>
+        </Badge>
+      </Td>
+      <Td>
+        {doc.supplierId && <SupplierAvatar supplierId={doc.supplierId} />}
+      </Td>
+    </Tr>
+  );
 }
 
 function SupplierQuoteRow({ doc }: { doc: SupplierQuote }) {

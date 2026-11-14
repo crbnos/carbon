@@ -6,6 +6,7 @@ import { toBaseAmount } from "@carbon/database/accounting-currency";
 import { round } from "@carbon/database/precision";
 import { expect, it } from "vitest";
 import {
+  allocateDepositRefund,
   allocatePaymentFunding,
   depositScopeMessage,
   type FundingApplication,
@@ -16,7 +17,8 @@ import {
   invoiceRemainingAmounts,
   isEffectiveSettlement,
   reduceInvoiceSettlements,
-  remainingFundingSources
+  remainingFundingSources,
+  reserveLegacyDepositRefunds
 } from "./payment-funding";
 
 const source = (
@@ -966,6 +968,42 @@ it("a deposit payment is refused on another document's invoice, naming the depos
   );
 });
 
+it("a purchase order prepayment funds only an invoice billing that order", () => {
+  const po1 = { type: "purchaseOrder" as const, id: "po-1" };
+  const result = allocate(
+    source("current", 0),
+    [
+      request("other", 50, 1, { purchaseOrderIds: ["po-2"] }),
+      request("own", 40, 1, { purchaseOrderIds: ["po-1", "po-3"] })
+    ],
+    {
+      priorSources: [
+        source("prepayment", 40, 1, { postingDate: "2026-09-01", scope: po1 }),
+        source("ordinary", 50, 1, { postingDate: "2026-09-05" })
+      ]
+    }
+  );
+  expect(
+    result.applications.map((a) => [
+      a.targetId,
+      a.sourcePaymentId,
+      a.sourceAmount
+    ])
+  ).toEqual([
+    ["other", "ordinary", 50],
+    ["own", "prepayment", 40]
+  ]);
+  expect(() =>
+    allocate(
+      source("current", 100, 1, { scope: { ...po1, readableId: "PO000012" } }),
+      [request("other", 10, 1, { purchaseOrderIds: ["po-2"] })]
+    )
+  ).toThrow(
+    "A prepayment for PO000012 can only be applied to that order's invoices"
+  );
+  expect(fundingScopeOf({ purchaseOrderId: "po-1" })).toEqual(po1);
+});
+
 it("fundingScopeOf and remainingFundingSources carry a deposit's document onto its source", () => {
   expect(
     fundingScopeOf({ rentalAgreementId: "ra-1", salesOrderId: null })
@@ -1156,4 +1194,213 @@ it("a contract deposit funds only invoices of its own contract", () => {
   expect(depositScopeMessage({ ...contract, readableId: "CC000007" })).toBe(
     "A deposit for CC000007 can only be applied to that contract's invoices"
   );
+});
+
+it("a refunded advance has no principal left to pay its order's invoice", () => {
+  const scope = { type: "purchaseOrder" as const, id: "po" };
+  const applications = allocateDepositRefund({
+    scope,
+    sources: [source("advance", 100, 1, { scope })],
+    requestedDocumentPrincipal: 100,
+    currencyDecimals: 2
+  });
+  expect(applications).toEqual([
+    {
+      sourcePaymentId: "advance",
+      sourceAmount: 100,
+      carryingBase: 100,
+      sourceExchangeRate: 1
+    }
+  ]);
+  expect(
+    remainingFundingSources(
+      [
+        {
+          id: "advance",
+          totalAmount: 100,
+          exchangeRate: 1,
+          currencyCode: "USD",
+          postingDate: "2026-09-01",
+          paymentDate: "2026-09-01",
+          scope
+        }
+      ],
+      applications.map((application) => ({
+        paymentId: "refund",
+        sourcePaymentId: application.sourcePaymentId,
+        sourceAmount: application.sourceAmount,
+        appliedAmount: application.carryingBase,
+        fxGainLossAmount: 0
+      })),
+      new Map([["USD", 2]]),
+      false
+    )
+  ).toEqual([]);
+});
+
+it("refunds oldest advances at their own carrying rates and exhausts the exact final residue", () => {
+  const scope = { type: "purchaseOrder" as const, id: "po" };
+  expect(
+    allocateDepositRefund({
+      scope,
+      sources: [
+        source("later", 100, 2, { scope, postingDate: "2026-09-02" }),
+        source("first", 10, 3, {
+          scope,
+          postingDate: "2026-09-01",
+          remainingBase: 3.34
+        })
+      ],
+      requestedDocumentPrincipal: 15,
+      currencyDecimals: 2
+    })
+  ).toEqual([
+    {
+      sourcePaymentId: "first",
+      sourceAmount: 10,
+      carryingBase: 3.34,
+      sourceExchangeRate: 3
+    },
+    {
+      sourcePaymentId: "later",
+      sourceAmount: 5,
+      carryingBase: 2.5,
+      sourceExchangeRate: 2
+    }
+  ]);
+});
+
+it("refuses refunds exceeding advances held for the exact document", () => {
+  const scope = { type: "purchaseOrder" as const, id: "po" };
+  expect(() =>
+    allocateDepositRefund({
+      scope,
+      sources: [
+        source("ordinary", 100),
+        source("other-order", 100, 1, { scope: { ...scope, id: "other" } }),
+        source("other-type", 100, 1, {
+          scope: { type: "salesOrder", id: "po" }
+        }),
+        source("own", 10, 1, { scope })
+      ],
+      requestedDocumentPrincipal: 11,
+      currencyDecimals: 2
+    })
+  ).toThrow();
+});
+
+it("rejects refund principal or source balances whose currency units are unsafe", () => {
+  const scope = { type: "purchaseOrder" as const, id: "po" };
+  for (const [requestedDocumentPrincipal, available] of [
+    [100000000000000.03, 100000000000000.03],
+    [1, 100000000000000.03]
+  ] as const) {
+    expect(() =>
+      allocateDepositRefund({
+        scope,
+        sources: [source("advance", available, 1, { scope })],
+        requestedDocumentPrincipal,
+        currencyDecimals: 2
+      })
+    ).toThrow(/safe document currency units/);
+  }
+  expect(
+    allocateDepositRefund({
+      scope,
+      sources: [source("advance", 0.3, 1, { scope })],
+      requestedDocumentPrincipal: 0.1 + 0.2,
+      currencyDecimals: 2
+    })
+  ).toEqual([
+    {
+      sourcePaymentId: "advance",
+      sourceAmount: 0.3,
+      carryingBase: 0.3,
+      sourceExchangeRate: 1
+    }
+  ]);
+});
+
+it("reserves historical refunds across original advances without counting them twice", () => {
+  const scope = { type: "salesOrder" as const, id: "order" };
+  const sources = [
+    source("a", 110, 1.1, { scope }),
+    source("b", 55, 1.1, { scope })
+  ];
+  const facts = new Map(
+    sources.map((source) => [
+      source.paymentId,
+      { currencyCode: "EUR", accountId: "deposits" }
+    ])
+  );
+  const remaining = reserveLegacyDepositRefunds({
+    sources,
+    refunds: [
+      {
+        paymentId: "old-refund",
+        postingDate: "2026-09-08",
+        currencyCode: "EUR",
+        scope,
+        principal: 132,
+        carryingBase: 120,
+        accountId: "deposits"
+      }
+    ],
+    sourceFacts: facts,
+    decimals: new Map([["EUR", 2]])
+  });
+  expect(
+    remaining.map((source) => ({
+      id: source.paymentId,
+      principal: source.remainingDocument,
+      base: source.remainingBase
+    }))
+  ).toEqual([{ id: "b", principal: 33, base: 30 }]);
+  expect(sources[0]?.remainingDocument).toBe(110);
+});
+
+it.each([
+  {
+    label: "a different booked account",
+    accountId: "other",
+    carryingBase: 40,
+    postingDate: "2026-09-08",
+    currencyCode: "EUR"
+  },
+  {
+    label: "a different booked carrying value",
+    accountId: "deposits",
+    carryingBase: 35.2,
+    postingDate: "2026-09-08",
+    currencyCode: "EUR"
+  },
+  {
+    label: "a receipt posted after the refund",
+    accountId: "deposits",
+    carryingBase: 40,
+    postingDate: "2026-09-06",
+    currencyCode: "EUR"
+  },
+  {
+    label: "a different currency",
+    accountId: "deposits",
+    carryingBase: 40,
+    postingDate: "2026-09-08",
+    currencyCode: "USD"
+  }
+])("requires reconciliation for historical refunds with $label", (refund) => {
+  const scope = { type: "salesOrder" as const, id: "order" };
+  expect(() =>
+    reserveLegacyDepositRefunds({
+      sources: [source("a", 110, 1.1, { scope })],
+      refunds: [{ ...refund, paymentId: "old", principal: 44, scope }],
+      sourceFacts: new Map([
+        ["a", { currencyCode: "EUR", accountId: "deposits" }]
+      ]),
+      decimals: new Map([
+        ["EUR", 2],
+        ["USD", 2]
+      ])
+    })
+  ).toThrow(/Reconcile historical deposit refund old/);
 });

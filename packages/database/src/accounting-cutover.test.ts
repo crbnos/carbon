@@ -12,6 +12,7 @@ import {
   MIGRATION_CLEARING_DESCRIPTION,
   type MigrationClearingAccount,
   migrationClearingByAccount,
+  migrationReconciliationBlockers,
   type OpenItem,
   type OpeningJournalLine,
   planInventoryReset,
@@ -742,4 +743,36 @@ describe("cutover constants", () => {
   it("dates the opening journal the day before the cutover", () => {
     expect(dayBeforeCutover("2026-03-01")).toBe("2026-02-28");
   });
+});
+
+it("requires advance balances to reconcile even when other differences offset them", () => {
+  const rows = [
+    { accountId: "prepayments", trialBalance: 100, carbon: 0, difference: 100 },
+    { accountId: AP, trialBalance: -100, carbon: 0, difference: -100 },
+    {
+      accountId: "historical-prepayments",
+      trialBalance: 50,
+      carbon: 40,
+      difference: 10
+    }
+  ];
+  expect(
+    migrationReconciliationBlockers(
+      rows,
+      new Set(["prepayments", "historical-prepayments"])
+    )
+  ).toEqual([rows[0], rows[2]]);
+  expect(
+    migrationReconciliationBlockers(
+      [
+        {
+          accountId: "prepayments",
+          trialBalance: 100,
+          carbon: 100,
+          difference: 0
+        }
+      ],
+      new Set(["prepayments"])
+    )
+  ).toEqual([]);
 });

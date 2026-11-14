@@ -434,20 +434,14 @@ const GaugeCalibrationRecordsTable = memo(
           table="gaugeCalibrationRecord"
           withSavedView
         />
-        {deleteDisclosure.isOpen && selectedGaugeCalibrationRecord && (
+        {selectedGaugeCalibrationRecord && (
           <ConfirmDelete
             action={path.to.deleteGaugeCalibrationRecord(
               selectedGaugeCalibrationRecord.id!
             )}
-            isOpen
-            onCancel={() => {
-              setSelectedGaugeCalibrationRecord(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedGaugeCalibrationRecord(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={`record for ${
               selectedGaugeCalibrationRecord.gaugeReadableId ?? "gauge"
             }`}

@@ -6,7 +6,7 @@ import { carbon } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -35,11 +35,12 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewLaborCategoryRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   return (
     <LaborCategoryForm
       initialValues={{ name: "", description: "", active: true }}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

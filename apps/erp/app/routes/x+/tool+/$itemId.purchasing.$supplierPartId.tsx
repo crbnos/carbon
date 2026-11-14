@@ -5,9 +5,9 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
-import { useRouteData } from "@carbon/react";
+import { useRouteData, useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { supplierPartFormValidator } from "~/modules/items/items.models";
 import type { ToolSummary } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
@@ -94,8 +94,7 @@ export default function EditToolSupplierRoute() {
     path.to.tool(itemId)
   );
 
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.toolPurchasing(itemId));
+  const dialog = useRouteDialog(path.to.toolPurchasing(itemId));
 
   const initialValues = {
     id: supplierPart.id,
@@ -118,7 +117,8 @@ export default function EditToolSupplierRoute() {
       unitOfMeasureCode={routeData?.toolSummary?.unitOfMeasureCode ?? ""}
       priceBreaks={priceBreaks}
       purchasingHistory={purchasingHistory}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -7,9 +7,10 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
 import {
   withoutOperatingHours,
@@ -69,8 +70,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function WorkCenterRoute() {
   const { workCenter, capitalCost } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.workCenters);
+  const dialog = useRouteDialog(path.to.workCenters);
 
   const initialValues = {
     id: workCenter?.id ?? undefined,
@@ -93,7 +93,8 @@ export default function WorkCenterRoute() {
   return (
     <WorkCenterForm
       key={initialValues.id}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
       capitalCost={capitalCost}
     />

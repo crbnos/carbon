@@ -5,10 +5,11 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteContractor,
@@ -74,12 +75,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteContractorRoute() {
   const { t } = useLingui();
   const { contractor } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.contractors);
 
   if (!contractor.supplierContactId)
     throw notFound("supplierContactId not found");
 
-  const onCancel = () => navigate(path.to.contractors);
   const name = contractor.fullName ?? contractor.email ?? "Unknown";
 
   return (
@@ -87,7 +87,8 @@ export default function DeleteContractorRoute() {
       action={path.to.deleteContractor(contractor.supplierContactId)}
       name={name}
       text={t`Are you sure you want to delete the contractor: ${name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

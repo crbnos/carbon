@@ -57,6 +57,7 @@ import {
   useCurrencyDecimals,
   useCurrencyFormatter,
   useDateFormatter,
+  useDrawerItem,
   usePercentFormatter,
   usePermissions
 } from "~/hooks";
@@ -117,9 +118,8 @@ function FinancingCards({
   });
   const formatPercent = usePercentFormatter();
   const { formatDate } = useDateFormatter();
-  const [modal, setModal] = useState<
-    "rate" | "event" | "request" | { complete: string } | null
-  >(null);
+  const [modal, setModal] = useState<"rate" | "event" | "request" | null>(null);
+  const completing = useDrawerItem<string>();
   const terms = financing.terms;
   const isPbp = terms?.financingMethod === "Performance-Based Payments";
   const lineLabel = (lineId: string | null) => {
@@ -273,7 +273,7 @@ function FinancingCards({
                             variant="secondary"
                             size="sm"
                             isDisabled={isDisabled}
-                            onClick={() => setModal({ complete: event.id })}
+                            onClick={() => completing.open(event.id)}
                           >
                             <Trans>Complete</Trans>
                           </Button>
@@ -390,35 +390,33 @@ function FinancingCards({
         </Card>
       )}
 
-      {modal === "rate" && (
-        <RateModal
-          contractId={id}
-          isPbp={isPbp}
-          onClose={() => setModal(null)}
-        />
-      )}
-      {modal === "event" && (
-        <EventModal
-          contractId={id}
-          lines={lines}
-          nextSequence={financing.events.length + 1}
-          currencyCode={financing.currencyCode}
-          onClose={() => setModal(null)}
-        />
-      )}
-      {modal === "request" && (
-        <RequestModal
-          contractId={id}
-          isPbp={isPbp}
-          currencyCode={financing.currencyCode}
-          onClose={() => setModal(null)}
-        />
-      )}
-      {modal !== null && typeof modal === "object" && (
+      <RateModal
+        open={modal === "rate"}
+        contractId={id}
+        isPbp={isPbp}
+        onClose={() => setModal(null)}
+      />
+      <EventModal
+        open={modal === "event"}
+        contractId={id}
+        lines={lines}
+        nextSequence={financing.events.length + 1}
+        currencyCode={financing.currencyCode}
+        onClose={() => setModal(null)}
+      />
+      <RequestModal
+        open={modal === "request"}
+        contractId={id}
+        isPbp={isPbp}
+        currencyCode={financing.currencyCode}
+        onClose={() => setModal(null)}
+      />
+      {completing.item && (
         <CompleteEventModal
+          open={completing.isOpen}
           contractId={id}
-          eventId={modal.complete}
-          onClose={() => setModal(null)}
+          eventId={completing.item}
+          onClose={completing.close}
         />
       )}
     </VStack>
@@ -538,6 +536,7 @@ function TermsCard({
 }
 
 function FormModal({
+  open,
   title,
   action,
   validator,
@@ -545,6 +544,7 @@ function FormModal({
   onClose,
   children
 }: {
+  open: boolean;
   title: string;
   action: string;
   validator: Parameters<typeof ValidatedForm>[0]["validator"];
@@ -553,7 +553,7 @@ function FormModal({
   children: React.ReactNode;
 }) {
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ValidatedForm
           method="post"
@@ -583,10 +583,12 @@ function FormModal({
 }
 
 function RateModal({
+  open,
   contractId,
   isPbp,
   onClose
 }: {
+  open: boolean;
   contractId: string;
   isPbp: boolean;
   onClose: () => void;
@@ -595,6 +597,7 @@ function RateModal({
   const today = useCompanyToday();
   return (
     <FormModal
+      open={open}
       title={t`Add Rate`}
       action={path.to.contractFinancing(contractId)}
       validator={contractFinancingRateValidator}
@@ -631,12 +634,14 @@ function RateModal({
 }
 
 function EventModal({
+  open,
   contractId,
   lines,
   nextSequence,
   currencyCode,
   onClose
 }: {
+  open: boolean;
   contractId: string;
   lines: ContractLine[];
   nextSequence: number;
@@ -647,6 +652,7 @@ function EventModal({
   const decimals = useCurrencyDecimals(currencyCode);
   return (
     <FormModal
+      open={open}
       title={t`Add Event`}
       action={path.to.contractFinancing(contractId)}
       validator={pbpEventValidator}
@@ -691,10 +697,12 @@ function EventModal({
 }
 
 function CompleteEventModal({
+  open,
   contractId,
   eventId,
   onClose
 }: {
+  open: boolean;
   contractId: string;
   eventId: string;
   onClose: () => void;
@@ -703,6 +711,7 @@ function CompleteEventModal({
   const today = useCompanyToday();
   return (
     <FormModal
+      open={open}
       title={t`Complete Event`}
       action={path.to.contractFinancing(contractId)}
       validator={pbpEventCompleteValidator}
@@ -718,11 +727,13 @@ function CompleteEventModal({
 }
 
 function RequestModal({
+  open,
   contractId,
   isPbp,
   currencyCode,
   onClose
 }: {
+  open: boolean;
   contractId: string;
   isPbp: boolean;
   currencyCode: string;
@@ -733,6 +744,7 @@ function RequestModal({
   const decimals = useCurrencyDecimals(currencyCode);
   return (
     <FormModal
+      open={open}
       title={isPbp ? t`New PBP Request` : t`New Progress Payment Request`}
       action={path.to.contractFinancing(contractId)}
       validator={financingRequestValidator}

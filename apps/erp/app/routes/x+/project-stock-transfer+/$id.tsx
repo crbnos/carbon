@@ -7,7 +7,6 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -26,8 +25,6 @@ import ProjectStockTransferHeader from "~/modules/projects/ui/Transfers/ProjectS
 import ProjectStockTransferLines from "~/modules/projects/ui/Transfers/ProjectStockTransferLines";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";
-
-const logger = getLogger("erp", "project-stock-transfer");
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
@@ -52,14 +49,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (transfer.error) {
-    logger.error("Failed to load project stock transfer", {
-      companyId,
-      id,
-      error: transfer.error
-    });
     throw redirect(
       path.to.projectStockTransfers,
-      await flash(request, error(transfer.error, "Failed to load the transfer"))
+      await flash(
+        request,
+        error(transfer.error, "Failed to load the transfer", { id })
+      )
     );
   }
 

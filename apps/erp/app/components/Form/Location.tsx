@@ -5,10 +5,9 @@
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
 import { getLocalTimeZone } from "@internationalized/date";
-import { useMemo, useRef, useState } from "react";
-import { useUser } from "~/hooks";
+import { useMemo, useRef } from "react";
+import { useDrawerItem, useUser } from "~/hooks";
 import type { getLocationsList } from "~/modules/resources/resources.service";
 import LocationForm from "~/modules/resources/ui/Locations/LocationForm";
 import { path } from "~/utils/path";
@@ -32,8 +31,7 @@ const LocationPreview = (
 };
 
 const Location = ({ inline = false, ...props }: LocationSelectProps) => {
-  const newLocationModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useLocations();
@@ -41,7 +39,7 @@ const Location = ({ inline = false, ...props }: LocationSelectProps) => {
   const { company } = useUser();
 
   const emptyMessage = useEmptyState("location", {
-    onCreate: () => newLocationModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -57,20 +55,20 @@ const Location = ({ inline = false, ...props }: LocationSelectProps) => {
         label={props?.label ?? "Location"}
         inline={inline ? LocationPreview : undefined}
         onCreateOption={(option) => {
-          newLocationModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newLocationModal.isOpen && (
+      {create.item !== null && (
         <LocationForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newLocationModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             timezone: getLocalTimeZone(),
             addressLine1: "",
             addressLine2: "",

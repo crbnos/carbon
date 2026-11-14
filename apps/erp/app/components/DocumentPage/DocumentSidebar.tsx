@@ -5,9 +5,9 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useState } from "react";
 import { AuditLogFeed } from "~/components/AuditLog";
 import { usePermissions, useUser } from "~/hooks";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { usePlanGate } from "~/hooks/usePlanGate";
 
 type DocumentSidebarProps = {
@@ -33,7 +33,11 @@ type DocumentSidebarProps = {
 export function DocumentSidebar({ documents, activity }: DocumentSidebarProps) {
   const { company } = useUser();
   const { isGated } = usePlanGate({ feature: "AUDIT_LOG" });
-  const [tab, setTab] = useState<"documents" | "activity">("documents");
+  const [tab, setTab] = usePersistentPageTab(
+    "document-sidebar",
+    ["documents", "activity"],
+    "documents"
+  );
   // The audit log is a settings-level read; without it there is no tab.
   const canViewActivity = usePermissions().can("view", "settings");
 
@@ -53,7 +57,7 @@ export function DocumentSidebar({ documents, activity }: DocumentSidebarProps) {
   return (
     <Tabs
       value={tab}
-      onValueChange={(value) => setTab(value as typeof tab)}
+      onValueChange={setTab}
       className="flex flex-col h-full min-h-0"
     >
       <div className="flex items-center shrink-0 px-4 pt-5 pb-3">

@@ -18,7 +18,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
@@ -30,6 +30,7 @@ import {
   SequenceOrCustomId,
   Submit,
   SupplierContact,
+  SupplierStage,
   SupplierStatus,
   SupplierType
 } from "~/components/Form";
@@ -49,12 +50,14 @@ import { path } from "~/utils/path";
 type SupplierFormProps = {
   initialValues: z.infer<typeof supplierValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const SupplierForm = ({
   initialValues,
   type = "card",
+  open = true,
   onClose
 }: SupplierFormProps) => {
   const { t } = useLingui();
@@ -72,7 +75,7 @@ const SupplierForm = ({
   const handledSuccessRef = useRef(false);
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       if (handledSuccessRef.current) return;
@@ -105,17 +108,19 @@ const SupplierForm = ({
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(t`Failed to create supplier: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, t, type, setSuppliers]);
+  }, [fetcher.data, fetcher.state, onClose, open, t, type, setSuppliers]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !permissions.can("update", "purchasing")
     : !permissions.can("create", "purchasing");
 
+  const Wrapper = type === "card" ? "div" : Fragment;
+
   return (
-    <div>
+    <Wrapper>
       <ModalCardProvider type={type}>
-        <ModalCard onClose={onClose}>
+        <ModalCard open={open} onClose={onClose}>
           <ModalCardContent size="medium">
             <ValidatedForm
               key={initialValues.supplierStatus}
@@ -185,6 +190,12 @@ const SupplierForm = ({
                     isReadOnly={supplierApprovalRequired}
                     termId="supplier-status"
                   />
+                  <SupplierStage
+                    name="supplierStageId"
+                    label={t`Supplier Stage`}
+                    placeholder={t`Select Supplier Stage`}
+                    termId="supplier-stage"
+                  />
                   <SupplierType
                     name="supplierTypeId"
                     label={t`Supplier Type`}
@@ -223,7 +234,7 @@ const SupplierForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
-    </div>
+    </Wrapper>
   );
 };
 

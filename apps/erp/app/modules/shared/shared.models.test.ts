@@ -7,6 +7,10 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
   booleanField,
+  forceDeleteApprovalRefusal,
+  forceDeleteNotificationId,
+  forceDeleteWithdrawRefusal,
+  isForceDeleteConfirmed,
   jsonInput,
   normalizeOperationSourceIds,
   operationStepValidator,
@@ -347,5 +351,59 @@ describe("booleanField", () => {
   it("refuses anything else", () => {
     expect(booleanField().safeParse("yes").success).toBe(false);
     expect(booleanField().safeParse(undefined).success).toBe(false);
+  });
+});
+
+describe("force delete", () => {
+  const base = { status: "Pending", requestedBy: "u1", isAdmin: true };
+
+  it("lets another Admin approve, never the one who asked", () => {
+    expect(forceDeleteApprovalRefusal({ ...base, userId: "u2" })).toBeNull();
+    expect(forceDeleteApprovalRefusal({ ...base, userId: "u1" })).toBe(
+      "You asked for this force delete: another Admin must approve it"
+    );
+    expect(
+      forceDeleteApprovalRefusal({ ...base, userId: "u2", isAdmin: false })
+    ).toBe("Only an Admin can approve a force delete");
+    expect(
+      forceDeleteApprovalRefusal({ ...base, status: "Executed", userId: "u2" })
+    ).toBe("This force delete request is executed");
+    expect(
+      forceDeleteApprovalRefusal({ ...base, status: "Approving", userId: "u2" })
+    ).toBe("Another Admin is approving this force delete right now");
+    expect(
+      forceDeleteWithdrawRefusal({
+        ...base,
+        status: "Approving",
+        intent: "cancel",
+        userId: "u1"
+      })
+    ).toBe("Another Admin is approving this force delete right now");
+  });
+
+  it("lets only the requester cancel, any Admin reject", () => {
+    expect(
+      forceDeleteWithdrawRefusal({ ...base, intent: "cancel", userId: "u1" })
+    ).toBeNull();
+    expect(
+      forceDeleteWithdrawRefusal({ ...base, intent: "cancel", userId: "u2" })
+    ).toBe(
+      "Only the Admin who asked can cancel this force delete; reject it instead"
+    );
+    expect(
+      forceDeleteWithdrawRefusal({ ...base, intent: "reject", userId: "u2" })
+    ).toBeNull();
+  });
+
+  it("confirms on the document's number, ignoring case and spaces", () => {
+    expect(isForceDeleteConfirmed(" pi 000012 ", "PI000012")).toBe(true);
+    expect(isForceDeleteConfirmed("PI000013", "PI000012")).toBe(false);
+    expect(isForceDeleteConfirmed("", "")).toBe(false);
+  });
+
+  it("names the document and request in its notification id", () => {
+    expect(forceDeleteNotificationId("receipt", "r1", "fdr1")).toBe(
+      "receipt:r1:fdr1"
+    );
   });
 });

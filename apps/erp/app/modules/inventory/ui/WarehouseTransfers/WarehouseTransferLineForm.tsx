@@ -67,12 +67,14 @@ const warehouseTransferLineFormValidator = z.discriminatedUnion("type", [
 type WarehouseTransferLineFormProps = {
   initialValues: z.infer<typeof warehouseTransferLineFormValidator>;
   warehouseTransfer: WarehouseTransfer;
+  open?: boolean;
   onClose: () => void;
 };
 
 const WarehouseTransferLineForm = ({
   initialValues,
   warehouseTransfer,
+  open = true,
   onClose
 }: WarehouseTransferLineFormProps) => {
   const permissions = usePermissions();
@@ -110,7 +112,7 @@ const WarehouseTransferLineForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

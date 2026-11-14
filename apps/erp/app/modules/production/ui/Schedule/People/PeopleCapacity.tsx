@@ -25,9 +25,10 @@ import {
 } from "@internationalized/date";
 import { Trans } from "@lingui/react/macro";
 import type { ComponentProps, ReactNode } from "react";
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo } from "react";
 import { LuInfo, LuTriangleAlert } from "react-icons/lu";
 import { DateTime } from "~/components";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { PeopleChip } from "./PeopleChip";
 import {
   assignmentHours,
@@ -153,7 +154,11 @@ export function PeopleCapacity({
   capacityRungByWorkCenter,
   holidayDates
 }: PeopleCapacityProps) {
-  const [tab, setTab] = useState<CapacityTab>("load");
+  const [tab, setTab] = usePersistentPageTab<CapacityTab>(
+    "people-capacity",
+    ["load", "due"],
+    "load"
+  );
   const absentSet = useMemo(() => buildAbsentSet(absences), [absences]);
   const holidaySet = useMemo(() => new Set(holidayDates), [holidayDates]);
 

@@ -178,8 +178,9 @@ spec's section 5 numbering, as the code comments do:
    (`ACCOUNTING_ALREADY_SET_UP`) or when `confirmation` is not the company name. Runs
    `getActivationReadiness` and `getMigrationClearing`
    (`@carbon/database/accounting-cutover-reads`) again under the lock. Refuses on a
-   failed check, or when Migration Clearing does not total zero
-   (`isMigrationClearingZero`). The `account-defaults` check refuses an empty
+   failed check, when Migration Clearing does not total zero
+   (`isMigrationClearingZero`), or when `reconciliationBlockers` contains an unreconciled
+   supplier-prepayment account. Offsetting control differences cannot conceal a missing advance. The `account-defaults` check refuses an empty
    `migrationClearingAccount`, and one that is not an active Equity posting account.
    1a. Writes the journals of the legacy documents (`journalLegacyDocuments`, below).
 2. Inventory reset (`resetAndRecostInventory`, `accounting.service.ts`).

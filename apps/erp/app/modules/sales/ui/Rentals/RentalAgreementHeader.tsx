@@ -399,9 +399,10 @@ const RentalAgreementHeader = ({
         </HStack>
       </div>
 
-      {current && confirm.isOpen && (
+      {current && (
         <Confirm
           action={current.action}
+          isOpen={confirm.isOpen}
           title={current.title}
           text={current.text}
           confirmText={current.confirmText}
@@ -425,16 +426,14 @@ const RentalAgreementHeader = ({
         </Confirm>
       )}
 
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteRentalAgreement(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={readableId}
-          text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteRentalAgreement(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={readableId}
+        text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </>
   );
 };

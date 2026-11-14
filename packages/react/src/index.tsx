@@ -211,6 +211,16 @@ import {
   InputOTPSeparator,
   InputOTPSlot
 } from "./InputOTP";
+import type {
+  InspectionParameter,
+  InspectionPlanTab
+} from "./InspectionPlanPanes";
+import {
+  hasWorkInstruction,
+  InspectionPlanInstructions,
+  InspectionPlanParameters,
+  InspectionPlanTabs
+} from "./InspectionPlanPanes";
 import { Kbd } from "./Kbd";
 import { Label } from "./Label";
 import { LabelWithHelp } from "./LabelWithHelp";
@@ -283,6 +293,7 @@ import {
   pulseNavIcon
 } from "./NavRail";
 import { NavSheet } from "./NavSheet";
+import { NonNettableBadge } from "./NonNettableBadge";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -404,7 +415,11 @@ import {
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
-import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
+import {
+  afterDialogCloses,
+  hasOpenDialog,
+  isInsideTopmostDialog
+} from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
 import { isBareKeyForAnotherControl, isEditableTarget } from "./utils/keyboard";
 import {
@@ -421,6 +436,7 @@ export * from "./hooks";
 export * from "./ImageZoomViewer";
 export * from "./InlineTrigger";
 export * from "./RecordOutlet";
+export { useReportUnsavedChanges } from "./RouteDialogScope";
 export type {
   ActionPresentation,
   AvatarProps,
@@ -436,6 +452,8 @@ export type {
   DateTimeProps,
   ExpiredEntityPolicy,
   InputProps,
+  InspectionParameter,
+  InspectionPlanTab,
   JSONContent,
   MenuItemShortcut,
   Modifier,
@@ -476,6 +494,7 @@ export {
   AvatarGroup,
   AvatarGroupList,
   AvatarOverflowIndicator,
+  afterDialogCloses,
   Badge,
   BadgeCloseButton,
   BarProgress,
@@ -607,6 +626,7 @@ export {
   HStack,
   HTML,
   hasOpenDialog,
+  hasWorkInstruction,
   IconButton,
   Input,
   InputGroup,
@@ -618,6 +638,9 @@ export {
   InputOTPSlot,
   InputRightAddon,
   InputRightElement,
+  InspectionPlanInstructions,
+  InspectionPlanParameters,
+  InspectionPlanTabs,
   isBareKeyForAnotherControl,
   isEditableTarget,
   isInsideTopmostDialog,
@@ -683,6 +706,7 @@ export {
   NavRailLink,
   NavRailSwitcher,
   NavSheet,
+  NonNettableBadge,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,

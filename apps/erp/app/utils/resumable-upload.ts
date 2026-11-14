@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@carbon/auth";
+import { SINGLE_TENANT, SUPABASE_ANON_KEY, SUPABASE_URL } from "@carbon/auth";
 import * as tus from "tus-js-client";
 
 // Supabase resumable (TUS) uploads. A standard `.upload()` buffers the whole
@@ -12,8 +12,14 @@ import * as tus from "tus-js-client";
 // the gateways never see a multi-GB body, a dropped chunk is retried, and an
 // upload a reload cut off resumes when the same file is dropped again.
 //
-// Supabase requires the chunk size to be EXACTLY 6 MB (except the final chunk).
-const CHUNK_SIZE = 6 * 1024 * 1024;
+// Chunks go one at a time, each waiting for storage to write it as an S3
+// part, so a bigger chunk pays that round trip less often. Hosted Supabase
+// (Carbon Cloud, TENANT_TYPE=multi) documents the chunk size as exactly 6 MB.
+// A single-tenant deployment (BYOC, self-hosted) runs its own storage, whose
+// @tus/s3-store turns any chunk from 5 MiB up to TUS_PART_SIZE (default 50 MB)
+// into one part, so there a chunk is 24 MiB: still small enough that a retry
+// on a dropped connection repeats little.
+const CHUNK_SIZE = (SINGLE_TENANT ? 24 : 6) * 1024 * 1024;
 
 // The TUS create (POST) returns a `Location` for subsequent PATCH/HEAD requests.
 // Behind the dev proxy chain (portless → kong → storage), kong overwrites

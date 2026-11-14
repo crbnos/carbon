@@ -314,19 +314,18 @@ export function BuilderHeader({
           )}
         </div>
 
-        {confirmUnpublish.isOpen && (
-          <ConfirmUnpublishWorkflow
-            workflowId={workflow.id}
-            name={workflow.name}
-            onClose={confirmUnpublish.onClose}
-          />
-        )}
+        <ConfirmUnpublishWorkflow
+          open={confirmUnpublish.isOpen}
+          workflowId={workflow.id}
+          name={workflow.name}
+          onClose={confirmUnpublish.onClose}
+        />
 
         {/* Hand-rolled rather than `Confirm`: publish posts `versionId` and reads the returned
           issues back off its own fetcher to outline the failing nodes. */}
-        {confirmPublish.isOpen && current && published && (
+        {current && published && (
           <Modal
-            open
+            open={confirmPublish.isOpen}
             onOpenChange={(open) => {
               if (!open) confirmPublish.onClose();
             }}

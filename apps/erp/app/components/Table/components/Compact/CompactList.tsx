@@ -90,6 +90,8 @@ export type CompactListProps<T> = {
   isTableEmpty: boolean;
   hasFilters: boolean;
   clearFilters: () => void;
+  hasRememberedChanges: boolean;
+  onResetRememberedState: () => void;
   csvExport?: DownloadProps;
   importCSV?: { table: keyof typeof fieldMappings; label: string }[];
   renderContextMenu?: (row: T) => JSX.Element | null;
@@ -141,6 +143,8 @@ export function CompactList<T>({
   isTableEmpty,
   hasFilters,
   clearFilters,
+  hasRememberedChanges,
+  onResetRememberedState,
   csvExport,
   importCSV,
   renderContextMenu,
@@ -308,7 +312,9 @@ export function CompactList<T>({
           : undefined
       }
       // Like desktop: a genuinely empty list has no toolbar.
-      hideControls={isTableEmpty}
+      hideControls={isTableEmpty && !hasRememberedChanges}
+      hasRememberedChanges={hasRememberedChanges}
+      onResetRememberedState={onResetRememberedState}
     />
   );
 

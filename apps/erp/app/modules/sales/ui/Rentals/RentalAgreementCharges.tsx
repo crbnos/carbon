@@ -27,7 +27,12 @@ import { useState } from "react";
 import { LuPlus, LuTrash } from "react-icons/lu";
 import { DateTime, Hyperlink } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCompanyToday, usePercentFormatter, usePermissions } from "~/hooks";
+import {
+  useCompanyToday,
+  useDrawerItem,
+  usePercentFormatter,
+  usePermissions
+} from "~/hooks";
 import { path } from "~/utils/path";
 import RentalAgreementChargeForm from "./RentalAgreementChargeForm";
 import RentalMoney from "./RentalMoney";
@@ -59,7 +64,12 @@ const RentalAgreementCharges = ({
   const permissions = usePermissions();
   const percentFormatter = usePercentFormatter();
   const companyToday = useCompanyToday();
-  const [deleting, setDeleting] = useState<RentalAgreementCharge | null>(null);
+  const {
+    item: deleting,
+    isOpen: isDeleting,
+    open: openDelete,
+    close: closeDelete
+  } = useDrawerItem<RentalAgreementCharge>();
   const [adding, setAdding] = useState(false);
 
   const charges = lineId
@@ -187,7 +197,7 @@ const RentalAgreementCharges = ({
                             variant="ghost"
                             size="sm"
                             isDisabled={!permissions.can("delete", "sales")}
-                            onClick={() => setDeleting(charge)}
+                            onClick={() => openDelete(charge)}
                           />
                         )}
                       </Td>
@@ -212,32 +222,31 @@ const RentalAgreementCharges = ({
         )}
       </Card>
 
-      {adding && (
-        <RentalAgreementChargeForm
-          action={path.to.newRentalAgreementCharge(id)}
-          initialValues={{
-            rentalAgreementLineId:
-              lineId ?? (lines.length === 1 ? lines[0].id : ""),
-            chargeDate: companyToday,
-            description: "",
-            amount: 0,
-            taxPercent: rentalAgreement.taxPercent ?? 0,
-            invoiceSeparately: false
-          }}
-          currencyCode={rentalAgreement.currencyCode ?? ""}
-          lineOptions={lineOptions}
-          onClose={() => setAdding(false)}
-        />
-      )}
+      <RentalAgreementChargeForm
+        open={adding}
+        action={path.to.newRentalAgreementCharge(id)}
+        initialValues={{
+          rentalAgreementLineId:
+            lineId ?? (lines.length === 1 ? lines[0].id : ""),
+          chargeDate: companyToday,
+          description: "",
+          amount: 0,
+          taxPercent: rentalAgreement.taxPercent ?? 0,
+          invoiceSeparately: false
+        }}
+        currencyCode={rentalAgreement.currencyCode ?? ""}
+        lineOptions={lineOptions}
+        onClose={() => setAdding(false)}
+      />
 
       {deleting && (
         <ConfirmDelete
           action={path.to.deleteRentalAgreementCharge(id, deleting.id)}
-          isOpen
+          isOpen={isDeleting}
           name={deleting.description}
           text={t`Are you sure you want to delete the charge "${deleting.description}"?`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          onCancel={closeDelete}
+          onSubmit={closeDelete}
         />
       )}
     </>

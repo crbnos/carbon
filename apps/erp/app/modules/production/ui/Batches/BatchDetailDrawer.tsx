@@ -97,11 +97,13 @@ const EVENT_ICONS: Record<
 };
 
 export function BatchDetailDrawer({
+  open = true,
   batch,
   events,
   outputLots = [],
   onClose
 }: {
+  open?: boolean;
   batch: JobOperationBatchDetail;
   events: JobOperationBatchEvent[];
   // The members' MERGEABLE output lots (the service filters to Available with
@@ -256,7 +258,7 @@ export function BatchDetailDrawer({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -767,42 +769,40 @@ export function BatchDetailDrawer({
           </HStack>
         </DrawerFooter>
       </DrawerContent>
-      {removeOpen && (
-        <ConfirmDelete
-          action={path.to.priorityBatchingUpdate}
-          title={t`Remove from batch`}
-          name={batch.readableId}
-          text={
-            selectedIds.size === memberCount
-              ? t`A batch needs at least one operation. To break up the whole batch, use Dissolve instead.`
-              : t`Remove ${selectedIds.size} of ${memberCount} operations from ${batch.readableId}?`
-          }
-          deleteText={t`Remove`}
-          isDisabled={selectedIds.size === memberCount}
-          fields={{
-            intent: "remove",
-            batchId: batch.id,
-            jobOperationIds: [...selectedIds]
-          }}
-          onCancel={() => setRemoveOpen(false)}
-          onSubmit={() => {
-            setRemoveOpen(false);
-            setSelectedIds(new Set());
-          }}
-        />
-      )}
-      {releaseOpen && (
-        <BatchReleaseModal
-          target={{ batchId: batch.id }}
-          title={t`Release batch ${batch.readableId}`}
-          confirmLabel={t`Release Batch`}
-          onClose={() => setReleaseOpen(false)}
-          onConfirm={(purchaseOrders) => {
-            submitBatchIntent("release", purchaseOrders);
-            setReleaseOpen(false);
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.priorityBatchingUpdate}
+        isOpen={removeOpen}
+        title={t`Remove from batch`}
+        name={batch.readableId}
+        text={
+          selectedIds.size === memberCount
+            ? t`A batch needs at least one operation. To break up the whole batch, use Dissolve instead.`
+            : t`Remove ${selectedIds.size} of ${memberCount} operations from ${batch.readableId}?`
+        }
+        deleteText={t`Remove`}
+        isDisabled={selectedIds.size === memberCount}
+        fields={{
+          intent: "remove",
+          batchId: batch.id,
+          jobOperationIds: [...selectedIds]
+        }}
+        onCancel={() => setRemoveOpen(false)}
+        onSubmit={() => {
+          setRemoveOpen(false);
+          setSelectedIds(new Set());
+        }}
+      />
+      <BatchReleaseModal
+        open={releaseOpen}
+        target={{ batchId: batch.id }}
+        title={t`Release batch ${batch.readableId}`}
+        confirmLabel={t`Release Batch`}
+        onClose={() => setReleaseOpen(false)}
+        onConfirm={(purchaseOrders) => {
+          submitBatchIntent("release", purchaseOrders);
+          setReleaseOpen(false);
+        }}
+      />
     </Drawer>
   );
 }

@@ -21,6 +21,7 @@ import {
 } from "@carbon/env";
 import { isPushConfigured } from "@carbon/env/push.server";
 import type { Events } from "@carbon/lib/events";
+import { getLogger } from "@carbon/logger";
 import {
   escapeSlackText,
   getNotificationEmailCtaLabel,
@@ -44,6 +45,8 @@ import {
   getNotificationEmailComponent
 } from "./content";
 import { pushSessionMaxAgeMs, pushSubscriptionCutoff } from "./push-outcome";
+
+const logger = getLogger("jobs", "notify");
 
 // A group notification can have hundreds of recipients. One request, insert
 // or send that carries all of them fails the whole notification, so each is
@@ -321,8 +324,9 @@ export const notifyFunction = inngest.createFunction(
       // Digest events can legitimately resolve to nothing (all documents
       // completed/deleted in flight) — skip, don't fail.
       if (payload.documentIds?.length) {
-        console.warn(
-          `carbon/notify ${payload.event}: no outstanding documents remain for documentIds — skipping`
+        logger.warning(
+          "No outstanding documents remain for the notification; skipping",
+          { event: payload.event }
         );
         return;
       }
@@ -336,8 +340,9 @@ export const notifyFunction = inngest.createFunction(
 
     // documentIds on a non-digest event: the extra documents were dropped.
     if ((payload.documentIds?.length ?? 0) > 1 && !content.digest) {
-      console.warn(
-        `carbon/notify ${payload.event}: documentIds provided but this event is not digest-capable; only ${primaryDocumentId} was used`
+      logger.warning(
+        "Event is not digest-capable; only the primary document was used",
+        { event: payload.event, documentId: primaryDocumentId }
       );
     }
     // "Label: Value" lines for plain-text channels (Slack, email text part);
@@ -358,7 +363,9 @@ export const notifyFunction = inngest.createFunction(
           groups: payload.recipient.groupIds
         });
         if (result.error) {
-          console.error("Failed to get userIds for groups", result.error);
+          logger.error("Failed to get userIds for groups", {
+            error: result.error
+          });
           throw result.error;
         }
         ids = (result.data ?? []) as string[];
@@ -380,10 +387,9 @@ export const notifyFunction = inngest.createFunction(
             .order("userId")
         );
         if (members.error) {
-          console.error(
-            "Failed to filter recipients by company membership",
-            members.error
-          );
+          logger.error("Failed to filter recipients by company membership", {
+            error: members.error
+          });
           throw members.error;
         }
         const memberIds = new Set(members.data.map((m) => m.userId));
@@ -433,7 +439,9 @@ export const notifyFunction = inngest.createFunction(
               }
             );
             if (error) {
-              console.error("Failed to load notification preferences", error);
+              logger.error("Failed to load notification preferences", {
+                error: error
+              });
               throw error;
             }
             const mutedFor = (channel: "email" | "slack") =>
@@ -486,10 +494,9 @@ export const notifyFunction = inngest.createFunction(
             );
           }
         } catch (error) {
-          console.error(
-            "Failed to send integration assignment notification:",
-            error
-          );
+          logger.error("Failed to send integration assignment notification", {
+            error: error
+          });
         }
       });
     }
@@ -530,10 +537,9 @@ export const notifyFunction = inngest.createFunction(
             const supersedeError =
               supersededDigests.error ?? supersededFlat.error;
             if (supersedeError) {
-              console.error(
-                "Failed to supersede prior reminder rows",
-                supersedeError
-              );
+              logger.error("Failed to supersede prior reminder rows", {
+                error: supersedeError
+              });
               throw supersedeError;
             }
           }
@@ -567,7 +573,9 @@ export const notifyFunction = inngest.createFunction(
               )
               .select("id, userId");
             if (parents.error) {
-              console.error("Failed to insert digest parents", parents.error);
+              logger.error("Failed to insert digest parents", {
+                error: parents.error
+              });
               throw parents.error;
             }
             inserted += parents.data.length;
@@ -582,7 +590,7 @@ export const notifyFunction = inngest.createFunction(
                 const error = new Error(
                   `Failed to insert digest parent for ${userId}`
                 );
-                console.error("Failed to insert digest parent", {
+                logger.error("Failed to insert digest parent", {
                   companyId: payload.companyId,
                   userId
                 });
@@ -613,10 +621,9 @@ export const notifyFunction = inngest.createFunction(
                 .insert(rows)
                 .select("id");
               if (children.error) {
-                console.error(
-                  "Failed to insert digest children",
-                  children.error
-                );
+                logger.error("Failed to insert digest children", {
+                  error: children.error
+                });
                 throw children.error;
               }
               inserted += children.data?.length ?? 0;
@@ -651,7 +658,9 @@ export const notifyFunction = inngest.createFunction(
             .insert(chunk)
             .select("id");
           if (error) {
-            console.error("Failed to insert notification rows", error);
+            logger.error("Failed to insert notification rows", {
+              error: error
+            });
             throw error;
           }
           inserted += data?.length ?? 0;
@@ -670,8 +679,9 @@ export const notifyFunction = inngest.createFunction(
       ));
 
     if (wantsEmail && !emailAllowed) {
-      console.warn(
-        `EMAIL_NOTIFICATIONS not enabled for company ${payload.companyId}; skipping email fan-out`
+      logger.warning(
+        "Email notifications are not enabled for the company; skipping email fan-out",
+        { companyId: payload.companyId }
       );
     }
 
@@ -692,7 +702,7 @@ export const notifyFunction = inngest.createFunction(
               .order("id")
         );
         if (error) {
-          console.error("Failed to resolve email recipients", error);
+          logger.error("Failed to resolve email recipients", { error: error });
           throw error;
         }
         return (users ?? []).filter((u) => u.email);
@@ -796,7 +806,7 @@ export const notifyFunction = inngest.createFunction(
             accessToken = (await getSlackWorkspace(client, payload.companyId))
               ?.token;
           } catch (error) {
-            console.error("Failed to resolve Slack workspace", error);
+            logger.error("Failed to resolve Slack workspace", { error: error });
             return [];
           }
           if (!accessToken) return [];
@@ -887,7 +897,7 @@ export const notifyFunction = inngest.createFunction(
                 .order("id")
           );
           if (error) {
-            console.error("Failed to load push subscriptions", error);
+            logger.error("Failed to load push subscriptions", { error: error });
             throw error;
           }
           const url = buildNotificationLink(

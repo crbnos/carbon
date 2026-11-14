@@ -11,6 +11,7 @@ import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { issueTrackedEntityValidator } from "~/services/models";
 import { abilityBlockRefusal } from "~/services/operations.service";
+import { resolveTravelerMaterial } from "~/services/traveler.server";
 
 const log = getLogger("mes");
 
@@ -29,17 +30,26 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const {
-    materialId,
     jobOperationId,
-    itemId,
     batchId,
     parentTrackedEntityId,
-    children,
     jobOperationStepId,
     unitNumber,
     overrideExpired,
-    overrideReason
+    overrideReason,
+    travelerScan
   } = validation.data;
+  let { materialId, itemId, children } = validation.data;
+
+  if (
+    travelerScan &&
+    (!jobOperationId || !parentTrackedEntityId || children.length !== 1)
+  ) {
+    return data(
+      { success: false, message: "Failed to validate payload" },
+      { status: 400 }
+    );
+  }
 
   if (batchId ? !itemId : !parentTrackedEntityId) {
     return data(
@@ -57,6 +67,29 @@ export async function action({ request }: ActionFunctionArgs) {
     if (refusal) {
       return data({ success: false, message: refusal }, { status: 403 });
     }
+  }
+
+  // Traveler scan: the scanned unit decides the material and quantity, so a
+  // wrong item, or one the unit already has, is refused before the posting.
+  if (travelerScan && jobOperationId && parentTrackedEntityId) {
+    const resolved = await resolveTravelerMaterial(
+      await getCarbonServiceRole(),
+      {
+        companyId,
+        jobOperationId,
+        trackedEntityId: children[0].trackedEntityId,
+        parentTrackedEntityId
+      }
+    );
+    if ("refusal" in resolved) {
+      return data(
+        { success: false, message: resolved.refusal },
+        { status: 400 }
+      );
+    }
+    materialId = resolved.materialId;
+    itemId = undefined;
+    children = [{ ...children[0], quantity: resolved.quantity }];
   }
 
   // Batch mode: one pick for the whole operation batch. The posting splits the
@@ -84,7 +117,9 @@ export async function action({ request }: ActionFunctionArgs) {
           jobOperationStepId,
           unitNumber,
           overrideExpired,
-          overrideReason
+          overrideReason,
+          // The posting re-checks the requirement under a lock for a scan.
+          travelerScan
         }
   );
 

@@ -5,10 +5,11 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteNoQuoteReason,
@@ -78,18 +79,18 @@ export default function DeleteNoQuoteReasonRoute() {
   const { t } = useLingui();
   const { id } = useParams();
   const { noQuoteReason } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.noQuoteReasons);
 
   if (!noQuoteReason) return null;
   if (!id) throw notFound("id not found");
 
-  const onCancel = () => navigate(path.to.noQuoteReasons);
   return (
     <ConfirmDelete
       action={path.to.deleteNoQuoteReason(id)}
       name={noQuoteReason.name}
       text={t`Are you sure you want to delete the no quote reason: ${noQuoteReason.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

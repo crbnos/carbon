@@ -33,6 +33,33 @@ export function QualityIssueModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  return (
+    <Modal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <QualityIssueBody
+          operationId={operationId}
+          trackedEntityId={trackedEntityId}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function QualityIssueBody({
+  operationId,
+  trackedEntityId,
+  onClose
+}: {
+  operationId: string;
+  trackedEntityId?: string;
+  onClose: () => void;
+}) {
   const { t } = useLingui();
   const fetcher = useAction<Result>({
     onSuccess: (data) => {
@@ -44,82 +71,71 @@ export function QualityIssueModal({
   });
   const issueTypeFetcher = useLoaderQuery<
     PostgrestResponse<{ id: string; name: string }>
-  >(isOpen ? path.to.api.qualityIssueTypes : null);
+  >(path.to.api.qualityIssueTypes);
 
   const issueTypes = issueTypeFetcher.data?.data ?? [];
 
-  if (!isOpen) return null;
-
   return (
-    <Modal
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      method="post"
+      action={path.to.qualityIssueNew}
+      validator={qualityIssueValidator}
+      defaultValues={{
+        jobOperationId: operationId,
+        description: "",
+        nonConformanceTypeId: issueTypes[0]?.id ?? "",
+        priority: "Medium" as const,
+        trackedEntityId: trackedEntityId ?? ""
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.qualityIssueNew}
-          validator={qualityIssueValidator}
-          defaultValues={{
-            jobOperationId: operationId,
-            description: "",
-            nonConformanceTypeId: issueTypes[0]?.id ?? "",
-            priority: "Medium" as const,
-            trackedEntityId: trackedEntityId ?? ""
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Create Quality Issue</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="jobOperationId" value={operationId} />
-            {trackedEntityId && (
-              <Hidden name="trackedEntityId" value={trackedEntityId} />
-            )}
-            <VStack spacing={4}>
-              <Select
-                name="nonConformanceTypeId"
-                label={t`Issue Type`}
-                size="lg"
-                options={issueTypes.map((type) => ({
-                  value: type.id,
-                  label: type.name
-                }))}
-              />
-              <Select
-                name="priority"
-                label={t`Priority`}
-                size="lg"
-                options={qualityIssuePriority.map((p) => ({
-                  value: p,
-                  label: p
-                }))}
-              />
-              <TextArea
-                name="description"
-                label={t`Description`}
-                placeholder={t`Describe the problem...`}
-                size="lg"
-              />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <HStack>
-              <Button variant="secondary" size="lg" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Submit size="lg" isLoading={fetcher.state !== "idle"}>
-                <Trans>Create Issue</Trans>
-              </Submit>
-            </HStack>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Create Quality Issue</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="jobOperationId" value={operationId} />
+        {trackedEntityId && (
+          <Hidden name="trackedEntityId" value={trackedEntityId} />
+        )}
+        <VStack spacing={4}>
+          <Select
+            name="nonConformanceTypeId"
+            label={t`Issue Type`}
+            size="lg"
+            options={issueTypes.map((type) => ({
+              value: type.id,
+              label: type.name
+            }))}
+          />
+          <Select
+            name="priority"
+            label={t`Priority`}
+            size="lg"
+            options={qualityIssuePriority.map((p) => ({
+              value: p,
+              label: p
+            }))}
+          />
+          <TextArea
+            name="description"
+            label={t`Description`}
+            placeholder={t`Describe the problem...`}
+            size="lg"
+          />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <HStack>
+          <Button variant="secondary" size="lg" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <Submit size="lg" isLoading={fetcher.state !== "idle"}>
+            <Trans>Create Issue</Trans>
+          </Submit>
+        </HStack>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }

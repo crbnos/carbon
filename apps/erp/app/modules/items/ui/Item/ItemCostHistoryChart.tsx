@@ -54,6 +54,7 @@ import { Bar, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { DateTime, SupplierAvatar } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { useCurrencyFormatter } from "~/hooks";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import type { ItemCostHistory } from "~/modules/items/types";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
@@ -66,6 +67,11 @@ export function ItemCostHistoryChart({
   itemCostHistory: ItemCostHistory;
 }) {
   const { t } = useLingui();
+  const [tab, setTab] = usePersistentPageTab(
+    "cost-history",
+    ["chart", "table"],
+    "chart"
+  );
 
   const chartConfig = {
     cost: {
@@ -164,7 +170,7 @@ export function ItemCostHistoryChart({
 
   return (
     <Card>
-      <Tabs defaultValue="chart">
+      <Tabs value={tab} onValueChange={setTab}>
         <HStack className="w-full justify-between">
           <CardHeader>
             <CardTitle>

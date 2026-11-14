@@ -4,9 +4,9 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { validationError, validator } from "@carbon/form";
-import { useRouteData } from "@carbon/react";
+import { useRouteData, useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { supplierPartFormValidator } from "~/modules/items/items.models";
 import type { ServiceSummary } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
@@ -42,8 +42,7 @@ export default function NewServiceSupplierRoute() {
     path.to.service(itemId)
   );
 
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.servicePurchasing(itemId));
+  const dialog = useRouteDialog(path.to.servicePurchasing(itemId));
 
   const initialValues = {
     itemId: itemId,
@@ -61,7 +60,8 @@ export default function NewServiceSupplierRoute() {
       type="Service"
       initialValues={initialValues}
       unitOfMeasureCode={routeData?.serviceSummary?.unitOfMeasureCode ?? ""}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

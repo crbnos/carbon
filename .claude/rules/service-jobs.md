@@ -389,14 +389,18 @@ Service or Warranty line has quantity 1 (one unit, one job).
   live job; finds or creates the customer asset of each serial and sets it At
   Depot; inserts one Open Depot job per line at the receiving location (Billable
   for Service, Warranty for Warranty); writes a `Return Receipt` activity. No
-  item ledger, cost layer or journal; the serial stays Consumed. `postReceipt`
+  item ledger, cost layer or journal; the serial goes from Consumed to
+  Available while the unit is at the depot. It has no ledger stock, so
+  on-hand and the pickers that read it (`get_available_tracked_entities`)
+  skip it; a list that filters on status alone (the MES issue modal's
+  `getSerialNumbersForItem`) still shows it. `postReceipt`
   re-reads every line's return type under the RMA lock and refuses if one
   changed. A serial-tracked Service or Warranty line with no serial on the
   receipt is refused ("Assign the serial before posting a service receipt").
 - **Receipt void** (`voidServiceJobsForReturn`): for each line THIS receipt
   received (quantity > 0; a line it carried at 0 belongs to another receipt),
   cancels the line's live job and
-  sets the asset back In Service. Refused when the job has work (a status past
+  sets the asset back In Service; the serial goes back to Consumed. Refused when the job has work (a status past
   Open, a time entry or a Part line): "Cancel the job first."
 - **Ship back**: the RMA shipment, the same create path as Return to Customer
   (header **Ship**, line **Ship Back** → `path.to.newShipment` with source
@@ -404,9 +408,11 @@ Service or Warranty line has quantity 1 (one unit, one job).
   Cancelled one (`loadReturnLineJobs`); a Cancelled job's unit goes back
   unrepaired. `shipServiceUnits` refuses unless that job is Completed,
   Invoiced or Cancelled (`SHIP_BACK_JOB_STATUSES`) and the asset is At Depot;
-  sets the asset In Service at the RMA's site; adds `quantityShipped`
-  (`addReturnLineQuantityShipped`). Void: `unshipServiceUnits` sets the asset
-  At Depot and lowers `quantityShipped` (never below 0).
+  sets the serial Consumed again and the asset In Service at the RMA's site;
+  adds `quantityShipped` (`addReturnLineQuantityShipped`). The Available serial
+  is what lets the shipment's tracking take it (`shippableEntityStatuses`).
+  Void: `unshipServiceUnits` sets the asset At Depot, the void sets the serial
+  Available, and `quantityShipped` drops (never below 0).
 - **Links**: the collapsed RMA line in the explorer shows the item and the
   return type only; its jobs are in the expanded line. A Service or
   Warranty line's page has a **Service Jobs** card, the sibling of the sales

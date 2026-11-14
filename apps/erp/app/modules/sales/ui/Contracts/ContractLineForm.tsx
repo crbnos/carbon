@@ -99,6 +99,7 @@ type ContractLineFormProps = {
   /** A card in the contract's center pane (new line or the line's own
    *  page), or a modal. */
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
@@ -110,6 +111,7 @@ const ContractLineForm = ({
   title,
   isLocked = false,
   type = "card",
+  open = true,
   onClose
 }: ContractLineFormProps) => {
   const { t } = useLingui();
@@ -304,7 +306,7 @@ const ContractLineForm = ({
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard open={open} onClose={onClose}>
         <ModalCardContent size="xlarge">
           <ValidatedForm
             defaultValues={initialValues}
@@ -745,13 +747,13 @@ const ContractLineForm = ({
       </ModalCard>
       {/* Outside the line's form: a form inside another form's React tree
           would bubble its submit through the portal to the outer one. */}
-      {showDelete && initialValues.id && (
+      {initialValues.id && (
         <ConfirmDelete
           action={path.to.deleteContractLine(
             initialValues.customerContractId,
             initialValues.id
           )}
-          isOpen
+          isOpen={showDelete}
           name={lineName}
           text={t`Are you sure you want to remove ${lineName} from this contract?`}
           onCancel={() => setShowDelete(false)}

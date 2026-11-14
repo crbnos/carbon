@@ -148,6 +148,17 @@ export const RECEIPT_STATUS_COLOR_MAP = {
   Voided: "red"
 } as const satisfies Record<string, StatusColor>;
 
+// ReceiptInspectionStatus.tsx — the receipt's roll-up of its inspection lots.
+export const RECEIPT_INSPECTION_STATUS_COLOR_MAP = {
+  "Not Required": "gray",
+  "Pending Inspection": "orange",
+  "Inspection In Progress": "blue",
+  "Inspection Passed": "green",
+  "Inspection Failed": "red",
+  "Partially Passed": "yellow",
+  "Put Away": "green"
+} as const satisfies Record<string, StatusColor>;
+
 // Shipment adds a conditional "Invoiced" (blue) the component derives from a flag.
 export const SHIPMENT_STATUS_COLOR_MAP = {
   Draft: "gray",
@@ -431,7 +442,8 @@ export const INSPECTION_STATUS_COLOR_MAP = {
   "In Progress": "blue",
   Passed: "green",
   Failed: "red",
-  Partial: "yellow"
+  Partial: "yellow",
+  Cancelled: "gray"
 } as const satisfies Record<string, StatusColor>;
 
 // PaymentStatus.tsx
@@ -519,6 +531,7 @@ export const statusColorMaps = {
   purchasingRfq: PURCHASING_RFQ_STATUS_COLOR_MAP,
   supplierQuote: SUPPLIER_QUOTE_STATUS_COLOR_MAP,
   receipt: RECEIPT_STATUS_COLOR_MAP,
+  receiptInspection: RECEIPT_INSPECTION_STATUS_COLOR_MAP,
   shipment: SHIPMENT_STATUS_COLOR_MAP,
   inventoryCount: RECEIPT_STATUS_COLOR_MAP,
   stockTransfer: STOCK_TRANSFER_STATUS_COLOR_MAP,

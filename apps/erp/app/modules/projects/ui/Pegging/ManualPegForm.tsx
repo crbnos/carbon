@@ -39,6 +39,7 @@ type ManualPegFormProps = {
     supplyId: string;
     readableId: string;
   }[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -49,6 +50,7 @@ type ManualPegFormProps = {
 export default function ManualPegForm({
   peg,
   supplies,
+  open = true,
   onClose
 }: ManualPegFormProps) {
   const { t } = useLingui();
@@ -67,7 +69,7 @@ export default function ManualPegForm({
   const current = `${peg.supplyType}:${peg.supplyId}`;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <ValidatedForm

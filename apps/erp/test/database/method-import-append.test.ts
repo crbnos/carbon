@@ -220,6 +220,81 @@ async function fixture() {
         sortOrder: Number(r.sortOrder)
       }));
     },
+    /**
+     * Adds a correction whose operation is Op 1 (Tighten) and whose material
+     * is COMP-2: the same Op No and item the routing and BOM could hold.
+     */
+    async addCorrection() {
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        const correction = await trx
+          .insertInto("methodCorrection")
+          .values({
+            makeMethodId,
+            name: "Too loose",
+            companyId,
+            createdBy: USER
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("methodOperation")
+          .values({
+            makeMethodId,
+            methodCorrectionId: correction.id,
+            order: 1,
+            processId,
+            description: "Tighten",
+            setupUnit: "Total Minutes",
+            laborUnit: "Minutes/Piece",
+            machineUnit: "Minutes/Piece",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("methodMaterial")
+          .values({
+            makeMethodId,
+            methodCorrectionId: correction.id,
+            itemId: itemId("COMP-2"),
+            itemType: "Part" as const,
+            quantity: 1,
+            unitOfMeasureCode: "EA",
+            order: 1,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+    },
+    /** Each operation's Op No, description and step names, routing and corrections alike. */
+    async operationsWithSteps() {
+      const rows = await db
+        .selectFrom("methodOperation")
+        .leftJoin(
+          "methodOperationStep",
+          "methodOperationStep.operationId",
+          "methodOperation.id"
+        )
+        .select([
+          "methodOperation.order",
+          "methodOperation.description",
+          "methodOperation.methodCorrectionId",
+          "methodOperationStep.name"
+        ])
+        .where("methodOperation.makeMethodId", "=", makeMethodId)
+        .where("methodOperation.companyId", "=", companyId)
+        .orderBy("methodOperation.order")
+        .orderBy("methodOperationStep.sortOrder")
+        .execute();
+      return rows.map((r) => ({
+        order: Number(r.order),
+        description: r.description,
+        correction: r.methodCorrectionId !== null,
+        step: r.name
+      }));
+    },
     async setMethodStatus(status: "Draft" | "Active") {
       await db
         .updateTable("makeMethod")
@@ -359,6 +434,48 @@ describe("method import onto an existing method", () => {
         { operationOrder: 10, name: "Deburr", sortOrder: 1 }
       ]);
       expect(await f.materials()).toHaveLength(1);
+    }
+  );
+
+  databaseTest(
+    "leaves a correction's operations and materials out of the routing and BOM",
+    async () => {
+      f = await fixture();
+      await f.addCorrection();
+      const summary = await f.run("partWithMethod", [
+        {
+          rowType: "BOM",
+          parentId: "ASSY",
+          componentId: "COMP-2",
+          quantity: "2"
+        },
+        step("1", "Clean"),
+        bop("10", { operationDescription: "Mill" }),
+        step("10", "Deburr")
+      ]);
+
+      expect(summary.errors).toEqual([]);
+      expect(summary.skipped).toEqual([]);
+      expect(summary.added).toEqual({
+        materials: 1,
+        operations: 1,
+        steps: 2,
+        tools: 0,
+        parameters: 0
+      });
+      // Op 1's new step lands on the routing's Saw, never on the correction.
+      expect(await f.operationsWithSteps()).toEqual([
+        { order: 1, description: "Saw", correction: false, step: "Measure" },
+        { order: 1, description: "Saw", correction: false, step: "Clean" },
+        { order: 1, description: "Tighten", correction: true, step: null },
+        { order: 10, description: "Mill", correction: false, step: "Deburr" }
+      ]);
+      // COMP-2 joins the BOM though the correction already uses it.
+      expect(await f.materials()).toEqual(
+        expect.arrayContaining([
+          { readableId: "COMP-2", quantity: 2, order: 2 }
+        ])
+      );
     }
   );
 

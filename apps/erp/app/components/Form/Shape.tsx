@@ -5,9 +5,8 @@
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox, CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
-import { usePermissions } from "~/hooks";
+import { useMemo, useRef } from "react";
+import { useDrawerItem, usePermissions } from "~/hooks";
 import type { getMaterialFormsList } from "~/modules/items/items.service";
 import { MaterialShapeForm } from "~/modules/items/ui/MaterialShapes";
 import { path } from "~/utils/path";
@@ -31,12 +30,11 @@ const Shape = (props: ShapeSelectProps) => {
   const options = useShape();
   const permissions = usePermissions();
 
-  const newShapeModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const emptyMessage = useEmptyState("materialShape", {
-    onCreate: () => newShapeModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return permissions.can("create", "parts") ? (
@@ -49,21 +47,21 @@ const Shape = (props: ShapeSelectProps) => {
         label={props?.label ?? "Shape"}
         emptyMessage={emptyMessage}
         onCreateOption={(option) => {
-          newShapeModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newShapeModal.isOpen && (
+      {create.item !== null && (
         <MaterialShapeForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newShapeModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
-            code: created.slice(0, 3).toUpperCase()
+            name: create.item,
+            code: create.item.slice(0, 3).toUpperCase()
           }}
         />
       )}

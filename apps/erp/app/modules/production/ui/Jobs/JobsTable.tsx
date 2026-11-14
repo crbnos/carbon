@@ -192,7 +192,6 @@ const JobsTable = memo((props: JobsTableProps) => {
   };
 
   const onDeleteCancel = () => {
-    setSelectedJob(null);
     deleteModal.onClose();
   };
 

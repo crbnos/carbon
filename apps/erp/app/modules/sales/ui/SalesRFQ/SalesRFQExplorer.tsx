@@ -83,7 +83,6 @@ export default function SalesRFQExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -248,23 +247,28 @@ export default function SalesRFQExplorer() {
           )}
         </div>
       </VStack>
-      {newSalesRFQLineDisclosure.isOpen && (
+      {newSalesRFQLineDisclosure.openCount > 0 && (
         <SalesRFQLineForm
+          key={newSalesRFQLineDisclosure.openCount}
+          open={newSalesRFQLineDisclosure.isOpen}
           initialValues={salesRfqLineInitialValues}
           type="modal"
           onClose={newSalesRFQLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeleteSalesRFQLine line={deleteLine!} onCancel={onDeleteCancel} />
-      )}
-      {mapLinesDisclosure.isOpen && (
-        <MapExtractedLinesModal
-          rfqId={rfqId}
-          customerId={salesRfqData?.rfqSummary?.customerId ?? undefined}
-          onClose={mapLinesDisclosure.onClose}
+      {deleteLine && (
+        <DeleteSalesRFQLine
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={onDeleteCancel}
         />
       )}
+      <MapExtractedLinesModal
+        rfqId={rfqId}
+        customerId={salesRfqData?.rfqSummary?.customerId ?? undefined}
+        open={mapLinesDisclosure.isOpen}
+        onClose={mapLinesDisclosure.onClose}
+      />
     </div>
   );
 }

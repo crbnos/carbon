@@ -71,6 +71,42 @@ export function BatchRecordModal({
   step,
   members,
   jobIdOf,
+  open: modalOpen = true,
+  onClose
+}: {
+  batchId: string;
+  step: BatchStep;
+  // The step's per-member rows, already in job order.
+  members: Member[];
+  jobIdOf: (jobOperationId: string) => string;
+  open?: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={modalOpen}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onClose();
+      }}
+    >
+      <ModalContent size="large">
+        <BatchRecordBody
+          batchId={batchId}
+          step={step}
+          members={members}
+          jobIdOf={jobIdOf}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function BatchRecordBody({
+  batchId,
+  step,
+  members,
+  jobIdOf,
   onClose
 }: {
   batchId: string;
@@ -270,150 +306,138 @@ export function BatchRecordModal({
   const spec = kind === "number" ? limits : null;
 
   return (
-    <Modal
-      open
-      onOpenChange={(isOpen) => {
-        if (!isOpen) onClose();
-      }}
-    >
-      <ModalContent size="large">
-        <ModalHeader>
-          <ModalTitle>{step.name}</ModalTitle>
-          <ModalDescription>
-            {spec ??
-              (ticked ? (
-                <Trans>Tick the jobs this was done for.</Trans>
-              ) : (
-                <Trans>
-                  Enter each job's value, or fill every job at once from the
-                  first row. Empty rows are skipped.
-                </Trans>
-              ))}
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          {kind === "file" && (
-            <div className="mb-4 flex flex-col gap-3">
-              {file ? (
-                <div className="flex items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <LuFile className="size-5 shrink-0 text-muted-foreground" />
-                    <span className="truncate text-sm">{file.name}</span>
-                  </div>
-                  <Button variant="secondary" onClick={() => setFile(null)}>
-                    <Trans>Remove</Trans>
-                  </Button>
+    <>
+      <ModalHeader>
+        <ModalTitle>{step.name}</ModalTitle>
+        <ModalDescription>
+          {spec ??
+            (ticked ? (
+              <Trans>Tick the jobs this was done for.</Trans>
+            ) : (
+              <Trans>
+                Enter each job's value, or fill every job at once from the first
+                row. Empty rows are skipped.
+              </Trans>
+            ))}
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        {kind === "file" && (
+          <div className="mb-4 flex flex-col gap-3">
+            {file ? (
+              <div className="flex items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <LuFile className="size-5 shrink-0 text-muted-foreground" />
+                  <span className="truncate text-sm">{file.name}</span>
                 </div>
-              ) : (
-                <FileDropzone onDrop={(files) => setFile(files[0] ?? null)} />
-              )}
-              {step.type === "Inspection" && (
-                <div className="flex items-center justify-between rounded-lg border bg-card px-4 py-3">
-                  <span className="text-sm font-medium">
-                    <Trans>Passed inspection</Trans>
-                  </span>
-                  <Switch
-                    aria-label={t`Passed inspection`}
-                    checked={passed}
-                    onCheckedChange={setPassed}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-          <div className="overflow-hidden rounded-lg border bg-card">
-            <table className="w-full border-separate border-spacing-0 text-sm">
-              <thead>
-                <tr>
-                  <th className="border-b border-r bg-muted/40 px-3 py-2 text-left font-medium text-muted-foreground">
-                    <Trans>Job</Trans>
-                  </th>
-                  <th
-                    className={cn(
-                      "border-b bg-muted/40 px-3 py-2 font-medium text-muted-foreground",
-                      ticked ? "w-24 text-center" : "text-left",
-                      kind === "number" && "text-right"
-                    )}
-                  >
-                    {ticked ? (
-                      <Trans>Done</Trans>
-                    ) : kind === "number" && step.unitOfMeasureCode ? (
-                      step.unitOfMeasureCode
-                    ) : (
-                      <Trans>Value</Trans>
-                    )}
-                  </th>
+                <Button variant="secondary" onClick={() => setFile(null)}>
+                  <Trans>Remove</Trans>
+                </Button>
+              </div>
+            ) : (
+              <FileDropzone onDrop={(files) => setFile(files[0] ?? null)} />
+            )}
+            {step.type === "Inspection" && (
+              <div className="flex items-center justify-between rounded-lg border bg-card px-4 py-3">
+                <span className="text-sm font-medium">
+                  <Trans>Passed inspection</Trans>
+                </span>
+                <Switch
+                  aria-label={t`Passed inspection`}
+                  checked={passed}
+                  onCheckedChange={setPassed}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        <div className="overflow-hidden rounded-lg border bg-card">
+          <table className="w-full border-separate border-spacing-0 text-sm">
+            <thead>
+              <tr>
+                <th className="border-b border-r bg-muted/40 px-3 py-2 text-left font-medium text-muted-foreground">
+                  <Trans>Job</Trans>
+                </th>
+                <th
+                  className={cn(
+                    "border-b bg-muted/40 px-3 py-2 font-medium text-muted-foreground",
+                    ticked ? "w-24 text-center" : "text-left",
+                    kind === "number" && "text-right"
+                  )}
+                >
+                  {ticked ? (
+                    <Trans>Done</Trans>
+                  ) : kind === "number" && step.unitOfMeasureCode ? (
+                    step.unitOfMeasureCode
+                  ) : (
+                    <Trans>Value</Trans>
+                  )}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {members.length > 1 && (
+                <tr className="bg-muted/20">
+                  <td className="border-b border-r px-3 py-2 align-middle font-medium text-muted-foreground">
+                    <Trans>All jobs</Trans>
+                  </td>
+                  <td className="border-b p-0 align-middle">{cellFor(null)}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {members.length > 1 && (
-                  <tr className="bg-muted/20">
-                    <td className="border-b border-r px-3 py-2 align-middle font-medium text-muted-foreground">
-                      <Trans>All jobs</Trans>
+              )}
+              {members.map((m, i) => {
+                const isLast = i === members.length - 1;
+                return (
+                  <tr key={m.stepId}>
+                    <td
+                      className={cn(
+                        "border-r px-3 py-2 align-middle",
+                        !isLast && "border-b"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium tabular-nums">
+                          {jobIdOf(m.jobOperationId)}
+                        </span>
+                        {m.recorded && (
+                          <LuCircleCheck
+                            className="size-4 text-emerald-500"
+                            aria-label={t`Recorded`}
+                          />
+                        )}
+                      </div>
                     </td>
-                    <td className="border-b p-0 align-middle">
-                      {cellFor(null)}
+                    <td
+                      className={cn("p-0 align-middle", !isLast && "border-b")}
+                    >
+                      {cellFor(m)}
                     </td>
                   </tr>
-                )}
-                {members.map((m, i) => {
-                  const isLast = i === members.length - 1;
-                  return (
-                    <tr key={m.stepId}>
-                      <td
-                        className={cn(
-                          "border-r px-3 py-2 align-middle",
-                          !isLast && "border-b"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium tabular-nums">
-                            {jobIdOf(m.jobOperationId)}
-                          </span>
-                          {m.recorded && (
-                            <LuCircleCheck
-                              className="size-4 text-emerald-500"
-                              aria-label={t`Recorded`}
-                            />
-                          )}
-                        </div>
-                      </td>
-                      <td
-                        className={cn(
-                          "p-0 align-middle",
-                          !isLast && "border-b"
-                        )}
-                      >
-                        {cellFor(m)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" size="lg" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            size="lg"
-            rightIcon={<LuCircleCheck />}
-            isLoading={busy}
-            isDisabled={
-              busy || changed.length === 0 || (kind === "file" && !file)
-            }
-            onClick={submit}
-          >
-            {changed.length > 0 ? (
-              <Trans>Record {changed.length} jobs</Trans>
-            ) : (
-              <Trans>Record</Trans>
-            )}
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" size="lg" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          size="lg"
+          rightIcon={<LuCircleCheck />}
+          isLoading={busy}
+          isDisabled={
+            busy || changed.length === 0 || (kind === "file" && !file)
+          }
+          onClick={submit}
+        >
+          {changed.length > 0 ? (
+            <Trans>Record {changed.length} jobs</Trans>
+          ) : (
+            <Trans>Record</Trans>
+          )}
+        </Button>
+      </ModalFooter>
+    </>
   );
 }

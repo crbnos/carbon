@@ -119,7 +119,6 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -248,15 +247,21 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
           )}
         </div>
       </VStack>
-      {newQuoteLineDisclosure.isOpen && (
+      {newQuoteLineDisclosure.openCount > 0 && (
         <QuoteLineForm
+          key={newQuoteLineDisclosure.openCount}
+          open={newQuoteLineDisclosure.isOpen}
           initialValues={quoteLineInitialValues}
           type="modal"
           onClose={newQuoteLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeleteQuoteLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLine && (
+        <DeleteQuoteLine
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={onDeleteCancel}
+        />
       )}
     </div>
   );

@@ -33,6 +33,7 @@ import { customerAssetValidator } from "../../service.models";
 
 type CustomerAssetFormProps = {
   initialValues: Partial<z.input<typeof customerAssetValidator>>;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -43,6 +44,7 @@ type CustomerAssetFormProps = {
  */
 const CustomerAssetForm = ({
   initialValues,
+  open = true,
   onClose
 }: CustomerAssetFormProps) => {
   const { t } = useLingui();
@@ -54,7 +56,7 @@ const CustomerAssetForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

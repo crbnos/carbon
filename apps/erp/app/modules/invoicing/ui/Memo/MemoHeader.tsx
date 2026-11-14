@@ -166,27 +166,24 @@ const MemoHeader = () => {
         }
       />
 
-      {voidModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.memoVoid(memo.id)}
-          name={memo.memoId}
-          title={t`Void ${memo.memoId}`}
-          text={t`Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone.`}
-          deleteText={t`Void`}
-          onCancel={voidModal.onClose}
-          onSubmit={voidModal.onClose}
-        />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.memoDelete(memo.id)}
-          isOpen={deleteModal.isOpen}
-          name={memo.memoId}
-          text={t`Are you sure you want to delete ${memo.memoId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        isOpen={voidModal.isOpen}
+        action={path.to.memoVoid(memo.id)}
+        name={memo.memoId}
+        title={t`Void ${memo.memoId}`}
+        text={t`Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone.`}
+        deleteText={t`Void`}
+        onCancel={voidModal.onClose}
+        onSubmit={voidModal.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={path.to.memoDelete(memo.id)}
+        name={memo.memoId}
+        text={t`Are you sure you want to delete ${memo.memoId}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
     </>
   );
 };

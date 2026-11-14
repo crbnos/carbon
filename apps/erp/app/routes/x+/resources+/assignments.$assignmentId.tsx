@@ -28,6 +28,8 @@ import {
   ToggleGroup,
   ToggleGroupItem,
   toast,
+  useDisclosure,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -44,7 +46,7 @@ import {
   LuUndo2
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { DateTime, EmployeeAvatar, Empty, FileDropzone } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
@@ -161,6 +163,30 @@ type StatusFilter =
 
 function CertificateCompleteModal({
   assignment,
+  open = true,
+  onClose
+}: {
+  assignment: TrainingAssignmentStatusItem;
+  open?: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <CertificateCompleteBody assignment={assignment} onClose={onClose} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function CertificateCompleteBody({
+  assignment,
   onClose
 }: {
   assignment: TrainingAssignmentStatusItem;
@@ -189,58 +215,50 @@ function CertificateCompleteModal({
   };
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>{t`Mark Complete`}</ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={4}>
-            <p className="text-sm text-muted-foreground">
-              <Trans>
-                Mark {assignment.employeeName?.trim()} complete. Attach their
-                certificate if you have one.
-              </Trans>
-            </p>
-            <FileDropzone
-              onDrop={(files) => setFile(files[0] ?? null)}
-              accept={{
-                ...trainingCertificateAccept,
-                "image/heic": [".heic", ".heif"]
-              }}
-              multiple={false}
-              disabled={isSubmitting}
-              className="mt-0 w-full"
-            />
-            {file && (
-              <HStack spacing={2} className="text-sm">
-                <LuFileCheck className="text-emerald-500" />
-                <span className="break-all">{file.name}</span>
-              </HStack>
-            )}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            onClick={onSubmit}
-            isDisabled={isSubmitting}
-            isLoading={isSubmitting}
-            leftIcon={<LuCircleCheck />}
-          >
-            <Trans>Mark Complete</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <>
+      <ModalHeader>
+        <ModalTitle>{t`Mark Complete`}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              Mark {assignment.employeeName?.trim()} complete. Attach their
+              certificate if you have one.
+            </Trans>
+          </p>
+          <FileDropzone
+            onDrop={(files) => setFile(files[0] ?? null)}
+            accept={{
+              ...trainingCertificateAccept,
+              "image/heic": [".heic", ".heif"]
+            }}
+            multiple={false}
+            disabled={isSubmitting}
+            className="mt-0 w-full"
+          />
+          {file && (
+            <HStack spacing={2} className="text-sm">
+              <LuFileCheck className="text-emerald-500" />
+              <span className="break-all">{file.name}</span>
+            </HStack>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          onClick={onSubmit}
+          isDisabled={isSubmitting}
+          isLoading={isSubmitting}
+          leftIcon={<LuCircleCheck />}
+        >
+          <Trans>Mark Complete</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 }
 
@@ -265,13 +283,14 @@ function AssignmentListItem({
   const employeeName = assignment.employeeName?.trim() ?? "";
   const canMarkComplete =
     assignment.status !== "Completed" && assignment.status !== "Not Required";
-  const [isCertificateOpen, setIsCertificateOpen] = useState(false);
+  const certificateModal = useDisclosure();
   // Hold the completion id from when the dialog opened: the row loses its
   // completionId as soon as the removal revalidates, and the dialog must stay
   // mounted until its submission settles so it can close itself.
   const [removeCompletionId, setRemoveCompletionId] = useState<number | null>(
     null
   );
+  const [isRemoveOpen, setIsRemoveOpen] = useState(false);
 
   return (
     <div className={cn("p-4", !isLast && "border-b w-full")}>
@@ -324,7 +343,10 @@ function AssignmentListItem({
                 variant="secondary"
                 size="sm"
                 leftIcon={<LuUndo2 />}
-                onClick={() => setRemoveCompletionId(assignment.completionId)}
+                onClick={() => {
+                  setRemoveCompletionId(assignment.completionId);
+                  setIsRemoveOpen(true);
+                }}
               >
                 <Trans>Remove Completion</Trans>
               </Button>
@@ -335,7 +357,7 @@ function AssignmentListItem({
               size="sm"
               isDisabled={disabled}
               leftIcon={<LuCircleCheck />}
-              onClick={() => setIsCertificateOpen(true)}
+              onClick={certificateModal.onOpen}
             >
               <Trans>Mark Complete</Trans>
             </Button>
@@ -366,12 +388,11 @@ function AssignmentListItem({
           )}
         </HStack>
       </div>
-      {isCertificateOpen && (
-        <CertificateCompleteModal
-          assignment={assignment}
-          onClose={() => setIsCertificateOpen(false)}
-        />
-      )}
+      <CertificateCompleteModal
+        open={certificateModal.isOpen}
+        assignment={assignment}
+        onClose={certificateModal.onClose}
+      />
       {removeCompletionId !== null && (
         <Confirm
           action={path.to.markTrainingIncomplete}
@@ -379,8 +400,9 @@ function AssignmentListItem({
           text={t`The training goes back to Pending for ${employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed.`}
           confirmText={t`Remove`}
           confirmVariant="destructive"
-          onCancel={() => setRemoveCompletionId(null)}
-          onSubmit={() => setRemoveCompletionId(null)}
+          isOpen={isRemoveOpen}
+          onCancel={() => setIsRemoveOpen(false)}
+          onSubmit={() => setIsRemoveOpen(false)}
         >
           <input type="hidden" name="completionId" value={removeCompletionId} />
         </Confirm>
@@ -393,7 +415,7 @@ export default function TrainingAssignmentDetailRoute() {
   const { t } = useLingui();
   const { name, isExternal, assignments } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.trainingAssignments);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
 
@@ -424,10 +446,8 @@ export default function TrainingAssignmentDetailRoute() {
     );
   }, [assignments]);
 
-  const onClose = () => navigate(path.to.trainingAssignments);
-
   return (
-    <Drawer open onOpenChange={(open) => !open && onClose()}>
+    <Drawer open={dialog.open} onOpenChange={(open) => !open && dialog.close()}>
       <DrawerContent size="lg">
         <DrawerHeader>
           <HStack className="justify-between w-full pr-8">

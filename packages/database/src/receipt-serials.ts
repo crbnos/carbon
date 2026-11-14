@@ -63,6 +63,23 @@ export async function idsWithLiveStockHistory(
         )
       )
     )
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom("inspection")
+            .innerJoin("receipt", (join) =>
+              join
+                .onRef("receipt.id", "=", "inspection.sourceDocumentId")
+                .onRef("receipt.companyId", "=", "inspection.companyId")
+            )
+            .select("inspection.id")
+            .whereRef("inspection.id", "=", "itemLedger.documentId")
+            .whereRef("inspection.companyId", "=", "itemLedger.companyId")
+            .where("inspection.sourceDocument", "=", "Receipt")
+            .where("receipt.status", "=", "Voided")
+        )
+      )
+    )
     .execute();
   return new Set(rows.flatMap((row) => row.trackedEntityId ?? []));
 }

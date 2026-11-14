@@ -747,7 +747,7 @@ export async function deactivateSsoConnection(
     // deactivate has done its job, so it succeeds. Try the release once more
     // now; if that fails too, the next connect, add or verify of these
     // domains clears them (releaseDeadDomainClaims).
-    logger.warn("SSO provider deleted; releasing its domain claims again", {
+    logger.warning("SSO provider deleted; releasing its domain claims again", {
       companyId: args.companyId,
       connectionId: connection.id
     });

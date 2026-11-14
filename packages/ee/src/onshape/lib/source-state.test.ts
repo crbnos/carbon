@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { OnshapeElementRow } from "./client";
-import { workspaceSourceStates } from "./source-state";
+import { settleBefore, workspaceSourceStates } from "./source-state";
 
 const element = (
   id: string,
@@ -55,5 +55,27 @@ describe("workspaceSourceStates", () => {
         element("ps", "PARTSTUDIO")
       ])
     ).toBeNull();
+  });
+});
+
+describe("settleBefore", () => {
+  it("returns the value of a read that finishes before the deadline", async () => {
+    expect(await settleBefore(Promise.resolve(7), Date.now() + 1000)).toEqual({
+      settled: true,
+      value: 7
+    });
+  });
+
+  it("gives up on a read still running at the deadline", async () => {
+    const never = new Promise<number>(() => undefined);
+    expect(await settleBefore(never, Date.now() + 5)).toEqual({
+      settled: false
+    });
+  });
+
+  it("passes on a read that fails before the deadline", async () => {
+    await expect(
+      settleBefore(Promise.reject(new Error("402")), Date.now() + 1000)
+    ).rejects.toThrow("402");
   });
 });

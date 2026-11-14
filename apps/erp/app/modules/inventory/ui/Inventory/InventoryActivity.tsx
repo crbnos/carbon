@@ -15,14 +15,25 @@ import {
 import { Link } from "react-router";
 import Activity from "~/components/Activity";
 import { useQuantityFormatter } from "~/hooks";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import { path } from "~/utils/path";
 import type { ItemLedger } from "../../types";
 import type { CollapsedItemLedger } from "./ledgerFeed";
 
 const getActivityText = (
   ledgerRecord: CollapsedItemLedger,
-  trackingNoun: "batch" | "serial" | null
+  trackingNoun: "batch" | "serial" | null,
+  nonNettable: Set<string>
 ) => {
+  const unitLabel = (name: string | null | undefined, id?: string | null) =>
+    name
+      ? `${name}${id && nonNettable.has(id) ? " (non-nettable)" : ""}`
+      : name;
+  const storageUnitName = unitLabel(
+    ledgerRecord.storageUnit?.name,
+    ledgerRecord.storageUnitId
+  );
+
   // Prefer the entity's readable serial/batch number; fall back to the raw
   // tracked-entity id when it has none (e.g. unnumbered receipt batches).
   // The tracked-entity clause is omitted entirely when the item isn't
@@ -34,131 +45,97 @@ const getActivityText = (
   switch (ledgerRecord.documentType) {
     case "Purchase Receipt":
       return `received ${ledgerRecord.quantity} units${
-        ledgerRecord.storageUnit?.name
-          ? ` to ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` to ${storageUnitName}` : ""
       }${
         trackedEntityLabel ? ` of ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     case "Purchase Invoice":
       return `invoiced ${ledgerRecord.quantity} units${
-        ledgerRecord.storageUnit?.name
-          ? ` on ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` on ${storageUnitName}` : ""
       }`;
     case "Sales Shipment":
       return `shipped ${-1 * ledgerRecord.quantity} units${
-        ledgerRecord.storageUnit?.name
-          ? ` from ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` from ${storageUnitName}` : ""
       }${
         trackedEntityLabel ? ` of ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     case "Sales Invoice":
       return `invoiced ${ledgerRecord.quantity} units for sale${
-        ledgerRecord.storageUnit?.name
-          ? ` from ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` from ${storageUnitName}` : ""
       }`;
     case "Transfer Shipment":
       return `shipped ${-1 * ledgerRecord.quantity} units${
-        ledgerRecord.storageUnit?.name
-          ? ` from ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` from ${storageUnitName}` : ""
       } for transfer`;
     case "Transfer Receipt":
       return `received ${ledgerRecord.quantity} units${
-        ledgerRecord.storageUnit?.name
-          ? ` to ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` to ${storageUnitName}` : ""
       } from transfer`;
     case "Direct Transfer": {
       // Collapsed rows carry both ends; an uncollapsed half names only its own.
       const from =
         ledgerRecord.quantity > 0
-          ? ledgerRecord.transferFromStorageUnitName
-          : ledgerRecord.storageUnit?.name;
-      const to =
-        ledgerRecord.quantity > 0 ? ledgerRecord.storageUnit?.name : null;
+          ? unitLabel(
+              ledgerRecord.transferFromStorageUnitName,
+              ledgerRecord.transferFromStorageUnitId
+            )
+          : storageUnitName;
+      const to = ledgerRecord.quantity > 0 ? storageUnitName : null;
       return `transferred ${Math.abs(ledgerRecord.quantity)} units${
         from ? ` from ${from}` : ""
       }${to ? ` to ${to}` : ""}`;
     }
     case "Inventory Receipt":
       return `received ${ledgerRecord.quantity} units into inventory${
-        ledgerRecord.storageUnit?.name
-          ? ` on ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` on ${storageUnitName}` : ""
       }`;
     case "Inventory Shipment":
       return `shipped ${-1 * ledgerRecord.quantity} units from inventory${
-        ledgerRecord.storageUnit?.name
-          ? ` from ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` from ${storageUnitName}` : ""
       }`;
     case "Posted Assembly":
       return `assembled ${ledgerRecord.quantity} units${
-        ledgerRecord.storageUnit?.name
-          ? ` on ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` on ${storageUnitName}` : ""
       }`;
     case "Purchase Credit Memo":
       return `credited ${ledgerRecord.quantity} units for purchase${
-        ledgerRecord.storageUnit?.name
-          ? ` on ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` on ${storageUnitName}` : ""
       }`;
     case "Purchase Return Shipment":
       // A return shipment's own positive rows put stock back: units an
       // inspection reject wrote off (restored to ship them), or a void.
       return ledgerRecord.quantity < 0
         ? `returned ${-1 * ledgerRecord.quantity} units to supplier${
-            ledgerRecord.storageUnit?.name
-              ? ` from ${ledgerRecord.storageUnit.name}`
-              : ""
+            storageUnitName ? ` from ${storageUnitName}` : ""
           }`
         : `added back ${ledgerRecord.quantity} units for a supplier return${
-            ledgerRecord.storageUnit?.name
-              ? ` to ${ledgerRecord.storageUnit.name}`
-              : ""
+            storageUnitName ? ` to ${storageUnitName}` : ""
           }`;
     case "Sales Credit Memo":
       return `credited ${ledgerRecord.quantity} units for sale${
-        ledgerRecord.storageUnit?.name
-          ? ` on ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` on ${storageUnitName}` : ""
       }`;
     case "Sales Return Receipt":
       return `received ${ledgerRecord.quantity} units as sales return${
-        ledgerRecord.storageUnit?.name
-          ? ` to ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` to ${storageUnitName}` : ""
       }`;
     case "Service Credit Memo":
       return `credited ${ledgerRecord.quantity} units for service${
-        ledgerRecord.storageUnit?.name
-          ? ` on ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` on ${storageUnitName}` : ""
       }`;
     case "Service Invoice":
       return `invoiced ${ledgerRecord.quantity} units for service${
-        ledgerRecord.storageUnit?.name
-          ? ` from ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` from ${storageUnitName}` : ""
       }`;
     case "Service Shipment":
       return `shipped ${-1 * ledgerRecord.quantity} units for service${
-        ledgerRecord.storageUnit?.name
-          ? ` from ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` from ${storageUnitName}` : ""
       }`;
     case "Job Consumption":
       return (
         <span>
           issued {-1 * ledgerRecord.quantity} units{" "}
-          {ledgerRecord.storageUnit?.name
-            ? `from ${ledgerRecord.storageUnit.name} `
-            : ""}
+          {storageUnitName ? `from ${storageUnitName} ` : ""}
           {trackedEntityLabel ? (
             <>
               of {trackingNoun} {trackedEntityLabel}{" "}
@@ -199,9 +176,7 @@ const getActivityText = (
       return (
         <span>
           issued {-1 * ledgerRecord.quantity} units{" "}
-          {ledgerRecord.storageUnit?.name
-            ? `from ${ledgerRecord.storageUnit.name} `
-            : ""}
+          {storageUnitName ? `from ${storageUnitName} ` : ""}
           {trackedEntityLabel ? (
             <>
               of {trackingNoun} {trackedEntityLabel}{" "}
@@ -260,10 +235,7 @@ const getActivityText = (
         <>
           <span>
             received {ledgerRecord.quantity} units
-            {ledgerRecord.storageUnit?.name
-              ? ` to ${ledgerRecord.storageUnit.name}`
-              : ""}{" "}
-            from a
+            {storageUnitName ? ` to ${storageUnitName}` : ""} from a
           </span>{" "}
           <Link
             className="inline-flex items-center gap-1 font-medium text-foreground hover:text-primary"
@@ -283,17 +255,13 @@ const getActivityText = (
   switch (ledgerRecord.entryType) {
     case "Positive Adjmt.":
       return `made a positive adjustment of ${ledgerRecord.quantity}${
-        ledgerRecord.storageUnit?.name
-          ? ` to ${ledgerRecord.storageUnit?.name}`
-          : ""
+        storageUnitName ? ` to ${storageUnitName}` : ""
       }${
         trackedEntityLabel ? ` for ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
     case "Negative Adjmt.":
       return `made a negative adjustment of ${-1 * ledgerRecord.quantity}${
-        ledgerRecord.storageUnit?.name
-          ? ` to ${ledgerRecord.storageUnit.name}`
-          : ""
+        storageUnitName ? ` to ${storageUnitName}` : ""
       }${
         trackedEntityLabel ? ` for ${trackingNoun} ${trackedEntityLabel}` : ""
       }`;
@@ -362,6 +330,7 @@ type InventoryActivityProps = {
 
 const InventoryActivity = memo(
   ({ item, highlightId, itemTrackingType }: InventoryActivityProps) => {
+    const nonNettable = useNonNettableStorageUnits();
     const trackingNoun =
       itemTrackingType === "Serial"
         ? ("serial" as const)
@@ -371,7 +340,7 @@ const InventoryActivity = memo(
     return (
       <Activity
         employeeId={item.createdBy}
-        activityMessage={getActivityText(item, trackingNoun)}
+        activityMessage={getActivityText(item, trackingNoun, nonNettable)}
         activityTime={item.createdAt}
         activityIcon={
           item.balanceBefore != null && item.balanceAfter != null ? (

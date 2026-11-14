@@ -36,7 +36,7 @@ export function AdjustInventory({ add }: { add: boolean }) {
   const [loading, setLoading] = useState(false);
 
   const [storageUnits, setStorageUnits] = useState<
-    { value: string; label: string }[]
+    { value: string; label: string; helper?: string }[]
   >([]);
   const [selectedStorageUnit, setSelectedStorageUnit] = useState<string | null>(
     null
@@ -67,13 +67,15 @@ export function AdjustInventory({ add }: { add: boolean }) {
     }
     const storageUnits = await carbon
       .from("storageUnit")
-      .select("id, name")
+      .select("id, name, effectiveNettable")
       .eq("locationId", routeData?.location ?? "");
 
     setStorageUnits(
       storageUnits.data?.map((storageUnit) => ({
         value: storageUnit.id,
-        label: storageUnit.name
+        label: storageUnit.name,
+        helper:
+          storageUnit.effectiveNettable === false ? t`Non-nettable` : undefined
       })) ?? []
     );
     setLoading(false);
@@ -84,7 +86,7 @@ export function AdjustInventory({ add }: { add: boolean }) {
     fetchStorageUnitsByLocationId();
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the result object so every completed submission toasts once, repeated failures included
   useEffect(() => {
     if (fetcher.data?.success === true) {
       surface.done();
@@ -96,7 +98,7 @@ export function AdjustInventory({ add }: { add: boolean }) {
         fetcher.data?.message ?? t`Failed to complete inventory adjustment`
       );
     }
-  }, [fetcher.data?.success]);
+  }, [fetcher.data]);
 
   const itemOptions = useMemo(() => {
     return items

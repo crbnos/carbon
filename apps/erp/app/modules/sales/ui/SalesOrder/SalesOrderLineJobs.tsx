@@ -179,113 +179,111 @@ export function SalesOrderLineJobs({
           )}
         </CardContent>
       </Card>
-      {newJobDisclosure.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) newJobDisclosure.onClose();
-          }}
-        >
-          <ModalContent size="large">
-            <ValidatedForm
-              validator={salesOrderToJobValidator}
-              method="post"
-              action={path.to.salesOrderLineToJob(orderId, lineId)}
-              defaultValues={{
-                customerId: salesOrder.customerId ?? undefined,
-                deadlineType: "Hard Deadline",
-                dueDate: line.promisedDate ?? "",
-                itemId: line.itemId ?? undefined,
-                locationId: line.locationId ?? "",
-                modelUploadId: line.modelUploadId ?? undefined,
-                quantity: line.saleQuantity ?? undefined,
-                quoteId: opportunity.quotes[0]?.id ?? undefined,
-                quoteLineId: opportunity.quotes[0]?.id ? lineId : undefined,
-                salesOrderId: opportunity.salesOrders[0]?.id ?? undefined,
-                salesOrderLineId: lineId,
-                scrapQuantity: 0,
-                unitOfMeasureCode: line.unitOfMeasureCode ?? undefined
-              }}
-              className="flex flex-col h-full"
-              onSubmit={newJobDisclosure.onClose}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Convert Line to Job</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  <Trans>
-                    Create a new production job to fulfill the sales order
-                  </Trans>
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <Hidden name="modelUploadId" />
-                <Hidden name="customerId" />
-                <Hidden name="itemId" />
-                <Hidden name="salesOrderId" />
-                <Hidden name="salesOrderLineId" />
-                <Hidden name="quoteId" />
-                <Hidden name="quoteLineId" />
-                <Hidden name="unitOfMeasureCode" />
-                <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
-                  <SequenceOrCustomId
-                    name="jobId"
-                    label={t`Job ID`}
-                    table="job"
-                  />
-                  <Location autoFocus name="locationId" label={t`Location`} />
-                  <NumberControlled
-                    name="quantity"
-                    label={t`Quantity`}
-                    value={quantities.quantity}
-                    onChange={(value) => {
-                      setQuantities((prev) => ({
-                        ...prev,
-                        quantity: value,
-                        scrapQuantity: scrapAllowance(value, scrapPercentage)
-                      }));
-                    }}
-                    minValue={0}
-                  />
-                  <NumberControlled
-                    name="scrapQuantity"
-                    label={t`Scrap Quantity`}
-                    value={quantities.scrapQuantity}
-                    onChange={(value) =>
-                      setQuantities((prev) => ({
-                        ...prev,
-                        scrapQuantity: value
-                      }))
-                    }
-                    minValue={0}
-                  />
-                  <DatePicker name="dueDate" label={t`Due Date`} />
-                  <Select
-                    name="deadlineType"
-                    label={t`Deadline Type`}
-                    options={deadlineTypes.map((d) => ({
-                      value: d,
-                      label: (
-                        <div className="flex gap-1 items-center">
-                          {getDeadlineIcon(d)}
-                          <span>{d}</span>
-                        </div>
-                      )
-                    }))}
-                  />
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={newJobDisclosure.onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit>Create</Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={newJobDisclosure.isOpen}
+        onOpenChange={(open) => {
+          if (!open) newJobDisclosure.onClose();
+        }}
+      >
+        <ModalContent size="large">
+          <ValidatedForm
+            validator={salesOrderToJobValidator}
+            method="post"
+            action={path.to.salesOrderLineToJob(orderId, lineId)}
+            defaultValues={{
+              customerId: salesOrder.customerId ?? undefined,
+              deadlineType: "Hard Deadline",
+              dueDate: line.promisedDate ?? "",
+              itemId: line.itemId ?? undefined,
+              locationId: line.locationId ?? "",
+              modelUploadId: line.modelUploadId ?? undefined,
+              quantity: line.saleQuantity ?? undefined,
+              quoteId: opportunity.quotes[0]?.id ?? undefined,
+              quoteLineId: opportunity.quotes[0]?.id ? lineId : undefined,
+              salesOrderId: opportunity.salesOrders[0]?.id ?? undefined,
+              salesOrderLineId: lineId,
+              scrapQuantity: 0,
+              unitOfMeasureCode: line.unitOfMeasureCode ?? undefined
+            }}
+            className="flex flex-col h-full"
+            onSubmit={newJobDisclosure.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Convert Line to Job</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>
+                  Create a new production job to fulfill the sales order
+                </Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Hidden name="modelUploadId" />
+              <Hidden name="customerId" />
+              <Hidden name="itemId" />
+              <Hidden name="salesOrderId" />
+              <Hidden name="salesOrderLineId" />
+              <Hidden name="quoteId" />
+              <Hidden name="quoteLineId" />
+              <Hidden name="unitOfMeasureCode" />
+              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
+                <SequenceOrCustomId
+                  name="jobId"
+                  label={t`Job ID`}
+                  table="job"
+                />
+                <Location autoFocus name="locationId" label={t`Location`} />
+                <NumberControlled
+                  name="quantity"
+                  label={t`Quantity`}
+                  value={quantities.quantity}
+                  onChange={(value) => {
+                    setQuantities((prev) => ({
+                      ...prev,
+                      quantity: value,
+                      scrapQuantity: scrapAllowance(value, scrapPercentage)
+                    }));
+                  }}
+                  minValue={0}
+                />
+                <NumberControlled
+                  name="scrapQuantity"
+                  label={t`Scrap Quantity`}
+                  value={quantities.scrapQuantity}
+                  onChange={(value) =>
+                    setQuantities((prev) => ({
+                      ...prev,
+                      scrapQuantity: value
+                    }))
+                  }
+                  minValue={0}
+                />
+                <DatePicker name="dueDate" label={t`Due Date`} />
+                <Select
+                  name="deadlineType"
+                  label={t`Deadline Type`}
+                  options={deadlineTypes.map((d) => ({
+                    value: d,
+                    label: (
+                      <div className="flex gap-1 items-center">
+                        {getDeadlineIcon(d)}
+                        <span>{d}</span>
+                      </div>
+                    )
+                  }))}
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={newJobDisclosure.onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit>Create</Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
     </>
   );
 }
@@ -387,8 +385,10 @@ export function SalesOrderJobItem({
       </HStack>
 
       {disclosure.isOpen && <JobDetails job={job as Job} />}
-      {releaseModal.isOpen && (
+      {releaseModal.openCount > 0 && (
         <JobStartModal
+          key={releaseModal.openCount}
+          open={releaseModal.isOpen}
           job={job as Job}
           onClose={releaseModal.onClose}
           release={release}

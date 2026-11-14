@@ -367,29 +367,26 @@ const QuoteHeader = () => {
           </>
         }
       />
-      {finalizeModal.isOpen && (
-        <QuoteFinalizeModal
-          quote={routeData?.quote}
-          shipment={routeData?.shipment ?? null}
-          onClose={finalizeModal.onClose}
-          // @ts-expect-error TS2339 - TODO: fix type
-          defaultCc={routeData?.defaultCc ?? []}
-        />
-      )}
-      {createRevisionModal.isOpen && (
-        <CreateRevisionModal
-          quote={routeData?.quote}
-          asRevision={asRevision}
-          onClose={createRevisionModal.onClose}
-        />
-      )}
-      {shareModal.isOpen && (
-        <ShareQuoteModal
-          id={quoteId}
-          externalLinkId={routeData?.quote.externalLinkId ?? undefined}
-          onClose={shareModal.onClose}
-        />
-      )}
+      <QuoteFinalizeModal
+        open={finalizeModal.isOpen}
+        quote={routeData?.quote}
+        shipment={routeData?.shipment ?? null}
+        onClose={finalizeModal.onClose}
+        // @ts-expect-error TS2339 - TODO: fix type
+        defaultCc={routeData?.defaultCc ?? []}
+      />
+      <CreateRevisionModal
+        open={createRevisionModal.isOpen}
+        quote={routeData?.quote}
+        asRevision={asRevision}
+        onClose={createRevisionModal.onClose}
+      />
+      <ShareQuoteModal
+        open={shareModal.isOpen}
+        id={quoteId}
+        externalLinkId={routeData?.quote.externalLinkId ?? undefined}
+        onClose={shareModal.onClose}
+      />
       {/* we use isOpen so we don't lose state */}
       <QuoteToOrderDrawer
         isOpen={convertToOrderModal.isOpen}
@@ -398,22 +395,20 @@ const QuoteHeader = () => {
         lines={eligibleLines ?? []}
         pricing={routeData?.prices ?? []}
       />
-      {deleteQuoteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteQuote(quoteId)}
-          isOpen={deleteQuoteModal.isOpen}
-          name={getQuoteDisplayId(routeData?.quote)}
-          text={t`Are you sure you want to delete ${getQuoteDisplayId(
-            routeData?.quote
-          )}? This cannot be undone.`}
-          onCancel={() => {
-            deleteQuoteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteQuoteModal.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteQuote(quoteId)}
+        isOpen={deleteQuoteModal.isOpen}
+        name={getQuoteDisplayId(routeData?.quote)}
+        text={t`Are you sure you want to delete ${getQuoteDisplayId(
+          routeData?.quote
+        )}? This cannot be undone.`}
+        onCancel={() => {
+          deleteQuoteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteQuoteModal.onClose();
+        }}
+      />
       {auditLogDrawer}
       {documentEdit.modal}
     </>
@@ -423,11 +418,36 @@ const QuoteHeader = () => {
 export default QuoteHeader;
 
 function CreateRevisionModal({
+  open,
   quote,
   asRevision,
   onClose
 }: {
+  open: boolean;
   quote?: Quotation;
+  asRevision: boolean;
+  onClose: () => void;
+}) {
+  if (!quote) return null;
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <CreateRevisionBody
+          quote={quote}
+          asRevision={asRevision}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function CreateRevisionBody({
+  quote,
+  asRevision,
+  onClose
+}: {
+  quote: Quotation;
   asRevision: boolean;
   onClose: () => void;
 }) {
@@ -454,89 +474,88 @@ function CreateRevisionModal({
     }
   }, [fetcher.data?.success, t]);
 
-  if (!quote) return null;
   return (
-    <Modal open onOpenChange={onClose}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            {asRevision ? (
-              <Trans>Create Quote Revision</Trans>
-            ) : (
-              <Trans>Copy Quote</Trans>
-            )}
-          </ModalTitle>
-          <ModalDescription>
-            {asRevision ? (
-              <Trans>The quote will be copied with a revision suffix</Trans>
-            ) : (
-              <Trans>Create a quote with a new quote ID</Trans>
-            )}
-          </ModalDescription>
-        </ModalHeader>
-        {newQuoteId ? (
-          <>
-            <ModalBody>
-              <div className="flex flex-col items-center justify-center py-8">
-                <div>
-                  <LuCheck className="w-16 h-16 text-green-500" />
-                </div>
-                <h2 className="animate-fade-in">
-                  <Trans>The quote has been created</Trans>
-                </h2>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          {asRevision ? (
+            <Trans>Create Quote Revision</Trans>
+          ) : (
+            <Trans>Copy Quote</Trans>
+          )}
+        </ModalTitle>
+        <ModalDescription>
+          {asRevision ? (
+            <Trans>The quote will be copied with a revision suffix</Trans>
+          ) : (
+            <Trans>Create a quote with a new quote ID</Trans>
+          )}
+        </ModalDescription>
+      </ModalHeader>
+      {newQuoteId ? (
+        <>
+          <ModalBody>
+            <div className="flex flex-col items-center justify-center py-8">
+              <div>
+                <LuCheck className="w-16 h-16 text-green-500" />
               </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button asChild>
-                <Link to={path.to.quoteDetails(newQuoteId)}>
-                  <Trans>Open</Trans>
-                </Link>
-              </Button>
-            </ModalFooter>
-          </>
-        ) : (
+              <h2 className="animate-fade-in">
+                <Trans>The quote has been created</Trans>
+              </h2>
+            </div>
+          </ModalBody>
           <ModalFooter>
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <fetcher.Form
-              method="post"
-              action={path.to.quoteDuplicate(quote.id!)}
-            >
-              <input type="hidden" name="quoteId" value={quote?.id ?? ""} />
-              <input
-                type="hidden"
-                name="asRevision"
-                value={asRevision ? "true" : "false"}
-              />
-              <Button
-                isLoading={fetcher.state !== "idle"}
-                isDisabled={fetcher.state !== "idle"}
-                variant="primary"
-                type="submit"
-              >
-                {asRevision ? (
-                  <Trans>Create Revision</Trans>
-                ) : (
-                  <Trans>Copy Quote</Trans>
-                )}
-              </Button>
-            </fetcher.Form>
+            <Button asChild>
+              <Link to={path.to.quoteDetails(newQuoteId)}>
+                <Trans>Open</Trans>
+              </Link>
+            </Button>
           </ModalFooter>
-        )}
-      </ModalContent>
-    </Modal>
+        </>
+      ) : (
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <fetcher.Form
+            method="post"
+            action={path.to.quoteDuplicate(quote.id!)}
+          >
+            <input type="hidden" name="quoteId" value={quote?.id ?? ""} />
+            <input
+              type="hidden"
+              name="asRevision"
+              value={asRevision ? "true" : "false"}
+            />
+            <Button
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+              variant="primary"
+              type="submit"
+            >
+              {asRevision ? (
+                <Trans>Create Revision</Trans>
+              ) : (
+                <Trans>Copy Quote</Trans>
+              )}
+            </Button>
+          </fetcher.Form>
+        </ModalFooter>
+      )}
+    </>
   );
 }
 
 function ShareQuoteModal({
+  open,
   id,
   externalLinkId,
   onClose
 }: {
+  open: boolean;
   id?: string;
   externalLinkId?: string;
   onClose: () => void;
@@ -550,7 +569,7 @@ function ShareQuoteModal({
   )}`;
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

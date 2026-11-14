@@ -35,7 +35,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (update.error) {
     return data(
       update,
-      await flash(request, error(update.error, update.error.message))
+      await flash(
+        request,
+        error(update.error, "Failed to update the batch number")
+      )
     );
   }
 

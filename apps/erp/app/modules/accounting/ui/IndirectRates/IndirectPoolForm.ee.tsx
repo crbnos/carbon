@@ -45,6 +45,7 @@ type IndirectPoolFormProps = {
   initialValues: z.infer<typeof indirectPoolValidator>;
   /** An existing pool only: its account mappings, below the form. */
   children?: ReactNode;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -55,6 +56,7 @@ type IndirectPoolFormProps = {
 const IndirectPoolForm = ({
   initialValues,
   children,
+  open = true,
   onClose
 }: IndirectPoolFormProps) => {
   const { t } = useLingui();
@@ -72,7 +74,7 @@ const IndirectPoolForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

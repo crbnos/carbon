@@ -352,28 +352,22 @@ const SupplierAccountsTable = memo(
           withSelectableRows={canEdit}
         />
 
-        {deactivateSupplierModal.isOpen && (
-          <DeactivateUsersModal
-            userIds={selectedUserIds}
-            isOpen={deactivateSupplierModal.isOpen}
-            redirectTo={path.to.supplierAccounts}
-            onClose={deactivateSupplierModal.onClose}
-          />
-        )}
-        {resendInviteModal.isOpen && (
-          <ResendInviteModal
-            userIds={selectedUserIds}
-            isOpen={resendInviteModal.isOpen}
-            onClose={resendInviteModal.onClose}
-          />
-        )}
-        {revokeInviteModal.isOpen && (
-          <RevokeInviteModal
-            userIds={selectedUserIds}
-            isOpen={revokeInviteModal.isOpen}
-            onClose={revokeInviteModal.onClose}
-          />
-        )}
+        <DeactivateUsersModal
+          userIds={selectedUserIds}
+          isOpen={deactivateSupplierModal.isOpen}
+          redirectTo={path.to.supplierAccounts}
+          onClose={deactivateSupplierModal.onClose}
+        />
+        <ResendInviteModal
+          userIds={selectedUserIds}
+          isOpen={resendInviteModal.isOpen}
+          onClose={resendInviteModal.onClose}
+        />
+        <RevokeInviteModal
+          userIds={selectedUserIds}
+          isOpen={revokeInviteModal.isOpen}
+          onClose={revokeInviteModal.onClose}
+        />
       </>
     );
   }

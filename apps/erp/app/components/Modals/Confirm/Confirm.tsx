@@ -35,9 +35,22 @@ type ConfirmProps = {
   details?: ReactNode;
 };
 
-const Confirm = ({
+const Confirm = ({ isOpen = true, onCancel, ...props }: ConfirmProps) => (
+  <Modal
+    open={isOpen}
+    onOpenChange={(open) => {
+      if (!open) onCancel();
+    }}
+  >
+    <ModalOverlay />
+    <ModalContent>
+      <ConfirmBody onCancel={onCancel} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const ConfirmBody = ({
   action,
-  isOpen = true,
   title,
   text,
   confirmText = "Confirm",
@@ -47,7 +60,7 @@ const Confirm = ({
   onSubmit,
   children,
   details
-}: ConfirmProps) => {
+}: Omit<ConfirmProps, "isOpen">) => {
   const fetcher = useFetcher<{ success: boolean; message: string }>();
   const submitted = useRef(false);
 
@@ -69,46 +82,38 @@ const Confirm = ({
   }, [fetcher.data?.message, fetcher.data?.success]);
 
   return (
-    <Modal
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>{title}</ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <p className="text-sm text-muted-foreground">{text}</p>
-          {details}
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onCancel}>
-            {cancelText}
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={action}
-            onSubmit={() => (submitted.current = true)}
+    <>
+      <ModalHeader>
+        <ModalTitle>{title}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <p className="text-sm text-muted-foreground">{text}</p>
+        {details}
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onCancel}>
+          {cancelText}
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={action}
+          onSubmit={() => (submitted.current = true)}
+        >
+          {children}
+          {/* Same z-50 tie-break dependency as ConfirmDelete: this modal
+              wins over an open drawer only because it mounts later. */}
+          <Button
+            variant={confirmVariant}
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle"}
+            type="submit"
+            shortcut={SHORTCUTS.confirm}
           >
-            {children}
-            {/* Same z-50 tie-break dependency as ConfirmDelete: this modal
-                wins over an open drawer only because it mounts later. */}
-            <Button
-              variant={confirmVariant}
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              type="submit"
-              shortcut={SHORTCUTS.confirm}
-            >
-              {confirmText}
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            {confirmText}
+          </Button>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 };
 

@@ -54,7 +54,9 @@ const ApprovalRuleCard = memo(
       qualityDocument: t`Quality Document`,
       supplier: t`Supplier`,
       changeOrder: t`Change Notice`,
-      projectChangeRequest: t`Project Change Request`
+      projectChangeRequest: t`Project Change Request`,
+      purchaseOrderForceDelete: t`Purchase Order Force Delete`,
+      documentForceDelete: t`Force Delete`
     };
     const documentTypeLabel = documentTypeLabels[documentType];
 

@@ -240,11 +240,9 @@ const PaymentsTable = memo((props: PaymentsTableProps) => {
           text={t`Are you sure you want to delete ${selectedPayment.paymentId}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
-            setSelectedPayment(null);
           }}
           onSubmit={() => {
             deleteModal.onClose();
-            setSelectedPayment(null);
           }}
         />
       )}

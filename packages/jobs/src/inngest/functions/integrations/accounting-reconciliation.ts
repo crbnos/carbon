@@ -21,6 +21,7 @@ import {
   toDebitSignedAmount,
   toPostingDateString
 } from "@carbon/ee/accounting";
+import { getLogger } from "@carbon/logger";
 /**
  * Weekly reconciliation cron (posting sync, v3 spec §5 / v4 Pillar E) —
  * presence drift detection plus the per-period × per-account tie-out.
@@ -91,6 +92,8 @@ import {
   type TieOutPeriod,
   toIsoDateString
 } from "./accounting-sync-operations";
+
+const logger = getLogger("jobs", "accounting-reconciliation");
 
 export const RECONCILIATION_WINDOW_DAYS = 90;
 
@@ -437,9 +440,11 @@ async function computeTieOutForCompany(args: {
 
     if (rows.length < TIE_OUT_JOURNAL_PAGE_SIZE) break;
     if (page === MAX_TIE_OUT_JOURNAL_PAGES - 1) {
-      console.warn(
-        `[RECONCILIATION] ${companyId}/${providerId}: tie-out journal scan truncated at ${journals.length} journals`
-      );
+      logger.warning("Tie-out journal scan truncated", {
+        companyId,
+        providerId,
+        journals: journals.length
+      });
     }
   }
 
@@ -811,8 +816,14 @@ async function reconcileCompany(args: {
   const externalIds = [...operationsByExternalId.keys()];
   if (externalIds.length > MAX_PRESENCE_CHECKS) {
     summary.truncated = true;
-    console.warn(
-      `[RECONCILIATION] ${companyId}/${providerId}: ${externalIds.length} provider journals in the window; checking the newest ${MAX_PRESENCE_CHECKS}`
+    logger.warning(
+      "Too many provider journals in the window; checking the newest only",
+      {
+        companyId,
+        providerId,
+        journals: externalIds.length,
+        checked: MAX_PRESENCE_CHECKS
+      }
     );
   }
   const idsToCheck = externalIds.slice(0, MAX_PRESENCE_CHECKS);
@@ -840,8 +851,9 @@ async function reconcileCompany(args: {
         // the run; unchecked ids are excluded from every comparison so
         // nothing is falsely reported missing
         summary.truncated = true;
-        console.warn(
-          `[RECONCILIATION] ${companyId}/${providerId}: rate limited after ${fetchedByExternalId.size} presence checks; reporting on the verified subset`
+        logger.warning(
+          "Rate limited during presence checks; reporting on the verified subset",
+          { companyId, providerId, checked: fetchedByExternalId.size }
         );
         break;
       }

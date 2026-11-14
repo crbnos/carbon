@@ -44,6 +44,7 @@ import {
   useDateFormatter,
   useQuantityFormatter
 } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { path } from "~/utils/path";
 import type { getTimesheetApprovals } from "../../projects.service";
 
@@ -62,10 +63,7 @@ export default function TimesheetApprovals({
   groups: ApprovalGroup[];
 }) {
   const { t } = useLingui();
-  const [rejecting, setRejecting] = useState<{
-    ids: string[];
-    label: string;
-  } | null>(null);
+  const rejecting = useDrawerItem<{ ids: string[]; label: string }>();
 
   return (
     <div className="flex w-full max-w-[80rem] flex-col gap-4 overflow-y-auto p-4 pt-2 mx-auto">
@@ -79,15 +77,16 @@ export default function TimesheetApprovals({
           <ApprovalCard
             key={group.key}
             group={group}
-            onReject={(ids, label) => setRejecting({ ids, label })}
+            onReject={(ids, label) => rejecting.open({ ids, label })}
           />
         ))
       )}
-      {rejecting && (
+      {rejecting.item && (
         <RejectModal
-          ids={rejecting.ids}
-          label={rejecting.label}
-          onClose={() => setRejecting(null)}
+          open={rejecting.isOpen}
+          ids={rejecting.item.ids}
+          label={rejecting.item.label}
+          onClose={rejecting.close}
         />
       )}
     </div>
@@ -293,60 +292,65 @@ function ApprovalCard({
   );
 }
 
-function RejectModal({
-  ids,
-  label,
-  onClose
-}: {
+type RejectModalProps = {
+  open?: boolean;
   ids: string[];
   label: string;
   onClose: () => void;
-}) {
+};
+
+function RejectModal({ open = true, onClose, ...props }: RejectModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <RejectBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function RejectBody({ ids, label, onClose }: Omit<RejectModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useAction<{ success: boolean }>({ onSuccess: onClose });
   const [note, setNote] = useState("");
   const isSubmitting = fetcher.state !== "idle";
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <fetcher.Form method="post" action={path.to.projectTimesheetApprovals}>
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Reject Time</Trans>
-            </ModalTitle>
-            <ModalDescription>{label}</ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <input type="hidden" name="intent" value="reject" />
-            {ids.map((id) => (
-              <input key={id} type="hidden" name="ids" value={id} />
-            ))}
-            <Textarea
-              name="note"
-              aria-label={t`Note`}
-              placeholder={t`Tell the employee what to fix`}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              autoFocus
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              type="submit"
-              variant="destructive"
-              isDisabled={!note.trim() || isSubmitting}
-              isLoading={isSubmitting}
-            >
-              <Trans>Reject</Trans>
-            </Button>
-          </ModalFooter>
-        </fetcher.Form>
-      </ModalContent>
-    </Modal>
+    <fetcher.Form method="post" action={path.to.projectTimesheetApprovals}>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Reject Time</Trans>
+        </ModalTitle>
+        <ModalDescription>{label}</ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <input type="hidden" name="intent" value="reject" />
+        {ids.map((id) => (
+          <input key={id} type="hidden" name="ids" value={id} />
+        ))}
+        <Textarea
+          name="note"
+          aria-label={t`Note`}
+          placeholder={t`Tell the employee what to fix`}
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          autoFocus
+        />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          type="submit"
+          variant="destructive"
+          isDisabled={!note.trim() || isSubmitting}
+          isLoading={isSubmitting}
+        >
+          <Trans>Reject</Trans>
+        </Button>
+      </ModalFooter>
+    </fetcher.Form>
   );
 }

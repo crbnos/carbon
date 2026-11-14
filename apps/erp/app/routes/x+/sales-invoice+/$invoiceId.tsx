@@ -18,11 +18,13 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
+import { DocumentForceDeleteBanner } from "~/components/ForceDelete/DocumentForceDelete";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 import {
   getCompanyHasOpenCredits,
+  getDocumentForceDeleteData,
   getSalesInvoice,
   getSalesInvoiceLines,
   getSalesInvoiceShipment
@@ -67,21 +69,26 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.salesInvoice?.invoiceId, "Sales Invoice");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
       view: "invoicing"
-    }
-  );
+    });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const [salesInvoice, salesInvoiceLines, salesInvoiceShipment] =
+  const [salesInvoice, salesInvoiceLines, salesInvoiceShipment, forceDelete] =
     await Promise.all([
       getSalesInvoice(client, invoiceId),
       getSalesInvoiceLines(client, invoiceId),
-      getSalesInvoiceShipment(client, invoiceId)
+      getSalesInvoiceShipment(client, invoiceId),
+      // The Admin force-delete override (`force-delete+`).
+      getDocumentForceDeleteData(getCarbonServiceRole(), getDatabaseClient(), {
+        companyId,
+        userId,
+        documentType: "salesInvoice",
+        documentId: invoiceId
+      })
     ]);
 
   if (salesInvoice.error) {
@@ -174,7 +181,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     customer: customer?.data ?? null,
     defaultCc,
     orgHasCredits,
-    stripeInvoiceUrl
+    stripeInvoiceUrl,
+    ...forceDelete
   };
 }
 
@@ -186,6 +194,7 @@ export default function SalesInvoiceRoute() {
   const params = useParams();
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
+  const data = useLoaderData<typeof loader>();
 
   return (
     <PanelProvider>
@@ -198,6 +207,13 @@ export default function SalesInvoiceRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
+                    <DocumentForceDeleteBanner
+                      documentType="salesInvoice"
+                      documentId={invoiceId}
+                      readableId={data.salesInvoice.invoiceId ?? invoiceId}
+                      status={data.salesInvoice.status ?? "Draft"}
+                      forceDelete={data}
+                    />
                     <RecordOutlet />
                   </VStack>
                 </div>

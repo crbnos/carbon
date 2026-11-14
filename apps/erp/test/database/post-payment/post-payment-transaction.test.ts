@@ -8,6 +8,32 @@ import { databaseTest } from "../fixtures/local-database";
 import { paymentFixture } from "../fixtures/payment";
 import { postPaymentTransaction } from "../../../app/modules/invoicing/invoicing.service";
 
+for (const status of ["Overdue", "Partially Paid"] as const) {
+  databaseTest(`settles an open invoice stored as ${status}`, async () => {
+    const f = await paymentFixture();
+    try {
+      await f.db
+        .updateTable("salesInvoice")
+        .set({ status })
+        .where("id", "=", f.invoiceId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const paymentId = await f.payment();
+      await postPaymentTransaction(f.db, { ...f.args, paymentId });
+      const invoice = await f.db
+        .selectFrom("salesInvoices")
+        .select(["status", "balance"])
+        .where("id", "=", f.invoiceId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(invoice.status).toEqual("Paid");
+      expect(Number(invoice.balance)).toEqual(0);
+    } finally {
+      await f.cleanup();
+    }
+  });
+}
+
 databaseTest(
   "posting locks authoritative snapshots, overwrites forged rates, and is idempotent",
   async () => {

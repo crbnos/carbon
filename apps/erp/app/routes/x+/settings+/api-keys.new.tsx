@@ -6,7 +6,7 @@ import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { SINGLE_TENANT } from "@carbon/env";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
@@ -33,7 +33,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewApiKeyRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const routeData = useRouteData<{ companyId: string }>(path.to.apiKeys);
   const { canSetRateLimit } = useLoaderData<typeof loader>();
 
@@ -45,7 +45,8 @@ export default function NewApiKeyRoute() {
 
   return (
     <ApiKeyForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
       companyId={routeData?.companyId}
       canSetRateLimit={canSetRateLimit}

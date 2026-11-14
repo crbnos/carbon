@@ -13,10 +13,11 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  SHORTCUTS
+  SHORTCUTS,
+  useReportUnsavedChanges
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { forwardRef, useCallback, useEffect, useRef } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker, useNavigation } from "react-router";
 import { useIsSubmitting } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
@@ -125,18 +126,20 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
       });
     }, []);
 
+    // The form's own save is not "leaving with unsaved changes": a form
+    // whose action posts to a DIFFERENT route (e.g. the Add Company modal
+    // on /x posting to /x/settings/company/new) submits via a cross-pathname
+    // navigation, which this blocker would otherwise intercept — blocking
+    // the save itself behind the Unsaved-changes dialog.
+    const hasUnsavedChanges = withBlocker && isTouched && !isSubmitting;
+    useReportUnsavedChanges(hasUnsavedChanges);
     const blocker = useBlocker(
       ({ currentLocation, nextLocation }) =>
-        withBlocker &&
-        isTouched &&
-        // The form's own save is not "leaving with unsaved changes": a form
-        // whose action posts to a DIFFERENT route (e.g. the Add Company modal
-        // on /x posting to /x/settings/company/new) submits via a cross-pathname
-        // navigation, which this blocker would otherwise intercept — blocking
-        // the save itself behind the Unsaved-changes dialog.
-        !isSubmitting &&
-        currentLocation.pathname !== nextLocation.pathname
+        hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
     );
+
+    const [wasBlocked, setWasBlocked] = useState(false);
+    if (blocker.state === "blocked" && !wasBlocked) setWasBlocked(true);
 
     return (
       <>
@@ -153,8 +156,13 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
         >
           {children}
         </Button>
-        {blocker.state === "blocked" && (
-          <Modal open onOpenChange={(open) => !open && blocker.reset()}>
+        {/* Mounted from the first block on: a Submit carries no closed
+            dialog until it blocks, and the prompt can still animate closed. */}
+        {wasBlocked && (
+          <Modal
+            open={blocker.state === "blocked"}
+            onOpenChange={(open) => !open && blocker.reset?.()}
+          >
             <ModalContent>
               <ModalHeader>
                 <ModalTitle>
@@ -165,10 +173,10 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
                 </ModalDescription>
               </ModalHeader>
               <ModalFooter>
-                <Button variant="secondary" onClick={() => blocker.reset()}>
+                <Button variant="secondary" onClick={() => blocker.reset?.()}>
                   <Trans>Stay on this page</Trans>
                 </Button>
-                <Button onClick={() => blocker.proceed()}>
+                <Button onClick={() => blocker.proceed?.()}>
                   <Trans>Leave this page</Trans>
                 </Button>
               </ModalFooter>

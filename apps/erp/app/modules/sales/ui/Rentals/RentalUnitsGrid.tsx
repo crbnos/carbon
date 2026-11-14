@@ -23,7 +23,7 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { LuInfo, LuPlus, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Table } from "~/components";
@@ -35,7 +35,7 @@ import {
   setupGridHeight,
   useCellSave
 } from "~/components/Setup";
-import { useCurrencyDecimals, usePermissions } from "~/hooks";
+import { useCurrencyDecimals, useDrawerItem, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   rentalAgreementLinesAddValidator,
@@ -85,7 +85,12 @@ const RentalUnitsGrid = ({
   const canEdit = permissions.can("update", "sales");
 
   const addUnits = useDisclosure();
-  const [deleting, setDeleting] = useState<RentalAgreementLine | null>(null);
+  const {
+    item: deleting,
+    isOpen: isDeleting,
+    open: openDelete,
+    close: closeDelete
+  } = useDrawerItem<RentalAgreementLine>();
 
   const rateUnitLabels = useMemo<Record<RateUnit, string>>(
     () => ({ Day: t`Daily`, Week: t`Weekly`, Month: t`Monthly` }),
@@ -199,14 +204,14 @@ const RentalUnitsGrid = ({
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={!permissions.can("delete", "sales")}
-          onClick={() => setDeleting(line)}
+          onClick={() => openDelete(line)}
         >
           <MenuIcon icon={<LuTrash />} />
           <Trans>Remove Unit</Trans>
         </MenuItem>
       );
     },
-    [lines, permissions]
+    [lines, permissions, openDelete]
   );
 
   const gridColumns = useMemo(
@@ -275,22 +280,22 @@ const RentalUnitsGrid = ({
         </>
       )}
 
-      {addUnits.isOpen && (
-        <RentalAddUnitsModal
-          rentalAgreementId={agreementId}
-          rentableAssets={rentableAssets}
-          rateUnitLabels={rateUnitLabels}
-          onClose={addUnits.onClose}
-        />
-      )}
+      <RentalAddUnitsModal
+        open={addUnits.isOpen}
+        rentalAgreementId={agreementId}
+        rentableAssets={rentableAssets}
+        rateUnitLabels={rateUnitLabels}
+        onClose={addUnits.onClose}
+      />
 
       {deleting && (
         <ConfirmDelete
           action={path.to.deleteRentalAgreementLine(agreementId, deleting.id)}
+          isOpen={isDeleting}
           name={rentalUnitLabel(deleting)}
           text={t`Are you sure you want to remove ${rentalUnitLabel(deleting)} from this agreement?`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          onCancel={closeDelete}
+          onSubmit={closeDelete}
         />
       )}
     </div>
@@ -300,11 +305,13 @@ const RentalUnitsGrid = ({
 /** Pick several fleet units at once; each becomes a line at its rate on
  *  file for the chosen frequency, to be adjusted in the grid. */
 const RentalAddUnitsModal = ({
+  open,
   rentalAgreementId,
   rentableAssets,
   rateUnitLabels,
   onClose
 }: {
+  open: boolean;
   rentalAgreementId: string;
   rentableAssets: RentableFleetAsset[];
   rateUnitLabels: Record<RateUnit, string>;
@@ -336,7 +343,7 @@ const RentalAddUnitsModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

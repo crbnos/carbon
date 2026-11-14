@@ -40,11 +40,13 @@ import type { Attribute, AttributeCategoryDetailType } from "../../types";
 
 type AttributeCategoryDetailProps = {
   attributeCategory: AttributeCategoryDetailType;
+  open?: boolean;
   onClose: () => void;
 };
 
 const AttributeCategoryDetail = ({
   attributeCategory,
+  open = true,
   onClose
 }: AttributeCategoryDetailProps) => {
   const { t } = useLingui();
@@ -119,7 +121,6 @@ const AttributeCategoryDetail = ({
   };
 
   const onDeleteCancel = () => {
-    setSelectedAttribute(undefined);
     deleteModal.onClose();
   };
 
@@ -147,7 +148,7 @@ const AttributeCategoryDetail = ({
   return (
     <>
       <Drawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

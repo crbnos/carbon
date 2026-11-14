@@ -55,6 +55,7 @@ import {
   usePermissions,
   useQuantityFormatter
 } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import type {
   BurnPoint,
   MilestoneGroup,
@@ -174,7 +175,7 @@ export default function MilestoneSchedule({
   const canUpdate = permissions.can("update", "projects") && !isDisabled;
   const fetcher = useFetcher();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [editing, setEditing] = useState<EditingMilestone | null>(null);
+  const editing = useDrawerItem<EditingMilestone>();
   const [deleting, setDeleting] = useState<Milestone | null>(null);
   const deleteDisclosure = useDisclosure();
   const [descending, setDescending] = useState(false);
@@ -293,7 +294,7 @@ export default function MilestoneSchedule({
       { method: "post", action }
     );
   const edit = (milestone: Milestone) =>
-    setEditing({
+    editing.open({
       id: milestone.id,
       name: milestone.name,
       startDate: milestone.startDate ?? undefined,
@@ -305,6 +306,13 @@ export default function MilestoneSchedule({
   };
 
   const open = milestones.find((m) => m.id === selected?.milestoneId) ?? null;
+  const [drawer, setDrawer] = useState<{
+    milestone: Milestone;
+    burn: typeof selected;
+  } | null>(null);
+  if (open && (drawer?.milestone !== open || drawer.burn !== selected)) {
+    setDrawer({ milestone: open, burn: selected });
+  }
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -340,7 +348,7 @@ export default function MilestoneSchedule({
         <Button
           leftIcon={<LuPlus />}
           isDisabled={!canUpdate}
-          onClick={() => setEditing({ name: "" })}
+          onClick={() => editing.open({ name: "" })}
         >
           <Trans>New Milestone</Trans>
         </Button>
@@ -567,49 +575,48 @@ export default function MilestoneSchedule({
         </div>
       )}
 
-      {open && (
+      {drawer && (
         <MilestoneDrawer
-          milestone={open}
-          statusLabel={groupLabels[open.group]}
+          open={open !== null}
+          milestone={drawer.milestone}
+          statusLabel={groupLabels[drawer.milestone.group]}
           burn={
-            selected ? (
+            drawer.burn ? (
               <MilestoneBurnChart
-                series={selected.series}
-                plannedHours={selected.plannedHours}
+                series={drawer.burn.series}
+                plannedHours={drawer.burn.plannedHours}
                 today={today}
               />
             ) : null
           }
           canUpdate={canUpdate}
           onClose={() => onSelect(null)}
-          onEdit={() => edit(open)}
-          onComplete={(completed) => setCompleted(open, completed)}
-          onDelete={() => askDelete(open)}
+          onEdit={() => edit(drawer.milestone)}
+          onComplete={(completed) => setCompleted(drawer.milestone, completed)}
+          onDelete={() => askDelete(drawer.milestone)}
         />
       )}
 
-      {editing && (
+      {editing.item && (
         <MilestoneForm
+          open={editing.isOpen}
           action={action}
-          initialValues={editing}
-          onClose={() => setEditing(null)}
+          initialValues={editing.item}
+          onClose={editing.close}
         />
       )}
 
-      {deleteDisclosure.isOpen && deleting && (
+      {deleting && (
         <Confirm
           action={action}
+          isOpen={deleteDisclosure.isOpen}
           title={t`Delete ${deleting.name}`}
           text={t`Delete the milestone ${deleting.name}? Its elements stay, without a milestone.`}
           confirmText={t`Delete`}
           confirmVariant="destructive"
-          onCancel={() => {
-            deleteDisclosure.onClose();
-            setDeleting(null);
-          }}
+          onCancel={deleteDisclosure.onClose}
           onSubmit={() => {
             deleteDisclosure.onClose();
-            setDeleting(null);
             if (deleting.id === open?.id) onSelect(null);
           }}
         >
@@ -623,6 +630,7 @@ export default function MilestoneSchedule({
 
 /** One milestone's details: status, dates, progress, hours, cost, burn and actions. */
 function MilestoneDrawer({
+  open,
   milestone,
   statusLabel,
   burn,
@@ -632,6 +640,7 @@ function MilestoneDrawer({
   onComplete,
   onDelete
 }: {
+  open: boolean;
   milestone: Milestone;
   statusLabel: string;
   burn: ReactNode;
@@ -649,7 +658,7 @@ function MilestoneDrawer({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(isOpen) => {
         if (!isOpen) onClose();
       }}

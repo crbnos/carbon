@@ -1029,7 +1029,6 @@ const GanttTimeline = ({
                         ? "bg-muted"
                         : "bg-transparent hover:bg-muted/60"
                     )}
-                    // onMouseOver={() => console.log(`hover ${index}`)}
                     onClick={(e) => {
                       toggleNodeSelection(node.id);
                     }}

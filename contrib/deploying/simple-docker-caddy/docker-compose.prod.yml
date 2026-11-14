@@ -60,7 +60,6 @@ services:
       - session_secret
       - inngest_signing_key
       - inngest_event_key
-      - resend_api_key
       - smtp_password
     environment:
       NODE_ENV: production
@@ -87,7 +86,6 @@ services:
       SESSION_SECRET: __SESSION_SECRET__
       INNGEST_SIGNING_KEY: __INNGEST_SIGNING_KEY__
       INNGEST_EVENT_KEY: __INNGEST_EVENT_KEY__
-      RESEND_API_KEY: __RESEND_API_KEY__
       SMTP_HOST: ${GOTRUE_SMTP_HOST:-}
       SMTP_PORT: ${GOTRUE_SMTP_PORT:-587}
       SMTP_USER: ${GOTRUE_SMTP_USER:-}
@@ -141,6 +139,8 @@ services:
       SESSION_SECRET: __SESSION_SECRET__
       INNGEST_SIGNING_KEY: __INNGEST_SIGNING_KEY__
       INNGEST_EVENT_KEY: __INNGEST_EVENT_KEY__
+      # MES sends no email, but its env check requires a from-address.
+      SMTP_FROM: ${SMTP_FROM:-}
     volumes:
       - *shim
     healthcheck:
@@ -727,8 +727,6 @@ secrets:
   inngest_signing_key:
     external: true
   inngest_event_key:
-    external: true
-  resend_api_key:
     external: true
   smtp_password:
     external: true

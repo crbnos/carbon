@@ -5,8 +5,8 @@
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import type { getItemPostingGroupsList } from "~/modules/items/items.service";
 import ItemPostingGroupForm from "~/modules/items/ui/ItemPostingGroups/ItemPostingGroupForm";
 import { path } from "~/utils/path";
@@ -29,14 +29,13 @@ const ItemPostingGroupPreview = (
 };
 
 const ItemPostingGroup = (props: ItemPostingGroupSelectProps) => {
-  const newItemPostingGroupModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useItemPostingGroups();
 
   const emptyMessage = useEmptyState("itemPostingGroup", {
-    onCreate: () => newItemPostingGroupModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -54,20 +53,20 @@ const ItemPostingGroup = (props: ItemPostingGroupSelectProps) => {
         inline={props.inline ? ItemPostingGroupPreview : undefined}
         label={props?.label ?? "Posting Group"}
         onCreateOption={(option) => {
-          newItemPostingGroupModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newItemPostingGroupModal.isOpen && (
+      {create.item !== null && (
         <ItemPostingGroupForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemPostingGroupModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created
+            name: create.item
           }}
         />
       )}

@@ -13,22 +13,26 @@ const line = {
   receiptLineId: z.string().min(1)
 };
 
-// One form per tracking type. `returnEntity` assigns (or with
-// `intent=remove` clears) an entity a customer sent back.
+// A JSON object of batch properties; one that does not parse saves none.
+const properties = zfd.text(z.string().optional()).transform((json) => {
+  if (!json) return undefined;
+  try {
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return undefined;
+  }
+});
+
+// One form per tracking type. `serialProperties` sets the batch properties of
+// every serial on the line. `returnEntity` assigns (or with `intent=remove`
+// clears) an entity a customer sent back.
 const tracking = z.discriminatedUnion("trackingType", [
   z.object({
     trackingType: z.literal("batch"),
     ...line,
     batchNumber: z.string(),
     quantity: zfd.numeric(z.number()),
-    // A JSON object; one that does not parse saves no properties.
-    properties: zfd.text(z.string().optional()).transform((json) => {
-      try {
-        return json ? (JSON.parse(json) as Record<string, unknown>) : {};
-      } catch {
-        return {};
-      }
-    }),
+    properties: properties.transform((value) => value ?? {}),
     trackedEntityId: zfd.text(z.string().optional())
   }),
   z.object({
@@ -36,7 +40,13 @@ const tracking = z.discriminatedUnion("trackingType", [
     ...line,
     serialNumber: z.string(),
     index: zfd.numeric(z.number()),
-    expiryDate: zfd.text(z.string().optional())
+    expiryDate: zfd.text(z.string().optional()),
+    properties
+  }),
+  z.object({
+    trackingType: z.literal("serialProperties"),
+    ...line,
+    properties: properties.transform((value) => value ?? {})
   }),
   z.object({
     trackingType: z.literal("returnEntity"),
@@ -57,6 +67,8 @@ export async function action(args: ActionFunctionArgs) {
       return api.inventory.setReceiptLineBatch(data);
     case "serial":
       return api.inventory.setReceiptLineSerial(data);
+    case "serialProperties":
+      return api.inventory.setReceiptLineSerialProperties(data);
     case "returnEntity":
       return data.intent === "remove"
         ? api.inventory.removeReceiptReturnEntity(data)

@@ -452,14 +452,15 @@ export function RevisionsItem({
         </div>
       )}
 
-      {revisionDisclosure.isOpen && selectedRevision && (
+      {selectedRevision && (
         <RevisionForm
-          initialValues={selectedRevision!}
+          initialValues={selectedRevision}
+          open={revisionDisclosure.isOpen}
           onClose={revisionDisclosure.onClose}
           hasSizesInsteadOfRevisions={hasSizesInsteadOfRevisions}
         />
       )}
-      {defaultDisclosure.isOpen && selectedRevision && (
+      {selectedRevision && (
         <Confirm
           action={path.to.defaultRevision(selectedRevision.id!)}
           confirmText={t`Make Default`}
@@ -473,11 +474,8 @@ export function RevisionsItem({
               ? t`This will replace all method materials of other sizes with this size.`
               : t`This will replace all method materials of other revisions with this revision.`
           }
-          isOpen
-          onSubmit={() => {
-            defaultDisclosure.onClose();
-            setSelectedRevision(null);
-          }}
+          isOpen={defaultDisclosure.isOpen}
+          onSubmit={defaultDisclosure.onClose}
           onCancel={defaultDisclosure.onClose}
         />
       )}

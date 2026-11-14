@@ -5,9 +5,9 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import type { getMaterialGradeList } from "~/modules/items/items.service";
 import type { MaterialGrade as MaterialGradeType } from "~/modules/items/types";
 import MaterialGradeForm from "~/modules/items/ui/MaterialGrades/MaterialGradeForm";
@@ -38,8 +38,7 @@ const MaterialGrade = (props: MaterialGradeSelectProps) => {
     Awaited<ReturnType<typeof getMaterialGradeList>>
   >(props.substanceId ? path.to.api.materialGrades(props.substanceId) : null);
 
-  const newGradeModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(() => {
@@ -63,7 +62,7 @@ const MaterialGrade = (props: MaterialGradeSelectProps) => {
 
   const emptyMessage = useEmptyState(
     "materialGrade",
-    props.substanceId ? { onCreate: () => newGradeModal.onOpen() } : undefined
+    props.substanceId ? { onCreate: () => create.open("") } : undefined
   );
 
   return (
@@ -85,20 +84,20 @@ const MaterialGrade = (props: MaterialGradeSelectProps) => {
         emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
-          newGradeModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newGradeModal.isOpen && (
+      {create.item !== null && (
         <MaterialGradeForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newGradeModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             materialSubstanceId: props.substanceId!
           }}
         />

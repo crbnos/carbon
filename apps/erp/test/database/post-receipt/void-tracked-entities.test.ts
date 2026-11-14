@@ -129,6 +129,25 @@ describe.skipIf(!hasLocalDatabase)("voiding a receipt", () => {
           createdBy: USER
         })
         .execute();
+      // An inspected part posts only into the location's non-nettable
+      // inspection unit, which the receipt line defaults to.
+      await trx
+        .insertInto("storageUnit")
+        .values({
+          id: `${f.prefix}-qc`,
+          name: "QC",
+          locationId: f.locationId,
+          nettable: false,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .updateTable("location")
+        .set({ inspectionStorageUnitId: `${f.prefix}-qc` })
+        .where("id", "=", f.locationId)
+        .where("companyId", "=", f.companyId)
+        .execute();
     });
   });
 

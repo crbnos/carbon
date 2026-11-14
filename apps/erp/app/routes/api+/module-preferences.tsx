@@ -6,17 +6,16 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { modulePreferencesValidator } from "~/modules/users/users.models";
 import { upsertModulePreferences } from "~/modules/users/users.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId, companyId } = await requirePermissions(request, {});
 
-  const body = (await request.json()) as {
-    preferences: { module: string; position: number; hidden: boolean }[];
-  };
+  const body = modulePreferencesValidator.safeParse(await request.json());
 
-  if (!Array.isArray(body.preferences)) {
+  if (!body.success) {
     return data({ error: "Invalid preferences format" }, { status: 400 });
   }
 
@@ -24,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client,
     userId,
     companyId,
-    body.preferences
+    body.data.preferences
   );
 
   if (result.error) {

@@ -95,6 +95,7 @@ export function withRunningBalance<T extends LedgerRow>(
 export type CollapsedItemLedger = ItemLedger &
   Partial<RunningBalance> & {
     transferFromStorageUnitName?: string | null;
+    transferFromStorageUnitId?: string | null;
   };
 
 export function collapseTransferPairs<
@@ -139,6 +140,7 @@ export function collapseTransferPairs<
       {
         ...row,
         transferFromStorageUnitName: outbound?.storageUnit?.name ?? null,
+        transferFromStorageUnitId: outbound?.storageUnitId ?? null,
         balanceBefore: older.balanceBefore,
         balanceAfter: newer.balanceAfter
       }

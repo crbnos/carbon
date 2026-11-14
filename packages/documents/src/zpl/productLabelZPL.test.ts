@@ -6,7 +6,11 @@ import type { LabelSize, ProductLabelItem } from "@carbon/utils";
 import { labelSizes } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import { resolveTemplate } from "../template";
-import { generateProductLabelZPL } from "./ProductLabelZPL";
+import {
+  fitQrModule,
+  generateProductLabelZPL,
+  qrModuleCount
+} from "./ProductLabelZPL";
 
 const item: ProductLabelItem = {
   itemId: "WIDGET-100",
@@ -71,7 +75,72 @@ describe("generateProductLabelZPL", () => {
 
   it("QR codes carry the MA, prefix (error correction + auto mode)", () => {
     const zpl = generateProductLabelZPL(item, size("label2x1"));
-    expect(zpl).toContain(`^FDMA,${item.trackedEntityId}`);
+    expect(zpl).toContain("/x/traveler/dtClCvNm9blDY0H3FXmDC");
+  });
+
+  it("sizes the top-right QR slot from the value length", () => {
+    // 54 bytes fits level-M version 4 (62 bytes) = 33 modules. On label2x1
+    // (406 dots wide, module 4, margin 20): x = 406 - 33 * 4 - 20 = 254.
+    const value = "x".repeat(54);
+    const zpl = generateProductLabelZPL(item, size("label2x1"), {
+      ...resolveTemplate("trackingLabel", null),
+      blocks: [
+        {
+          id: "q",
+          type: "labelBarcode" as const,
+          visible: true,
+          symbology: "qrcode" as const,
+          value,
+          placement: "right" as const
+        }
+      ]
+    });
+    expect(zpl).toContain(`^FO254,30^BQN,2,4^FH^FDMA,${value}^FS`);
+  });
+
+  it("shrinks the top-right QR module until the code fits the label height", () => {
+    // 110 bytes needs level-M version 7 = 45 modules. At module 4 that is 180
+    // dots, but label2x1 has 203 - 30 - 20 = 153 dots below the QR's top, so
+    // the module drops to 3 (135 dots): x = 406 - 135 - 20 = 251.
+    const value = "x".repeat(110);
+    const zpl = generateProductLabelZPL(item, size("label2x1"), {
+      ...resolveTemplate("trackingLabel", null),
+      blocks: [
+        {
+          id: "q",
+          type: "labelBarcode" as const,
+          visible: true,
+          symbology: "qrcode" as const,
+          value,
+          placement: "right" as const
+        }
+      ]
+    });
+    expect(zpl).toContain(`^FO251,30^BQN,2,3^FH^FDMA,${value}^FS`);
+  });
+
+  it("never prints a QR taller or wider than its box", () => {
+    for (const bytes of [10, 60, 110, 200, 400, 1000]) {
+      const value = "x".repeat(bytes);
+      const modules = qrModuleCount(bytes);
+      for (const [width, height] of [
+        [366, 153],
+        [153, 366],
+        [800, 400],
+        [120, 90]
+      ] as const) {
+        const module = fitQrModule(value, 8, width, height);
+        expect(module).toBeGreaterThanOrEqual(1);
+        expect(module).toBeLessThanOrEqual(8);
+        if (modules <= Math.min(width, height)) {
+          expect(module * modules).toBeLessThanOrEqual(Math.min(width, height));
+        }
+      }
+    }
+  });
+
+  it("keeps the preferred QR module when the code fits", () => {
+    expect(fitQrModule("x".repeat(54), 4, 366, 153)).toBe(4);
   });
 
   it("QR module size scales with the label stock", () => {
@@ -114,7 +183,7 @@ describe("generateProductLabelZPL", () => {
       { ...item, trackedEntityId: "AB^PQ100" },
       size("label2x1")
     );
-    expect(zpl).toContain("^FH^FDMA,AB_5EPQ100^FS");
+    expect(zpl).toContain("/x/traveler/AB_5EPQ100^FS");
     expect(zpl).not.toContain("AB^PQ100");
   });
 

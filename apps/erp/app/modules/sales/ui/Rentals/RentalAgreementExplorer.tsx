@@ -99,8 +99,10 @@ export default function RentalAgreementExplorer() {
           </div>
         )}
       </VStack>
-      {addDisclosure.isOpen && (
+      {addDisclosure.openCount > 0 && (
         <RentalAgreementLineForm
+          key={addDisclosure.openCount}
+          open={addDisclosure.isOpen}
           initialValues={{
             rentalAgreementId: id,
             fixedAssetId: "",

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect } from "vitest";
+import { sql } from "kysely";
 import { databaseTest } from "../fixtures/local-database";
 import { paymentFixture } from "../fixtures/payment";
 import { postPaymentTransaction } from "../../../app/modules/invoicing/invoicing.service";
@@ -124,3 +125,52 @@ databaseTest(
     }
   }
 );
+
+
+for (const type of ["post", "void"] as const) {
+  databaseTest(`payment ${type} takes the activation lock before locking its document`, async () => {
+    const f = await paymentFixture();
+    const activation = await f.connect();
+    const worker = await f.connect();
+    const monitor = await f.connect();
+    let running: Promise<unknown> | undefined;
+    let holding: Promise<void> | undefined;
+    let release!: () => void;
+    let locked!: () => void;
+    const lockedPromise = new Promise<void>((resolve) => {locked=resolve;});
+    const releasePromise = new Promise<void>((resolve) => {release=resolve;});
+    try {
+      const paymentId = await f.payment();
+      if (type === "void") await postPaymentTransaction(f.db,{...f.args,paymentId});
+      const {rows:[workerPid]} = await sql<{pid:number}>`SELECT pg_backend_pid() AS pid`.execute(worker);
+      holding = activation.transaction().execute(async (trx) => {
+        await trx.selectFrom("companySettings").select("id").where("id","=",f.companyId).forUpdate().executeTakeFirstOrThrow();
+        locked();
+        await releasePromise;
+        await sql`SELECT id FROM payment WHERE id=${paymentId} AND "companyId"=${f.companyId} FOR UPDATE NOWAIT`.execute(trx);
+      });
+      void holding.catch(() => {});
+      await lockedPromise;
+      running = postPaymentTransaction(worker,{...f.args,paymentId,type});
+      // Prevent an early rejection from becoming unhandled while monitoring locks.
+      void running.catch(() => {});
+      const deadline = performance.now()+10000;
+      let blocked = false;
+      while (performance.now()<deadline) {
+        const {rows:[state]} = await sql<{blocked:boolean}>`SELECT cardinality(pg_blocking_pids(${workerPid!.pid})) > 0 AS blocked`.execute(monitor);
+        if (state?.blocked) {blocked=true;break;}
+        await new Promise(resolve=>setTimeout(resolve,20));
+      }
+      expect(blocked).toBe(true);
+      release();
+      await holding;
+      await running;
+      expect(await f.db.selectFrom("payment").select("status").where("id","=",paymentId).where("companyId","=",f.companyId).executeTakeFirstOrThrow()).toEqual({status:type === "post" ? "Posted":"Voided"});
+      expect(await f.db.selectFrom("journal").select("id").where("companyId","=",f.companyId).where("sourceType","=","Payment").execute()).toHaveLength(type === "post" ? 1:2);
+    } finally {
+      release?.();
+      await running?.catch(()=>{});
+      await activation.destroy();await worker.destroy();await monitor.destroy();await f.cleanup();
+    }
+  });
+}

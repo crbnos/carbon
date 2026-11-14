@@ -421,8 +421,9 @@ export default function ContractLineSummary({
           <Trans>Change lines with Amend.</Trans>
         </p>
       </CardContent>
-      {isBuilding && prototype?.projectId && (
+      {prototype?.projectId && (
         <ContractLineBuildModal
+          open={isBuilding}
           contractId={line.customerContractId}
           lineId={line.id}
           projectId={prototype.projectId}

@@ -5,10 +5,9 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { useMemo, useRef, useState } from "react";
-import { useUser } from "~/hooks";
+import { useMemo, useRef } from "react";
+import { useDrawerItem, useUser } from "~/hooks";
 import type {
   getGaugesList,
   getGaugeTypesList
@@ -20,15 +19,14 @@ import { useEmptyState } from "./emptyStates";
 type GaugeSelectProps = Omit<ComboboxProps, "options">;
 
 const Gauge = (props: GaugeSelectProps) => {
-  const newGaugeModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const { options, gaugeTypes } = useGauges();
   const { defaults } = useUser();
 
   const emptyMessage = useEmptyState("gauge", {
-    onCreate: () => newGaugeModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -40,17 +38,17 @@ const Gauge = (props: GaugeSelectProps) => {
         label={props?.label ?? "Gauge"}
         emptyMessage={emptyMessage}
         onCreateOption={(option) => {
-          newGaugeModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newGaugeModal.isOpen && (
+      {create.item !== null && (
         <GaugeForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newGaugeModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           gaugeTypes={gaugeTypes}
           initialValues={{
@@ -59,7 +57,7 @@ const Gauge = (props: GaugeSelectProps) => {
             manufacturer: "",
             modelNumber: "",
             serialNumber: "",
-            description: created,
+            description: create.item,
             dateAcquired: today(getLocalTimeZone()).toString(),
             gaugeTypeId: "",
 

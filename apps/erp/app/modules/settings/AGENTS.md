@@ -10,7 +10,7 @@ Company configuration: the company/subsidiary records themselves, the ~50-flag `
 - **Sequence** — per-company numbering (`table`, `prefix`, `suffix`, `next`, `step`, `size`) behind readable ids like `PO000123`. `getNextSequence` calls the `get_next_sequence` RPC and **consumes** a number; `getCurrentSequence` only previews it (and re-derives date tokens through `interpolateSequenceDate` in the company timezone so the preview matches what SQL will issue). `itemSerialSequence` is the per-item serial-number equivalent.
 - **Custom Field** — user-defined fields per table (`customField`, read through the `customFieldTables` view). Definitions are Redis-cached under `customFields:{companyId}:*`.
 - **Integration** — per-company third-party config in `companyIntegration` (read through the `integrations` view), Redis-cached under `integrations:{companyId}` and `json:integrations:{companyId}`. An OAuth callback can't render its own failure, so it redirects with `integrationErrorSearch(integration, code)` and the integrations page resolves the code to Lingui copy via `getIntegrationError` (`integration-errors.ts`) — only a code crosses the URL, never the provider's message.
-- **API Key / Webhook** — outbound automation. `upsertApiKey` stores only `keyHash` / `keyPreview` and returns the raw key **once**; `rateLimit`/`rateLimitWindow` are stripped as platform-controlled.
+- **API Key / Webhook** — outbound automation. `upsertApiKey` stores only `keyHash` / `keyPreview` and returns the raw key **once**; `rateLimit`/`rateLimitWindow` are stripped as platform-controlled. `apiKey` has no write policy (a key acts as its `createdBy` with its `scopes`), so `createApiKey` / `updateApiKey` / `revokeApiKey` write it with the service role, scoped by `companyId`, behind their `users_update` gate.
 
 ## Safety
 
@@ -56,7 +56,7 @@ pnpm run lint
 | `documentSection` | Company-global reusable header/body/footer rich text |
 | `terms` | Company `salesTerms` / `purchasingTerms` JSON (PK = company id) |
 | `sequence` | Readable-id numbering per table |
-| `itemSerialSequence` / `itemSerialSequences` (view) | Per-item serial-number numbering; `serialNumberTiming` overrides the company's serial number timing for the item (NULL follows it) |
+| `itemSerialSequence` / `itemSerialSequences` (view) | Per-item serial-number numbering; `serialNumberTiming` overrides the company's serial number timing for the item (NULL follows it); `printLabelOnCompletion` prints the item's serial label when its job's last operation completes |
 | `customField` / `customFieldTables` (view) | User-defined fields, grouped per table |
 | `companyIntegration` / `integrations` (view) | Per-company third-party config + metadata |
 | `apiKey` | Hashed API keys with per-module scopes |
@@ -73,6 +73,7 @@ A settings page has ONE update operation, `update<Page>Settings` (`updateAccount
 
 | Operation | Route | What it holds |
 |---|---|---|
+| `updateQualitySettings` (`locationGoodsInStorage`) | `x+/settings+/quality.tsx` (`GoodsInStorageCard`) | One location's inspection and rejected storage units (`location` columns), only the ones sent; refuses a unit at another location, an inactive one, or one unit for both |
 | `updateAccountingSettings` / `writeMissingJournals` | `x+/settings+/accounting.tsx` | The deferred tax accounts go to `accountDefault`; the repair runs `journal-legacy-documents` under the operation's own gate and needs `update: accounting` too, so it is not published (the API gate takes one module) |
 | `updateInvoicingSettings`, `updatePurchasingSettings` | `invoicing.tsx`, `purchasing.tsx` | The centralized billing address (a null field clears it); Stripe must be connected for "Post and Send via Stripe" |
 | `updateProductionSettings` | `production.tsx` | A location's staffing rule is written as the system, for the company's own location only; a change re-plans the location (kind `location`) |

@@ -32,6 +32,7 @@ export function ScrapEntityModal({
   readableId,
   parentId,
   isMakeToOrder,
+  open = true,
   onClose
 }: {
   materialId: string;
@@ -39,6 +40,7 @@ export function ScrapEntityModal({
   readableId?: string | null;
   parentId?: string;
   isMakeToOrder: boolean;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -47,13 +49,15 @@ export function ScrapEntityModal({
 
   useEffect(() => {
     if (submitted.current && fetcher.state === "idle") {
+      // Reset, or the next open would close itself: the modal stays mounted.
+      submitted.current = false;
       onClose();
     }
   }, [fetcher.state, onClose]);
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

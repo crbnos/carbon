@@ -265,18 +265,12 @@ const QualityDocumentsTable = memo(
           table="qualityDocument"
           withSavedView
         />
-        {deleteDisclosure.isOpen && selectedQualityDocument && (
+        {selectedQualityDocument && (
           <ConfirmDelete
             action={path.to.deleteQualityDocument(selectedQualityDocument.id!)}
-            isOpen
-            onCancel={() => {
-              setSelectedQualityDocument(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedQualityDocument(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={selectedQualityDocument.name ?? "quality document"}
             text={t`Are you sure you want to delete this quality document?`}
           />

@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const company = await getCompany(client, companyId);
   if (company.error) {
-    logger.error(company.error);
+    logger.error("Failed to load the company", { error: company.error });
     throw new Error("Failed to load company");
   }
 

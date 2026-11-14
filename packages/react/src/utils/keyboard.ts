@@ -35,7 +35,7 @@ export function isTextEntryTarget(
 // Controls that act on a bare Enter or Space themselves. Text fields are not
 // listed: a shortcut reaches them only when it opts in
 // (`enabledOnInputElements`), which says the field's Enter means the action.
-const ACTIVATABLE_CONTROL = [
+export const ACTIVATABLE_CONTROL = [
   "button",
   "a[href]",
   "select",

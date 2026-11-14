@@ -607,11 +607,9 @@ const ServicesTable = memo((props: ServicesTableProps) => {
           text={t`Are you sure you want to delete ${selectedItem.readableIdWithRevision!}? This cannot be undone.`}
           onCancel={() => {
             deleteItemModal.onClose();
-            setSelectedItem(null);
           }}
           onSubmit={() => {
             deleteItemModal.onClose();
-            setSelectedItem(null);
           }}
         />
       )}

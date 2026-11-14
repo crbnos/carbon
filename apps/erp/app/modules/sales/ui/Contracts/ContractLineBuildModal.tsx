@@ -40,15 +40,21 @@ import { contractLineBuildValidator } from "../../sales.models";
  * line and its link to the CLIN follow from the line.
  */
 export default function ContractLineBuildModal({
-  contractId,
-  lineId,
-  projectId,
-  itemLabel,
-  defaultElementId,
-  defaultQuantity,
-  defaultDueDate,
-  onClose
-}: {
+  open = true,
+  onClose,
+  ...props
+}: ContractLineBuildFormProps & { open?: boolean }) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <ContractLineBuildForm {...props} onClose={onClose} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+type ContractLineBuildFormProps = {
   contractId: string;
   lineId: string;
   projectId: string;
@@ -60,7 +66,18 @@ export default function ContractLineBuildModal({
   /** The task's target date. */
   defaultDueDate?: string | null;
   onClose: () => void;
-}) {
+};
+
+function ContractLineBuildForm({
+  contractId,
+  lineId,
+  projectId,
+  itemLabel,
+  defaultElementId,
+  defaultQuantity,
+  defaultDueDate,
+  onClose
+}: ContractLineBuildFormProps) {
   const { t } = useLingui();
   const { defaults } = useUser();
   const chargeNumbers = useChargeNumbers();
@@ -83,62 +100,57 @@ export default function ContractLineBuildModal({
   );
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          validator={contractLineBuildValidator}
-          method="post"
-          action={path.to.contractLineBuild(contractId, lineId)}
-          fetcher={fetcher}
-          defaultValues={{
-            elementId: defaultElementId ?? "",
-            quantity: defaultQuantity,
-            dueDate: defaultDueDate ?? undefined,
-            locationId: defaults?.locationId ?? ""
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Build</Trans>
-            </ModalTitle>
-            <ModalDescription>{itemLabel}</ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              {errorMessage && (
-                <Alert variant="destructive">
-                  <LuTriangleAlert />
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-              <Combobox
-                name="elementId"
-                label={t`Task`}
-                options={taskOptions}
-                helperText={t`The job's cost reports to this task`}
-              />
-              <NumberField
-                name="quantity"
-                label={t`Quantity`}
-                minValue={0}
-                formatOptions={INPUT_FORMAT.quantity}
-                step={INPUT_STEP.quantity}
-              />
-              <DatePicker name="dueDate" label={t`Due Date`} />
-              <Location name="locationId" label={t`Location`} />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              <Trans>Create Job</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+    <ValidatedForm
+      validator={contractLineBuildValidator}
+      method="post"
+      action={path.to.contractLineBuild(contractId, lineId)}
+      fetcher={fetcher}
+      defaultValues={{
+        elementId: defaultElementId ?? "",
+        quantity: defaultQuantity,
+        dueDate: defaultDueDate ?? undefined,
+        locationId: defaults?.locationId ?? ""
+      }}
+    >
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Build</Trans>
+        </ModalTitle>
+        <ModalDescription>{itemLabel}</ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          {errorMessage && (
+            <Alert variant="destructive">
+              <LuTriangleAlert />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+          <Combobox
+            name="elementId"
+            label={t`Task`}
+            options={taskOptions}
+            helperText={t`The job's cost reports to this task`}
+          />
+          <NumberField
+            name="quantity"
+            label={t`Quantity`}
+            minValue={0}
+            formatOptions={INPUT_FORMAT.quantity}
+            step={INPUT_STEP.quantity}
+          />
+          <DatePicker name="dueDate" label={t`Due Date`} />
+          <Location name="locationId" label={t`Location`} />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit withBlocker={false}>
+          <Trans>Create Job</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }

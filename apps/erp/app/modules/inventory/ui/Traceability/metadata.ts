@@ -127,3 +127,15 @@ export function isMovementActivity(type: string | null | undefined): boolean {
   const kind = activityKindFor(type);
   return kind === "Transfer" || kind === "Pick";
 }
+
+// The type the inspection engine writes (`packages/database/src/quality.ts`).
+// The graph wires an inspection on this exact type, not on activityKindFor's
+// substring match: a production event is named after its operation ("Final
+// Inspection (Labor)") and produces and consumes like any other.
+const INSPECT_ACTIVITY_TYPE = "Inspect";
+
+// An inspection looks at a unit and leaves it as it was: the unit is its input,
+// neither consumed nor moved, and keeps its state.
+export function isInspectActivity(type: string | null | undefined): boolean {
+  return type === INSPECT_ACTIVITY_TYPE;
+}

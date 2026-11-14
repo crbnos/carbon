@@ -9,10 +9,19 @@ import {
   toleranceLimits,
   valuateMeasurement
 } from "@carbon/database/inspection-verdict";
+import { getLogger } from "@carbon/logger";
+import type {
+  InspectionParameter,
+  InspectionPlanTab,
+  JSONContent
+} from "@carbon/react";
 import {
   Badge,
   cn,
   IconButton,
+  InspectionPlanInstructions,
+  InspectionPlanParameters,
+  InspectionPlanTabs,
   ToggleGroup,
   ToggleGroupItem,
   toast
@@ -59,6 +68,8 @@ import type {
 } from "~/services/types";
 import { path } from "~/utils/path";
 import InspectionGaugePicker from "./InspectionGaugePicker";
+
+const logger = getLogger("mes", "inspection");
 
 // A cell save's response payload (the measurement action returns it so the
 // matrix can update without a revalidation roundtrip). Same contract as the
@@ -129,6 +140,13 @@ type InspectionMeasurementMatrixProps = {
   onMeasurementSaved: (result: MeasurementSaveResult) => void;
   // Buttons for the toolbar's end: the drawing and collapse toggles.
   toolbarActions?: ReactNode;
+  // The plan's parameters (setup to read before measuring), on a Parameters
+  // tab beside the characteristics. Passed only when the lot has a plan, so
+  // the tab is always there to find, empty or not.
+  parameters?: InspectionParameter[];
+  // The plan's work instructions, on an Instructions tab. Passed with
+  // `parameters`, only when the lot has a plan.
+  workInstruction?: JSONContent | null;
   // Matrix position -> sample id, owned by the view so it survives a remount
   // (Hide / Show drawing). A save still running in the old matrix writes
   // here, so the new matrix's next save reuses that sample.
@@ -170,9 +188,12 @@ const InspectionMeasurementMatrix = ({
   onActiveFeatureChange,
   onMeasurementSaved,
   toolbarActions,
+  parameters,
+  workInstruction,
   placementRef,
   onBusyChange
 }: InspectionMeasurementMatrixProps) => {
+  const [tab, setTab] = useState<InspectionPlanTab>("characteristics");
   const { t } = useLingui();
 
   // The matrix ignores plan rows whose live feature was deleted from the document.
@@ -443,7 +464,13 @@ const InspectionMeasurementMatrix = ({
       const response = await fetch(
         path.to.inspectionMeasurement(inspectionId),
         { method: "post", body: formData }
-      ).catch(() => null);
+      ).catch((error) => {
+        logger.warning("Failed to send the measurement", {
+          inspectionId,
+          error
+        });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         data?: {
           sampleId: string;
@@ -499,7 +526,10 @@ const InspectionMeasurementMatrix = ({
       const response = await fetch(path.to.inspectionSample(inspectionId), {
         method: "post",
         body: formData
-      }).catch(() => null);
+      }).catch((error) => {
+        logger.warning("Failed to send the sample", { inspectionId, error });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         sampleId?: string;
         error?: { message: string } | null;
@@ -981,7 +1011,14 @@ const InspectionMeasurementMatrix = ({
           const response = await fetch(path.to.inspectionGauge(inspectionId), {
             method: "post",
             body: formData
-          }).catch(() => null);
+          }).catch((error) => {
+            logger.warning("Failed to send the gauge", {
+              inspectionId,
+              featureId,
+              error
+            });
+            return null;
+          });
           const body = (await response?.json().catch(() => null)) as {
             error?: { message: string } | null;
           } | null;
@@ -1275,14 +1312,28 @@ const InspectionMeasurementMatrix = ({
   }, [isBusy, onBusyChange]);
   useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
 
+  const characteristicsTitle = hasFeatures
+    ? `${t`Characteristics`} (${characteristics.length})`
+    : t`Result`;
+  const showingParameters = parameters !== undefined && tab === "parameters";
+  const showingInstructions =
+    parameters !== undefined && tab === "instructions";
+
   const toolbar = (
     <div className="flex min-h-10 flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
       <span className="flex min-w-0 items-center gap-2">
-        <span className="truncate text-sm font-medium text-foreground">
-          {hasFeatures
-            ? `${t`Characteristics`} (${characteristics.length})`
-            : t`Result`}
-        </span>
+        {parameters !== undefined ? (
+          <InspectionPlanTabs
+            value={tab}
+            onValueChange={setTab}
+            characteristicsLabel={characteristicsTitle}
+            className="max-md:w-auto max-md:px-0"
+          />
+        ) : (
+          <span className="truncate text-sm font-medium text-foreground">
+            {characteristicsTitle}
+          </span>
+        )}
         {failedReadings > 0 && (
           <Badge variant="red" className="tabular-nums">
             {t`${failedReadings} failed`}
@@ -1295,7 +1346,7 @@ const InspectionMeasurementMatrix = ({
         )}
       </span>
       <span className="flex items-center gap-1">
-        {columnCount > 0 && (
+        {columnCount > 0 && !showingParameters && !showingInstructions && (
           <ToggleGroup
             type="single"
             size="sm"
@@ -1317,6 +1368,27 @@ const InspectionMeasurementMatrix = ({
       </span>
     </div>
   );
+
+  if (showingInstructions) {
+    return (
+      <>
+        {toolbar}
+        <InspectionPlanInstructions
+          workInstruction={workInstruction}
+          size="lg"
+        />
+      </>
+    );
+  }
+
+  if (showingParameters) {
+    return (
+      <>
+        {toolbar}
+        <InspectionPlanParameters parameters={parameters} size="lg" />
+      </>
+    );
+  }
 
   if (columnCount === 0) {
     return (

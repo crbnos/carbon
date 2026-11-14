@@ -233,6 +233,31 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       active: true
     });
   }
+  // Goods-in receipts of inspected items land in the inspection shelf; a
+  // rejected lot moves to the rejected shelf.
+  await ctx.client.query(
+    `UPDATE "location" SET "inspectionStorageUnitId" = $1, "rejectedStorageUnitId" = $2 WHERE id = $3 AND "companyId" = $4`,
+    [
+      need(ctx.refs.shelves, data.inspectionShelf, "shelf"),
+      need(ctx.refs.shelves, data.rejectedShelf, "shelf"),
+      plantId,
+      ctx.companyId
+    ]
+  );
+
+  // Written on every apply, so applying a dataset without lineFlow turns the
+  // line-flow settings off again.
+  const flow = data.lineFlow;
+  ctx.log("line flow settings");
+  await ctx.client.query(
+    `UPDATE "companySettings" SET "travelerLabels" = $1, "requireTrackedMaterialsIssued" = $2, "autoPickingListOnRelease" = $3 WHERE id = $4`,
+    [
+      flow?.travelerLabels ?? false,
+      flow?.requireTrackedMaterialsIssued ?? false,
+      flow?.autoPickingListOnRelease ?? false,
+      ctx.companyId
+    ]
+  );
 
   // ── Work centers (need dept + ability + location) ─────────────────────────
   ctx.log("work centers");
@@ -379,36 +404,45 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
     ctx.refs.contacts[`${cc.customer}:${cc.lastName}`] = contactId;
 
-    const addrId = await insertId(
-      ctx,
-      "address",
-      partyAddress(
-        data,
-        data.customers.find((c) => c.name === cc.customer)?.address,
-        "See parent"
-      )
-    );
-    const locId = await insertId(ctx, "customerLocation", {
-      customerId,
-      addressId: addrId,
-      name: "Billing"
-    });
-    ctx.refs.misc[`cloc:${cc.customer}`] = locId;
+    let locId: string;
+    if (cc.sharesLocation) {
+      locId = need(ctx.refs.misc, `cloc:${cc.customer}`, "customer location");
+    } else {
+      const addrId = await insertId(
+        ctx,
+        "address",
+        partyAddress(
+          data,
+          data.customers.find((c) => c.name === cc.customer)?.address,
+          "See parent"
+        )
+      );
+      locId = await insertId(ctx, "customerLocation", {
+        customerId,
+        addressId: addrId,
+        name: "Billing"
+      });
+      ctx.refs.misc[`cloc:${cc.customer}`] = locId;
+    }
 
-    await insertId(ctx, "customerContact", {
-      customerId,
-      contactId,
-      customerLocationId: locId
-    });
+    ctx.refs.contacts[`cc:${cc.customer}:${cc.lastName}`] = await insertId(
+      ctx,
+      "customerContact",
+      { customerId, contactId, customerLocationId: locId }
+    );
   }
 
   // ── Suppliers ─────────────────────────────────────────────────────────────
   ctx.log("suppliers");
   for (const s of data.suppliers) {
     const typeId = need(ctx.refs.misc, `stype:${s.type}`, "supplier type");
+    const stageId = s.stage
+      ? await bootstrapIdByName(ctx, "supplierStage", s.stage)
+      : null;
     const supId = await insertId(ctx, "supplier", {
       name: s.name,
       supplierTypeId: typeId,
+      supplierStageId: stageId,
       phone: s.phone,
       website: s.website,
       currencyCode: s.currencyCode ?? "USD",
@@ -526,13 +560,45 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── Printer routes ─────────────────────────────────────────────────────────
   if (data.printerRoute) {
     ctx.log("printer routes");
-    await insertRow(ctx, "printerRoute", {
+    const printerRouteId = await insertId(ctx, "printerRoute", {
       name: data.printerRoute.name,
       locationId: plantId,
       format: data.printerRoute.format,
       printerUrl: data.printerRoute.printerUrl,
       companyId
     });
+    if (data.printerRoute.plantDefault) {
+      // The shape of emptyLocationAssignment (@carbon/printing) with the
+      // default set; the contexts and work centers inherit it.
+      const inherit = { printerRouteId: null, autoPrint: true };
+      const plantAssignment = {
+        defaultPrinterRouteId: printerRouteId,
+        defaultAutoPrint: true,
+        shipping: inherit,
+        receiving: inherit,
+        inventory: inherit,
+        // A kanban card needs media of at least 3" x 2", and this route has
+        // no media size, so the print worker would render the card on
+        // label2x1 and the kanban renderer refuses that. A context with no
+        // route of its own always falls back to the location default
+        // (resolveContextAssignment), so kanban cannot opt out of the route;
+        // it opts out of auto-print instead, and creating a kanban queues no
+        // job that is sure to fail.
+        kanban: { printerRouteId: null, autoPrint: false },
+        workCenters: {}
+      };
+      // Set only this plant's entry: the assignments of other locations stay.
+      await ctx.client.query(
+        `UPDATE "companySettings"
+         SET printing = COALESCE(printing, '{}'::jsonb) || jsonb_build_object(
+           'assignments',
+           COALESCE(printing -> 'assignments', '{}'::jsonb)
+             || jsonb_build_object($2::text, $1::jsonb)
+         )
+         WHERE id = $3`,
+        [JSON.stringify(plantAssignment), plantId, companyId]
+      );
+    }
   }
 
   // ── Procedures (shop-floor work instructions) ─────────────────────────────

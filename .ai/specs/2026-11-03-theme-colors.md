@@ -62,7 +62,10 @@ cookie holds its name, as for every theme:
 | `forge`, `graphite`, … | A preset theme from `presetThemes` (built from `THEME_PRESETS`). |
 | `custom:7c2d12:ea580c:g` | A custom theme: `base`, `highlight`, then `g` (gradient) or `s` (solid). |
 
-A theme with `colors` keeps the default theme's accent (`cssVars` of `zinc`).
+A theme with `colors` takes the default theme's (`zinc`) `cssVars`, with its
+own accent: `themeAccent` sets `--primary`, `--primary-foreground` and
+`--ring` from the highlight. Buttons and focus rings take the theme's color,
+as with a color theme.
 `isThemeName` is the one test of a stored name. An unknown or malformed value
 reads as the default theme. So removing a preset never breaks a browser that
 still holds its name.
@@ -270,7 +273,7 @@ If the user closes the pane first, the pane saves the last color as it closes.
 | What `colors` paints | The frame (`SidebarProvider` and the desktop `NavRail`) in full color, and a tint of the frame's hue on the page. | The user asked for a page that matches the frame, not a plain black or white page (2026-11-03). A tint, not the full color, keeps dense tables and forms readable. A test holds the page text at AA. |
 | A second setting or a theme | A kind of theme, beside the color themes. One choice, one `theme` cookie. | The user asked for one setting, so the app manages one cookie and one resolver (2026-11-05). The cost: a user can no longer combine a color theme's accent with a colored frame. |
 | Where the choice is stored | The `theme` cookie, per browser. | Every theme is a per-browser cookie on the host app (`packages/account/AGENTS.md`). A new column is a schema change, which `AGENTS.md` puts in Ask First. |
-| The accent of a theme with `colors` | The default theme's (`zinc`) `cssVars`. | The frame carries the color. A neutral accent fits every frame. |
+| The accent of a theme with `colors` | The highlight, from `themeAccent`. A button takes white text when white has 2.5:1 or more on the highlight, else dark text. The fill then moves only until its text reads at AA and the fill stands out from the page at 3:1. | The user asked for buttons in the theme's color, as with a color theme (2026-11-10). It replaced a neutral `zinc` accent. The color themes also use white text on all but the lightest colors. A test holds every preset and 400 custom themes to both ratios. |
 | The avatar menu and the mobile profile sheet | They list no themes. Their Appearance item opens Account → Appearance. | 24 themes crowd a compact menu, and one picker keeps one place to learn (2026-11-05). |
 | Light mode and dark mode | One preset per theme, painted per mode: light mode keeps the picked color, muted; dark mode deepens it (`deepFrame`). | The reference app does this (measured 2026-11-05, see the Changelog). One color per preset halves the preset data. |
 | Text color in the frame | Computed by WCAG contrast, never stored. | A custom color can be light or dark. A stored text color could go stale when the user edits the frame color. |

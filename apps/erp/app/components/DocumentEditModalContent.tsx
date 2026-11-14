@@ -50,10 +50,12 @@ type DocumentEditor = NonNullable<
 export default function DocumentEditModal({
   documentType,
   documentId,
+  open = true,
   onClose
 }: {
   documentType: DocumentEditType;
   documentId: string;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -72,7 +74,7 @@ export default function DocumentEditModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(next) => {
         if (!next) onClose();
       }}

@@ -10,6 +10,7 @@ import type {
   ContractSpec,
   CustomerAssetSpec,
   PriceBreak,
+  RentalAgreementSpec,
   SalesData,
   SalesOpportunitySpec,
   SalesReturnSpec,
@@ -1233,6 +1234,65 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
   }
 ];
 
+// Rental agreements over the fleet units (accounting FIXED_ASSETS "fleet-*").
+// The Active one is open-ended, so every line classifies as a Rental.
+export const RENTAL_AGREEMENTS: RentalAgreementSpec[] = [
+  {
+    key: "active",
+    customer: "Dominion Ag Equipment",
+    primaryContact: "Bertrand",
+    contacts: [{ contact: "Holloway", role: "Site contact" }],
+    status: "Active",
+    startOffset: -45,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-1",
+        rateUnit: "Month",
+        rate: 190,
+        fairValue: 2310,
+        economicLifeMonths: 60,
+        deliveredOffset: -40
+      },
+      {
+        fixedAsset: "fleet-2",
+        rateUnit: "Month",
+        rate: 190,
+        fairValue: 2310,
+        economicLifeMonths: 60
+      }
+    ],
+    charges: [
+      {
+        line: 1,
+        description: "Freight and install",
+        amount: 240,
+        dateOffset: -40
+      }
+    ]
+  },
+  {
+    key: "draft",
+    customer: "Cedar Valley Hydraulics",
+    primaryContact: "Ellwood",
+    status: "Draft",
+    startOffset: 14,
+    endOffset: 379,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-3",
+        rateUnit: "Month",
+        rate: 190,
+        fairValue: 2310,
+        economicLifeMonths: 60
+      }
+    ]
+  }
+];
+
 export const precisionSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
@@ -1286,5 +1346,6 @@ export const precisionSales: SalesData = {
   ],
   customerAssets: CUSTOMER_ASSETS,
   serviceLaborRates: { cost: 54, bill: 125 },
-  serviceJobs: SERVICE_JOBS
+  serviceJobs: SERVICE_JOBS,
+  rentalAgreements: RENTAL_AGREEMENTS
 };

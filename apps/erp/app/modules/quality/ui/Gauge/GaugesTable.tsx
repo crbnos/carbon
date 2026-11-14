@@ -398,67 +398,33 @@ const GaugesTable = memo((props: GaugesTableProps) => {
         table="gauge"
         withSavedView
       />
-      {deleteDisclosure.isOpen && selectedGauge && (
+      {selectedGauge && (
         <ConfirmDelete
           action={path.to.deleteGauge(selectedGauge.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedGauge(null);
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedGauge(null);
-            deleteDisclosure.onClose();
-          }}
+          isOpen={deleteDisclosure.isOpen}
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
           name={selectedGauge.gaugeId ?? "gauge"}
           text={t`Are you sure you want to delete this gauge?`}
         />
       )}
-      {deleteDisclosure.isOpen && selectedGauge && (
-        <ConfirmDelete
-          action={path.to.deleteGauge(selectedGauge.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedGauge(null);
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedGauge(null);
-            deleteDisclosure.onClose();
-          }}
-          name={selectedGauge.gaugeId ?? "gauge"}
-          text={t`Are you sure you want to delete this gauge?`}
-        />
-      )}
-      {activateDisclosure.isOpen && selectedGauge && (
+      {selectedGauge && (
         <Confirm
           action={path.to.activateGauge(selectedGauge.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedGauge(null);
-            activateDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedGauge(null);
-            activateDisclosure.onClose();
-          }}
+          isOpen={activateDisclosure.isOpen}
+          onCancel={activateDisclosure.onClose}
+          onSubmit={activateDisclosure.onClose}
           text={t`Are you sure you want to activate this gauge?.`}
           title={`Activate ${selectedGauge.gaugeId}`}
           confirmText={t`Activate`}
         />
       )}
-      {deactivateDisclosure.isOpen && selectedGauge && (
+      {selectedGauge && (
         <Confirm
           action={path.to.gaugeDeactivate(selectedGauge.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedGauge(null);
-            deactivateDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedGauge(null);
-            deactivateDisclosure.onClose();
-          }}
+          isOpen={deactivateDisclosure.isOpen}
+          onCancel={deactivateDisclosure.onClose}
+          onSubmit={deactivateDisclosure.onClose}
           text={t`Are you sure you want to deactivate this gauge?.`}
           title={`Deactivate ${selectedGauge.gaugeId}`}
           confirmText={t`Deactivate`}

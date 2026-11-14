@@ -35,7 +35,8 @@ import {
 import {
   useCompanyToday,
   useCurrencyDecimals,
-  useDateFormatter
+  useDateFormatter,
+  useDrawerItem
 } from "~/hooks";
 import ContractMoney from "./ContractMoney";
 
@@ -82,7 +83,12 @@ export default function ContractFundingActions({
   const save = useCellSave();
   const [drafts, setDrafts] = useState<FundingRow[]>([]);
   const draftCount = useRef(0);
-  const [deleting, setDeleting] = useState<FundingRow | null>(null);
+  const {
+    item: deleting,
+    isOpen: isDeleting,
+    open: openDelete,
+    close: closeDelete
+  } = useDrawerItem<FundingRow>();
 
   const rows = useMemo<FundingRow[]>(
     () => [
@@ -273,14 +279,14 @@ export default function ContractFundingActions({
         onClick={() =>
           row.id === null
             ? setDrafts((previous) => previous.filter((d) => d.key !== row.key))
-            : setDeleting(row)
+            : openDelete(row)
         }
       >
         <MenuIcon icon={<LuTrash />} />
         <Trans>Delete Funding</Trans>
       </MenuItem>
     ),
-    [isDisabled]
+    [isDisabled, openDelete]
   );
   const gridColumns = useMemo(
     () => [...columns, rowMenuColumn(renderMenu, t`Actions`)],
@@ -360,12 +366,12 @@ export default function ContractFundingActions({
       {deleting && deleting.id && (
         <ConfirmDelete
           action={action}
-          isOpen
+          isOpen={isDeleting}
           name={deleting.modificationNumber}
           text={t`Are you sure you want to delete this funding action?`}
           fields={{ intent: "delete", id: deleting.id }}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          onCancel={closeDelete}
+          onSubmit={closeDelete}
         />
       )}
     </>

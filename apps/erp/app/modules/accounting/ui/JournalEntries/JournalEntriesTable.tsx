@@ -300,11 +300,9 @@ const JournalEntriesTable = memo(
             text={t`Are you sure you want to delete ${selectedEntry.journalEntryId}?`}
             onCancel={() => {
               deleteModal.onClose();
-              setSelectedEntry(null);
             }}
             onSubmit={() => {
               deleteModal.onClose();
-              setSelectedEntry(null);
             }}
           />
         )}

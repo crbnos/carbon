@@ -29,10 +29,11 @@ import { capitalize, copyToClipboard } from "~/utils/string";
 import { AttributeList, hasRenderedAttributes } from "./attributeRenderers";
 import { ContainmentList } from "./ContainmentList";
 import type { ClusterMember, EntityCluster } from "./cluster";
-import { edgeKey } from "./cluster";
+import { edgeKey, sharedMemberAttributes } from "./cluster";
 import {
   ACTIVITY_KIND_META,
   activityKindFor,
+  isInspectActivity,
   isMovementActivity
 } from "./metadata";
 import { StepRecordsList } from "./StepRecordsList";
@@ -41,6 +42,7 @@ import {
   activityHeadline,
   entityHeadline,
   type LineagePayload,
+  normalizeInspectionLinks,
   type StepRecord,
   sourceLinkHref
 } from "./utils";
@@ -78,9 +80,16 @@ export function TraceabilitySidebar({
   const { t } = useLingui();
   const selectedNode = entity ?? activity;
   const selectedNodeType = cluster ? "group" : entity ? "entity" : "activity";
-  const selectedNodeAttributes = (
-    entity ? (entity.attributes ?? {}) : (activity?.attributes ?? {})
-  ) as Record<string, any>;
+  // A serial group shows what its members have in common.
+  const selectedNodeAttributes = useMemo(
+    () =>
+      (cluster
+        ? sharedMemberAttributes(cluster.members, payload?.entities ?? [])
+        : entity
+          ? (entity.attributes ?? {})
+          : (activity?.attributes ?? {})) as Record<string, any>,
+    [cluster, entity, activity, payload?.entities]
+  );
 
   const clusterByMember = useMemo(() => {
     const m = new Map<string, EntityCluster>();
@@ -108,133 +117,160 @@ export function TraceabilitySidebar({
     entity?.sourceDocumentReadableId ?? activity?.sourceDocumentReadableId;
   const sourceHref = sourceLinkHref(sourceDoc, sourceDocId);
 
-  const { producedBy, consumedBy, movedBy, splits, inputs, outputs } =
-    useMemo(() => {
-      if (!payload) {
-        return {
-          producedBy: [] as RelatedActivity[],
-          consumedBy: [] as RelatedActivity[],
-          movedBy: [] as RelatedActivity[],
-          splits: [] as RelatedActivity[],
-          inputs: [] as RelatedEntity[],
-          outputs: [] as RelatedEntity[]
-        };
+  // Older inspections are stored as zero-quantity self-loops; read them as one
+  // input, so they do not show as a split.
+  const lineage = useMemo(
+    () => (payload ? normalizeInspectionLinks(payload) : null),
+    [payload]
+  );
+  const {
+    producedBy,
+    consumedBy,
+    movedBy,
+    inspectedBy,
+    splits,
+    inputs,
+    outputs
+  } = useMemo(() => {
+    if (!lineage) {
+      return {
+        producedBy: [] as RelatedActivity[],
+        consumedBy: [] as RelatedActivity[],
+        movedBy: [] as RelatedActivity[],
+        inspectedBy: [] as RelatedActivity[],
+        splits: [] as RelatedActivity[],
+        inputs: [] as RelatedEntity[],
+        outputs: [] as RelatedEntity[]
+      };
+    }
+    const payload = lineage;
+    const activityById = indexBy(payload.activities, (a) => a.id);
+    const entityById = indexBy(payload.entities, (e) => e.id);
+
+    const producedBy: RelatedActivity[] = [];
+    const consumedBy: RelatedActivity[] = [];
+    const movedBy: RelatedActivity[] = [];
+    const inspectedBy: RelatedActivity[] = [];
+    const splits: RelatedActivity[] = [];
+    const inputs: RelatedEntityItem[] = [];
+    const outputs: RelatedEntityItem[] = [];
+
+    if (cluster) {
+      // Every member sits on the same edges by construction — one row per
+      // signature entry, carrying the summed quantity.
+      for (const entry of cluster.signature) {
+        const a = activityById.get(entry.activityId);
+        if (!a) continue;
+        const quantity =
+          cluster.quantitiesByEdge[edgeKey(entry.activityId, entry.side)] ?? 0;
+        if (entry.side === "output") {
+          producedBy.push({ activity: a, quantity });
+        } else if (isInspectActivity(a.type)) {
+          inspectedBy.push({ activity: a, quantity });
+        } else if (isMovementActivity(a.type)) {
+          movedBy.push({ activity: a, quantity });
+        } else {
+          consumedBy.push({ activity: a, quantity });
+        }
       }
-      const activityById = indexBy(payload.activities, (a) => a.id);
-      const entityById = indexBy(payload.entities, (e) => e.id);
+    } else if (entity) {
+      // A historical split survivor is recorded as both input and output of
+      // its own Split activity. That self-loop is neither production nor
+      // consumption — surface it as a Split instead of lying on both sides.
+      const inputActivityIds = new Set(
+        pluckUnique(payload.inputs, (i) =>
+          i.trackedEntityId === entity.id ? i.trackedActivityId : null
+        )
+      );
+      const selfLoopActivityIds = new Set(
+        pluckUnique(payload.outputs, (o) =>
+          o.trackedEntityId === entity.id &&
+          inputActivityIds.has(o.trackedActivityId)
+            ? o.trackedActivityId
+            : null
+        )
+      );
 
-      const producedBy: RelatedActivity[] = [];
-      const consumedBy: RelatedActivity[] = [];
-      const movedBy: RelatedActivity[] = [];
-      const splits: RelatedActivity[] = [];
-      const inputs: RelatedEntityItem[] = [];
-      const outputs: RelatedEntityItem[] = [];
-
-      if (cluster) {
-        // Every member sits on the same edges by construction — one row per
-        // signature entry, carrying the summed quantity.
-        for (const entry of cluster.signature) {
-          const a = activityById.get(entry.activityId);
-          if (!a) continue;
-          const quantity =
-            cluster.quantitiesByEdge[edgeKey(entry.activityId, entry.side)] ??
-            0;
-          if (entry.side === "output") {
-            producedBy.push({ activity: a, quantity });
-          } else if (isMovementActivity(a.type)) {
-            movedBy.push({ activity: a, quantity });
-          } else {
-            consumedBy.push({ activity: a, quantity });
-          }
+      for (const o of payload.outputs) {
+        if (o.trackedEntityId !== entity.id) continue;
+        const a = activityById.get(o.trackedActivityId);
+        if (!a) continue;
+        if (selfLoopActivityIds.has(o.trackedActivityId)) {
+          // The output row's quantity is what the entity kept.
+          splits.push({ activity: a, quantity: o.quantity });
+        } else {
+          producedBy.push({ activity: a, quantity: o.quantity });
         }
-      } else if (entity) {
-        // A historical split survivor is recorded as both input and output of
-        // its own Split activity. That self-loop is neither production nor
-        // consumption — surface it as a Split instead of lying on both sides.
-        const inputActivityIds = new Set(
-          pluckUnique(payload.inputs, (i) =>
-            i.trackedEntityId === entity.id ? i.trackedActivityId : null
-          )
-        );
-        const selfLoopActivityIds = new Set(
-          pluckUnique(payload.outputs, (o) =>
-            o.trackedEntityId === entity.id &&
-            inputActivityIds.has(o.trackedActivityId)
-              ? o.trackedActivityId
-              : null
-          )
-        );
-
-        for (const o of payload.outputs) {
-          if (o.trackedEntityId !== entity.id) continue;
-          const a = activityById.get(o.trackedActivityId);
-          if (!a) continue;
-          if (selfLoopActivityIds.has(o.trackedActivityId)) {
-            // The output row's quantity is what the entity kept.
-            splits.push({ activity: a, quantity: o.quantity });
-          } else {
-            producedBy.push({ activity: a, quantity: o.quantity });
-          }
+      }
+      for (const i of payload.inputs) {
+        if (i.trackedEntityId !== entity.id) continue;
+        if (selfLoopActivityIds.has(i.trackedActivityId)) continue;
+        const a = activityById.get(i.trackedActivityId);
+        if (!a) continue;
+        // A Split draws a portion off this lot and leaves the rest on the
+        // shelf — the lot is an input but was NOT consumed. (Legacy splits
+        // recorded the survivor as input AND output; the self-loop skip above
+        // catches those.)
+        if (a.type === "Split") {
+          splits.push({ activity: a, quantity: i.quantity });
+        } else if (isInspectActivity(a.type)) {
+          inspectedBy.push({ activity: a, quantity: i.quantity });
+        } else if (isMovementActivity(a.type)) {
+          // A transfer/pick relocated the lot — it did not consume it.
+          movedBy.push({ activity: a, quantity: i.quantity });
+        } else {
+          consumedBy.push({ activity: a, quantity: i.quantity });
         }
-        for (const i of payload.inputs) {
-          if (i.trackedEntityId !== entity.id) continue;
-          if (selfLoopActivityIds.has(i.trackedActivityId)) continue;
-          const a = activityById.get(i.trackedActivityId);
-          if (!a) continue;
-          // A Split draws a portion off this lot and leaves the rest on the
-          // shelf — the lot is an input but was NOT consumed. (Legacy splits
-          // recorded the survivor as input AND output; the self-loop skip above
-          // catches those.)
-          if (a.type === "Split") {
-            splits.push({ activity: a, quantity: i.quantity });
-          } else if (isMovementActivity(a.type)) {
-            // A transfer/pick relocated the lot — it did not consume it.
-            movedBy.push({ activity: a, quantity: i.quantity });
-          } else {
-            consumedBy.push({ activity: a, quantity: i.quantity });
-          }
-        }
-      } else if (activity) {
-        // Clustered members collapse into one row per group — a 50-serial fan
-        // is unreadable as 50 identical lines.
-        const collect = (
-          rows: { trackedEntityId: string; quantity: number }[],
-          into: RelatedEntityItem[]
-        ) => {
-          const clusterTotals = new Map<string, number>();
-          const clusterOrder: EntityCluster[] = [];
-          for (const row of rows) {
-            const memberCluster = clusterByMember.get(row.trackedEntityId);
-            if (memberCluster) {
-              if (!clusterTotals.has(memberCluster.id)) {
-                clusterOrder.push(memberCluster);
-              }
-              clusterTotals.set(
-                memberCluster.id,
-                (clusterTotals.get(memberCluster.id) ?? 0) + row.quantity
-              );
-              continue;
+      }
+    } else if (activity) {
+      // Clustered members collapse into one row per group — a 50-serial fan
+      // is unreadable as 50 identical lines.
+      const collect = (
+        rows: { trackedEntityId: string; quantity: number }[],
+        into: RelatedEntityItem[]
+      ) => {
+        const clusterTotals = new Map<string, number>();
+        const clusterOrder: EntityCluster[] = [];
+        for (const row of rows) {
+          const memberCluster = clusterByMember.get(row.trackedEntityId);
+          if (memberCluster) {
+            if (!clusterTotals.has(memberCluster.id)) {
+              clusterOrder.push(memberCluster);
             }
-            const e = entityById.get(row.trackedEntityId);
-            if (e) into.push({ entity: e, quantity: row.quantity });
+            clusterTotals.set(
+              memberCluster.id,
+              (clusterTotals.get(memberCluster.id) ?? 0) + row.quantity
+            );
+            continue;
           }
-          for (const c of clusterOrder) {
-            into.push({ cluster: c, quantity: clusterTotals.get(c.id) ?? 0 });
-          }
-        };
+          const e = entityById.get(row.trackedEntityId);
+          if (e) into.push({ entity: e, quantity: row.quantity });
+        }
+        for (const c of clusterOrder) {
+          into.push({ cluster: c, quantity: clusterTotals.get(c.id) ?? 0 });
+        }
+      };
 
-        collect(
-          payload.inputs.filter((i) => i.trackedActivityId === activity.id),
-          inputs
-        );
-        collect(
-          payload.outputs.filter((o) => o.trackedActivityId === activity.id),
-          outputs
-        );
-      }
+      collect(
+        payload.inputs.filter((i) => i.trackedActivityId === activity.id),
+        inputs
+      );
+      collect(
+        payload.outputs.filter((o) => o.trackedActivityId === activity.id),
+        outputs
+      );
+    }
 
-      return { producedBy, consumedBy, movedBy, splits, inputs, outputs };
-    }, [payload, entity, activity, cluster, clusterByMember]);
+    return {
+      producedBy,
+      consumedBy,
+      movedBy,
+      inspectedBy,
+      splits,
+      inputs,
+      outputs
+    };
+  }, [lineage, entity, activity, cluster, clusterByMember]);
 
   const stepRecordsFetcher = useFetcher<{ stepRecords: StepRecord[] }>();
   const lastLoadedActivityIdRef = useRef<string | null>(null);
@@ -509,6 +545,19 @@ export function TraceabilitySidebar({
           <Section title="Moved by" count={movedBy.length}>
             <ul className="divide-y divide-border/30">
               {movedBy.map((item) => (
+                <RelatedActivityRow
+                  key={item.activity.id}
+                  item={item}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+          </Section>
+        )}
+        {inspectedBy.length > 0 && (
+          <Section title={t`Inspected by`} count={inspectedBy.length}>
+            <ul className="divide-y divide-border/30">
+              {inspectedBy.map((item) => (
                 <RelatedActivityRow
                   key={item.activity.id}
                   item={item}

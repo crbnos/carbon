@@ -6,7 +6,7 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { kanbanValidator } from "~/modules/inventory/inventory.models";
@@ -50,7 +50,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function EditKanbanRoute() {
   const { kanban } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: kanban?.id ?? undefined,
@@ -74,7 +74,8 @@ export default function EditKanbanRoute() {
       key={initialValues.id}
       initialValues={initialValues}
       locationId={initialValues.locationId}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

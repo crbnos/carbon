@@ -11,10 +11,10 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-  useDisclosure,
   VStack
 } from "@carbon/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import ToolForm from "~/modules/items/ui/Tools/ToolForm";
 
 import { useTools } from "~/stores";
@@ -56,8 +56,7 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
     [tools]
   );
 
-  const newToolsModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const { getInputProps, error, isOptional: fieldIsOptional } = useField(name);
@@ -84,7 +83,7 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
   });
 
   const emptyMessage = useEmptyState("tool", {
-    onCreate: () => newToolsModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -120,8 +119,7 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
             label={label}
             itemHeight={44}
             onCreateOption={(option) => {
-              newToolsModal.onOpen();
-              setCreated(option);
+              create.open(option);
             }}
           />
         </div>
@@ -131,18 +129,19 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
           helperText && <FormHelperText>{helperText}</FormHelperText>
         )}
       </FormControl>
-      {newToolsModal.isOpen && (
+      {create.item !== null && (
         <ToolForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newToolsModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             id: "",
             revision: "0",
-            name: created,
+            name: create.item,
             description: "",
             itemTrackingType: "Inventory",
             unitOfMeasureCode: "EA",

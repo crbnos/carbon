@@ -96,6 +96,7 @@ type JobFormProps = {
   /** "modal": one job (no Many Jobs tab) in a dialog, created through the
    *  New Job route, which opens the job; a refusal shows on its field. */
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
   /** The item types the job may make; Part and Tool by default. */
   validItemTypes?: ItemType[];
@@ -106,6 +107,7 @@ const JobForm = ({
   fixedAssetClasses = [],
   underConstructionAssets = [],
   type: formType = "card",
+  open = true,
   onClose,
   validItemTypes = ["Part", "Tool"]
 }: JobFormProps) => {
@@ -370,7 +372,7 @@ const JobForm = ({
 
           <TabsContent value="job" className="w-full">
             <ModalCardProvider type={formType}>
-              <ModalCard onClose={onClose}>
+              <ModalCard open={open} onClose={onClose}>
                 <ModalCardContent size="xlarge">
                   <ValidatedForm
                     method="post"
@@ -868,22 +870,20 @@ const JobForm = ({
         </VStack>
       </Tabs>
 
-      {requiresConfiguration &&
-        configurationDisclosure.isOpen &&
-        configurationParameters && (
-          <ConfiguratorModal
-            open
-            initialValues={configurationValues || {}}
-            groups={configurationParameters.groups ?? []}
-            parameters={configurationParameters.parameters ?? []}
-            onClose={configurationDisclosure.onClose}
-            onSubmit={(config: Record<string, any>) => {
-              setConfigurationValues(config);
-              setIsConfigured(true);
-              configurationDisclosure.onClose();
-            }}
-          />
-        )}
+      {requiresConfiguration && configurationParameters && (
+        <ConfiguratorModal
+          open={configurationDisclosure.isOpen}
+          initialValues={configurationValues || {}}
+          groups={configurationParameters.groups ?? []}
+          parameters={configurationParameters.parameters ?? []}
+          onClose={configurationDisclosure.onClose}
+          onSubmit={(config: Record<string, any>) => {
+            setConfigurationValues(config);
+            setIsConfigured(true);
+            configurationDisclosure.onClose();
+          }}
+        />
+      )}
     </>
   );
 };

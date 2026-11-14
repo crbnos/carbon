@@ -500,7 +500,8 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   // In Progress and Completed mirror post-receipt's Sales Return Order branch:
   // a Posted receipt plus a Sales Return Receipt ledger row per Return to Stock
   // line. A Service or Warranty line enters no stock (receipt-service-return.ts):
-  // no ledger row, its asset goes At Depot, and seedServiceJobs creates its job.
+  // no ledger row, its serial goes Available and its asset At Depot, and
+  // seedServiceJobs creates its job.
   // A `credit` adds Issue Credit's memo (helpers/return-credit.ts); tier 09
   // journals it if Posted.
   if (data.salesReturns.length > 0) {
@@ -590,6 +591,11 @@ export async function runTier4(ctx: Ctx): Promise<void> {
                 `UPDATE "customerAsset" SET status = 'At Depot'
                  WHERE id = $1 AND "companyId" = $2`,
                 [need(ctx.refs.misc, `asset:${line.asset}`), companyId]
+              );
+              await ctx.client.query(
+                `UPDATE "trackedEntity" SET status = 'Available'
+                 WHERE id = $1 AND "companyId" = $2`,
+                [need(ctx.refs.misc, `asset-serial:${line.asset}`), companyId]
               );
             }
             continue;
@@ -892,26 +898,29 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     }
   }
 
-  // The job favorite is tier 06's — job refs do not exist yet.
+  // The job favorite is tier 06's — job refs do not exist yet. A walkthrough
+  // dataset has no quotes or orders, so it gets no favorites.
   const sentQuote = data.opportunities.find(
     (spec) => spec.quote?.status === "Sent"
   );
-  if (!sentQuote?.quote) {
+  if (sentQuote?.quote) {
+    await insertRow(ctx, "quoteFavorite", {
+      quoteId: need(ctx.refs.documents, sentQuote.quote.ref),
+      userId
+    });
+  } else if (data.opportunities.length > 0) {
     throw new Error(`Seed: no Sent quote to favorite`);
   }
-  await insertRow(ctx, "quoteFavorite", {
-    quoteId: need(ctx.refs.documents, sentQuote.quote.ref),
-    userId
-  });
 
   const firstReleased = data.releasedOrders[0];
-  if (!firstReleased?.order) {
+  if (firstReleased?.order) {
+    await insertRow(ctx, "salesOrderFavorite", {
+      salesOrderId: need(ctx.refs.documents, firstReleased.order.ref),
+      userId
+    });
+  } else if (firstReleased) {
     throw new Error(`Seed: no released order to favorite`);
   }
-  await insertRow(ctx, "salesOrderFavorite", {
-    salesOrderId: need(ctx.refs.documents, firstReleased.order.ref),
-    userId
-  });
 
   await seedServiceJobs(ctx);
 }

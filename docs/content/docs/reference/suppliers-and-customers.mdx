@@ -23,6 +23,8 @@ A customer lives in sales and anchors the sell side: <Term id="quote">quotes</Te
 The asymmetry to remember: **supplier status is a fixed four-value set; customer status is a company-configurable lookup.** Their type catalogs (supplier type, customer type) are both user-defined.
 </Callout>
 
+Suppliers also have a <Term id="supplier-stage">Supplier Stage</Term>, a list your company manages under **Purchasing → Stages**. It starts with Prospect, Sampling, Qualified and Production, and you can add more. A stage records where a supplier is in your onboarding. It does not affect approvals or which suppliers you can use.
+
 ## What they share
 
 Both records carry the same satellite shape: **contacts**, **locations/addresses**, and **payment, shipping, and tax** defaults. Payment terms, currency, and tax settings live on those satellites, not on the core record. Both also have a human-readable id (`SUP…` / `CUS…`) on top of their internal key, and both can expose an external **portal**: suppliers respond to <Term id="rfq">RFQs</Term> through a digital-quote link; customers track their orders through a [customer portal](/docs/reference/customer-portal).

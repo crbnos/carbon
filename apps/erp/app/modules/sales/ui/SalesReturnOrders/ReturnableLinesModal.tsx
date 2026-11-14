@@ -57,14 +57,32 @@ type SelectedLine = {
 type ReturnableLinesModalProps = {
   customerId: string;
   salesOrderId?: string | null;
+  open?: boolean;
   onClose: () => void;
 };
 
 const ReturnableLinesModal = ({
+  open = true,
+  onClose,
+  ...props
+}: ReturnableLinesModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent size="xlarge">
+      <ReturnableLinesBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const ReturnableLinesBody = ({
   customerId,
   salesOrderId,
   onClose
-}: ReturnableLinesModalProps) => {
+}: Omit<ReturnableLinesModalProps, "open">) => {
   const { t } = useLingui();
   const { id: orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -204,173 +222,165 @@ const ReturnableLinesModal = ({
   const isLoading = fetcher.state !== "idle";
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent size="xlarge">
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Add lines from document</Trans>
-          </ModalTitle>
-          <ModalDescription>
-            <Trans>
-              Shipped lines for this customer with quantity remaining to return
-            </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={3} className="w-full">
-            <InputGroup className="w-full">
-              <InputLeftElement>
-                <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
-              </InputLeftElement>
-              <Input
-                aria-label={t`Search returnable lines`}
-                value={searchInput}
-                placeholder={t`Search by shipment, sales order, or item`}
-                onChange={(e) => {
-                  setSearchInput(e.target.value);
-                  commitSearch(e.target.value);
-                }}
-              />
-            </InputGroup>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Add lines from document</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>
+            Shipped lines for this customer with quantity remaining to return
+          </Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={3} className="w-full">
+          <InputGroup className="w-full">
+            <InputLeftElement>
+              <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
+            </InputLeftElement>
+            <Input
+              aria-label={t`Search returnable lines`}
+              value={searchInput}
+              placeholder={t`Search by shipment, sales order, or item`}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                commitSearch(e.target.value);
+              }}
+            />
+          </InputGroup>
 
-            {isLoading && !fetcher.data ? (
-              <p className="text-sm text-muted-foreground py-6 text-center w-full">
-                <Trans>Loading returnable lines...</Trans>
-              </p>
-            ) : lines.length === 0 ? (
-              <VStack spacing={1} className="py-6 items-center">
-                <p className="text-sm text-muted-foreground text-center">
-                  {search.trim() ? (
-                    <Trans>No returnable lines match your search</Trans>
-                  ) : (
-                    <Trans>No returnable lines for this customer</Trans>
-                  )}
-                </p>
-                <p className="text-xs text-muted-foreground text-center max-w-[42ch]">
-                  <Trans>
-                    Lines appear here once a sales order shipment has been
-                    posted, and only for quantities not already authorized on
-                    another RMA. Use Add Line Item for a blind return.
-                  </Trans>
-                </p>
-              </VStack>
-            ) : (
-              <>
-                <HStack className="w-full justify-between px-1">
-                  <span className="text-xs text-muted-foreground">
-                    {search.trim() ? (
-                      t`${totalCount} results`
-                    ) : hasMore ? (
-                      <Trans>Most recent — search to find more</Trans>
-                    ) : (
-                      <Trans>All returnable lines</Trans>
-                    )}
-                  </span>
-                  {selectedCount > 0 && (
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {t`${selectedCount} selected`}
-                    </span>
-                  )}
-                </HStack>
-                <ScrollArea className="max-h-[50dvh] w-full">
-                  <VStack spacing={2} className="w-full">
-                    {lines.map((line) => {
-                      const isSelected = line.shipmentLineId in selected;
-                      const itemReadableId = line.itemReadableId;
-                      return (
-                        <HStack
-                          key={line.shipmentLineId}
-                          className="w-full justify-between p-3 border rounded-lg"
-                        >
-                          <HStack spacing={3} className="min-w-0">
-                            <Checkbox
-                              aria-label={t`Select ${itemReadableId}`}
-                              isChecked={isSelected}
-                              onCheckedChange={() => toggle(line)}
-                            />
-                            <VStack spacing={0} className="min-w-0 items-start">
-                              <span className="text-sm font-medium truncate">
-                                {line.itemReadableId}
-                              </span>
-                              {distinctItemText(
-                                line.itemReadableId,
-                                line.itemName
-                              ) && (
-                                <span className="text-xs text-muted-foreground truncate">
-                                  {line.itemName}
-                                </span>
-                              )}
-                              <span className="text-xs text-muted-foreground">
-                                {line.shipmentReadableId}
-                                {line.salesOrderReadableId
-                                  ? ` · ${line.salesOrderReadableId}`
-                                  : ""}
-                              </span>
-                            </VStack>
-                          </HStack>
-                          <HStack spacing={4}>
-                            <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-                              {line.returnableQuantity}{" "}
-                              <Trans>returnable</Trans>
-                            </span>
-                            {isSelected && (
-                              <NumberField
-                                aria-label={t`Quantity to return for ${itemReadableId}`}
-                                formatOptions={INPUT_FORMAT.quantity}
-                                step={INPUT_STEP.quantity}
-                                value={selected[line.shipmentLineId]?.quantity}
-                                onChange={(value) =>
-                                  setQuantity(line.shipmentLineId, value)
-                                }
-                              >
-                                <NumberInput
-                                  className="min-w-[100px]"
-                                  size="sm"
-                                  min={0}
-                                  max={line.returnableQuantity}
-                                />
-                              </NumberField>
-                            )}
-                          </HStack>
-                        </HStack>
-                      );
-                    })}
-                  </VStack>
-                </ScrollArea>
-                {hasMore && (
-                  <Button
-                    variant="secondary"
-                    className="w-full"
-                    isLoading={isLoading}
-                    isDisabled={isLoading}
-                    onClick={() => setLimit((current) => current + PAGE_SIZE)}
-                  >
-                    <Trans>Show more</Trans>
-                  </Button>
+          {isLoading && !fetcher.data ? (
+            <p className="text-sm text-muted-foreground py-6 text-center w-full">
+              <Trans>Loading returnable lines...</Trans>
+            </p>
+          ) : lines.length === 0 ? (
+            <VStack spacing={1} className="py-6 items-center">
+              <p className="text-sm text-muted-foreground text-center">
+                {search.trim() ? (
+                  <Trans>No returnable lines match your search</Trans>
+                ) : (
+                  <Trans>No returnable lines for this customer</Trans>
                 )}
-              </>
-            )}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            isLoading={isSubmitting}
-            isDisabled={isSubmitting || selectedCount === 0}
-            onClick={onSubmit}
-          >
-            <Trans>Add Lines</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+              </p>
+              <p className="text-xs text-muted-foreground text-center max-w-[42ch]">
+                <Trans>
+                  Lines appear here once a sales order shipment has been posted,
+                  and only for quantities not already authorized on another RMA.
+                  Use Add Line Item for a blind return.
+                </Trans>
+              </p>
+            </VStack>
+          ) : (
+            <>
+              <HStack className="w-full justify-between px-1">
+                <span className="text-xs text-muted-foreground">
+                  {search.trim() ? (
+                    t`${totalCount} results`
+                  ) : hasMore ? (
+                    <Trans>Most recent — search to find more</Trans>
+                  ) : (
+                    <Trans>All returnable lines</Trans>
+                  )}
+                </span>
+                {selectedCount > 0 && (
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {t`${selectedCount} selected`}
+                  </span>
+                )}
+              </HStack>
+              <ScrollArea className="max-h-[50dvh] w-full">
+                <VStack spacing={2} className="w-full">
+                  {lines.map((line) => {
+                    const isSelected = line.shipmentLineId in selected;
+                    const itemReadableId = line.itemReadableId;
+                    return (
+                      <HStack
+                        key={line.shipmentLineId}
+                        className="w-full justify-between p-3 border rounded-lg"
+                      >
+                        <HStack spacing={3} className="min-w-0">
+                          <Checkbox
+                            aria-label={t`Select ${itemReadableId}`}
+                            isChecked={isSelected}
+                            onCheckedChange={() => toggle(line)}
+                          />
+                          <VStack spacing={0} className="min-w-0 items-start">
+                            <span className="text-sm font-medium truncate">
+                              {line.itemReadableId}
+                            </span>
+                            {distinctItemText(
+                              line.itemReadableId,
+                              line.itemName
+                            ) && (
+                              <span className="text-xs text-muted-foreground truncate">
+                                {line.itemName}
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {line.shipmentReadableId}
+                              {line.salesOrderReadableId
+                                ? ` · ${line.salesOrderReadableId}`
+                                : ""}
+                            </span>
+                          </VStack>
+                        </HStack>
+                        <HStack spacing={4}>
+                          <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+                            {line.returnableQuantity} <Trans>returnable</Trans>
+                          </span>
+                          {isSelected && (
+                            <NumberField
+                              aria-label={t`Quantity to return for ${itemReadableId}`}
+                              formatOptions={INPUT_FORMAT.quantity}
+                              step={INPUT_STEP.quantity}
+                              value={selected[line.shipmentLineId]?.quantity}
+                              onChange={(value) =>
+                                setQuantity(line.shipmentLineId, value)
+                              }
+                            >
+                              <NumberInput
+                                className="min-w-[100px]"
+                                size="sm"
+                                min={0}
+                                max={line.returnableQuantity}
+                              />
+                            </NumberField>
+                          )}
+                        </HStack>
+                      </HStack>
+                    );
+                  })}
+                </VStack>
+              </ScrollArea>
+              {hasMore && (
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  isLoading={isLoading}
+                  isDisabled={isLoading}
+                  onClick={() => setLimit((current) => current + PAGE_SIZE)}
+                >
+                  <Trans>Show more</Trans>
+                </Button>
+              )}
+            </>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          isLoading={isSubmitting}
+          isDisabled={isSubmitting || selectedCount === 0}
+          onClick={onSubmit}
+        >
+          <Trans>Add Lines</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 };
 

@@ -6,9 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useNavigate, useParams } from "react-router";
+import { data, useParams } from "react-router";
 import { useUser } from "~/hooks";
 import { supplierBankAccountValidator } from "~/modules/purchasing/purchasing.models";
 import { upsertSupplierBankAccount } from "~/modules/purchasing/purchasing.service";
@@ -73,10 +74,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function NewSupplierBankAccountRoute() {
-  const navigate = useNavigate();
   const { company } = useUser();
   const { supplierId } = useParams();
   if (!supplierId) throw new Error("supplierId not found");
+  const dialog = useRouteDialog(path.to.supplierBankAccounts(supplierId));
 
   const initialValues = {
     supplierId,
@@ -95,7 +96,8 @@ export default function NewSupplierBankAccountRoute() {
   return (
     <SupplierBankAccountForm
       initialValues={initialValues}
-      onClose={() => navigate(path.to.supplierBankAccounts(supplierId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

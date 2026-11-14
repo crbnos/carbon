@@ -63,6 +63,7 @@ import {
   LuUsers
 } from "react-icons/lu";
 import { Link } from "react-router";
+import { POINTER_SENSOR_OPTIONS } from "~/utils/drag-sensors";
 import { path } from "~/utils/path";
 import {
   type AddableBlockType,
@@ -73,10 +74,6 @@ import {
   usePickBlock
 } from "./context";
 import { HEADER_LOGO_ID, useHeaderConfig } from "./useHeaderConfig";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
 const ADD_OPTIONS: {
   type: AddableBlockType;
@@ -442,7 +439,7 @@ function BlockRow({ id }: { id: string }) {
           type="button"
           aria-label={t`Drag to reorder`}
           onClick={(e) => e.stopPropagation()}
-          className="relative cursor-grab text-muted-foreground/60 active:cursor-grabbing"
+          className="relative cursor-grab touch-none text-muted-foreground/60 active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >

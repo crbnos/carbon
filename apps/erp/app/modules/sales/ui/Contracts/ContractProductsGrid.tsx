@@ -20,7 +20,7 @@ import {
 import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { LuPencil, LuPlus, LuReceipt, LuTrash } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import { Table } from "~/components";
@@ -40,6 +40,7 @@ import {
 import {
   useCurrencyDecimals,
   useDateFormatter,
+  useDrawerItem,
   usePercentFormatter,
   usePermissions,
   useQuantityFormatter
@@ -101,8 +102,14 @@ const ContractProductsGrid = ({
   const canEdit = permissions.can("update", "sales");
 
   const addProducts = useDisclosure();
-  const [editing, setEditing] = useState<ContractLine | null>(null);
-  const [deleting, setDeleting] = useState<ContractLine | null>(null);
+  const editing = useDrawerItem<ContractLine>();
+  const { open: openEdit } = editing;
+  const {
+    item: deleting,
+    isOpen: isDeleting,
+    open: openDelete,
+    close: closeDelete
+  } = useDrawerItem<ContractLine>();
 
   const revenueTypeLabels = useMemo<
     Record<ContractLine["revenueType"], string>
@@ -329,7 +336,7 @@ const ContractProductsGrid = ({
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            onClick={() => setEditing(line)}
+            onClick={() => openEdit(line)}
           >
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Details</Trans>
@@ -348,7 +355,7 @@ const ContractProductsGrid = ({
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "sales")}
-            onClick={() => setDeleting(line)}
+            onClick={() => openDelete(line)}
           >
             <MenuIcon icon={<LuTrash />} />
             <Trans>Delete Line</Trans>
@@ -356,7 +363,7 @@ const ContractProductsGrid = ({
         </>
       );
     },
-    [lines, permissions, navigate, contractId]
+    [lines, permissions, navigate, contractId, openDelete, openEdit]
   );
 
   const gridColumns = useMemo(
@@ -426,33 +433,34 @@ const ContractProductsGrid = ({
         </>
       )}
 
-      {addProducts.isOpen && (
-        <ContractAddProductsModal
-          contractId={contractId}
-          existingItemIds={lines.map((line) => line.itemId)}
-          onClose={addProducts.onClose}
-        />
-      )}
+      <ContractAddProductsModal
+        open={addProducts.isOpen}
+        contractId={contractId}
+        existingItemIds={lines.map((line) => line.itemId)}
+        onClose={addProducts.onClose}
+      />
 
-      {editing && (
+      {editing.item && (
         <ContractLineForm
           type="modal"
-          key={editing.id}
-          title={contractLineName(editing)}
+          key={editing.key}
+          open={editing.isOpen}
+          title={contractLineName(editing.item)}
           currencyCode={currencyCode}
           billingBasis={contract.billingBasis}
-          initialValues={contractLineFormValues(editing)}
-          onClose={() => setEditing(null)}
+          initialValues={contractLineFormValues(editing.item)}
+          onClose={editing.close}
         />
       )}
 
       {deleting && (
         <ConfirmDelete
           action={path.to.deleteContractLine(contractId, deleting.id)}
+          isOpen={isDeleting}
           name={contractLineName(deleting)}
           text={t`Are you sure you want to remove ${contractLineName(deleting)} from this contract?`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          onCancel={closeDelete}
+          onSubmit={closeDelete}
         />
       )}
     </div>
@@ -463,10 +471,12 @@ const ContractProductsGrid = ({
  *  defaults (Recurring, quantity 1, billed per the contract's frequency from
  *  its start), to be priced in the grid. */
 const ContractAddProductsModal = ({
+  open,
   contractId,
   existingItemIds,
   onClose
 }: {
+  open: boolean;
   contractId: string;
   existingItemIds: string[];
   onClose: () => void;
@@ -497,7 +507,7 @@ const ContractAddProductsModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

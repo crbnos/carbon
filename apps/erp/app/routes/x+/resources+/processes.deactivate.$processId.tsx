@@ -5,10 +5,11 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { Confirm } from "~/components/Modals";
 import {
   getProcess,
@@ -74,13 +75,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeactivateProcessRoute() {
   const { processId } = useParams();
   const { process } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.processes);
   const { t } = useLingui();
 
   if (!process) return null;
   if (!processId) throw new Error("processId is not found");
 
-  const onCancel = () => navigate(path.to.processes);
   const name = process.name;
   return (
     <Confirm
@@ -88,9 +88,9 @@ export default function DeactivateProcessRoute() {
       title={t`Deactivate ${name}`}
       text={t`Are you sure you want to deactivate the process: ${name}? It will no longer appear in dropdowns.`}
       confirmText={t`Deactivate`}
-      isOpen={true}
-      onCancel={onCancel}
-      onSubmit={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
+      onSubmit={dialog.close}
     />
   );
 }

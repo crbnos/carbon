@@ -9,12 +9,12 @@ import { z } from "zod";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(
-    z.object({ drawingNumber: z.string().optional() })
+    z.object({ name: z.string().optional() })
   ).request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.quality.setInspectionDocumentDrawingNumber({
+  return api.quality.setInspectionDocumentName({
     id: input.params.id,
-    drawingNumber: input.data.drawingNumber
+    name: input.data.name
   });
 }

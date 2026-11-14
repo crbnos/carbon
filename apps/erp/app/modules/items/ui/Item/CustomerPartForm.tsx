@@ -12,7 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -31,7 +31,7 @@ type CustomerPartFormProps = {
 
 const CustomerPartForm = ({ initialValues }: CustomerPartFormProps) => {
   const permissions = usePermissions();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const { t } = useLingui();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
@@ -41,11 +41,11 @@ const CustomerPartForm = ({ initialValues }: CustomerPartFormProps) => {
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
 
-  const onClose = () => closeRoute();
+  const onClose = dialog.close;
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -59,6 +59,11 @@ export function partSourceId(
     .slice(0, 40)}`;
 }
 
+/** A model an Onshape export made: every export's id carries this prefix. */
+export function isOnshapeModelId(id: string | null | undefined): boolean {
+  return typeof id === "string" && id.startsWith("onshape-");
+}
+
 /** The assembly source key once its version or workspace state (`state`) is known. */
 export function assemblySourceKeyAt(
   input: Pick<

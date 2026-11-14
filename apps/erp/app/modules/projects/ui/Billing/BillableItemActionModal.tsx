@@ -38,10 +38,12 @@ import type { ContractBillableItem } from "../../types";
  * Projects → Billing's update route; the change reaches the audit log.
  */
 export default function BillableItemActionModal({
+  open = true,
   action,
   items,
   onClose
 }: {
+  open?: boolean;
   action: BillableItemAction;
   items: ContractBillableItem[];
   onClose: () => void;
@@ -72,7 +74,7 @@ export default function BillableItemActionModal({
         : t`${count} items`;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ValidatedForm
           validator={billableItemActionValidator}

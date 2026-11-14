@@ -273,16 +273,14 @@ const StockTransferHeader = () => {
 
       <releaseRules.ViolationModal />
       <completeRules.ViolationModal />
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteStockTransfer(id)}
-          isOpen={deleteModal.isOpen}
-          name={stockTransfer.stockTransferId ?? "stockTransfer"}
-          text={t`Are you sure you want to delete ${stockTransfer.stockTransferId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteStockTransfer(id)}
+        isOpen={deleteModal.isOpen}
+        name={stockTransfer.stockTransferId ?? "stockTransfer"}
+        text={t`Are you sure you want to delete ${stockTransfer.stockTransferId}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
     </>
   );
 };

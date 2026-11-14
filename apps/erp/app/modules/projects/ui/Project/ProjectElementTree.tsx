@@ -18,13 +18,15 @@ import type {
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
   pointerWithin,
+  TouchSensor,
   useDraggable,
   useDroppable,
   useSensor,
   useSensors
 } from "@dnd-kit/core";
+import { getEventCoordinates } from "@dnd-kit/utilities";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -33,6 +35,10 @@ import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
 import { Link, useFetcher, useSearchParams } from "react-router";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
+import {
+  MOUSE_SENSOR_OPTIONS,
+  TOUCH_SENSOR_OPTIONS
+} from "~/utils/drag-sensors";
 import type {
   ElementDropPlan,
   ElementDropPosition,
@@ -67,10 +73,6 @@ const LEVEL_INDENT = 12;
 const CHEVRON_WIDTH = 20;
 /** How long a drag rests on a collapsed parent before it opens. */
 const EXPAND_ON_HOVER_MS = 600;
-
-// Module constant: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 6 } };
 
 type Drop = {
   targetId: string;
@@ -201,7 +203,10 @@ export function ProjectElementTree({
       : "";
 
   const fetcher = useFetcher();
-  const sensors = useSensors(useSensor(PointerSensor, POINTER_SENSOR_OPTIONS));
+  const sensors = useSensors(
+    useSensor(MouseSensor, MOUSE_SENSOR_OPTIONS),
+    useSensor(TouchSensor, TOUCH_SENSOR_OPTIONS)
+  );
   const isDragEnabled = canMove && filterText.trim() === "";
   const [activeId, setActiveId] = useState<string | null>(null);
   const [drop, setDrop] = useState<Drop | null>(null);
@@ -281,17 +286,15 @@ export function ProjectElementTree({
 
   const onDragMove = (event: DragMoveEvent) => {
     const { active, over, activatorEvent, delta } = event;
-    if (!over || !("clientY" in activatorEvent)) {
+    const pointer = getEventCoordinates(activatorEvent);
+    if (!over || !pointer) {
       setDrop(null);
       return;
     }
-    const pointer = activatorEvent as PointerEvent;
-    const ratio =
-      (pointer.clientY + delta.y - over.rect.top) / over.rect.height;
+    const ratio = (pointer.y + delta.y - over.rect.top) / over.rect.height;
     // Fractional: a row hops up while its level is above it.
     const pointerLevel =
-      (pointer.clientX + delta.x - over.rect.left - CHEVRON_WIDTH) /
-      LEVEL_INDENT;
+      (pointer.x + delta.x - over.rect.left - CHEVRON_WIDTH) / LEVEL_INDENT;
     const next = resolveDrop(
       String(active.id),
       String(over.id),
@@ -510,7 +513,11 @@ function DraggableRow({
         setDropRef(node);
       }}
       {...listeners}
-      className={className}
+      className={cn(
+        className,
+        !disabled &&
+          "touch-manipulation pointer-coarse:select-none [-webkit-touch-callout:none]"
+      )}
     >
       {children}
     </div>

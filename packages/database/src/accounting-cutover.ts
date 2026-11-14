@@ -60,6 +60,7 @@ export type OpenItemType =
   | "Reimbursement"
   | "Unapplied Credit"
   | "Customer Deposit"
+  | "Supplier Prepayment"
   | "Received Not Invoiced"
   | "Invoiced Not Received"
   | "Work in Progress"
@@ -336,6 +337,18 @@ export function migrationClearingByAccount(
   // row, so the clearing account ends at minus their debit total.
   const total = round(-(itemsDebit + nonControlDebit));
   return { rows, total: total === 0 ? 0 : total };
+}
+
+/** Required control balances reconcile independently of offsetting differences. */
+export function migrationReconciliationBlockers(
+  rows: MigrationClearingRow[],
+  requiredAccountIds: ReadonlySet<string>
+): MigrationClearingRow[] {
+  return rows.filter(
+    (row) =>
+      requiredAccountIds.has(row.accountId) &&
+      !isMigrationClearingZero(row.difference)
+  );
 }
 
 /**

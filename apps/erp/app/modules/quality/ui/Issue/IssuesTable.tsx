@@ -374,18 +374,12 @@ const IssuesTable = memo((props: IssuesTableProps) => {
         table="nonConformance"
         withSavedView
       />
-      {deleteDisclosure.isOpen && selectedIssue && (
+      {selectedIssue && (
         <ConfirmDelete
           action={path.to.deleteIssue(selectedIssue.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedIssue(null);
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedIssue(null);
-            deleteDisclosure.onClose();
-          }}
+          isOpen={deleteDisclosure.isOpen}
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
           name={selectedIssue.name ?? "issue"}
           text={t`Are you sure you want to delete this issue?`}
         />

@@ -6,11 +6,14 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { useRouteDialog } from "@carbon/react";
+import { isUniqueViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { unitOfMeasureValidator } from "~/modules/items/items.models";
+import {
+  UNIT_OF_MEASURE_TAKEN,
+  unitOfMeasureValidator
+} from "~/modules/items/items.models";
 import {
   getUnitOfMeasure,
   upsertUnitOfMeasure
@@ -63,7 +66,12 @@ export async function action({ request }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(updateUnitOfMeasure.error, "Failed to update unit of measure")
+        error(
+          updateUnitOfMeasure.error,
+          isUniqueViolation(updateUnitOfMeasure.error)
+            ? UNIT_OF_MEASURE_TAKEN
+            : "Failed to update unit of measure"
+        )
       )
     );
   }
@@ -76,12 +84,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function EditUnitOfMeasuresRoute() {
   const { unitOfMeasure } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: unitOfMeasure?.id ?? undefined,
     name: unitOfMeasure?.name ?? "",
     code: unitOfMeasure?.code ?? "",
+    active: unitOfMeasure?.active ?? true,
     ...getCustomFields(unitOfMeasure?.customFields)
   };
 
@@ -89,7 +98,8 @@ export default function EditUnitOfMeasuresRoute() {
     <UnitOfMeasureForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

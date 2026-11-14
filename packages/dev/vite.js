@@ -9,6 +9,15 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { brotliCompress, constants } from "node:zlib";
 import { loadEnv, normalizePath } from "vite";
+import {
+  activityFile,
+  BOOT_TIMEOUT_MS,
+  isAsleepIn,
+  isBootingIn,
+  isCloudDev,
+  STACK_STATE_ENV,
+  WAKE_TIMEOUT_MS
+} from "./stack-state.js";
 
 /**
  * Merge `.env*` files into `process.env` so SSR code that reads `process.env`
@@ -20,8 +29,8 @@ import { loadEnv, normalizePath } from "vite";
  *
  * In non-production modes, file values **overwrite** existing `process.env`
  * keys — `react-router dev` can invoke the vite config with modes other than
- * `"development"` during startup, which previously left stale shell values
- * (e.g. `SUPABASE_URL=127.0.0.1:54321`) in place.
+ * `"development"` during startup, and a stale shell value
+ * (e.g. `SUPABASE_URL=127.0.0.1:54321`) would otherwise stay in place.
  */
 export function applyDotenvToProcessEnv(mode, appDir) {
   const repoRoot = path.resolve(appDir, "../..");
@@ -92,11 +101,45 @@ export function linguiWithoutIdQuery(plugins) {
   });
 }
 
+/** Waits while `held()` is true; false when it still is at the deadline. */
+async function waitWhile(held, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (held()) {
+    if (Date.now() >= deadline) return false;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  return true;
+}
+
+/**
+ * Cloud container only (scripts/cloud-dev.sh): transform the app's `warmup`
+ * files when the server starts, not at the first request, which otherwise
+ * waits about two minutes on a 4-core box; and allow any host, since the
+ * session reaches the server through a forwarded port.
+ *
+ * @param {import("./vite").CarbonOptions["cloudWarmup"]} warmup
+ * @returns {import("vite").Plugin}
+ */
+function cloudDevServer(warmup) {
+  return {
+    name: "carbon:cloud-dev-server",
+    apply: "serve",
+    config(config) {
+      if (!isCloudDev()) return;
+      // Set, not returned: Vite would concatenate `true` onto the app's list.
+      config.server ??= {};
+      config.server.allowedHosts = true;
+      if (warmup) config.server.warmup = warmup;
+    },
+  };
+}
+
 /**
  * Dev-server half of stack hibernation (see `services/hibernate.ts` in this
  * package). Touches `activity` on each request so `crbn up` can tell the apps
  * are in use, and holds a request while the stack is asleep until `crbn up`
- * has started the containers again. Does nothing unless `crbn up` set
+ * has started the containers again, or a cloud boot has the database ready.
+ * Does nothing unless `crbn up` set
  * `CRBN_STACK_STATE`, so a build or a bare `vite dev` is unaffected.
  *
  * `/api/inngest` is not traffic: the Inngest dev server polls it constantly
@@ -104,17 +147,16 @@ export function linguiWithoutIdQuery(plugins) {
  *
  * @returns {import("vite").Plugin}
  */
-export function stackActivity() {
+function stackActivity() {
   return {
     name: "carbon:stack-activity",
     apply: "serve",
     // Its middleware has to see a request before any app handler does.
     enforce: "pre",
     configureServer(server) {
-      const dir = process.env.CRBN_STACK_STATE;
+      const dir = process.env[STACK_STATE_ENV];
       if (!dir) return;
-      const activity = path.join(dir, "activity");
-      const asleep = path.join(dir, "asleep");
+      const activity = activityFile(dir);
       let touched = 0;
       const touch = (force) => {
         const now = Date.now();
@@ -126,15 +168,20 @@ export function stackActivity() {
           // crbn up is gone; nothing is watching
         }
       };
-      server.middlewares.use(async (req, _res, next) => {
+      server.middlewares.use(async (req, res, next) => {
         if (req.url?.startsWith("/api/inngest")) return next();
         touch(false);
-        if (fs.existsSync(asleep)) {
+        if (isAsleepIn(dir)) {
           touch(true);
-          const deadline = Date.now() + 120_000;
-          while (fs.existsSync(asleep) && Date.now() < deadline) {
-            await new Promise((resolve) => setTimeout(resolve, 200));
-          }
+          await waitWhile(() => isAsleepIn(dir), WAKE_TIMEOUT_MS);
+        }
+        // A cloud boot starts the dev servers while it still migrates and
+        // seeds; a request let through earlier would reach a half-built schema.
+        if (!(await waitWhile(() => isBootingIn(dir), BOOT_TIMEOUT_MS))) {
+          res.statusCode = 503;
+          res.setHeader("Retry-After", "5");
+          res.end("The database is still starting. Retry shortly.");
+          return;
         }
         next();
       });
@@ -161,7 +208,7 @@ export function stackActivity() {
  *   hands a config function
  * @returns {Promise<import("vite").Plugin[]>}
  */
-export async function precompressedAssets({ command, mode }) {
+async function precompressedAssets({ command, mode }) {
   if (command !== "build" || mode !== "production" || process.env.VERCEL) {
     return [];
   }
@@ -222,7 +269,7 @@ const brotli = (source) =>
  *
  * @param {string} directory
  */
-export async function compressRemaining(directory) {
+async function compressRemaining(directory) {
   const entries = await readdir(directory, {
     recursive: true,
     withFileTypes: true,
@@ -255,7 +302,7 @@ export async function compressRemaining(directory) {
  *
  * @returns {import("vite").Plugin}
  */
-export function splitServerByPackage() {
+function splitServerByPackage() {
   /** @param {string} id */
   const packageChunk = (id) => {
     if (!id.includes("node_modules/")) {
@@ -479,7 +526,7 @@ function scanIconImports(directories) {
  *
  * @returns {import("vite").Plugin}
  */
-export function iconImports() {
+function iconImports() {
   /** @type {Map<string, Set<string>>} */
   let used = new Map();
   /** @type {string[]} */
@@ -637,7 +684,7 @@ export async function listDatasetAssetFiles(directory) {
  *
  * @returns {import("vite").Plugin}
  */
-export function datasetAssets() {
+function datasetAssets() {
   return {
     name: "carbon:dataset-assets",
     apply: "serve",
@@ -767,16 +814,21 @@ export async function carbon({
   clientOnly = {},
   splitServer = false,
   precompress = false,
+  cloudWarmup,
 } = {}) {
+  if (precompress && !(command && mode)) {
+    throw new Error("carbon({ precompress }) needs the config's command and mode");
+  }
   const { lingui } = await import("@lingui/vite-plugin");
   return [
     stackActivity(),
+    cloudDevServer(cloudWarmup),
     iconImports(),
     datasetAssets(),
     dropStalledHmrClients(),
     linguiWithoutIdQuery(lingui({ macroTransform: true })),
     splitServer && splitServerByPackage(),
-    precompress && command && mode && precompressedAssets({ command, mode }),
+    precompress && precompressedAssets({ command, mode }),
     locales && ariaLocales(),
     ...Object.entries(clientOnly).map(([specifier, file]) =>
       clientOnlyAlias(specifier, file)

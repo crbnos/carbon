@@ -14,7 +14,7 @@ import {
 import { equals, INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { LuPlus, LuRotateCcw, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Table } from "~/components";
@@ -29,6 +29,7 @@ import {
   useCompanyToday,
   useCurrencyDecimals,
   useDateFormatter,
+  useDrawerItem,
   usePermissions
 } from "~/hooks";
 import { path } from "~/utils/path";
@@ -75,7 +76,12 @@ const ContractInvoiceGrid = ({
   const today = useCompanyToday();
   const resetFetcher = useFetcher<{}>();
   const addInvoice = useDisclosure();
-  const [deleting, setDeleting] = useState<InvoiceRow | null>(null);
+  const {
+    item: deleting,
+    isOpen: isDeleting,
+    open: openDelete,
+    close: closeDelete
+  } = useDrawerItem<InvoiceRow>();
 
   const contractId = contract.id!;
   const { currencyCode } = contract;
@@ -270,13 +276,13 @@ const ContractInvoiceGrid = ({
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         destructive
         disabled={!canEdit}
-        onClick={() => setDeleting(row)}
+        onClick={() => openDelete(row)}
       >
         <MenuIcon icon={<LuTrash />} />
         <Trans>Delete Invoice</Trans>
       </MenuItem>
     ),
-    [canEdit]
+    [canEdit, openDelete]
   );
 
   const gridColumns = useMemo(
@@ -388,27 +394,27 @@ const ContractInvoiceGrid = ({
         </p>
       </div>
 
-      {addInvoice.isOpen && (
-        <ContractAmountsModal
-          intent="addInvoice"
-          action={action}
-          title={<Trans>Add Invoice</Trans>}
-          description={
-            <Trans>
-              Each amount starts at what the line has left to invoice.
-            </Trans>
-          }
-          lines={lines}
-          defaults={remaining}
-          defaultDate={lastDate ?? contract.startDate ?? today}
-          currencyCode={currencyCode}
-          onClose={addInvoice.onClose}
-        />
-      )}
+      <ContractAmountsModal
+        open={addInvoice.isOpen}
+        intent="addInvoice"
+        action={action}
+        title={<Trans>Add Invoice</Trans>}
+        description={
+          <Trans>
+            Each amount starts at what the line has left to invoice.
+          </Trans>
+        }
+        lines={lines}
+        defaults={remaining}
+        defaultDate={lastDate ?? contract.startDate ?? today}
+        currencyCode={currencyCode}
+        onClose={addInvoice.onClose}
+      />
 
       {deleting && (
         <ConfirmDelete
           action={action}
+          isOpen={isDeleting}
           fields={{
             intent: "delete",
             customerContractInvoiceId: deleting.ref
@@ -416,8 +422,8 @@ const ContractInvoiceGrid = ({
           name={formatDate(deleting.invoiceDate)}
           title={t`Delete the ${formatDate(deleting.invoiceDate)} invoice`}
           text={t`Its amounts go back to what each line has left to invoice.`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          onCancel={closeDelete}
+          onSubmit={closeDelete}
         />
       )}
     </div>

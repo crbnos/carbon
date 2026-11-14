@@ -521,10 +521,16 @@ const PaymentApplyTable = ({
               )}
             </p>
             <p className="text-sm text-muted-foreground mt-1 text-pretty">
-              <Trans>
-                This counterparty has nothing outstanding — the payment will be
-                recorded on-account.
-              </Trans>
+              {paymentScope ? (
+                <Trans>
+                  Unapplied cash is held as an advance for this document.
+                </Trans>
+              ) : (
+                <Trans>
+                  This counterparty has nothing outstanding — the payment will
+                  be recorded on-account.
+                </Trans>
+              )}
             </p>
           </div>
         ) : (
@@ -588,7 +594,15 @@ const PaymentApplyTable = ({
                   className="mt-1 flex items-baseline justify-between text-xs text-muted-foreground"
                 >
                   <span>
-                    {document ? (
+                    {deposit.scope?.type === "purchaseOrder" ? (
+                      document ? (
+                        <Trans>
+                          Prepayment for {document} (its invoices only)
+                        </Trans>
+                      ) : (
+                        <Trans>Prepayment (its order's invoices only)</Trans>
+                      )
+                    ) : document ? (
                       <Trans>Deposit for {document} (its invoices only)</Trans>
                     ) : (
                       <Trans>Deposit (its document's invoices only)</Trans>

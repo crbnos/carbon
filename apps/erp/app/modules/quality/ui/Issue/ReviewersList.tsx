@@ -120,51 +120,49 @@ export function ReviewersList({
               isDisabled={isDisabled}
             />
           ))}
-          {disclosure.isOpen && (
-            <Modal
-              open
-              onOpenChange={(open) => {
-                if (!open) disclosure.onClose();
-              }}
-            >
-              <ModalContent>
-                <ValidatedForm
-                  method="post"
-                  action={path.to.issueReview(id)}
-                  validator={nonConformanceReviewerValidator}
-                  fetcher={fetcher}
-                  onSubmit={() => {
-                    submitted.current = true;
-                  }}
-                >
-                  <ModalHeader>
-                    <ModalTitle>
-                      <Trans>Add Approval Requirement</Trans>
-                    </ModalTitle>
-                  </ModalHeader>
-                  <ModalBody>
-                    <Input name="title" label={t`Title`} />
-                  </ModalBody>
-                  <ModalFooter>
-                    <Button
-                      isDisabled={fetcher.state === "submitting"}
-                      variant="secondary"
-                      onClick={disclosure.onClose}
-                    >
-                      <Trans>Cancel</Trans>
-                    </Button>
-                    <Submit
-                      hideShortcutKey
-                      isLoading={fetcher.state === "submitting"}
-                      isDisabled={fetcher.state === "submitting"}
-                    >
-                      Submit
-                    </Submit>
-                  </ModalFooter>
-                </ValidatedForm>
-              </ModalContent>
-            </Modal>
-          )}
+          <Modal
+            open={disclosure.isOpen}
+            onOpenChange={(open) => {
+              if (!open) disclosure.onClose();
+            }}
+          >
+            <ModalContent>
+              <ValidatedForm
+                method="post"
+                action={path.to.issueReview(id)}
+                validator={nonConformanceReviewerValidator}
+                fetcher={fetcher}
+                onSubmit={() => {
+                  submitted.current = true;
+                }}
+              >
+                <ModalHeader>
+                  <ModalTitle>
+                    <Trans>Add Approval Requirement</Trans>
+                  </ModalTitle>
+                </ModalHeader>
+                <ModalBody>
+                  <Input name="title" label={t`Title`} />
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    isDisabled={fetcher.state === "submitting"}
+                    variant="secondary"
+                    onClick={disclosure.onClose}
+                  >
+                    <Trans>Cancel</Trans>
+                  </Button>
+                  <Submit
+                    hideShortcutKey
+                    isLoading={fetcher.state === "submitting"}
+                    isDisabled={fetcher.state === "submitting"}
+                  >
+                    Submit
+                  </Submit>
+                </ModalFooter>
+              </ValidatedForm>
+            </ModalContent>
+          </Modal>
           <HStack className="max-md:hidden">
             {disclosure.isOpen ? (
               <Button variant="secondary" onClick={disclosure.onClose}>

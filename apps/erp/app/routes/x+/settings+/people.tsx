@@ -180,8 +180,11 @@ export default function PeopleSettingsRoute() {
         </Card>
       </SettingsPage>
 
-      {showPinModal && generatedPin && (
-        <Modal open onOpenChange={(open) => !open && setShowPinModal(false)}>
+      {generatedPin && (
+        <Modal
+          open={showPinModal}
+          onOpenChange={(open) => !open && setShowPinModal(false)}
+        >
           <ModalOverlay />
           <ModalContent>
             <ModalHeader>

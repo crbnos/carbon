@@ -5,26 +5,57 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter } from "node:path";
+import { stripVTControlCharacters } from "node:util";
 import { parse } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { dirname, join } from "pathe";
 import pc from "picocolors";
-import { isAtLeastAsNew, onShutdown, readLines } from "../helpers.js";
+import { STACK_STATE_ENV } from "../../stack-state.js";
+import { APPS, ROUTE_STYLE, ROUTES, type RouteName } from "../constants.js";
+import {
+  isAtLeastAsNew,
+  killGroup,
+  lineWriter,
+  onShutdown,
+  readLines
+} from "../helpers.js";
+import { paths } from "../paths.js";
 import { type PortMap, sameWorktreePath } from "../worktree.js";
 
-const APP_COLORS: Record<string, (s: string) => string> = {
-  erp: pc.cyan,
-  mes: pc.magenta
-};
+const isRoute = (id: string): id is RouteName => id in ROUTES;
 
 // Drop portless banners (`-- ...`), pnpm script-echo (`> ...`), blanks.
 // Vite "Local:", "ready in …", and errors pass through.
 const NOISE_PATTERNS: RegExp[] = [/^\s*--\s/, /^\s*>\s/, /^\s*$/];
 
 function isNoiseLine(line: string): boolean {
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: ignored using `--suppress`
-  const plain = line.replace(/\x1b\[[0-9;]*m/g, "");
+  const plain = stripVTControlCharacters(line);
   return NOISE_PATTERNS.some((re) => re.test(plain));
+}
+
+// Copies a child's output to ours, each line prefixed, `skip`ped lines left
+// out. The readers close when it exits, so a crash-looping app leaks none.
+function prefixOutput(
+  child: ExecaChildProcess,
+  prefix: string,
+  skip: (line: string) => boolean
+): void {
+  const disposers: Array<() => void> = [];
+  for (const [stream, sink] of [
+    [child.stdout, process.stdout],
+    [child.stderr, process.stderr]
+  ] as const) {
+    if (!stream) continue;
+    const write = lineWriter(sink);
+    disposers.push(
+      readLines(stream, (line) => {
+        if (!skip(line)) write(`${prefix}${line}\n`);
+      })
+    );
+  }
+  child.once("exit", () => {
+    for (const dispose of disposers) dispose();
+  });
 }
 
 // Rolldown pre-bundles dependencies with one worker per core, and its allocator
@@ -59,16 +90,6 @@ function spawnAppEnv(repoRoot: string, appId: string): NodeJS.ProcessEnv {
   return env as NodeJS.ProcessEnv;
 }
 
-const APP_PORT_KEYS: Partial<Record<string, keyof PortMap>> = {
-  erp: "PORT_ERP",
-  mes: "PORT_MES"
-};
-
-const APP_URL_ENV_KEYS: Partial<Record<string, string>> = {
-  erp: "ERP_URL",
-  mes: "MES_URL"
-};
-
 type AppCommand = { file: string; args: string[] };
 
 function reactRouterDevCommand(port: number | undefined): AppCommand {
@@ -96,14 +117,17 @@ export function spawnApps(opts: {
   command?: (ctx: { id: string; port: number | undefined }) => AppCommand;
   // Programmatic teardown in addition to OS signals: abort to stop the stack.
   signal?: AbortSignal;
+  /** The stack whose hibernation the dev servers report traffic to. */
+  stateDir?: string;
 }): Promise<void> {
   const { root, apps, ports, portless } = opts;
+  const stateEnv = opts.stateDir ? { [STACK_STATE_ENV]: opts.stateDir } : {};
   const buildCommand =
     opts.command ?? (({ port }) => reactRouterDevCommand(port));
 
   // When portless is active, apps talk to Supabase over HTTPS using
   // portless's self-signed CA. Tell Node to trust it.
-  const caPath = join(homedir(), ".portless", "ca.pem");
+  const caPath = join(paths.portless(), "ca.pem");
   const extraCaEnv =
     portless && existsSync(caPath) ? { NODE_EXTRA_CA_CERTS: caPath } : {};
 
@@ -114,17 +138,15 @@ export function spawnApps(opts: {
   const current: (ExecaChildProcess | undefined)[] = new Array(apps.length);
 
   const spawnOne = (id: string): ExecaChildProcess => {
-    const color = APP_COLORS[id] ?? ((s: string) => s);
-    // Spawn apps directly with assigned ports. Hostnames are registered via
-    // `portless alias` (in registerAliases) so we control the exact format
-    // (`<app>.<prefix>.dev`) without portless auto-prefix mangling.
-    const portKey = APP_PORT_KEYS[id];
-    const port = portKey ? ports[portKey] : undefined;
+    const color = isRoute(id) ? pc[ROUTE_STYLE[id].color] : (s: string) => s;
+    // Hostnames come from `portless alias` (registerAliases), not portless's
+    // own naming, which would mangle the `<app>.<prefix>.dev` format.
+    const app = APPS.find((a) => a.id === id);
+    const port = isRoute(id) ? ports[ROUTES[id]] : undefined;
     const appEnv = spawnAppEnv(root, id);
     // Each app needs its own VERCEL_URL so auth redirects (magic link,
     // OAuth callback) return to the correct app, not always ERP.
-    const urlKey = APP_URL_ENV_KEYS[id];
-    const vercelUrl = urlKey ? appEnv[urlKey] : undefined;
+    const vercelUrl = app && "urlEnv" in app ? appEnv[app.urlEnv] : undefined;
     const { file, args } = buildCommand({ id, port });
     const child = execa(file, args, {
       cwd: join(root, "apps", id),
@@ -132,6 +154,7 @@ export function spawnApps(opts: {
         ...ROLLDOWN_MEMORY_ENV,
         ...appEnv,
         ...extraCaEnv,
+        ...stateEnv,
         HOST: "127.0.0.1",
         ...(port !== undefined ? { PORT: String(port) } : {}),
         ...(vercelUrl ? { VERCEL_URL: vercelUrl } : {})
@@ -141,28 +164,12 @@ export function spawnApps(opts: {
       detached: true
     });
 
-    const prefix = color(pc.bold(`${id.padEnd(3)} | `));
-    const disposers: Array<() => void> = [];
-    const pipe = (
-      stream: NodeJS.ReadableStream | null,
-      sink: NodeJS.WriteStream
-    ) => {
-      if (!stream) return;
-      disposers.push(
-        readLines(stream, (line) => {
-          // Mute shutdown noise (EPIPE, ELIFECYCLE 143, esbuild "stopped").
-          if (shuttingDown || isNoiseLine(line)) return;
-          sink.write(`${prefix}${line}\n`);
-        })
-      );
-    };
-    pipe(child.stdout, process.stdout);
-    pipe(child.stderr, process.stderr);
-    // Close the readline interfaces when this child exits so a restarting
-    // (crash-looping) app doesn't leak one per respawn.
-    child.once("exit", () => {
-      for (const dispose of disposers) dispose();
-    });
+    // Mute shutdown noise (EPIPE, ELIFECYCLE 143, esbuild "stopped").
+    prefixOutput(
+      child,
+      color(pc.bold(`${id.padEnd(3)} | `)),
+      (line) => shuttingDown || isNoiseLine(line)
+    );
 
     return child;
   };
@@ -171,15 +178,7 @@ export function spawnApps(opts: {
 
   const shutdown = (signal: "SIGTERM" | "SIGKILL") => {
     for (const c of current) {
-      if (!c || c.exitCode !== null || !c.pid) continue;
-      try {
-        process.kill(-c.pid, signal);
-      } catch {
-        try {
-          c.kill(signal);
-          // biome-ignore lint/suspicious/noEmptyBlockStatements: ignored using `--suppress`
-        } catch {}
-      }
+      if (c && c.exitCode === null) killGroup(c, signal);
     }
   };
 
@@ -347,29 +346,38 @@ export function assemblerCargoTargetDir(env: NodeJS.ProcessEnv): string {
 }
 
 const auxChildren = new Set<ExecaChildProcess>();
+// The ones whose exit ends a run with no dev servers: not the stripe listener.
+const watchedChildren = new Set<ExecaChildProcess>();
 
-function trackAuxChild(child: ExecaChildProcess): void {
+let auxShutdownHooked = false;
+
+// The processes crbn spawns beside the dev servers. A Ctrl+C stops them.
+function trackAuxChild(
+  child: ExecaChildProcess,
+  watched = true
+): ExecaChildProcess {
   auxChildren.add(child);
-  child.once("exit", () => auxChildren.delete(child));
+  if (watched) watchedChildren.add(child);
+  child.once("exit", () => {
+    auxChildren.delete(child);
+    watchedChildren.delete(child);
+  });
+  if (!auxShutdownHooked) {
+    onShutdown(() => stopAuxApps());
+    auxShutdownHooked = true;
+  }
+  return child;
 }
 
 export function stopAuxApps(): void {
   for (const child of auxChildren) {
-    if (child.exitCode !== null || !child.pid) continue;
-    try {
-      process.kill(-child.pid, "SIGTERM");
-    } catch {
-      try {
-        child.kill("SIGTERM");
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: best-effort kill
-      } catch {}
-    }
+    if (child.exitCode === null) killGroup(child);
   }
 }
 
 export function whenAuxAppExits(): Promise<void> {
   return new Promise<void>((resolve) => {
-    for (const child of auxChildren) child.once("exit", () => resolve());
+    for (const child of watchedChildren) child.once("exit", () => resolve());
   });
 }
 
@@ -427,23 +435,9 @@ export function spawnAssembler(opts: {
     detached: true
   });
 
-  const pipe = (
-    stream: NodeJS.ReadableStream | null,
-    sink: NodeJS.WriteStream
-  ) => {
-    if (!stream) return;
-    readLines(stream, (line) => {
-      if (isNoiseLine(line)) return;
-      sink.write(`${prefix}${line}\n`);
-    });
-  };
-  pipe(child.stdout, process.stdout);
-  pipe(child.stderr, process.stderr);
+  prefixOutput(child, prefix, isNoiseLine);
 
-  trackAuxChild(child);
-  onShutdown(() => stopAuxApps());
-
-  return child;
+  return trackAuxChild(child);
 }
 
 const EMAIL_PREFIX = pc.green(pc.bold("eml | "));
@@ -456,8 +450,7 @@ const EMAIL_STARTUP_PATTERNS: RegExp[] = [
 ];
 
 function isEmailStartupLine(line: string): boolean {
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: strip SGR codes
-  const plain = line.replace(/\x1b\[[0-9;]*m/g, "");
+  const plain = stripVTControlCharacters(line);
   return EMAIL_STARTUP_PATTERNS.some((re) => re.test(plain));
 }
 
@@ -481,36 +474,27 @@ export function spawnEmailPreview(opts: {
     detached: true
   });
 
-  const pipe = (
-    stream: NodeJS.ReadableStream | null,
-    sink: NodeJS.WriteStream
-  ) => {
-    if (!stream) return;
-    readLines(stream, (line) => {
-      if (isNoiseLine(line) || isEmailStartupLine(line)) return;
-      sink.write(`${EMAIL_PREFIX}${line}\n`);
-    });
-  };
-  pipe(child.stdout, process.stdout);
-  pipe(child.stderr, process.stderr);
+  prefixOutput(
+    child,
+    EMAIL_PREFIX,
+    (line) => isNoiseLine(line) || isEmailStartupLine(line)
+  );
 
-  trackAuxChild(child);
-  onShutdown(() => stopAuxApps());
-
-  return child;
+  return trackAuxChild(child);
 }
 
-// Detached + reject:false so the caller owns the lifecycle: kill the whole
-// process group on teardown (apps mode) or `unref()` it to outlive crbn
-// (services-only mode). Previously fire-and-forget `.unref()`, which orphaned
-// the listener across `crbn down`.
+// Stopped with the other helper processes; services-only mode `unref()`s it
+// to outlive crbn, and `crbn down` stops it then.
 export function spawnStripeListener(root: string): ExecaChildProcess {
-  return execa("pnpm", ["run", "dev:stripe"], {
-    cwd: root,
-    detached: true,
-    stdio: "ignore",
-    reject: false
-  });
+  return trackAuxChild(
+    execa("pnpm", ["run", "dev:stripe"], {
+      cwd: root,
+      detached: true,
+      stdio: "ignore",
+      reject: false
+    }),
+    false
+  );
 }
 
 // Skip when node_modules/.modules.yaml is newer than pnpm-lock.yaml (pnpm's
@@ -565,19 +549,14 @@ export async function installSkills(root: string): Promise<boolean> {
   return true;
 }
 
-// ---------------------------------------------------------------------------
-// Orphan cleanup — used by `crbn down` to kill host processes that survived
-// a crashed `crbn up`. Dev servers and the stripe listener are spawned
-// `detached: true` so they outlive the parent; without this, orphaned
-// processes hold the worktree's ports and block the next `crbn up`.
-// ---------------------------------------------------------------------------
+// Dev servers and the stripe listener are spawned `detached: true`, so they
+// survive a crashed `crbn up` and hold the worktree's ports until killed.
 
-// Kill processes listening on PORT_ERP / PORT_MES. Port-based lookup is
-// reliable since ports are unique per worktree (allocated in the slot
-// registry). Best-effort — silently skips ports with nothing listening.
+// Kill what listens on the ports of the processes crbn spawns (every app but a
+// compose service). The slot registry hands each worktree its own ports.
 export async function killOrphanedApps(ports: PortMap): Promise<void> {
-  const appPorts = [ports.PORT_ERP, ports.PORT_MES, ports.PORT_EMAIL].filter(
-    (p) => typeof p === "number"
+  const appPorts = APPS.filter((a) => a.kind !== "service").map(
+    (a) => ports[ROUTES[a.id]]
   );
   for (const port of appPorts) {
     const r = await execa("lsof", ["-ti", `:${port}`], { reject: false });
@@ -589,8 +568,9 @@ export async function killOrphanedApps(ports: PortMap): Promise<void> {
     for (const pid of pids) {
       try {
         process.kill(pid, "SIGKILL");
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: best-effort kill
-      } catch {}
+      } catch {
+        // exited since lsof
+      }
     }
   }
 }
@@ -611,14 +591,13 @@ export async function killOrphanedStripe(root: string): Promise<void> {
     if (cwd && sameWorktreePath(cwd, root)) {
       try {
         process.kill(pid, "SIGKILL");
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: best-effort kill
-      } catch {}
+      } catch {
+        // exited since pgrep
+      }
     }
   }
 }
 
-// Resolve a process's current working directory via lsof (macOS + Linux).
-// Returns null if the process is gone or lsof isn't available.
 async function processCwd(pid: number): Promise<string | null> {
   const r = await execa("lsof", ["-a", "-p", String(pid), "-d", "cwd", "-Fn"], {
     reject: false

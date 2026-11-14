@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { changeNoticeRequiredActionValidator } from "~/modules/items/items.models";
@@ -67,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewChangeNoticeRequiredActionRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: "",
     active: true
@@ -76,7 +76,8 @@ export default function NewChangeNoticeRequiredActionRoute() {
   return (
     <ChangeNoticeRequiredActionForm
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -9,7 +9,8 @@ import {
   Button,
   InputOTP,
   InputOTPGroup,
-  InputOTPSlot
+  InputOTPSlot,
+  useShortcutKeys
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { RefObject } from "react";
@@ -22,7 +23,8 @@ import {
   useState
 } from "react";
 import { LuCheck, LuLoader, LuLogOut, LuSearch, LuX } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useConsolePinAction } from "~/hooks/useConsolePinAction";
+import { DISMISS_PIN_OVERLAY_SHORTCUT } from "~/shortcuts";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -101,24 +103,31 @@ export function PinInOverlay({
   const [pinError, setPinError] = useState<string | null>(null);
   const pinLabelId = useId();
   const pinErrorId = useId();
-  const searchRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   useInertOutside(overlayRef);
 
-  const pinInFetcher = useFetcher<{ error?: string }>();
-  const pinOutFetcher = useFetcher();
+  const { action: pinInFetcher, submit: submitPinInAction } =
+    useConsolePinAction({
+      onSuccess: (result) => {
+        if (result.success) onDismiss?.();
+      },
+      onError: (result) => {
+        if (result.error) setPinError(result.error);
+        setPin("");
+      }
+    });
+  const { action: pinOutFetcher, submit: submitPinOutAction } =
+    useConsolePinAction();
 
   const recentIds = useMemo(() => getRecentOperators(companyId), [companyId]);
   const isPinning = pinInFetcher.state !== "idle";
+  const changingPin = isPinning || pinOutFetcher.state !== "idle";
 
-  useEffect(() => {
-    if (!dismissable) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onDismiss?.();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [dismissable, onDismiss]);
+  useShortcutKeys({
+    shortcut: DISMISS_PIN_OVERLAY_SHORTCUT,
+    action: () => onDismiss?.(),
+    disabled: !dismissable || changingPin
+  });
 
   const submitPinIn = useCallback(
     (person: Person, pinValue: string) => {
@@ -127,25 +136,10 @@ export function PinInOverlay({
       // The server looks up name and avatar itself; only the id is trusted.
       formData.append("userId", person.id);
       if (pinValue) formData.append("pin", pinValue);
-      pinInFetcher.submit(formData, {
-        method: "POST",
-        action: path.to.consolePinIn
-      });
+      submitPinInAction(formData, path.to.consolePinIn);
     },
-    [companyId, pinInFetcher]
+    [companyId, submitPinInAction]
   );
-
-  useEffect(() => {
-    if (pinInFetcher.state === "idle" && pinInFetcher.data?.error) {
-      setPinError(pinInFetcher.data.error);
-      setPin("");
-    }
-  }, [pinInFetcher.state, pinInFetcher.data]);
-
-  // Focus search on mount
-  useEffect(() => {
-    searchRef.current?.focus();
-  }, []);
 
   const stationUser = useMemo(
     () => (sessionUserId ? people.find((p) => p.id === sessionUserId) : null),
@@ -182,28 +176,6 @@ export function PinInOverlay({
     return { recent, others, all: sorted };
   }, [people, search, recentIds, locationEmployeeIds, sessionUserId]);
 
-  // Track if we've submitted a pin-in attempt
-  const hasSubmittedPinIn = useRef(false);
-
-  // Watch for successful pin-in completion
-  useEffect(() => {
-    if (
-      pinInFetcher.state === "submitting" ||
-      pinInFetcher.state === "loading"
-    ) {
-      hasSubmittedPinIn.current = true;
-    }
-    if (
-      hasSubmittedPinIn.current &&
-      pinInFetcher.state === "idle" &&
-      !pinInFetcher.data?.error
-    ) {
-      // Fetcher completed without error — cookie is set, dismiss overlay
-      hasSubmittedPinIn.current = false;
-      onDismiss?.();
-    }
-  }, [pinInFetcher.state, pinInFetcher.data, onDismiss]);
-
   const handlePinComplete = useCallback(
     (value: string) => {
       if (selectedPerson && value.length === 4) {
@@ -215,8 +187,8 @@ export function PinInOverlay({
   );
 
   const handleBackdropClick = useCallback(() => {
-    if (dismissable) onDismiss?.();
-  }, [dismissable, onDismiss]);
+    if (dismissable && !changingPin) onDismiss?.();
+  }, [dismissable, changingPin, onDismiss]);
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss; Escape and the labelled close button do the same
@@ -241,6 +213,7 @@ export function PinInOverlay({
           <button
             type="button"
             onClick={onDismiss}
+            disabled={changingPin}
             aria-label={t`Close`}
             className="absolute top-2.5 right-2.5 z-10 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
@@ -252,8 +225,8 @@ export function PinInOverlay({
         <div className="flex items-center gap-3 border-b px-4 py-3">
           <LuSearch className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
-            ref={searchRef}
             type="text"
+            autoFocus
             placeholder={t`Search operators...`}
             aria-label={t`Search operators`}
             value={search}
@@ -407,10 +380,7 @@ export function PinInOverlay({
               size="md"
               className="w-full text-destructive hover:text-destructive"
               onClick={() => {
-                pinOutFetcher.submit(null, {
-                  method: "POST",
-                  action: path.to.consolePinOut
-                });
+                submitPinOutAction(null, path.to.consolePinOut);
               }}
             >
               <LuLogOut className="mr-2 h-4 w-4" />

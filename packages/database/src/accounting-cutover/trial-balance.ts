@@ -16,6 +16,7 @@ import {
   type MigrationClearingAccount,
   type MigrationClearingRow,
   migrationClearingByAccount,
+  migrationReconciliationBlockers,
   type OpenItem,
   type TrialBalanceLine
 } from "../accounting-cutover";
@@ -117,6 +118,7 @@ export type CutoverOpeningInputs = {
   trialBalance: TrialBalanceLine[];
   /** Accounts whose opening balance comes from Carbon, not the trial balance. */
   controlAccountIds: Set<string>;
+  requiredReconciliationAccountIds: Set<string>;
   migrationClearingAccountId: string | null;
   /**
    * The Migration Clearing default with its class, for
@@ -234,6 +236,7 @@ export async function getCutoverOpeningInputs(
         "employeeReimbursementsPayableAccount"
       ),
       defaults.prepaymentAccount,
+      defaults.supplierPrepaymentAccount,
       defaults.goodsReceivedNotInvoicedAccount,
       defaults.workInProgressAccount,
       defaults.rawMaterialsAccount,
@@ -273,6 +276,14 @@ export async function getCutoverOpeningInputs(
     settledFromCutoverIds,
     trialBalance: trialBalance.lines,
     controlAccountIds,
+    requiredReconciliationAccountIds: new Set(
+      [
+        defaults.supplierPrepaymentAccount,
+        ...items
+          .filter((item) => item.openItemType === "Supplier Prepayment")
+          .map((item) => item.accountId)
+      ].filter((id): id is string => Boolean(id))
+    ),
     migrationClearingAccountId,
     migrationClearingAccount
   };
@@ -288,7 +299,11 @@ export async function getMigrationClearing(
   db: CutoverDb,
   args: CutoverArgs
 ): Promise<
-  { rows: MigrationClearingRow[]; total: number } & CutoverOpeningInputs
+  {
+    rows: MigrationClearingRow[];
+    total: number;
+    reconciliationBlockers: MigrationClearingRow[];
+  } & CutoverOpeningInputs
 > {
   const inputs = await getCutoverOpeningInputs(db, args);
   const { rows, total } = migrationClearingByAccount(
@@ -296,7 +311,15 @@ export async function getMigrationClearing(
     inputs.trialBalance,
     inputs.controlAccountIds
   );
-  return { rows, total, ...inputs };
+  return {
+    rows,
+    total,
+    reconciliationBlockers: migrationReconciliationBlockers(
+      rows,
+      inputs.requiredReconciliationAccountIds
+    ),
+    ...inputs
+  };
 }
 
 /**

@@ -5,9 +5,9 @@
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { useFetcher } from "react-router";
+import { useDrawerItem } from "~/hooks";
 import type { getFixedAssetClassesList } from "~/modules/accounting/accounting.service";
 import AssetClassForm from "~/modules/accounting/ui/FixedAssets/AssetClassForm";
 import type { loader as newAssetClassLoader } from "~/routes/x+/accounting+/asset-classes.new";
@@ -32,8 +32,7 @@ const AssetClassPreview = (
 };
 
 const AssetClass = ({ inline = false, ...props }: AssetClassSelectProps) => {
-  const newAssetClassModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const defaultsFetcher = useFetcher<typeof newAssetClassLoader>();
 
@@ -46,7 +45,7 @@ const AssetClass = ({ inline = false, ...props }: AssetClassSelectProps) => {
   const emptyMessage = useEmptyState("assetClass", {
     onCreate: () => {
       defaultsFetcher.load(path.to.newAssetClass);
-      newAssetClassModal.onOpen();
+      create.open("");
     }
   });
 
@@ -64,21 +63,21 @@ const AssetClass = ({ inline = false, ...props }: AssetClassSelectProps) => {
         inline={inline ? AssetClassPreview : undefined}
         onCreateOption={(option) => {
           defaultsFetcher.load(path.to.newAssetClass);
-          newAssetClassModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newAssetClassModal.isOpen && (
+      {create.item !== null && (
         <AssetClassForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newAssetClassModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           taxDepreciationEnabled={taxDepreciationEnabled}
           initialValues={{
-            name: created,
+            name: create.item,
             description: "",
             depreciationMethod: "Straight Line" as const,
             usefulLifeMonths: 60,

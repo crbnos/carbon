@@ -13,7 +13,8 @@ import {
   checklistTasksToCreate,
   earnedValueClosedCheck,
   evaluateCloseChecklist,
-  periodRunChecks
+  periodRunChecks,
+  shippedNotInvoicedCheck
 } from "./accounting.service";
 import {
   fiscalYearPeriodDates,
@@ -378,6 +379,48 @@ describe("periodRunChecks", () => {
 
 // The Government Contracting close checks: "Compute burden for the period"
 // (5b) and "Close earned value for the period" (5c).
+describe("shippedNotInvoicedCheck", () => {
+  it("passes with no uninvoiced shipment", () => {
+    expect(shippedNotInvoicedCheck({ shipments: [], count: 0 })).toEqual({
+      failing: false,
+      count: 0,
+      documents: []
+    });
+  });
+
+  it("fails with the shipments as linked documents and the exact count", () => {
+    expect(
+      shippedNotInvoicedCheck({
+        shipments: [{ id: "s1", shipmentId: "SH000001", status: "Posted" }],
+        count: 1
+      })
+    ).toEqual({
+      failing: true,
+      count: 1,
+      documents: [
+        {
+          documentType: "Shipment",
+          id: "s1",
+          readableId: "SH000001",
+          status: "Posted"
+        }
+      ]
+    });
+  });
+
+  it("lists at most the first 25 shipments while the count stays exact", () => {
+    const shipments = Array.from({ length: 30 }, (_, i) => ({
+      id: `s${i}`,
+      shipmentId: `SH${i}`,
+      status: "Posted"
+    }));
+    const result = shippedNotInvoicedCheck({ shipments, count: 30 });
+    expect(result.count).toBe(30);
+    expect(result.documents).toHaveLength(25);
+    expect(result.documents[24]?.id).toBe("s24");
+  });
+});
+
 describe("burdenComputedCheck", () => {
   it("passes, not applicable, without GOVERNMENT_CONTRACTING", () => {
     expect(

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Badge, HStack } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Plural, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
@@ -32,6 +32,7 @@ import { usePermissions, useUrlParams } from "~/hooks";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 import type { InspectionPlanPart } from "../../types";
+import QualityDocumentStatus from "../Documents/QualityDocumentStatus";
 
 type InspectionDocumentTableProps = {
   data: InspectionPlanPart[];
@@ -199,6 +200,17 @@ const InspectionDocumentTable = memo(
                     />
                   </span>
                 </Hyperlink>
+                <Badge variant="outline">V{plan.version}</Badge>
+                <QualityDocumentStatus status={plan.status} />
+                {plan.versions.length > 1 && (
+                  <span className="text-xs text-muted-foreground">
+                    <Plural
+                      value={plan.versions.length}
+                      one="# version"
+                      other="# versions"
+                    />
+                  </span>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-3 text-muted-foreground">
                 <EmployeeAvatar employeeId={plan.createdBy} size="xs" />

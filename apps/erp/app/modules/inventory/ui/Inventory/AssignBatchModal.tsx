@@ -42,19 +42,7 @@ export type ExistingBatch = {
   expirationDate: string | null;
 };
 
-/**
- * Gives a storage unit's unnumbered stock a batch, so a transfer, pick or
- * shipment can take it. The stock stays where it is.
- */
-export function AssignBatchModal({
-  itemId,
-  itemReadableId,
-  locationId,
-  storageUnitId,
-  quantity,
-  batches,
-  onClose
-}: {
+type AssignBatchModalProps = {
   itemId: string;
   itemReadableId: string;
   locationId: string;
@@ -62,8 +50,42 @@ export function AssignBatchModal({
   /** How much in the storage unit has no batch number. */
   quantity: number;
   batches: ExistingBatch[];
+  open?: boolean;
   onClose: () => void;
-}) {
+};
+
+/**
+ * Gives a storage unit's unnumbered stock a batch, so a transfer, pick or
+ * shipment can take it. The stock stays where it is.
+ */
+export function AssignBatchModal({
+  open = true,
+  onClose,
+  ...props
+}: AssignBatchModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <AssignBatchBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function AssignBatchBody({
+  itemId,
+  itemReadableId,
+  locationId,
+  storageUnitId,
+  quantity,
+  batches,
+  onClose
+}: Omit<AssignBatchModalProps, "open">) {
   const { t } = useLingui();
   const formatQuantity = useQuantityFormatter();
   const [tab, setTab] = useState("scan");
@@ -80,170 +102,157 @@ export function AssignBatchModal({
   const existing = batches.find((batch) => batch.readableId === value);
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      method="post"
+      validator={assignBatchValidator}
+      action={path.to.inventoryItemAssignBatch(itemId)}
+      fetcher={fetcher}
+      defaultValues={{
+        locationId,
+        storageUnitId: storageUnitId ?? undefined,
+        quantity
       }}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          validator={assignBatchValidator}
-          action={path.to.inventoryItemAssignBatch(itemId)}
-          fetcher={fetcher}
-          defaultValues={{
-            locationId,
-            storageUnitId: storageUnitId ?? undefined,
-            quantity
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>{itemReadableId}</ModalTitle>
-            <ModalDescription>
-              <Trans>Scan or choose a batch number</Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="locationId" />
-            <Hidden name="storageUnitId" />
-            <Hidden name="readableId" value={value} />
-            {existing && (
-              <Hidden
-                name="expirationDate"
-                value={existing.expirationDate ?? ""}
-              />
-            )}
-            <VStack spacing={4}>
-              <Tabs value={tab} onValueChange={setTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="scan" className="leading-none">
-                    <LuQrCode className="mr-2 shrink-0" />
-                    <Trans>Scan</Trans>
-                  </TabsTrigger>
-                  <TabsTrigger value="select" className="leading-none">
-                    <LuList className="mr-2 shrink-0" />
-                    <Trans>Select</Trans>
-                  </TabsTrigger>
-                </TabsList>
+      <ModalHeader>
+        <ModalTitle>{itemReadableId}</ModalTitle>
+        <ModalDescription>
+          <Trans>Scan or choose a batch number</Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="locationId" />
+        <Hidden name="storageUnitId" />
+        <Hidden name="readableId" value={value} />
+        {existing && (
+          <Hidden name="expirationDate" value={existing.expirationDate ?? ""} />
+        )}
+        <VStack spacing={4}>
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="scan" className="leading-none">
+                <LuQrCode className="mr-2 shrink-0" />
+                <Trans>Scan</Trans>
+              </TabsTrigger>
+              <TabsTrigger value="select" className="leading-none">
+                <LuList className="mr-2 shrink-0" />
+                <Trans>Select</Trans>
+              </TabsTrigger>
+            </TabsList>
 
-                <TabsContent value="scan" className="mt-2">
-                  <VStack spacing={1}>
-                    <InputGroup>
-                      <Input
-                        autoFocus
-                        aria-label={t`Batch Number`}
-                        placeholder={t`Scan or enter a batch number`}
-                        value={batchNumber}
-                        onChange={(e) => setBatchNumber(e.target.value)}
-                        onKeyDown={(e) => {
-                          // A scanner ends with Enter: nothing to send yet.
-                          if (e.key === "Enter" && !value) e.preventDefault();
-                        }}
-                      />
-                      <InputRightElement>
-                        {existing && <LuCheck className="text-emerald-500" />}
-                      </InputRightElement>
-                    </InputGroup>
-                    {value && (
-                      <span className="text-xs text-muted-foreground">
-                        {existing ? (
-                          <Trans>Adds to an existing batch</Trans>
-                        ) : (
-                          <Trans>A new batch</Trans>
-                        )}
-                      </span>
+            <TabsContent value="scan" className="mt-2">
+              <VStack spacing={1}>
+                <InputGroup>
+                  <Input
+                    autoFocus
+                    aria-label={t`Batch Number`}
+                    placeholder={t`Scan or enter a batch number`}
+                    value={batchNumber}
+                    onChange={(e) => setBatchNumber(e.target.value)}
+                    onKeyDown={(e) => {
+                      // A scanner ends with Enter: nothing to send yet.
+                      if (e.key === "Enter" && !value) e.preventDefault();
+                    }}
+                  />
+                  <InputRightElement>
+                    {existing && <LuCheck className="text-emerald-500" />}
+                  </InputRightElement>
+                </InputGroup>
+                {value && (
+                  <span className="text-xs text-muted-foreground">
+                    {existing ? (
+                      <Trans>Adds to an existing batch</Trans>
+                    ) : (
+                      <Trans>A new batch</Trans>
                     )}
-                  </VStack>
-                </TabsContent>
+                  </span>
+                )}
+              </VStack>
+            </TabsContent>
 
-                <TabsContent value="select" className="mt-2">
-                  <ScrollArea className="max-h-[36dvh] w-full">
-                    <VStack spacing={2} className="w-full">
-                      {batches.length === 0 ? (
-                        <p className="w-full py-6 text-center text-xs text-muted-foreground">
-                          <Trans>This item has no batches here yet</Trans>
-                        </p>
-                      ) : (
-                        batches.map((batch) => {
-                          const selected = batch.readableId === value;
-                          return (
+            <TabsContent value="select" className="mt-2">
+              <ScrollArea className="max-h-[36dvh] w-full">
+                <VStack spacing={2} className="w-full">
+                  {batches.length === 0 ? (
+                    <p className="w-full py-6 text-center text-xs text-muted-foreground">
+                      <Trans>This item has no batches here yet</Trans>
+                    </p>
+                  ) : (
+                    batches.map((batch) => {
+                      const selected = batch.readableId === value;
+                      return (
+                        <HStack
+                          key={batch.readableId}
+                          className={cn(
+                            "w-full justify-between rounded-lg border p-3",
+                            selected && "border-primary"
+                          )}
+                        >
+                          <VStack spacing={0} className="min-w-0">
+                            <p className="truncate text-base font-medium">
+                              {batch.readableId}
+                            </p>
                             <HStack
-                              key={batch.readableId}
-                              className={cn(
-                                "w-full justify-between rounded-lg border p-3",
-                                selected && "border-primary"
-                              )}
+                              spacing={2}
+                              className="text-xs text-muted-foreground"
                             >
-                              <VStack spacing={0} className="min-w-0">
-                                <p className="truncate text-base font-medium">
-                                  {batch.readableId}
-                                </p>
-                                <HStack
-                                  spacing={2}
-                                  className="text-xs text-muted-foreground"
-                                >
-                                  <span className="tabular-nums">
-                                    <Trans>
-                                      {formatQuantity(batch.quantity)} available
-                                    </Trans>
-                                  </span>
-                                  {batch.expirationDate && (
-                                    <span>
-                                      ·{" "}
-                                      <Trans>
-                                        Expires{" "}
-                                        {formatDate(batch.expirationDate)}
-                                      </Trans>
-                                    </span>
-                                  )}
-                                </HStack>
-                              </VStack>
-                              <Button
-                                size="sm"
-                                variant={selected ? "primary" : "secondary"}
-                                onClick={() => {
-                                  setBatchNumber(batch.readableId);
-                                  setTab("scan");
-                                }}
-                              >
-                                {selected ? (
-                                  <Trans>Chosen</Trans>
-                                ) : (
-                                  <Trans>Choose</Trans>
-                                )}
-                              </Button>
+                              <span className="tabular-nums">
+                                <Trans>
+                                  {formatQuantity(batch.quantity)} available
+                                </Trans>
+                              </span>
+                              {batch.expirationDate && (
+                                <span>
+                                  ·{" "}
+                                  <Trans>
+                                    Expires {formatDate(batch.expirationDate)}
+                                  </Trans>
+                                </span>
+                              )}
                             </HStack>
-                          );
-                        })
-                      )}
-                    </VStack>
-                  </ScrollArea>
-                </TabsContent>
-              </Tabs>
+                          </VStack>
+                          <Button
+                            size="sm"
+                            variant={selected ? "primary" : "secondary"}
+                            onClick={() => {
+                              setBatchNumber(batch.readableId);
+                              setTab("scan");
+                            }}
+                          >
+                            {selected ? (
+                              <Trans>Chosen</Trans>
+                            ) : (
+                              <Trans>Choose</Trans>
+                            )}
+                          </Button>
+                        </HStack>
+                      );
+                    })
+                  )}
+                </VStack>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
 
-              <NumberInput
-                name="quantity"
-                label={t`Quantity`}
-                minValue={0}
-                maxValue={quantity}
-                formatOptions={INPUT_FORMAT.quantity}
-              />
-              {!existing && (
-                <DatePicker name="expirationDate" label={t`Expiration Date`} />
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false} isDisabled={!value}>
-              <Trans>Assign Batch</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          <NumberInput
+            name="quantity"
+            label={t`Quantity`}
+            minValue={0}
+            maxValue={quantity}
+            formatOptions={INPUT_FORMAT.quantity}
+          />
+          {!existing && (
+            <DatePicker name="expirationDate" label={t`Expiration Date`} />
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit withBlocker={false} isDisabled={!value}>
+          <Trans>Assign Batch</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }

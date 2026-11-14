@@ -5,9 +5,9 @@
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
 import { formatAddress } from "@carbon/utils";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import type { getSupplierLocations } from "~/modules/purchasing/purchasing.service";
 import type { SupplierLocation as SupplierLocationType } from "~/modules/purchasing/types";
 import SupplierLocationForm from "~/modules/purchasing/ui/Supplier/SupplierLocationForm";
@@ -39,8 +39,7 @@ const SupplierLocation = ({
   supplier,
   ...props
 }: SupplierLocationSelectProps) => {
-  const newLocationModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const supplierLocationsFetcher = useLoaderQuery<
     Awaited<ReturnType<typeof getSupplierLocations>>
@@ -77,7 +76,7 @@ const SupplierLocation = ({
 
   const emptyMessage = useEmptyState(
     "supplierLocation",
-    supplier ? { onCreate: () => newLocationModal.onOpen() } : undefined
+    supplier ? { onCreate: () => create.open("") } : undefined
   );
 
   return (
@@ -91,22 +90,22 @@ const SupplierLocation = ({
         emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
-          newLocationModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newLocationModal.isOpen && (
+      {create.item !== null && (
         <SupplierLocationForm
+          key={create.key}
+          open={create.isOpen}
           supplierId={supplier!}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newLocationModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             name: supplierName,
-            addressLine1: created || "",
+            addressLine1: create.item || "",
             addressLine2: "",
             city: "",
             stateProvince: "",

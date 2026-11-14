@@ -21,6 +21,7 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  NonNettableBadge,
   toast,
   useDisclosure,
   VStack
@@ -44,6 +45,7 @@ import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useQuantityFormatter, useRouteData } from "~/hooks";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
 import type {
   StockTransfer,
@@ -79,6 +81,21 @@ function StockTransferLineComponent({
   permissions
 }: StockTransferLineProps) {
   const { t } = useLingui();
+  const nonNettable = useNonNettableStorageUnits();
+  // A line without the key names no unit on that side; one with the key
+  // and no name has no storage unit.
+  const fromLabel =
+    "fromStorageUnitId" in line
+      ? (line.fromStorageUnitName ?? t`No storage unit`)
+      : null;
+  const toLabel =
+    "toStorageUnitId" in line
+      ? (line.toStorageUnitName ?? t`No storage unit`)
+      : null;
+  const fromNonNettable =
+    !!line.fromStorageUnitId && nonNettable.has(line.fromStorageUnitId);
+  const toNonNettable =
+    !!line.toStorageUnitId && nonNettable.has(line.toStorageUnitId);
   const navigate = useNavigate();
   const params = useParams();
   const { id } = params;
@@ -189,25 +206,28 @@ function StockTransferLineComponent({
           </VStack>
         </HStack>
         <div className="flex items-center justify-between gap-4 w-full @3xl:w-auto @3xl:flex-1 min-w-0 max-md:gap-3">
-          <HStack spacing={4} className="text-left items-center min-w-0">
-            {"fromStorageUnitId" in line && (
-              <span
-                className="text-base font-medium truncate"
-                title={line.fromStorageUnitName ?? undefined}
-              >
-                {line.fromStorageUnitName ?? t`No storage unit`}
-              </span>
-            )}
+          <div className="grid min-w-0 grid-cols-[minmax(0,auto)_auto_minmax(0,auto)] items-center gap-x-3 gap-y-1 text-left">
+            <span
+              className="truncate text-base font-medium"
+              title={fromLabel ?? undefined}
+            >
+              {fromLabel}
+            </span>
             <LuArrowRight className="size-4 shrink-0" />
-            {"toStorageUnitId" in line && (
-              <span
-                className="text-base font-medium truncate"
-                title={line.toStorageUnitName ?? undefined}
-              >
-                {line.toStorageUnitName ?? t`No storage unit`}
-              </span>
+            <span
+              className="truncate text-base font-medium"
+              title={toLabel ?? undefined}
+            >
+              {toLabel}
+            </span>
+            {(fromNonNettable || toNonNettable) && (
+              <>
+                <span>{fromNonNettable && <NonNettableBadge />}</span>
+                <span />
+                <span>{toNonNettable && <NonNettableBadge />}</span>
+              </>
             )}
-          </HStack>
+          </div>
           <HStack spacing={1} className="shrink-0">
             {line.trackedEntityId && (
               <PrintButton
@@ -419,8 +439,9 @@ export default function StockTransferLines() {
           </div>
         </CardContent>
       </Card>
-      {deleteDisclosure.isOpen && (
+      {selectedLine && (
         <ConfirmDelete
+          isOpen={deleteDisclosure.isOpen}
           name="Stock Transfer Line"
           text="Are you sure you want to delete this stock transfer line?"
           action={path.to.deleteStockTransferLine(id, selectedLine?.id!)}

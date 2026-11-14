@@ -26,10 +26,13 @@ import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useParams } from "react-router";
 import {
+  Boolean,
   CustomerContact,
   EmailRecipients,
+  Hidden,
   SelectControlled
 } from "~/components/Form";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
 import { quoteFinalizeValidator } from "../../sales.models";
@@ -42,6 +45,7 @@ import type {
 } from "../../types";
 
 type QuotationFinalizeModalProps = {
+  open?: boolean;
   onClose: () => void;
   quote?: Quotation;
   shipment: QuotationShipment | null;
@@ -49,11 +53,30 @@ type QuotationFinalizeModalProps = {
 };
 
 const QuotationFinalizeModal = ({
+  open = true,
+  onClose,
+  ...props
+}: QuotationFinalizeModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}
+  >
+    <ModalContent>
+      <QuotationFinalizeBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const QuotationFinalizeBody = ({
   quote,
   onClose,
   shipment,
   defaultCc = []
-}: QuotationFinalizeModalProps) => {
+}: Omit<QuotationFinalizeModalProps, "open">) => {
   const { t } = useLingui();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
@@ -71,6 +94,7 @@ const QuotationFinalizeModal = ({
 
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
+  const digitalQuoteEnabled = useCompanySettings()?.digitalQuoteEnabled;
   const { carbon } = useCarbon();
 
   const [loading, setLoading] = useState(true);
@@ -159,116 +183,117 @@ const QuotationFinalizeModal = ({
   const showShippingWarning = !hasShippingCost && !allLinesHaveShippingCosts;
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
-    >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          validator={quoteFinalizeValidator}
-          action={path.to.quoteFinalize(quoteId)}
-          defaultValues={{
-            notification: notificationType as "Email" | "None",
-            customerContact: quote?.customerContactId ?? undefined,
-            cc: defaultCc
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>{`Finalize ${getQuoteDisplayId(quote)}`}</ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <p className="text-sm text-muted-foreground">
-                <Trans>Are you sure you want to finalize the quote?</Trans>
-              </p>
-              {warningLineReadableIds.length > 0 && (
-                <Alert variant="warning">
-                  <LuTriangleAlert className="h-4 w-4" />
-                  <AlertTitle>
-                    <Trans>Lines need prices or lead times</Trans>
-                  </AlertTitle>
-                  <AlertDescription>
-                    The following line items are missing prices or lead times:
-                    <ul className="list-disc py-2 pl-4">
-                      {warningLineReadableIds.map((readableId) => (
-                        <li key={readableId}>{readableId}</li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
-              {showShippingWarning && (
-                <Alert variant="warning">
-                  <LuTriangleAlert className="h-4 w-4" />
-                  <AlertTitle>
-                    <Trans>Missing Shipping Costs</Trans>
-                  </AlertTitle>
-                  <AlertDescription>
-                    This quote has no shipping costs defined. Please add
-                    shipping costs either at the quote level or for individual
-                    line items.
-                  </AlertDescription>
-                </Alert>
-              )}
-              {canEmail && (
-                <SelectControlled
-                  label={t`Send Via`}
-                  name="notification"
-                  options={[
-                    {
-                      label: "None",
-                      value: "None"
-                    },
-                    {
-                      label: "Email",
-                      value: "Email"
-                    }
-                  ]}
-                  value={notificationType}
-                  onChange={(t) => {
-                    if (t) setNotificationType(t.value);
-                  }}
+    <>
+      <ValidatedForm
+        method="post"
+        validator={quoteFinalizeValidator}
+        action={path.to.quoteFinalize(quoteId)}
+        defaultValues={{
+          notification: notificationType as "Email" | "None",
+          customerContact: quote?.customerContactId ?? undefined,
+          cc: defaultCc,
+          emailOrderOnAcceptance: true
+        }}
+        fetcher={fetcher}
+      >
+        <ModalHeader>
+          <ModalTitle>{`Finalize ${getQuoteDisplayId(quote)}`}</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <VStack spacing={4}>
+            <p className="text-sm text-muted-foreground">
+              <Trans>Are you sure you want to finalize the quote?</Trans>
+            </p>
+            {warningLineReadableIds.length > 0 && (
+              <Alert variant="warning">
+                <LuTriangleAlert className="h-4 w-4" />
+                <AlertTitle>
+                  <Trans>Lines need prices or lead times</Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  The following line items are missing prices or lead times:
+                  <ul className="list-disc py-2 pl-4">
+                    {warningLineReadableIds.map((readableId) => (
+                      <li key={readableId}>{readableId}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
+            {showShippingWarning && (
+              <Alert variant="warning">
+                <LuTriangleAlert className="h-4 w-4" />
+                <AlertTitle>
+                  <Trans>Missing Shipping Costs</Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  This quote has no shipping costs defined. Please add shipping
+                  costs either at the quote level or for individual line items.
+                </AlertDescription>
+              </Alert>
+            )}
+            {canEmail && (
+              <SelectControlled
+                label={t`Send Via`}
+                name="notification"
+                options={[
+                  {
+                    label: "None",
+                    value: "None"
+                  },
+                  {
+                    label: "Email",
+                    value: "Email"
+                  }
+                ]}
+                value={notificationType}
+                onChange={(t) => {
+                  if (t) setNotificationType(t.value);
+                }}
+              />
+            )}
+            {notificationType === "Email" && (
+              <>
+                <CustomerContact
+                  name="customerContact"
+                  customer={quote?.customerId ?? undefined}
+                  warnIfNoEmail
+                  onMissingEmailChange={setContactMissingEmail}
                 />
-              )}
-              {notificationType === "Email" && (
-                <>
-                  <CustomerContact
-                    name="customerContact"
-                    customer={quote?.customerId ?? undefined}
-                    warnIfNoEmail
-                    onMissingEmailChange={setContactMissingEmail}
-                  />
-                  <EmailRecipients name="cc" label={t`CC`} type="employee" />
-                </>
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              isDisabled={
-                loading ||
-                isSubmitting ||
-                (notificationType === "Email" && contactMissingEmail)
-              }
-              isLoading={isSubmitting}
-              type="submit"
-            >
-              <Trans>Finalize</Trans>
-            </Button>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
+                <EmailRecipients name="cc" label={t`CC`} type="employee" />
+              </>
+            )}
+            {digitalQuoteEnabled ? (
+              <Boolean
+                name="emailOrderOnAcceptance"
+                label={t`Send order confirmation`}
+                description={t`Emails the sales order to the customer when they accept this quote online.`}
+                bordered
+              />
+            ) : (
+              <Hidden name="emailOrderOnAcceptance" value="on" />
+            )}
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <Button
+            isDisabled={
+              loading ||
+              isSubmitting ||
+              (notificationType === "Email" && contactMissingEmail)
+            }
+            isLoading={isSubmitting}
+            type="submit"
+          >
+            <Trans>Finalize</Trans>
+          </Button>
+        </ModalFooter>
+      </ValidatedForm>
       <ruleViolations.ViolationModal />
-    </Modal>
+    </>
   );
 };
 

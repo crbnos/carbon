@@ -16,12 +16,12 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useNavigate } from "react-router";
+import { useFetcher } from "react-router";
 import { Input, Location, Submit } from "~/components/Form";
 import { useUser } from "~/hooks";
 import { createOperatorValidator } from "~/modules/users/users.models";
@@ -48,21 +48,18 @@ export async function action(args: ActionFunctionArgs) {
 export default function NewOperatorRoute() {
   const { t } = useLingui();
   const { defaults } = useUser();
-  const navigate = useNavigate();
-  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<typeof action>();
   const created =
     formFetcher.data && "data" in formFetcher.data
       ? formFetcher.data.data
       : null;
+  const dialog = useRouteDialog(created ? path.to.operators : undefined);
 
   return (
     <Modal
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
-        if (open) return;
-        if (created) navigate(path.to.operators);
-        else closeRoute();
+        if (!open) dialog.close();
       }}
     >
       <ModalOverlay />
@@ -71,7 +68,7 @@ export default function NewOperatorRoute() {
           <CreatedOperatorPin
             name={created.name}
             pin={created.pin}
-            onDone={() => navigate(path.to.operators)}
+            onDone={dialog.close}
           />
         ) : (
           <ValidatedForm

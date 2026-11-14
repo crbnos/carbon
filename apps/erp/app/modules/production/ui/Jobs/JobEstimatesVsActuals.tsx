@@ -52,6 +52,7 @@ import type { z } from "zod";
 import { EmployeeAvatar, EmployeeAvatarGroup } from "~/components";
 import { MethodIcon, TimeTypeIcon } from "~/components/Icons";
 import { useCurrencyFormatter, usePercentFormatter, useUser } from "~/hooks";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/duration";
 import { path } from "~/utils/path";
@@ -106,6 +107,11 @@ const JobEstimatesVsActuals = ({
   const { carbon } = useCarbon();
   const { jobId } = useParams();
   const { t } = useLingui();
+  const [tab, setTab] = usePersistentPageTab(
+    "estimates-vs-actual",
+    ["processes", "materials"],
+    "processes"
+  );
   const user = useUser();
   if (!jobId) throw new Error("Could not find jobId");
 
@@ -326,7 +332,7 @@ const JobEstimatesVsActuals = ({
   );
 
   return (
-    <Tabs defaultValue="processes" className="w-full">
+    <Tabs value={tab} onValueChange={setTab} className="w-full">
       <Card>
         <HStack className="justify-between items-start max-md:flex-col max-md:items-stretch max-md:space-x-0">
           <CardHeader>

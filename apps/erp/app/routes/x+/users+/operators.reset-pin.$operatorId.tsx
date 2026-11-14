@@ -18,13 +18,13 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData, useNavigate } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { path } from "~/utils/path";
 
 /**
@@ -81,21 +81,18 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function ResetPinRoute() {
   const { operator } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<typeof action>();
   const result =
     formFetcher.data && "error" in formFetcher.data ? formFetcher.data : null;
   const newPin = result?.data?.pin ?? null;
   const failure = result?.error?.message ?? null;
+  const dialog = useRouteDialog(newPin ? path.to.operators : undefined);
 
   return (
     <Modal
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
-        if (open) return;
-        if (newPin) navigate(path.to.operators);
-        else closeRoute();
+        if (!open) dialog.close();
       }}
     >
       <ModalOverlay />
@@ -145,10 +142,7 @@ export default function ResetPinRoute() {
           <ModalFooter>
             <HStack>
               {newPin ? (
-                <Button
-                  type="button"
-                  onClick={() => navigate(path.to.operators)}
-                >
+                <Button type="button" onClick={dialog.close}>
                   <Trans>Done</Trans>
                 </Button>
               ) : (

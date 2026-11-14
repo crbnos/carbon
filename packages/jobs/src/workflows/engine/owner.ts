@@ -13,7 +13,7 @@ import type { PermissionAction } from "@carbon/ee/workflows";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const log = getLogger("workflows");
+const log = getLogger("jobs", "workflows");
 
 export type OwnerPermissions = Record<string, Permission>;
 

@@ -72,20 +72,27 @@ export function getApplyCreditHref(args: {
 type PaymentFormValues = z.infer<typeof paymentValidator>;
 
 // The picker's single value: the ids travel as separate hidden fields
-// (`salesOrderId` / `rentalAgreementId` / `customerContractId`, at most one
-// set — the validator and `payment_deposit_document_check` both enforce it).
+// (`salesOrderId` / `rentalAgreementId` / `customerContractId` /
+// `purchaseOrderId`, at most one set — the validator and
+// `payment_deposit_document_check` both enforce it).
 const depositValue = (doc: Pick<DepositDocument, "kind" | "id">) =>
   `${doc.kind}:${doc.id}`;
 const parseDepositValue = (value: string) => {
   const separator = value.indexOf(":");
   if (separator < 0)
-    return { salesOrderId: "", rentalAgreementId: "", customerContractId: "" };
+    return {
+      salesOrderId: "",
+      rentalAgreementId: "",
+      customerContractId: "",
+      purchaseOrderId: ""
+    };
   const kind = value.slice(0, separator);
   const id = value.slice(separator + 1);
   return {
     salesOrderId: kind === "salesOrder" ? id : "",
     rentalAgreementId: kind === "rentalAgreement" ? id : "",
-    customerContractId: kind === "customerContract" ? id : ""
+    customerContractId: kind === "customerContract" ? id : "",
+    purchaseOrderId: kind === "purchaseOrder" ? id : ""
   };
 };
 
@@ -133,11 +140,15 @@ const PaymentForm = ({
   const kindFields = paymentKindFields(paymentKind);
   const isEmployee = kindFields.party === "employeeId";
   const isCustomer = kindFields.party === "customerId";
+  const isSupplier = kindFields.party === "supplierId";
   const currentType = kindFields.paymentType;
 
-  // The deposit picker follows the selected customer; picking a customer clears
-  // a document that belonged to the previous one.
+  // The deposit picker follows the selected party; picking a party clears a
+  // document that belonged to the previous one. A customer deposit is taken by
+  // a Receipt; a supplier prepayment by a Disbursement.
   const [customerId, setCustomerId] = useState(initialValues.customerId ?? "");
+  const [supplierId, setSupplierId] = useState(initialValues.supplierId ?? "");
+  const partyId = isCustomer ? customerId : isSupplier ? supplierId : "";
   const initialDeposit = initialValues.rentalAgreementId
     ? depositValue({
         kind: "rentalAgreement",
@@ -150,7 +161,12 @@ const PaymentForm = ({
             kind: "customerContract",
             id: initialValues.customerContractId
           })
-        : "";
+        : initialValues.purchaseOrderId
+          ? depositValue({
+              kind: "purchaseOrder",
+              id: initialValues.purchaseOrderId
+            })
+          : "";
   const [deposit, setDeposit] = useState(initialDeposit);
   // UI-only controlled fields are seeded through the form defaults so the
   // registered value matches what is shown on first render.
@@ -159,15 +175,23 @@ const PaymentForm = ({
     paymentKind: initialKind,
     depositDocument: initialDeposit
   };
-  const showDepositPicker = isCustomer && depositDocuments !== undefined;
+  const showDepositPicker =
+    (isCustomer || isSupplier) && depositDocuments !== undefined;
+  const takesDeposit = isCustomer
+    ? currentType === "Receipt"
+    : currentType === "Disbursement";
   const depositOptions = useMemo(() => {
     if (!showDepositPicker) return [];
-    const forReceipt = currentType === "Receipt";
     return (depositDocuments ?? [])
       .filter(
         (doc) =>
-          doc.customerId === customerId &&
-          (!forReceipt || doc.open || depositValue(doc) === initialDeposit)
+          doc.partyId === partyId &&
+          (doc.kind === "purchaseOrder") === isSupplier &&
+          (takesDeposit
+            ? doc.open || (isEditing && depositValue(doc) === initialDeposit)
+            : !doc.refundableCurrencyCodes ||
+              doc.refundableCurrencyCodes.includes(currencyCode) ||
+              (isEditing && depositValue(doc) === initialDeposit))
       )
       .map((doc) => ({
         value: depositValue(doc),
@@ -177,23 +201,36 @@ const PaymentForm = ({
             ? t`Rental Agreement`
             : doc.kind === "customerContract"
               ? t`Contract`
-              : t`Sales Order`
+              : doc.kind === "purchaseOrder"
+                ? t`Purchase Order`
+                : t`Sales Order`
         } · ${doc.status}`
       }));
   }, [
     showDepositPicker,
     depositDocuments,
-    customerId,
-    currentType,
+    partyId,
+    isSupplier,
+    takesDeposit,
+    isEditing,
+    currencyCode,
     initialDeposit,
     t
   ]);
-  // With no picker the saved link round-trips untouched — a customer payment
-  // keeps its deposit until its customer changes.
+  if (
+    showDepositPicker &&
+    deposit &&
+    !depositOptions.some((option) => option.value === deposit)
+  ) {
+    setDeposit("");
+  }
+  // With no picker the saved link round-trips untouched — a payment keeps its
+  // deposit until its party changes.
   const depositIds = parseDepositValue(
     showDepositPicker
       ? deposit
-      : isCustomer && customerId === initialValues.customerId
+      : (isCustomer && customerId === initialValues.customerId) ||
+          (isSupplier && supplierId === initialValues.supplierId)
         ? initialDeposit
         : ""
   );
@@ -229,6 +266,7 @@ const PaymentForm = ({
           name="customerContractId"
           value={depositIds.customerContractId}
         />
+        <Hidden name="purchaseOrderId" value={depositIds.purchaseOrderId} />
         {isEditing && <Hidden name="paymentId" />}
         {financingRequestId && (
           <Hidden name="financingRequestId" value={financingRequestId} />
@@ -268,18 +306,36 @@ const PaymentForm = ({
             }}
           />
         ) : (
-          <Supplier name="supplierId" label={t`Supplier`} />
+          <Supplier
+            name="supplierId"
+            label={t`Supplier`}
+            onChange={(option) => {
+              const next = option?.value ?? "";
+              if (next !== supplierId) setDeposit("");
+              setSupplierId(next);
+            }}
+          />
         )}
         {showDepositPicker && (
           <Combobox
             name="depositDocument"
             label={
-              currentType === "Receipt" ? t`Deposit for` : t`Refund deposit for`
+              isSupplier
+                ? takesDeposit
+                  ? t`Prepayment for`
+                  : t`Refund prepayment for`
+                : takesDeposit
+                  ? t`Deposit for`
+                  : t`Refund deposit for`
             }
             helperText={
-              currentType === "Receipt"
-                ? t`Unapplied cash is held as a customer prepayment for this document instead of on-account credit.`
-                : t`Pays the deposit held for this document back out of customer prepayments.`
+              isSupplier
+                ? takesDeposit
+                  ? t`Unapplied cash is held as a supplier prepayment for this order instead of on-account credit.`
+                  : t`Takes the prepayment held for this order back out of supplier prepayments.`
+                : takesDeposit
+                  ? t`Unapplied cash is held as a customer prepayment for this document instead of on-account credit.`
+                  : t`Pays the deposit held for this document back out of customer prepayments.`
             }
             options={depositOptions}
             value={deposit}
