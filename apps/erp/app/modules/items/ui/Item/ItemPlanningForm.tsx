@@ -82,7 +82,8 @@ const ItemPlanningForm = ({
           // field and saves 0, which overrides the default with "none".
           planningHorizonDays: initialValues.planningHorizonDays ?? undefined,
           planningTimeFenceDays:
-            initialValues.planningTimeFenceDays ?? undefined
+            initialValues.planningTimeFenceDays ?? undefined,
+          responsibleEmployee: initialValues.responsibleEmployee ?? undefined
         }}
       >
         <HStack className="w-full justify-between items-start max-md:items-center">
