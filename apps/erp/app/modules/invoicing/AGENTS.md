@@ -252,8 +252,8 @@ guarded by `requireUnlockedBulk`, not validators.
   The page loaders keep their own permission (`invoicing` for the workbenches,
   `accounting` + employee for the reports); the CSV routes share
   `x+/reports+/aging.server.ts`, which admits a viewer of either module because
-  the download holds exactly what either page shows. The workbench's Export
-  button links to the CSV route (`withCsvExport={false}` on the Table): the
+  the download holds exactly what either page shows. The workbench passes the
+  CSV route URL to the Table's download control: the
   download is the whole tree, built by `agingCsvTable` (`invoicing.reports.ts`),
   not the expanded rows on screen. It includes open documents even when their
   counterparty's net aging row is zero, and translates headings from the

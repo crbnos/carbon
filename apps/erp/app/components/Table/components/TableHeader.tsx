@@ -114,6 +114,7 @@ type HeaderProps<T> = {
   // CSV download; both default on so ordinary tables are unchanged.
   withColumnOrdering?: boolean;
   withCsvExport?: boolean;
+  csvExportHref?: string;
   sort?: ReactNode;
 };
 
@@ -156,6 +157,7 @@ const TableHeader = <T extends object>({
   withSelectableRows,
   withColumnOrdering = true,
   withCsvExport = true,
+  csvExportHref,
   sort
 }: HeaderProps<T>) => {
   const { t } = useLingui();
@@ -428,6 +430,7 @@ const TableHeader = <T extends object>({
 
             {withCsvExport && (
               <Download
+                href={csvExportHref}
                 data={data}
                 infinite={infiniteExport}
                 columnAccessors={columnAccessors}

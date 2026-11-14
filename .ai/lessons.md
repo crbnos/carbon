@@ -26,6 +26,16 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** AR/AP aging CSV routes and report helpers.
 
+## File downloads can link directly to a resource route
+
+**Context:** The AR/AP aging table needs a complete server-generated CSV rather than its currently expanded browser rows.
+
+**Problem:** Adding a separate Export button required turning off the Table's own CSV control with `withCsvExport={false}`, leaving two download mechanisms to coordinate.
+
+**Rule:** Give the Table the download URL and render its Download control as a plain anchor. The route returns the file with `Content-Disposition: attachment`; one browser GET generates and downloads it. Keep the client-side Table export for lists without a download URL.
+
+**Applies to:** Table downloads backed by resource routes and AR/AP aging exports.
+
 ## Onshape individual release assets need the complete source identity
 
 **Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.

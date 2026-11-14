@@ -28,7 +28,6 @@ import { useCallback, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
-  LuDownload,
   LuScale,
   LuTriangleAlert,
   LuUser
@@ -584,11 +583,6 @@ export function ARAPWorkbench({
           </TooltipContent>
         </Tooltip>
       ) : null}
-      <Button asChild variant="secondary" leftIcon={<LuDownload />}>
-        <a href={exportHref} download>
-          <Trans>Export</Trans>
-        </a>
-      </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" rightIcon={<LuChevronDown />}>
@@ -635,7 +629,7 @@ export function ARAPWorkbench({
       <div className="flex-1 w-full">
         <Table<WorkbenchRow>
           data={displayRows}
-          withCsvExport={false}
+          csvExportHref={exportHref}
           columns={columns}
           count={displayRows.length}
           title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}
