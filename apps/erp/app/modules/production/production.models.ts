@@ -90,6 +90,35 @@ export const planningActionType = [
 
 export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
 
+/**
+ * The planned order statuses a person may still change: MRP's own (Planned)
+ * and the ones a person holds (Firm). A Converted row is the history of its
+ * job or PO line, which is where a change goes.
+ */
+export const PLANNED_ORDER_EDITABLE_STATUSES = ["Planned", "Firm"] as const;
+
+export function isPlannedOrderEditable(status: string | null | undefined) {
+  return (PLANNED_ORDER_EDITABLE_STATUSES as readonly string[]).includes(
+    status ?? ""
+  );
+}
+
+/** Firm or unfirm one planned order. */
+export const plannedOrderIdValidator = z.object({ id: z.string().min(1) });
+
+/**
+ * Edit one planned order's quantity or due date. The edit firms the row; a
+ * moved due date moves the release date by the same number of days.
+ */
+export const updatePlannedOrderValidator = z.object({
+  id: z.string().min(1),
+  quantity: z.number().positive().optional(),
+  dueDate: z
+    .string()
+    .refine(isIsoDate, { message: "Enter the due date as YYYY-MM-DD" })
+    .optional()
+});
+
 // Pure (no lingui / JSX) so the ERP vitest suite can import it directly — the
 // models barrel drags the glossary's lingui macros, which vitest does not
 // transform (see apps/erp/test/job-complete-logic.test.ts).

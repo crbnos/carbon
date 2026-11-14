@@ -107,6 +107,7 @@ import {
   peopleWeekAssignValidator,
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator,
+  plannedOrderIdValidator,
   planningOrderStart,
   procedureStatus,
   productionEventValidator,
@@ -117,7 +118,8 @@ import {
   salesOrderToJobValidator,
   scheduleJobUpdateValidator,
   scheduleOperationReorderValidator,
-  shouldStartAssemblyPlan
+  shouldStartAssemblyPlan,
+  updatePlannedOrderValidator
 } from "./production.models";
 import type { JobStatus } from "./production.service";
 import * as service from "./production.service";
@@ -4989,7 +4991,7 @@ const CHANGE_ACTION_TYPES = [
  *
  * @remarks
  * Every id is read from the persisted worklist (only an Open change action on
- * a job; the type, job and suggested value come from the row, never the
+ * a job or a planned order; the type, job and suggested value come from the row, never the
  * caller); `type` keeps only actions of that type. A job that is not Draft or
  * Planned is never edited from planning: its action is listed in
  * `requiresManualAction`. Expedite / Defer move the jobs' due dates in one
@@ -4997,7 +4999,10 @@ const CHANGE_ACTION_TYPES = [
  * job's quantity (guarded on Draft / Planned in the UPDATE) and recalculate
  * it; Cancel runs `cancelJob` from Draft / Planned. Each of those
  * is claimed right before its change, three jobs at a time, and a failed one
- * gives its claim back. With no `type`, an Open Transfer or Borrow creates a
+ * gives its claim back. An action on a Make planned order edits that order
+ * in one transaction: Expedite / Defer set its due date (the release date
+ * moves by the same days), Increase / Decrease its quantity, and the order
+ * becomes Firm; Cancel deletes it. With no `type`, an Open Transfer or Borrow creates a
  * Draft project stock transfer (`applyTransferPlanningActions`, which needs
  * `update: projects`). Returns what was `applied`, the `transfers` created,
  * what needs review, `warnings` (applied, with a follow-up step that failed)
@@ -5079,6 +5084,7 @@ export const applyPlanningActions = defineServiceFn({
     const transferIdSet = new Set(transferIds);
 
     const eligible: { planningActionId: string; row: PlanningActionRow }[] = [];
+    const plannedOrderTargets: service.PlannedOrderPlanningAction[] = [];
     for (const planningActionId of planningActionIds) {
       if (transferIdSet.has(planningActionId)) continue;
       const row = rowById.get(planningActionId);
@@ -5102,6 +5108,21 @@ export const applyPlanningActions = defineServiceFn({
         );
         continue;
       }
+      if (row.plannedOrderId) {
+        // A Make planned order: edited (and firmed) or deleted below.
+        plannedOrderTargets.push({
+          planningActionId,
+          plannedOrderId: row.plannedOrderId,
+          type: row.type as service.PlannedOrderPlanningAction["type"],
+          suggestedDate: row.suggestedDate ?? null,
+          suggestedQuantity:
+            row.suggestedQuantity === null ||
+            row.suggestedQuantity === undefined
+              ? null
+              : Number(row.suggestedQuantity)
+        });
+        continue;
+      }
       if (!row.jobId) {
         errors.push(
           `Planning action ${planningActionId} does not target a job`
@@ -5109,6 +5130,35 @@ export const applyPlanningActions = defineServiceFn({
         continue;
       }
       eligible.push({ planningActionId, row });
+    }
+
+    // Planned orders: one transaction for the whole batch. No scheduler
+    // notice — a planned order is not a job the scheduler places.
+    if (plannedOrderTargets.length > 0) {
+      let outcome: Awaited<
+        ReturnType<typeof service.applyPlannedOrderPlanningActions>
+      >;
+      try {
+        outcome = await service.applyPlannedOrderPlanningActions(db, {
+          companyId,
+          userId,
+          orderType: "Make",
+          actions: plannedOrderTargets
+        });
+      } catch (err) {
+        return ctx.error(
+          "internal",
+          `Failed to apply planning actions to planned orders: ${getErrorMessage(err, "unknown error")}`,
+          err
+        );
+      }
+      applied.push(...outcome.applied);
+      for (const id of outcome.alreadyApplied) {
+        errors.push(`Planning action ${id} was already applied`);
+      }
+      for (const refusal of outcome.refused) {
+        errors.push(`Planning action ${refusal.id}: ${refusal.message}`);
+      }
     }
 
     // One statement: the id list is a parameter, never a PostgREST URL.
@@ -5323,6 +5373,132 @@ export const applyPlanningActions = defineServiceFn({
     };
   }
 });
+/**
+ * Firm a planned order.
+ *
+ * @remarks
+ * A person holds a Firm planned order: MRP no longer changes its quantity or
+ * dates, and raises a planning action when it disagrees. A Make planned order
+ * needs `update: production`, a Buy planned order `update: purchasing`. A
+ * Firm order is left as it is; a Converted one is refused.
+ */
+export const firmPlannedOrder = defineServiceFn({
+  input: plannedOrderIdValidator,
+  // The planned order's type decides the permission: the body checks it.
+  permission: {},
+  async run(ctx, { id }) {
+    const order = await service.readPlannedOrderForChange(ctx, id);
+    if (order instanceof CarbonError) return order;
+    const done = {
+      id,
+      status: "Firm" as const,
+      message: "Planned order firmed"
+    };
+    if (order.status === "Firm") return done;
+    const firmed = await service.catchInternal(
+      ctx,
+      "Failed to firm the planned order",
+      () =>
+        service.firmPlannedOrder(ctx.asSystem.pg, {
+          id,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        })
+    );
+    if (firmed instanceof CarbonError) return firmed;
+    if (!firmed) {
+      return ctx.error(
+        "conflict",
+        "The planned order changed since it was read"
+      );
+    }
+    return done;
+  }
+});
+
+/**
+ * Give a Firm planned order back to MRP.
+ *
+ * @remarks
+ * The order becomes Planned again, with no firm stamp, and the next MRP run
+ * may change or delete it. A Make planned order needs `update: production`, a
+ * Buy planned order `update: purchasing`. A Planned order is left as it is; a
+ * Converted one is refused.
+ */
+export const unfirmPlannedOrder = defineServiceFn({
+  input: plannedOrderIdValidator,
+  // The planned order's type decides the permission: the body checks it.
+  permission: {},
+  async run(ctx, { id }) {
+    const order = await service.readPlannedOrderForChange(ctx, id);
+    if (order instanceof CarbonError) return order;
+    const done = {
+      id,
+      status: "Planned" as const,
+      message: "Planned order returned to MRP"
+    };
+    if (order.status === "Planned") return done;
+    const unfirmed = await service.catchInternal(
+      ctx,
+      "Failed to unfirm the planned order",
+      () =>
+        service.unfirmPlannedOrder(ctx.asSystem.pg, {
+          id,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        })
+    );
+    if (unfirmed instanceof CarbonError) return unfirmed;
+    if (!unfirmed) {
+      return ctx.error(
+        "conflict",
+        "The planned order changed since it was read"
+      );
+    }
+    return done;
+  }
+});
+
+/**
+ * Change a planned order's quantity or due date.
+ *
+ * @remarks
+ * The edit firms the order, so MRP keeps the planner's numbers. A new due
+ * date moves the release date by the same number of days. A Make planned
+ * order needs `update: production`, a Buy planned order `update: purchasing`.
+ * A Converted order is refused.
+ */
+export const updatePlannedOrder = defineServiceFn({
+  input: updatePlannedOrderValidator,
+  // The planned order's type decides the permission: the body checks it.
+  permission: {},
+  async run(ctx, { id, quantity, dueDate }) {
+    if (quantity === undefined && dueDate === undefined) {
+      return ctx.error("validation", "Change the quantity or the due date");
+    }
+    const order = await service.readPlannedOrderForChange(ctx, id);
+    if (order instanceof CarbonError) return order;
+    const changed = await service.catchInternal(
+      ctx,
+      "Failed to update the planned order",
+      () =>
+        service.updatePlannedOrders(ctx.asSystem.pg, {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          edits: [{ id, quantity, dueDate }]
+        })
+    );
+    if (changed instanceof CarbonError) return changed;
+    if (changed.length === 0) {
+      return ctx.error(
+        "conflict",
+        "The planned order changed since it was read"
+      );
+    }
+    return { id, status: "Firm" as const, message: "Planned order updated" };
+  }
+});
+
 /**
  * Dismiss production planning suggestions.
  *

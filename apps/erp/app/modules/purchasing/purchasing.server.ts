@@ -70,9 +70,11 @@ import {
   type RefusedPlanningOrder
 } from "~/modules/production/production.models";
 import {
+  applyPlannedOrderPlanningActions,
   assignPlanningActions,
   dismissPlanningActions,
   getPlanningActionsByIds,
+  type PlannedOrderPlanningAction,
   reopenDismissedPlanningActions,
   runMRP,
   settleNewSupplyPlanningActions
@@ -4662,7 +4664,10 @@ type PlanningLine = {
  * quantity and date come from the stored action, never the caller):
  * Expedite and Defer move the line's required date, Increase and Decrease
  * its quantity, Cancel deletes the line (needs `delete: purchasing`). `type`
- * `apply` takes any of them; the others only their own. An action whose
+ * `apply` takes any of them; the others only their own. An action on a Buy
+ * planned order edits that order instead: Expedite / Defer set its due date
+ * (the release date moves by the same days), Increase / Decrease its
+ * quantity, and the order becomes Firm; Cancel deletes it. An action whose
  * order is in approval or sent, or whose date the supplier promised, is
  * listed in `requiresManualAction` to review on the order. With `apply`, an
  * Open Transfer or Borrow creates a Draft project stock transfer
@@ -4735,6 +4740,7 @@ export const applyPlanningActions = defineServiceFn({
       planningActionId: string;
       row: (typeof actionRows.data)[number];
     }[] = [];
+    const plannedOrderTargets: PlannedOrderPlanningAction[] = [];
     for (const planningActionId of ids) {
       if (transferIdSet.has(planningActionId)) continue;
       const row = rowById.get(planningActionId);
@@ -4758,6 +4764,21 @@ export const applyPlanningActions = defineServiceFn({
         );
         continue;
       }
+      if (row.plannedOrderId) {
+        // A Buy planned order: edited (and firmed) or deleted below.
+        plannedOrderTargets.push({
+          planningActionId,
+          plannedOrderId: row.plannedOrderId,
+          type: row.type as PlannedOrderPlanningAction["type"],
+          suggestedDate: row.suggestedDate ?? null,
+          suggestedQuantity:
+            row.suggestedQuantity === null ||
+            row.suggestedQuantity === undefined
+              ? null
+              : Number(row.suggestedQuantity)
+        });
+        continue;
+      }
       if (!row.purchaseOrderLineId) {
         errors.push(
           `Planning action ${planningActionId} does not target a purchase order line`
@@ -4765,6 +4786,38 @@ export const applyPlanningActions = defineServiceFn({
         continue;
       }
       eligible.push({ planningActionId, row });
+    }
+
+    // Planned orders: one transaction for the whole batch. Deleting a planned
+    // order for a Cancel needs no delete permission: it is a suggestion, not
+    // a document.
+    if (plannedOrderTargets.length > 0) {
+      let plannedOutcome: Awaited<
+        ReturnType<typeof applyPlannedOrderPlanningActions>
+      >;
+      try {
+        plannedOutcome = await applyPlannedOrderPlanningActions(db, {
+          companyId,
+          userId: ctx.auditUserId,
+          orderType: "Buy",
+          actions: plannedOrderTargets
+        });
+      } catch (err) {
+        return ctx.error(
+          "internal",
+          `Failed to apply planning actions to planned orders: ${
+            err instanceof Error ? err.message : "unknown error"
+          }`,
+          err
+        );
+      }
+      applied.push(...plannedOutcome.applied);
+      for (const id of plannedOutcome.alreadyApplied) {
+        errors.push(`Planning action ${id} was already applied`);
+      }
+      for (const refusal of plannedOutcome.refused) {
+        errors.push(`Planning action ${refusal.id}: ${refusal.message}`);
+      }
     }
 
     // One statement: the id list goes to Postgres as a parameter, never into

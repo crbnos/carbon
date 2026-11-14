@@ -247,6 +247,7 @@ import {
   getAssemblyModelState,
   isJobLocked,
   isJobOrderStatusHidden,
+  isPlannedOrderEditable,
   JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
@@ -264,6 +265,7 @@ import {
   makeToAssetReleaseError,
   motionSchema,
   type orientationSchema,
+  PLANNED_ORDER_EDITABLE_STATUSES,
   PLANNING_EDITABLE_JOB_STATUSES,
   PO_STATUS_PRIORITY,
   type procedureParameterValidator,
@@ -12615,6 +12617,404 @@ export async function convertPlannedOrdersForActions(
     `.execute(trx);
     return result.rows;
   });
+}
+
+/** A planned order as a person's change reads it. */
+export type PlannedOrderForChange = {
+  id: string;
+  orderType: "Make" | "Buy" | "Transfer";
+  status: "Planned" | "Firm" | "Converted";
+};
+
+/**
+ * Read one planned order of this company for a person's change (firm,
+ * unfirm, edit) and check that the caller may change it. The order type
+ * decides the permission: a Make planned order needs `update: production`, a
+ * Buy planned order `update: purchasing`. A Converted row is refused, because
+ * its job or PO line is the order now.
+ */
+export async function readPlannedOrderForChange(
+  ctx: ServiceContext,
+  id: string
+): Promise<PlannedOrderForChange | CarbonError> {
+  let row: PlannedOrderForChange | undefined;
+  try {
+    row = await ctx.asSystem.pg
+      .selectFrom("plannedOrder")
+      .select(["id", "orderType", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", ctx.company.id)
+      .executeTakeFirst();
+  } catch (err) {
+    return ctx.error("internal", "Failed to read the planned order", err);
+  }
+  if (!row) return ctx.error("notFound", "Planned order not found");
+  if (row.orderType === "Transfer") {
+    return ctx.error("rule", "A Transfer planned order cannot be changed");
+  }
+  const module = row.orderType === "Make" ? "production" : "purchasing";
+  if (!ctx.can({ update: module })) {
+    return ctx.error(
+      "forbidden",
+      `Changing a ${row.orderType} planned order needs update permission on ${module}`
+    );
+  }
+  if (!isPlannedOrderEditable(row.status)) {
+    return ctx.error(
+      "rule",
+      `This planned order is ${row.status}: change its ${
+        row.orderType === "Make" ? "job" : "purchase order line"
+      } instead`
+    );
+  }
+  return row;
+}
+
+const editablePlannedOrderStatuses = sql.join(
+  PLANNED_ORDER_EDITABLE_STATUSES.map(
+    (status) => sql`${status}::"plannedOrderStatus"`
+  )
+);
+
+/**
+ * Firm a Planned order: a person now holds it, and MRP no longer changes its
+ * quantity or dates. Only a Planned row changes; returns whether it did.
+ */
+export async function firmPlannedOrder(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<boolean> {
+  const now = datetime.timestamp();
+  const rows = await db
+    .updateTable("plannedOrder")
+    .set({
+      status: "Firm",
+      firmedBy: args.userId,
+      firmedAt: now,
+      updatedBy: args.userId,
+      updatedAt: now
+    })
+    .where("id", "=", args.id)
+    .where("companyId", "=", args.companyId)
+    .where("status", "=", "Planned")
+    .returning("id")
+    .execute();
+  return rows.length > 0;
+}
+
+/**
+ * Give a Firm order back to MRP: Planned, with no firm stamp. Only a Firm row
+ * changes; returns whether it did.
+ *
+ * A Planned row is unique on its natural key (item, location, segment, type,
+ * week, `splitIndex`). MRP may have planned another order on the same key
+ * while this one was Firm, so the row then takes the next free `splitIndex`
+ * of its week. The next run matches it to no order it plans, and deletes it
+ * unless the time fence holds it.
+ */
+export async function unfirmPlannedOrder(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<boolean> {
+  const now = datetime.timestamp();
+  const sameKey = sql`
+    o."companyId" = po."companyId"
+    AND o."itemId" = po."itemId"
+    AND o."locationId" = po."locationId"
+    AND o."planningSegmentId" = po."planningSegmentId"
+    AND o."orderType" = po."orderType"
+    AND o."periodId" = po."periodId"
+    AND o."status" = 'Planned'
+  `;
+  const result = await sql<{ id: string }>`
+    UPDATE "plannedOrder" po
+    SET "status" = 'Planned',
+        "firmedBy" = NULL,
+        "firmedAt" = NULL,
+        "splitIndex" = CASE
+          WHEN EXISTS (
+            SELECT 1 FROM "plannedOrder" o
+            WHERE ${sameKey} AND o."splitIndex" = po."splitIndex"
+          )
+          THEN (SELECT MAX(o."splitIndex") + 1 FROM "plannedOrder" o WHERE ${sameKey})
+          ELSE po."splitIndex"
+        END,
+        "updatedBy" = ${args.userId},
+        "updatedAt" = ${now}
+    WHERE po."id" = ${args.id}
+      AND po."companyId" = ${args.companyId}
+      AND po."status" = 'Firm'
+    RETURNING po."id"
+  `.execute(db);
+  return result.rows.length > 0;
+}
+
+/** A person's edit of one planned order: a new quantity, a new due date, or both. */
+export type PlannedOrderEdit = {
+  id: string;
+  quantity?: number | null;
+  dueDate?: string | null;
+};
+
+/**
+ * Edit planned orders in ONE statement. Each edit firms its row (a person now
+ * holds it); a row already Firm keeps who firmed it. A moved due date moves
+ * the release date by the same number of days, so the lead time between them
+ * stays. A new quantity of a Make order restates `scrapQuantity` from the
+ * item's scrap rate, as `updatePlanningJob` does for a job; a Buy order
+ * carries no scrap. Only Planned and Firm rows change. Returns the ids it
+ * changed. Throws on failure; call it inside the caller's transaction.
+ */
+export async function updatePlannedOrders(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  args: { companyId: string; userId: string; edits: PlannedOrderEdit[] }
+): Promise<string[]> {
+  if (args.edits.length === 0) return [];
+  const now = datetime.timestamp();
+  const values = sql.join(
+    args.edits.map(
+      (edit) =>
+        sql`(${edit.id}::text, ${edit.quantity ?? null}::numeric, ${edit.dueDate ?? null}::date)`
+    )
+  );
+  const result = await sql<{ id: string }>`
+    UPDATE "plannedOrder" po
+    SET "quantity" = COALESCE(v."quantity", po."quantity"),
+        "scrapQuantity" = CASE
+          WHEN v."quantity" IS NULL THEN po."scrapQuantity"
+          WHEN po."orderType" = 'Make' THEN CEIL(v."quantity" * COALESCE((
+            SELECT ir."scrapPercentage" FROM "itemReplenishment" ir
+            WHERE ir."itemId" = po."itemId" AND ir."companyId" = po."companyId"
+          ), 0))
+          ELSE 0
+        END,
+        "dueDate" = COALESCE(v."dueDate", po."dueDate"),
+        "releaseDate" = po."releaseDate"
+          + (COALESCE(v."dueDate", po."dueDate") - po."dueDate"),
+        "status" = 'Firm',
+        "firmedBy" = COALESCE(po."firmedBy", ${args.userId}),
+        "firmedAt" = COALESCE(po."firmedAt", ${now}::timestamptz),
+        "updatedBy" = ${args.userId},
+        "updatedAt" = ${now}
+    FROM (VALUES ${values}) AS v("id", "quantity", "dueDate")
+    WHERE po."id" = v."id"
+      AND po."companyId" = ${args.companyId}
+      AND po."status" IN (${editablePlannedOrderStatuses})
+    RETURNING po."id"
+  `.execute(db);
+  return result.rows.map((row) => row.id);
+}
+
+/** A change action on a planned order, as Apply reads it. */
+export type PlannedOrderPlanningAction = {
+  planningActionId: string;
+  plannedOrderId: string;
+  type: "Expedite" | "Defer" | "Increase" | "Decrease" | "Cancel";
+  suggestedDate: string | null;
+  suggestedQuantity: number | null;
+};
+
+export type PlannedOrderPlanningApplyResult = {
+  /** changed (or deleted, for a Cancel) and marked Actioned */
+  applied: string[];
+  /** marked Actioned by another apply since the page loaded; nothing changed */
+  alreadyApplied: string[];
+  /** not applied, and left Open: the reason is for the planner */
+  refused: { id: string; message: string }[];
+};
+
+/**
+ * Apply a batch of change actions to their planned orders in ONE transaction,
+ * set-based, as `applyPurchasingPlanningActions` does for PO lines:
+ *   1. lock the planned orders, and refuse an action whose order is of the
+ *      other worklist (`orderType`), Converted, or gone;
+ *   2. claim the rest (`claimPlanningActions`, the lock against a second apply);
+ *   3. one UPDATE for every Expedite / Defer / Increase / Decrease
+ *      (`updatePlannedOrders`: the due date or the quantity, and the row is
+ *      firmed), then one DELETE for every Cancel;
+ *   4. give the claim of a refused action back.
+ *
+ * A Cancel deletes the planned order. The FK from `planningAction` cascades,
+ * so the Cancel action and every other action on that order go with it. The
+ * claim comes first all the same: it is what stops two applies from both
+ * acting, and the action is reported in `applied`.
+ *
+ * Two actions on one order that set the same field (an Expedite and a Defer)
+ * cannot both apply: the first is applied, the second refused.
+ */
+export async function applyPlannedOrderPlanningActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    orderType: "Make" | "Buy";
+    actions: PlannedOrderPlanningAction[];
+  }
+): Promise<PlannedOrderPlanningApplyResult> {
+  const { companyId, userId, orderType, actions } = args;
+  const result: PlannedOrderPlanningApplyResult = {
+    applied: [],
+    alreadyApplied: [],
+    refused: []
+  };
+  if (actions.length === 0) return result;
+  const now = datetime.timestamp();
+
+  await db.transaction().execute(async (trx) => {
+    // 1. lock the targets: a convert waits for this apply, and the reverse
+    const orders = await trx
+      .selectFrom("plannedOrder")
+      .select(["id", "orderType", "status"])
+      .where("id", "in", [...new Set(actions.map((a) => a.plannedOrderId))])
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    const orderById = new Map(orders.map((order) => [order.id, order]));
+    const eligible: PlannedOrderPlanningAction[] = [];
+    for (const action of actions) {
+      const order = orderById.get(action.plannedOrderId);
+      if (!order) {
+        result.refused.push({
+          id: action.planningActionId,
+          message: "Its planned order no longer exists"
+        });
+      } else if (order.orderType !== orderType) {
+        result.refused.push({
+          id: action.planningActionId,
+          message: `It targets a ${order.orderType} planned order`
+        });
+      } else if (!isPlannedOrderEditable(order.status)) {
+        result.refused.push({
+          id: action.planningActionId,
+          message: `Its planned order is ${order.status}: review its ${
+            orderType === "Make" ? "job" : "purchase order line"
+          }`
+        });
+      } else {
+        eligible.push(action);
+      }
+    }
+
+    // 2. claim
+    const claimed = await claimPlanningActions(trx, {
+      ids: eligible.map((a) => a.planningActionId),
+      companyId,
+      userId,
+      now
+    });
+    const toRelease: string[] = [];
+    const edits = new Map<string, PlannedOrderEdit & { actionIds: string[] }>();
+    const cancels = new Map<string, string[]>();
+    for (const action of eligible) {
+      const claim = claimed.get(action.planningActionId);
+      if (!claim) {
+        result.alreadyApplied.push(action.planningActionId);
+        continue;
+      }
+      // The suggestion comes from the claim (see claimPlanningActions).
+      const suggestedDate = claim.suggestedDate ?? action.suggestedDate;
+      const suggestedQuantity =
+        claim.suggestedQuantity ?? action.suggestedQuantity;
+      const refuse = (message: string) => {
+        toRelease.push(action.planningActionId);
+        result.refused.push({ id: action.planningActionId, message });
+      };
+
+      if (action.type === "Cancel") {
+        const ids = cancels.get(action.plannedOrderId) ?? [];
+        ids.push(action.planningActionId);
+        cancels.set(action.plannedOrderId, ids);
+        continue;
+      }
+      const edit = edits.get(action.plannedOrderId) ?? {
+        id: action.plannedOrderId,
+        actionIds: []
+      };
+      if (action.type === "Expedite" || action.type === "Defer") {
+        if (!suggestedDate) {
+          refuse("It suggests no date");
+          continue;
+        }
+        if (edit.dueDate) {
+          refuse("Another action in this batch already moves its date");
+          continue;
+        }
+        edit.dueDate = suggestedDate;
+      } else {
+        if (suggestedQuantity === null || !(suggestedQuantity > 0)) {
+          refuse("It suggests no quantity");
+          continue;
+        }
+        if (edit.quantity !== undefined && edit.quantity !== null) {
+          refuse("Another action in this batch already changes its quantity");
+          continue;
+        }
+        edit.quantity = suggestedQuantity;
+      }
+      edit.actionIds.push(action.planningActionId);
+      edits.set(action.plannedOrderId, edit);
+    }
+
+    // 3. write: the edits, then the cancels (a Cancel wins over an edit of
+    // the same order in the batch: the order is gone either way)
+    const changed = new Set(
+      await updatePlannedOrders(trx, {
+        companyId,
+        userId,
+        edits: [...edits.values()].map(({ id, quantity, dueDate }) => ({
+          id,
+          quantity,
+          dueDate
+        }))
+      })
+    );
+    const deleted = new Set<string>();
+    if (cancels.size > 0) {
+      const rows = await trx
+        .deleteFrom("plannedOrder")
+        .where("id", "in", [...cancels.keys()])
+        .where("companyId", "=", companyId)
+        .where("status", "in", [...PLANNED_ORDER_EDITABLE_STATUSES])
+        .returning("id")
+        .execute();
+      for (const row of rows) deleted.add(row.id);
+    }
+
+    for (const [plannedOrderId, edit] of edits) {
+      for (const id of edit.actionIds) {
+        if (changed.has(plannedOrderId)) result.applied.push(id);
+        else {
+          toRelease.push(id);
+          result.refused.push({
+            id,
+            message: "Its planned order changed since it was read"
+          });
+        }
+      }
+    }
+    for (const [plannedOrderId, ids] of cancels) {
+      for (const id of ids) {
+        if (deleted.has(plannedOrderId)) result.applied.push(id);
+        else {
+          toRelease.push(id);
+          result.refused.push({
+            id,
+            message: "Its planned order changed since it was read"
+          });
+        }
+      }
+    }
+
+    // 4. give the refused claims back (a cancelled order's actions are gone)
+    await releasePlanningActionClaims(trx, {
+      ids: toRelease,
+      companyId,
+      userId,
+      now
+    });
+  });
+
+  return result;
 }
 
 /** Compensation for a failed apply: release a claimed (Actioned) row back to Open. */
