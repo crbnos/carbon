@@ -57,11 +57,14 @@ import { parseDate, startOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { toIsoDate } from "../scheduling/date-utils.ts";
+import {
+  buildOpenSupplyOrders,
+  itemLocationSegmentKey
+} from "./open-supply-orders.ts";
 import { groupByProjectOf, planningSegmentOf } from "./plan-company.ts";
 import type {
   ChangeCandidate,
   OpenSupplyOrder,
-  PlannedOrderRelease,
   PlanningActionCandidate,
   PlanningActionSegment,
   PlanningActionType
@@ -75,11 +78,14 @@ import {
   laterDate,
   sizeRowSupply
 } from "./row-sizing.ts";
-import {
-  jobCompletionDate,
-  purchaseOrderLineArrivalDate
-} from "./supply-date.ts";
 
+export {
+  earlierRelease,
+  isCommittedJobStatus,
+  isCommittedPurchaseOrderStatus,
+  itemLocationSegmentKey,
+  releaseByDate
+} from "./open-supply-orders.ts";
 export type {
   OpenSupplyOrder,
   PlannedOrderRelease,
@@ -133,46 +139,6 @@ export type ExistingPlanningAction = {
   assignee: string | null;
   assigneeOverridden: boolean;
 } & PlanningActionSegment;
-
-/**
- * The view only yields open POs ('Planned' | 'To Receive' | 'To Receive and
- * Invoice'); anything past 'Planned'/'Draft' has been sent to the supplier
- * (mirrors PURCHASE_ORDER_LOCKED_STATUSES in purchasing.models.ts). Never gate
- * on orderDate — insertPurchaseOrder defaults it to today for planned POs.
- */
-export function isCommittedPurchaseOrderStatus(
-  status: Database["public"]["Enums"]["purchaseOrderStatus"] | null | undefined
-): boolean {
-  return status !== "Planned" && status !== "Draft";
-}
-
-/** Job statuses at/after release-to-floor are committed supply. */
-export function isCommittedJobStatus(
-  status: Database["public"]["Enums"]["jobStatus"] | null | undefined
-): boolean {
-  return status === "Ready" || status === "In Progress" || status === "Paused";
-}
-
-/**
- * The last day to release a planned order so it still arrives on time: its
- * due date less the item's lead time, less one more day. Due in 8 days with a
- * 7-day lead time is today.
- */
-export function releaseByDate(dueDate: string, leadTimeDays: number): string {
-  return parseDate(dueDate)
-    .subtract({ days: Math.max(leadTimeDays, 0) + 1 })
-    .toString();
-}
-
-/** The earlier of two releases (a purchase order is released once, for the
- *  line that needs it first). */
-export function earlierRelease(
-  a: PlannedOrderRelease | null | undefined,
-  b: PlannedOrderRelease
-): PlannedOrderRelease {
-  // daysBetween(a, b) is a − b
-  return a && daysBetween(a.date, b.date) <= 0 ? a : b;
-}
 
 /**
  * One Release per planned order (`OpenSupplyOrder.release`), dated the last
@@ -823,15 +789,6 @@ type RpcPlanningRow =
 type ProductionPlanningRow =
   Database["public"]["Functions"]["get_production_planning"]["Returns"][number];
 
-/** The map key of an item at a location in one netting segment. */
-export function itemLocationSegmentKey(
-  itemId: string,
-  locationId: string,
-  segmentId: string = COMMON_SEGMENT
-): string {
-  return itemId + KEY_SEP + locationId + KEY_SEP + segmentId;
-}
-
 /**
  * On-hand per item, location and netting segment (`itemLocationSegmentKey`).
  * itemStockQuantities holds one row per project stock stripe ('' is common).
@@ -1291,91 +1248,13 @@ export async function generatePlanningActions(
     poLineFactorRows.map((row) => [row.id, Number(row.conversionFactor)])
   );
 
-  const openOrdersByItemLocation = new Map<string, OpenSupplyOrder[]>();
-  const pushOrder = (key: string, order: OpenSupplyOrder) => {
-    const list = openOrdersByItemLocation.get(key) ?? [];
-    list.push(order);
-    openOrdersByItemLocation.set(key, list);
-  };
-  // A Planned purchase order is released once, for whichever of its lines
-  // needs it first — every line's Release carries that date.
-  const releaseByPurchaseOrder = new Map<string, PlannedOrderRelease>();
-  for (const line of poLineRows) {
-    if (line.status !== "Planned" || !line.purchaseOrderId) continue;
-    if ((Number(line.quantityToReceive) || 0) <= 0) continue;
-    const dueDate = purchaseOrderLineArrivalDate(line, todayDate);
-    const leadTime = Number(line.leadTime) || 0;
-    releaseByPurchaseOrder.set(
-      line.purchaseOrderId,
-      earlierRelease(releaseByPurchaseOrder.get(line.purchaseOrderId), {
-        date: releaseByDate(dueDate, leadTime),
-        dueDate,
-        leadTime
-      })
-    );
-  }
-
-  for (const line of poLineRows) {
-    if (!line.id || !line.itemId || !line.locationId) continue;
-    const quantity = Number(line.quantityToReceive) || 0;
-    if (quantity <= 0) continue;
-    // the same arrival date the projection buckets this line on
-    const dueDate = purchaseOrderLineArrivalDate(line, todayDate);
-    pushOrder(
-      itemLocationSegmentKey(
-        line.itemId,
-        line.locationId,
-        line.planningSegmentId || COMMON_SEGMENT
-      ),
-      {
-        purchaseOrderLineId: line.id,
-        quantity,
-        dueDate,
-        requiresManualAction: isCommittedPurchaseOrderStatus(line.status),
-        dateIsPromised: Boolean(line.promisedDate),
-        supplierId: line.supplierId,
-        conversionFactor: conversionFactorByLineId.get(line.id) ?? 1,
-        release:
-          line.status === "Planned" && line.purchaseOrderId
-            ? (releaseByPurchaseOrder.get(line.purchaseOrderId) ?? null)
-            : null
-      }
-    );
-  }
-  for (const job of jobRows) {
-    if (!job.id || !job.itemId || !job.locationId) continue;
-    const details = jobById.get(job.id);
-    // The view's quantityToReceive is productionQuantity (quantity + scrap)
-    // less received. A change action is applied to `job.quantity`, the good
-    // units, so the order is measured in those: on the view's figure every
-    // job with a scrap allowance read as over-supplied, got a Decrease to its
-    // own quantity, and got it again after it was applied.
-    const quantity = details
-      ? Math.max(details.quantity - details.quantityReceivedToInventory, 0)
-      : Number(job.quantityToReceive) || 0;
-    if (quantity <= 0) continue;
-    // the same date the projection buckets this job on — an undated job is
-    // supply there, so it is supply here too
-    const dueDate = jobCompletionDate(job, todayDate);
-    const leadTime = Number(job.leadTime) || 0;
-    pushOrder(
-      itemLocationSegmentKey(
-        job.itemId,
-        job.locationId,
-        job.planningSegmentId || COMMON_SEGMENT
-      ),
-      {
-        jobId: job.id,
-        quantity,
-        dueDate,
-        requiresManualAction: isCommittedJobStatus(details?.status),
-        release:
-          details?.status === "Planned"
-            ? { date: releaseByDate(dueDate, leadTime), dueDate, leadTime }
-            : null
-      }
-    );
-  }
+  const openOrdersByItemLocation = buildOpenSupplyOrders({
+    poLineRows,
+    jobRows,
+    jobDetailsById: jobById,
+    conversionFactorByLineId,
+    todayDate
+  });
 
   // ── the common stock each project segment draws, per item and location
   const drawsByItemLocation = new Map<
