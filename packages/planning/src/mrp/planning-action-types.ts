@@ -75,6 +75,11 @@ export type OpenSupplyOrder = {
    * it directly, so it never requires manual action.
    */
   plannedOrderId?: string;
+  /**
+   * A planned order's type. An Order suggestion folds only into a Buy planned
+   * order, and a Make only into a Make one.
+   */
+  orderType?: "Make" | "Buy";
   quantity: number;
   /** the date the order is currently expected to land (ISO) */
   dueDate: string;
@@ -113,4 +118,11 @@ export type PlannedOrderRelease = {
 export type ChangeCandidate = Omit<
   PlanningActionCandidate,
   "itemId" | "locationId" | "assignee"
->;
+> & {
+  /**
+   * MRP v2: the natural key (`plannedOrderNaturalKey`) of the planned order a
+   * new Order or Make stands for. Set only by the engine's sizing
+   * (`createPlanSupply`); the action writer maps it to `plannedOrder.id`.
+   */
+  plannedOrderKey?: string;
+};

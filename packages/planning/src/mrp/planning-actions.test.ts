@@ -1128,32 +1128,33 @@ describe("change actions on a planned order", () => {
     expect(naturalKey(cancel)).toBe(naturalKey({ ...cancel, periodId: "p4" }));
   });
 
-  // A planned order is of its row's replenishment type, so an Order and a
-  // Make each fold into it.
-  it.each(["Order", "Make"] as const)(
-    "folds a %s suggestion into a same-window planned order as one Increase",
-    (type) => {
+  const suggestion = (type: "Order" | "Make") => ({
+    type,
+    periodId: "p2",
+    suggestedQuantity: 5,
+    suggestedDate: "2026-10-12",
+    horizonDate: "2026-10-12",
+    latestOrderDate: "2026-10-07",
+    isASAP: false,
+    purchaseOrderLineId: null,
+    jobId: null,
+    plannedOrderId: null,
+    requiresManualAction: false,
+    supplierId: null,
+    policyName: "Demand-Based Reorder",
+    reason: null,
+    triggerValues: null
+  });
+
+  it.each([
+    ["Order", "Buy"],
+    ["Make", "Make"]
+  ] as const)(
+    "folds a %s suggestion into a same-window %s planned order as one Increase",
+    (type, orderType) => {
       const [action] = convertOrdersToIncreases({
-        sizingCandidates: [
-          {
-            type,
-            periodId: "p2",
-            suggestedQuantity: 5,
-            suggestedDate: "2026-10-12",
-            horizonDate: "2026-10-12",
-            latestOrderDate: "2026-10-07",
-            isASAP: false,
-            purchaseOrderLineId: null,
-            jobId: null,
-            plannedOrderId: null,
-            requiresManualAction: false,
-            supplierId: null,
-            policyName: "Demand-Based Reorder",
-            reason: null,
-            triggerValues: null
-          }
-        ],
-        openOrders: [plannedOrder],
+        sizingCandidates: [suggestion(type)],
+        openOrders: [{ ...plannedOrder, orderType }],
         changeActions: [],
         toleranceDays: TOLERANCE,
         todayDate: TODAY
@@ -1166,6 +1167,24 @@ describe("change actions on a planned order", () => {
         requiresManualAction: false,
         suggestedQuantity: 15 // existing 10 + shortfall 5
       });
+    }
+  );
+
+  // A Make planned order is a job to be; buying into it would mix the two.
+  it.each([
+    ["Order", "Make"],
+    ["Make", "Buy"]
+  ] as const)(
+    "keeps a %s suggestion a new order beside a %s planned order",
+    (type, orderType) => {
+      const result = convertOrdersToIncreases({
+        sizingCandidates: [suggestion(type)],
+        openOrders: [{ ...plannedOrder, orderType }],
+        changeActions: [],
+        toleranceDays: TOLERANCE,
+        todayDate: TODAY
+      });
+      expect(result).toEqual([suggestion(type)]);
     }
   );
 });

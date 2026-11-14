@@ -514,13 +514,16 @@ export function convertOrdersToIncreases(args: {
     const match = openOrders.find((order) => {
       const ref = supplyTarget(order) ?? "";
       if (!ref || targeted.has(ref) || used.has(ref)) return false;
-      // A planned order is of the row's own type, so it takes either; a PO
-      // line takes only an Order and a job only a Make.
-      if (!order.plannedOrderId) {
-        const isBuy = Boolean(order.purchaseOrderLineId);
-        if (candidate.type === "Order" && !isBuy) return false;
-        if (candidate.type === "Make" && isBuy) return false;
-      }
+      // An Order folds only into a PO line or a Buy planned order, a Make
+      // only into a job or a Make planned order.
+      const isBuy = order.plannedOrderId
+        ? order.orderType === "Buy"
+        : Boolean(order.purchaseOrderLineId);
+      const isMake = order.plannedOrderId
+        ? order.orderType === "Make"
+        : Boolean(order.jobId);
+      if (candidate.type === "Order" && !isBuy) return false;
+      if (candidate.type === "Make" && !isMake) return false;
       if (isOrderFrozen(order, args.todayDate, args.leadTimeDays)) return false;
       // Growing an order past what one order holds (a batch, a fixed
       // reorder quantity, the maximum order quantity) breaks the rule it was
