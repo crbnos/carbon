@@ -593,8 +593,11 @@ working-day dates.
   turned before MRP ran again), Open OR Dismissed: that action counted the
   overdue orders, so the current week's action takes only its own week's
   (`hasPastWeekAction`, which reads the row's actions, not just the offered
-  ones), and a dismissed one's overdue orders are offered nowhere. A week with
-  no planned order is split by its policy as before. The drawers get the planned
+  ones), and a dismissed one's overdue orders are offered nowhere. Only the
+  LATEST Open past week's action (by its date, then its week) takes the overdue
+  orders (`overdueOwnerOf`); another past week's action, or a Dismissed one,
+  takes none and is split by its policy. A week with no planned order is split
+  by its policy as before. The drawers get the planned
   orders from `DrawerPlannedOrders`' `onOrdersLoaded` (re-read through
   `refreshKey` after an order is placed); a bulk Make / Order on rows never
   opened reads them with `getRowPlannedOrders` (`production.utils.ts`, 100 items
@@ -610,15 +613,24 @@ working-day dates.
      SMALLER than what is left of it only takes its quantity off (the order
      keeps its status; several documents naming one order count together).
      One LARGER converts it and takes the excess off its week's next Planned
-     orders by `splitIndex`, as in 2. A stale id (gone, converted, another
+     orders, as in 2. A stale id (gone, converted, another
      item / location / segment / type, or converted earlier in the batch)
      falls back to 2.
   2. Each other document takes a planned order of the week of the action it
      settled, per (item, location, segment, week, type) — the current week
      (the period holding `asOf`) also holding every overdue planned order:
-     first one of EQUAL quantity (Planned before Firm, then `splitIndex`), then
-     the next Planned one by `splitIndex`, which a smaller document only
-     reduces. A LARGER document converts it and is also the supply of the
+     first one of EQUAL quantity (Planned before Firm, then due date and
+     `splitIndex`), then the next Planned one by due date, then `splitIndex`
+     (the suggestions' order, so an overdue one goes first), which a smaller
+     document only reduces. A document of a past week's action draws only on
+     the overdue orders (due before the current week's start), and its excess
+     never reaches the current week's. A document of the current week draws
+     only on the current week's when its row has a past week's action: one
+     settled in the same batch, or an Open / Dismissed Order / Make of a week
+     before the current one (`pastWeekActionRows`, read under the lock). It
+     differs from the drawer in one case: with several past weeks' actions,
+     every past week's document draws on the overdue orders, where the drawer
+     offers them to the latest Open one only. A LARGER document converts it and is also the supply of the
      week's next Planned orders: each drops by what is left of the excess, and
      one the excess covers whole is deleted (its actions cascade). A Firm order
      converts only by id or equal quantity, so a smaller job never takes it,
@@ -653,14 +665,23 @@ working-day dates.
   `firmPlannedOrder` / `unfirmPlannedOrder` / `updatePlannedOrder` (purchasing calls
   the production operations).
   **Every change re-plans.** Firm, unfirm and edit run MRP once the change commits
-  (`replanAfterPlannedOrderChange`), and `applyPlanningActions` in both modules
-  runs it once the whole batch is written when at least one action on a planned
-  order applied — all through `replanAfterChange` (`production.service.ts`, the one
-  building block `replanAfterItemChange` uses too). Without it the week's Order /
-  Make kept the old total until the next scheduled run. A failed run is logged and
-  never fails the change. `DrawerPlannedOrders` revalidates the page after a
-  successful post, so the item's actions and the row's Make / Order quantity
-  follow. Pinned by `apps/erp/test/database/planned-order-firm.test.ts`.
+  (`replanAfterChange(ctx, reason)`, `production.service.ts`, the one building
+  block `replanAfterItemChange` uses too; `reason` is only logged). In both
+  modules `applyPlanningActions` runs its whole body inside
+  `replanAfterPlannedOrderChanges`, which runs MRP once after it when
+  `applyPlannedOrderPlanningActions` reported a changed planned order
+  (`changedPlannedOrderIds`) — whatever the body returns, so no early return
+  skips it. Without it the week's Order / Make kept the old total until the
+  next scheduled run. A failed run is logged and never fails the change.
+  After a successful post `DrawerPlannedOrders` reads its orders again, calls
+  `onReplanned` (the drawer drops the row's draft and bumps the editor reset
+  key, so the Suggested Jobs / Orders are rebuilt from the re-planned actions
+  and orders, as after Plan on a Draft job) and revalidates the page; the read
+  the revalidated actions would trigger is skipped (one read per change). An
+  Apply that changed a planned order drops its rows' drafts the same way
+  (`usePlanningActions` `onRowsReplanned`, `rowsReplannedByApply`; the grid's
+  `draftVersion` resets the drawer's editors). Pinned by
+  `apps/erp/test/database/planned-order-firm.test.ts`.
 - **UI.** Both order drawers render `DrawerPlannedOrders` (Planned Orders section,
   above Suggested Jobs / Orders, common segment only): `getDrawerPlannedOrders`
   and `getPlanningTimeFenceDays` (`production.utils.ts`, browser reads with the

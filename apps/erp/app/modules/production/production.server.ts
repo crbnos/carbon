@@ -147,7 +147,7 @@ export const replanAfterItemChange = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, { itemId }) {
-    await service.replanAfterChange(ctx, { itemId });
+    await service.replanAfterChange(ctx, `item ${itemId} planning saved`);
   }
 });
 
@@ -5010,402 +5010,377 @@ export const applyPlanningActions = defineServiceFn({
   }),
   permission: { update: "production" },
 
-  async run(ctx, { planningActionIds, type }) {
-    const companyId = ctx.company.id;
-    const userId = ctx.auditUserId;
-    const client = ctx.asSystem.supabase;
-    const db = ctx.asSystem.pg;
-    const applied: string[] = [];
-    const requiresManualAction: { id: string; jobId: string | null }[] = [];
-    const errors: string[] = [];
-    // Applied, but a follow-up step failed: reported, never rolled back.
-    const warnings: string[] = [];
-
-    // A claim that is not given back leaves the action Actioned with nothing
-    // applied, so a failed release is reported, never swallowed.
-    const releaseClaim = async (planningActionId: string) => {
-      const released = await service.releasePlanningActionClaim(client, {
-        id: planningActionId,
-        companyId,
-        userId
-      });
-      if (released.error) {
-        logger.error("Failed to release a planning action claim", {
-          companyId,
-          planningActionId,
-          error: released.error
-        });
-        errors.push(
-          `Planning action ${planningActionId} could not be reopened: ${released.error}`
-        );
-      }
-    };
-
-    const actionRows = await service.getPlanningActionsByIds(db, {
-      ids: planningActionIds,
-      companyId
-    });
-    if (actionRows.error) {
-      return ctx.error(
-        "internal",
-        "Failed to read planning actions",
-        actionRows.error
-      );
-    }
-    const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
-
-    // A Transfer or a Borrow creates a Draft project stock transfer
-    // (approved and posted on the transfer pages); it is never one of the
-    // change actions below. Only a plain Apply (no `type`) takes them.
-    const transferIds = type
-      ? []
-      : planningActionIds.filter((id) => {
-          const row = rowById.get(id);
-          return (
-            (row?.type === "Transfer" || row?.type === "Borrow") &&
-            row.status === "Open"
-          );
-        });
-    const transferOutcome = await applyTransferPlanningActions({
-      db: ctx.asSystem.pg,
-      companyId,
-      userId,
-      planningActionIds: transferIds
-    });
-    applied.push(...transferOutcome.applied);
-    errors.push(...transferOutcome.errors);
-    const transferIdSet = new Set(transferIds);
-
-    const eligible: { planningActionId: string; row: PlanningActionRow }[] = [];
-    const plannedOrderTargets: service.PlannedOrderPlanningAction[] = [];
-    // An applied action changed these planned orders, so the supply MRP
-    // counts: it re-plans once the whole batch is written, as a firm or an
-    // edit does, and before the answer so the page reads the new actions.
-    const changedPlannedOrderIds: string[] = [];
-    const replanned = async <T>(result: T): Promise<T> => {
-      if (changedPlannedOrderIds.length > 0) {
-        await service.replanAfterChange(ctx, {
-          plannedOrderIds: changedPlannedOrderIds
-        });
-      }
-      return result;
-    };
-    for (const planningActionId of planningActionIds) {
-      if (transferIdSet.has(planningActionId)) continue;
-      const row = rowById.get(planningActionId);
-      if (!row) {
-        errors.push(`Planning action ${planningActionId} not found`);
-        continue;
-      }
-      if (row.status !== "Open") {
-        errors.push(`Planning action ${planningActionId} is not open`);
-        continue;
-      }
-      if (
-        type
-          ? row.type !== type
-          : !(CHANGE_ACTION_TYPES as readonly string[]).includes(row.type)
-      ) {
-        errors.push(
-          type
-            ? `Planning action ${planningActionId} is a ${row.type}, not ${type}`
-            : `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
-        );
-        continue;
-      }
-      if (row.plannedOrderId) {
-        // A Make planned order: edited (and firmed) or deleted below.
-        plannedOrderTargets.push({
-          planningActionId,
-          plannedOrderId: row.plannedOrderId,
-          type: row.type as service.PlannedOrderPlanningAction["type"],
-          suggestedDate: row.suggestedDate ?? null,
-          suggestedQuantity:
-            row.suggestedQuantity === null ||
-            row.suggestedQuantity === undefined
-              ? null
-              : Number(row.suggestedQuantity)
-        });
-        continue;
-      }
-      if (!row.jobId) {
-        errors.push(
-          `Planning action ${planningActionId} does not target a job`
-        );
-        continue;
-      }
-      eligible.push({ planningActionId, row });
-    }
-
-    // Planned orders: one transaction for the whole batch. No scheduler
-    // notice — a planned order is not a job the scheduler places.
-    if (plannedOrderTargets.length > 0) {
-      let outcome: Awaited<
-        ReturnType<typeof service.applyPlannedOrderPlanningActions>
-      >;
-      try {
-        outcome = await service.applyPlannedOrderPlanningActions(db, {
-          companyId,
-          userId,
-          orderType: "Make",
-          actions: plannedOrderTargets
-        });
-      } catch (err) {
-        return ctx.error(
-          "internal",
-          `Failed to apply planning actions to planned orders: ${getErrorMessage(err, "unknown error")}`,
-          err
-        );
-      }
-      applied.push(...outcome.applied);
-      const appliedIds = new Set(outcome.applied);
-      changedPlannedOrderIds.push(
-        ...plannedOrderTargets
-          .filter((target) => appliedIds.has(target.planningActionId))
-          .map((target) => target.plannedOrderId)
-      );
-      for (const id of outcome.alreadyApplied) {
-        errors.push(`Planning action ${id} was already applied`);
-      }
-      for (const refusal of outcome.refused) {
-        errors.push(`Planning action ${refusal.id}: ${refusal.message}`);
-      }
-    }
-
-    // One statement: the id list is a parameter, never a PostgREST URL.
-    const jobIds = [...new Set(eligible.map(({ row }) => row.jobId!))];
-    const jobs = await service.catchInternal(
+  run: (ctx, { planningActionIds, type }) =>
+    service.replanAfterPlannedOrderChanges(
       ctx,
-      "Failed to read the planning actions' jobs",
-      async () =>
-        jobIds.length > 0
-          ? db
-              .selectFrom("job")
-              .select(["id", "status"])
-              .where("id", "in", jobIds)
-              .where("companyId", "=", companyId)
-              .execute()
-          : []
-    );
-    if (jobs instanceof CarbonError) return replanned(jobs);
-    const jobStatusById = new Map(jobs.map((job) => [job.id, job.status]));
+      async (changedPlannedOrderIds) => {
+        const companyId = ctx.company.id;
+        const userId = ctx.auditUserId;
+        const client = ctx.asSystem.supabase;
+        const db = ctx.asSystem.pg;
+        const applied: string[] = [];
+        const requiresManualAction: { id: string; jobId: string | null }[] = [];
+        const errors: string[] = [];
+        // Applied, but a follow-up step failed: reported, never rolled back.
+        const warnings: string[] = [];
 
-    const toClaim: typeof eligible = [];
-    for (const target of eligible) {
-      const jobId = target.row.jobId!;
-      const status = jobStatusById.get(jobId);
-      if (status === undefined) {
-        errors.push(
-          `Job for planning action ${target.planningActionId} not found`
-        );
-        continue;
-      }
-      if (!isJobEditableFromPlanning(status)) {
-        // On the floor, finished, closed or cancelled since MRP ran.
-        requiresManualAction.push({ id: target.planningActionId, jobId });
-        continue;
-      }
-      toClaim.push(target);
-    }
+        // A claim that is not given back leaves the action Actioned with nothing
+        // applied, so a failed release is reported, never swallowed.
+        const releaseClaim = async (planningActionId: string) => {
+          const released = await service.releasePlanningActionClaim(client, {
+            id: planningActionId,
+            companyId,
+            userId
+          });
+          if (released.error) {
+            logger.error("Failed to release a planning action claim", {
+              companyId,
+              planningActionId,
+              error: released.error
+            });
+            errors.push(
+              `Planning action ${planningActionId} could not be reopened: ${released.error}`
+            );
+          }
+        };
 
-    // Dates: ONE transaction for every Expedite / Defer, then ONE scheduler
-    // event (a "reorder" event re-stamps the whole company whatever its job).
-    const dateActions = toClaim.filter(
-      ({ row }) =>
-        (row.type === "Expedite" || row.type === "Defer") && row.suggestedDate
-    );
-    if (dateActions.length > 0) {
-      let outcome: Awaited<
-        ReturnType<typeof service.applyProductionPlanningDateActions>
-      >;
-      try {
-        outcome = await service.applyProductionPlanningDateActions(db, {
-          companyId,
-          userId,
-          actions: dateActions.map(({ planningActionId, row }) => ({
-            planningActionId,
-            jobId: row.jobId!,
-            suggestedDate: row.suggestedDate
-          }))
+        const actionRows = await service.getPlanningActionsByIds(db, {
+          ids: planningActionIds,
+          companyId
         });
-      } catch (err) {
-        return replanned(
-          ctx.error(
+        if (actionRows.error) {
+          return ctx.error(
             "internal",
-            `Failed to reschedule jobs: ${getErrorMessage(err, "unknown error")}`,
-            err
-          )
-        );
-      }
-      applied.push(...outcome.applied);
-      requiresManualAction.push(...outcome.refused);
-      for (const id of outcome.alreadyApplied) {
-        errors.push(`Planning action ${id} was already applied`);
-      }
-      if (outcome.applied.length > 0) {
-        const notified = await service.notifyScheduleInputsChanged(
-          ctx.company.id,
-          "reorder",
-          `Planning rescheduled ${outcome.applied.length} job(s)`
-        );
-        if (!notified) {
-          warnings.push(
-            `${outcome.applied.length} due date(s) are saved, but the schedule was not refreshed`
+            "Failed to read planning actions",
+            actionRows.error
           );
         }
-      }
-    }
+        const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
 
-    // Each action is claimed right before its own change: a request that dies
-    // here strands at most the actions in flight, which the next MRP run
-    // re-emits as fresh Open actions. Resolves to the claimed suggestion.
-    const claim = async (planningActionId: string) => {
-      const claimed = await service.markPlanningActionsActioned(db, {
-        ids: [planningActionId],
-        companyId,
-        userId
-      });
-      if (claimed.error) {
-        logger.error("Failed to claim a planning action", {
+        // A Transfer or a Borrow creates a Draft project stock transfer
+        // (approved and posted on the transfer pages); it is never one of the
+        // change actions below. Only a plain Apply (no `type`) takes them.
+        const transferIds = type
+          ? []
+          : planningActionIds.filter((id) => {
+              const row = rowById.get(id);
+              return (
+                (row?.type === "Transfer" || row?.type === "Borrow") &&
+                row.status === "Open"
+              );
+            });
+        const transferOutcome = await applyTransferPlanningActions({
+          db: ctx.asSystem.pg,
           companyId,
-          planningActionId,
-          error: claimed.error
+          userId,
+          planningActionIds: transferIds
         });
-        errors.push(
-          `Planning action ${planningActionId} could not be claimed: ${claimed.error.message}`
-        );
-        return null;
-      }
-      const [row] = claimed.data;
-      if (!row) {
-        errors.push(`Planning action ${planningActionId} was already applied`);
-        return null;
-      }
-      return {
-        suggestedQuantity:
-          row.suggestedQuantity === null || row.suggestedQuantity === undefined
-            ? null
-            : Number(row.suggestedQuantity)
-      };
-    };
+        applied.push(...transferOutcome.applied);
+        errors.push(...transferOutcome.errors);
+        const transferIdSet = new Set(transferIds);
 
-    // Two actions on one job (an Increase and a Cancel) must not run at once:
-    // group by job, run the groups three at a time, each group in order.
-    const byJob = groupBy(
-      toClaim.filter(
-        ({ row }) =>
-          row.type === "Cancel" ||
-          row.type === "Increase" ||
-          row.type === "Decrease"
-      ),
-      ({ row }) => row.jobId!
-    );
-    await async.map(
-      Object.values(byJob),
-      async (group) => {
-        for (const { planningActionId, row } of group) {
-          const claimedRow = await claim(planningActionId);
-          if (!claimedRow) continue;
-          const jobId = row.jobId!;
-
-          if (row.type === "Cancel") {
-            const cancelled = await cancelJob(ctx, {
-              jobId,
-              // Read Draft / Planned above; released since, it goes to
-              // review instead of losing its picks.
-              fromStatuses: [...PLANNING_EDITABLE_JOB_STATUSES]
-            });
-            if (cancelled.error) {
-              await releaseClaim(planningActionId);
-              if (cancelled.error.category === "conflict") {
-                requiresManualAction.push({ id: planningActionId, jobId });
-              } else {
-                errors.push(
-                  `Failed to cancel job for planning action ${planningActionId}: ${cancelled.error.message}`
-                );
-              }
-              continue;
-            }
-            if (cancelled.data.warning) warnings.push(cancelled.data.warning);
-          } else {
-            const update = await service.updatePlanningJob(client, {
-              id: jobId,
-              companyId,
-              updatedBy: userId,
-              quantity: Number(
-                claimedRow.suggestedQuantity ?? row.suggestedQuantity
-              )
-            });
-            if (update.error) {
-              await releaseClaim(planningActionId);
-              errors.push(
-                `Failed to update job quantity for planning action ${planningActionId}: ${update.error.message}`
-              );
-              continue;
-            }
-            if (!update.updated) {
-              // Released (or finished) since it was read.
-              await releaseClaim(planningActionId);
-              requiresManualAction.push({ id: planningActionId, jobId });
-              continue;
-            }
-            const recalc = await service.recalculateJobRequirements(
-              client,
-              db,
-              {
-                id: jobId,
-                companyId,
-                userId
-              }
+        const eligible: { planningActionId: string; row: PlanningActionRow }[] =
+          [];
+        const plannedOrderTargets: service.PlannedOrderPlanningAction[] = [];
+        for (const planningActionId of planningActionIds) {
+          if (transferIdSet.has(planningActionId)) continue;
+          const row = rowById.get(planningActionId);
+          if (!row) {
+            errors.push(`Planning action ${planningActionId} not found`);
+            continue;
+          }
+          if (row.status !== "Open") {
+            errors.push(`Planning action ${planningActionId} is not open`);
+            continue;
+          }
+          if (
+            type
+              ? row.type !== type
+              : !(CHANGE_ACTION_TYPES as readonly string[]).includes(row.type)
+          ) {
+            errors.push(
+              type
+                ? `Planning action ${planningActionId} is a ${row.type}, not ${type}`
+                : `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
             );
-            if (recalc.error) {
-              // The quantity change stands, and the action stays Actioned.
-              logger.error(
-                "Failed to recalculate job requirements after a planning action",
-                { companyId, jobId, planningActionId, error: recalc.error }
-              );
+            continue;
+          }
+          if (row.plannedOrderId) {
+            // A Make planned order: edited (and firmed) or deleted below.
+            plannedOrderTargets.push({
+              planningActionId,
+              plannedOrderId: row.plannedOrderId,
+              type: row.type as service.PlannedOrderPlanningAction["type"],
+              suggestedDate: row.suggestedDate ?? null,
+              suggestedQuantity:
+                row.suggestedQuantity === null ||
+                row.suggestedQuantity === undefined
+                  ? null
+                  : Number(row.suggestedQuantity)
+            });
+            continue;
+          }
+          if (!row.jobId) {
+            errors.push(
+              `Planning action ${planningActionId} does not target a job`
+            );
+            continue;
+          }
+          eligible.push({ planningActionId, row });
+        }
+
+        // Planned orders: one transaction for the whole batch. No scheduler
+        // notice — a planned order is not a job the scheduler places.
+        if (plannedOrderTargets.length > 0) {
+          let outcome: Awaited<
+            ReturnType<typeof service.applyPlannedOrderPlanningActions>
+          >;
+          try {
+            outcome = await service.applyPlannedOrderPlanningActions(db, {
+              companyId,
+              userId,
+              orderType: "Make",
+              actions: plannedOrderTargets
+            });
+          } catch (err) {
+            return ctx.error(
+              "internal",
+              `Failed to apply planning actions to planned orders: ${getErrorMessage(err, "unknown error")}`,
+              err
+            );
+          }
+          applied.push(...outcome.applied);
+          // MRP re-plans once the whole batch is written, as after a firm or an
+          // edit (`replanAfterPlannedOrderChanges`).
+          for (const id of outcome.changedPlannedOrderIds) {
+            changedPlannedOrderIds.add(id);
+          }
+          for (const id of outcome.alreadyApplied) {
+            errors.push(`Planning action ${id} was already applied`);
+          }
+          for (const refusal of outcome.refused) {
+            errors.push(`Planning action ${refusal.id}: ${refusal.message}`);
+          }
+        }
+
+        // One statement: the id list is a parameter, never a PostgREST URL.
+        const jobIds = [...new Set(eligible.map(({ row }) => row.jobId!))];
+        const jobs = await service.catchInternal(
+          ctx,
+          "Failed to read the planning actions' jobs",
+          async () =>
+            jobIds.length > 0
+              ? db
+                  .selectFrom("job")
+                  .select(["id", "status"])
+                  .where("id", "in", jobIds)
+                  .where("companyId", "=", companyId)
+                  .execute()
+              : []
+        );
+        if (jobs instanceof CarbonError) return jobs;
+        const jobStatusById = new Map(jobs.map((job) => [job.id, job.status]));
+
+        const toClaim: typeof eligible = [];
+        for (const target of eligible) {
+          const jobId = target.row.jobId!;
+          const status = jobStatusById.get(jobId);
+          if (status === undefined) {
+            errors.push(
+              `Job for planning action ${target.planningActionId} not found`
+            );
+            continue;
+          }
+          if (!isJobEditableFromPlanning(status)) {
+            // On the floor, finished, closed or cancelled since MRP ran.
+            requiresManualAction.push({ id: target.planningActionId, jobId });
+            continue;
+          }
+          toClaim.push(target);
+        }
+
+        // Dates: ONE transaction for every Expedite / Defer, then ONE scheduler
+        // event (a "reorder" event re-stamps the whole company whatever its job).
+        const dateActions = toClaim.filter(
+          ({ row }) =>
+            (row.type === "Expedite" || row.type === "Defer") &&
+            row.suggestedDate
+        );
+        if (dateActions.length > 0) {
+          let outcome: Awaited<
+            ReturnType<typeof service.applyProductionPlanningDateActions>
+          >;
+          try {
+            outcome = await service.applyProductionPlanningDateActions(db, {
+              companyId,
+              userId,
+              actions: dateActions.map(({ planningActionId, row }) => ({
+                planningActionId,
+                jobId: row.jobId!,
+                suggestedDate: row.suggestedDate
+              }))
+            });
+          } catch (err) {
+            return ctx.error(
+              "internal",
+              `Failed to reschedule jobs: ${getErrorMessage(err, "unknown error")}`,
+              err
+            );
+          }
+          applied.push(...outcome.applied);
+          requiresManualAction.push(...outcome.refused);
+          for (const id of outcome.alreadyApplied) {
+            errors.push(`Planning action ${id} was already applied`);
+          }
+          if (outcome.applied.length > 0) {
+            const notified = await service.notifyScheduleInputsChanged(
+              ctx.company.id,
+              "reorder",
+              `Planning rescheduled ${outcome.applied.length} job(s)`
+            );
+            if (!notified) {
               warnings.push(
-                `Planning action ${planningActionId}: the quantity is saved, but the job's materials and operations were not recalculated`
+                `${outcome.applied.length} due date(s) are saved, but the schedule was not refreshed`
               );
             }
           }
-          applied.push(planningActionId);
         }
-      },
-      { concurrency: 3 }
-    );
 
-    return replanned({
-      applied,
-      // The Draft project stock transfers the applied Transfers and Borrows
-      // created, for the toast's links.
-      transfers: transferOutcome.transfers,
-      requiresManualAction,
-      warnings,
-      errors
-    });
-  }
+        // Each action is claimed right before its own change: a request that dies
+        // here strands at most the actions in flight, which the next MRP run
+        // re-emits as fresh Open actions. Resolves to the claimed suggestion.
+        const claim = async (planningActionId: string) => {
+          const claimed = await service.markPlanningActionsActioned(db, {
+            ids: [planningActionId],
+            companyId,
+            userId
+          });
+          if (claimed.error) {
+            logger.error("Failed to claim a planning action", {
+              companyId,
+              planningActionId,
+              error: claimed.error
+            });
+            errors.push(
+              `Planning action ${planningActionId} could not be claimed: ${claimed.error.message}`
+            );
+            return null;
+          }
+          const [row] = claimed.data;
+          if (!row) {
+            errors.push(
+              `Planning action ${planningActionId} was already applied`
+            );
+            return null;
+          }
+          return {
+            suggestedQuantity:
+              row.suggestedQuantity === null ||
+              row.suggestedQuantity === undefined
+                ? null
+                : Number(row.suggestedQuantity)
+          };
+        };
+
+        // Two actions on one job (an Increase and a Cancel) must not run at once:
+        // group by job, run the groups three at a time, each group in order.
+        const byJob = groupBy(
+          toClaim.filter(
+            ({ row }) =>
+              row.type === "Cancel" ||
+              row.type === "Increase" ||
+              row.type === "Decrease"
+          ),
+          ({ row }) => row.jobId!
+        );
+        await async.map(
+          Object.values(byJob),
+          async (group) => {
+            for (const { planningActionId, row } of group) {
+              const claimedRow = await claim(planningActionId);
+              if (!claimedRow) continue;
+              const jobId = row.jobId!;
+
+              if (row.type === "Cancel") {
+                const cancelled = await cancelJob(ctx, {
+                  jobId,
+                  // Read Draft / Planned above; released since, it goes to
+                  // review instead of losing its picks.
+                  fromStatuses: [...PLANNING_EDITABLE_JOB_STATUSES]
+                });
+                if (cancelled.error) {
+                  await releaseClaim(planningActionId);
+                  if (cancelled.error.category === "conflict") {
+                    requiresManualAction.push({ id: planningActionId, jobId });
+                  } else {
+                    errors.push(
+                      `Failed to cancel job for planning action ${planningActionId}: ${cancelled.error.message}`
+                    );
+                  }
+                  continue;
+                }
+                if (cancelled.data.warning)
+                  warnings.push(cancelled.data.warning);
+              } else {
+                const update = await service.updatePlanningJob(client, {
+                  id: jobId,
+                  companyId,
+                  updatedBy: userId,
+                  quantity: Number(
+                    claimedRow.suggestedQuantity ?? row.suggestedQuantity
+                  )
+                });
+                if (update.error) {
+                  await releaseClaim(planningActionId);
+                  errors.push(
+                    `Failed to update job quantity for planning action ${planningActionId}: ${update.error.message}`
+                  );
+                  continue;
+                }
+                if (!update.updated) {
+                  // Released (or finished) since it was read.
+                  await releaseClaim(planningActionId);
+                  requiresManualAction.push({ id: planningActionId, jobId });
+                  continue;
+                }
+                const recalc = await service.recalculateJobRequirements(
+                  client,
+                  db,
+                  {
+                    id: jobId,
+                    companyId,
+                    userId
+                  }
+                );
+                if (recalc.error) {
+                  // The quantity change stands, and the action stays Actioned.
+                  logger.error(
+                    "Failed to recalculate job requirements after a planning action",
+                    { companyId, jobId, planningActionId, error: recalc.error }
+                  );
+                  warnings.push(
+                    `Planning action ${planningActionId}: the quantity is saved, but the job's materials and operations were not recalculated`
+                  );
+                }
+              }
+              applied.push(planningActionId);
+            }
+          },
+          { concurrency: 3 }
+        );
+
+        return {
+          applied,
+          // The Draft project stock transfers the applied Transfers and Borrows
+          // created, for the toast's links.
+          transfers: transferOutcome.transfers,
+          requiresManualAction,
+          warnings,
+          errors
+        };
+      }
+    )
 });
-/**
- * Re-plan after a person changes a planned order.
- *
- * @remarks
- * Firm, unfirm and edit change the supply MRP counts, and the planning pages
- * list MRP's stored suggestions: without a run the week's Order / Make kept
- * the old total until the next scheduled one. The run is company-wide, as
- * every run is. A failed run never fails the change.
- */
-export const replanAfterPlannedOrderChange = defineServiceFn({
-  input: z.object({ plannedOrderId: z.string() }),
-  // As `runMRP`. The planned order operations call it nested, which their own
-  // check admits (a "system" rule would refuse every person).
-  permission: { update: "inventory" },
-
-  async run(ctx, { plannedOrderId }) {
-    await service.replanAfterChange(ctx, { plannedOrderIds: [plannedOrderId] });
-  }
-});
-
 /**
  * Firm a planned order.
  *
@@ -5414,7 +5389,7 @@ export const replanAfterPlannedOrderChange = defineServiceFn({
  * dates, and raises a planning action when it disagrees. A Make planned order
  * needs `update: production`, a Buy planned order `update: purchasing`. A
  * Firm order is left as it is; a Converted one is refused. MRP runs after
- * the change (`replanAfterPlannedOrderChange`).
+ * the change (`replanAfterChange`).
  */
 export const firmPlannedOrder = defineServiceFn({
   input: plannedOrderIdValidator,
@@ -5446,7 +5421,7 @@ export const firmPlannedOrder = defineServiceFn({
         "The planned order changed since it was read"
       );
     }
-    await replanAfterPlannedOrderChange(ctx, { plannedOrderId: id });
+    await service.replanAfterChange(ctx, `planned order ${id} firmed`);
     return done;
   }
 });
@@ -5490,7 +5465,7 @@ export const unfirmPlannedOrder = defineServiceFn({
         "The planned order changed since it was read"
       );
     }
-    await replanAfterPlannedOrderChange(ctx, { plannedOrderId: id });
+    await service.replanAfterChange(ctx, `planned order ${id} unfirmed`);
     return done;
   }
 });
@@ -5535,7 +5510,7 @@ export const updatePlannedOrder = defineServiceFn({
         "The planned order changed since it was read"
       );
     }
-    await replanAfterPlannedOrderChange(ctx, { plannedOrderId: id });
+    await service.replanAfterChange(ctx, `planned order ${id} edited`);
     return { id, status: "Firm" as const, message: "Planned order updated" };
   }
 });

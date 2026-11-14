@@ -92,8 +92,12 @@ type ProductionPlanningOrderDrawerProps = {
   actionHandlers: PlanningActionHandlers;
   setOrders: (item: ProductionPlanningItem, orders: ProductionOrder[]) => void;
   /** Drop the item's draft list so the drawer re-seeds from MRP's new
-   *  suggestions — after a Draft job is planned, which re-runs MRP. */
+   *  suggestions — after a Draft job is planned, or a planned order is
+   *  firmed, unfirmed or edited, each of which re-runs MRP. */
   onSuggestionsStale: (item: ProductionPlanningItem) => void;
+  /** Bumped by the grid each time it drops a row's draft (an Apply on a
+   *  planned order re-runs MRP): closes a cell editor left open. */
+  draftVersion?: number;
   /** The item's Make planned orders, as the Planned Orders section reads
    *  them: the suggested jobs stand for them. */
   onPlannedOrdersLoaded: (
@@ -118,6 +122,7 @@ export const ProductionPlanningOrderDrawer = memo(
     actionHandlers,
     setOrders,
     onSuggestionsStale,
+    draftVersion = 0,
     onPlannedOrdersLoaded,
     locationId,
     periods,
@@ -627,6 +632,7 @@ export const ProductionPlanningOrderDrawer = memo(
                   actionHandlers={actionHandlers}
                   refreshKey={openJobsVersion}
                   onOrdersLoaded={onPlannedOrdersRead}
+                  onReplanned={reseedSuggestions}
                 />
 
                 <SuggestedOrdersGrid<ProductionOrder>
@@ -646,7 +652,7 @@ export const ProductionPlanningOrderDrawer = memo(
                   todayIso={locationToday}
                   quantityHeader={t`Quantity`}
                   orderByHeader={t`Start By`}
-                  resetKey={suggestionsVersion}
+                  resetKey={suggestionsVersion + draftVersion}
                   onChange={onSuggestedOrdersChange}
                   onAdd={onAddOrder}
                 />
@@ -705,6 +711,8 @@ export const ProductionPlanningOrderDrawer = memo(
         onSubmit,
         onSuggestedOrdersChange,
         suggestionsVersion,
+        draftVersion,
+        reseedSuggestions,
         lastBeyondFenceDate,
         beyondFenceOrders,
         onIncludeBeyondFence,

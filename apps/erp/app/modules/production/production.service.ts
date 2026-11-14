@@ -3565,28 +3565,47 @@ export async function runMRP(
  * Re-plan after a person changes what MRP plans from: an item's planning
  * settings, or a planned order (firm, unfirm, edit, an applied action). The
  * planning pages list MRP's stored suggestions, so without a run they kept
- * the old ones until the next scheduled run. Every run is company-wide; the
- * scope is only logged. A failed run is logged and never fails the change.
+ * the old ones until the next scheduled run. Every run is company-wide.
+ * `reason` (what changed) is only logged. A failed run is logged and never
+ * fails the change.
  */
-export async function replanAfterChange(
-  ctx: ServiceContext,
-  change: { itemId: string } | { plannedOrderIds: string[] }
-) {
-  const scope =
-    "itemId" in change
-      ? { type: "item" as const, id: change.itemId }
-      : { type: "company" as const, id: ctx.company.id };
+export async function replanAfterChange(ctx: ServiceContext, reason?: string) {
   const mrp = await runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
-    ...scope,
+    type: "company",
+    id: ctx.company.id,
     companyId: ctx.company.id,
     userId: ctx.auditUserId
   });
   if (mrp.error) {
     logger.error("MRP failed after a planning input changed", {
       companyId: ctx.company.id,
-      ...change,
+      reason,
       error: mrp.error
     });
+  }
+}
+
+/**
+ * Run an Apply and re-plan once afterwards when it changed a planned order.
+ * `apply` adds the ids of the planned orders it changed (edited or deleted)
+ * to `changed`. The run follows whatever `apply` returns or throws, so no
+ * early return in it can skip the re-plan, and it comes before the answer so
+ * the page reads the new actions.
+ */
+export async function replanAfterPlannedOrderChanges<T>(
+  ctx: ServiceContext,
+  apply: (changed: Set<string>) => Promise<T>
+): Promise<T> {
+  const changed = new Set<string>();
+  try {
+    return await apply(changed);
+  } finally {
+    if (changed.size > 0) {
+      await replanAfterChange(
+        ctx,
+        `planning actions applied to ${changed.size} planned order(s)`
+      );
+    }
   }
 }
 
@@ -12618,8 +12637,25 @@ const conversionKey = (
     row.orderType
   ].join("\u001f");
 
+/** The order MRP split a week's planned orders in, and the suggestions list
+ *  them in (`plannedOrdersFromActions`): due date, then `splitIndex`, then
+ *  id. An overdue order of an earlier week comes first. */
 const bySplit = (a: ConvertiblePlannedOrder, b: ConvertiblePlannedOrder) =>
-  a.splitIndex - b.splitIndex || a.id.localeCompare(b.id);
+  // ISO dates order as strings
+  a.dueDate.localeCompare(b.dueDate) ||
+  a.splitIndex - b.splitIndex ||
+  a.id.localeCompare(b.id);
+
+/** The planning row a planned order or document belongs to. */
+type ConversionRow = Pick<
+  PlannedOrderConversion,
+  "itemId" | "locationId" | "planningSegmentId" | "orderType"
+>;
+
+const conversionRowKey = (row: ConversionRow) =>
+  [row.itemId, row.locationId, row.planningSegmentId, row.orderType].join(
+    "\u001f"
+  );
 
 /** One weekly period, as the convert reads it. */
 export type ConversionWeek = { id: string; startDate: string; endDate: string };
@@ -12635,6 +12671,10 @@ export type ConversionCalendar = {
    *  rolled forward since the week turned. Its documents convert in the
    *  current week, which now holds what it counted as overdue. */
   earlierWeekIds: string[];
+  /** Rows with an Open or Dismissed Order / Make of a week before the
+   *  current one. That action counted the overdue planned orders, so the
+   *  current week's documents of the row take only the current week's. */
+  pastWeekActionRows?: ConversionRow[];
 };
 
 /**
@@ -12718,7 +12758,12 @@ function conversionWeekOf(
  *    `conversionWeekOf` gives it, so the current week also holds every
  *    overdue one: MRP sizes it, and sums it into the action, there. Without a
  *    calendar, its stored week. A document whose action's week is already
- *    past (`earlierWeekIds`) counts in the current week.
+ *    past (`earlierWeekIds`) counts in the current week, and takes only the
+ *    overdue orders (due before the current week's start): that action
+ *    counted them. A document of the current week then takes only the
+ *    current week's orders, as it does when the row has an Open or
+ *    Dismissed action of a past week (`pastWeekActionRows`). Orders are
+ *    taken by due date, then `splitIndex`, as the suggestions list them.
  */
 export function matchPlannedOrdersToDocuments(
   documents: PlannedOrderConversion[],
@@ -12754,9 +12799,35 @@ export function matchPlannedOrdersToDocuments(
     if (list) list.push(row);
     else candidatesByKey.set(key, [row]);
   }
-  // the document's week's Planned orders not yet converted, by `splitIndex`
+  // The planned orders a document may draw on, as the suggestions offer
+  // them: a document of a past week's action only the overdue ones; one of
+  // the current week only the current week's when its row has a past week's
+  // action (that action counted the overdue ones), else both.
+  const currentWeek = currentWeekOf(calendar);
+  const isPastWeekDocument = (document: PlannedOrderConversion) =>
+    !!currentWeek && !!calendar?.earlierWeekIds.includes(document.periodId);
+  const rowsWithPastWeekAction = new Set(
+    [
+      ...(calendar?.pastWeekActionRows ?? []),
+      ...documents.filter(isPastWeekDocument)
+    ].map(conversionRowKey)
+  );
+  // ISO dates order as strings
+  const isOverdue = (row: ConvertiblePlannedOrder) =>
+    !!currentWeek && row.dueDate < currentWeek.startDate;
+  const weekOf = (document: PlannedOrderConversion) => {
+    const rows =
+      candidatesByKey.get(documentConversionKey(document, calendar)) ?? [];
+    if (!currentWeek) return rows;
+    if (isPastWeekDocument(document)) return rows.filter(isOverdue);
+    return document.periodId === currentWeek.id &&
+      rowsWithPastWeekAction.has(conversionRowKey(document))
+      ? rows.filter((row) => !isOverdue(row))
+      : rows;
+  };
+  // the document's week's Planned orders not yet converted, in split order
   const plannedOfWeek = (document: PlannedOrderConversion) =>
-    (candidatesByKey.get(documentConversionKey(document, calendar)) ?? [])
+    weekOf(document)
       .filter((row) => !claimed.has(row.id) && row.status === "Planned")
       .sort(bySplit);
   // A document larger than the order it converts is also the supply of the
@@ -12813,9 +12884,7 @@ export function matchPlannedOrdersToDocuments(
   );
   const unmatched: PlannedOrderConversion[] = [];
   for (const document of unnamed) {
-    const equal = (
-      candidatesByKey.get(documentConversionKey(document, calendar)) ?? []
-    )
+    const equal = weekOf(document)
       .filter((row) => !isTaken(row) && equals(row.quantity, document.quantity))
       .sort(
         (a, b) =>
@@ -12929,7 +12998,47 @@ export async function convertPlannedOrdersForActions(
       asOf: args.asOf
     });
     const weekById = new Map(calendar.weeks.map((week) => [week.id, week]));
-    const currentWeekId = currentWeekOf(calendar)?.id;
+    const currentWeek = currentWeekOf(calendar);
+    const currentWeekId = currentWeek?.id;
+    // The rows with an Open or Dismissed Order / Make of a week already past
+    // (the week turned before MRP ran again): that action counted the
+    // overdue planned orders, not the current week's.
+    const orderTypes = [...new Set(keys.map((key) => key.orderType))];
+    const pastWeekActions = currentWeek
+      ? await trx
+          .selectFrom("planningAction as pa")
+          .innerJoin("period as p", "p.id", "pa.periodId")
+          .select([
+            "pa.itemId",
+            "pa.locationId",
+            "pa.planningSegmentId",
+            "pa.type"
+          ])
+          .distinct()
+          .where("pa.companyId", "=", args.companyId)
+          .where("pa.status", "in", ["Open", "Dismissed"])
+          .where(
+            "pa.type",
+            "in",
+            orderTypes.map((type) =>
+              type === "Make" ? ("Make" as const) : ("Order" as const)
+            )
+          )
+          .where("pa.itemId", "in", [...new Set(keys.map((k) => k.itemId))])
+          .where("pa.locationId", "in", [
+            ...new Set(keys.map((k) => k.locationId))
+          ])
+          .where("p.startDate", "<", currentWeek.startDate)
+          .execute()
+      : [];
+    calendar.pastWeekActionRows = pastWeekActions.map(
+      (row): ConversionRow => ({
+        itemId: row.itemId,
+        locationId: row.locationId,
+        planningSegmentId: row.planningSegmentId,
+        orderType: row.type === "Make" ? "Make" : "Buy"
+      })
+    );
     // each key's week, by due date: the current one from the first day of
     // time, as it holds every overdue planned order; a past action week
     // reads as the current one
@@ -13409,6 +13518,8 @@ export type PlannedOrderPlanningApplyResult = {
   alreadyApplied: string[];
   /** not applied, and left Open: the reason is for the planner */
   refused: { id: string; message: string }[];
+  /** the planned orders an applied action edited or deleted */
+  changedPlannedOrderIds: string[];
 };
 
 /**
@@ -13443,7 +13554,8 @@ export async function applyPlannedOrderPlanningActions(
   const result: PlannedOrderPlanningApplyResult = {
     applied: [],
     alreadyApplied: [],
-    refused: []
+    refused: [],
+    changedPlannedOrderIds: []
   };
   if (actions.length === 0) return result;
   const now = datetime.timestamp();
@@ -13597,6 +13709,7 @@ export async function applyPlannedOrderPlanningActions(
         .execute();
       for (const row of rows) deleted.add(row.id);
     }
+    result.changedPlannedOrderIds = [...new Set([...changed, ...deleted])];
 
     for (const [plannedOrderId, edit] of edits) {
       for (const id of edit.actionIds) {

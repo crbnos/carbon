@@ -27,6 +27,7 @@ import {
   plannedOrdersFromActions,
   productionOrdersFromActions,
   refusedOrdersOfRow,
+  rowsReplannedByApply,
   supplierConversionFactor,
   withoutRowDraft
 } from "../app/modules/production/ui/Planning/planned-orders-from-actions";
@@ -822,6 +823,76 @@ describe("suggestions from the week's planned orders", () => {
     ).toEqual([{ plannedOrderId: "this-week", quantity: 5 }]);
   });
 
+  // Two weeks turned before MRP ran again: only the latest open past week's
+  // action stands for what is overdue now, so each order is offered once.
+  it("gives the overdue planned orders only to the latest open past week's action", () => {
+    const twoWeeksAgo = action({
+      id: "two-weeks-ago",
+      type: "Make",
+      periodId: "two-weeks-ago",
+      suggestedDate: "2026-09-17",
+      suggestedQuantity: 4,
+      policyName: "Stock Only"
+    });
+    const lastWeek = action({
+      id: "last-week",
+      type: "Make",
+      periodId: "last-week",
+      suggestedDate: "2026-09-24",
+      suggestedQuantity: 4,
+      policyName: "Stock Only"
+    });
+    const offered = (
+      actions: Action[],
+      rowActions?: NonNullable<
+        Parameters<typeof productionOrdersFromActions>[1]
+      >["rowActions"]
+    ) =>
+      productionOrdersFromActions(actions, {
+        todayDate: "2026-09-30",
+        weeks,
+        rowActions,
+        plannedOrders: [
+          plannedOrder({
+            id: "overdue",
+            periodId: "last-week",
+            quantity: 4,
+            dueDate: "2026-09-24"
+          })
+        ]
+      }).map(({ planningActionId, plannedOrderId, quantity }) => ({
+        planningActionId,
+        plannedOrderId,
+        quantity
+      }));
+
+    // both open: the earlier one is split by its policy, naming no order
+    expect(offered([twoWeeksAgo, lastWeek])).toEqual([
+      {
+        planningActionId: "two-weeks-ago",
+        plannedOrderId: undefined,
+        quantity: 4
+      },
+      { planningActionId: "last-week", plannedOrderId: "overdue", quantity: 4 }
+    ]);
+    // the later one dismissed: the latest OPEN one takes them
+    expect(
+      offered(
+        [twoWeeksAgo],
+        [
+          {
+            type: "Make",
+            status: "Dismissed",
+            periodId: "last-week",
+            suggestedDate: "2026-09-24"
+          }
+        ]
+      )
+    ).toEqual([
+      { planningActionId: "two-weeks-ago", plannedOrderId: "overdue", quantity: 4 }
+    ]);
+  });
+
   it("offers an action of a later week not on the page no planned order", () => {
     const orders = productionOrdersFromActions(
       [
@@ -927,6 +998,45 @@ describe("suggestions from the week's planned orders", () => {
     ).toEqual([
       { quantity: 10, plannedOrderId: undefined },
       { quantity: 10, plannedOrderId: undefined }
+    ]);
+  });
+});
+
+// MRP re-plans after an Apply that changed a planned order: those rows'
+// drafts were built from the old actions and planned orders.
+describe("rowsReplannedByApply", () => {
+  const change = (
+    id: string,
+    overrides: Partial<{
+      itemId: string;
+      planningSegmentId: string | null;
+      plannedOrderId: string | null;
+    }> = {}
+  ) => ({
+    id,
+    itemId: "item1",
+    planningSegmentId: "",
+    plannedOrderId: "po1",
+    ...overrides
+  });
+
+  it("names each row of an applied action on a planned order once", () => {
+    expect(
+      rowsReplannedByApply(
+        [
+          change("a1"),
+          change("a2", { plannedOrderId: "po2" }),
+          // on a job, not a planned order: no re-plan
+          change("a3", { itemId: "item2", plannedOrderId: null }),
+          // refused: not applied
+          change("a4", { itemId: "item3" }),
+          change("a5", { itemId: "item4", planningSegmentId: null })
+        ],
+        ["a1", "a2", "a3", "a5"]
+      )
+    ).toEqual([
+      { id: "item1", planningSegmentId: "" },
+      { id: "item4", planningSegmentId: null }
     ]);
   });
 });

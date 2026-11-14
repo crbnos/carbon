@@ -219,6 +219,12 @@ const PlanningTable = memo(
     const canUpdateActions = permissions.can("update", "purchasing");
     const actionTypeOptions = usePlanningActionTypeOptions("Buy");
     const [people] = usePeople();
+    // Set below, once the drafts exist: an Apply on a planned order re-plans
+    // its rows, whose drafts are then stale.
+    const dropRowDraftsRef = useRef<
+      | ((rows: { id: string; planningSegmentId: string | null }[]) => void)
+      | null
+    >(null);
     const {
       actionHandlers: changeActionHandlers,
       isActionsBusy,
@@ -234,7 +240,8 @@ const PlanningTable = memo(
       locationId,
       updatePath: path.to.bulkUpdatePurchasingPlanning,
       currentUserId: user.id,
-      canUpdate: canUpdateActions
+      canUpdate: canUpdateActions,
+      onRowsReplanned: (rows) => dropRowDraftsRef.current?.(rows)
     });
 
     // The purchase order's own commands (Reopen, Finalize) join each row's ⋯.
@@ -642,13 +649,23 @@ const PlanningTable = memo(
       []
     );
 
-    // After an order the row's draft is stale: drop it so the drawer re-seeds.
-    const dropOrders = useCallback((item: PurchasingPlanningItem) => {
-      if (!item.id) return;
-      setOrdersMap((prev) => withoutRowDraft(prev, item));
-      // an order placed converted planned orders: the drawer reads them again
-      setPlannedOrdersByRowKey((prev) => withoutRowDraft(prev, item));
-    }, []);
+    // After an order, or a planned order changed (MRP re-runs), the row's
+    // draft is stale: drop it so the drawer re-seeds.
+    const [draftVersion, setDraftVersion] = useState(0);
+    const dropOrders = useCallback(
+      (item: { id: string; planningSegmentId?: string | null }) => {
+        if (!item.id) return;
+        setOrdersMap((prev) => withoutRowDraft(prev, item));
+        // an order placed converted planned orders: the drawer reads them again
+        setPlannedOrdersByRowKey((prev) => withoutRowDraft(prev, item));
+        // closes a suggested-order cell editor left open in the drawer
+        setDraftVersion((version) => version + 1);
+      },
+      []
+    );
+    dropRowDraftsRef.current = (rows) => {
+      for (const row of rows) dropOrders(row);
+    };
 
     // The drawer's own Planning Horizon control: the same on-screen override
     // as the grid cell, for the row the drawer is open on.
@@ -1131,6 +1148,7 @@ const PlanningTable = memo(
             ordersVersion={ordersVersion}
             setOrders={setOrders}
             onSuggestionsStale={dropOrders}
+            draftVersion={draftVersion}
             onPlannedOrdersLoaded={onPlannedOrdersLoaded}
             periods={periods}
             isOpen={isDrawerOpen}

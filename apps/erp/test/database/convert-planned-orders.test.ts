@@ -29,7 +29,8 @@ let week2: string;
 async function action(
   type: "Make" | "Order",
   suggestedQuantity: number,
-  key: string
+  key: string,
+  status: "Open" | "Dismissed" = "Open"
 ): Promise<string> {
   const id = `${f.prefix}-action-${key}`;
   await seed(f, (trx) =>
@@ -39,7 +40,7 @@ async function action(
         id,
         companyId: f.companyId,
         type,
-        status: "Open",
+        status,
         itemId: f.partId,
         locationId: f.locationId,
         periodId: week1,
@@ -888,6 +889,46 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
         expect.objectContaining({ id: actionId, status: "Actioned" })
       ]);
       expect(await read(overdue)).toMatchObject({ status: "Converted", jobId });
+    }
+  );
+
+  databaseTest(
+    "the current week's job leaves the overdue planned orders to last week's dismissed Make",
+    async () => {
+      // the week turned (today is in week 2) and last week's Make, which
+      // counted the overdue order, was dismissed: the drawer offered the
+      // current week's job only week 2's order, and the convert agrees
+      await action("Make", 10, "dismissed-last-week", "Dismissed");
+      const overdue = await plannedOrder(
+        { orderType: "Make", quantity: 10 },
+        "dismissed-overdue"
+      );
+      const current = await plannedOrder(
+        {
+          orderType: "Make",
+          quantity: 20,
+          periodId: week2,
+          dueDate: "2299-01-10"
+        },
+        "dismissed-current"
+      );
+      const jobId = await job("dismissed-current");
+      expect(
+        await convertPlannedOrdersForActions(f.db, {
+          companyId: f.companyId,
+          userId: USER,
+          asOf: "2299-01-10",
+          documents: [{ ...document(jobId), periodId: week2 }]
+        })
+      ).toEqual([]);
+      expect(await read(overdue)).toMatchObject({
+        status: "Planned",
+        quantity: 10
+      });
+      expect(await read(current)).toMatchObject({
+        status: "Planned",
+        quantity: 10
+      });
     }
   );
 

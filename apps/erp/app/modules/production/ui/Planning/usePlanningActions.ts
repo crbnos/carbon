@@ -13,6 +13,7 @@ import {
   type FenceRow,
   useTimeFenceOverrides
 } from "~/modules/production/ui/Planning/PlanningFence";
+import { rowsReplannedByApply } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { planningRowKey } from "~/modules/production/ui/Planning/planning-action-scope";
 import { actionsInsideFence } from "~/modules/production/ui/Planning/planning-fence";
 import { isStaleRelease } from "~/modules/production/ui/Planning/planning-review";
@@ -30,7 +31,8 @@ export function usePlanningActions({
   locationId,
   updatePath,
   currentUserId,
-  canUpdate
+  canUpdate,
+  onRowsReplanned
 }: {
   data: (FenceRow & { planningSegmentId?: string | null })[];
   planningActions: PlanningAction[];
@@ -41,13 +43,35 @@ export function usePlanningActions({
   updatePath: string;
   currentUserId: string;
   canUpdate: boolean;
+  /** Told the rows an applied action on a planned order re-planned: their
+   *  drafts are stale (`rowsReplannedByApply`). */
+  onRowsReplanned?: (
+    rows: { id: string; planningSegmentId: string | null }[]
+  ) => void;
 }) {
   const { t } = useLingui();
   const describePlanningResult = usePlanningResultMessage();
   // The worklist action last submitted, for the toast that answers it.
   const lastAction = useRef<string | null>(null);
+  // The actions an Apply submitted, as they were: MRP re-plans after it, and
+  // may delete or rewrite them before the answer arrives.
+  const lastApplied = useRef<PlanningAction[]>([]);
+  const onRowsReplannedRef = useRef(onRowsReplanned);
+  onRowsReplannedRef.current = onRowsReplanned;
+  // the latest, so the submit (and the handlers) stay the same function
+  const planningActionsRef = useRef(planningActions);
+  planningActionsRef.current = planningActions;
   const actionsFetcher = useAction<PlanningActionsResult>({
     onSuccess: (result) => {
+      // Purchasing answers `applied` at the top level; production's service
+      // function answers it inside `data`.
+      const appliedIds =
+        ("applied" in result ? result.applied : undefined) ??
+        ("data" in result ? result.data?.applied : undefined) ??
+        [];
+      const replanned = rowsReplannedByApply(lastApplied.current, appliedIds);
+      if (replanned.length > 0) onRowsReplannedRef.current?.(replanned);
+
       const outcome = describePlanningResult(result, lastAction.current);
       if (!outcome) return;
       // An applied Transfer leaves the worklist; the toast links its transfer.
@@ -155,6 +179,15 @@ export function usePlanningActions({
     (payload: Record<string, unknown>) => {
       lastAction.current =
         typeof payload.action === "string" ? payload.action : null;
+      const ids = Array.isArray(payload.planningActionIds)
+        ? new Set(payload.planningActionIds)
+        : new Set();
+      lastApplied.current =
+        payload.action === "apply"
+          ? planningActionsRef.current.filter(
+              (action) => action.plannedOrderId && ids.has(action.id)
+            )
+          : [];
       actionsFetcher.submit(JSON.stringify({ locationId, ...payload }), {
         method: "post",
         action: updatePath,
@@ -209,6 +242,8 @@ type PlanningActionsResult =
   | {
       success?: boolean;
       message?: string;
+      /** The applied actions' ids. */
+      applied?: string[];
       /** The Draft project stock transfers an applied Transfer created. */
       transfers?: { id: string; projectStockTransferId: string }[];
     }

@@ -57,6 +57,9 @@ type DrawerPlannedOrdersProps = {
   /** Told the orders on every read: the drawer's suggested orders stand for
    *  them (`productionOrdersFromActions` / `plannedOrdersFromActions`). */
   onOrdersLoaded?: (orders: DrawerPlannedOrder[]) => void;
+  /** Told after a firm, unfirm or edit here: the server re-planned, so the
+   *  drawer's suggested orders are stale and must be built again. */
+  onReplanned?: () => void;
 };
 
 /** What a planning route answers: a service result (`{ data, error }`,
@@ -72,8 +75,9 @@ type PlannedOrderChangeResult = {
  * orders at the location, read with the user's client as the open jobs and
  * PO lines are. Firm / Unfirm and a cell edit post to `planning.update`. An
  * edit of a Planned order firms it, so the drawer asks first. Each change
- * re-plans on the server, so a successful one reloads the page's data: the
- * item's actions and the row's Make / Order quantity.
+ * re-plans on the server, so a successful one reads the orders again, tells
+ * the drawer (`onReplanned`) and reloads the page's data: the item's actions
+ * and the row's Make / Order quantity.
  */
 export function DrawerPlannedOrders({
   title,
@@ -87,12 +91,13 @@ export function DrawerPlannedOrders({
   actions,
   actionHandlers,
   refreshKey = 0,
-  onOrdersLoaded
+  onOrdersLoaded,
+  onReplanned
 }: DrawerPlannedOrdersProps) {
   const { t } = useLingui();
   const { carbon } = useCarbon();
   const { company } = useUser();
-  const { revalidate } = useRevalidator();
+  const { revalidate, state: revalidationState } = useRevalidator();
   const isCommonSegment = !planningSegmentId;
 
   const [orders, setOrders] = useState<DrawerPlannedOrder[] | null | Error>(
@@ -104,6 +109,16 @@ export function DrawerPlannedOrders({
   // The latest callback, so a new function from the parent re-reads nothing.
   const onOrdersLoadedRef = useRef(onOrdersLoaded);
   onOrdersLoadedRef.current = onOrdersLoaded;
+  // After a change here the orders are read at once (`version`): the server
+  // re-planned before it answered. The revalidation that follows brings the
+  // re-planned actions, whose new `actionsKey` needs no second read.
+  const skipActionsRead = useRef(false);
+  const lastTriggers = useRef<{ actionsKey: string; others: string } | null>(
+    null
+  );
+  // Only the latest read lands. Not an effect cleanup: a skipped run must
+  // not cancel the read in flight.
+  const readSeq = useRef(0);
 
   const plannedOrderActions = useMemo(
     () => actions.filter((action) => action.plannedOrderId),
@@ -116,10 +131,22 @@ export function DrawerPlannedOrders({
 
   // Only while open: the drawer stays mounted on its last item so it can
   // slide out.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: actionsKey, version and refreshKey are re-read triggers
   useEffect(() => {
     if (!isOpen || !carbon || !itemId || !isCommonSegment) return;
-    let isCurrent = true;
+    const others = [itemId, locationId, orderType, version, refreshKey].join(
+      "|"
+    );
+    const previous = lastTriggers.current;
+    lastTriggers.current = { actionsKey, others };
+    if (
+      skipActionsRead.current &&
+      previous?.others === others &&
+      previous.actionsKey !== actionsKey
+    ) {
+      skipActionsRead.current = false;
+      return;
+    }
+    const seq = ++readSeq.current;
 
     (async () => {
       const args = { companyId: company.id, itemId, locationId };
@@ -127,7 +154,7 @@ export function DrawerPlannedOrders({
         getDrawerPlannedOrders(carbon, { ...args, orderType }),
         getPlanningTimeFenceDays(carbon, args)
       ]);
-      if (!isCurrent) return;
+      if (seq !== readSeq.current) return;
       if (read.error) {
         setOrders(new Error(read.error.message));
         return;
@@ -137,10 +164,6 @@ export function DrawerPlannedOrders({
       setOrders(read.data ?? []);
       onOrdersLoadedRef.current?.(read.data ?? []);
     })();
-
-    return () => {
-      isCurrent = false;
-    };
   }, [
     isOpen,
     carbon,
@@ -153,6 +176,12 @@ export function DrawerPlannedOrders({
     version,
     refreshKey
   ]);
+
+  // The revalidation has landed: a later change of the actions is someone
+  // else's, and is read.
+  useEffect(() => {
+    if (revalidationState === "idle") skipActionsRead.current = false;
+  }, [revalidationState]);
 
   const rows = useMemo<PlannedOrderRow[] | null | Error>(() => {
     if (!Array.isArray(orders)) return orders;
@@ -229,9 +258,6 @@ export function DrawerPlannedOrders({
           .json()
           .catch(() => null)) as PlannedOrderChangeResult | null;
         if (response.ok && !result?.error && result?.success !== false) {
-          // A plain fetch bypasses the router, and the server re-planned:
-          // reload the actions and the grid row behind the drawer.
-          void revalidate();
           return null;
         }
         return (
@@ -243,8 +269,18 @@ export function DrawerPlannedOrders({
         return t`Failed to update the planned order`;
       }
     },
-    [locationId, revalidate, t, updatePath]
+    [locationId, t, updatePath]
   );
+
+  // The server re-planned before it answered: read the orders again, tell
+  // the drawer its suggestions are stale, and reload the actions and the
+  // grid row behind it (a plain fetch bypasses the router).
+  const afterReplan = useCallback(() => {
+    skipActionsRead.current = true;
+    onReplanned?.();
+    setVersion((v) => v + 1);
+    void revalidate();
+  }, [onReplanned, revalidate]);
 
   // ── The question an edit of a Planned order asks first ───────────────────
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -283,10 +319,10 @@ export function DrawerPlannedOrders({
         return false;
       }
       // the order is Firm now, and a new due date moved its release date
-      setVersion((v) => v + 1);
+      afterReplan();
       return true;
     },
-    [askToKeepNumbers, post]
+    [askToKeepNumbers, post, afterReplan]
   );
 
   const [firmingId, setFirmingId] = useState<string | null>(null);
@@ -306,9 +342,9 @@ export function DrawerPlannedOrders({
       toast.success(
         isFirm ? t`Planned order returned to MRP` : t`Planned order firmed`
       );
-      setVersion((v) => v + 1);
+      afterReplan();
     },
-    [post, t]
+    [post, t, afterReplan]
   );
 
   if (!isCommonSegment) return null;

@@ -475,6 +475,101 @@ describe("matchPlannedOrdersToDocuments", () => {
     });
   });
 
+  it("takes the week's Planned orders by due date before split index", () => {
+    // 150 = B 100 (due first, converted) + 50 off A
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { quantity: 150 })],
+        [
+          plannedOrder("A", { splitIndex: 0, dueDate: "2283-01-06" }),
+          plannedOrder("B", { splitIndex: 1, dueDate: "2283-01-04" })
+        ]
+      )
+    ).toEqual({
+      conversions: [{ plannedOrderId: "B", documentId: "job" }],
+      reductions: [{ plannedOrderId: "A", quantity: 50 }],
+      deletions: []
+    });
+  });
+
+  describe("after the week turned", () => {
+    // today is in w0; wPast is last week's, whose orders are now overdue
+    const calendar = {
+      weeks: [{ id: "w0", startDate: "2283-01-01", endDate: "2283-01-07" }],
+      today: "2283-01-03",
+      earlierWeekIds: ["wPast"]
+    };
+    const overdue = plannedOrder("A", {
+      periodId: "wPast",
+      dueDate: "2282-12-28"
+    });
+    const current = plannedOrder("C", {
+      periodId: "w0",
+      dueDate: "2283-01-05"
+    });
+
+    it("draws a past week's document only on the overdue orders", () => {
+      // 150: A converted; the excess never reaches the current week's C
+      expect(
+        matchPlannedOrdersToDocuments(
+          [job("past", { periodId: "wPast", quantity: 150 })],
+          [current, overdue],
+          calendar
+        )
+      ).toEqual({
+        conversions: [{ plannedOrderId: "A", documentId: "past" }],
+        reductions: [],
+        deletions: []
+      });
+    });
+
+    it("draws the current week's document only on its own week's orders beside a past week's document", () => {
+      expect(
+        matchPlannedOrdersToDocuments(
+          [
+            job("past", { periodId: "wPast", quantity: 150 }),
+            job("now", { periodId: "w0", quantity: 60 })
+          ],
+          [current, overdue],
+          calendar
+        )
+      ).toEqual({
+        conversions: [{ plannedOrderId: "A", documentId: "past" }],
+        reductions: [{ plannedOrderId: "C", quantity: 40 }],
+        deletions: []
+      });
+    });
+
+    it("leaves the overdue orders to a past week's action of the row that is still Open or Dismissed", () => {
+      const now = job("now", { periodId: "w0" });
+      expect(
+        matchPlannedOrdersToDocuments([now], [overdue, current], {
+          ...calendar,
+          pastWeekActionRows: [
+            {
+              itemId: "item",
+              locationId: "loc",
+              planningSegmentId: "",
+              orderType: "Make"
+            }
+          ]
+        })
+      ).toEqual({
+        conversions: [{ plannedOrderId: "C", documentId: "now" }],
+        reductions: [],
+        deletions: []
+      });
+      // with none, the current week's document also takes the overdue ones
+      expect(
+        matchPlannedOrdersToDocuments([now], [overdue, current], calendar)
+      ).toEqual({
+        conversions: [{ plannedOrderId: "A", documentId: "now" }],
+        reductions: [],
+        deletions: []
+      });
+    });
+  });
+
   it("does not convert by id a planned order of another segment", () => {
     expect(
       matchPlannedOrdersToDocuments(

@@ -186,6 +186,11 @@ const ProductionPlanningTable = ({
   const canUpdateActions = permissions.can("update", "production");
   const actionTypeOptions = usePlanningActionTypeOptions("Make");
   const [people] = usePeople();
+  // Set below, once the drafts exist: an Apply on a planned order re-plans
+  // its rows, whose drafts are then stale.
+  const dropRowDraftsRef = useRef<
+    ((rows: { id: string; planningSegmentId: string | null }[]) => void) | null
+  >(null);
   const {
     actionHandlers: changeActionHandlers,
     isActionsBusy,
@@ -201,7 +206,8 @@ const ProductionPlanningTable = ({
     locationId,
     updatePath: path.to.bulkUpdateProductionPlanning,
     currentUserId: user.id,
-    canUpdate: canUpdateActions
+    canUpdate: canUpdateActions,
+    onRowsReplanned: (rows) => dropRowDraftsRef.current?.(rows)
   });
 
   // A job's Release button releases it from here (the jobs table's release
@@ -535,14 +541,24 @@ const ProductionPlanningTable = ({
     []
   );
 
-  // After a Draft job is planned (MRP re-runs) or an order is placed, the
-  // row's draft is stale: drop it so the drawer re-seeds.
-  const dropOrders = useCallback((item: ProductionPlanningItem) => {
-    if (!item.id) return;
-    setOrdersMap((prev) => withoutRowDraft(prev, item));
-    // an order placed converted planned orders: the drawer reads them again
-    setPlannedOrdersByRowKey((prev) => withoutRowDraft(prev, item));
-  }, []);
+  // After a Draft job is planned or a planned order changes (MRP re-runs),
+  // or an order is placed, the row's draft is stale: drop it so the drawer
+  // re-seeds.
+  const [draftVersion, setDraftVersion] = useState(0);
+  const dropOrders = useCallback(
+    (item: { id: string; planningSegmentId?: string | null }) => {
+      if (!item.id) return;
+      setOrdersMap((prev) => withoutRowDraft(prev, item));
+      // an order placed converted planned orders: the drawer reads them again
+      setPlannedOrdersByRowKey((prev) => withoutRowDraft(prev, item));
+      // closes a suggested-order cell editor left open in the drawer
+      setDraftVersion((version) => version + 1);
+    },
+    []
+  );
+  dropRowDraftsRef.current = (rows) => {
+    for (const row of rows) dropOrders(row);
+  };
 
   // The drawer's own Planning Horizon control: the same on-screen override as
   // the grid cell, for the row the drawer is open on.
@@ -974,6 +990,7 @@ const ProductionPlanningTable = ({
           actionHandlers={actionHandlers}
           setOrders={setOrders}
           onSuggestionsStale={dropOrders}
+          draftVersion={draftVersion}
           onPlannedOrdersLoaded={onPlannedOrdersLoaded}
           periods={periods}
           isOpen={isDrawerOpen}

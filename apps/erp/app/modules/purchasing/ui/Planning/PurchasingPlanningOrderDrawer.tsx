@@ -136,6 +136,9 @@ type PurchasingPlanningOrderDrawerProps = {
   setOrders: (item: PurchasingPlanningItem, orders: PlannedOrder[]) => void;
   /** Drop the item's draft list so the drawer re-seeds from the suggestions. */
   onSuggestionsStale: (item: PurchasingPlanningItem) => void;
+  /** Bumped by the grid each time it drops a row's draft (an Apply on a
+   *  planned order re-runs MRP): closes a cell editor left open. */
+  draftVersion?: number;
   /** The item's Buy planned orders, as the Planned Orders section reads
    *  them: the suggested orders stand for them. */
   onPlannedOrdersLoaded: (
@@ -159,6 +162,7 @@ export const PurchasingPlanningOrderDrawer = memo(
     ordersVersion = 0,
     setOrders,
     onSuggestionsStale,
+    draftVersion = 0,
     onPlannedOrdersLoaded,
     locationId,
     periods,
@@ -198,6 +202,12 @@ export const PurchasingPlanningOrderDrawer = memo(
     // Bumped when the rows are re-read, to close any cell editor left open.
     const [suggestionsVersion, setSuggestionsVersion] = useState(0);
     const submittedOrders = useRef<PlannedOrder[]>([]);
+    // A planned order firmed, unfirmed or edited here re-ran MRP: the
+    // suggestions are rebuilt from the re-planned actions and orders.
+    const reseedSuggestions = useCallback(() => {
+      onSuggestionsStale(selectedItem);
+      setSuggestionsVersion((version) => version + 1);
+    }, [onSuggestionsStale, selectedItem]);
     const onPlannedOrdersRead = useCallback(
       (plannedOrders: DrawerPlannedOrder[]) =>
         onPlannedOrdersLoaded(selectedItem, plannedOrders),
@@ -932,6 +942,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                       actionHandlers={actionHandlers}
                       refreshKey={openLinesVersion}
                       onOrdersLoaded={onPlannedOrdersRead}
+                      onReplanned={reseedSuggestions}
                     />
 
                     <SuggestedOrdersGrid<PlannedOrder>
@@ -951,7 +962,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                       todayIso={locationToday}
                       quantityHeader={t`Purchase Qty`}
                       orderByHeader={t`Order By`}
-                      resetKey={suggestionsVersion}
+                      resetKey={suggestionsVersion + draftVersion}
                       onChange={onSuggestedOrdersChange}
                       onAdd={onAddOrder}
                     />
