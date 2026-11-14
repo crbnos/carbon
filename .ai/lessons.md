@@ -499,6 +499,20 @@ them for every function and view your migrations define; for any hit, write a NE
 dated after both that carries both changes (here, since folded into
 `20261006221601_complete-job-to-asset.sql`).
 
+**Context:** Adding aging detail columns to `get_ap_open_by_supplier` kept the
+supplier reference behavior, but changed the line breaks around fields added by
+its previous migration.
+
+**Problem:** `function-redefinition-keeps-changes` compares added SQL lines
+literally, so the harmless layout change failed both CI conformance and tests.
+
+**Rule:** When extending an RPC return shape, retain the exact lines introduced
+by its newest definition where possible, and run the conformance test before
+committing. Put new select expressions on separate lines.
+
+**Applies to:** `packages/database/supabase/migrations/` function redefinitions
+that add return columns.
+
 ## Job-completion side effects must live in complete_job_to_inventory, not in route actions
 
 **Context:** Service-job fulfillment (advance the linked salesOrderLine on completion) was first implemented in the ERP `$jobId.complete.tsx` action after the RPC call. In e2e it never ran: the operator finished the last operation, and `sync_update_job_operation_quantities` → `sync_finish_job_operation` (DB interceptors) called `complete_job_to_inventory` directly — the ERP route was never involved.

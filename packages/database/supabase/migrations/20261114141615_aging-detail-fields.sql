@@ -188,8 +188,9 @@ AS $function$
       AND j."status"='Posted' AND j."postingDate"<=_as_of_date
     GROUP BY line."documentId"
   ), invoice_open AS (
-    SELECT i."supplierId", i."id", i."invoiceId", i."dateDue", i."dateIssued", i."postingDate", i."currencyCode",
+    SELECT i."supplierId", i."id", i."invoiceId", i."dateDue", i."currencyCode",
       i."exchangeRate", i."totalAmount", i."supplierReference",
+      i."dateIssued", i."postingDate",
       COALESCE(c.original_base, accounting_round_internal(i."totalAmount")) AS original_base,
       COALESCE(s.settled_base, 0) AS settled_base,
       amounts.remaining_document,
@@ -211,8 +212,9 @@ AS $function$
       AND NOT (ib."status" = 'Paid'
         AND (ib."datePaid" IS NULL OR ib."datePaid" <= _as_of_date))
   ), memo_open AS (
-    SELECT m."supplierId", m."id", m."memoId", m."direction", m."memoDate", m."currencyCode",
+    SELECT m."supplierId", m."id", m."memoId", m."direction", m."currencyCode",
       m."exchangeRate", m."amount",
+      m."memoDate",
       accounting_round_internal(m."amount"/m."exchangeRate") - COALESCE(s.settled_base,0) - COALESCE(t.settled_base,0) AS remaining_base,
       COALESCE(s.settled_document, 0) + COALESCE(t.settled_document, 0) AS settled_document,
       m."amount" - COALESCE(s.settled_document, 0)
