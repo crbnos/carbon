@@ -123,7 +123,7 @@ Server checks (`plan.server.ts`) read `companyPlan.planId` through `getCompanyPl
 `requirePermissions` also uses: service role, Redis for 5 minutes, memoized per read request.
 A company with no plan row is cached too (as `""`), and so is the `isCarbonOwnedCompany`
 fallback such a company falls through to. `syncStripeDataToKV` clears the plan key when
-it writes a row; a failed read is never cached. Any other change (a plan row edited by
+it writes a row; a failed read is never cached, and reads as no plan (`getCompanyPlanIdOrThrow` throws instead, for `companyHasFeatureOrThrow`). Any other change (a plan row edited by
 hand, the `customer.subscription.deleted` webhook, a group owner change) shows up within
 5 minutes, or at once after `DEL companyPlan:<companyId>` in Redis.
 

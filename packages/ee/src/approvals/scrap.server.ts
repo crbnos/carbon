@@ -8,7 +8,7 @@ import { getLogger } from "@carbon/logger";
 import { datetime, equals, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { employeesWithPin } from "../console.server";
-import { companyHasFeature } from "../plan.server";
+import { companyHasFeature, companyHasFeatureOrThrow } from "../plan.server";
 import {
   BACKFLUSHED_ITEM_TYPES,
   materialUnitCost,
@@ -40,14 +40,16 @@ const logger = getLogger("ee", "scrap-approval");
 
 /**
  * Whether any enabled scrap approval rule could apply. The cheap first check:
- * a company without one never pays for the estimate.
+ * a company without one never pays for the estimate. Fails closed: a failed
+ * plan read throws, as a failed rule read does, rather than reading as a plan
+ * without approval rules.
  */
 export async function hasScrapApprovalRules(
   serviceRole: SupabaseClient<Database>,
   companyId: string
 ): Promise<boolean> {
   if (
-    !(await companyHasFeature(serviceRole, companyId, {
+    !(await companyHasFeatureOrThrow(serviceRole, companyId, {
       feature: "APPROVAL_RULES"
     }))
   ) {
