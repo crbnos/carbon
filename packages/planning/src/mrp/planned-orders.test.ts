@@ -146,6 +146,9 @@ const heldOrder = (
   ...overrides
 });
 
+/** item_p's planning row at loc_1 (`itemLocationSegmentKey`). */
+const ROW = ["item_p", "loc_1", ""].join(KEY_SEP);
+
 const key = (periodId: string, splitIndex = 0) =>
   ["item_p", "loc_1", "", "Make", periodId, String(splitIndex)].join(KEY_SEP);
 
@@ -297,6 +300,8 @@ describe("planned orders in planCompany", () => {
     ]);
     expect(outputs.heldPlannedOrderIds).toEqual(["plo_1"]);
     expect(outputs.plannedOrders).toEqual([]);
+    // a cancelled order is not offered for conversion as well
+    expect(outputs.newSupplyByRow.get(ROW)).toEqual([]);
     expect(childDemand(outputs)).toEqual([["w1", 10]]);
   });
 
@@ -331,6 +336,88 @@ describe("planned orders in planCompany", () => {
     expect(outputs.plannedOrders).toEqual([]);
     expect(outputs.heldPlannedOrderIds).toEqual([]);
     expect(childDemand(outputs)).toEqual([["w3", 18]]);
+  });
+
+  // A held order is converted through its week's Make, so it is that Make's
+  // supply: its own quantity and dates, its id, and no second order for it.
+  it("offers a held order for conversion as its week's Make", () => {
+    const outputs = planCompany(
+      base({
+        salesOrderLines: [sale("2026-12-07", 3)],
+        planned: {
+          existingPlannedOrders: [
+            heldOrder({
+              id: "plo_2",
+              status: "Firm",
+              quantity: 8,
+              scrapQuantity: 1,
+              dueDate: "2026-12-07",
+              releaseDate: "2026-11-30",
+              periodId: "w4",
+              quantityTrace: {
+                policyName: "Fixed Reorder Quantity",
+                triggerValues: { projectedStock: -3 }
+              }
+            })
+          ]
+        }
+      })
+    );
+    expect(outputs.plannedOrders).toEqual([]);
+    expect(outputs.newSupplyByRow.get(ROW)).toEqual([
+      {
+        type: "Make",
+        periodId: "w4",
+        suggestedQuantity: 8,
+        suggestedDate: "2026-12-07",
+        horizonDate: "2026-12-07",
+        latestOrderDate: "2026-11-30",
+        isASAP: false,
+        purchaseOrderLineId: null,
+        jobId: null,
+        plannedOrderId: "plo_2",
+        plannedOrderKey: key("w4"),
+        requiresManualAction: false,
+        supplierId: null,
+        policyName: "Fixed Reorder Quantity",
+        reason: null,
+        triggerValues: { projectedStock: -3 }
+      }
+    ]);
+  });
+
+  // The Firm 3 is due 11-20, inside its 7-day lead time, and the need of 7
+  // is in the same week. A planned order is no document being made, so it
+  // takes the shortfall as "Increase to 7" instead of a second Make of 4.
+  it("increases a Firm order due inside its lead time", () => {
+    const outputs = planCompany(
+      base({
+        salesOrderLines: [sale("2026-11-18", 7)],
+        planned: {
+          existingPlannedOrders: [
+            heldOrder({
+              id: "plo_2",
+              status: "Firm",
+              quantity: 3,
+              dueDate: "2026-11-20",
+              releaseDate: "2026-11-13",
+              periodId: "w1"
+            })
+          ]
+        }
+      })
+    );
+    expect(
+      (outputs.newSupplyByRow.get(ROW) ?? []).map((candidate) => [
+        candidate.type,
+        candidate.plannedOrderId,
+        candidate.suggestedQuantity
+      ])
+    ).toEqual([
+      ["Increase", "plo_2", 7],
+      ["Make", "plo_2", 3]
+    ]);
+    expect(outputs.plannedOrders).toEqual([]);
   });
 
   // On-hand 2, needs of 5 (week 2) and 3 (week 4), multiples of 4. The
@@ -746,14 +833,8 @@ describe("explosion parity with job creation", () => {
 
   // item_m is built inside item_p's job (Make to Order): its subjob makes
   // 2 × 11 = 22 plus its scrap ceil(3.3) = 4, so the subjob needs 3 × 26 =
-  // 78 of item_b.
-  // SKIPPED, a bug: MRP plans 66 of item_b. The planned explosion gives
-  // item_m 22 with no scrap (right: its subjob adds it), but item_m then
-  // takes the Phase 1 pass-through (`explodeBom`, the inline-production
-  // branch), which explodes the raw 22 and never adds the subjob's scrap, nor
-  // item_b's own scrap. The part under a made Make to Order child is short by
-  // the child's scrap.
-  it.skip("gives the part under a Make to Order child the material quantity of the child's subjob", () => {
+  // 78 of item_b. item_m takes the raw-need path, which adds its scrap.
+  it("gives the part under a Make to Order child the material quantity of the child's subjob", () => {
     const outputs = planCompany(
       base({
         items: [

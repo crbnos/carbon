@@ -8,6 +8,7 @@
 // are a person's or a document's, and are never touched.
 
 import type { DB } from "@carbon/database/client";
+import { lockCompanyPlanning } from "@carbon/database/planning-lock";
 import { equals } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { toIsoDate } from "../scheduling/date-utils.ts";
@@ -15,9 +16,110 @@ import {
   type GeneratedPlannedOrder,
   plannedOrderNaturalKey
 } from "./planned-orders.ts";
-import { jsonEquals, lockCompanyPlanning } from "./planning-actions.ts";
+import { jsonEquals } from "./planning-actions.ts";
 
 const BATCH_SIZE = 500;
+
+/** How many times a run reads and plans again when its planned orders changed. */
+export const MAX_PLAN_ATTEMPTS = 3;
+
+/**
+ * `plannedOrder.updatedAt` as UTC text, the same way in the snapshot and the
+ * check, so the two compare as strings.
+ */
+export const PLANNED_ORDER_UPDATED_AT = sql<
+  string | null
+>`("updatedAt" AT TIME ZONE 'UTC')::text`.as("updatedAt");
+
+/**
+ * The planned orders a run planned from, read before its other inputs
+ * (`runMrp`): the database's `now()` when the read began, then each Planned
+ * and Firm row's id, status and `updatedAt`.
+ */
+export type PlannedOrderSnapshot = {
+  readStart: string;
+  rows: { id: string; status: string; updatedAt: string | null }[];
+};
+
+/**
+ * A `plannedOrder` row as the write reads it under the planning lock: every
+ * Planned and Firm row, and any row created since the run's read began.
+ */
+export type CurrentPlannedOrder = {
+  id: string;
+  status: string;
+  updatedAt: string | null;
+  createdSinceRead: boolean;
+};
+
+/**
+ * Someone changed the company's planned orders between the run's read and
+ * its write. The write throws it before it writes, so its transaction rolls
+ * back; `runMrp` reads and plans again.
+ */
+export class PlannedOrdersChangedError extends Error {
+  constructor() {
+    super("The planned orders changed while MRP was planning");
+    this.name = "PlannedOrdersChangedError";
+  }
+}
+
+/**
+ * Did anyone change the planned orders since the run read them? Every change
+ * a person or another run makes shows here, with no clock compared in
+ * TypeScript:
+ *
+ * - firm, unfirm, edit and convert set `updatedAt` (convert also leaves
+ *   Planned / Firm, so the row is gone from the current set);
+ * - a Cancel deletes the row: a loaded id is missing;
+ * - another run's insert is a Planned row the run did not load, and was
+ *   created after the read began.
+ *
+ * The write calls this before it writes anything, so nothing here is the
+ * run's own.
+ */
+export function plannedOrdersChangedSince(
+  loaded: PlannedOrderSnapshot["rows"],
+  current: CurrentPlannedOrder[]
+): boolean {
+  if (current.some((row) => row.createdSinceRead)) return true;
+  const live = current.filter(
+    (row) => row.status === "Planned" || row.status === "Firm"
+  );
+  if (live.length !== loaded.length) return true;
+  const liveById = new Map(live.map((row) => [row.id, row]));
+  return loaded.some((row) => {
+    const now = liveById.get(row.id);
+    return (
+      !now ||
+      now.status !== row.status ||
+      (now.updatedAt ?? null) !== (row.updatedAt ?? null)
+    );
+  });
+}
+
+/**
+ * Runs `attempt` again, up to `maxAttempts` times in all, while it throws
+ * `PlannedOrdersChangedError`. Any other error, or the last attempt's, ends it.
+ */
+export async function retryOnPlannedOrderChange<T>(
+  attempt: (attemptNumber: number) => Promise<T>,
+  maxAttempts = MAX_PLAN_ATTEMPTS
+): Promise<T> {
+  for (let attemptNumber = 1; ; attemptNumber++) {
+    try {
+      return await attempt(attemptNumber);
+    } catch (err) {
+      if (!(err instanceof PlannedOrdersChangedError)) throw err;
+      if (attemptNumber >= maxAttempts) {
+        throw new Error(
+          `MRP did not write its plan: the planned orders changed during each of ${maxAttempts} attempts. Run MRP again.`,
+          { cause: err }
+        );
+      }
+    }
+  }
+}
 
 /** A `plannedOrder` row with status Planned, as the diff reads it. */
 export type StoredPlannedOrder = {
@@ -119,6 +221,10 @@ export function diffPlannedOrders(args: {
  * Diff-writes the company's Planned rows inside the caller's transaction and
  * returns the id of every generated order by its natural key.
  *
+ * With `snapshot` (what the run planned from), it first checks under the lock
+ * that no one changed the planned orders since (`plannedOrdersChangedSince`)
+ * and throws `PlannedOrdersChangedError`, writing nothing, when someone did.
+ *
  * It takes the company's planning lock FIRST, before it reads: the ERP's
  * convert (`settleNewSupplyPlanningActions`) takes the same lock, so a
  * planned order is never converted between this read and this write. Call it
@@ -140,10 +246,31 @@ export async function writePlannedOrderDiff(
     generated: GeneratedPlannedOrder[];
     heldPlannedOrderIds: string[];
     updatedAt: string;
+    snapshot?: PlannedOrderSnapshot;
   }
 ): Promise<Map<string, string>> {
   const { companyId, userId, updatedAt } = args;
   await lockCompanyPlanning(trx, companyId);
+
+  if (args.snapshot) {
+    const readStart = sql`${args.snapshot.readStart}::timestamptz`;
+    const current = await trx
+      .selectFrom("plannedOrder")
+      .select([
+        "id",
+        "status",
+        PLANNED_ORDER_UPDATED_AT,
+        sql<boolean>`"createdAt" > ${readStart}`.as("createdSinceRead")
+      ])
+      .where("companyId", "=", companyId)
+      .where(
+        sql<boolean>`("status" IN ('Planned', 'Firm') OR "createdAt" > ${readStart})`
+      )
+      .execute();
+    if (plannedOrdersChangedSince(args.snapshot.rows, current)) {
+      throw new PlannedOrdersChangedError();
+    }
+  }
   if (args.locationIds.length === 0) return new Map();
 
   const locationIds = new Set(args.locationIds);

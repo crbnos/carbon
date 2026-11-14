@@ -119,12 +119,16 @@ export type DeriveChangeActionsInput = {
  * Increase or Decrease on it cannot be carried out; a shortfall it cannot
  * cover becomes new supply instead. (An Increase on an overdue job sat beside
  * a Make for the same week, and the planner read the two as ordering twice.)
+ *
+ * A planned order is never frozen: no document exists, nothing is being made
+ * or shipped, and planning changes it directly.
  */
 export function isOrderFrozen(
-  order: Pick<OpenSupplyOrder, "dueDate">,
+  order: Pick<OpenSupplyOrder, "dueDate" | "plannedOrderId">,
   todayDate: string,
   leadTimeDays = 0
 ): boolean {
+  if (order.plannedOrderId) return false;
   return daysBetween(order.dueDate, todayDate) < Math.max(leadTimeDays, 0);
 }
 

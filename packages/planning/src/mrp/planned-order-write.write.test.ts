@@ -15,7 +15,12 @@ import {
 } from "kysely";
 import { describe, expect, it } from "vitest";
 import {
+  type CurrentPlannedOrder,
   diffPlannedOrders,
+  type PlannedOrderSnapshot,
+  PlannedOrdersChangedError,
+  plannedOrdersChangedSince,
+  retryOnPlannedOrderChange,
   writePlannedOrderDiff
 } from "./planned-order-write";
 import {
@@ -27,8 +32,9 @@ type Row = Record<string, unknown> & { id: string; status: string };
 
 /**
  * A `plannedOrder` table in memory. It records every statement and applies
- * the ones the writer sends: the read (by status), the DELETE (by id and
- * status), the `UPDATE … FROM (VALUES …)` and the INSERT … RETURNING.
+ * the ones the writer sends: the snapshot check (the Planned and Firm rows),
+ * the read (by status), the DELETE (by id and status), the
+ * `UPDATE … FROM (VALUES …)` and the INSERT … RETURNING.
  */
 class RecordingDriver extends DummyDriver {
   readonly sent: CompiledQuery[] = [];
@@ -40,6 +46,16 @@ class RecordingDriver extends DummyDriver {
   private apply(query: CompiledQuery): unknown[] {
     const params = query.parameters as unknown[];
     const sqlText = query.sql;
+    if (sqlText.includes('"createdSinceRead"')) {
+      return this.rows
+        .filter((row) => row.status === "Planned" || row.status === "Firm")
+        .map((row) => ({
+          id: row.id,
+          status: row.status,
+          updatedAt: row.updatedAt ?? null,
+          createdSinceRead: false
+        }));
+    }
     if (sqlText.startsWith("select")) {
       const status = params[1];
       return this.rows.filter((row) => row.status === status);
@@ -157,10 +173,21 @@ function stored(id: string, overrides: Partial<Row> = {}): Row {
   return { ...order, id, status: "Planned", ...overrides };
 }
 
+function kindsOf(driver: RecordingDriver) {
+  return driver.sent.map((q) =>
+    q.sql.includes("pg_advisory_xact_lock")
+      ? "lock"
+      : q.sql.includes('"createdSinceRead"')
+        ? "check"
+        : q.sql.trimStart().split(/\s/)[0]!.toLowerCase()
+  );
+}
+
 async function write(
   rows: Row[],
   orders: GeneratedPlannedOrder[],
-  heldPlannedOrderIds: string[] = []
+  heldPlannedOrderIds: string[] = [],
+  snapshot?: PlannedOrderSnapshot
 ) {
   const { db, driver } = database(rows);
   const idByKey = await writePlannedOrderDiff(db, {
@@ -169,14 +196,10 @@ async function write(
     locationIds: ["loc-1"],
     generated: orders,
     heldPlannedOrderIds,
-    updatedAt: "2026-11-14T00:00:00Z"
+    updatedAt: "2026-11-14T00:00:00Z",
+    snapshot
   });
-  const kinds = driver.sent.map((q) =>
-    q.sql.includes("pg_advisory_xact_lock")
-      ? "lock"
-      : q.sql.trimStart().split(/\s/)[0]!.toLowerCase()
-  );
-  return { idByKey, kinds, driver };
+  return { idByKey, kinds: kindsOf(driver), driver };
 }
 
 describe("writePlannedOrderDiff", () => {
@@ -281,5 +304,160 @@ describe("diffPlannedOrders", () => {
       deleteIds: [],
       matchedIds: new Map([[order.naturalKey, "plo-1"]])
     });
+  });
+});
+
+describe("the planned-order check before the write", () => {
+  const READ_START = "2026-11-14 10:00:00+00";
+  const snapshotOf = (...rows: Row[]): PlannedOrderSnapshot => ({
+    readStart: READ_START,
+    rows: rows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      updatedAt: (row.updatedAt as string | undefined) ?? null
+    }))
+  });
+
+  // A planner firmed plo-1 after the run read it: the run's plan would
+  // overwrite the firm, so this attempt writes nothing.
+  it("writes nothing when a planned order changed since the run read it", async () => {
+    const before = stored("plo-1");
+    const firmed = stored("plo-1", {
+      status: "Firm",
+      updatedAt: "2026-11-14 10:00:05"
+    });
+    const { db, driver } = database([firmed]);
+    await expect(
+      writePlannedOrderDiff(db, {
+        companyId: "co-1",
+        userId: "user-1",
+        locationIds: ["loc-1"],
+        generated: [generated({ quantity: 15 })],
+        heldPlannedOrderIds: [],
+        updatedAt: "2026-11-14T00:00:00Z",
+        snapshot: snapshotOf(before)
+      })
+    ).rejects.toBeInstanceOf(PlannedOrdersChangedError);
+    expect(kindsOf(driver)).toEqual(["lock", "check"]);
+    expect(driver.rows).toEqual([firmed]);
+  });
+
+  it("writes as usual when the planned orders are as the run read them", async () => {
+    const row = stored("plo-1", { updatedAt: "2026-11-13 09:00:00" });
+    const { kinds, driver } = await write(
+      [row],
+      [generated({ quantity: 15 })],
+      [],
+      snapshotOf(row)
+    );
+    expect(kinds).toEqual(["lock", "check", "select", "update"]);
+    expect(driver.rows).toEqual([
+      expect.objectContaining({ id: "plo-1", quantity: 15 })
+    ]);
+  });
+});
+
+describe("plannedOrdersChangedSince", () => {
+  const loaded = [
+    { id: "plo-1", status: "Planned", updatedAt: null },
+    { id: "plo-2", status: "Firm", updatedAt: "2026-11-13 09:00:00" }
+  ];
+  const current = (
+    overrides: Partial<
+      Record<string, Partial<CurrentPlannedOrder> | null>
+    > = {},
+    extra: CurrentPlannedOrder[] = []
+  ): CurrentPlannedOrder[] => [
+    ...loaded.flatMap((row) => {
+      const override = overrides[row.id];
+      if (override === null) return [];
+      return [{ ...row, createdSinceRead: false, ...override }];
+    }),
+    ...extra
+  ];
+
+  it("sees no change when every row is as read", () => {
+    expect(plannedOrdersChangedSince(loaded, current())).toBe(false);
+  });
+
+  it.each([
+    [
+      "a firm",
+      { "plo-1": { status: "Firm", updatedAt: "2026-11-14 10:00:05" } }
+    ],
+    ["an edit", { "plo-2": { updatedAt: "2026-11-14 10:00:05" } }],
+    [
+      "a conversion",
+      { "plo-1": { status: "Converted", updatedAt: "2026-11-14 10:00:05" } }
+    ],
+    ["a cancel (the row is deleted)", { "plo-2": null }]
+  ] as const)("sees %s", (_name, overrides) => {
+    expect(plannedOrdersChangedSince(loaded, current(overrides))).toBe(true);
+  });
+
+  it("sees a planned order another run inserted", () => {
+    expect(
+      plannedOrdersChangedSince(
+        loaded,
+        current({}, [
+          {
+            id: "plo-3",
+            status: "Planned",
+            updatedAt: null,
+            createdSinceRead: false
+          }
+        ])
+      )
+    ).toBe(true);
+  });
+
+  it("sees any row created after the read began", () => {
+    expect(
+      plannedOrdersChangedSince(
+        loaded,
+        current({}, [
+          {
+            id: "plo-4",
+            status: "Converted",
+            updatedAt: null,
+            createdSinceRead: true
+          }
+        ])
+      )
+    ).toBe(true);
+  });
+});
+
+describe("retryOnPlannedOrderChange", () => {
+  it("plans again after a change and returns the attempt that wrote", async () => {
+    const attempts: number[] = [];
+    const result = await retryOnPlannedOrderChange(async (attempt) => {
+      attempts.push(attempt);
+      if (attempt < 2) throw new PlannedOrdersChangedError();
+      return "written";
+    });
+    expect([result, attempts]).toEqual(["written", [1, 2]]);
+  });
+
+  it("gives up after three changed attempts", async () => {
+    const attempts: number[] = [];
+    await expect(
+      retryOnPlannedOrderChange(async (attempt) => {
+        attempts.push(attempt);
+        throw new PlannedOrdersChangedError();
+      })
+    ).rejects.toMatchObject({ cause: expect.any(PlannedOrdersChangedError) });
+    expect(attempts).toEqual([1, 2, 3]);
+  });
+
+  it("does not retry any other failure", async () => {
+    const attempts: number[] = [];
+    await expect(
+      retryOnPlannedOrderChange(async (attempt) => {
+        attempts.push(attempt);
+        throw new Error("connection lost");
+      })
+    ).rejects.toThrow("connection lost");
+    expect(attempts).toEqual([1]);
   });
 });

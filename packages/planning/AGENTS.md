@@ -87,17 +87,19 @@ with no group (the golden test asserts it). Planning groups and pegging are in
 
 | File | Holds |
 |------|-------|
-| `src/mrp/planned-orders.ts` | `createPlanSupply(inputs)` (pure): the `planSupply` hook `explodeBom` calls per eligible common key, `extraPlanningKeys`, and the accumulated `result()`; `plannedOrderNaturalKey`; the input/output types (`PlannedOrderInputs`, `GeneratedPlannedOrder`, `PlannedOrderSignal`, …) |
-| `src/mrp/row-sizing.ts` | `sizeRowSupply` — the new-supply sizing of one row, shared by the engine hook and `deriveRowActions` — with `deriveChangeActions`, `convertOrdersToIncreases`, `projectionsWithExpedites`, `isOrderFrozen`, the date helpers |
+| `src/mrp/planned-orders.ts` | `createPlanSupply(inputs)` (pure): the `planSupply` hook `explodeBom` calls per eligible common key, `extraPlanningKeys`, and the accumulated `result()`; `plannedOrderNaturalKey`; `withPlannedOrderIds`; the input/output types (`PlannedOrderInputs`, `GeneratedPlannedOrder`, `PlannedOrderSignal`, …). Every planned order still to convert — each new one and each held one MRP does not Cancel — is one Order / Make in `newSupplyByRow`, naming it by `plannedOrderKey` and (held, or new once written) `plannedOrderId`; the worklist sums them per type and week into one action that names none |
+| `src/mrp/row-sizing.ts` | `sizeRowSupply` — the new-supply sizing of one row, shared by the engine hook and `deriveRowActions` — with `deriveChangeActions`, `convertOrdersToIncreases`, `projectionsWithExpedites`, `isOrderFrozen` (never a planned order), the date helpers |
 | `src/mrp/open-supply-orders.ts` | `buildOpenSupplyOrders` (pure): open PO lines and jobs as `OpenSupplyOrder`s, with `releaseByDate`, `earlierRelease`, `itemLocationSegmentKey` |
-| `src/mrp/planned-order-write.ts` | `diffPlannedOrders` (pure) and `writePlannedOrderDiff(trx, …)` — the first statement of `runMrp`'s Phase-7 transaction; takes the planning lock, never touches Firm / Converted / held rows |
+| `src/mrp/planned-order-write.ts` | `diffPlannedOrders` (pure) and `writePlannedOrderDiff(trx, …)` — the first statement of `runMrp`'s Phase-7 transaction; takes the planning lock, then, given the run's `snapshot`, throws `PlannedOrdersChangedError` before any write when `plannedOrdersChangedSince` (pure) sees a change; never touches Firm / Converted / held rows. `retryOnPlannedOrderChange` re-runs `runMrp`'s load → plan → write up to `MAX_PLAN_ATTEMPTS` (3) times |
 | `src/mrp/planning-action-types.ts` | the shared action types (`PlanningActionCandidate`, `OpenSupplyOrder` with `plannedOrderId`, `ChangeCandidate`) |
 
-`lockCompanyPlanning(trx, companyId)` (`planning-actions.ts`) is the one per-company advisory lock
+`lockCompanyPlanning(trx, companyId)` (`@carbon/database/planning-lock`) is the one per-company advisory lock
 (`planning-actions:<companyId>`) every planned-order and planning-action writer takes first, the
-ERP's settle / convert / firm / edit / apply included. `runMrp` loads the planned-order inputs
-with `loadPlannedOrderInputs` (Kysely) and passes the engine's planned-order outputs to
-`generatePlanningActions`.
+ERP's settle / convert / firm / edit / apply included. `runMrp` reads the planned orders FIRST
+(`loadPlannedOrderSnapshot`: the database's `now()`, then the Planned and Firm rows), then the
+other inputs (`loadPlannedOrderInputs`, Kysely), and passes the engine's planned-order outputs to
+`generatePlanningActions`. The time fence is `@carbon/utils` `resolvePlanningTimeFenceDays` /
+`isPlannedOrderHeld`, shared with the planning drawers.
 
 Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId, commonSurplusDraws, newSupplyByRow?, plannedOrderChangeActions?, plannedOrderSignals?, plannedOrderIdByKey?, heldPlannedOrderIds?, … })`
 (`src/mrp/planning-actions.ts` — the planning action messages, Order / Make / Expedite / Defer /

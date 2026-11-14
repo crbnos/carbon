@@ -2306,6 +2306,35 @@ describe("deriveRowActions with the engine's new supply", () => {
     expect(actions[0]).not.toHaveProperty("plannedOrderKey");
     expect(actions[0]?.plannedOrderId).toBeNull();
   });
+
+  // A held planned order is part of its week's Make: the action covers it
+  // and the new order of the week, and names neither.
+  it("sums a held planned order into its week's Make", () => {
+    const make = (
+      quantity: number,
+      plannedOrderId: string | null
+    ): ChangeCandidate => ({
+      type: "Make",
+      periodId: "p2",
+      suggestedQuantity: quantity,
+      suggestedDate: "2026-10-12",
+      horizonDate: "2026-10-12",
+      latestOrderDate: "2026-10-05",
+      isASAP: false,
+      purchaseOrderLineId: null,
+      jobId: null,
+      plannedOrderId,
+      requiresManualAction: false,
+      supplierId: null,
+      policyName: "Demand-Based Reorder",
+      reason: null,
+      triggerValues: null,
+      plannedOrderKey: `key-${plannedOrderId}`
+    });
+    const actions = deriveRowActions(input([make(40, null), make(5, "plo_1")]));
+    expect(summary(actions)).toEqual([["Make", "p2", 45]]);
+    expect(actions[0]?.plannedOrderId).toBeNull();
+  });
 });
 
 describe("plannedOrderActions", () => {
@@ -2392,6 +2421,24 @@ describe("plannedOrderActions", () => {
         reason: expect.any(String),
         triggerValues: null
       }
+    ]);
+  });
+
+  // A Firm order may share the new order's natural key (only Planned rows are
+  // unique on it); the Expedite is still the new order's 20, not the Firm 9.
+  it("sizes a fence Expedite by the new order, not a Firm order on its key", () => {
+    const firm = { ...order, suggestedQuantity: 9, plannedOrderId: "plo-firm" };
+    const [expedite] = base({
+      signals: [
+        { naturalKey: order.plannedOrderKey!, expediteTo: "2026-10-05" }
+      ],
+      newSupplyByRow: new Map([
+        [itemLocationSegmentKey("item-1", "loc-1"), [order, firm]]
+      ])
+    });
+    expect([expedite?.plannedOrderId, expedite?.suggestedQuantity]).toEqual([
+      "plo-new",
+      20
     ]);
   });
 

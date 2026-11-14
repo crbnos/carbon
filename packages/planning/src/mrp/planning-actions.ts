@@ -44,6 +44,7 @@ import { getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { COMMON_SEGMENT, KEY_SEP } from "@carbon/database/mrp-engine";
+import { lockCompanyPlanning } from "@carbon/database/planning-lock";
 import type {
   GroupPegInput,
   MemberMove,
@@ -855,21 +856,6 @@ export async function loadSegmentOnHand(
 }
 
 /**
- * Takes the company's planning lock for the rest of the caller's transaction.
- * Every writer of planned orders and planning actions takes it first: the
- * MRP write phase, `generatePlanningActions`, and the ERP's settle and convert
- * (`settleNewSupplyPlanningActions`). It serialises them per company.
- */
-export async function lockCompanyPlanning(
-  trx: Kysely<DB>,
-  companyId: string
-): Promise<void> {
-  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`planning-actions:${companyId}`}, 0))`.execute(
-    trx
-  );
-}
-
-/**
  * What the open-supply views do not expose: each open job's status and
  * good-unit quantity, and the conversion factor of each open PO line bought
  * in a unit other than the inventory unit. One read each of the company's
@@ -1097,11 +1083,13 @@ export function deriveRowActions(
 }
 
 /**
- * The engine's new supply for a row, as actions. An Order or Make stands for
- * every planned order of its week, so it names none (`plannedOrderKey` is
- * dropped). One action per order: an Increase on an order that a change
- * action of the row already targets is left out, as `convertOrdersToIncreases`
- * leaves it out when it sizes the row itself.
+ * The engine's new supply for a row, as actions. Each engine Order or Make is
+ * one planned order (new or held); the action stands for every planned order
+ * of its week, so it names none (`plannedOrderKey` and `plannedOrderId` are
+ * dropped) and `deriveRowActions` sums the week's orders into it. One action
+ * per order: an Increase on an order that a change action of the row already
+ * targets is left out, as `convertOrdersToIncreases` leaves it out when it
+ * sizes the row itself.
  */
 function engineNewSupply(
   engineSupply: ChangeCandidate[],
@@ -1109,6 +1097,9 @@ function engineNewSupply(
 ): ChangeCandidate[] {
   const targeted = new Set(changeActions.map((a) => supplyTarget(a) ?? ""));
   return engineSupply.flatMap(({ plannedOrderKey: _key, ...candidate }) => {
+    if (candidate.type === "Order" || candidate.type === "Make") {
+      return [{ ...candidate, plannedOrderId: null }];
+    }
     const target = supplyTarget(candidate);
     if (target && targeted.has(target)) return [];
     return [candidate];
@@ -1168,12 +1159,20 @@ export function plannedOrderActions(args: {
     actions.push({ ...action, requiresManualAction: false });
   }
 
+  // The new orders by natural key. A held Firm order may share a new order's
+  // natural key (only Planned rows are unique on it); it names its own id.
   const orderByKey = new Map<string, ChangeCandidate>();
   for (const supply of args.newSupplyByRow.values()) {
     for (const candidate of supply) {
-      if (candidate.plannedOrderKey) {
-        orderByKey.set(candidate.plannedOrderKey, candidate);
+      const key = candidate.plannedOrderKey;
+      if (!key) continue;
+      if (
+        candidate.plannedOrderId &&
+        candidate.plannedOrderId !== args.plannedOrderIdByKey.get(key)
+      ) {
+        continue;
       }
+      orderByKey.set(key, candidate);
     }
   }
   for (const signal of args.signals) {

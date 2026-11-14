@@ -54,7 +54,10 @@ export type PlanningActionCandidate = {
   jobId: string | null;
   /**
    * A change action on a planned order (`plannedOrder.id`). Such an action
-   * never needs manual action and is never a Release.
+   * never needs manual action and is never a Release. An Order / Make action
+   * is never stored with one (`planningAction_change_target_chk`); only the
+   * engine's Order / Make candidates (`newSupplyByRow`) carry the id of the
+   * one planned order each stands for.
    */
   plannedOrderId: string | null;
   requiresManualAction: boolean;
@@ -120,9 +123,10 @@ export type ChangeCandidate = Omit<
   "itemId" | "locationId" | "assignee"
 > & {
   /**
-   * MRP v2: the natural key (`plannedOrderNaturalKey`) of the planned order a
-   * new Order or Make stands for. Set only by the engine's sizing
-   * (`createPlanSupply`); the action writer maps it to `plannedOrder.id`.
+   * MRP v2: the natural key (`plannedOrderNaturalKey`) of the planned order an
+   * engine Order or Make stands for, new or held. Set only by the engine's
+   * sizing (`createPlanSupply`); `runMrp` maps a new order's key to its
+   * `plannedOrderId` once the write gave it one.
    */
   plannedOrderKey?: string;
 };

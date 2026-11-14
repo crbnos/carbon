@@ -24,7 +24,13 @@ import {
   makeLocationItemKey,
   type PlannedSupplyResult
 } from "@carbon/database/mrp-engine";
-import { round, scrapAllowance } from "@carbon/utils";
+import {
+  isPlannedOrderHeld,
+  planningTimeFenceDate,
+  resolvePlanningTimeFenceDays,
+  round,
+  scrapAllowance
+} from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { itemLocationSegmentKey } from "./open-supply-orders.ts";
 import type {
@@ -85,6 +91,14 @@ export type ExistingPlannedOrder = {
   periodId: string;
   splitIndex: number;
   supplierId: string | null;
+  /**
+   * The trace MRP stored when it planned the order (`plannedOrder.
+   * quantityTrace`); a held order's Order / Make names its policy from it.
+   * Absent or null: no policy named.
+   */
+  quantityTrace?: Partial<
+    Pick<PlannedOrderTrace, "policyName" | "triggerValues">
+  > | null;
 };
 
 /** What `runMrp` loads for planned orders. Absent: MRP plans as in Phase 1. */
@@ -178,10 +192,17 @@ export type PlanSupplyResult = {
   plannedOrderSignals: PlannedOrderSignal[];
   plannedOrderChangeActions: PlannedOrderChangeAction[];
   /**
-   * The new supply of each planned key (`itemLocationSegmentKey`): every new
-   * Order / Make (each with its `plannedOrderKey`, dates fence-shifted) and
-   * every Increase on an open order. A key the hook planned is present even
-   * with an empty list; a key absent here keeps the Phase 1 path.
+   * The new supply of each planned key (`itemLocationSegmentKey`): every
+   * Order / Make, and every Increase on an open order. A key the hook planned
+   * is present even with an empty list; a key absent here keeps the Phase 1
+   * path.
+   *
+   * An Order / Make stands for one planned order still to convert, and names
+   * it: a new one by `plannedOrderKey` (dates fence-shifted; `runMrp` adds its
+   * `plannedOrderId` once the write gave it one), a held one (Firm, or Planned
+   * inside the fence) by `plannedOrderKey` and `plannedOrderId`, with its own
+   * quantity and dates. A held order MRP cancels has none. The worklist sums
+   * them per type and week into one action that names no planned order.
    */
   newSupplyByRow: Map<string, ChangeCandidate[]>;
 };
@@ -207,6 +228,32 @@ export function plannedOrderNaturalKey(order: {
     order.periodId,
     String(order.splitIndex)
   ].join(KEY_SEP);
+}
+
+/**
+ * `newSupplyByRow` with each new Order / Make naming its planned order's id,
+ * once the write gave the order one (`plannedOrderIdByKey`). A held order
+ * already names its own id and keeps it: a Firm order may share a new
+ * order's natural key.
+ */
+export function withPlannedOrderIds(
+  newSupplyByRow: ReadonlyMap<string, ChangeCandidate[]>,
+  plannedOrderIdByKey: ReadonlyMap<string, string>
+): Map<string, ChangeCandidate[]> {
+  return new Map(
+    [...newSupplyByRow].map(([rowKey, supply]) => [
+      rowKey,
+      supply.map((candidate) => {
+        if (candidate.plannedOrderId || !candidate.plannedOrderKey) {
+          return candidate;
+        }
+        const plannedOrderId = plannedOrderIdByKey.get(
+          candidate.plannedOrderKey
+        );
+        return plannedOrderId ? { ...candidate, plannedOrderId } : candidate;
+      })
+    ])
+  );
 }
 
 /** A Buy or Buy and Make item plans purchases; a Make item plans jobs. */
@@ -312,15 +359,10 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     return { policy, kind };
   };
 
-  // item value, else the location's, else 0 (no fence)
   const fenceDaysOf = (policy: PlanningPolicyInput): number =>
-    Math.max(
-      0,
-      Number(
-        policy.planningTimeFenceDays ??
-          inputs.locationTimeFenceDays.get(policy.locationId) ??
-          0
-      ) || 0
+    resolvePlanningTimeFenceDays(
+      policy.planningTimeFenceDays,
+      inputs.locationTimeFenceDays.get(policy.locationId)
     );
 
   // Held orders: Firm, or Planned and released inside the fence. They keep
@@ -332,12 +374,9 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     }
     const eligible = eligibleOf(order.locationId, order.itemId);
     if (!eligible) continue;
-    const fenceDays = fenceDaysOf(eligible.policy);
-    const held =
-      order.status === "Firm" ||
-      (fenceDays > 0 &&
-        daysBetween(order.releaseDate, addDays(todayDate, fenceDays)) <= 0);
-    if (!held) continue;
+    if (!isPlannedOrderHeld(order, fenceDaysOf(eligible.policy), todayDate)) {
+      continue;
+    }
     const key = makeLocationItemKey(order.locationId, order.itemId);
     const list = heldByKey.get(key) ?? [];
     list.push(order);
@@ -370,7 +409,7 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     const explosionOf = (quantity: number) =>
       quantity + scrapAllowance(quantity, scrapRate);
     const fenceDays = fenceDaysOf(policy);
-    const fenceDate = addDays(todayDate, fenceDays);
+    const fenceDate = planningTimeFenceDate(todayDate, fenceDays);
     const rowKey = itemLocationSegmentKey(itemId, locationId);
     const held = heldByKey.get(makeLocationItemKey(locationId, itemId)) ?? [];
 
@@ -546,7 +585,44 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       }
       return { ...candidate, plannedOrderKey: naturalKey };
     });
-    newSupplyByRow.set(rowKey, rowSupply);
+
+    // ── held orders still to convert: each is part of its week's Order /
+    // Make, so applying that action converts it. Its quantity and dates are
+    // its own; sizing already counted it as supply, so it adds no order. A
+    // held order MRP cancels is not offered for conversion.
+    const cancelledIds = new Set(
+      changeActions
+        .filter((action) => action.type === "Cancel")
+        .map((action) => action.plannedOrderId)
+    );
+    const heldOrderSupply: ChangeCandidate[] = [];
+    for (const order of held) {
+      if (cancelledIds.has(order.id)) continue;
+      if (order.orderType !== "Make" && order.orderType !== "Buy") continue;
+      // the week it lands in as supply; past the horizon it is not supply
+      const index = supplyPeriodIndex(order.dueDate);
+      const period = index === null ? undefined : periods[index];
+      if (!period) continue;
+      heldOrderSupply.push({
+        type: order.orderType === "Make" ? "Make" : "Order",
+        periodId: period.id,
+        suggestedQuantity: order.quantity,
+        suggestedDate: order.dueDate,
+        horizonDate: order.dueDate,
+        latestOrderDate: order.releaseDate,
+        isASAP: daysBetween(order.releaseDate, todayDate) < 0,
+        purchaseOrderLineId: null,
+        jobId: null,
+        plannedOrderId: order.id,
+        plannedOrderKey: plannedOrderNaturalKey(order),
+        requiresManualAction: false,
+        supplierId: order.orderType === "Buy" ? order.supplierId : null,
+        policyName: order.quantityTrace?.policyName ?? null,
+        reason: null,
+        triggerValues: order.quantityTrace?.triggerValues ?? null
+      });
+    }
+    newSupplyByRow.set(rowKey, [...rowSupply, ...heldOrderSupply]);
 
     if (kind !== "Make") return { explosions: [] };
 
@@ -605,7 +681,7 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
   };
 }
 
-/** A new Order or Make: new supply with no open order to change. */
+/** A new Order or Make from the sizing: new supply with no order behind it. */
 function isNewOrder(candidate: ChangeCandidate): boolean {
   return (
     (candidate.type === "Order" || candidate.type === "Make") &&
