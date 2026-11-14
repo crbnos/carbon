@@ -143,7 +143,15 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
       );
 
     /** Scraps the kit the job consumed, as the dialog's Scrap tab does. */
-    const scrapIssuedKit = async (consumedKitId: string) => {
+    const scrapIssuedKit = async () => {
+      // The issue split the consumed kit off the lot, under the lot's number.
+      const consumedKit = await f.db
+        .selectFrom("trackedEntity")
+        .select("id")
+        .where("readableId", "=", `KIT-${key}`)
+        .where("status", "=", "Consumed")
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
       const reason = await f.db
         .insertInto("scrapReason")
         .values({
@@ -158,7 +166,7 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
         "issue",
         {
           type: "scrapTrackedEntity",
-          trackedEntityId: consumedKitId,
+          trackedEntityId: consumedKit.id,
           materialId: material.id,
           parentTrackedEntityId: parentId,
           scrapReasonId: reason.id
@@ -208,11 +216,8 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
     async () => {
       const job = await jobNeedingOneKit("scrapped");
 
-      const first = await job.issueKits(1);
-      expect(first.error).toBeNull();
-      const consumedKitId = first.data?.splitEntities?.[0]?.newId;
-      expect(consumedKitId).toBeDefined();
-      expect((await job.scrapIssuedKit(consumedKitId as string)).error).toBeNull();
+      expect((await job.issueKits(1)).error).toBeNull();
+      expect((await job.scrapIssuedKit()).error).toBeNull();
 
       expect((await job.issueKits(1)).error).toBeNull();
       expect(await job.state()).toEqual({ issued: 1, leftInLot: 3 });
