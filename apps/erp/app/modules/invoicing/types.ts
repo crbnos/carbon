@@ -21,7 +21,9 @@ export type PurchaseInvoice =
 
 export type PurchaseInvoiceListItem = NonNullable<
   Awaited<ReturnType<typeof getPurchaseInvoices>>["data"]
->[number];
+>[number] & {
+  glCodes?: string | null;
+};
 
 export type PurchaseInvoiceDelivery = NonNullable<
   Awaited<ReturnType<typeof getPurchaseInvoiceDelivery>>["data"]
@@ -43,7 +45,9 @@ export type SalesInvoice = Database["public"]["Views"]["salesInvoices"]["Row"];
 
 export type SalesInvoiceListItem = NonNullable<
   Awaited<ReturnType<typeof getSalesInvoices>>["data"]
->[number];
+>[number] & {
+  glCodes?: string | null;
+};
 
 export type SalesInvoiceShipment = NonNullable<
   Awaited<ReturnType<typeof getSalesInvoiceShipment>>["data"]

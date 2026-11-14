@@ -811,6 +811,19 @@ export async function getSalesInvoiceCustomerNames(
   });
 }
 
+export async function getInvoiceLineGlCodes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceType: "sales" | "purchase",
+  invoiceIds: string[]
+) {
+  return client.rpc("get_invoice_line_gl_codes", {
+    company_id: companyId,
+    invoice_type: invoiceType,
+    invoice_ids: invoiceIds
+  });
+}
+
 export async function getSalesInvoiceShipment(
   client: SupabaseClient<Database>,
   salesInvoiceId: string
