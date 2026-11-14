@@ -1936,7 +1936,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "부적합 작업으로 다른 곳에서 문제 재발을 방지합니다 — 시정 수정 및 격리와는 구별됩니다."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "그림 옆에 숫자나 기호를 놓으면 의미가 달라집니다. 그 사이에 단어를 넣으세요."
 
 msgid "A part"
 msgstr "부품"
@@ -9500,6 +9500,9 @@ msgstr "부품 주문부터 가용까지의 일수이며, 계획 오프셋이 �
 msgid "Days Off"
 msgstr "휴무일"
 
+msgid "Days Past Due"
+msgstr "지급 기한 경과 일수"
+
 msgid "Days Remaining"
 msgstr "남은 일수"
 
@@ -16092,7 +16095,7 @@ msgid "Keep matching items"
 msgstr "일치하는 품목 유지"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "내 버전 유지"
 
 msgid "Keep navigation open"
 msgstr "탐색 열어 두기"
@@ -16837,7 +16840,7 @@ msgid "Linked Record"
 msgstr "연결된 레코드"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "공유 섹션에 연결되어 있습니다. 모든 곳에 반영하려면 라이브러리에서 편집하세요."
 
 msgid "Links"
 msgstr "링크"
@@ -19935,7 +19938,7 @@ msgid "No values available"
 msgstr "사용 가능한 값이 없습니다."
 
 msgid "No values found"
-msgstr ""
+msgstr "값을 찾을 수 없습니다"
 
 msgid "No variable matches {query}"
 msgstr "{query}와 일치하는 변수가 없습니다"
@@ -21145,6 +21148,9 @@ msgstr "출처"
 msgid "Original"
 msgstr "원본"
 
+msgid "Original Amount"
+msgstr "원래 금액"
+
 msgid "Original Count"
 msgstr "원본 계산"
 
@@ -22202,7 +22208,7 @@ msgid "Playback"
 msgstr "재생"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "<0>변경해 주세요</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "감사 로깅을 활성화하려면 관리자에게 문의하십시오."
@@ -24327,7 +24333,7 @@ msgid "Remove authenticator app"
 msgstr "인증 앱 제거"
 
 msgid "Remove block"
-msgstr ""
+msgstr "블록 제거"
 
 msgid "Remove clause"
 msgstr "절 제거"
@@ -27158,7 +27164,7 @@ msgid "Shared channel"
 msgstr "공유 채널"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "공유 섹션(삭제됨)"
 
 msgid "Shared Sections"
 msgstr "공유 섹션"
@@ -27801,7 +27807,7 @@ msgid "Someone"
 msgstr "누군가"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "다른 사용자가 방금 이 템플릿을 저장했습니다. 새로 고침하여 해당 버전을 불러오거나, 계속 편집한 뒤 저장할 때 덮어쓰세요."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "회계를 업데이트할 수 있는 사용자가 자산을 자본화하기 전에 사내 생산 원가를 입력해야 합니다."
@@ -29779,7 +29785,7 @@ msgid "The document could not be downloaded."
 msgstr "문서를 다운로드할 수 없습니다."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "문서를 열 수 없습니다."
 
 msgid "The early hours, {name}."
 msgstr "이른 시간, {name}."
@@ -30349,7 +30355,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "이 이슈에 적용되는 사전 정의된 작업 및 승인 요구사항 묶음입니다. 설정 시 이슈 유형의 기본 워크플로를 재정의합니다."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "미리보기를 생성할 수 없습니다. 마지막으로 생성된 미리보기를 표시합니다."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "시간 및 자재 라인의 시간 가격: 직원을 위한 라인의 요율, 그렇지 않으면 노무 범주를 위한, 그렇지 않으면 노무 범주의 기본 청구 요율, 그 날 유효합니다."
@@ -31196,7 +31202,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "이 PIN은 다시 표시되지 않습니다. MES 터미널에서 콘솔 모드를 종료할 때 필요합니다."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "텍스트가 그림을 변경하므로 이 미리보기가 일시 중지되었습니다."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "이 가격은 수동으로 입력되었으므로 가격 규칙이 적용되지 않았습니다."
@@ -31262,7 +31268,7 @@ msgid "This serial"
 msgstr "이 일련번호"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "이 공유 섹션은 더 이상 존재하지 않습니다. 블록을 제거하거나 섹션을 다시 만드세요."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "이 작업장은 역량 게이트 작업을 실행합니다 — 자격 있는 작업자가 교대조에 있을 때만 실행됩니다; 인력 배치표에 할당된 작업자는 가용 노무를 더욱 형성합니다."

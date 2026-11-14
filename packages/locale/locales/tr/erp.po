@@ -1936,7 +1936,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Sorununun başka yerlerde tekrarlanmasını durduran uygunsuzluk görevi — düzeltici onarım ve çevrelemeden farklı."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "Bir şeklin yanındaki sayı veya işaret, onun anlamını değiştirir. Aralarına bir sözcük ekleyin."
 
 msgid "A part"
 msgstr "Bir parça"
@@ -9500,6 +9500,9 @@ msgstr "Bir parça sipariş etmekten itibaren kullanılabilir olana kadar olan g
 msgid "Days Off"
 msgstr "İzin Günleri"
 
+msgid "Days Past Due"
+msgstr "Vade Tarihini Geçen Gün"
+
 msgid "Days Remaining"
 msgstr "Kalan Günler"
 
@@ -16092,7 +16095,7 @@ msgid "Keep matching items"
 msgstr "Eşleşen öğeleri sakla"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "Benimkini koru"
 
 msgid "Keep navigation open"
 msgstr "Gezinmeyi açık tut"
@@ -16837,7 +16840,7 @@ msgid "Linked Record"
 msgstr "Bağlantılı Kayıt"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "Paylaşılan bir bölüme bağlı. Her yerde güncellemek için kitaplıkta düzenleyin."
 
 msgid "Links"
 msgstr "Bağlantılar"
@@ -19935,7 +19938,7 @@ msgid "No values available"
 msgstr "Kullanılabilir değer yok"
 
 msgid "No values found"
-msgstr ""
+msgstr "Hiçbir değer bulunamadı"
 
 msgid "No variable matches {query}"
 msgstr "Değişken {query} ile eşleşmiyor"
@@ -21145,6 +21148,9 @@ msgstr "Kaynak"
 msgid "Original"
 msgstr "Orijinal"
 
+msgid "Original Amount"
+msgstr "Orijinal Tutar"
+
 msgid "Original Count"
 msgstr "Orijinal Sayım"
 
@@ -22202,7 +22208,7 @@ msgid "Playback"
 msgstr "Oynatma"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "Lütfen <0>değiştirin</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Denetim günlüğünü etkinleştirmek için lütfen yöneticinizle iletişime geçin."
@@ -24327,7 +24333,7 @@ msgid "Remove authenticator app"
 msgstr "Kimlik Doğrulayıcı Uygulamasını Kaldır"
 
 msgid "Remove block"
-msgstr ""
+msgstr "Bloğu kaldır"
 
 msgid "Remove clause"
 msgstr "Maddeyi kaldır"
@@ -27158,7 +27164,7 @@ msgid "Shared channel"
 msgstr "Paylaşılan kanal"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "Paylaşılan Bölüm (silindi)"
 
 msgid "Shared Sections"
 msgstr "Paylaşılan Bölümler"
@@ -27801,7 +27807,7 @@ msgid "Someone"
 msgstr "Birisi"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "Başka biri bu şablonu az önce kaydetti. Onun sürümünü yüklemek için yenileyin veya düzenlemeye devam edip kaydederken üzerine yazın."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Muhasebeyi güncelleyebilen birinin, varlıklaştırılabilmesi için üretim maliyetini girmesi gerekir."
@@ -29779,7 +29785,7 @@ msgid "The document could not be downloaded."
 msgstr "Belge indirilemedi."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "Belge açılamadı."
 
 msgid "The early hours, {name}."
 msgstr "Sabah saatleri, {name}."
@@ -30349,7 +30355,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Bu sorun türüne uygulanan Görev ve Onay gereksinimlerinin önceden ayarlanmış kümesi; ayarlandığında sorun türünün varsayılan İş akışını geçersiz kılar."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "Önizleme oluşturulamadı. Son başarılı önizleme gösteriliyor."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Bir Zaman ve Malzeme satırında bir saatin fiyatı: satır için çalışanın oranı, yoksa işçilik kategorisinin oranı, yoksa işçilik kategorisinin varsayılan Faturalandırma Oranı, o gün geçerli."
@@ -31196,7 +31202,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan çıkmak için gerekli olacak."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "Bir metin şekli değiştirdiği için bu önizleme duraklatıldı."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Bu fiyat manuel olarak girildi, bu nedenle hiçbir fiyatlandırma kuralı uygulanmadı."
@@ -31262,7 +31268,7 @@ msgid "This serial"
 msgstr "Bu seri numarası"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "Bu paylaşılan bölüm artık yok. Bloğu kaldırın veya bölümü yeniden oluşturun."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Bu istasyon yetkinlik kapısı geçmeli işleri çalıştırır — yalnızca nitelikli operatör vardiyada olduğu sürece çalışır; kadro tarafından atanan operatörler kullanılabilir işçiliği şekillendirir."

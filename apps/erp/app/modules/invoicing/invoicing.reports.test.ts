@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   aggregateSpend,
   agingCsvTable,
+  daysPastDue,
   previousPeriod
 } from "./invoicing.reports";
 
@@ -116,7 +117,9 @@ describe("agingCsvTable", () => {
       partyId: "sup-1",
       documentNumber: "PI-123",
       documentType: "Invoice",
+      transactionDate: "2026-11-01",
       dateDue: "2026-11-30",
+      originalInBase: 2000,
       openInBase: 1500,
       supplierReference: "SUP-9"
     },
@@ -124,45 +127,118 @@ describe("agingCsvTable", () => {
       partyId: "sup-1",
       documentNumber: "DR-7",
       documentType: "Debit Memo",
+      transactionDate: "2026-11-07",
       dateDue: null,
+      originalInBase: -500,
       openInBase: -500,
       supplierReference: null
     }
   ];
   const partyNameById = new Map([["sup-1", "Acme"]]);
+  const labels = {
+    party: "Supplier",
+    document: "Document",
+    transactionDate: "Transaction Date",
+    documentType: "Document Type",
+    invoice: "Invoice",
+    creditMemo: "Credit Memo",
+    debitMemo: "Debit Memo",
+    supplierInvoiceNumber: "Supplier Invoice Number",
+    dueDate: "Due Date",
+    originalAmount: "Original Amount",
+    daysPastDue: "Days Past Due",
+    paymentTerm: "Payment Term",
+    current: "Current",
+    unapplied: "Unapplied",
+    total: "Total"
+  };
+
+  it("uses localized document types in the CSV rows", () => {
+    const { fields, rows } = agingCsvTable({
+      labels: {
+        ...labels,
+        documentType: "Belegart",
+        invoice: "Rechnung",
+        creditMemo: "Gutschrift",
+        debitMemo: "Sollschrift"
+      },
+      partyNameById,
+      aging,
+      open: [
+        ...open,
+        { ...open[0]!, documentType: "Credit Memo" },
+        { ...open[0]!, documentType: "Other" }
+      ],
+      asOfDate: "2026-12-15",
+      bucketDays: [30, 60, 90],
+      withSupplierReference: true
+    });
+
+    expect(fields[3]).toBe("Belegart");
+    expect(rows.slice(1).map((row) => row[3])).toEqual([
+      "Rechnung",
+      "Sollschrift",
+      "Gutschrift",
+      "Other"
+    ]);
+  });
 
   it("writes every open document under its counterparty, naming the party on each row", () => {
     const { fields, rows } = agingCsvTable({
-      partyHeader: "Supplier",
+      labels,
       partyNameById,
       aging,
       open,
+      asOfDate: "2026-12-15",
       bucketDays: [30, 60, 90],
       withSupplierReference: true
     });
     expect(fields).toEqual([
       "Supplier",
       "Document",
+      "Transaction Date",
       "Document Type",
       "Supplier Invoice Number",
       "Due Date",
+      "Original Amount",
+      "Days Past Due",
       "Payment Term",
       "Current",
       "1-30",
       "31-60",
       "61-90",
-      "90+",
+      "91+",
       "Unapplied",
       "Total"
     ]);
     expect(rows).toEqual([
-      ["Acme", "", "", "", "", "Net 30", 1000, 500, 0, 0, 0, 0, 1500],
+      [
+        "Acme",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Net 30",
+        1000,
+        500,
+        0,
+        0,
+        0,
+        0,
+        1500
+      ],
       [
         "Acme",
         "PI-123",
+        "2026-11-01",
         "Invoice",
         "SUP-9",
         "2026-11-30",
+        2000,
+        15,
         "",
         "",
         "",
@@ -172,33 +248,57 @@ describe("agingCsvTable", () => {
         "",
         1500
       ],
-      ["Acme", "DR-7", "Debit Memo", "", "", "", "", "", "", "", "", "", -500]
+      [
+        "Acme",
+        "DR-7",
+        "2026-11-07",
+        "Debit Memo",
+        "",
+        "",
+        -500,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        -500
+      ]
     ]);
   });
 
   it("omits the supplier reference column on the AR side and falls back to the id for an unknown party", () => {
     const { fields, rows } = agingCsvTable({
-      partyHeader: "Customer",
+      labels: { ...labels, party: "Customer" },
       partyNameById: new Map(),
       aging,
       open: open.slice(0, 1),
+      asOfDate: "2026-12-15",
       bucketDays: [15, 45, 75],
       withSupplierReference: false
     });
-    expect(fields.slice(0, 5)).toEqual([
+    expect(fields.slice(0, 8)).toEqual([
       "Customer",
       "Document",
+      "Transaction Date",
       "Document Type",
       "Due Date",
+      "Original Amount",
+      "Days Past Due",
       "Payment Term"
     ]);
-    expect(fields.slice(6, 10)).toEqual(["1-15", "16-45", "46-75", "75+"]);
+    expect(fields.slice(9, 13)).toEqual(["1-15", "16-45", "46-75", "76+"]);
     expect(rows[0][0]).toBe("sup-1");
     expect(rows[1]).toEqual([
       "sup-1",
       "PI-123",
+      "2026-11-01",
       "Invoice",
       "2026-11-30",
+      2000,
+      15,
       "",
       "",
       "",
@@ -208,5 +308,70 @@ describe("agingCsvTable", () => {
       "",
       1500
     ]);
+  });
+
+  it("keeps open documents when their party has a zero-net aging balance", () => {
+    const { rows } = agingCsvTable({
+      labels,
+      partyNameById,
+      aging: [],
+      open: [
+        { ...open[0]!, originalInBase: 500, openInBase: 500 },
+        { ...open[1]!, originalInBase: -500, openInBase: -500 }
+      ],
+      asOfDate: "2026-12-15",
+      bucketDays: [30, 60, 90],
+      withSupplierReference: true
+    });
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toEqual([
+      "Acme",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]);
+    expect(rows.slice(1).map((row) => [row[1], row.at(-1)])).toEqual([
+      ["PI-123", 500],
+      ["DR-7", -500]
+    ]);
+  });
+
+  it("uses the supplied localized headings", () => {
+    const { fields } = agingCsvTable({
+      labels: {
+        ...labels,
+        party: "Proveedor",
+        document: "Documento",
+        originalAmount: "Importe original"
+      },
+      partyNameById,
+      aging,
+      open,
+      asOfDate: "2026-12-15",
+      bucketDays: [30, 60, 90],
+      withSupplierReference: true
+    });
+    expect(fields[0]).toBe("Proveedor");
+    expect(fields[1]).toBe("Documento");
+    expect(fields[6]).toBe("Importe original");
+  });
+
+  it("counts only overdue calendar days", () => {
+    expect(daysPastDue("2026-12-15", "2026-12-14")).toBe(1);
+    expect(daysPastDue("2026-12-15", "2026-12-15")).toBe(0);
+    expect(daysPastDue("2026-12-15", "2026-12-16")).toBe(0);
+    expect(daysPastDue("2026-12-15", null)).toBeNull();
   });
 });

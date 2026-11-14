@@ -4866,6 +4866,16 @@ function parseBuckets(raw: string | null): [number, number, number] {
   return [30, 60, 90];
 }
 
+/** A `YYYY-MM-DD` calendar date, or null for anything else. */
+function parseIsoDate(raw: string | null): string | null {
+  if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  try {
+    return parseDate(raw).toString();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The AR/AP aging pages, the receivables/payables workbenches and their CSV
  * downloads all read the same three query params, so they parse them here:
@@ -4880,7 +4890,7 @@ export async function getAgingParams(
 ) {
   const url = new URL(request.url);
   const asOfDate =
-    url.searchParams.get("asOfDate") ??
+    parseIsoDate(url.searchParams.get("asOfDate")) ??
     datetime.today(await getCompanyTimeZone(client, companyId)).toString();
   const agingMethod: "dueDate" | "documentDate" =
     url.searchParams.get("agingMethod") === "documentDate"

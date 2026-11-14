@@ -1936,7 +1936,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Zadanie niezgodności, które uniemożliwia powtarzanie się problemu gdzie indziej — różne od poprawy naprawczej i zabezpieczenia."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "Liczba lub znak umieszczony obok rysunku zmienia jego znaczenie. Wstaw między nie słowo."
 
 msgid "A part"
 msgstr "Część"
@@ -9500,6 +9500,9 @@ msgstr "Dni od zamówienia części do jej dostępności. Przesunięcie planisty
 msgid "Days Off"
 msgstr "Dni wolne"
 
+msgid "Days Past Due"
+msgstr "Liczba dni po terminie"
+
 msgid "Days Remaining"
 msgstr "Dni pozostałe"
 
@@ -16092,7 +16095,7 @@ msgid "Keep matching items"
 msgstr "Zachowaj pasujące elementy"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "Zachowaj moje zmiany"
 
 msgid "Keep navigation open"
 msgstr "Pozostaw nawigację otwartą"
@@ -16837,7 +16840,7 @@ msgid "Linked Record"
 msgstr "Powiązany rekord"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "Powiązano z sekcją współdzieloną. Edytuj ją w bibliotece, aby zaktualizować ją wszędzie."
 
 msgid "Links"
 msgstr "Łącza"
@@ -19935,7 +19938,7 @@ msgid "No values available"
 msgstr "Brak dostępnych wartości"
 
 msgid "No values found"
-msgstr ""
+msgstr "Nie znaleziono wartości"
 
 msgid "No variable matches {query}"
 msgstr "Żadna zmienna nie pasuje do {query}"
@@ -21145,6 +21148,9 @@ msgstr "Pochodzenie"
 msgid "Original"
 msgstr "Oryginalne"
 
+msgid "Original Amount"
+msgstr "Kwota pierwotna"
+
 msgid "Original Count"
 msgstr "Oryginalne Liczenie"
 
@@ -22202,7 +22208,7 @@ msgid "Playback"
 msgstr "Odtwarzanie"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "Proszę <0>to zmienić</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Skontaktuj się z administratorem, aby włączyć rejestrowanie audytu."
@@ -24327,7 +24333,7 @@ msgid "Remove authenticator app"
 msgstr "Usuń z listy aplikację uwierzytelniającą"
 
 msgid "Remove block"
-msgstr ""
+msgstr "Usuń blok z listy"
 
 msgid "Remove clause"
 msgstr "Usuń z listy klauzulę"
@@ -27158,7 +27164,7 @@ msgid "Shared channel"
 msgstr "Kanał wspólny"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "Sekcja współdzielona (usunięta)"
 
 msgid "Shared Sections"
 msgstr "Sekcje wspólne"
@@ -27801,7 +27807,7 @@ msgid "Someone"
 msgstr "Ktoś"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "Ktoś inny właśnie zapisał ten szablon. Odśwież stronę, aby wczytać jego wersję, albo kontynuuj edycję, aby nadpisać ją podczas zapisywania."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Osoba, która może aktualizować księgowość, musi wpisać, ile kosztowało to wytworzenie, zanim będzie można to skapitalizować."
@@ -29779,7 +29785,7 @@ msgid "The document could not be downloaded."
 msgstr "Nie udało się pobrać dokumentu."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "Nie można otworzyć dokumentu."
 
 msgid "The early hours, {name}."
 msgstr "Wczesne godziny, {name}."
@@ -30349,7 +30355,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Wstępnie ustawiony pakiet zadań i wymagań zatwierdzenia stosowany do tego problemu; zastępuje domyślny przepływ pracy typu problemu, jeśli jest ustawiony."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "Nie można wyrenderować podglądu. Wyświetlana jest ostatnia poprawnie wyrenderowana wersja."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Cena godziny w linii Time & Materials: stawka linii dla pracownika, inaczej dla kategorii robocizny, inaczej domyślna stawka rozliczeniowa kategorii robocizny, obowiązująca w dniu."
@@ -31196,7 +31202,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Ten PIN nie będzie już więcej wyświetlany. Będzie ci potrzebny do wyjścia z trybu konsoli na terminalach MES."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "Ten podgląd został wstrzymany, ponieważ tekst zmienia rysunek."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Ta cena została wprowadzona ręcznie, dlatego nie zastosowano żadnych reguł cenowych."
@@ -31262,7 +31268,7 @@ msgid "This serial"
 msgstr "Ten numer seryjny"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "Ta sekcja współdzielona już nie istnieje. Usuń blok z listy albo utwórz sekcję ponownie."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "To stanowisko robocze wykonuje pracę ograniczoną do uprawnień — działa tylko gdy na zmianie jest wykwalifikowany operator; operatorzy przypisani na tablicy obsady dalej kształtują dostępną roboczyzną."

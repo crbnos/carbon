@@ -1936,7 +1936,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Задача несоответствия, которая предотвращает повторение проблемы в других местах — отличающаяся от исправления и локализации."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "Число или знак рядом с рисунком меняет его смысл. Поставьте между ними слово."
 
 msgid "A part"
 msgstr "Деталь"
@@ -9500,6 +9500,9 @@ msgstr "Дни от заказа детали до ее доступности; 
 msgid "Days Off"
 msgstr "Выходные дни"
 
+msgid "Days Past Due"
+msgstr "Дни просрочки"
+
 msgid "Days Remaining"
 msgstr "Дней осталось"
 
@@ -16092,7 +16095,7 @@ msgid "Keep matching items"
 msgstr "Сохранить соответствующие элементы"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "Сохранить мои изменения"
 
 msgid "Keep navigation open"
 msgstr "Не сворачивать навигацию"
@@ -16837,7 +16840,7 @@ msgid "Linked Record"
 msgstr "Связанная запись"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "Связано с общим разделом. Измените его в библиотеке, чтобы обновить во всех местах."
 
 msgid "Links"
 msgstr "Ссылки"
@@ -19935,7 +19938,7 @@ msgid "No values available"
 msgstr "Нет доступных значений"
 
 msgid "No values found"
-msgstr ""
+msgstr "Значения не найдены"
 
 msgid "No variable matches {query}"
 msgstr "Нет переменных соответствующих {query}"
@@ -21145,6 +21148,9 @@ msgstr "Источник"
 msgid "Original"
 msgstr "Оригинал"
 
+msgid "Original Amount"
+msgstr "Первоначальная сумма"
+
 msgid "Original Count"
 msgstr "Исходный подсчет"
 
@@ -22202,7 +22208,7 @@ msgid "Playback"
 msgstr "Воспроизведение"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "Пожалуйста, <0>измените это</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Пожалуйста, обратитесь к администратору для включения логирования аудита."
@@ -24327,7 +24333,7 @@ msgid "Remove authenticator app"
 msgstr "Удалить приложение аутентификации"
 
 msgid "Remove block"
-msgstr ""
+msgstr "Убрать блок"
 
 msgid "Remove clause"
 msgstr "Убрать условие"
@@ -27158,7 +27164,7 @@ msgid "Shared channel"
 msgstr "Общий канал"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "Общий раздел (удалён)"
 
 msgid "Shared Sections"
 msgstr "Общие разделы"
@@ -27801,7 +27807,7 @@ msgid "Someone"
 msgstr "Кто-то"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "Этот шаблон только что сохранил другой пользователь. Обновите страницу, чтобы загрузить его версию, или продолжайте редактирование, чтобы перезаписать её при сохранении."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Пользователь, имеющий права на обновление бухгалтерии, должен ввести себестоимость производства перед тем, как она может быть капитализирована."
@@ -29779,7 +29785,7 @@ msgid "The document could not be downloaded."
 msgstr "Не удалось скачать документ."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "Не удалось открыть документ."
 
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
@@ -30349,7 +30355,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Предварительно установленный пакет задач и требований утверждения, применяемый к этой проблеме; переопределяет рабочий процесс по умолчанию типа проблемы при установке."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "Не удалось отобразить предварительный просмотр. Показан последний успешно созданный вариант."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Цена часа на строке Time & Materials: ставка строки для сотрудника, иначе для категории труда, иначе стандартная ставка выставления счета категории труда, действующая на день."
@@ -31196,7 +31202,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Этот PIN больше не будет показан. Он вам понадобится для выхода из режима консоли на терминалах MES."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "Предварительный просмотр приостановлен, поскольку текст изменяет рисунок."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Эта цена была введена вручную, поэтому правила ценообразования не были применены."
@@ -31262,7 +31268,7 @@ msgid "This serial"
 msgstr "Этот серийный номер"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "Этот общий раздел больше не существует. Уберите блок или создайте раздел заново."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Эта станция выполняет работу, требующую определенных навыков — она работает только когда квалифицированный оператор находится на смене; операторы, назначенные на доску укомплектования, уточняют доступный труд."

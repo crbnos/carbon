@@ -38,6 +38,7 @@ import { CustomerAvatar, DateTime, SupplierAvatar, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
 import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { daysPastDue } from "~/modules/invoicing/invoicing.reports";
 import { path } from "~/utils/path";
 
 type TieOutResult = {
@@ -64,7 +65,9 @@ type OpenInvoiceRow = {
   invoiceNumber: string;
   // 'Invoice' | 'Credit Memo' | 'Debit Memo' — from the open-by drill-down
   documentType?: string;
+  transactionDate: string | null;
   dateDue: string | null;
+  originalInBase: number;
   currencyCode: string;
   exchangeRate: number;
   totalAmount: number;
@@ -355,6 +358,26 @@ export function ARAPWorkbench({
           mobile: "P1"
         }
       },
+      {
+        id: "transactionDate",
+        header: t`Transaction Date`,
+        cell: ({ row }) =>
+          row.original.kind === "invoice" && row.original.transactionDate ? (
+            <DateTime value={row.original.transactionDate} variant="date" />
+          ) : null
+      },
+      {
+        id: "documentType",
+        header: t`Type`,
+        cell: ({ row }) => {
+          const r = row.original;
+          if (r.kind !== "invoice") return null;
+          if (r.documentType === "Invoice") return t`Invoice`;
+          if (r.documentType === "Credit Memo") return t`Credit Memo`;
+          if (r.documentType === "Debit Memo") return t`Debit Memo`;
+          return r.documentType;
+        }
+      },
       ...(side === "ap"
         ? [
             {
@@ -375,6 +398,24 @@ export function ARAPWorkbench({
             <Enumerable value={row.original.paymentTerm ?? null} />
           ) : null
       },
+      {
+        id: "originalInBase",
+        header: t`Original Amount`,
+        cell: ({ row }) =>
+          row.original.kind === "invoice" ? (
+            <span className="tabular-nums">
+              {money(row.original.originalInBase)}
+            </span>
+          ) : null
+      },
+      {
+        id: "daysPastDue",
+        header: t`Days Past Due`,
+        cell: ({ row }) => {
+          if (row.original.kind !== "invoice") return null;
+          return daysPastDue(asOfDate, row.original.dateDue) ?? "—";
+        }
+      },
       // Aging buckets only carry a value on counterparty rows. They aren't
       // common to both union members, so they use `id` + `cell` (not
       // `accessorKey`) to stay valid against ColumnDef<WorkbenchRow>.
@@ -384,7 +425,7 @@ export function ARAPWorkbench({
           ["bucket1", `1-${b1}`],
           ["bucket2", `${b1 + 1}-${b2}`],
           ["bucket3", `${b2 + 1}-${b3}`],
-          ["bucket4", `${b3}+`],
+          ["bucket4", `${b3 + 1}+`],
           ["unapplied", t`Unapplied`]
         ] as const
       ).map(
@@ -422,6 +463,7 @@ export function ARAPWorkbench({
     b1,
     b2,
     b3,
+    asOfDate,
     money,
     childrenByParty,
     expandedIds,

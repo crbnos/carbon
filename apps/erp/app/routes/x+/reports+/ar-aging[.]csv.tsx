@@ -10,12 +10,16 @@ import {
   getArAging,
   getArOpenByCustomer
 } from "~/modules/invoicing/invoicing.service";
-import { agingCsvResponse, resolveAgingExportRequest } from "./aging.server";
+import {
+  agingCsvResponse,
+  getAgingCsvLabels,
+  resolveAgingExportRequest
+} from "./aging.server";
 
 const logger = getLogger("erp", "reports-ar-aging-csv");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, asOfDate, agingMethod, bucketDays } =
+  const { client, partyClient, companyId, asOfDate, agingMethod, bucketDays } =
     await resolveAgingExportRequest(request);
 
   const [aging, open] = await Promise.all([
@@ -41,9 +45,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const customers = await fetchAllByIds(
-    aging.data.map((a) => a.customerId),
+    [
+      ...new Set([
+        ...aging.data.map((a) => a.customerId),
+        ...open.data.map((d) => d.customerId)
+      ])
+    ],
     (ids) =>
-      client
+      partyClient
         .from("customer")
         .select("id, name")
         .eq("companyId", companyId)
@@ -61,10 +70,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return agingCsvResponse(
     `ar-aging-${asOfDate}.csv`,
     agingCsvTable({
-      partyHeader: "Customer",
+      labels: await getAgingCsvLabels(request, "Customer"),
       partyNameById: new Map(customers.data.map((c) => [c.id, c.name])),
       aging: aging.data.map((a) => ({ ...a, partyId: a.customerId })),
       open: open.data.map((d) => ({ ...d, partyId: d.customerId })),
+      asOfDate,
       bucketDays,
       withSupplierReference: false
     })

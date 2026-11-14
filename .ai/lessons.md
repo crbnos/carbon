@@ -6,6 +6,26 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Aging report previews need seeded open documents
+
+**Context:** Sharing a local AR/AP aging UI preview.
+
+**Problem:** The dev server rendered the reports, but the default test company had no sales or purchase invoices, so both reports appeared empty. The dataset seed then failed on `inspectionDocument.drawingNumber`: the local database carried a newer schema from `main` than the branch's own code.
+
+**Rule:** Check the report RPCs for open rows before handing off a preview. Seed an isolated company when the current test company contains unrelated records, and verify both report counts after seeding. When a seed fails on a column, compare the branch's generated types with the local database before editing the dataset: merge `main` (or migrate a clean database) rather than changing the tier.
+
+**Applies to:** Local aging report previews and `packages/database/src/datasets/`.
+
+## Aging CSV exports must follow open documents
+
+**Context:** Exporting AR/AP aging from a summary RPC and a separate open-document RPC.
+
+**Problem:** A counterparty with offsetting open documents can have a zero net balance and disappear from the summary RPC while its documents remain open. Looking up names and building CSV rows only from summary parties silently drops those documents.
+
+**Rule:** Union counterparty IDs from both RPCs, emit a zero summary row for open-only counterparties, and keep document rows beneath it. Resolve CSV headings from the request locale. Include any RPC migration in the tracked change before relying on regenerated types.
+
+**Applies to:** AR/AP aging CSV routes and report helpers.
+
 ## Onshape individual release assets need the complete source identity
 
 **Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.
@@ -4687,3 +4707,35 @@ took 20 from the bin and left the 3. TypeScript `id !== null` and SQL
 
 **Applies to:** `packages/database/src/picked-consumption.ts`, `backflush_job_materials`,
 and any bin or stripe filter where `null` is both a key and "unset".
+
+## Localized CSV exports must translate row values as well as headings
+
+**Context:** The AR/AP aging CSV translated its column headings, while the document
+type column still contained raw `Invoice`, `Credit Memo`, and `Debit Memo` values.
+
+**Problem:** In a non-English locale, the downloaded report mixed translated
+headings with English document types even though the on-screen workbench and
+catalogs already translated those values.
+
+**Rule:** Resolve fixed display values through the same per-request catalog used
+for CSV headings, while retaining raw values for data logic and falling back to
+the raw value for an unknown type. Assert the exported row values with labels
+that differ from the source strings.
+
+**Applies to:** Server-generated localized CSV reports, including AR/AP aging.
+
+## Export permission must cover enrichment reads
+
+**Context:** AR/AP aging CSV downloads admit accounting or invoicing viewers, then
+look up customer or supplier names to label the rows.
+
+**Problem:** Customer RLS requires sales view and supplier RLS requires purchasing
+view. An otherwise authorized export received empty name results and silently
+fell back to party IDs.
+
+**Rule:** Trace every enrichment lookup against the route's permission contract.
+After authorizing the export, use a company-scoped privileged read when the
+related table has a narrower RLS gate than the export itself.
+
+**Applies to:** AR/AP aging CSV routes and other server exports that enrich
+authorized rows from tables protected by different module permissions.

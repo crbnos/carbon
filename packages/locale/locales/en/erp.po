@@ -9500,6 +9500,9 @@ msgstr "Days from ordering a part to having it available; planning offsets deman
 msgid "Days Off"
 msgstr "Days Off"
 
+msgid "Days Past Due"
+msgstr "Days Past Due"
+
 msgid "Days Remaining"
 msgstr "Days Remaining"
 
@@ -21144,6 +21147,9 @@ msgstr "Origin"
 
 msgid "Original"
 msgstr "Original"
+
+msgid "Original Amount"
+msgstr "Original Amount"
 
 msgid "Original Count"
 msgstr "Original Count"

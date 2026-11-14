@@ -18,8 +18,9 @@ there too. `project-charges.ts` (plain, server-only) is the purchase invoice's p
 their receipt already charged to a project (the invoice then writes only the price
 variance).
 
-`invoicing.reports.ts` is pure calendar/aggregation math (`previousPeriod`, `aggregateSpend`)
-with no route consumer yet — only its own test. `ui/SalesInvoice/` has no `index.ts` and is NOT
+`invoicing.reports.ts` holds pure report helpers (`previousPeriod`, `aggregateSpend`,
+`agingCsvTable`, `daysPastDue`); the aging CSV routes use its export helper.
+`ui/SalesInvoice/` has no `index.ts` and is NOT
 in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder (`Charge`,
 `Dashboard`, `Memo`, `Payment`, `PurchaseInvoice`, `Reimbursement`, `Workbench`) is barrel-exported.
 
@@ -208,7 +209,12 @@ guarded by `requireUnlockedBulk`, not validators.
   (`InvoicingDashboard`) and the CSV downloads `x+/reports+/{ar,ap}-aging[.]csv.tsx`.
   `getApOpenBySupplier` also returns `supplierReference` (the supplier's own
   invoice number, shown as "Supplier Invoice Number"); it is NULL on memo rows
-  even though the generated type says `string`.
+  even though the generated type says `string`. Both open-document RPCs return
+  `transactionDate` (invoice issued date, falling back to posting date; memo
+  date) and signed `originalInBase` for the aging detail rows and CSV. The
+  workbench and CSV compute days past due from `dateDue` and the selected
+  `asOfDate`; memos have no due date. The final bucket is labeled from the day
+  after `bucket3` (for example, `91+` for a 90-day cutoff).
 - `getAgingParams(client, companyId, request)` — the one parser of the aging
   query params (`asOfDate`, `agingMethod`, `bucketDays`) for those six routes.
   The page loaders keep their own permission (`invoicing` for the workbenches,
@@ -217,9 +223,13 @@ guarded by `requireUnlockedBulk`, not validators.
   the download holds exactly what either page shows. The workbench's Export
   button links to the CSV route (`withCsvExport={false}` on the Table): the
   download is the whole tree, built by `agingCsvTable` (`invoicing.reports.ts`),
-  not the expanded rows on screen. The four aging/open reads return query
+  not the expanded rows on screen. It includes open documents even when their
+  counterparty's net aging row is zero, and translates headings from the
+  request locale. The four aging/open reads return query
   builders: the CSV routes page them with `fetchAllRecords` and stable unique
-  ordering, and batch party-name lookups with `fetchAllByIds`.
+  ordering. After the export permission check, they batch party-name lookups
+  with `fetchAllByIds` through a service-role client, scoped to `companyId`;
+  customer and supplier RLS otherwise require sales or purchasing permission.
 - `updateReimbursement` (Draft-scoped UPDATE) / `upsertReimbursementLines` (Kysely,
   delete-then-reinsert; bind dimensions by `sequence`, never by returned row order) /
   `getPaymentCurrencyConfiguration` (base currency + `currency.decimalPlaces`; throws when the

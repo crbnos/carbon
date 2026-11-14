@@ -1936,7 +1936,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "問題が他の場所で再発するのを防ぐ不適合タスク—是正措置と封じ込めとは異なります。"
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "図のそばに数字や記号を置くと、その意味が変わります。間に単語を入れてください。"
 
 msgid "A part"
 msgstr "部品"
@@ -9500,6 +9500,9 @@ msgstr "部品を注文してから利用可能になるまでの日数。計画
 msgid "Days Off"
 msgstr "休日"
 
+msgid "Days Past Due"
+msgstr "延滞日数"
+
 msgid "Days Remaining"
 msgstr "残り日数"
 
@@ -16092,7 +16095,7 @@ msgid "Keep matching items"
 msgstr "一致する品目を保持"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "自分の変更を保持"
 
 msgid "Keep navigation open"
 msgstr "ナビゲーションを開いたままにする"
@@ -16837,7 +16840,7 @@ msgid "Linked Record"
 msgstr "リンクされたレコード"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "共有セクションにリンクされています。ライブラリで編集すると、すべての使用箇所に反映されます。"
 
 msgid "Links"
 msgstr "リンク"
@@ -19935,7 +19938,7 @@ msgid "No values available"
 msgstr "利用可能な値がありません"
 
 msgid "No values found"
-msgstr ""
+msgstr "値が見つかりません"
 
 msgid "No variable matches {query}"
 msgstr "{query}に一致する変数がありません"
@@ -21145,6 +21148,9 @@ msgstr "オリジン"
 msgid "Original"
 msgstr "元"
 
+msgid "Original Amount"
+msgstr "当初金額"
+
 msgid "Original Count"
 msgstr "元のカウント"
 
@@ -22202,7 +22208,7 @@ msgid "Playback"
 msgstr "再生"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "<0>変更してください</0>。"
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "監査ログを有効にするには、管理者にお問い合わせください。"
@@ -24327,7 +24333,7 @@ msgid "Remove authenticator app"
 msgstr "認証アプリを除去"
 
 msgid "Remove block"
-msgstr ""
+msgstr "ブロックを除去"
 
 msgid "Remove clause"
 msgstr "条項を除去"
@@ -27158,7 +27164,7 @@ msgid "Shared channel"
 msgstr "共有チャネル"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "共有セクション（削除済み）"
 
 msgid "Shared Sections"
 msgstr "共有セクション"
@@ -27801,7 +27807,7 @@ msgid "Someone"
 msgstr "誰か"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "別のユーザーがこのテンプレートを保存しました。更新してそのバージョンを読み込むか、編集を続けて保存時に上書きしてください。"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "会計を更新できるユーザーが製造にかかった原価を入力してからでなければ、資本化できません。"
@@ -29779,7 +29785,7 @@ msgid "The document could not be downloaded."
 msgstr "文書をダウンロードできませんでした。"
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "文書を開けませんでした。"
 
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
@@ -30349,7 +30355,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "このイシューに適用されるタスクと承認要件のプリセットバンドル。設定されると、イシュータイプのデフォルトワークフローを置き換えます。"
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "プレビューを描画できませんでした。最後に描画できたものを表示しています。"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "タイム & マテリアル明細の 1 時間の価格：従業員の明細レート。それ以外の場合は労務カテゴリ。それ以外の場合は労務カテゴリの既定請求レート。その日から有効。"
@@ -31196,7 +31202,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "このPINは再度表示されません。MES 端末でコンソールモードを終了するときに必要です。"
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "テキストが図を変更するため、このプレビューは一時停止しています。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "この価格は手動で入力されたため、価格設定ルールは適用されていません。"
@@ -31262,7 +31268,7 @@ msgid "This serial"
 msgstr "このシリアル"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "この共有セクションは存在しません。ブロックを除去するか、セクションを再作成してください。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "このステーションはスキル制限のある作業を実行します — 適切なスキルを持つ作業者がシフト中のみ実行されます。人員配置ボードに割り当てられた作業者は、利用可能な労務をさらに決定します。"

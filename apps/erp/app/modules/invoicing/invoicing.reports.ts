@@ -3,11 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { parseDate } from "@internationalized/date";
+import { msg } from "@lingui/core/macro";
 
-// Pure aggregation for the spend-by-party reports (Revenue by Customer /
-// Expenses by Supplier). Kept dependency-light (only calendar math) so it can be
-// unit-tested without pulling in the whole service graph — mirrors the
-// accounting module's `executivePnl.ts`.
+// Pure report helpers, kept independent of the service graph so they can be
+// unit-tested. The CSV message descriptors are translated by the route.
 
 export type SpendByPartyRow = {
   /** Customer or supplier id (null-party invoices are dropped upstream). */
@@ -103,21 +102,60 @@ export type AgingCsvDocument = {
   documentNumber: string;
   /** 'Invoice' | 'Credit Memo' | 'Debit Memo' */
   documentType: string;
+  transactionDate: string | null;
   dateDue: string | null;
+  originalInBase: number;
   openInBase: number;
   /** The supplier's own invoice number (AP only; null on memos). */
   supplierReference?: string | null;
 };
 
 export type AgingCsvInput = {
-  /** "Customer" or "Supplier": the first column's heading. */
-  partyHeader: string;
+  labels: AgingCsvLabels;
   partyNameById: Map<string, string>;
   aging: AgingCsvCounterparty[];
   open: AgingCsvDocument[];
+  asOfDate: string;
   bucketDays: [number, number, number];
   /** AP carries the supplier's invoice number; AR has no such column. */
   withSupplierReference: boolean;
+};
+
+export const agingCsvMessages = {
+  customer: msg`Customer`,
+  supplier: msg`Supplier`,
+  document: msg`Document`,
+  transactionDate: msg`Transaction Date`,
+  documentType: msg`Document Type`,
+  invoice: msg`Invoice`,
+  creditMemo: msg`Credit Memo`,
+  debitMemo: msg`Debit Memo`,
+  supplierInvoiceNumber: msg`Supplier Invoice Number`,
+  dueDate: msg`Due Date`,
+  originalAmount: msg`Original Amount`,
+  daysPastDue: msg`Days Past Due`,
+  paymentTerm: msg`Payment Term`,
+  current: msg`Current`,
+  unapplied: msg`Unapplied`,
+  total: msg`Total`
+};
+
+export type AgingCsvLabels = {
+  party: string;
+  document: string;
+  transactionDate: string;
+  documentType: string;
+  invoice: string;
+  creditMemo: string;
+  debitMemo: string;
+  supplierInvoiceNumber: string;
+  dueDate: string;
+  originalAmount: string;
+  daysPastDue: string;
+  paymentTerm: string;
+  current: string;
+  unapplied: string;
+  total: string;
 };
 
 /**
@@ -126,28 +164,37 @@ export type AgingCsvInput = {
  * the counterparty's name so the sheet still filters and sorts by it.
  */
 export function agingCsvTable({
-  partyHeader,
+  labels,
   partyNameById,
   aging,
   open,
+  asOfDate,
   bucketDays,
   withSupplierReference
 }: AgingCsvInput): { fields: string[]; rows: unknown[][] } {
   const [b1, b2, b3] = bucketDays;
+  const documentTypeLabels: Record<string, string> = {
+    Invoice: labels.invoice,
+    "Credit Memo": labels.creditMemo,
+    "Debit Memo": labels.debitMemo
+  };
   const fields = [
-    partyHeader,
-    "Document",
-    "Document Type",
-    ...(withSupplierReference ? ["Supplier Invoice Number"] : []),
-    "Due Date",
-    "Payment Term",
-    "Current",
+    labels.party,
+    labels.document,
+    labels.transactionDate,
+    labels.documentType,
+    ...(withSupplierReference ? [labels.supplierInvoiceNumber] : []),
+    labels.dueDate,
+    labels.originalAmount,
+    labels.daysPastDue,
+    labels.paymentTerm,
+    labels.current,
     `1-${b1}`,
     `${b1 + 1}-${b2}`,
     `${b2 + 1}-${b3}`,
-    `${b3}+`,
-    "Unapplied",
-    "Total"
+    `${b3 + 1}+`,
+    labels.unapplied,
+    labels.total
   ];
 
   const openByParty = new Map<string, AgingCsvDocument[]>();
@@ -157,14 +204,35 @@ export function agingCsvTable({
     openByParty.set(doc.partyId, list);
   }
 
-  const rows = aging.flatMap((a) => {
+  const summaryPartyIds = new Set(aging.map((row) => row.partyId));
+  const allParties = [
+    ...aging,
+    ...[...openByParty.keys()]
+      .filter((partyId) => !summaryPartyIds.has(partyId))
+      .map((partyId) => ({
+        partyId,
+        paymentTerm: null,
+        current: 0,
+        bucket1: 0,
+        bucket2: 0,
+        bucket3: 0,
+        bucket4: 0,
+        unapplied: 0,
+        total: 0
+      }))
+  ];
+
+  const rows = allParties.flatMap((a) => {
     const name = partyNameById.get(a.partyId) ?? a.partyId;
     return [
       [
         name,
         "",
         "",
+        "",
         ...(withSupplierReference ? [""] : []),
+        "",
+        "",
         "",
         a.paymentTerm ?? "",
         a.current,
@@ -178,9 +246,12 @@ export function agingCsvTable({
       ...(openByParty.get(a.partyId) ?? []).map((doc) => [
         name,
         doc.documentNumber,
-        doc.documentType,
+        doc.transactionDate ?? "",
+        documentTypeLabels[doc.documentType] ?? doc.documentType,
         ...(withSupplierReference ? [doc.supplierReference ?? ""] : []),
         doc.dateDue ?? "",
+        doc.originalInBase,
+        daysPastDue(asOfDate, doc.dateDue) ?? "",
         "",
         "",
         "",
@@ -194,4 +265,10 @@ export function agingCsvTable({
   });
 
   return { fields, rows };
+}
+
+/** Due today or later is current; memos have no due date. */
+export function daysPastDue(asOfDate: string, dateDue: string | null) {
+  if (!dateDue) return null;
+  return Math.max(0, parseDate(asOfDate).compare(parseDate(dateDue)));
 }
