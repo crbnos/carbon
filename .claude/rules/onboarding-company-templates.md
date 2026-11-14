@@ -112,11 +112,14 @@ around its generic FK-null + topological delete, all inside the apply transactio
 3. The existing header-first deletes (invoices, orders, quotes, RFQs), MRP output, and
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
    `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. Any other
-   seeded table with a CHECK that needs
-   one of several nullable FKs set goes in `PARENT_CHECK_TABLES` (today
+   table, seeded or not, with a CHECK that needs
+   one of several nullable FKs set, or two set or null together, goes in `PARENT_CHECK_TABLES` (today
    `customerContractInvoiceLine`: an invoice OR a credit memo; `projectCostRelief`: a Cost
    Relief schedule row OR a project close journal; `projectStockTransfer`:
-   two different project owners, after `projectBorrow`, which references its lines). Missing one fails every
+   two different project owners, after `projectBorrow`, which references its lines;
+   `revenueRecognitionSchedule`: a lessee lease and its schedule line, or neither, after
+   `revenueRecognitionRun`, whose lines reference it ON DELETE RESTRICT; no dataset seeds it,
+   so the drift check cannot catch it). Missing one fails every
    re-apply with "new row … violates check constraint", while a first apply onto an
    empty company still works.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier

@@ -3640,6 +3640,8 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Rule:** A seeded table whose CHECK needs one of several nullable FKs goes in `PARENT_CHECK_TABLES` (`packages/database/src/datasets/wipe.ts`). The dataset check now re-applies each dataset over itself, so this fails before commit. When a test only exercises the first run of an idempotent operation, also run it a second time.
 
+**Later:** the same failure came back for a table no dataset seeds. An activated lessee lease writes `revenueRecognitionSchedule` rows that name the lease and its schedule line together (`revenueRecognitionSchedule_lease_pairing_check`), and every re-apply over that company failed. The dataset check stayed green because it only meets seeded rows. So the rule covers every table a company can hold, not only seeded ones: add the table when you write the CHECK, and give it a case in `datasets/wipe-check-tables.test.ts`. The list deletes in order before the topological pass, so a table referenced ON DELETE RESTRICT goes after its referrer: the schedule listed alone fails on `revenueRecognitionRunLine_schedule_fkey` once a lease run exists, so `revenueRecognitionRun` goes first.
+
 **Applies to:** `packages/database/src/datasets/` (wipe, verify), migrations that add CHECKs over nullable FK columns.
 
 ## A migration on main can carry a timestamp ahead of UTC
