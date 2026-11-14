@@ -11,7 +11,7 @@ import { getLogger } from "@carbon/logger";
 import { Combobox, Heading, HStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
@@ -26,9 +26,12 @@ import { getUserDefaults } from "~/modules/users/users.service";
 import { clearStockTransferWizard } from "~/stores";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "stock-transfer-new");
+
+export const meta = newRecordMeta("Stock Transfer");
 
 export const handle: Handle = {
   breadcrumb: msg`Stock Transfers`,
@@ -53,16 +56,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("companyId", companyId)
       .maybeSingle();
     if (location.error) {
-      logger.error("Failed to load the location for a new stock transfer", {
-        companyId,
-        locationId: requested,
-        error: location.error
-      });
       throw redirect(
         path.to.stockTransfers,
         await flash(
           request,
-          error(location.error, "Failed to load the location")
+          error(location.error, "Failed to load the location", {
+            locationId: requested
+          })
         )
       );
     }
@@ -95,14 +95,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
   const failure = stock.error ?? storageUnits.error ?? trackedStock.error;
   if (failure || !trackedStock.data) {
-    logger.error("Failed to load stock for a new stock transfer", {
-      companyId,
-      locationId,
-      error: failure
-    });
     throw redirect(
       path.to.stockTransfers,
-      await flash(request, error(failure, "Failed to load stock"))
+      await flash(
+        request,
+        error(failure, "Failed to load stock", { locationId })
+      )
     );
   }
 
@@ -161,6 +159,7 @@ export default function NewStockTransferRoute() {
     useLoaderData<typeof loader>();
   const locations = useLocations();
   const navigate = useNavigate();
+  const { t } = useLingui();
 
   // Lines belong to one location: start empty, and again on a switch.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs per location on purpose
@@ -177,6 +176,7 @@ export default function NewStockTransferRoute() {
         <div className="shrink-0">
           <Combobox
             asButton
+            aria-label={t`Location`}
             size="sm"
             value={locationId}
             options={locations}

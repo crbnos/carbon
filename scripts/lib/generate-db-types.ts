@@ -46,13 +46,19 @@ export function validateDatabaseUrl(value: string | undefined): string {
 // local DB's seeded companies — committing them makes types.ts
 // machine-dependent. The static `searchIndexRegistry` / `auditLogArchive`
 // tables (no underscore) are unaffected.
+//
+// Also strip Storage's `iceberg_namespaces` / `iceberg_tables`. Storage skips
+// them in a multi-tenant tenant database (crbn's shared mode keeps them in its
+// own registry database), so they would exist in one dev mode and not the
+// other. Carbon does not use them.
 export function stripPerTenantTables(source: string): string {
   const lines: string[] = [];
   let skipping = false;
   for (const line of source.split("\n")) {
     if (
       !skipping &&
-      /^      "?(searchIndex|auditLog)_[A-Za-z0-9-]+"?: \{$/.test(line)
+      (/^      "?(searchIndex|auditLog)_[A-Za-z0-9-]+"?: \{$/.test(line) ||
+        /^      iceberg_(namespaces|tables): \{$/.test(line))
     ) {
       skipping = true;
       continue;
@@ -148,6 +154,19 @@ export function splitConstants(source: string): {
   };
 }
 
+function describeFailure(result: {
+  error?: Error;
+  stderr?: Buffer | string | null;
+}): string {
+  if (result.error) return ` ${result.error.message}`;
+  const text = (result.stderr ?? "").toString().trim();
+  if (!text) return "";
+  const redacted = text.replace(/postgres(ql)?:\/\/[^\s"']+/g, "<db-url>");
+  const lines = redacted.split("\n");
+  const tail = lines.slice(-12).join("\n");
+  return `\n${lines.length > 12 ? "…\n" : ""}${tail}`;
+}
+
 export function generateDatabaseTypes(databaseUrl: string | undefined): void {
   const dbUrl = validateDatabaseUrl(databaseUrl);
   const target = resolve("packages/database/src/types.ts");
@@ -174,15 +193,31 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
           "--schema",
           "graphql_public"
         ],
-        { stdio: ["ignore", out, "pipe"] }
+        {
+          stdio: ["ignore", out, "pipe"],
+          env: {
+            ...process.env,
+            // Supabase CLI 2.89 classifies 127.0.0.1:54322 as its own
+            // `supabase start` database and looks for a container we do not
+            // run. The explicit --db-url is Carbon's Compose database; give
+            // the CLI a different local default so it uses that URL directly.
+            SUPABASE_DB_PORT: "1",
+            // The CLI pulls postgres-meta from public.ecr.aws by default, whose
+            // anonymous pulls share a data quota per IP (CI runners, cloud
+            // containers); Docker Hub serves the same image.
+            SUPABASE_INTERNAL_IMAGE_REGISTRY:
+              process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY ?? "docker.io"
+          }
+        }
       );
       if (result.error || result.status !== 0) {
         const status =
           result.status === null
             ? "could not complete"
             : `exited ${result.status}`;
+        const detail = describeFailure(result);
         throw new Error(
-          `Supabase type generation ${status}; the existing type file was preserved.`
+          `Supabase type generation ${status}; the existing type file was preserved.${detail}`
         );
       }
     } finally {

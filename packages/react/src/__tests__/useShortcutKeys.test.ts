@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  ariaKeyShortcuts,
   canonicalCombo,
   KeyboardKeys,
   parseShortcut,
@@ -136,5 +137,34 @@ describe("canonicalCombo", () => {
 
   it("treats a lone modifier-looking token as a flag with no key", () => {
     expect(canonicalCombo("mod")).toBe("00010:");
+  });
+});
+
+describe("ariaKeyShortcuts", () => {
+  it("returns undefined without a binding", () => {
+    expect(ariaKeyShortcuts(undefined)).toBeUndefined();
+  });
+
+  it("lists both platforms for mod", () => {
+    expect(ariaKeyShortcuts({ key: "enter", modifiers: ["mod"] })).toBe(
+      "Meta+Enter Control+Enter"
+    );
+    expect(ariaKeyShortcuts("mod+s")).toBe("Meta+S Control+S");
+  });
+
+  it("lists both arms of a dual-platform definition", () => {
+    expect(
+      ariaKeyShortcuts({
+        mac: { key: KeyboardKeys.Enter, modifiers: ["meta"] },
+        windows: { key: KeyboardKeys.Enter, modifiers: ["ctrl"] }
+      })
+    ).toBe("Meta+Enter Control+Enter");
+  });
+
+  it("uses ARIA key names and drops duplicates", () => {
+    expect(ariaKeyShortcuts(["n", "shift+alt+escape", "N"])).toBe(
+      "N Shift+Alt+Escape"
+    );
+    expect(ariaKeyShortcuts("backspace")).toBe("Backspace");
   });
 });

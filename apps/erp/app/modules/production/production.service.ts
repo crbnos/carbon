@@ -14,6 +14,7 @@ import {
   postProductionEventInput,
   recalculateInput,
   rescheduleInput,
+  triggerCorrectionInput,
   triggerReworkInput
 } from "@carbon/api/postings";
 import type {
@@ -189,6 +190,7 @@ import {
   checkProjectBudget,
   insertTimesheetDraft
 } from "~/modules/projects/projects.service";
+import { copyDocumentEdit } from "~/modules/settings/settings.service";
 import {
   assertCompanyRecords,
   attributesContain,
@@ -199,7 +201,8 @@ import {
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
-import type { Cursor } from "~/utils/cursor";
+import { type Cursor, encodeCursor } from "~/utils/cursor";
+import { PAGE_SIZE } from "~/utils/pagination";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
   getGenericFilter,
@@ -222,6 +225,13 @@ import {
 import { invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type { MethodType } from "../shared/types";
+import {
+  correctionDependencyEdges,
+  correctionInitialStatuses,
+  correctionOperationGroups,
+  type MatchableStep,
+  matchStepsByName
+} from "./correction-groups";
 import {
   claimPlanningActions,
   releasePlanningActionClaims
@@ -1215,6 +1225,102 @@ export async function getDemandProjections(
     .in("periodId", params.periodIds);
 }
 
+/** Dated, location-scoped forecast rows for external reporting. */
+export async function getDemandForecastReport(
+  db: Kysely<KyselyDatabase>,
+  params: {
+    companyId: string;
+    locationId: string;
+    itemId?: string;
+    startDate?: string;
+    endDate?: string;
+    after?: { startDate: string; itemId: string; id: string };
+    cursorKeys: string[];
+  }
+) {
+  let query = db
+    .selectFrom("demandProjection as projection")
+    .innerJoin("item as item", (join) =>
+      join
+        .onRef("item.id", "=", "projection.itemId")
+        .on("item.companyId", "=", params.companyId)
+    )
+    .innerJoin("period as period", "period.id", "projection.periodId")
+    .select([
+      "projection.id",
+      "projection.itemId",
+      "projection.forecastQuantity",
+      "projection.consumedQuantity",
+      "item.readableIdWithRevision as item",
+      "item.name as itemName",
+      "item.unitOfMeasureCode",
+      sql<string>`${sql.ref("period.startDate")}::text`.as("startDate"),
+      sql<string>`${sql.ref("period.endDate")}::text`.as("endDate")
+    ])
+    .where("projection.companyId", "=", params.companyId)
+    .where("projection.locationId", "=", params.locationId);
+
+  if (params.itemId)
+    query = query.where("projection.itemId", "=", params.itemId);
+  if (params.startDate) {
+    query = query.where("period.startDate", ">=", params.startDate);
+  }
+  if (params.endDate) {
+    query = query.where("period.startDate", "<=", params.endDate);
+  }
+  if (params.after) {
+    const after = params.after;
+    query = query.where((eb) =>
+      eb.or([
+        eb("period.startDate", ">", after.startDate),
+        eb.and([
+          eb("period.startDate", "=", after.startDate),
+          eb("projection.itemId", ">", after.itemId)
+        ]),
+        eb.and([
+          eb("period.startDate", "=", after.startDate),
+          eb("projection.itemId", "=", after.itemId),
+          eb("projection.id", ">", after.id)
+        ])
+      ])
+    );
+  }
+
+  const rows = await query
+    .orderBy("period.startDate", "asc")
+    .orderBy("projection.itemId", "asc")
+    .orderBy("projection.id", "asc")
+    .limit(PAGE_SIZE + 1)
+    .execute();
+  const hasMore = rows.length > PAGE_SIZE;
+  const page = rows.slice(0, PAGE_SIZE);
+  const last = page.at(-1);
+  return {
+    results: page.map((row) => ({
+      itemId: row.itemId,
+      item: row.item,
+      itemName: row.itemName,
+      unitOfMeasureCode: row.unitOfMeasureCode,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      forecastQuantity: row.forecastQuantity,
+      consumedQuantity: row.consumedQuantity,
+      remainingQuantity: Math.max(
+        0,
+        row.forecastQuantity - row.consumedQuantity
+      )
+    })),
+    nextCursor:
+      hasMore && last
+        ? encodeCursor({
+            values: [last.startDate, last.itemId],
+            id: last.id,
+            keys: params.cursorKeys
+          })
+        : null
+  };
+}
+
 export async function getJobDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1832,7 +1938,7 @@ export async function getJobMaterialShortfallByItem(
   if (successorStock.error) {
     // Read as no stock, every successor would show a shortage it may not
     // have: show the predecessor's own shortfall only.
-    logger.warn("Failed to read successor stock for the job materials", {
+    logger.warning("Failed to read successor stock for the job materials", {
       companyId,
       jobId,
       error: successorStock.error
@@ -3257,6 +3363,9 @@ export async function getTrackedEntitiesByJobId(
  * same snapshot and a receipt committing mid-read cannot pair a new quantity
  * with old units. Kysely because itemLedger is readable only with inventory or
  * accounting view, and production users need the answer; the route authorizes.
+ *
+ * `issuedTrackedEntityIds` are the job's Consumed units booked out of stock
+ * (issued or shipped), which complete_job_to_inventory still receives.
  */
 export async function getJobReceiptSnapshot(
   db: Kysely<KyselyDatabase>,
@@ -3277,7 +3386,48 @@ export async function getJobReceiptSnapshot(
         string[]
       >`COALESCE(array_agg("itemLedger"."trackedEntityId") FILTER (WHERE "itemLedger"."trackedEntityId" IS NOT NULL), '{}')`.as(
         "trackedEntityIds"
-      )
+      ),
+      // complete_job_to_inventory's rule for a Consumed unit it receives.
+      (eb) =>
+        eb.fn
+          .coalesce(
+            eb
+              .selectFrom("jobMakeMethod as jmm")
+              .innerJoin("trackedEntity as te", (join) =>
+                join
+                  .on((eb) =>
+                    eb(
+                      sql<string>`"te"."attributes"->>'Job Make Method'`,
+                      "=",
+                      eb.ref("jmm.id")
+                    )
+                  )
+                  .onRef("te.companyId", "=", "jmm.companyId")
+              )
+              .select((eb) =>
+                eb.fn
+                  .agg<string[]>("array_agg", ["te.id"])
+                  .orderBy("te.id")
+                  .as("ids")
+              )
+              .whereRef("jmm.jobId", "=", "job.id")
+              .whereRef("jmm.companyId", "=", "job.companyId")
+              .where("jmm.parentMaterialId", "is", null)
+              .where("te.status", "=", "Consumed")
+              .where("te.quantity", "=", 1)
+              .where((eb) =>
+                eb.exists(
+                  eb
+                    .selectFrom("itemLedger as il")
+                    .select(eb.lit(1).as("one"))
+                    .whereRef("il.trackedEntityId", "=", "te.id")
+                    .whereRef("il.companyId", "=", "te.companyId")
+                    .where("il.quantity", "<", 0)
+                )
+              ),
+            sql<string[]>`'{}'`
+          )
+          .as("issuedTrackedEntityIds")
     ])
     .where("job.id", "=", jobId)
     .where("job.companyId", "=", companyId)
@@ -3495,7 +3645,12 @@ async function getMaterialsWithoutStorageUnit(
       ? { data: [], error: null }
       : await client
           .from("location")
-          .select("id, workCenter!inner(id), storageUnit!inner(id)")
+          // Named: a location also points at its inspection and rejected
+          // storage units, so a bare `storageUnit` embed is ambiguous
+          // (PGRST201) and every release failed with strict backflush on.
+          .select(
+            "id, workCenter!inner(id), storageUnit!storageUnit_locationId_fkey!inner(id)"
+          )
           .in("id", jobLocationIds)
           .eq("companyId", companyId)
           .eq("workCenter.active", true)
@@ -4446,6 +4601,144 @@ export async function assignJobSerialNumbersAtRelease(
   }
 }
 
+/**
+ * Appends one paragraph to a job's notes in one UPDATE, so a note saved at the
+ * same time is never overwritten. Notes that are a Tiptap document get the
+ * paragraph at the end of their `content`; any other value is replaced by a
+ * new document that holds only the paragraph. Returns false when no row of
+ * the company matched.
+ */
+export async function appendJobNoteParagraph(
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; text: string }
+): Promise<boolean> {
+  const paragraph = JSON.stringify({
+    type: "paragraph",
+    content: [{ type: "text", text: args.text }]
+  });
+  const result = await db
+    .updateTable("job")
+    .set({
+      notes: sql<Json>`CASE
+        WHEN jsonb_typeof("notes") = 'object' AND "notes"->>'type' = 'doc'
+          THEN jsonb_set(
+            "notes",
+            '{content}',
+            COALESCE(
+              CASE WHEN jsonb_typeof("notes"->'content') = 'array'
+                THEN "notes"->'content' END,
+              '[]'::jsonb
+            ) || jsonb_build_array(${paragraph}::jsonb)
+          )
+        ELSE jsonb_build_object(
+          'type', 'doc',
+          'content', jsonb_build_array(${paragraph}::jsonb)
+        )
+      END`
+    })
+    .where("id", "=", args.jobId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  return Number(result.numUpdatedRows ?? 0) > 0;
+}
+
+/**
+ * Create the picking list of a job `releaseCheckedJobs` just released, when
+ * `companySettings.autoPickingListOnRelease` is on. It does nothing when the
+ * job already has an open (Draft or In Progress) list, or nothing to pick. An
+ * error is returned, never thrown: the job is already Ready, so the caller
+ * warns and the release goes on.
+ */
+export async function createReleasePickingList(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; userId: string }
+): Promise<{ created: boolean; error: string | null }> {
+  const { jobId, companyId, userId } = args;
+
+  const settings = await client
+    .from("companySettings")
+    .select("autoPickingListOnRelease")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) {
+    return {
+      created: false,
+      error: getErrorMessage(settings.error, "unknown error")
+    };
+  }
+  if (settings.data?.autoPickingListOnRelease !== true) {
+    return { created: false, error: null };
+  }
+
+  const job = await client
+    .from("job")
+    .select("locationId")
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (job.error) {
+    return {
+      created: false,
+      error: getErrorMessage(job.error, "unknown error")
+    };
+  }
+  if (!job.data?.locationId) {
+    return { created: false, error: "The job has no location" };
+  }
+
+  const open = await client
+    .from("pickingListLine")
+    .select("id, pickingList!inner(status)")
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .in("pickingList.status", ["Draft", "In Progress"])
+    .limit(1);
+  if (open.error) {
+    return {
+      created: false,
+      error: getErrorMessage(open.error, "unknown error")
+    };
+  }
+  if ((open.data ?? []).length > 0) return { created: false, error: null };
+
+  const operations = await fetchAllRecords(() =>
+    client
+      .from("jobOperation")
+      .select("id")
+      .eq("jobId", jobId)
+      .eq("companyId", companyId)
+      .not("status", "in", "(Done,Canceled)")
+      .order("id")
+  );
+  if (operations.error) {
+    return {
+      created: false,
+      error: getErrorMessage(operations.error, "unknown error")
+    };
+  }
+  const jobOperationIds = (operations.data ?? []).map((row) => row.id);
+  if (jobOperationIds.length === 0) return { created: false, error: null };
+
+  const generated = await inventoryPostings.generatePickingList(client, db, {
+    jobOperationIds,
+    locationId: job.data.locationId,
+    companyId,
+    createdBy: userId,
+    excludeMadeParts: true
+  });
+  if (generated.error === inventoryPostings.NO_MATERIALS_TO_PICK) {
+    return { created: false, error: null };
+  }
+  if (generated.error) {
+    return {
+      created: false,
+      error: getErrorMessage(generated.error, "unknown error")
+    };
+  }
+  return { created: true, error: null };
+}
+
 /** The row write only; `updateJobDetails` also checks the job and recalculates it. */
 export async function updateJob(
   client: SupabaseClient<Database>,
@@ -4610,8 +4903,10 @@ export async function updatePlanningJob(
       .eq("companyId", companyId)
       .single();
     if (existing.error) return { updated: false, error: existing.error };
-    const deadlineType = deadlineTypeForPlanningDate(
-      existing.data.deadlineType
+    // as on the job's own panel: a dated ASAP job becomes Soft Deadline
+    const deadlineType = deadlineTypeForDueDate(
+      existing.data.deadlineType,
+      updates.dueDate
     );
     if (deadlineType !== existing.data.deadlineType) {
       updates.deadlineType = deadlineType;
@@ -8873,8 +9168,11 @@ async function notifyAssemblerInvalidate(modelUploadId: string) {
       body: JSON.stringify({ modelUploadId }),
       signal: AbortSignal.timeout(5000)
     });
-  } catch {
-    // swallow — best-effort
+  } catch (error) {
+    logger.warning("Failed to tell the assembler to invalidate its cache", {
+      modelUploadId,
+      error
+    });
   }
 }
 
@@ -10587,6 +10885,7 @@ export async function getFlattenedBomMaterials(
         "id, itemId, quantity, methodType, materialMakeMethodId, item(id, name, readableIdWithRevision)"
       )
       .eq("makeMethodId", makeMethodId)
+      .is("methodCorrectionId", null)
       .order("order", { ascending: true });
 
     for (const material of materials.data ?? []) {
@@ -12044,15 +12343,21 @@ export async function markPlanningActionsActioned(
 }
 
 /**
- * Settle the new-supply suggestions a planning Order just raised. The page's
- * Order button creates PO lines (Buy) or jobs (Make) from the suggested
- * orders, which carry no action id; each one is the week of an Order / Make
- * action (both come from `computePlanningOrders`, and the natural key holds
- * one such action per item, location, segment and week). Without this, the action
- * stayed Open beside the order that answered it until the next MRP run.
- * Dismissed is settled too: the need it suppressed has now been ordered.
- * Pairs are matched as pairs, so a bulk order never settles one item's week
- * because another item was ordered in it.
+ * Settle the Order / Make actions that a planning Order / Make just answered,
+ * by the QUANTITY ordered against each: Actioned when it covers
+ * `suggestedQuantity` (compared at 5 places), otherwise the action keeps its
+ * status (Open or Dismissed) and drops to the remainder. MRP sums a week's
+ * orders into one action, so ordering part of a week (a row removed, lowered,
+ * or refused for starting in the past) must leave the rest of the need open.
+ *
+ * An order settles the action named by its `planningActionId` (kept through
+ * drawer edits, so a row moved to another week settles the week it came
+ * from), and nothing else: an id that no longer matches means that need was
+ * settled or is gone. An order with no id (a row the planner added) settles
+ * its (item, week, segment) action. Only actions of the same item, segment,
+ * type, location and company match. Runs under MRP's advisory lock
+ * (`planning-actions:<companyId>`) and returns the rows it changed, each with
+ * the indexes (in `ordered`) of the orders that answered it.
  */
 export async function settleNewSupplyPlanningActions(
   db: Kysely<KyselyDatabase>,
@@ -12061,44 +12366,107 @@ export async function settleNewSupplyPlanningActions(
     locationId: string;
     userId: string;
     type: "Order" | "Make";
-    /** One per order placed; the segment defaults to common (''). */
-    ordered: { itemId: string; periodId: string; planningSegmentId?: string }[];
+    /** One per order placed, in the action's units (inventory units for an
+     *  Order); the segment defaults to common (''). */
+    ordered: {
+      itemId: string;
+      periodId: string;
+      planningSegmentId?: string;
+      quantity: number;
+      planningActionId?: string | null;
+    }[];
   }
 ) {
-  const byKey = new Map(
-    args.ordered.map((pair) => [
-      `${pair.itemId}\u0000${pair.periodId}\u0000${pair.planningSegmentId ?? ""}`,
-      pair
-    ])
+  // the index is the order's place in `ordered`, which the caller maps back
+  const ordered = args.ordered.flatMap((order, index) =>
+    order.quantity > 0 ? [{ ...order, index }] : []
   );
-  const ordered = [...byKey.values()];
-  return planningActionIdList([...byKey.keys()], () =>
-    db
-      .updateTable("planningAction")
-      .set({
-        status: "Actioned",
-        updatedBy: args.userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("companyId", "=", args.companyId)
-      .where("locationId", "=", args.locationId)
-      .where("type", "=", args.type)
-      .where("status", "in", ["Open", "Dismissed"])
-      .where((eb) =>
-        eb.or(
-          ordered.map((pair) =>
-            eb.and([
-              eb("itemId", "=", pair.itemId),
-              eb("periodId", "=", pair.periodId),
-              eb("planningSegmentId", "=", pair.planningSegmentId ?? "")
-            ])
+  return planningActionIdList(
+    ordered.map((order) => order.itemId),
+    () =>
+      withTransaction(db, async (trx) => {
+        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`planning-actions:${args.companyId}`}, 0))`.execute(
+          trx
+        );
+        const values = sql.join(
+          ordered.map(
+            (order) =>
+              sql`(${order.index}::int, ${order.planningActionId ?? null}::text, ${order.itemId}::text, ${order.periodId}::text, ${order.planningSegmentId ?? ""}::text, ${order.quantity}::numeric)`
           )
-        )
-      )
-      // The key fields let a grouped order move the action's pegs to the
-      // supply it created (Projects Phase 3).
-      .returning(["id", "itemId", "periodId", "planningSegmentId"])
-      .execute()
+        );
+        const settleable = sql`
+          SELECT id, "itemId", "periodId", "planningSegmentId"
+          FROM "planningAction"
+          WHERE "companyId" = ${args.companyId}
+            AND "locationId" = ${args.locationId}
+            AND "type" = ${args.type}::"planningActionType"
+            AND "status" IN ('Open', 'Dismissed')
+        `;
+        // Each order answers one action, by id or, with none, by week (the
+        // natural key holds one per week); an action is settled once, by
+        // their sum.
+        const result = await sql<{
+          id: string;
+          itemId: string;
+          periodId: string;
+          planningSegmentId: string;
+          status: "Open" | "Dismissed" | "Actioned";
+          suggestedQuantity: number;
+          orderIndexes: number[];
+        }>`
+          WITH ordered ("index", "planningActionId", "itemId", "periodId", "planningSegmentId", "quantity") AS (
+            VALUES ${values}
+          ),
+          settleable AS (${settleable}),
+          by_id AS (
+            SELECT o."index", s.id
+            FROM ordered o
+            JOIN settleable s
+              ON s.id = o."planningActionId"
+             AND s."itemId" = o."itemId"
+             AND s."planningSegmentId" = o."planningSegmentId"
+          ),
+          by_week AS (
+            SELECT o."index", s.id
+            FROM ordered o
+            JOIN settleable s
+              ON s."itemId" = o."itemId"
+             AND s."planningSegmentId" = o."planningSegmentId"
+             AND s."periodId" = o."periodId"
+            WHERE o."planningActionId" IS NULL
+          ),
+          answered AS (
+            SELECT m.id, SUM(o."quantity") AS "quantity",
+              array_agg(m."index" ORDER BY m."index") AS "orderIndexes"
+            FROM (SELECT * FROM by_id UNION ALL SELECT * FROM by_week) m
+            JOIN ordered o ON o."index" = m."index"
+            GROUP BY m.id
+          )
+          UPDATE "planningAction" pa
+          SET
+            "status" = CASE
+              WHEN round(pa."suggestedQuantity" - a."quantity", 5) <= 0
+                THEN 'Actioned'::"planningActionStatus"
+              ELSE pa."status"
+            END,
+            "suggestedQuantity" = CASE
+              WHEN round(pa."suggestedQuantity" - a."quantity", 5) <= 0
+                THEN pa."suggestedQuantity"
+              ELSE round(pa."suggestedQuantity" - a."quantity", 5)
+            END,
+            "updatedBy" = ${args.userId},
+            "updatedAt" = ${datetime.timestamp()}
+          FROM answered a
+          WHERE pa.id = a.id
+            AND pa."companyId" = ${args.companyId}
+          RETURNING pa.id, pa."itemId", pa."periodId", pa."planningSegmentId",
+            pa."status", pa."suggestedQuantity", a."orderIndexes"
+        `.execute(trx);
+        return result.rows.map((row) => ({
+          ...row,
+          suggestedQuantity: Number(row.suggestedQuantity)
+        }));
+      })
   );
 }
 
@@ -14257,7 +14625,7 @@ export async function assignSerialNumbers(
   });
 }
 
-const sandboxLogger = getLogger("erp", "configuration-rule");
+const sandboxLogger = getLogger("erp", "production", "configuration-rule");
 
 /**
  * A stored configuration rule is the TypeScript body of `configure(params)`. It is
@@ -14275,9 +14643,7 @@ export async function importTypeScript(code: string): Promise<{
   try {
     javascript = transpileRule(code);
   } catch (error) {
-    sandboxLogger.error("configuration rule does not compile", {
-      error: String(error)
-    });
+    sandboxLogger.error("A configuration rule does not compile", { error });
   }
 
   return {
@@ -14286,15 +14652,13 @@ export async function importTypeScript(code: string): Promise<{
       try {
         return (await runConfigurationRule(javascript, params)) as T | null;
       } catch (error) {
-        sandboxLogger.error("configuration rule failed", {
-          error: String(error)
-        });
+        sandboxLogger.error("A configuration rule failed", { error });
         return null;
       }
     }
   };
 }
-const getMethodLogger = getLogger("erp", "get-method");
+const getMethodLogger = getLogger("erp", "production", "get-method");
 
 /**
  * An operation-step `description` as a tiptap doc for a jsonb column. The
@@ -14503,6 +14867,830 @@ async function insertOperationChildren(
       .execute();
   }
   return stepMap;
+}
+
+/**
+ * Copies a make method's corrections onto another make method: each
+ * correction, its operations (steps, slides, tools, parameters), its materials
+ * and its step-result mappings. `stepIdMap` maps the source routing's step ids
+ * to their copies; a mapping whose step was not copied is dropped. The
+ * target's own corrections are replaced.
+ */
+export async function copyMethodCorrections(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    sourceMakeMethodId: string;
+    targetMakeMethodId: string;
+    companyId: string;
+    userId: string;
+    stepIdMap: Record<string, string>;
+  }
+) {
+  const { sourceMakeMethodId, targetMakeMethodId, companyId, userId } = args;
+
+  await trx
+    .deleteFrom("methodCorrection")
+    .where("makeMethodId", "=", targetMakeMethodId)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  const corrections = await trx
+    .selectFrom("methodCorrection")
+    .selectAll()
+    .where("makeMethodId", "=", sourceMakeMethodId)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (corrections.length === 0) return;
+
+  const correctionIds = await newIds(trx, "mcor", corrections.length);
+  const correctionIdMap = new Map(
+    corrections.map((correction, i) => [correction.id, correctionIds[i]!])
+  );
+  await trx
+    .insertInto("methodCorrection")
+    .values(
+      corrections.map(
+        ({
+          id,
+          createdAt: _createdAt,
+          updatedAt: _updatedAt,
+          updatedBy: _updatedBy,
+          ...correction
+        }) => ({
+          ...correction,
+          id: correctionIdMap.get(id)!,
+          makeMethodId: targetMakeMethodId,
+          createdBy: userId
+        })
+      )
+    )
+    .execute();
+
+  const sourceCorrectionIds = [...correctionIdMap.keys()];
+
+  const operations = await trx
+    .selectFrom("methodOperation")
+    .selectAll()
+    .where("methodCorrectionId", "in", sourceCorrectionIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const operationIds = await newIds(trx, "mop", operations.length);
+  const operationIdMap = new Map(
+    operations.map((operation, i) => [operation.id, operationIds[i]!])
+  );
+  if (operations.length > 0) {
+    const operationRows = operations.map(
+      ({
+        id,
+        createdAt: _createdAt,
+        updatedAt: _updatedAt,
+        updatedBy: _updatedBy,
+        ...operation
+      }) => ({
+        ...operation,
+        id: operationIdMap.get(id)!,
+        makeMethodId: targetMakeMethodId,
+        methodCorrectionId: correctionIdMap.get(operation.methodCorrectionId!)!,
+        createdBy: userId
+      })
+    );
+    for (const rows of chunked(operationRows)) {
+      await trx
+        .insertInto("methodOperation")
+        .values(rows as never)
+        .execute();
+    }
+
+    const sourceOperationIds = [...operationIdMap.keys()];
+    const [steps, tools, parameters] = await Promise.all([
+      trx
+        .selectFrom("methodOperationStep")
+        .selectAll()
+        .where("operationId", "in", sourceOperationIds)
+        .execute(),
+      trx
+        .selectFrom("methodOperationTool")
+        .selectAll()
+        .where("operationId", "in", sourceOperationIds)
+        .execute(),
+      trx
+        .selectFrom("methodOperationParameter")
+        .selectAll()
+        .where("operationId", "in", sourceOperationIds)
+        .execute()
+    ]);
+    const children = newOperationChildren();
+    children.steps.push(
+      ...steps.map(
+        ({
+          id,
+          createdAt: _createdAt,
+          updatedAt: _updatedAt,
+          updatedBy: _updatedBy,
+          ...step
+        }) => ({
+          sourceStepId: id,
+          row: {
+            ...step,
+            operationId: operationIdMap.get(step.operationId)!,
+            companyId,
+            createdBy: userId
+          } as Record<string, unknown>
+        })
+      )
+    );
+    children.tools.push(
+      ...tools.map((tool) => ({
+        row: {
+          toolId: tool.toolId,
+          quantity: tool.quantity,
+          operationId: operationIdMap.get(tool.operationId)!,
+          companyId,
+          createdBy: userId
+        },
+        sourceStepIds: null
+      }))
+    );
+    children.parameters.push(
+      ...parameters.map((parameter) => ({
+        operationId: operationIdMap.get(parameter.operationId)!,
+        key: parameter.key,
+        value: parameter.value,
+        companyId,
+        createdBy: userId
+      }))
+    );
+    await insertOperationChildren(
+      trx,
+      "method",
+      "methodOperationStepSlide",
+      children,
+      companyId,
+      userId
+    );
+  }
+
+  const materials = await trx
+    .selectFrom("methodMaterial")
+    .selectAll()
+    .where("methodCorrectionId", "in", sourceCorrectionIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (materials.length > 0) {
+    await trx
+      .insertInto("methodMaterial")
+      .values(
+        materials.map(
+          ({
+            id: _id,
+            createdAt: _createdAt,
+            updatedAt: _updatedAt,
+            updatedBy: _updatedBy,
+            productionQuantity: _productionQuantity,
+            ...material
+          }) => ({
+            ...material,
+            makeMethodId: targetMakeMethodId,
+            methodCorrectionId: correctionIdMap.get(
+              material.methodCorrectionId!
+            )!,
+            methodOperationId: material.methodOperationId
+              ? (operationIdMap.get(material.methodOperationId) ?? null)
+              : null,
+            createdBy: userId
+          })
+        ) as never
+      )
+      .execute();
+  }
+
+  const triggers = await trx
+    .selectFrom("methodCorrectionTrigger")
+    .selectAll()
+    .where("methodCorrectionId", "in", sourceCorrectionIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const triggerRows = triggers.flatMap((trigger) => {
+    const methodOperationStepId = args.stepIdMap[trigger.methodOperationStepId];
+    if (!methodOperationStepId) return [];
+    return [
+      {
+        methodOperationStepId,
+        methodCorrectionId: correctionIdMap.get(trigger.methodCorrectionId)!,
+        listValue: trigger.listValue,
+        measurementCondition: trigger.measurementCondition,
+        companyId,
+        createdBy: userId
+      }
+    ];
+  });
+  if (triggerRows.length > 0) {
+    await trx
+      .insertInto("methodCorrectionTrigger")
+      .values(triggerRows)
+      .execute();
+  }
+}
+
+/**
+ * A job correction's `definition`: its operations as the job operation,
+ * step, tool and parameter rows job creation builds (rates frozen with the
+ * job's), and its materials with their quantity per unit. trigger-correction
+ * spreads these rows into inserts for the units sent into the correction.
+ */
+export type JobCorrectionDefinition = {
+  version: 1;
+  operations: {
+    /** The source method operation, which materials point at. */
+    key: string;
+    operation: Record<string, unknown>;
+    /** Step rows, each with its slides (images and 3D views). */
+    steps: {
+      row: Record<string, unknown>;
+      slides: Record<string, unknown>[];
+    }[];
+    tools: { toolId: string; quantity: number }[];
+    parameters: { key: string; value: string }[];
+  }[];
+  materials: {
+    itemId: string;
+    itemType: string;
+    methodType: string;
+    description: string;
+    quantity: number;
+    unitOfMeasureCode: string;
+    order: number;
+    operationKey: string | null;
+    /**
+     * The method line's Pull From per location. Absent in a snapshot taken
+     * before it was recorded; the item's default bin is used then.
+     */
+    storageUnitIds?: Record<string, string> | null;
+  }[];
+};
+
+const CORRECTION_STEP_COLUMNS = [
+  "name",
+  "type",
+  "required",
+  "sortOrder",
+  "minValue",
+  "maxValue",
+  "listValues",
+  "unitOfMeasureCode",
+  "fileTypes",
+  "description"
+] as const;
+
+/**
+ * Snapshots one make method level's corrections onto the job, with the result
+ * mappings moved onto the job's own steps (`stepMap`: method step id -> job
+ * step id). Replaces the level's earlier snapshot, so getting a job's method
+ * again refreshes it.
+ */
+async function snapshotJobCorrections(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    makeMethodId: string;
+    jobId: string;
+    jobMakeMethodId: string;
+    companyId: string;
+    userId: string;
+    stepMap: Record<string, string>;
+    laborAndOverheadRates: ReturnType<typeof getRatesFromWorkCenters>;
+    outsideOperationRates: ReturnType<typeof getRatesFromSupplierProcesses>;
+  }
+) {
+  const { makeMethodId, jobId, jobMakeMethodId, companyId, userId } = args;
+
+  await trx
+    .deleteFrom("jobCorrection")
+    .where("jobMakeMethodId", "=", jobMakeMethodId)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  const corrections = await trx
+    .selectFrom("methodCorrection")
+    .selectAll()
+    .where("makeMethodId", "=", makeMethodId)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (corrections.length === 0) return;
+
+  const correctionIds = corrections.map((correction) => correction.id);
+  const [operations, materials, triggers] = await Promise.all([
+    trx
+      .selectFrom("methodOperation")
+      .selectAll()
+      .where("methodCorrectionId", "in", correctionIds)
+      .where("companyId", "=", companyId)
+      .orderBy("order", "asc")
+      .execute(),
+    trx
+      .selectFrom("methodMaterial")
+      .innerJoin("item", "item.id", "methodMaterial.itemId")
+      .select([
+        "methodMaterial.methodCorrectionId",
+        "methodMaterial.itemId",
+        "methodMaterial.itemType",
+        "methodMaterial.methodType",
+        "methodMaterial.quantity",
+        "methodMaterial.unitOfMeasureCode",
+        "methodMaterial.order",
+        "methodMaterial.methodOperationId",
+        "methodMaterial.storageUnitIds",
+        "item.name"
+      ])
+      .where("methodMaterial.methodCorrectionId", "in", correctionIds)
+      .where("methodMaterial.companyId", "=", companyId)
+      .execute(),
+    trx
+      .selectFrom("methodCorrectionTrigger")
+      .selectAll()
+      .where("methodCorrectionId", "in", correctionIds)
+      .where("companyId", "=", companyId)
+      .execute()
+  ]);
+
+  const operationIds = operations.map((operation) => operation.id);
+  const [steps, tools, parameters] =
+    operationIds.length > 0
+      ? await Promise.all([
+          trx
+            .selectFrom("methodOperationStep")
+            .selectAll()
+            .where("operationId", "in", operationIds)
+            .execute(),
+          trx
+            .selectFrom("methodOperationTool")
+            .selectAll()
+            .where("operationId", "in", operationIds)
+            .execute(),
+          trx
+            .selectFrom("methodOperationParameter")
+            .selectAll()
+            .where("operationId", "in", operationIds)
+            .execute()
+        ])
+      : [[], [], []];
+  const slides =
+    steps.length > 0
+      ? await trx
+          .selectFrom("methodOperationStepSlide")
+          .selectAll()
+          .where(
+            "stepId",
+            "in",
+            steps.map((step) => step.id)
+          )
+          .execute()
+      : [];
+
+  const jobCorrectionIds = await newIds(trx, "jcor", corrections.length);
+  const jobCorrectionIdMap = new Map(
+    corrections.map((correction, i) => [correction.id, jobCorrectionIds[i]!])
+  );
+
+  const rows = corrections.map((correction) => {
+    const definition: JobCorrectionDefinition = {
+      version: 1,
+      operations: operations
+        .filter((operation) => operation.methodCorrectionId === correction.id)
+        .map((operation) => ({
+          key: operation.id,
+          operation: {
+            processId: operation.processId,
+            procedureId: operation.procedureId,
+            workCenterId: operation.workCenterId,
+            description: operation.description,
+            setupTime: operation.setupTime,
+            setupUnit: operation.setupUnit,
+            laborTime: operation.laborTime,
+            laborUnit: operation.laborUnit,
+            machineTime: operation.machineTime,
+            machineUnit: operation.machineUnit,
+            ...args.laborAndOverheadRates(
+              operation.processId,
+              operation.workCenterId
+            ),
+            operationOrder: operation.operationOrder,
+            operationType: normalizeOperationType(operation.operationType),
+            assemblyInstructionId: operation.assemblyInstructionId,
+            inspectionDocumentId: operation.inspectionDocumentId,
+            operationSupplierProcessId: operation.operationSupplierProcessId,
+            ...args.outsideOperationRates(
+              operation.processId,
+              operation.operationSupplierProcessId
+            ),
+            workInstruction: operation.workInstruction ?? {},
+            tags: operation.tags
+          },
+          steps: steps
+            .filter((step) => step.operationId === operation.id)
+            .map((step) => ({
+              row: Object.fromEntries(
+                CORRECTION_STEP_COLUMNS.map((column) => [column, step[column]])
+              ),
+              slides: slides
+                .filter((slide) => slide.stepId === step.id)
+                .map((slide) => ({
+                  annotations: slide.annotations,
+                  caption: slide.caption,
+                  imagePath: slide.imagePath,
+                  modelUploadId: slide.modelUploadId,
+                  size: slide.size,
+                  sortOrder: slide.sortOrder
+                }))
+            })),
+          tools: tools
+            .filter((tool) => tool.operationId === operation.id)
+            .map((tool) => ({ toolId: tool.toolId, quantity: tool.quantity })),
+          parameters: parameters
+            .filter((parameter) => parameter.operationId === operation.id)
+            .map((parameter) => ({
+              key: parameter.key,
+              value: parameter.value
+            }))
+        })),
+      materials: materials
+        .filter((material) => material.methodCorrectionId === correction.id)
+        .map((material) => ({
+          itemId: material.itemId,
+          itemType: material.itemType,
+          methodType: material.methodType,
+          description: material.name,
+          quantity: Number(material.quantity),
+          unitOfMeasureCode: material.unitOfMeasureCode,
+          order: Number(material.order),
+          operationKey: material.methodOperationId,
+          storageUnitIds:
+            (material.storageUnitIds as Record<string, string> | null) ?? null
+        }))
+    };
+    return {
+      id: jobCorrectionIdMap.get(correction.id)!,
+      companyId,
+      jobId,
+      jobMakeMethodId,
+      methodCorrectionId: correction.id,
+      name: correction.name,
+      description: correction.description,
+      returnTo: correction.returnTo,
+      maxAttempts: correction.maxAttempts,
+      order: correction.order,
+      definition: JSON.stringify(definition),
+      createdBy: userId
+    };
+  });
+  await trx.insertInto("jobCorrection").values(rows).execute();
+
+  const triggerRows = triggers.flatMap((trigger) => {
+    const jobOperationStepId = args.stepMap[trigger.methodOperationStepId];
+    if (!jobOperationStepId) return [];
+    return [
+      {
+        jobOperationStepId,
+        jobCorrectionId: jobCorrectionIdMap.get(trigger.methodCorrectionId)!,
+        listValue: trigger.listValue,
+        measurementCondition: trigger.measurementCondition,
+        companyId,
+        createdBy: userId
+      }
+    ];
+  });
+  if (triggerRows.length > 0) {
+    await trx.insertInto("jobCorrectionTrigger").values(triggerRows).execute();
+  }
+}
+
+/**
+ * The result mappings of a make method's corrections, with what identifies
+ * each mapped step apart from its id. Read before the routing is replaced
+ * (the step delete cascades to the mappings), then restored with
+ * `restoreCorrectionMappings`.
+ */
+async function readCorrectionMappings(
+  trx: Transaction<KyselyDatabase>,
+  makeMethodId: string,
+  companyId: string
+) {
+  return trx
+    .selectFrom("methodCorrectionTrigger")
+    .innerJoin(
+      "methodOperationStep",
+      "methodOperationStep.id",
+      "methodCorrectionTrigger.methodOperationStepId"
+    )
+    .innerJoin(
+      "methodOperation",
+      "methodOperation.id",
+      "methodOperationStep.operationId"
+    )
+    .select([
+      "methodCorrectionTrigger.methodCorrectionId",
+      "methodCorrectionTrigger.listValue",
+      "methodCorrectionTrigger.measurementCondition",
+      "methodOperationStep.id as stepId",
+      "methodOperationStep.name",
+      "methodOperationStep.type",
+      "methodOperationStep.sortOrder",
+      "methodOperation.order"
+    ])
+    .where("methodOperation.makeMethodId", "=", makeMethodId)
+    .where("methodOperation.methodCorrectionId", "is", null)
+    .where("methodCorrectionTrigger.companyId", "=", companyId)
+    .execute();
+}
+
+/**
+ * Puts mappings read by `readCorrectionMappings` back on the make method's
+ * new routing: each goes to the step with the same operation order, name and
+ * type (`matchStepsByName`); a mapping whose step is gone is dropped.
+ */
+async function restoreCorrectionMappings(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    mappings: Awaited<ReturnType<typeof readCorrectionMappings>>;
+    makeMethodId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { mappings, makeMethodId, companyId, userId } = args;
+  if (mappings.length === 0) return;
+  const newSteps = await trx
+    .selectFrom("methodOperationStep")
+    .innerJoin(
+      "methodOperation",
+      "methodOperation.id",
+      "methodOperationStep.operationId"
+    )
+    .select([
+      "methodOperationStep.id",
+      "methodOperationStep.name",
+      "methodOperationStep.type",
+      "methodOperationStep.sortOrder",
+      "methodOperation.order"
+    ])
+    .where("methodOperation.makeMethodId", "=", makeMethodId)
+    .where("methodOperation.methodCorrectionId", "is", null)
+    .where("methodOperation.companyId", "=", companyId)
+    .execute();
+  const oldSteps = [
+    ...new Map(mappings.map((m) => [m.stepId, m])).values()
+  ].map((m) => ({
+    id: m.stepId,
+    name: m.name,
+    type: m.type,
+    sortOrder: Number(m.sortOrder ?? 0),
+    operationOrder: Number(m.order)
+  }));
+  const stepMap = matchStepsByName(
+    oldSteps,
+    newSteps.map((step) => ({
+      id: step.id,
+      name: step.name,
+      type: step.type,
+      sortOrder: Number(step.sortOrder ?? 0),
+      operationOrder: Number(step.order)
+    }))
+  );
+  const rows = mappings.flatMap((mapping) => {
+    const methodOperationStepId = stepMap[mapping.stepId];
+    if (!methodOperationStepId) return [];
+    return [
+      {
+        methodOperationStepId,
+        methodCorrectionId: mapping.methodCorrectionId,
+        listValue: mapping.listValue,
+        measurementCondition: mapping.measurementCondition,
+        companyId,
+        createdBy: userId
+      }
+    ];
+  });
+  for (const chunk of chunked(rows)) {
+    await trx.insertInto("methodCorrectionTrigger").values(chunk).execute();
+  }
+}
+
+/**
+ * Snapshots corrections onto a job whose routing did not come from a make
+ * method (a quote line converted to a job). Each job level takes the
+ * corrections of its item's make method (the same version, else the Active
+ * one), and each result mapping moves to the job step with the same
+ * operation order, step name and type (`matchStepsByName`). A mapping whose
+ * step the quote changed is dropped.
+ */
+async function snapshotJobCorrectionsByStepMatch(
+  trx: Transaction<KyselyDatabase>,
+  args: { jobId: string; companyId: string; userId: string }
+) {
+  const { jobId, companyId, userId } = args;
+  const levels = await trx
+    .selectFrom("jobMakeMethod")
+    .select(["id", "itemId", "version"])
+    .where("jobId", "=", jobId)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (levels.length === 0) return;
+
+  const makeMethods = await trx
+    .selectFrom("makeMethod")
+    .select(["id", "itemId", "version", "status"])
+    .where("itemId", "in", [...new Set(levels.map((level) => level.itemId))])
+    .where("companyId", "=", companyId)
+    .execute();
+  const methodForLevel = new Map<string, string>();
+  for (const level of levels) {
+    const candidates = makeMethods.filter((m) => m.itemId === level.itemId);
+    const chosen =
+      candidates.find((m) => Number(m.version) === Number(level.version)) ??
+      candidates.find((m) => m.status === "Active");
+    if (chosen) methodForLevel.set(level.id, chosen.id);
+  }
+  const methodIds = [...new Set(methodForLevel.values())];
+  if (methodIds.length === 0) return;
+
+  const withCorrections = new Set(
+    (
+      await trx
+        .selectFrom("methodCorrection")
+        .select("makeMethodId")
+        .where("makeMethodId", "in", methodIds)
+        .where("companyId", "=", companyId)
+        .execute()
+    ).map((row) => row.makeMethodId)
+  );
+  if (withCorrections.size === 0) return;
+
+  const [methodSteps, jobSteps, workCenters, supplierProcesses] =
+    await Promise.all([
+      trx
+        .selectFrom("methodOperationStep")
+        .innerJoin(
+          "methodOperation",
+          "methodOperation.id",
+          "methodOperationStep.operationId"
+        )
+        .select([
+          "methodOperationStep.id",
+          "methodOperationStep.name",
+          "methodOperationStep.type",
+          "methodOperationStep.sortOrder",
+          "methodOperation.order",
+          "methodOperation.makeMethodId"
+        ])
+        .where("methodOperation.makeMethodId", "in", [...withCorrections])
+        .where("methodOperation.methodCorrectionId", "is", null)
+        .where("methodOperation.companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("jobOperationStep")
+        .innerJoin(
+          "jobOperation",
+          "jobOperation.id",
+          "jobOperationStep.operationId"
+        )
+        .select([
+          "jobOperationStep.id",
+          "jobOperationStep.name",
+          "jobOperationStep.type",
+          "jobOperationStep.sortOrder",
+          "jobOperation.order",
+          "jobOperation.jobMakeMethodId"
+        ])
+        .where("jobOperation.jobId", "=", jobId)
+        .where("jobOperation.reworkId", "is", null)
+        .where("jobOperation.companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("workCenters")
+        .selectAll()
+        .where("companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("supplierProcess")
+        .selectAll()
+        .where("companyId", "=", companyId)
+        .execute()
+    ]);
+  const toMatchable = (step: {
+    id: string;
+    name: string;
+    type: string;
+    sortOrder: number | null;
+    order: number | string;
+  }): MatchableStep => ({
+    id: step.id,
+    name: step.name,
+    type: step.type,
+    sortOrder: Number(step.sortOrder ?? 0),
+    operationOrder: Number(step.order)
+  });
+
+  for (const [jobMakeMethodId, makeMethodId] of methodForLevel) {
+    if (!withCorrections.has(makeMethodId)) continue;
+    await snapshotJobCorrections(trx, {
+      makeMethodId,
+      jobId,
+      jobMakeMethodId,
+      companyId,
+      userId,
+      stepMap: matchStepsByName(
+        methodSteps
+          .filter((step) => step.makeMethodId === makeMethodId)
+          .map(toMatchable),
+        jobSteps
+          .filter((step) => step.jobMakeMethodId === jobMakeMethodId)
+          .map(toMatchable)
+      ),
+      laborAndOverheadRates: getRatesFromWorkCenters(workCenters),
+      outsideOperationRates: getRatesFromSupplierProcesses(supplierProcesses)
+    });
+  }
+}
+
+/**
+ * Copies a job's correction snapshots onto another job (Get Method from a
+ * job): each source level's corrections go to the matching target level, and
+ * their result mappings move onto the copied steps (`stepMap`: source job step
+ * id -> target job step id). Replaces the target levels' earlier snapshots.
+ */
+async function copyJobCorrections(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    jobId: string;
+    companyId: string;
+    userId: string;
+    /** source jobMakeMethodId -> target jobMakeMethodId */
+    makeMethodMap: Record<string, string>;
+    stepMap: Record<string, string>;
+  }
+) {
+  const { jobId, companyId, userId, makeMethodMap, stepMap } = args;
+  const sourceLevels = Object.keys(makeMethodMap);
+  if (sourceLevels.length === 0) return;
+
+  await trx
+    .deleteFrom("jobCorrection")
+    .where("jobMakeMethodId", "in", Object.values(makeMethodMap))
+    .where("companyId", "=", companyId)
+    .execute();
+
+  const corrections = await trx
+    .selectFrom("jobCorrection")
+    .selectAll()
+    .where("jobMakeMethodId", "in", sourceLevels)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (corrections.length === 0) return;
+
+  const ids = await newIds(trx, "jcor", corrections.length);
+  const idMap = new Map(corrections.map((c, i) => [c.id, ids[i]!]));
+  await trx
+    .insertInto("jobCorrection")
+    .values(
+      corrections.map((correction) => ({
+        id: idMap.get(correction.id)!,
+        companyId,
+        jobId,
+        jobMakeMethodId: makeMethodMap[correction.jobMakeMethodId]!,
+        methodCorrectionId: correction.methodCorrectionId,
+        name: correction.name,
+        description: correction.description,
+        returnTo: correction.returnTo,
+        maxAttempts: correction.maxAttempts,
+        order: correction.order,
+        definition: JSON.stringify(correction.definition),
+        createdBy: userId
+      }))
+    )
+    .execute();
+
+  const triggers = await trx
+    .selectFrom("jobCorrectionTrigger")
+    .selectAll()
+    .where("jobCorrectionId", "in", [...idMap.keys()])
+    .where("companyId", "=", companyId)
+    .execute();
+  const triggerRows = triggers.flatMap((trigger) => {
+    const jobOperationStepId = stepMap[trigger.jobOperationStepId];
+    if (!jobOperationStepId) return [];
+    return [
+      {
+        jobOperationStepId,
+        jobCorrectionId: idMap.get(trigger.jobCorrectionId)!,
+        listValue: trigger.listValue,
+        measurementCondition: trigger.measurementCondition,
+        companyId,
+        createdBy: userId
+      }
+    ];
+  });
+  for (const rows of chunked(triggerRows)) {
+    await trx.insertInto("jobCorrectionTrigger").values(rows).execute();
+  }
 }
 
 // Many-to-many step links (Phase 2): remap a parent's OLD operation-step ids onto the freshly
@@ -14750,7 +15938,9 @@ export async function getMethod(
           parts.billOfMaterial
             ? many(db, "methodMaterial", {
                 makeMethodId: sourceMakeMethod.data.id,
-                companyId
+                companyId,
+                // Corrections are copied on their own (copyMethodCorrections).
+                methodCorrectionId: isNull
               })
             : Promise.resolve({ data: [], error: null }),
         () =>
@@ -14765,7 +15955,11 @@ export async function getMethod(
               >(
                 db,
                 "methodOperation",
-                { makeMethodId: sourceMakeMethod.data.id, companyId },
+                {
+                  makeMethodId: sourceMakeMethod.data.id,
+                  companyId,
+                  methodCorrectionId: isNull
+                },
                 {
                   embed: {
                     methodOperationTool: {
@@ -14791,6 +15985,15 @@ export async function getMethod(
       }
 
       await withTransaction(db, async (trx) => {
+        // The target keeps its own corrections; their result mappings go with
+        // the steps the delete below removes, so keep them to put back.
+        const correctionMappings = parts.billOfProcess
+          ? await readCorrectionMappings(
+              trx,
+              targetMakeMethod.data.id!,
+              companyId
+            )
+          : [];
         // Delete existing materials and operations from target method
         await Promise.all([
           parts.billOfMaterial
@@ -14798,6 +16001,7 @@ export async function getMethod(
                 .deleteFrom("methodMaterial")
                 .where("makeMethodId", "=", targetMakeMethod.data.id)
                 .where("companyId", "=", companyId)
+                .where("methodCorrectionId", "is", null)
                 .execute()
             : Promise.resolve(),
           parts.billOfProcess
@@ -14805,6 +16009,7 @@ export async function getMethod(
                 .deleteFrom("methodOperation")
                 .where("makeMethodId", "=", targetMakeMethod.data.id)
                 .where("companyId", "=", companyId)
+                .where("methodCorrectionId", "is", null)
                 .execute()
             : Promise.resolve()
         ]);
@@ -14938,6 +16143,12 @@ export async function getMethod(
             userId
           );
         }
+        await restoreCorrectionMappings(trx, {
+          mappings: correctionMappings,
+          makeMethodId: targetMakeMethod.data.id!,
+          companyId,
+          userId
+        });
         // Copy materials from source to target, dropping any zero-quantity
         // BOM lines.
         const materialsToCopy = (
@@ -15378,7 +16589,7 @@ export async function getMethod(
               return (result ?? defaultValue) as T;
             } catch (err) {
               getMethodLogger.error("configuration field resolver failed", {
-                error: String((err as Error)?.stack ?? err)
+                error: err
               });
               return defaultValue;
             }
@@ -15795,6 +17006,16 @@ export async function getMethod(
                 return acc;
               }, {});
             }
+            await snapshotJobCorrections(trx, {
+              makeMethodId: node.data.materialMakeMethodId,
+              jobId,
+              jobMakeMethodId: parentJobMakeMethodId!,
+              companyId,
+              userId,
+              stepMap: methodStepsToJobSteps,
+              laborAndOverheadRates: getLaborAndOverheadRates,
+              outsideOperationRates: getOutsideOperationRates
+            });
           } // end if (parts.billOfProcess)
 
           if (parts.billOfMaterial) {
@@ -16671,6 +17892,16 @@ export async function getMethod(
                   {}
                 ) ?? {};
             }
+            await snapshotJobCorrections(trx, {
+              makeMethodId: node.data.materialMakeMethodId,
+              jobId: jobMakeMethod.data?.jobId!,
+              jobMakeMethodId: parentJobMakeMethodId!,
+              companyId,
+              userId,
+              stepMap: methodStepsToJobSteps,
+              laborAndOverheadRates: getLaborAndOverheadRates,
+              outsideOperationRates: getOutsideOperationRates
+            });
           } // end if (parts.billOfProcess)
 
           if (parts.billOfMaterial) {
@@ -17219,7 +18450,7 @@ export async function getMethod(
               return (result ?? defaultValue) as T;
             } catch (err) {
               getMethodLogger.error("configuration field resolver failed", {
-                error: String((err as Error)?.stack ?? err)
+                error: err
               });
               return defaultValue;
             }
@@ -17236,7 +18467,7 @@ export async function getMethod(
           node: MethodTreeItem,
           parentQuoteMakeMethodId: string | null
         ) {
-          getMethodLogger.debug("[traverseMethod]", {
+          getMethodLogger.debug("Traversing a method node", {
             isRoot: node.data.isRoot,
             itemId: node.data.itemId,
             methodType: node.data.methodType,
@@ -17716,7 +18947,7 @@ export async function getMethod(
               (child) => child!.data.methodType === "Make to Order"
             );
 
-            getMethodLogger.debug("[traverseMethod] materials", {
+            getMethodLogger.debug("Grouped the method node materials", {
               totalChildren: materialsWithConfiguredFields.length,
               madeMaterialsCount: madeMaterials.length,
               madeChildrenCount: madeChildren.length,
@@ -17748,17 +18979,14 @@ export async function getMethod(
                 const materialId = madeMaterialsWithIds[index]!.id;
                 const newMakeMethodId = newMakeMethodIds[index]!;
 
-                getMethodLogger.debug(
-                  "[traverseMethod] processing made child",
-                  {
-                    index,
-                    materialId,
-                    newMakeMethodId,
-                    childItemId: child!.data.itemId,
-                    parentItemId: itemId,
-                    willRecurse: child!.data.itemId !== itemId
-                  }
-                );
+                getMethodLogger.debug("Processing a made child material", {
+                  index,
+                  materialId,
+                  newMakeMethodId,
+                  childItemId: child!.data.itemId,
+                  parentItemId: itemId,
+                  willRecurse: child!.data.itemId !== itemId
+                });
 
                 // A configuration rule may have moved this line onto another
                 // made item; the sub-assembly under it is then that item's.
@@ -17789,10 +19017,13 @@ export async function getMethod(
         }
 
         function logTree(node: MethodTreeItem, depth = 0) {
-          getMethodLogger.debug(
-            "  ".repeat(depth) +
-              `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`
-          );
+          getMethodLogger.debug("Method tree node", {
+            depth,
+            itemId: node.data.itemId,
+            methodType: node.data.methodType,
+            isRoot: node.data.isRoot,
+            childCount: node.children.length
+          });
           for (const child of node.children) {
             logTree(child, depth + 1);
           }
@@ -17948,7 +19179,7 @@ export async function getMethod(
               return (result ?? defaultValue) as T;
             } catch (err) {
               getMethodLogger.error("configuration field resolver failed", {
-                error: String((err as Error)?.stack ?? err)
+                error: err
               });
               return defaultValue;
             }
@@ -18388,6 +19619,9 @@ export async function getMethod(
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
@@ -18395,6 +19629,9 @@ export async function getMethod(
                   .deleteFrom("methodOperation")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve()
           ]);
@@ -18731,6 +19968,9 @@ export async function getMethod(
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
@@ -18738,6 +19978,9 @@ export async function getMethod(
                   .deleteFrom("methodOperation")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve()
           ]);
@@ -19099,8 +20342,29 @@ export async function getMethod(
         );
       }
 
-      const sourceMaterialRows = sourceMaterials.data ?? [];
-      const sourceOperationRows = sourceOperations.data ?? [];
+      // A rework or correction operation (and a material a correction added
+      // on one) belongs to the units the source job sent into it, not to the
+      // routing: the copy takes the routing only.
+      const reworkOperationIds = new Set(
+        (sourceOperations.data ?? [])
+          .filter((operation) => operation.reworkId)
+          .map((operation) => operation.id)
+      );
+      const correctionMaterialIds = new Set(
+        (sourceMaterials.data ?? [])
+          .filter(
+            (material) =>
+              material.jobOperationId &&
+              reworkOperationIds.has(material.jobOperationId)
+          )
+          .map((material) => material.id)
+      );
+      const sourceMaterialRows = (sourceMaterials.data ?? []).filter(
+        (material) => !correctionMaterialIds.has(material.id)
+      );
+      const sourceOperationRows = (sourceOperations.data ?? []).filter(
+        (operation) => !operation.reworkId
+      );
 
       const sourceMaterialById = new Map(
         sourceMaterialRows.map((m) => [m.id, m])
@@ -19225,6 +20489,8 @@ export async function getMethod(
                 continue;
               }
               const sourceMaterial = sourceMaterialById.get(child.id);
+              // Left out above: a material a correction added.
+              if (correctionMaterialIds.has(child.id)) continue;
               const newMaterialId = nanoid();
               sourceMaterialIdToJobMaterialId[child.id] = newMaterialId;
 
@@ -19576,6 +20842,17 @@ export async function getMethod(
             );
             Object.assign(sourceStepsToJobSteps, copiedSteps);
           }
+          // The source job's corrections come with its routing.
+          await copyJobCorrections(trx, {
+            jobId: targetJobId,
+            companyId,
+            userId,
+            makeMethodMap: {
+              ...sourceMakeMethodIdToJobMakeMethodId,
+              [sourceJobMakeMethod.data.id]: targetJobMakeMethod.data.id
+            },
+            stepMap: sourceStepsToJobSteps
+          });
         } // end if (parts.billOfProcess)
 
         // The links between materials and operations/steps can only be
@@ -19682,7 +20959,9 @@ export async function getMethod(
           parts.billOfMaterial
             ? many(db, "methodMaterial", {
                 makeMethodId: sourceMakeMethod.data.id,
-                companyId
+                companyId,
+                // Corrections are copied on their own (copyMethodCorrections).
+                methodCorrectionId: isNull
               })
             : Promise.resolve({ data: [], error: null }),
         () =>
@@ -19697,7 +20976,11 @@ export async function getMethod(
               >(
                 db,
                 "methodOperation",
-                { makeMethodId: sourceMakeMethod.data.id, companyId },
+                {
+                  makeMethodId: sourceMakeMethod.data.id,
+                  companyId,
+                  methodCorrectionId: isNull
+                },
                 {
                   embed: {
                     methodOperationTool: {
@@ -19725,6 +21008,8 @@ export async function getMethod(
       // A new version inserts its header in a transaction and copies inside
       // it, so a failed copy leaves no empty version behind.
       await withTransaction(db, async (trx) => {
+        // Source routing step id -> copy, for the corrections' result mappings.
+        let routingStepIdMap: Record<string, string> = {};
         // The lines about to be replaced, whose configuration rules go with them.
         const [targetMaterialIds, targetOperationIds] = await Promise.all([
           trx
@@ -19732,6 +21017,7 @@ export async function getMethod(
             .select("id")
             .where("makeMethodId", "=", targetMakeMethod.data.id)
             .where("companyId", "=", companyId)
+            .where("methodCorrectionId", "is", null)
             .execute()
             .then((rows) => rows.map((row) => row.id)),
           trx
@@ -19739,6 +21025,7 @@ export async function getMethod(
             .select("id")
             .where("makeMethodId", "=", targetMakeMethod.data.id)
             .where("companyId", "=", companyId)
+            .where("methodCorrectionId", "is", null)
             .execute()
             .then((rows) => rows.map((row) => row.id))
         ]);
@@ -19750,6 +21037,7 @@ export async function getMethod(
                 .deleteFrom("methodMaterial")
                 .where("makeMethodId", "=", targetMakeMethod.data.id)
                 .where("companyId", "=", companyId)
+                .where("methodCorrectionId", "is", null)
                 .execute()
             : Promise.resolve(),
           parts.billOfProcess
@@ -19757,6 +21045,7 @@ export async function getMethod(
                 .deleteFrom("methodOperation")
                 .where("makeMethodId", "=", targetMakeMethod.data.id)
                 .where("companyId", "=", companyId)
+                .where("methodCorrectionId", "is", null)
                 .execute()
             : Promise.resolve()
         ]);
@@ -19881,7 +21170,7 @@ export async function getMethod(
               }
             }
           }
-          await insertOperationChildren(
+          routingStepIdMap = await insertOperationChildren(
             trx,
             "method",
             "methodOperationStepSlide",
@@ -19924,6 +21213,16 @@ export async function getMethod(
 
         // Configuration rules are keyed by method line and operation ids:
         // follow the copied lines, and drop the rules of the lines replaced.
+        if (parts.billOfProcess) {
+          await copyMethodCorrections(trx, {
+            sourceMakeMethodId: sourceMakeMethod.data.id,
+            targetMakeMethodId: targetMakeMethod.data.id,
+            companyId,
+            userId,
+            stepIdMap: routingStepIdMap
+          });
+        }
+
         await copyConfigurationRules(trx, {
           sourceItemId: sourceMakeMethod.data.itemId,
           targetItemId: targetMakeMethod.data.itemId,
@@ -20263,6 +21562,9 @@ export async function getMethod(
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
@@ -20270,6 +21572,9 @@ export async function getMethod(
                   .deleteFrom("methodOperation")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve()
           ]);
@@ -20604,6 +21909,9 @@ export async function getMethod(
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
@@ -20611,6 +21919,9 @@ export async function getMethod(
                   .deleteFrom("methodOperation")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve()
           ]);
@@ -21337,6 +22648,13 @@ export async function getMethod(
               userId
             );
           }
+          // Quotes carry no corrections: take them from the item's make
+          // method, mapped onto the quote's steps by name.
+          await snapshotJobCorrectionsByStepMatch(trx, {
+            jobId,
+            companyId,
+            userId
+          });
         } // end if (parts.billOfProcess)
 
         // Materials were inserted before operations in this direction, so the
@@ -21740,6 +23058,7 @@ export async function getMethod(
       let newQuoteId = "";
 
       const oldLineToNewLineMap: Record<string, string> = {};
+      const newLineIds = new Map<string, string>();
 
       const [
         sourceQuote,
@@ -21916,6 +23235,8 @@ export async function getMethod(
             throw new Error("Failed to insert quote line");
           }
 
+          newLineIds.set(id, newLine.id);
+
           if (line.methodType === "Make to Order") {
             // we only need further processing on make lines
             oldLineToNewLineMap[id] = newLine.id;
@@ -21957,6 +23278,18 @@ export async function getMethod(
               )
               .execute();
           }
+        }
+
+        // A revision prints like the quote it revises; a new quote starts clean.
+        if (asRevision) {
+          await copyDocumentEdit(trx, {
+            companyId,
+            documentType: "quote",
+            fromId: sourceQuoteId,
+            toId: newQuoteId,
+            userId,
+            rowIds: newLineIds
+          });
         }
       });
 
@@ -22887,7 +24220,8 @@ function readMethodOperations(
   return selectRows<"methodOperation", MethodOperationRow>(
     db,
     "methodOperation",
-    { makeMethodId: makeMethodIds, companyId },
+    // Corrections are not part of the routing a job or quote copies.
+    { makeMethodId: makeMethodIds, companyId, methodCorrectionId: isNull },
     {
       orderBy: ["order", "id"],
       embed: {
@@ -23199,7 +24533,7 @@ async function readOperationsForTree(
   const operations = await many<"methodOperation", TreeOperation>(
     trx,
     "methodOperation",
-    { makeMethodId: [...makeMethodIds] },
+    { makeMethodId: [...makeMethodIds], methodCorrectionId: isNull },
     {
       embed: {
         methodOperationTool: {
@@ -23687,13 +25021,11 @@ async function hydrateConfiguration(
 
     return transformed;
   } catch (err) {
-    getMethodLogger.error("configuration transform failed", {
-      error: String((err as Error)?.stack ?? err)
-    });
+    getMethodLogger.error("configuration transform failed", { error: err });
     return configuration;
   }
 }
-const rescheduleJobLogger = getLogger("server-functions", "reschedule");
+const rescheduleJobLogger = getLogger("erp", "production", "reschedule");
 // Types
 type JobOperation = {
   id: string;
@@ -24084,7 +25416,7 @@ export async function rescheduleJob(
     .executeTakeFirst();
   if (!owned) throw new NotFoundError("Job not found");
 
-  rescheduleJobLogger.info(`🔰 Starting reschedule for job ${jobId}`);
+  rescheduleJobLogger.info("Starting a job reschedule", { jobId });
 
   const result = await db.transaction().execute(async (trx) => {
     // 1. Get job and all its operations with dependencies
@@ -24093,9 +25425,11 @@ export async function rescheduleJob(
       jobId
     );
 
-    rescheduleJobLogger.info(
-      `📊 Job has ${operations.length} operations, ${dependencies.length} dependencies`
-    );
+    rescheduleJobLogger.info("Loaded the job operations and dependencies", {
+      jobId,
+      operationCount: operations.length,
+      dependencyCount: dependencies.length
+    });
 
     // 2. Build dependency graph
     const graph = buildDependencyGraph(operations, dependencies);
@@ -24108,9 +25442,10 @@ export async function rescheduleJob(
     );
 
     const conflicts = scheduledOps.filter((op) => op.hasConflict);
-    rescheduleJobLogger.info(
-      `⚠️  Detected ${conflicts.length} scheduling conflicts`
-    );
+    rescheduleJobLogger.info("Detected scheduling conflicts", {
+      jobId,
+      conflictCount: conflicts.length
+    });
 
     // 4. Get affected work centers
     const workCenterIds = [
@@ -24121,9 +25456,10 @@ export async function rescheduleJob(
       )
     ];
 
-    rescheduleJobLogger.info(
-      `🏭 Affected work centers: ${workCenterIds.length}`
-    );
+    rescheduleJobLogger.info("Found the affected work centers", {
+      jobId,
+      workCenterCount: workCenterIds.length
+    });
 
     // 5. Recalculate priorities for each work center
     const prioritizedOps = await recalculatePriorities(
@@ -24153,7 +25489,10 @@ export async function rescheduleJob(
     }
     await updateRowsById(trx, "jobOperation", companyId, jobOperationUpdates);
 
-    rescheduleJobLogger.info(`✅ Updated ${prioritizedOps.length} operations`);
+    rescheduleJobLogger.info("Updated the job operations", {
+      jobId,
+      operationCount: prioritizedOps.length
+    });
 
     return {
       operationsUpdated: prioritizedOps.length,
@@ -25109,7 +26448,8 @@ async function syncShopTimesheet(
   });
 }
 const recalculateRequirementsLogger = getLogger(
-  "server-functions",
+  "erp",
+  "production",
   "recalculate"
 );
 export const recalculateRequirementsPermission = {
@@ -25127,7 +26467,12 @@ export async function recalculateRequirements(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  recalculateRequirementsLogger.info({ type, id, companyId, userId });
+  recalculateRequirementsLogger.info("Recalculating job requirements", {
+    type,
+    id,
+    companyId,
+    userId
+  });
 
   // Every read here goes over the direct connection: a PostgREST call costs
   // roughly ten times a statement, and this runs on every job save.
@@ -25158,7 +26503,8 @@ export async function recalculateRequirements(
 
         if (jobMaterial?.methodType !== "Make to Order") {
           recalculateRequirementsLogger.info(
-            `Job material ${jobMakeMethod.parentMaterialId} is not a 'Make' type. Skipping recalculation.`
+            "Skipped recalculation: the job material is not a Make type",
+            { jobMaterialId: jobMakeMethod.parentMaterialId }
           );
           return { success: true };
         }
@@ -25314,8 +26660,32 @@ const updateJobQuantities = async (
     );
   }
 
+  // A material a correction added sits on a rework operation and is sized for
+  // the units sent into it (`triggerCorrection`), not for the job quantity —
+  // the same reason the operation update below skips rework operations.
+  const materialIds = computed.filter((c) => c.hasJobMaterial).map((c) => c.id);
+  const reworkMaterialIds = new Set(
+    materialIds.length === 0
+      ? []
+      : (
+          await trx
+            .selectFrom("jobMaterial")
+            .innerJoin(
+              "jobOperation",
+              "jobOperation.id",
+              "jobMaterial.jobOperationId"
+            )
+            .select("jobMaterial.id")
+            .where("jobMaterial.id", "in", materialIds)
+            .where("jobOperation.reworkId", "is not", null)
+            .execute()
+        ).map((row) => row.id)
+  );
+
   // jobMaterial scrap/estimated — one VALUES-join update for the whole tree
-  const materialRows = computed.filter((c) => c.hasJobMaterial);
+  const materialRows = computed.filter(
+    (c) => c.hasJobMaterial && !reworkMaterialIds.has(c.id)
+  );
   if (materialRows.length > 0) {
     await sql`
       UPDATE "jobMaterial" AS m
@@ -25398,7 +26768,7 @@ const updateJobQuantities = async (
     }
   }
 };
-const triggerReworkLogger = getLogger("server-functions", "trigger-rework");
+const triggerReworkLogger = getLogger("erp", "production", "trigger-rework");
 
 interface TriggerReworkRequest {
   jobId: string;
@@ -25500,9 +26870,10 @@ async function cloneReworkOperations(
     triggeredAtJobOperationId
   );
 
-  triggerReworkLogger.info(
-    `📋 Rework path: ${operationPath.length} operations to clone`
-  );
+  triggerReworkLogger.info("Found the rework path", {
+    jobId,
+    operationCount: operationPath.length
+  });
 
   // 2. Create the rework record
   const [rework] = await trx
@@ -25653,7 +27024,40 @@ async function cloneReworkOperations(
     sourceToCloneMap.set(sourceOp.id, clonedOps[i]!.id);
   });
 
-  triggerReworkLogger.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
+  triggerReworkLogger.info("Cloned the rework operations", {
+    jobId,
+    operationCount: clonedOperationIds.length
+  });
+
+  // 5b. Scope the copies to the serial units sent into the rework. Without
+  //     these rows every open unit of the make method counts as not done at a
+  //     copy. Batch and untracked parts stay quantity-based.
+  if (trackedEntityIds && trackedEntityIds.length > 0) {
+    const jobMakeMethodId = sourceOperations[0]?.jobMakeMethodId;
+    const jobMakeMethod = jobMakeMethodId
+      ? await trx
+          .selectFrom("jobMakeMethod")
+          .select("requiresSerialTracking")
+          .where("id", "=", jobMakeMethodId)
+          .executeTakeFirst()
+      : undefined;
+    if (jobMakeMethod?.requiresSerialTracking) {
+      const scopeRows = clonedOperationIds.flatMap((jobOperationId) =>
+        trackedEntityIds.map((trackedEntityId) => ({
+          jobOperationId,
+          trackedEntityId,
+          companyId,
+          createdBy: userId
+        }))
+      );
+      for (const rows of chunked(scopeRows)) {
+        await trx
+          .insertInto("jobOperationTrackedEntity")
+          .values(rows)
+          .execute();
+      }
+    }
+  }
 
   // 6. Clone steps, tools, and parameters (batch fetch + batch insert)
   const [allSteps, allTools, allParams] = await Promise.all([
@@ -25767,9 +27171,10 @@ async function cloneReworkOperations(
     await trx.insertInto("jobOperationDependency").values(dagEdges).execute();
   }
 
-  triggerReworkLogger.info(
-    `🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`
-  );
+  triggerReworkLogger.info("Rewired the downstream dependencies", {
+    jobId,
+    dependencyCount: downstreamDeps.length
+  });
 
   // 8. Record a productionQuantity entry for the rework
   await trx
@@ -25837,7 +27242,7 @@ export async function triggerRework(
   ];
   const operations = await db
     .selectFrom("jobOperation")
-    .select("id")
+    .select(["id", "jobMakeMethodId"])
     .where("id", "in", operationIds)
     .where("jobId", "=", body.jobId)
     .where("companyId", "=", body.companyId)
@@ -25853,6 +27258,14 @@ export async function triggerRework(
     body.companyId,
     "Tracked entity"
   );
+  await assertUnitsOfMakeMethod(db, {
+    trackedEntityIds: body.trackedEntityIds ?? [],
+    jobMakeMethodId: operations.find(
+      (operation) => operation.id === body.triggeredAtJobOperationId
+    )?.jobMakeMethodId,
+    jobOperationId: body.triggeredAtJobOperationId,
+    companyId: body.companyId
+  });
 
   // Written as productionQuantity.inspectionId, whose FK accepts any company's
   // inspection.
@@ -25864,9 +27277,11 @@ export async function triggerRework(
     "Inspection"
   );
 
-  triggerReworkLogger.info(
-    `🔰 Starting rework for job ${body.jobId}: go back to ${body.targetJobOperationId} from ${body.triggeredAtJobOperationId}`
-  );
+  triggerReworkLogger.info("Starting a job rework", {
+    jobId: body.jobId,
+    targetJobOperationId: body.targetJobOperationId,
+    triggeredAtJobOperationId: body.triggeredAtJobOperationId
+  });
 
   const result = await db.transaction().execute(async (trx) => {
     return await cloneReworkOperations(trx, body);
@@ -25888,6 +27303,710 @@ export async function triggerRework(
 
   return { success: true, ...result };
 }
+
+/**
+ * Refuses a unit that is not a unit of the operation's make method. A rework or
+ * correction scopes its new operations to the units it names, so a unit of
+ * another job would leave an operation no unit of this job can complete.
+ */
+async function assertUnitsOfMakeMethod(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    trackedEntityIds: string[];
+    jobMakeMethodId: string | null | undefined;
+    /** The operation the units are sent on from; its scope, if it has one. */
+    jobOperationId?: string;
+    companyId: string;
+  }
+) {
+  const ids = [...new Set(args.trackedEntityIds)];
+  if (ids.length === 0) return;
+  const units = args.jobMakeMethodId
+    ? await db
+        .selectFrom("trackedEntity")
+        .select("id")
+        .where("id", "in", ids)
+        .where("companyId", "=", args.companyId)
+        .where(sql`"attributes"->>'Job Make Method'`, "=", args.jobMakeMethodId)
+        .execute()
+    : [];
+  if (units.length !== ids.length) {
+    throw new InvalidInputError(
+      "A unit is not a unit of this operation's part on this job"
+    );
+  }
+  // A rework or correction operation works only the units sent into it, so
+  // only those units can be sent on from it.
+  if (args.jobOperationId) {
+    const scope = await db
+      .selectFrom("jobOperationTrackedEntity")
+      .select("trackedEntityId")
+      .where("jobOperationId", "=", args.jobOperationId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    const inScope = new Set(scope.map((row) => row.trackedEntityId));
+    if (inScope.size > 0 && ids.some((id) => !inScope.has(id))) {
+      throw new InvalidInputError("A unit is not part of this operation");
+    }
+  }
+}
+
+export const triggerCorrectionPermission = {
+  update: "production"
+} satisfies PermissionRule<z.output<typeof triggerCorrectionInput>>;
+
+/**
+ * Sends units through one of the job's corrections: inserts the correction's
+ * operations after the operation that found the problem (scoped to the units
+ * for a serial part), adds its materials, and with "Re-inspect" a copy of that
+ * operation after them, then reschedules the job. Refuses a unit that has
+ * already used the correction its limit number of times.
+ */
+export async function triggerCorrection(
+  ctx: ServiceContext,
+  raw: z.input<typeof triggerCorrectionInput>
+) {
+  const input = triggerCorrectionInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  const job = await db
+    .selectFrom("job")
+    .select(["id", "companyId"])
+    .where("id", "=", input.jobId)
+    .executeTakeFirst();
+  if (!job || job.companyId !== companyId) {
+    throw new NotFoundError("Job not found in this company");
+  }
+
+  const triggeringOperation = await db
+    .selectFrom("jobOperation")
+    .selectAll()
+    .where("id", "=", input.triggeredAtJobOperationId)
+    .where("jobId", "=", input.jobId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!triggeringOperation) {
+    throw new NotFoundError("Job operation not found in this company");
+  }
+
+  const correction = await db
+    .selectFrom("jobCorrection")
+    .selectAll()
+    .where("id", "=", input.jobCorrectionId)
+    .where("jobId", "=", input.jobId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!correction) {
+    throw new NotFoundError("Correction not found on this job");
+  }
+  if (correction.jobMakeMethodId !== triggeringOperation.jobMakeMethodId) {
+    throw new InvalidInputError(
+      "The correction belongs to another part of this job"
+    );
+  }
+
+  const trackedEntityIds = input.trackedEntityIds ?? [];
+  // A serial part is corrected unit by unit: without a unit the correction
+  // would scope to none and skip the attempt limit.
+  if (trackedEntityIds.length === 0 && triggeringOperation.jobMakeMethodId) {
+    const makeMethod = await db
+      .selectFrom("jobMakeMethod")
+      .select("requiresSerialTracking")
+      .where("id", "=", triggeringOperation.jobMakeMethodId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (makeMethod?.requiresSerialTracking) {
+      throw new InvalidInputError("Choose the unit to correct");
+    }
+  }
+  await assertCompanyRecords(
+    db,
+    "trackedEntity",
+    trackedEntityIds,
+    companyId,
+    "Tracked entity"
+  );
+  await assertUnitsOfMakeMethod(db, {
+    trackedEntityIds,
+    jobMakeMethodId: triggeringOperation.jobMakeMethodId,
+    jobOperationId: triggeringOperation.id,
+    companyId
+  });
+  await assertCompanyRecords(
+    db,
+    "inspection",
+    [input.inspectionId],
+    companyId,
+    "Inspection"
+  );
+
+  const definition =
+    correction.definition as unknown as JobCorrectionDefinition;
+  if (definition?.version !== 1 || definition.operations.length === 0) {
+    throw new InvalidInputError("The correction has no operations");
+  }
+
+  const result = await db.transaction().execute(async (trx) => {
+    // Two operators who confirm at the same moment must not both pass the
+    // limit: lock the correction, then count the uses under the lock.
+    await trx
+      .selectFrom("jobCorrection")
+      .select("id")
+      .where("id", "=", correction.id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    // The attempt limit counts earlier uses of this correction by each unit.
+    if (correction.maxAttempts !== null && trackedEntityIds.length > 0) {
+      const uses = await trx
+        .selectFrom("rework")
+        .innerJoin("jobOperation", "jobOperation.reworkId", "rework.id")
+        .innerJoin(
+          "jobOperationTrackedEntity",
+          "jobOperationTrackedEntity.jobOperationId",
+          "jobOperation.id"
+        )
+        .select([
+          "jobOperationTrackedEntity.trackedEntityId",
+          sql<string>`count(DISTINCT "rework"."id")`.as("uses")
+        ])
+        .where("rework.jobCorrectionId", "=", correction.id)
+        .where("rework.companyId", "=", companyId)
+        .where(
+          "jobOperationTrackedEntity.trackedEntityId",
+          "in",
+          trackedEntityIds
+        )
+        .groupBy("jobOperationTrackedEntity.trackedEntityId")
+        .execute();
+      const overLimit = uses.find(
+        (use) => Number(use.uses) >= correction.maxAttempts!
+      );
+      if (overLimit) {
+        throw new InvalidInputError(
+          `This unit has used "${correction.name}" ${overLimit.uses} times, its limit. Scrap it or raise a quality issue.`
+        );
+      }
+    }
+
+    return insertCorrectionOperations(trx, {
+      input,
+      correction: {
+        id: correction.id,
+        returnTo: correction.returnTo,
+        definition
+      },
+      triggeringOperation,
+      companyId,
+      userId
+    });
+  });
+
+  const rescheduled = await invokePosting(
+    { db, companyId, userId },
+    "reschedule",
+    { jobId: input.jobId },
+    rescheduleJob
+  );
+  if (rescheduled.error) {
+    triggerReworkLogger.error("Failed to reschedule after a correction", {
+      error: rescheduled.error
+    });
+  }
+
+  return { success: true, ...result };
+}
+
+async function insertCorrectionOperations(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    input: z.output<typeof triggerCorrectionInput>;
+    correction: {
+      id: string;
+      returnTo: Database["public"]["Enums"]["correctionReturnTo"];
+      definition: JobCorrectionDefinition;
+    };
+    triggeringOperation: Database["public"]["Tables"]["jobOperation"]["Row"];
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { input, correction, triggeringOperation, companyId, userId } = args;
+  const { definition } = correction;
+  const trackedEntityIds = input.trackedEntityIds ?? [];
+  const jobMakeMethodId = triggeringOperation.jobMakeMethodId!;
+  const reinspect = correction.returnTo === "Re-inspect";
+
+  const [rework] = await trx
+    .insertInto("rework")
+    .values({
+      jobId: input.jobId,
+      triggeredAtJobOperationId: triggeringOperation.id,
+      // A correction has no earlier operation to go back to.
+      targetJobOperationId: triggeringOperation.id,
+      reason: input.reason,
+      quantity: input.quantity,
+      requestedById: userId,
+      jobCorrectionId: correction.id,
+      companyId
+    })
+    .returning(["id"])
+    .execute();
+
+  if (trackedEntityIds.length > 0) {
+    const activityId = nanoid();
+    await trx
+      .insertInto("trackedActivity")
+      .values({
+        id: activityId,
+        type: "Rework",
+        sourceDocument: "Rework",
+        sourceDocumentId: rework!.id,
+        attributes: {
+          Job: input.jobId,
+          "Triggered At": triggeringOperation.id,
+          Correction: correction.id,
+          Reason: input.reason,
+          Quantity: input.quantity
+        },
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+    await trx
+      .insertInto("trackedActivityInput")
+      .values(
+        trackedEntityIds.map((trackedEntityId) => ({
+          trackedActivityId: activityId,
+          trackedEntityId,
+          quantity: trackedEntityIds.length > 1 ? 1 : input.quantity,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+  }
+
+  // Between the triggering operation and the next one, like a rework.
+  const nextOperation = await trx
+    .selectFrom("jobOperation")
+    .select("order")
+    .where("jobId", "=", input.jobId)
+    .where("order", ">", triggeringOperation.order)
+    .orderBy("order", "asc")
+    .executeTakeFirst();
+  const triggerOrder = Number(triggeringOperation.order);
+  const upperBound = nextOperation
+    ? Number(nextOperation.order)
+    : triggerOrder + 1;
+  const count = definition.operations.length + (reinspect ? 1 : 0);
+  const increment = (upperBound - triggerOrder) / (count + 1);
+
+  const initialStatuses = correctionInitialStatuses(
+    definition.operations.map((entry) => ({
+      operationOrder: String(entry.operation.operationOrder ?? "")
+    }))
+  );
+  const correctionInserts = definition.operations.map((entry, i) => ({
+    ...entry.operation,
+    workInstruction: toJson(entry.operation.workInstruction ?? {}),
+    // The first runs alongside the triggering operation's successors until
+    // the routing converges, as a rework's first copy does.
+    operationOrder:
+      i === 0 ? "With Previous" : (entry.operation.operationOrder as string),
+    jobId: input.jobId,
+    jobMakeMethodId,
+    order: triggerOrder + increment * (i + 1),
+    operationQuantity: input.quantity,
+    targetQuantity: input.quantity,
+    status: initialStatuses[i],
+    reworkId: rework!.id,
+    companyId,
+    createdBy: userId,
+    customFields: {}
+  }));
+  const inserted = await trx
+    .insertInto("jobOperation")
+    .values(correctionInserts as never)
+    .returning(["id"])
+    .execute();
+  const correctionOperationIds = inserted.map((row) => row.id);
+  const operationIdByKey = new Map(
+    definition.operations.map((entry, i) => [
+      entry.key,
+      correctionOperationIds[i]!
+    ])
+  );
+
+  // Steps (with their slides), tools and parameters of the correction's
+  // operations. Step ids are made here so each slide finds its step.
+  const definitionSteps = definition.operations.flatMap((entry, i) =>
+    entry.steps.map((step) => ({
+      step,
+      operationId: correctionOperationIds[i]!
+    }))
+  );
+  const correctionStepIds = await newIds(
+    trx,
+    STEP_ID_PREFIX.job,
+    definitionSteps.length
+  );
+  const stepRows = definitionSteps.map(({ step, operationId }, i) => ({
+    ...step.row,
+    id: correctionStepIds[i]!,
+    operationId,
+    companyId,
+    createdBy: userId
+  }));
+  const slideRows = definitionSteps.flatMap(({ step }, i) =>
+    step.slides.map((slide) => ({
+      ...slide,
+      stepId: correctionStepIds[i]!,
+      companyId,
+      createdBy: userId
+    }))
+  );
+  const toolRows = definition.operations.flatMap((entry, i) =>
+    entry.tools.map((tool) => ({
+      ...tool,
+      operationId: correctionOperationIds[i]!,
+      companyId,
+      createdBy: userId
+    }))
+  );
+  const parameterRows = definition.operations.flatMap((entry, i) =>
+    entry.parameters.map((parameter) => ({
+      ...parameter,
+      operationId: correctionOperationIds[i]!,
+      companyId,
+      createdBy: userId
+    }))
+  );
+  for (const rows of chunked(stepRows)) {
+    await trx
+      .insertInto("jobOperationStep")
+      .values(rows as never)
+      .execute();
+  }
+  for (const rows of chunked(slideRows)) {
+    await trx
+      .insertInto("jobOperationStepSlide")
+      .values(rows as never)
+      .execute();
+  }
+  for (const rows of chunked(toolRows)) {
+    await trx.insertInto("jobOperationTool").values(rows).execute();
+  }
+  for (const rows of chunked(parameterRows)) {
+    await trx.insertInto("jobOperationParameter").values(rows).execute();
+  }
+
+  // With "Re-inspect", a copy of the triggering operation follows.
+  let reinspectOperationId: string | null = null;
+  if (reinspect) {
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      updatedBy: _updatedBy,
+      ...source
+    } = triggeringOperation;
+    const [copy] = await trx
+      .insertInto("jobOperation")
+      .values({
+        jobId: source.jobId,
+        jobMakeMethodId: source.jobMakeMethodId,
+        order: triggerOrder + increment * count,
+        processId: source.processId,
+        workCenterId: source.workCenterId,
+        description: source.description,
+        setupTime: source.setupTime,
+        setupUnit: source.setupUnit,
+        laborTime: source.laborTime,
+        laborUnit: source.laborUnit,
+        machineTime: source.machineTime,
+        machineUnit: source.machineUnit,
+        operationOrder: "After Previous",
+        laborRate: source.laborRate,
+        overheadRate: source.overheadRate,
+        machineRate: source.machineRate,
+        operationType: source.operationType,
+        operationMinimumCost: source.operationMinimumCost,
+        operationLeadTime: source.operationLeadTime,
+        operationUnitCost: source.operationUnitCost,
+        operationSupplierProcessId: source.operationSupplierProcessId,
+        workInstruction: source.workInstruction,
+        procedureId: source.procedureId,
+        inspectionDocumentId: source.inspectionDocumentId,
+        assemblyInstructionId: source.assemblyInstructionId,
+        operationQuantity: input.quantity,
+        targetQuantity: input.quantity,
+        tags: source.tags,
+        companyId,
+        createdBy: userId,
+        reworkId: rework!.id,
+        status: "Waiting",
+        customFields: source.customFields
+      })
+      .returning(["id"])
+      .execute();
+    reinspectOperationId = copy!.id;
+
+    const [steps, tools, parameters] = await Promise.all([
+      trx
+        .selectFrom("jobOperationStep")
+        .selectAll()
+        .where("operationId", "=", triggeringOperation.id)
+        .execute(),
+      trx
+        .selectFrom("jobOperationTool")
+        .selectAll()
+        .where("operationId", "=", triggeringOperation.id)
+        .execute(),
+      trx
+        .selectFrom("jobOperationParameter")
+        .selectAll()
+        .where("operationId", "=", triggeringOperation.id)
+        .execute()
+    ]);
+    if (steps.length > 0) {
+      // Ids made here so the re-inspection's steps keep the original steps'
+      // result mappings: a second bad result suggests a correction again.
+      const stepIds = await newIds(trx, STEP_ID_PREFIX.job, steps.length);
+      const stepIdMap = new Map(steps.map((step, i) => [step.id, stepIds[i]!]));
+      await trx
+        .insertInto("jobOperationStep")
+        .values(
+          steps.map(
+            ({
+              id: stepId,
+              createdAt: _ca,
+              updatedAt: _ua,
+              updatedBy: _ub,
+              ...step
+            }) => ({
+              ...step,
+              id: stepIdMap.get(stepId)!,
+              operationId: reinspectOperationId!,
+              createdBy: userId
+            })
+          )
+        )
+        .execute();
+      // The re-inspection shows the same reference slides as the original.
+      const slides = await trx
+        .selectFrom("jobOperationStepSlide")
+        .select([
+          "stepId",
+          "annotations",
+          "caption",
+          "imagePath",
+          "modelUploadId",
+          "size",
+          "sortOrder"
+        ])
+        .where("stepId", "in", [...stepIdMap.keys()])
+        .where("companyId", "=", companyId)
+        .execute();
+      for (const rows of chunked(slides)) {
+        await trx
+          .insertInto("jobOperationStepSlide")
+          .values(
+            rows.map((slide) => ({
+              ...slide,
+              stepId: stepIdMap.get(slide.stepId)!,
+              companyId,
+              createdBy: userId
+            })) as never
+          )
+          .execute();
+      }
+      const mappings = await trx
+        .selectFrom("jobCorrectionTrigger")
+        .selectAll()
+        .where("jobOperationStepId", "in", [...stepIdMap.keys()])
+        .where("companyId", "=", companyId)
+        .execute();
+      if (mappings.length > 0) {
+        await trx
+          .insertInto("jobCorrectionTrigger")
+          .values(
+            mappings.map((mapping) => ({
+              jobOperationStepId: stepIdMap.get(mapping.jobOperationStepId)!,
+              jobCorrectionId: mapping.jobCorrectionId,
+              listValue: mapping.listValue,
+              measurementCondition: mapping.measurementCondition,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+    }
+    if (tools.length > 0) {
+      await trx
+        .insertInto("jobOperationTool")
+        .values(
+          tools.map((tool) => ({
+            toolId: tool.toolId,
+            quantity: tool.quantity,
+            operationId: reinspectOperationId!,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    }
+    if (parameters.length > 0) {
+      await trx
+        .insertInto("jobOperationParameter")
+        .values(
+          parameters.map((parameter) => ({
+            key: parameter.key,
+            value: parameter.value,
+            operationId: reinspectOperationId!,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    }
+  }
+
+  // Dependencies: each group waits for the group before; the routing waits
+  // for where the correction converges.
+  const groups = correctionOperationGroups(
+    definition.operations.map((entry, i) => ({
+      id: correctionOperationIds[i]!,
+      operationOrder: String(entry.operation.operationOrder ?? "")
+    }))
+  );
+  const newOperationIds = [
+    ...correctionOperationIds,
+    ...(reinspectOperationId ? [reinspectOperationId] : [])
+  ];
+  const downstream = await trx
+    .selectFrom("jobOperationDependency")
+    .select(["operationId"])
+    .where("jobId", "=", input.jobId)
+    .where("dependsOnId", "=", triggeringOperation.id)
+    .where("operationId", "not in", newOperationIds)
+    .execute();
+  const edges = correctionDependencyEdges({
+    groups,
+    reinspectOperationId,
+    downstreamOperationIds: downstream.map((row) => row.operationId)
+  }).map((edge) => ({ ...edge, jobId: input.jobId, companyId }));
+  if (edges.length > 0) {
+    await trx.insertInto("jobOperationDependency").values(edges).execute();
+  }
+
+  // Scope every new operation to the units sent in (serial parts).
+  if (trackedEntityIds.length > 0) {
+    const jobMakeMethod = await trx
+      .selectFrom("jobMakeMethod")
+      .select("requiresSerialTracking")
+      .where("id", "=", jobMakeMethodId)
+      .executeTakeFirst();
+    if (jobMakeMethod?.requiresSerialTracking) {
+      const scopeRows = newOperationIds.flatMap((jobOperationId) =>
+        trackedEntityIds.map((trackedEntityId) => ({
+          jobOperationId,
+          trackedEntityId,
+          companyId,
+          createdBy: userId
+        }))
+      );
+      for (const rows of chunked(scopeRows)) {
+        await trx
+          .insertInto("jobOperationTrackedEntity")
+          .values(rows)
+          .execute();
+      }
+    }
+  }
+
+  // The correction's materials join the job only now.
+  if (definition.materials.length > 0) {
+    const itemIds = [...new Set(definition.materials.map((m) => m.itemId))];
+    // Each material draws from its Pull From at the job's location, else the
+    // item's default bin, as job creation picks it. A strict backflush
+    // refuses a line with no bin, so the correction must not leave it empty.
+    const job = await trx
+      .selectFrom("job")
+      .select("locationId")
+      .where("id", "=", input.jobId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    const locationId = job?.locationId ?? null;
+    const itemDefaults = createItemDefaults(companyId, locationId);
+    await itemDefaults.load(trx, itemIds);
+    const binByMaterial = await Promise.all(
+      definition.materials.map((material) =>
+        itemDefaults.storageUnitId(
+          trx,
+          material.itemId,
+          locationId ? material.storageUnitIds?.[locationId] : null
+        )
+      )
+    );
+    const items = await trx
+      .selectFrom("item")
+      .leftJoin("itemCost", "itemCost.itemId", "item.id")
+      .select(["item.id", "item.itemTrackingType", "itemCost.unitCost"])
+      .where("item.id", "in", itemIds)
+      .where("item.companyId", "=", companyId)
+      .execute();
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    await trx
+      .insertInto("jobMaterial")
+      .values(
+        definition.materials.map((material, index) => {
+          const item = itemById.get(material.itemId);
+          return {
+            jobId: input.jobId,
+            jobMakeMethodId,
+            jobOperationId:
+              (material.operationKey &&
+                operationIdByKey.get(material.operationKey)) ||
+              correctionOperationIds[0]!,
+            itemId: material.itemId,
+            itemType: material.itemType,
+            methodType: material.methodType,
+            description: material.description,
+            quantity: material.quantity,
+            estimatedQuantity: material.quantity * input.quantity,
+            unitOfMeasureCode: material.unitOfMeasureCode,
+            storageUnitId: binByMaterial[index] ?? null,
+            unitCost: Number(item?.unitCost ?? 0),
+            requiresSerialTracking: item?.itemTrackingType === "Serial",
+            requiresBatchTracking: item?.itemTrackingType === "Batch",
+            order: material.order,
+            companyId,
+            createdBy: userId
+          };
+        }) as never
+      )
+      .execute();
+  }
+
+  await trx
+    .insertInto("productionQuantity")
+    .values({
+      jobOperationId: triggeringOperation.id,
+      type: "Rework",
+      quantity: input.quantity,
+      inspectionId: input.inspectionId ?? null,
+      companyId,
+      createdBy: userId
+    })
+    .execute();
+
+  return { reworkId: rework!.id, operationIds: newOperationIds };
+}
+
 const NOT_STARTED = ["Todo", "Ready", "Waiting"];
 // The produced item + tracking of each member, and its live WIP entity (the
 // entity a member's output lot is finalized from; its readableId is the lot
@@ -27178,4 +29297,106 @@ export async function batchOperation(
   }
 
   return { success: true, ...result };
+}
+
+/**
+ * A job make method's corrections for the read-only Corrections card: each
+ * correction with its operations and materials (from its `definition`), the
+ * step results that suggest it, and its uses on this job (rework rows with the
+ * units sent into them). Two reads: the corrections with their triggers, then
+ * the uses of all of them in one `.in()`.
+ */
+export async function getJobCorrections(
+  client: SupabaseClient<Database>,
+  jobMakeMethodId: string,
+  companyId: string
+) {
+  const corrections = await client
+    .from("jobCorrection")
+    .select(
+      "id, name, description, returnTo, maxAttempts, order, definition, jobCorrectionTrigger(id, listValue, measurementCondition, jobOperationStep(id, name, jobOperation(id, description, order, reworkId)))"
+    )
+    .eq("jobMakeMethodId", jobMakeMethodId)
+    .eq("companyId", companyId)
+    .order("order", { ascending: true });
+
+  if (corrections.error) return { data: null, error: corrections.error };
+  if (corrections.data.length === 0) return { data: [], error: null };
+
+  const uses = await client
+    .from("rework")
+    .select(
+      "id, jobCorrectionId, reason, quantity, createdAt, jobOperation!jobOperation_reworkId_fkey(id, jobOperationTrackedEntity(trackedEntityId, trackedEntity(readableId)))"
+    )
+    .in(
+      "jobCorrectionId",
+      corrections.data.map((correction) => correction.id)
+    )
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+
+  if (uses.error) return { data: null, error: uses.error };
+
+  return {
+    data: corrections.data.map((correction) => {
+      const definition =
+        correction.definition as unknown as JobCorrectionDefinition | null;
+      return {
+        id: correction.id,
+        name: correction.name,
+        description: correction.description,
+        returnTo: correction.returnTo,
+        maxAttempts: correction.maxAttempts,
+        operations: (definition?.operations ?? []).map((entry) => ({
+          key: entry.key,
+          description: String(entry.operation.description ?? ""),
+          operationOrder: String(entry.operation.operationOrder ?? "")
+        })),
+        materials: (definition?.materials ?? [])
+          .slice()
+          .sort((a, b) => a.order - b.order)
+          .map((material) => ({
+            itemId: material.itemId,
+            description: material.description,
+            quantity: material.quantity,
+            unitOfMeasureCode: material.unitOfMeasureCode
+          })),
+        // A re-inspection copy carries the mappings of the operation it
+        // copies; list each mapping once, on the job's own routing.
+        triggers: correction.jobCorrectionTrigger
+          .filter(
+            (trigger) => !trigger.jobOperationStep?.jobOperation?.reworkId
+          )
+          .map((trigger) => ({
+            id: trigger.id,
+            operationDescription:
+              trigger.jobOperationStep?.jobOperation?.description ?? "",
+            operationOrder: trigger.jobOperationStep?.jobOperation?.order ?? 0,
+            stepName: trigger.jobOperationStep?.name ?? "",
+            listValue: trigger.listValue,
+            measurementCondition: trigger.measurementCondition
+          }))
+          .sort((a, b) => a.operationOrder - b.operationOrder),
+        uses: uses.data
+          .filter((use) => use.jobCorrectionId === correction.id)
+          .map((use) => ({
+            id: use.id,
+            reason: use.reason,
+            quantity: use.quantity,
+            createdAt: use.createdAt,
+            units: [
+              ...new Set(
+                use.jobOperation.flatMap((operation) =>
+                  operation.jobOperationTrackedEntity.map(
+                    (unit) =>
+                      unit.trackedEntity?.readableId ?? unit.trackedEntityId
+                  )
+                )
+              )
+            ]
+          }))
+      };
+    }),
+    error: null
+  };
 }

@@ -5,10 +5,11 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteUnitOfMeasure,
@@ -111,10 +112,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         // The trigger's refusal names the referencing tables — show it.
-        error(
-          deleteTypeError,
-          deleteTypeError.message || "Failed to delete unit of measure"
-        )
+        error(deleteTypeError, "Failed to delete unit of measure")
       )
     );
   }
@@ -128,13 +126,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteUnitOfMeasureRoute() {
   const { uomId } = useParams();
   const { unitOfMeasure, usage } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.uoms);
   const { t } = useLingui();
 
   if (!unitOfMeasure) return null;
   if (!uomId) throw notFound("uomId not found");
 
-  const onCancel = () => navigate(path.to.uoms);
   const isInUse = usage.length > 0;
   const where = describeUsage(usage);
 
@@ -148,7 +145,8 @@ export default function DeleteUnitOfMeasureRoute() {
           ? t`${unitOfMeasure.name} cannot be deleted because it is still in use by ${where}. Change those records to a different unit of measure first.`
           : t`Are you sure you want to delete the unit of measure: ${unitOfMeasure.name}? This cannot be undone.`
       }
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

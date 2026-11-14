@@ -403,11 +403,9 @@ export function extractXeroErrorDetails(
   return details;
 }
 
-const isDevelopment = process.env.NODE_ENV !== "production";
-
 /**
- * Creates and logs an AccountingApiError from an HTTP response, then throws it.
- * Logs full error details to console for debugging.
+ * Throws an AccountingApiError from a failed Xero response. The caller that
+ * handles it logs it; its `details` carry the provider's response.
  *
  * @param operation - Description of the operation that failed (e.g., "create item", "batch upsert contacts")
  * @param response - The HTTP response object from HTTPClient
@@ -423,26 +421,7 @@ export function throwXeroApiError(
     response.data
   );
 
-  const error = new AccountingApiError("xero", operation, details);
-
-  // Log full error details for debugging
-  const logDetails: Record<string, unknown> = {
-    statusCode: details.statusCode,
-    statusText: details.statusText,
-    providerErrorType: details.providerErrorType,
-    providerErrorCode: details.providerErrorCode,
-    providerMessage: details.providerMessage,
-    validationErrors: details.validationErrors
-  };
-
-  // Only include raw response in development to avoid log bloat
-  if (isDevelopment) {
-    logDetails.rawResponse = details.rawResponse;
-  }
-
-  logger.error("Xero API error", { operation, ...logDetails });
-
-  throw error;
+  throw new AccountingApiError("xero", operation, details);
 }
 
 // /********************************************************\

@@ -59,6 +59,7 @@ import SalesInvoiceLineForm from "./SalesInvoiceLineForm";
 import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
 
 export default function SalesInvoiceExplorer() {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -102,7 +103,6 @@ export default function SalesInvoiceExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -183,7 +183,7 @@ export default function SalesInvoiceExplorer() {
               </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -194,15 +194,21 @@ export default function SalesInvoiceExplorer() {
           )}
         </div>
       </VStack>
-      {newSalesInvoiceLineDisclosure.isOpen && (
+      {newSalesInvoiceLineDisclosure.openCount > 0 && (
         <SalesInvoiceLineForm
+          key={newSalesInvoiceLineDisclosure.openCount}
+          open={newSalesInvoiceLineDisclosure.isOpen}
           initialValues={salesInvoiceLineInitialValues}
           type="modal"
           onClose={newSalesInvoiceLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeleteSalesInvoiceLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLine && (
+        <DeleteSalesInvoiceLine
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={onDeleteCancel}
+        />
       )}
     </>
   );
@@ -275,17 +281,27 @@ function SalesInvoiceLineItem({
             line.description
           );
 
+  const lineName = isRental
+    ? rentalLineTypeLabel(line.rentalLineType)
+    : line.invoiceLineType === "Fixed Asset"
+      ? (line as any).assetReadableId || "Fixed Asset"
+      : isItemless
+        ? line.description || t`Service`
+        : (getItemReadableId(items, line.itemId) ?? "");
+
   return (
     <VStack spacing={0} className="border-b">
-      <PrefetchLink
-        to={path.to.salesInvoiceLine(invoiceId, line.id!)}
-        className="w-full"
+      <HStack
+        className={cn(
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
+          isSelected && "bg-accent/60 hover:bg-accent/50"
+        )}
       >
-        <HStack
-          className={cn(
-            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50"
-          )}
+        {/* The link is stretched over the row; the menu sits beside it, not
+            inside it, so neither is nested in the other. */}
+        <PrefetchLink
+          to={path.to.salesInvoiceLine(invoiceId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             {isRental ? (
@@ -296,15 +312,7 @@ function SalesInvoiceLineItem({
               <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
             )}
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {isRental
-                  ? rentalLineTypeLabel(line.rentalLineType)
-                  : line.invoiceLineType === "Fixed Asset"
-                    ? (line as any).assetReadableId || "Fixed Asset"
-                    : isItemless
-                      ? line.description || t`Service`
-                      : (getItemReadableId(items, line.itemId) ?? "")}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
               {secondaryText && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">
                   {secondaryText}
@@ -312,56 +320,55 @@ function SalesInvoiceLineItem({
               )}
             </VStack>
           </HStack>
-          <div className="absolute right-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More`}
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                  icon={<LuEllipsisVertical />}
-                  variant="solid"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More actions for ${lineName}`}
+                className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                icon={<LuEllipsisVertical />}
+                variant="solid"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                disabled={isDisabled || !permissions.can("update", "sales")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(line);
+                }}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete Line</Trans>
+              </DropdownMenuItem>
+              {/* @ts-expect-error */}
+              {itemType.includes(line.invoiceLineType ?? "") && line.itemId && (
                 <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(line);
-                  }}
+                  shortcut={MENU_ITEM_SHORTCUTS.view}
+                  asChild
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Line</Trans>
+                  <Link
+                    to={getLinkToItemDetails(
+                      line.invoiceLineType as ItemType,
+                      line.itemId!
+                    )}
+                  >
+                    <DropdownMenuIcon
+                      icon={<MethodItemTypeIcon type={"Part"} />}
+                    />
+                    <Trans>View Item Master</Trans>
+                  </Link>
                 </DropdownMenuItem>
-                {/* @ts-expect-error */}
-                {itemType.includes(line.invoiceLineType ?? "") &&
-                  line.itemId && (
-                    <DropdownMenuItem
-                      shortcut={MENU_ITEM_SHORTCUTS.view}
-                      asChild
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Link
-                        to={getLinkToItemDetails(
-                          line.invoiceLineType as ItemType,
-                          line.itemId!
-                        )}
-                      >
-                        <DropdownMenuIcon
-                          icon={<MethodItemTypeIcon type={"Part"} />}
-                        />
-                        <Trans>View Item Master</Trans>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </HStack>
-      </PrefetchLink>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </HStack>
     </VStack>
   );
 }

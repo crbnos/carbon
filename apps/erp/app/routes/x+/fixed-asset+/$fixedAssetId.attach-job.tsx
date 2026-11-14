@@ -6,9 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { useRouteDialog } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { fixedAssetAttachJobValidator } from "~/modules/accounting/accounting.models";
 import {
   getFixedAsset,
@@ -120,13 +121,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (result.error) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
-      await flash(
-        request,
-        error(
-          result.error,
-          getErrorMessage(result.error, "Failed to attach the job")
-        )
-      )
+      await flash(request, error(result.error, "Failed to attach the job"))
     );
   }
 
@@ -138,7 +133,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function AttachJobToFixedAssetRoute() {
   const { jobs } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog();
 
-  return <FixedAssetAttachJobForm jobs={jobs} onClose={() => navigate(-1)} />;
+  return (
+    <FixedAssetAttachJobForm
+      jobs={jobs}
+      open={dialog.open}
+      onClose={dialog.close}
+    />
+  );
 }

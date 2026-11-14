@@ -14,7 +14,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "webhook-stripe");
+const logger = getLogger("erp", "webhook", "stripe");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});

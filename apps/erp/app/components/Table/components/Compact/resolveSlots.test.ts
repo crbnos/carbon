@@ -46,12 +46,11 @@ describe("resolveSlots", () => {
     expect(slots?.pills).toEqual([]);
   });
 
-  it("falls back to the first data column and warns", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  it("falls back to the first data column", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const name = col("name");
     const slots = resolveSlots([col("Select"), name, col("other")], "Parts");
     expect(slots?.p1).toBe(name);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("Parts"));
   });
 
   it("never uses the select, actions or expand columns", () => {

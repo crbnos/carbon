@@ -5,7 +5,7 @@
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { oncePerRead } from "@carbon/logger/middleware.server";
+import { oncePerRead } from "@carbon/logger/context.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { Permission, Result } from "../types";

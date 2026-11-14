@@ -12,13 +12,17 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
-import { inspectionDispositionValidator } from "~/services/models";
+import {
+  CORRECTION_TARGET_PREFIX,
+  inspectionDispositionValidator
+} from "~/services/models";
 import {
   abilityBlockRefusal,
   finishJobOperation,
   insertScrapQuantity
 } from "~/services/operations.service";
 import {
+  checkRequiredScans,
   checkStrictBackflush,
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
@@ -217,6 +221,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Required scans: the units this decision completes must hold their
+  // tracked parts. Refuse before the lot closes; a closed lot cannot be
+  // dispositioned again.
+  const scanCheck = await checkRequiredScans(serviceRole, {
+    jobOperationId: state.jobOperationId,
+    quantity: completionQuantity,
+    requiresSerialTracking: state.requiresSerialTracking,
+    trackedEntityIds: completionCandidates.map((c) => c.trackedEntityId),
+    companyId
+  });
+  if (scanCheck.message) {
+    return fail(scanCheck.error, scanCheck.message);
+  }
+
   // Strict backflush: refuse before the lot closes; a closed lot cannot be
   // dispositioned again.
   const backflushCheck = await checkStrictBackflush({
@@ -334,21 +352,33 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (reworkTotal > 0 && targetOperationId && reworkReason) {
-    const rework = await erpPosting(
-      "trigger-rework",
-      { companyId, userId },
-      {
-        jobId: state.jobId,
-        triggeredAtJobOperationId: state.jobOperationId,
-        targetJobOperationId: targetOperationId,
-        reason: reworkReason,
-        quantity: reworkTotal,
-        trackedEntityIds: state.requiresSerialTracking
-          ? reworkEntityIds
-          : undefined,
-        inspectionId: id
-      }
-    );
+    // The target is an earlier operation, or one of the part's corrections.
+    const jobCorrectionId = targetOperationId.startsWith(
+      CORRECTION_TARGET_PREFIX
+    )
+      ? targetOperationId.slice(CORRECTION_TARGET_PREFIX.length)
+      : null;
+    const shared = {
+      jobId: state.jobId,
+      triggeredAtJobOperationId: state.jobOperationId,
+      reason: reworkReason,
+      quantity: reworkTotal,
+      trackedEntityIds: state.requiresSerialTracking
+        ? reworkEntityIds
+        : undefined,
+      inspectionId: id
+    };
+    const rework = jobCorrectionId
+      ? await erpPosting(
+          "trigger-correction",
+          { companyId, userId },
+          { ...shared, jobCorrectionId }
+        )
+      : await erpPosting(
+          "trigger-rework",
+          { companyId, userId },
+          { ...shared, targetJobOperationId: targetOperationId }
+        );
     if (rework.error) {
       return fail(
         rework.error,

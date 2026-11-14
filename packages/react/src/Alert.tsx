@@ -36,7 +36,10 @@ const Alert = forwardRef<
 >(({ className, variant, ...props }, ref) => (
   <div
     ref={ref}
-    role="alert"
+    // Only an error interrupts: `alert` is assertive, and most banners here
+    // are page content (a warning about the record) that a polite `status`
+    // covers. A caller can still pass its own `role`.
+    role={variant === "destructive" ? "alert" : "status"}
     className={cn(alertVariants({ variant }), className)}
     {...props}
   />

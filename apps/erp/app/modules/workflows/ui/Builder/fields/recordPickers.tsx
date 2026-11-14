@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Combobox } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type { ComponentType } from "react";
 import { useMemo } from "react";
 import { Enumerable } from "~/components/Enumerable";
@@ -24,6 +25,7 @@ export type RecordPickerProps = {
 // ── Customer ────────────────────────────────────────────────────────────────
 
 const CustomerPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
+  const { t } = useLingui();
   const [customers] = useCustomers();
   const options = useMemo(
     () => customers.map((c) => ({ value: c.id, label: c.name })),
@@ -31,6 +33,7 @@ const CustomerPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
   );
   return (
     <Combobox
+      aria-label={t`Customer`}
       options={options}
       value={value}
       isClearable
@@ -44,6 +47,7 @@ const CustomerPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
 // ── Supplier ─────────────────────────────────────────────────────────────────
 
 const SupplierPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
+  const { t } = useLingui();
   const [suppliers] = useSuppliers();
   const options = useMemo(
     () => suppliers.map((s) => ({ value: s.id, label: s.name })),
@@ -51,6 +55,7 @@ const SupplierPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
   );
   return (
     <Combobox
+      aria-label={t`Supplier`}
       options={options}
       value={value}
       isClearable
@@ -64,6 +69,7 @@ const SupplierPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
 // ── Item (all types) ─────────────────────────────────────────────────────────
 
 const ItemPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
+  const { t } = useLingui();
   const [items] = useItems();
   const options = useMemo(
     () =>
@@ -78,6 +84,7 @@ const ItemPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
   );
   return (
     <Combobox
+      aria-label={t`Item`}
       options={options}
       value={value}
       isClearable
@@ -91,9 +98,11 @@ const ItemPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
 // ── Location ─────────────────────────────────────────────────────────────────
 
 const LocationPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
+  const { t } = useLingui();
   const locations = useLocations();
   return (
     <Combobox
+      aria-label={t`Location`}
       options={locations}
       value={value}
       isClearable
@@ -111,9 +120,11 @@ const IssueTypePicker = ({
   onChange,
   isDisabled
 }: RecordPickerProps) => {
+  const { t } = useLingui();
   const options = useIssueTypes();
   return (
     <Combobox
+      aria-label={t`Issue type`}
       options={options.map((o) => ({
         value: o.value,
         label: <Enumerable value={o.label} />

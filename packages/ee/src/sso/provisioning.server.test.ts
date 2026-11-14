@@ -15,15 +15,6 @@ vi.mock("@carbon/kv", () => ({
   redis: { del: vi.fn().mockResolvedValue(null) }
 }));
 
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn()
-  })
-}));
-
 vi.mock("@carbon/utils", () => ({
   datetime: { timestamp: vi.fn(() => "2026-01-01T00:00:00.000Z") }
 }));

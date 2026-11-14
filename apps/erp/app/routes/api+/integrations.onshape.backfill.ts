@@ -5,8 +5,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getOnshapeIntegration } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+
+const logger = getLogger("erp", "integrations", "onshape-backfill");
 
 export const config = {
   runtime: "nodejs"
@@ -47,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await trigger("onshape-backfill", { companyId, userId });
     return data({ success: true, message: "Onshape asset backfill started" });
   } catch (error) {
-    console.error("Failed to start Onshape backfill:", error);
+    logger.error("Failed to start Onshape backfill", { error });
     return data({ error: "Failed to start Onshape backfill" }, { status: 500 });
   }
 }

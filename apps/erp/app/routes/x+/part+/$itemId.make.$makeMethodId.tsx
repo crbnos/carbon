@@ -20,6 +20,7 @@ import {
   getItemManufacturing,
   getMakeMethodById,
   getMakeMethods,
+  getMethodCorrectionsData,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getRevisionLock
@@ -29,8 +30,10 @@ import type { PartSummary } from "~/modules/items/types";
 import {
   BillOfMaterial,
   BillOfProcess,
-  MakeMethodTools
+  MakeMethodTools,
+  MethodCorrections
 } from "~/modules/items/ui/Item";
+import { toMethodCorrectionsProps } from "~/modules/items/ui/Item/MethodCorrections";
 import { getModelByItemId, getTagsList } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
@@ -102,7 +105,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         configurationRules: []
       };
 
+  const methodCorrections = await getMethodCorrectionsData(
+    client,
+    makeMethodId,
+    companyId
+  );
+
   return {
+    corrections: toMethodCorrectionsProps(methodCorrections.data),
     makeMethod: makeMethod.data,
     methodMaterials:
       methodMaterials.data?.map((m) => ({
@@ -201,6 +211,15 @@ export default function PartMakeMethodPage() {
         configurationRules={configurationRules}
         parameters={configurationParametersAndGroups.parameters}
         replenishmentSystem={partData?.partSummary?.replenishmentSystem}
+        revisionStatus={revisionStatus}
+        releaseControl={releaseControl}
+      />
+      <MethodCorrections
+        key={`corrections:${makeMethod.id}`}
+        makeMethod={makeMethod}
+        {...loaderData.corrections}
+        routingOperations={methodOperations as never}
+        tags={tags}
         revisionStatus={revisionStatus}
         releaseControl={releaseControl}
       />

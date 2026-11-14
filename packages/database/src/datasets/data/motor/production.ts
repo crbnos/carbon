@@ -6,6 +6,7 @@ import type {
   GenealogyAssemblySpec,
   GenealogyInputSpec,
   JobSpec,
+  MaterialRequestSpec,
   PickingListSpec,
   ProductionData,
   ShiftEventSpec
@@ -475,6 +476,25 @@ export const PICKING_LISTS: PickingListSpec[] = [
   }
 ];
 
+// Calls from the floor on the in-progress job: one still waiting at the
+// running operation, one answered yesterday.
+export const MATERIAL_REQUESTS: MaterialRequestSpec[] = [
+  {
+    job: "in-progress",
+    operationOrder: 2,
+    item: "CN-BRG-GREASE",
+    note: "Kit 2 is short CN-BRG-GREASE — need one cartridge at the bearing press before the rotor goes in.",
+    status: "Open"
+  },
+  {
+    job: "in-progress",
+    operationOrder: 1,
+    item: "FST-M10-SS",
+    note: "Need 4 more M10 stainless bolts for the end bell — two were cross-threaded.",
+    status: "Resolved"
+  }
+];
+
 export const motorProduction: ProductionData = {
   jobs: JOBS,
   shifts: SHIFTS,
@@ -498,5 +518,6 @@ export const motorProduction: ProductionData = {
     targetOperationOrder: 1,
     triggeredAtOperationOrder: 2
   },
-  pickingLists: PICKING_LISTS
+  pickingLists: PICKING_LISTS,
+  materialRequests: MATERIAL_REQUESTS
 };

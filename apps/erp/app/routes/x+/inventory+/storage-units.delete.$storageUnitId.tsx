@@ -17,13 +17,14 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  ModalTitle
+  ModalTitle,
+  useRouteDialog
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { ConfirmDelete } from "~/components/Modals";
@@ -93,11 +94,11 @@ export default function DeleteStorageUnitRoute() {
   if (!storageUnitId) throw notFound("storageUnitId not found");
 
   const { storageUnit, childCount } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.storageUnits);
   const { t } = useLingui();
 
   if (!storageUnit) return null;
-  const onCancel = () => navigate(path.to.storageUnits);
+  const onCancel = () => dialog.close();
 
   // When the unit has no children, reuse the standard ConfirmDelete — it
   // posts nothing special and the server path goes through the non-cascade
@@ -108,6 +109,7 @@ export default function DeleteStorageUnitRoute() {
         action={path.to.deleteStorageUnit(storageUnitId)}
         name={storageUnit.name}
         text={t`Are you sure you want to delete the storage unit: ${storageUnit.name}? This cannot be undone.`}
+        isOpen={dialog.open}
         onCancel={onCancel}
       />
     );
@@ -118,6 +120,7 @@ export default function DeleteStorageUnitRoute() {
       storageUnitId={storageUnitId}
       storageUnitName={storageUnit.name}
       childCount={childCount}
+      open={dialog.open}
       onCancel={onCancel}
     />
   );
@@ -127,11 +130,13 @@ function DeleteWithCascadeModal({
   storageUnitId,
   storageUnitName,
   childCount,
+  open,
   onCancel
 }: {
   storageUnitId: string;
   storageUnitName: string;
   childCount: number;
+  open: boolean;
   onCancel: () => void;
 }) {
   const { t } = useLingui();
@@ -149,7 +154,7 @@ function DeleteWithCascadeModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}

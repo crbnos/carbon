@@ -41,6 +41,7 @@ import {
 } from "~/components/LineReorder";
 import { Confirm } from "~/components/Modals";
 import {
+  useDrawerItem,
   useOptimisticLocation,
   usePermissions,
   useRouteData,
@@ -53,12 +54,13 @@ import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores";
 import { getCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { isPurchaseOrderLocked } from "../../purchasing.models";
+import { isPurchaseOrderEditLocked } from "../../purchasing.models";
 import type { PurchaseOrder, PurchaseOrderLine, Supplier } from "../../types";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
 import PurchaseOrderLineForm from "./PurchaseOrderLineForm";
 
 export default function PurchaseOrderExplorer() {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -93,16 +95,13 @@ export default function PurchaseOrderExplorer() {
   const newPurchaseOrderLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<PurchaseOrderLine | null>(null);
-  const [duplicateLine, setDuplicateLine] = useState<PurchaseOrderLine | null>(
-    null
-  );
+  const duplicateLine = useDrawerItem<PurchaseOrderLine>();
 
-  const isLocked = isPurchaseOrderLocked(
+  // A released order keeps its lines editable while it is not complete; an
+  // edit above the approved amount sends it back for approval.
+  const isDisabled = isPurchaseOrderEditLocked(
     purchaseOrderData?.purchaseOrder?.status
   );
-  const isDisabled = isLocked
-    ? true
-    : purchaseOrderData?.purchaseOrder?.status !== "Draft";
   // A Planned PO is one planning created and nobody has sent yet, so a line
   // can still come off it, the same as on a Draft.
   const isDeleteDisabled = !["Draft", "Planned"].includes(
@@ -128,7 +127,6 @@ export default function PurchaseOrderExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -161,7 +159,7 @@ export default function PurchaseOrderExplorer() {
                   isDuplicateDisabled={isDisabled}
                   line={line}
                   onDelete={onDeleteLine}
-                  onDuplicate={setDuplicateLine}
+                  onDuplicate={duplicateLine.open}
                 />
               ))
             )
@@ -202,7 +200,7 @@ export default function PurchaseOrderExplorer() {
               </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -213,23 +211,30 @@ export default function PurchaseOrderExplorer() {
           )}
         </div>
       </VStack>
-      {newPurchaseOrderLineDisclosure.isOpen && (
+      {newPurchaseOrderLineDisclosure.openCount > 0 && (
         <PurchaseOrderLineForm
+          key={`newPurchaseOrderLineDisclosure-${newPurchaseOrderLineDisclosure.openCount}`}
+          open={newPurchaseOrderLineDisclosure.isOpen}
           initialValues={purchaseOrderLineInitialValues}
           type="modal"
           onClose={newPurchaseOrderLineDisclosure.onClose}
         />
       )}
-      {duplicateLine && (
+      {duplicateLine.item && (
         <PurchaseOrderLineForm
-          key={duplicateLine.id}
-          initialValues={getDuplicateLineValues(duplicateLine)}
+          key={`duplicateLine-${duplicateLine.key}`}
+          open={duplicateLine.isOpen}
+          initialValues={getDuplicateLineValues(duplicateLine.item)}
           type="modal"
-          onClose={() => setDuplicateLine(null)}
+          onClose={duplicateLine.close}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeletePurchaseOrderLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLine && (
+        <DeletePurchaseOrderLine
+          line={deleteLine}
+          isOpen={deleteLineDisclosure.isOpen}
+          onCancel={onDeleteCancel}
+        />
       )}
     </>
   );
@@ -378,17 +383,24 @@ function PurchaseOrderLineItem({
             line.description
           );
 
+  const lineName =
+    line.purchaseOrderLineType === "G/L Account"
+      ? line.description || "G/L Account"
+      : line.purchaseOrderLineType === "Fixed Asset"
+        ? (line as any).assetReadableId || "Fixed Asset"
+        : getItemReadableId(items, line.itemId);
+
   return (
     <VStack spacing={0} className="border-b">
-      <PrefetchLink
-        to={path.to.purchaseOrderLine(orderId, line.id!)}
-        className="w-full"
+      <HStack
+        className={cn(
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
+          isSelected && "bg-accent/60 hover:bg-accent/50"
+        )}
       >
-        <HStack
-          className={cn(
-            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50"
-          )}
+        <PrefetchLink
+          to={path.to.purchaseOrderLine(orderId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             <ItemThumbnail
@@ -397,13 +409,7 @@ function PurchaseOrderLineItem({
             />
 
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.purchaseOrderLineType === "G/L Account"
-                  ? line.description || "G/L Account"
-                  : line.purchaseOrderLineType === "Fixed Asset"
-                    ? (line as any).assetReadableId || "Fixed Asset"
-                    : getItemReadableId(items, line.itemId)}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
               {subtitle && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">
                   {subtitle}
@@ -411,115 +417,112 @@ function PurchaseOrderLineItem({
               )}
             </VStack>
           </HStack>
-          <div className="absolute right-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More`}
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                  icon={<LuEllipsisVertical />}
-                  variant="solid"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More actions for ${lineName}`}
+                className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                icon={<LuEllipsisVertical />}
+                variant="solid"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.duplicate}
+                disabled={
+                  isDuplicateDisabled ||
+                  !permissions.can("create", "purchasing")
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onDuplicate(line);
+                }}
+              >
+                <DropdownMenuIcon icon={<LuCopy />} />
+                <Trans>Duplicate Line</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                disabled={
+                  isDeleteDisabled || !permissions.can("delete", "purchasing")
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(line);
+                }}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete Line</Trans>
+              </DropdownMenuItem>
+              {(canStopReceiving || canResumeReceiving) && (
                 <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.duplicate}
-                  disabled={
-                    isDuplicateDisabled ||
-                    !permissions.can("create", "purchasing")
-                  }
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    onDuplicate(line);
+                    receivingDisclosure.onOpen();
                   }}
                 >
-                  <DropdownMenuIcon icon={<LuCopy />} />
-                  <Trans>Duplicate Line</Trans>
+                  <DropdownMenuIcon
+                    icon={
+                      canStopReceiving ? <LuPackageX /> : <LuPackageCheck />
+                    }
+                  />
+                  {canStopReceiving ? (
+                    <Trans>Stop Receiving</Trans>
+                  ) : (
+                    <Trans>Resume Receiving</Trans>
+                  )}
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  destructive
-                  disabled={
-                    isDeleteDisabled || !permissions.can("delete", "purchasing")
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(line);
-                  }}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Line</Trans>
-                </DropdownMenuItem>
-                {(canStopReceiving || canResumeReceiving) && (
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      receivingDisclosure.onOpen();
-                    }}
+              )}
+              {(itemType as readonly string[]).includes(
+                line?.purchaseOrderLineType ?? ""
+              ) && (
+                <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
+                  <Link
+                    to={getLinkToItemDetails(
+                      line.purchaseOrderLineType as ItemType,
+                      line.itemId!
+                    )}
                   >
                     <DropdownMenuIcon
-                      icon={
-                        canStopReceiving ? <LuPackageX /> : <LuPackageCheck />
-                      }
+                      icon={<MethodItemTypeIcon type={"Part"} />}
                     />
-                    {canStopReceiving ? (
-                      <Trans>Stop Receiving</Trans>
-                    ) : (
-                      <Trans>Resume Receiving</Trans>
-                    )}
-                  </DropdownMenuItem>
-                )}
-                {(itemType as readonly string[]).includes(
-                  line?.purchaseOrderLineType ?? ""
-                ) && (
-                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
-                    <Link
-                      to={getLinkToItemDetails(
-                        line.purchaseOrderLineType as ItemType,
-                        line.itemId!
-                      )}
-                    >
-                      <DropdownMenuIcon
-                        icon={<MethodItemTypeIcon type={"Part"} />}
-                      />
-                      <Trans>View Item Master</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </HStack>
-      </PrefetchLink>
-      {receivingDisclosure.isOpen && (
-        <Confirm
-          action={path.to.purchaseOrderLineReceiving(orderId, line.id!)}
-          title={canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`}
-          text={
-            canStopReceiving
-              ? t`The remaining ${line.quantityToReceive} ${
-                  line.purchaseUnitOfMeasureCode ?? ""
-                } will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged.`
-              : t`The remaining ${line.quantityToReceive} ${
-                  line.purchaseUnitOfMeasureCode ?? ""
-                } will be expected again and counted as incoming supply.`
-          }
-          confirmText={
-            canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`
-          }
-          onCancel={receivingDisclosure.onClose}
-          onSubmit={receivingDisclosure.onClose}
-        >
-          <input
-            type="hidden"
-            name="intent"
-            value={canStopReceiving ? "close" : "reopen"}
-          />
-        </Confirm>
-      )}
+                    <Trans>View Item Master</Trans>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </HStack>
+      <Confirm
+        isOpen={receivingDisclosure.isOpen}
+        action={path.to.purchaseOrderLineReceiving(orderId, line.id!)}
+        title={canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`}
+        text={
+          canStopReceiving
+            ? t`The remaining ${line.quantityToReceive} ${
+                line.purchaseUnitOfMeasureCode ?? ""
+              } will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged.`
+            : t`The remaining ${line.quantityToReceive} ${
+                line.purchaseUnitOfMeasureCode ?? ""
+              } will be expected again and counted as incoming supply.`
+        }
+        confirmText={canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`}
+        onCancel={receivingDisclosure.onClose}
+        onSubmit={receivingDisclosure.onClose}
+      >
+        <input
+          type="hidden"
+          name="intent"
+          value={canStopReceiving ? "close" : "reopen"}
+        />
+      </Confirm>
     </VStack>
   );
 }

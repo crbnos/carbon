@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { isKanbanCompleteScan, kanbanCompleteTarget } from "./kanban";
+import {
+  isKanbanCompleteScan,
+  kanbanCompleteTarget,
+  soleUnitId
+} from "./kanban";
 
 const kanban = { id: "kbn_8f3k2m1q", completedBarcodeOverride: null };
 
@@ -90,6 +94,42 @@ describe("kanbanCompleteTarget", () => {
     ).toEqual({ action: "complete" });
   });
 
+  it("completes the job's only unit at a later operation without asking", () => {
+    expect(
+      kanbanCompleteTarget({
+        ...serial,
+        isFirstOperation: false,
+        selectedEntityId: null,
+        selectedIsIncomplete: false,
+        soleUnitId: "te_only"
+      })
+    ).toEqual({ action: "complete", trackedEntityId: "te_only" });
+  });
+
+  it("prefers the unit on screen over the job's only unit", () => {
+    expect(
+      kanbanCompleteTarget({
+        ...serial,
+        isFirstOperation: false,
+        selectedEntityId: "te_2",
+        selectedIsIncomplete: true,
+        soleUnitId: "te_only"
+      })
+    ).toEqual({ action: "complete", trackedEntityId: "te_2" });
+  });
+
+  it("still asks at a later operation when the job makes several units", () => {
+    expect(
+      kanbanCompleteTarget({
+        ...serial,
+        isFirstOperation: false,
+        selectedEntityId: null,
+        selectedIsIncomplete: false,
+        soleUnitId: null
+      })
+    ).toEqual({ action: "select" });
+  });
+
   it("names no unit for a batch or untracked part", () => {
     expect(
       kanbanCompleteTarget({
@@ -99,5 +139,36 @@ describe("kanbanCompleteTarget", () => {
         selectedIsIncomplete: true
       })
     ).toEqual({ action: "complete" });
+  });
+});
+
+describe("soleUnitId", () => {
+  it("names the unit of a one-unit job", () => {
+    expect(soleUnitId([{ id: "te_1" }], 1)).toBe("te_1");
+    // No count to compare: one entity is the whole job.
+    expect(soleUnitId([{ id: "te_1" }], null)).toBe("te_1");
+  });
+
+  it("names the one unit a correction or rework operation works", () => {
+    expect(
+      soleUnitId(
+        [
+          { id: "te_1", inOperationScope: false },
+          { id: "te_2", inOperationScope: true },
+          { id: "te_3", inOperationScope: false }
+        ],
+        1
+      )
+    ).toBe("te_2");
+  });
+
+  it("names none when the job makes several units", () => {
+    expect(soleUnitId([{ id: "te_1" }, { id: "te_2" }], 2)).toBeNull();
+    // The entity list can run short of the units: a count of 3 is not one unit.
+    expect(soleUnitId([{ id: "te_1" }], 3)).toBeNull();
+  });
+
+  it("names none when the job has no unit yet", () => {
+    expect(soleUnitId([], 1)).toBeNull();
   });
 });

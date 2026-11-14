@@ -6,14 +6,11 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { assemblySubAssemblyNewValidator } from "~/modules/production/production.models";
 import { makeAssemblySubAssembly } from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
-
-const logger = getLogger("erp", "assembly-sub-assembly-new");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -46,19 +43,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
     return { success: true, id: headerId };
   } catch (err) {
-    logger.error("Failed to make sub-assembly", {
-      companyId,
-      assemblyInstructionId: id,
-      stepId: validation.data.stepId,
-      error: err
-    });
     return data(
       { success: false },
       await flash(
         request,
         error(
           err,
-          err instanceof Error ? err.message : "Failed to make sub-assembly"
+          err instanceof Error ? err.message : "Failed to make sub-assembly",
+          { assemblyInstructionId: id, stepId: validation.data.stepId }
         )
       )
     );

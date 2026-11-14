@@ -44,6 +44,7 @@ type FixedAssetCapitalizeFormProps = {
   // The unit's carrying cost — what the transfer will book. null when it
   // could not be read; the server function still decides on submit.
   cost: number | null;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -53,6 +54,7 @@ const FixedAssetCapitalizeForm = ({
   item,
   serialNumber,
   cost,
+  open = true,
   onClose
 }: FixedAssetCapitalizeFormProps) => {
   const { t } = useLingui();
@@ -73,7 +75,7 @@ const FixedAssetCapitalizeForm = ({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

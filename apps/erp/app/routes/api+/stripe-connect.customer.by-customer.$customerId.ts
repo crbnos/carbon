@@ -10,7 +10,7 @@ import type { StripeCustomerResolution } from "~/modules/invoicing/invoicing.ser
 import { resolveStripeCustomerForBilling } from "~/modules/invoicing/invoicing.service";
 import { getDatabaseClient } from "~/services/database.server";
 
-const logger = getLogger("stripe-connect");
+const logger = getLogger("erp", "stripe-connect");
 
 /**
  * What linking this billing customer to Stripe would do to the connected

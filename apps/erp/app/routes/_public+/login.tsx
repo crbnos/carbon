@@ -10,6 +10,7 @@ import {
   error,
   getRedirectTo,
   isAuthProviderEnabled,
+  isDevBypassEmail,
   magicLinkValidator,
   RATE_LIMIT,
   signInCodeValidator
@@ -85,6 +86,8 @@ import { data, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import type { Result } from "~/types";
 import { setAppBadge } from "~/utils/app-badge";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "login");
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Login" }];
@@ -212,10 +215,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const user = await getUserByEmail(email);
 
-  const devBypassEmail = process.env.DEV_BYPASS_EMAIL;
   if (
-    devBypassEmail &&
-    email.toLowerCase() === devBypassEmail.toLowerCase() &&
+    isDevBypassEmail(email, process.env.DEV_BYPASS_EMAIL) &&
     user.data?.active
   ) {
     const authSession = await signInWithBypassEmail(email);
@@ -316,9 +317,7 @@ export default function LoginRoute() {
     setAppBadge(0);
     import("localforage")
       .then((storage) => storage.default.clear())
-      .catch((error) =>
-        getLogger("erp", "login").warn("stored lists not cleared", { error })
-      );
+      .catch((error) => logger.warning("stored lists not cleared", { error }));
   }, []);
 
   const { t } = useLingui();
@@ -357,9 +356,9 @@ export default function LoginRoute() {
   const logoutReason = searchParams.get("reason");
   useEffect(() => {
     if (logoutReason) {
-      // biome-ignore lint/suspicious/noConsole: surfacing the silent logout is the point
-      console.warn(
-        `[carbon:auth] Session was destroyed server-side (reason: ${logoutReason}). See server logs for the full record.`
+      logger.warning(
+        "Session was destroyed server-side; see server logs for the full record",
+        { reason: logoutReason }
       );
     }
   }, [logoutReason]);
@@ -789,6 +788,7 @@ export default function LoginRoute() {
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
+      aria-hidden="true"
       height="16"
       strokeLinejoin="round"
       viewBox="0 0 16 16"
@@ -818,6 +818,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 function OutlookIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       height="24"
       width="24"

@@ -9,16 +9,10 @@ import {
   useShellThemeStyle,
   useViewport
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { motion, useReducedMotion } from "motion/react";
 import type { ComponentProps, CSSProperties, PropsWithChildren } from "react";
-import {
-  createContext,
-  forwardRef,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef
-} from "react";
+import { createContext, forwardRef, useContext, useMemo } from "react";
 import { LuPanelLeft } from "react-icons/lu";
 import type { Location } from "react-router";
 import { useLocation, useMatches, useNavigation } from "react-router";
@@ -49,19 +43,8 @@ function CollapsibleSidebarProvider({
   hasSidebar,
   children
 }: PropsWithChildren<{ hasSidebar: boolean }>) {
-  const { isPhone } = useViewport();
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
-  const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
-
-  // Only a change of breakpoint moves it: opening on mount would undo the
-  // user's collapse.
-  const wasCompact = useRef(false);
-  useEffect(() => {
-    if (isPhone) setSidebarOpen(false);
-    else if (wasCompact.current) setSidebarOpen(true);
-    wasCompact.current = isPhone;
-  }, [isPhone, setSidebarOpen]);
 
   return (
     <CollapsibleSidebarContext.Provider
@@ -132,12 +115,14 @@ export function useSidebarLocation(isInside: (pathname: string) => boolean) {
  * background. A link opts in with `data-nav-item`.
  */
 export function SidebarLinks({ children }: PropsWithChildren) {
+  const { t } = useLingui();
   const { containerRef, cardRef, handlers } =
-    useSlidingHoverCard<HTMLDivElement>();
+    useSlidingHoverCard<HTMLElement>();
 
   return (
-    <div
+    <nav
       ref={containerRef}
+      aria-label={t`Module`}
       className="relative overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full w-full pb-8"
       {...handlers}
     >
@@ -147,7 +132,7 @@ export function SidebarLinks({ children }: PropsWithChildren) {
         className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-out motion-reduce:transition-none"
       />
       {children}
-    </div>
+    </nav>
   );
 }
 

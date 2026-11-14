@@ -3,11 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Config } from "@react-router/dev/config";
-import { vercelPreset } from "@vercel/react-router/vite";
 
 export default {
   ssr: true,
-  presets: process.env.VERCEL ? [vercelPreset()] : undefined,
+  // Imported only on Vercel: the preset's module loads ts-morph, and with it a
+  // TypeScript compiler (~30 MB of heap), into every dev server.
+  presets: process.env.VERCEL
+    ? [(await import("@vercel/react-router/vite")).vercelPreset()]
+    : undefined,
   future: { unstable_optimizeDeps: true, v8_middleware: true, v8_viteEnvironmentApi: true },
   allowedActionOrigins:
     process.env.NODE_ENV === "development"

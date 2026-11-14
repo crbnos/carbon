@@ -27,6 +27,9 @@ const BOT_BLOCKED_MESSAGE = "Bot verification failed. Please try again.";
 // its two keys; the BYOC console's Integrations tab is where a self-hosted
 // operator sets them. Unset: BotID for Cloud on Vercel, else Turnstile if its
 // keys are set, else no check (the IP rate limit and lockout still stand).
+// "none" turns the check off even where keys are set: a cloud dev container
+// sets it so the DEV_BYPASS_EMAIL login and agent-driven logins can post the
+// form without a Cloudflare widget.
 //
 // An explicit choice that cannot work stops the process at boot rather than
 // leaving login unguarded without anyone noticing.
@@ -54,6 +57,8 @@ function resolveBotProtection(): BotProtection {
         );
       }
       return turnstile;
+    case "none":
+      return null;
     case undefined:
     case "":
       return CarbonEdition === Edition.Cloud && IS_VERCEL
@@ -61,7 +66,7 @@ function resolveBotProtection(): BotProtection {
         : turnstile;
     default:
       throw new Error(
-        `BOT_PROTECTION must be "botid" or "turnstile", got "${BOT_PROTECTION}"`
+        `BOT_PROTECTION must be "botid", "turnstile" or "none", got "${BOT_PROTECTION}"`
       );
   }
 }

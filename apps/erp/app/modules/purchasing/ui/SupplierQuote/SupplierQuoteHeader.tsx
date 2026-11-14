@@ -341,46 +341,43 @@ const SupplierQuoteHeader = () => {
         lines={routeData?.lines ?? []}
         pricing={routeData?.prices ?? []}
       />
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSupplierQuote(id)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.quote?.supplierQuoteId ?? "supplier quote"}
-          text={t`Are you sure you want to delete ${routeData?.quote?.supplierQuoteId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
-        />
-      )}
-      {finalizeModal.isOpen && (
-        <SupplierQuoteFinalizeModal
-          quote={routeData?.quote}
-          lines={routeData?.lines ?? []}
-          prices={routeData?.prices ?? []}
-          onClose={finalizeModal.onClose}
-          fetcher={finalizeFetcher}
-        />
-      )}
-      {sendModal.isOpen && (
-        <SupplierQuoteSendModal
-          quote={routeData?.quote}
-          onClose={sendModal.onClose}
-          fetcher={sendFetcher}
-          externalLinkId={routeData?.quote?.externalLinkId ?? ""}
-          // @ts-expect-error TS2339 - TODO: fix type
-          defaultCc={routeData?.defaultCc ?? []}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteSupplierQuote(id)}
+        isOpen={deleteModal.isOpen}
+        name={routeData?.quote?.supplierQuoteId ?? "supplier quote"}
+        text={t`Are you sure you want to delete ${routeData?.quote?.supplierQuoteId}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
+      <SupplierQuoteFinalizeModal
+        quote={routeData?.quote}
+        lines={routeData?.lines ?? []}
+        prices={routeData?.prices ?? []}
+        open={finalizeModal.isOpen}
+        onClose={finalizeModal.onClose}
+        fetcher={finalizeFetcher}
+      />
+      <SupplierQuoteSendModal
+        quote={routeData?.quote}
+        lines={routeData?.lines ?? []}
+        open={sendModal.isOpen}
+        onClose={sendModal.onClose}
+        fetcher={sendFetcher}
+        externalLinkId={routeData?.quote?.externalLinkId ?? ""}
+        // @ts-expect-error TS2339 - TODO: fix type
+        defaultCc={routeData?.defaultCc ?? []}
+      />
       <ShareQuoteModal
         id={id}
         externalLinkId={routeData?.quote?.externalLinkId || ""}
         onClose={shareModal.onClose}
         isOpen={shareModal.isOpen}
       />
-      {compareModal.isOpen && linkedRfqId && (
+      {linkedRfqId && (
         <SupplierQuoteCompareDrawer
           isOpen={compareModal.isOpen}
           onClose={compareModal.onClose}
@@ -395,12 +392,14 @@ function SupplierQuoteFinalizeModal({
   quote,
   lines,
   prices,
+  open,
   onClose,
   fetcher
 }: {
   quote?: SupplierQuote;
   lines: SupplierQuoteLine[];
   prices: SupplierQuoteLinePrice[];
+  open: boolean;
   onClose: () => void;
   fetcher: FetcherWithComponents<{}>;
 }) {
@@ -436,7 +435,7 @@ function SupplierQuoteFinalizeModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -508,6 +507,7 @@ function ShareQuoteModal({
   onClose: () => void;
   isOpen: boolean;
 }) {
+  const { t } = useLingui();
   if (!externalLinkId) return null;
   if (typeof window === "undefined") return null;
 
@@ -534,7 +534,7 @@ function ShareQuoteModal({
         </ModalHeader>
         <ModalBody>
           <InputGroup>
-            <Input value={digitalQuoteUrl} />
+            <Input aria-label={t`Share link`} value={digitalQuoteUrl} />
             <InputRightElement>
               <Copy text={digitalQuoteUrl} />
             </InputRightElement>

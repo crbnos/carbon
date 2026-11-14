@@ -29,7 +29,7 @@ export class NotificationPipeline {
         async (integration) => {
           const service = notificationRegistry.getService(integration.id);
           if (!service) {
-            logger.warn("Notification service not found in registry", {
+            logger.warning("Notification service not found in registry", {
               integrationId: integration.id
             });
             return;

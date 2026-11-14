@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { generateQRCodeSVG } from "@carbon/documents/qr";
+import { getRequestOrigin } from "@carbon/utils";
+import type { LoaderFunctionArgs } from "react-router";
+import { data } from "react-router";
+import { getKanban } from "~/modules/inventory/inventory.service";
+import { path } from "~/utils/path";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "inventory"
+  });
+
+  const { id, action } = params;
+  if (!id) throw new Error("Could not find kanban id");
+  if (!action) throw new Error("Could not find kanban action");
+  if (!["order", "start", "complete"].includes(action)) {
+    throw new Error("Invalid kanban action");
+  }
+
+  const kanban = await getKanban(client, id, companyId);
+
+  if (kanban.error) {
+    return data({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let kanbanUrl = "";
+  let qrColor = "000000";
+  // The origin the user is on, not request.url's (internal, http) — it is
+  // printed into the QR code.
+  const baseUrl = getRequestOrigin(request) ?? new URL(request.url).origin;
+  if (action === "order") {
+    kanbanUrl = `${baseUrl}${path.to.api.kanban(id)}`;
+    qrColor = "000000"; // black
+  } else if (action === "start") {
+    kanbanUrl = `${baseUrl}${path.to.api.kanbanStart(id)}`;
+    qrColor = "059669"; // emerald-600
+  } else if (action === "complete") {
+    kanbanUrl = `${baseUrl}${path.to.api.kanbanComplete(id)}`;
+    qrColor = "2563eb"; // blue-600
+  }
+
+  const svg = generateQRCodeSVG(kanbanUrl, qrColor);
+
+  return new Response(svg, {
+    headers: {
+      "Content-Type": "image/svg+xml",
+      // Only a drawing: nothing in it may load or run.
+      "Content-Security-Policy": "default-src 'none'",
+      "Cache-Control": "public, max-age=31536000, immutable"
+    }
+  });
+}

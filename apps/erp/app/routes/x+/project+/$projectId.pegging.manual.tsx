@@ -9,9 +9,10 @@ import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate, useParams } from "react-router";
+import { data, useLoaderData, useParams } from "react-router";
 import {
   manualPegValidator,
   parseManualPegSupply
@@ -57,19 +58,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .maybeSingle();
 
   if (peg.error || !peg.data || peg.data.state !== "Soft") {
-    if (peg.error) {
-      logger.error("Failed to load the peg", {
-        companyId,
-        projectId,
-        pegId,
-        error: peg.error
-      });
-    }
     throw redirect(
       path.to.projectPegging(projectId),
       await flash(
         request,
-        error(peg.error, "The peg has changed. Reload the page.")
+        error(peg.error, "The peg has changed. Reload the page.", {
+          projectId,
+          pegId
+        })
       )
     );
   }
@@ -150,13 +146,14 @@ export default function ProjectPeggingManualRoute() {
   const { peg, supplies } = useLoaderData<typeof loader>();
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.projectPegging(projectId));
 
   return (
     <ManualPegForm
       peg={peg}
       supplies={supplies}
-      onClose={() => navigate(path.to.projectPegging(projectId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

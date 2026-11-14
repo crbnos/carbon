@@ -14,6 +14,7 @@ import { stepRecordValidator } from "~/services/models";
 import {
   abilityBlockRefusal,
   backflushUntrackedMaterialsOnStepRecord,
+  getCorrectionSuggestion,
   insertAttributeRecord
 } from "~/services/operations.service";
 
@@ -86,8 +87,18 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
+  // A result mapped to a correction asks the operator to confirm it.
+  const correction = await getCorrectionSuggestion(serviceRole, {
+    jobOperationStepId: validation.data.jobOperationStepId,
+    index: validation.data.index,
+    value: validation.data.value,
+    numericValue: validation.data.numericValue,
+    booleanValue: validation.data.booleanValue,
+    companyId
+  });
+
   return data(
-    { success: true },
+    { success: true, correction },
     await flash(request, success("Attribute recorded successfully"))
   );
 }

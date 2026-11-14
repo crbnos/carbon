@@ -58,7 +58,7 @@ export function onshapeFailure(
         : null,
     transport: status === undefined ? message.slice(0, 300) : null
   };
-  logger.warn("Onshape call failed", { read, status, message });
+  logger.warning("Onshape call failed", { read, status, message });
 
   if (status === undefined) {
     // No response: axios says "timeout of Nms exceeded"; else the network.

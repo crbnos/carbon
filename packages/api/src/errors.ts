@@ -5,7 +5,7 @@
 import { getLogger } from "@carbon/logger";
 import { isZodError, summarizeZodIssues } from "@carbon/utils";
 
-const logger = getLogger("server-functions");
+const logger = getLogger("api");
 
 /** `message` is empty when the failure came from the data layer, so raw
  *  constraint text never reaches a toast. `body` carries structured extras. */
@@ -47,6 +47,16 @@ export class NotFoundError extends ServerFnError {
 /** SQLSTATE of a plpgsql `RAISE EXCEPTION`: a message our own SQL wrote for
  *  the person (e.g. "Job J000343 has 6 serial unit(s) left to receive…"). */
 export const RAISED_EXCEPTION = "P0001";
+
+/** The text of a RAISE in our own SQL, written for the person; else null. */
+export function raisedMessage(error: unknown): string | null {
+  const raised = error as { code?: unknown; message?: unknown } | null;
+  return raised?.code === RAISED_EXCEPTION &&
+    typeof raised.message === "string" &&
+    raised.message !== ""
+    ? raised.message
+    : null;
+}
 
 /** SQLSTATE classes that are the server's failure, never the request's:
  *  connection, transaction rollback (deadlock, serialization), insufficient
@@ -120,7 +130,12 @@ export function toServerFnError(
   // A refusal the caller caused (bad input, missing record, no permission) is
   // expected traffic; only a server failure is an error.
   if (error.status >= 500) logger.error("{name} failed", { name, error: err });
-  else logger.warn(`${name} refused`, { status: error.status, error: err });
+  else
+    logger.warning("{name} refused", {
+      name,
+      status: error.status,
+      error: err
+    });
   return error;
 }
 

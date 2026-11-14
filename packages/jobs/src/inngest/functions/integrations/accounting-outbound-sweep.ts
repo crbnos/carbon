@@ -16,6 +16,7 @@ import {
   type SyncContext
 } from "@carbon/ee/accounting";
 import { trigger } from "@carbon/lib/trigger";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { today } from "@internationalized/date";
 /**
@@ -62,6 +63,8 @@ import {
 import type { ReconcileRef } from "./reconcile";
 import { type ReconcileSummary, reconcileEntities } from "./reconcile-executor";
 import { loadIntegrationTopology } from "./topology";
+
+const logger = getLogger("jobs", "accounting-outbound-sweep");
 
 const PAGE_SIZE = 200;
 const MAX_PAGES = 25;
@@ -232,9 +235,11 @@ async function sweepCompanyProvider(args: {
     providerId
   );
   if (converged.removed.length > 0) {
-    console.info(
-      `[OUTBOUND SWEEP] ${companyId}/${providerId}: removed stale subscription(s): ${converged.removed.join(", ")}`
-    );
+    logger.info("Removed stale subscriptions", {
+      companyId,
+      providerId,
+      removed: converged.removed
+    });
   }
 
   const topology = await loadIntegrationTopology(client, companyId);
@@ -623,10 +628,11 @@ async function sweepCompanyProvider(args: {
           recipient: { type: "user", userId: recipientId }
         });
       } catch (notifyError) {
-        console.error(
-          `[OUTBOUND SWEEP] ${companyId}/${providerId}: failed to send sync-failure notification`,
-          notifyError
-        );
+        logger.error("Failed to send the sync-failure notification", {
+          companyId,
+          providerId,
+          error: notifyError
+        });
       }
     }
   }

@@ -108,12 +108,14 @@ type SalesOrderLineFormProps = {
     assetName?: string;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const SalesOrderLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: SalesOrderLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -511,6 +513,7 @@ const SalesOrderLineForm = ({
       >
         <ModalCardProvider type={type}>
           <ModalCard
+            open={open}
             onClose={onClose}
             isCollapsible={isEditing}
             defaultCollapsed={false}
@@ -900,6 +903,7 @@ const SalesOrderLineForm = ({
                                   ))}
 
                                 <IconButton
+                                  aria-expanded={costsDisclosure.isOpen}
                                   icon={<LuChevronRight />}
                                   aria-label={
                                     costsDisclosure.isOpen
@@ -1072,6 +1076,7 @@ const SalesOrderLineForm = ({
                                 </Badge>
                               )}
                               <IconButton
+                                aria-expanded={assetCostsDisclosure.isOpen}
                                 icon={<LuChevronRight />}
                                 aria-label={
                                   assetCostsDisclosure.isOpen

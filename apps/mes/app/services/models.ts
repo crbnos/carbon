@@ -115,6 +115,12 @@ export const convertEntityValidator = z.object({
   quantity: z.coerce.number().positive().default(1)
 });
 
+/**
+ * The trigger `listValue` that maps a failed Inspection step; the ERP writes it
+ * (`inspectionFailedResult` in the items module's models).
+ */
+export const inspectionFailedResult = "Failed";
+
 export const stepRecordValidator = z.object({
   index: zfd.numeric(z.number()),
   jobOperationStepId: z.string(),
@@ -234,7 +240,10 @@ export const issueTrackedEntityValidator = z.object({
   unitNumber: z.number().int().positive().optional(),
   // Set when policy is BlockWithOverride and operator typed a reason.
   overrideExpired: z.boolean().optional(),
-  overrideReason: z.string().optional()
+  overrideReason: z.string().optional(),
+  // Set by a traveler scan: the server resolves the material and quantity from
+  // the scanned unit and refuses a wrong item.
+  travelerScan: z.boolean().optional()
 });
 
 export const baseQuantityValidator = finishValidator.extend({
@@ -245,6 +254,11 @@ export const baseQuantityValidator = finishValidator.extend({
 });
 
 export const nonScrapQuantityValidator = baseQuantityValidator;
+
+// The completed quantity the page showed; the route skips a stale completion.
+export const completeQuantityValidator = nonScrapQuantityValidator.extend({
+  expectedQuantityComplete: zfd.numeric(z.number().min(0).optional())
+});
 
 export const scrapQuantityValidator = baseQuantityValidator.extend({
   scrapReasonId: zfd.text(z.string()),
@@ -312,6 +326,18 @@ export const triggerReworkValidator = z.object({
   // Provenance link when the rework was triggered by an inspection
   // disposition (stamped on the Rework productionQuantity row).
   inspectionId: zfd.text(z.string().optional())
+});
+
+/** A disposition rework target naming a correction instead of an operation. */
+export const CORRECTION_TARGET_PREFIX = "correction:";
+
+export const triggerCorrectionValidator = z.object({
+  jobId: z.string().min(1),
+  triggeredAtJobOperationId: z.string().min(1),
+  jobCorrectionId: z.string().min(1, { message: "Choose a correction" }),
+  reason: z.string().min(1),
+  quantity: zfd.numeric(z.number().positive().default(1)),
+  trackedEntityId: zfd.text(z.string().optional())
 });
 
 export const maintenanceDispatchValidator = z.object({
@@ -392,6 +418,12 @@ export const qualityIssueValidator = z.object({
   trackedEntityId: zfd.text(z.string().optional())
 });
 
+export const materialRequestValidator = z.object({
+  jobOperationId: z.string().min(1),
+  itemId: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional())
+});
+
 export const maintenanceDispatchIssueValidator = z.object({
   maintenanceDispatchItemId: z.string().min(1, {
     message: "Maintenance Dispatch Item is required"
@@ -427,6 +459,17 @@ export const inspectionSampleValidator = z.object({
     error: "Status is required"
   }),
   notes: zfd.text(z.string().optional())
+});
+
+// A receipt or manual lot's verdict: no production outcome rides on it, so it
+// is only Accept or Reject, with the reason a Reject needs when nothing failed.
+export const inspectionVerdictValidator = z.object({
+  decision: z.enum(["Accept", "Reject"], {
+    error: "Decision is required"
+  }),
+  reason: zfd.text(z.string().optional()),
+  // A reject opens an NCR unless the inspector turns it off, as in the ERP.
+  createNcr: zfd.checkbox()
 });
 
 // One decision surface for closing an inspection lot: the verdict carries its

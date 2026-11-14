@@ -23,6 +23,11 @@ import { requireEntitlement } from "./entitlements.server";
  *
  * The entitlement LOCK lives INSIDE this commercial function (see
  * `entitlements.server`) so it cannot be stripped from open-licensed app code.
+ *
+ * `client` is the service role: `apiKey` has no write policy, because a key acts
+ * as its `createdBy` with its `scopes`, and a caller writing the row directly
+ * would choose both. So every statement here is scoped by `companyId`, and the
+ * caller's permission (`users_update`) is checked by the service function.
  */
 
 // Minimal input shape — the validator's `Omit<…, "id" | "scopes" | "expiresAt">`
@@ -52,6 +57,7 @@ export async function upsertApiKey(
       })
     | (ApiKeyInput & {
         id: string;
+        companyId: string;
         scopes: Record<string, string[]>;
         expiresAt?: string;
       })
@@ -92,64 +98,60 @@ export async function upsertApiKey(
     return { data: { key: rawKey, id: result.data.id }, error: null };
   }
 
-  // The update input carries no companyId — read it from the row so the
-  // entitlement check (the lock) can run before the write.
-  const existing = await client
-    .from("apiKey")
-    .select("companyId")
-    .eq("id", apiKey.id)
-    .single();
-
-  if (existing.error || !existing.data) {
-    return {
-      data: null,
-      error: existing.error || { message: "API key not found" }
-    };
-  }
-
-  await requireEntitlement(client, existing.data.companyId, "API_KEYS");
+  await requireEntitlement(client, apiKey.companyId, "API_KEYS");
 
   // Update: update name, scopes, expiration (never the key itself)
   // The window is always the platform's; the limit is too off single tenant.
   const {
+    id,
+    companyId,
     scopes,
     expiresAt,
     rateLimit,
     rateLimitWindow: _rlw,
     ...rest
   } = apiKey as any;
-  return client
-    .from("apiKey")
-    .update(
-      sanitize({
-        ...rest,
-        ...ownRateLimit(rateLimit),
-        scopes: scopes as any,
-        expiresAt: expiresAt || null
-      }) as any
-    )
-    .eq("id", apiKey.id);
+  return requireAffected(
+    client
+      .from("apiKey")
+      .update(
+        sanitize({
+          ...rest,
+          ...ownRateLimit(rateLimit),
+          scopes: scopes as any,
+          expiresAt: expiresAt || null
+        }) as any
+      )
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function deleteApiKey(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  // The input carries no companyId — read it from the row so the entitlement
-  // check (the lock) can run before the delete.
-  const existing = await client
-    .from("apiKey")
-    .select("companyId")
-    .eq("id", id)
-    .single();
+  await requireEntitlement(client, companyId, "API_KEYS");
+  return requireAffected(
+    client
+      .from("apiKey")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
+}
 
-  if (existing.error || !existing.data) {
-    return {
-      data: null,
-      error: existing.error || { message: "API key not found" }
-    };
+/** A write that matched no row of the company is a missing key, not a success. */
+async function requireAffected(
+  query: PromiseLike<{ data: { id: string }[] | null; error: unknown }>
+) {
+  const { data, error } = await query;
+  if (error) return { data: null, error };
+  if (!data?.length) {
+    return { data: null, error: { message: "API key not found" } };
   }
-
-  await requireEntitlement(client, existing.data.companyId, "API_KEYS");
-  return client.from("apiKey").delete().eq("id", id);
+  return { data, error: null };
 }

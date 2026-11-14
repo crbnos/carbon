@@ -39,7 +39,9 @@ export const searchFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const payload = SearchPayloadSchema.parse(event.data);
 
-    logger.info(`Processing ${payload.records.length} search index events`);
+    logger.info("Processing search index events", {
+      count: payload.records.length
+    });
 
     const results = {
       updated: 0,

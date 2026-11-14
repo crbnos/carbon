@@ -42,10 +42,15 @@ import {
 
 type FixedAssetFormProps = {
   initialValues: z.infer<typeof fixedAssetValidator>;
+  open?: boolean;
   onClose: () => void;
 };
 
-const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
+const FixedAssetForm = ({
+  initialValues,
+  open = true,
+  onClose
+}: FixedAssetFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const settings = useSettings();
@@ -111,7 +116,7 @@ const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

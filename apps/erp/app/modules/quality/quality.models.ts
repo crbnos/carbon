@@ -89,6 +89,14 @@ export const nonConformanceAssociationType = [
 
 export const qualityDocumentStatus = ["Draft", "Active", "Archived"] as const;
 
+export const inspectionDocumentStatus = [
+  "Draft",
+  "Active",
+  "Archived"
+] as const;
+export type InspectionDocumentStatus =
+  (typeof inspectionDocumentStatus)[number];
+
 export const riskSource = [
   "Customer",
   "General",
@@ -432,7 +440,8 @@ export const inspectionStatusType = [
   "In Progress",
   "Passed",
   "Failed",
-  "Partial"
+  "Partial",
+  "Cancelled"
 ] as const;
 
 export const inspectionSampleStatusType = [
@@ -474,7 +483,25 @@ export const inspectionDispositionValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
-export const inspectionSourceDocuments = ["Receipt", "Job Operation"] as const;
+export const inspectionSourceDocuments = [
+  "Receipt",
+  "Job Operation",
+  "Manual"
+] as const;
+
+// A manual inspection of specific tracked entities of one item.
+export const manualInspectionValidator = z.object({
+  itemId: z.string().min(1, { message: "Item is required" }),
+  trackedEntityIds: z
+    .array(z.string().min(1))
+    .min(1, { message: "Select at least one tracked entity" }),
+  inspectionDocumentId: z
+    .string()
+    .min(1, { message: "Inspection plan is required" }),
+  workCenterId: zfd.text(z.string().optional()),
+  assignee: zfd.text(z.string().optional()),
+  notes: zfd.text(z.string().optional())
+});
 
 export const inspectionDocumentUsages = ["Receipt"] as const;
 
@@ -512,7 +539,6 @@ export const inspectionDocumentValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: zfd.text(z.string().optional()),
   partId: z.string().min(1, { message: "Part is required" }),
-  drawingNumber: zfd.text(z.string().optional()),
   pdfUrl: zfd.text(z.string().optional()),
   annotations: zfd.text(z.string().optional()),
   features: zfd.text(z.string().optional())
@@ -632,6 +658,16 @@ export const inspectionDocumentSamplingValidator = z.object({
   samplingInspectionLevel: z.enum(inspectionLevels).nullable(),
   samplingSeverity: z.enum(inspectionSeverities).nullable()
 });
+
+// The plan's parameters, the whole list in display order. Sent by the editor
+// as JSON with the ids it minted (`idp_…`).
+export const inspectionDocumentParametersValidator = z.array(
+  z.object({
+    id: z.string().min(1),
+    key: z.string().trim().min(1, { message: "Parameter is required" }),
+    value: z.string().trim()
+  })
+);
 
 const inspectionFeatureSamplingFieldsValidator = {
   samplingPlanType: z.enum(samplingPlanTypes).nullable().optional(),

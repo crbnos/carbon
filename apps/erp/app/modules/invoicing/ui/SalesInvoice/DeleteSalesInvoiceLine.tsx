@@ -11,9 +11,11 @@ import { path } from "~/utils/path";
 import type { SalesInvoiceLine } from "../../types";
 
 export default function DeleteSalesInvoiceLine({
+  isOpen,
   line,
   onCancel
 }: {
+  isOpen?: boolean;
   line: SalesInvoiceLine;
   onCancel: () => void;
 }) {
@@ -28,6 +30,7 @@ export default function DeleteSalesInvoiceLine({
   return (
     <ConfirmDelete
       action={path.to.deleteSalesInvoiceLine(invoiceId, line.id)}
+      isOpen={isOpen}
       name={itemReadableId ?? "this line"}
       text={t`Are you sure you want to delete the line: ${itemReadableId}? This cannot be undone.`}
       onCancel={onCancel}

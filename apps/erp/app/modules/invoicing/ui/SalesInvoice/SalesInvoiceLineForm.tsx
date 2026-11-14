@@ -108,6 +108,7 @@ type SalesInvoiceLineFormProps = {
   };
   isSalesOrderLine?: boolean;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
@@ -118,6 +119,7 @@ const SalesInvoiceLineForm = (props: SalesInvoiceLineFormProps) =>
     <RentalInvoiceLineSummary
       lineId={props.initialValues.id}
       type={props.type}
+      open={props.open}
       onClose={props.onClose}
     />
   ) : (
@@ -128,6 +130,7 @@ const SalesInvoiceItemLineForm = ({
   initialValues,
   type,
   isSalesOrderLine = false,
+  open = true,
   onClose
 }: SalesInvoiceLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -471,6 +474,7 @@ const SalesInvoiceItemLineForm = ({
     >
       <ModalCardProvider type={type}>
         <ModalCard
+          open={open}
           onClose={onClose}
           isCollapsible={isEditing}
           defaultCollapsed={false}
@@ -835,6 +839,7 @@ const SalesInvoiceItemLineForm = ({
                                 ))}
 
                               <IconButton
+                                aria-expanded={costsDisclosure.isOpen}
                                 icon={<LuChevronRight />}
                                 aria-label={
                                   costsDisclosure.isOpen
@@ -984,6 +989,7 @@ const SalesInvoiceItemLineForm = ({
                               </Badge>
                             )}
                             <IconButton
+                              aria-expanded={assetCostsDisclosure.isOpen}
                               icon={<LuChevronRight />}
                               aria-label={
                                 assetCostsDisclosure.isOpen

@@ -6,6 +6,7 @@ import type {
   GenealogyAssemblySpec,
   GenealogyInputSpec,
   JobSpec,
+  MaterialRequestSpec,
   PickingListSpec,
   ProductionData,
   ShiftEventSpec
@@ -467,6 +468,25 @@ export const PICKING_LISTS: PickingListSpec[] = [
   }
 ];
 
+// Calls from the floor on the in-progress job: one still waiting at the
+// running operation, one answered yesterday.
+export const MATERIAL_REQUESTS: MaterialRequestSpec[] = [
+  {
+    job: "in-progress",
+    operationOrder: 2,
+    item: "BSH-BRZ-2012",
+    note: "Kit 2 is short BSH-BRZ-2012 — need 2 bronze bushings at the press before the pivot arms are fitted.",
+    status: "Open"
+  },
+  {
+    job: "in-progress",
+    operationOrder: 1,
+    item: "SEAL-ORING-224",
+    note: "Rolled an O-ring on install — need 2 more -224 seals at the bench.",
+    status: "Resolved"
+  }
+];
+
 export const precisionProduction: ProductionData = {
   jobs: JOBS,
   shifts: SHIFTS,
@@ -490,5 +510,6 @@ export const precisionProduction: ProductionData = {
     targetOperationOrder: 1,
     triggeredAtOperationOrder: 2
   },
-  pickingLists: PICKING_LISTS
+  pickingLists: PICKING_LISTS,
+  materialRequests: MATERIAL_REQUESTS
 };

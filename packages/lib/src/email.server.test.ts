@@ -34,14 +34,6 @@ vi.mock("@carbon/env", () => ({
   }
 }));
 
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn()
-  })
-}));
-
 // @carbon/env reads process.env at import time, so each test stubs env and
 // re-imports the module fresh.
 const loadMailer = async () => {

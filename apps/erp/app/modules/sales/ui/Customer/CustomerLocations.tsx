@@ -101,9 +101,10 @@ const CustomerLocations = ({ locations }: CustomerLocationsProps) => {
         </CardContent>
       </Card>
 
-      {deleteLocationModal.isOpen && location?.id && (
+      {location?.id && (
         <ConfirmDelete
           action={path.to.deleteCustomerLocation(customerId, location.id)}
+          isOpen={deleteLocationModal.isOpen}
           name={location?.address?.city ?? ""}
           text="Are you sure you want to delete this location?"
           onCancel={deleteLocationModal.onClose}

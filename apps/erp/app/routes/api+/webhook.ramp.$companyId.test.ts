@@ -16,7 +16,6 @@ vi.mock("@carbon/jobs", () => ({ trigger: vi.fn() }));
 const log = vi.hoisted(() => ({
   debug: vi.fn(),
   info: vi.fn(),
-  warn: vi.fn(),
   warning: vi.fn(),
   error: vi.fn()
 }));
@@ -144,9 +143,9 @@ describe("Ramp webhook rejection logging", () => {
     );
 
     expect(await run(delivery)).toMatchObject({ init: { status: 401 } });
-    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(log.warning).toHaveBeenCalledTimes(1);
 
-    const [, context] = log.warn.mock.calls[0] ?? [];
+    const [, context] = log.warning.mock.calls[0] ?? [];
     expect(context).toEqual({
       companyId: "company-1",
       reason: "no-signature-header"
@@ -158,7 +157,7 @@ describe("Ramp webhook rejection logging", () => {
     expect(await run(request("{}", "invalid"))).toMatchObject({
       init: { status: 401 }
     });
-    expect(log.warn).toHaveBeenCalledTimes(1);
-    expect(log.warn.mock.calls[0]?.[1]).toEqual({ companyId: "company-1" });
+    expect(log.warning).toHaveBeenCalledTimes(1);
+    expect(log.warning.mock.calls[0]?.[1]).toEqual({ companyId: "company-1" });
   });
 });

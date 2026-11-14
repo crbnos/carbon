@@ -149,7 +149,11 @@ const SupplierQuoteLinePricing = ({
           .eq("quantity", quantity);
 
         if (update?.error) {
-          logger.error(update.error);
+          logger.error("Failed to update a supplier quote line price", {
+            lineId,
+            quantity,
+            error: update.error
+          });
           toastError(t`Failed to update supplier quote line`, update.error);
           setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
         }
@@ -161,7 +165,11 @@ const SupplierQuoteLinePricing = ({
         });
 
         if (insert?.error) {
-          logger.error(insert.error);
+          logger.error("Failed to insert a supplier quote line price", {
+            lineId,
+            quantity,
+            error: insert.error
+          });
           toastError(t`Failed to insert supplier quote line`, insert.error);
           setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
         }
@@ -231,6 +239,7 @@ const SupplierQuoteLinePricing = ({
                     className="group-hover:bg-muted/50"
                   >
                     <EditableNumberCell
+                      aria-label={t`Lead time for quantity ${quantity}`}
                       value={leadTime}
                       formatOptions={{
                         style: "unit",
@@ -268,6 +277,7 @@ const SupplierQuoteLinePricing = ({
                 return (
                   <Td key={quantity.toString()}>
                     <EditableNumberCell
+                      aria-label={t`Unit price for quantity ${quantity}`}
                       value={price}
                       formatOptions={INPUT_FORMAT.rate(
                         quoteCurrency,
@@ -325,6 +335,7 @@ const SupplierQuoteLinePricing = ({
                 return (
                   <Td key={quantity.toString()}>
                     <EditableNumberCell
+                      aria-label={t`Shipping cost for quantity ${quantity}`}
                       value={shippingCost}
                       formatOptions={INPUT_FORMAT.money(
                         quoteCurrency,
@@ -359,6 +370,7 @@ const SupplierQuoteLinePricing = ({
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <EditableNumberCell
+                      aria-label={t`Tax amount for quantity ${quantity}`}
                       value={taxAmount}
                       formatOptions={INPUT_FORMAT.money(
                         quoteCurrency,
@@ -397,6 +409,7 @@ const SupplierQuoteLinePricing = ({
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <EditableNumberCell
+                      aria-label={t`Tax percent for quantity ${quantity}`}
                       value={taxPercent}
                       formatOptions={INPUT_FORMAT.percent}
                       minValue={0}

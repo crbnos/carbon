@@ -26,12 +26,8 @@ import { useElementRoutes } from "./ElementRoutes";
 /** Moves an element under another parent, or to the top level. */
 const TOP_LEVEL = "__top__";
 
-export function MoveElementModal({
-  projectId,
-  element,
-  elements,
-  onClose
-}: {
+type MoveElementModalProps = {
+  open?: boolean;
   projectId: string;
   element: { id: string; readableId: string; parentId: string | null };
   elements: {
@@ -42,7 +38,29 @@ export function MoveElementModal({
     parentId: string | null;
   }[];
   onClose: () => void;
-}) {
+};
+
+export function MoveElementModal({
+  open = true,
+  onClose,
+  ...props
+}: MoveElementModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <MoveElementBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function MoveElementBody({
+  projectId,
+  element,
+  elements,
+  onClose
+}: Omit<MoveElementModalProps, "open">) {
   const { t } = useLingui();
   const changeRequestId = useActiveChangeRequestId();
   const routes = useElementRoutes(projectId);
@@ -79,50 +97,47 @@ export function MoveElementModal({
   }, [elements, element.id, t]);
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Move {element.readableId}</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <Combobox
-            asButton
-            value={target}
-            options={options}
-            onChange={(value) => setTarget(value || TOP_LEVEL)}
-            placeholder={t`Choose the new parent`}
-          />
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            isLoading={fetcher.isPending}
-            isDisabled={
-              fetcher.isPending || target === (element.parentId ?? TOP_LEVEL)
-            }
-            onClick={() =>
-              fetcher.submit(
-                {
-                  intent: "move",
-                  elementId: element.id,
-                  parentId: target === TOP_LEVEL ? "" : target
-                },
-                {
-                  method: "post",
-                  action: withChangeRequest(routes.move, changeRequestId)
-                }
-              )
-            }
-          >
-            <Trans>Move</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Move {element.readableId}</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Combobox
+          asButton
+          value={target}
+          options={options}
+          onChange={(value) => setTarget(value || TOP_LEVEL)}
+          placeholder={t`Choose the new parent`}
+        />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          isLoading={fetcher.isPending}
+          isDisabled={
+            fetcher.isPending || target === (element.parentId ?? TOP_LEVEL)
+          }
+          onClick={() =>
+            fetcher.submit(
+              {
+                intent: "move",
+                elementId: element.id,
+                parentId: target === TOP_LEVEL ? "" : target
+              },
+              {
+                method: "post",
+                action: withChangeRequest(routes.move, changeRequestId)
+              }
+            )
+          }
+        >
+          <Trans>Move</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 }

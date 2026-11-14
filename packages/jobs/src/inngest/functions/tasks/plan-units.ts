@@ -3,6 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
+
+const logger = getLogger("jobs", "plan-units");
 
 /** A pre-grouped rigid body for the geometry planner's `options.units`. */
 export type PlanUnit = { id: string; name: string | null; nodeIds: string[] };
@@ -50,7 +53,9 @@ export async function loadPlanUnits(args: {
         nodeIds: unit.componentNodeIds ?? []
       }));
   } catch (error) {
-    console.error("loadPlanUnits failed; planning every leaf instead:", error);
+    logger.error("Failed to load plan units; planning every leaf instead", {
+      error
+    });
     return [];
   }
 }

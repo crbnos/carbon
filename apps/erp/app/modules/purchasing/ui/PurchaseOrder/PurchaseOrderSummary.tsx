@@ -45,14 +45,14 @@ import {
 } from "~/hooks";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
-import { isPurchaseOrderLocked } from "../../purchasing.models";
+import { isPurchaseOrderEditLocked } from "../../purchasing.models";
 import type {
   PurchaseOrder,
   PurchaseOrderDelivery,
   PurchaseOrderLine,
   Supplier
 } from "../../types";
-import { PurchaseOrderLinePromisedDate } from "./PurchaseOrderLineDates";
+import { PurchaseOrderLineSummaryDates } from "./PurchaseOrderLineDates";
 
 const LineItems = ({
   currencyCode,
@@ -122,6 +122,7 @@ const LineItems = ({
       supplierLineTotal +
       (line.supplierTaxAmount ?? 0) +
       (line.supplierShippingCost ?? 0);
+    const lineName = itemReadableId ?? "";
     const unitOfMeasureLabel = unitOfMeasures.find(
       (uom) => uom.value === line.purchaseUnitOfMeasureCode
     )?.label;
@@ -162,9 +163,13 @@ const LineItems = ({
           )}
 
           <VStack spacing={0} className="flex-1 min-w-0">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
             <div
               className="flex flex-col cursor-pointer w-full"
-              onClick={() => toggleOpen(line.id!)}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a, button")) return;
+                toggleOpen(line.id!);
+              }}
             >
               {/* The text column must shrink (flex-1 min-w-0) or a long
                       description shoves the totals out of the card, and its
@@ -210,16 +215,24 @@ const LineItems = ({
                     <motion.button
                       type="button"
                       aria-expanded={openItems.includes(line.id)}
+                      aria-controls={
+                        openItems.includes(line.id)
+                          ? `purchase-order-line-details-${line.id}`
+                          : undefined
+                      }
+                      aria-label={
+                        openItems.includes(line.id)
+                          ? t`Hide details for ${lineName}`
+                          : t`Show details for ${lineName}`
+                      }
                       className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => toggleOpen(line.id!)}
                       animate={{
                         rotate: openItems.includes(line.id) ? 90 : 0
                       }}
                       transition={{ duration: 0.2 }}
                     >
-                      <LuChevronRight size={24} />
-                      <span className="sr-only">
-                        <Trans>Details</Trans>
-                      </span>
+                      <LuChevronRight size={24} aria-hidden />
                     </motion.button>
                   </HStack>
                   <div className="flex items-center gap-2">
@@ -249,19 +262,24 @@ const LineItems = ({
                       </Badge>
                     ) : null}
                   </div>
-                  {!isIndirect && (
-                    <PurchaseOrderLinePromisedDate
-                      line={{
-                        id: line.id,
-                        purchaseOrderId: orderId,
-                        receivedComplete: line.receivedComplete ?? false,
-                        promisedDate: line.promisedDate
-                      }}
-                      order={order}
-                    />
-                  )}
                 </VStack>
               </div>
+              {/* Below the header, not in the totals column: in that
+                      shrink-0 column the dates' width came out of the item
+                      name's. */}
+              {!isIndirect && (
+                <PurchaseOrderLineSummaryDates
+                  line={{
+                    id: line.id,
+                    purchaseOrderId: orderId,
+                    receivedComplete: line.receivedComplete ?? false,
+                    requiredDate: line.requiredDate,
+                    promisedDate: line.promisedDate,
+                    receivedDate: line.receivedDate
+                  }}
+                  order={order}
+                />
+              )}
             </div>
           </VStack>
         </HStack>
@@ -270,6 +288,7 @@ const LineItems = ({
           {openItems.includes(line.id) ? (
             <motion.div
               key="panel"
+              id={`purchase-order-line-details-${line.id}`}
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
               animate={{ opacity: 1, height: "auto", marginTop: 16 }}
               exit={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -492,7 +511,9 @@ const PurchaseOrderSummary = ({
     supplier: Supplier;
   }>(path.to.purchaseOrder(orderId));
 
-  const isEditable = !isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isEditable = !isPurchaseOrderEditLocked(
+    routeData?.purchaseOrder?.status
+  );
 
   const { locale } = useLocale();
   const formatter = useCurrencyFormatter();

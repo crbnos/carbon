@@ -35,6 +35,7 @@ export type Attachments = { readonly [T in Table]?: Attachment };
 export const attachments = {
   ability: { statement: ["broadcast_reference_changes"] },
   address: { before: ["sync_address_to_parent"], events: true },
+  approvalRule: { events: true },
   assemblyPlanJob: { statement: ["broadcast_table_changes"] },
   changeOrder: {
     events: true,
@@ -109,7 +110,11 @@ export const attachments = {
   implementationFieldValue: { statement: ["broadcast_table_changes"] },
   implementationHub: { statement: ["broadcast_table_changes"] },
   implementationRow: { statement: ["broadcast_table_changes"] },
-  inspection: { statement: ["broadcast_table_changes"] },
+  inspection: {
+    before: ["check_inspection_lot_release"],
+    after: ["sync_receipt_inspection_status"],
+    statement: ["broadcast_table_changes"]
+  },
   inspectionSample: { statement: ["broadcast_table_changes"] },
   inventoryCount: {
     after: ["sync_advance_document_sequence"],
@@ -118,9 +123,14 @@ export const attachments = {
   },
   inventoryCountLine: { events: true, statement: ["broadcast_table_changes"] },
   invite: { events: true },
-  invoiceSettlement: { events: true, statement: ["broadcast_table_changes"] },
+  invoiceSettlement: {
+    before: ["prevent_invalid_deposit_refund"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   itarCertification: { events: true },
   item: {
+    before: ["check_item_inspection_hold"],
     after: [
       "sync_create_item_related_records",
       "sync_create_make_method_related_records",
@@ -130,7 +140,8 @@ export const attachments = {
     statement: [
       "broadcast_table_changes",
       "log_table_changes",
-      "queue_pmi_inspection_plans"
+      "queue_pmi_inspection_plans",
+      "sync_item_tracking_type_change"
     ]
   },
   itemCost: { events: true },
@@ -138,6 +149,7 @@ export const attachments = {
     statement: [
       "apply_item_stock_quantities",
       "broadcast_table_changes",
+      "check_inspection_hold",
       "queue_kanban_level_checks"
     ]
   },
@@ -208,6 +220,7 @@ export const attachments = {
   journalLine: { events: true },
   lease: { after: ["sync_advance_document_sequence"], events: true },
   location: {
+    before: ["check_location_goods_in_storage_units"],
     after: ["sync_create_location_related_records"],
     events: true,
     statement: ["broadcast_reference_changes"]
@@ -227,6 +240,7 @@ export const attachments = {
   makeMethod: { events: true },
   material: { statement: ["broadcast_table_changes"] },
   materialForm: { statement: ["broadcast_table_changes"] },
+  materialRequest: { statement: ["broadcast_table_changes"] },
   materialSubstance: { statement: ["broadcast_table_changes"] },
   materialType: { statement: ["broadcast_reference_changes"] },
   memo: { after: ["sync_advance_document_sequence"], events: true },
@@ -244,6 +258,7 @@ export const attachments = {
     ]
   },
   nonConformance: {
+    before: ["check_nonconformance_inspection_release"],
     after: ["sync_advance_document_sequence"],
     events: true,
     statement: ["broadcast_table_changes"]
@@ -254,6 +269,9 @@ export const attachments = {
   },
   nonConformanceApprovalTask: { events: true },
   nonConformanceItem: { events: true, statement: ["broadcast_table_changes"] },
+  nonConformanceInspection: {
+    before: ["check_nonconformance_inspection_link"]
+  },
   nonConformanceRequiredAction: {
     before: ["sync_protect_system_required_actions"],
     events: true
@@ -266,6 +284,7 @@ export const attachments = {
   notification: { statement: ["broadcast_user_changes"] },
   part: { statement: ["broadcast_table_changes"] },
   payment: {
+    before: ["prevent_invalid_deposit_refund"],
     after: ["sync_advance_document_sequence"],
     events: true,
     statement: ["broadcast_table_changes"]
@@ -312,6 +331,7 @@ export const attachments = {
     statement: ["broadcast_table_changes"]
   },
   purchaseOrder: {
+    before: ["prevent_prepaid_purchase_order_deletion"],
     after: ["sync_advance_document_sequence"],
     events: true,
     statement: ["broadcast_table_changes"]
@@ -411,7 +431,7 @@ export const attachments = {
   shipmentLine: { events: true, statement: ["broadcast_table_changes"] },
   shippingMethod: { statement: ["broadcast_reference_changes"] },
   stockTransfer: {
-    after: ["sync_advance_document_sequence"],
+    after: ["sync_advance_document_sequence", "sync_receipt_inspection_status"],
     events: true,
     statement: ["broadcast_table_changes"]
   },
@@ -426,7 +446,8 @@ export const attachments = {
       "storage_unit_enforce_same_location",
       "storage_unit_block_location_change_with_children",
       "storage_unit_enforce_no_cycle",
-      "storage_unit_release_non_nettable_stock"
+      "storage_unit_release_non_nettable_stock",
+      "check_goods_in_storage_unit"
     ],
     after: ["sync_storage_unit_nettable"],
     events: true,
@@ -469,9 +490,15 @@ export const attachments = {
     statement: ["broadcast_reference_changes"]
   },
   trackedActivity: { statement: ["broadcast_table_changes"] },
-  trackedEntity: { statement: ["broadcast_table_changes"] },
+  trackedEntity: {
+    before: ["check_tracked_entity_inspection_hold"],
+    statement: ["broadcast_table_changes"]
+  },
   unattributedMachineTime: { statement: ["broadcast_table_changes"] },
-  unitOfMeasure: { statement: ["broadcast_reference_changes"] },
+  unitOfMeasure: {
+    before: ["unit_of_measure_enforce_unique_code"],
+    statement: ["broadcast_reference_changes"]
+  },
   user: {
     after: [
       "sync_create_user_identity_group",

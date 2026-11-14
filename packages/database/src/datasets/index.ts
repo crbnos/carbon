@@ -15,9 +15,11 @@ import { today } from "@internationalized/date";
 import type { PoolClient } from "pg";
 import { defense } from "./data/defense/index.ts";
 import { motor } from "./data/motor/index.ts";
+import { motorLine } from "./data/motor-line/index.ts";
 import { precision } from "./data/precision/index.ts";
 import { robotics } from "./data/robotics/index.ts";
 import { satellite } from "./data/satellite/index.ts";
+import { ensureUnitsOfMeasure } from "./helpers/units-of-measure.ts";
 import { ensureSequences } from "./sql.ts";
 import { selectTiers } from "./tiers/index.ts";
 import {
@@ -37,6 +39,7 @@ export const DATASETS: Record<DatasetKey, Dataset> = {
   robotics,
   precision,
   motor,
+  "motor-line": motorLine,
   defense
 };
 
@@ -140,6 +143,7 @@ export async function applyDatasetTiers(
 
   // Must run before resetSequences, and before any nextSequence() call.
   await ensureSequences(client, companyId);
+  await ensureUnitsOfMeasure(client, companyId, dataset);
 
   if (wipeFirst) {
     log("Wiping existing business data...");

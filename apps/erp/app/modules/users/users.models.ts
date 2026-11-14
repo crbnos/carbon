@@ -7,6 +7,18 @@ import { NotificationTopic } from "@carbon/notifications";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+export const modulePreferencesValidator = z.object({
+  preferences: z.array(
+    z.object({
+      module: z.string().min(1),
+      position: z.number(),
+      hidden: z.boolean(),
+      hiddenSubmodules: z.array(z.string()).optional(),
+      submoduleOrder: z.array(z.string()).optional()
+    })
+  )
+});
+
 export const bulkPermissionsValidator = z.object({
   editType: z.string().min(1, { message: "Update type is required" }),
   userIds: z

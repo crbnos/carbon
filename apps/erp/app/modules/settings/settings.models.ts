@@ -615,7 +615,8 @@ export const itemSerialSequenceValidator = z.object({
   step: zfd.numeric(z.number().min(1)),
   size: zfd.numeric(z.number().min(1).max(20)),
   // Empty follows the company's serial number timing.
-  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional())
+  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional()),
+  printLabelOnCompletion: zfd.checkbox()
 });
 
 export type Theme = ThemeName;
@@ -973,6 +974,16 @@ export const documentTemplateValidator = zfd.formData({
   headerConfig: jsonField(
     sectionConfigSchema,
     "Invalid header config"
+  ).optional()
+});
+
+/** One document's draft as the editor holds it; the server keeps only what differs. */
+export const documentEditValidator = zfd.formData({
+  blocks: jsonField(z.array(blockSchema), "Invalid document blocks"),
+  settings: jsonField(documentSettingsSchema, "Invalid document settings"),
+  notes: jsonField(
+    z.record(z.string(), z.unknown()).nullable(),
+    "Invalid notes"
   ).optional()
 });
 

@@ -42,15 +42,22 @@ export function localAnonClient(): SupabaseClient<Database> | null {
   return localClient("SUPABASE_ANON_KEY");
 }
 
+/** A local caller whose permissions come from its API key. */
+export function localApiKeyClient(rawKey: string): SupabaseClient<Database> | null {
+  return localClient("SUPABASE_ANON_KEY", {"carbon-key": rawKey});
+}
+
 function localClient(
-  keyName: "SUPABASE_SERVICE_ROLE_KEY" | "SUPABASE_ANON_KEY"
+  keyName: "SUPABASE_SERVICE_ROLE_KEY" | "SUPABASE_ANON_KEY",
+  headers: Record<string, string> = {}
 ): SupabaseClient<Database> | null {
   const env = localEnv();
   const port = env?.PORT_API;
   const key = env?.[keyName];
   if (!port || !key) return null;
   return createClient<Database>(`http://localhost:${port}`, key, {
-    auth: { autoRefreshToken: false, persistSession: false }
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: {headers}
   });
 }
 

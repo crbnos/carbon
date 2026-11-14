@@ -143,6 +143,19 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
         locales: true,
         precompress: true,
         splitServer: true,
+        // The login page and the app shell, which a cloud session opens first.
+        cloudWarmup: {
+          ssrFiles: [
+            "./app/root.tsx",
+            "./app/routes/_public+/login.tsx",
+            "./app/routes/x+/_layout.tsx"
+          ],
+          clientFiles: [
+            "./app/entry.client.tsx",
+            "./app/root.tsx",
+            "./app/routes/_public+/login.tsx"
+          ]
+        },
         // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser,
         // which runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it
         // out there only: on the server it is the one engine PDF reading has.

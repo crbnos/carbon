@@ -67,7 +67,7 @@ export const sendPushFunction = inngest.createFunction(
         .eq("userId", userId)
         .eq("role", "employee");
       if (memberships.error) {
-        log.warn("Failed to read the user's companies for the badge", {
+        log.warning("Failed to read the user's companies for the badge", {
           error: memberships.error,
           userId
         });
@@ -83,7 +83,7 @@ export const sendPushFunction = inngest.createFunction(
         .is("readAt", null)
         .is("digestedInto", null);
       if (error) {
-        log.warn("Failed to count unread notifications for the badge", {
+        log.warning("Failed to count unread notifications for the badge", {
           error,
           userId
         });
@@ -119,7 +119,7 @@ export const sendPushFunction = inngest.createFunction(
             // Kept: the browser replaces an old-key subscription on its next
             // page load, and the row ages out after a session's lifetime. The
             // body says which (e.g. Apple's "BadJwtToken" is our token).
-            log.warn("Push service refused the signature", {
+            log.warning("Push service refused the signature", {
               body: err.body,
               host: new URL(subscription.endpoint).host,
               status,

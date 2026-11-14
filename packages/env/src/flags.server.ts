@@ -4,6 +4,7 @@
 
 /// <reference types="node" />
 import { createHash } from "node:crypto";
+import { getLogger } from "@carbon/logger";
 import { FlagdCore } from "@openfeature/flagd-core";
 import flagdCorePackage from "@openfeature/flagd-core/package.json";
 import {
@@ -40,13 +41,7 @@ const BOOT_WAIT_MS = 2_000;
 const BOOT_POLL_MS = 250;
 const MAX_BODY_BYTES = 1 << 20;
 
-type WarnFn = (message: string, properties: Record<string, unknown>) => void;
-
-// The default when the app passes no `onWarning`.
-const consoleWarn: WarnFn = (message, properties) => {
-  // biome-ignore lint/suspicious/noConsole: @carbon/logger depends on this package
-  console.warn(`flags: ${message}`, properties);
-};
+const logger = getLogger("env", "flags");
 
 /**
  * `CARBON_FLAGS_HEADERS` in the `OTEL_EXPORTER_OTLP_HEADERS` format: `k=v`
@@ -63,11 +58,11 @@ export function parseHeaders(raw = ""): Record<string, string> {
       // Header names are case-insensitive: keep one spelling, the last wins.
       const name = decodeURIComponent(key).toLowerCase();
       if (name in headers) {
-        consoleWarn("A CARBON_FLAGS_HEADERS name appears twice", { name });
+        logger.warning("A CARBON_FLAGS_HEADERS name appears twice", { name });
       }
       headers[name] = decodeURIComponent(pair.slice(i + 1).trim());
     } catch {
-      consoleWarn("Skipping a malformed CARBON_FLAGS_HEADERS pair", { key });
+      logger.warning("Skipping a malformed CARBON_FLAGS_HEADERS pair", { key });
     }
   }
   return headers;
@@ -105,12 +100,6 @@ export type CarbonFlagsOptions = {
   store?: FlagsStore;
   /** Keeps a background sync alive after the response is sent (Vercel). */
   waitUntil?: (promise: Promise<unknown>) => void;
-  /**
-   * Receives each warning with structured properties: a failed sync
-   * (`lastError`, `confirmedAt`, `ageMs`) and a read of an archived flag
-   * (`key`). The apps pass their logger, so Axiom can alert on stale flags.
-   */
-  onWarning?: WarnFn;
   tenancy?: "single" | "multi";
   edition?: string;
 };
@@ -178,7 +167,6 @@ export class CarbonFlagsProvider implements Provider {
   private readonly scope: string;
   private readonly store?: FlagsStore;
   private readonly waitUntil?: (promise: Promise<unknown>) => void;
-  private readonly onWarning: WarnFn;
   private readonly context: { tenancy: string; edition: string };
   private loadedEtag?: string;
   private storeUnavailable = false;
@@ -221,9 +209,8 @@ export class CarbonFlagsProvider implements Provider {
       .slice(0, 16);
     this.store = options.store;
     this.waitUntil = options.waitUntil;
-    this.onWarning = options.onWarning ?? consoleWarn;
     if (this.endpoint && this.mode === "none") {
-      this.onWarning(
+      logger.warning(
         "CARBON_FLAGS_ENDPOINT must be an https: or data: URL (http: only on localhost); using the code defaults",
         { scheme: scheme ?? null }
       );
@@ -283,8 +270,8 @@ export class CarbonFlagsProvider implements Provider {
 
   private fail(error: unknown) {
     this.lastError = error instanceof Error ? error.message : String(error);
-    this.onWarning("Feature flags kept after a failed sync", {
-      lastError: this.lastError,
+    logger.warning("Feature flags kept after a failed sync", {
+      error,
       confirmedAt: this.confirmedAt ?? null,
       ageMs: this.confirmedAt ? Date.now() - this.confirmedAt : null
     });
@@ -432,7 +419,7 @@ export class CarbonFlagsProvider implements Provider {
       !this.warnedArchived.has(key)
     ) {
       this.warnedArchived.add(key);
-      this.onWarning("Code read an archived feature flag", { key });
+      logger.warning("Code read an archived feature flag", { key });
     }
     return result;
   }
@@ -524,7 +511,7 @@ declare global {
  * lambda) does nothing. Until it resolves, every flag answers its default.
  */
 export async function initFlags(
-  options: Pick<CarbonFlagsOptions, "store" | "waitUntil" | "onWarning"> = {}
+  options: Pick<CarbonFlagsOptions, "store" | "waitUntil"> = {}
 ): Promise<void> {
   if (globalThis.__carbonFlags) return;
   const provider = new CarbonFlagsProvider({
@@ -533,7 +520,6 @@ export async function initFlags(
     commit: CARBON_COMMIT_SHA,
     store: options.store,
     waitUntil: options.waitUntil,
-    onWarning: options.onWarning,
     tenancy: SINGLE_TENANT ? "single" : "multi",
     edition: CarbonEdition
   });

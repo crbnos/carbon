@@ -151,6 +151,7 @@ const PickMethodForm = ({
           <CardAction>
             <HStack spacing={2}>
               <Combobox
+                aria-label={t`Location`}
                 asButton
                 size="sm"
                 value={initialValues.locationId}

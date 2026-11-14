@@ -79,7 +79,7 @@ export async function action(args: ActionFunctionArgs) {
     await flash(
       args.request,
       result.error
-        ? error(result.error, result.error.title ?? result.error.message)
+        ? error(result.error, "Failed to update your profile")
         : success("Updated profile")
     )
   );

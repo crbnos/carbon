@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.purchasingRfqs,
       await flash(
         request,
-        error(purchasingRfqDelete.error, purchasingRfqDelete.error.message)
+        error(purchasingRfqDelete.error, "Failed to delete the RFQ")
       )
     );
   }

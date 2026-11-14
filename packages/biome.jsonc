@@ -14,10 +14,9 @@
   "overrides": [
     {
       // Supabase edge functions run on Deno, not Node — they use Deno globals,
-      // their own import style, and were never Biome-formatted. Bring them into
-      // the lint surface for `noConsole` ONLY (inherited from root as a warning),
-      // and switch off formatting/assist + the Node-oriented error rules that
-      // would otherwise fail CI on this never-linted code.
+      // their own import style, and were never Biome-formatted. Switch off
+      // formatting/assist + the Node-oriented error rules that would otherwise
+      // fail CI on this never-linted code.
       "includes": ["database/supabase/functions/**/*.ts"],
       "formatter": { "enabled": false },
       "assist": { "enabled": false },
@@ -27,7 +26,24 @@
             "noUndeclaredVariables": "off",
             "noUnusedVariables": "off"
           },
-          "style": { "useImportType": "off" }
+          "style": { "useImportType": "off" },
+          // Deno: it cannot import @carbon/logger.
+          "suspicious": { "noConsole": "off" }
+        }
+      }
+    },
+    {
+      // CLIs whose output IS the console: crbn, the seeds and datasets.
+      "includes": [
+        "dev/**",
+        "database/src/seed*.ts",
+        "database/src/check-datasets.ts",
+        "database/src/datasets/**",
+        "database/src/authz/cli.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": { "noConsole": "off" }
         }
       }
     }

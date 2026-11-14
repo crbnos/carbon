@@ -35,6 +35,14 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { erpPosting } from "~/services/erp";
 import { sanitize } from "~/utils/supabase";
+import {
+  batchRequiredScanMessage,
+  firstOpenOperationIds,
+  issuedByJobMaterial,
+  netTrackedInputs,
+  requiredScanMessage,
+  requiredScanShortfall
+} from "~/utils/trackedMaterials";
 import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
   batchStepRecordsValidator,
@@ -44,6 +52,7 @@ import type {
   scrapQuantityValidator,
   stepRecordValidator
 } from "./models";
+import { inspectionFailedResult } from "./models";
 import { planStepBackflush } from "./step-backflush";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
@@ -335,6 +344,387 @@ export async function isFirstOperationOfMakeMethod(
   return !priorDependency.error && !priorDependency.data;
 }
 
+/**
+ * Is this the last operation of its make method's routing? Mirrors
+ * isFirstOperationOfMakeMethod: "last" means no operation of the same make
+ * method depends on this one.
+ *
+ * Fails closed: an errored lookup reads as "not last".
+ */
+export async function isLastOperationOfMakeMethod(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operationId: string,
+  jobMakeMethodId: string
+): Promise<boolean> {
+  const nextDependency = await client
+    .from("jobOperationDependency")
+    .select(
+      "operation:jobOperation!jobOperationDependency_operationId_fk!inner(jobMakeMethodId)"
+    )
+    .eq("dependsOnId", operationId)
+    .eq("companyId", companyId)
+    .eq("operation.jobMakeMethodId", jobMakeMethodId)
+    .limit(1)
+    .maybeSingle();
+  return !nextDependency.error && !nextDependency.data;
+}
+
+const REQUIRED_SCAN_CHECK_FAILED = "Could not check the scanned parts";
+
+/**
+ * The first open operation of each of these make methods
+ * (`firstOpenOperationIds`), read in one query. A failed read is returned as
+ * the error, so the caller can refuse instead of reading "not first".
+ */
+export async function getFirstOpenOperationsOfMakeMethods(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobMakeMethodIds: string[]
+): Promise<{ data: Set<string>; error: PostgrestError | null }> {
+  if (jobMakeMethodIds.length === 0) return { data: new Set(), error: null };
+  const operations = await client
+    .from("jobOperation")
+    .select("id, jobMakeMethodId, order")
+    .in("jobMakeMethodId", jobMakeMethodIds)
+    .eq("companyId", companyId)
+    .not("status", "in", "(Done,Canceled)");
+  if (operations.error) {
+    return { data: new Set(), error: operations.error };
+  }
+  return { data: firstOpenOperationIds(operations.data ?? []), error: null };
+}
+
+/**
+ * Is this the first open operation of its make method? A material with no
+ * jobOperationId is consumed there. Fails closed: an errored lookup reads as
+ * "not first", and the server's required-scan check refuses on its own read.
+ */
+export async function isFirstOpenOperationOfMakeMethod(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operationId: string,
+  jobMakeMethodId: string
+): Promise<boolean> {
+  const first = await getFirstOpenOperationsOfMakeMethods(client, companyId, [
+    jobMakeMethodId
+  ]);
+  return !first.error && first.data.has(operationId);
+}
+
+/**
+ * The tracked inputs still inside each unit, per job material, read with the
+ * batch lineage RPCs (two calls for every unit). A failed read is returned as
+ * the error.
+ */
+async function getIssuedByUnit(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  trackedEntityIds: string[]
+): Promise<{ data: Map<string, Map<string, number>>; error: unknown }> {
+  const data = new Map<string, Map<string, number>>();
+  if (trackedEntityIds.length === 0) return { data, error: null };
+  const [inputs, outputs] = await Promise.all([
+    client.rpc("get_direct_descendants_of_tracked_entities_strict", {
+      p_tracked_entity_ids: trackedEntityIds,
+      p_company_id: companyId
+    }),
+    client.rpc("get_direct_ancestors_of_tracked_entities_strict", {
+      p_tracked_entity_ids: trackedEntityIds,
+      p_company_id: companyId
+    })
+  ]);
+  if (inputs.error || outputs.error) {
+    return { data, error: inputs.error ?? outputs.error };
+  }
+  const bySource = <T extends { sourceEntityId: string }>(rows: T[]) => {
+    const grouped = new Map<string, T[]>();
+    for (const row of rows) {
+      const list = grouped.get(row.sourceEntityId) ?? [];
+      list.push(row);
+      grouped.set(row.sourceEntityId, list);
+    }
+    return grouped;
+  };
+  const inputsByUnit = bySource(inputs.data ?? []);
+  const outputsByUnit = bySource(outputs.data ?? []);
+  for (const trackedEntityId of trackedEntityIds) {
+    data.set(
+      trackedEntityId,
+      issuedByJobMaterial(
+        netTrackedInputs(
+          inputsByUnit.get(trackedEntityId) ?? [],
+          outputsByUnit.get(trackedEntityId) ?? []
+        )
+      )
+    );
+  }
+  return { data, error: null };
+}
+
+export type RequiredScanCheck = {
+  jobOperationId: string;
+  /** Units this completion adds. Counted against the operation's
+   *  `quantityIssued` when `serialUnits` is not given. */
+  quantity: number;
+  /** Serial units being completed: each unit counts only what was scanned
+   *  into it. `null` is a unit with no id, which holds nothing. */
+  serialUnits?: (string | null)[];
+};
+
+export type RequiredScanShortRow = {
+  itemReadableId: string;
+  issued: number;
+  required: number;
+};
+
+/**
+ * When the company requires tracked materials to be issued, the short parts
+ * of each operation completion in `checks`, read with one query per table for
+ * all of them. `data` is empty when the setting is off. A failed read returns
+ * `error`, and the caller refuses with `REQUIRED_SCAN_CHECK_FAILED`.
+ */
+async function getRequiredScanShortfalls(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  checks: RequiredScanCheck[]
+): Promise<{
+  data: { jobOperationId: string; rows: RequiredScanShortRow[] }[];
+  error: unknown | null;
+}> {
+  const fail = (what: string, error: unknown) => {
+    log.error("getRequiredScanShortfall: a read failed", {
+      read: what,
+      companyId,
+      jobOperationIds: checks.map((check) => check.jobOperationId),
+      error
+    });
+    return { data: [], error };
+  };
+
+  if (checks.length === 0) return { data: [], error: null };
+
+  const settings = await client
+    .from("companySettings")
+    .select("requireTrackedMaterialsIssued")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) return fail("reading company settings", settings.error);
+  if (!settings.data?.requireTrackedMaterialsIssued) {
+    return { data: [], error: null };
+  }
+
+  const operationIds = [
+    ...new Set(checks.map((check) => check.jobOperationId))
+  ];
+  const operations = await client
+    .from("jobOperation")
+    .select("id, jobMakeMethodId, quantityComplete")
+    .in("id", operationIds)
+    .eq("companyId", companyId);
+  if (operations.error) {
+    return fail("reading the job operations", operations.error);
+  }
+  if ((operations.data ?? []).length !== operationIds.length) {
+    return fail(
+      "reading the job operations",
+      new Error("Job operation not found")
+    );
+  }
+  const operationById = new Map(
+    operations.data.map((operation) => [operation.id, operation])
+  );
+  // Materials belong to a make method; an operation outside one consumes none.
+  const makeMethodIds = [
+    ...new Set(
+      operations.data
+        .map((operation) => operation.jobMakeMethodId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  if (makeMethodIds.length === 0) return { data: [], error: null };
+
+  const serialUnitIds = [
+    ...new Set(
+      checks.flatMap((check) =>
+        (check.serialUnits ?? []).filter((id): id is string => Boolean(id))
+      )
+    )
+  ];
+
+  const [materials, firstOpenOperations, issuedByUnit] = await Promise.all([
+    // Paged: a batch's members can hold more tracked materials than the row
+    // cap, and a truncated read would let a unit through without its scans.
+    fetchAllByIds(makeMethodIds, (batch) =>
+      client
+        .from("jobMaterial")
+        .select(
+          "id, itemId, jobMakeMethodId, jobOperationId, requiresSerialTracking, requiresBatchTracking, quantity, quantityIssued"
+        )
+        .in("jobMakeMethodId", batch)
+        .eq("companyId", companyId)
+        .or("requiresSerialTracking.eq.true,requiresBatchTracking.eq.true")
+        .order("id")
+    ),
+    getFirstOpenOperationsOfMakeMethods(client, companyId, makeMethodIds),
+    getIssuedByUnit(client, companyId, serialUnitIds)
+  ]);
+  if (materials.error) {
+    return fail("reading tracked materials", materials.error);
+  }
+  if (firstOpenOperations.error) {
+    return fail("reading the open operations", firstOpenOperations.error);
+  }
+  if (issuedByUnit.error) {
+    return fail("reading the scanned parts", issuedByUnit.error);
+  }
+
+  const shortfalls = checks.map((check) => {
+    const operation = operationById.get(check.jobOperationId)!;
+    if (!operation.jobMakeMethodId) {
+      return { jobOperationId: check.jobOperationId, short: [] };
+    }
+    const short = requiredScanShortfall({
+      materials: (materials.data ?? []).filter(
+        (material) => material.jobMakeMethodId === operation.jobMakeMethodId
+      ),
+      operationId: check.jobOperationId,
+      jobMakeMethodId: operation.jobMakeMethodId,
+      isFirstOpenOperation: firstOpenOperations.data.has(check.jobOperationId),
+      units: check.serialUnits
+        ? {
+            kind: "serial",
+            issuedByUnit: check.serialUnits.map(
+              (id) => (id ? issuedByUnit.data.get(id) : undefined) ?? new Map()
+            )
+          }
+        : {
+            kind: "operation",
+            unitsAfterCompletion:
+              (operation.quantityComplete ?? 0) + check.quantity
+          }
+    });
+    return { jobOperationId: check.jobOperationId, short };
+  });
+
+  const itemIds = [
+    ...new Set(
+      shortfalls.flatMap(({ short }) => short.map((row) => row.material.itemId))
+    )
+  ];
+  if (itemIds.length === 0) {
+    return {
+      data: shortfalls.map(({ jobOperationId }) => ({
+        jobOperationId,
+        rows: []
+      })),
+      error: null
+    };
+  }
+  const items = await client
+    .from("item")
+    .select("id, readableId, readableIdWithRevision")
+    .in("id", itemIds)
+    .eq("companyId", companyId);
+  if (items.error) return fail("reading item ids", items.error);
+  const readableIdById = new Map(
+    (items.data ?? []).map((item) => [
+      item.id,
+      item.readableIdWithRevision ?? item.readableId
+    ])
+  );
+
+  return {
+    data: shortfalls.map(({ jobOperationId, short }) => ({
+      jobOperationId,
+      rows: short.map((row) => ({
+        itemReadableId:
+          readableIdById.get(row.material.itemId) ?? row.material.itemId,
+        issued: row.issued,
+        required: row.required
+      }))
+    })),
+    error: null
+  };
+}
+
+/**
+ * When the company requires tracked materials to be issued, the message that
+ * refuses completing units of an operation whose serial or batch materials
+ * are not yet scanned in. `message` is null when completion may go ahead. A
+ * failed read refuses with a generic message rather than letting the unit
+ * through.
+ *
+ * A serial parent counts what was scanned into each unit: `trackedEntityIds`
+ * (several units, an inspection lot) or `trackedEntityId` (one unit). A batch
+ * or untracked parent counts the operation's `quantityIssued` for
+ * `quantityComplete + quantity` units.
+ */
+export async function getRequiredScanShortfall(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    jobOperationId: string;
+    trackedEntityId?: string;
+    trackedEntityIds?: string[];
+    parentIsSerial: boolean;
+    quantity: number;
+  }
+): Promise<{ message: string | null; error: unknown | null }> {
+  const result = await getRequiredScanShortfalls(client, args.companyId, [
+    {
+      jobOperationId: args.jobOperationId,
+      quantity: args.quantity,
+      serialUnits: args.parentIsSerial
+        ? (args.trackedEntityIds ?? [args.trackedEntityId ?? null])
+        : undefined
+    }
+  ]);
+  if (result.error) {
+    return { message: REQUIRED_SCAN_CHECK_FAILED, error: result.error };
+  }
+  return {
+    message: requiredScanMessage(result.data[0]?.rows ?? []),
+    error: null
+  };
+}
+
+/**
+ * The required-scan gate for a batch completion: every member is checked in
+ * one set of reads, and the message names each member that is short by its
+ * `label`. A batch issues a member's material against the member's
+ * `jobMaterial.quantityIssued`, never into one serial unit, so every member
+ * counts the operation's `quantityIssued`, serial-tracked members included.
+ */
+export async function getBatchRequiredScanShortfall(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    members: { jobOperationId: string; quantity: number; label: string }[];
+  }
+): Promise<{ message: string | null; error: unknown | null }> {
+  const result = await getRequiredScanShortfalls(
+    client,
+    args.companyId,
+    args.members.map((member) => ({
+      jobOperationId: member.jobOperationId,
+      quantity: member.quantity
+    }))
+  );
+  if (result.error) {
+    return { message: REQUIRED_SCAN_CHECK_FAILED, error: result.error };
+  }
+  return {
+    message: batchRequiredScanMessage(
+      args.members.map((member, index) => ({
+        label: member.label,
+        rows: result.data[index]?.rows ?? []
+      }))
+    ),
+    error: null
+  };
+}
+
 export async function getUpstreamOperations(
   client: SupabaseClient<Database>,
   operationId: string
@@ -422,7 +812,7 @@ export async function finishJobOperation(
     .select("id, jobId");
 
   if (!result.error && result.data.length === 0) {
-    log.warn("finishJobOperation: job operation not found in company", {
+    log.warning("finishJobOperation: job operation not found in company", {
       companyId: args.companyId,
       jobOperationId: args.jobOperationId
     });
@@ -822,6 +1212,40 @@ export async function getJobAttributesByOperationId(
 }
 
 /**
+ * Why an operation is not on the floor, or null when it is. The operation,
+ * assembly and inspection views share it: a batched operation follows its
+ * batch (a Planned batch is off the floor), any other follows its job, which
+ * must be released (Ready, In Progress or Paused).
+ */
+export async function floorRefusal(
+  client: SupabaseClient<Database>,
+  args: {
+    jobStatus: string | null | undefined;
+    jobOperationBatchId: string | null | undefined;
+    companyId: string;
+  }
+): Promise<string | null> {
+  if (args.jobOperationBatchId) {
+    const batch = await client
+      .from("jobOperationBatch")
+      .select("status")
+      .eq("id", args.jobOperationBatchId)
+      .eq("companyId", args.companyId)
+      .maybeSingle();
+    if (batch.error || !batch.data) {
+      return "This operation's batch could not be checked";
+    }
+    return batch.data.status === "Planned"
+      ? "This operation is part of a batch that has not been released to the floor"
+      : null;
+  }
+  return args.jobStatus &&
+    (activeJobStatuses as readonly string[]).includes(args.jobStatus)
+    ? null
+    : "This operation's job has not been released to the floor";
+}
+
+/**
  * Tenant check for a caller-supplied job operation id. Routes read operations
  * with a service-role client (operators often lack RLS rights), so this scoped
  * lookup is the boundary: null data means the id is not in the company.
@@ -934,6 +1358,7 @@ export type BatchMaterialTotal = {
   itemType: string | null;
   // Where the members' rows say to pick it from (the first one set).
   storageUnitName: string | null;
+  storageUnitEffectiveNettable: boolean | null;
   unitOfMeasureCode: string | null;
   requiresBatchTracking: boolean;
   requiresSerialTracking: boolean;
@@ -966,7 +1391,7 @@ export async function getBatchMaterialTotals(
   const rows = await client
     .from("jobMaterial")
     .select(
-      "itemId, jobOperationId, jobMakeMethodId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, item(readableIdWithRevision, thumbnailPath, type), storageUnit(name)"
+      "itemId, jobOperationId, jobMakeMethodId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, item(readableIdWithRevision, thumbnailPath, type), storageUnit(name, effectiveNettable)"
     )
     .or(
       [
@@ -993,13 +1418,17 @@ export async function getBatchMaterialTotals(
       thumbnailPath: r.item?.thumbnailPath ?? null,
       itemType: r.item?.type ?? null,
       storageUnitName: null,
+      storageUnitEffectiveNettable: null,
       name: r.description ?? null,
       unitOfMeasureCode: r.unitOfMeasureCode ?? null,
       requiresBatchTracking: Boolean(r.requiresBatchTracking),
       requiresSerialTracking: Boolean(r.requiresSerialTracking),
       perMember: []
     });
-    t.storageUnitName ??= r.storageUnit?.name ?? null;
+    if (!t.storageUnitName && r.storageUnit?.name) {
+      t.storageUnitName = r.storageUnit.name;
+      t.storageUnitEffectiveNettable = r.storageUnit.effectiveNettable;
+    }
     const required = Number(r.estimatedQuantity ?? 0);
     t.required += required;
     t.issued += Number(r.quantityIssued ?? 0);
@@ -1264,7 +1693,7 @@ export async function getJobMaterialsByOperationId(
   const [materials, trackedInputs] = await Promise.all([
     client
       .from("jobMaterialWithMakeMethodId")
-      .select("*")
+      .select("*, storageUnit(effectiveNettable)")
       .eq("jobMakeMethodId", operation.jobMakeMethodId)
       .order("itemReadableId", { ascending: true })
       .order("id", { ascending: true }),
@@ -1279,7 +1708,7 @@ export async function getJobMaterialsByOperationId(
   if (kittedMakeMethodIds.size) {
     const kittedMaterials = await client
       .from("jobMaterialWithMakeMethodId")
-      .select("*")
+      .select("*, storageUnit(effectiveNettable)")
       .in("jobMakeMethodId", Array.from(kittedMakeMethodIds))
       .neq("methodType", "Make to Order");
 
@@ -2019,7 +2448,14 @@ export async function getTrackedEntitiesByMakeMethodId(
 type SerialEntityForSelection = Pick<
   Database["public"]["Tables"]["trackedEntity"]["Row"],
   "attributes" | "status"
->;
+> & {
+  /**
+   * False when the operation applies to other units only (a rework copy
+   * scoped to the units sent into it). Set by `getTrackedEntitiesForOperation`;
+   * absent means the operation applies to every unit.
+   */
+  inOperationScope?: boolean;
+};
 
 /**
  * A serial tracked entity is still "incomplete" for a job operation when its
@@ -2035,6 +2471,7 @@ export function isSerialEntityIncompleteForOperation(
   // Scrapped is terminal like Consumed — a scrapped unit is never a work
   // candidate; its replacement is the spawned Reserved entity.
   return (
+    entity.inOperationScope !== false &&
     !(`Operation ${jobOperationId}` in attributes) &&
     entity.status !== "Consumed" &&
     entity.status !== "Scrapped"
@@ -2060,7 +2497,10 @@ export function getNextIncompleteSerialEntity<
   // unit Consumed on a finished subassembly), preserving the prior behavior of
   // always returning something when entities exist.
   const selectable = entities.filter(
-    (entity) => entity.status !== "Consumed" && entity.status !== "Scrapped"
+    (entity) =>
+      entity.inOperationScope !== false &&
+      entity.status !== "Consumed" &&
+      entity.status !== "Scrapped"
   );
   return (
     selectable.find((entity) =>
@@ -2069,6 +2509,272 @@ export function getNextIncompleteSerialEntity<
     selectable[selectable.length - 1] ??
     entities[entities.length - 1]
   );
+}
+
+/**
+ * The units of an operation's make method, in unit-axis order, each flagged
+ * with whether the operation applies to it. A rework copy applies only to the
+ * units sent into it (`jobOperationTrackedEntity`); every other operation has
+ * no scope rows and applies to every unit.
+ *
+ * The list is never narrowed: step records are keyed by a unit's position in
+ * the full axis, so a filtered list would shift every position after a skipped
+ * unit. Consumers read `inOperationScope` (via
+ * `isSerialEntityIncompleteForOperation`) instead.
+ */
+export async function getTrackedEntitiesForOperation(
+  client: SupabaseClient<Database>,
+  args: { operationId: string; jobMakeMethodId: string; companyId: string }
+) {
+  const [entities, scope] = await Promise.all([
+    getTrackedEntitiesByMakeMethodId(
+      client,
+      args.jobMakeMethodId,
+      args.companyId
+    ),
+    client
+      .from("jobOperationTrackedEntity")
+      .select("trackedEntityId")
+      .eq("jobOperationId", args.operationId)
+      .eq("companyId", args.companyId)
+  ]);
+
+  if (entities.error) return { data: null, error: entities.error };
+  if (scope.error) return { data: null, error: scope.error };
+
+  const scopedIds =
+    scope.data.length > 0
+      ? new Set(scope.data.map((row) => row.trackedEntityId))
+      : null;
+
+  return {
+    data: entities.data.map((entity) => ({
+      ...entity,
+      inOperationScope: scopedIds ? scopedIds.has(entity.id) : true
+    })),
+    error: null
+  };
+}
+
+/**
+ * The name of the correction a rework operation belongs to, or null for a
+ * plain rework (or an operation that is not a rework).
+ */
+export async function getReworkCorrectionName(
+  client: SupabaseClient<Database>,
+  reworkId: string | null | undefined,
+  companyId: string
+): Promise<string | null> {
+  if (!reworkId) return null;
+  const rework = await client
+    .from("rework")
+    .select("jobCorrectionId")
+    .eq("id", reworkId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const jobCorrectionId = rework.data?.jobCorrectionId;
+  if (!jobCorrectionId) return null;
+  const correction = await client
+    .from("jobCorrection")
+    .select("name")
+    .eq("id", jobCorrectionId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return correction.data?.name ?? null;
+}
+
+/** The job's corrections for an operation's part (its job make method). */
+export async function getOperationCorrections(
+  client: SupabaseClient<Database>,
+  operationId: string,
+  companyId: string
+) {
+  const operation = await client
+    .from("jobOperation")
+    .select("jobMakeMethodId")
+    .eq("id", operationId)
+    .eq("companyId", companyId)
+    .single();
+  if (operation.error || !operation.data.jobMakeMethodId) {
+    return { data: [], error: operation.error };
+  }
+  return client
+    .from("jobCorrection")
+    .select("id, name, returnTo")
+    .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
+    .eq("companyId", companyId)
+    .order("order", { ascending: true });
+}
+
+export type CorrectionSuggestion = {
+  jobId: string;
+  triggeredAtJobOperationId: string;
+  /** The recorded result, stored as the rework's reason. */
+  reason: string;
+  trackedEntityId: string | null;
+  suggestedJobCorrectionId: string;
+  corrections: {
+    id: string;
+    name: string;
+    returnTo: string;
+    maxAttempts: number | null;
+    /** Earlier uses of this correction by the unit. */
+    uses: number;
+  }[];
+};
+
+/**
+ * The correction a just-recorded step result maps to, with the unit's earlier
+ * uses of it, or null when the result maps to none. A List value matches a
+ * mapped value; a failed Inspection matches `inspectionFailedResult`; a
+ * Measurement matches "Below Minimum" or "Above Maximum".
+ */
+export async function getCorrectionSuggestion(
+  client: SupabaseClient<Database>,
+  args: {
+    jobOperationStepId: string;
+    index: number;
+    value?: string | null;
+    numericValue?: number | null;
+    booleanValue?: boolean | null;
+    companyId: string;
+  }
+): Promise<CorrectionSuggestion | null> {
+  const triggers = await client
+    .from("jobCorrectionTrigger")
+    .select("jobCorrectionId, listValue, measurementCondition")
+    .eq("jobOperationStepId", args.jobOperationStepId)
+    .eq("companyId", args.companyId);
+  if (triggers.error || !triggers.data?.length) return null;
+
+  const step = await client
+    .from("jobOperationStep")
+    .select("type, minValue, maxValue, operationId")
+    .eq("id", args.jobOperationStepId)
+    .eq("companyId", args.companyId)
+    .single();
+  if (step.error) return null;
+
+  let match: { jobCorrectionId: string; reason: string } | undefined;
+  if (step.data.type === "List") {
+    const trigger = triggers.data.find(
+      (t) => args.value && t.listValue === args.value
+    );
+    if (trigger && args.value) {
+      match = { jobCorrectionId: trigger.jobCorrectionId, reason: args.value };
+    }
+  } else if (step.data.type === "Inspection") {
+    // An Inspection records pass or fail; its `value` is the attached file.
+    const trigger =
+      args.booleanValue === false
+        ? triggers.data.find((t) => t.listValue === inspectionFailedResult)
+        : undefined;
+    if (trigger) {
+      match = {
+        jobCorrectionId: trigger.jobCorrectionId,
+        reason: "Failed inspection"
+      };
+    }
+  } else if (
+    step.data.type === "Measurement" &&
+    args.numericValue !== null &&
+    args.numericValue !== undefined
+  ) {
+    const condition =
+      step.data.minValue !== null && args.numericValue < step.data.minValue
+        ? "Below Minimum"
+        : step.data.maxValue !== null && args.numericValue > step.data.maxValue
+          ? "Above Maximum"
+          : null;
+    const trigger = condition
+      ? triggers.data.find((t) => t.measurementCondition === condition)
+      : undefined;
+    if (trigger) {
+      match = {
+        jobCorrectionId: trigger.jobCorrectionId,
+        reason: `${args.numericValue} (${condition})`
+      };
+    }
+  }
+  if (!match) return null;
+
+  const operation = await client
+    .from("jobOperation")
+    .select("id, jobId, jobMakeMethodId")
+    .eq("id", step.data.operationId)
+    .eq("companyId", args.companyId)
+    .single();
+  if (operation.error || !operation.data.jobMakeMethodId) return null;
+
+  const [corrections, jobMakeMethod] = await Promise.all([
+    // Only the correction the result maps to: a result names its fix, so
+    // the operation's other corrections are not offered here.
+    client
+      .from("jobCorrection")
+      .select("id, name, returnTo, maxAttempts")
+      .eq("id", match.jobCorrectionId)
+      .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
+      .eq("companyId", args.companyId),
+    client
+      .from("jobMakeMethod")
+      .select("requiresSerialTracking")
+      .eq("id", operation.data.jobMakeMethodId)
+      .eq("companyId", args.companyId)
+      .single()
+  ]);
+  if (corrections.error || jobMakeMethod.error) return null;
+
+  // A serial unit is the record's position in the unit axis.
+  let trackedEntityId: string | null = null;
+  const uses = new Map<string, number>();
+  if (jobMakeMethod.data.requiresSerialTracking) {
+    const entities = await getTrackedEntitiesByMakeMethodId(
+      client,
+      operation.data.jobMakeMethodId,
+      args.companyId
+    );
+    trackedEntityId = entities.data?.[args.index]?.id ?? null;
+  }
+  if (trackedEntityId) {
+    const scoped = await client
+      .from("jobOperationTrackedEntity")
+      .select("jobOperation!inner(reworkId)")
+      .eq("trackedEntityId", trackedEntityId)
+      .eq("companyId", args.companyId);
+    const reworkIds = [
+      ...new Set(
+        (scoped.data ?? [])
+          .map((row) => row.jobOperation?.reworkId)
+          .filter((id): id is string => !!id)
+      )
+    ];
+    if (reworkIds.length > 0) {
+      const reworks = await client
+        .from("rework")
+        .select("jobCorrectionId")
+        .in("id", reworkIds)
+        .eq("companyId", args.companyId);
+      for (const rework of reworks.data ?? []) {
+        if (!rework.jobCorrectionId) continue;
+        uses.set(
+          rework.jobCorrectionId,
+          (uses.get(rework.jobCorrectionId) ?? 0) + 1
+        );
+      }
+    }
+  }
+
+  return {
+    jobId: operation.data.jobId,
+    triggeredAtJobOperationId: operation.data.id,
+    reason: match.reason,
+    trackedEntityId,
+    suggestedJobCorrectionId: match.jobCorrectionId,
+    corrections: corrections.data.map((correction) => ({
+      ...correction,
+      uses: uses.get(correction.id) ?? 0
+    }))
+  };
 }
 
 export async function getTrackedEntity(
@@ -2121,44 +2827,12 @@ export async function getTrackedInputs(
   // relieved its WIP and reopened the material requirement — so it must not
   // surface in the Unconsume/Scrap lists (which are built from these inputs).
   // Genealogy still sees it via the traceability lineage RPCs; this MES helper
-  // intentionally hides it.
-  if (inputs.data) {
-    inputs.data = inputs.data.filter((input) => input.status !== "Scrapped");
-  }
-
-  if (outputs.error || outputs.data.length === 0) return inputs;
-
-  // Handle circular references while keeping only unique entities that appear more times in inputs than outputs
-  const inputCounts = new Map<string, number>();
-  const outputCounts = new Map<string, number>();
-
-  // Count occurrences in inputs
-  inputs.data?.forEach((input) => {
-    inputCounts.set(input.id, (inputCounts.get(input.id) || 0) + 1);
-  });
-
-  // Count occurrences in outputs
-  outputs.data?.forEach((output) => {
-    outputCounts.set(output.id, (outputCounts.get(output.id) || 0) + 1);
-  });
-
-  // Track which IDs we've already included to avoid duplicates
-  const includedIds = new Set<string>();
-
-  const inputsWithoutCircularReferences = inputs.data?.filter((input) => {
-    const inputCount = inputCounts.get(input.id) || 0;
-    const outputCount = outputCounts.get(input.id) || 0;
-
-    // Only include if input count > output count and we haven't included this ID yet
-    if (inputCount > outputCount && !includedIds.has(input.id)) {
-      includedIds.add(input.id);
-      return true;
-    }
-    return false;
-  });
-
+  // intentionally hides it. An input given back by an Unconsume (it appears in
+  // outputs as often as in inputs) is no longer inside the unit either.
   return {
-    data: inputsWithoutCircularReferences,
+    data: inputs.data
+      ? netTrackedInputs(inputs.data, outputs.error ? [] : (outputs.data ?? []))
+      : inputs.data,
     error: inputs.error
   };
 }
@@ -2330,7 +3004,7 @@ export async function insertAttributeRecord(
     .maybeSingle();
   if (step.error) return { error: step.error, refusal: null };
   if (!step.data) {
-    log.warn("insertAttributeRecord: step not found in company", {
+    log.warning("insertAttributeRecord: step not found in company", {
       companyId: data.companyId,
       jobOperationStepId: data.jobOperationStepId
     });
@@ -2534,6 +3208,64 @@ export async function insertProductionQuantity(
   return result;
 }
 
+/**
+ * Records one completion only while the operation's completed quantity is
+ * still `expectedQuantityComplete`, read under the operation's row lock, so
+ * two requests for one unit record it once. Kysely bypasses RLS: the caller
+ * checks `create: production` (the productionQuantity insert policy) first.
+ */
+export async function insertProductionQuantityIfCurrent(
+  db: Kysely<KyselyDatabase>,
+  data: z.infer<typeof nonScrapQuantityValidator> & {
+    companyId: string;
+    createdBy: string;
+  },
+  expectedQuantityComplete: number
+): Promise<{ id: string } | null> {
+  const inserted = await db.transaction().execute(async (trx) => {
+    const operation = await trx
+      .selectFrom("jobOperation")
+      .select("quantityComplete")
+      .where("id", "=", data.jobOperationId)
+      .where("companyId", "=", data.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (
+      !operation ||
+      Number(operation.quantityComplete ?? 0) !== expectedQuantityComplete
+    ) {
+      return null;
+    }
+    return trx
+      .insertInto("productionQuantity")
+      .values({
+        jobOperationId: data.jobOperationId,
+        type: "Production",
+        quantity: data.quantity,
+        notes: data.notes ?? null,
+        setupProductionEventId: data.setupProductionEventId ?? null,
+        laborProductionEventId: data.laborProductionEventId ?? null,
+        machineProductionEventId: data.machineProductionEventId ?? null,
+        companyId: data.companyId,
+        createdBy: data.createdBy
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+  });
+
+  if (inserted) {
+    trackWorkEvent("production_quantity_reported", {
+      companyId: data.companyId,
+      userId: data.createdBy,
+      productionQuantityId: inserted.id,
+      jobOperationId: data.jobOperationId,
+      quantity: data.quantity,
+      source: "mes"
+    });
+  }
+  return inserted;
+}
+
 export async function insertScrapQuantity(
   client: SupabaseClient<Database>,
   data: z.infer<typeof scrapQuantityValidator> & {
@@ -2660,7 +3392,7 @@ async function postEventTime(
       error: posted.error
     });
   } else if (posted.data.success === false) {
-    log.warn("A production event was not posted", {
+    log.warning("A production event was not posted", {
       companyId: caller.companyId,
       productionEventId,
       reason: posted.data.reason
@@ -2814,16 +3546,19 @@ async function verifyProductionEventRefs(
   ].filter(Boolean) as string[];
 
   if (missing.length > 0) {
-    log.warn("startProductionEvent: referenced record not found in company", {
-      companyId,
-      missing,
-      jobOperationId: args.jobOperationId,
-      workCenterId: args.workCenterId,
-      jobOperationBatchId: args.jobOperationBatchId,
-      trackedEntityId: args.trackedEntityId,
-      error:
-        operation.error ?? workCenter?.error ?? batch?.error ?? entity?.error
-    });
+    log.warning(
+      "startProductionEvent: referenced record not found in company",
+      {
+        companyId,
+        missing,
+        jobOperationId: args.jobOperationId,
+        workCenterId: args.workCenterId,
+        jobOperationBatchId: args.jobOperationBatchId,
+        trackedEntityId: args.trackedEntityId,
+        error:
+          operation.error ?? workCenter?.error ?? batch?.error ?? entity?.error
+      }
+    );
     return { ok: false, message: `${missing[0]} not found` };
   }
 

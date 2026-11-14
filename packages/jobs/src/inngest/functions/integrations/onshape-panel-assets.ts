@@ -20,6 +20,7 @@ import {
 import type { OnshapeOAuthIntegrationId } from "@carbon/ee/onshape/integration-id";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import type { Events } from "@carbon/lib/events";
+import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError, RetryAfterError } from "inngest";
@@ -55,6 +56,8 @@ import {
   type SyncOnshapeDrawingInput,
   type SyncOnshapeElementInput
 } from "./onshape-sync-element";
+
+const logger = getLogger("jobs", "onshape-panel-assets");
 
 // The STEP models of an assembly push's child rows, exported onto the items
 // the push linked, and the drawing PDFs of the rows a push names: each drawing
@@ -151,7 +154,7 @@ async function readOrWarn<T>(
     return await withRateLimitRetry(read, label);
   } catch (error) {
     if (error instanceof RetryAfterError) throw error;
-    console.warn(`onshape-panel-assets: could not read ${label}`, error);
+    logger.warning("Could not read an Onshape element", { label, error });
     return null;
   }
 }
@@ -520,10 +523,10 @@ export const onshapePanelAssetBatchFunction = inngest.createFunction(
         const task = batch[index]!;
         const counts = task.kind === "model" ? result.models : result.drawings;
         if (outcome.status === "rejected") {
-          console.error(
-            `onshape-panel-asset-batch: ${task.label} failed`,
-            outcome.reason
-          );
+          logger.error("Onshape panel asset export failed", {
+            label: task.label,
+            error: outcome.reason
+          });
           counts.failed++;
           result.consecutiveFailures++;
           continue;
@@ -561,9 +564,9 @@ export const onshapePanelAssetBatchFunction = inngest.createFunction(
               });
             } catch (error) {
               // Only an optimization: the next push exports it again.
-              console.warn(
-                `onshape-panel-asset-batch: could not record ${task.label}`,
-                error
+              logger.warning(
+                "Could not record an exported Onshape panel asset",
+                { label: task.label, error }
               );
             }
           });
@@ -725,7 +728,10 @@ export const onshapePanelAssetsFunction = inngest.createFunction(
           }
         });
       } catch (error) {
-        console.error(`onshape-panel-assets: batch ${index} failed`, error);
+        logger.error("Onshape panel asset batch failed", {
+          batch: index,
+          error
+        });
         result = {
           ...emptyBatchResult(consecutiveFailures + batch.length),
           models: {

@@ -898,13 +898,10 @@ const propertyProvider: OptionsProvider = {
         // difference between "reconnect" and "fix the server's OAuth config".
         case "misconfigured":
           optionsLogger.error(
-            "Could not build the refresh config for {piece}: {cause}",
+            "Could not build the refresh config for {piece}",
             {
               piece,
-              cause:
-                auth.cause instanceof Error
-                  ? auth.cause.message
-                  : String(auth.cause)
+              error: auth.cause
             }
           );
           return { options: [], errorCode: "failed" };

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
+import { actionOutcome, useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -28,6 +28,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
+import { receiptLotIssueType } from "~/modules/quality/quality.utils";
 import type { IssueTypeListItem } from "~/modules/quality/types";
 
 export type FailedFeatureSummary = {
@@ -46,11 +47,32 @@ type RejectLotModalProps = {
   // Nothing failed statistically: the lot is rejected for another reason (a
   // suspected counterfeit, the wrong part), which the inspector must give.
   requiresReason?: boolean;
+  open?: boolean;
   onCancel: () => void;
   onSubmit: () => void;
 };
 
 const RejectLotModal = ({
+  open = true,
+  onCancel,
+  ...props
+}: RejectLotModalProps) => {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <RejectLotBody onCancel={onCancel} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+};
+
+const RejectLotBody = ({
   action,
   issueTypes,
   summary,
@@ -58,13 +80,15 @@ const RejectLotModal = ({
   requiresReason = false,
   onCancel,
   onSubmit
-}: RejectLotModalProps) => {
+}: Omit<RejectLotModalProps, "open">) => {
   const { t } = useLingui();
   const fetcher = useAction<{}>({
-    onSettled: () => {
-      if (submitted.current) {
+    onSettled: (data) => {
+      if (!submitted.current) return;
+      submitted.current = false;
+      // A refusal keeps the dialog open; useAction toasts it.
+      if (data === undefined || actionOutcome(data) === "success") {
         onSubmit();
-        submitted.current = false;
       }
     }
   });
@@ -72,146 +96,138 @@ const RejectLotModal = ({
   const [createNcr, setCreateNcr] = useState(true);
   const [reason, setReason] = useState("");
   const [issueTypeId, setIssueTypeId] = useState<string>(
-    issueTypes[0]?.id ?? ""
+    receiptLotIssueType(issueTypes)?.id ?? ""
   );
 
   const hasIssueTypes = issueTypes.length > 0;
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Reject Lot</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={4}>
-            <p className="text-sm text-muted-foreground">{summary}</p>
-            {failedFeatureSummary && failedFeatureSummary.length > 0 && (
-              <div className="w-full rounded-md border p-3">
-                <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  <Trans>Failed characteristics</Trans>
-                </p>
-                <ul className="flex flex-col gap-0.5">
-                  {failedFeatureSummary.map((feature) => (
-                    <li
-                      key={feature.label}
-                      className="font-mono text-xs text-red-500"
-                    >
-                      {feature.label}
-                      {feature.spec ? ` (${feature.spec})` : ""}
-                      {feature.failedValues.length > 0
-                        ? `: ${feature.failedValues.join(", ")}`
-                        : ""}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div className="flex flex-col gap-2 w-full">
-              <Label htmlFor="rejectReason">
-                {requiresReason ? (
-                  <Trans>Reason</Trans>
-                ) : (
-                  <Trans>Reason (optional)</Trans>
-                )}
-              </Label>
-              <Textarea
-                id="rejectReason"
-                value={reason}
-                // rejectInspection takes at most 2,000 characters.
-                maxLength={2000}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder={t`e.g. Suspected counterfeit, wrong part, damaged in transit`}
-              />
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Reject Lot</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          <p className="text-sm text-muted-foreground">{summary}</p>
+          {failedFeatureSummary && failedFeatureSummary.length > 0 && (
+            <div className="w-full rounded-md border p-3">
+              <p className="mb-1 text-xs font-medium text-muted-foreground">
+                <Trans>Failed characteristics</Trans>
+              </p>
+              <ul className="flex flex-col gap-0.5">
+                {failedFeatureSummary.map((feature) => (
+                  <li
+                    key={feature.label}
+                    className="font-mono text-xs text-red-500"
+                  >
+                    {feature.label}
+                    {feature.spec ? ` (${feature.spec})` : ""}
+                    {feature.failedValues.length > 0
+                      ? `: ${feature.failedValues.join(", ")}`
+                      : ""}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <label className="flex items-center gap-2 w-full cursor-pointer">
-              <Checkbox
-                isChecked={createNcr}
-                onCheckedChange={(checked) => setCreateNcr(!!checked)}
-              />
-              <span className="text-sm font-medium">
-                <Trans>Open an NCR for MRB disposition</Trans>
-              </span>
-            </label>
-            {createNcr &&
-              (hasIssueTypes ? (
-                <div className="flex flex-col gap-2 w-full">
-                  <Label htmlFor="nonConformanceTypeId">
-                    <Trans>Issue Type</Trans>
-                  </Label>
-                  <Select value={issueTypeId} onValueChange={setIssueTypeId}>
-                    <SelectTrigger id="nonConformanceTypeId">
-                      <SelectValue placeholder={t`Select an issue type`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {issueTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          )}
+          <div className="flex flex-col gap-2 w-full">
+            <Label htmlFor="rejectReason">
+              {requiresReason ? (
+                <Trans>Reason</Trans>
               ) : (
-                <Alert variant="warning">
-                  <LuTriangleAlert className="size-4" />
-                  <AlertTitle>
-                    <Trans>No issue types configured</Trans>
-                  </AlertTitle>
-                  <AlertDescription>
-                    <Trans>
-                      The lot will still be rejected, but an NCR cannot be
-                      created until at least one Issue Type is configured.
-                    </Trans>
-                  </AlertDescription>
-                </Alert>
-              ))}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onCancel}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={action}
-            onSubmit={() => (submitted.current = true)}
+                <Trans>Reason (optional)</Trans>
+              )}
+            </Label>
+            <Textarea
+              id="rejectReason"
+              value={reason}
+              // rejectInspection takes at most 2,000 characters.
+              maxLength={2000}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder={t`e.g. Suspected counterfeit, wrong part, damaged in transit`}
+            />
+          </div>
+          <label className="flex items-center gap-2 w-full cursor-pointer">
+            <Checkbox
+              isChecked={createNcr}
+              onCheckedChange={(checked) => setCreateNcr(!!checked)}
+            />
+            <span className="text-sm font-medium">
+              <Trans>Open an NCR for MRB disposition</Trans>
+            </span>
+          </label>
+          {createNcr &&
+            (hasIssueTypes ? (
+              <div className="flex flex-col gap-2 w-full">
+                <Label htmlFor="nonConformanceTypeId">
+                  <Trans>Issue Type</Trans>
+                </Label>
+                <Select value={issueTypeId} onValueChange={setIssueTypeId}>
+                  <SelectTrigger id="nonConformanceTypeId">
+                    <SelectValue placeholder={t`Select an issue type`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {issueTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <Alert variant="warning">
+                <LuTriangleAlert className="size-4" />
+                <AlertTitle>
+                  <Trans>No issue types configured</Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  <Trans>
+                    The lot will still be rejected, but an NCR cannot be created
+                    until at least one Issue Type is configured.
+                  </Trans>
+                </AlertDescription>
+              </Alert>
+            ))}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onCancel}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={action}
+          onSubmit={() => (submitted.current = true)}
+        >
+          <input
+            type="hidden"
+            name="createNcr"
+            value={createNcr ? "true" : "false"}
+          />
+          <input
+            type="hidden"
+            name="nonConformanceTypeId"
+            value={createNcr ? issueTypeId : ""}
+          />
+          <input type="hidden" name="reason" value={reason.trim()} />
+          <Button
+            variant="destructive"
+            type="submit"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={
+              fetcher.state !== "idle" ||
+              (requiresReason && !reason.trim()) ||
+              (createNcr && hasIssueTypes && !issueTypeId)
+            }
           >
-            <input
-              type="hidden"
-              name="createNcr"
-              value={createNcr ? "true" : "false"}
-            />
-            <input
-              type="hidden"
-              name="nonConformanceTypeId"
-              value={createNcr ? issueTypeId : ""}
-            />
-            <input type="hidden" name="reason" value={reason.trim()} />
-            <Button
-              variant="destructive"
-              type="submit"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={
-                fetcher.state !== "idle" ||
-                (requiresReason && !reason.trim()) ||
-                (createNcr && hasIssueTypes && !issueTypeId)
-              }
-            >
-              <Trans>Reject Lot</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            <Trans>Reject Lot</Trans>
+          </Button>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 };
 

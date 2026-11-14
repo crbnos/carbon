@@ -133,6 +133,12 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   component that stays mounted across records passes the record id as its third
   argument (`useResolved(promise, null, itemId)`), or it shows the previous record's
   value until the new one arrives.
+- Every page has its own document title. A record route exports
+  `meta = ({ data }) => recordMeta(...)`, a new-record route
+  `meta = newRecordMeta("Sales Order")` and a module layout
+  `meta = moduleMeta("Sales")` (`~/utils/meta`), which titles each list and
+  settings page from its breadcrumbs. `RouteAnnouncer` reads that title aloud
+  on navigation, so a route without one is announced as the bare module.
 - A route under `/x` renders `<RecordOutlet />` from `@carbon/react`, never a plain
   `<Outlet />`. React Router keeps a page mounted when only its params change, so
   a form's default values, an editor's content or a `useState` copy would stay the
@@ -147,16 +153,27 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   A cached `api+` loader exports `clientLoader = cachedClientLoader<typeof loader>()`;
   no route exports a `clientAction`.
 
-## Errors: always log before you throw
+## Errors: the layer that handles a failure logs it
 
-- Never throw (or return) an error without logging it first. Declare a module
-  logger, `const logger = getLogger("erp", "<route-or-module>")` from
-  `@carbon/logger`, and call `logger.error("<what failed>", { companyId, ...context, error })`
-  before `throw new Response(...)` / `throw new Error(...)`.
-- Why: a thrown `Response` from a loader/action goes straight to the client;
-  React Router skips `handleError` for it, so an unlogged throw leaves no server trace.
+- A failure is logged once, by the code that handles it. A helper that throws
+  or returns the failure (`{ error }`, a throw helper) does not log it as well.
+- A thrown `Error` reaches each app's `handleError` (`handleServerError`,
+  `@carbon/logger/middleware.server`), which logs it with the method and path.
+- A thrown `Response` or `data()` is control flow: `handleError` skips it. Log
+  before you throw a 5xx one: `logger.error("<what failed>", { ...context, error })`
+  with a module logger, `getLogger("erp", "<module>")`. Every line of a request
+  already carries `requestId`, `companyId` and `userId`.
+- The `error()` result helper (`@carbon/auth`) logs the failure it returns.
+  Pass the record ids as its third argument; do not log before calling it.
 - Also log failures you deliberately swallow (best-effort cleanup, ignored
   `{ error }` results, `.catch(() => {})`).
+- Never `console.*` — Biome's `noConsole` is an error. `console.error(msg, err)`
+  prints a multi-line stack that the log collector stores as one levelless entry
+  per line; the logger writes one JSON record with the error inside. Message is
+  a fixed sentence, values go in the properties (`{ companyId, error }`).
+  Terminal tools are exempt in `biome.jsonc` / `packages/biome.jsonc` (scripts,
+  `src/scripts`, the CLIs, seeds, Deno edge functions). Until an app configures
+  logging, a logger writes plain lines to the console, so a script needs no setup.
 - The body of a thrown 4xx `Response` is shown to the user on the route error
   screen (`routeErrorCopy`, `@carbon/react`), with its status. Write it for a
   person and say what was wrong ("The item could not be found…"); never pass a
@@ -217,9 +234,10 @@ URL strings in links, redirects, and form actions.
 
 A theme may carry **colors** (`Theme.colors`): the 16 presets in
 `presetThemes` and any `custom:<base>:<highlight>:<g|s>` name. Such a theme
-keeps the default accent and also colors the app frame (the `NavRail` and the
-gutter around the content card), the ERP module sidebar, and lightly the page,
-solid or gradient (`packages/utils/src/theme-colors.ts`). It is stored in the
+takes its accent (buttons, focus rings) from its highlight (`themeAccent`) and
+also colors the app frame (the `NavRail` and the gutter around the content
+card), the ERP module sidebar, and lightly the page, solid or gradient
+(`packages/utils/src/theme-colors.ts`). It is stored in the
 same `theme` cookie as every theme. `useThemeStyle` (`@carbon/react`) reads the
 theme to render (`useThemeValue`: a preview, a pending pick, the root loader)
 and paints the ERP and MES `SidebarProvider`; the shell passes the same style

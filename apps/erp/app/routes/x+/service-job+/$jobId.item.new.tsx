@@ -4,9 +4,10 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { isServiceJobLocked } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { serviceJobItemValidator } from "~/modules/service/service.models";
 import type { ServiceJobDetail } from "~/modules/service/types";
@@ -40,7 +41,7 @@ export async function action(args: ActionFunctionArgs) {
 export default function NewServiceJobChargeRoute() {
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.serviceJob(jobId));
   const { lines, coverageAccount } = useLoaderData<typeof loader>();
   const routeData = useRouteData<{ job: ServiceJobDetail }>(
     path.to.serviceJob(jobId)
@@ -59,7 +60,8 @@ export default function NewServiceJobChargeRoute() {
       costLines={lines}
       coverageAccount={coverageAccount}
       isLocked={isServiceJobLocked(routeData?.job?.status)}
-      onClose={() => navigate(path.to.serviceJob(jobId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

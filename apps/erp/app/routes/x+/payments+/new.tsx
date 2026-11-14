@@ -32,6 +32,7 @@ import { PaymentForm } from "~/modules/invoicing/ui";
 import { getCompany } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 // Loader pre-fills the form. Query params:
@@ -42,7 +43,10 @@ import { path } from "~/utils/path";
 //   amount      -> fallback total when no invoiceId is supplied
 //   salesOrderId / rentalAgreementId / customerContractId -> seeds the
 //                  deposit document
+//   purchaseOrderId -> seeds the supplier prepayment's order
 //   financingRequestId -> the contract financing request the payment receives
+export const meta = newRecordMeta("Payment");
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
@@ -57,6 +61,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const salesOrderId = url.searchParams.get("salesOrderId");
   const rentalAgreementId = url.searchParams.get("rentalAgreementId");
   const customerContractId = url.searchParams.get("customerContractId");
+  const purchaseOrderId = url.searchParams.get("purchaseOrderId");
   // A contract financing request this payment receives.
   const financingRequestId = url.searchParams.get("financingRequestId");
 
@@ -68,7 +73,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [company, defaults, depositDocuments] = await Promise.all([
     getCompany(client, companyId),
     getDefaultAccounts(client, companyId),
-    getDepositDocuments(client, companyId, [salesOrderId])
+    getDepositDocuments(client, companyId, [salesOrderId], [purchaseOrderId])
   ]);
   const bankAccount = defaults.data?.bankCashAccount ?? "";
 
@@ -145,7 +150,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       memo: "",
       salesOrderId: salesOrderId ?? "",
       rentalAgreementId: rentalAgreementId ?? "",
-      customerContractId: customerContractId ?? ""
+      customerContractId: customerContractId ?? "",
+      purchaseOrderId: supplierId ? (purchaseOrderId ?? "") : ""
     },
     seedInvoiceIds: invoiceIds,
     depositDocuments,
@@ -205,7 +211,7 @@ export default function NewPaymentRoute() {
     <NewRecordPage>
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={1}>
             <Trans>New Payment</Trans>
           </CardTitle>
           <CardDescription>

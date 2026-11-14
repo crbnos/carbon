@@ -19,6 +19,7 @@ import {
 } from "@carbon/auth";
 import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
@@ -51,8 +52,9 @@ import {
   projectStates,
   returnReasons,
   scrapReasons,
+  seedUnitsOfMeasure,
   sequences,
-  unitOfMeasures
+  supplierStages
 } from "@carbon/database/seed-data";
 import {
   getPullFromLocations,
@@ -61,17 +63,22 @@ import {
 } from "@carbon/database/strict-backflush";
 import type {
   DocumentBlock,
+  DocumentEdit,
+  DocumentEditType,
   DocumentSectionPlacement,
   DocumentSettings,
   DocumentTemplate,
   DocumentTemplateType,
   DocumentTheme,
-  ResolvedSection
+  ResolvedSection,
+  ValueEdits
 } from "@carbon/documents/template";
 import {
   CURRENT_TEMPLATE_FORMAT_VERSION,
   getBuiltInSection,
   isBuiltInSectionId,
+  isEmptyDocumentEdit,
+  rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
@@ -96,6 +103,7 @@ import type {
 import {
   assemblyAssetRows,
   integrations as availableIntegrations,
+  BOM_LINE_FIELDS,
   bomAssemblySources,
   bomLineItemType,
   CUSTOM_FIELD_TYPE_LABELS,
@@ -108,6 +116,7 @@ import {
   flattenNodes,
   getIntegrationConfigById,
   getIntegrationIdsByRole,
+  IDENTITY_FIELDS,
   type IntegrationHealthcheckResult,
   type IntegrationID,
   ITEM_METHOD_TYPES,
@@ -134,6 +143,7 @@ import {
   STANDARD_FIELD_IDS,
   splitSecrets,
   standardField,
+  standardSourceErrors,
   targetKey,
   translationErrors
 } from "@carbon/ee";
@@ -196,6 +206,7 @@ import {
   takePanelPlan
 } from "@carbon/ee/onshape";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
+import { panelCompanyChoices } from "@carbon/ee/onshape/panel-session.server";
 import {
   isOnshapeOAuthIntegrationId,
   loadOnshapeOAuthConfig,
@@ -231,6 +242,7 @@ import {
   isInternalEmail,
   labelSizes,
   requireAffected,
+  requiresItarEntityCertification,
   searchFilter
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
@@ -243,6 +255,7 @@ import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
   getShippingMethodsList,
+  getShippingTermsList,
   getStockTransfer,
   getStockTransferLines
 } from "~/modules/inventory/inventory.service";
@@ -254,14 +267,13 @@ import {
 } from "~/modules/invoicing/invoicing.service";
 import { canEditChangeNoticeEngineering } from "~/modules/items/items.models";
 import {
-  cascadeItemTrackingType,
   createMakeMethodVersion,
   createRevision,
   deleteChangeNotice,
   deleteItem,
   type getItem,
-  getLockVerdict,
   insertChangeNotice,
+  methodWriteRefusal,
   type ReleaseControl,
   requireChangeNoticeEditable,
   updateDefaultRevision,
@@ -298,7 +310,10 @@ import type {
 } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
-import { getPermissionCacheKey } from "~/modules/users/users.service";
+import {
+  getItarCertificationStatus,
+  getPermissionCacheKey
+} from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
@@ -323,6 +338,9 @@ import type {
   subsidiaryValidator
 } from "./settings.models";
 import { companyValidator, type customFieldValidator } from "./settings.models";
+import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
+
+const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
 
@@ -972,7 +990,6 @@ export async function upsertDocumentTemplate(
 ) {
   const { companyId, userId } = documentTemplate;
   const now = datetime.timestamp();
-  const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
 
   await withTransaction(db, async (trx) => {
     if (header) {
@@ -1468,6 +1485,58 @@ export async function setLocationResponsibleEmployee(
 }
 
 /**
+ * Set a location's goods-in storage units (null clears one). The Kysely handle
+ * bypasses row-level security, so the caller checks `resources` update.
+ * Undefined when the location is not the company's; "sameUnit" when the two
+ * would be one unit.
+ */
+export async function setLocationGoodsInStorage(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    inspectionStorageUnitId?: string | null;
+    rejectedStorageUnitId?: string | null;
+    userId: string;
+  }
+) {
+  return withTransaction(db, async (trx) => {
+    const stored = await trx
+      .selectFrom("location")
+      .select(["inspectionStorageUnitId", "rejectedStorageUnitId"])
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!stored) return undefined;
+    const inspection =
+      args.inspectionStorageUnitId === undefined
+        ? stored.inspectionStorageUnitId
+        : args.inspectionStorageUnitId;
+    const rejected =
+      args.rejectedStorageUnitId === undefined
+        ? stored.rejectedStorageUnitId
+        : args.rejectedStorageUnitId;
+    if (inspection && inspection === rejected) return "sameUnit" as const;
+    return trx
+      .updateTable("location")
+      .set({
+        ...(args.inspectionStorageUnitId !== undefined
+          ? { inspectionStorageUnitId: args.inspectionStorageUnitId }
+          : {}),
+        ...(args.rejectedStorageUnitId !== undefined
+          ? { rejectedStorageUnitId: args.rejectedStorageUnitId }
+          : {}),
+        updatedBy: args.userId
+      })
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .returning("id")
+      .executeTakeFirst();
+  });
+}
+
+/**
  * Upsert one (location, item group) ownership cell; clearing the employee
  * DELETES the row (unset → inherit up the tree, matching printers).
  */
@@ -1592,7 +1661,7 @@ export async function unpackBackupArchive(
   }
   return { name, assetErrors };
 }
-const log = getLogger("erp", "backups");
+const log = getLogger("erp", "settings", "backups");
 
 /**
  * Backups are a Business/Enterprise feature (`BACKUPS`), plus an escape hatch for
@@ -1637,10 +1706,13 @@ export async function getCompanyBackups(
     try {
       catalog = await getCompanyTableCatalog(db);
     } catch (err) {
-      log.warn("Backups: live compatibility unavailable — listing without it", {
-        companyId,
-        error: err instanceof Error ? err.message : String(err)
-      });
+      log.warning(
+        "Backups: live compatibility unavailable — listing without it",
+        {
+          companyId,
+          error: err
+        }
+      );
     }
   }
 
@@ -1746,7 +1818,7 @@ export async function purgeCorruptedRows(
         company.data.companyGroupId ?? null
       )
     );
-  log.warn("Backups: purged out-of-scope rows before restore", {
+  log.warning("Backups: purged out-of-scope rows before restore", {
     companyId,
     deleted: result.deleted
   });
@@ -1937,6 +2009,7 @@ export async function buildPreviewProps(
         terms,
         payment,
         shipping,
+        shippingTerms,
         ar
       ] = await Promise.all([
         getSalesInvoice(client, id),
@@ -1946,6 +2019,7 @@ export async function buildPreviewProps(
         getSalesTerms(client, companyId),
         getPaymentTermsList(client, companyId),
         getShippingMethodsList(client, companyId),
+        getShippingTermsList(client, companyId),
         getAccountsReceivableBillingAddress(client, companyId)
       ]);
       if (!invoice.data) return null;
@@ -1961,7 +2035,8 @@ export async function buildPreviewProps(
           : null,
         terms: (terms?.data?.salesTerms ?? {}) as JSONContent,
         paymentTerms: payment.data ?? [],
-        shippingMethods: shipping.data ?? []
+        shippingMethods: shipping.data ?? [],
+        shippingTerms: shippingTerms.data ?? []
       };
     }
     case "salesOrder": {
@@ -2031,7 +2106,8 @@ export async function buildPreviewProps(
         shipment,
         terms,
         paymentTerms,
-        shipping
+        shipping,
+        timeZone
       ] = await Promise.all([
         getQuote(client, id),
         getQuoteLines(client, id),
@@ -2041,7 +2117,8 @@ export async function buildPreviewProps(
         getQuoteShipment(client, id),
         getSalesTerms(client, companyId),
         getPaymentTermsList(client, companyId),
-        getShippingMethodsList(client, companyId)
+        getShippingMethodsList(client, companyId),
+        getCompanyTimeZone(client, companyId)
       ]);
       if (!quote.data) return null;
       // The document's own stamped rate — never a live lookup, so a reprint
@@ -2051,6 +2128,7 @@ export async function buildPreviewProps(
       return {
         ...base,
         exchangeRate,
+        printDate: datetime.today(timeZone).toString(),
         quote: quote.data,
         quoteLines: lines.data ?? [],
         quoteLinePrices: prices.data ?? [],
@@ -2092,6 +2170,10 @@ export {
 type CompanyLogoPaths = {
   logoLight: string | null;
   logoLightIcon: string | null;
+  /** The label's `company.*` variables, read in the same query. */
+  name: string;
+  city: string | null;
+  countryCode: string | null;
 };
 
 /**
@@ -2109,7 +2191,7 @@ export async function getCompanyLogoForLabel(
 ): Promise<CompanyLogoPaths | null> {
   const { data } = await client
     .from("company")
-    .select("logoLight, logoLightIcon")
+    .select("logoLight, logoLightIcon, name, city, countryCode")
     .eq("id", companyId)
     .maybeSingle();
 
@@ -2122,10 +2204,13 @@ export async function getCompanyLogoForLabel(
 
   return {
     logoLight: expand(data.logoLight),
-    logoLightIcon: expand(data.logoLightIcon)
+    logoLightIcon: expand(data.logoLightIcon),
+    name: data.name,
+    city: data.city,
+    countryCode: data.countryCode
   };
 }
-const logger = getLogger("erp", "oee-devices");
+const logger = getLogger("erp", "settings", "oee-devices");
 
 // Picking a work center revalidates the tab, and a mapping change does not
 // change the provider's device list. A short TTL keeps those revalidations off
@@ -2498,7 +2583,6 @@ export async function getCachedCompanyIntegrations(
     // Fallback to old key format for backwards compatibility
     cached = await redis.get(cacheKey);
     if (cached !== null && cached !== undefined) {
-      // Log the type and content for debugging
       logger.info("Cache hit", {
         cacheKey,
         type: typeof cached,
@@ -3471,6 +3555,27 @@ export async function saveCompanySettings(
   return error ? ctx.error("internal", failure, error) : null;
 }
 
+/**
+ * Writes the company's settings row on a Kysely handle, so an operation can
+ * write it in one transaction with another table. Bypasses row-level security:
+ * the operation's permission is the gate. False when the row was not written.
+ */
+export async function saveCompanySettingsIn(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  fields: CompanySettingsUpdate
+): Promise<boolean> {
+  const changes = sentFields(fields);
+  if (Object.keys(changes).length === 0) return true;
+  const row = await db
+    .updateTable("companySettings")
+    .set(changes)
+    .where("id", "=", companyId)
+    .returning("id")
+    .executeTakeFirst();
+  return row !== undefined;
+}
+
 const timekeepingLogger = getLogger("erp", "settings", "time");
 
 /**
@@ -3770,7 +3875,7 @@ export function resolveShippingDefault({
   }
   return candidates[0]!.id;
 }
-const seedCompanyLogger = getLogger("erp", "seed-company");
+const seedCompanyLogger = getLogger("erp", "settings", "seed-company");
 
 export const seedCompanyInput = z.object({
   parentCompanyId: z.string().optional(),
@@ -3792,7 +3897,7 @@ export async function seedCompany(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  seedCompanyLogger.info({
+  seedCompanyLogger.info("Seeding a company", {
     companyId,
     userId,
     parentCompanyId,
@@ -3986,6 +4091,17 @@ export async function seedCompany(
         )
         .execute();
 
+      await trx
+        .insertInto("supplierStage")
+        .values(
+          supplierStages.map((name) => ({
+            name,
+            companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+
       // scrap reason codes
       await trx
         .insertInto("scrapReason")
@@ -4017,9 +4133,22 @@ export async function seedCompany(
         .values(paymentTerms.map((pt) => ({ ...pt, companyId })))
         .execute();
 
+      // Every standard unit, those of the company's measurement system
+      // active. The company-insert interceptor sets useMetric from the
+      // company's country.
+      const measurement = await trx
+        .selectFrom("companySettings")
+        .select("useMetric")
+        .where("id", "=", companyId)
+        .executeTakeFirst();
       await trx
         .insertInto("unitOfMeasure")
-        .values(unitOfMeasures.map((uom) => ({ ...uom, companyId })))
+        .values(
+          seedUnitsOfMeasure(measurement?.useMetric ?? false).map((uom) => ({
+            ...uom,
+            companyId
+          }))
+        )
         .execute();
 
       await trx
@@ -4488,10 +4617,16 @@ function escapeAttribute(value: string) {
 }
 
 type ItemRevisionStatus = Database["public"]["Enums"]["itemRevisionStatus"];
-const onshapeDraftMethodLogger = getLogger("erp", "onshape", "draft-method");
+const onshapeDraftMethodLogger = getLogger(
+  "erp",
+  "settings",
+  "onshape",
+  "draft-method"
+);
 
 /**
- * Why the assembly push must not write a parent's BOM, per item id. A Draft a
+ * Why the assembly push, or the sync connection's BOM sync (`syncMakeMethod`),
+ * must not write a parent's BOM, per item id: `methodWriteRefusal`. A Draft a
  * change notice holds is the notice's to change, whatever its stage. A
  * released (Production) revision follows `plmReleaseControl` through
  * `getLockVerdict`, as the BOM editor's `checkRevisionLock` does: `enforce`
@@ -4536,19 +4671,14 @@ export async function loadMethodWriteRefusals(
     "enforce") as ReleaseControl;
   for (const target of targets) {
     const changeOrderId = target.method.changeOrderId;
-    if (changeOrderId) {
-      const number = noticeNumber.get(changeOrderId);
-      reasons.set(
-        target.itemId,
-        `its make method is a Draft on ${number ? `change notice ${number}` : "a change notice"}. Change the BOM there.`
-      );
-      continue;
-    }
-    const verdict = getLockVerdict({
-      isLocked: target.revisionStatus === "Production",
-      releaseControl
-    });
-    if (!verdict.ok) reasons.set(target.itemId, verdict.message);
+    const reason = methodWriteRefusal(
+      { changeOrderId, revisionStatus: target.revisionStatus },
+      {
+        noticeNumber: changeOrderId ? noticeNumber.get(changeOrderId) : null,
+        releaseControl
+      }
+    );
+    if (reason) reasons.set(target.itemId, reason);
   }
   return reasons;
 }
@@ -4704,6 +4834,8 @@ async function carryLineOwnership(
       .select(["id", "itemId", "order", "quantity"])
       .where("makeMethodId", "=", makeMethodId)
       .where("companyId", "=", companyId)
+      // A correction's materials are not BOM lines Onshape owns.
+      .where("methodCorrectionId", "is", null)
       .execute();
   const [sourceLines, targetLines] = [
     await lines(sourceMethodId),
@@ -4748,7 +4880,7 @@ export type OwnedMethodLine = {
   /** Ownership row metadata; `makeMethodId` names the line's method. */
   metadata: Record<string, unknown>;
 };
-const onshapePushLogger = getLogger("erp", "onshape", "push");
+const onshapePushLogger = getLogger("erp", "settings", "onshape", "push");
 
 /**
  * Replace an item's Onshape link in one transaction: delete any row for this
@@ -4947,6 +5079,68 @@ export type OpenReleaseNotice = {
   changeNoticeId: string;
   affectedCount: number;
 };
+
+/**
+ * Revisions held by a change notice whose engineering is locked
+ * (Implementation onward, or awaiting approval), by item id, with the reason.
+ * Release clears `changeOrderId`, so a set one is a current hold.
+ */
+export async function loadLockedRevisions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[]
+): Promise<
+  { data: Map<string, string>; error: null } | { data: null; error: string }
+> {
+  const lockedByItemId = new Map<string, string>();
+  if (itemIds.length === 0) return { data: lockedByItemId, error: null };
+  const held = await selectInBatches(itemIds, (batch) =>
+    client
+      .from("makeMethod")
+      .select("itemId, changeOrderId, changeOrder(changeOrderId)")
+      .eq("companyId", companyId)
+      .in("itemId", batch)
+      .not("changeOrderId", "is", null)
+  );
+  if (held.error) return { data: null, error: held.error.message };
+  const noticeIds = [
+    ...new Set(
+      held.data.flatMap((method) =>
+        method.changeOrderId ? [method.changeOrderId] : []
+      )
+    )
+  ];
+  // One check per notice; a release's revisions share one or two.
+  const lockByNoticeId = new Map(
+    await Promise.all(
+      noticeIds.map(
+        async (changeNoticeId) =>
+          [
+            changeNoticeId,
+            (
+              await requireChangeNoticeEditable(client, {
+                changeNoticeId,
+                companyId,
+                scope: "engineering"
+              })
+            )?.error.message ?? null
+          ] as const
+      )
+    )
+  );
+  for (const method of held.data) {
+    const lock = method.changeOrderId
+      ? lockByNoticeId.get(method.changeOrderId)
+      : null;
+    if (!lock || lockedByItemId.has(method.itemId)) continue;
+    const notice = method.changeOrder?.changeOrderId;
+    lockedByItemId.set(
+      method.itemId,
+      notice ? `change notice ${notice}: ${lock}` : lock
+    );
+  }
+  return { data: lockedByItemId, error: null };
+}
 
 /**
  * The notice an earlier push of this release made, while it still takes items:
@@ -5218,14 +5412,9 @@ const STANDARD_FIELD_WRITERS: Record<
       })
       .eq("id", ctx.itemId)
       .eq("companyId", ctx.companyId);
-    if (updated.error) return updated.error.message;
-    await cascadeItemTrackingType(ctx.db, {
-      itemIds: [ctx.itemId],
-      companyId: ctx.companyId,
-      newType: write.itemTrackingType,
-      userId: ctx.userId
-    });
-    return null;
+    // The database gives the new flags to the open documents in the same
+    // statement (`sync_item_tracking_type_change`), or refuses the change.
+    return updated.error ? updated.error.message : null;
   },
   itemColumn: async (ctx, write) => {
     const updated = await updateItemColumns(ctx.client, {
@@ -5332,7 +5521,7 @@ export async function applyExistingItemFields(
   }
   return { values: merged?.ok ? merged.values : null, error: null };
 }
-const onshapeOauthLogger = getLogger("erp", "onshape", "oauth");
+const onshapeOauthLogger = getLogger("erp", "settings", "onshape", "oauth");
 
 /** Absolute integrations-page URL on this request's origin. */
 function integrationsUrl(request: Request) {
@@ -5343,6 +5532,86 @@ function integrationsUrl(request: Request) {
   }
 
   return `${requestUrl.origin}${path.to.integrations}`;
+}
+
+/**
+ * The companies this user can move the Onshape panel to. Service role: the
+ * connection's SELECT needs settings view, which a parts-only user lacks.
+ */
+export async function getOnshapePanelCompanies(
+  client: SupabaseClient<Database>,
+  userId: string,
+  currentCompanyId: string
+) {
+  const memberships = await client
+    .from("companies")
+    .select("id, name, companyGroupId, role")
+    .eq("userId", userId)
+    .order("name");
+  if (memberships.error) {
+    return { data: null, error: memberships.error };
+  }
+
+  const serviceRole = getCarbonServiceRole();
+  const connected = await selectInBatches(
+    memberships.data.flatMap(({ id }) => (id ? [id] : [])),
+    (batch) =>
+      serviceRole
+        .from("companyIntegration")
+        .select("companyId")
+        .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+        .eq("active", true)
+        .in("companyId", batch),
+    { orderBy: "companyId" }
+  );
+  if (connected.error) {
+    return { data: null, error: connected.error };
+  }
+
+  return {
+    data: panelCompanyChoices(
+      memberships.data,
+      new Set(connected.data.map(({ companyId }) => companyId)),
+      currentCompanyId
+    ),
+    error: null
+  };
+}
+
+/**
+ * The app shell's MFA and ITAR gates for one company: the panel skips the
+ * shell, so its sign-in and company switch apply them here. A failed read
+ * answers `unavailable`, never `open`.
+ */
+export async function getOnshapePanelAccountGate(
+  client: SupabaseClient<Database>,
+  account: {
+    companyId: string;
+    userId: string;
+    email: string;
+    ssoProviderId?: string;
+  }
+): Promise<"open" | "setup-required" | "unavailable"> {
+  const { companyId, userId, email, ssoProviderId } = account;
+  const [companySettings, itar] = await Promise.all([
+    getCompanySettings(client, companyId),
+    CONTROLLED_ENVIRONMENT
+      ? getItarCertificationStatus(client, companyId, userId)
+      : Promise.resolve({ entityCertified: true, userCertified: true })
+  ]);
+  if (companySettings.error) return "unavailable";
+
+  const itarBlocked =
+    CONTROLLED_ENVIRONMENT &&
+    ((requiresItarEntityCertification(email) && !itar.entityCertified) ||
+      !itar.userCertified);
+  const mfaRequired =
+    (CONTROLLED_ENVIRONMENT || companySettings.data?.requireMfa === true) &&
+    !ssoProviderId;
+  return itarBlocked ||
+    (mfaRequired && !(await userHasVerifiedTotpFactor(userId)))
+    ? "setup-required"
+    : "open";
 }
 
 /**
@@ -6043,11 +6312,10 @@ export const onshapeAssemblyPushInput = z.object({
   planId: z.string().min(1),
   edits: z.record(z.string(), itemEditSchema).default({}),
   excluded: z.array(z.string().min(1)).default([]),
-  /**
-   * Part numbers whose STEP model to export. Omitted: every row that offers
-   * one and is not excluded.
-   */
-  modelRows: z.array(z.string().min(1)).optional()
+  /** Part numbers whose STEP model the reviewer picked. */
+  modelRows: z.array(z.string().min(1)).default([]),
+  /** Part numbers whose drawings the reviewer picked. */
+  drawingRows: z.array(z.string().min(1)).default([])
 });
 
 type AssemblyPushSummary = {
@@ -6064,10 +6332,15 @@ type AssemblyPushSummary = {
   methodsTouched: number;
   /** Parent part numbers whose BOM went into a new Draft. */
   draftVersionsCreated: string[];
-  /** Child rows' STEP models queued for export from Onshape. */
   modelsQueued: number;
-  /** Rows whose item did not end up linked to the row's source. */
+  drawingsQueued: number;
+  /** Picked rows whose item did not end up linked to the row's source. */
   assetsSkipped: number;
+  /** Queued files current at review; the export skips those still current. */
+  modelsCurrent: number;
+  drawingsCurrent: number;
+  /** The assembly's own model, when queued; "current" as of the review. */
+  rootModel?: "exporting" | "current";
   skipped: string[];
   errors: string[];
 };
@@ -6162,7 +6435,10 @@ export async function pushOnshapeAssembly(
     methodsTouched: 0,
     draftVersionsCreated: [],
     modelsQueued: 0,
+    drawingsQueued: 0,
     assetsSkipped: 0,
+    modelsCurrent: 0,
+    drawingsCurrent: 0,
     skipped: [...plan.skipped],
     errors: []
   };
@@ -6944,9 +7220,11 @@ export async function pushOnshapeAssembly(
       planId,
       plan,
       excluded,
-      modelRows: input.modelRows,
+      modelRows: new Set(input.modelRows),
+      drawingRows: new Set(input.drawingRows),
       itemByReadableId,
       linkedSourceByItemId: childLinks.linkedSourceByItemId,
+      // Released: the root keeps its release's link and files.
       root: null,
       summary
     });
@@ -7011,6 +7289,7 @@ export async function pushOnshapeAssembly(
       },
       { id: `${planId}:${rootItem.id}:${elementId}` }
     );
+    summary.rootModel = plan.root.modelCurrent ? "current" : "exporting";
   } catch {
     summary.errors.push(
       `${root.partNumber}: pushed, but the model export couldn't be queued. Push again to retry the export.`
@@ -7023,7 +7302,8 @@ export async function pushOnshapeAssembly(
     planId,
     plan,
     excluded,
-    modelRows: input.modelRows,
+    modelRows: new Set(input.modelRows),
+    drawingRows: new Set(input.drawingRows),
     itemByReadableId,
     linkedSourceByItemId: childLinks.linkedSourceByItemId,
     // Its drawings go where its model goes: only when the link holds.
@@ -7128,12 +7408,9 @@ type DrawingTargetRow = NonNullable<
 >["targets"][number];
 
 /**
- * Queues the child rows' STEP models and every row's drawing PDFs: the rows
- * in `modelRows`, or with none given, every row that offers a model and is
- * not excluded. A row is queued only when its item ended up linked to the
- * row's Onshape source; any other counts in `assetsSkipped`. A part number
- * the plan did not offer is ignored. `root` takes the drawings of the
- * assembly itself; its model is queued with every push, not here.
+ * Queues the picked models and drawings of rows whose item ended up linked
+ * to the row's source; other picks count in `assetsSkipped`. The root's
+ * model is queued with every push, not here.
  */
 async function queueAssemblyAssets(input: {
   companyId: string;
@@ -7141,7 +7418,8 @@ async function queueAssemblyAssets(input: {
   planId: string;
   plan: StoredAssemblyPlan;
   excluded: Set<string>;
-  modelRows: string[] | undefined;
+  modelRows: Set<string>;
+  drawingRows: Set<string>;
   itemByReadableId: Map<string, { id: string }>;
   linkedSourceByItemId: Map<string, string>;
   /** Null when the push leaves the root as its release left it. */
@@ -7149,29 +7427,31 @@ async function queueAssemblyAssets(input: {
   summary: AssemblyPushSummary;
 }): Promise<void> {
   const { plan, summary } = input;
+  if (input.modelRows.size === 0 && input.drawingRows.size === 0) return;
 
-  const picked =
-    input.modelRows?.length === 0
-      ? { models: [], unlinked: 0 }
-      : assemblyAssetRows({
-          plan,
-          modelRows: input.modelRows ? new Set(input.modelRows) : undefined,
-          excluded: input.excluded,
-          linkFor: (partNumber, source) => {
-            const item = input.itemByReadableId.get(partNumber);
-            const externalId = externalIdForBomLine({
-              documentId: source.documentId,
-              elementId: source.elementId,
-              partId: source.partId,
-              configuration: source.configuration ?? undefined
-            });
-            return item &&
-              externalId &&
-              input.linkedSourceByItemId.get(item.id) === externalId
-              ? { itemId: item.id, externalId }
-              : null;
-          }
-        });
+  const picked = assemblyAssetRows({
+    plan,
+    modelRows: input.modelRows,
+    drawingRows: input.drawingRows,
+    excluded: input.excluded,
+    root: input.root
+      ? { ...input.root, configuration: input.root.configuration ?? null }
+      : null,
+    linkFor: (partNumber, source) => {
+      const item = input.itemByReadableId.get(partNumber);
+      const externalId = externalIdForBomLine({
+        documentId: source.documentId,
+        elementId: source.elementId,
+        partId: source.partId,
+        configuration: source.configuration ?? undefined
+      });
+      return item &&
+        externalId &&
+        input.linkedSourceByItemId.get(item.id) === externalId
+        ? { itemId: item.id, externalId }
+        : null;
+    }
+  });
   summary.assetsSkipped += picked.unlinked;
 
   // Every assembly of the push, so a drawing of one never lands on its parts.
@@ -7217,29 +7497,29 @@ async function queueAssemblyAssets(input: {
       failed = true;
     }
   }
-  // Every row's drawings in one search, apart from the models' batches.
-  const drawingTargets: DrawingTargetRow[] = [
-    ...(input.root ? [input.root] : []),
-    ...picked.models.map(({ externalId: _externalId, ...row }) => row)
-  ];
-  if (
-    drawingTargets.length > 0 &&
-    !(await queueDrawingEvents({
+  // The picked rows' drawings in one search, apart from the models' batches.
+  if (picked.drawingTargets.length > 0) {
+    const queued = await queueDrawingEvents({
       companyId: input.companyId,
       userId: input.userId,
       planId: input.planId,
       idPrefix: `${input.planId}:drawings`,
-      targets: drawingTargets,
+      targets: picked.drawingTargets,
       assemblies
-    }))
-  ) {
-    failed = true;
+    });
+    if (queued) summary.drawingsQueued += picked.drawings;
+    else failed = true;
   }
   if (failed) {
+    // The plan is consumed, so a re-push starts a review with nothing picked.
     summary.errors.push(
-      "STEP models and drawings of the parts couldn't be queued. Push again to retry."
+      "STEP models or drawings couldn't be queued. Re-push the assembly and pick them again."
     );
+    return;
   }
+  // The files the review marked current: queued, but the export skips them.
+  summary.modelsCurrent += picked.current.models;
+  summary.drawingsCurrent += picked.current.drawings;
 }
 
 /**
@@ -7876,68 +8156,27 @@ export async function pushOnshapeRelease(
     }
   }
 
-  // A reused revision held by a change notice whose engineering content is
-  // locked (Implementation onward, or awaiting approval) takes no writes: not
-  // its fields, not its BOM. A method's changeOrderId is cleared at release, so
-  // a set one means a notice holds the item now.
-  const lockedByItemId = new Map<string, string>();
-  const reusedItemIds = decisions.flatMap((decision) =>
-    decision.kind === "reuse" ? [decision.row.id] : []
-  );
-  if (reusedItemIds.length > 0) {
-    const held = await selectInBatches(reusedItemIds, (batch) =>
-      client
-        .from("makeMethod")
-        .select("itemId, changeOrderId, changeOrder(changeOrderId)")
-        .eq("companyId", companyId)
-        .in("itemId", batch)
-        .not("changeOrderId", "is", null)
-    );
-    if (held.error) {
-      return panelReply(
-        {
-          error: `Couldn't check the change notices that hold the existing revisions (${held.error.message}); nothing was written. Try again.`
-        },
-        { status: 500 }
-      );
-    }
-    const noticeIds = [
-      ...new Set(
-        held.data.flatMap((method) =>
-          method.changeOrderId ? [method.changeOrderId] : []
-        )
+  // A locked notice's revisions take no writes: reused rows, and the revision
+  // outside the release that a drawing attaches to.
+  const lockedRevisions = await loadLockedRevisions(client, companyId, [
+    ...new Set([
+      ...decisions.flatMap((decision) =>
+        decision.kind === "reuse" ? [decision.row.id] : []
+      ),
+      ...drawingItems.flatMap((drawing) =>
+        drawing.drawingOf?.itemId ? [drawing.drawingOf.itemId] : []
       )
-    ];
-    // One check per notice; a release's revisions share one or two.
-    const lockByNoticeId = new Map(
-      await Promise.all(
-        noticeIds.map(
-          async (changeNoticeId) =>
-            [
-              changeNoticeId,
-              (
-                await requireChangeNoticeEditable(client, {
-                  changeNoticeId,
-                  companyId,
-                  scope: "engineering"
-                })
-              )?.error.message ?? null
-            ] as const
-        )
-      )
+    ])
+  ]);
+  if (lockedRevisions.error !== null) {
+    return panelReply(
+      {
+        error: `Couldn't check the change notices that hold the existing revisions (${lockedRevisions.error}); nothing was written. Try again.`
+      },
+      { status: 500 }
     );
-    for (const method of held.data) {
-      const lock = method.changeOrderId
-        ? lockByNoticeId.get(method.changeOrderId)
-        : null;
-      if (!lock || lockedByItemId.has(method.itemId)) continue;
-      const notice = method.changeOrder?.changeOrderId;
-      lockedByItemId.set(
-        method.itemId,
-        notice ? `change notice ${notice}: ${lock}` : lock
-      );
-    }
   }
+  const lockedByItemId = lockedRevisions.data;
 
   // The notice exists before the first item write, so each item is staged as it
   // is written. A second document of the same release reuses the open notice.
@@ -8045,7 +8284,7 @@ export async function pushOnshapeRelease(
         // Also keeps the BOM-child pass from writing its fields.
         fieldEditsApplied.add(item.partNumber);
         summary.skipped.push(
-          `${item.partNumber} Rev ${item.revision}: ${lock} Its fields and BOM were left as they are.`
+          `${item.partNumber} Rev ${item.revision}: ${lock} Its fields, BOM, model and drawings were left as they are.`
         );
         continue;
       }
@@ -8388,6 +8627,8 @@ export async function pushOnshapeRelease(
             .select("id, makeMethodId, itemId, order, quantity")
             .eq("companyId", companyId)
             .in("makeMethodId", batch)
+            // Never dedupe away a correction's material.
+            .is("methodCorrectionId", null)
         ),
         selectInBatches(targetMethodIds, (batch) =>
           serviceRole
@@ -8638,7 +8879,8 @@ export async function pushOnshapeRelease(
   }> = [];
   for (const item of modelItems) {
     const row = revisionItemByPartNumber.get(item.partNumber);
-    if (!row) continue;
+    // A revision a locked notice holds takes no model; its skip is reported.
+    if (!row || lockedByItemId.has(row.id)) continue;
     assetTargets.push({
       item,
       itemId: row.id,
@@ -8661,6 +8903,18 @@ export async function pushOnshapeRelease(
             }, which isn't in Carbon; push its release first`
           : `${drawing.partNumber}: drawing has no matching model item in this release`
       );
+      continue;
+    }
+    const lock = lockedByItemId.get(targetId);
+    if (lock) {
+      // A model in the release already reported its own skip.
+      if (model && targetId === model.itemId) {
+        summary.skipped.push(
+          `${model.partNumber}${
+            model.revision ? ` Rev ${model.revision}` : ""
+          }: ${lock} Drawing ${drawing.partNumber} was not added to it.`
+        );
+      }
       continue;
     }
     assetTargets.push({ item: drawing, itemId: targetId, kind: "drawing" });
@@ -8765,6 +9019,7 @@ export async function pushOnshapeRelease(
 }
 export const onshapePanelFieldsLogger = getLogger(
   "erp",
+  "settings",
   "onshape",
   "panel-fields"
 );
@@ -8777,7 +9032,9 @@ const entrySchema = z.object({
   valueType: z.string().min(1),
   target: z.discriminatedUnion("kind", [
     z.object({ kind: z.literal("customField"), fieldId: z.string().min(1) }),
-    z.object({ kind: z.literal("item"), field: z.enum(STANDARD_FIELD_IDS) })
+    z.object({ kind: z.literal("item"), field: z.enum(STANDARD_FIELD_IDS) }),
+    z.object({ kind: z.literal("identity"), field: z.enum(IDENTITY_FIELDS) }),
+    z.object({ kind: z.literal("bomLine"), field: z.enum(BOM_LINE_FIELDS) })
   ]),
   mode: modeSchema,
   translations: z
@@ -8868,6 +9125,14 @@ export async function saveOnshapePropertyMap(
 
   // The editor hides unmappable rows; this guards a hand-made payload.
   for (const entry of entries) {
+    // A source for Part number, Item, … writes no field: its own rules.
+    if (entry.target.kind === "identity" || entry.target.kind === "bomLine") {
+      const errors = standardSourceErrors(entry);
+      if (errors.length > 0) {
+        fieldErrors.push({ key: entry.onshapePropertyId, errors });
+      }
+      continue;
+    }
     if (!Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType)) {
       fieldErrors.push({
         key: entry.onshapePropertyId,
@@ -9117,6 +9382,7 @@ function methodLinesMissingPullFrom(
         .on("component.companyId", "=", companyId)
     )
     .where("methodMaterial.companyId", "=", companyId)
+    .where("methodMaterial.methodCorrectionId", "is", null)
     .where("methodMaterial.methodType", "!=", "Make to Order")
     .where("methodMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
     .where(
@@ -9385,4 +9651,170 @@ export async function getOpenJobsMissingStorageUnit(
   } catch (error) {
     return { data: null, error: error as Error };
   }
+}
+
+/**
+ * The record a document prints, for the "Edit document" modal: its readable
+ * number, whether it is locked, and the notes its Notes block prints. Read with
+ * the caller's client, so a record the caller cannot see is not found.
+ */
+export async function getDocumentEditRecord(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType: DocumentEditType,
+  documentId: string
+) {
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+  const { data, error } = await client
+    .from(record.table as "purchaseOrder")
+    .select(
+      ["status", record.readableId, record.notesColumn]
+        .filter(Boolean)
+        .join(", ")
+    )
+    .eq("id", documentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (error || !data) return { data: null, error };
+  const row = data as unknown as Record<string, unknown>;
+  return {
+    data: {
+      label: String(row[record.readableId] ?? documentId),
+      locked: record.isLocked(row.status as string | null),
+      notes: record.notesColumn
+        ? ((row[record.notesColumn] as JSONContent | null) ?? null)
+        : null
+    },
+    error: null
+  };
+}
+
+/**
+ * Save one document's edits and, when given, its notes, together. An empty edit
+ * deletes the row, so the document follows the template again. Writes nothing and
+ * says why when the record is locked or gone.
+ */
+export async function saveDocumentEditRow(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    documentId: string;
+    edit: DocumentEdit;
+    notes?: JSONContent | null;
+    userId: string;
+  }
+) {
+  const { companyId, documentType, documentId, edit, userId } = args;
+  const now = datetime.timestamp();
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+
+  return withTransaction(db, async (trx) => {
+    // Lock the record row while the edit is written: a finalize that runs at the
+    // same time waits for this save, or this save sees the record locked.
+    const current = await trx
+      .selectFrom(record.table as "purchaseOrder")
+      .select("status")
+      .where("id", "=", documentId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!current) return "notFound" as const;
+    if (record.isLocked(current.status)) return "locked" as const;
+
+    if (isEmptyDocumentEdit(edit)) {
+      await trx
+        .deleteFrom("documentEdit")
+        .where("companyId", "=", companyId)
+        .where("documentType", "=", documentType)
+        .where("documentId", "=", documentId)
+        .execute();
+    } else {
+      await trx
+        .insertInto("documentEdit")
+        .values({
+          companyId,
+          documentType,
+          documentId,
+          blocks: jsonb(edit.blocks),
+          settings: jsonb(edit.settings),
+          createdBy: userId
+        })
+        .onConflict((oc) =>
+          oc.columns(["companyId", "documentType", "documentId"]).doUpdateSet({
+            blocks: jsonb(edit.blocks),
+            settings: jsonb(edit.settings),
+            updatedBy: userId,
+            updatedAt: now
+          })
+        )
+        .execute();
+    }
+
+    if (args.notes !== undefined && record.notesColumn) {
+      // The record's own notes column: the same text its page edits.
+      await trx
+        .updateTable(record.table as "purchaseOrder")
+        .set({
+          [record.notesColumn]: jsonb(args.notes ?? {}),
+          updatedBy: userId,
+          updatedAt: now
+        } as never)
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    return "saved" as const;
+  });
+}
+
+/**
+ * Give a new copy of a document the same edits (a quote revision prints like
+ * the quote it revises). Nothing happens when the source has none.
+ */
+export async function copyDocumentEdit(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    fromId: string;
+    toId: string;
+    userId: string;
+    /** The copy's id for each of the record's row ids. */
+    rowIds: ReadonlyMap<string, string>;
+  }
+) {
+  const source = await db
+    .selectFrom("documentEdit")
+    .select(["blocks", "settings"])
+    .where("companyId", "=", args.companyId)
+    .where("documentType", "=", args.documentType)
+    .where("documentId", "=", args.fromId)
+    .executeTakeFirst();
+  if (!source) return;
+
+  const settings = (source.settings ?? {}) as { valueEdits?: ValueEdits };
+  await db
+    .insertInto("documentEdit")
+    .values({
+      companyId: args.companyId,
+      documentType: args.documentType,
+      documentId: args.toId,
+      blocks: jsonb(source.blocks),
+      settings: jsonb(
+        settings.valueEdits
+          ? {
+              ...settings,
+              valueEdits: rewriteValueEditRowKeys(settings.valueEdits, (id) =>
+                args.rowIds.get(id)
+              )
+            }
+          : settings
+      ),
+      createdBy: args.userId
+    })
+    .onConflict((oc) =>
+      oc.columns(["companyId", "documentType", "documentId"]).doNothing()
+    )
+    .execute();
 }

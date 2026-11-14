@@ -4,9 +4,10 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { isServiceJobLocked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { Navigate, useNavigate, useParams } from "react-router";
+import { Navigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { serviceJobTimeValidator } from "~/modules/service/service.models";
 import type { ServiceJobDetail, ServiceJobTime } from "~/modules/service/types";
@@ -29,7 +30,7 @@ export async function action(args: ActionFunctionArgs) {
 export default function ServiceJobTimeRoute() {
   const { jobId, timeId } = useParams();
   if (!jobId || !timeId) throw new Error("Could not find jobId or timeId");
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.serviceJob(jobId));
   const routeData = useRouteData<{
     job: ServiceJobDetail;
     time: ServiceJobTime[];
@@ -52,7 +53,8 @@ export default function ServiceJobTimeRoute() {
         note: entry.note ?? ""
       }}
       isLocked={isServiceJobLocked(routeData?.job?.status)}
-      onClose={() => navigate(path.to.serviceJob(jobId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

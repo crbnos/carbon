@@ -16,7 +16,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -98,7 +98,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function ConvertOperatorRoute() {
   const { t } = useLingui();
   const { operator } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const formFetcher = useFetcher<Result>();
   const employeeTypeFetcher = useLoaderQuery<
     Awaited<ReturnType<typeof getEmployeeTypes>>
@@ -114,9 +114,9 @@ export default function ConvertOperatorRoute() {
 
   return (
     <Modal
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
-        if (!open) closeRoute();
+        if (!open) dialog.close();
       }}
     >
       <ModalOverlay />

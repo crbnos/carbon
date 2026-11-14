@@ -20,7 +20,7 @@ import {
   toStripeInvoiceLines
 } from "./connect-invoice";
 
-const logger = getLogger("stripe-connect");
+const logger = getLogger("stripe", "connect");
 
 type ServiceRole = SupabaseClient<Database>;
 

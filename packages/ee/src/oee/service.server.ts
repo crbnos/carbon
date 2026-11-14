@@ -30,6 +30,7 @@ type Result<T> = { data: T; error: null } | { data: null; error: string };
 
 const fail = (error: unknown): { data: null; error: string } => {
   if (error instanceof EntitlementError) throw error;
+  logger.error("OEE provider call failed", { error });
   return {
     data: null,
     error: error instanceof Error ? error.message : String(error)
@@ -126,7 +127,7 @@ export async function postEndedMachineEvents(
       logger.error("Failed to post a Machine event", {
         companyId: args.companyId,
         productionEventId,
-        error: posted.error.message
+        error: posted.error
       });
     }
   }

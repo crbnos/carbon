@@ -15,7 +15,7 @@ import { maintenanceMiddleware } from "@carbon/auth/middleware/maintenance.serve
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
-import { requestIdMiddleware } from "@carbon/logger/middleware.server";
+import { requestMiddleware } from "@carbon/logger/middleware.server";
 import { createInvalidationMiddleware } from "@carbon/query/cache";
 import {
   Button,
@@ -79,7 +79,7 @@ import { path } from "~/utils/path";
 import { getTheme, setTheme } from "./services/theme.server";
 
 export const middleware = [
-  requestIdMiddleware,
+  requestMiddleware,
   securityMiddleware,
   maintenanceMiddleware,
   formBodyMiddleware,

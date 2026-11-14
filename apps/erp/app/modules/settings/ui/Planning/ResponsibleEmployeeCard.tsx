@@ -233,6 +233,7 @@ function OwnershipRow({
           onChange={(selected) => onChange(selected)}
           isClearable
           placeholder={placeholder}
+          aria-label={t`Responsible employee for ${label}`}
         />
       </div>
     </div>

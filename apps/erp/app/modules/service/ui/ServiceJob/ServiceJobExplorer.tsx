@@ -119,7 +119,6 @@ export function ServiceJobExplorer({
   };
 
   const onDeleteClose = () => {
-    setSelectedChild(null);
     deleteDisclosure.onClose();
   };
 
@@ -177,7 +176,7 @@ export function ServiceJobExplorer({
           ))}
         </VStack>
       </VStack>
-      {deleteDisclosure.isOpen && selectedChild && (
+      {selectedChild && (
         <ConfirmDelete
           action={getDeleteAction(jobId, selectedChild)}
           fields={
@@ -328,8 +327,9 @@ function ServiceJobExplorerItem({
         </div>
       )}
 
-      {issuePartModal.isOpen && (
+      {node.key === "items" && (
         <ServiceJobAddPartModal
+          open={issuePartModal.isOpen}
           jobId={jobId}
           onClose={issuePartModal.onClose}
         />

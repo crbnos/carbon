@@ -7,15 +7,13 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getIndirectPool } from "@carbon/ee/indirect-rates.server";
-import { getLogger } from "@carbon/logger";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "indirect-pool-delete");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -27,14 +25,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const pool = await getIndirectPool(client, poolId, companyId);
   if (pool.error || !pool.data) {
-    logger.error("Failed to load an indirect pool", {
-      companyId,
-      poolId,
-      error: pool.error
-    });
     throw redirect(
       path.to.indirectPools,
-      await flash(request, error(pool.error, "Failed to load the pool"))
+      await flash(
+        request,
+        error(pool.error, "Failed to load the pool", { poolId })
+      )
     );
   }
 
@@ -57,7 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteIndirectPoolRoute() {
   const { poolId } = useParams();
   const { pool } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.indirectPools);
   const { t } = useLingui();
 
   if (!poolId) throw new Error("Pool ID was not found");
@@ -68,7 +64,8 @@ export default function DeleteIndirectPoolRoute() {
       action={path.to.deleteIndirectPool(poolId)}
       name={name}
       text={t`Are you sure you want to delete the pool: ${name}? This cannot be undone.`}
-      onCancel={() => navigate(path.to.indirectPools)}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

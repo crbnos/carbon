@@ -19,10 +19,14 @@ case "$(uname -s)" in
     ;;
 esac
 
-# Node 24.22.1+ required: the October 2026 security release, and the floor in
-# the root package.json `engines`. `sort -V -C` succeeds when the minimum sorts
-# first, so nightly and RC builds of a newer major still pass.
-NODE_MIN="24.22.1"
+# The Node floor is the root package.json's `engines.node` (">=X.Y.Z"), next
+# to this script. `sort -V -C` succeeds when the minimum sorts first, so
+# nightly and RC builds of a newer major still pass.
+NODE_MIN="$(sed -n 's/.*"node": *">=\([0-9.]*\)".*/\1/p' "$(dirname "$0")/../../../package.json")"
+if [[ -z "$NODE_MIN" ]]; then
+  printf '\033[1;31m✗\033[0m crbn could not read engines.node from the root package.json\n' >&2
+  exit 1
+fi
 if command -v node >/dev/null 2>&1; then
   node_ver="$(node -v)"
   node_num="${node_ver#v}"
@@ -38,11 +42,8 @@ else
   exit 1
 fi
 
-# ---------------------------------------------------------------------------
-# Output helpers (colors when stderr is a TTY).
 # All listings/errors go to stderr so they never get eval'd by the `crbn()`
 # shell function from setup.sh, which only consumes stdout.
-# ---------------------------------------------------------------------------
 
 if [[ -t 2 ]] && command -v tput >/dev/null 2>&1 && [[ "$(tput colors 2>/dev/null || echo 0)" -ge 8 ]]; then
   C_BOLD=$(tput bold);   C_DIM=$(tput dim);    C_RESET=$(tput sgr0)
@@ -59,10 +60,6 @@ warn()  { printf '%s!%s %s\n' "$C_YELLOW" "$C_RESET" "$*" >&2; }
 fail()  { printf '%s✗%s %s\n' "$C_RED"    "$C_RESET" "$*" >&2; }
 hdr()   { printf '\n%s%s%s\n' "$C_BOLD" "$*" "$C_RESET" >&2; }
 
-# ---------------------------------------------------------------------------
-# Repo discovery
-# ---------------------------------------------------------------------------
-
 repo_root() {
   # Each linked worktree has its own --show-toplevel. We want the *main*
   # checkout (where packages/dev lives), which is `--git-common-dir`'s parent.
@@ -77,61 +74,37 @@ repo_root() {
   dirname "$common_dir"
 }
 
-slugify_branch() {
-  # Mirrors packages/dev/src/worktree.ts:slugify — lowercase, replace
-  # non-[a-z0-9-] runs with `-`, trim/collapse `-`.
-  printf '%s' "$1" \
-    | tr '[:upper:]' '[:lower:]' \
-    | sed -E 's/[^a-z0-9-]+/-/g; s/^-+|-+$//g; s/-+/-/g'
-}
-
-delegate_ts() {
-  # Run citty entry through tsx. Prefer the current worktree's source so CLI
-  # changes in a branch are testable immediately; fall back to main checkout.
-  # tsx binary: prefer worktree's node_modules, then main's, then pnpx.
-  local wt_root main_root src tsx
+# The TypeScript CLI as a command line: the current worktree's source when
+# its deps are installed (so a branch's CLI changes run at once), else the
+# main checkout's; tsx from either, else pnpx.
+ts_cli() {
+  local wt_root main_root src
   wt_root="$(git rev-parse --show-toplevel 2>/dev/null)"
   main_root="$(repo_root)"
-
-  # Pick source: worktree first, but only if deps are installed (otherwise
-  # imports like `citty` fail). Falls back to main checkout.
   if [[ -n "$wt_root" && -f "$wt_root/packages/dev/src/main.ts" && -d "$wt_root/node_modules" ]]; then
     src="$wt_root/packages/dev/src/main.ts"
   else
     src="$main_root/packages/dev/src/main.ts"
   fi
-
-  # Pick tsx binary.
   if [[ -n "$wt_root" && -x "$wt_root/node_modules/.bin/tsx" ]]; then
-    tsx="$wt_root/node_modules/.bin/tsx"
+    TS_CLI=("$wt_root/node_modules/.bin/tsx" "$src")
   elif [[ -x "$main_root/node_modules/.bin/tsx" ]]; then
-    tsx="$main_root/node_modules/.bin/tsx"
+    TS_CLI=("$main_root/node_modules/.bin/tsx" "$src")
   else
-    exec pnpx tsx "$src" "$@"
+    TS_CLI=(pnpx tsx "$src")
   fi
-
-  exec "$tsx" "$src" "$@"
 }
 
-# ---------------------------------------------------------------------------
-# checkout <name> [-b] [--path PATH] [--base REF] [--up]
-#
-# Unified verb: jumps into an existing worktree, or creates one when needed.
-# Mirrors `git checkout` semantics:
-#
-#   crbn checkout <name>        Existing branch → worktree (create if missing,
-#                               cd into it). Falls back to `origin/<name>`
-#                               (auto-fetches) when no local branch exists.
-#                               No match → error.
-#
-#   crbn checkout -b <name>     Branch must NOT exist. Creates new branch
-#                               from --base (default HEAD) + worktree.
-#
-# All progress logs go to stderr; the only stdout is `cd '<path>'` for the
-# shell function in setup.sh to eval. Pass --up to chain `crbn up` after
-# creation (bypasses the eval-wrapper; user's cwd doesn't change but the
-# stack starts in the new worktree).
-# ---------------------------------------------------------------------------
+delegate_ts() { ts_cli; exec "${TS_CLI[@]}" "$@"; }
+run_ts() { ts_cli; "${TS_CLI[@]}" "$@"; }
+
+# Where `crbn checkout` puts a branch's worktree: the TypeScript CLI names it,
+# as `crbn new` does.
+worktree_path() { run_ts worktree-path "$1"; }
+
+# checkout: all progress logs go to stderr; the only stdout is `cd '<path>'`
+# for the shell function in setup.sh to eval. --up runs `crbn up` in the new
+# worktree without going through that eval, so the user's cwd doesn't change.
 
 checkout_usage() {
   cat >&2 <<'USAGE'
@@ -212,16 +185,13 @@ cmd_checkout() {
     return $?
   fi
 
-  local root parent base target
+  local root target
   root="$(repo_root)"
-  parent="$(dirname "$root")"
-  base="$(basename "$root")"
-  base="${base%%-[a-z0-9-]*}"  # strip prior `-<slug>` suffix
   if [[ -n "$custom_path" ]]; then
     target="$custom_path"
     [[ "$target" = /* ]] || target="$PWD/$target"
   else
-    target="$parent/${base}-$(slugify_branch "$name")"
+    target="$(worktree_path "$name")"
   fi
 
   local local_exists=0 existing_worktree=""
@@ -231,7 +201,6 @@ cmd_checkout() {
   existing_worktree="$(worktree_path_for_branch "$name")"
 
   if (( create_new )); then
-    # -b path: branch must not exist.
     if (( local_exists )); then
       fail "branch '$name' already exists locally — drop -b to use it"
       exit 1
@@ -242,18 +211,13 @@ cmd_checkout() {
     fi
     info "creating branch '$name' from ${C_BOLD}${base_ref}${C_RESET}"
     git -C "$root" worktree add -b "$name" "$target" "$base_ref" >&2
-    ok "worktree at $target"
-    do_post_create "$target"
-    printf "cd %q\n" "$target"
-    maybe_up "$target" "$do_up"
+    created "$target" "$do_up"
     return 0
   fi
 
-  # No -b: fast-path if the branch already has a worktree.
   if [[ -n "$existing_worktree" ]]; then
     info "worktree exists at ${C_DIM}${existing_worktree}${C_RESET}"
-    printf "cd %q\n" "$existing_worktree"
-    maybe_up "$existing_worktree" "$do_up"
+    enter "$existing_worktree" "$do_up"
     return 0
   fi
 
@@ -264,12 +228,10 @@ cmd_checkout() {
   main_branch="${main_branch#origin/}"
   if [[ "$name" == "$main_branch" ]]; then
     info "main checkout at ${C_DIM}${root}${C_RESET}"
-    printf "cd %q\n" "$root"
-    maybe_up "$root" "$do_up"
+    enter "$root" "$do_up"
     return 0
   fi
 
-  # Need to materialize a worktree. Resolve the ref locally or via origin.
   local resolved=""
   if (( local_exists )); then
     resolved="$name"
@@ -292,10 +254,7 @@ cmd_checkout() {
 
   info "git worktree add ${C_DIM}${target}${C_RESET}"
   git -C "$root" worktree add "$target" "$resolved" >&2
-  ok "worktree at $target"
-  do_post_create "$target"
-  printf "cd %q\n" "$target"
-  maybe_up "$target" "$do_up"
+  created "$target" "$do_up"
 }
 
 # Fetch a GitHub PR into a worktree whose branch pushes BACK to the PR.
@@ -305,14 +264,11 @@ cmd_checkout() {
 # `gh` is absent. Same stdout contract as cmd_checkout (only `cd '<path>'`).
 _checkout_pr() {
   local num="$1" do_up="$2"
-  local root parent base
+  local root
   root="$(repo_root)"
-  parent="$(dirname "$root")"
-  base="$(basename "$root")"
-  base="${base%%-[a-z0-9-]*}"
 
   if ! command -v gh >/dev/null 2>&1; then
-    _checkout_pr_no_gh "$num" "$do_up" "$root" "$parent" "$base"
+    _checkout_pr_no_gh "$num" "$do_up" "$root"
     return
   fi
 
@@ -327,16 +283,14 @@ _checkout_pr() {
   head_ref="${metadata%%$'\t'*}"
   title="${metadata#*$'\t'}"
   branch="$head_ref"
-  target="$parent/${base}-$(slugify_branch "$branch")"
+  target="$(worktree_path "$branch")"
   info "PR #${num} — ${C_BOLD}${title}${C_RESET} (${C_DIM}${head_ref}${C_RESET})"
 
-  # Fast-path: a worktree is already on this branch.
   local existing
   existing="$(worktree_path_for_branch "$branch")"
   if [[ -n "$existing" ]]; then
     info "worktree for PR #${num} exists at ${C_DIM}${existing}${C_RESET}"
-    printf "cd %q\n" "$existing"
-    maybe_up "$existing" "$do_up"
+    enter "$existing" "$do_up"
     return 0
   fi
 
@@ -354,25 +308,23 @@ _checkout_pr() {
     git -C "$root" worktree remove --force "$target" 2>/dev/null || true
     exit 1
   fi
-  ok "worktree at $target — \`git push\` updates PR #${num}"
-  do_post_create "$target"
-  printf "cd %q\n" "$target"
-  maybe_up "$target" "$do_up"
+  info "\`git push\` updates PR #${num}"
+  created "$target" "$do_up"
 }
 
 # No `gh`: read-only pure-git fetch of the PR head into a local `pr-<num>`
 # branch. Commits CANNOT be pushed back (the `pull/<num>/head` ref is read-only
 # and no push tracking is set) — install `gh` to push to the PR.
 _checkout_pr_no_gh() {
-  local num="$1" do_up="$2" root="$3" parent="$4" base="$5"
-  local branch="pr-${num}" target="$parent/${base}-pr-${num}"
+  local num="$1" do_up="$2" root="$3"
+  local branch="pr-${num}" target
+  target="$(worktree_path "$branch")"
 
   local existing
   existing="$(worktree_path_for_branch "$branch")"
   if [[ -n "$existing" ]]; then
     info "worktree for PR #${num} exists at ${C_DIM}${existing}${C_RESET}"
-    printf "cd %q\n" "$existing"
-    maybe_up "$existing" "$do_up"
+    enter "$existing" "$do_up"
     return 0
   fi
 
@@ -395,10 +347,7 @@ _checkout_pr_no_gh() {
 
   info "git worktree add ${C_DIM}${target}${C_RESET}"
   git -C "$root" worktree add "$target" "$branch" >&2
-  ok "worktree at $target"
-  do_post_create "$target"
-  printf "cd %q\n" "$target"
-  maybe_up "$target" "$do_up"
+  created "$target" "$do_up"
 }
 
 # Provision the freshly-created worktree via `crbn init`: sets the canonical
@@ -413,6 +362,19 @@ do_post_create() {
   fi
 }
 
+# A worktree just made: provision it, then enter it.
+created() {
+  ok "worktree at $1"
+  do_post_create "$1"
+  enter "$1" "$2"
+}
+
+# The only stdout: the `cd` setup.sh's `crbn()` evals. Then `--up`, if asked.
+enter() {
+  printf "cd %q\n" "$1"
+  maybe_up "$1" "$2"
+}
+
 # Replace process with `crbn up` cd'd into the new worktree. Caller's shell
 # stays at original cwd; on Ctrl+C they're back where they started.
 maybe_up() {
@@ -424,58 +386,20 @@ maybe_up() {
   fi
 }
 
-# ---------------------------------------------------------------------------
-# Top-level help
-# ---------------------------------------------------------------------------
-
+# `checkout` is this script's; every other command's help is the TypeScript
+# CLI's own.
 print_help() {
   cat <<'USAGE'
 crbn — Carbon dev CLI
 
-  Worktrees:
-    crbn checkout <branch>          Switch into worktree (creates if missing).
-    crbn checkout -b <branch>       New branch + worktree (--base REF).
-    crbn checkout <pr-number>       PR → worktree; git push updates the PR (needs gh).
-    crbn new [branch]               Interactive worktree creation.
-    crbn init                       Provision the current worktree (slug/env/skills).
-    crbn list                       Show all worktrees with stack status.
-    crbn remove [--prune] [name...] Delete worktrees (picker, or named by branch/path).
-                                    --prune also deletes the git branch.
-    crbn prune                      Destroy stacks whose worktree is gone.
-    crbn prune --all                Destroy every stack on this machine (worktrees kept).
-    crbn prune --tree               Also forget missing worktrees; with --all, remove clean ones.
-
-  Stack:
-    crbn up                         Boot compose stack + apps.
-    crbn up --all                   Launch all apps without the picker.
-    crbn up --no-portless           Localhost mode (API:54321 ERP:3000 MES:3001).
-    crbn up --borrow                Reuse another worktree's containers.
-    crbn up --no-apps               Services only, no dev servers.
-    crbn up --full                  Also start Studio, Postgres-Meta, edge runtime, imgproxy.
-    crbn up --no-hibernate          Don't stop the containers when ERP/MES go quiet.
-    crbn down                       Stop stack (volumes preserved).
-    crbn down --purge               Stop stack, wipe volumes, release the slot.
-    crbn reset                      Wipe volumes + redis, then up.
-    crbn status                     Port assignment + container health.
-    crbn status --json              Same, as JSON (also: crbn list --json).
-    crbn migrate                    Apply DB migrations (loads .env.local).
-    crbn restore <file>             Restore a prod backup, then apply migrations it predates.
-    crbn reload <service...>        Recreate compose services (apply compose/env edits, apps untouched).
-
-  Files:
-    crbn copy <file...>             Copy file(s) from main checkout.
-    crbn env sync                   Sync package.json#crbn.copy from main.
-
-  Misc:
-    crbn --version                  Print crbn commit + node version.
-    crbn --help                     Show this help.
+  crbn checkout <branch>          Switch into worktree (creates if missing).
+  crbn checkout -b <branch>       New branch + worktree (--base REF).
+  crbn checkout <pr-number>       PR → worktree; git push updates the PR (needs gh).
+  crbn --version                  Print crbn commit + node version.
 
 USAGE
+  run_ts --help
 }
-
-# ---------------------------------------------------------------------------
-# Dispatch
-# ---------------------------------------------------------------------------
 
 cmd="${1:-}"
 [[ $# -gt 0 ]] && shift || true

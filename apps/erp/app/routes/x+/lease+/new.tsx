@@ -6,7 +6,6 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -26,9 +25,10 @@ import {
 } from "~/modules/settings/settings.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "lease-new");
+export const meta = newRecordMeta("Lease");
 
 export const handle: Handle = {
   breadcrumb: msg`Leases`,
@@ -43,10 +43,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const companySettings = await getCompanySettings(client, companyId);
   // Without the settings the lease would be discounted at 0 % unnoticed.
   if (companySettings.error) {
-    logger.error("company settings read failed for a new lease", {
-      companyId,
-      error: companySettings.error
-    });
     throw redirect(
       path.to.leases,
       await flash(
@@ -80,10 +76,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const sequence = await getNextSequence(client, "lease", companyId);
   if (sequence.error || !sequence.data) {
-    logger.error("lease sequence read failed", {
-      companyId,
-      error: sequence.error
-    });
     throw redirect(
       path.to.leases,
       await flash(
@@ -102,7 +94,6 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (lease.error || !lease.data) {
-    logger.error("lease insert failed", { companyId, error: lease.error });
     throw redirect(
       path.to.leases,
       await flash(request, error(lease.error, "Failed to create lease"))

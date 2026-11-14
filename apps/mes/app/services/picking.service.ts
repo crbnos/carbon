@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { fetchAllRecords } from "@carbon/database";
 import { getErrorMessage, requireAffected } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type ErpPostingInput, erpPosting } from "~/services/erp";
@@ -10,14 +11,59 @@ import { isPickingListLocked } from "~/services/models";
 
 export async function getAssignedPickingLists(
   client: SupabaseClient<Database>,
-  userId: string
+  companyId: string,
+  userId: string,
+  locationId: string | undefined
 ) {
-  return client
-    .from("pickingLists")
-    .select("*")
-    .eq("assignee", userId)
-    .in("status", ["Draft", "In Progress"])
-    .order("dueDate", { ascending: true, nullsFirst: false });
+  const statuses = ["Draft", "In Progress"] as const;
+
+  // A water spider works the lists assigned to them and the unassigned lists
+  // at their location, in the current company only (RLS admits every company
+  // the user belongs to). Both are paged with a stable order, so a location
+  // past the row cap still lists every open list before the sort below.
+  const [assigned, unassigned] = await Promise.all([
+    fetchAllRecords(() =>
+      client
+        .from("pickingLists")
+        .select("*")
+        .eq("companyId", companyId)
+        .eq("assignee", userId)
+        .in("status", [...statuses])
+        .order("id")
+    ),
+    locationId
+      ? fetchAllRecords(() =>
+          client
+            .from("pickingLists")
+            .select("*")
+            .eq("companyId", companyId)
+            .is("assignee", null)
+            .eq("locationId", locationId)
+            .in("status", [...statuses])
+            .order("id")
+        )
+      : Promise.resolve({ data: [], error: null })
+  ]);
+
+  const error = assigned.error ?? unassigned.error;
+  if (error) return { data: null, error };
+
+  const byId = new Map<string, NonNullable<typeof assigned.data>[number]>();
+  for (const row of [...(assigned.data ?? []), ...(unassigned.data ?? [])]) {
+    if (row.id) byId.set(row.id, row);
+  }
+
+  const data = [...byId.values()].sort((a, b) => {
+    // ISO dates compare as strings; nulls go last.
+    if (a.dueDate !== b.dueDate) {
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return a.dueDate < b.dueDate ? -1 : 1;
+    }
+    return (a.pickingListId ?? "").localeCompare(b.pickingListId ?? "");
+  });
+
+  return { data, error: null };
 }
 
 export async function getPickingListForExecution(

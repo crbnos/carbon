@@ -72,6 +72,7 @@ import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column
 import { noServerCodeInClient } from "./conformance/no-server-code-in-client";
 import { noStateCopyOfLoaderData } from "./conformance/no-state-copy-of-loader-data";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
+import { noUnmountingDialog } from "./conformance/no-unmounting-dialog";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
@@ -152,6 +153,7 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noUnscopedKyselyWrite,
   noUnguardedSubmit,
   noNoopOpenChange,
+  noUnmountingDialog,
   noPostgresChanges,
   journalStatusFilter
 ];

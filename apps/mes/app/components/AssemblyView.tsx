@@ -28,6 +28,7 @@ import {
   hasOpenDialog,
   IconButton,
   ImageZoomViewer,
+  isBareKeyForAnotherControl,
   Modal,
   ModalBody,
   ModalContent,
@@ -60,7 +61,7 @@ import {
 } from "@carbon/viewer";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   LuArrowLeft,
   LuBox,
@@ -83,6 +84,7 @@ import {
   LuImage,
   LuListChecks,
   LuListFilter,
+  LuPackageSearch,
   LuPause,
   LuPlay,
   LuTimer,
@@ -97,13 +99,16 @@ import { TrackingTypeIcon } from "~/components/Icons";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
 import { MaintenanceDispatch } from "~/components/JobOperation/components/MaintenanceDispatch";
+import { NeedMaterialModal } from "~/components/JobOperation/components/NeedMaterialModal";
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
+import { useTravelerScan } from "~/components/JobOperation/hooks/useTravelerScan";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
+import { ReworkBadge } from "~/components/ReworkBadge";
 import { useRealtime, useUser } from "~/hooks";
 import {
   type AbilityShortfall,
@@ -116,7 +121,11 @@ import type {
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
-import { isKanbanCompleteScan, kanbanCompleteTarget } from "~/utils/kanban";
+import {
+  isKanbanCompleteScan,
+  kanbanCompleteTarget,
+  soleUnitId
+} from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { deriveUnits } from "~/utils/units";
@@ -284,6 +293,8 @@ type Operation = {
   jobStatus?: string | null;
   duration?: number | null;
   jobDeadlineType?: string | null;
+  reworkId?: string | null;
+  jobMakeMethodId?: string | null;
 };
 
 type Props = {
@@ -292,11 +303,15 @@ type Props = {
   job: { itemReadableIdWithRevision?: string | null } | null;
   operation: Operation | null;
   thumbnailPath: string | null | undefined;
+  /** The correction this rework operation belongs to, if any. */
+  correctionName?: string | null;
   trackedEntities: {
     id: string;
     readableId?: string | null;
     status?: string | null;
     attributes?: unknown;
+    /** False when this rework or correction copy does not work the unit. */
+    inOperationScope?: boolean;
   }[];
   trackedEntityId: string | null;
   materials: { materials?: any[]; trackedInputs?: any[] } | null;
@@ -315,6 +330,8 @@ type Props = {
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
   isFirstOperation: boolean;
+  isFirstOpenOperation?: boolean;
+  requireTrackedMaterialsIssued?: boolean;
   openEvent: { id: string; startTime: string } | null;
   events: ProductionEvent[];
   nonConformanceActions: ContainmentAction[];
@@ -519,6 +536,7 @@ export function AssemblyView({
   job,
   operation,
   thumbnailPath,
+  correctionName,
   trackedEntities,
   trackedEntityId,
   materials,
@@ -528,6 +546,8 @@ export function AssemblyView({
   requiresSerialTracking,
   requiresBatchTracking,
   isFirstOperation,
+  isFirstOpenOperation = false,
+  requireTrackedMaterialsIssued = false,
   openEvent,
   events,
   nonConformanceActions,
@@ -556,6 +576,7 @@ export function AssemblyView({
 
   const issueModal = useDisclosure();
   const qualityModal = useDisclosure();
+  const needMaterialModal = useDisclosure();
   const completeModal = useDisclosure();
   const scrapModal = useDisclosure();
   const reworkModal = useDisclosure();
@@ -613,7 +634,8 @@ export function AssemblyView({
         isFirstOperation,
         selectedEntityId: selected?.id ?? null,
         selectedIsIncomplete:
-          !!selected && isUnitIncompleteForOperation(selected, operationId)
+          !!selected && isUnitIncompleteForOperation(selected, operationId),
+        soleUnitId: soleUnitId(trackedEntities, operation?.operationQuantity)
       });
       if (target.action === "select") {
         toast.info(t`Scan or select the unit, then scan the kanban card again`);
@@ -768,9 +790,7 @@ export function AssemblyView({
     if (result && result.success === false) {
       log.error(
         "Failed to create inspection steps for non-conformance actions",
-        {
-          message: result.message
-        }
+        { reason: result.message }
       );
       toast.error(result.message ?? "Failed to create containment steps");
     }
@@ -852,10 +872,23 @@ export function AssemblyView({
   // Only serial/batch parents bind entities to the unit axis; inventory/non-inventory
   // page purely by index, so stray inventory entities must not surface as units or "S/N".
   const axisEntities = isTracked ? trackedEntities : [];
-  const units = deriveUnits(unitCount, axisEntities);
+  // A rework or correction copy works only the units sent into it: page through
+  // those, but key step records by each unit's place in the full axis, as the
+  // operation view and the ERP do. With no scope the two are the same.
+  const scopedAxis = axisEntities
+    .map((entity, axisIndex) => ({ entity, axisIndex }))
+    .filter(({ entity }) => entity.inOperationScope !== false);
+  const axisIndexOf = (position: number) =>
+    scopedAxis[position]?.axisIndex ?? position;
+  const units = deriveUnits(
+    unitCount,
+    scopedAxis.map(({ entity }) => entity)
+  );
   // The tracked entities within the navigable set (for the serial picker; empty when
   // the parent is untracked).
-  const unitEntities = axisEntities.slice(0, unitCount);
+  const unitEntities = units.flatMap((unit) =>
+    unit.entity ? [unit.entity] : []
+  );
 
   // Units already built. Drives the quantity progress indicator and, for untracked
   // parents, the default landing unit (the next one still to build).
@@ -890,7 +923,7 @@ export function AssemblyView({
 
   // Step records key off the unit index for ALL tracking types, identical to the
   // Operation view (FIX-1 / FIX-5) — this is what isolates unit i's records.
-  const activeIndex = currentUnitIndex;
+  const activeIndex = axisIndexOf(currentUnitIndex);
 
   const isStepDone = (step: Step) =>
     (step.jobOperationStepRecord ?? []).some((r) => r.index === activeIndex);
@@ -918,14 +951,16 @@ export function AssemblyView({
     isStepBadResultAtIndex(step, activeIndex);
   // Does any step have an out-of-spec record for this unit? Flags the unit red in
   // the sidebar navigator so a bad build is visible without opening each unit.
-  const unitHasBadResult = (index: number) =>
-    steps.some((s) => isStepBadResultAtIndex(s, index));
+  const unitHasBadResult = (position: number) =>
+    steps.some((s) => isStepBadResultAtIndex(s, axisIndexOf(position)));
   // Every step recorded for this unit — flags a fully-built unit green in the
   // navigator (mirrors `allStepsRecorded`, but for an arbitrary unit index).
-  const unitIsRecorded = (index: number) =>
+  const unitIsRecorded = (position: number) =>
     steps.length > 0 &&
     steps.every((s) =>
-      (s.jobOperationStepRecord ?? []).some((r) => r.index === index)
+      (s.jobOperationStepRecord ?? []).some(
+        (r) => r.index === axisIndexOf(position)
+      )
     );
   const doneCount = steps.filter(isStepDone).length;
   // All steps recorded for the current unit — drives the "Steps are missing"
@@ -987,7 +1022,7 @@ export function AssemblyView({
     const effectiveMaterial =
       linkShare !== null ? { ...m, quantity: perUnit } : m;
     const state = getIssuedForUnit(effectiveMaterial, {
-      unitIndex: currentUnitIndex,
+      unitIndex: activeIndex,
       issuedIsPerUnit,
       issuedOverride
     });
@@ -1016,6 +1051,9 @@ export function AssemblyView({
   // the step is done, gated, or submitting — the key is inert exactly when the
   // button is.
   const primaryStepActionRef = useRef<(() => void) | null>(null);
+  // Wraps the primary action button: Space/Enter on it is the shortcut's own
+  // key (so a clicker press still arms the RecordModal swallow below).
+  const primaryStepActionContainerRef = useRef<HTMLDivElement>(null);
 
   // Open production events per work type (to pass to the complete flow so it
   // can close them on completion).
@@ -1272,7 +1310,12 @@ export function AssemblyView({
     <button
       key={s.id}
       type="button"
-      aria-label={`Go to step ${i + 1}`}
+      aria-label={
+        isStepDone(s)
+          ? t`Go to step ${i + 1}: ${s.name ?? ""} (done)`
+          : t`Go to step ${i + 1}: ${s.name ?? ""}`
+      }
+      aria-current={i === currentStep ? "step" : undefined}
       onClick={() => goToStep(i)}
       className={cn(
         "h-3 flex-1 rounded-[2px] transition-colors",
@@ -1331,7 +1374,7 @@ export function AssemblyView({
         fd.set("workCenterId", operation.workCenterId);
       const entityId = isTracked ? currentEntity?.id : undefined;
       if (entityId) fd.set("trackedEntityId", entityId);
-      fd.set("unitIndex", String(currentUnitIndex));
+      fd.set("unitIndex", String(activeIndex));
       laborFetcher.submit(fd, {
         method: "post",
         action: path.to.productionEvent
@@ -1349,7 +1392,9 @@ export function AssemblyView({
   // preventDefault in the action stops a focused button's native click (Space
   // clicks on keyup only if keydown wasn't prevented; Enter's click is the
   // keydown's default action) — otherwise one press could both record and
-  // re-trigger the focused button.
+  // re-trigger the focused button. It cannot stop a control that handles the
+  // key in its own keydown handler (a role="button" element, a tab), so those
+  // keep the key.
   const ARMED_SWALLOW_MS = 750;
   const shortcutArmedAtRef = useRef<number | null>(null);
 
@@ -1364,6 +1409,17 @@ export function AssemblyView({
       // Any open dialog (RecordModal, issue/scan modals, zoom) keeps native
       // key semantics — the armed-clicker swallow below is the one exception.
       !hasOpenDialog() &&
+      // A control that handles the key in its own keydown (a role="button"
+      // part, a tab) keeps it. A native button or link does not: the clicker
+      // records even with Skip focused, and preventDefault stops its click.
+      !(
+        isBareKeyForAnotherControl(
+          event,
+          primaryStepActionContainerRef.current
+        ) &&
+        event.target instanceof Element &&
+        !event.target.closest("button, a[href]")
+      ) &&
       // No primary action (step done, gated, or submitting) → leave the
       // action keys native, so a keyboard user who focused Skip can still
       // activate it with Space/Enter.
@@ -1480,6 +1536,13 @@ export function AssemblyView({
     const fd = new FormData();
     fd.set("jobOperationId", operation.id);
     fd.set("quantity", "1");
+    // The route skips the completion if another one recorded this unit. The
+    // stored quantity, not the rounded one shown: a fraction must still match.
+    if (!isTracked)
+      fd.set(
+        "expectedQuantityComplete",
+        String(operation.quantityComplete ?? 0)
+      );
     if (requiresSerialTracking) fd.set("trackingType", "Serial");
     else if (requiresBatchTracking) fd.set("trackingType", "Batch");
     if (isTracked && currentEntity?.id)
@@ -1782,7 +1845,7 @@ export function AssemblyView({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
-              aria-label="Filter steps"
+              aria-label={t`Filter steps`}
               variant={stepFilter === "all" ? "ghost" : "active"}
               size="sm"
               icon={<LuListFilter />}
@@ -1873,6 +1936,17 @@ export function AssemblyView({
   // Block: no production work here. The routes refuse it too.
   const abilityBlocked = abilityWarning?.policy === "Block";
 
+  // A traveler scan issues the unit into this operation, opens the unit it
+  // already sits in, or goes to its traveler.
+  useTravelerScan({
+    operationId,
+    jobMakeMethodId: operation?.jobMakeMethodId,
+    parentTrackedEntityId: currentEntity?.id ?? trackedEntities[0]?.id,
+    jobOperationStepId: step?.id,
+    unitNumber: activeIndex + 1,
+    active: !issueModal.isOpen && !abilityBlocked
+  });
+
   // The header's actions; the md+ header and the phone app bar share them.
   const headerActions = (
     <>
@@ -1907,7 +1981,7 @@ export function AssemblyView({
               openEvent={openEventForWorkType(wt)}
               workType={wt}
               trackedEntityId={isTracked ? currentEntity?.id : undefined}
-              unitIndex={currentUnitIndex}
+              unitIndex={activeIndex}
               startDisabled={abilityBlocked}
             />
           ))
@@ -1941,7 +2015,7 @@ export function AssemblyView({
             </div>
           ) : null}
 
-          <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
+          <h1 className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
             <span className="truncate text-sm font-semibold">
               {job?.itemReadableIdWithRevision ?? "—"}
             </span>
@@ -1955,7 +2029,10 @@ export function AssemblyView({
                 </span>
               </>
             ) : null}
-          </div>
+            {operation?.reworkId ? (
+              <ReworkBadge correctionName={correctionName} />
+            ) : null}
+          </h1>
 
           <div className="flex-1" />
 
@@ -1967,7 +2044,7 @@ export function AssemblyView({
             className="hidden h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4 lg:flex"
           >
             <LuFlag className="size-4" />
-            Flag issue
+            <Trans>Flag issue</Trans>
           </button>
           {headerActions}
         </header>
@@ -2210,10 +2287,14 @@ export function AssemblyView({
         </aside>
 
         {/* ── MAIN: tabbed — details (image + step) · model · chat ── */}
-        <main className="flex w-full flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+        <div className="flex w-full flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
           {/* Tab bar */}
           {/* Phones: 44px underline tabs, as on the operation page. */}
-          <div className="flex shrink-0 items-center gap-1 border-b border-border px-3 py-1.5 max-md:gap-5 max-md:px-4 max-md:py-0 max-md:[&>*]:flex-1">
+          <div
+            role="group"
+            aria-label={t`Assembly view`}
+            className="flex shrink-0 items-center gap-1 border-b border-border px-3 py-1.5 max-md:gap-5 max-md:px-4 max-md:py-0 max-md:[&>*]:flex-1"
+          >
             <TabButton
               active={tab === "details"}
               onClick={() => setTab("details")}
@@ -2483,7 +2564,7 @@ export function AssemblyView({
               </div>
             </div>
           )}
-        </main>
+        </div>
 
         {/* ── SIDEBAR: materials, tools, NCRs, parameters ── */}
         <aside className="flex w-full shrink-0 flex-col border-t border-border bg-card lg:w-[280px] lg:overflow-hidden lg:border-l lg:border-t-0 xl:w-[320px]">
@@ -2497,7 +2578,7 @@ export function AssemblyView({
               scrollable={visibleMaterialsWithState.length > 0}
               action={
                 <IconButton
-                  aria-label="Issue material"
+                  aria-label={t`Issue another material`}
                   variant="ghost"
                   size="lg"
                   icon={<LuCirclePlus />}
@@ -2523,7 +2604,7 @@ export function AssemblyView({
                         material={m}
                         stepNumbers={stepNumbers}
                         currentStepNumber={currentStep + 1}
-                        unitIndex={currentUnitIndex}
+                        unitIndex={activeIndex}
                         issuedIsPerUnit={issuedIsPerUnit}
                         issuedOverride={issuedOverride}
                         onIssue={
@@ -2649,13 +2730,18 @@ export function AssemblyView({
             )}
             <div className="flex w-full items-stretch gap-2">
               {step && (
-                <div className="min-w-0 flex-1">
+                <div
+                  ref={primaryStepActionContainerRef}
+                  className="min-w-0 flex-1"
+                >
                   <StepCompleteAction
                     step={step}
                     activeIndex={activeIndex}
                     done={isStepDone(step)}
                     disabled={hasPendingScans || abilityBlocked}
                     actionRef={primaryStepActionRef}
+                    onScrap={scrapModal.onOpen}
+                    onQualityIssue={qualityModal.onOpen}
                   />
                 </div>
               )}
@@ -2665,9 +2751,11 @@ export function AssemblyView({
                 className="shrink-0"
                 isDisabled={isLastStep}
                 onClick={() => goToStep(currentStep + 1)}
+                aria-keyshortcuts="ArrowRight"
               >
                 Skip
                 <ShortcutKey
+                  aria-hidden
                   shortcut="arrowright"
                   variant="medium"
                   className="hidden md:flex"
@@ -2697,36 +2785,32 @@ export function AssemblyView({
         </div>
       ) : null}
 
-      {issueModal.isOpen && (
-        <IssueMaterialModal
-          operationId={operationId}
-          // Assembly builds one unit at a time: each scan issues one unit's
-          // worth (issuePerUnit), so the pick order can never be attributed
-          // to the unit on screen — never pre-select tracked entities; the
-          // operator scans what goes into THIS unit.
-          allowPrefill={false}
-          issuePerUnit
-          expiredEntityPolicy={expiredEntityPolicy}
-          locationId={locationId}
-          workCenterId={operation?.workCenterId ?? undefined}
-          material={selectedMaterial ?? undefined}
-          // Untracked parents have no unit-axis entity, but tracked child
-          // consumes still need a genealogy parent — fall back to the make
-          // method's seed entity, same as the operation view.
-          parentId={currentEntity?.id ?? trackedEntities[0]?.id ?? ""}
-          parentIdIsSerialized={requiresSerialTracking}
-          // Stamp the current step + 1-based unit onto the consume so issued
-          // quantities can be attributed per-unit even for a batch parent (where
-          // all units share one lot). See the loader's batch attribution.
-          jobOperationStepId={step?.id}
-          unitNumber={currentUnitIndex + 1}
-          trackedInputs={materials?.trackedInputs ?? []}
-          onClose={() => {
-            setSelectedMaterial(null);
-            issueModal.onClose();
-          }}
-        />
-      )}
+      <IssueMaterialModal
+        open={issueModal.isOpen}
+        operationId={operationId}
+        // Assembly builds one unit at a time: each scan issues one unit's
+        // worth (issuePerUnit), so the pick order can never be attributed
+        // to the unit on screen — never pre-select tracked entities; the
+        // operator scans what goes into THIS unit.
+        allowPrefill={false}
+        issuePerUnit
+        expiredEntityPolicy={expiredEntityPolicy}
+        locationId={locationId}
+        workCenterId={operation?.workCenterId ?? undefined}
+        material={selectedMaterial ?? undefined}
+        // Untracked parents have no unit-axis entity, but tracked child
+        // consumes still need a genealogy parent — fall back to the make
+        // method's seed entity, same as the operation view.
+        parentId={currentEntity?.id ?? trackedEntities[0]?.id ?? ""}
+        parentIdIsSerialized={requiresSerialTracking}
+        // Stamp the current step + 1-based unit onto the consume so issued
+        // quantities can be attributed per-unit even for a batch parent (where
+        // all units share one lot). See the loader's batch attribution.
+        jobOperationStepId={step?.id}
+        unitNumber={activeIndex + 1}
+        trackedInputs={materials?.trackedInputs ?? []}
+        onClose={issueModal.onClose}
+      />
 
       <QualityIssueModal
         operationId={operationId}
@@ -2735,8 +2819,26 @@ export function AssemblyView({
         onClose={qualityModal.onClose}
       />
 
-      {completeModal.isOpen && operation && (
+      <NeedMaterialModal
+        operationId={operationId}
+        materials={allMaterials.flatMap((material) =>
+          material.itemId
+            ? [
+                {
+                  itemId: material.itemId as string,
+                  label: (material.itemReadableId ?? material.itemId) as string
+                }
+              ]
+            : []
+        )}
+        isOpen={needMaterialModal.isOpen}
+        onClose={needMaterialModal.onClose}
+      />
+
+      {operation && completeModal.openCount > 0 && (
         <QuantityModal
+          key={`complete-${completeModal.openCount}`}
+          open={completeModal.isOpen}
           type="complete"
           operation={operation as unknown as OperationWithDetails}
           materials={(materials?.materials ?? []) as JobMaterial[]}
@@ -2747,12 +2849,16 @@ export function AssemblyView({
           laborProductionEvent={openByType("Labor")}
           machineProductionEvent={openByType("Machine")}
           allStepsRecorded={allStepsRecorded}
+          isFirstOpenOperation={isFirstOpenOperation}
+          requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
           onClose={completeModal.onClose}
         />
       )}
 
-      {scrapModal.isOpen && operation && (
+      {operation && scrapModal.openCount > 0 && (
         <QuantityModal
+          key={`scrap-${scrapModal.openCount}`}
+          open={scrapModal.isOpen}
           type="scrap"
           operation={operation as unknown as OperationWithDetails}
           parentIsSerial={requiresSerialTracking}
@@ -2766,8 +2872,10 @@ export function AssemblyView({
         />
       )}
 
-      {finishModal.isOpen && operation && (
+      {operation && finishModal.openCount > 0 && (
         <QuantityModal
+          key={`finish-${finishModal.openCount}`}
+          open={finishModal.isOpen}
           type="finish"
           operation={operation as unknown as OperationWithDetails}
           parentIsSerial={requiresSerialTracking}
@@ -2781,8 +2889,9 @@ export function AssemblyView({
         />
       )}
 
-      {reworkModal.isOpen && operation && jobId && (
+      {operation && jobId && reworkModal.openCount > 0 && (
         <ReworkModal
+          key={`rework-${reworkModal.openCount}`}
           operation={operation as unknown as OperationWithDetails}
           jobId={jobId}
           isOpen={reworkModal.isOpen}
@@ -2801,21 +2910,20 @@ export function AssemblyView({
         />
       )}
 
-      {serialModal.isOpen && (
-        <SerialSelectorModal
-          availableEntities={
-            unitEntities.filter((entity) =>
-              isUnitIncompleteForOperation(entity, operationId)
-            ) as never
-          }
-          onClose={serialModal.onClose}
-          onCancel={serialModal.onClose}
-          onSelect={(entity) => {
-            navigateEntity(entity);
-            serialModal.onClose();
-          }}
-        />
-      )}
+      <SerialSelectorModal
+        open={serialModal.isOpen}
+        availableEntities={
+          unitEntities.filter((entity) =>
+            isUnitIncompleteForOperation(entity, operationId)
+          ) as never
+        }
+        onClose={serialModal.onClose}
+        onCancel={serialModal.onClose}
+        onSelect={(entity) => {
+          navigateEntity(entity);
+          serialModal.onClose();
+        }}
+      />
 
       <BottomSheet
         open={actionsSheet.isOpen}
@@ -2871,6 +2979,14 @@ export function AssemblyView({
                   qualityModal.onOpen();
                 }}
               />
+              <ActionSheetButton
+                icon={<LuPackageSearch className="size-4 shrink-0" />}
+                label={t`Need material`}
+                onClick={() => {
+                  actionsSheet.onClose();
+                  needMaterialModal.onOpen();
+                }}
+              />
               {/* Manager-only override: record every remaining step for this unit at once.
                   Shown only to users with the Production DELETE permission, and only when
                   there are unrecorded steps left. */}
@@ -2891,56 +3007,54 @@ export function AssemblyView({
         </BottomSheetContent>
       </BottomSheet>
 
-      {completeAllModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) completeAllModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>Complete all steps?</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                This records the{" "}
-                <span className="font-semibold text-foreground">
-                  {steps.length - doneCount}
-                </span>{" "}
-                remaining step(s) as complete for{" "}
-                <span className="font-semibold text-foreground">
-                  Unit {currentUnitIndex + 1}
-                </span>{" "}
-                without capturing their values. This is a manager override; each
-                step can still be undone individually.
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={completeAllModal.onClose}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                isLoading={completeAllFetcher.state !== "idle"}
-                onClick={() => {
-                  const fd = new FormData();
-                  fd.append("operationId", operationId);
-                  fd.append("index", String(activeIndex));
-                  completeAllFetcher.submit(fd, {
-                    method: "post",
-                    action: path.to.completeAllSteps
-                  });
-                  completeAllModal.onClose();
-                }}
-              >
-                Complete all
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={completeAllModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) completeAllModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Complete all steps?</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              This records the{" "}
+              <span className="font-semibold text-foreground">
+                {steps.length - doneCount}
+              </span>{" "}
+              remaining step(s) as complete for{" "}
+              <span className="font-semibold text-foreground">
+                Unit {currentUnitIndex + 1}
+              </span>{" "}
+              without capturing their values. This is a manager override; each
+              step can still be undone individually.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={completeAllModal.onClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              isLoading={completeAllFetcher.state !== "idle"}
+              onClick={() => {
+                const fd = new FormData();
+                fd.append("operationId", operationId);
+                fd.append("index", String(activeIndex));
+                completeAllFetcher.submit(fd, {
+                  method: "post",
+                  action: path.to.completeAllSteps
+                });
+                completeAllModal.onClose();
+              }}
+            >
+              Complete all
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <ImageZoomViewer
         open={imageViewer.isOpen}
@@ -2965,7 +3079,7 @@ export function AssemblyView({
             workCenterId={operation.workCenterId ?? undefined}
             openEvent={openEventForWorkType(headerWorkTypes[0])}
             trackedEntityId={isTracked ? currentEntity?.id : undefined}
-            unitIndex={currentUnitIndex}
+            unitIndex={activeIndex}
           />
         )}
     </div>
@@ -3067,6 +3181,7 @@ function TimerControl({
     Labor: t`Labor`,
     Machine: t`Machine`
   } as const;
+  const elapsedId = useId();
 
   // Optimistic state: the moment Start/End is submitted, flip immediately
   // instead of waiting for the (slow) post-production-event round-trip. This
@@ -3079,6 +3194,19 @@ function TimerControl({
       : pendingAction === "End"
         ? false
         : !!openEvent;
+
+  // A disabled button drops focus to the page: when the press settles, put
+  // focus back on the button the user pressed.
+  const timerButtonRef = useRef<HTMLButtonElement>(null);
+  const refocusTimer = useRef(false);
+  const isTimerBusy = fetcher.state !== "idle";
+  useEffect(() => {
+    if (isTimerBusy || !refocusTimer.current) return;
+    refocusTimer.current = false;
+    if (!document.activeElement || document.activeElement === document.body) {
+      timerButtonRef.current?.focus();
+    }
+  }, [isTimerBusy]);
 
   // Freeze the clock while a stop is in flight; otherwise tick live.
   const liveElapsed = useElapsed(pendingAction === "End" ? null : openEvent);
@@ -3114,18 +3242,35 @@ function TimerControl({
         <input type="hidden" name="unitIndex" value={unitIndex} />
       ) : null}
       <button
-        disabled={(startDisabled && !openEvent) || fetcher.state !== "idle"}
+        ref={timerButtonRef}
+        // Disabled while the press is in flight, so a second press can't post
+        // again; the effect above gives focus back once it settles.
+        disabled={isTimerBusy || (startDisabled && !openEvent)}
+        onClick={() => {
+          refocusTimer.current =
+            document.activeElement === timerButtonRef.current;
+        }}
         type="submit"
-        aria-label={active ? t`Pause timer` : t`Start timer`}
+        aria-label={
+          active
+            ? t`Pause ${workTypeLabels[workType]} timer`
+            : t`Start ${workTypeLabels[workType]} timer`
+        }
+        // The elapsed time, which the label above replaces as the name.
+        aria-describedby={elapsedId}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:min-w-11 max-md:justify-center md:gap-2 md:px-4"
       >
         <span className="flex flex-col items-end leading-none">
-          <span className="text-sm font-medium tabular-nums">
+          <span id={elapsedId} className="text-sm font-medium tabular-nums">
             {/* The clock moves between the server render and hydration, so the
                 elapsed time is only rendered in the browser. */}
             <ClientOnly fallback={formatElapsed(0)}>
               {() => formatElapsed(elapsed)}
             </ClientOnly>
+            {/* The running state, read with the elapsed time. */}
+            <span className="sr-only">
+              {active ? t`, running` : t`, not running`}
+            </span>
           </span>
           <span className="text-[0.5625rem] max-md:text-xs uppercase tracking-wider text-muted-foreground">
             {workTypeLabels[workType]}
@@ -3244,8 +3389,11 @@ function MaterialRow({
   // first step is recorded, so their status mirrors that trigger directly.
   issuedOverride?: number;
 }) {
+  const { t } = useLingui();
   const isTracked =
     material.requiresSerialTracking || material.requiresBatchTracking;
+  const partName: string =
+    material.description || material.itemReadableId || "";
   const { required, issued, fullyIssued } = getIssuedForUnit(material, {
     unitIndex,
     issuedIsPerUnit,
@@ -3292,7 +3440,7 @@ function MaterialRow({
         ? {
             type: "button" as const,
             onClick: onIssue,
-            "aria-label": isTracked ? "Scan material" : "Issue material"
+            "aria-label": isTracked ? t`Scan ${partName}` : t`Issue ${partName}`
           }
         : {})}
       className={cn(
@@ -3359,11 +3507,16 @@ function StepCompleteAction({
   activeIndex,
   done,
   disabled = false,
-  actionRef
+  actionRef,
+  onScrap,
+  onQualityIssue
 }: {
   step: Step;
   activeIndex: number;
   done: boolean;
+  // Offered by the correction prompt past a correction's attempt limit.
+  onScrap?: () => void;
+  onQualityIssue?: () => void;
   // Soft gate: the step's tracked parts aren't fully issued for this unit, so
   // block completion (Mark done / Record) until they're scanned. Skip bypasses.
   disabled?: boolean;
@@ -3376,7 +3529,6 @@ function StepCompleteAction({
   const busy = fetcher.state !== "idle";
   const recordModal = useDisclosure();
 
-  // Find the existing record for this unit (if done)
   const record = (step.jobOperationStepRecord ?? []).find(
     (r) => r.index === activeIndex
   );
@@ -3484,9 +3636,11 @@ function StepCompleteAction({
         isDisabled={disabled}
         className="w-full"
         onClick={markTaskDone}
+        aria-keyshortcuts="Enter Space"
       >
         Mark done
         <ShortcutKey
+          aria-hidden
           shortcut="enter"
           variant="medium"
           className="hidden md:flex"
@@ -3504,21 +3658,24 @@ function StepCompleteAction({
         isDisabled={disabled}
         className="w-full"
         onClick={recordModal.onOpen}
+        aria-keyshortcuts="Enter Space"
       >
         Record
         <ShortcutKey
+          aria-hidden
           shortcut="enter"
           variant="medium"
           className="hidden md:flex"
         />
       </Button>
-      {recordModal.isOpen && (
-        <RecordModal
-          attribute={step as unknown as JobOperationStep}
-          activeStep={activeIndex}
-          onClose={recordModal.onClose}
-        />
-      )}
+      <RecordModal
+        open={recordModal.isOpen}
+        attribute={step as unknown as JobOperationStep}
+        activeStep={activeIndex}
+        onClose={recordModal.onClose}
+        onScrap={onScrap}
+        onQualityIssue={onQualityIssue}
+      />
     </>
   );
 }
@@ -3712,6 +3869,7 @@ function TabButton({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
         "rounded-md px-3 py-1 text-xs font-medium transition-colors",

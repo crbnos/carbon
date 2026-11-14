@@ -15,6 +15,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  useDisclosure,
   useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -37,6 +38,7 @@ import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
 import { AuditLogFeed } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useResolved } from "~/hooks/useResolved";
@@ -153,20 +155,12 @@ export function ElementView({
   const [deleting, setDeleting] = useState(false);
   // Each charge modal opens empty (the ⋯ menu, the Actual tab, a shortcut)
   // or set to a plan line (its card on the Estimated tab).
-  const [loggingTime, setLoggingTime] = useState<{
-    laborCategoryId?: string;
-  } | null>(null);
-  const [issuing, setIssuing] = useState<{
-    itemId?: string;
-    quantity?: number;
-  } | null>(null);
-  const [charging, setCharging] = useState<{
-    description?: string;
-    amount?: number;
-  } | null>(null);
+  const loggingTime = useDrawerItem<{ laborCategoryId?: string }>();
+  const issuing = useDrawerItem<{ itemId?: string; quantity?: number }>();
+  const charging = useDrawerItem<{ description?: string; amount?: number }>();
   const [costView, setCostView] = useState<CostView | null>(null);
-  const [creatingJob, setCreatingJob] = useState(false);
-  const [creatingPurchaseOrder, setCreatingPurchaseOrder] = useState(false);
+  const jobModal = useDisclosure();
+  const purchaseOrderModal = useDisclosure();
 
   const isClosed = project?.status === "Closed";
   const canUpdate = permissions.can("update", routes.module) && !isClosed;
@@ -221,7 +215,7 @@ export function ElementView({
       action: (event) => {
         if (!canLogTime) return;
         event.preventDefault();
-        setLoggingTime({});
+        loggingTime.open({});
       }
     },
     {
@@ -229,7 +223,7 @@ export function ElementView({
       action: (event) => {
         if (!canIssue) return;
         event.preventDefault();
-        setIssuing({});
+        issuing.open({});
       }
     }
   ]);
@@ -391,21 +385,21 @@ export function ElementView({
                 <>
                   <DropdownMenuItem
                     disabled={!canLogTime}
-                    onClick={() => setLoggingTime({})}
+                    onClick={() => loggingTime.open({})}
                   >
                     <DropdownMenuIcon icon={<LuTimer />} />
                     <Trans>Log time</Trans>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={!canIssue}
-                    onClick={() => setIssuing({})}
+                    onClick={() => issuing.open({})}
                   >
                     <DropdownMenuIcon icon={<LuPackageMinus />} />
                     <Trans>Issue material</Trans>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={!canChargeCost}
-                    onClick={() => setCharging({})}
+                    onClick={() => charging.open({})}
                   >
                     <DropdownMenuIcon icon={<LuReceipt />} />
                     <Trans>Charge cost</Trans>
@@ -530,13 +524,11 @@ export function ElementView({
                     onAddingChange={setAddingChild}
                     quickAddRef={childQuickAddRef}
                     jobs={jobs}
-                    onAddJob={
-                      canAddJob ? () => setCreatingJob(true) : undefined
-                    }
+                    onAddJob={canAddJob ? jobModal.onOpen : undefined}
                     purchaseOrderLines={purchaseOrderLines}
                     onAddPurchaseOrder={
                       canAddPurchaseOrder
-                        ? () => setCreatingPurchaseOrder(true)
+                        ? purchaseOrderModal.onOpen
                         : undefined
                     }
                   />
@@ -570,9 +562,9 @@ export function ElementView({
                           isDisabled={!canUpdate}
                           canSupply={isProject}
                           addDisabledReason={planLockMessage}
-                          onIssue={canIssue ? setIssuing : undefined}
-                          onLogTime={canLogTime ? setLoggingTime : undefined}
-                          onCharge={canChargeCost ? setCharging : undefined}
+                          onIssue={canIssue ? issuing.open : undefined}
+                          onLogTime={canLogTime ? loggingTime.open : undefined}
+                          onCharge={canChargeCost ? charging.open : undefined}
                         />
                       ) : (
                         <EmptyCosts>
@@ -593,12 +585,14 @@ export function ElementView({
                           openTime={openTime}
                           elementReadableId={element.readableId}
                           laborCategories={laborCategories}
-                          onIssue={canIssue ? () => setIssuing({}) : undefined}
+                          onIssue={
+                            canIssue ? () => issuing.open({}) : undefined
+                          }
                           onLogTime={
-                            canLogTime ? () => setLoggingTime({}) : undefined
+                            canLogTime ? () => loggingTime.open({}) : undefined
                           }
                           onCharge={
-                            canChargeCost ? () => setCharging({}) : undefined
+                            canChargeCost ? () => charging.open({}) : undefined
                           }
                         />
                       )}
@@ -663,39 +657,42 @@ export function ElementView({
         </div>
       </div>
 
-      {loggingTime && (
+      {loggingTime.item && (
         <LogTimeModal
+          open={loggingTime.isOpen}
           projectId={projectId}
           element={element}
           laborCategories={laborCategories}
           defaultLaborCategoryId={
-            loggingTime.laborCategoryId ?? defaultLaborCategoryId
+            loggingTime.item.laborCategoryId ?? defaultLaborCategoryId
           }
-          onClose={() => setLoggingTime(null)}
+          onClose={loggingTime.close}
         />
       )}
-      {issuing && (
+      {issuing.item && (
         <IssueMaterialModal
+          open={issuing.isOpen}
           projectId={projectId}
           element={element}
           defaultLocationId={project?.locationId}
-          defaultItemId={issuing.itemId}
-          defaultQuantity={issuing.quantity}
-          onClose={() => setIssuing(null)}
+          defaultItemId={issuing.item.itemId}
+          defaultQuantity={issuing.item.quantity}
+          onClose={issuing.close}
         />
       )}
-      {creatingPurchaseOrder && (
-        <AddPurchaseOrderModal
-          projectId={projectId}
-          elementId={element.id}
-          defaultRequiredDate={element.targetDate ?? undefined}
-          onClose={() => setCreatingPurchaseOrder(false)}
-        />
-      )}
-      {creatingJob && (
+      <AddPurchaseOrderModal
+        open={purchaseOrderModal.isOpen}
+        projectId={projectId}
+        elementId={element.id}
+        defaultRequiredDate={element.targetDate ?? undefined}
+        onClose={purchaseOrderModal.onClose}
+      />
+      {jobModal.openCount > 0 && (
         <JobForm
+          key={`jobModal-${jobModal.openCount}`}
+          open={jobModal.isOpen}
           type="modal"
-          onClose={() => setCreatingJob(false)}
+          onClose={jobModal.onClose}
           validItemTypes={["Part", "Service", "Tool"]}
           initialValues={{
             customerId: "",
@@ -722,24 +719,24 @@ export function ElementView({
           }}
         />
       )}
-      {charging && (
+      {charging.item && (
         <ChargeCostModal
+          open={charging.isOpen}
           projectId={projectId}
           element={element}
-          defaultDescription={charging.description}
-          defaultAmount={charging.amount || undefined}
-          onClose={() => setCharging(null)}
+          defaultDescription={charging.item.description}
+          defaultAmount={charging.item.amount || undefined}
+          onClose={charging.close}
         />
       )}
-      {deleting && (
-        <ConfirmDelete
-          action={withChangeRequest(routes.remove(element.id), changeRequestId)}
-          name={element.readableId}
-          text={t`Delete ${element.readableId} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted.`}
-          onCancel={() => setDeleting(false)}
-          onSubmit={() => setDeleting(false)}
-        />
-      )}
+      <ConfirmDelete
+        action={withChangeRequest(routes.remove(element.id), changeRequestId)}
+        isOpen={deleting}
+        name={element.readableId}
+        text={t`Delete ${element.readableId} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted.`}
+        onCancel={() => setDeleting(false)}
+        onSubmit={() => setDeleting(false)}
+      />
     </div>
   );
 }

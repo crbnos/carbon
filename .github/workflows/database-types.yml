@@ -1,0 +1,71 @@
+name: Database types
+
+# The committed database types (packages/database/src/types.ts and
+# constants.ts) must match the committed migrations. This applies every
+# migration to an empty database, regenerates the types and fails on a
+# difference, so `crbn up` does not have to regenerate them on every boot.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/database/supabase/migrations/**"
+      - "packages/database/src/types.ts"
+      - "packages/database/src/constants.ts"
+      - "scripts/generate-db-types.ts"
+      - "scripts/lib/generate-db-types.ts"
+      - "packages/dev/docker/**"
+      - "packages/dev/src/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/database-types.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  types:
+    name: Database types
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # This job runs the pull request's code, so the token is not left in
+      # .git/config for it to read.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/cache@v6
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            docs/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm install --frozen-lockfile
+
+      # Standalone `crbn migrate` boots the shared backend and migration services,
+      # applies every migration to a fresh worktree database, regenerates its
+      # types, then stops the worktree services.
+      - name: Migrate an empty database and regenerate the types
+        env:
+          CARBON_DEV_YES: "1"
+          # The stack's name; otherwise taken from the checkout directory.
+          CARBON_WORKTREE: ci-types
+        run: packages/dev/bin/crbn migrate
+
+      - name: Committed types match the migrations
+        run: |
+          files="packages/database/src/types.ts packages/database/src/constants.ts"
+          if ! git diff --quiet -- $files || [ -n "$(git ls-files --others -- $files)" ]; then
+            git --no-pager diff --stat -- $files
+            git --no-pager diff -- $files | head -200
+            echo "::error::The committed database types do not match the migrations. Run pnpm db:migrate (or pnpm generate:types against a migrated database) and commit packages/database/src/types.ts and constants.ts." >&2
+            exit 1
+          fi

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost, error, hasPermission, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,14 +11,17 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
-import { nonScrapQuantityValidator } from "~/services/models";
+import { completeQuantityValidator } from "~/services/models";
 import {
   abilityBlockRefusal,
   finishJobOperation,
-  insertProductionQuantity
+  getRequiredScanShortfall,
+  insertProductionQuantity,
+  insertProductionQuantityIfCurrent
 } from "~/services/operations.service";
-import { autoPrintFirstOperationLabel } from "~/services/printing.server";
+import { autoPrintOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
@@ -27,10 +30,13 @@ const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId, permissions } = await requirePermissions(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
-  const validation = await validator(nonScrapQuantityValidator).validate(
+  const validation = await validator(completeQuantityValidator).validate(
     formData
   );
 
@@ -110,6 +116,23 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  const shortfall = await getRequiredScanShortfall(serviceRole, {
+    companyId,
+    jobOperationId: jobOperation.data.id,
+    trackedEntityId: validation.data.trackedEntityId,
+    parentIsSerial: validation.data.trackingType === "Serial",
+    quantity: validation.data.quantity
+  });
+  if (shortfall.message) {
+    return data(
+      {},
+      await flash(request, {
+        ...error(null, shortfall.message),
+        flash: "error"
+      })
+    );
+  }
+
   // Mirror the DB auto-Done predicate (sync_update_job_operation_quantities,
   // 20260807090629): scrap does NOT count toward targetQuantity — the op is
   // finished only once GOOD (+ reworked) quantity reaches the target.
@@ -154,10 +177,10 @@ export async function action({ request }: ActionFunctionArgs) {
     // Print the entity that was just completed (from form), not the new reserved one
     const completedEntityId = validation.data.trackedEntityId;
 
-    // Auto-print label on first operation only (entity was just minted)
+    // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
     const printEntityId = completedEntityId || newTrackedEntityId;
     if (printEntityId) {
-      await autoPrintFirstOperationLabel({
+      await autoPrintOperationLabel({
         serviceRole,
         trackedEntityId: printEntityId,
         jobOperationId: jobOperation.data.id,
@@ -233,9 +256,9 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    // Auto-print label on first operation only (batch entity was just minted)
+    // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
     if (validation.data.trackedEntityId) {
-      await autoPrintFirstOperationLabel({
+      await autoPrintOperationLabel({
         serviceRole,
         trackedEntityId: validation.data.trackedEntityId,
         jobOperationId: jobOperation.data.id,
@@ -275,8 +298,14 @@ export async function action({ request }: ActionFunctionArgs) {
     const operationPath = path.to.operation(validation.data.jobOperationId);
     return redirect(withOrigin(operationPath, origin));
   } else {
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-    const { trackedEntityId, trackingType, ...d } = validation.data;
+    const {
+      // biome-ignore lint/correctness/noUnusedVariables: not a productionQuantity column
+      trackedEntityId,
+      // biome-ignore lint/correctness/noUnusedVariables: not a productionQuantity column
+      trackingType,
+      expectedQuantityComplete,
+      ...d
+    } = validation.data;
 
     const check = await checkStrictBackflush({
       jobOperationId: validation.data.jobOperationId,
@@ -295,23 +324,69 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const insertProduction = await insertProductionQuantity(client, {
-      ...d,
-      companyId,
-      createdBy: userId
-    });
+    let recorded: unknown;
+    if (expectedQuantityComplete !== undefined) {
+      // The page sent the completed quantity it showed: record the unit only
+      // if no other request (a second tab, a resend) recorded it meanwhile.
+      if (!hasPermission(permissions, "production", "create", companyId)) {
+        return data(
+          {},
+          await flash(request, {
+            ...error(null, "You do not have permission to record production"),
+            flash: "error"
+          })
+        );
+      }
+      let inserted: { id: string } | null;
+      try {
+        inserted = await insertProductionQuantityIfCurrent(
+          getDatabaseClient(),
+          { ...d, companyId, createdBy: userId },
+          expectedQuantityComplete
+        );
+      } catch (err) {
+        log.error("Failed to record production quantity", {
+          companyId,
+          jobOperationId: jobOperation.data.id,
+          error: err
+        });
+        return data(
+          {},
+          await flash(request, {
+            ...error(err, "Failed to record production quantity"),
+            flash: "error"
+          })
+        );
+      }
+      if (!inserted) {
+        log.info("Completion skipped: the unit is already recorded", {
+          companyId,
+          jobOperationId: jobOperation.data.id,
+          expectedQuantityComplete
+        });
+        return data({ alreadyRecorded: true });
+      }
+      recorded = [inserted];
+    } else {
+      const insertProduction = await insertProductionQuantity(client, {
+        ...d,
+        companyId,
+        createdBy: userId
+      });
 
-    if (insertProduction.error) {
-      return data(
-        {},
-        await flash(request, {
-          ...error(
-            insertProduction.error,
-            "Failed to record production quantity"
-          ),
-          flash: "error"
-        })
-      );
+      if (insertProduction.error) {
+        return data(
+          {},
+          await flash(request, {
+            ...error(
+              insertProduction.error,
+              "Failed to record production quantity"
+            ),
+            flash: "error"
+          })
+        );
+      }
+      recorded = insertProduction.data;
     }
 
     const issued = await erpPosting(
@@ -364,7 +439,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     return data(
-      insertProduction.data,
+      recorded,
       await flash(request, {
         ...success("Successfully completed part"),
         flash: "success"

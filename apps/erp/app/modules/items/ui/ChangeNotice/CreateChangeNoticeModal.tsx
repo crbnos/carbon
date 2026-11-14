@@ -13,6 +13,7 @@ import ChangeNoticeForm from "./ChangeNoticeForm";
 type CreateChangeNoticeModalProps = {
   // The Part to pre-select as the first affected item.
   itemId: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -23,18 +24,23 @@ type CreateChangeNoticeModalProps = {
 // creates the CO, attaches the item, then redirects to the CO detail.
 const CreateChangeNoticeModal = ({
   itemId,
+  open = true,
   onClose
 }: CreateChangeNoticeModalProps) => {
   const typesFetcher = useFetcher<{ types: ListItem[] }>();
   const user = useUser();
 
-  // Load categories once when the modal mounts (it mounts only while open).
+  // Load categories once per open; the modal stays mounted while closed.
   const loadedRef = useRef(false);
   useEffect(() => {
+    if (!open) {
+      loadedRef.current = false;
+      return;
+    }
     if (loadedRef.current) return;
     loadedRef.current = true;
     typesFetcher.load(path.to.newChangeNotice);
-  }, [typesFetcher]);
+  }, [open, typesFetcher]);
 
   const initialValues = {
     id: undefined,
@@ -54,7 +60,7 @@ const CreateChangeNoticeModal = ({
   return (
     <ChangeNoticeForm
       type="modal"
-      open
+      open={open}
       onClose={onClose}
       initialValues={initialValues}
       types={typesFetcher.data?.types ?? []}

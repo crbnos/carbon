@@ -5,18 +5,18 @@
 import type { Database } from "@carbon/database";
 import type { SalesInvoiceEmail } from "@carbon/documents/email";
 import { ensureFont, SalesInvoicePDF } from "@carbon/documents/pdf";
-import type { ResolvedSection } from "@carbon/documents/template";
+import type { DocumentEdit, ResolvedSection } from "@carbon/documents/template";
 import {
   collectSectionIds,
   getBuiltInSection,
   resolveTemplate,
-  templateShowsThumbnails,
-  toDocumentTemplate
+  templateShowsThumbnails
 } from "@carbon/documents/template";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getPrintedTemplate } from "./document-edit.server";
 
 const logger = getLogger("lib", "sales-invoice-document");
 
@@ -138,9 +138,18 @@ export async function loadSalesInvoiceDocument(args: {
   locale: string;
   /** Base for public logo URLs (`SUPABASE_URL`). */
   storageUrl: string;
+  /** Draft edits to preview; omitted, the saved ones are read. */
+  edit?: DocumentEdit | null;
 }): Promise<SalesInvoiceDocument> {
-  const { client, companyId, companyGroupId, invoiceId, locale, storageUrl } =
-    args;
+  const {
+    client,
+    companyId,
+    companyGroupId,
+    invoiceId,
+    locale,
+    storageUrl,
+    edit
+  } = args;
 
   const [
     company,
@@ -153,7 +162,8 @@ export async function loadSalesInvoiceDocument(args: {
     terms,
     paymentTerms,
     shippingMethods,
-    documentTemplate
+    shippingTerms,
+    templateConfig
   ] = await Promise.all([
     getCompanyWithPublicLogos(client, companyId, storageUrl),
     client.from("companySettings").select("*").eq("id", companyId).single(),
@@ -202,11 +212,16 @@ export async function loadSalesInvoiceDocument(args: {
       .eq("active", true)
       .order("name", { ascending: true }),
     client
-      .from("documentTemplate")
-      .select("*")
+      .from("shippingTerm")
+      .select("id, name")
       .eq("companyId", companyId)
-      .eq("documentType", "salesInvoice")
-      .maybeSingle()
+      .eq("active", true)
+      .order("name", { ascending: true }),
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "salesInvoice", documentId: invoiceId },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -244,11 +259,6 @@ export async function loadSalesInvoiceDocument(args: {
   ) {
     throw new Error("Failed to load sales invoice");
   }
-
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "salesInvoice"
-  );
 
   let thumbnails: Record<string, string | null> = {};
   if (templateShowsThumbnails(templateConfig, "salesInvoice")) {
@@ -295,14 +305,12 @@ export async function loadSalesInvoiceDocument(args: {
     ).sort();
   }
 
-  // Resolve against the effective template (default when nothing is stored) so
-  // built-in / forked header & footer sections render even before a company
-  // saves a custom layout.
-  const resolved = resolveTemplate("salesInvoice", templateConfig);
+  // The effective template (the default when nothing is stored), so built-in and
+  // forked header and footer sections render before a company saves a layout.
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
 
   // Settlement decimals from the document currency's row (authoritative over
@@ -364,7 +372,7 @@ export async function loadSalesInvoiceDocument(args: {
     terms: (terms.data?.salesTerms ?? {}) as SalesInvoicePDFProps["terms"],
     paymentTerms: paymentTerms.data ?? [],
     shippingMethods: shippingMethods.data ?? [],
-    title: "Sales Invoice",
+    shippingTerms: shippingTerms.data ?? [],
     thumbnails,
     template: templateConfig,
     sections

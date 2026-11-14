@@ -148,7 +148,7 @@ function WorkflowTitle({
       }}
     >
       <Heading className={headingClassName}>{name}</Heading>
-      <LuPencil className="size-3 shrink-0 text-muted-foreground md:opacity-0 transition-opacity group-hover/title:opacity-100 max-md:size-4" />
+      <LuPencil className="size-3 shrink-0 text-muted-foreground md:opacity-0 transition-opacity group-hover/title:opacity-100 group-focus-within/title:opacity-100 focus-visible:opacity-100 max-md:size-4" />
     </button>
   );
 }
@@ -314,19 +314,18 @@ export function BuilderHeader({
           )}
         </div>
 
-        {confirmUnpublish.isOpen && (
-          <ConfirmUnpublishWorkflow
-            workflowId={workflow.id}
-            name={workflow.name}
-            onClose={confirmUnpublish.onClose}
-          />
-        )}
+        <ConfirmUnpublishWorkflow
+          open={confirmUnpublish.isOpen}
+          workflowId={workflow.id}
+          name={workflow.name}
+          onClose={confirmUnpublish.onClose}
+        />
 
         {/* Hand-rolled rather than `Confirm`: publish posts `versionId` and reads the returned
           issues back off its own fetcher to outline the failing nodes. */}
-        {confirmPublish.isOpen && current && published && (
+        {current && published && (
           <Modal
-            open
+            open={confirmPublish.isOpen}
             onOpenChange={(open) => {
               if (!open) confirmPublish.onClose();
             }}

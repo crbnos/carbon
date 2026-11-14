@@ -399,7 +399,7 @@ called over HTTP with `client.functions.invoke("embedding", { body })`.
 
 ### 3.4 The database
 
-Carbon uses Postgres 15 through Supabase [[24]](#g24), which adds PostgREST, authentication, file storage,
+Carbon uses Postgres 17 through Supabase [[24]](#g24), which adds PostgREST, authentication, file storage,
 realtime changes, and an edge-function runtime.
 
 As of August 2026, the schema contains **923 migration files**, 362 tables, 101 views, 238 database functions, and 154 enum types.
@@ -684,9 +684,11 @@ environment variables on the container.
 
 ### 7.5 Knowing what is happening
 
-LogTape emits colored local logs and newline-delimited JSON in production. It redacts sensitive fields and
-propagates request IDs. Carbon does not provide separate log shipping; use CloudWatch on AWS or `docker service logs`
-when self-hosted. PostHog provides product analytics and is disabled in controlled environments. Carbon does not use Sentry or distributed tracing.
+LogTape emits colored local logs and newline-delimited JSON in production. It redacts sensitive fields, and every
+line written during a request carries its request ID, company and user. Carbon does not provide separate log shipping;
+use CloudWatch on AWS or `docker service logs` when self-hosted. Tracing is OpenTelemetry and off by default: set
+`OTEL_EXPORTER_OTLP_ENDPOINT` to send one trace per request, with its route, queries and outbound calls, to any OTLP
+backend. PostHog provides product analytics and is disabled in controlled environments. Carbon does not use Sentry.
 
 ---
 
@@ -816,7 +818,7 @@ caused it.
 
 <a id="g17"></a>
 **17. Postgres:** the relational database everything in Carbon is built on.
-Version 15.
+Version 17.
 
 <a id="g18"></a>
 **18. PostgREST:** a service that exposes Postgres tables and views as a REST

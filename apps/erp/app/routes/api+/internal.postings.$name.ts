@@ -14,6 +14,7 @@ import { getCarbon } from "@carbon/auth";
 import { SESSION_SECRET } from "@carbon/env";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { describeCause, reasonText } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -34,12 +35,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Checked before the body is read, so a request with no signature never
   // has its body buffered.
   if (!readInternalCallHeaders(name, request.headers)) {
-    logger.warn("Refused an internal call with no valid signature", { name });
+    logger.warning("Refused an internal call with no valid signature", {
+      name
+    });
     return refuse(401, "Unauthorized");
   }
   const body = await readInternalCallBody(request);
   if (body === null) {
-    logger.warn("Refused an internal call with a body too large", { name });
+    logger.warning("Refused an internal call with a body too large", { name });
     return refuse(413, "The body is too large");
   }
 
@@ -50,7 +53,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     body
   );
   if (!call) {
-    logger.warn("Refused an internal call with no valid signature", { name });
+    logger.warning("Refused an internal call with no valid signature", {
+      name
+    });
     return refuse(401, "Unauthorized");
   }
 
@@ -61,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return refuse(400, "The body is not JSON");
   }
   if (!isMesPosting(name, input)) {
-    logger.warn("Refused an internal call MES does not make", {
+    logger.warning("Refused an internal call MES does not make", {
       name,
       companyId: call.companyId
     });
@@ -85,14 +90,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (fresh !== "OK") {
     const holder = await redis.get(nonceKey);
     if (holder !== null && holder !== claim) {
-      logger.warn("Refused a repeated internal call", {
+      logger.warning("Refused a repeated internal call", {
         name,
         companyId: call.companyId
       });
       return refuse(409, "This call was already made");
     }
     if (holder === null) {
-      logger.warn("Accepted an internal call without a replay check", {
+      logger.warning("Accepted an internal call without a replay check", {
         name,
         companyId: call.companyId
       });
@@ -113,7 +118,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const result = await posting(name, handles, input as never);
   if (result.error) {
-    const { status, message, body: details } = result.error;
+    const { status, body: details } = result.error;
+    const reason = result.error.message ? null : describeCause(result.error);
+    const message = result.error.message || (reason ? reasonText(reason) : "");
     return Response.json(
       { data: null, error: { status, message, body: details } },
       { status }

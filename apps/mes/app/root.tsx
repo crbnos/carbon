@@ -27,7 +27,9 @@ import {
   useUiScale,
   ViewportProvider
 } from "@carbon/react";
+import { DocumentHiddenMotion } from "@carbon/react/DocumentHidden";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
+import { RouteAnnouncer } from "@carbon/react/RouteAnnouncer";
 import type { UiScale } from "@carbon/utils";
 import {
   colorSchemeHintScript,
@@ -50,7 +52,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -138,6 +140,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_URL,
+    TENANT_TYPE,
     SUPABASE_ANON_KEY,
     VERCEL_ENV,
     VERCEL_URL
@@ -162,6 +165,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_URL,
+        TENANT_TYPE,
         SUPABASE_ANON_KEY,
         VERCEL_ENV,
         VERCEL_URL
@@ -357,6 +361,19 @@ function Document({
   );
 }
 
+/**
+ * The query devtools button floats over form controls, so a browser driven by
+ * automation (`navigator.webdriver`) does not get it. Developers still do.
+ */
+function QueryDevtools() {
+  const [automated, setAutomated] = useState(true);
+  useEffect(() => {
+    setAutomated(navigator.webdriver === true);
+  }, []);
+  if (automated) return null;
+  return <ReactQueryDevtools buttonPosition="bottom-right" />;
+}
+
 export default function App() {
   const loaderData = useLoaderData<typeof loader>();
   const env = loaderData?.env ?? {};
@@ -404,8 +421,12 @@ export default function App() {
                     env={env}
                   >
                     <Outlet />
-                    {/* Renders nothing outside development; the package strips itself. */}
-                    <ReactQueryDevtools buttonPosition="bottom-right" />
+                    {/* Says which page opened and moves focus to it on navigation. */}
+                    <RouteAnnouncer />
+                    {/* Closed menus and dialogs unmount at once in a hidden tab. */}
+                    <DocumentHiddenMotion />
+                    {/* Renders nothing outside development or in an automated browser. */}
+                    <QueryDevtools />
                   </Document>
                 </MotionConfig>
               </TooltipProvider>

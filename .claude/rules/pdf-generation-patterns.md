@@ -38,7 +38,7 @@ All PDF components are barrel-exported from `pdf/index.ts`.
   `theme`, `showFooter`, `showPageNumbers`, `pageNumberFormat`, `fontFamily`. It
   wraps children in `DocStyleProvider` so blocks read the themed `tw`.
 - Other shared parts (barrel `pdf/components/index.ts`): `Header`, `Footer`,
-  `AddressBlock`, `LogoImage`, `Note`, `Summary`, `Watermark`. Labels use
+  `LogoImage`, `Note`, `Summary`, `Watermark`. Labels use
   `components/labelGeometry.ts` `getLabelPdfGeometry(labelSize)` to size fonts/QR
   to a 203-dpi thermal baseline (geometric parity with the ZPL output).
 
@@ -84,7 +84,8 @@ Generated **async, before render**, into base64 PNG data URLs (react-pdf renders
 dependency.
 
 - `src/qr/qr-code.ts` — `generateQRCode(text, size, color?): Promise<string>`
-  (returns `data:image/png;base64,...`); also `generateQRCodeBuffer`. There is a
+  (returns `data:image/png;base64,...`); also `generateQRCodeSVG(text, color?)`
+  (a dotted SVG with the Carbon mark drawn in, served by the kanban QR route). There is a
   `generateQRCodeSync` that **throws "not supported"** — never call it.
 - `src/qr/barcode.ts` — `generateBarcode(text, symbology, opts?)` where
   `symbology` is `"pdf417" | "code128" | "datamatrix" | "qrcode"`. 2D codes use

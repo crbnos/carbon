@@ -139,12 +139,16 @@ export function PeopleCard({
     ? item.dayRows.map((row) => stationName(row.workCenterId)).join(", ")
     : "";
 
+  const canOpen = !isOverlay && !isDisabled;
+
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a tap anywhere on the card opens it; the name button is the keyboard/AT control
     <div
       ref={isOverlay ? undefined : setNodeRef}
       style={style}
-      onClick={() => {
-        if (!isOverlay && !isDisabled) onOpen(item);
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("a, button")) return;
+        if (canOpen) onOpen(item);
       }}
       className={cn(
         // the schedule board's card shell, so both boards read the same
@@ -183,7 +187,17 @@ export function PeopleCard({
         />
       </div>
       <div className="min-w-[7rem] flex-1">
-        <p className="truncate text-sm font-medium">{item.employee.name}</p>
+        {canOpen ? (
+          <button
+            type="button"
+            className="block max-w-full truncate rounded-sm text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => onOpen(item)}
+          >
+            {item.employee.name}
+          </button>
+        ) : (
+          <p className="truncate text-sm font-medium">{item.employee.name}</p>
+        )}
         {/* one fact per line — nothing shares a row, so nothing truncates */}
         {!item.isAbsent && shiftWindow && (
           <p className="truncate text-xs tabular-nums text-muted-foreground">
@@ -261,8 +275,11 @@ export function PeopleCard({
             <Trans>Absent</Trans>
           </PeoplePill>
         )}
-        {!isDisabled && !isOverlay && (
-          <LuChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/60" />
+        {canOpen && (
+          <LuChevronRight
+            aria-hidden
+            className="h-4 w-4 flex-shrink-0 text-muted-foreground/60"
+          />
         )}
       </div>
     </div>

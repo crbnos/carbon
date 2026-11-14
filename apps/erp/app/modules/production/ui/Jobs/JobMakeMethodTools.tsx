@@ -174,7 +174,6 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     configuratorModal.onClose();
     const sourceId = selectedConfigureItemId;
     setSelectedConfigureItemId(null);
-    setConfigurationParameters({ groups: [], parameters: [] });
     fetcher.submit(
       {
         type: "item",
@@ -726,27 +725,24 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
           </ValidatedForm>
         </ModalContent>
       </Modal>
-      {configuratorModal.isOpen && (
-        <ConfiguratorModal
-          open
-          destructive
-          initialValues={
-            routeData?.job?.configuration
-              ? (routeData.job.configuration as Record<string, any>)
-              : {}
-          }
-          groups={configurationParameters.groups}
-          parameters={configurationParameters.parameters}
-          onClose={() => {
-            configuratorModal.onClose();
-            setSelectedConfigureItemId(null);
-            setConfigurationParameters({ groups: [], parameters: [] });
-          }}
-          onSubmit={(config: Record<string, any>) => {
-            saveConfiguration(config);
-          }}
-        />
-      )}
+      <ConfiguratorModal
+        open={configuratorModal.isOpen}
+        destructive
+        initialValues={
+          routeData?.job?.configuration
+            ? (routeData.job.configuration as Record<string, any>)
+            : {}
+        }
+        groups={configurationParameters.groups}
+        parameters={configurationParameters.parameters}
+        onClose={() => {
+          configuratorModal.onClose();
+          setSelectedConfigureItemId(null);
+        }}
+        onSubmit={(config: Record<string, any>) => {
+          saveConfiguration(config);
+        }}
+      />
     </Fragment>
   );
 };

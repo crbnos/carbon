@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { LabelDownloadModal } from "@carbon/printing/ui";
 import {
   Button,
@@ -71,6 +72,8 @@ type StorageUnitsTableProps = {
   parentIdsWithChildren: string[];
   initialExpanded: string[];
 };
+
+const logger = getLogger("erp", "inventory", "storage-units-table");
 
 const StorageUnitsTable = memo(
   ({
@@ -201,9 +204,12 @@ const StorageUnitsTable = memo(
               : new Set([...prev].filter((id) => present.has(id)))
           );
         })
-        .catch(() => {
+        .catch((error) => {
           // A failed read leaves the children as shown; the next reload
           // reads them again.
+          logger.warning("Failed to reload the storage unit children", {
+            error
+          });
         });
       return () => {
         stale = true;
@@ -349,6 +355,7 @@ const StorageUnitsTable = memo(
                   <Spinner className="size-3" />
                 ) : (
                   <button
+                    aria-expanded={isExpanded}
                     type="button"
                     aria-label={
                       isExpanded ? t`Collapse subtree` : t`Expand subtree`
@@ -476,9 +483,15 @@ const StorageUnitsTable = memo(
           // effectiveNettable: its own flag, a parent's or a storage type's.
           accessorKey: "effectiveNettable",
           header: t`Non-nettable`,
-          cell: (item) => (
-            <Checkbox isChecked={item.getValue<boolean | null>() === false} />
-          ),
+          cell: (item) => {
+            const name = item.row.original.name;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean | null>() === false}
+                aria-label={t`Non-nettable: ${name}`}
+              />
+            );
+          },
           meta: {
             filter: {
               type: "static",
@@ -496,7 +509,15 @@ const StorageUnitsTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const name = item.row.original.name;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${name}`}
+              />
+            );
+          },
           meta: {
             filter: {
               type: "static",
@@ -607,6 +628,7 @@ const StorageUnitsTable = memo(
             </Button>
           )}
           <Combobox
+            aria-label={t`Location`}
             asButton
             size="sm"
             value={locationId}
@@ -690,78 +712,72 @@ const StorageUnitsTable = memo(
           table="storageUnit"
           withSavedView
         />
-        {printerModal.isOpen && (
-          <Modal
-            open
-            onOpenChange={(open) => {
-              if (!open) printerModal.onClose();
-            }}
-          >
-            <ModalContent>
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Select Printer</Trans>
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <div className="flex flex-col gap-1">
-                  {printerRoutes.map((route) => (
-                    <button
-                      type="button"
-                      key={route.id}
-                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
-                        selectedPrinterId === route.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted"
-                      }`}
-                      onClick={() => setSelectedPrinterId(route.id)}
-                    >
-                      <LuPrinter className="size-4 text-muted-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium">
-                          {route.name}
-                        </span>
-                        <span className="text-xs text-muted-foreground ml-2 uppercase">
-                          {route.format}
-                        </span>
-                        {route.mediaSizeId && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            {route.mediaSizeId}
-                          </span>
-                        )}
-                      </div>
-                      {selectedPrinterId === route.id && (
-                        <LuCheck className="size-4 text-primary shrink-0" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <div className="flex gap-2">
-                  <Button
-                    variant="primary"
-                    leftIcon={<LuPrinter />}
-                    disabled={!selectedPrinterId || isPrinting}
-                    onClick={handleConfirmPrint}
+        <Modal
+          open={printerModal.isOpen}
+          onOpenChange={(open) => {
+            if (!open) printerModal.onClose();
+          }}
+        >
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Select Printer</Trans>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <div className="flex flex-col gap-1">
+                {printerRoutes.map((route) => (
+                  <button
+                    type="button"
+                    key={route.id}
+                    className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                      selectedPrinterId === route.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:bg-muted"
+                    }`}
+                    onClick={() => setSelectedPrinterId(route.id)}
                   >
-                    <Trans>Print {selectedIds.size} Labels</Trans>
-                  </Button>
-                  <Button variant="solid" onClick={printerModal.onClose}>
-                    <Trans>Cancel</Trans>
-                  </Button>
-                </div>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        )}
-        {downloadModal.isOpen && selectedIds.size > 0 && (
-          <StorageUnitDownloadModal
-            ids={Array.from(selectedIds)}
-            isOpen={downloadModal.isOpen}
-            onClose={downloadModal.onClose}
-          />
-        )}
+                    <LuPrinter className="size-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{route.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2 uppercase">
+                        {route.format}
+                      </span>
+                      {route.mediaSizeId && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {route.mediaSizeId}
+                        </span>
+                      )}
+                    </div>
+                    {selectedPrinterId === route.id && (
+                      <LuCheck className="size-4 text-primary shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  leftIcon={<LuPrinter />}
+                  disabled={!selectedPrinterId || isPrinting}
+                  onClick={handleConfirmPrint}
+                >
+                  <Trans>Print {selectedIds.size} Labels</Trans>
+                </Button>
+                <Button variant="solid" onClick={printerModal.onClose}>
+                  <Trans>Cancel</Trans>
+                </Button>
+              </div>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+        <StorageUnitDownloadModal
+          ids={Array.from(selectedIds)}
+          isOpen={downloadModal.isOpen}
+          onClose={downloadModal.onClose}
+        />
       </>
     );
   }

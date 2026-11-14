@@ -72,6 +72,13 @@ sequences before tier 1. So **apply** uses the dataset wipe, and **revert** uses
 restore wipe (the snapshot carries the config back, so nothing needs keeping). The
 asymmetry is deliberate: each wipe is paired with whatever repopulates after it.
 
+Units are the one piece of that config the apply adjusts itself. `ensureUnitsOfMeasure`
+(`helpers/units-of-measure.ts`, run beside `ensureSequences`) makes every catalog unit the
+dataset names (any key ending in `unitOfMeasureCode`) active, and adds back one the company
+deleted: a metric company holds the imperial units the datasets use (LB, INCH, FOOT, GL, YD)
+inactive. The validator's `unitsOfMeasure` rule refuses a code outside the catalog
+(`@carbon/database/units-of-measure`).
+
 `wipeCompanyBusinessData` is NOT exported on its own — `wipeFirst` is the only way to
 reach it, so no caller can wipe without also re-seeding.
 
@@ -310,6 +317,32 @@ The validator's `items` rule checks that each `customFieldValues` key names an
 field's `listOptions`. Its `foundation` rule checks that an address `countryCode` is two
 upper-case letters.
 
+## Serial traveler line fields
+
+The serial traveler line (`.ai/specs/2026-11-12-serial-traveler-line-flow.md`) added
+these fields. Each one is optional except `materialRequests`; omitted, the row is as before.
+
+| Field | Written by | Effect |
+|---|---|---|
+| `FoundationData.lineFlow` (`LineFlowSpec`) | tier 01 | sets `companySettings.travelerLabels`, `requireTrackedMaterialsIssued` and `autoPickingListOnRelease`. Tier 01 writes all 3 on every apply, so a dataset without `lineFlow` turns them off again |
+| `BomLineSpec.operation` | tier 02 | the `order` of a `bop` operation in the same method, written as `methodOperationId` |
+| `TrackedStockSpec.shelf` | tier 03 | writes one opening `itemLedger` row per lot at that shelf, and skips the untracked opening row of that (item, shelf) |
+| `KanbanItemSpec.replenishmentLevel` | tier 03 | Transfer kanbans only |
+| `JobSpec.serials` | tier 06 | serial items only: one `readableId` per unit. `splitSerialUnits` splits the job's one reserved unit into quantity-1 units, each 1 ms after the last, as `assignSerialNumbers` does |
+| `ProductionData.materialRequests` (`MaterialRequestSpec`) | tier 06 | "Need material" rows on the job operation at `operationOrder`, at its work center and the plant. The applying user resolves a Resolved row, dated yesterday. Required: every dataset except a walkthrough seeds rows, and the `coverage.ts` floor is 2 |
+| `SerialSequenceSpec.serialNumberTiming` / `printLabelOnCompletion` | tier 10 | the `itemSerialSequence` columns; omitted, the column defaults apply |
+
+The validator checks them:
+
+- `operation` names a `bop` order of the same method.
+- A tracked shelf holds no Scrapped lot, and its lots sum to the `openingStock` at that shelf.
+- `replenishmentLevel` is on a Transfer kanban, and it is an integer of 0 or more.
+- `serials` is on a Serial item, has one entry per unit, and repeats no serial and no other seeded
+  tracked-entity id (`onHandTracked`, a receipt `lotNumber`, `genealogyInputs`, the
+  `genealogyAssembly` serial).
+- A material request is on an open, released job, at one of its root operations.
+- The `materialRequestStatus` coverage set has both Open and Resolved.
+
 ## Dates are offsets, never literals
 
 Every date in a dataset is a `DayOffset` — a signed number of days from the moment the
@@ -456,6 +489,33 @@ The full decision log, with the code each convention was copied from, is
 `.ai/specs/2026-09-22-demo-data-completeness.md` and
 `.ai/specs/2026-09-23-demo-data-screen-coverage.md` → Autonomous Decisions.
 
+## Rental agreements
+
+Every dataset seeds two rental agreements (`sales.rentalAgreements`,
+`RentalAgreementSpec`; spec `.ai/specs/2026-11-10-rental-agreements-demo-data.md`).
+Tier 09 seeds them right after the fixed assets (`tiers/rentals.ts`
+`seedRentalAgreements`), because every line rents a fleet unit.
+
+- **Fleet units** — three `FixedAssetSpec`s per dataset with `fleet: { item, serial }`,
+  class "Rental Fleet", Active. Tier 09 mints a Consumed serial for each, sets
+  `fixedAsset.itemId` / `trackedEntityId`, and tags the serial `{"Fixed Asset": <id>}`.
+- **Active** — open-ended (so every line is a `Rental`), with `lessorClassification` and
+  `classificationInputs` from `classifyRentalLine`, Pending billing periods from
+  `generateRentalBillingPeriods` through `billingHorizon` (both moved into
+  `@carbon/database`), one unit On Rent through a Posted rental shipment
+  (`shipmentFixedAssetLine` + a `Rental Delivery` activity, no ledger, no journal), one
+  unit Pending, a second contact (`rentalAgreementContact`) and one unbilled charge.
+- **Draft** — a 12-month term starting in 14 days, one line, no periods.
+- Every seeded agreement has `invoiceAutomation = 'Draft Only'`: the nightly
+  `recurring-billing` job drafts every due Pending period, and the company default would
+  post and email those invoices.
+- The second contact is a `CustomerContactSpec` with `sharesLocation: true`: tier 01
+  reuses the customer's "Billing" location, so `cloc:<customer>` is unchanged. Tier 01
+  stores every `customerContact` id at `ctx.refs.contacts["cc:<customer>:<lastName>"]`.
+- `shipmentFixedAssetLine` is in `PARENT_CHECK_TABLES` (a sales order line OR a rental
+  line). The validator's `rentals` rule checks activation's own rules. Not seeded:
+  invoices, deposits, credit memos, Sale lines, returns.
+
 ## Service jobs
 
 Every dataset seeds service work (`SalesData` in `types.ts`, tier 04
@@ -499,7 +559,8 @@ journals like any other document source (`DOCUMENT_JOURNAL_SOURCES`). Floors:
 
 ## Part thumbnails ship with the app
 
-Every seeded item gets `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"`,
+Every seeded item gets `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"`
+(`<industryId>` is `Dataset.assetIndustryId` when set, see below),
 written by `createItem`. **That is not a storage object.** The artwork is 132 committed
 vector files under `packages/database/src/datasets/assets/<industryId>/`, exposed by
 `@carbon/database/dataset-assets` and resolved by both apps' `getPrivateUrl`, which tries
@@ -531,8 +592,8 @@ row whose `modelPath`/`glbPath`/`graphPath` are those bundled paths, `processing
 (tier 04) and jobs (tier 06) both copy the link.
 
 The data is `ItemsData.assembly` (`AssemblySpec`), authored in `data/<key>/assembly.ts`. It
-is **optional** — a dataset with a null `industryId` has nowhere to resolve a model from and is
-skipped. A step's `componentNodeIds` are real node ids read out of that exact `graph.json`; they
+is **optional** — a dataset with no `assetIndustryId` and a null `industryId` has nowhere to resolve
+a model from and is skipped. A step's `componentNodeIds` are real node ids read out of that exact `graph.json`; they
 are the frozen join key between the graph, the GLB node extras and the step rows, so a step
 naming an absent node would render but animate nothing — the pure validator now fails it
 (and a `componentCount` that disagrees with the graph) before commit. Regenerate them from the graph rather than
@@ -572,6 +633,37 @@ Two things needed no change and should stay that way: `wipe.ts` discovers tables
 already cleaned on re-apply (verified — applying a second dataset leaves exactly one model row);
 and because the artifacts are bundled rather than stored, a backup/restore or template revert
 carries the paths across intact with nothing to re-upload.
+
+## Dev-only datasets
+
+A dataset with `industryId: null` is dev-only: `datasetForIndustry` never returns it, so
+onboarding never offers it. `pnpm db:seed:dev -- --dataset <key>` still applies it.
+`Dataset.assetIndustryId` names the industry folder whose bundled assets (thumbnails, CAD model)
+it reuses; it defaults to `industryId`. Tier 02 (`seedAssembly`), `createItem` and the validator's
+assembly graph check read it.
+
+`motor-line` (`data/motor-line/index.ts`, label "Motor line (dev)") is the one dev-only dataset.
+It is a walkthrough of one product, the anonymized AJ-3 serial motor line (`aj3.ts`), with
+`lineFlow` and all 3 settings on. It keeps only the motor company setup the line needs (plant,
+shift, storage types, printer route, the two AJ-3 suppliers) and seeds no documents: no jobs,
+orders, quality, maintenance or workflows. The chambers (AJ3-CC) and injectors (AJ3-FIA) are on
+shelf WH1-C1 as 3 serials each, so the engine line runs without sub-assembly jobs. The only
+demand is a forecast of 1 AJ3-ENG next week, so MRP suggests one engine to make. A safety stock
+alone does not work here: MRP's planning grid lists only an item with demand, open supply or a
+reorder point.
+
+### Walkthrough datasets
+
+`Dataset.walkthrough: true` marks a dev-only single-product dataset. The validator runs only its
+structural rules on it (`WALKTHROUGH_RULES` in `validate.ts`): names resolve, stock adds up,
+serials do not collide. The coverage checks in those rules go through `ValidationCtx.cover`, which
+skips them. `datasetScope` refuses a walkthrough with an `industryId`, and it requires each slice
+whose rules do not run (sales, purchasing documents, production, quality, accounting documents,
+most of ops, workflow runs) to be empty. `coverageFloorsFor` (`coverage.ts`) gives a walkthrough
+no row-count floors, so `db:check:datasets` still applies it and rolls it back, but counts nothing.
+The job, RFQ and demand stories (`production.eventsJobKey`, `purchasing.rfqHeader`,
+`planning.demandOrder` and the others in `datasetScope`) are null on a walkthrough, and the tiers
+skip them. Every other dataset must set them.
 
 ## Adding an industry
 

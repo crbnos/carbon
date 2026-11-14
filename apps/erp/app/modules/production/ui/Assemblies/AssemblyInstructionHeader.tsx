@@ -70,6 +70,7 @@ function useNewVersion() {
 }
 
 function InstructionNameInput() {
+  const { t } = useLingui();
   const { id, instruction } = useInstruction();
   const permissions = usePermissions();
   const nameFetcher = useFetcher<{}>();
@@ -91,6 +92,7 @@ function InstructionNameInput() {
 
   return (
     <Input
+      aria-label={t`Instruction name`}
       className="mr-2 w-auto min-w-0 max-w-[320px] font-semibold text-foreground field-sizing-content"
       value={name}
       borderless
@@ -167,17 +169,15 @@ function InstructionPrimaryAction() {
           <Trans>Make Active</Trans>
         </Button>
       </RecordAction>
-      {activateDisclosure.isOpen && (
-        <Confirm
-          isOpen
-          title={t`Make Active`}
-          text={t`Make version ${instruction.version} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it.`}
-          confirmText={t`Make Active`}
-          action={path.to.assemblyInstructionActivate(id)}
-          onCancel={activateDisclosure.onClose}
-          onSubmit={activateDisclosure.onClose}
-        />
-      )}
+      <Confirm
+        isOpen={activateDisclosure.isOpen}
+        title={t`Make Active`}
+        text={t`Make version ${instruction.version} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it.`}
+        confirmText={t`Make Active`}
+        action={path.to.assemblyInstructionActivate(id)}
+        onCancel={activateDisclosure.onClose}
+        onSubmit={activateDisclosure.onClose}
+      />
     </>
   );
 }
@@ -299,20 +299,18 @@ const AssemblyInstructionHeader = () => {
           </>
         }
       />
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteAssemblyInstruction(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={instruction?.name ?? t`assembly instruction`}
-          text={t`Are you sure you want to delete ${instruction?.name}? This cannot be undone.`}
-          onCancel={() => {
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteAssemblyInstruction(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={instruction?.name ?? t`assembly instruction`}
+        text={t`Are you sure you want to delete ${instruction?.name}? This cannot be undone.`}
+        onCancel={() => {
+          deleteDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteDisclosure.onClose();
+        }}
+      />
     </>
   );
 };

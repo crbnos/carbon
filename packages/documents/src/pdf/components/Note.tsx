@@ -41,11 +41,40 @@ export function keepListItemTogether(item: JSONContent): boolean {
 }
 
 /**
+ * How a text's marks print. Italic only with an italic face: react-pdf fails the
+ * whole document without one.
+ */
+export function markStyle(
+  marks: JSONContent["marks"],
+  allowItalic: boolean
+): {
+  fontWeight?: "bold";
+  fontStyle?: "italic";
+  textDecoration?: "underline" | "line-through" | "underline line-through";
+} | null {
+  const has = (type: string) => marks?.some((mark) => mark.type === type);
+  const italic = allowItalic && has("italic");
+  const textDecoration = has("underline")
+    ? has("strike")
+      ? "underline line-through"
+      : "underline"
+    : has("strike")
+      ? "line-through"
+      : undefined;
+  if (!has("bold") && !italic && !textDecoration) return null;
+  return {
+    ...(has("bold") ? { fontWeight: "bold" as const } : {}),
+    ...(italic ? { fontStyle: "italic" as const } : {}),
+    ...(textDecoration ? { textDecoration } : {})
+  };
+}
+
+/**
  * Build a tiptap → react-pdf renderer bound to a theme, so the title/headings
  * pick up `theme.heading` and body text inherits `theme.text` (set on the
  * wrapper). Closure over `theme` keeps the recursive calls clean.
  */
-function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
+export function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
   const convert = (
     node: JSONContent,
     args?: {
@@ -156,22 +185,10 @@ function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
         );
 
       case "text": {
-        const marks = node.marks ?? [];
-        if (marks.length === 0) return node.text;
-        const style: { fontWeight?: "bold"; fontStyle?: "italic" } = {};
-        if (marks.some((mark) => mark.type === "bold"))
-          style.fontWeight = "bold";
-        // Italic only with an italic face: react-pdf throws without one.
-        if (allowItalic && marks.some((mark) => mark.type === "italic")) {
-          style.fontStyle = "italic";
-        }
-        const text =
-          Object.keys(style).length > 0 ? (
-            <Text style={style}>{node.text}</Text>
-          ) : (
-            node.text
-          );
-        const href = marks.find((mark) => mark.type === "link")?.attrs?.href;
+        const style = markStyle(node.marks, allowItalic);
+        const text = style ? <Text style={style}>{node.text}</Text> : node.text;
+        const href = node.marks?.find((mark) => mark.type === "link")?.attrs
+          ?.href;
         return typeof href === "string" && href ? (
           <Link
             src={href}

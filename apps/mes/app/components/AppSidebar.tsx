@@ -19,6 +19,7 @@ import {
   HStack,
   NavRail,
   NavRailGroup,
+  NavRailItem,
   NavRailLink,
   NavRailSwitcher,
   useMode,
@@ -34,11 +35,14 @@ import {
   LuCalendarDays,
   LuChevronsUpDown,
   LuCirclePlay,
+  LuClipboardCheck,
   LuClipboardList,
   LuHeadphones,
   LuHistory,
+  LuMapPin,
   LuMonitorPlay,
   LuPackageCheck,
+  LuTruck,
   LuWrench
 } from "react-icons/lu";
 import { Await, Link, useLocation, useNavigate } from "react-router";
@@ -51,7 +55,12 @@ import { EndShift } from "./EndShift";
 import { MoreSheet } from "./MoreSheet";
 import Suggestion from "./Suggestion";
 import { TimeCardButton } from "./TimeCardButton";
-import { UserNav, useSwitchCompany } from "./UserNav";
+import {
+  UserNav,
+  useLocationSwitch,
+  useSwitchCompany,
+  useUserNav
+} from "./UserNav";
 
 export function AppSidebar({
   activeEvents,
@@ -89,6 +98,7 @@ export function AppSidebar({
 }) {
   const { t } = useLingui();
   const { isMobile } = useSidebar();
+  const { optimisticLocation } = useLocationSwitch(location);
 
   const queues = (
     <QueueLinks
@@ -139,7 +149,14 @@ export function AppSidebar({
         <MoreSheet
           open={moreOpen}
           onOpenChange={onMoreOpenChange}
-          header={<CompanyLink company={company} />}
+          header={
+            <CompanyLink
+              company={company}
+              locationName={
+                locations.find((l) => l.id === optimisticLocation)?.name
+              }
+            />
+          }
           company={company}
           companies={companies}
           consoleEnabled={consoleEnabled}
@@ -161,6 +178,10 @@ export function AppSidebar({
         <CompanySwitcher
           company={company}
           companies={companies}
+          consoleMode={consoleMode}
+          pinnedInUser={pinnedInUser}
+          location={location}
+          locations={locations}
           // An operator pinned in at a console station cannot switch company.
           canSwitch={!(consoleMode && pinnedInUser)}
         />
@@ -172,8 +193,6 @@ export function AppSidebar({
           <UserNav
             consoleEnabled={consoleEnabled}
             consoleMode={consoleMode}
-            location={location}
-            locations={locations}
             pinnedInUser={pinnedInUser}
           />
         </>
@@ -192,19 +211,40 @@ export function AppSidebar({
 function CompanySwitcher({
   company,
   companies,
+  consoleMode,
+  pinnedInUser,
+  location,
+  locations,
   canSwitch
 }: {
   company: Company;
   companies: Company[];
+  consoleMode: boolean;
+  pinnedInUser: PinnedInUser | null;
+  location: string;
+  locations: Location[];
   canSwitch: boolean;
 }) {
   const { t } = useLingui();
   const mode = useMode();
   const switchCompany = useSwitchCompany();
+  // Location follows the phone sheet and the account menu: only another
+  // operator pinned in at the station blocks it, not the station user.
+  const { updateLocation, optimisticLocation, isOperatorPinnedIn } = useUserNav(
+    {
+      consoleMode,
+      location,
+      pinnedInUser
+    }
+  );
+  const locationName = locations.find((l) => l.id === optimisticLocation)?.name;
+
+  const canSwitchCompany = canSwitch && companies.length > 1;
+  const canSwitchLocation = !isOperatorPinnedIn && locations.length > 1;
 
   // Nothing to switch to: the row is the link back to the ERP, as it was.
-  if (!canSwitch || companies.length < 2) {
-    return <CompanyLink company={company} />;
+  if (!canSwitchCompany && !canSwitchLocation) {
+    return <CompanyLink company={company} locationName={locationName} />;
   }
 
   return (
@@ -212,40 +252,70 @@ function CompanySwitcher({
       <DropdownMenuTrigger asChild>
         <NavRailSwitcher
           label={company.name ?? ""}
+          sublabel={locationName}
           logoLight={company.logoLightIcon}
           logoDark={company.logoDarkIcon}
           trailing={<LuChevronsUpDown />}
         />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[240px]">
-        <DropdownMenuLabel>{t`Companies`}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={company.companyId!}>
-          {companies.map((c) => {
-            const companyLogo =
-              mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
-            return (
-              <DropdownMenuRadioItem
-                key={c.companyId}
-                value={c.companyId!}
-                onSelect={() => {
-                  if (c.companyId !== company.companyId) {
-                    switchCompany(c.companyId!);
-                  }
-                }}
-              >
-                <HStack>
-                  <Avatar
-                    size="xs"
-                    name={c.name ?? undefined}
-                    src={companyLogo ?? undefined}
-                  />
-                  <span>{c.name}</span>
-                </HStack>
-              </DropdownMenuRadioItem>
-            );
-          })}
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
+      <DropdownMenuContent
+        align="start"
+        className="min-w-[240px] max-w-[360px]"
+      >
+        {canSwitchCompany ? (
+          <>
+            <DropdownMenuLabel>{t`Companies`}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={company.companyId!}>
+              {companies.map((c) => {
+                const companyLogo =
+                  mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
+                return (
+                  <DropdownMenuRadioItem
+                    key={c.companyId}
+                    value={c.companyId!}
+                    onSelect={() => {
+                      if (c.companyId !== company.companyId) {
+                        switchCompany(c.companyId!);
+                      }
+                    }}
+                  >
+                    <HStack className="min-w-0">
+                      <Avatar
+                        size="xs"
+                        name={c.name ?? undefined}
+                        src={companyLogo ?? undefined}
+                      />
+                      <span className="truncate">{c.name}</span>
+                    </HStack>
+                  </DropdownMenuRadioItem>
+                );
+              })}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
+        {canSwitchLocation ? (
+          <>
+            <DropdownMenuLabel>{t`Locations`}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={optimisticLocation}>
+              {locations.map((loc) => (
+                <DropdownMenuRadioItem
+                  key={loc.id}
+                  value={loc.id}
+                  onSelect={() => {
+                    if (loc.id !== optimisticLocation) updateLocation(loc.id);
+                  }}
+                >
+                  <HStack className="min-w-0">
+                    <LuMapPin className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{loc.name}</span>
+                  </HStack>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
         <DropdownMenuItem asChild>
           <Link to={ERP_URL}>
             <DropdownMenuIcon icon={<LuArrowUpRight />} />
@@ -258,11 +328,18 @@ function CompanySwitcher({
 }
 
 /** Leads back to the ERP; on phones, the More sheet's first row. */
-function CompanyLink({ company }: { company: Company }) {
+function CompanyLink({
+  company,
+  locationName
+}: {
+  company: Company;
+  locationName?: string;
+}) {
   return (
     <NavRailSwitcher
       asChild
       label={company.name ?? ""}
+      sublabel={locationName}
       logoLight={company.logoLightIcon}
       logoDark={company.logoDarkIcon}
       trailing={<LuArrowUpRight className="md:hidden" />}
@@ -301,7 +378,9 @@ export const QUEUES: { key: QueueKey; icon: typeof LuActivity; to: string }[] =
     { key: "jobs", icon: LuCirclePlay, to: path.to.jobs },
     { key: "maintenance", icon: LuWrench, to: path.to.maintenance },
     { key: "picking", icon: LuPackageCheck, to: path.to.picking },
-    { key: "service", icon: LuHeadphones, to: path.to.service }
+    { key: "service", icon: LuHeadphones, to: path.to.service },
+    { key: "inspections", icon: LuClipboardCheck, to: path.to.inspections },
+    { key: "lineFeed", icon: LuTruck, to: path.to.lineFeed }
   ];
 
 /** `path.to.operations` carries a `?saved=1` query; activity matches on paths. */
@@ -319,7 +398,9 @@ export function useQueueTitles(): Record<QueueKey, string> {
       jobs: t`Jobs`,
       maintenance: t`Maintenance`,
       picking: t`Picking`,
-      service: t`Service`
+      service: t`Service`,
+      inspections: t`Inspections`,
+      lineFeed: t`Line feed`
     }),
     [t]
   );
@@ -374,16 +455,18 @@ function DisplaysLink() {
   const { t } = useLingui();
 
   return (
-    <NavRailLink
-      to={path.to.displays}
+    // NavRailItem directly (not NavRailLink) so the name can say the link
+    // opens a new tab while the visible label stays "Displays".
+    <NavRailItem
+      asChild
       icon={<LuMonitorPlay />}
       label={t`Displays`}
-      external
-      target="_blank"
-      rel="noreferrer"
+      aria-label={t`Displays (opens in new tab)`}
       trailing={
         <LuArrowUpRight className="hidden size-4 text-muted-foreground max-md:block" />
       }
-    />
+    >
+      <Link to={path.to.displays} target="_blank" rel="noreferrer" />
+    </NavRailItem>
   );
 }

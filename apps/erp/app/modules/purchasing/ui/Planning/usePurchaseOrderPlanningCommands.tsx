@@ -11,7 +11,7 @@ import { LuCheckCheck, LuGitBranchPlus, LuLoaderCircle } from "react-icons/lu";
 import type { FetcherWithComponents } from "react-router";
 import { useFetcher } from "react-router";
 import Confirm from "~/components/Modals/Confirm/Confirm";
-import { usePermissions } from "~/hooks";
+import { useDrawerItem, usePermissions } from "~/hooks";
 import type { PlanningPurchaseOrder } from "~/modules/production/ui/Planning/planning-review";
 import { purchaseOrderPlanningMenu } from "~/modules/production/ui/Planning/planning-review";
 import type { loader as finalizeDefaultsLoader } from "~/routes/api+/purchasing.purchase-order.$id.finalize";
@@ -47,9 +47,10 @@ export function usePurchaseOrderPlanningCommands(): {
   const permissions = usePermissions();
   const statusFetcher = useFetcher();
   const finalizeFetcher = useFetcher();
-  const [revisionOrder, setRevisionOrder] =
-    useState<PlanningPurchaseOrder | null>(null);
-  const [finalizeOrderId, setFinalizeOrderId] = useState<string | null>(null);
+  const revision = useDrawerItem<PlanningPurchaseOrder>();
+  const finalize = useDrawerItem<string>();
+  const openRevision = revision.open;
+  const openFinalize = finalize.open;
   const [ordersVersion, setOrdersVersion] = useState(0);
 
   const isBusy =
@@ -105,7 +106,7 @@ export function usePurchaseOrderPlanningCommands(): {
           {menu.canReopenAsRevision && (
             <DropdownMenuItem
               disabled={isBusy || !canDelete}
-              onSelect={() => setRevisionOrder(order)}
+              onSelect={() => openRevision(order)}
             >
               <DropdownMenuIcon icon={<LuGitBranchPlus />} />
               <Trans>Reopen as Revision</Trans>
@@ -114,7 +115,7 @@ export function usePurchaseOrderPlanningCommands(): {
           {menu.canFinalize && (
             <DropdownMenuItem
               disabled={isBusy || !canCreate}
-              onSelect={() => setFinalizeOrderId(order.id)}
+              onSelect={() => openFinalize(order.id)}
             >
               <DropdownMenuIcon icon={<LuCheckCheck />} />
               <Trans>Finalize</Trans>
@@ -123,21 +124,30 @@ export function usePurchaseOrderPlanningCommands(): {
         </>
       );
     },
-    [isBusy, reopen, canUpdate, canDelete, canCreate]
+    [
+      isBusy,
+      reopen,
+      canUpdate,
+      canDelete,
+      canCreate,
+      openRevision,
+      openFinalize
+    ]
   );
 
-  const revisionLabel = revisionOrder?.readableId ?? t`The purchase order`;
+  const revisionLabel = revision.item?.readableId ?? t`The purchase order`;
   const purchaseOrderDialogs = (
     <>
-      {revisionOrder && (
+      {revision.item && (
         <Confirm
-          action={path.to.purchaseOrderStatus(revisionOrder.id)}
+          isOpen={revision.isOpen}
+          action={path.to.purchaseOrderStatus(revision.item.id)}
           title={t`Reopen as Revision`}
           text={t`${revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order.`}
           confirmText={t`Create Revision`}
-          onCancel={() => setRevisionOrder(null)}
+          onCancel={revision.close}
           onSubmit={() => {
-            setRevisionOrder(null);
+            revision.close();
             setOrdersVersion((version) => version + 1);
           }}
         >
@@ -145,11 +155,12 @@ export function usePurchaseOrderPlanningCommands(): {
           <input type="hidden" name="createRevision" value="true" />
         </Confirm>
       )}
-      {finalizeOrderId && (
+      {finalize.item && (
         <PlanningFinalizeModal
-          purchaseOrderId={finalizeOrderId}
+          purchaseOrderId={finalize.item}
           fetcher={finalizeFetcher}
-          onClose={() => setFinalizeOrderId(null)}
+          open={finalize.isOpen}
+          onClose={finalize.close}
         />
       )}
     </>
@@ -157,7 +168,7 @@ export function usePurchaseOrderPlanningCommands(): {
 
   return {
     purchaseOrderMenuItems,
-    finalizePurchaseOrder: setFinalizeOrderId,
+    finalizePurchaseOrder: openFinalize,
     purchaseOrderDialogs,
     ordersVersion
   };
@@ -168,10 +179,12 @@ export function usePurchaseOrderPlanningCommands(): {
 function PlanningFinalizeModal({
   purchaseOrderId,
   fetcher,
+  open,
   onClose
 }: {
   purchaseOrderId: string;
   fetcher: FetcherWithComponents<unknown>;
+  open: boolean;
   onClose: () => void;
 }) {
   const defaults = useLoaderQuery<typeof finalizeDefaultsLoader>(
@@ -185,6 +198,7 @@ function PlanningFinalizeModal({
       purchaseOrder={defaults.data.purchaseOrder}
       defaultCc={defaults.data.defaultCc}
       fetcher={fetcher}
+      open={open}
       onClose={onClose}
     />
   );

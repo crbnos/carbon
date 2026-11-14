@@ -111,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // token proves identity, so a `userId` that is not the token's owner would
   // stamp another user's company onto this session — refuse it.
   if (authSession.userId !== userId) {
-    logger.warn("Callback userId does not match the refresh token's user", {
+    logger.warning("Callback userId does not match the refresh token's user", {
       userId,
       sessionUserId: authSession.userId
     });

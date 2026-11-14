@@ -15,13 +15,16 @@ afterAll(() => vi.unstubAllEnvs());
 
 const waitEnded = vi.fn();
 const startSpan = vi.fn((_name: string, _attributes: object) => waitEnded);
-vi.mock("@carbon/logger/tracing.server", () => ({ startSpan }));
+vi.mock("@carbon/logger/span", async (original) => ({
+  ...(await original<typeof import("@carbon/logger/span")>()),
+  startSpan
+}));
 
 const { getCarbonAPIKeyClient, getCarbonClient, storageReadFetch } =
   await import("./client");
 const { requestFetch } = await import("./client.server");
 const { requestContextMiddleware } = await import(
-  "@carbon/logger/middleware.server"
+  "@carbon/logger/context.server"
 );
 const { RouterContextProvider } = await import("react-router");
 

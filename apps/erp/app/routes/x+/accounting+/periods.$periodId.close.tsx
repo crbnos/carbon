@@ -342,6 +342,8 @@ function PeriodCloseTaskRow({
         return t`Computes the indirect rates for the period and posts the burden catch-up to each project, then bills it on Cost Plus lines. Lock the period first. Passes when the company has no indirect pool that applies to projects. Skip with a reason if burden waits for a later period.`;
       case "timesheets-complete":
         return t`In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known.`;
+      case "shipped-not-invoiced":
+        return t`These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains.`;
     }
     switch (task.name) {
       case "Lock the period":
@@ -358,6 +360,7 @@ function PeriodCloseTaskRow({
   const isResolved = status === "Done" || status === "Skipped";
   // The "Lock the period" step is an Action whose button performs the real
   // Open <-> Locked transition (below), not a generic "Mark Done"/"Skip".
+  const taskName = task.name;
   const isLockTask =
     task.taskType === "Action" && task.name === LOCK_PERIOD_TASK_NAME;
   // Auto tasks are evaluated by the system; only Action/Manual tasks are
@@ -432,6 +435,8 @@ function PeriodCloseTaskRow({
                   title={
                     task.autoCheckKey === "draft-journals" ? (
                       <Trans>Draft Journal Entries</Trans>
+                    ) : task.autoCheckKey === "shipped-not-invoiced" ? (
+                      <Trans>Uninvoiced Shipments</Trans>
                     ) : (
                       <Trans>Unposted Documents</Trans>
                     )
@@ -442,6 +447,16 @@ function PeriodCloseTaskRow({
                         These journal entries are still Draft, so their debits
                         and credits aren't in the ledger for this period. Post
                         each one, or re-date it into a later open period.
+                      </Trans>
+                    ) : task.autoCheckKey === "shipped-not-invoiced" ? (
+                      <Trans>
+                        These shipments recorded costs in this period, but some
+                        quantities were not invoiced by period end. New sales
+                        invoices post with today's date, so invoicing after
+                        period end will not clear this warning. Review the
+                        timing difference and any required accounting
+                        adjustment, then skip with a reason documenting the
+                        treatment if the warning remains.
                       </Trans>
                     ) : (
                       <Trans>
@@ -463,6 +478,14 @@ function PeriodCloseTaskRow({
                       ) : (
                         <Trans>
                           {task.autoCheck.count} draft journal entries
+                        </Trans>
+                      )
+                    ) : task.autoCheckKey === "shipped-not-invoiced" ? (
+                      task.autoCheck.count === 1 ? (
+                        <Trans>1 uninvoiced shipment</Trans>
+                      ) : (
+                        <Trans>
+                          {task.autoCheck.count} uninvoiced shipments
                         </Trans>
                       )
                     ) : task.autoCheck.count === 1 ? (
@@ -649,6 +672,7 @@ function PeriodCloseTaskRow({
               <input type="hidden" name="taskId" value={task.id} />
               <Input
                 name="skippedReason"
+                aria-label={t`Reason for skipping ${taskName}`}
                 placeholder={t`Reason for skipping (required)`}
                 className="flex-1"
               />

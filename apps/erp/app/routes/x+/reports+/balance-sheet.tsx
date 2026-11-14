@@ -13,6 +13,7 @@ import {
   redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
@@ -152,10 +153,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         path.to.accounting,
         await flash(
           request,
-          error(
-            adjusted.error,
-            adjusted.error?.message ?? "Failed to apply currency translation"
-          )
+          error(adjusted.error, "Failed to apply currency translation")
         )
       );
     }
@@ -222,10 +220,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         path.to.accounting,
         await flash(
           request,
-          error(
-            adjusted.error,
-            adjusted.error?.message ?? "Failed to apply currency translation"
-          )
+          error(adjusted.error, "Failed to apply currency translation")
         )
       );
     }
@@ -267,6 +262,9 @@ export default function BalanceSheetRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">
+        <Trans>Balance Sheet</Trans>
+      </h1>
       <ReportFilters
         companies={companies}
         selectedCompanyIds={selectedCompanyIds}

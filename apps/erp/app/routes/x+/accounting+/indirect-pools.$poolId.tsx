@@ -16,7 +16,7 @@ import {
 } from "@carbon/ee/indirect-rates.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
@@ -47,14 +47,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (pool.error || !pool.data) {
-    logger.error("Failed to load an indirect pool", {
-      companyId,
-      poolId,
-      error: pool.error
-    });
     throw redirect(
       path.to.indirectPools,
-      await flash(request, error(pool.error, "Failed to load the pool"))
+      await flash(
+        request,
+        error(pool.error, "Failed to load the pool", { poolId })
+      )
     );
   }
   if (dimensions.error) {
@@ -169,7 +167,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function IndirectPoolRoute() {
   const { pool, dimensions } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const permissions = usePermissions();
 
   return (
@@ -186,7 +184,8 @@ export default function IndirectPoolRoute() {
         offsetAbsorbedOverhead: pool.offsetAbsorbedOverhead,
         active: pool.active
       }}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     >
       <IndirectPoolAccounts
         poolId={pool.id}

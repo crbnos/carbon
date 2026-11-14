@@ -13,7 +13,8 @@ import { data } from "react-router";
 import { finishValidator } from "~/services/models";
 import {
   abilityBlockRefusal,
-  finishJobOperation
+  finishJobOperation,
+  getRequiredScanShortfall
 } from "~/services/operations.service";
 import { readOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
@@ -37,6 +38,16 @@ export async function action({ request }: ActionFunctionArgs) {
   });
   if (refusal) {
     return data({}, await flash(request, error(null, refusal)));
+  }
+
+  const shortfall = await getRequiredScanShortfall(serviceRole, {
+    companyId,
+    jobOperationId: validation.data.jobOperationId,
+    parentIsSerial: false,
+    quantity: 0
+  });
+  if (shortfall.message) {
+    return data({}, await flash(request, error(null, shortfall.message)));
   }
 
   const finishOperation = await finishJobOperation(serviceRole, {

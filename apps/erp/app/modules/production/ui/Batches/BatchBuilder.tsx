@@ -299,6 +299,7 @@ type CandidatesResponse = {
 };
 
 export function BatchBuilder({
+  open = true,
   onClose,
   defaultLocationId,
   initialLocationId,
@@ -308,6 +309,7 @@ export function BatchBuilder({
   workCenters,
   batch
 }: {
+  open?: boolean;
   onClose: () => void;
   defaultLocationId: string;
   initialLocationId?: string | null;
@@ -873,7 +875,7 @@ export function BatchBuilder({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -1039,18 +1041,17 @@ export function BatchBuilder({
           </HStack>
         </DrawerFooter>
       </DrawerContent>
-      {createReleaseOpen && (
-        <BatchReleaseModal
-          target={{ jobIds: [...new Set(selected.map((c) => c.jobId))] }}
-          title={t`Create & release batch`}
-          confirmLabel={t`Create & Release`}
-          onClose={() => setCreateReleaseOpen(false)}
-          onConfirm={(purchaseOrdersBySupplierId) => {
-            submit(undefined, { release: true, purchaseOrdersBySupplierId });
-            setCreateReleaseOpen(false);
-          }}
-        />
-      )}
+      <BatchReleaseModal
+        open={createReleaseOpen}
+        target={{ jobIds: [...new Set(selected.map((c) => c.jobId))] }}
+        title={t`Create & release batch`}
+        confirmLabel={t`Create & Release`}
+        onClose={() => setCreateReleaseOpen(false)}
+        onConfirm={(purchaseOrdersBySupplierId) => {
+          submit(undefined, { release: true, purchaseOrdersBySupplierId });
+          setCreateReleaseOpen(false);
+        }}
+      />
     </Drawer>
   );
 }
@@ -1701,6 +1702,7 @@ function ComposePanel({
               <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search jobs or items`}
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t`Search jobs or items`}
@@ -1826,24 +1828,28 @@ function CandidateTable({
           const locked =
             compat.lockedById.has(row.original.id) &&
             !selectedById.has(row.original.id);
+          const operationName = [
+            row.original.jobReadableId,
+            row.original.description
+          ]
+            .filter(Boolean)
+            .join(" ");
+          // A label, not a button: the padding stays a hit area for the
+          // checkbox without nesting one control inside another.
           return (
-            <button
-              type="button"
+            <label
               className={cn(
                 "flex items-center p-3 -m-3",
                 locked ? "cursor-not-allowed" : "cursor-pointer"
               )}
-              onClick={() => !locked && onToggle(row.original)}
-              disabled={locked}
-              aria-label={t`Select operation`}
             >
               <Checkbox
                 checked={selectedById.has(row.original.id)}
                 disabled={locked}
-                className="pointer-events-none"
-                tabIndex={-1}
+                onCheckedChange={() => !locked && onToggle(row.original)}
+                aria-label={t`Select ${operationName}`}
               />
-            </button>
+            </label>
           );
         }
       },
@@ -2178,13 +2184,16 @@ function CandidateGroup({
           const isSelected = selectedById.has(c.id);
           const isLocked = compat.lockedById.has(c.id) && !isSelected;
           const due = dueDateOf(c);
+          const operationName = [c.jobReadableId, c.description]
+            .filter(Boolean)
+            .join(" ");
+          // The card is the checkbox's label: clicking anywhere toggles it,
+          // and the checkbox is the one control (no button around it).
           return (
-            <button
+            <label
               key={c.id}
-              type="button"
-              onClick={() => !isLocked && onToggle(c)}
-              disabled={isLocked}
               className={cn(
+                "block",
                 "w-full min-w-0 rounded-lg border p-2.5 text-left transition-colors",
                 isLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer",
                 isSelected
@@ -2196,8 +2205,9 @@ function CandidateGroup({
                 <Checkbox
                   checked={isSelected}
                   disabled={isLocked}
-                  className="pointer-events-none flex-shrink-0"
-                  tabIndex={-1}
+                  onCheckedChange={() => !isLocked && onToggle(c)}
+                  aria-label={t`Select ${operationName}`}
+                  className="flex-shrink-0"
                 />
                 <ItemThumbnail
                   thumbnailPath={c.thumbnailPath}
@@ -2235,7 +2245,7 @@ function CandidateGroup({
                   </span>
                 </VStack>
               </HStack>
-            </button>
+            </label>
           );
         })}
       </VStack>
@@ -2487,6 +2497,7 @@ function ReviewPanel({
             />
           ) : null}
           <Input
+            aria-label={t`Notes`}
             size="sm"
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}

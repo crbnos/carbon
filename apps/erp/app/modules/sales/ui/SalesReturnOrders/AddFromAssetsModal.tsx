@@ -32,6 +32,7 @@ import { path } from "~/utils/path";
 const PAGE_SIZE = 5;
 
 type AddFromAssetsModalProps = {
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -40,7 +41,25 @@ type AddFromAssetsModalProps = {
  * chosen asset becomes one line of one unit, with the return type its
  * warranty suggests (`createReturnOrderLinesFromAssets`).
  */
-const AddFromAssetsModal = ({ onClose }: AddFromAssetsModalProps) => {
+const AddFromAssetsModal = ({
+  open = true,
+  onClose
+}: AddFromAssetsModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent size="xlarge">
+      <AddFromAssetsBody onClose={onClose} />
+    </ModalContent>
+  </Modal>
+);
+
+const AddFromAssetsBody = ({
+  onClose
+}: Omit<AddFromAssetsModalProps, "open">) => {
   const { t } = useLingui();
   const { id: orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -103,151 +122,142 @@ const AddFromAssetsModal = ({ onClose }: AddFromAssetsModalProps) => {
   };
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent size="xlarge">
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Add lines from assets</Trans>
-          </ModalTitle>
-          <ModalDescription>
-            <Trans>
-              Each asset becomes one line for one unit. A unit under warranty is
-              a Return for Warranty, any other a Return for Service.
-            </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={3} className="w-full">
-            <InputGroup className="w-full">
-              <InputLeftElement>
-                <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
-              </InputLeftElement>
-              <Input
-                value={searchInput}
-                placeholder={t`Search by serial`}
-                onChange={(e) => {
-                  setSearchInput(e.target.value);
-                  commitSearch(e.target.value);
-                }}
-              />
-            </InputGroup>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Add lines from assets</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>
+            Each asset becomes one line for one unit. A unit under warranty is a
+            Return for Warranty, any other a Return for Service.
+          </Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={3} className="w-full">
+          <InputGroup className="w-full">
+            <InputLeftElement>
+              <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
+            </InputLeftElement>
+            <Input
+              value={searchInput}
+              placeholder={t`Search by serial`}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                commitSearch(e.target.value);
+              }}
+            />
+          </InputGroup>
 
-            {isLoading && !assetsFetcher.data ? (
-              <p className="text-sm text-muted-foreground py-6 text-center w-full">
-                <Trans>Loading assets...</Trans>
-              </p>
-            ) : assets.length === 0 ? (
-              <VStack spacing={1} className="py-6 items-center">
-                <p className="text-sm text-muted-foreground text-center">
-                  {search.trim() ? (
-                    <Trans>No assets match your search</Trans>
-                  ) : (
-                    <Trans>This customer has no assets</Trans>
-                  )}
-                </p>
-                <p className="text-xs text-muted-foreground text-center max-w-[42ch]">
-                  <Trans>
-                    A serialized unit becomes a customer asset when its shipment
-                    posts. Register older units under Service → Customer Assets.
-                  </Trans>
-                </p>
-              </VStack>
-            ) : (
-              <>
-                <HStack className="w-full justify-between px-1">
-                  <span className="text-xs text-muted-foreground">
-                    {search.trim() ? (
-                      t`${count} results`
-                    ) : hasMore ? (
-                      <Trans>Most recent — search to find more</Trans>
-                    ) : (
-                      <Trans>All assets</Trans>
-                    )}
-                  </span>
-                  {selected.size > 0 && (
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {t`${selected.size} selected`}
-                    </span>
-                  )}
-                </HStack>
-                <ScrollArea className="max-h-[50dvh] w-full">
-                  <VStack spacing={2} className="w-full">
-                    {assets.map((asset) => {
-                      const isOnReturn = onReturn.has(asset.id);
-                      const shippedOn = formatDate(asset.shippedDate);
-                      return (
-                        <HStack
-                          key={asset.id}
-                          className="w-full justify-between p-3 border rounded-lg"
-                        >
-                          <HStack spacing={3} className="min-w-0 flex-1">
-                            <Checkbox
-                              isChecked={selected.has(asset.id)}
-                              disabled={isOnReturn}
-                              onCheckedChange={() => toggle(asset.id)}
-                            />
-                            <VStack
-                              spacing={0}
-                              className="min-w-0 flex-1 items-start"
-                            >
-                              <span className="text-sm font-medium truncate w-full whitespace-nowrap">
-                                {asset.trackedEntity?.readableId}
-                              </span>
-                              <span className="text-xs text-muted-foreground truncate w-full">
-                                {asset.item?.readableIdWithRevision}
-                                {shippedOn
-                                  ? ` · ${t`Shipped ${shippedOn}`}`
-                                  : ""}
-                              </span>
-                            </VStack>
-                          </HStack>
-                          <HStack spacing={2} className="shrink-0">
-                            {isOnReturn && (
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                <Trans>On this RMA</Trans>
-                              </span>
-                            )}
-                            <WarrantyBadge asset={asset} />
-                          </HStack>
-                        </HStack>
-                      );
-                    })}
-                  </VStack>
-                </ScrollArea>
-                {hasMore && (
-                  <Button
-                    variant="secondary"
-                    className="w-full"
-                    isLoading={isLoading}
-                    isDisabled={isLoading}
-                    onClick={() => setLimit((current) => current + PAGE_SIZE)}
-                  >
-                    <Trans>Show more</Trans>
-                  </Button>
+          {isLoading && !assetsFetcher.data ? (
+            <p className="text-sm text-muted-foreground py-6 text-center w-full">
+              <Trans>Loading assets...</Trans>
+            </p>
+          ) : assets.length === 0 ? (
+            <VStack spacing={1} className="py-6 items-center">
+              <p className="text-sm text-muted-foreground text-center">
+                {search.trim() ? (
+                  <Trans>No assets match your search</Trans>
+                ) : (
+                  <Trans>This customer has no assets</Trans>
                 )}
-              </>
-            )}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            isLoading={isSubmitting}
-            isDisabled={isSubmitting || selected.size === 0}
-            onClick={onSubmit}
-          >
-            <Trans>Add Lines</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+              </p>
+              <p className="text-xs text-muted-foreground text-center max-w-[42ch]">
+                <Trans>
+                  A serialized unit becomes a customer asset when its shipment
+                  posts. Register older units under Service → Customer Assets.
+                </Trans>
+              </p>
+            </VStack>
+          ) : (
+            <>
+              <HStack className="w-full justify-between px-1">
+                <span className="text-xs text-muted-foreground">
+                  {search.trim() ? (
+                    t`${count} results`
+                  ) : hasMore ? (
+                    <Trans>Most recent — search to find more</Trans>
+                  ) : (
+                    <Trans>All assets</Trans>
+                  )}
+                </span>
+                {selected.size > 0 && (
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {t`${selected.size} selected`}
+                  </span>
+                )}
+              </HStack>
+              <ScrollArea className="max-h-[50dvh] w-full">
+                <VStack spacing={2} className="w-full">
+                  {assets.map((asset) => {
+                    const isOnReturn = onReturn.has(asset.id);
+                    const shippedOn = formatDate(asset.shippedDate);
+                    return (
+                      <HStack
+                        key={asset.id}
+                        className="w-full justify-between p-3 border rounded-lg"
+                      >
+                        <HStack spacing={3} className="min-w-0 flex-1">
+                          <Checkbox
+                            isChecked={selected.has(asset.id)}
+                            disabled={isOnReturn}
+                            onCheckedChange={() => toggle(asset.id)}
+                          />
+                          <VStack
+                            spacing={0}
+                            className="min-w-0 flex-1 items-start"
+                          >
+                            <span className="text-sm font-medium truncate w-full whitespace-nowrap">
+                              {asset.trackedEntity?.readableId}
+                            </span>
+                            <span className="text-xs text-muted-foreground truncate w-full">
+                              {asset.item?.readableIdWithRevision}
+                              {shippedOn ? ` · ${t`Shipped ${shippedOn}`}` : ""}
+                            </span>
+                          </VStack>
+                        </HStack>
+                        <HStack spacing={2} className="shrink-0">
+                          {isOnReturn && (
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              <Trans>On this RMA</Trans>
+                            </span>
+                          )}
+                          <WarrantyBadge asset={asset} />
+                        </HStack>
+                      </HStack>
+                    );
+                  })}
+                </VStack>
+              </ScrollArea>
+              {hasMore && (
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  isLoading={isLoading}
+                  isDisabled={isLoading}
+                  onClick={() => setLimit((current) => current + PAGE_SIZE)}
+                >
+                  <Trans>Show more</Trans>
+                </Button>
+              )}
+            </>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          isLoading={isSubmitting}
+          isDisabled={isSubmitting || selected.size === 0}
+          onClick={onSubmit}
+        >
+          <Trans>Add Lines</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 };
 

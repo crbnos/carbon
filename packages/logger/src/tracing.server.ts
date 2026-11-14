@@ -3,12 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  type Attributes,
   context,
-  createContextKey,
   type Span,
   SpanKind,
-  SpanStatusCode,
   type Tracer,
   trace
 } from "@opentelemetry/api";
@@ -36,8 +33,14 @@ import {
 } from "@opentelemetry/semantic-conventions";
 import type { MiddlewareFunction, ServerInstrumentation } from "react-router";
 import { REDACTED, redactSearch } from "./redaction";
+import {
+  annotateRequestSpan,
+  failSpan,
+  REQUEST_SPAN,
+  tracer,
+  withSpan
+} from "./span";
 
-const REQUEST_SPAN = createContextKey("carbon.request-span");
 const PROVIDER = Symbol.for("carbon.tracing.provider");
 
 // Everything below is inert unless an OTLP endpoint is configured.
@@ -67,10 +70,7 @@ export function createTracing({
   const provider = ensureProvider(serviceName, spanProcessors);
   const flush = () => provider.forceFlush().catch(() => undefined);
   return [
-    routerInstrumentation(
-      trace.getTracer("carbon"),
-      afterRequest && (() => afterRequest(flush))
-    )
+    routerInstrumentation(tracer(), afterRequest && (() => afterRequest(flush)))
   ];
 }
 
@@ -289,87 +289,20 @@ function traceQuery(event: {
   error?: unknown;
 }) {
   const endTime = Date.now();
-  const span = trace
-    .getTracer("carbon")
-    .startSpan(querySpanName(event.query.sql), {
-      kind: SpanKind.CLIENT,
-      startTime: endTime - event.queryDurationMillis,
-      attributes: {
-        "db.system.name": "postgresql",
-        "db.query.text": event.query.sql
-      }
-    });
-  if (event.level === "error") {
-    const error =
-      event.error instanceof Error
-        ? event.error
-        : new Error(String(event.error));
-    span.recordException(error);
-    span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-  }
+  const span = tracer().startSpan(querySpanName(event.query.sql), {
+    kind: SpanKind.CLIENT,
+    startTime: endTime - event.queryDurationMillis,
+    attributes: {
+      "db.system.name": "postgresql",
+      "db.query.text": event.query.sql
+    }
+  });
+  if (event.level === "error") failSpan(span, event.error);
   span.end(endTime);
 }
 
 /** Pass as Kysely's `log`; undefined when tracing is off, so Kysely installs no hook. */
 export const queryLog = enabled ? traceQuery : undefined;
-
-/** No-op when tracing is off or outside a request. */
-export function annotateRequestSpan(attributes: Attributes) {
-  if (!enabled) return;
-  (context.active().getValue(REQUEST_SPAN) as Span | undefined)?.setAttributes(
-    attributes
-  );
-}
-
-/**
- * For a route that serves many things on one path (`/api/inngest`, `/api/mcp`):
- * say which one in the request span's name. Keep it to a bounded set of values.
- */
-export function nameRequestSpan(name: string) {
-  if (!enabled) return;
-  (context.active().getValue(REQUEST_SPAN) as Span | undefined)?.updateName(
-    name
-  );
-}
-
-function end(span: Span, error: Error | undefined) {
-  if (error) {
-    span.recordException(error);
-    span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-  }
-  span.end();
-}
-
-/**
- * Starts a span and returns what ends it, for a wait that someone else's call
- * finishes. Does nothing when tracing is off.
- */
-export function startSpan(name: string, attributes: Attributes): () => void {
-  if (!enabled) return () => undefined;
-  const span = trace.getTracer("carbon").startSpan(name, { attributes });
-  return () => span.end();
-}
-
-/** Runs `run` in a child span of whatever is active; a plain call when tracing is off. */
-export function withSpan<T>(
-  name: string,
-  attributes: Attributes,
-  run: () => Promise<T>
-): Promise<T> {
-  if (!enabled) return run();
-  return trace
-    .getTracer("carbon")
-    .startActiveSpan(name, { attributes }, async (span) => {
-      try {
-        const result = await run();
-        span.end();
-        return result;
-      } catch (error) {
-        end(span, error instanceof Error ? error : new Error(String(error)));
-        throw error;
-      }
-    });
-}
 
 export function routerInstrumentation(
   tracer: Tracer,
@@ -393,7 +326,8 @@ export function routerInstrumentation(
 
           return context.with(requestContext, async () => {
             const { error } = await handleRequest();
-            end(span, error);
+            if (error) failSpan(span, error);
+            span.end();
             onRequestEnd?.();
           });
         }
@@ -414,7 +348,8 @@ export function routerInstrumentation(
 
           return tracer.startActiveSpan(`${kind} ${id}`, async (span) => {
             const { error } = await call();
-            end(span, error);
+            if (error) failSpan(span, error);
+            span.end();
           });
         };
 

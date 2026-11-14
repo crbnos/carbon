@@ -393,6 +393,7 @@ const PurchaseInvoicesTable = memo(
     return (
       <>
         <Table<PurchaseInvoiceListItem>
+          getRowLabel={(row) => row.invoiceId ?? undefined}
           count={count}
           columns={columns}
           data={data}
@@ -434,11 +435,9 @@ const PurchaseInvoicesTable = memo(
             text={t`Are you sure you want to permanently delete ${selectedPurchaseInvoice.invoiceId!}?`}
             onCancel={() => {
               closePurchaseInvoiceModal.onClose();
-              setSelectedPurchaseInvoice(null);
             }}
             onSubmit={() => {
               closePurchaseInvoiceModal.onClose();
-              setSelectedPurchaseInvoice(null);
             }}
           />
         )}

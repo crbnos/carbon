@@ -119,6 +119,7 @@ import {
   contractLineItemTypeMessage,
   DEFAULT_CURRENCY_DECIMALS,
   datetime,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   type ExistingBillingPeriod,
   earnsInterest,
@@ -185,7 +186,8 @@ import {
   getCurrentAccountingPeriod,
   isContactEmailRequired,
   refuseUnlessOwned,
-  resolveInventoryAccount
+  resolveInventoryAccount,
+  sendSalesOrderEmail
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
 import {
@@ -1236,7 +1238,7 @@ export async function getCustomerStatuses(
 ) {
   let query = client
     .from("customerStatus")
-    .select("id, name, customFields", {
+    .select("id, name, color, customFields", {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -1258,7 +1260,7 @@ export async function getCustomerStatusesList(
 ) {
   return client
     .from("customerStatus")
-    .select("id, name")
+    .select("id, name, color")
     .eq("companyId", companyId)
     .order("name");
 }
@@ -1410,7 +1412,7 @@ export async function getActiveCustomerPortal(
     return { refusal: "error" };
   }
   if (!portal.data?.customerId) {
-    logger.warn("Customer portal refused: notFound", { id });
+    logger.warning("Customer portal refused: notFound", { id });
     return { refusal: "notFound" };
   }
 
@@ -1418,7 +1420,7 @@ export async function getActiveCustomerPortal(
     feature: "CUSTOMER_PORTALS"
   });
   if (!hasPlan) {
-    logger.warn("Customer portal refused: plan", {
+    logger.warning("Customer portal refused: plan", {
       id,
       companyId: portal.data.companyId
     });
@@ -1430,7 +1432,8 @@ export async function getActiveCustomerPortal(
     datetime.timestamp()
   );
   if (refusal) {
-    logger.warn(`Customer portal refused: ${refusal}`, {
+    logger.warning("Customer portal refused: {refusal}", {
+      refusal,
       id,
       companyId: portal.data.companyId
     });
@@ -2530,13 +2533,17 @@ export async function finalizeQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
   userId: string,
-  companyId: string
+  companyId: string,
+  options: { emailOrderOnAcceptance?: boolean } = {}
 ) {
   const quoteUpdate = await requireAffected(
     client
       .from("quote")
       .update({
         status: "Sent",
+        ...(options.emailOrderOnAcceptance !== undefined && {
+          emailOrderOnAcceptance: options.emailOrderOnAcceptance
+        }),
         updatedAt: datetime.timestamp(),
         updatedBy: userId
       })
@@ -13126,13 +13133,23 @@ export async function releaseServiceJobInvoiceStamps(
  * billed, so the next generation bills them again. `salesInvoiceLineId` on
  * those rows has no foreign key, so a plain delete would leave them stamped
  * as billed forever. Throws on a missing or non-Draft invoice.
+ *
+ * `voided` is the Admin force delete: it also deletes a Voided invoice (the
+ * release is a no-op for what the void already released), inside the
+ * caller's transaction, which has set `app.force_delete` so the database's
+ * Draft-only guard steps aside.
  */
 export async function deleteSalesInvoiceReleasingRentals(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; invoiceId: string; userId: string }
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    invoiceId: string;
+    userId: string;
+    voided?: boolean;
+  }
 ): Promise<void> {
   const { companyId, invoiceId, userId } = args;
-  await db.transaction().execute(async (trx) => {
+  await withTransaction(db, async (trx) => {
     const invoice = await trx
       .selectFrom("salesInvoice")
       .select(["id", "status"])
@@ -13141,7 +13158,10 @@ export async function deleteSalesInvoiceReleasingRentals(
       .forUpdate()
       .executeTakeFirst();
     if (!invoice) throw new Error("Sales invoice not found");
-    if (invoice.status !== "Draft") {
+    if (
+      invoice.status !== "Draft" &&
+      !(args.voided && invoice.status === "Voided")
+    ) {
       throw new Error(
         `Cannot delete sales invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
       );
@@ -14514,7 +14534,7 @@ export async function emailQuote(
   const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
-    .createSignedUrl(args.documentFilePath, 3600);
+    .createSignedUrl(args.documentFilePath, EMAIL_ATTACHMENT_URL_SECONDS);
   if (signed.error) {
     logger.error("Failed to create signed URL for attachment", {
       storagePath: args.documentFilePath,
@@ -14702,6 +14722,56 @@ export async function notifyDigitalQuoteResponse(
     logger.error("Failed to notify the digital quote group", {
       companyId: ctx.company.id,
       quoteId,
+      error
+    });
+  }
+}
+
+/**
+ * Emails the order to whoever accepted the quote online, with the sales person
+ * on the email. Best-effort: a failure is logged and never undoes the order.
+ */
+export async function emailDigitalQuoteOrder(
+  ctx: ServiceContext,
+  args: {
+    salesOrderId: string;
+    acceptedBy: string;
+    acceptedByEmail: string;
+    documentFilePath: string;
+    fileName: string;
+  }
+): Promise<void> {
+  const companyId = ctx.company.id;
+  const email = args.acceptedByEmail.trim();
+  if (!z.string().email().safeParse(email).success) {
+    logger.warning(
+      "Skipped the order email: the acceptor's email is not valid",
+      {
+        companyId,
+        salesOrderId: args.salesOrderId
+      }
+    );
+    return;
+  }
+  try {
+    const order = await getSalesOrder(ctx.asSystem.supabase, args.salesOrderId);
+    if (order.error) throw order.error;
+    const sent = await sendSalesOrderEmail({
+      salesOrderId: args.salesOrderId,
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      userId: order.data.salesPersonId ?? ctx.auditUserId,
+      recipient: { email, name: args.acceptedBy },
+      documentFilePath: args.documentFilePath,
+      fileName: args.fileName,
+      serviceRole: ctx.asSystem.supabase,
+      locales: ["en-US"]
+    });
+    if (!sent.success) throw new Error(sent.message);
+  } catch (error) {
+    logger.error("Failed to email the order after digital quote acceptance", {
+      companyId,
+      salesOrderId: args.salesOrderId,
       error
     });
   }

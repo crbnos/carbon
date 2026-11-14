@@ -102,6 +102,7 @@ export function NavRail({
   /** Ignore hover, e.g. while a modal owns the pointer. */
   disableHover?: boolean;
 }) {
+  const { t } = useLingui();
   const { open, isMobile, openMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
   // Desktop rail only: the mobile drawer keeps the normal colors.
@@ -203,8 +204,13 @@ export function NavRail({
 
   const content = (
     <NavRailHoldContext.Provider value={hold}>
-      <VStack spacing={1} className="flex flex-col justify-between h-full px-2">
-        <VStack spacing={1}>
+      <VStack spacing={1} className="flex flex-col justify-between h-full">
+        {/* Only the list scrolls, so the footer stays in view. A color theme makes
+            the rail transparent, so nothing can paint over a scrolling list. */}
+        <VStack
+          spacing={1}
+          className="min-h-0 flex-1 px-2 pb-1 overflow-x-hidden overflow-y-auto hide-scrollbar scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+        >
           {header ? (
             // As tall as the app's top bar (ERP `--topbar-height`, MES
             // `--header-height`) and as far down: the rail's padding plus the
@@ -216,7 +222,11 @@ export function NavRail({
           ) : null}
           {children}
         </VStack>
-        {footer ? <VStack spacing={1}>{footer}</VStack> : null}
+        {footer ? (
+          <VStack spacing={1} className="shrink-0 px-2">
+            {footer}
+          </VStack>
+        ) : null}
       </VStack>
     </NavRailHoldContext.Provider>
   );
@@ -236,7 +246,9 @@ export function NavRail({
             <Trans>Navigation</Trans>
           </DrawerTitle>
           <NavRailHoldContext.Provider value={hold}>
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too */}
             <nav
+              aria-label={t`Main`}
               data-state="expanded"
               onClick={closeOnLink}
               className="group min-h-0 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
@@ -253,6 +265,7 @@ export function NavRail({
               />
             </nav>
             {footer ? (
+              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too
               <div
                 data-state="expanded"
                 onClick={closeOnLink}
@@ -284,6 +297,7 @@ export function NavRail({
     >
       <nav
         ref={navRef}
+        aria-label={t`Main`}
         data-state={state}
         data-sliding-hover=""
         style={themeStyle?.rail[railMode] as CSSProperties | undefined}
@@ -292,7 +306,7 @@ export function NavRail({
           "w-14 data-[state=expanded]:w-[15rem]",
           "transition-[width] duration-200 ease-out motion-reduce:transition-none",
           "flex flex-col justify-between",
-          "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+          "hide-scrollbar overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
         onPointerDown={(event) => {
           lastPointerType.current = event.pointerType;
@@ -521,6 +535,8 @@ type NavRailSwitcherProps = Omit<
   logoDark?: string | null;
   /** Also the accessible name unless `aria-label` is given. */
   label: string;
+  /** A second line under the name, e.g. the current location. */
+  sublabel?: string | null;
   /** After the name, e.g. chevrons for a menu or an arrow for a link out. */
   trailing?: ReactNode;
   asChild?: boolean;
@@ -541,6 +557,7 @@ export const NavRailSwitcher = forwardRef<
       logoLight,
       logoDark,
       label,
+      sublabel,
       trailing,
       asChild = false,
       className,
@@ -564,7 +581,9 @@ export const NavRailSwitcher = forwardRef<
       <Comp
         ref={ref}
         type={asChild ? undefined : "button"}
-        aria-label={label}
+        aria-label={sublabel ? `${label}, ${sublabel}` : label}
+        // The text truncates in the rail: the full text is one hover away.
+        title={sublabel ? `${label}\n${sublabel}` : label}
         {...props}
         className={cn(
           "relative flex h-10 shrink-0 items-center rounded-md select-none",
@@ -591,7 +610,14 @@ export const NavRailSwitcher = forwardRef<
             "md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100"
           )}
         >
-          <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+          <span className="flex min-w-0 flex-1 flex-col text-left">
+            <span className="truncate leading-tight">{label}</span>
+            {sublabel ? (
+              <span className="truncate text-xs font-normal leading-tight text-muted-foreground">
+                {sublabel}
+              </span>
+            ) : null}
+          </span>
           {trailing ? (
             <span className="flex shrink-0 text-muted-foreground [&>svg]:size-3.5">
               {trailing}

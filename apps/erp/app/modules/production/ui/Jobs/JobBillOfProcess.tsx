@@ -65,6 +65,8 @@ import {
   INPUT_FORMAT
 } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { DragControls } from "motion/react";
@@ -267,7 +269,7 @@ function makeItems(
   tags: { name: string }[],
   temporaryItems: TemporaryItems,
   urlParams: { [key: string]: string },
-  t: ReturnType<typeof useLingui>["t"],
+  t: (descriptor: MessageDescriptor) => string,
   locale: string
 ): ItemWithData[] {
   return operations.map((operation) =>
@@ -280,7 +282,7 @@ function makeItem(
   tags: { name: string }[],
   temporaryItems: TemporaryItems,
   urlParams: { [key: string]: string },
-  t: ReturnType<typeof useLingui>["t"],
+  t: (descriptor: MessageDescriptor) => string,
   locale: string
 ): ItemWithData {
   // Forward forecast vs backward need-by target: calendar-day comparison via
@@ -373,18 +375,22 @@ function makeItem(
           <JobOperationTags operation={operation} availableTags={tags} />
           <Tooltip>
             <TooltipTrigger asChild>
-              <a
-                href={path.to.external.mesJobOperation(operation.id!)}
-                title={t`Open in MES`}
+              {/* One control: the link styled as the icon button. A button
+                  inside a link is two controls with one name. */}
+              <Button
+                asChild
+                isIcon
+                variant="secondary"
+                size="sm"
                 className="max-md:hidden"
               >
-                <IconButton
-                  icon={<LuPlay />}
-                  variant="secondary"
-                  aria-label={t`Open in MES`}
-                  size="sm"
-                />
-              </a>
+                <a
+                  href={path.to.external.mesJobOperation(operation.id!)}
+                  aria-label={t(msg`Open in MES`)}
+                >
+                  <LuPlay aria-hidden />
+                </a>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <span>
@@ -394,18 +400,20 @@ function makeItem(
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link
-                to={newIssueUrl(operation, urlParams)}
-                title={t`Create Issue`}
+              <Button
+                asChild
+                isIcon
+                variant="secondary"
+                size="sm"
                 className="max-md:hidden"
               >
-                <IconButton
-                  icon={<LuShieldX />}
-                  variant="secondary"
-                  aria-label={t`Create Issue`}
-                  size="sm"
-                ></IconButton>
-              </Link>
+                <Link
+                  to={newIssueUrl(operation, urlParams)}
+                  aria-label={t(msg`Create Issue`)}
+                >
+                  <LuShieldX aria-hidden />
+                </Link>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <span>
@@ -855,6 +863,7 @@ const JobBillOfProcess = ({
             <div>
               {permissions.can("update", "parts") ? (
                 <Editor
+                  label={t`Work Instructions`}
                   initialValue={
                     workInstructions[item.id] ?? ({} as JSONContent)
                   }
@@ -1079,6 +1088,7 @@ const JobBillOfProcess = ({
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Process`}
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
@@ -1547,6 +1557,7 @@ function StepsForm({
                   <Trans>Description</Trans>
                 </Label>
                 <Editor
+                  label={t`Description`}
                   initialValue={description}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -2204,6 +2215,7 @@ function StepsListItem({
                 <Trans>Description</Trans>
               </Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {
@@ -2397,20 +2409,18 @@ function StepsListItem({
           )}
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteJobOperationStep(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={name}
-          text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteJobOperationStep(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={name}
+        text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -2480,10 +2490,16 @@ function PreviewStepRecord({
   return (
     <>
       {attribute.type === "Task" && (
-        <Checkbox checked={record.booleanValue ?? false} />
+        <Checkbox
+          checked={record.booleanValue ?? false}
+          aria-label={attribute.name}
+        />
       )}
       {attribute.type === "Checkbox" && (
-        <Checkbox checked={record.booleanValue ?? false} />
+        <Checkbox
+          checked={record.booleanValue ?? false}
+          aria-label={attribute.name}
+        />
       )}
       {attribute.type === "Value" && <p className="text-sm">{record.value}</p>}
       {attribute.type === "Measurement" &&
@@ -2547,7 +2563,10 @@ function PreviewStepRecord({
               </a>
             </>
           )}
-          <Checkbox checked={record.booleanValue ?? false} />
+          <Checkbox
+            checked={record.booleanValue ?? false}
+            aria-label={attribute.name}
+          />
         </div>
       )}
     </>
@@ -2755,20 +2774,18 @@ function ParametersListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteJobOperationParameter(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={key}
-          text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteJobOperationParameter(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={key}
+        text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -3174,6 +3191,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={setupDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     setupDisclosure.isOpen ? t`Collapse Setup` : t`Expand Setup`
@@ -3256,6 +3274,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={laborDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     laborDisclosure.isOpen ? t`Collapse Labor` : t`Expand Labor`
@@ -3339,6 +3358,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={machineDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       machineDisclosure.isOpen
@@ -3416,6 +3436,7 @@ function OperationForm({
               </HStack>
               <HStack>
                 <IconButton
+                  aria-expanded={costingDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     costingDisclosure.isOpen
@@ -3510,6 +3531,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={procedureDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       procedureDisclosure.isOpen
@@ -3564,13 +3586,12 @@ function OperationForm({
                       >
                         Sync Procedure
                       </Button>
-                      {procedureSyncDisclosure.isOpen && (
-                        <ProcedureSyncModal
-                          operationId={item.id}
-                          procedureId={processData.procedureId}
-                          onClose={procedureSyncDisclosure.onClose}
-                        />
-                      )}
+                      <ProcedureSyncModal
+                        open={procedureSyncDisclosure.isOpen}
+                        operationId={item.id}
+                        procedureId={processData.procedureId}
+                        onClose={procedureSyncDisclosure.onClose}
+                      />
                     </div>
                   </div>
                 )}
@@ -3599,6 +3620,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={assemblyDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       assemblyDisclosure.isOpen
@@ -3657,15 +3679,14 @@ function OperationForm({
                         >
                           Sync Assembly Steps
                         </Button>
-                        {assemblySyncDisclosure.isOpen && (
-                          <AssemblyStepsSyncModal
-                            operationId={item.id}
-                            assemblyInstructionId={
-                              processData.assemblyInstructionId
-                            }
-                            onClose={assemblySyncDisclosure.onClose}
-                          />
-                        )}
+                        <AssemblyStepsSyncModal
+                          open={assemblySyncDisclosure.isOpen}
+                          operationId={item.id}
+                          assemblyInstructionId={
+                            processData.assemblyInstructionId
+                          }
+                          onClose={assemblySyncDisclosure.onClose}
+                        />
                       </div>
                     </div>
                   )}
@@ -3720,21 +3741,21 @@ function OperationForm({
   );
 }
 
-function ProcedureSyncModal({
-  operationId,
-  procedureId,
-  onClose
-}: {
+type ProcedureSyncModalProps = {
+  open?: boolean;
   operationId: string;
   procedureId: string;
   onClose: () => void;
-}) {
-  const fetcher = useAction<typeof syncProcedureAction>({
-    onSuccess: onClose
-  });
+};
+
+function ProcedureSyncModal({
+  open = true,
+  onClose,
+  ...props
+}: ProcedureSyncModalProps) {
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -3742,62 +3763,99 @@ function ProcedureSyncModal({
       }}
     >
       <ModalContent>
-        <ValidatedForm
-          validator={procedureSyncValidator}
-          action={path.to.jobOperationProcedureSync}
-          method="post"
-          fetcher={fetcher}
-          defaultValues={{
-            operationId,
-            procedureId
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Are you sure?</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody className="py-4">
-            <Hidden name="operationId" />
-            <Hidden name="procedureId" />
-            <Alert variant="warning">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Potential Data Loss</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                Syncing the procedure will update the operation with the new
-                work instructions, steps, and parameters. Any steps that are not
-                part of the procedure will be removed.
-              </AlertDescription>
-            </Alert>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-            >
-              Sync
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
+        <ProcedureSyncBody onClose={onClose} {...props} />
       </ModalContent>
     </Modal>
   );
 }
 
-function AssemblyStepsSyncModal({
+function ProcedureSyncBody({
   operationId,
-  assemblyInstructionId,
+  procedureId,
   onClose
-}: {
+}: Omit<ProcedureSyncModalProps, "open">) {
+  const fetcher = useAction<typeof syncProcedureAction>({
+    onSuccess: onClose
+  });
+  return (
+    <ValidatedForm
+      validator={procedureSyncValidator}
+      action={path.to.jobOperationProcedureSync}
+      method="post"
+      fetcher={fetcher}
+      defaultValues={{
+        operationId,
+        procedureId
+      }}
+    >
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Are you sure?</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody className="py-4">
+        <Hidden name="operationId" />
+        <Hidden name="procedureId" />
+        <Alert variant="warning">
+          <LuTriangleAlert className="h-4 w-4" />
+          <AlertTitle>
+            <Trans>Potential Data Loss</Trans>
+          </AlertTitle>
+          <AlertDescription>
+            Syncing the procedure will update the operation with the new work
+            instructions, steps, and parameters. Any steps that are not part of
+            the procedure will be removed.
+          </AlertDescription>
+        </Alert>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit
+          isLoading={fetcher.state !== "idle"}
+          isDisabled={fetcher.state !== "idle"}
+        >
+          Sync
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
+  );
+}
+
+type AssemblyStepsSyncModalProps = {
+  open?: boolean;
   operationId: string;
   assemblyInstructionId: string;
   onClose: () => void;
-}) {
+};
+
+function AssemblyStepsSyncModal({
+  open = true,
+  onClose,
+  ...props
+}: AssemblyStepsSyncModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <AssemblyStepsSyncBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function AssemblyStepsSyncBody({
+  operationId,
+  assemblyInstructionId,
+  onClose
+}: Omit<AssemblyStepsSyncModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useAction<typeof syncAssemblyAction>({
     onSuccess: ({ data }) => {
@@ -3814,57 +3872,46 @@ function AssemblyStepsSyncModal({
     }
   });
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
+    <ValidatedForm
+      validator={syncAssemblyToBopValidator}
+      action={path.to.assemblySyncBop(assemblyInstructionId)}
+      method="post"
+      fetcher={fetcher}
+      defaultValues={{
+        operationId
       }}
     >
-      <ModalContent>
-        <ValidatedForm
-          validator={syncAssemblyToBopValidator}
-          action={path.to.assemblySyncBop(assemblyInstructionId)}
-          method="post"
-          fetcher={fetcher}
-          defaultValues={{
-            operationId
-          }}
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Are you sure?</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody className="py-4">
+        <Hidden name="operationId" />
+        <Alert variant="warning">
+          <LuTriangleAlert className="h-4 w-4" />
+          <AlertTitle>
+            <Trans>Potential Data Loss</Trans>
+          </AlertTitle>
+          <AlertDescription>
+            Syncing updates the operation's steps from the assembly instruction.
+            Steps previously synced from an instruction are updated or removed
+            to match; hand-authored steps are kept.
+          </AlertDescription>
+        </Alert>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit
+          isLoading={fetcher.state !== "idle"}
+          isDisabled={fetcher.state !== "idle"}
         >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Are you sure?</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody className="py-4">
-            <Hidden name="operationId" />
-            <Alert variant="warning">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Potential Data Loss</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                Syncing updates the operation's steps from the assembly
-                instruction. Steps previously synced from an instruction are
-                updated or removed to match; hand-authored steps are kept.
-              </AlertDescription>
-            </Alert>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-            >
-              Sync
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          Sync
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 
@@ -4044,20 +4091,18 @@ function ToolsListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteJobOperationTool(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={tool.readableIdWithRevision}
-          text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteJobOperationTool(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={tool.readableIdWithRevision}
+        text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }

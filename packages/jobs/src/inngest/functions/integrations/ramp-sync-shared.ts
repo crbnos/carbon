@@ -19,8 +19,11 @@ import {
   validateRampExchangeRate
 } from "@carbon/ee/ramp.server";
 import { getAppUrl } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { getJobDatabaseClient } from "../../../db";
+
+const logger = getLogger("jobs", "ramp-sync");
 
 type CarbonClient = SupabaseClient<Database>;
 
@@ -101,16 +104,20 @@ export async function recordRampSyncFailures(
         createdBy: ctx.createdBy
       });
       if (error) {
-        console.error(
-          `[RAMP SYNC] ${ctx.companyId}: failed to record ${args.entityType} sync failure for ${failure.id}`,
+        logger.error("Failed to record a Ramp sync failure", {
+          companyId: ctx.companyId,
+          entityType: args.entityType,
+          entityId: failure.id,
           error
-        );
+        });
       }
     } catch (recordError) {
-      console.error(
-        `[RAMP SYNC] ${ctx.companyId}: recording ${args.entityType} sync failure for ${failure.id} threw`,
-        recordError
-      );
+      logger.error("Recording a Ramp sync failure threw", {
+        companyId: ctx.companyId,
+        entityType: args.entityType,
+        entityId: failure.id,
+        error: recordError
+      });
     }
   }
 }
@@ -152,16 +159,18 @@ export async function resolveRampSyncOperations(
           : ["Warning"]
     });
     if (error) {
-      console.error(
-        `[RAMP SYNC] ${ctx.companyId}: failed to clear resolved ${args.entityType} sync operations`,
+      logger.error("Failed to clear resolved Ramp sync operations", {
+        companyId: ctx.companyId,
+        entityType: args.entityType,
         error
-      );
+      });
     }
   } catch (resolveError) {
-    console.error(
-      `[RAMP SYNC] ${ctx.companyId}: clearing resolved ${args.entityType} sync operations threw`,
-      resolveError
-    );
+    logger.error("Clearing resolved Ramp sync operations threw", {
+      companyId: ctx.companyId,
+      entityType: args.entityType,
+      error: resolveError
+    });
   }
 }
 

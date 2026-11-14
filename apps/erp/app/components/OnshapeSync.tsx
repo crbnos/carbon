@@ -210,10 +210,18 @@ export const OnshapeSync = ({
   };
 
   const upsertBomFetcher = useAction<typeof onShapeSyncAction>({
-    onSuccess: () => {
+    onSuccess: (result) => {
       setBomRows([]);
       setLastSyncedAt(new Date().toISOString());
-      toast.success(t`BOM synced successfully`);
+      // A sub-assembly a change notice holds, or a released one, keeps its BOM.
+      const skipped =
+        "data" in result && result.data ? result.data.skipped : [];
+      if (skipped.length > 0) {
+        const notWritten = skipped.join("; ");
+        toast.warning(t`BOM synced. Not written: ${notWritten}`);
+      } else {
+        toast.success(t`BOM synced successfully`);
+      }
     }
   });
   const saveBom = () => {
@@ -235,6 +243,7 @@ export const OnshapeSync = ({
         <div className="flex items-center w-full justify-between">
           <OnshapeLogo className="h-5 w-auto" />
           <IconButton
+            aria-expanded={disclosure.isOpen}
             aria-label={t`Show sync options`}
             variant="ghost"
             size="sm"
@@ -252,6 +261,7 @@ export const OnshapeSync = ({
               </span>
               <div className="w-[180px]">
                 <Combobox
+                  aria-label={t`Onshape document`}
                   isLoading={documentsFetcher.state === "loading"}
                   options={documentOptions}
                   isReadOnly={isDisabled}
@@ -273,6 +283,7 @@ export const OnshapeSync = ({
               </span>
               <div className="w-[180px]">
                 <Combobox
+                  aria-label={t`Onshape version`}
                   isLoading={versionsFetcher.state === "loading"}
                   isReadOnly={isDisabled}
                   options={versionOptions}
@@ -293,6 +304,7 @@ export const OnshapeSync = ({
               </span>
               <div className="w-[180px]">
                 <Combobox
+                  aria-label={t`Onshape assembly`}
                   isLoading={elementsFetcher.state === "loading"}
                   options={elementOptions}
                   isReadOnly={isDisabled}
@@ -459,7 +471,9 @@ export const OnshapeSync = ({
                         <Trans>No part ID</Trans>
                       </Status>
                     )}
-                    {!isSynced && partId && <PulsingDot className="mt-0.5" />}
+                    {!isSynced && partId && (
+                      <PulsingDot label={t`Not synced`} className="mt-0.5" />
+                    )}
                     {/** biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration */}
                     {row.data["State"] && (
                       // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration

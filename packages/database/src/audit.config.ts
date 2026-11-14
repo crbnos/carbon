@@ -188,7 +188,11 @@ export const auditConfig = {
         supplier: {
           role: "root",
           snapshotFields: {
-            supplierTypeId: { table: "supplierType", displayColumns: ["name"] }
+            supplierTypeId: { table: "supplierType", displayColumns: ["name"] },
+            supplierStageId: {
+              table: "supplierStage",
+              displayColumns: ["name"]
+            }
           }
         },
         supplierPayment: { role: "extension" }, // PK = supplierId
@@ -300,6 +304,26 @@ export const auditConfig = {
         lease: { role: "root" },
         leaseLine: { entityIdColumn: "leaseId" },
         leasePayment: { entityIdColumn: "leaseId" }
+      }
+    },
+
+    // Who may approve what: thresholds, approvers and default approver.
+    approvalRule: {
+      label: "Approval Rule",
+      tables: {
+        approvalRule: {
+          role: "root",
+          createFields: [
+            "documentType",
+            "lowerBoundAmount",
+            "approverGroupIds",
+            "defaultApproverId",
+            "enabled"
+          ],
+          snapshotFields: {
+            defaultApproverId: { table: "user", displayColumns: ["fullName"] }
+          }
+        }
       }
     },
 
@@ -738,6 +762,7 @@ export const auditConfig = {
    * Tables not listed here fall back to a camelCase → Title Case conversion.
    */
   tableLabels: {
+    approvalRule: "Approval Rule",
     journal: "Journal Entry",
     invoiceSettlement: "Settlement",
     revenueRecognitionRunLine: "Recognition Line",
@@ -915,6 +940,7 @@ export const fkDisplayRegistry: {
   supplier: ["name"],
   supplierLocation: ["name"],
   supplierQuote: ["supplierQuoteId"],
+  supplierStage: ["name"],
   supplierType: ["name"],
   trackedEntity: ["readableId"],
   unitOfMeasure: ["name"],

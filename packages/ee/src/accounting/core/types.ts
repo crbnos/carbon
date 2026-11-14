@@ -1224,8 +1224,7 @@ export abstract class BaseEntitySyncer<
     if (status === "success") {
       logger.info("Sync log", logEntry);
     } else {
-      // Enhanced error logging with structured details
-      const errorDetails: Record<string, unknown> = { ...logEntry };
+      const errorDetails: Record<string, unknown> = { ...logEntry, error };
 
       if (error instanceof AccountingApiError) {
         errorDetails.errorType = error.name;
@@ -1240,12 +1239,6 @@ export abstract class BaseEntitySyncer<
           validationErrors: error.details.validationErrors
         };
         errorDetails.userMessage = error.getUserMessage();
-      } else if (error instanceof Error) {
-        errorDetails.errorType = error.name;
-        errorDetails.errorMessage = error.message;
-        errorDetails.stack = error.stack;
-      } else {
-        errorDetails.error = error;
       }
 
       logger.error("Sync log error", errorDetails);

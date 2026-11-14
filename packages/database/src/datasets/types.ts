@@ -98,6 +98,8 @@ export type SupplierSpec = {
   website: string;
   /** Omitted = Active, written explicitly (the column has no default). */
   status?: "Active" | "Inactive" | "Pending" | "Rejected";
+  /** A stage bootstrap seeds. Omitted = no stage. */
+  stage?: "Prospect" | "Sampling" | "Qualified" | "Production";
   /** Must be a currency bootstrap seeds. Defaults to "USD". */
   currencyCode?: string;
   /** Defaults to Net 30. */
@@ -113,7 +115,11 @@ export type ContactSpec = {
   title: string;
 };
 
-export type CustomerContactSpec = ContactSpec & { customer: string };
+export type CustomerContactSpec = ContactSpec & {
+  customer: string;
+  /** A second contact at the same site: reuses the customer's "Billing" location. */
+  sharesLocation?: true;
+};
 
 export type SupplierContactSpec = ContactSpec & { supplier: string };
 
@@ -192,6 +198,14 @@ export type PrinterRouteSpec = {
   name: string;
   format: string;
   printerUrl: string;
+  /**
+   * Make the route the plant's default printer (Settings → Printing). Every
+   * context at the plant inherits it, so travelers and finished-good labels
+   * reach it; the kanban context does not auto-print, since a kanban card
+   * cannot print on this route's label media. Other locations' assignments
+   * are kept. Off for the onboarding demos: their printer URLs are fake.
+   */
+  plantDefault?: boolean;
 };
 
 export type ContractorAgencySpec = {
@@ -260,6 +274,10 @@ export type FoundationData = {
   nonNettableStorageTypes: string[];
   /** Insertion order matters — a parent shelf must precede its children. */
   shelves: ShelfSpec[];
+  /** The plant's goods-in inspection storage unit (location.inspectionStorageUnitId). */
+  inspectionShelf: string;
+  /** The plant's rejected-goods storage unit (location.rejectedStorageUnitId). */
+  rejectedShelf: string;
   printerRoute: PrinterRouteSpec | null;
   holidays: HolidaySpec[];
   tags: TagSpec[];
@@ -272,6 +290,14 @@ export type FoundationData = {
   partyAddressStateProvince: string;
   partyAddressPostalCode: string;
   partyAddressCountryCode: string;
+  /** Line-flow company settings. */
+  lineFlow?: LineFlowSpec;
+};
+
+export type LineFlowSpec = {
+  travelerLabels: boolean;
+  requireTrackedMaterialsIssued: boolean;
+  autoPickingListOnRelease: boolean;
 };
 
 export type ItemType =
@@ -349,6 +375,8 @@ export type BomLineSpec = {
   order: number;
   methodType?: MethodType;
   kit?: boolean;
+  /** The `order` of a bop operation in the same method; written as `methodOperationId`. */
+  operation?: number;
 };
 
 export type BopOperationSpec = {
@@ -537,7 +565,7 @@ export type RevisionLadderSpec = {
 export type InspectionPlanSpec = {
   key: string;
   item: string;
-  drawingNumber: string;
+  name: string;
   aql: number;
   features: InspectionFeatureSpec[];
 };
@@ -556,7 +584,8 @@ export type ItemsData = {
   customerParts: CustomerPartSpec[];
   priceOverrides: PriceOverrideSpec[];
   pricingRules: PricingRuleSpec[];
-  configuration: ConfigurationSpec;
+  /** Null only on a walkthrough dataset (`Dataset.walkthrough`). */
+  configuration: ConfigurationSpec | null;
   revisionLadder: RevisionLadderSpec[];
   inspectionPlans: InspectionPlanSpec[];
   enforcementRules: EnforcementRuleSpec[];
@@ -586,6 +615,8 @@ export type OpeningStockSpec = {
 
 export type TrackedStockSpec = {
   item: string;
+  /** When set, tier 03 writes the opening ledger of this item at this shelf per lot. */
+  shelf?: string;
   entities: Array<{
     readableId: string;
     quantity: number;
@@ -623,6 +654,8 @@ export type KanbanItemSpec = {
   /** Transfer kanbans only, with toShelf. */
   fromShelf?: string;
   toShelf?: string;
+  /** Transfer kanbans only. */
+  replenishmentLevel?: number;
 };
 
 export type InventoryCountLineSpec = {
@@ -956,6 +989,41 @@ export type ContractSpec = {
   }[];
 };
 
+/** A rental agreement as activation writes it (ERP `sales.service.ts`); `Rental`
+ *  lines only, so no journal. Tier 09 seeds it after the fleet units. */
+export type RentalAgreementSpec = {
+  /** Registered in ctx.refs.documents as `ra:<key>`. */
+  key: string;
+  customer: string;
+  /** The lastName of the primary customer contact. */
+  primaryContact: string;
+  /** The other contacts, by lastName, in the order they were added. */
+  contacts?: { contact: string; role?: string }[];
+  status: "Draft" | "Active";
+  startOffset: DayOffset;
+  /** Omitted = open-ended. */
+  endOffset?: DayOffset;
+  billingCycle: "Calendar Month" | "Monthly" | "28 Days";
+  billingTiming: "Advance" | "Arrears";
+  lines: {
+    /** A `FixedAssetSpec.key` with `fleet` set. */
+    fixedAsset: string;
+    rateUnit: "Day" | "Week" | "Month";
+    rate: number;
+    fairValue: number;
+    economicLifeMonths: number;
+    /** Active only: a posted rental shipment delivered the unit on this day. */
+    deliveredOffset?: DayOffset;
+  }[];
+  /** Unbilled charges; `line` is the 1-based position in `lines`. */
+  charges?: {
+    line: number;
+    description: string;
+    amount: number;
+    dateOffset: DayOffset;
+  }[];
+};
+
 /**
  * A unit at a customer, registered the way `registerCustomerAsset` does it
  * (the datasets ship no serials to customers): a Consumed `trackedEntity`
@@ -1091,6 +1159,7 @@ export type SalesData = {
    */
   serviceLaborRates: { cost: number; bill: number };
   serviceJobs: ServiceJobSpec[];
+  rentalAgreements: RentalAgreementSpec[];
 };
 
 export type RfqLineSpec = {
@@ -1286,7 +1355,11 @@ export type PurchasingData = {
   rfqQuotes: RfqQuoteSpec[];
   rfqWinningQuote: string;
   rfqOrderQuantity: number;
-  rfqHeader: RfqHeaderSpec;
+  /**
+   * Null only on a walkthrough dataset: tier 05 then seeds no RFQ, and
+   * rfqLines, rfqQuotes and the winning-quote orders must be empty.
+   */
+  rfqHeader: RfqHeaderSpec | null;
   lifecycleRfqs: LifecycleRfqSpec[];
   purchaseOrders: PurchaseOrderSpec[];
   standaloneSupplierQuotes: StandaloneSupplierQuoteSpec[];
@@ -1368,6 +1441,8 @@ export type JobSpec = {
    * from `startOffset` 07:00 — the estimates-vs-actuals KPI compares the two.
    */
   loggedTime?: { startOffset: DayOffset; efficiency: number };
+  /** Serial items only: one readableId per unit, as `assignSerialNumbers` numbers them. */
+  serials?: string[];
 };
 
 export type ShiftEventSpec = {
@@ -1517,18 +1592,32 @@ export type PickingListSpec = {
   lines: PickingListLineSpec[];
 };
 
+/**
+ * A "need material" call from the floor (MES). Written on the job operation at
+ * `operationOrder` (1-based root position), at that operation's work center and
+ * the job's location. A Resolved row is resolved by the applying user.
+ */
+export type MaterialRequestSpec = {
+  job: string;
+  operationOrder: number;
+  item?: string;
+  note?: string;
+  status: "Open" | "Resolved";
+};
+
 export type ProductionData = {
   jobs: JobSpec[];
   /** Production-event blocks, indexed by operation position — not shift rows. */
   shifts: ShiftEventSpec[][];
   genealogyInputs: GenealogyInputSpec[];
-  genealogyAssembly: GenealogyAssemblySpec;
+  /** Null only on a walkthrough dataset, as are the other job stories below. */
+  genealogyAssembly: GenealogyAssemblySpec | null;
   /** JobSpec.key whose operations get production events. */
-  eventsJobKey: string;
+  eventsJobKey: string | null;
   /** JobSpec.key the as-built genealogy hangs off. */
-  genealogyJobKey: string;
+  genealogyJobKey: string | null;
   /** Open Setup event (null endTime) on the events job; use the op overridden to "In Progress". */
-  openEvent: { operationOrder: number };
+  openEvent: { operationOrder: number } | null;
   /**
    * An Active batch; members are unstarted root operations of different
    * released jobs on one process. `running` is its batch timer today, on the
@@ -1538,9 +1627,10 @@ export type ProductionData = {
   batch: {
     members: { job: string; order: number }[];
     running: { type: "Setup" | "Labor" | "Machine"; startTimeOfDay: string };
-  };
-  rework: ReworkSpec;
+  } | null;
+  rework: ReworkSpec | null;
   pickingLists: PickingListSpec[];
+  materialRequests: MaterialRequestSpec[];
 };
 
 export type NonConformanceTaskStatus =
@@ -1659,8 +1749,11 @@ export type InspectionSampleSpec = {
 
 type InspectionLotSpec = {
   ref: string;
-  /** "Partial" = some samples passed, some failed. */
-  status: "Pending" | "In Progress" | "Passed" | "Partial";
+  /**
+   * "Partial" = some samples passed, some failed. "Cancelled" is a manual lot's
+   * only (ManualInspectionSpec).
+   */
+  status: "Pending" | "In Progress" | "Passed" | "Partial" | "Cancelled";
   /** Required iff dispositioned; on/after every sample's inspectedOffset. */
   dispositionOffset?: DayOffset;
   notes?: string;
@@ -1680,7 +1773,7 @@ export type ReceiptInspectionSpec = InspectionLotSpec & {
   source: "Receipt";
   receipt: string;
   item: string;
-  drawingNumber: string;
+  name: string;
   /** Resolved sample size must be ≤ 5 so every sample is authored. */
   aql: number;
   features: InspectionFeatureSpec[];
@@ -1696,7 +1789,26 @@ export type JobOperationInspectionSpec = InspectionLotSpec & {
   job: string;
 };
 
-export type InspectionSpec = ReceiptInspectionSpec | JobOperationInspectionSpec;
+/**
+ * A lot a person creates for specific tracked entities (createManualInspection):
+ * no plan (every unit inspected), lot size = the serial count or the batches'
+ * quantity. Seeded open only: an On Hold entity stays On Hold until a verdict.
+ */
+export type ManualInspectionSpec = InspectionLotSpec & {
+  source: "Manual";
+  /** A Cancelled lot gave its entities back, so they may be in an open lot. */
+  status: "Pending" | "Cancelled";
+  /** onHandTracked readableIds, all of one item and all On Hold. */
+  trackedEntities: string[];
+  /** A foundation work center name. */
+  workCenter?: string;
+  assignee?: "self";
+};
+
+export type InspectionSpec =
+  | ReceiptInspectionSpec
+  | JobOperationInspectionSpec
+  | ManualInspectionSpec;
 
 export type QualityDocumentStepType =
   | "Value"
@@ -1912,6 +2024,8 @@ export type FixedAssetSpec = {
   usageLogs?: { monthsBack: number; unitsProduced: number }[];
   /** Required iff "Disposed"; the tier derives NBV and gainLoss as post-sales-invoice does. */
   disposal?: { dateOffset: DayOffset; method: "Sale"; saleProceeds: number };
+  /** A rentable fleet unit: a Serial-tracked item and a new Consumed serial of it. */
+  fleet?: { item: string; serial: string };
 };
 
 export type AccountClass =
@@ -2520,6 +2634,8 @@ export type SerialSequenceSpec = {
    * seeded serial of the item that fits prefix + counter + suffix.
    */
   next: number;
+  serialNumberTiming?: "jobCreation" | "jobRelease" | "production";
+  printLabelOnCompletion?: boolean;
 };
 
 /** As the print-job task leaves it. */
@@ -2650,7 +2766,8 @@ export type PlanningData = {
   buyItemIds: string[];
   makeItemIds: string[];
   demandProjections: DemandProjectionSpec[];
-  demandOrder: DemandOrderSpec;
+  /** Null only on a walkthrough dataset: no sales order, so no demand. */
+  demandOrder: DemandOrderSpec | null;
   hq: HqPlanningSpec;
 };
 
@@ -2660,6 +2777,7 @@ export type DatasetKey =
   | "robotics"
   | "precision"
   | "motor"
+  | "motor-line"
   | "defense";
 
 // One industry story's worth of data. The tiers hold the insertion logic; a
@@ -2669,6 +2787,16 @@ export type Dataset = {
   label: string;
   /** industry.id this dataset backs, or null for dev-only datasets. */
   industryId: string | null;
+  /**
+   * Industry folder for bundled assets (CAD model, thumbnails); defaults to
+   * `industryId`. Lets a dev-only dataset reuse an industry's assets.
+   */
+  assetIndustryId?: string;
+  /**
+   * A dev-only single-product dataset: only the structural rules run and
+   * coverage floors skip it. Never set with an `industryId`.
+   */
+  walkthrough?: boolean;
   foundation: FoundationData;
   items: ItemsData;
   inventory: InventoryData;

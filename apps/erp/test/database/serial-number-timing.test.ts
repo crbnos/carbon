@@ -1109,3 +1109,40 @@ describe.skipIf(!client)("serial number timing", () => {
     }
   });
 });
+
+describe.skipIf(!client)("repeated serial completion", () => {
+  it("refuses a unit already complete on the operation", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "repeat", 3);
+      const [seedUnit] = await units(f, job.makeMethodId);
+      const completeUnit = () =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "jobOperationSerialComplete",
+            trackedEntityId: seedUnit!.id,
+            quantity: 1,
+            jobOperationId: job.operationId
+          },
+          issue
+        );
+
+      unwrap(await completeUnit());
+      const repeated = await completeUnit();
+
+      expect(repeated.error?.status).toBe(400);
+      const production = await f.db
+        .selectFrom("productionQuantity")
+        .select("quantity")
+        .where("jobOperationId", "=", job.operationId)
+        .execute();
+      expect(production.map((row) => Number(row.quantity))).toEqual([1]);
+    } finally {
+      await f.cleanup();
+    }
+  });
+});

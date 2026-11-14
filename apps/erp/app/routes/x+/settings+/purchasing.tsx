@@ -107,6 +107,11 @@ const purchasingSettingsForm = z.discriminatedUnion("intent", [
     "requireSupplierContactEmailToggle",
     "requireSupplierContactEmail"
   ),
+  settingsToggle("includeSupplierPartFilesToggle", "includeSupplierPartFiles"),
+  settingsToggle(
+    "requirePromisedDateToFinalizePurchaseOrderToggle",
+    "requirePromisedDateToFinalizePurchaseOrder"
+  ),
   settingsToggle(
     "requirePurchaseOrderApprovalSignatureToggle",
     "requirePurchaseOrderApprovalSignature"
@@ -172,11 +177,25 @@ export default function PurchasingSettingsRoute() {
             ? t`Supplier contact requirement enabled`
             : t`Supplier contact requirement disabled`
         );
+      } else if (data.includeSupplierPartFiles !== undefined) {
+        toast.success(
+          data.includeSupplierPartFiles
+            ? t`Part files attached automatically`
+            : t`Part files attached only when picked`
+        );
       } else if (data.requireSupplierContactEmail !== undefined) {
         toast.success(
           data.requireSupplierContactEmail
             ? t`Supplier contact email required`
             : t`Supplier contact email optional`
+        );
+      } else if (
+        data.requirePromisedDateToFinalizePurchaseOrder !== undefined
+      ) {
+        toast.success(
+          data.requirePromisedDateToFinalizePurchaseOrder
+            ? t`Promised date required to finalize purchase orders`
+            : t`Promised date optional to finalize purchase orders`
         );
       } else if (data.requirePurchaseOrderApprovalSignature !== undefined) {
         toast.success(
@@ -266,6 +285,44 @@ export default function PurchasingSettingsRoute() {
       toggleFetcher.submit(
         {
           intent: "requireSupplierContactEmailToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  const includeSupplierPartFiles = useSavedToggle(
+    toggleFetcher,
+    "includeSupplierPartFilesToggle",
+    companySettings.includeSupplierPartFiles ?? true
+  );
+
+  const handleIncludeSupplierPartFilesToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "includeSupplierPartFilesToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  const requirePromisedDate = useSavedToggle(
+    toggleFetcher,
+    "requirePromisedDateToFinalizePurchaseOrderToggle",
+    companySettings.requirePromisedDateToFinalizePurchaseOrder ?? false
+  );
+
+  const handleRequirePromisedDateToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "requirePromisedDateToFinalizePurchaseOrderToggle",
           enabled: checked.toString()
         },
         { method: "POST" }
@@ -370,6 +427,52 @@ export default function PurchasingSettingsRoute() {
         <Card>
           <CardHeader>
             <CardTitle>
+              <Trans>Attach Part Files Automatically</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Sending an RFQ or a supplier quote lists each line item's model
+                and the files on its Files tab, such as drawings. Only the files
+                ticked there are attached to the email and shown on the
+                supplier's quote page.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {includeSupplierPartFiles ? (
+                    <Trans>Part files are attached automatically</Trans>
+                  ) : (
+                    <Trans>Part files are attached only when picked</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {includeSupplierPartFiles ? (
+                    <Trans>
+                      Every part file starts ticked; untick any you don't want
+                      to send.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Every part file starts unticked; tick the ones to send.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={includeSupplierPartFiles}
+                onCheckedChange={handleIncludeSupplierPartFilesToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
               <Trans>Require a Supplier Contact and Location</Trans>
             </CardTitle>
             <CardDescription>
@@ -409,6 +512,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require a Supplier Contact and Location`}
                 checked={requireSupplierContactAndLocation}
                 onCheckedChange={handleRequireSupplierContactToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -442,8 +546,42 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require an Email on Supplier Contacts`}
                 checked={requireSupplierContactEmail}
                 onCheckedChange={handleRequireSupplierContactEmailToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Require a Promised Date to Finalize Purchase Orders</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                A purchase order cannot be finalized until it has a supplier
+                promised date. A date on the order covers every line. Keep this
+                off if suppliers give you a date after they receive the order.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requirePromisedDate ? (
+                    <Trans>A promised date is required to finalize</Trans>
+                  ) : (
+                    <Trans>A promised date is optional to finalize</Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={requirePromisedDate}
+                onCheckedChange={handleRequirePromisedDateToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
@@ -488,6 +626,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require a Signature to Approve Purchase Orders`}
                 checked={requireApprovalSignature}
                 onCheckedChange={handleRequireApprovalSignatureToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -532,6 +671,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Centralized Billing Address`}
                 checked={apAddressEnabled}
                 onCheckedChange={handleApAddressToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -690,6 +830,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Automatic Lead Time Updates`}
                 checked={leadTimesOnReceiptEnabled}
                 onCheckedChange={handleLeadTimesOnReceiptToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -739,6 +880,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Show Supplier IDs`}
                 checked={showSupplierReadableIdEnabled}
                 onCheckedChange={handleShowSupplierReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}

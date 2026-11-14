@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LuX } from "react-icons/lu";
 import { IconButton } from "./IconButton";
 import { cn } from "./utils/cn";
+import { keepOpenOnToast } from "./utils/dialog";
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 6;
@@ -182,6 +183,7 @@ export function ImageZoomViewer({
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className="fixed inset-0 z-[80] flex flex-col bg-black/90 backdrop-blur-sm outline-none"
+          onInteractOutside={keepOpenOnToast()}
           // Tapping the backdrop at fit-scale closes; while zoomed it's reserved for panning.
           onClick={(e) => {
             if (e.target === e.currentTarget && scale === 1) onClose();

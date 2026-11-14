@@ -25,6 +25,24 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 
 ## Key Domain Concepts
 
+- **Force delete (Admin override): invoices, receipts, payments.** This is the purchase order force delete (`purchasing/AGENTS.md`) for purchase invoices, sales invoices, receipts and payments. It is an emergency override for when a user error has broken the normal process: it cleans up what holds the document instead of refusing.
+  - **Storage:** one table, `forceDeleteRequest` (`documentType`, `documentId` with no FK, `documentReadableId`, `documentStatus`; `serviceOnly()`). The `approvalRequest` type is `documentForceDelete`, in `adminApprovedDocumentTypes`.
+  - **Operations:** `requestDocumentForceDelete`, `decideDocumentForceDelete` and `cancelDocumentForceDelete` (`invoicing.server.ts`). Permission is keyed by `documentType`. The route is `force-delete+/$documentType.$documentId.tsx`; the UI is `components/ForceDelete/DocumentForceDelete.tsx`, and the loaders spread `getDocumentForceDeleteData`.
+  - **Claiming:** approving first claims the request (status `Approving`, `claimForceDeleteRequest`), so a cancel or reject cannot run while committed steps run. A refusal or failure releases the claim back to Pending; a claim left for ten minutes can be taken again.
+  - **Step 1, each part committing on its own:**
+    - `unapplyForceDeleteSettlements` unapplies what is applied to the document: an invoice's payments and memos, or the other payments a payment funds or refunds. A Posted payment's journal is built again (`rebuildPaymentJournal`) with and without the settlements; `paymentJournalDifference` is posted today, and the payment keeps the cash as unapplied credit.
+    - `reverseRecognizedRevenue` reverses a sales invoice's Posted revenue schedule rows.
+    - The document's own void runs (`voidForceDeleteDocument`).
+    - The payment void reverses every `journalLine` of the payment, unapply journals included.
+  - **Step 2, one transaction:** if the void refused, `reverseDocumentByJournal` runs:
+    1. It negates every journal carrying the document's lines. Before the cutover there are none to negate: an invoice writes its open amount off, and a payment negates its rebuilt posting.
+    2. It moves the stock back by adjustment, even negative, with its inspections cancelled under `withInspectionRelease`, and adds the original value back from its cost ledger.
+    3. It restores PO received and invoiced quantities, and moves a capitalized asset's CIP value back.
+    4. It marks the document Voided.
+
+    Then `deleteForceDeleteDocument` sets `app.force_delete` (the invoice delete guards and `prevent_invalid_deposit_refund` return early on it) and deletes the document.
+  - **Refused only** while the document is being posted.
+  - **Notifications:** the `documentId` is `<documentType>:<documentId>:<requestId>`.
 - **Invoice status** — `salesInvoiceStatusType` / `purchaseInvoiceStatusType`;
   `is{Sales,Purchase}InvoiceLocked` = not Draft. **`Partially Paid` and `Overdue` are DERIVED**
   in the `salesInvoices`/`purchaseInvoices` views from `invoiceSettlement`. There is no
@@ -56,9 +74,10 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   `!isReimbursement && cashIn !== isAR`, so a three-way party can't be misread as a refund.
   `totalAmount` may be 0 — a payment can be a pure credit application.
 - **`invoiceSettlement`** — source is exactly one of `paymentId`/`memoId`; target exactly one of
-  FOUR (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
-  `targetReimbursementId` — the fourth added by `20260923231244`, which widened
-  `invoiceSettlement_target_check`). **`appliedAmount`, `discountAmount` and `writeOffAmount` are
+  FIVE (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
+  `targetReimbursementId`, `targetPaymentId`). `targetPaymentId` links an advance refund
+  to its original payment; the managed `prevent_invalid_deposit_refund` interceptor
+  validates its party, currency, document scope and effective funding under source locks. **`appliedAmount`, `discountAmount` and `writeOffAmount` are
   company BASE currency; `sourceAmount` is the exact principal in the funding source's DOCUMENT
   currency** (per the `COMMENT ON COLUMN` statements in
   `20260908021155_accounting_posting_corrections.sql`) — getting that pair backwards is a live
@@ -156,7 +175,7 @@ pnpm --filter erp test                                    # the whole app's vite
 | `purchaseInvoiceDelivery` | AP delivery terms |
 | `memo` | Credit/debit memos; customer XOR supplier, `direction` orthogonal to party |
 | `payment` | Receipts, disbursements, employee payouts (three-way `payment_party_check`) |
-| `invoiceSettlement` | Applications: one source × one of four targets; base-currency reliefs + generated `fxGainLossAmount` |
+| `invoiceSettlement` | Applications: one source × one of five targets; base-currency reliefs + generated `fxGainLossAmount` |
 | `charge` / `chargeLine` | Card charges (`chargeType`: Charge/Credit/Payment/Cashback/Repayment) |
 | `reimbursement` / `reimbursementLine` / `reimbursementLineDimension` | Employee expense payable, coding lines, dimension tags |
 | `paymentTerm`, `currency`, `company` | Due-date, decimals, and base-currency resolution |
@@ -194,6 +213,19 @@ guarded by `requireUnlockedBulk`, not validators.
 - `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` — terms math (the due date itself is
   `calculateDueDate` / `DEFAULT_PAYMENT_TERM` from `@carbon/utils`, shared with invoice posting);
   discounts batch-load their terms in one query, never per invoice.
+- `getDepositDocuments` pages rental agreements and customer contracts with stable id tie-breakers.
+  Supplier refund currencies come from `get_supplier_prepayment_refund_currencies`, a caller-RLS
+  SQL aggregate returning one row per referenced purchase order, including exhausted saved links.
+- `postPaymentTransaction` locks company settings, a linked purchase order, the payment,
+  then funding sources; it rechecks the order reference after locking the payment.
+  Activation takes the same settings-first order. Journal, normalized settlements and payment
+  status commit together. `rebuildPaymentJournals` alone opts historical customer refunds into
+  legacy reconstruction; new refunds must allocate original advances. Funding readers, draft
+  allocation and posting also reserve historical customer refunds that have no source applications:
+  oldest eligible original advances first, only when their original account and carrying value
+  match the refund's unchanged journal. Incompatible history refuses with a reconciliation message.
+  Voided history is ignored; attributed modern refunds are not counted twice. The database
+  interceptor protects historical document principal and original-account carrying capacity too.
 - `replaceInvoiceSettlements` (Kysely) — replace-all for a Draft payment's applications; owns
   the AR / AP / refund / reimbursement arm rules and the balance ceilings.
 - `applyCreditsToInvoices` (Kysely) — additive memo-sourced settlements, GL-neutral (the memos

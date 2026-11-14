@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { LabelWithHelp } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -27,8 +26,6 @@ import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractMoney } from "~/modules/sales/ui/Contracts";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "contract-billing-backup");
 
 /** The backup of one project billing invoice: every billable item it
  *  billed, traced to its ledger row, or to its pool, fiscal year, rate and
@@ -52,16 +49,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getProjectBillingBackup(client, { companyId, salesInvoiceId: invoiceId })
   ]);
   if (invoice.error || invoice.data.customerContractId !== id || items.error) {
-    logger.error("Failed to load a project billing backup", {
-      companyId,
-      invoiceId,
-      error: invoice.error ?? items.error
-    });
     throw redirect(
       path.to.contractDetails(id),
       await flash(
         request,
-        error(invoice.error ?? items.error, "Failed to load the backup")
+        error(invoice.error ?? items.error, "Failed to load the backup", {
+          invoiceId
+        })
       )
     );
   }
