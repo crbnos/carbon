@@ -4570,6 +4570,7 @@ export const orderPlannedJobs = defineServiceFn({
       quantity: number;
       dueDate: string | null;
       planningActionId?: string;
+      plannedOrderId?: string;
     }[] = [];
     const errors: string[] = [];
     // A job kept without its method: the planner must Get Method on it.
@@ -4699,7 +4700,8 @@ export const orderPlannedJobs = defineServiceFn({
           jobId: id,
           quantity: order.quantity,
           dueDate: order.dueDate ?? null,
-          planningActionId: order.planningActionId
+          planningActionId: order.planningActionId,
+          plannedOrderId: order.plannedOrderId
         });
         const key = [item.id, order.periodId, item.planningSegmentId].join(
           "\u001f"
@@ -4731,6 +4733,7 @@ export const orderPlannedJobs = defineServiceFn({
       locationId,
       userId,
       type: "Make",
+      asOf: today,
       ordered
     });
     if (settled.error) {

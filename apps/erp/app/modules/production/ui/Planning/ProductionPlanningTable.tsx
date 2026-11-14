@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCarbon } from "@carbon/auth";
 import { useAction } from "@carbon/query";
 import {
   Button,
@@ -56,6 +57,10 @@ import {
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM
 } from "~/modules/production/production.models";
+import {
+  type DrawerPlannedOrder,
+  getRowPlannedOrders
+} from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import {
   isApplyablePlanningAction,
@@ -140,8 +145,11 @@ const ProductionPlanningTable = ({
 
   const mrpFetcher = useAction<typeof mrpAction>({
     onSettled: (data) => {
-      // the drawer re-seeds from the new run's actions
-      if (data) setOrdersMap({});
+      // the drawer re-seeds from the new run's actions and planned orders
+      if (data) {
+        setOrdersMap({});
+        setPlannedOrdersByRowKey({});
+      }
     }
   });
   const mrpScheduleDescription = useMrpScheduleDescription();
@@ -222,6 +230,8 @@ const ProductionPlanningTable = ({
       setOrdersMap(
         draftsOfRefusedOrders(submittedRows.current, data.refusedOrders)
       );
+      // the jobs converted planned orders: read them again
+      setPlannedOrdersByRowKey({});
       const refusedCount = data.refusedOrders.length;
       if (refusedCount > 0) {
         toast.error(pastStartToast(data.jobs.length, refusedCount));
@@ -317,30 +327,96 @@ const ProductionPlanningTable = ({
     {}
   );
 
+  // The Make planned orders of the rows whose drawer read them (common
+  // segment only), by row. A suggested job stands for each.
+  const [plannedOrdersByRowKey, setPlannedOrdersByRowKey] = useState<
+    Record<string, DrawerPlannedOrder[]>
+  >({});
+  const onPlannedOrdersLoaded = useCallback(
+    (item: ProductionPlanningItem, orders: DrawerPlannedOrder[]) => {
+      if (item.id) {
+        setPlannedOrdersByRowKey((prev) => ({
+          ...prev,
+          [planningRowKey(item)]: orders
+        }));
+      }
+    },
+    []
+  );
+
   // A row's suggested jobs are its open Make actions: what MRP wrote after it
   // moved expedited supply, folded a shortfall into an open job as an
-  // Increase, and summed each week. They seed the drawer, size the Make
+  // Increase, and summed each week — one job per planned order of the
+  // action's week when it has any. They seed the drawer, size the Make
   // button, and are what a bulk Create Jobs submits for rows never opened.
+  const currentWeek = useMemo(
+    () =>
+      periods[0] ? { id: periods[0].id, endDate: periods[0].endDate } : null,
+    [periods]
+  );
+  const ordersForRow = useCallback(
+    (row: ProductionPlanningItem, plannedOrders?: DrawerPlannedOrder[]) =>
+      productionOrdersFromActions(
+        openNewSupplyActions(actionsByRowKey.get(planningRowKey(row)), "Make"),
+        { item: row, todayDate: locationToday, plannedOrders, currentWeek }
+      ),
+    [actionsByRowKey, locationToday, currentWeek]
+  );
   const ordersByRowKey = useMemo(
     () =>
       new Map(
         loadedRows.map((row) => [
           planningRowKey(row),
-          productionOrdersFromActions(
-            openNewSupplyActions(
-              actionsByRowKey.get(planningRowKey(row)),
-              "Make"
-            ),
-            { item: row, todayDate: locationToday }
-          )
+          ordersForRow(row, plannedOrdersByRowKey[planningRowKey(row)])
         ])
       ),
-    [loadedRows, actionsByRowKey, locationToday]
+    [loadedRows, ordersForRow, plannedOrdersByRowKey]
   );
+
+  const { carbon } = useCarbon();
+  // A bulk Create Jobs reads the planned orders of the rows it sizes itself,
+  // so a bulk job converts by id as the drawer's does. One read at a time.
+  const isReadingPlannedOrders = useRef(false);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onBulkUpdate = useCallback(
-    (selectedRows: ProductionPlanningItem[], action: "order") => {
+    async (selectedRows: ProductionPlanningItem[], action: "order") => {
+      if (isReadingPlannedOrders.current) return;
+      // Rows never opened in the drawer are sized here; only the common
+      // segment has planned orders.
+      const sizedHere = selectedRows.filter(
+        (row) =>
+          row.id &&
+          !row.planningSegmentId &&
+          !(planningRowKey(row) in ordersMap)
+      );
+      let plannedOrdersByItem: Map<string, DrawerPlannedOrder[]> | null = null;
+      if (sizedHere.length > 0 && carbon) {
+        isReadingPlannedOrders.current = true;
+        const read = await getRowPlannedOrders(carbon, {
+          companyId: user.company.id,
+          locationId,
+          orderType: "Make",
+          itemIds: sizedHere.map((row) => row.id!)
+        }).finally(() => {
+          isReadingPlannedOrders.current = false;
+        });
+        // a failed read sizes from the actions alone; Make then converts the
+        // week's planned orders by quantity
+        if (read.data) {
+          plannedOrdersByItem = new Map();
+          for (const order of read.data) {
+            const list = plannedOrdersByItem.get(order.itemId);
+            if (list) list.push(order);
+            else plannedOrdersByItem.set(order.itemId, [order]);
+          }
+        }
+      }
+      const suggestedOrders = (row: ProductionPlanningItem) =>
+        plannedOrdersByItem && !row.planningSegmentId
+          ? ordersForRow(row, plannedOrdersByItem.get(row.id!) ?? [])
+          : (ordersByRowKey.get(planningRowKey(row)) ?? []);
+
       const payload = {
         locationId,
         items: selectedRows
@@ -354,7 +430,7 @@ const ProductionPlanningTable = ({
               planningRowKey(row) in ordersMap
                 ? ordersMap[planningRowKey(row)]!
                 : splitOrdersByFence(
-                    ordersByRowKey.get(planningRowKey(row)) ?? [],
+                    suggestedOrders(row),
                     timeFence.fenceDateFor(row)
                   ).inside;
             const ordersWithPeriods = sourceOrders.map((order) => {
@@ -400,7 +476,16 @@ const ProductionPlanningTable = ({
       });
     },
 
-    [bulkUpdateFetcher, locationId, ordersMap, ordersByRowKey, timeFence]
+    [
+      bulkUpdateFetcher,
+      carbon,
+      locationId,
+      ordersMap,
+      ordersByRowKey,
+      ordersForRow,
+      timeFence,
+      user.company.id
+    ]
   );
 
   // Moving a row's fence changes which suggested orders its drawer opens on.
@@ -450,7 +535,10 @@ const ProductionPlanningTable = ({
   // After a Draft job is planned (MRP re-runs) or an order is placed, the
   // row's draft is stale: drop it so the drawer re-seeds.
   const dropOrders = useCallback((item: ProductionPlanningItem) => {
-    if (item.id) setOrdersMap((prev) => withoutRowDraft(prev, item));
+    if (!item.id) return;
+    setOrdersMap((prev) => withoutRowDraft(prev, item));
+    // an order placed converted planned orders: the drawer reads them again
+    setPlannedOrdersByRowKey((prev) => withoutRowDraft(prev, item));
   }, []);
 
   // The drawer's own Planning Horizon control: the same on-screen override as
@@ -883,6 +971,7 @@ const ProductionPlanningTable = ({
           actionHandlers={actionHandlers}
           setOrders={setOrders}
           onSuggestionsStale={dropOrders}
+          onPlannedOrdersLoaded={onPlannedOrdersLoaded}
           periods={periods}
           isOpen={isDrawerOpen}
           onClose={closeDrawer}

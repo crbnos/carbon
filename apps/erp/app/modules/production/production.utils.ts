@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { resolvePlanningTimeFenceDays } from "@carbon/utils";
 import type { AssemblyStep } from "@carbon/viewer";
 import { isPlanFlagged } from "@carbon/viewer/steps";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -157,7 +158,7 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
 // purchasing_view, the two pages that open these drawers.
 
 const DRAWER_PLANNED_ORDER_COLUMNS =
-  "id, status, orderType, quantity, scrapQuantity, quantityTrace, dueDate, releaseDate, firmedAt" as const;
+  "id, itemId, periodId, splitIndex, status, orderType, quantity, scrapQuantity, quantityTrace, dueDate, releaseDate, firmedAt" as const;
 
 /**
  * The Planned and Firm planned orders of one item at one location, by due
@@ -191,6 +192,49 @@ export type DrawerPlannedOrder = NonNullable<
   Awaited<ReturnType<typeof getDrawerPlannedOrders>>["data"]
 >[number];
 
+/** Item ids per request: the ids travel in the URL (`in.(…)`). */
+const PLANNED_ORDER_ITEM_CHUNK = 100;
+
+/**
+ * The Planned and Firm planned orders of many items at one location, for a
+ * bulk Make / Order on the planning grids: each suggested order of a row then
+ * names the planned order it stands for. One request per 100 items, so a
+ * large selection never builds a URL the gateway refuses.
+ */
+export async function getRowPlannedOrders(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    orderType: "Make" | "Buy";
+    itemIds: string[];
+  }
+): Promise<
+  { data: DrawerPlannedOrder[]; error: null } | { data: null; error: Error }
+> {
+  const itemIds = [...new Set(args.itemIds)];
+  const chunks: string[][] = [];
+  for (let i = 0; i < itemIds.length; i += PLANNED_ORDER_ITEM_CHUNK) {
+    chunks.push(itemIds.slice(i, i + PLANNED_ORDER_ITEM_CHUNK));
+  }
+  const reads = await Promise.all(
+    chunks.map((ids) =>
+      client
+        .from("plannedOrder")
+        .select(DRAWER_PLANNED_ORDER_COLUMNS)
+        .eq("companyId", args.companyId)
+        .in("itemId", ids)
+        .eq("locationId", args.locationId)
+        .eq("orderType", args.orderType)
+        .eq("planningSegmentId", "")
+        .in("status", ["Planned", "Firm"])
+    )
+  );
+  const failed = reads.find((read) => read.error)?.error;
+  if (failed) return { data: null, error: new Error(failed.message) };
+  return { data: reads.flatMap((read) => read.data ?? []), error: null };
+}
+
 /**
  * The item's planning time fence at a location, in calendar days, as MRP
  * resolves it: the item's own value, else the location's, else 0 (no fence).
@@ -217,10 +261,10 @@ export async function getPlanningTimeFenceDays(
   const failed = itemPlanning.error ?? location.error;
   if (failed) return { data: null, error: new Error(failed.message) };
   return {
-    data:
-      itemPlanning.data?.planningTimeFenceDays ??
-      location.data?.planningTimeFenceDays ??
-      0,
+    data: resolvePlanningTimeFenceDays(
+      itemPlanning.data?.planningTimeFenceDays,
+      location.data?.planningTimeFenceDays
+    ),
     error: null
   };
 }

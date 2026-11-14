@@ -49,6 +49,7 @@ import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { SupplierPartPrice } from "~/modules/items/ui/Item/SupplierParts";
 import type { RefusedPlanningOrder } from "~/modules/production/production.models";
+import type { DrawerPlannedOrder } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import { DrawerPlannedOrders } from "~/modules/production/ui/Planning/DrawerPlannedOrders";
 import {
@@ -135,6 +136,12 @@ type PurchasingPlanningOrderDrawerProps = {
   setOrders: (item: PurchasingPlanningItem, orders: PlannedOrder[]) => void;
   /** Drop the item's draft list so the drawer re-seeds from the suggestions. */
   onSuggestionsStale: (item: PurchasingPlanningItem) => void;
+  /** The item's Buy planned orders, as the Planned Orders section reads
+   *  them: the suggested orders stand for them. */
+  onPlannedOrdersLoaded: (
+    item: PurchasingPlanningItem,
+    orders: DrawerPlannedOrder[]
+  ) => void;
   setSelectedItem: (item: PurchasingPlanningItem) => void;
 };
 
@@ -152,6 +159,7 @@ export const PurchasingPlanningOrderDrawer = memo(
     ordersVersion = 0,
     setOrders,
     onSuggestionsStale,
+    onPlannedOrdersLoaded,
     locationId,
     periods,
     selectedSupplier,
@@ -190,6 +198,11 @@ export const PurchasingPlanningOrderDrawer = memo(
     // Bumped when the rows are re-read, to close any cell editor left open.
     const [suggestionsVersion, setSuggestionsVersion] = useState(0);
     const submittedOrders = useRef<PlannedOrder[]>([]);
+    const onPlannedOrdersRead = useCallback(
+      (plannedOrders: DrawerPlannedOrder[]) =>
+        onPlannedOrdersLoaded(selectedItem, plannedOrders),
+      [onPlannedOrdersLoaded, selectedItem]
+    );
 
     // Only while open: the drawer stays mounted on its last item so it can
     // slide out, and that item's actions change with every Apply on the grid.
@@ -917,6 +930,8 @@ export const PurchasingPlanningOrderDrawer = memo(
                       todayIso={locationToday}
                       actions={actions}
                       actionHandlers={actionHandlers}
+                      refreshKey={openLinesVersion}
+                      onOrdersLoaded={onPlannedOrdersRead}
                     />
 
                     <SuggestedOrdersGrid<PlannedOrder>

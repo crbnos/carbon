@@ -111,6 +111,92 @@ function ordersOf(
 }
 
 /**
+ * A planned order the suggestions stand for: one of the row's item, location
+ * and type, in the common segment (`getRowPlannedOrders`).
+ */
+export type SuggestablePlannedOrder = {
+  id: string;
+  status: string;
+  periodId: string;
+  quantity: number | string;
+  dueDate: string;
+  releaseDate: string;
+  splitIndex?: number | null;
+};
+
+/** The planning page's first week (the current one): it also holds every
+ *  overdue planned order, as MRP's sizing does. */
+export type PlanningCurrentWeek = { id: string; endDate: string };
+
+/**
+ * Whether a planned order belongs to an action's week: its own week, or —
+ * for the current week's action — any week before it. MRP sizes an overdue
+ * order in the current week, while the row keeps the week of its due date.
+ */
+export function isPlannedOrderOfWeek(
+  order: Pick<SuggestablePlannedOrder, "periodId" | "dueDate">,
+  periodId: string,
+  currentWeek: PlanningCurrentWeek | null | undefined
+): boolean {
+  if (order.periodId === periodId) return true;
+  // ISO dates order as strings
+  return currentWeek?.id === periodId && order.dueDate <= currentWeek.endDate;
+}
+
+/**
+ * The unconverted planned orders of an action's week, in the order MRP split
+ * them: by due date, then `splitIndex`. MRP sums the week's planned orders
+ * into the action (Planned, Firm and fence-held alike), so they ARE its
+ * orders — each one is offered as itself and converts by its id.
+ */
+function plannedOrdersOfWeek(
+  action: NewSupplyActionFields,
+  plannedOrders: SuggestablePlannedOrder[] | undefined,
+  currentWeek: PlanningCurrentWeek | null | undefined
+): SuggestablePlannedOrder[] {
+  return (plannedOrders ?? [])
+    .filter(
+      (order) =>
+        isPlannedOrderOfWeek(order, action.periodId, currentWeek) &&
+        (order.status === "Planned" || order.status === "Firm")
+    )
+    .sort(
+      (a, b) =>
+        a.dueDate.localeCompare(b.dueDate) ||
+        (a.splitIndex ?? 0) - (b.splitIndex ?? 0) ||
+        a.id.localeCompare(b.id)
+    );
+}
+
+/**
+ * An action's orders: one per unconverted planned order of its week when it
+ * has any, else the action split by its policy (`ordersOf`).
+ */
+function suggestionsOf(
+  action: NewSupplyActionFields,
+  item: ItemOrderSizing,
+  todayDate: string | undefined,
+  plannedOrders: SuggestablePlannedOrder[] | undefined,
+  currentWeek: PlanningCurrentWeek | null | undefined
+): {
+  quantity: number;
+  startDate: string;
+  dueDate: string;
+  isASAP: boolean;
+  plannedOrderId?: string;
+}[] {
+  const week = plannedOrdersOfWeek(action, plannedOrders, currentWeek);
+  if (week.length === 0) return ordersOf(action, item, todayDate);
+  return week.map((order) => ({
+    quantity: Number(order.quantity),
+    startDate: order.releaseDate,
+    dueDate: order.dueDate,
+    isASAP: isOrderASAP(action, order.releaseDate, todayDate),
+    plannedOrderId: order.id
+  }));
+}
+
+/**
  * Whether an order must start at once: its own start date has passed, judged
  * against today on the page. MRP stores one flag per week (any of the week's
  * orders) as of its run, so every batch of the week became an ASAP job, and a
@@ -132,9 +218,10 @@ function isOrderASAP(
 }
 
 /**
- * The job suggestions of each open Make action — the jobs its policy sized —
- * in the item's own units, each with the action's policy attribution for the
- * chart's order popover.
+ * The job suggestions of each open Make action, in the item's own units, each
+ * with the action's policy attribution for the chart's order popover: one per
+ * Make planned order of the action's week (its quantity, dates and
+ * `plannedOrderId`), else the jobs the action's policy sized.
  */
 export function productionOrdersFromActions(
   actions: NewSupplyActionFields[],
@@ -143,16 +230,27 @@ export function productionOrdersFromActions(
     item?: ItemOrderSizing;
     /** Today on the location's calendar, to judge each job's ASAP. */
     todayDate?: string;
+    /** The row's Make planned orders (none outside the common segment). */
+    plannedOrders?: SuggestablePlannedOrder[];
+    /** The page's first week, which also holds the overdue planned orders. */
+    currentWeek?: PlanningCurrentWeek | null;
   } = {}
 ): ProductionOrder[] {
   return actions.flatMap((action) =>
-    ordersOf(action, context.item ?? {}, context.todayDate).map((batch) => ({
+    suggestionsOf(
+      action,
+      context.item ?? {},
+      context.todayDate,
+      context.plannedOrders,
+      context.currentWeek
+    ).map((batch) => ({
       startDate: batch.startDate,
       dueDate: batch.dueDate,
       periodId: action.periodId,
       quantity: batch.quantity,
       isASAP: batch.isASAP,
       planningActionId: action.id,
+      plannedOrderId: batch.plannedOrderId,
       policyName: action.policyName ?? undefined,
       reason: action.reason ?? undefined,
       triggerValues: triggerValuesOf(action.triggerValues)
@@ -161,9 +259,11 @@ export function productionOrdersFromActions(
 }
 
 /**
- * The purchase suggestions of each open Order action — the orders its policy
- * sized. The action's quantity is in inventory units; each order is in the
- * supplier's purchase units, rounded up to a whole unit.
+ * The purchase suggestions of each open Order action: one per Buy planned
+ * order of the action's week (its quantity, dates and `plannedOrderId`), else
+ * the orders the action's policy sized. Quantities are in inventory units
+ * there; each order is in the supplier's purchase units, rounded up to a
+ * whole unit.
  */
 export function plannedOrdersFromActions(
   actions: NewSupplyActionFields[],
@@ -177,11 +277,21 @@ export function plannedOrdersFromActions(
     itemReadableId?: string;
     description?: string;
     unitOfMeasureCode?: string;
+    /** The row's Buy planned orders (none outside the common segment). */
+    plannedOrders?: SuggestablePlannedOrder[];
+    /** The page's first week, which also holds the overdue planned orders. */
+    currentWeek?: PlanningCurrentWeek | null;
   }
 ): PlannedOrder[] {
   const { conversionFactor } = context;
   return actions.flatMap((action) =>
-    ordersOf(action, context.item ?? {}).map((batch) => ({
+    suggestionsOf(
+      action,
+      context.item ?? {},
+      undefined,
+      context.plannedOrders,
+      context.currentWeek
+    ).map((batch) => ({
       startDate: batch.startDate,
       dueDate: batch.dueDate,
       periodId: action.periodId,
@@ -191,6 +301,7 @@ export function plannedOrdersFromActions(
           : batch.quantity,
       supplierId: context.supplierId ?? action.supplierId ?? undefined,
       planningActionId: action.id,
+      plannedOrderId: batch.plannedOrderId,
       itemReadableId: context.itemReadableId,
       description: context.description,
       unitOfMeasureCode: context.unitOfMeasureCode,

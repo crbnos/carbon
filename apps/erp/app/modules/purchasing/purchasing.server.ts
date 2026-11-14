@@ -3926,6 +3926,7 @@ export const orderPlannedPurchases = defineServiceFn({
       quantity: number;
       dueDate: string | null;
       planningActionId?: string;
+      plannedOrderId?: string;
     }[] = [];
 
     // Weeks are counted from the location's today, as the planning grid's are.
@@ -4392,7 +4393,8 @@ export const orderPlannedPurchases = defineServiceFn({
             purchaseOrderLineId: purchaseOrderLineId!,
             quantity: adjustedQuantity * conversionFactor,
             dueDate: order.dueDate ?? null,
-            planningActionId: order.planningActionId
+            planningActionId: order.planningActionId,
+            plannedOrderId: order.plannedOrderId
           });
           allSupplyForecasts.push({
             itemId,
@@ -4419,6 +4421,7 @@ export const orderPlannedPurchases = defineServiceFn({
       locationId,
       userId,
       type: "Order",
+      asOf: today,
       ordered
     });
     if (settled.error) {

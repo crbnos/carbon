@@ -14,7 +14,7 @@ import {
   ModalTitle,
   toast
 } from "@carbon/react";
-import { parseDate } from "@internationalized/date";
+import { isPlannedOrderHeld } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -50,6 +50,12 @@ type DrawerPlannedOrdersProps = {
    *  are shown on its row. */
   actions: PlanningAction[];
   actionHandlers: PlanningActionHandlers;
+  /** Bumped by the drawer to read the orders again (after an order is
+   *  placed, which converts planned orders). */
+  refreshKey?: number;
+  /** Told the orders on every read: the drawer's suggested orders stand for
+   *  them (`productionOrdersFromActions` / `plannedOrdersFromActions`). */
+  onOrdersLoaded?: (orders: DrawerPlannedOrder[]) => void;
 };
 
 /** What a planning route answers: a service result (`{ data, error }`,
@@ -76,7 +82,9 @@ export function DrawerPlannedOrders({
   updatePath,
   todayIso,
   actions,
-  actionHandlers
+  actionHandlers,
+  refreshKey = 0,
+  onOrdersLoaded
 }: DrawerPlannedOrdersProps) {
   const { t } = useLingui();
   const { carbon } = useCarbon();
@@ -89,6 +97,9 @@ export function DrawerPlannedOrders({
   const [fenceDays, setFenceDays] = useState(0);
   // Bumped after a change here, to read the orders again.
   const [version, setVersion] = useState(0);
+  // The latest callback, so a new function from the parent re-reads nothing.
+  const onOrdersLoadedRef = useRef(onOrdersLoaded);
+  onOrdersLoadedRef.current = onOrdersLoaded;
 
   const plannedOrderActions = useMemo(
     () => actions.filter((action) => action.plannedOrderId),
@@ -101,7 +112,7 @@ export function DrawerPlannedOrders({
 
   // Only while open: the drawer stays mounted on its last item so it can
   // slide out.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: actionsKey and version are re-read triggers
+  // biome-ignore lint/correctness/useExhaustiveDependencies: actionsKey, version and refreshKey are re-read triggers
   useEffect(() => {
     if (!isOpen || !carbon || !itemId || !isCommonSegment) return;
     let isCurrent = true;
@@ -120,6 +131,7 @@ export function DrawerPlannedOrders({
       // a fence that cannot be read only hides the marker
       setFenceDays(fence.data ?? 0);
       setOrders(read.data ?? []);
+      onOrdersLoadedRef.current?.(read.data ?? []);
     })();
 
     return () => {
@@ -134,18 +146,12 @@ export function DrawerPlannedOrders({
     orderType,
     isCommonSegment,
     actionsKey,
-    version
+    version,
+    refreshKey
   ]);
 
   const rows = useMemo<PlannedOrderRow[] | null | Error>(() => {
     if (!Array.isArray(orders)) return orders;
-    // MRP holds a Planned order released on or before this day (calendar
-    // days, as MRP counts them); 0 days is no fence
-    const fenceEnd =
-      fenceDays > 0
-        ? parseDate(todayIso).add({ days: fenceDays }).toString()
-        : null;
-
     const result: PlannedOrderRow[] = orders.map((order) => {
       const action = actionForOrder(
         plannedOrderActions,
@@ -158,10 +164,10 @@ export function DrawerPlannedOrders({
         dueDate: order.dueDate,
         releaseDate: order.releaseDate,
         quantityTrace: order.quantityTrace,
+        // held by the fence alone: a Firm order shows its own status
         isFenceHeld:
           order.status === "Planned" &&
-          fenceEnd !== null &&
-          order.releaseDate <= fenceEnd,
+          isPlannedOrderHeld(order, fenceDays, todayIso),
         isEditable: actionHandlers.canUpdate,
         action,
         suggestedQuantity: action ? Number(action.suggestedQuantity) : null

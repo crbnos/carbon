@@ -1363,6 +1363,8 @@ export const productionOrderValidator = z.object({
   isASAP: z.boolean().optional(),
   // The Make action this suggestion came from, which Make settles
   planningActionId: zfd.text(z.string().optional()),
+  // The planned order this suggestion stands for, which Make converts
+  plannedOrderId: zfd.text(z.string().optional()),
   // Reorder-policy attribution, copied from the Make action (absent on a job
   // the planner added): the chart's order popover explains the suggestion
   // from it, as it does for a purchase order.

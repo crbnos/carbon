@@ -29,6 +29,7 @@ import {
   isJobEditableFromPlanning,
   type jobStatus
 } from "~/modules/production/production.models";
+import type { DrawerPlannedOrder } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import { DrawerPlannedOrders } from "~/modules/production/ui/Planning/DrawerPlannedOrders";
 import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
@@ -93,6 +94,12 @@ type ProductionPlanningOrderDrawerProps = {
   /** Drop the item's draft list so the drawer re-seeds from MRP's new
    *  suggestions — after a Draft job is planned, which re-runs MRP. */
   onSuggestionsStale: (item: ProductionPlanningItem) => void;
+  /** The item's Make planned orders, as the Planned Orders section reads
+   *  them: the suggested jobs stand for them. */
+  onPlannedOrdersLoaded: (
+    item: ProductionPlanningItem,
+    orders: DrawerPlannedOrder[]
+  ) => void;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
   isOpen: boolean;
@@ -111,6 +118,7 @@ export const ProductionPlanningOrderDrawer = memo(
     actionHandlers,
     setOrders,
     onSuggestionsStale,
+    onPlannedOrdersLoaded,
     locationId,
     periods,
     isOpen,
@@ -233,6 +241,12 @@ export const ProductionPlanningOrderDrawer = memo(
         isCurrent = false;
       };
     }, [isOpen, carbon, row.id, locationId, actionsKey, openJobsVersion]);
+
+    const onPlannedOrdersRead = useCallback(
+      (plannedOrders: DrawerPlannedOrder[]) =>
+        onPlannedOrdersLoaded(row, plannedOrders),
+      [onPlannedOrdersLoaded, row]
+    );
 
     // An action on a planned order sits on its row in the Planned Orders grid.
     const jobActions = useMemo(
@@ -611,6 +625,8 @@ export const ProductionPlanningOrderDrawer = memo(
                   todayIso={locationToday}
                   actions={actions}
                   actionHandlers={actionHandlers}
+                  refreshKey={openJobsVersion}
+                  onOrdersLoaded={onPlannedOrdersRead}
                 />
 
                 <SuggestedOrdersGrid<ProductionOrder>
@@ -706,6 +722,8 @@ export const ProductionPlanningOrderDrawer = memo(
         isTimeFenceOverridden,
         onFenceChange,
         fenceLabel,
+        openJobsVersion,
+        onPlannedOrdersRead,
         t
       ]
     );

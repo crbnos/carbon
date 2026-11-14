@@ -5,9 +5,9 @@
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 
 // Planning's Make / Order settles the Make / Order actions it answers, and in
-// the same transaction converts the planned orders those actions cover: each
-// job or PO line placed against an action is linked to the action's next
-// Planned or Firm planned order of its week, in splitIndex order.
+// the same transaction converts the planned orders the jobs or PO lines stand
+// for: the one an order names (`plannedOrderId`), else one of the settled
+// action's week — equal quantity first, a Firm one only by id or quantity.
 
 import { afterEach, beforeEach, describe, expect } from "vitest";
 import {
@@ -60,6 +60,7 @@ async function plannedOrder(
     splitIndex?: number;
     periodId?: string;
     firm?: boolean;
+    quantity?: number;
   },
   key: string
 ): Promise<string> {
@@ -77,7 +78,7 @@ async function plannedOrder(
         status: overrides.firm ? "Firm" : "Planned",
         firmedBy: overrides.firm ? USER : null,
         firmedAt: overrides.firm ? f.today : null,
-        quantity: 10,
+        quantity: overrides.quantity ?? 10,
         dueDate: "2299-01-05",
         releaseDate: "2299-01-01",
         periodId: overrides.periodId ?? week1,
@@ -152,6 +153,23 @@ async function purchaseOrderLine(key: string): Promise<string> {
       .execute();
   });
   return lineId;
+}
+
+/** A job placed from planning, as the settle hands it to the convert. */
+function document(
+  documentId: string,
+  overrides: { plannedOrderId?: string; quantity?: number } = {}
+) {
+  return {
+    documentId,
+    quantity: overrides.quantity ?? 10,
+    plannedOrderId: overrides.plannedOrderId ?? null,
+    itemId: f.partId,
+    locationId: f.locationId,
+    planningSegmentId: "",
+    periodId: week1,
+    orderType: "Make" as const
+  };
 }
 
 async function read(id: string) {
@@ -304,16 +322,7 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
       const converted = await convertPlannedOrdersForActions(f.db, {
         companyId: f.companyId,
         userId: USER,
-        settled: [
-          {
-            itemId: f.partId,
-            locationId: f.locationId,
-            planningSegmentId: "",
-            periodId: week1,
-            orderType: "Make",
-            documentIds: [jobId]
-          }
-        ]
+        documents: [document(jobId, { plannedOrderId: firm })]
       });
       expect(converted).toEqual([
         { id: firm, jobId, purchaseOrderLineId: null }
@@ -393,16 +402,7 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
         convertPlannedOrdersForActions(f.db, {
           companyId: f.companyId,
           userId: USER,
-          settled: [
-            {
-              itemId: f.partId,
-              locationId: f.locationId,
-              planningSegmentId: "",
-              periodId: week1,
-              orderType: "Make",
-              documentIds: [documentId]
-            }
-          ]
+          documents: [document(documentId)]
         });
       await convert(jobA);
       await convert(jobB);
@@ -414,6 +414,240 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
         status: "Converted",
         jobId: jobB
       });
+    }
+  );
+  databaseTest(
+    "a job that names its planned order converts that one, not the first by split",
+    async () => {
+      const actionId = await action("Make", 20, "named");
+      const first = await plannedOrder(
+        { orderType: "Make", splitIndex: 0 },
+        "named-0"
+      );
+      const second = await plannedOrder(
+        { orderType: "Make", splitIndex: 1 },
+        "named-1"
+      );
+      const jobId = await job("named");
+
+      const result = await settleNewSupplyPlanningActions(f.db, {
+        companyId: f.companyId,
+        locationId: f.locationId,
+        userId: USER,
+        type: "Make",
+        ordered: [
+          {
+            itemId: f.partId,
+            periodId: week1,
+            quantity: 10,
+            planningActionId: actionId,
+            plannedOrderId: second,
+            jobId
+          }
+        ]
+      });
+      expect(result.error).toBeNull();
+      expect(await read(second)).toMatchObject({ status: "Converted", jobId });
+      expect(await read(first)).toMatchObject({
+        status: "Planned",
+        jobId: null
+      });
+    }
+  );
+
+  databaseTest(
+    "a smaller job with no id converts a Planned order, never the Firm one",
+    async () => {
+      const actionId = await action("Make", 30, "firm-kept");
+      // the Firm order sorts first by split: a guess by position took it
+      const firm = await plannedOrder(
+        { orderType: "Make", splitIndex: 0, firm: true, quantity: 20 },
+        "firm-kept-0"
+      );
+      const planned = await plannedOrder(
+        { orderType: "Make", splitIndex: 1 },
+        "firm-kept-1"
+      );
+      const jobId = await job("smaller");
+
+      await settleNewSupplyPlanningActions(f.db, {
+        companyId: f.companyId,
+        locationId: f.locationId,
+        userId: USER,
+        type: "Make",
+        ordered: [
+          {
+            itemId: f.partId,
+            periodId: week1,
+            quantity: 5,
+            planningActionId: actionId,
+            jobId
+          }
+        ]
+      });
+      expect(await read(firm)).toMatchObject({
+        status: "Firm",
+        jobId: null,
+        firmedBy: USER
+      });
+      expect(await read(planned)).toMatchObject({
+        status: "Converted",
+        jobId
+      });
+    }
+  );
+
+  databaseTest(
+    "a job with no id converts the planned order of its own quantity",
+    async () => {
+      const ten = await plannedOrder(
+        { orderType: "Make", splitIndex: 0 },
+        "qty-10"
+      );
+      const twenty = await plannedOrder(
+        { orderType: "Make", splitIndex: 1, quantity: 20 },
+        "qty-20"
+      );
+      const firm = await plannedOrder(
+        { orderType: "Make", splitIndex: 2, quantity: 5, firm: true },
+        "qty-5-firm"
+      );
+      const jobA = await job("qty-20");
+      const jobB = await job("qty-3");
+      const jobC = await job("qty-5");
+
+      await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [
+          // a 3 matches nothing: it takes the next Planned order by split,
+          // after the equal quantities are matched
+          document(jobB, { quantity: 3 }),
+          document(jobA, { quantity: 20 }),
+          // a Firm order converts by its own quantity
+          document(jobC, { quantity: 5 })
+        ]
+      });
+      expect(await read(twenty)).toMatchObject({
+        status: "Converted",
+        jobId: jobA
+      });
+      expect(await read(ten)).toMatchObject({
+        status: "Converted",
+        jobId: jobB
+      });
+      expect(await read(firm)).toMatchObject({
+        status: "Converted",
+        jobId: jobC,
+        firmedBy: null
+      });
+    }
+  );
+
+  databaseTest(
+    "a stale or mismatched id converts nothing",
+    async () => {
+      const buy = await plannedOrder({ orderType: "Buy" }, "wrong-type");
+      const jobId = await job("wrong-type");
+      const converted = await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [
+          document(jobId, { plannedOrderId: buy }),
+          document(jobId, { plannedOrderId: `${f.prefix}-gone` })
+        ]
+      });
+      expect(converted).toEqual([]);
+      expect(await read(buy)).toMatchObject({ status: "Planned" });
+    }
+  );
+
+  databaseTest(
+    "converting deletes the open and dismissed change actions on the planned order",
+    async () => {
+      const target = await plannedOrder({ orderType: "Make" }, "acted");
+      const changeAction = (status: "Open" | "Dismissed" | "Actioned") =>
+        seed(f, (trx) =>
+          trx
+            .insertInto("planningAction")
+            .values({
+              id: `${f.prefix}-change-${status}`,
+              companyId: f.companyId,
+              type: "Expedite",
+              status,
+              itemId: f.partId,
+              locationId: f.locationId,
+              periodId: week1,
+              planningSegmentId: "",
+              plannedOrderId: target,
+              suggestedQuantity: 10,
+              suggestedDate: f.today,
+              horizonDate: f.today,
+              createdBy: USER
+            })
+            .execute()
+        );
+      // the natural key allows one non-Actioned row per target and type
+      await changeAction("Open");
+      await changeAction("Actioned");
+      await seed(f, (trx) =>
+        trx
+          .insertInto("planningAction")
+          .values({
+            id: `${f.prefix}-change-Dismissed`,
+            companyId: f.companyId,
+            type: "Defer",
+            status: "Dismissed",
+            itemId: f.partId,
+            locationId: f.locationId,
+            periodId: week1,
+            planningSegmentId: "",
+            plannedOrderId: target,
+            suggestedQuantity: 10,
+            suggestedDate: f.today,
+            horizonDate: f.today,
+            createdBy: USER
+          })
+          .execute()
+      );
+      const jobId = await job("acted");
+
+      await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [document(jobId, { plannedOrderId: target })]
+      });
+      const left = await f.db
+        .selectFrom("planningAction")
+        .select(["id", "status"])
+        .where("companyId", "=", f.companyId)
+        .where("plannedOrderId", "=", target)
+        .execute();
+      expect(left).toEqual([
+        { id: `${f.prefix}-change-Actioned`, status: "Actioned" }
+      ]);
+    }
+  );
+  databaseTest(
+    "the current week's job with no id converts an overdue planned order of an older week",
+    async () => {
+      // MRP sizes an overdue planned order in the current week (week 2 on
+      // 2299-01-10) and sums it into that week's Make; the row keeps week 1
+      const overdue = await plannedOrder({ orderType: "Make" }, "overdue");
+      const jobId = await job("overdue");
+      const convert = (asOf: string) =>
+        convertPlannedOrdersForActions(f.db, {
+          companyId: f.companyId,
+          userId: USER,
+          asOf,
+          documents: [{ ...document(jobId), periodId: week2 }]
+        });
+
+      // week 2 is not the current week yet: an older week is not its own
+      expect(await convert("2299-01-01")).toEqual([]);
+      expect(await convert("2299-01-10")).toEqual([
+        { id: overdue, jobId, purchaseOrderLineId: null }
+      ]);
     }
   );
 });

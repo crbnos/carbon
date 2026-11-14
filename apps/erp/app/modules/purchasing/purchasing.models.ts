@@ -153,6 +153,8 @@ export const plannedOrderValidator = z.object({
   supplierId: zfd.text(z.string().optional()),
   // The Order action this suggestion came from, which Order settles
   planningActionId: zfd.text(z.string().optional()),
+  // The planned order this suggestion stands for, which Order converts
+  plannedOrderId: zfd.text(z.string().optional()),
   itemReadableId: zfd.text(z.string().optional()),
   unitPrice: zfd.numeric(z.number().optional()),
   unitOfMeasureCode: zfd.text(z.string().optional()),
