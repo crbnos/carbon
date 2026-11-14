@@ -190,8 +190,10 @@ node-postgres is configured so runtime matches the generated types:
 `packages/database/src/client.ts` registers `setTypeParser` overrides once at
 module load (node-postgres keeps them in a process-global registry).
 
-- **NUMERIC (1700) → `Number`.** Existing `Number(...)` coercions are harmless
-  no-ops; float8 columns still arrive as strings.
+- **NUMERIC (1700) → `Number`.** Do not wrap a NUMERIC read in `Number(...)`.
+  The wrappers still in the code are from before the parser and do nothing;
+  remove them when you change the lines around them. float8 columns still
+  arrive as strings.
 - **DATE (1082) → the raw `YYYY-MM-DD` string.** node-postgres otherwise parses it
   into a JS `Date` at LOCAL midnight (`postgres-date`: "Force YYYY-MM-DD dates to
   be parsed as local time") while `KyselyDatabase` declares `string`. Typecheck
