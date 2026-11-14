@@ -640,7 +640,13 @@ function IssueMaterialBody({
       readableId?: string;
       remainingQuantity?: number;
     }>;
+    overIssue?: boolean;
   }>();
+  // The server refused the last issue because the requirement is filled. The
+  // Issue button then confirms; the scanner's Enter key does nothing.
+  const overIssueRefusal = fetcher.data?.overIssue
+    ? fetcher.data.message
+    : null;
   const unconsumeFetcher = useFetcher<{ success: boolean; message: string }>();
   const inventoryFetcher = useFetcher<{
     success?: boolean;
@@ -980,7 +986,8 @@ function IssueMaterialBody({
               quantity: 1
             })),
             ...contextFields,
-            ...overrideFields
+            ...overrideFields,
+            ...(overIssueRefusal ? { allowOverIssue: true } : {})
           }
         : {
             jobOperationId: operationId,
@@ -1011,7 +1018,8 @@ function IssueMaterialBody({
     hasExpiredSelection,
     expiryOverrideReason,
     jobOperationStepId,
-    unitNumber
+    unitNumber,
+    overIssueRefusal
   ]);
 
   const handleSubmitBatch = useCallback(() => {
@@ -1071,7 +1079,8 @@ function IssueMaterialBody({
                 quantity: bn.quantity
               })),
               ...contextFields,
-              ...overrideFields
+              ...overrideFields,
+              ...(overIssueRefusal ? { allowOverIssue: true } : {})
             }
           : {
               jobOperationId: operationId,
@@ -1104,7 +1113,8 @@ function IssueMaterialBody({
     hasExpiredSelection,
     expiryOverrideReason,
     jobOperationStepId,
-    unitNumber
+    unitNumber,
+    overIssueRefusal
   ]);
 
   const handleUnconsumeSerial = useCallback(() => {
@@ -1214,7 +1224,7 @@ function IssueMaterialBody({
             toast.success(fetcher.data.message);
           }
         }
-      } else if (fetcher.data.message) {
+      } else if (fetcher.data.message && !fetcher.data.overIssue) {
         toast.error(fetcher.data.message);
       }
     }
@@ -1539,7 +1549,8 @@ function IssueMaterialBody({
                                     // Enter, same as clicking Issue.
                                     if (e.key === "Enter") {
                                       e.preventDefault();
-                                      handleSubmitSerial();
+                                      if (!overIssueRefusal)
+                                        handleSubmitSerial();
                                     }
                                   }}
                                   onBlur={(e) => {
@@ -1807,7 +1818,8 @@ function IssueMaterialBody({
                                     // Enter, same as clicking Issue.
                                     if (e.key === "Enter") {
                                       e.preventDefault();
-                                      handleSubmitBatch();
+                                      if (!overIssueRefusal)
+                                        handleSubmitBatch();
                                     }
                                   }}
                                   onBlur={(e) => {
@@ -2085,6 +2097,14 @@ function IssueMaterialBody({
                   </AlertDescription>
                 </Alert>
               )}
+              {overIssueRefusal && activeTab !== "unconsume" && (
+                <Alert variant="warning">
+                  <AlertTitle>{overIssueRefusal}</AlertTitle>
+                  <AlertDescription>
+                    Nothing was issued. Issue more only to replace a part.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </ModalBody>
           <ModalFooter>
@@ -2124,7 +2144,7 @@ function IssueMaterialBody({
                   fetcher.state !== "idle" || !selectedItemId || isLoadingItem
                 }
               >
-                Issue
+                {overIssueRefusal ? "Issue anyway" : "Issue"}
               </Button>
             )}
           </ModalFooter>

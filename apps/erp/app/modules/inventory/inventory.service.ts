@@ -29231,7 +29231,9 @@ async function assertUnitsNotInProduction(
  * without scrapped components) must be below it. Any other parent needs the
  * job's remaining quantity (`estimatedQuantity`, else `quantity`, less
  * `quantityIssued`) above zero. The MES `resolveTravelerMaterial` makes the
- * same test before the posting; this one is authoritative.
+ * same test before the posting; this one is authoritative. The Issue dialog
+ * makes it too: `overIssue` on the refusal lets the dialog ask the operator
+ * to confirm.
  */
 async function assertTravelerRequirementOpen(
   trx: Transaction<KyselyDatabase>,
@@ -29257,7 +29259,8 @@ async function assertTravelerRequirementOpen(
     const remaining = round(required - (jobMaterial.quantityIssued ?? 0));
     if (remaining <= EPSILON) {
       throw new InvalidInputError(
-        `This job already has all its ${jobMaterial.description || "material"}`
+        `This job already has all its ${jobMaterial.description || "material"}`,
+        { overIssue: true }
       );
     }
     return;
@@ -29303,7 +29306,8 @@ async function assertTravelerRequirementOpen(
   );
   if (remaining <= EPSILON) {
     throw new InvalidInputError(
-      `This unit already has its ${jobMaterial.description || "material"}`
+      `This unit already has its ${jobMaterial.description || "material"}`,
+      { overIssue: true }
     );
   }
 }
@@ -29325,6 +29329,7 @@ async function consumeTrackedEntitiesIntoOperation(
     overrideExpired,
     overrideReason,
     travelerScan,
+    refuseOverIssue,
     companyId,
     userId,
     companyToday,
@@ -29345,9 +29350,11 @@ async function consumeTrackedEntitiesIntoOperation(
     /**
      * An MES traveler scan: lock the job material and refuse the issue when
      * its requirement is already filled (`assertTravelerRequirementOpen`).
-     * Batch members and the Issue dialog leave it off.
+     * Batch members leave it off.
      */
     travelerScan?: boolean;
+    /** The Issue dialog, not yet confirmed: the same lock and refusal. */
+    refuseOverIssue?: boolean;
     companyId: string;
     userId: string;
     companyToday: CalendarDate;
@@ -29433,11 +29440,16 @@ async function consumeTrackedEntitiesIntoOperation(
       .where("id", "=", materialId)
       .where("companyId", "=", companyId)
       .selectAll();
-    if (travelerScan) jobMaterialQuery = jobMaterialQuery.forUpdate();
+    if (travelerScan || refuseOverIssue) {
+      jobMaterialQuery = jobMaterialQuery.forUpdate();
+    }
     jobMaterial = await jobMaterialQuery.executeTakeFirst();
 
+    // An unplanned material has no requirement for the dialog to exceed.
+    const planned =
+      (jobMaterial?.estimatedQuantity ?? jobMaterial?.quantity ?? 0) > 0;
     if (
-      travelerScan &&
+      (travelerScan || (refuseOverIssue && planned)) &&
       jobMaterial &&
       firstTrackedEntity?.sourceDocumentId === jobMaterial.itemId
     ) {
@@ -32213,6 +32225,7 @@ export async function issueMaterial(
         overrideExpired,
         overrideReason,
         travelerScan,
+        allowOverIssue,
         companyId,
         userId
       } = validatedPayload;
@@ -32258,6 +32271,7 @@ export async function issueMaterial(
           overrideExpired,
           overrideReason,
           travelerScan,
+          refuseOverIssue: !travelerScan && !allowOverIssue,
           companyId,
           userId,
           companyToday,
