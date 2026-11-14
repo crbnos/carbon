@@ -16,13 +16,23 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** Local aging report previews and `packages/database/src/datasets/`.
 
+## Aging summary tables keep document headers inside the expansion
+
+**Context:** Showing AR/AP aging totals by customer or supplier with document details beneath each party.
+
+**Problem:** Putting transaction date, type, and original amount in the shared table header leaves blank cells across every party row and makes the report look unfinished.
+
+**Rule:** On aging report pages, show only party-level fields in the outer table. Render open documents and unapplied payments in an expanded table with its own column headers. Keep the receivables/payables workbench layout unchanged unless that page is explicitly in scope.
+
+**Applies to:** `ARAPWorkbench` on the AR/AP aging report routes.
+
 ## Aging CSV exports must follow open documents
 
 **Context:** Exporting AR/AP aging from a summary RPC and a separate open-document RPC.
 
 **Problem:** A counterparty with offsetting open documents can have a zero net balance and disappear from the summary RPC while its documents remain open. Looking up names and building CSV rows only from summary parties silently drops those documents.
 
-**Rule:** Union counterparty IDs from both RPCs, emit a zero summary row for open-only counterparties, and keep document rows beneath it. Resolve CSV headings from the request locale. Include any RPC migration in the tracked change before relying on regenerated types.
+**Rule:** Union counterparty IDs from the summary, open-document, and unapplied-payment RPCs. Export one row per open document or payment with the counterparty repeated, including parties whose net summary is zero. Resolve CSV headings from the request locale. Include any RPC migration in the tracked change before relying on regenerated types.
 
 **Applies to:** AR/AP aging CSV routes and report helpers.
 
@@ -32,7 +42,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Problem:** Adding a separate Export button required turning off the Table's own CSV control with `withCsvExport={false}`, leaving two download mechanisms to coordinate.
 
-**Rule:** Give the Table the download URL and render its Download control as a plain anchor. The route returns the file with `Content-Disposition: attachment`; one browser GET generates and downloads it. Keep the client-side Table export for lists without a download URL.
+**Rule:** For one format, give the Table the download URL and render its Download control as a plain anchor. For multiple formats on a report, use one Export menu whose links each make one browser GET to a server resource route; hide the Table's single-format control there. Keep the client-side Table export for lists without a download URL.
 
 **Applies to:** Table downloads backed by resource routes and AR/AP aging exports.
 

@@ -81,9 +81,7 @@ export function aggregateSpend(
     .sort((a, b) => b.total - a.total);
 }
 
-// AR / AP aging CSV. The download is the whole aging tree — every counterparty
-// and every open document under it — not the rows the grid happens to show,
-// so it is built here from the loader data and not from the Table's own export.
+// AR / AP aging downloads use one row per open document or unapplied payment.
 
 export type AgingCsvCounterparty = {
   partyId: string;
@@ -115,7 +113,9 @@ export type AgingCsvInput = {
   partyNameById: Map<string, string>;
   aging: AgingCsvCounterparty[];
   open: AgingCsvDocument[];
+  unappliedPayments: AgingCsvDocument[];
   asOfDate: string;
+  agingMethod: "dueDate" | "documentDate";
   bucketDays: [number, number, number];
   /** AP carries the supplier's invoice number; AR has no such column. */
   withSupplierReference: boolean;
@@ -130,6 +130,8 @@ export const agingCsvMessages = {
   invoice: msg`Invoice`,
   creditMemo: msg`Credit Memo`,
   debitMemo: msg`Debit Memo`,
+  receipt: msg`Receipt`,
+  disbursement: msg`Disbursement`,
   supplierInvoiceNumber: msg`Supplier Invoice Number`,
   dueDate: msg`Due Date`,
   originalAmount: msg`Original Amount`,
@@ -140,6 +142,18 @@ export const agingCsvMessages = {
   total: msg`Total`
 };
 
+export function agingBucketMessages([b1, b2, b3]: [number, number, number]) {
+  const bucket2Start = b1 + 1;
+  const bucket3Start = b2 + 1;
+  const bucket4Start = b3 + 1;
+  return {
+    bucket1: msg`1-${b1} Days`,
+    bucket2: msg`${bucket2Start}-${b2} Days`,
+    bucket3: msg`${bucket3Start}-${b3} Days`,
+    bucket4: msg`${bucket4Start}+ Days`
+  };
+}
+
 export type AgingCsvLabels = {
   party: string;
   document: string;
@@ -148,35 +162,64 @@ export type AgingCsvLabels = {
   invoice: string;
   creditMemo: string;
   debitMemo: string;
+  receipt: string;
+  disbursement: string;
   supplierInvoiceNumber: string;
   dueDate: string;
   originalAmount: string;
   daysPastDue: string;
   paymentTerm: string;
   current: string;
+  bucket1: string;
+  bucket2: string;
+  bucket3: string;
+  bucket4: string;
   unapplied: string;
   total: string;
 };
 
-/**
- * One row per counterparty carrying its aging buckets, followed by one row per
- * open document carrying its type, due date and open amount. Every row repeats
- * the counterparty's name so the sheet still filters and sorts by it.
- */
+/** Match the SQL aging RPC's date and bucket boundaries for each document. */
+export function agingDocumentBuckets(
+  document: Pick<
+    AgingCsvDocument,
+    "documentType" | "transactionDate" | "dateDue" | "openInBase"
+  >,
+  asOfDate: string,
+  agingMethod: "dueDate" | "documentDate",
+  [b1, b2, b3]: [number, number, number]
+) {
+  const ageDate =
+    document.documentType === "Invoice" && agingMethod === "dueDate"
+      ? document.dateDue
+      : document.transactionDate;
+  const days = ageDate ? parseDate(asOfDate).compare(parseDate(ageDate)) : 0;
+  const amount = document.openInBase;
+  return {
+    current: days <= 0 ? amount : 0,
+    bucket1: days > 0 && days <= b1 ? amount : 0,
+    bucket2: days > b1 && days <= b2 ? amount : 0,
+    bucket3: days > b2 && days <= b3 ? amount : 0,
+    bucket4: days > b3 ? amount : 0
+  };
+}
+
 export function agingCsvTable({
   labels,
   partyNameById,
   aging,
   open,
+  unappliedPayments,
   asOfDate,
+  agingMethod,
   bucketDays,
   withSupplierReference
 }: AgingCsvInput): { fields: string[]; rows: unknown[][] } {
-  const [b1, b2, b3] = bucketDays;
   const documentTypeLabels: Record<string, string> = {
     Invoice: labels.invoice,
     "Credit Memo": labels.creditMemo,
-    "Debit Memo": labels.debitMemo
+    "Debit Memo": labels.debitMemo,
+    Receipt: labels.receipt,
+    Disbursement: labels.disbursement
   };
   const fields = [
     labels.party,
@@ -189,79 +232,62 @@ export function agingCsvTable({
     labels.daysPastDue,
     labels.paymentTerm,
     labels.current,
-    `1-${b1}`,
-    `${b1 + 1}-${b2}`,
-    `${b2 + 1}-${b3}`,
-    `${b3 + 1}+`,
+    labels.bucket1,
+    labels.bucket2,
+    labels.bucket3,
+    labels.bucket4,
     labels.unapplied,
     labels.total
   ];
 
-  const openByParty = new Map<string, AgingCsvDocument[]>();
+  const openByParty = new Map<
+    string,
+    { document: AgingCsvDocument; isPayment: boolean }[]
+  >();
   for (const doc of open) {
     const list = openByParty.get(doc.partyId) ?? [];
-    list.push(doc);
+    list.push({ document: doc, isPayment: false });
     openByParty.set(doc.partyId, list);
   }
+  for (const payment of unappliedPayments) {
+    const list = openByParty.get(payment.partyId) ?? [];
+    list.push({ document: payment, isPayment: true });
+    openByParty.set(payment.partyId, list);
+  }
 
-  const summaryPartyIds = new Set(aging.map((row) => row.partyId));
-  const allParties = [
-    ...aging,
-    ...[...openByParty.keys()]
-      .filter((partyId) => !summaryPartyIds.has(partyId))
-      .map((partyId) => ({
-        partyId,
-        paymentTerm: null,
-        current: 0,
-        bucket1: 0,
-        bucket2: 0,
-        bucket3: 0,
-        bucket4: 0,
-        unapplied: 0,
-        total: 0
-      }))
-  ];
-
-  const rows = allParties.flatMap((a) => {
-    const name = partyNameById.get(a.partyId) ?? a.partyId;
-    return [
-      [
-        name,
-        "",
-        "",
-        "",
-        ...(withSupplierReference ? [""] : []),
-        "",
-        "",
-        "",
-        a.paymentTerm ?? "",
-        a.current,
-        a.bucket1,
-        a.bucket2,
-        a.bucket3,
-        a.bucket4,
-        a.unapplied,
-        a.total
-      ],
-      ...(openByParty.get(a.partyId) ?? []).map((doc) => [
-        name,
-        doc.documentNumber,
-        doc.transactionDate ?? "",
-        documentTypeLabels[doc.documentType] ?? doc.documentType,
-        ...(withSupplierReference ? [doc.supplierReference ?? ""] : []),
-        doc.dateDue ?? "",
-        doc.originalInBase,
-        daysPastDue(asOfDate, doc.dateDue) ?? "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        doc.openInBase
-      ])
-    ];
+  const agingByParty = new Map(aging.map((row) => [row.partyId, row]));
+  const partyIds = new Set([
+    ...aging.map((row) => row.partyId),
+    ...openByParty.keys()
+  ]);
+  const rows = [...partyIds].flatMap((partyId) => {
+    const name = partyNameById.get(partyId) ?? partyId;
+    const paymentTerm = agingByParty.get(partyId)?.paymentTerm ?? "";
+    return (openByParty.get(partyId) ?? []).map(
+      ({ document: doc, isPayment }) => {
+        const buckets = isPayment
+          ? { current: 0, bucket1: 0, bucket2: 0, bucket3: 0, bucket4: 0 }
+          : agingDocumentBuckets(doc, asOfDate, agingMethod, bucketDays);
+        return [
+          name,
+          doc.documentNumber,
+          doc.transactionDate ?? "",
+          documentTypeLabels[doc.documentType] ?? doc.documentType,
+          ...(withSupplierReference ? [doc.supplierReference ?? ""] : []),
+          doc.dateDue ?? "",
+          doc.originalInBase,
+          daysPastDue(asOfDate, doc.dateDue) ?? "",
+          paymentTerm,
+          buckets.current,
+          buckets.bucket1,
+          buckets.bucket2,
+          buckets.bucket3,
+          buckets.bucket4,
+          isPayment ? doc.openInBase : 0,
+          doc.openInBase
+        ];
+      }
+    );
   });
 
   return { fields, rows };

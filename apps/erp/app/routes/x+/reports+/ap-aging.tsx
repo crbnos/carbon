@@ -10,6 +10,7 @@ import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   getAgingParams,
+  getAgingUnappliedPayments,
   getApAging,
   getApOpenBySupplier,
   getApTieOut
@@ -41,12 +42,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const companySettings = await getCompanySettings(client, companyId);
   const accountingSetUp = hasAccountingCutover(companySettings.data);
 
-  const [tieOut, aging, open] = await Promise.all([
+  const [tieOut, aging, open, payments] = await Promise.all([
     accountingSetUp
       ? getApTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null }),
     getApAging(client, companyId, asOfDate, { agingMethod, bucketDays }),
-    getApOpenBySupplier(client, companyId, asOfDate)
+    getApOpenBySupplier(client, companyId, asOfDate),
+    getAgingUnappliedPayments(client, companyId, asOfDate, "ap")
   ]);
 
   return {
@@ -59,12 +61,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ...r,
       invoiceId: r.documentId,
       invoiceNumber: r.documentNumber
+    })),
+    payments: (payments.data ?? []).map((r) => ({
+      ...r,
+      paymentId: r.documentId,
+      paymentNumber: r.documentNumber,
+      paymentType: r.documentType,
+      supplierId: r.partyId
     }))
   };
 }
 
 export default function ApAgingRoute() {
-  const { asOfDate, agingMethod, bucketDays, result, aging, open } =
+  const { asOfDate, agingMethod, bucketDays, result, aging, open, payments } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   return (
@@ -73,6 +82,8 @@ export default function ApAgingRoute() {
       result={result}
       aging={aging}
       open={open}
+      payments={payments}
+      reportDetails
       asOfDate={asOfDate}
       agingMethod={agingMethod}
       bucketDays={bucketDays}

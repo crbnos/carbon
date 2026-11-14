@@ -107544,6 +107544,18 @@ export type Database = {
           workCenterId: string
         }[]
       }
+      get_aging_unapplied_payments: {
+        Args: { _as_of_date: string; _company_id: string; _side: string }
+        Returns: {
+          documentId: string
+          documentNumber: string
+          documentType: string
+          openInBase: number
+          originalInBase: number
+          partyId: string
+          transactionDate: string
+        }[]
+      }
       get_ap_aging: {
         Args: {
           _aging_method?: string

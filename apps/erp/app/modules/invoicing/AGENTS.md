@@ -19,7 +19,7 @@ their receipt already charged to a project (the invoice then writes only the pri
 variance).
 
 `invoicing.reports.ts` holds pure report helpers (`previousPeriod`, `aggregateSpend`,
-`agingCsvTable`, `daysPastDue`); the aging CSV routes use its export helper.
+`agingCsvTable`, `daysPastDue`); the aging CSV and Excel routes use its export helper.
 `ui/SalesInvoice/` has no `index.ts` and is NOT
 in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder (`Charge`,
 `Dashboard`, `Memo`, `Payment`, `PurchaseInvoice`, `Reimbursement`, `Workbench`) is barrel-exported.
@@ -236,9 +236,9 @@ guarded by `requireUnlockedBulk`, not validators.
 - `getOpenSalesInvoicesForCustomer` / `getOpenPurchaseInvoicesForSupplier` /
   `getOpenReimbursementsForEmployee` — payable targets, one per payee kind.
 - `getArAging` / `getApAging` / `getArTieOut` / `getApTieOut` / `getArOpenByCustomer` /
-  `getApOpenBySupplier` — drive `x+/reports+/{ar,ap}-aging.tsx`,
+  `getApOpenBySupplier` / `getAgingUnappliedPayments` — drive `x+/reports+/{ar,ap}-aging.tsx`,
   `x+/invoicing+/{receivables,payables}.tsx` (`ARAPWorkbench`), `_index.tsx`
-  (`InvoicingDashboard`) and the CSV downloads `x+/reports+/{ar,ap}-aging[.]csv.tsx`.
+  (`InvoicingDashboard`) and the CSV/Excel aging downloads.
   `getApOpenBySupplier` also returns `supplierReference` (the supplier's own
   invoice number, shown as "Supplier Invoice Number"); it is NULL on memo rows
   even though the generated type says `string`. Both open-document RPCs return
@@ -248,17 +248,21 @@ guarded by `requireUnlockedBulk`, not validators.
   `asOfDate`; memos have no due date. The final bucket is labeled from the day
   after `bucket3` (for example, `91+` for a 90-day cutoff).
 - `getAgingParams(client, companyId, request)` — the one parser of the aging
-  query params (`asOfDate`, `agingMethod`, `bucketDays`) for those six routes.
+  query params (`asOfDate`, `agingMethod`, `bucketDays`) for the report,
+  workbench and export routes.
   The page loaders keep their own permission (`invoicing` for the workbenches,
-  `accounting` + employee for the reports); the CSV routes share
+  `accounting` + employee for the reports); the CSV and Excel routes share
   `x+/reports+/aging.server.ts`, which admits a viewer of either module because
-  the download holds exactly what either page shows. The workbench passes the
-  CSV route URL to the Table's download control: the
-  download is the whole tree, built by `agingCsvTable` (`invoicing.reports.ts`),
-  not the expanded rows on screen. It includes open documents even when their
-  counterparty's net aging row is zero, and translates headings from the
-  request locale. The four aging/open reads return query
-  builders: the CSV routes page them with `fetchAllRecords` and stable unique
+  the download holds exactly what either page shows. The invoicing workbench passes
+  the CSV route URL to the Table's download control; the aging report pages offer
+  CSV and Excel in one Export menu. Each export row is an open document or
+  unapplied payment with its counterparty repeated; the Excel
+  download uses the same rows and adds formulas for document and grand totals.
+  The report pages keep document-only columns in an expanded table with its own
+  header. Exports include open documents even when their counterparty's net
+  aging row is zero, and translate headings from the request locale. The aging,
+  open-document, and payment reads return query
+  builders: the export routes page them with `fetchAllRecords` and stable unique
   ordering. After the export permission check, they batch party-name lookups
   with `fetchAllByIds` through a service-role client, scoped to `companyId`;
   customer and supplier RLS otherwise require sales or purchasing permission.

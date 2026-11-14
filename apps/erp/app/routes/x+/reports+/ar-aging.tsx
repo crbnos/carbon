@@ -10,6 +10,7 @@ import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   getAgingParams,
+  getAgingUnappliedPayments,
   getArAging,
   getArOpenByCustomer,
   getArTieOut
@@ -42,12 +43,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const companySettings = await getCompanySettings(client, companyId);
   const accountingSetUp = hasAccountingCutover(companySettings.data);
 
-  const [tieOut, aging, open] = await Promise.all([
+  const [tieOut, aging, open, payments] = await Promise.all([
     accountingSetUp
       ? getArTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null }),
     getArAging(client, companyId, asOfDate, { agingMethod, bucketDays }),
-    getArOpenByCustomer(client, companyId, asOfDate)
+    getArOpenByCustomer(client, companyId, asOfDate),
+    getAgingUnappliedPayments(client, companyId, asOfDate, "ar")
   ]);
 
   return {
@@ -60,12 +62,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ...r,
       invoiceId: r.documentId,
       invoiceNumber: r.documentNumber
+    })),
+    payments: (payments.data ?? []).map((r) => ({
+      ...r,
+      paymentId: r.documentId,
+      paymentNumber: r.documentNumber,
+      paymentType: r.documentType,
+      customerId: r.partyId
     }))
   };
 }
 
 export default function ArAgingRoute() {
-  const { asOfDate, agingMethod, bucketDays, result, aging, open } =
+  const { asOfDate, agingMethod, bucketDays, result, aging, open, payments } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   return (
@@ -74,6 +83,8 @@ export default function ArAgingRoute() {
       result={result}
       aging={aging}
       open={open}
+      payments={payments}
+      reportDetails
       asOfDate={asOfDate}
       agingMethod={agingMethod}
       bucketDays={bucketDays}

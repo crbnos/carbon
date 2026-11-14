@@ -127982,6 +127982,85 @@ export default {
         tags: ["(rpc) employee_requires_period"]
       }
     },
+    "/rpc/get_aging_unapplied_payments": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "_as_of_date",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "_side",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_aging_unapplied_payments"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                _as_of_date: {
+                  format: "date",
+                  type: "string"
+                },
+                _company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                _side: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["_company_id", "_as_of_date", "_side"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_aging_unapplied_payments"]
+      }
+    },
     "/rpc/get_warehouse_storage_unit_ids": {
       get: {
         parameters: [

@@ -838,6 +838,15 @@ msgstr "{behindDays, plural, one {Hinter dem Ziel um # Tag} other {Hinter dem Zi
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# abrechenbarer Artikel wartet auf Überprüfung} other {# abrechenbare Artikel warten auf Überprüfung}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2} Tage"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3} Tage"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ Tage"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel}-Aufschlag für Menge {quantity}"
 
@@ -1507,6 +1516,9 @@ msgstr "1 unveröffentlichtes Dokument"
 msgid "1 year"
 msgstr "1 Jahr"
 
+msgid "1-{b1} Days"
+msgstr "1-{b1} Tage"
+
 msgid "12 monthly periods"
 msgstr "12 monatliche Perioden"
 
@@ -1991,7 +2003,6 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Eine Nichtkonformitätsaufgabe, die verhindert, dass das Problem anderswo erneut auftritt — unterschiedlich von der korrigierenden Maßnahme und dem Containment."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr "Eine Zahl oder ein Zeichen direkt neben einer Ziffer verändert deren Bedeutung. Setzen Sie ein Wort dazwischen."
 msgstr "Eine Zahl oder ein Zeichen direkt neben einem Wert verändert dessen Aussage. Setzen Sie ein Wort dazwischen."
 
 msgid "A part"
@@ -10803,6 +10814,9 @@ msgstr "Deaktivieren"
 msgid "Disabled"
 msgstr "Deaktiviert"
 
+msgid "Disbursement"
+msgstr "Auszahlung"
+
 msgid "Discard"
 msgstr "Verwerfen"
 
@@ -11053,6 +11067,9 @@ msgstr "Herunterladen {0} Zeile(n) zum Beheben"
 
 msgid "Download CSV"
 msgstr "CSV herunterladen"
+
+msgid "Download Excel"
+msgstr "Excel herunterladen"
 
 msgid "Download Labels"
 msgstr "Etiketten herunterladen"
@@ -16444,7 +16461,6 @@ msgid "Keep matching items"
 msgstr "Übereinstimmende Artikel behalten"
 
 msgid "Keep mine"
-msgstr "Meine Version behalten"
 msgstr "Meine behalten"
 
 msgid "Keep navigation open"
@@ -17208,7 +17224,6 @@ msgid "Linked Record"
 msgstr "Verknüpfter Datensatz"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr "Mit einem freigegebenen Abschnitt verknüpft. Bearbeiten Sie ihn in der Bibliothek, um ihn überall zu aktualisieren."
 msgstr "Mit einem gemeinsamen Abschnitt verknüpft. Bearbeiten Sie ihn in der Bibliothek, um ihn überall zu aktualisieren."
 
 msgid "Links"
@@ -21135,6 +21150,9 @@ msgstr "Kontenzuordnung öffnen"
 msgid "Open Actions"
 msgstr "Offene Maßnahmen"
 
+msgid "Open Amount"
+msgstr "Offener Betrag"
+
 msgid "Open an NCR for MRB disposition"
 msgstr "Öffnen Sie ein NCR für MRB-Verwendungsentscheid"
 
@@ -22679,7 +22697,6 @@ msgid "Playback"
 msgstr "Wiedergabe"
 
 msgid "Please <0>change it</0>."
-msgstr "Bitte <0>ändern Sie dies</0>."
 msgstr "Bitte <0>ändern Sie es</0>."
 
 msgid "Please contact your administrator to enable audit logging."
@@ -27752,7 +27769,6 @@ msgid "Shared channel"
 msgstr "Gemeinsamer Kanal"
 
 msgid "Shared Section (deleted)"
-msgstr "Freigegebener Abschnitt (gelöscht)"
 msgstr "Gemeinsamer Abschnitt (gelöscht)"
 
 msgid "Shared Sections"
@@ -28404,7 +28420,6 @@ msgid "Someone"
 msgstr "Jemand"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr "Jemand anderes hat diese Vorlage gerade gespeichert. Aktualisieren Sie die Seite, um dessen Version zu laden, oder bearbeiten Sie weiter, um sie beim Speichern zu überschreiben."
 msgstr "Jemand anderes hat diese Vorlage gerade gespeichert. Laden Sie die Seite neu, um die andere Version zu laden, oder bearbeiten Sie weiter und überschreiben Sie sie beim Speichern."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
@@ -31006,7 +31021,6 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Das vordefinierte Paket aus Aufgaben und Genehmigungsanforderungen, das auf diesen Fall angewendet wird; überschreibt den Standard-Workflow des Falltyps, wenn festgelegt."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr "Die Vorschau konnte nicht erstellt werden. Stattdessen wird die zuletzt erstellte Vorschau angezeigt."
 msgstr "Die Vorschau konnte nicht erstellt werden. Angezeigt wird die zuletzt erfolgreich erstellte."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
@@ -31884,7 +31898,6 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Diese PIN wird nicht mehr angezeigt. Sie benötigen sie, um den Konsolenmodus auf MES-Terminals zu beenden."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr "Diese Vorschau ist pausiert, weil ein Text eine Zahl verändert."
 msgstr "Diese Vorschau ist pausiert, weil ein Text einen Wert verändert."
 
 msgid "This price was entered manually, so no pricing rules were applied."
@@ -31951,7 +31964,6 @@ msgid "This serial"
 msgstr "Diese Seriennummer"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr "Dieser freigegebene Abschnitt ist nicht mehr vorhanden. Entfernen Sie den Block oder erstellen Sie den Abschnitt erneut."
 msgstr "Dieser gemeinsame Abschnitt existiert nicht mehr. Entfernen Sie den Block oder erstellen Sie den Abschnitt neu."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."

@@ -5394,6 +5394,20 @@ export function getApAging(
     _bucket3: b3
   });
 }
+
+export function getAgingUnappliedPayments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  asOfDate: string,
+  side: "ar" | "ap"
+) {
+  return client.rpc("get_aging_unapplied_payments", {
+    _company_id: companyId,
+    _as_of_date: asOfDate,
+    _side: side
+  });
+}
+
 // Documents a payment can be a deposit for — or a refund of: every open sales
 // order and Draft/Active rental agreement (a new customer deposit), every open
 // purchase order (a new supplier prepayment), plus every document a posted

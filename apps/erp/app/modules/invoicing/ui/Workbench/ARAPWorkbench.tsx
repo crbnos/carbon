@@ -8,6 +8,7 @@ import {
   DatePicker,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
@@ -16,9 +17,15 @@ import {
   PopoverContent,
   PopoverHeader,
   PopoverTrigger,
+  Table as TableBase,
+  Tbody,
+  Td,
+  Th,
+  Thead,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  Tr,
   VStack
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
@@ -28,6 +35,7 @@ import { useCallback, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
+  LuDownload,
   LuScale,
   LuTriangleAlert,
   LuUser
@@ -37,7 +45,10 @@ import { CustomerAvatar, DateTime, SupplierAvatar, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
 import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
-import { daysPastDue } from "~/modules/invoicing/invoicing.reports";
+import {
+  agingBucketMessages,
+  daysPastDue
+} from "~/modules/invoicing/invoicing.reports";
 import { path } from "~/utils/path";
 
 type TieOutResult = {
@@ -78,17 +89,31 @@ type OpenInvoiceRow = {
   supplierReference?: string | null;
 };
 
+type OpenPaymentRow = {
+  paymentId: string;
+  paymentNumber: string;
+  paymentType: string;
+  transactionDate: string | null;
+  originalInBase: number;
+  openInBase: number;
+  customerId?: string;
+  supplierId?: string;
+};
+
 type ARAPWorkbenchProps = {
   side: "ar" | "ap";
   result: TieOutResult | null;
   aging: AgingRow[];
   open: OpenInvoiceRow[];
+  payments?: OpenPaymentRow[];
   asOfDate: string;
   agingMethod: "dueDate" | "documentDate";
   bucketDays: [number, number, number];
   // Overrides the table title. Defaults to Receivables/Payables (the invoicing
   // workbench); the aging reports pass "AR Aging" / "AP Aging".
   title?: string;
+  /** The report pages show document details in an expanded table. */
+  reportDetails?: boolean;
 };
 
 // A counterparty (root) row carries the aging buckets; an invoice (child) row
@@ -110,17 +135,19 @@ export function ARAPWorkbench({
   result,
   aging,
   open,
+  payments = [],
   asOfDate,
   agingMethod,
   bucketDays,
-  title
+  title,
+  reportDetails = false
 }: ARAPWorkbenchProps) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const [, setParams] = useUrlParams();
   const adjustFetcher = useFetcher();
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
-  const [b1, b2, b3] = bucketDays;
+  const bucketMessages = agingBucketMessages(bucketDays);
 
   const money = useCallback(
     (n: number) => currencyFormatter.format(Number(n)),
@@ -144,6 +171,15 @@ export function ARAPWorkbench({
     }
     return map;
   }, [open, partyIdOf]);
+  const paymentsByParty = useMemo(() => {
+    const map: Record<string, OpenPaymentRow[]> = {};
+    for (const payment of payments) {
+      const partyId = partyIdOf(payment);
+      if (!partyId) continue;
+      (map[partyId] ??= []).push(payment);
+    }
+    return map;
+  }, [payments, partyIdOf]);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -190,11 +226,34 @@ export function ARAPWorkbench({
   // Flatten counterparties (roots) and, for expanded ones, their invoices.
   const displayRows = useMemo<WorkbenchRow[]>(() => {
     const out: WorkbenchRow[] = [];
-    for (const a of aging) {
+    const allAging = [...aging];
+    if (reportDetails) {
+      const known = new Set(aging.map(partyIdOf));
+      for (const partyId of [
+        ...Object.keys(childrenByParty),
+        ...Object.keys(paymentsByParty)
+      ]) {
+        if (known.has(partyId)) continue;
+        known.add(partyId);
+        allAging.push({
+          ...(side === "ar"
+            ? { customerId: partyId }
+            : { supplierId: partyId }),
+          current: 0,
+          bucket1: 0,
+          bucket2: 0,
+          bucket3: 0,
+          bucket4: 0,
+          unapplied: 0,
+          total: 0
+        });
+      }
+    }
+    for (const a of allAging) {
       const pid = partyIdOf(a);
       if (!pid) continue;
       out.push({ kind: "counterparty", id: pid, partyId: pid, ...a });
-      if (expandedIds.has(pid)) {
+      if (!reportDetails && expandedIds.has(pid)) {
         for (const inv of childrenByParty[pid] ?? []) {
           out.push({
             kind: "invoice",
@@ -206,7 +265,15 @@ export function ARAPWorkbench({
       }
     }
     return out;
-  }, [aging, childrenByParty, expandedIds, partyIdOf]);
+  }, [
+    aging,
+    childrenByParty,
+    expandedIds,
+    partyIdOf,
+    paymentsByParty,
+    reportDetails,
+    side
+  ]);
 
   // The selected invoices, and whether they can become one payment. A payment
   // has one counterparty and one currency, so the action is enabled only when
@@ -239,9 +306,154 @@ export function ARAPWorkbench({
     bucketDays: bucketDays.join(",")
   });
   const exportHref = `${side === "ar" ? path.to.arAgingCsv : path.to.apAgingCsv}?${exportParams.toString()}`;
+  const excelHref = `${side === "ar" ? path.to.arAgingExcel : path.to.apAgingExcel}?${exportParams.toString()}`;
+
+  const canExpandRow = useCallback(
+    (row: WorkbenchRow) =>
+      row.kind === "counterparty" &&
+      ((childrenByParty[row.partyId]?.length ?? 0) > 0 ||
+        (paymentsByParty[row.partyId]?.length ?? 0) > 0),
+    [childrenByParty, paymentsByParty]
+  );
+
+  const renderExpandedRow = useCallback(
+    (row: WorkbenchRow) => {
+      if (row.kind !== "counterparty") return null;
+      const documents = childrenByParty[row.partyId] ?? [];
+      const partyPayments = paymentsByParty[row.partyId] ?? [];
+      return (
+        <div className="p-3">
+          <TableBase className="min-w-[900px]">
+            <Thead>
+              <Tr>
+                <Th className="w-10 px-2" />
+                <Th>{t`Document`}</Th>
+                <Th>{t`Transaction Date`}</Th>
+                <Th>{t`Type`}</Th>
+                {side === "ap" ? <Th>{t`Supplier Invoice Number`}</Th> : null}
+                <Th>{t`Due Date`}</Th>
+                <Th>{t`Original Amount`}</Th>
+                <Th>{t`Days Past Due`}</Th>
+                <Th>{t`Open Amount`}</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {documents.map((document) => {
+                const documentHref =
+                  document.documentType === "Invoice"
+                    ? side === "ar"
+                      ? path.to.salesInvoiceDetails(document.invoiceId)
+                      : path.to.purchaseInvoiceDetails(document.invoiceId)
+                    : path.to.memo(document.invoiceId);
+                const documentType =
+                  document.documentType === "Invoice"
+                    ? t`Invoice`
+                    : document.documentType === "Credit Memo"
+                      ? t`Credit Memo`
+                      : document.documentType === "Debit Memo"
+                        ? t`Debit Memo`
+                        : document.documentType;
+                return (
+                  <Tr key={document.invoiceId}>
+                    <Td className="px-2">
+                      <IndeterminateCheckbox
+                        checked={selectedIds.has(document.invoiceId)}
+                        indeterminate={false}
+                        onChange={() => toggleInvoice(document.invoiceId)}
+                      />
+                    </Td>
+                    <Td>
+                      <Link to={documentHref} className="hover:underline">
+                        {document.invoiceNumber}
+                      </Link>
+                    </Td>
+                    <Td>
+                      {document.transactionDate ? (
+                        <DateTime
+                          value={document.transactionDate}
+                          variant="date"
+                        />
+                      ) : (
+                        "—"
+                      )}
+                    </Td>
+                    <Td>{documentType}</Td>
+                    {side === "ap" ? (
+                      <Td>{document.supplierReference ?? "—"}</Td>
+                    ) : null}
+                    <Td>
+                      {document.dateDue ? (
+                        <DateTime value={document.dateDue} variant="date" />
+                      ) : (
+                        "—"
+                      )}
+                    </Td>
+                    <Td className="tabular-nums">
+                      {money(document.originalInBase)}
+                    </Td>
+                    <Td className="tabular-nums">
+                      {daysPastDue(asOfDate, document.dateDue) ?? "—"}
+                    </Td>
+                    <Td className="tabular-nums">
+                      {money(document.openInBase)}
+                    </Td>
+                  </Tr>
+                );
+              })}
+              {partyPayments.map((payment) => (
+                <Tr key={payment.paymentId}>
+                  <Td />
+                  <Td>
+                    <Link
+                      to={path.to.payment(payment.paymentId)}
+                      className="hover:underline"
+                    >
+                      {payment.paymentNumber}
+                    </Link>
+                  </Td>
+                  <Td>
+                    {payment.transactionDate ? (
+                      <DateTime
+                        value={payment.transactionDate}
+                        variant="date"
+                      />
+                    ) : (
+                      "—"
+                    )}
+                  </Td>
+                  <Td>
+                    {payment.paymentType === "Receipt"
+                      ? t`Receipt`
+                      : t`Disbursement`}
+                  </Td>
+                  {side === "ap" ? <Td>—</Td> : null}
+                  <Td>—</Td>
+                  <Td className="tabular-nums">
+                    {money(payment.originalInBase)}
+                  </Td>
+                  <Td>—</Td>
+                  <Td className="tabular-nums">{money(payment.openInBase)}</Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </TableBase>
+        </div>
+      );
+    },
+    [
+      asOfDate,
+      childrenByParty,
+      money,
+      paymentsByParty,
+      selectedIds,
+      side,
+      t,
+      toggleInvoice
+    ]
+  );
 
   const columns = useMemo<ColumnDef<WorkbenchRow>[]>(() => {
-    return [
+    const allColumns: ColumnDef<WorkbenchRow>[] = [
       {
         id: "Select",
         size: 50,
@@ -283,28 +495,33 @@ export function ARAPWorkbench({
             return (
               <div
                 data-key-cell=""
-                className="flex items-center max-md:w-[calc(45dvw-32px)] max-md:pl-3"
+                className={cn(
+                  "flex items-center max-md:w-[calc(45dvw-32px)]",
+                  !reportDetails && "max-md:pl-3"
+                )}
               >
-                <div className="w-5 shrink-0 flex items-center justify-center self-center">
-                  {kids.length > 0 ? (
-                    <button
-                      aria-expanded={isExpanded}
-                      type="button"
-                      aria-label={isExpanded ? t`Collapse` : t`Expand`}
-                      className="text-muted-foreground hover:text-foreground max-md:hit-area"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleExpand(r.partyId);
-                      }}
-                    >
-                      {isExpanded ? (
-                        <LuChevronDown className="size-4" />
-                      ) : (
-                        <LuChevronRight className="size-4" />
-                      )}
-                    </button>
-                  ) : null}
-                </div>
+                {!reportDetails ? (
+                  <div className="w-5 shrink-0 flex items-center justify-center self-center">
+                    {kids.length > 0 ? (
+                      <button
+                        aria-expanded={isExpanded}
+                        type="button"
+                        aria-label={isExpanded ? t`Collapse` : t`Expand`}
+                        className="text-muted-foreground hover:text-foreground max-md:hit-area"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpand(r.partyId);
+                        }}
+                      >
+                        {isExpanded ? (
+                          <LuChevronDown className="size-4" />
+                        ) : (
+                          <LuChevronRight className="size-4" />
+                        )}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
                 {r.customerId ? (
                   <CustomerAvatar
                     customerId={r.customerId}
@@ -421,10 +638,10 @@ export function ARAPWorkbench({
       ...(
         [
           ["current", t`Current`],
-          ["bucket1", `1-${b1}`],
-          ["bucket2", `${b1 + 1}-${b2}`],
-          ["bucket3", `${b2 + 1}-${b3}`],
-          ["bucket4", `${b3 + 1}+`],
+          ["bucket1", i18n._(bucketMessages.bucket1)],
+          ["bucket2", i18n._(bucketMessages.bucket2)],
+          ["bucket3", i18n._(bucketMessages.bucket3)],
+          ["bucket4", i18n._(bucketMessages.bucket4)],
           ["unapplied", t`Unapplied`]
         ] as const
       ).map(
@@ -456,17 +673,32 @@ export function ARAPWorkbench({
         }
       }
     ];
+    return reportDetails
+      ? allColumns.filter(
+          (column) =>
+            ![
+              "transactionDate",
+              "documentType",
+              "supplierReference",
+              "originalInBase",
+              "daysPastDue"
+            ].includes(column.id ?? "")
+        )
+      : allColumns;
   }, [
     t,
+    i18n,
     side,
-    b1,
-    b2,
-    b3,
+    bucketMessages.bucket1,
+    bucketMessages.bucket2,
+    bucketMessages.bucket3,
+    bucketMessages.bucket4,
     asOfDate,
     money,
     childrenByParty,
     expandedIds,
     selectedIds,
+    reportDetails,
     toggleExpand,
     toggleCounterparty,
     toggleInvoice
@@ -621,6 +853,31 @@ export function ARAPWorkbench({
           setParams({ asOfDate: value?.toString() ?? asOfDate })
         }
       />
+      {reportDetails ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="secondary"
+              leftIcon={<LuDownload />}
+              rightIcon={<LuChevronDown />}
+            >
+              <Trans>Export</Trans>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <a href={exportHref}>
+                <Trans>Download CSV</Trans>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href={excelHref}>
+                <Trans>Download Excel</Trans>
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
     </HStack>
   );
 
@@ -629,9 +886,13 @@ export function ARAPWorkbench({
       <div className="flex-1 w-full">
         <Table<WorkbenchRow>
           data={displayRows}
+          getRowId={(row) => row.id}
           csvExportHref={exportHref}
+          withCsvExport={!reportDetails}
           columns={columns}
           count={displayRows.length}
+          renderExpandedRow={reportDetails ? renderExpandedRow : undefined}
+          canExpandRow={reportDetails ? canExpandRow : undefined}
           title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}
           primaryAction={filters}
           defaultColumnPinning={{ left: ["Select", "counterparty"] }}

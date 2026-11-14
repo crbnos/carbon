@@ -838,6 +838,15 @@ msgstr "{behindDays, plural, one {Behind target by # day} other {Behind target b
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}-{b2} Days"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}-{b3} Days"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ Days"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel} markup for quantity {quantity}"
 
@@ -1506,6 +1515,9 @@ msgstr "1 unposted document"
 
 msgid "1 year"
 msgstr "1 year"
+
+msgid "1-{b1} Days"
+msgstr "1-{b1} Days"
 
 msgid "12 monthly periods"
 msgstr "12 monthly periods"
@@ -10802,6 +10814,9 @@ msgstr "Disable"
 msgid "Disabled"
 msgstr "Disabled"
 
+msgid "Disbursement"
+msgstr "Disbursement"
+
 msgid "Discard"
 msgstr "Discard"
 
@@ -11052,6 +11067,9 @@ msgstr "Download {0} row(s) to fix"
 
 msgid "Download CSV"
 msgstr "Download CSV"
+
+msgid "Download Excel"
+msgstr "Download Excel"
 
 msgid "Download Labels"
 msgstr "Download Labels"
@@ -21131,6 +21149,9 @@ msgstr "Open Account Mapping"
 
 msgid "Open Actions"
 msgstr "Open Actions"
+
+msgid "Open Amount"
+msgstr "Open Amount"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Open an NCR for MRB disposition"

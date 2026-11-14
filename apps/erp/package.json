@@ -6,7 +6,8 @@
     "@ai-sdk/openai": "catalog:",
     "@ai-sdk/react": "catalog:",
     "@carbon/serve": "workspace:*",
-    "ai": "catalog:"
+    "ai": "catalog:",
+    "exceljs": "4.4.0"
   },
   "devDependencies": {
     "@base-ui-components/react": "1.0.0-rc.0",

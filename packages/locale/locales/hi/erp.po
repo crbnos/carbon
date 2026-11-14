@@ -838,6 +838,15 @@ msgstr "{behindDays, plural, one {लक्ष्य से # दिन पी�
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# बिल योग्य आइटम समीक्षा के लिए प्रतीक्षा करता है} other {# बिल योग्य आइटम समीक्षा के लिए प्रतीक्षा करते हैं}}"
 
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}–{b2} दिन"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}–{b3} दिन"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}+ दिन"
+
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "मात्रा {quantity} के लिए {categoryLabel} मार्कअप"
 
@@ -1507,6 +1516,9 @@ msgstr "1 अपोस्ट किया गया दस्तावेज़"
 msgid "1 year"
 msgstr "1 वर्ष"
 
+msgid "1-{b1} Days"
+msgstr "1–{b1} दिन"
+
 msgid "12 monthly periods"
 msgstr "12 मासिक अवधियाँ"
 
@@ -1991,7 +2003,6 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "एक गैर-अनुरूपता कार्य जो समस्या को अन्य स्थानों पर फिर से होने से रोकता है — सुधारात्मक सुधार और नियंत्रण से अलग।"
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr "किसी चित्र के पास अंक या चिह्न रखने से उसका अर्थ बदल जाता है। उनके बीच एक शब्द जोड़ें।"
 msgstr "आंकड़े के बगल में कोई संख्या या चिह्न हो तो उसका अर्थ बदल जाता है। दोनों के बीच एक शब्द रखें।"
 
 msgid "A part"
@@ -10803,6 +10814,9 @@ msgstr "अक्षम करें"
 msgid "Disabled"
 msgstr "अक्षम"
 
+msgid "Disbursement"
+msgstr "संवितरण"
+
 msgid "Discard"
 msgstr "त्यागें"
 
@@ -11053,6 +11067,9 @@ msgstr "ठीक करने के लिए {0} पंक्ति(यों
 
 msgid "Download CSV"
 msgstr "CSV डाउनलोड करें"
+
+msgid "Download Excel"
+msgstr "Excel डाउनलोड करें"
 
 msgid "Download Labels"
 msgstr "लेबल डाउनलोड करें"
@@ -16444,7 +16461,6 @@ msgid "Keep matching items"
 msgstr "मेल खाने वाले आइटम रखें"
 
 msgid "Keep mine"
-msgstr "मेरा संस्करण रखें"
 msgstr "मेरे बदलाव रखें"
 
 msgid "Keep navigation open"
@@ -17208,7 +17224,6 @@ msgid "Linked Record"
 msgstr "लिंक किया गया रिकॉर्ड"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr "यह साझा अनुभाग से जुड़ा है। इसे हर जगह अपडेट करने के लिए लाइब्रेरी में संपादित करें।"
 msgstr "एक साझा अनुभाग से जुड़ा है। हर जगह अपडेट करने के लिए इसे लाइब्रेरी में संपादित करें।"
 
 msgid "Links"
@@ -21134,6 +21149,9 @@ msgstr "खाता मैपिंग खोलें"
 
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"
+
+msgid "Open Amount"
+msgstr "बकाया राशि"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
@@ -28402,7 +28420,6 @@ msgid "Someone"
 msgstr "कोई"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr "किसी और ने अभी यह टेम्पलेट सहेजा है। उनका संस्करण लोड करने के लिए रीफ़्रेश करें, या संपादन जारी रखें और सहेजते समय उसे अधिलेखित करें।"
 msgstr "किसी और ने अभी यह टेम्पलेट सहेजा है। उनका संस्करण लोड करने के लिए रीफ़्रेश करें, या सहेजते समय इसे ओवरराइट करने के लिए संपादन जारी रखें।"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
@@ -31004,7 +31021,6 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "कार्यों और अनुमोदन आवश्यकताओं का पूर्वनिर्धारित बंडल इस समस्या पर लागू होता है; जब सेट किया जाता है तो समस्या प्रकार के डिफ़ॉल्ट वर्कफ़्लो को ओवरराइड करता है।"
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr "पूर्वावलोकन तैयार नहीं किया जा सका। पिछला सफल पूर्वावलोकन दिखाया जा रहा है।"
 msgstr "पूर्वावलोकन नहीं बन सका। यह आख़िरी सफल पूर्वावलोकन दिखा रहा है।"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
@@ -31882,7 +31898,6 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "यह PIN फिर से नहीं दिखाया जाएगा। MES टर्मिनल पर कंसोल मोड से बाहर निकलने के लिए आपको इसकी आवश्यकता होगी।"
 
 msgid "This preview is paused because a text changes a figure."
-msgstr "यह पूर्वावलोकन रुका हुआ है क्योंकि एक पाठ चित्र को बदलता है।"
 msgstr "एक पाठ आंकड़ा बदल रहा है, इसलिए यह पूर्वावलोकन रोका गया है।"
 
 msgid "This price was entered manually, so no pricing rules were applied."
@@ -31949,7 +31964,6 @@ msgid "This serial"
 msgstr "यह सीरियल"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr "यह साझा अनुभाग अब मौजूद नहीं है। ब्लॉक निकालें या अनुभाग फिर से बनाएँ।"
 msgstr "यह साझा अनुभाग अब मौजूद नहीं है। ब्लॉक निकालें या अनुभाग दोबारा बनाएँ।"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."

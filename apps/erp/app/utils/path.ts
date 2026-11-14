@@ -91,6 +91,7 @@ export const path = {
       generatePath(`${x}/reports/analytics/${key}`),
     apAging: `${x}/reports/ap-aging`,
     apAgingCsv: `${x}/reports/ap-aging.csv`,
+    apAgingExcel: `${x}/reports/ap-aging.xlsx`,
     api: {
       abilities: `${api}/resources/abilities`,
       accountNotifications: `${api}/account/notifications`,
@@ -489,6 +490,7 @@ export const path = {
     approvalRules: `${x}/settings/approval-rules`,
     arAging: `${x}/reports/ar-aging`,
     arAgingCsv: `${x}/reports/ar-aging.csv`,
+    arAgingExcel: `${x}/reports/ar-aging.xlsx`,
     assemblyInstruction: (id: string) => generatePath(`${x}/assembly/${id}`),
     assemblyInstructionActivate: (id: string) =>
       generatePath(`${x}/assembly/${id}/activate`),
