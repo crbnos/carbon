@@ -2011,6 +2011,9 @@ msgstr "작업자가 이 단계에서 보는 사진 또는 PDF"
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "실제 풀 신호로 재고와 함께 있는 인쇄된 카드 또는 QR 코드로 스캔되는 순간 발주서 또는 작업 지시를 생성하여 빈을 보충합니다."
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP. Dynamics 365 calls this state Approved."
+msgstr ""
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Carbon 자체 흐름의 한 지점으로 워크플로가 감시할 수 있습니다 — 작업 지시 릴리스됨, 견적서 수락됨, 출하 전기됨 — 원시 필드 변경과는 다릅니다; 워크플로에 관련 레코드를 ID로 제공합니다."
 
@@ -2395,8 +2398,8 @@ msgstr "작업장 또는 작업자의 한 공정의 배치 시간 범위에 대�
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "부분 CLIN: 동일한 계약의 상위 CLIN의 4자리 숫자에 2개의 문자 또는 숫자(예: 0001AA)를 더한 것입니다."
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "MRP가 각 실행 후 작성하는 제안입니다: 새로운 공급을 발주하거나 생산하거나, 미결 발주서 라인 또는 작업 지시를 가속화, 연기, 증가, 감소 또는 취소합니다. 계획 페이지에서 적용하거나, 무시하거나, 할당할 수 있습니다."
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr ""
 
 msgid "A supplier contact and location are optional"
 msgstr "공급업체 담당자 및 사업장은 선택사항입니다"
@@ -29601,6 +29604,9 @@ msgstr "공급 및 소요량 차트({weeks}주): 예상 재고는 {start}에서 
 msgid "Supply and demand chart: no data."
 msgstr "공급 및 소요량 차트: 데이터가 없습니다."
 
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr ""
+
 msgid "Support"
 msgstr "지원"
 
@@ -32870,6 +32876,9 @@ msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
 
 msgid "Turn on to create one picking list for each job when it is released."
+msgstr ""
+
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
 msgstr ""
 
 msgid "Turned off sync"

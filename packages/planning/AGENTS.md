@@ -73,16 +73,36 @@ true surplus. **Golden test:** `plan-company.test.ts` snapshots `planCompany` on
 `__fixtures__/plan-company.basic.json`, a company with no project stock. Never edit that
 snapshot to make a test pass; a change there means the change broke the "no project stock,
 identical output" invariant. `plan-company.project.json` pins the segment spec case.
+`planCompany` also takes `plannedOrderInputs` (MRP v2 Phase 2a) and returns `plannedOrders`,
+`heldPlannedOrderIds`, `plannedOrderSignals`, `plannedOrderChangeActions` and `newSupplyByRow`.
+Without the input it plans exactly as before (the golden test runs without it).
 Netting segments (`planningSegmentId`, `''` = common) are described in
 `.claude/rules/mrp-system.md` → *Project netting segments*. `planCompany` also returns
 `groupPegInputs`, one per (planning group, item, location), which is empty for a company
 with no group (the golden test asserts it). Planning groups and pegging are in
 `.claude/rules/mrp-system.md` → *Planning groups and pegging*.
 
-Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId, commonSurplusDraws })`
+**Planned orders (MRP v2 Phase 2a)** — internal modules, rule `.claude/rules/mrp-system.md` →
+*Planned orders*:
+
+| File | Holds |
+|------|-------|
+| `src/mrp/planned-orders.ts` | `createPlanSupply(inputs)` (pure): the `planSupply` hook `explodeBom` calls per eligible common key, `extraPlanningKeys`, and the accumulated `result()`; `plannedOrderNaturalKey`; the input/output types (`PlannedOrderInputs`, `GeneratedPlannedOrder`, `PlannedOrderSignal`, …) |
+| `src/mrp/row-sizing.ts` | `sizeRowSupply` — the new-supply sizing of one row, shared by the engine hook and `deriveRowActions` — with `deriveChangeActions`, `convertOrdersToIncreases`, `projectionsWithExpedites`, `isOrderFrozen`, the date helpers |
+| `src/mrp/open-supply-orders.ts` | `buildOpenSupplyOrders` (pure): open PO lines and jobs as `OpenSupplyOrder`s, with `releaseByDate`, `earlierRelease`, `itemLocationSegmentKey` |
+| `src/mrp/planned-order-write.ts` | `diffPlannedOrders` (pure) and `writePlannedOrderDiff(trx, …)` — the first statement of `runMrp`'s Phase-7 transaction; takes the planning lock, never touches Firm / Converted / held rows |
+| `src/mrp/planning-action-types.ts` | the shared action types (`PlanningActionCandidate`, `OpenSupplyOrder` with `plannedOrderId`, `ChangeCandidate`) |
+
+`lockCompanyPlanning(trx, companyId)` (`planning-actions.ts`) is the one per-company advisory lock
+(`planning-actions:<companyId>`) every planned-order and planning-action writer takes first, the
+ERP's settle / convert / firm / edit / apply included. `runMrp` loads the planned-order inputs
+with `loadPlannedOrderInputs` (Kysely) and passes the engine's planned-order outputs to
+`generatePlanningActions`.
+
+Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId, commonSurplusDraws, newSupplyByRow?, plannedOrderChangeActions?, plannedOrderSignals?, plannedOrderIdByKey?, heldPlannedOrderIds?, … })`
 (`src/mrp/planning-actions.ts` — the planning action messages, Order / Make / Expedite / Defer /
 Increase / Decrease / Cancel / Release / Transfer, one row's set computed by the pure
-`deriveRowActions` (a project segment is lot-for-lot; each draw is a Transfer), diff-written to `planningAction` in one transaction that holds a
+`deriveRowActions` (a project segment is lot-for-lot; each draw is a Transfer; a row the engine planned takes its Order / Make from `newSupplyByRow`; `plannedOrderActions` adds the change actions on held planned orders and the fence Expedites), diff-written to `planningAction` in one transaction that holds a
 per-company `pg_advisory_xact_lock` across the read and the write; `runMrp` calls it after its
 Phase-7 commit. With `pegging` (PLANNING_GROUPS only), `memberMoveCandidates` first adds
 member Transfer and Borrow actions, and after the action diff the same transaction runs

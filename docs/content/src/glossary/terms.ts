@@ -1335,9 +1335,23 @@ export const terms = {
     term: msg`Planning time fence`,
     definition: msg`The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's.`
   },
+  "planned-order": {
+    term: msg`Planned Order`,
+    definition: msg`Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents.`
+  },
+  "firm-planned-order": {
+    term: msg`Firm`,
+    definition: msg`A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP. Dynamics 365 calls this state Approved.`,
+    aliases: ["firm"]
+  },
+  "convert-planned-order": {
+    term: msg`Convert`,
+    definition: msg`Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status.`,
+    aliases: ["convert"]
+  },
   "planning-action": {
     term: msg`Planning action`,
-    definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it.`,
+    definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it.`,
     href: "/docs/reference/planning#planning-actions"
   },
   "reschedule-tolerance": {

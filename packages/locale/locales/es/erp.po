@@ -2011,6 +2011,9 @@ msgstr "Una foto o PDF que el operario ve en este paso"
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "Una señal de extracción física — una tarjeta impresa o código QR ubicado con el stock — que genera una orden de compra o un trabajo en el momento en que se escanea para llenar un contenedor."
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP. Dynamics 365 calls this state Approved."
+msgstr ""
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Un punto en uno de los propios flujos de Carbon que un flujo de trabajo puede observar — un trabajo liberado, una cotización aceptada, un envío publicado — a diferencia de un cambio de campo bruto; proporciona al flujo de trabajo los registros involucrados por id."
 
@@ -2395,8 +2398,8 @@ msgstr "Una reserva almacenada de un centro de trabajo u operario para el lapso 
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "Un SubCLIN: los 4 dígitos de su CLIN principal en el mismo contrato, más 2 letras o dígitos, como 0001AA."
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "Una sugerencia que MRP escribe después de cada ejecución: Pedir o Fabricar nuevo suministro, o Adelantar, Diferir, Aumentar, Disminuir o Cancelar una línea de orden de compra abierta u orden de trabajo. Aplícala desde la página de planificación, descártala o asígnala."
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr ""
 
 msgid "A supplier contact and location are optional"
 msgstr "Un contacto de proveedor y una ubicación son opcionales"
@@ -29601,6 +29604,9 @@ msgstr "Gráfico de suministro y demanda durante {weeks} semanas: el stock dispo
 msgid "Supply and demand chart: no data."
 msgstr "Gráfico de suministro y demanda: sin datos."
 
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr ""
+
 msgid "Support"
 msgstr "Soporte"
 
@@ -32870,6 +32876,9 @@ msgid "Turn on the built-in pieces"
 msgstr "Activa las piezas integradas"
 
 msgid "Turn on to create one picking list for each job when it is released."
+msgstr ""
+
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
 msgstr ""
 
 msgid "Turned off sync"

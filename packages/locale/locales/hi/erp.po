@@ -2011,6 +2011,9 @@ msgstr "एक फ़ोटो या PDF जो ऑपरेटर इस च�
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "एक भौतिक खींचने का संकेत — एक मुद्रित कार्ड या QR कोड जो स्टॉक के साथ रहता है — जो क्रय आदेश या जॉब बढ़ाता है जिस क्षण इसे बिन को भरने के लिए स्कैन किया जाता है।"
 
+msgid "A planned order a person has locked: MRP no longer changes its quantity or dates, still counts it as supply, and raises an action when it disagrees. Editing a planned order's quantity or due date firms it; Unfirm gives it back to MRP. Dynamics 365 calls this state Approved."
+msgstr ""
+
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "कार्बन के अपने प्रवाह में एक बिंदु जिसे एक वर्कफ़्लो देख सकता है — एक नौकरी जारी की गई, एक उद्धरण स्वीकार किया गया, एक शिपमेंट पोस्ट किया गया — एक कच्चे क्षेत्र परिवर्तन के विपरीत; यह वर्कफ़्लो को आईडी द्वारा शामिल रिकॉर्ड देता है।"
 
@@ -2395,8 +2398,8 @@ msgstr "एक वर्क सेंटर या ऑपरेटर की ए
 msgid "A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA."
 msgstr "एक SubCLIN: एक ही अनुबंध पर इसके मूल CLIN के 4 अंक, प्लस 2 अक्षर या अंक, जैसे 0001AA।"
 
-msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it."
-msgstr "एक सुझाव जो MRP प्रत्येक रन के बाद लिखता है: नई आपूर्ति के लिए ऑर्डर करें या निर्माण करें, या किसी खुली क्रय आदेश पंक्ति या जॉब को तेज़ करें, स्थगित करें, बढ़ाएं, घटाएं या रद्द करें। इसे योजना पृष्ठ से लागू करें, इसे खारिज करें, या इसे असाइन करें।"
+msgid "A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it."
+msgstr ""
 
 msgid "A supplier contact and location are optional"
 msgstr "आपूर्तिकर्ता संपर्क और स्थान वैकल्पिक हैं"
@@ -29601,6 +29604,9 @@ msgstr "{weeks} सप्ताहों पर आपूर्ति और म
 msgid "Supply and demand chart: no data."
 msgstr "आपूर्ति और मांग चार्ट: कोई डेटा नहीं।"
 
+msgid "Supply MRP suggests for one item at one location and week: a job to make or a purchase to buy, sized by the item's reorder policy. MRP may change or delete it on each run until a person firms or converts it. It is not a Planned job or Planned purchase order, which are documents."
+msgstr ""
+
 msgid "Support"
 msgstr "समर्थन"
 
@@ -32870,6 +32876,9 @@ msgid "Turn on the built-in pieces"
 msgstr "बिल्ट-इन पीसेस को चालू करें"
 
 msgid "Turn on to create one picking list for each job when it is released."
+msgstr ""
+
+msgid "Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status."
 msgstr ""
 
 msgid "Turned off sync"
