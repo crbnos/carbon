@@ -18746,6 +18746,14 @@ msgstr "租赁净投资"
 msgid "Net Investment in Leases (default)"
 msgstr "租赁净投资（默认）"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of the {0} deposit already held for the order."
+msgstr ""
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of the {0} prepayment already held for the order."
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "使用权资产净额"
 

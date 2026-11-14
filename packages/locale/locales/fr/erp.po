@@ -18746,6 +18746,14 @@ msgstr "Investissement net dans les contrats de location"
 msgid "Net Investment in Leases (default)"
 msgstr "Investissement net dans les contrats de location (par défaut)"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of the {0} deposit already held for the order."
+msgstr ""
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of the {0} prepayment already held for the order."
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Actif net de droit d'utilisation"
 

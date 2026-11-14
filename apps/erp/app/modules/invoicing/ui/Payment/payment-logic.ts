@@ -9,6 +9,7 @@ import {
   allocatePaymentFunding,
   type FundingRequest,
   type FundingScope,
+  type FundingScopeIds,
   type FundingSource,
   fundableDocumentAmounts,
   fundingScopeCovers,
@@ -78,6 +79,43 @@ export function paymentDocumentCurrency(
   baseCurrencyCode: string | null | undefined
 ): string {
   return currencyCode || baseCurrencyCode || "USD";
+}
+
+/**
+ * How much of the invoices a new payment is seeded from is covered by advances
+ * already held for the documents they bill, in document currency. An advance
+ * can settle nothing but those invoices, so the payment's cash is seeded net
+ * of it and the allocator draws it for the rest. On-account credit funds any
+ * invoice, so drawing it stays the user's choice.
+ */
+export function heldAdvanceCovering(
+  invoices: ReadonlyArray<FundingScopeIds & { cashDue: number }>,
+  sources: readonly FundingSource[],
+  currencyDecimals: number
+): number {
+  const advances = sources.filter((source) => source.scope);
+  if (advances.length === 0) return 0;
+  const covered = fundableDocumentAmounts({
+    // No cash yet: only the advances are on offer.
+    currentPayment: {
+      paymentId: "",
+      postingDate: "",
+      exchangeRate: 1,
+      remainingDocument: 0,
+      remainingBase: 0
+    },
+    priorSources: advances,
+    requests: invoices.map((invoice) => ({
+      ...invoice,
+      maximumDocument: invoice.cashDue
+    })),
+    currencyDecimals
+  });
+  return toDocumentAmount(
+    covered.reduce((sum, amount) => sum + amount, 0),
+    1,
+    currencyDecimals
+  );
 }
 
 // ---------------------------------------------------------------------------

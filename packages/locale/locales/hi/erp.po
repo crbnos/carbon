@@ -18746,6 +18746,14 @@ msgstr "पट्टों में शुद्ध निवेश"
 msgid "Net Investment in Leases (default)"
 msgstr "पट्टों में शुद्ध निवेश (डिफ़ॉल्ट)"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of the {0} deposit already held for the order."
+msgstr ""
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of the {0} prepayment already held for the order."
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "शुद्ध उपयोग का अधिकार संपत्ति"
 

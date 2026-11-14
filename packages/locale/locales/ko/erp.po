@@ -18746,6 +18746,14 @@ msgstr "리스 순투자"
 msgid "Net Investment in Leases (default)"
 msgstr "리스 순투자(기본값)"
 
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of the {0} deposit already held for the order."
+msgstr ""
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of the {0} prepayment already held for the order."
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "순 사용권 자산"
 

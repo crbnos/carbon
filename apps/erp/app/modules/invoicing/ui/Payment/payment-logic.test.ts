@@ -18,6 +18,7 @@ import {
   buildCreditApplications,
   type ExistingApplication,
   fundingRequests,
+  heldAdvanceCovering,
   initialPaymentKind,
   type OpenInvoice,
   type PaymentApplication,
@@ -83,6 +84,63 @@ describe("payment kind", () => {
       expect(paymentDocumentCurrency(currency, base)).toBe(expected);
     }
   );
+});
+
+describe("advance held for a seeded invoice's order", () => {
+  const advance = (id: string, remainingDocument: number, paymentId = id) => ({
+    paymentId,
+    postingDate: "2026-09-01",
+    exchangeRate: 1,
+    remainingDocument,
+    remainingBase: remainingDocument,
+    scope: { type: "purchaseOrder" as const, id }
+  });
+
+  it("covers the order's invoice up to what is still held", () => {
+    expect(
+      heldAdvanceCovering(
+        [{ cashDue: 1000, purchaseOrderIds: ["po-1"] }],
+        [advance("po-1", 300)],
+        2
+      )
+    ).toBe(300);
+  });
+
+  it("never covers more than the invoice is due", () => {
+    expect(
+      heldAdvanceCovering(
+        [{ cashDue: 250, purchaseOrderIds: ["po-1"] }],
+        [advance("po-1", 300)],
+        2
+      )
+    ).toBe(250);
+  });
+
+  it("is spent once across invoices of the same order", () => {
+    expect(
+      heldAdvanceCovering(
+        [
+          { cashDue: 200, purchaseOrderIds: ["po-1"] },
+          { cashDue: 200, purchaseOrderIds: ["po-1"] }
+        ],
+        [advance("po-1", 300)],
+        2
+      )
+    ).toBe(300);
+  });
+
+  it("leaves another order's advance and on-account credit alone", () => {
+    expect(
+      heldAdvanceCovering(
+        [{ cashDue: 1000, purchaseOrderIds: ["po-1"] }],
+        [
+          advance("po-2", 300),
+          { ...advance("po-1", 500, "on-account"), scope: null }
+        ],
+        2
+      )
+    ).toBe(0);
+  });
 });
 
 describe("apply to invoices", () => {
