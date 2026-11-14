@@ -9,7 +9,7 @@ import {
   type SegmentQuantity,
   trueSurplusByPeriod
 } from "./mrp-netting-sequence.ts";
-import { RoundingMode, round } from "./precision.ts";
+import { RoundingMode, round, scrapAllowance } from "./precision.ts";
 import {
   consumableInWholeAssemblies,
   type Redirect
@@ -100,6 +100,51 @@ export type BomExplosionInput = {
    * still short. Absent: no segment is a group.
    */
   groupSegments?: ReadonlySet<string>;
+  /**
+   * MRP v2: the start date (YYYY-MM-DD) of each period, in `periods` order,
+   * for a `planSupply` hook that dates its orders. The engine does not read it.
+   */
+  periodStartDates?: string[];
+  /**
+   * MRP v2: plans the new supply of one common key (no Consume First
+   * redirect). Called once per key, when its gross demand is complete. The
+   * returned explosions replace the explosion of the raw net requirement.
+   * Null runs the Phase 1 path for the key. Absent: every key runs it.
+   */
+  planSupply?: (args: {
+    locationId: string;
+    itemId: string;
+    segmentId: string;
+    /** Gross demand per period, complete at this level. */
+    grossByPeriod: number[];
+    /** Open jobs, POs and borrows per period. */
+    supplyByPeriod: number[];
+    onHand: number;
+  }) => PlannedSupplyResult | null;
+  /**
+   * MRP v2: `makeLocationItemKey` keys (common segment) with a buffer policy.
+   * Each is visited at its item's level even with no gross demand, so
+   * `planSupply` can plan stock-driven supply for it.
+   */
+  extraPlanningKeys?: string[];
+  /**
+   * MRP v2: the scrap rate per item. A `planSupply` explosion adds the
+   * child's scrap (`scrapAllowance`) to the child's quantity, except for a
+   * Make to Order child that is made: its own job carries its scrap.
+   * Absent: no child scrap. The Phase 1 path never adds scrap.
+   */
+  scrapRateByItem?: Map<string, number>;
+};
+
+export type PlannedSupplyResult = {
+  explosions: {
+    /** The period the order is released in: its children are needed then. */
+    releasePeriodIndex: number;
+    /** The parent quantity to explode, the parent's scrap included. */
+    quantity: number;
+    /** The period whose demand contributors the children inherit. */
+    contributorPeriodIndex: number;
+  }[];
 };
 
 export type BomExplosionOutput = {
@@ -280,6 +325,7 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
   const horizonPeriods = input.horizonPeriods ?? periods.length;
   const commonSurplusDraws = new Map<string, number>();
   const groupSegments = input.groupSegments ?? new Set<string>();
+  const { planSupply, scrapRateByItem } = input;
 
   // The pre-swap BOM's edges level too: a project segment explodes through
   // it, so an item it names must be planned after every parent there.
@@ -362,6 +408,31 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
     // converted into child demand below.
     let running = onHandByLocationItem.get(invKey) ?? 0;
 
+    // MRP v2: a common key with no Consume First redirect may plan its supply
+    // through the hook. It sees the whole horizon at once, as lot sizes and
+    // buffers need.
+    const planned =
+      planSupply && isCommon && !consumeFirstRedirect.has(itemId)
+        ? planSupply({
+            locationId,
+            itemId,
+            segmentId,
+            grossByPeriod: periods.map(
+              (period) =>
+                grossDemand.get(
+                  makeKey(locationId, period.id, itemId, segmentId)
+                ) ?? 0
+            ),
+            supplyByPeriod: periods.map(
+              (period) =>
+                jobSupply.get(
+                  makeKey(locationId, period.id, itemId, segmentId)
+                ) ?? 0
+            ),
+            onHand: running
+          })
+        : null;
+
     for (const [index, period] of periods.entries()) {
       const periodKey = makeKey(locationId, period.id, itemId, segmentId);
       running += jobSupply.get(periodKey) ?? 0;
@@ -411,8 +482,9 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
       running = Math.max(0, running - grossQty);
 
       // Buy items never explode — their shortfall surfaces directly in
-      // demandForecast / quantityToOrder via the caller.
-      if (netRequirement <= 0 || effRepSys !== "Make") continue;
+      // demandForecast / quantityToOrder via the caller. A planned key
+      // explodes its planned orders below instead of the raw need.
+      if (planned || netRequirement <= 0 || effRepSys !== "Make") continue;
 
       const children = explodable.get(itemId) ?? [];
       for (const child of children) {
@@ -481,9 +553,102 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
       }
     }
 
+    if (planned && effRepSys === "Make") {
+      explodePlannedOrders(locationId, itemId, segmentId, planned, explodable);
+    }
+
     // Persist the trailing balance so the next LLC layer (or a later
-    // call) sees the consumed/produced state of this item.
+    // call) sees the consumed/produced state of this item. A planned key
+    // writes the Phase 1 balance too: planned receipts never enter it, so
+    // the common surplus a project segment may draw (on-hand only) and
+    // everything read from this balance stay as in Phase 1.
     onHandByLocationItem.set(invKey, running);
+  };
+
+  const clampPeriodIndex = (index: number) =>
+    Math.max(0, Math.min(periods.length - 1, index));
+
+  // Explodes the hook's planned orders of one key: each order's quantity, at
+  // its release period, with no child lead-time offset (the order's own
+  // dates already carry it).
+  const explodePlannedOrders = (
+    locationId: string,
+    itemId: string,
+    segmentId: string,
+    planned: PlannedSupplyResult,
+    explodable: Map<string, BomChild[]>
+  ) => {
+    // Two orders for the demand of one period (a lot split) pass its
+    // contributors to each BOM line once, as the Phase 1 path does.
+    const inheritedContributorPeriods = new Set<string>();
+
+    for (const explosion of planned.explosions) {
+      if (explosion.quantity <= 0) continue;
+      const releasePeriod =
+        periods[clampPeriodIndex(explosion.releasePeriodIndex)];
+      const contributorPeriod =
+        periods[clampPeriodIndex(explosion.contributorPeriodIndex)];
+      if (!releasePeriod || !contributorPeriod) continue;
+      const contributorKey = makeKey(
+        locationId,
+        contributorPeriod.id,
+        itemId,
+        segmentId
+      );
+
+      for (const [line, child] of (explodable.get(itemId) ?? []).entries()) {
+        const childEffRepSys = effectiveReplenishment(
+          replenishmentSystemByItem.get(child.itemId)
+        );
+        const isInlineProduction =
+          child.methodType === "Make to Order" && childEffRepSys === "Make";
+
+        const target = child.quantity * explosion.quantity;
+        // A Make to Order child that is made gets its own job, which adds
+        // the scrap itself.
+        const childQty =
+          scrapRateByItem && !isInlineProduction
+            ? target +
+              scrapAllowance(target, scrapRateByItem.get(child.itemId) ?? 0)
+            : target;
+
+        const childKey = makeKey(
+          locationId,
+          releasePeriod.id,
+          child.itemId,
+          segmentId
+        );
+        grossDemand.set(childKey, (grossDemand.get(childKey) ?? 0) + childQty);
+        if (!isInlineProduction) {
+          bomDerivedDemand.set(
+            childKey,
+            (bomDerivedDemand.get(childKey) ?? 0) + childQty
+          );
+        }
+
+        const inheritKey = `${contributorPeriod.id}${KEY_SEP}${line}`;
+        if (inheritedContributorPeriods.has(inheritKey)) continue;
+        inheritedContributorPeriods.add(inheritKey);
+        const parentContributors = [
+          ...(demandContributors.get(contributorKey) ?? []),
+          ...(topLevelContributors.get(contributorKey) ?? [])
+        ];
+        if (parentContributors.length === 0) continue;
+        // Contributors are gross, and a planned key is never a group
+        // segment, so each keeps its whole quantity per child.
+        const childContributors = demandContributors.get(childKey) ?? [];
+        for (const pc of parentContributors) {
+          childContributors.push({
+            ...pc,
+            quantity: pc.quantity * child.quantity,
+            redirectedFromItemId:
+              child.redirectedFromItemId ?? pc.redirectedFromItemId,
+            perAssemblyQuantity: child.quantity
+          });
+        }
+        demandContributors.set(childKey, childContributors);
+      }
+    }
   };
 
   // A project segment's shortfall per period after its own on-hand and
@@ -521,6 +686,12 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
       if ((llc.get(itemId) ?? 0) === level) {
         locItemsAtLevel.add(makeLocationItemKey(locationId, itemId, segmentId));
       }
+    }
+    // A buffer policy can need supply with no demand at all.
+    for (const locItem of input.extraPlanningKeys ?? []) {
+      const [, itemId, segmentId] = splitLocationItemKey(locItem);
+      if (segmentId !== COMMON_SEGMENT) continue;
+      if ((llc.get(itemId) ?? 0) === level) locItemsAtLevel.add(locItem);
     }
 
     // The common segment nets first, so its demand is final when a project
