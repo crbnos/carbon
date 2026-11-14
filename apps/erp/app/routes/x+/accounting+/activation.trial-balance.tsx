@@ -196,10 +196,7 @@ export async function action({ request }: ActionFunctionArgs) {
     } catch (err) {
       return data(
         {},
-        await flash(
-          request,
-          error(err, getErrorMessage(err, "Failed to save the trial balance"))
-        )
+        await flash(request, error(err, "Failed to save the trial balance"))
       );
     }
     throw redirect(
@@ -305,7 +302,7 @@ export async function action({ request }: ActionFunctionArgs) {
         {},
         await flash(
           request,
-          error(err, getErrorMessage(err, "Failed to ignore the invoice"), {
+          error(err, "Failed to ignore the invoice", {
             invoiceId: validation.data.invoiceId
           })
         )
@@ -339,10 +336,7 @@ export async function action({ request }: ActionFunctionArgs) {
     } catch (err) {
       return data(
         {},
-        await flash(
-          request,
-          error(err, getErrorMessage(err, "Failed to update the trial balance"))
-        )
+        await flash(request, error(err, "Failed to update the trial balance"))
       );
     }
     throw redirect(
@@ -415,10 +409,7 @@ export async function action({ request }: ActionFunctionArgs) {
     } catch (err) {
       return data<TrialBalanceImportResult>(
         {},
-        await flash(
-          request,
-          error(err, getErrorMessage(err, "Failed to save the trial balance"))
-        )
+        await flash(request, error(err, "Failed to save the trial balance"))
       );
     }
     throw redirect(

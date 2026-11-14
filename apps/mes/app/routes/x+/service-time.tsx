@@ -228,7 +228,9 @@ export async function action({ request }: ActionFunctionArgs) {
         {},
         await flash(
           request,
-          error(completed.error, completed.error.message, { serviceJobId })
+          error(completed.error, "Failed to complete the service job", {
+            serviceJobId
+          })
         )
       );
     }

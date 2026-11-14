@@ -8,10 +8,7 @@ import {
   type LogRecord,
   type TextFormatter
 } from "@logtape/logtape";
-import { LOG_CONTEXT_KEYS } from "./context.server";
-
-// On every in-request record; useful in prod JSON, noise on each dev line.
-const AMBIENT_KEYS = new Set<string>(LOG_CONTEXT_KEYS);
+import { getLogContext, type LogContext } from "./context.server";
 
 // Returns null for `{*}`, which already renders every property.
 function referencedKeys(raw: LogRecord["rawMessage"]): Set<string> | null {
@@ -33,9 +30,12 @@ export const devFormatter: TextFormatter = (record) => {
     const referenced = referencedKeys(record.rawMessage);
     if (referenced === null) return line;
 
+    // The request's own ids are on every line of it: useful in prod JSON, noise
+    // here. A record's own value (a job's companyId) still shows.
+    const ambient: LogContext = getLogContext() ?? {};
     const extra = Object.fromEntries(
       Object.entries(record.properties ?? {}).filter(
-        ([key]) => !referenced.has(key) && !AMBIENT_KEYS.has(key)
+        ([key, value]) => !referenced.has(key) && ambient[key] !== value
       )
     );
     if (Object.keys(extra).length === 0) return line;

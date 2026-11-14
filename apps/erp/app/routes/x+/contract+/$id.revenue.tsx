@@ -70,13 +70,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const back = requestReferrer(request) ?? path.to.contractDetails(id);
   if (result.error) {
-    throw redirect(
-      back,
-      await flash(
-        request,
-        error(result.error, getErrorMessage(result.error, failure))
-      )
-    );
+    throw redirect(back, await flash(request, error(result.error, failure)));
   }
 
   throw redirect(

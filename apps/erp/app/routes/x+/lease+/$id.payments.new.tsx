@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       back,
       await flash(
         request,
-        error(insert.error, insert.error.message || "Failed to add payment", {
+        error(insert.error, "Failed to add payment", {
           leaseId: id
         })
       )

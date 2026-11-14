@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
@@ -98,7 +98,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.leaseSetup(id, "details"),
       await flash(
         request,
-        error(err, getErrorMessage(err, "Failed to update lease"), {
+        error(err, "Failed to update lease", {
           leaseId: id
         })
       )

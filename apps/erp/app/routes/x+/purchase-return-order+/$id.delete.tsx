@@ -83,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           purchaseReturnOrderDelete.error,
-          purchaseReturnOrderDelete.error.message
+          "Failed to delete the purchase return order"
         )
       )
     );

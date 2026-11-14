@@ -25,6 +25,8 @@ import { maskRedactedField, REDACT_FIELD_PATTERNS } from "./redaction";
 import { tracer } from "./span";
 
 const CONFIGURED = Symbol.for("carbon.logging.configured");
+// Its own flag: a test that resets CONFIGURED to reconfigure must not stack listeners.
+const PROCESS_HANDLERS = Symbol.for("carbon.logging.process-handlers");
 
 /**
  * A cancelled call: the AbortError itself, or what supabase-js makes of it — a
@@ -151,7 +153,9 @@ export function ensureLoggingConfigured(
 
   g[CONFIGURED] = true;
 
-  const log = getLogger("server");
+  if (g[PROCESS_HANDLERS]) return;
+  g[PROCESS_HANDLERS] = true;
+  const log = getLogger("logger", "server");
   process.on("unhandledRejection", (reason) => {
     log.error("Unhandled promise rejection", { error: reason });
   });

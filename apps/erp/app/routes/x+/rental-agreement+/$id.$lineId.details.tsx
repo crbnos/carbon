@@ -138,10 +138,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (update.error) {
     throw redirect(
       path.to.rentalAgreementDetails(id),
-      await flash(
-        request,
-        error(update.error, update.error.message || "Failed to update unit")
-      )
+      await flash(request, error(update.error, "Failed to update unit"))
     );
   }
 

@@ -99,10 +99,12 @@ export function getRequestContext<T>(context: RouterContext<T>): T | undefined {
 }
 
 /** What every log line written during the request carries. */
-export const LOG_CONTEXT_KEYS = ["requestId", "companyId", "userId"] as const;
-export type LogContext = Partial<
-  Record<(typeof LOG_CONTEXT_KEYS)[number], string>
->;
+export type LogContext = {
+  requestId?: string;
+  companyId?: string;
+  userId?: string;
+  [key: string]: string | undefined;
+};
 
 const logContext = createContext<LogContext | null>(null);
 
@@ -118,7 +120,7 @@ export function addLogContext(properties: LogContext): void {
 }
 
 /** The current request's log context, or undefined outside a request. */
-function getLogContext(): LogContext | undefined {
+export function getLogContext(): LogContext | undefined {
   return storage.getStore()?.get(logContext) ?? undefined;
 }
 

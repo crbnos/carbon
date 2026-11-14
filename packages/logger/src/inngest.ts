@@ -24,14 +24,19 @@ function isProperties(value: unknown): value is Record<string, unknown> {
 
 /**
  * A job's `ctx.logger` takes the call `getLogger` takes — a message template
- * and its properties, an `Error` standing for `{ error }` — so a line reads the
- * same whichever logger wrote it, and error spans group it by its template.
+ * and its properties, an `Error` standing for `{ error }` (after the message,
+ * or alone) — so a line reads the same whichever logger wrote it, and error
+ * spans group it by its template.
  * Inngest's own lines are not templates: any other call, and a lone string
  * holding a brace, is logged as a value.
  */
 function emit(logger: Logger, level: "debug" | "info" | "warning" | "error") {
   return (...args: unknown[]): void => {
     const [message, properties] = args;
+    if (message instanceof Error && args.length === 1) {
+      logger[level]("Job error", { error: message });
+      return;
+    }
     if (typeof message === "string" && args.length <= 2) {
       if (properties instanceof Error) {
         logger[level](message, { error: properties });

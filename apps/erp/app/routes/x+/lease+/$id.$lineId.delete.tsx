@@ -34,7 +34,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       back,
       await flash(
         request,
-        error(result.error, result.error.message || "Failed to remove asset", {
+        error(result.error, "Failed to remove asset", {
           leaseId: id,
           leaseLineId: lineId
         })

@@ -5,7 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { regenerateLeasePayments } from "~/modules/purchasing/purchasing.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -37,7 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       back,
       await flash(
         request,
-        error(err, getErrorMessage(err, "Failed to regenerate the payments"), {
+        error(err, "Failed to regenerate the payments", {
           leaseId: id
         })
       )

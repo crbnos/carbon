@@ -32,6 +32,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./config.server": "./src/config.server.ts",
+    "./configure.server": "./src/configure.server.ts",
     "./context.server": "./src/context.server.ts",
     "./middleware.server": "./src/middleware.server.ts",
     "./tracing.server": "./src/tracing.server.ts",

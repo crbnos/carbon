@@ -29,7 +29,9 @@ categories, env-driven levels, and cloud-agnostic request-id correlation.
   `warning`.
 - Every log line written during a request carries `requestId`, and
   `companyId`/`userId` once `requirePermissions` (or the MCP OAuth path) has
-  resolved them (`addLogContext`, `@carbon/logger/context.server`). A call's own
+  resolved them (`addLogContext`, `@carbon/logger/context.server`, which also
+  takes a route's own fields, such as MCP's `authKind`). The dev terminal hides
+  the ids the request added and shows a record's own (a job's `companyId`). A call's own
   property of the same name wins, so a loop over companies passes `companyId`.
   Read the id with `getRequestId(context)` or `getRequestId()`
   (`@carbon/logger/middleware.server`).
@@ -40,6 +42,10 @@ categories, env-driven levels, and cloud-agnostic request-id correlation.
   the failure does not log it as well. The `error()` result helper
   (`@carbon/auth`) logs the failure it returns, with an optional context
   argument for the record ids — so a route does not log before calling it.
+  Its message is the log template, so it is a fixed sentence
+  (`error(err, "Failed to delete the quote")`), never the error's own text:
+  that reaches the person as the toast's reason. A refusal the person must
+  fix (a rule, a missing plan) passes `null`, so it is not logged as an error.
 - Request-scoped memoization: `oncePerRequest(key, fn)` computes once per HTTP
   request; `oncePerRead(key, fn)` does the same but ONLY on GET/HEAD/OPTIONS.
   Use `oncePerRead` for anything derived from database state — React Router runs
@@ -89,7 +95,8 @@ pnpm --filter @carbon/logger test
 | Subpath | Provides |
 |---------|----------|
 | `.` | `getLogger`, `Logger` type (no `warn`) — isomorphic, safe everywhere |
-| `./config.server` | `ensureLoggingConfigured()` (ANSI dev / JSONL+redacted prod; adds the request log context to each record; logs unhandled rejections and uncaught exceptions, exiting on the second) |
+| `./config.server` | `ensureLoggingConfigured()` (ANSI dev / JSONL+redacted prod; adds the request log context to each record; logs unhandled rejections and uncaught exceptions, exiting on the second, under `carbon.logger.server`) |
+| `./configure.server` | Calls `ensureLoggingConfigured()` when imported: each app's first `entry.server.tsx` import |
 | `./context.server` | The request scope: `requestContextMiddleware`, `currentRequest`, `isReadRequest`, `getRouterContext`, `getRequestContext`, `oncePerRequest`, `oncePerRead`, `describeRequest(detail)` (access-log detail and request span name), `addLogContext` / `withRequestLogContext`, `runInRequestContext` (tests) |
 | `./middleware.server` | `requestMiddleware` (request context + request id + access log in one), `handleServerError` (each app's `handleError`), `requestIdContext`, `getRequestId`, `REQUEST_ID_HEADER` |
 | `./span` | Spans through the OpenTelemetry API only, safe in browser-reachable code: `withSpan(name, attributes, run(span))`, `startSpan`, `failSpan`, `annotateRequestSpan`, `nameRequestSpan` |
@@ -98,8 +105,9 @@ pnpm --filter @carbon/logger test
 
 ## Wiring (per app)
 
-- `entry.server.tsx`: `ensureLoggingConfigured()` from
-  `@carbon/logger/config.server` at the top, and
+- `entry.server.tsx`: `import "@carbon/logger/configure.server"` as the FIRST
+  import (modules evaluate in import order, so a line another module writes at
+  load time already gets the app's sinks), and
   `export { handleServerError as handleError } from "@carbon/logger/middleware.server"`.
   `handleServerError` skips a thrown `Response` or `data()` (control flow) and a
   read the client abandoned; it logs everything else, a write that failed after

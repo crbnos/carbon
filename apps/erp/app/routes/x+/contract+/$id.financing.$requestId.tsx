@@ -11,7 +11,7 @@ import {
 } from "@carbon/ee/contract-financing";
 import {
   approveFinancingRequest,
-  FinancingError,
+  financingRefusal,
   getFinancingRequest,
   overrideRequestLine,
   submitFinancingRequest,
@@ -163,17 +163,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   } catch (err) {
     if (err instanceof Response) throw err;
+    const refusal = financingRefusal(err);
     return data(
       { success: false },
       await flash(
         request,
-        error(
-          err,
-          err instanceof FinancingError
-            ? err.message
-            : "Failed to change the request",
-          { requestId }
-        )
+        refusal === null
+          ? error(err, "Failed to change the request", { requestId })
+          : error(null, refusal)
       )
     );
   }

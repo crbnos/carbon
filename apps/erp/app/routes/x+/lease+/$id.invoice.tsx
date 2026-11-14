@@ -5,7 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { datetime, getErrorMessage, redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
   generateLeaseInvoicesNow,
@@ -58,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       requestReferrer(request) ?? path.to.leaseDetails(id),
       await flash(
         request,
-        error(err, getErrorMessage(err, "Failed to draft invoices"), {
+        error(err, "Failed to draft invoices", {
           leaseId: id
         })
       )

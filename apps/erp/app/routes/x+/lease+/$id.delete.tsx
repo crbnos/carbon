@@ -28,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(result.error, result.error.message || "Failed to delete lease", {
+        error(result.error, "Failed to delete lease", {
           leaseId: id
         })
       )

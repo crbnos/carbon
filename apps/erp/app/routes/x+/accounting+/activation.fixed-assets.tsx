@@ -10,7 +10,7 @@ import {
   updateCutoverAccumulatedDepreciation
 } from "@carbon/database/accounting-cutover-reads";
 import { validator } from "@carbon/form";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -98,11 +98,9 @@ export async function action({ request }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(
-          err,
-          getErrorMessage(err, "Failed to save the accumulated depreciation"),
-          { fixedAssetId: validation.data.fixedAssetId }
-        )
+        error(err, "Failed to save the accumulated depreciation", {
+          fixedAssetId: validation.data.fixedAssetId
+        })
       )
     );
   }

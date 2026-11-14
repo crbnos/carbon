@@ -44,7 +44,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       requestReferrer(request) ?? path.to.active,
       await flash(
         request,
-        error(result.error, result.error ?? "Failed to request material", {
+        error(result.error, "Failed to request material", {
           jobOperationId
         })
       )

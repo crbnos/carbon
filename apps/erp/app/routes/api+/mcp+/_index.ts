@@ -185,7 +185,11 @@ async function resolveAuth(request: Request): Promise<{
 
 export async function action({ request }: ActionFunctionArgs) {
   const { ctx, request: authedRequest } = await resolveAuth(request);
-  addLogContext({ companyId: ctx.companyId, userId: ctx.userId });
+  addLogContext({
+    companyId: ctx.companyId,
+    userId: ctx.userId,
+    authKind: ctx.authKind
+  });
 
   let response: Response;
   try {

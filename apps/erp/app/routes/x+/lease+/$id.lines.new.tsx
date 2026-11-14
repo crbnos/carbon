@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { leaseLineValidator } from "~/modules/purchasing/purchasing.models";
 import { saveDraftLeaseLine } from "~/modules/purchasing/purchasing.service";
@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       back,
       await flash(
         request,
-        error(err, getErrorMessage(err, "Failed to add the asset"), {
+        error(err, "Failed to add the asset", {
           leaseId: id
         })
       )

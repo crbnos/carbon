@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import "@carbon/logger/configure.server";
 import { POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
 import { installFormBodyGuard } from "@carbon/auth/middleware/form-body.server";
 import {
@@ -12,7 +13,6 @@ import { getProcessPool } from "@carbon/database/client";
 import { initFlags } from "@carbon/env/flags.server";
 import { redisFlagsStore } from "@carbon/kv";
 import { inngest } from "@carbon/lib/inngest";
-import { ensureLoggingConfigured } from "@carbon/logger/config.server";
 import { createTracing } from "@carbon/logger/tracing.server";
 import { async } from "@carbon/utils";
 import { attachDatabasePool, waitUntil } from "@vercel/functions";
@@ -22,7 +22,6 @@ import type { EntryContext, RouterContextProvider } from "react-router";
 import { scheduleInngestSelfSync } from "./utils/inngest-self-sync.server";
 import "./modules/carbon.server";
 
-ensureLoggingConfigured();
 installFormBodyGuard();
 
 // Vercel freezes an instance once its response is sent: keep it up until idle

@@ -228,7 +228,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           completed.error,
-          `Batch completed, but combining lots into ${plannedLotNumber} failed — use "Merge output lots" on the batch`
+          'Batch completed, but combining its output lots failed — use "Merge output lots" on the batch',
+          { lotNumber: plannedLotNumber }
         )
       )
     );
@@ -250,7 +251,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
           request,
           error(
             mergeResult.error,
-            `Batch completed, but combining lots into ${plannedLotNumber} failed — use "Merge output lots" on the batch`
+            'Batch completed, but combining its output lots failed — use "Merge output lots" on the batch',
+            { lotNumber: plannedLotNumber }
           )
         )
       );

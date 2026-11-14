@@ -170,7 +170,7 @@ export const requestMiddleware: MiddlewareFunction<Response> = (args, next) =>
     () => requestIdMiddleware(args, next) as Promise<Response>
   );
 
-const serverLog = getLogger("server");
+const serverLog = getLogger("logger", "server");
 
 /**
  * React Router's `handleError`: every app's `entry.server.tsx` re-exports it.

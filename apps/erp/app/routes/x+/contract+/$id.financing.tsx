@@ -16,7 +16,7 @@ import {
   addFinancingRate,
   completePbpEvent,
   createFinancingRequest,
-  FinancingError,
+  financingRefusal,
   getContractFinancing,
   upsertContractFinancing,
   upsertPbpEvent
@@ -100,13 +100,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const db = getDatabaseClient();
 
   const refuse = async (err: unknown, message: string) => {
+    const refusal = financingRefusal(err);
     return data(
       { success: false },
       await flash(
         request,
-        error(err, err instanceof FinancingError ? err.message : message, {
-          customerContractId: id
-        })
+        refusal === null
+          ? error(err, message, { customerContractId: id })
+          : error(null, refusal)
       )
     );
   };

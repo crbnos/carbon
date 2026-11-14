@@ -34,11 +34,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       back,
       await flash(
         request,
-        error(
-          result.error,
-          result.error.message || "Failed to delete payment",
-          { leaseId: id, paymentId }
-        )
+        error(result.error, "Failed to delete payment", {
+          leaseId: id,
+          paymentId
+        })
       )
     );
   }

@@ -46,6 +46,13 @@ describe("createInngestLogger", () => {
     expect(recorder.records[0]?.properties).toEqual({ error: boom });
   });
 
+  it("keeps a lone Error under error, under one fixed message", () => {
+    const boom = new Error("boom");
+    createInngestLogger().error(boom);
+    expect(recorder.records[0]?.rawMessage).toBe("Job error");
+    expect(recorder.records[0]?.properties).toEqual({ error: boom });
+  });
+
   it("logs a lone string holding a brace as a value", () => {
     createInngestLogger().info("payload {not a template}");
     expect(recorder.records[0]?.message.join("")).toBe(

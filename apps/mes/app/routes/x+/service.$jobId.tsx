@@ -189,7 +189,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (returned.error) {
       return data(
         {},
-        await flash(request, error(returned.error, returned.error.message))
+        await flash(
+          request,
+          error(returned.error, "Failed to return the part", {
+            serviceJobItemId
+          })
+        )
       );
     }
     return data(
