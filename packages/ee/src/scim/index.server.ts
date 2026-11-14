@@ -3,12 +3,6 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 export {
-  handleScimRequest,
-  reconcileEmployeeTypes,
-  SCIM_ACTOR_LABEL,
-  type ScimDeps
-} from "./scim.server";
-export {
   createScimConnection,
   generateScimToken,
   getScimConnection,
@@ -16,4 +10,10 @@ export {
   saveScimGroupMappings,
   turnOffScimConnection,
   updateScimConnection
-} from "./scim-connections.server";
+} from "./connections.server";
+export {
+  handleScimRequest,
+  reconcileEmployeeTypes,
+  SCIM_ACTOR_LABEL,
+  type ScimDeps
+} from "./engine.server";

@@ -20,7 +20,7 @@ import {
   scimError,
   toScimUser,
   USER_SCHEMA
-} from "./scim-protocol";
+} from "./protocol";
 
 const jane: ScimUserState = {
   userName: "jane@acme.com",

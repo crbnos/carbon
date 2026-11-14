@@ -185,7 +185,7 @@ Refactor one at a time; each PR should leave the tree green.
   `@carbon/workflows-core` so `@carbon/lib` need not depend on the commercial engine — that
   edge would be a `lib → ee → lib` cycle. (The job-side executors in
   `packages/jobs/src/workflows/` stay in jobs — Inngest-coupled, like backups.)
-- ✅ **SCIM provisioning** — engine in `packages/ee/src/sso/scim*.ts`
+- ✅ **SCIM provisioning** — engine in `packages/ee/src/scim/`
   (`@carbon/ee/scim.server`). `handleScimRequest` embeds `requireEntitlement("SCIM")`
   on every request (an un-entitled company's IdP gets 403); the settings writes embed it
   too, except `turnOffScimConnection`, so a downgraded company can still turn SCIM off.

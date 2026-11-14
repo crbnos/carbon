@@ -197,7 +197,7 @@ for every active person of the connection.
 | Token | `scim_` + 32 random base62 characters. Store `tokenHash` (SHA-256 hex, `hashApiKey`) and `tokenPreview` (last 4). Show once. Regenerate replaces the hash. | The API-key pattern (`apiKey.keyHash`). Okta and Entra store one static bearer token. |
 | Rate limit | 600 requests per minute per connection. Answer `429` with `Retry-After: 60`. | Okta waits `Retry-After` seconds. Entra runs 5–10 requests in parallel. |
 | Resource id | `scimUser.id` / `scimGroup.id`, not the Carbon user id. | A company-scoped id answers 404 across companies by construction. It does not leak global user ids. |
-| Where the code lives | Engine in `packages/ee/src/sso/` (`scim-*.ts`), exported as `@carbon/ee/scim.server`. Settings UI in `ScimProvisioning.ee.tsx`. | The commercial-licensing rule. SAML SSO lives in the same folder. |
+| Where the code lives | Engine in `packages/ee/src/scim/`, exported as `@carbon/ee/scim.server`. Settings UI in `ScimProvisioning.ee.tsx`. | The commercial-licensing rule: one folder per feature. It imports the three SSO helpers it needs from `sso/`. |
 | Multi-tenancy (heuristic 1) | All 4 tables have `companyId`, composite PK `("id", "companyId")`, `id('…')` defaults. `scimGroupMember` has PK `("groupId", "scimUserId", "companyId")`. | Convention. |
 | Service shape (heuristic 2) | Engine functions take `db` and `serviceRole` and return `{ data, error }`. The HTTP handler returns a `Response` and never throws. | Convention. The MCP engine (`serveMcpRequest`) is the precedent for an ee handler. |
 | RLS (heuristic 3) | `company("settings", { read: "settings_view" })` for all 4 tables in `authz/manifest.ts`. | `apiKey` uses the same rule. The engine writes with the service role. |
@@ -301,24 +301,24 @@ Notes:
 
 ## API / Service Changes
 
-**`@carbon/ee/scim.server`** (new export → `packages/ee/src/sso/scim-index.server.ts`):
+**`@carbon/ee/scim.server`** (new export → `packages/ee/src/scim/index.server.ts`):
 
 | Function | File | Does |
 |---|---|---|
 | `handleScimRequest(request, deps)` | `scim.server.ts` | Authenticates, gates, rate-limits, routes. Returns a `Response`. |
-| `createScimConnection(serviceRole, db, input)` | `scim-connections.server.ts` | `requireEntitlement`. Makes the token. Returns the raw token once. |
-| `updateScimConnection(serviceRole, db, input)` | `scim-connections.server.ts` | `requireEntitlement`. Saves the IdP, default type and location. Reconciles. |
-| `regenerateScimToken(serviceRole, input)` | `scim-connections.server.ts` | `requireEntitlement`. Replaces the hash. Returns the raw token once. |
-| `turnOffScimConnection(serviceRole, input)` | `scim-connections.server.ts` | Clears the token; keeps the connection row, the SCIM people and groups and the mappings. Not gated, so a downgraded company can still turn SCIM off. |
-| `getScimConnection(client, companyId)` | `scim-connections.server.ts` | The card's read: connection, groups with member counts, active count. |
-| `saveScimGroupMappings(serviceRole, db, input)` | `scim-connections.server.ts` | `requireEntitlement`. Takes every group's type in list order, numbers the mapped groups by that order and writes the changed rows in one transaction. Reconciles once. |
+| `createScimConnection(serviceRole, db, input)` | `scim/connections.server.ts` | `requireEntitlement`. Makes the token. Returns the raw token once. |
+| `updateScimConnection(serviceRole, db, input)` | `scim/connections.server.ts` | `requireEntitlement`. Saves the IdP, default type and location. Reconciles. |
+| `regenerateScimToken(serviceRole, input)` | `scim/connections.server.ts` | `requireEntitlement`. Replaces the hash. Returns the raw token once. |
+| `turnOffScimConnection(serviceRole, input)` | `scim/connections.server.ts` | Clears the token; keeps the connection row, the SCIM people and groups and the mappings. Not gated, so a downgraded company can still turn SCIM off. |
+| `getScimConnection(client, companyId)` | `scim/connections.server.ts` | The card's read: connection, groups with member counts, active count. |
+| `saveScimGroupMappings(serviceRole, db, input)` | `scim/connections.server.ts` | `requireEntitlement`. Takes every group's type in list order, numbers the mapped groups by that order and writes the changed rows in one transaction. Reconciles once. |
 
 **Pure modules (unit-tested, no I/O):**
 
-- `scim-protocol.ts`: `parseScimFilter`, `normalizePatchOperations`,
+- `scim/protocol.ts`: `parseScimFilter`, `normalizePatchOperations`,
   `applyUserPatch`, `applyGroupMemberPatch`, `toScimUser`, `toScimGroup`,
   `scimListResponse`, `scimError`, the discovery documents.
-- `scim-mapping.ts`: `pickEmployeeType(memberships, defaultTypeId)`,
+- `scim/mapping.ts`: `pickEmployeeType(memberships, defaultTypeId)`,
   `replaceCompanyGrants(current, typeGrants, companyId)`,
   `primaryEmail(resource)`.
 
@@ -357,9 +357,9 @@ SAML SSO. SCIM copies its shape file for file:
 
 | SAML SSO | SCIM |
 |---|---|
-| `packages/ee/src/sso/connections.server.ts` | `packages/ee/src/sso/scim-connections.server.ts` |
-| `packages/ee/src/sso/provisioning.server.ts` (`migrateUserToSso`: user, employee, membership, permissions in one transaction) | `packages/ee/src/sso/scim.server.ts` (create and reactivate) |
-| `@carbon/ee/sso.server` → `sso/index.server.ts` | `@carbon/ee/scim.server` → `sso/scim-index.server.ts` |
+| `packages/ee/src/sso/connections.server.ts` | `packages/ee/src/scim/connections.server.ts` |
+| `packages/ee/src/sso/provisioning.server.ts` (`migrateUserToSso`: user, employee, membership, permissions in one transaction) | `packages/ee/src/scim/engine.server.ts` (create and reactivate) |
+| `@carbon/ee/sso.server` → `sso/index.server.ts` | `@carbon/ee/scim.server` → `scim/index.server.ts` |
 | `x+/settings+/sso.tsx` (action-only, intents) | `x+/settings+/scim.tsx` |
 | Single Sign-On section in `security.tsx` | Provisioning section in `security.tsx`, body in `ScimProvisioning.ee.tsx` |
 | `ssoConnectionValidator` in `settings.models.ts` | `scimConnectionValidator`, `scimGroupMappingsValidator` |
@@ -478,3 +478,4 @@ Audit log: the table, the drawer and the CSV export show
 - 2026-11-12 (review fixes): (1) Deleting or unmapping the last mapped group moved no one, so its members kept that group's type and grants. They now move to the default type (`mappingRemoved` on `reconcileEmployeeTypes`). (2) A group create writes the group and its members in one transaction; before, a failed member write left a bare group that answered the IdP's retry with 409. (3) The expanded audit row shows the SCIM label in Actor ID, not "System".
 - 2026-11-14 (UI): Group mappings show mapped groups in the order they win, with up/down arrows in place of the Priority field; a newly mapped group goes last. Type and order changes stay unsaved until "Save changes" (`saveScimGroupMappings`, one transaction for the whole list); "Cancel" drops them. The `priority` column and the precedence rule are unchanged. The connection card's description links to the docs. The connection no longer stores the identity provider (no `identityProvider` column, no `scimIdentityProvider` enum): it only named the audit actor, and every identity provider is handled the same way. Audit entries read "SCIM". The Group Mappings card is hidden until the identity provider sends a group.
 - 2026-11-14 (turn off): "Turn off" no longer deletes the connection. It clears the token (`tokenHash` and `tokenPreview` are nullable), so every `/scim/v2` request is refused, and keeps the SCIM people, groups and mappings. A new setup resumes the same row with a new token and new defaults (`createScimConnection`). Before, a turn-off deleted the SCIM ids the IdP had stored, so after a new setup Okta's updates answered 404 and its group pushes dropped every member.
+- 2026-11-14 (layout): The engine moved from `packages/ee/src/sso/scim*.ts` to its own folder, `packages/ee/src/scim/` (`protocol.ts`, `mapping.ts`, `engine.server.ts`, `connections.server.ts`, `index.server.ts`). SCIM is its own feature with its own plan gate; it runs with SSO off.

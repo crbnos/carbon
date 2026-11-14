@@ -4,7 +4,7 @@
 
 /**
  * The two decisions SCIM makes about a person's access, kept pure so
- * `scim-mapping.test.ts` pins them: which employee type the person's IdP
+ * `mapping.test.ts` pins them: which employee type the person's IdP
  * groups give, and how that type's grants replace this company's slice of the
  * person's `userPermission` row. The row is global (`{ "<module>_<action>":
  * [companyId, …] }`), so only this company's id may ever move.

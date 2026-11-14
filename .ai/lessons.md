@@ -4980,7 +4980,7 @@ redirects (purchase orders, and the other records with a `/details` index).
 
 **Rule:** Recognize an out-of-range page by `result.status === 416` (keep the code as a fallback), and build the count read from a query factory, not the builder you already ranged.
 
-**Applies to:** any supabase-js read that pages by offset with `.range()` (`packages/ee/src/sso/scim.server.ts` `isOffsetPastEnd`).
+**Applies to:** any supabase-js read that pages by offset with `.range()` (`packages/ee/src/scim/engine.server.ts` `isOffsetPastEnd`).
 
 ## PostgREST `ilike` reads `*` as a wildcard
 
@@ -5000,4 +5000,4 @@ redirects (purchase orders, and the other records with a `/details` index).
 
 **Rule:** When a caller retries only on failure (an IdP, a webhook sender), store the new state after the side effects that grant or remove access succeed. Answer 5xx when one of them fails, so the retry runs them again. Each step must be idempotent.
 
-**Applies to:** `packages/ee/src/sso/scim.server.ts` and any inbound sync or webhook handler that changes access.
+**Applies to:** `packages/ee/src/scim/engine.server.ts` and any inbound sync or webhook handler that changes access.

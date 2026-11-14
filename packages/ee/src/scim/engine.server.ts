@@ -41,18 +41,18 @@ import { EntitlementError, requireEntitlement } from "../entitlements.server";
 import {
   getSsoConnection,
   getSsoConnectionByDomain
-} from "./connections.server";
-import { isSsoEnabled } from "./gate";
+} from "../sso/connections.server";
+import { isSsoEnabled } from "../sso/gate";
 import {
   emailDomain,
   seedSsoIdentityForUser,
   uncoveredSsoDomainError
-} from "./provisioning.server";
+} from "../sso/provisioning.server";
 import {
   pickEmployeeType,
   replaceCompanyGrants,
   typeGrantsFor
-} from "./scim-mapping";
+} from "./mapping";
 import {
   applyGroupPatch,
   applyUserPatch,
@@ -74,7 +74,7 @@ import {
   serviceProviderConfig,
   toScimGroup,
   toScimUser
-} from "./scim-protocol";
+} from "./protocol";
 
 const logger = getLogger("ee", "scim");
 

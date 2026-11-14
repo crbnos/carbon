@@ -22,12 +22,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { customAlphabet } from "nanoid";
 import { requireEntitlement } from "../entitlements.server";
-import { reconcileEmployeeTypes } from "./scim.server";
+import { reconcileEmployeeTypes } from "./engine.server";
 import {
   compareGroupPrecedence,
   type GroupMappingChoice,
   planGroupMappingSave
-} from "./scim-mapping";
+} from "./mapping";
 
 const logger = getLogger("ee", "scim-connections");
 

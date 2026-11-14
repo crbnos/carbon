@@ -6,7 +6,7 @@
  * The SCIM 2.0 wire format (RFC 7643 / 7644) for Carbon's provisioning
  * endpoint: filters, PATCH operations, resource bodies and responses. Pure — no
  * I/O — so every request shape the identity providers send is pinned by
- * `scim-protocol.test.ts`.
+ * `protocol.test.ts`.
  *
  * The readers are lenient on purpose. Okta's custom (AIW) apps send PUT for
  * every update; Entra sends PATCH with `op` capitalised, booleans as the

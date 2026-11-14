@@ -9,7 +9,7 @@ import {
   replaceCompanyGrants,
   stripCompanyGrants,
   typeGrantsFor
-} from "./scim-mapping";
+} from "./mapping";
 
 describe("pickEmployeeType", () => {
   it("picks the mapped group with the lowest priority", () => {

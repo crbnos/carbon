@@ -1,6 +1,6 @@
 ---
 paths:
-  - "packages/ee/src/sso/scim*"
+  - "packages/ee/src/scim/**"
   - "apps/erp/app/routes/scim+/**"
   - "apps/erp/app/routes/x+/settings+/scim.tsx"
   - "apps/erp/app/modules/settings/ui/Security/ScimProvisioning.ee.tsx"
@@ -18,11 +18,11 @@ licences, test tools): `.ai/research/scim-provisioning.md`. User docs:
 
 | File | Holds |
 |---|---|
-| `packages/ee/src/sso/scim-protocol.ts` | Pure wire format: `parseScimFilter`, `applyUserPatch`, `applyGroupPatch`, `readUserResource`, `matchScimRoute`, resource bodies, discovery documents |
-| `packages/ee/src/sso/scim-mapping.ts` | Pure access decisions: `pickEmployeeType`, `typeGrantsFor`, `replaceCompanyGrants` |
-| `packages/ee/src/sso/scim.server.ts` | `handleScimRequest` (token → `scimConnection`, `requireEntitlement(…, "SCIM")`, rate limit, routing), the Users and Groups handlers, `reconcileEmployeeTypes` |
-| `packages/ee/src/sso/scim-connections.server.ts` | The settings card's reads and writes; every write but `turnOffScimConnection` embeds `requireEntitlement` |
-| `@carbon/ee/scim.server` | `sso/scim-index.server.ts`, the export of the two files above |
+| `packages/ee/src/scim/protocol.ts` | Pure wire format: `parseScimFilter`, `applyUserPatch`, `applyGroupPatch`, `readUserResource`, `matchScimRoute`, resource bodies, discovery documents |
+| `packages/ee/src/scim/mapping.ts` | Pure access decisions: `pickEmployeeType`, `typeGrantsFor`, `replaceCompanyGrants` |
+| `packages/ee/src/scim/engine.server.ts` | `handleScimRequest` (token → `scimConnection`, `requireEntitlement(…, "SCIM")`, rate limit, routing), the Users and Groups handlers, `reconcileEmployeeTypes` |
+| `packages/ee/src/scim/connections.server.ts` | The settings card's reads and writes; every write but `turnOffScimConnection` embeds `requireEntitlement` |
+| `@carbon/ee/scim.server` | `scim/index.server.ts`, the export of the two files above |
 | `apps/erp/app/routes/scim+/v2+/$.ts` | Loader and action both hand the request to `handleScimRequest` |
 | `apps/erp/app/routes/x+/settings+/scim.tsx` | Action-only, like `sso.tsx`: intents `create`, `update`, `regenerate`, `saveGroupMappings`, `delete` |
 | `ScimProvisioning.ee.tsx` | The Provisioning section of Settings → Security |
@@ -114,7 +114,7 @@ with the service role and stamps `createdBy` / `updatedBy` with
 
 ## Testing
 
-`scim-protocol.test.ts` and `scim-mapping.test.ts` pin the parsers and the
+`scim/protocol.test.ts` and `scim/mapping.test.ts` pin the parsers and the
 decisions. The live flows (Okta and Entra sequences, sessions, API keys, a
 second company) were run against a local stack with curl; the steps and
 results are in the run log `.ai/runs/2026-10-30-scim-provisioning.md`. Okta's SCIM 2.0 Spec
