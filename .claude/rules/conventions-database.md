@@ -173,3 +173,7 @@ Validate in route actions with `validator(schema).validate(formData)` from
       a discriminator CHECK): if the demo datasets seed the table, add it to `PARENT_CHECK_TABLES`
       in `packages/database/src/datasets/wipe.ts`. Re-applying demo data nulls every nullable FK
       into a table it clears, which trips that CHECK (`pnpm db:check:datasets` catches it)
+- [ ] A unique index that counts a NULL foreign key as a value (a partial index on
+      `fk IS NULL`, `COALESCE(fk, '')`, or `NULLS NOT DISTINCT`): add the table to
+      `UNIQUE_INDEX_TABLES` in the same file, whether or not the datasets seed it. Nulling the
+      FK makes distinct rows collide

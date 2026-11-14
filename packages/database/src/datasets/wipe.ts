@@ -123,6 +123,26 @@ const PARENT_CHECK_TABLES = [
   "shipmentFixedAssetLine"
 ];
 
+// Tables with a unique index that counts a NULL foreign key as a value (a
+// partial index on `fk IS NULL`, COALESCE(fk, ''), or NULLS NOT DISTINCT), so
+// the FK-nulling pass makes distinct rows equal and aborts on the index. A new
+// table with an index like that goes here, whether a dataset seeds it or only
+// the app writes it.
+const UNIQUE_INDEX_TABLES = [
+  // customerItemPriceOverride_all_item_uq: one all-customers override per item.
+  // Nulling customerId and customerTypeId makes every override an
+  // all-customers one, so an item with two overrides of any scope collides.
+  // Its breaks cascade.
+  "customerItemPriceOverride",
+  // *_person_day_key: one row per person, day and COALESCE(shiftId, ''), so
+  // nulling shiftId collides a person's two shifts on one day.
+  "peopleAssignment",
+  "peopleAbsence",
+  // jobMaterialScrap_idempotencyKey_key is NULLS NOT DISTINCT over
+  // trackedEntityId, so nulling it collides the lots of one scrap.
+  "jobMaterialScrap"
+];
+
 type ForeignKey = {
   child: string;
   parent: string;
@@ -409,11 +429,14 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   // parent is being deleted — would violate the CHECK and abort the wipe.
   // Deleting outright is safe for a dataset apply: MRP regenerates these on
   // its next run (the planner's dismissals and assignments on planningAction
-  // go with the rest of the company's data, as the apply intends).
+  // go with the rest of the company's data, as the apply intends). The other
+  // lists go first for the same reason: a CHECK or a unique index the nulling
+  // pass would break.
   for (const t of [
     ...TRANSIENT_MRP_TABLES,
     ...MODEL_SLIDE_TABLES,
-    ...PARENT_CHECK_TABLES
+    ...PARENT_CHECK_TABLES,
+    ...UNIQUE_INDEX_TABLES
   ]) {
     if (deleteSet.has(t)) {
       await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [

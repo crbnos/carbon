@@ -29,6 +29,7 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
   also what triggers those scripts to deploy (`.github/workflows/supabase.yml` only fires on
   `packages/database/supabase/**`).
 - A new table whose CHECK needs one of several nullable FKs set (an invoice OR a memo, `imagePath` OR `modelUploadId`) and that the demo datasets seed goes in `PARENT_CHECK_TABLES` in `src/datasets/wipe.ts`. The wipe before a re-apply nulls every nullable FK into a table it clears, so that CHECK aborts the whole apply ("new row … violates check constraint"). `pnpm db:check:datasets` re-applies each dataset over itself to catch exactly this.
+- A new unique index that counts a NULL foreign key as a value (a partial index on `fk IS NULL`, `COALESCE(fk, '')`, or `NULLS NOT DISTINCT`) puts its table in `UNIQUE_INDEX_TABLES` in the same file, whether the demo datasets seed it or only the app writes it. The same nulling makes distinct rows equal ("duplicate key value violates unique constraint"): two price overrides on one item become two all-customers overrides. A plain unique index needs nothing, because Postgres treats two NULLs as distinct.
 - Use `fetchAllFromTable` for paginated reads that exceed the 1000-row Supabase limit. It pages
   without `count: "exact"` (a `COUNT(*) OVER ()` per page is not free) and fetches the pages past
   the first concurrently. `fetchAllRecords` is the same pager over a query FACTORY (`() => builder`)
