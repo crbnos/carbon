@@ -6371,6 +6371,9 @@ msgstr "Annuler la commande"
 msgid "Cancel Picking List"
 msgstr "Annuler la liste de prélèvement"
 
+msgid "Cancel planned order"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "Annuler le bon de commande"
 
@@ -9807,6 +9810,9 @@ msgstr "Diminuer {fieldLabel}"
 msgid "Decrease job {target} to {amount}"
 msgstr "Réduire l'ordre de fabrication {target} à {amount}"
 
+msgid "Decrease planned order to {amount}"
+msgstr ""
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Réduire le bon de commande {target} à {amount}"
 
@@ -9974,6 +9980,9 @@ msgstr "Reporter"
 
 msgid "Defer job {target} to {date}"
 msgstr "Reporter l'ordre de fabrication {target} au {date}"
+
+msgid "Defer planned order to {date}"
+msgstr ""
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "Reporter le bon de commande {target} au {date}"
@@ -12838,6 +12847,9 @@ msgstr "Avancer"
 msgid "Expedite job {target} to {date}"
 msgstr "Accélérer l'ordre de fabrication {target} au {date}"
 
+msgid "Expedite planned order to {date}"
+msgstr ""
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "Accélérer le bon de commande {target} au {date}"
 
@@ -15377,6 +15389,9 @@ msgstr "Augmenter {fieldLabel}"
 
 msgid "Increase job {target} to {amount}"
 msgstr "Augmenter l'ordre de fabrication {target} à {amount}"
+
+msgid "Increase planned order to {amount}"
+msgstr ""
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "Augmenter le bon de commande {target} à {amount}"

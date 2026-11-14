@@ -6371,6 +6371,9 @@ msgstr "주문 취소"
 msgid "Cancel Picking List"
 msgstr "피킹 리스트 취소"
 
+msgid "Cancel planned order"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "발주서 취소"
 
@@ -9807,6 +9810,9 @@ msgstr "{fieldLabel} 감소"
 msgid "Decrease job {target} to {amount}"
 msgstr "작업 지시 {target}을(를) {amount}로 감소"
 
+msgid "Decrease planned order to {amount}"
+msgstr ""
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "발주서 {target}을(를) {amount}로 감소"
 
@@ -9974,6 +9980,9 @@ msgstr "연기"
 
 msgid "Defer job {target} to {date}"
 msgstr "작업 지시 {target}을(를) {date}로 연기"
+
+msgid "Defer planned order to {date}"
+msgstr ""
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "발주서 {target}을(를) {date}로 연기"
@@ -12838,6 +12847,9 @@ msgstr "앞당기기"
 msgid "Expedite job {target} to {date}"
 msgstr "작업 지시 {target}을(를) {date}로 앞당기기"
 
+msgid "Expedite planned order to {date}"
+msgstr ""
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "발주서 {target}을(를) {date}로 앞당기기"
 
@@ -15377,6 +15389,9 @@ msgstr "{fieldLabel} 증가"
 
 msgid "Increase job {target} to {amount}"
 msgstr "작업 지시 {target}을(를) {amount}로 증가"
+
+msgid "Increase planned order to {amount}"
+msgstr ""
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "발주서 {target}을(를) {amount}로 증가"

@@ -59,9 +59,14 @@ import { type Kysely, sql } from "kysely";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import {
   buildOpenSupplyOrders,
-  itemLocationSegmentKey
+  itemLocationSegmentKey,
+  type OpenJobDetails
 } from "./open-supply-orders.ts";
 import { groupByProjectOf, planningSegmentOf } from "./plan-company.ts";
+import type {
+  PlannedOrderChangeAction,
+  PlannedOrderSignal
+} from "./planned-orders.ts";
 import type {
   ChangeCandidate,
   OpenSupplyOrder,
@@ -849,6 +854,75 @@ export async function loadSegmentOnHand(
   return onHand;
 }
 
+/**
+ * Takes the company's planning lock for the rest of the caller's transaction.
+ * Every writer of planned orders and planning actions takes it first: the
+ * MRP write phase, `generatePlanningActions`, and the ERP's settle and convert
+ * (`settleNewSupplyPlanningActions`). It serialises them per company.
+ */
+export async function lockCompanyPlanning(
+  trx: Kysely<DB>,
+  companyId: string
+): Promise<void> {
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`planning-actions:${companyId}`}, 0))`.execute(
+    trx
+  );
+}
+
+/**
+ * What the open-supply views do not expose: each open job's status and
+ * good-unit quantity, and the conversion factor of each open PO line bought
+ * in a unit other than the inventory unit. One read each of the company's
+ * open documents (the views' own filters), no id list.
+ */
+export async function loadOpenSupplyDetails(
+  db: Kysely<DB>,
+  companyId: string
+): Promise<{
+  jobDetailsById: Map<string, OpenJobDetails>;
+  conversionFactorByLineId: Map<string, number>;
+}> {
+  const [openJobRows, poLineFactorRows] = await Promise.all([
+    db
+      .selectFrom("job")
+      .select(["id", "status", "quantity", "quantityReceivedToInventory"])
+      .where("companyId", "=", companyId)
+      .where("status", "in", ["Planned", "Ready", "In Progress", "Paused"])
+      .execute(),
+    // Only the lines bought in a unit other than the inventory unit: every
+    // other line's factor is 1, the default.
+    db
+      .selectFrom("purchaseOrderLine as pol")
+      .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
+      .select(["pol.id", "pol.conversionFactor"])
+      .where("pol.companyId", "=", companyId)
+      .where("po.status", "in", [
+        "To Receive",
+        "To Receive and Invoice",
+        "Planned"
+      ])
+      .where("pol.receivedComplete", "=", false)
+      .where("pol.conversionFactor", "!=", 1)
+      .execute()
+  ]);
+
+  const jobDetailsById = new Map<string, OpenJobDetails>();
+  for (const row of openJobRows) {
+    if (!row.status) continue;
+    jobDetailsById.set(row.id, {
+      status: row.status,
+      quantity: Number(row.quantity) || 0,
+      quantityReceivedToInventory: Number(row.quantityReceivedToInventory) || 0
+    });
+  }
+  return {
+    jobDetailsById,
+    conversionFactorByLineId: new Map(
+      poLineFactorRows.map((row) => [row.id, Number(row.conversionFactor)])
+    )
+  };
+}
+
 /** What one project segment takes from common stock in one period. */
 export type CommonSurplusDraw = {
   itemId: string;
@@ -876,6 +950,13 @@ export type DeriveRowActionsInput = {
   draws: { periodId: string; quantity: number }[];
   toleranceDays: number;
   todayDate: string;
+  /**
+   * MRP v2: the row's new supply as the engine sized it with planned orders
+   * (`planCompany`'s `newSupplyByRow`): each new Order / Make and each
+   * Increase. When set it replaces the sizing of the RPC row; the change
+   * actions on the open jobs and PO lines still come from the RPC row.
+   */
+  engineSupply?: ChangeCandidate[];
 };
 
 /**
@@ -910,7 +991,7 @@ export function deriveRowActions(
 
   const drawByPeriod = drawsByPeriod(isProjectSegment ? input.draws : []);
 
-  const { changeActions, newSupply: merged } = sizeRowSupply({
+  const { changeActions, newSupply: rpcSupply } = sizeRowSupply({
     kind,
     isProjectSegment,
     supersessionMode: row.supersessionMode,
@@ -930,6 +1011,9 @@ export function deriveRowActions(
     toleranceDays,
     todayDate
   });
+  const merged = input.engineSupply
+    ? engineNewSupply(input.engineSupply, changeActions)
+    : rpcSupply;
 
   // Lot-size splitting can emit several new-supply suggestions in one
   // period; persist ONE action per (type, period) with the summed quantity
@@ -1012,6 +1096,143 @@ export function deriveRowActions(
   ].map((action) => ({ ...action, planningSegmentId: segmentId }));
 }
 
+/**
+ * The engine's new supply for a row, as actions. An Order or Make stands for
+ * every planned order of its week, so it names none (`plannedOrderKey` is
+ * dropped). One action per order: an Increase on an order that a change
+ * action of the row already targets is left out, as `convertOrdersToIncreases`
+ * leaves it out when it sizes the row itself.
+ */
+function engineNewSupply(
+  engineSupply: ChangeCandidate[],
+  changeActions: ChangeCandidate[]
+): ChangeCandidate[] {
+  const targeted = new Set(changeActions.map((a) => supplyTarget(a) ?? ""));
+  return engineSupply.flatMap(({ plannedOrderKey: _key, ...candidate }) => {
+    const target = supplyTarget(candidate);
+    if (target && targeted.has(target)) return [];
+    return [candidate];
+  });
+}
+
+/** Which action wins on one order: Cancel, then a date, then a quantity. */
+const CHANGE_PRECEDENCE: Partial<Record<PlanningActionType, number>> = {
+  Cancel: 0,
+  Expedite: 1,
+  Defer: 1,
+  Increase: 2,
+  Decrease: 2
+};
+
+/**
+ * MRP v2: the actions on planned orders that no planning row carries. They
+ * are raised whether or not the item has a planning RPC row this run (a
+ * held planned order with no demand left gets its Cancel).
+ *
+ * 1. Each change action the engine raised on a held planned order
+ *    (Expedite, Defer, Decrease, Cancel). Only a held order gets one.
+ * 2. An Expedite for each new planned order the time fence moved, to the
+ *    date it is needed (`expediteTo`; never before today, as
+ *    `deriveChangeActions` dates a need). Its quantity is the order's.
+ *
+ * Each planned order gets one action: the precedence of
+ * `deriveChangeActions` (Cancel, then Expedite / Defer, then Increase /
+ * Decrease) decides.
+ */
+export function plannedOrderActions(args: {
+  changeActions: PlannedOrderChangeAction[];
+  signals: PlannedOrderSignal[];
+  /** `planCompany`'s `newSupplyByRow`: the signalled orders' quantities. */
+  newSupplyByRow: ReadonlyMap<string, ChangeCandidate[]>;
+  /** `plannedOrderNaturalKey` -> `plannedOrder.id`, as written this run. */
+  plannedOrderIdByKey: ReadonlyMap<string, string>;
+  /** The planned orders held this run. */
+  heldPlannedOrderIds: ReadonlySet<string>;
+  periods: { id: string; startDate: string }[];
+  todayDate: string;
+}): Omit<PlanningActionCandidate, "assignee">[] {
+  const { periods, todayDate } = args;
+  const periodFor = (dateIso: string) => {
+    let match = periods[0];
+    for (const p of periods) {
+      if (daysBetween(p.startDate, dateIso) <= 0) match = p;
+      else break;
+    }
+    return match;
+  };
+
+  const actions: Omit<PlanningActionCandidate, "assignee">[] = [];
+  for (const action of args.changeActions) {
+    if (!action.plannedOrderId) continue;
+    if (!args.heldPlannedOrderIds.has(action.plannedOrderId)) continue;
+    actions.push({ ...action, requiresManualAction: false });
+  }
+
+  const orderByKey = new Map<string, ChangeCandidate>();
+  for (const supply of args.newSupplyByRow.values()) {
+    for (const candidate of supply) {
+      if (candidate.plannedOrderKey) {
+        orderByKey.set(candidate.plannedOrderKey, candidate);
+      }
+    }
+  }
+  for (const signal of args.signals) {
+    if (!signal.expediteTo) continue;
+    const plannedOrderId = args.plannedOrderIdByKey.get(signal.naturalKey);
+    const order = orderByKey.get(signal.naturalKey);
+    const period = periodFor(signal.expediteTo);
+    if (!plannedOrderId || !order || !period) continue;
+    const [itemId, locationId, planningSegmentId] =
+      signal.naturalKey.split(KEY_SEP);
+    if (!itemId || !locationId) continue;
+    const suggestedDate = laterDate(signal.expediteTo, todayDate);
+    actions.push({
+      itemId,
+      locationId,
+      planningSegmentId: planningSegmentId ?? COMMON_SEGMENT,
+      type: "Expedite",
+      periodId: period.id,
+      suggestedQuantity: round(order.suggestedQuantity),
+      suggestedDate,
+      horizonDate: earlierDate(order.suggestedDate, suggestedDate),
+      latestOrderDate: null,
+      isASAP: daysBetween(signal.expediteTo, todayDate) < 0,
+      purchaseOrderLineId: null,
+      jobId: null,
+      plannedOrderId,
+      requiresManualAction: false,
+      supplierId: order.supplierId,
+      policyName: null,
+      reason: `Needed ${daysBetween(order.suggestedDate, suggestedDate)} days earlier than the planning time fence allows`,
+      triggerValues: null
+    });
+  }
+  return actions;
+}
+
+/**
+ * One action per planned order across all of a run's candidates, by
+ * `CHANGE_PRECEDENCE`; the first of equal rank stays. Candidates on no
+ * planned order pass through.
+ */
+export function onePerPlannedOrder<
+  T extends Pick<PlanningActionCandidate, "type" | "plannedOrderId">
+>(candidates: T[]): T[] {
+  const best = new Map<string, T>();
+  for (const candidate of candidates) {
+    if (!candidate.plannedOrderId) continue;
+    const current = best.get(candidate.plannedOrderId);
+    const rank = CHANGE_PRECEDENCE[candidate.type] ?? 3;
+    const currentRank = current ? (CHANGE_PRECEDENCE[current.type] ?? 3) : 4;
+    if (rank < currentRank) best.set(candidate.plannedOrderId, candidate);
+  }
+  return candidates.filter(
+    (candidate) =>
+      !candidate.plannedOrderId ||
+      best.get(candidate.plannedOrderId) === candidate
+  );
+}
+
 export async function generatePlanningActions(
   client: SupabaseClient<Database>,
   db: Kysely<DB>,
@@ -1042,6 +1263,20 @@ export async function generatePlanningActions(
       priorityRuleByGroup: Record<string, PegPriorityRule>;
       priorityByProject: Record<string, number>;
     };
+    /**
+     * MRP v2: the engine's new supply per common row
+     * (`itemLocationSegmentKey`). A row present here takes its Order, Make
+     * and Increase actions from it instead of sizing the RPC row again.
+     */
+    newSupplyByRow?: ReadonlyMap<string, ChangeCandidate[]>;
+    /** MRP v2: the engine's change actions on held planned orders. */
+    plannedOrderChangeActions?: PlannedOrderChangeAction[];
+    /** MRP v2: the new planned orders the time fence moved. */
+    plannedOrderSignals?: PlannedOrderSignal[];
+    /** MRP v2: `plannedOrderNaturalKey` -> `plannedOrder.id`, as written. */
+    plannedOrderIdByKey?: ReadonlyMap<string, string>;
+    /** MRP v2: the Planned rows held this run (inside the time fence). */
+    heldPlannedOrderIds?: string[];
   }
 ): Promise<{ inserted: number; updated: number; deleted: number }> {
   const { companyId, userId } = args;
@@ -1124,8 +1359,7 @@ export async function generatePlanningActions(
     demandForecasts,
     demandProjections,
     onHandByItemLocation,
-    openJobRows,
-    poLineFactorRows
+    { jobDetailsById, conversionFactorByLineId }
   ] = await Promise.all([
     db
       .selectFrom("demandActual")
@@ -1161,27 +1395,7 @@ export async function generatePlanningActions(
       .where("companyId", "=", companyId)
       .execute(),
     loadSegmentOnHand(db, companyId, groupByProjectOf(args.planningGroups)),
-    db
-      .selectFrom("job")
-      .select(["id", "status", "quantity", "quantityReceivedToInventory"])
-      .where("companyId", "=", companyId)
-      .where("status", "in", ["Planned", "Ready", "In Progress", "Paused"])
-      .execute(),
-    // Only the lines bought in a unit other than the inventory unit: every
-    // other line's factor is 1, the default below.
-    db
-      .selectFrom("purchaseOrderLine as pol")
-      .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
-      .select(["pol.id", "pol.conversionFactor"])
-      .where("pol.companyId", "=", companyId)
-      .where("po.status", "in", [
-        "To Receive",
-        "To Receive and Invoice",
-        "Planned"
-      ])
-      .where("pol.receivedComplete", "=", false)
-      .where("pol.conversionFactor", "!=", 1)
-      .execute()
+    loadOpenSupplyDetails(db, companyId)
   ]);
 
   const demandByItemLocation = new Map<string, Map<string, number>>();
@@ -1238,31 +1452,10 @@ export async function generatePlanningActions(
     );
   }
 
-  const jobById = new Map<
-    string,
-    {
-      status: Database["public"]["Enums"]["jobStatus"];
-      quantity: number;
-      quantityReceivedToInventory: number;
-    }
-  >();
-  for (const row of openJobRows) {
-    if (!row.status) continue;
-    jobById.set(row.id, {
-      status: row.status,
-      quantity: Number(row.quantity) || 0,
-      quantityReceivedToInventory: Number(row.quantityReceivedToInventory) || 0
-    });
-  }
-
-  const conversionFactorByLineId = new Map(
-    poLineFactorRows.map((row) => [row.id, Number(row.conversionFactor)])
-  );
-
   const openOrdersByItemLocation = buildOpenSupplyOrders({
     poLineRows,
     jobRows,
-    jobDetailsById: jobById,
+    jobDetailsById,
     conversionFactorByLineId,
     todayDate
   });
@@ -1340,7 +1533,8 @@ export async function generatePlanningActions(
         onHand: onHandByItemLocation.get(key) ?? 0,
         draws: drawsByItemLocation.get(key) ?? [],
         toleranceDays,
-        todayDate
+        todayDate,
+        engineSupply: args.newSupplyByRow?.get(key)
       });
 
       leadTimeByItemLocation.set(
@@ -1367,6 +1561,30 @@ export async function generatePlanningActions(
 
     for (const row of purchasing.data ?? []) process(row, "Order");
     for (const row of production.data ?? []) process(row, "Make");
+  }
+
+  // ── MRP v2: the actions on planned orders, with or without an RPC row
+  if (args.plannedOrderChangeActions || args.plannedOrderSignals) {
+    for (const action of plannedOrderActions({
+      changeActions: args.plannedOrderChangeActions ?? [],
+      signals: args.plannedOrderSignals ?? [],
+      newSupplyByRow: args.newSupplyByRow ?? new Map(),
+      plannedOrderIdByKey: args.plannedOrderIdByKey ?? new Map(),
+      heldPlannedOrderIds: new Set(args.heldPlannedOrderIds ?? []),
+      periods,
+      todayDate
+    })) {
+      if (!periodById.has(action.periodId)) continue;
+      candidates.push({
+        ...action,
+        suggestedQuantity: round(action.suggestedQuantity),
+        assignee: resolveAssignee(
+          action.itemId,
+          action.locationId,
+          action.planningSegmentId ?? COMMON_SEGMENT
+        )
+      });
+    }
   }
 
   // ── Projects Phase 3: member Transfers and Borrows inside each planning
@@ -1398,9 +1616,7 @@ export async function generatePlanningActions(
   // which rolls back the whole write. Under the lock the second run reads
   // the first run's rows and updates them in place instead.
   const diff = await db.transaction().execute(async (trx) => {
-    await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`planning-actions:${companyId}`}, 0))`.execute(
-      trx
-    );
+    await lockCompanyPlanning(trx, companyId);
 
     const existingRows = await trx
       .selectFrom("planningAction")
@@ -1449,7 +1665,7 @@ export async function generatePlanningActions(
 
     const diff = diffPlanningActions({
       existing,
-      candidates,
+      candidates: onePerPlannedOrder(candidates),
       periods,
       toleranceDays
     });

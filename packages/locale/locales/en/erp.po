@@ -6371,6 +6371,9 @@ msgstr "Cancel Order"
 msgid "Cancel Picking List"
 msgstr "Cancel Picking List"
 
+msgid "Cancel planned order"
+msgstr "Cancel planned order"
+
 msgid "Cancel Purchase Order"
 msgstr "Cancel Purchase Order"
 
@@ -9807,6 +9810,9 @@ msgstr "Decrease {fieldLabel}"
 msgid "Decrease job {target} to {amount}"
 msgstr "Decrease job {target} to {amount}"
 
+msgid "Decrease planned order to {amount}"
+msgstr "Decrease planned order to {amount}"
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Decrease purchase order {target} to {amount}"
 
@@ -9974,6 +9980,9 @@ msgstr "Defer"
 
 msgid "Defer job {target} to {date}"
 msgstr "Defer job {target} to {date}"
+
+msgid "Defer planned order to {date}"
+msgstr "Defer planned order to {date}"
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "Defer purchase order {target} to {date}"
@@ -12838,6 +12847,9 @@ msgstr "Expedite"
 msgid "Expedite job {target} to {date}"
 msgstr "Expedite job {target} to {date}"
 
+msgid "Expedite planned order to {date}"
+msgstr "Expedite planned order to {date}"
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "Expedite purchase order {target} to {date}"
 
@@ -15377,6 +15389,9 @@ msgstr "Increase {fieldLabel}"
 
 msgid "Increase job {target} to {amount}"
 msgstr "Increase job {target} to {amount}"
+
+msgid "Increase planned order to {amount}"
+msgstr "Increase planned order to {amount}"
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "Increase purchase order {target} to {amount}"

@@ -6371,6 +6371,9 @@ msgstr "ऑर्डर रद्द करें"
 msgid "Cancel Picking List"
 msgstr "पिकिंग सूची रद्द करें"
 
+msgid "Cancel planned order"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "क्रय आदेश रद्द करें"
 
@@ -9807,6 +9810,9 @@ msgstr "{fieldLabel} घटाएँ"
 msgid "Decrease job {target} to {amount}"
 msgstr "जॉब {target} को {amount} तक घटाएं"
 
+msgid "Decrease planned order to {amount}"
+msgstr ""
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "क्रय आदेश {target} को {amount} तक घटाएं"
 
@@ -9974,6 +9980,9 @@ msgstr "स्थगित करें"
 
 msgid "Defer job {target} to {date}"
 msgstr "जॉब {target} को {date} तक स्थगित करें"
+
+msgid "Defer planned order to {date}"
+msgstr ""
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "क्रय आदेश {target} को {date} तक स्थगित करें"
@@ -12838,6 +12847,9 @@ msgstr "तेज़ी से करें"
 msgid "Expedite job {target} to {date}"
 msgstr "जॉब {target} को {date} तक तेज़ करें"
 
+msgid "Expedite planned order to {date}"
+msgstr ""
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "क्रय आदेश {target} को {date} तक तेज़ करें"
 
@@ -15377,6 +15389,9 @@ msgstr "{fieldLabel} बढ़ाएँ"
 
 msgid "Increase job {target} to {amount}"
 msgstr "जॉब {target} को {amount} तक बढ़ाएं"
+
+msgid "Increase planned order to {amount}"
+msgstr ""
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "क्रय आदेश {target} को {amount} तक बढ़ाएं"

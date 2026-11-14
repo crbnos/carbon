@@ -6371,6 +6371,9 @@ msgstr "Anuluj zamówienie"
 msgid "Cancel Picking List"
 msgstr "Anuluj listę kompletacyjną"
 
+msgid "Cancel planned order"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "Anuluj zamówienie zakupu"
 
@@ -9807,6 +9810,9 @@ msgstr "Zmniejsz: {fieldLabel}"
 msgid "Decrease job {target} to {amount}"
 msgstr "Zmniejsz zlecenie produkcyjne {target} do {amount}"
 
+msgid "Decrease planned order to {amount}"
+msgstr ""
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Zmniejsz zamówienie zakupu {target} do {amount}"
 
@@ -9974,6 +9980,9 @@ msgstr "Przełóż"
 
 msgid "Defer job {target} to {date}"
 msgstr "Przełóż zlecenie produkcyjne {target} na {date}"
+
+msgid "Defer planned order to {date}"
+msgstr ""
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "Przełóż zamówienie zakupu {target} na {date}"
@@ -12838,6 +12847,9 @@ msgstr "Przyspiesz"
 msgid "Expedite job {target} to {date}"
 msgstr "Przyspiesz zlecenie produkcyjne {target} na {date}"
 
+msgid "Expedite planned order to {date}"
+msgstr ""
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "Przyspiesz zamówienie zakupu {target} na {date}"
 
@@ -15377,6 +15389,9 @@ msgstr "Zwiększ: {fieldLabel}"
 
 msgid "Increase job {target} to {amount}"
 msgstr "Zwiększ zlecenie produkcyjne {target} do {amount}"
+
+msgid "Increase planned order to {amount}"
+msgstr ""
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "Zwiększ zamówienie zakupu {target} do {amount}"

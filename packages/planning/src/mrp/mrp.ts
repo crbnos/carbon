@@ -19,8 +19,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { z } from "zod";
 import { toIsoDate } from "../scheduling/date-utils.ts";
+import { buildOpenSupplyOrders } from "./open-supply-orders.ts";
 import { activeMethodIdByItem, planCompany } from "./plan-company.ts";
-import { generatePlanningActions } from "./planning-actions.ts";
+import { writePlannedOrderDiff } from "./planned-order-write.ts";
+import type {
+  ExistingPlannedOrder,
+  PlannedOrderInputs
+} from "./planned-orders.ts";
+import {
+  generatePlanningActions,
+  loadOpenSupplyDetails
+} from "./planning-actions.ts";
 
 const logger = getLogger("planning", "mrp");
 
@@ -438,6 +447,20 @@ export async function runMrp(
     if (supplyActualsError) throw supplyActualsError;
 
     // ──────────────────────────────────────────────────────────────
+    // MRP v2: the inputs of planned orders (spec §2a). Every read is
+    // company-wide, like every other read of the run: `runMrp` plans the
+    // whole company whatever the payload's `type`, so the plannedOrder diff
+    // in Phase 7 covers every location of the company.
+    // ──────────────────────────────────────────────────────────────
+    const plannedOrderInputs = await loadPlannedOrderInputs(db, {
+      companyId,
+      todayDate: today.toString(),
+      locations: locations.data,
+      productionLines: productionLines.data ?? [],
+      purchaseOrderLines: purchaseOrderLines.data ?? []
+    });
+
+    // ──────────────────────────────────────────────────────────────
     // PHASES 3–6: the pure planning core (plan-company.ts)
     // ──────────────────────────────────────────────────────────────
 
@@ -449,7 +472,12 @@ export async function runMrp(
       consumptionUpdates,
       cycleItemIds,
       commonSurplusDraws,
-      groupPegInputs
+      groupPegInputs,
+      plannedOrders,
+      heldPlannedOrderIds,
+      plannedOrderSignals,
+      plannedOrderChangeActions,
+      newSupplyByRow
     } = planCompany({
       companyId,
       userId,
@@ -483,7 +511,8 @@ export async function runMrp(
       activeMethods: activeMethodsResult.data ?? [],
       materials: allMaterials,
       existingDemandActuals: existingDemandActuals ?? [],
-      existingSupplyActuals: existingSupplyActuals ?? []
+      existingSupplyActuals: existingSupplyActuals ?? [],
+      plannedOrderInputs
     });
 
     if (cycleItemIds.length > 0) {
@@ -505,130 +534,150 @@ export async function runMrp(
       // between the delete and the inserts) saw planning data half-written —
       // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
       // everything back on any throw.
-      await db.transaction().execute(async (trx) => {
-        // Delete existing MRP forecasts
-        await trx
-          .deleteFrom("demandForecast")
-          .where("companyId", "=", companyId)
-          .where("forecastMethod", "=", "mrp")
-          .execute();
-
-        // Delete existing MRP forecast source rows. The demandForecast delete
-        // above removes the parent rows; this removes their attribution rows.
-        // demandForecastSource only ever holds MRP-derived rows.
-        await trx
-          .deleteFrom("demandForecastSource")
-          .where("companyId", "=", companyId)
-          .execute();
-
-        // Guarded: an empty array renders as `IN ()`, which is a syntax error
-        // (42601), so a company with no locations configured crashed the whole
-        // run. Nothing to clear in that case anyway.
-        if (locations.data.length > 0) {
+      const plannedOrderIdByKey = await db
+        .transaction()
+        .execute(async (trx) => {
+          // FIRST: the planned orders. `writePlannedOrderDiff` takes the
+          // company's planning lock before any other statement of this
+          // transaction, so the ERP's convert (which takes it too) never
+          // interleaves with the run, and no row lock is held while waiting
+          // for it. `generatePlanningActions` takes the same lock in its own
+          // transaction, after this one commits and releases it.
+          const idByKey = await writePlannedOrderDiff(trx, {
+            companyId,
+            userId,
+            locationIds: locations.data.map((l) => l.id),
+            generated: plannedOrders,
+            heldPlannedOrderIds,
+            updatedAt: datetime.timestamp()
+          });
+          // Delete existing MRP forecasts
           await trx
-            .deleteFrom("supplyForecast")
-            .where(
-              "locationId",
-              "in",
-              locations.data.map((l) => l.id)
-            )
+            .deleteFrom("demandForecast")
+            .where("companyId", "=", companyId)
+            .where("forecastMethod", "=", "mrp")
+            .execute();
+
+          // Delete existing MRP forecast source rows. The demandForecast delete
+          // above removes the parent rows; this removes their attribution rows.
+          // demandForecastSource only ever holds MRP-derived rows.
+          await trx
+            .deleteFrom("demandForecastSource")
             .where("companyId", "=", companyId)
             .execute();
-        }
 
-        // Insert demand forecasts in batches
-        for (let i = 0; i < demandForecastUpserts.length; i += BATCH_SIZE) {
-          const batch = demandForecastUpserts.slice(i, i + BATCH_SIZE);
-          await trx
-            .insertInto("demandForecast")
-            .values(batch)
-            .onConflict((oc) =>
-              oc
-                .columns([
-                  "itemId",
-                  "locationId",
-                  "periodId",
-                  "planningSegmentId"
-                ])
-                .doUpdateSet({
-                  forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
-                  forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId
-                })
-            )
-            .execute();
-        }
+          // Guarded: an empty array renders as `IN ()`, which is a syntax error
+          // (42601), so a company with no locations configured crashed the whole
+          // run. Nothing to clear in that case anyway.
+          if (locations.data.length > 0) {
+            await trx
+              .deleteFrom("supplyForecast")
+              .where(
+                "locationId",
+                "in",
+                locations.data.map((l) => l.id)
+              )
+              .where("companyId", "=", companyId)
+              .execute();
+          }
 
-        // Insert demand forecast source rows in batches. No onConflict — the
-        // upstream delete guarantees no key collisions.
-        for (
-          let i = 0;
-          i < demandForecastSourceInserts.length;
-          i += BATCH_SIZE
-        ) {
-          const batch = demandForecastSourceInserts.slice(i, i + BATCH_SIZE);
-          await trx.insertInto("demandForecastSource").values(batch).execute();
-        }
+          // Insert demand forecasts in batches
+          for (let i = 0; i < demandForecastUpserts.length; i += BATCH_SIZE) {
+            const batch = demandForecastUpserts.slice(i, i + BATCH_SIZE);
+            await trx
+              .insertInto("demandForecast")
+              .values(batch)
+              .onConflict((oc) =>
+                oc
+                  .columns([
+                    "itemId",
+                    "locationId",
+                    "periodId",
+                    "planningSegmentId"
+                  ])
+                  .doUpdateSet({
+                    forecastQuantity: (eb) =>
+                      eb.ref("excluded.forecastQuantity"),
+                    forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
+                    updatedAt: datetime.timestamp(),
+                    updatedBy: userId
+                  })
+              )
+              .execute();
+          }
 
-        // Insert demand actuals in batches
-        for (let i = 0; i < demandActualUpserts.length; i += BATCH_SIZE) {
-          const batch = demandActualUpserts.slice(i, i + BATCH_SIZE);
-          await trx
-            .insertInto("demandActual")
-            .values(batch)
-            .onConflict((oc) =>
-              oc
-                .columns([
-                  "itemId",
-                  "locationId",
-                  "periodId",
-                  "sourceType",
-                  "planningSegmentId"
-                ])
-                .doUpdateSet({
-                  actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId
-                })
-            )
-            .execute();
-        }
+          // Insert demand forecast source rows in batches. No onConflict — the
+          // upstream delete guarantees no key collisions.
+          for (
+            let i = 0;
+            i < demandForecastSourceInserts.length;
+            i += BATCH_SIZE
+          ) {
+            const batch = demandForecastSourceInserts.slice(i, i + BATCH_SIZE);
+            await trx
+              .insertInto("demandForecastSource")
+              .values(batch)
+              .execute();
+          }
 
-        // Insert supply actuals in batches
-        for (let i = 0; i < supplyActualUpserts.length; i += BATCH_SIZE) {
-          const batch = supplyActualUpserts.slice(i, i + BATCH_SIZE);
-          await trx
-            .insertInto("supplyActual")
-            .values(batch)
-            .onConflict((oc) =>
-              oc
-                .columns([
-                  "itemId",
-                  "locationId",
-                  "periodId",
-                  "sourceType",
-                  "planningSegmentId"
-                ])
-                .doUpdateSet({
-                  actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId
-                })
-            )
-            .execute();
-        }
+          // Insert demand actuals in batches
+          for (let i = 0; i < demandActualUpserts.length; i += BATCH_SIZE) {
+            const batch = demandActualUpserts.slice(i, i + BATCH_SIZE);
+            await trx
+              .insertInto("demandActual")
+              .values(batch)
+              .onConflict((oc) =>
+                oc
+                  .columns([
+                    "itemId",
+                    "locationId",
+                    "periodId",
+                    "sourceType",
+                    "planningSegmentId"
+                  ])
+                  .doUpdateSet({
+                    actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+                    updatedAt: datetime.timestamp(),
+                    updatedBy: userId
+                  })
+              )
+              .execute();
+          }
 
-        // Persist forecast consumption in batches — an UPDATE, not an upsert,
-        // so a projection deleted mid-run can never be resurrected by the
-        // write phase. Every loaded projection has a row here (0 included),
-        // so stale consumption from a prior run is always overwritten.
-        // Consumption is derived data, not an edit: the row's updatedAt /
-        // updatedBy stay with the planner who entered the forecast, and a row
-        // whose consumption did not change is not written at all.
-        for (let i = 0; i < consumptionUpdates.length; i += BATCH_SIZE) {
-          const batch = consumptionUpdates.slice(i, i + BATCH_SIZE);
-          await sql`
+          // Insert supply actuals in batches
+          for (let i = 0; i < supplyActualUpserts.length; i += BATCH_SIZE) {
+            const batch = supplyActualUpserts.slice(i, i + BATCH_SIZE);
+            await trx
+              .insertInto("supplyActual")
+              .values(batch)
+              .onConflict((oc) =>
+                oc
+                  .columns([
+                    "itemId",
+                    "locationId",
+                    "periodId",
+                    "sourceType",
+                    "planningSegmentId"
+                  ])
+                  .doUpdateSet({
+                    actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+                    updatedAt: datetime.timestamp(),
+                    updatedBy: userId
+                  })
+              )
+              .execute();
+          }
+
+          // Persist forecast consumption in batches — an UPDATE, not an upsert,
+          // so a projection deleted mid-run can never be resurrected by the
+          // write phase. Every loaded projection has a row here (0 included),
+          // so stale consumption from a prior run is always overwritten.
+          // Consumption is derived data, not an edit: the row's updatedAt /
+          // updatedBy stay with the planner who entered the forecast, and a row
+          // whose consumption did not change is not written at all.
+          for (let i = 0; i < consumptionUpdates.length; i += BATCH_SIZE) {
+            const batch = consumptionUpdates.slice(i, i + BATCH_SIZE);
+            await sql`
             UPDATE "demandProjection" AS dp
             SET "consumedQuantity" = v."consumedQuantity"::numeric
             FROM (VALUES ${sql.join(
@@ -643,8 +692,10 @@ export async function runMrp(
               AND dp."companyId" = ${companyId}
               AND dp."consumedQuantity" IS DISTINCT FROM v."consumedQuantity"::numeric
           `.execute(trx);
-        }
-      });
+          }
+
+          return idByKey;
+        });
 
       // Persist the planning action messages (spec §P1) in their own atomic
       // transaction AFTER the forecast/actual write commits — the planning
@@ -659,6 +710,11 @@ export async function runMrp(
         companyId,
         userId,
         commonSurplusDraws,
+        newSupplyByRow,
+        plannedOrderChangeActions,
+        plannedOrderSignals,
+        plannedOrderIdByKey,
+        heldPlannedOrderIds,
         planningGroups,
         pegging:
           planningGroupsEnabled && deps
@@ -696,6 +752,167 @@ export async function runMrp(
 // ──────────────────────────────────────────────────────────────
 // Helper functions
 // ──────────────────────────────────────────────────────────────
+
+/**
+ * MRP v2: what `planCompany` needs to plan the common segment with planned
+ * orders (`PlannedOrderInputs`). Kysely reads, so no PostgREST row cap.
+ *
+ * - The policy rows join `itemPlanning`, `item` and `itemReplenishment` with
+ *   INNER JOINs, as the planning RPCs do: an item with no `itemPlanning` row
+ *   at a location has no planning row there and gets no planned order.
+ * - The open jobs and PO lines are the views `runMrp` already read, built
+ *   into orders by `buildOpenSupplyOrders` as the planning actions build them.
+ * - The existing planned orders are the Planned and Firm rows; a Converted
+ *   row is history, and its document is supply in the views.
+ */
+async function loadPlannedOrderInputs(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    todayDate: string;
+    locations: { id: string; planningTimeFenceDays: number | null }[];
+    productionLines: Parameters<typeof buildOpenSupplyOrders>[0]["jobRows"];
+    purchaseOrderLines: Parameters<
+      typeof buildOpenSupplyOrders
+    >[0]["poLineRows"];
+  }
+): Promise<PlannedOrderInputs> {
+  const { companyId } = args;
+  const [policyRows, settings, openSupplyDetails, plannedOrderRows] =
+    await Promise.all([
+      db
+        .selectFrom("itemPlanning as ip")
+        .innerJoin("item as i", (join) =>
+          join.onRef("i.id", "=", "ip.itemId").on("i.companyId", "=", companyId)
+        )
+        .innerJoin("itemReplenishment as ir", (join) =>
+          join
+            .onRef("ir.itemId", "=", "ip.itemId")
+            .on("ir.companyId", "=", companyId)
+        )
+        .select([
+          "ip.itemId",
+          "ip.locationId",
+          "i.active",
+          "i.itemTrackingType",
+          "i.replenishmentSystem",
+          "ip.reorderingPolicy",
+          "ip.reorderPoint",
+          "ip.reorderQuantity",
+          "ip.minimumOrderQuantity",
+          "ip.maximumOrderQuantity",
+          "ip.orderMultiple",
+          "ip.maximumInventoryQuantity",
+          "ip.demandAccumulationPeriod",
+          "ip.demandAccumulationSafetyStock",
+          "ip.planningTimeFenceDays",
+          "ir.lotSize",
+          "ir.leadTime",
+          "ir.scrapPercentage",
+          "ir.preferredSupplierId"
+        ])
+        .where("ip.companyId", "=", companyId)
+        .execute(),
+      db
+        .selectFrom("companySettings")
+        .select(["rescheduleToleranceDays"])
+        .where("id", "=", companyId)
+        .executeTakeFirst(),
+      loadOpenSupplyDetails(db, companyId),
+      db
+        .selectFrom("plannedOrder")
+        .select([
+          "id",
+          "itemId",
+          "locationId",
+          "planningSegmentId",
+          "orderType",
+          "status",
+          "quantity",
+          "scrapQuantity",
+          "dueDate",
+          "releaseDate",
+          "periodId",
+          "splitIndex",
+          "supplierId"
+        ])
+        .where("companyId", "=", companyId)
+        .where("status", "in", ["Planned", "Firm"])
+        .execute()
+    ]);
+
+  const toNumber = (value: unknown): number | null =>
+    value === null || value === undefined ? null : Number(value);
+
+  const scrapRateByItem = new Map<string, number>();
+  const preferredSupplierByItem = new Map<string, string | null>();
+  for (const row of policyRows) {
+    scrapRateByItem.set(row.itemId, Number(row.scrapPercentage) || 0);
+    preferredSupplierByItem.set(row.itemId, row.preferredSupplierId ?? null);
+  }
+
+  return {
+    planningPolicies: policyRows.map((row) => ({
+      itemId: row.itemId,
+      locationId: row.locationId,
+      active: row.active,
+      itemTrackingType: row.itemTrackingType,
+      replenishmentSystem: row.replenishmentSystem,
+      reorderingPolicy: row.reorderingPolicy,
+      reorderPoint: toNumber(row.reorderPoint),
+      reorderQuantity: toNumber(row.reorderQuantity),
+      minimumOrderQuantity: toNumber(row.minimumOrderQuantity),
+      maximumOrderQuantity: toNumber(row.maximumOrderQuantity),
+      orderMultiple: toNumber(row.orderMultiple),
+      lotSize: toNumber(row.lotSize),
+      maximumInventoryQuantity: toNumber(row.maximumInventoryQuantity),
+      demandAccumulationPeriod: toNumber(row.demandAccumulationPeriod),
+      demandAccumulationSafetyStock: toNumber(
+        row.demandAccumulationSafetyStock
+      ),
+      leadTime: toNumber(row.leadTime),
+      planningTimeFenceDays: toNumber(row.planningTimeFenceDays)
+    })),
+    locationTimeFenceDays: new Map(
+      args.locations.map((location) => [
+        location.id,
+        Number(location.planningTimeFenceDays) || 0
+      ])
+    ),
+    scrapRateByItem,
+    preferredSupplierByItem,
+    openSupplyOrders: buildOpenSupplyOrders({
+      poLineRows: args.purchaseOrderLines,
+      jobRows: args.productionLines,
+      jobDetailsById: openSupplyDetails.jobDetailsById,
+      conversionFactorByLineId: openSupplyDetails.conversionFactorByLineId,
+      todayDate: args.todayDate
+    }),
+    existingPlannedOrders: plannedOrderRows.flatMap(
+      (row): ExistingPlannedOrder[] =>
+        row.status === "Planned" || row.status === "Firm"
+          ? [
+              {
+                id: row.id,
+                itemId: row.itemId,
+                locationId: row.locationId,
+                planningSegmentId: row.planningSegmentId,
+                orderType: row.orderType,
+                status: row.status,
+                quantity: Number(row.quantity),
+                scrapQuantity: Number(row.scrapQuantity),
+                dueDate: toIsoDate(row.dueDate)!,
+                releaseDate: toIsoDate(row.releaseDate)!,
+                periodId: row.periodId,
+                splitIndex: row.splitIndex,
+                supplierId: row.supplierId
+              }
+            ]
+          : []
+    ),
+    toleranceDays: Number(settings?.rescheduleToleranceDays ?? 7)
+  };
+}
 
 /**
  * Whether the company has the commercial PLANNING_GROUPS feature. The check

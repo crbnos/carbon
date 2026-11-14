@@ -6371,6 +6371,9 @@ msgstr "注文をキャンセル"
 msgid "Cancel Picking List"
 msgstr "ピッキングリストをキャンセル"
 
+msgid "Cancel planned order"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "発注書をキャンセル"
 
@@ -9807,6 +9810,9 @@ msgstr "{fieldLabel}を減らす"
 msgid "Decrease job {target} to {amount}"
 msgstr "製造指図{target}を{amount}に減少"
 
+msgid "Decrease planned order to {amount}"
+msgstr ""
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "発注書{target}を{amount}に減少"
 
@@ -9974,6 +9980,9 @@ msgstr "延期"
 
 msgid "Defer job {target} to {date}"
 msgstr "製造指図{target}を{date}に延期"
+
+msgid "Defer planned order to {date}"
+msgstr ""
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "発注書{target}を{date}に延期"
@@ -12838,6 +12847,9 @@ msgstr "前倒し"
 msgid "Expedite job {target} to {date}"
 msgstr "製造指図{target}を{date}に前倒し"
 
+msgid "Expedite planned order to {date}"
+msgstr ""
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "発注書{target}を{date}に前倒し"
 
@@ -15377,6 +15389,9 @@ msgstr "{fieldLabel}を増やす"
 
 msgid "Increase job {target} to {amount}"
 msgstr "製造指図{target}を{amount}に増加"
+
+msgid "Increase planned order to {amount}"
+msgstr ""
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "発注書{target}を{amount}に増加"

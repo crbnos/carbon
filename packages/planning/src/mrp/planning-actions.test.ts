@@ -17,6 +17,7 @@ import {
   type QueryResult
 } from "kysely";
 import { describe, expect, it } from "vitest";
+import type { ChangeCandidate } from "./planning-action-types";
 import type {
   ExistingPlanningAction,
   PlanningActionCandidate
@@ -39,6 +40,8 @@ import {
   loadSegmentOnHand,
   memberMoveCandidates,
   naturalKey,
+  onePerPlannedOrder,
+  plannedOrderActions,
   projectionsWithExpedites,
   releaseByDate
 } from "./planning-actions";
@@ -2220,6 +2223,194 @@ describe("memberMoveCandidates", () => {
     ).toEqual([
       ["p-102", 2],
       ["p-101", 4]
+    ]);
+  });
+});
+
+// MRP v2: a row the engine planned with planned orders takes its new supply
+// from the engine; the RPC row only sizes rows the engine did not plan.
+describe("deriveRowActions with the engine's new supply", () => {
+  const commonRow = {
+    id: "item-1",
+    planningSegmentId: "",
+    reorderingPolicy: "Demand-Based Reorder",
+    reorderPoint: 0,
+    reorderQuantity: 0,
+    minimumOrderQuantity: 0,
+    maximumOrderQuantity: 0,
+    orderMultiple: 0,
+    lotSize: 0,
+    maximumInventoryQuantity: 0,
+    demandAccumulationPeriod: 1,
+    demandAccumulationSafetyStock: 0,
+    leadTime: 0,
+    quantityOnHand: 0,
+    quantityToOrder: 15,
+    supersessionMode: null,
+    minimumReserveQuantity: 0,
+    week1: -15,
+    week2: -15,
+    week3: -15,
+    week4: -15,
+    week5: -15
+  } as unknown as Parameters<typeof deriveRowActions>[0]["row"];
+
+  const input = (engineSupply?: ChangeCandidate[]) => ({
+    row: commonRow,
+    kind: "Make" as const,
+    periods: PERIODS,
+    demandByPeriod: new Map([["p1", 15]]),
+    openOrders: [],
+    onHand: 0,
+    draws: [],
+    toleranceDays: TOLERANCE,
+    todayDate: TODAY,
+    engineSupply
+  });
+
+  const summary = (actions: ChangeCandidate[]) =>
+    actions.map((a) => [a.type, a.periodId, a.suggestedQuantity]);
+
+  it("sizes the RPC row when the engine did not plan it", () => {
+    expect(summary(deriveRowActions(input()))).toEqual([["Make", "p1", 15]]);
+  });
+
+  // A lot size of 40 on the planned order: the engine's number wins, and the
+  // two planned orders of week p2 are one Make with no planned order named.
+  it("uses the engine's orders, summed per week, naming no planned order", () => {
+    const make = (
+      quantity: number,
+      plannedOrderKey: string
+    ): ChangeCandidate => ({
+      type: "Make",
+      periodId: "p2",
+      suggestedQuantity: quantity,
+      suggestedDate: "2026-10-12",
+      horizonDate: "2026-10-12",
+      latestOrderDate: "2026-10-12",
+      isASAP: false,
+      purchaseOrderLineId: null,
+      jobId: null,
+      plannedOrderId: null,
+      requiresManualAction: false,
+      supplierId: null,
+      policyName: "Demand-Based Reorder",
+      reason: null,
+      triggerValues: null,
+      plannedOrderKey
+    });
+    const actions = deriveRowActions(
+      input([make(40, "key-0"), make(40, "key-1")])
+    );
+    expect(summary(actions)).toEqual([["Make", "p2", 80]]);
+    expect(actions[0]).not.toHaveProperty("plannedOrderKey");
+    expect(actions[0]?.plannedOrderId).toBeNull();
+  });
+});
+
+describe("plannedOrderActions", () => {
+  const order: ChangeCandidate = {
+    type: "Make",
+    periodId: "p3",
+    suggestedQuantity: 20,
+    suggestedDate: "2026-10-19",
+    horizonDate: "2026-10-19",
+    latestOrderDate: "2026-10-12",
+    isASAP: false,
+    purchaseOrderLineId: null,
+    jobId: null,
+    plannedOrderId: null,
+    requiresManualAction: false,
+    supplierId: null,
+    policyName: "Demand-Based Reorder",
+    reason: null,
+    triggerValues: null,
+    plannedOrderKey: ["item-1", "loc-1", "", "Make", "p3", "0"].join(KEY_SEP)
+  };
+  const cancel = {
+    itemId: "item-9",
+    locationId: "loc-1",
+    planningSegmentId: "",
+    type: "Cancel" as const,
+    periodId: "p2",
+    suggestedQuantity: 5,
+    suggestedDate: "2026-10-12",
+    horizonDate: "2026-10-12",
+    latestOrderDate: null,
+    isASAP: false,
+    purchaseOrderLineId: null,
+    jobId: null,
+    plannedOrderId: "plo-held",
+    requiresManualAction: false,
+    supplierId: null,
+    policyName: null,
+    reason: "No remaining requirement for this order",
+    triggerValues: null
+  };
+  const base = (
+    overrides: Partial<Parameters<typeof plannedOrderActions>[0]>
+  ) =>
+    plannedOrderActions({
+      changeActions: [],
+      signals: [],
+      newSupplyByRow: new Map([
+        [itemLocationSegmentKey("item-1", "loc-1"), [order]]
+      ]),
+      plannedOrderIdByKey: new Map([[order.plannedOrderKey!, "plo-new"]]),
+      heldPlannedOrderIds: new Set(["plo-held"]),
+      periods: PERIODS,
+      todayDate: "2026-10-01",
+      ...overrides
+    });
+
+  // The fence moved the order from its need on Oct 5 to Oct 19.
+  it("turns a fence signal into an Expedite on the planned order", () => {
+    expect(
+      base({
+        signals: [
+          { naturalKey: order.plannedOrderKey!, expediteTo: "2026-10-05" }
+        ]
+      })
+    ).toEqual([
+      {
+        itemId: "item-1",
+        locationId: "loc-1",
+        planningSegmentId: "",
+        type: "Expedite",
+        periodId: "p1",
+        suggestedQuantity: 20,
+        suggestedDate: "2026-10-05",
+        horizonDate: "2026-10-05",
+        latestOrderDate: null,
+        isASAP: false,
+        purchaseOrderLineId: null,
+        jobId: null,
+        plannedOrderId: "plo-new",
+        requiresManualAction: false,
+        supplierId: null,
+        policyName: null,
+        reason: expect.any(String),
+        triggerValues: null
+      }
+    ]);
+  });
+
+  // A held order with no demand has no planning row; its Cancel still goes out.
+  it("raises a held order's Cancel with no planning row, and drops one on an order not held", () => {
+    expect(
+      base({
+        changeActions: [cancel, { ...cancel, plannedOrderId: "plo-other" }]
+      })
+    ).toEqual([cancel]);
+  });
+
+  it("keeps one action per planned order: a Cancel beats an Expedite", () => {
+    const expedite = { ...cancel, type: "Expedite" as const };
+    const decrease = { ...cancel, type: "Decrease" as const };
+    const order = { ...cancel, type: "Make" as const, plannedOrderId: null };
+    expect(onePerPlannedOrder([expedite, order, cancel, decrease])).toEqual([
+      order,
+      cancel
     ]);
   });
 });

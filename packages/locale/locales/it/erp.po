@@ -6371,6 +6371,9 @@ msgstr "Annulla ordine"
 msgid "Cancel Picking List"
 msgstr "Annulla Lista di prelievo"
 
+msgid "Cancel planned order"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "Annulla ordine d'acquisto"
 
@@ -9807,6 +9810,9 @@ msgstr "Diminuisci {fieldLabel}"
 msgid "Decrease job {target} to {amount}"
 msgstr "Riduci ordine di produzione {target} a {amount}"
 
+msgid "Decrease planned order to {amount}"
+msgstr ""
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Riduci ordine di acquisto {target} a {amount}"
 
@@ -9974,6 +9980,9 @@ msgstr "Rinvia"
 
 msgid "Defer job {target} to {date}"
 msgstr "Posticipa ordine di produzione {target} a {date}"
+
+msgid "Defer planned order to {date}"
+msgstr ""
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "Posticipa ordine di acquisto {target} a {date}"
@@ -12838,6 +12847,9 @@ msgstr "Anticipa"
 msgid "Expedite job {target} to {date}"
 msgstr "Anticipa ordine di produzione {target} a {date}"
 
+msgid "Expedite planned order to {date}"
+msgstr ""
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "Anticipa ordine di acquisto {target} a {date}"
 
@@ -15377,6 +15389,9 @@ msgstr "Aumenta {fieldLabel}"
 
 msgid "Increase job {target} to {amount}"
 msgstr "Aumenta ordine di produzione {target} a {amount}"
+
+msgid "Increase planned order to {amount}"
+msgstr ""
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "Aumenta ordine di acquisto {target} a {amount}"

@@ -6371,6 +6371,9 @@ msgstr "取消订单"
 msgid "Cancel Picking List"
 msgstr "取消拣货单"
 
+msgid "Cancel planned order"
+msgstr ""
+
 msgid "Cancel Purchase Order"
 msgstr "取消采购订单"
 
@@ -9807,6 +9810,9 @@ msgstr "减少{fieldLabel}"
 msgid "Decrease job {target} to {amount}"
 msgstr "减少工单 {target} 至 {amount}"
 
+msgid "Decrease planned order to {amount}"
+msgstr ""
+
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "减少采购订单 {target} 至 {amount}"
 
@@ -9974,6 +9980,9 @@ msgstr "延后"
 
 msgid "Defer job {target} to {date}"
 msgstr "推迟工单 {target} 至 {date}"
+
+msgid "Defer planned order to {date}"
+msgstr ""
 
 msgid "Defer purchase order {target} to {date}"
 msgstr "推迟采购订单 {target} 至 {date}"
@@ -12838,6 +12847,9 @@ msgstr "加急"
 msgid "Expedite job {target} to {date}"
 msgstr "加快工单 {target} 至 {date}"
 
+msgid "Expedite planned order to {date}"
+msgstr ""
+
 msgid "Expedite purchase order {target} to {date}"
 msgstr "加快采购订单 {target} 至 {date}"
 
@@ -15377,6 +15389,9 @@ msgstr "增加{fieldLabel}"
 
 msgid "Increase job {target} to {amount}"
 msgstr "增加工单 {target} 至 {amount}"
+
+msgid "Increase planned order to {amount}"
+msgstr ""
 
 msgid "Increase purchase order {target} to {amount}"
 msgstr "增加采购订单 {target} 至 {amount}"
