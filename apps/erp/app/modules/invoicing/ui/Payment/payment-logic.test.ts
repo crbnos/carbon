@@ -87,20 +87,26 @@ describe("payment kind", () => {
 });
 
 describe("advance held for a seeded invoice's order", () => {
-  const advance = (id: string, remainingDocument: number, paymentId = id) => ({
-    paymentId,
+  const po1 = { type: "purchaseOrder" as const, id: "po-1" };
+  const held = (
+    remainingDocument: number,
+    scope: FundingScope | null,
+    overrides: Partial<FundingSource> = {}
+  ): FundingSource => ({
+    paymentId: "advance",
     postingDate: "2026-09-01",
     exchangeRate: 1,
     remainingDocument,
     remainingBase: remainingDocument,
-    scope: { type: "purchaseOrder" as const, id }
+    scope,
+    ...overrides
   });
 
   it("covers the order's invoice up to what is still held", () => {
     expect(
       heldAdvanceCovering(
         [{ cashDue: 1000, purchaseOrderIds: ["po-1"] }],
-        [advance("po-1", 300)],
+        [held(300, po1)],
         2
       )
     ).toBe(300);
@@ -110,7 +116,7 @@ describe("advance held for a seeded invoice's order", () => {
     expect(
       heldAdvanceCovering(
         [{ cashDue: 250, purchaseOrderIds: ["po-1"] }],
-        [advance("po-1", 300)],
+        [held(300, po1)],
         2
       )
     ).toBe(250);
@@ -123,7 +129,17 @@ describe("advance held for a seeded invoice's order", () => {
           { cashDue: 200, purchaseOrderIds: ["po-1"] },
           { cashDue: 200, purchaseOrderIds: ["po-1"] }
         ],
-        [advance("po-1", 300)],
+        [held(300, po1)],
+        2
+      )
+    ).toBe(300);
+  });
+
+  it("covers a sales order's invoice from the order's deposit", () => {
+    expect(
+      heldAdvanceCovering(
+        [{ cashDue: 1000, salesOrderIds: ["so-1"] }],
+        [held(300, { type: "salesOrder", id: "so-1" })],
         2
       )
     ).toBe(300);
@@ -134,12 +150,63 @@ describe("advance held for a seeded invoice's order", () => {
       heldAdvanceCovering(
         [{ cashDue: 1000, purchaseOrderIds: ["po-1"] }],
         [
-          advance("po-2", 300),
-          { ...advance("po-1", 500, "on-account"), scope: null }
+          held(300, { type: "purchaseOrder", id: "po-2" }),
+          held(500, null, { paymentId: "on-account" })
         ],
         2
       )
     ).toBe(0);
+  });
+
+  // A rental deposit is refundable security; a contract deposit is liquidated
+  // at the contract's rate. Neither is applied in full by default.
+  it.each([
+    ["rentalAgreement", { rentalAgreementIds: ["doc"] }],
+    ["customerContract", { customerContractIds: ["doc"] }]
+  ] as const)("leaves a %s deposit for the user to apply", (type, billed) => {
+    expect(
+      heldAdvanceCovering(
+        [{ cashDue: 1000, ...billed }],
+        [held(300, { type, id: "doc" })],
+        2
+      )
+    ).toBe(0);
+  });
+
+  it("leaves cash that, with the advance, settles the invoice in full", () => {
+    const sources = [held(300, po1)];
+    const covered = heldAdvanceCovering(
+      [{ cashDue: 1000, purchaseOrderIds: ["po-1"] }],
+      sources,
+      2
+    );
+    const { applications } = allocatePaymentFunding({
+      currentPayment: held(1000 - covered, null, {
+        paymentId: "current",
+        postingDate: "2026-09-07"
+      }),
+      priorSources: sources,
+      requests: [
+        {
+          targetId: "invoice",
+          targetExchangeRate: 1,
+          remainingDocument: 1000,
+          remainingBase: 1000,
+          requestedDocumentPrincipal: 1000,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          purchaseOrderIds: ["po-1"]
+        }
+      ],
+      currencyDecimals: 2,
+      isAR: false
+    });
+    expect(
+      applications.map((a) => [a.sourcePaymentId, a.sourceAmount])
+    ).toEqual([
+      [null, 700],
+      ["advance", 300]
+    ]);
   });
 });
 

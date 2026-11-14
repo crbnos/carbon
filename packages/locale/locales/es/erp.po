@@ -18747,12 +18747,12 @@ msgid "Net Investment in Leases (default)"
 msgstr "Inversión Neta en Arrendamientos (predeterminado)"
 
 #. placeholder {0}: currencyFormatter.format(heldAdvance)
-msgid "Net of the {0} deposit already held for the order."
-msgstr ""
+msgid "Net of {0} already paid as a prepayment."
+msgstr "Neto de {0} ya pagados como anticipo."
 
 #. placeholder {0}: currencyFormatter.format(heldAdvance)
-msgid "Net of the {0} prepayment already held for the order."
-msgstr ""
+msgid "Net of {0} already received as a deposit."
+msgstr "Neto de {0} ya recibidos como depósito."
 
 msgid "Net right-of-use asset"
 msgstr "activo neto por derecho de uso"

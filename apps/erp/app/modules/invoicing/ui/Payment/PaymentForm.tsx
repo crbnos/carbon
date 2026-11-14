@@ -159,6 +159,14 @@ const PaymentForm = ({
   const [customerId, setCustomerId] = useState(initialValues.customerId ?? "");
   const [supplierId, setSupplierId] = useState(initialValues.supplierId ?? "");
   const partyId = isCustomer ? customerId : isSupplier ? supplierId : "";
+  // The advance was netted for the payment as it was seeded: it says nothing
+  // about another party, type or currency.
+  const netsHeldAdvance =
+    heldAdvance > 0 &&
+    paymentKind === initialKind &&
+    currencyCode === initialValues.currencyCode &&
+    partyId ===
+      (isSupplier ? initialValues.supplierId : initialValues.customerId);
   const initialDeposit = initialValues.rentalAgreementId
     ? depositValue({
         kind: "rentalAgreement",
@@ -373,10 +381,10 @@ const PaymentForm = ({
           label={t`Total Amount`}
           formatOptions={INPUT_FORMAT.money(currencyCode, currencyDecimals)}
           helperText={
-            heldAdvance > 0 && currencyCode === initialValues.currencyCode
+            netsHeldAdvance
               ? isSupplier
-                ? t`Net of the ${currencyFormatter.format(heldAdvance)} prepayment already held for the order.`
-                : t`Net of the ${currencyFormatter.format(heldAdvance)} deposit already held for the order.`
+                ? t`Net of ${currencyFormatter.format(heldAdvance)} already paid as a prepayment.`
+                : t`Net of ${currencyFormatter.format(heldAdvance)} already received as a deposit.`
               : undefined
           }
         />

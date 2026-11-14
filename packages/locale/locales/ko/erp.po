@@ -18747,12 +18747,12 @@ msgid "Net Investment in Leases (default)"
 msgstr "리스 순투자(기본값)"
 
 #. placeholder {0}: currencyFormatter.format(heldAdvance)
-msgid "Net of the {0} deposit already held for the order."
-msgstr ""
+msgid "Net of {0} already paid as a prepayment."
+msgstr "선급금으로 이미 지급한 {0}을(를) 차감한 금액입니다."
 
 #. placeholder {0}: currencyFormatter.format(heldAdvance)
-msgid "Net of the {0} prepayment already held for the order."
-msgstr ""
+msgid "Net of {0} already received as a deposit."
+msgstr "보증금으로 이미 받은 {0}을(를) 차감한 금액입니다."
 
 msgid "Net right-of-use asset"
 msgstr "순 사용권 자산"

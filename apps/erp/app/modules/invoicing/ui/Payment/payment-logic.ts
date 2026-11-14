@@ -83,17 +83,27 @@ export function paymentDocumentCurrency(
 
 /**
  * How much of the invoices a new payment is seeded from is covered by advances
- * already held for the documents they bill, in document currency. An advance
- * can settle nothing but those invoices, so the payment's cash is seeded net
- * of it and the allocator draws it for the rest. On-account credit funds any
- * invoice, so drawing it stays the user's choice.
+ * already held for the orders they bill, in document currency: a supplier's
+ * prepayment for a purchase order, or a customer's deposit for a sales order.
+ * Such an advance can settle nothing but that order's invoices, so the
+ * payment's cash is seeded net of it and seeding the applications funds the
+ * rest from the party's prior payments, oldest first.
+ *
+ * Nothing else is netted. A rental deposit is refundable security and a
+ * contract deposit is liquidated at the contract's rate, so neither is applied
+ * in full by default; on-account credit funds any invoice, so using it is the
+ * user's choice.
  */
 export function heldAdvanceCovering(
   invoices: ReadonlyArray<FundingScopeIds & { cashDue: number }>,
   sources: readonly FundingSource[],
   currencyDecimals: number
 ): number {
-  const advances = sources.filter((source) => source.scope);
+  const advances = sources.filter(
+    (source) =>
+      source.scope?.type === "purchaseOrder" ||
+      source.scope?.type === "salesOrder"
+  );
   if (advances.length === 0) return 0;
   const covered = fundableDocumentAmounts({
     // No cash yet: only the advances are on offer.

@@ -7,6 +7,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardContent,
@@ -35,6 +36,8 @@ import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "payments");
 
 // Loader pre-fills the form. Query params:
 //   customerId  -> seeds counterparty + paymentType=Receipt
@@ -110,37 +113,44 @@ export async function loader({ request }: LoaderFunctionArgs) {
             error(null, "Selected invoices must use the same currency")
           )
         );
-      const configuration = await getPaymentCurrencyConfiguration(
-        client,
-        companyId,
-        currencyCode
-      );
-      // Net of any early-payment discount the invoice's terms grant as of the
-      // payment date, so a "2/10 net 30" invoice paid today pre-fills the
-      // discounted cash amount.
-      const discounts = await getSeededDiscounts(
-        client,
-        companyId,
-        companyGroupId,
-        currencyCode,
-        paymentDate,
-        selected
-      );
+      const api = await carbon(request);
+      const [configuration, discounts, funding] = await Promise.all([
+        getPaymentCurrencyConfiguration(client, companyId, currencyCode),
+        // Net of any early-payment discount the invoice's terms grant as of
+        // the payment date, so a "2/10 net 30" invoice paid today pre-fills
+        // the discounted cash amount.
+        getSeededDiscounts(
+          client,
+          companyId,
+          companyGroupId,
+          currencyCode,
+          paymentDate,
+          selected
+        ),
+        api.invoicing.getAvailableOnAccountCreditSources({
+          party:
+            paymentType === "Receipt"
+              ? { paymentType, customerId: partyId }
+              : { paymentType, supplierId: partyId },
+          currencyCode
+        })
+      ]);
+      // The prefill still works without the party's prior funding, at the full
+      // balance: say so, or an advance paid twice has no trace.
+      if (funding.error) {
+        logger.warning("Seeding a payment without the party's held advances", {
+          companyId,
+          partyId,
+          error: funding.error
+        });
+      }
       const due = selected.map((inv) => ({
         ...inv,
         cashDue: inv.remainingDocument - (discounts.get(inv.id ?? "") ?? 0)
       }));
-      // A deposit or prepayment already held for an invoice's order is cash
+      // A prepayment or deposit already held for an invoice's order is cash
       // the party has paid: asking for it again would leave it stranded on the
       // prepayment account. Seeding the applications draws it for the rest.
-      const api = await carbon(request);
-      const funding = await api.invoicing.getAvailableOnAccountCreditSources({
-        party:
-          paymentType === "Receipt"
-            ? { paymentType, customerId: partyId }
-            : { paymentType, supplierId: partyId },
-        currencyCode
-      });
       heldAdvance = heldAdvanceCovering(
         due,
         funding.data?.sources ?? [],
