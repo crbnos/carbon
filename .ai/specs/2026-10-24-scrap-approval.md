@@ -219,7 +219,11 @@ CREATE TABLE "scrapRequest" (
 - While a rule is on, a Scrap row from `createProductionQuantity` is written as the system
   and carries no workflow run tag.
 - On Carbon Cloud a failed plan read makes `companyHasFeature` answer false, so the rule
-  reads as off. Every approval type shares this.
+  reads as off. Scrap no longer has this gap: `hasScrapApprovalRules` reads the plan with
+  `companyHasFeatureOrThrow` and refuses the scrap. The other approval types still share it.
+- `prevent_direct_scrap_write` refuses a direct Scrap row that names another company's
+  operation. It does not refuse a Production or Rework row that does: that operation's
+  totals still follow the row. That gap is outside scrap approval.
 - Rules apply per scrap event. An operator can split scrap into pieces under the lowest
   floor; a floor of 0 is the answer.
 
