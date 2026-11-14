@@ -75,7 +75,15 @@ const ItemPlanningForm = ({
       <ValidatedForm
         method="post"
         validator={itemPlanningValidator}
-        defaultValues={initialValues}
+        defaultValues={{
+          ...initialValues,
+          // An empty override means "inherit" (the location's fence, the
+          // company's horizon). A null default renders as 0 in the number
+          // field and saves 0, which overrides the default with "none".
+          planningHorizonDays: initialValues.planningHorizonDays ?? undefined,
+          planningTimeFenceDays:
+            initialValues.planningTimeFenceDays ?? undefined
+        }}
       >
         <HStack className="w-full justify-between items-start max-md:items-center">
           <CardHeader>
