@@ -171,7 +171,9 @@ function plannedOrdersBeingCancelled(
  * them: by due date, then `splitIndex`. A planned order counts in the week
  * `plannedOrderWeekIndex` gives it (overdue in the first week, else the week
  * of its due date) — MRP's own rule — and not in its stored week. One MRP is
- * cancelling is left out. An action whose week is not on the page has none.
+ * cancelling is left out. An action of a week already past (the week turned
+ * before MRP ran again) is the first week's: what it counted is overdue now.
+ * An action of a later week not on the page has none.
  */
 function plannedOrdersOfWeek(
   action: NewSupplyActionFields,
@@ -181,8 +183,8 @@ function plannedOrdersOfWeek(
   const weeks = [...(context.weeks ?? [])].sort((a, b) =>
     a.startDate.localeCompare(b.startDate)
   );
-  const index = weeks.findIndex((week) => week.id === action.periodId);
-  if (index < 0) return [];
+  const index = actionWeekIndex(action, weeks);
+  if (index === null) return [];
   const today = context.todayDate ?? weeks[0].startDate;
   const cancelled = plannedOrdersBeingCancelled(context.rowActions);
   return (context.plannedOrders ?? [])
@@ -198,6 +200,24 @@ function plannedOrdersOfWeek(
         (a.splitIndex ?? 0) - (b.splitIndex ?? 0) ||
         a.id.localeCompare(b.id)
     );
+}
+
+/**
+ * The page week an action counts in: its own, else the first when its week
+ * is not on the page and lies before it. The action carries no week dates;
+ * its suggested date lies in its week (or before it, in the current one),
+ * so a suggested date before the page's first week is a past week's.
+ */
+function actionWeekIndex(
+  action: Pick<NewSupplyActionFields, "periodId" | "suggestedDate">,
+  weeks: PlanningWeek[]
+): number | null {
+  const index = weeks.findIndex((week) => week.id === action.periodId);
+  if (index >= 0) return index;
+  // ISO dates order as strings
+  return weeks.length > 0 && action.suggestedDate < weeks[0].startDate
+    ? 0
+    : null;
 }
 
 /**

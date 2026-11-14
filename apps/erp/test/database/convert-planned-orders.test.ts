@@ -459,7 +459,7 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
   );
 
   databaseTest(
-    "a smaller job with no id converts a Planned order, never the Firm one",
+    "a smaller job with no id takes its quantity off a Planned order, never the Firm one",
     async () => {
       const actionId = await action("Make", 30, "firm-kept");
       // the Firm order sorts first by split: a guess by position took it
@@ -494,8 +494,9 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
         firmedBy: USER
       });
       expect(await read(planned)).toMatchObject({
-        status: "Converted",
-        jobId
+        status: "Planned",
+        quantity: 5,
+        jobId: null
       });
     }
   );
@@ -516,16 +517,16 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
         "qty-5-firm"
       );
       const jobA = await job("qty-20");
-      const jobB = await job("qty-3");
+      const jobB = await job("qty-12");
       const jobC = await job("qty-5");
 
       await convertPlannedOrdersForActions(f.db, {
         companyId: f.companyId,
         userId: USER,
         documents: [
-          // a 3 matches nothing: it takes the next Planned order by split,
-          // after the equal quantities are matched
-          document(jobB, { quantity: 3 }),
+          // a 12 matches nothing: it converts the next Planned order by
+          // split, after the equal quantities are matched
+          document(jobB, { quantity: 12 }),
           document(jobA, { quantity: 20 }),
           // a Firm order converts by its own quantity
           document(jobC, { quantity: 5 })
@@ -651,6 +652,78 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
       expect(await convert("2299-01-10")).toEqual([
         { id: overdue, jobId, purchaseOrderLineId: null }
       ]);
+    }
+  );
+
+  databaseTest(
+    "a smaller job with no id takes its quantity off the next Planned order and leaves it Planned",
+    async () => {
+      const planned = await plannedOrder(
+        { orderType: "Make", quantity: 100 },
+        "reduce-planned"
+      );
+      const small = await job("reduce-planned-10");
+      expect(
+        await convertPlannedOrdersForActions(f.db, {
+          companyId: f.companyId,
+          userId: USER,
+          documents: [document(small, { quantity: 10 })]
+        })
+      ).toEqual([]);
+      expect(await read(planned)).toMatchObject({
+        status: "Planned",
+        quantity: 90,
+        jobId: null
+      });
+
+      // the jobs that follow count against what is left: of 85 and 5 in
+      // one batch, the 5 reaches it and converts it
+      const more = await job("reduce-planned-85");
+      const last = await job("reduce-planned-5");
+      await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [
+          document(more, { quantity: 85 }),
+          document(last, { quantity: 5 })
+        ]
+      });
+      expect(await read(planned)).toMatchObject({
+        status: "Converted",
+        jobId: last
+      });
+    }
+  );
+
+  databaseTest(
+    "a job settled against last week's action converts the planned order now overdue",
+    async () => {
+      // the week turned (today is in week 2) and MRP has not run again: the
+      // Make still names week 1, and its planned order is overdue
+      const actionId = await action("Make", 10, "last-week");
+      const overdue = await plannedOrder({ orderType: "Make" }, "last-week");
+      const jobId = await job("last-week");
+
+      const result = await settleNewSupplyPlanningActions(f.db, {
+        companyId: f.companyId,
+        locationId: f.locationId,
+        userId: USER,
+        type: "Make",
+        asOf: "2299-01-10",
+        ordered: [
+          {
+            itemId: f.partId,
+            periodId: week1,
+            quantity: 10,
+            planningActionId: actionId,
+            jobId
+          }
+        ]
+      });
+      expect(result.data).toEqual([
+        expect.objectContaining({ id: actionId, status: "Actioned" })
+      ]);
+      expect(await read(overdue)).toMatchObject({ status: "Converted", jobId });
     }
   );
 

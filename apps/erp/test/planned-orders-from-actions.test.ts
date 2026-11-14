@@ -696,6 +696,61 @@ describe("suggestions from the week's planned orders", () => {
     ]);
   });
 
+  // After the week turns and before MRP runs again, an action keeps last
+  // week's period: what it counted is overdue, and counts in the first week.
+  it("offers an action of a week already past the overdue planned orders", () => {
+    const orders = productionOrdersFromActions(
+      [
+        action({
+          type: "Make",
+          periodId: "last-week",
+          suggestedDate: "2026-09-24",
+          suggestedQuantity: 4
+        })
+      ],
+      {
+        todayDate: "2026-09-30",
+        weeks,
+        plannedOrders: [
+          plannedOrder({
+            id: "overdue",
+            periodId: "last-week",
+            quantity: 4,
+            dueDate: "2026-09-24",
+            releaseDate: "2026-09-20"
+          }),
+          plannedOrder({ id: "next-week", periodId: "w1" })
+        ]
+      }
+    );
+    expect(
+      orders.map(({ quantity, periodId, plannedOrderId }) => ({
+        quantity,
+        periodId,
+        plannedOrderId
+      }))
+    ).toEqual([{ quantity: 4, periodId: "last-week", plannedOrderId: "overdue" }]);
+  });
+
+  it("offers an action of a later week not on the page no planned order", () => {
+    const orders = productionOrdersFromActions(
+      [
+        action({
+          type: "Make",
+          periodId: "w9",
+          suggestedDate: "2026-11-30",
+          suggestedQuantity: 6
+        })
+      ],
+      {
+        todayDate: "2026-09-30",
+        weeks,
+        plannedOrders: [plannedOrder({ id: "overdue", dueDate: "2026-09-24" })]
+      }
+    );
+    expect(orders.map((order) => order.plannedOrderId)).toEqual([undefined]);
+  });
+
   it("counts a planned order in the week of its due date, not its stored week", () => {
     const orders = productionOrdersFromActions(
       [action({ type: "Make", periodId: "w2", suggestedQuantity: 5 })],

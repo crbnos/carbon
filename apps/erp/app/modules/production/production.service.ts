@@ -12602,7 +12602,36 @@ export type ConversionWeek = { id: string; startDate: string; endDate: string };
 export type ConversionCalendar = {
   weeks: ConversionWeek[];
   today: string | null;
+  /** Settled actions' weeks before the current one: an action MRP has not
+   *  rolled forward since the week turned. Its documents convert in the
+   *  current week, which now holds what it counted as overdue. */
+  earlierWeekIds: string[];
 };
+
+/**
+ * The (item, location, segment, week, type) a document converts in: the week
+ * of the action it settled, or the current week when that action's week is
+ * already past.
+ */
+function documentConversionKey(
+  document: PlannedOrderConversion,
+  calendar: ConversionCalendar | null | undefined
+) {
+  return conversionKey({
+    ...document,
+    periodId: conversionWeekOfDocument(document.periodId, calendar)
+  });
+}
+
+function conversionWeekOfDocument(
+  periodId: string,
+  calendar: ConversionCalendar | null | undefined
+): string {
+  const current = calendar?.today ? calendar.weeks[0]?.id : undefined;
+  return current && calendar?.earlierWeekIds.includes(periodId)
+    ? current
+    : periodId;
+}
 
 /**
  * The week a planned order counts in for the convert: MRP's own rule,
@@ -12635,11 +12664,14 @@ function conversionWeekOf(
  * 2. The other documents convert the planned orders of their week left over,
  *    per (item, location, segment, week, type): first each to one of equal
  *    quantity (Planned before Firm, then `splitIndex`), then each one left to
- *    the next Planned order by `splitIndex`. A Firm order is the planner's
- *    number, so only its id or its quantity converts it. A planned order
- *    counts in the week `conversionWeekOf` gives it, so the current week also
- *    holds every overdue one: MRP sizes it, and sums it into the action,
- *    there. Without a calendar, its stored week.
+ *    the next Planned order by `splitIndex` — by the rule of 1: a document
+ *    smaller than what is left of that order only reduces it. A Firm order
+ *    is the planner's number, so only its id or its quantity converts it. A
+ *    planned order counts in the week `conversionWeekOf` gives it, so the
+ *    current week also holds every overdue one: MRP sizes it, and sums it
+ *    into the action, there. Without a calendar, its stored week. A
+ *    document whose action's week is already past (`earlierWeekIds`) counts
+ *    in the current week.
  */
 export function matchPlannedOrdersToDocuments(
   documents: PlannedOrderConversion[],
@@ -12700,7 +12732,9 @@ export function matchPlannedOrdersToDocuments(
   const unnamed = documents.filter((document) => !document.plannedOrderId);
   const unmatched: PlannedOrderConversion[] = [];
   for (const document of unnamed) {
-    const equal = (candidatesByKey.get(conversionKey(document)) ?? [])
+    const equal = (
+      candidatesByKey.get(documentConversionKey(document, calendar)) ?? []
+    )
       .filter((row) => !isTaken(row) && equals(row.quantity, document.quantity))
       .sort(
         (a, b) =>
@@ -12710,11 +12744,26 @@ export function matchPlannedOrdersToDocuments(
     if (equal) claim(equal, document.documentId);
     else unmatched.push(document);
   }
+  // The fallback holds the named documents' rule: a document smaller than
+  // what is left of the order takes its quantity off and leaves the order as
+  // it is; one that reaches it converts it. Later documents count against
+  // what the earlier ones left.
   for (const document of unmatched) {
-    const next = (candidatesByKey.get(conversionKey(document)) ?? [])
-      .filter((row) => !isTaken(row) && row.status === "Planned")
+    const next = (
+      candidatesByKey.get(documentConversionKey(document, calendar)) ?? []
+    )
+      .filter((row) => !claimed.has(row.id) && row.status === "Planned")
       .sort(bySplit)[0];
-    if (next) claim(next, document.documentId);
+    if (!next) continue;
+    const remainder = round(
+      (left.get(next.id) ?? next.quantity) - document.quantity
+    );
+    if (remainder > 0) {
+      left.set(next.id, remainder);
+      continue;
+    }
+    left.delete(next.id);
+    claim(next, document.documentId);
   }
   return {
     conversions,
@@ -12748,9 +12797,10 @@ function restatedPlannedOrderScrap(quantity: RawBuilder<unknown>) {
  * Firm). Its Open and Dismissed change actions are deleted: the job or PO
  * line is the order now, and MRP raises its actions on that.
  *
- * A document smaller than the planned order it names does not convert it:
- * the order keeps its status (a Firm one stays Firm) and drops to the
- * quantity left, its Make scrap restated as `updatePlannedOrders` does.
+ * A document smaller than the planned order it names, or (naming none) the
+ * Planned order it falls back to, does not convert it: the order keeps its
+ * status (a Firm one stays Firm) and drops to the quantity left, its Make
+ * scrap restated as `updatePlannedOrders` does.
  *
  * A planned order no document stands for stays as it is, and the next MRP run
  * sizes it again. Two orders merged into one PO line are two documents, so
@@ -12798,9 +12848,12 @@ export async function convertPlannedOrdersForActions(
     const weekById = new Map(calendar.weeks.map((week) => [week.id, week]));
     const currentWeekId = calendar.today ? calendar.weeks[0]?.id : undefined;
     // each key's week, by due date: the current one from the first day of
-    // time, as it holds every overdue planned order
+    // time, as it holds every overdue planned order; a past action week
+    // reads as the current one
     const keyFilters = keys.flatMap((key) => {
-      const week = weekById.get(key.periodId);
+      const week = weekById.get(
+        conversionWeekOfDocument(key.periodId, calendar)
+      );
       return week ? [{ key, week }] : [];
     });
 
@@ -12921,14 +12974,18 @@ export async function convertPlannedOrdersForActions(
 /**
  * The weeks a convert sorts planned orders into, in date order: given
  * `asOf`, the weekly period holding it first (it holds every overdue planned
- * order), then the settled actions' later weeks. Without a period holding
- * `asOf`, the settled actions' weeks and no planned order is overdue.
+ * order), then the settled actions' later weeks. A settled action's week
+ * before it is named in `earlierWeekIds`, so its documents convert in the
+ * current week. Without a period holding `asOf`, the settled actions' weeks
+ * and no planned order is overdue.
  */
 async function readConversionCalendar(
   db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
   args: { periodIds: string[]; asOf?: string }
 ): Promise<ConversionCalendar> {
-  if (args.periodIds.length === 0) return { weeks: [], today: null };
+  if (args.periodIds.length === 0) {
+    return { weeks: [], today: null, earlierWeekIds: [] };
+  }
   const asOf = args.asOf;
   const rows = await db
     .selectFrom("period")
@@ -12959,19 +13016,27 @@ async function readConversionCalendar(
   if (!current) {
     return {
       weeks: all.filter((week) => args.periodIds.includes(week.id)),
-      today: null
+      today: null,
+      earlierWeekIds: []
     };
   }
   // a week before the current one holds nothing: what was due then is
-  // overdue, and counts in the current week
-  const later = all.filter(
-    // ISO dates order as strings
-    (week) =>
-      week !== current &&
-      args.periodIds.includes(week.id) &&
-      week.startDate > current.startDate
+  // overdue, and counts in the current week. A settled action still on
+  // such a week (the week turned before MRP ran again) converts there too.
+  const settled = all.filter(
+    (week) => week !== current && args.periodIds.includes(week.id)
   );
-  return { weeks: [current, ...later], today: asOf ?? null };
+  return {
+    // ISO dates order as strings
+    weeks: [
+      current,
+      ...settled.filter((week) => week.startDate > current.startDate)
+    ],
+    today: asOf ?? null,
+    earlierWeekIds: settled
+      .filter((week) => week.startDate < current.startDate)
+      .map((week) => week.id)
+  };
 }
 
 /** A planned order as a person's change reads it. */
