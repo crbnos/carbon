@@ -879,6 +879,20 @@ export async function getLocation(
   return client.from("location").select("*").eq("id", locationId).single();
 }
 
+/** The location's planning time fence, which an item's empty fence inherits. */
+export async function getLocationPlanningTimeFence(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  companyId: string
+) {
+  return client
+    .from("location")
+    .select("planningTimeFenceDays")
+    .eq("id", locationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
 export const LOCATIONS_PAGING: Paging = {
   defaultSorts: [{ column: "name", ascending: true }]
 };

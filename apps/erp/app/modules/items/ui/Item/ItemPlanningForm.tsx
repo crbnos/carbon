@@ -35,21 +35,27 @@ import {
 import { ItemReorderPolicy } from "./ItemReorderPolicy";
 
 type ItemPlanningFormProps = {
-  // the DB row carries responsibleEmployee / planningHorizonDays as nullable;
-  // the validator treats them as optional — accept both
+  // the DB row carries responsibleEmployee / planningHorizonDays /
+  // planningTimeFenceDays as nullable; the validator treats them as optional —
+  // accept both
   initialValues: Omit<
     z.infer<typeof itemPlanningValidator>,
-    "responsibleEmployee" | "planningHorizonDays"
+    "responsibleEmployee" | "planningHorizonDays" | "planningTimeFenceDays"
   > & {
     responsibleEmployee?: string | null;
     planningHorizonDays?: number | null;
+    planningTimeFenceDays?: number | null;
   };
+  // the location's planning time fence, which an empty item value inherits;
+  // undefined when it could not be read
+  locationTimeFenceDays?: number;
   locations: ListItem[];
   type: "Part" | "Material" | "Tool" | "Consumable";
 };
 
 const ItemPlanningForm = ({
   initialValues,
+  locationTimeFenceDays,
   locations,
   type
 }: ItemPlanningFormProps) => {
@@ -188,6 +194,18 @@ const ItemPlanningForm = ({
               label={t`Planning Horizon (Days)`}
               termId="item-planning-horizon"
               minValue={0}
+            />
+
+            <Number
+              name="planningTimeFenceDays"
+              label={t`Planning time fence (days)`}
+              termId="planning-time-fence"
+              minValue={0}
+              placeholder={
+                locationTimeFenceDays === undefined
+                  ? t`Location default`
+                  : t`Location default: ${locationTimeFenceDays}`
+              }
             />
 
             <Employee

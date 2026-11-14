@@ -245,6 +245,8 @@ export const createLocation = defineServiceFn({
   async run(ctx, { id: _id, ...location }) {
     const insert = await service.upsertLocation(ctx.asCaller.supabase, {
       ...location,
+      // The column is NOT NULL: an empty fence is no fence.
+      planningTimeFenceDays: location.planningTimeFenceDays ?? 0,
       companyId: ctx.company.id,
       createdBy: ctx.auditUserId
     });
@@ -289,6 +291,9 @@ export const updateLocation = defineServiceFn({
     const update = await service.upsertLocation(ctx.asCaller.supabase, {
       id,
       ...location,
+      // The column is NOT NULL, and an update is a full replace: an empty
+      // fence saves 0 (no fence) rather than null.
+      planningTimeFenceDays: location.planningTimeFenceDays ?? 0,
       updatedBy: ctx.auditUserId
     });
     if (update.error) {

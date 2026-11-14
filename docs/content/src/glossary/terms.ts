@@ -1331,6 +1331,10 @@ export const terms = {
     term: msg`Planning Horizon (Days)`,
     definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`
   },
+  "planning-time-fence": {
+    term: msg`Planning time fence`,
+    definition: msg`The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's.`
+  },
   "planning-action": {
     term: msg`Planning action`,
     definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line or job. Apply it from the planning page, dismiss it, or assign it.`,

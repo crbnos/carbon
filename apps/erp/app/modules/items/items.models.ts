@@ -744,6 +744,10 @@ export const itemPlanningValidator = z
     // = inherit the company default, else no fence; 0 = no fence for this item
     // even when the company has a default.
     planningHorizonDays: zfd.numeric(z.number().int().min(0).optional()),
+    // The planning time fence in calendar days from today: MRP holds planned
+    // orders inside it still. Empty = inherit the location's fence; 0 = no
+    // fence for this item even when the location has one.
+    planningTimeFenceDays: zfd.numeric(z.number().int().min(0).optional()),
     // the ownership ladder's leaf override (spec §P1.3): this item at this
     // location; empty = inherit item group → location → company default
     responsibleEmployee: zfd.text(z.string().optional()),
