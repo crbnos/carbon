@@ -99,6 +99,62 @@ export function plannedOrdersChangedSince(
 }
 
 /**
+ * Under the planning lock (the caller takes it first, in `trx`): throws
+ * `PlannedOrdersChangedError` when anyone changed the company's planned
+ * orders since `snapshot` was read. Both writes of a run check it: the
+ * planned-order write against the run's read, and the worklist write
+ * against what the planned-order write committed.
+ */
+export async function assertPlannedOrdersUnchanged(
+  trx: Kysely<DB>,
+  companyId: string,
+  snapshot: PlannedOrderSnapshot
+): Promise<void> {
+  const readStart = sql`${snapshot.readStart}::timestamptz`;
+  const current = await trx
+    .selectFrom("plannedOrder")
+    .select([
+      "id",
+      "status",
+      PLANNED_ORDER_UPDATED_AT,
+      sql<boolean>`"createdAt" > ${readStart}`.as("createdSinceRead")
+    ])
+    .where("companyId", "=", companyId)
+    .where(
+      sql<boolean>`("status" IN ('Planned', 'Firm') OR "createdAt" > ${readStart})`
+    )
+    .execute();
+  if (plannedOrdersChangedSince(snapshot.rows, current)) {
+    throw new PlannedOrdersChangedError();
+  }
+}
+
+/**
+ * The company's planned orders as they stand in `db`'s transaction: its
+ * `now()` (the transaction's start, so rows it inserted itself do not read
+ * as created since), then each Planned and Firm row's id, status and
+ * `updatedAt`. Read at the end of the Phase-7 transaction, it is what the
+ * run committed, and the worklist write checks against it.
+ */
+export async function readPlannedOrderSnapshot(
+  db: Kysely<DB>,
+  companyId: string
+): Promise<PlannedOrderSnapshot> {
+  const clock = await sql<{
+    now: string;
+  }>`SELECT now()::text AS "now"`.execute(db);
+  const readStart = clock.rows[0]?.now;
+  if (!readStart) throw new Error("Failed to read the database clock");
+  const rows = await db
+    .selectFrom("plannedOrder")
+    .select(["id", "status", PLANNED_ORDER_UPDATED_AT])
+    .where("companyId", "=", companyId)
+    .where("status", "in", ["Planned", "Firm"])
+    .execute();
+  return { readStart, rows };
+}
+
+/**
  * Runs `attempt` again, up to `maxAttempts` times in all, while it throws
  * `PlannedOrdersChangedError`. Any other error, or the last attempt's, ends it.
  */
@@ -253,23 +309,7 @@ export async function writePlannedOrderDiff(
   await lockCompanyPlanning(trx, companyId);
 
   if (args.snapshot) {
-    const readStart = sql`${args.snapshot.readStart}::timestamptz`;
-    const current = await trx
-      .selectFrom("plannedOrder")
-      .select([
-        "id",
-        "status",
-        PLANNED_ORDER_UPDATED_AT,
-        sql<boolean>`"createdAt" > ${readStart}`.as("createdSinceRead")
-      ])
-      .where("companyId", "=", companyId)
-      .where(
-        sql<boolean>`("status" IN ('Planned', 'Firm') OR "createdAt" > ${readStart})`
-      )
-      .execute();
-    if (plannedOrdersChangedSince(args.snapshot.rows, current)) {
-      throw new PlannedOrdersChangedError();
-    }
+    await assertPlannedOrdersUnchanged(trx, companyId, args.snapshot);
   }
   if (args.locationIds.length === 0) return new Map();
 

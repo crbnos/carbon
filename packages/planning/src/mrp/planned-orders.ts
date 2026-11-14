@@ -26,6 +26,7 @@ import {
 } from "@carbon/database/mrp-engine";
 import {
   isPlannedOrderHeld,
+  plannedOrderWeekIndex,
   planningTimeFenceDate,
   resolvePlanningTimeFenceDays,
   round,
@@ -185,8 +186,10 @@ export type PlannedOrderChangeAction = Omit<
 export type PlanSupplyResult = {
   plannedOrders: GeneratedPlannedOrder[];
   /**
-   * The Planned rows held this run (released inside the time fence). They
-   * keep their values; the writer must neither update nor delete them.
+   * The planned orders held this run: Firm, or Planned and released inside
+   * the time fence, of an item MRP plans or no longer plans. They keep their
+   * values; the writer must neither update nor delete them, and only they
+   * get change actions.
    */
   heldPlannedOrderIds: string[];
   plannedOrderSignals: PlannedOrderSignal[];
@@ -326,17 +329,10 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     }
     return index;
   };
-  // The week supply lands in, as `findPeriod` buckets it: an overdue order in
-  // the first week, one past the last week in none.
-  const supplyPeriodIndex = (dateIso: string): number | null => {
-    if (daysBetween(dateIso, todayDate) < 0) return 0;
-    const index = periods.findIndex(
-      (p) =>
-        daysBetween(p.startDate, dateIso) <= 0 &&
-        daysBetween(p.endDate, dateIso) >= 0
-    );
-    return index < 0 ? null : index;
-  };
+  // The week a planned order counts in: an overdue order in the first week,
+  // one past the last week in none. One rule with the drawer and convert.
+  const weekIndexOf = (dueDate: string): number | null =>
+    plannedOrderWeekIndex(dueDate, periods, todayDate);
 
   const policyByKey = new Map<string, PlanningPolicyInput>();
   for (const policy of inputs.planningPolicies) {
@@ -359,21 +355,37 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     return { policy, kind };
   };
 
-  const fenceDaysOf = (policy: PlanningPolicyInput): number =>
+  // The item's fence, else the location's. An item with no planning row at
+  // the location has only the location's.
+  const fenceDaysAt = (locationId: string, itemId: string): number =>
     resolvePlanningTimeFenceDays(
-      policy.planningTimeFenceDays,
-      inputs.locationTimeFenceDays.get(policy.locationId)
+      policyByKey.get(makeLocationItemKey(locationId, itemId))
+        ?.planningTimeFenceDays,
+      inputs.locationTimeFenceDays.get(locationId)
     );
+  const fenceDaysOf = (policy: PlanningPolicyInput): number =>
+    fenceDaysAt(policy.locationId, policy.itemId);
 
   // Held orders: Firm, or Planned and released inside the fence. They keep
   // their quantity and dates and count as supply.
   const heldByKey = new Map<string, ExistingPlannedOrder[]>();
+  // Held orders of an item MRP no longer plans (deactivated, superseded,
+  // built as Make to Order, no planning row): kept, never supply, never
+  // exploded, each with a Cancel for a person to decide. Deleting a Firm or
+  // fence-held order silently would undo a planner's decision.
+  const ineligibleHeld: ExistingPlannedOrder[] = [];
   for (const order of inputs.existingPlannedOrders) {
     if ((order.planningSegmentId || COMMON_SEGMENT) !== COMMON_SEGMENT) {
       continue;
     }
     const eligible = eligibleOf(order.locationId, order.itemId);
-    if (!eligible) continue;
+    if (!eligible) {
+      const fenceDays = fenceDaysAt(order.locationId, order.itemId);
+      if (isPlannedOrderHeld(order, fenceDays, todayDate)) {
+        ineligibleHeld.push(order);
+      }
+      continue;
+    }
     if (!isPlannedOrderHeld(order, fenceDaysOf(eligible.policy), todayDate)) {
       continue;
     }
@@ -393,7 +405,27 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
 
   const plannedOrders: GeneratedPlannedOrder[] = [];
   const plannedOrderSignals: PlannedOrderSignal[] = [];
-  const plannedOrderChangeActions: PlannedOrderChangeAction[] = [];
+  const plannedOrderChangeActions: PlannedOrderChangeAction[] =
+    ineligibleHeld.map((order) => ({
+      itemId: order.itemId,
+      locationId: order.locationId,
+      planningSegmentId: COMMON_SEGMENT,
+      type: "Cancel",
+      periodId: periods[periodIndexOn(order.dueDate)]?.id ?? order.periodId,
+      suggestedQuantity: order.quantity,
+      suggestedDate: order.dueDate,
+      horizonDate: order.dueDate,
+      latestOrderDate: null,
+      isASAP: false,
+      purchaseOrderLineId: null,
+      jobId: null,
+      plannedOrderId: order.id,
+      requiresManualAction: false,
+      supplierId: order.orderType === "Buy" ? order.supplierId : null,
+      policyName: null,
+      reason: "Item is no longer planned by MRP",
+      triggerValues: null
+    }));
   const newSupplyByRow = new Map<string, ChangeCandidate[]>();
 
   const planSupply = (args: PlanSupplyArgs): PlannedSupplyResult | null => {
@@ -418,7 +450,7 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     // floored
     const heldSupply = periods.map(() => 0);
     for (const order of held) {
-      const index = supplyPeriodIndex(order.dueDate);
+      const index = weekIndexOf(order.dueDate);
       if (index === null) continue;
       heldSupply[index] = (heldSupply[index] ?? 0) + order.quantity;
     }
@@ -600,7 +632,7 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       if (cancelledIds.has(order.id)) continue;
       if (order.orderType !== "Make" && order.orderType !== "Buy") continue;
       // the week it lands in as supply; past the horizon it is not supply
-      const index = supplyPeriodIndex(order.dueDate);
+      const index = weekIndexOf(order.dueDate);
       const period = index === null ? undefined : periods[index];
       if (!period) continue;
       heldOrderSupply.push({
@@ -626,9 +658,12 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
 
     if (kind !== "Make") return { explosions: [] };
 
-    // A held Make order is still made: its components are needed.
+    // A held Make order is still made: its components are needed. One past
+    // the horizon is not supply this run, so nothing needs its components
+    // yet either.
     for (const order of held) {
       if (order.orderType !== "Make") continue;
+      if (weekIndexOf(order.dueDate) === null) continue;
       explosions.push({
         releasePeriodIndex: periodIndexOn(order.releaseDate),
         quantity: order.quantity + order.scrapQuantity,
@@ -670,10 +705,10 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
     extraPlanningKeys: [...extraPlanningKeys],
     result: () => ({
       plannedOrders,
-      heldPlannedOrderIds: [...heldByKey.values()]
-        .flat()
-        .filter((order) => order.status === "Planned")
-        .map((order) => order.id),
+      heldPlannedOrderIds: [
+        ...[...heldByKey.values()].flat(),
+        ...ineligibleHeld
+      ].map((order) => order.id),
       plannedOrderSignals,
       plannedOrderChangeActions,
       newSupplyByRow

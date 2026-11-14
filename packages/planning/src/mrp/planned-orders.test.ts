@@ -20,7 +20,7 @@ import {
   type PlannedOrderInputs,
   type PlanningPolicyInput
 } from "./planned-orders";
-import { deriveRowActions } from "./planning-actions";
+import { deriveRowActions, plannedOrderActions } from "./planning-actions";
 
 const TODAY = "2026-11-16"; // a Monday; weeks start on Sunday
 const PERIODS = [
@@ -334,8 +334,118 @@ describe("planned orders in planCompany", () => {
       ])
     ).toEqual([["Decrease", "plo_2", 3]]);
     expect(outputs.plannedOrders).toEqual([]);
-    expect(outputs.heldPlannedOrderIds).toEqual([]);
+    // held, so the worklist keeps its Decrease
+    expect(outputs.heldPlannedOrderIds).toEqual(["plo_2"]);
     expect(childDemand(outputs)).toEqual([["w3", 18]]);
+  });
+
+  // Due 2027-01-04, after the last week (w6 ends 2026-12-26): the Firm order
+  // is not supply this run, so nothing needs its components yet either.
+  it("does not explode a held Make order due past the horizon", () => {
+    const outputs = planCompany(
+      base({
+        planned: {
+          existingPlannedOrders: [
+            heldOrder({
+              id: "plo_2",
+              status: "Firm",
+              dueDate: "2027-01-04",
+              releaseDate: "2026-12-28",
+              periodId: "w8"
+            })
+          ]
+        }
+      })
+    );
+    expect(childDemand(outputs)).toEqual([]);
+    expect(outputs.newSupplyByRow.get(ROW)).toEqual([]);
+    expect(outputs.plannedOrderChangeActions).toEqual([]);
+  });
+
+  // A planner's Firm order, or a Planned one MRP holds inside the fence, is
+  // a decision: when MRP stops planning the item it asks a person instead of
+  // deleting the order. Not supply, not exploded.
+  it.each([
+    [
+      "a Firm order of a deactivated item",
+      { parent: { active: false } },
+      heldOrder({ status: "Firm" })
+    ],
+    [
+      "a Planned order inside the location's fence, with no planning row",
+      { parent: null, locationTimeFenceDays: new Map([["loc_1", 10]]) },
+      heldOrder({})
+    ]
+  ] as const)("keeps %s and raises a Cancel on it", (_name, setup, order) => {
+    const { parent, ...planned } = setup as {
+      parent: Partial<PlanningPolicyInput> | null;
+      locationTimeFenceDays?: Map<string, number>;
+    };
+    const outputs = planCompany(
+      base({
+        parent,
+        salesOrderLines: [sale("2026-11-30", 3)],
+        planned: { ...planned, existingPlannedOrders: [order] }
+      })
+    );
+    const cancel = {
+      itemId: "item_p",
+      locationId: "loc_1",
+      planningSegmentId: "",
+      type: "Cancel",
+      periodId: "w2",
+      suggestedQuantity: 5,
+      suggestedDate: "2026-11-27",
+      horizonDate: "2026-11-27",
+      latestOrderDate: null,
+      isASAP: false,
+      purchaseOrderLineId: null,
+      jobId: null,
+      plannedOrderId: "plo_1",
+      requiresManualAction: false,
+      supplierId: null,
+      policyName: null,
+      reason: expect.any(String),
+      triggerValues: null
+    };
+    expect(outputs.plannedOrderChangeActions).toEqual([cancel]);
+    expect(outputs.heldPlannedOrderIds).toEqual(["plo_1"]);
+    expect(outputs.plannedOrders).toEqual([]);
+    // the sale's 3 explodes on the Phase 1 path; the order's 5 does not
+    expect(childDemand(outputs)).toEqual([["w2", 6]]);
+    // the item has no planning row this run: the Cancel still reaches the worklist
+    expect(
+      plannedOrderActions({
+        changeActions: outputs.plannedOrderChangeActions,
+        signals: outputs.plannedOrderSignals,
+        newSupplyByRow: outputs.newSupplyByRow,
+        plannedOrderIdByKey: new Map(),
+        heldPlannedOrderIds: new Set(outputs.heldPlannedOrderIds),
+        periods: PERIODS,
+        todayDate: TODAY
+      })
+    ).toEqual([cancel]);
+  });
+
+  // Released 11-30, after the fence ends on 11-26: nothing holds it.
+  it("lets a Planned order outside the fence of an item MRP no longer plans be deleted", () => {
+    const outputs = planCompany(
+      base({
+        parent: null,
+        planned: {
+          locationTimeFenceDays: new Map([["loc_1", 10]]),
+          existingPlannedOrders: [
+            heldOrder({
+              dueDate: "2026-12-07",
+              releaseDate: "2026-11-30",
+              periodId: "w4"
+            })
+          ]
+        }
+      })
+    );
+    expect(outputs.plannedOrderChangeActions).toEqual([]);
+    expect(outputs.heldPlannedOrderIds).toEqual([]);
   });
 
   // A held order is converted through its week's Make, so it is that Make's

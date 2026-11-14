@@ -13,7 +13,12 @@ import {
 } from "@carbon/database/client";
 import { type Kysely, PostgresDriver, sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { writePlannedOrderDiff } from "./planned-order-write";
+import {
+  assertPlannedOrdersUnchanged,
+  PlannedOrdersChangedError,
+  readPlannedOrderSnapshot,
+  writePlannedOrderDiff
+} from "./planned-order-write";
 import {
   type GeneratedPlannedOrder,
   plannedOrderNaturalKey
@@ -186,6 +191,44 @@ describe.skipIf(!hasLocalDatabase)(
 
       await expect(run).rejects.toMatchObject({ code: "23502" });
       expect(await stored()).toEqual(before);
+    });
+
+    // The worklist write checks the planned orders against what the run's
+    // Phase-7 write committed: its own update, insert and delete are no
+    // change, a person's Cancel after the commit is.
+    it("reads a post-write snapshot that sees the run's own write as unchanged", async () => {
+      const snapshot = await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+        await writePlannedOrderDiff(trx, {
+          companyId,
+          userId: USER,
+          locationIds: [locationId],
+          generated: [generated(0, 15), generated(3, 4)],
+          heldPlannedOrderIds: [],
+          updatedAt: "2295-01-01T00:00:00Z"
+        });
+        return readPlannedOrderSnapshot(trx, companyId);
+      });
+      expect(snapshot.rows.map((row) => row.status).sort()).toEqual([
+        "Firm",
+        "Planned",
+        "Planned"
+      ]);
+
+      const check = () =>
+        db
+          .transaction()
+          .execute((trx) =>
+            assertPlannedOrdersUnchanged(trx, companyId, snapshot)
+          );
+      await expect(check()).resolves.toBeUndefined();
+
+      await db
+        .deleteFrom("plannedOrder")
+        .where("companyId", "=", companyId)
+        .where("id", "=", `${prefix}-kept`)
+        .execute();
+      await expect(check()).rejects.toBeInstanceOf(PlannedOrdersChangedError);
     });
   }
 );

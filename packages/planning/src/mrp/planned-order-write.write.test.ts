@@ -2,18 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { DB } from "@carbon/database/client";
-import {
-  type CompiledQuery,
-  type DatabaseConnection,
-  DummyDriver,
-  Kysely,
-  PostgresAdapter,
-  PostgresIntrospector,
-  PostgresQueryCompiler,
-  type QueryResult
-} from "kysely";
 import { describe, expect, it } from "vitest";
+import {
+  recordingDatabase as database,
+  kindOf,
+  type RecordingDriver,
+  type Row
+} from "./__fixtures__/recording-driver";
 import {
   type CurrentPlannedOrder,
   diffPlannedOrders,
@@ -27,115 +22,6 @@ import {
   type GeneratedPlannedOrder,
   plannedOrderNaturalKey
 } from "./planned-orders";
-
-type Row = Record<string, unknown> & { id: string; status: string };
-
-/**
- * A `plannedOrder` table in memory. It records every statement and applies
- * the ones the writer sends: the snapshot check (the Planned and Firm rows),
- * the read (by status), the DELETE (by id and status), the
- * `UPDATE … FROM (VALUES …)` and the INSERT … RETURNING.
- */
-class RecordingDriver extends DummyDriver {
-  readonly sent: CompiledQuery[] = [];
-  private nextId = 1;
-  constructor(readonly rows: Row[]) {
-    super();
-  }
-
-  private apply(query: CompiledQuery): unknown[] {
-    const params = query.parameters as unknown[];
-    const sqlText = query.sql;
-    if (sqlText.includes('"createdSinceRead"')) {
-      return this.rows
-        .filter((row) => row.status === "Planned" || row.status === "Firm")
-        .map((row) => ({
-          id: row.id,
-          status: row.status,
-          updatedAt: row.updatedAt ?? null,
-          createdSinceRead: false
-        }));
-    }
-    if (sqlText.startsWith("select")) {
-      const status = params[1];
-      return this.rows.filter((row) => row.status === status);
-    }
-    if (sqlText.startsWith("delete")) {
-      const [, status, ...ids] = params;
-      for (let i = this.rows.length - 1; i >= 0; i--) {
-        const row = this.rows[i]!;
-        if (row.status === status && ids.includes(row.id)) {
-          this.rows.splice(i, 1);
-        }
-      }
-      return [];
-    }
-    if (sqlText.trimStart().startsWith("UPDATE")) {
-      // updatedBy, updatedAt, then 8 values per row, then companyId
-      const values = params.slice(2, -1);
-      for (let i = 0; i < values.length; i += 8) {
-        const [id, quantity, scrapQuantity, dueDate, releaseDate] =
-          values.slice(i, i + 8);
-        const row = this.rows.find(
-          (r) => r.id === id && r.status === "Planned"
-        );
-        if (!row) continue;
-        Object.assign(row, {
-          quantity,
-          scrapQuantity,
-          dueDate,
-          releaseDate,
-          updatedBy: params[0]
-        });
-      }
-      return [];
-    }
-    if (sqlText.startsWith("insert")) {
-      const columns = [
-        ...(sqlText.match(/\(([^)]*)\) values/)?.[1] ?? "").matchAll(/"(\w+)"/g)
-      ].map((m) => m[1]!);
-      const inserted: Row[] = [];
-      for (let i = 0; i < params.length; i += columns.length) {
-        const row = Object.fromEntries(
-          columns.map((column, j) => [column, params[i + j]])
-        ) as Row;
-        row.id = `new-${this.nextId++}`;
-        this.rows.push(row);
-        inserted.push(row);
-      }
-      return inserted;
-    }
-    return [];
-  }
-
-  override async acquireConnection(): Promise<DatabaseConnection> {
-    return {
-      executeQuery: async <R>(
-        query: CompiledQuery
-      ): Promise<QueryResult<R>> => {
-        this.sent.push(query);
-        return { rows: this.apply(query) as R[] };
-      },
-      // biome-ignore lint/correctness/useYield: never streamed
-      streamQuery: async function* () {
-        throw new Error("not streamed");
-      }
-    };
-  }
-}
-
-function database(rows: Row[]) {
-  const driver = new RecordingDriver(rows);
-  const db = new Kysely<DB>({
-    dialect: {
-      createAdapter: () => new PostgresAdapter(),
-      createDriver: () => driver,
-      createIntrospector: (k) => new PostgresIntrospector(k),
-      createQueryCompiler: () => new PostgresQueryCompiler()
-    }
-  });
-  return { db, driver };
-}
 
 const TRACE = {
   policyName: "Demand-Based Reorder",
@@ -174,13 +60,7 @@ function stored(id: string, overrides: Partial<Row> = {}): Row {
 }
 
 function kindsOf(driver: RecordingDriver) {
-  return driver.sent.map((q) =>
-    q.sql.includes("pg_advisory_xact_lock")
-      ? "lock"
-      : q.sql.includes('"createdSinceRead"')
-        ? "check"
-        : q.sql.trimStart().split(/\s/)[0]!.toLowerCase()
-  );
+  return driver.sent.map(kindOf);
 }
 
 async function write(

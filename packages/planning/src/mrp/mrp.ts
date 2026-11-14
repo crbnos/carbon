@@ -7,6 +7,7 @@ import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import type { MethodType } from "@carbon/database/mrp-engine";
+import { lockCompanyMrpRun } from "@carbon/database/planning-lock";
 import type { WriteGroupPegs } from "@carbon/ee/pegging";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -25,6 +26,7 @@ import {
   PLANNED_ORDER_UPDATED_AT,
   type PlannedOrderSnapshot,
   PlannedOrdersChangedError,
+  readPlannedOrderSnapshot,
   retryOnPlannedOrderChange,
   writePlannedOrderDiff
 } from "./planned-order-write.ts";
@@ -127,6 +129,32 @@ export async function runMrp(
   deps?: MrpDeps
 ): Promise<MrpResult> {
   const parsedPayload = payloadValidator.parse(payload);
+  const { companyId } = parsedPayload;
+
+  // One run per company at a time: two overlapping runs would each change
+  // the planned orders the other planned from, and both would plan again
+  // until they ran out of attempts. The MRP run lock is held by this
+  // transaction, which does nothing else, until the run ends (a throw rolls
+  // it back and releases the lock). The run's work goes on other
+  // connections, so its Phase-7 write commits on its own and the worklist
+  // reads it over PostgREST.
+  //
+  // Lock order: the MRP run lock, then the planning lock. The run takes the
+  // planning lock only while it holds the run lock (its two writes), and a
+  // person's firm, edit, apply or convert takes the planning lock only, so
+  // nothing holding the planning lock ever waits for the run lock.
+  return db.transaction().execute(async (runLock) => {
+    await lockCompanyMrpRun(runLock, companyId);
+    return runMrpLocked(client, db, parsedPayload, deps);
+  });
+}
+
+async function runMrpLocked(
+  client: SupabaseClient<Database>,
+  db: Kysely<DB>,
+  parsedPayload: MrpPayload,
+  deps: MrpDeps | undefined
+): Promise<MrpResult> {
   const { type, companyId, userId } = parsedPayload;
 
   logger.info("run started", { type, companyId, userId });
@@ -143,24 +171,25 @@ export async function runMrp(
 
   try {
     // A convert, firm, edit or cancel that commits between the run's reads
-    // and its write would be overwritten: a converted week planned again is a
-    // second Make. The write checks, under the planning lock, that the
-    // planned orders are still as the run read them; if not, it rolls back
-    // and the run reads and plans again.
-    const {
-      plannedOrderIdByKey,
-      commonSurplusDraws,
-      groupPegInputs,
-      heldPlannedOrderIds,
-      plannedOrderSignals,
-      plannedOrderChangeActions,
-      newSupplyByRow: plannedSupplyByRow,
-      planningGroups,
-      planningGroupsEnabled,
-      planningGroupRows,
-      groupMemberRows
-    } = await retryOnPlannedOrderChange((attempt) =>
-      loadPlanAndWrite(client, db, {
+    // and its writes would be overwritten: a converted week planned again is
+    // a second Make. Each write checks, under the planning lock, that the
+    // planned orders are still as the run read (Phase 7) or wrote them (the
+    // worklist); if not, it rolls back and the run reads and plans again.
+    await retryOnPlannedOrderChange(async (attempt) => {
+      const {
+        plannedOrderIdByKey,
+        plannedOrderSnapshot,
+        commonSurplusDraws,
+        groupPegInputs,
+        heldPlannedOrderIds,
+        plannedOrderSignals,
+        plannedOrderChangeActions,
+        newSupplyByRow: plannedSupplyByRow,
+        planningGroups,
+        planningGroupsEnabled,
+        planningGroupRows,
+        groupMemberRows
+      } = await loadPlanAndWrite(client, db, {
         companyId,
         userId,
         today,
@@ -168,61 +197,69 @@ export async function runMrp(
         locations: locations.data,
         deps,
         attempt
-      })
-    );
-    // Each new Order / Make names its planned order's id once it has one.
-    const newSupplyByRow = withPlannedOrderIds(
-      plannedSupplyByRow,
-      plannedOrderIdByKey
-    );
-
-    try {
-      // Persist the planning action messages (spec §P1) in their own atomic
-      // transaction AFTER the forecast/actual write commits — the planning
-      // RPCs it reads see only committed data. Errors PROPAGATE: the run must
-      // not report success with stale actions (forecasts are committed and
-      // correct; actions self-heal on the next successful run).
-      // The common stock each project segment draws becomes a Transfer.
-      // With PLANNING_GROUPS the planning-action transaction also
-      // diff-writes the pegs. It runs even with no active group, so the Soft
-      // pegs of a group that turned inactive are superseded.
-      await generatePlanningActions(client, db, {
-        companyId,
-        userId,
-        commonSurplusDraws,
-        newSupplyByRow,
-        plannedOrderChangeActions,
-        plannedOrderSignals,
-        plannedOrderIdByKey,
-        heldPlannedOrderIds,
-        planningGroups,
-        pegging:
-          planningGroupsEnabled && deps
-            ? {
-                writeGroupPegs: deps.writeGroupPegs,
-                runId: randomUUID(),
-                inputs: groupPegInputs,
-                priorityRuleByGroup: Object.fromEntries(
-                  planningGroupRows.map((group) => [
-                    group.id,
-                    group.priorityRule
-                  ])
-                ),
-                priorityByProject: Object.fromEntries(
-                  groupMemberRows.map((project) => [
-                    project.id,
-                    project.planningPriority
-                  ])
-                )
-              }
-            : undefined
       });
+      // Each new Order / Make names its planned order's id once it has one.
+      const newSupplyByRow = withPlannedOrderIds(
+        plannedSupplyByRow,
+        plannedOrderIdByKey
+      );
 
-      return { success: true };
-    } catch (err) {
-      logger.error("write phase failed", { companyId, error: err });
-      throw err;
-    }
+      try {
+        // Persist the planning action messages (spec §P1) in their own atomic
+        // transaction AFTER the forecast/actual write commits — the planning
+        // RPCs it reads see only committed data. Errors PROPAGATE: the run must
+        // not report success with stale actions (forecasts are committed and
+        // correct; actions self-heal on the next successful run).
+        // The common stock each project segment draws becomes a Transfer.
+        // With PLANNING_GROUPS the planning-action transaction also
+        // diff-writes the pegs. It runs even with no active group, so the Soft
+        // pegs of a group that turned inactive are superseded.
+        await generatePlanningActions(client, db, {
+          companyId,
+          userId,
+          commonSurplusDraws,
+          newSupplyByRow,
+          plannedOrderChangeActions,
+          plannedOrderSignals,
+          plannedOrderIdByKey,
+          heldPlannedOrderIds,
+          plannedOrderSnapshot,
+          planningGroups,
+          pegging:
+            planningGroupsEnabled && deps
+              ? {
+                  writeGroupPegs: deps.writeGroupPegs,
+                  runId: randomUUID(),
+                  inputs: groupPegInputs,
+                  priorityRuleByGroup: Object.fromEntries(
+                    planningGroupRows.map((group) => [
+                      group.id,
+                      group.priorityRule
+                    ])
+                  ),
+                  priorityByProject: Object.fromEntries(
+                    groupMemberRows.map((project) => [
+                      project.id,
+                      project.planningPriority
+                    ])
+                  )
+                }
+              : undefined
+        });
+      } catch (err) {
+        if (err instanceof PlannedOrdersChangedError) {
+          logger.info(
+            "planned orders changed before the worklist write; planning again",
+            { companyId, attempt }
+          );
+        } else {
+          logger.error("write phase failed", { companyId, error: err });
+        }
+        throw err;
+      }
+    });
+
+    return { success: true };
   } catch (err) {
     logger.error("run failed", { companyId, error: err });
     throw err;
@@ -654,7 +691,7 @@ async function loadPlanAndWrite(
     // between the delete and the inserts) saw planning data half-written —
     // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
     // everything back on any throw.
-    const plannedOrderIdByKey = await db.transaction().execute(async (trx) => {
+    const written = await db.transaction().execute(async (trx) => {
       // FIRST: the planned orders. `writePlannedOrderDiff` takes the
       // company's planning lock before any other statement of this
       // transaction, so the ERP's convert (which takes it too) never
@@ -808,11 +845,16 @@ async function loadPlanAndWrite(
         `.execute(trx);
       }
 
-      return idByKey;
+      // LAST: the planned orders as this transaction leaves them, for the
+      // worklist write to check against after the commit.
+      const committedSnapshot = await readPlannedOrderSnapshot(trx, companyId);
+
+      return { idByKey, committedSnapshot };
     });
 
     return {
-      plannedOrderIdByKey,
+      plannedOrderIdByKey: written.idByKey,
+      plannedOrderSnapshot: written.committedSnapshot,
       commonSurplusDraws,
       groupPegInputs,
       heldPlannedOrderIds,

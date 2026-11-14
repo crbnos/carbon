@@ -64,6 +64,10 @@ import {
   type OpenJobDetails
 } from "./open-supply-orders.ts";
 import { groupByProjectOf, planningSegmentOf } from "./plan-company.ts";
+import {
+  assertPlannedOrdersUnchanged,
+  type PlannedOrderSnapshot
+} from "./planned-order-write.ts";
 import type {
   PlannedOrderChangeAction,
   PlannedOrderSignal
@@ -1274,8 +1278,14 @@ export async function generatePlanningActions(
     plannedOrderSignals?: PlannedOrderSignal[];
     /** MRP v2: `plannedOrderNaturalKey` -> `plannedOrder.id`, as written. */
     plannedOrderIdByKey?: ReadonlyMap<string, string>;
-    /** MRP v2: the Planned rows held this run (inside the time fence). */
+    /** MRP v2: the planned orders held this run (Firm, or Planned inside the time fence). */
     heldPlannedOrderIds?: string[];
+    /**
+     * MRP v2: the planned orders as the run's Phase-7 write committed them
+     * (`readPlannedOrderSnapshot`). The write checks them under its lock
+     * (`writePlanningActions`).
+     */
+    plannedOrderSnapshot?: PlannedOrderSnapshot;
   }
 ): Promise<{ inserted: number; updated: number; deleted: number }> {
   const { companyId, userId } = args;
@@ -1608,14 +1618,68 @@ export async function generatePlanningActions(
     pegging = { ...pegging, inputs: moves.inputs };
   }
 
-  // ── diff-write. One transaction holds a per-company advisory lock across
-  // the read and the write: two runs for one company can overlap (the cron
-  // racing a route-triggered run), and both reading "no row" for a natural
-  // key then inserting fails the second on planningAction_natural_key_idx —
-  // which rolls back the whole write. Under the lock the second run reads
-  // the first run's rows and updates them in place instead.
-  const diff = await db.transaction().execute(async (trx) => {
+  const diff = await writePlanningActions(db, {
+    companyId,
+    userId,
+    candidates,
+    periods,
+    toleranceDays,
+    pegging,
+    plannedOrderSnapshot: args.plannedOrderSnapshot
+  });
+
+  logger.info("planning actions written", {
+    companyId,
+    inserted: diff.inserts.length,
+    updated: diff.updates.length,
+    deleted: diff.deleteIds.length
+  });
+
+  return {
+    inserted: diff.inserts.length,
+    updated: diff.updates.length,
+    deleted: diff.deleteIds.length
+  };
+}
+
+/**
+ * The worklist's diff-write, in one transaction that holds the company's
+ * planning lock across the read and the write: two runs for one company
+ * could overlap (the cron racing a route-triggered run), and both reading
+ * "no row" for a natural key then inserting fails the second on
+ * planningAction_natural_key_idx — which rolls back the whole write. Under
+ * the lock the second run reads the first run's rows and updates them in
+ * place instead.
+ *
+ * With `plannedOrderSnapshot` (what the run's planned-order write committed),
+ * it first checks, under the lock, that no one changed the planned orders
+ * since, and throws `PlannedOrdersChangedError` before any read or write
+ * when someone did: a Cancel deleted a planned order a candidate names (its
+ * insert would fail on the foreign key), or a convert left a week this
+ * worklist would offer again. `runMrp` then plans again.
+ */
+export async function writePlanningActions(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    candidates: PlanningActionCandidate[];
+    periods: { id: string; startDate: string }[];
+    toleranceDays: number;
+    pegging?: Parameters<typeof generatePlanningActions>[2]["pegging"];
+    plannedOrderSnapshot?: PlannedOrderSnapshot;
+  }
+): Promise<PlanningActionDiff> {
+  const { companyId, userId, candidates, periods, pegging } = args;
+  return db.transaction().execute(async (trx) => {
     await lockCompanyPlanning(trx, companyId);
+    if (args.plannedOrderSnapshot) {
+      await assertPlannedOrdersUnchanged(
+        trx,
+        companyId,
+        args.plannedOrderSnapshot
+      );
+    }
 
     const existingRows = await trx
       .selectFrom("planningAction")
@@ -1666,7 +1730,7 @@ export async function generatePlanningActions(
       existing,
       candidates: onePerPlannedOrder(candidates),
       periods,
-      toleranceDays
+      toleranceDays: args.toleranceDays
     });
 
     await writePlanningActionDiff(trx, {
@@ -1689,19 +1753,6 @@ export async function generatePlanningActions(
 
     return diff;
   });
-
-  logger.info("planning actions written", {
-    companyId,
-    inserted: diff.inserts.length,
-    updated: diff.updates.length,
-    deleted: diff.deleteIds.length
-  });
-
-  return {
-    inserted: diff.inserts.length,
-    updated: diff.updates.length,
-    deleted: diff.deleteIds.length
-  };
 }
 
 /**
