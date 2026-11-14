@@ -421,8 +421,7 @@ const DEPENDENCY_LABELS: Record<AssemblerDependency, string> = {
 const HOMEBREW_PACKAGES: Partial<Record<AssemblerDependency, string>> = {
   fcl: "fcl",
   draco: "draco",
-  openblas: "openblas",
-  occt: "cmake ninja"
+  openblas: "openblas"
 };
 
 const APT_PACKAGES: Partial<Record<AssemblerDependency, string>> = {
@@ -430,9 +429,16 @@ const APT_PACKAGES: Partial<Record<AssemblerDependency, string>> = {
   fcl: "libfcl-dev",
   draco: "libdraco-dev",
   openblas: "libopenblas-dev",
-  openssl: "pkg-config libssl-dev",
-  occt: "cmake ninja-build"
+  openssl: "pkg-config libssl-dev"
 };
+
+function missingOcctBuildTools(machine: MachineProbe): string[] {
+  const macOS = machine.platform === "darwin";
+  return [
+    ...(onPath(machine, "cmake") ? [] : ["cmake"]),
+    ...(onPath(machine, "ninja") ? [] : [macOS ? "ninja" : "ninja-build"])
+  ];
+}
 
 /**
  * What the assembler still needs on this machine, as one message that lists
@@ -457,30 +463,34 @@ export function assemblerMissingPrerequisite(
   if (missing.length === 0) return null;
 
   const macOS = machine.platform === "darwin";
-  const packages = missing
-    .map((dependency) =>
+  const packages = [
+    ...missing.map((dependency) =>
       macOS ? HOMEBREW_PACKAGES[dependency] : APT_PACKAGES[dependency]
-    )
+    ),
+    ...(missing.includes("occt") ? missingOcctBuildTools(machine) : [])
+  ]
     .filter(Boolean)
     .join(" ");
-  const commands = [
+  // OCCT comes last: build-occt.sh needs the compiler, cmake and ninja.
+  const steps = [
     ...(packages
       ? [
           macOS
-            ? `    brew install ${packages}`
-            : `    sudo apt install ${packages}   # Debian/Ubuntu; elsewhere the same libraries from your package manager`
+            ? `brew install ${packages}`
+            : `sudo apt install ${packages}   # Debian/Ubuntu; elsewhere the same libraries from your package manager`
         ]
       : []),
     ...(missing.includes("rust")
       ? [
-          `    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh${macOS ? "" : "   # not apt's cargo: too old"}`
+          `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh${macOS ? "" : "   # not apt's cargo: too old"}`
         ]
       : []),
     ...(missing.includes("occt")
       ? [
-          "    apps/assembler/scripts/build-occt.sh   # ~15-30 min, every worktree shares it"
+          "apps/assembler/scripts/build-occt.sh   # ~15-30 min, every worktree shares it"
         ]
-      : [])
+      : []),
+    "crbn up   # pick Assembler again"
   ];
   return [
     "Assembler selected, but this machine is missing:",
@@ -489,9 +499,9 @@ export function assemblerMissingPrerequisite(
         ? `  - ${DEPENDENCY_LABELS.occt} (${occtPrefix(machine.env)})`
         : `  - ${DEPENDENCY_LABELS[dependency]}`
     ),
-    "  install them once per machine:",
-    ...commands,
-    instead
+    "Run every step, in order, from the repo root (once per machine):",
+    ...steps.map((step, index) => `  ${index + 1}. ${step}`),
+    "Or run crbn up without the assembler app."
   ].join("\n");
 }
 

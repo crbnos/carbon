@@ -401,4 +401,30 @@ describe("assemblerMissingPrerequisite", () => {
     };
     expect(assemblerMissingPrerequisite(windows)).not.toBeNull();
   });
+
+  it("asks for only the OCCT build tools that are not on PATH", () => {
+    // A Mac with every library from Homebrew and no OCCT build yet.
+    const mac = (tools: string[]): MachineProbe => ({
+      env: { PATH: "/opt/homebrew/bin", CARGO_HOME: "/cargo" },
+      platform: "darwin",
+      arch: "arm64",
+      exists: (path) =>
+        [
+          "/cargo/bin/cargo",
+          "/opt/homebrew/opt/fcl/include/fcl",
+          "/opt/homebrew/opt/draco/include/draco",
+          "/opt/homebrew/opt/openblas/lib/libopenblas.dylib",
+          ...tools.map((tool) => `/opt/homebrew/bin/${tool}`)
+        ].includes(path)
+    });
+    expect(assemblerMissingPrerequisite(mac(["cmake", "ninja"]))).not.toContain(
+      "brew install"
+    );
+    expect(assemblerMissingPrerequisite(mac(["cmake"]))).toContain(
+      "brew install ninja\n"
+    );
+    expect(assemblerMissingPrerequisite(mac([]))).toContain(
+      "brew install cmake ninja\n"
+    );
+  });
 });
