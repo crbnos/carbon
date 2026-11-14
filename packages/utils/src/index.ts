@@ -56,6 +56,7 @@ export * from "./mode";
 export * from "./object";
 export * from "./payment-funding";
 export * from "./pick-guards";
+export * from "./planning-fence";
 export * from "./planning-sizing";
 export * from "./prefetch";
 export * from "./project-billing";
