@@ -18,6 +18,7 @@ import {
   LuContainer,
   LuCreditCard,
   LuDollarSign,
+  LuHash,
   LuLayoutList,
   LuPencil,
   LuQrCode,
@@ -136,6 +137,16 @@ const PurchaseInvoicesTable = memo(
               }))
             },
             icon: <LuContainer />
+          }
+        },
+        {
+          id: "glCodes",
+          header: t`GL Codes`,
+          cell: ({ row }) => row.original.glCodes,
+          enableSorting: false,
+          meta: {
+            exportValue: (row) => row.glCodes,
+            icon: <LuHash />
           }
         },
         {

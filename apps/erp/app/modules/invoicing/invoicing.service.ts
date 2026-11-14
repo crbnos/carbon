@@ -328,7 +328,7 @@ const PURCHASE_INVOICES_LIST_COLUMNS =
   "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,purchaseOrderIds,purchaseOrderReadableIds,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
 
 const SALES_INVOICES_LIST_COLUMNS =
-  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt" as const;
+  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt,customerName,invoiceCustomerName" as const;
 
 /**
  * Compute an invoice's Due Date from its Issue Date and Payment Term.
@@ -798,6 +798,30 @@ export async function getSalesInvoices(
 
   query = setGenericQueryFilters(query, args, SALES_INVOICES_PAGING);
   return query;
+}
+
+export async function getSalesInvoiceCustomerNames(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceIds: string[]
+) {
+  return client.rpc("get_sales_invoice_customer_names", {
+    company_id: companyId,
+    invoice_ids: invoiceIds
+  });
+}
+
+export async function getInvoiceLineGlCodes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceType: "sales" | "purchase",
+  invoiceIds: string[]
+) {
+  return client.rpc("get_invoice_line_gl_codes", {
+    company_id: companyId,
+    invoice_type: invoiceType,
+    invoice_ids: invoiceIds
+  });
 }
 
 export async function getSalesInvoiceShipment(

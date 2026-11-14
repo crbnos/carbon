@@ -14361,6 +14361,9 @@ msgstr "Müşterilere verilen erken ödeme iskontolarının kaydedildiği muhase
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Tedarikçilerden alınan erken ödeme iskontolarının kaydedildiği muhasebe hesabı."
 
+msgid "GL Codes"
+msgstr "Muhasebe hesap kodları"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Amortisman muhasebeleştirildiğinde her dönem alacağa kaydedilen ve varlık satıldığında veya hurda hale getirildiğinde tam olarak borca kaydedilen muhasebe kontra-varlık hesabı."
 

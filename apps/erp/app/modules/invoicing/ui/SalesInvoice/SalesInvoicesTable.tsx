@@ -20,6 +20,7 @@ import {
   LuContainer,
   LuCreditCard,
   LuDollarSign,
+  LuHash,
   LuPencil,
   LuQrCode,
   LuStar,
@@ -102,6 +103,7 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
         ),
         meta: {
           mobile: "P3",
+          exportValue: (row) => row.customerName,
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -119,6 +121,7 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
           <CustomerAvatar customerId={row.original.invoiceCustomerId} />
         ),
         meta: {
+          exportValue: (row) => row.invoiceCustomerName,
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -127,6 +130,16 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
             }))
           },
           icon: <LuContainer />
+        }
+      },
+      {
+        id: "glCodes",
+        header: t`GL Codes`,
+        cell: ({ row }) => row.original.glCodes,
+        enableSorting: false,
+        meta: {
+          exportValue: (row) => row.glCodes,
+          icon: <LuHash />
         }
       },
       {
