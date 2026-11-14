@@ -12950,6 +12950,9 @@ msgstr "選択した工法が開始すると使用期限が開始します。"
 msgid "Expiry trace"
 msgstr "使用期限トレース"
 
+msgid "explode {explode}"
+msgstr ""
+
 msgid "Export"
 msgstr "エクスポート"
 
@@ -13428,6 +13431,9 @@ msgstr "仕入先見積行の更新に失敗しました"
 msgid "Failed to update the items"
 msgstr "品目の更新に失敗しました"
 
+msgid "Failed to update the planned order"
+msgstr ""
+
 msgid "Failed to update the setting"
 msgstr "設定の更新に失敗"
 
@@ -13529,6 +13535,9 @@ msgstr "手数料"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (先期限先出)"
+
+msgid "Fence"
+msgstr ""
 
 msgid "Fetch"
 msgstr "取得"
@@ -13705,6 +13714,9 @@ msgstr "すべてのラインがピックされるか「短い」とマークさ
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "見積明細、受注明細、売上請求書明細で発動します。"
+
+msgid "Firm"
+msgstr ""
 
 msgid "First {count}"
 msgstr "最初の {count} 件"
@@ -16457,6 +16469,9 @@ msgstr "一致する品目を保持"
 msgid "Keep mine"
 msgstr "自分の変更を保持"
 
+msgid "Keep my numbers"
+msgstr ""
+
 msgid "Keep navigation open"
 msgstr "ナビゲーションを開いたままにする"
 
@@ -16474,6 +16489,9 @@ msgstr "開いたままにする"
 
 msgid "Keep picking"
 msgstr "ピッキングを続ける"
+
+msgid "Keep your numbers through plan updates?"
+msgstr ""
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "注文、見積、設定を2段階認証で保護します"
@@ -22609,6 +22627,15 @@ msgstr "計画注文"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "計画済注文 = 品目の発注ポリシーに基づいて予測所要量をカバーするためのMRP提案(または手動追加)。"
 
+msgid "Planned order firmed"
+msgstr ""
+
+msgid "Planned order returned to MRP"
+msgstr ""
+
+msgid "Planned Orders"
+msgstr ""
+
 msgid "Planned purchase order"
 msgstr "計画済み発注書"
 
@@ -23389,6 +23416,9 @@ msgstr "週ごとの予測手持在庫"
 
 msgid "Projected stock"
 msgstr "予測在庫"
+
+msgid "Projected stock {stock}"
+msgstr ""
 
 msgid "Projected stock by week"
 msgstr "週別予想在庫"
@@ -24775,6 +24805,9 @@ msgstr "リリース制御設定が更新されました"
 msgid "Release date"
 msgstr "リリース日"
 
+msgid "Release Date"
+msgstr ""
+
 msgid "Release Items"
 msgstr "品目をリリース"
 
@@ -24798,6 +24831,9 @@ msgstr "リリース済み"
 
 msgid "Released date"
 msgstr "リリース日"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr ""
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "リリース済み品目は次の請求書実行時に、明細の予算内で請求されます。"
@@ -26547,6 +26583,9 @@ msgstr "保存中 {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "現在のデータのコピーを保存中"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr ""
+
 msgid "Saving..."
 msgstr "保存中..."
 
@@ -26685,6 +26724,9 @@ msgstr "スクラップ {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "スクラップ/品質原価"
+
+msgid "scrap +{scrap}"
+msgstr ""
 
 msgid "Scrap Percent"
 msgstr "スクラップ率"
@@ -33007,6 +33049,9 @@ msgstr "今後の割引前支払額（会計年度ごと）から、残りの月
 
 msgid "Undo"
 msgstr "元に戻す"
+
+msgid "Unfirm"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "リンクを展開"

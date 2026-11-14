@@ -30,6 +30,7 @@ import {
   type jobStatus
 } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
+import { DrawerPlannedOrders } from "~/modules/production/ui/Planning/DrawerPlannedOrders";
 import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   BeyondFenceButton,
@@ -233,12 +234,18 @@ export const ProductionPlanningOrderDrawer = memo(
       };
     }, [isOpen, carbon, row.id, locationId, actionsKey, openJobsVersion]);
 
+    // An action on a planned order sits on its row in the Planned Orders grid.
+    const jobActions = useMemo(
+      () => actions.filter((action) => !action.plannedOrderId),
+      [actions]
+    );
+
     const openJobRows = useMemo<OpenOrderRow[] | null | Error>(() => {
       if (!Array.isArray(openJobs)) return openJobs;
 
       const rows: OpenOrderRow[] = openJobs.map((job) => {
         const action = actionForOrder(
-          actions,
+          jobActions,
           (a) => a.jobId === job.existingId
         );
         return {
@@ -257,7 +264,7 @@ export const ProductionPlanningOrderDrawer = memo(
       // An action whose job is not in the list still has to be shown — a
       // suggestion that silently drops out of the drawer reads as "nothing to
       // do". It gets a read-only row built from the action itself.
-      for (const action of actions) {
+      for (const action of jobActions) {
         if (rows.some((r) => r.action?.id === action.id)) continue;
         rows.push({
           id: action.id,
@@ -273,7 +280,7 @@ export const ProductionPlanningOrderDrawer = memo(
       }
 
       return rows;
-    }, [openJobs, actions]);
+    }, [openJobs, jobActions]);
 
     const onOpenJobsChange = useCallback((rows: OpenOrderRow[]) => {
       setOpenJobs((previous) =>
@@ -593,6 +600,19 @@ export const ProductionPlanningOrderDrawer = memo(
               />
 
               <DeferredDrawerSections>
+                <DrawerPlannedOrders
+                  title={<Trans>Planned Orders</Trans>}
+                  isOpen={isOpen}
+                  itemId={row.id ?? ""}
+                  locationId={locationId}
+                  planningSegmentId={row.planningSegmentId}
+                  orderType="Make"
+                  updatePath={path.to.bulkUpdateProductionPlanning}
+                  todayIso={locationToday}
+                  actions={actions}
+                  actionHandlers={actionHandlers}
+                />
+
                 <SuggestedOrdersGrid<ProductionOrder>
                   title={<Trans>Suggested Jobs</Trans>}
                   titleAction={
@@ -678,6 +698,8 @@ export const ProductionPlanningOrderDrawer = memo(
         onSaveOpenJob,
         onOpenJobsChange,
         actionHandlers,
+        actions,
+        isOpen,
         chartOrders,
         locationToday,
         timeFenceDate,

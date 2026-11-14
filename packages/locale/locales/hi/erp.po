@@ -12950,6 +12950,9 @@ msgstr "समाप्ति तब शुरू होती है जब च
 msgid "Expiry trace"
 msgstr "समाप्ति ट्रेस"
 
+msgid "explode {explode}"
+msgstr ""
+
 msgid "Export"
 msgstr "निर्यात करें"
 
@@ -13428,6 +13431,9 @@ msgstr "आपूर्तिकर्ता कोटेशन पंक्त�
 msgid "Failed to update the items"
 msgstr "आइटम को अपडेट करने में विफल"
 
+msgid "Failed to update the planned order"
+msgstr ""
+
 msgid "Failed to update the setting"
 msgstr "सेटिंग अपडेट करने में विफल"
 
@@ -13529,6 +13535,9 @@ msgstr "शुल्क"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (प्रथम समाप्ति प्रथम निकली)"
+
+msgid "Fence"
+msgstr ""
 
 msgid "Fetch"
 msgstr "लाएं"
@@ -13705,6 +13714,9 @@ msgstr "जब तक हर पंक्ति को चुना नहीं
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "कोटेशन पंक्तियों, विक्रय आदेश पंक्तियों और विक्रय चालान पंक्तियों पर सक्रिय होता है।"
+
+msgid "Firm"
+msgstr ""
 
 msgid "First {count}"
 msgstr "पहले {count}"
@@ -16457,6 +16469,9 @@ msgstr "मेल खाने वाले आइटम रखें"
 msgid "Keep mine"
 msgstr "मेरे बदलाव रखें"
 
+msgid "Keep my numbers"
+msgstr ""
+
 msgid "Keep navigation open"
 msgstr "नेविगेशन खुला रखें"
 
@@ -16474,6 +16489,9 @@ msgstr "खुला रखें"
 
 msgid "Keep picking"
 msgstr "पिकिंग जारी रखें"
+
+msgid "Keep your numbers through plan updates?"
+msgstr ""
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "ऑर्डर, कोट्स और सेटिंग्स को एक दूसरी जांच के पीछे रखता है"
@@ -22609,6 +22627,15 @@ msgstr "नियोजित आदेश"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "नियोजित आदेश = अनुमानित मांग को कवर करने के लिए MRP सुझाव आइटम की पुनः आदेश नीति के आधार पर (या मैन्युअल रूप से जोड़ा गया)।"
 
+msgid "Planned order firmed"
+msgstr ""
+
+msgid "Planned order returned to MRP"
+msgstr ""
+
+msgid "Planned Orders"
+msgstr ""
+
 msgid "Planned purchase order"
 msgstr "योजनाबद्ध क्रय आदेश"
 
@@ -23389,6 +23416,9 @@ msgstr "सप्ताह के अनुसार अनुमानित �
 
 msgid "Projected stock"
 msgstr "अनुमानित स्टॉक"
+
+msgid "Projected stock {stock}"
+msgstr ""
 
 msgid "Projected stock by week"
 msgstr "सप्ताह के अनुसार प्रक्षेपित स्टॉक"
@@ -24775,6 +24805,9 @@ msgstr "रिलीज नियंत्रण सेटिंग अपडे
 msgid "Release date"
 msgstr "जारी करने की तारीख"
 
+msgid "Release Date"
+msgstr ""
+
 msgid "Release Items"
 msgstr "आइटम को जारी करें"
 
@@ -24798,6 +24831,9 @@ msgstr "जारी किया गया"
 
 msgid "Released date"
 msgstr "जारी की गई तारीख"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr ""
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "जारी किए गए आइटम अगले चालान रन पर बिल करते हैं, पंक्ति के वित्तपोषण के भीतर।"
@@ -26547,6 +26583,9 @@ msgstr "सहेजा जा रहा है {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "आपके वर्तमान डेटा की प्रति सहेज रहे हैं"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr ""
+
 msgid "Saving..."
 msgstr "सहेज रहे हैं..."
 
@@ -26685,6 +26724,9 @@ msgstr "स्क्रैप {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "स्क्रैप / गुणवत्ता की लागत"
+
+msgid "scrap +{scrap}"
+msgstr ""
 
 msgid "Scrap Percent"
 msgstr "स्क्रैप प्रतिशत"
@@ -33007,6 +33049,9 @@ msgstr "अभी भी आने वाले बिना छूट के �
 
 msgid "Undo"
 msgstr "पूर्ववत करें"
+
+msgid "Unfirm"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "लिंक्स को विस्तृत करें"

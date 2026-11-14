@@ -12950,6 +12950,9 @@ msgstr "Son kullanma tarihi seçilen işlem başladığında başlar."
 msgid "Expiry trace"
 msgstr "Son kullanma tarihi izi"
 
+msgid "explode {explode}"
+msgstr ""
+
 msgid "Export"
 msgstr "Dışa Aktar"
 
@@ -13428,6 +13431,9 @@ msgstr "Tedarikçi teklif satırı güncellenemedi"
 msgid "Failed to update the items"
 msgstr "Stok kartları güncellemesi başarısız"
 
+msgid "Failed to update the planned order"
+msgstr ""
+
 msgid "Failed to update the setting"
 msgstr "Ayar güncellenemedi"
 
@@ -13529,6 +13535,9 @@ msgstr "Ücretler"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (süresi en kısa olanı ilk çıkart)"
+
+msgid "Fence"
+msgstr ""
 
 msgid "Fetch"
 msgstr "Al\\\\'ındır"
@@ -13705,6 +13714,9 @@ msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar redd
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Teklif satırlarında, satış siparişi satırlarında ve satış faturası satırlarında etkinleşir."
+
+msgid "Firm"
+msgstr ""
 
 msgid "First {count}"
 msgstr "İlk {count}"
@@ -16457,6 +16469,9 @@ msgstr "Eşleşen öğeleri sakla"
 msgid "Keep mine"
 msgstr "Benimkini koru"
 
+msgid "Keep my numbers"
+msgstr ""
+
 msgid "Keep navigation open"
 msgstr "Gezinmeyi açık tut"
 
@@ -16474,6 +16489,9 @@ msgstr "Açık Tut"
 
 msgid "Keep picking"
 msgstr "Toplamaya devam et"
+
+msgid "Keep your numbers through plan updates?"
+msgstr ""
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Siparişleri, teklifleri ve ayarları ikinci bir kontrolün arkasında tutar"
@@ -22609,6 +22627,15 @@ msgstr "Planlanmış Sipariş"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "Planlanan sipariş = Ürünün yeniden sipariş politikasına göre öngörülen talebi karşılamak için MRP önerisi (veya manuel olarak eklenmiştir)."
 
+msgid "Planned order firmed"
+msgstr ""
+
+msgid "Planned order returned to MRP"
+msgstr ""
+
+msgid "Planned Orders"
+msgstr ""
+
 msgid "Planned purchase order"
 msgstr "Planlanan satın alma siparişi"
 
@@ -23389,6 +23416,9 @@ msgstr "Haftaya göre tahmini stok"
 
 msgid "Projected stock"
 msgstr "Tahmini stok"
+
+msgid "Projected stock {stock}"
+msgstr ""
 
 msgid "Projected stock by week"
 msgstr "Haftalara göre projekte edilen stok"
@@ -24775,6 +24805,9 @@ msgstr "Serbest bırakma kontrol ayarı güncellendi"
 msgid "Release date"
 msgstr "Serbest Bırakma Tarihi"
 
+msgid "Release Date"
+msgstr ""
+
 msgid "Release Items"
 msgstr "Stok Kartlarını Serbest Bırak"
 
@@ -24798,6 +24831,9 @@ msgstr "Yayınlandı"
 
 msgid "Released date"
 msgstr "Yayın tarihi"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr ""
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "Serbest bırakılan stok kartları bir sonraki fatura çalışması ile satırın fonlaması içinde faturalanır."
@@ -26547,6 +26583,9 @@ msgstr "Kaydediliyor {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Mevcut verilerinizin bir kopyası kaydediliyor"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr ""
+
 msgid "Saving..."
 msgstr "Kaydediliyor..."
 
@@ -26685,6 +26724,9 @@ msgstr "Fire {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "Fire / Kalite Maliyeti"
+
+msgid "scrap +{scrap}"
+msgstr ""
 
 msgid "Scrap Percent"
 msgstr "Fire Oranı"
@@ -33007,6 +33049,9 @@ msgstr "Mali yılına göre henüz gelecek iskonto uygulanmamış ödemeler, kal
 
 msgid "Undo"
 msgstr "Geri Al"
+
+msgid "Unfirm"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "Bağlantıları Aç"

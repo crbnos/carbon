@@ -12950,6 +12950,9 @@ msgstr "유통기한은 선택된 공법이 시작될 때 시작됩니다."
 msgid "Expiry trace"
 msgstr "유통기한 추적"
 
+msgid "explode {explode}"
+msgstr ""
+
 msgid "Export"
 msgstr "내보내기"
 
@@ -13428,6 +13431,9 @@ msgstr "공급업체 견적 라인을 업데이트하지 못했습니다"
 msgid "Failed to update the items"
 msgstr "품목 업데이트 실패"
 
+msgid "Failed to update the planned order"
+msgstr ""
+
 msgid "Failed to update the setting"
 msgstr "설정 업데이트 실패"
 
@@ -13529,6 +13535,9 @@ msgstr "수수료"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO(유효기한 임박 순 출고)"
+
+msgid "Fence"
+msgstr ""
 
 msgid "Fetch"
 msgstr "가져오기"
@@ -13705,6 +13714,9 @@ msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "견적 라인, 수주 라인 및 매출 송장 라인에서 실행합니다."
+
+msgid "Firm"
+msgstr ""
 
 msgid "First {count}"
 msgstr "처음 {count}"
@@ -16457,6 +16469,9 @@ msgstr "일치하는 품목 유지"
 msgid "Keep mine"
 msgstr "내 변경 사항 유지"
 
+msgid "Keep my numbers"
+msgstr ""
+
 msgid "Keep navigation open"
 msgstr "탐색 열어 두기"
 
@@ -16474,6 +16489,9 @@ msgstr "열린 상태 유지"
 
 msgid "Keep picking"
 msgstr "피킹 유지"
+
+msgid "Keep your numbers through plan updates?"
+msgstr ""
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "주문, 견적 및 설정을 이중 확인으로 보호합니다"
@@ -22609,6 +22627,15 @@ msgstr "계획 주문"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "계획된 주문 = 품목의 재주문 정책(또는 수동으로 추가됨)에 따라 예상 소요량을 충당하기 위한 MRP 제안."
 
+msgid "Planned order firmed"
+msgstr ""
+
+msgid "Planned order returned to MRP"
+msgstr ""
+
+msgid "Planned Orders"
+msgstr ""
+
 msgid "Planned purchase order"
 msgstr "계획된 발주서"
 
@@ -23389,6 +23416,9 @@ msgstr "주별 예상 현재고"
 
 msgid "Projected stock"
 msgstr "예상 재고"
+
+msgid "Projected stock {stock}"
+msgstr ""
 
 msgid "Projected stock by week"
 msgstr "주별 예상 재고"
@@ -24775,6 +24805,9 @@ msgstr "릴리스 제어 설정 업데이트됨"
 msgid "Release date"
 msgstr "릴리스 날짜"
 
+msgid "Release Date"
+msgstr ""
+
 msgid "Release Items"
 msgstr "릴리스 항목"
 
@@ -24798,6 +24831,9 @@ msgstr "릴리즈됨"
 
 msgid "Released date"
 msgstr "출시일"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr ""
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "릴리스된 항목은 다음 송장 실행 시 해당 라인의 자금 범위 내에서 청구됩니다."
@@ -26547,6 +26583,9 @@ msgstr "저장 중 {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "현재 데이터의 사본 저장 중"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr ""
+
 msgid "Saving..."
 msgstr "저장 중..."
 
@@ -26685,6 +26724,9 @@ msgstr "스크랩 {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "스크랩 / 품질 원가"
+
+msgid "scrap +{scrap}"
+msgstr ""
 
 msgid "Scrap Percent"
 msgstr "스크랩 비율"
@@ -33007,6 +33049,9 @@ msgstr "남은 개월이 부과할 이자를 제외한, 아직 올 할인되지 
 
 msgid "Undo"
 msgstr "실행 취소"
+
+msgid "Unfirm"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "링크 펼치기"

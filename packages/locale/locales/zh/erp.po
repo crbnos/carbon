@@ -12950,6 +12950,9 @@ msgstr "有效期从选定的流程开始时开始。"
 msgid "Expiry trace"
 msgstr "有效期追踪"
 
+msgid "explode {explode}"
+msgstr ""
+
 msgid "Export"
 msgstr "导出"
 
@@ -13428,6 +13431,9 @@ msgstr "未能更新供应商报价行"
 msgid "Failed to update the items"
 msgstr "更新物料失败"
 
+msgid "Failed to update the planned order"
+msgstr ""
+
 msgid "Failed to update the setting"
 msgstr "更新设置失败"
 
@@ -13529,6 +13535,9 @@ msgstr "费用"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "先到期先出（先到期先出）"
+
+msgid "Fence"
+msgstr ""
 
 msgid "Fetch"
 msgstr "获取"
@@ -13705,6 +13714,9 @@ msgstr "在所有行都被拣货或标记为短缺后才能完成。"
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "在报价行、销售订单行和销售发票行上触发。"
+
+msgid "Firm"
+msgstr ""
 
 msgid "First {count}"
 msgstr "前 {count} 个"
@@ -16457,6 +16469,9 @@ msgstr "保留匹配的物料"
 msgid "Keep mine"
 msgstr "保留我的"
 
+msgid "Keep my numbers"
+msgstr ""
+
 msgid "Keep navigation open"
 msgstr "保持导航展开"
 
@@ -16474,6 +16489,9 @@ msgstr "保持未结"
 
 msgid "Keep picking"
 msgstr "继续拣货"
+
+msgid "Keep your numbers through plan updates?"
+msgstr ""
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "让订单、报价单和设置受到第二道检查的保护"
@@ -22609,6 +22627,15 @@ msgstr "计划订单"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "计划订单 = MRP建议，用于根据物料的重新订购政策覆盖预计需求（或手动添加）。"
 
+msgid "Planned order firmed"
+msgstr ""
+
+msgid "Planned order returned to MRP"
+msgstr ""
+
+msgid "Planned Orders"
+msgstr ""
+
 msgid "Planned purchase order"
 msgstr "计划采购订单"
 
@@ -23389,6 +23416,9 @@ msgstr "按周预计现有库存"
 
 msgid "Projected stock"
 msgstr "预计库存"
+
+msgid "Projected stock {stock}"
+msgstr ""
 
 msgid "Projected stock by week"
 msgstr "按周投影库存"
@@ -24775,6 +24805,9 @@ msgstr "下达控制设置已更新"
 msgid "Release date"
 msgstr "释放日期"
 
+msgid "Release Date"
+msgstr ""
+
 msgid "Release Items"
 msgstr "下达物料"
 
@@ -24798,6 +24831,9 @@ msgstr "已下达"
 
 msgid "Released date"
 msgstr "下达日期"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr ""
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "已下达的物料在下一个发票运行中计费，在行的资金范围内。"
@@ -26547,6 +26583,9 @@ msgstr "正在保存 {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "正在保存您当前数据的副本"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr ""
+
 msgid "Saving..."
 msgstr "保存中..."
 
@@ -26685,6 +26724,9 @@ msgstr "报废 {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "报废/质量成本"
+
+msgid "scrap +{scrap}"
+msgstr ""
 
 msgid "Scrap Percent"
 msgstr "报废率"
@@ -33007,6 +33049,9 @@ msgstr "仍待支付的未折现支付额，按会计年度列示，扣除剩余
 
 msgid "Undo"
 msgstr "撤销"
+
+msgid "Unfirm"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "展开链接"

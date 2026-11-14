@@ -12950,6 +12950,9 @@ msgstr "La scadenza inizia quando il processo selezionato si avvia."
 msgid "Expiry trace"
 msgstr "Traccia scadenza"
 
+msgid "explode {explode}"
+msgstr ""
+
 msgid "Export"
 msgstr "Esporta"
 
@@ -13428,6 +13431,9 @@ msgstr "Impossibile aggiornare la riga offerta del fornitore"
 msgid "Failed to update the items"
 msgstr "Impossibile aggiornare gli articoli"
 
+msgid "Failed to update the planned order"
+msgstr ""
+
 msgid "Failed to update the setting"
 msgstr "Impossibile aggiornare l'impostazione"
 
@@ -13529,6 +13535,9 @@ msgstr "Commissioni"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (primo scaduto-primo uscito)"
+
+msgid "Fence"
+msgstr ""
 
 msgid "Fetch"
 msgstr "Recupera"
@@ -13705,6 +13714,9 @@ msgstr "Il completamento è rifiutato finché ogni riga non è prelevata o marca
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Attiva su righe di offerta, righe di ordine di vendita e righe di fattura di vendita."
+
+msgid "Firm"
+msgstr ""
 
 msgid "First {count}"
 msgstr "Primi {count}"
@@ -16457,6 +16469,9 @@ msgstr "Mantieni articoli corrispondenti"
 msgid "Keep mine"
 msgstr "Mantieni le mie"
 
+msgid "Keep my numbers"
+msgstr ""
+
 msgid "Keep navigation open"
 msgstr "Mantieni navigazione aperta"
 
@@ -16474,6 +16489,9 @@ msgstr "Mantieni Aperto"
 
 msgid "Keep picking"
 msgstr "Continua il prelievo"
+
+msgid "Keep your numbers through plan updates?"
+msgstr ""
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Mantiene ordini, offerte e impostazioni dietro un secondo controllo"
@@ -22609,6 +22627,15 @@ msgstr "Ordine Pianificato"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "Ordine pianificato = proposta MRP per coprire il fabbisogno previsto in base alla politica di riordino dell'articolo (o aggiunto manualmente)."
 
+msgid "Planned order firmed"
+msgstr ""
+
+msgid "Planned order returned to MRP"
+msgstr ""
+
+msgid "Planned Orders"
+msgstr ""
+
 msgid "Planned purchase order"
 msgstr "Ordine d'acquisto pianificato"
 
@@ -23389,6 +23416,9 @@ msgstr "Giacenza prevista per settimana"
 
 msgid "Projected stock"
 msgstr "Stock previsto"
+
+msgid "Projected stock {stock}"
+msgstr ""
 
 msgid "Projected stock by week"
 msgstr "Giacenza proiettata per settimana"
@@ -24775,6 +24805,9 @@ msgstr "Impostazione del controllo di rilascio aggiornata"
 msgid "Release date"
 msgstr "Data di rilascio"
 
+msgid "Release Date"
+msgstr ""
+
 msgid "Release Items"
 msgstr "Rilascia Articoli"
 
@@ -24798,6 +24831,9 @@ msgstr "Rilasciato"
 
 msgid "Released date"
 msgstr "Data di rilascio"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr ""
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "Gli articoli rilasciati vengono fatturati nella prossima esecuzione di fatturazione, entro i fondi della riga."
@@ -26547,6 +26583,9 @@ msgstr "Salvataggio {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Salvataggio di una copia dei dati attuali"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr ""
+
 msgid "Saving..."
 msgstr "Salvataggio in corso..."
 
@@ -26685,6 +26724,9 @@ msgstr "Scarto {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "Scarto / Costo della Qualità"
+
+msgid "scrap +{scrap}"
+msgstr ""
 
 msgid "Scrap Percent"
 msgstr "Percentuale di Scarto"
@@ -33007,6 +33049,9 @@ msgstr "Pagamenti non scontati ancora da venire, per esercizio fiscale, meno gli
 
 msgid "Undo"
 msgstr "Annulla"
+
+msgid "Unfirm"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "Espandi i link"

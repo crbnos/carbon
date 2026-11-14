@@ -12950,6 +12950,9 @@ msgstr "Срок годности начинается при запуске в�
 msgid "Expiry trace"
 msgstr "Трассировка срока годности"
 
+msgid "explode {explode}"
+msgstr ""
+
 msgid "Export"
 msgstr "Экспортировать"
 
@@ -13428,6 +13431,9 @@ msgstr "Не удалось обновить строку предложения
 msgid "Failed to update the items"
 msgstr "Не удалось обновить номенклатуры"
 
+msgid "Failed to update the planned order"
+msgstr ""
+
 msgid "Failed to update the setting"
 msgstr "Не удалось обновить параметр"
 
@@ -13529,6 +13535,9 @@ msgstr "Сборы"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (первым истекает - первым отпускается)"
+
+msgid "Fence"
+msgstr ""
 
 msgid "Fetch"
 msgstr "Получить"
@@ -13705,6 +13714,9 @@ msgstr "Завершение отклоняется до тех пор, пока
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Срабатывает на строках предложения, строках заказа покупателя и строках счета-фактуры выданной."
+
+msgid "Firm"
+msgstr ""
 
 msgid "First {count}"
 msgstr "Первые {count}"
@@ -16457,6 +16469,9 @@ msgstr "Сохранить соответствующие элементы"
 msgid "Keep mine"
 msgstr "Оставить мою версию"
 
+msgid "Keep my numbers"
+msgstr ""
+
 msgid "Keep navigation open"
 msgstr "Не сворачивать навигацию"
 
@@ -16474,6 +16489,9 @@ msgstr "Оставить открытым"
 
 msgid "Keep picking"
 msgstr "Сохранить отбор"
+
+msgid "Keep your numbers through plan updates?"
+msgstr ""
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Требует дополнительную проверку для заказов, коммерческих предложений и настроек"
@@ -22609,6 +22627,15 @@ msgstr "Плановый заказ"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "Запланированный заказ = предложение MRP для покрытия прогнозируемой потребности на основе политики переоформления номенклатуры (или добавленный вручную)."
 
+msgid "Planned order firmed"
+msgstr ""
+
+msgid "Planned order returned to MRP"
+msgstr ""
+
+msgid "Planned Orders"
+msgstr ""
+
 msgid "Planned purchase order"
 msgstr "Запланированный заказ поставщику"
 
@@ -23389,6 +23416,9 @@ msgstr "Прогнозируемый остаток по неделям"
 
 msgid "Projected stock"
 msgstr "Прогнозируемый запас"
+
+msgid "Projected stock {stock}"
+msgstr ""
 
 msgid "Projected stock by week"
 msgstr "Прогнозируемый запас по неделям"
@@ -24775,6 +24805,9 @@ msgstr "Параметр контроля запуска в работу обн�
 msgid "Release date"
 msgstr "Дата освобождения"
 
+msgid "Release Date"
+msgstr ""
+
 msgid "Release Items"
 msgstr "Запустить в работу номенклатуру"
 
@@ -24798,6 +24831,9 @@ msgstr "Выпущено"
 
 msgid "Released date"
 msgstr "Дата выпуска"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr ""
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "Запущенная номенклатура выставляется счетом при следующем запуске счетов в пределах финансирования строки."
@@ -26547,6 +26583,9 @@ msgstr "Сохранение {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Сохранение копии текущих данных"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr ""
+
 msgid "Saving..."
 msgstr "Сохранение..."
 
@@ -26685,6 +26724,9 @@ msgstr "Брак {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "Брак / Себестоимость качества"
+
+msgid "scrap +{scrap}"
+msgstr ""
 
 msgid "Scrap Percent"
 msgstr "Процент брака"
@@ -33007,6 +33049,9 @@ msgstr "Недисконтированные платежи, которые ещ
 
 msgid "Undo"
 msgstr "Отменить"
+
+msgid "Unfirm"
+msgstr ""
 
 msgid "Unfurl Links"
 msgstr "Развернуть ссылки"

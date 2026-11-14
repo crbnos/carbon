@@ -150,3 +150,77 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
     flagged: isPlanFlagged(step.warnings, step.motion) ? true : undefined
   };
 }
+
+// ── Planned orders in the planning drawers ─────────────────────────────────
+// Read in the browser with the user's client, as the drawers read their open
+// jobs and PO lines: the `plannedOrder` SELECT policy is production_view or
+// purchasing_view, the two pages that open these drawers.
+
+const DRAWER_PLANNED_ORDER_COLUMNS =
+  "id, status, orderType, quantity, scrapQuantity, quantityTrace, dueDate, releaseDate, firmedAt" as const;
+
+/**
+ * The Planned and Firm planned orders of one item at one location, by due
+ * date: the rows of the drawer's Planned Orders grid. Planned orders exist
+ * only in the common segment. A Converted row is its job or PO line now, which
+ * the drawer lists as an open order.
+ */
+export async function getDrawerPlannedOrders(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    itemId: string;
+    locationId: string;
+    orderType: "Make" | "Buy";
+  }
+) {
+  return client
+    .from("plannedOrder")
+    .select(DRAWER_PLANNED_ORDER_COLUMNS)
+    .eq("companyId", args.companyId)
+    .eq("itemId", args.itemId)
+    .eq("locationId", args.locationId)
+    .eq("orderType", args.orderType)
+    .eq("planningSegmentId", "")
+    .in("status", ["Planned", "Firm"])
+    .order("dueDate", { ascending: true })
+    .order("id", { ascending: true });
+}
+
+export type DrawerPlannedOrder = NonNullable<
+  Awaited<ReturnType<typeof getDrawerPlannedOrders>>["data"]
+>[number];
+
+/**
+ * The item's planning time fence at a location, in calendar days, as MRP
+ * resolves it: the item's own value, else the location's, else 0 (no fence).
+ */
+export async function getPlanningTimeFenceDays(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; itemId: string; locationId: string }
+): Promise<{ data: number; error: null } | { data: null; error: Error }> {
+  const [itemPlanning, location] = await Promise.all([
+    client
+      .from("itemPlanning")
+      .select("planningTimeFenceDays")
+      .eq("companyId", args.companyId)
+      .eq("itemId", args.itemId)
+      .eq("locationId", args.locationId)
+      .maybeSingle(),
+    client
+      .from("location")
+      .select("planningTimeFenceDays")
+      .eq("companyId", args.companyId)
+      .eq("id", args.locationId)
+      .maybeSingle()
+  ]);
+  const failed = itemPlanning.error ?? location.error;
+  if (failed) return { data: null, error: new Error(failed.message) };
+  return {
+    data:
+      itemPlanning.data?.planningTimeFenceDays ??
+      location.data?.planningTimeFenceDays ??
+      0,
+    error: null
+  };
+}

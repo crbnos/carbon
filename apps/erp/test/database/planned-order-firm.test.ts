@@ -12,11 +12,16 @@ import { createServiceContext } from "@carbon/api/service-fn.server";
 import { afterEach, beforeEach, describe, expect } from "vitest";
 import {
   applyPlanningActions,
+  dismissProductionPlanningActions,
   firmPlannedOrder,
+  reopenProductionPlanningActions,
   unfirmPlannedOrder,
   updatePlannedOrder
 } from "../../app/modules/production/production.server";
-import { applyPlanningActions as applyPurchasingPlanningActions } from "../../app/modules/purchasing/purchasing.server";
+import {
+  applyPlanningActions as applyPurchasingPlanningActions,
+  dismissPurchasingPlanningActions
+} from "../../app/modules/purchasing/purchasing.server";
 import {
   alwaysPostFixture,
   type Fixture,
@@ -27,6 +32,7 @@ import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
 
 let f: Fixture;
 let week: string;
+let nextWeek: string;
 
 async function plannedOrder(
   key: string,
@@ -54,8 +60,8 @@ async function plannedOrder(
         firmedAt: status === "Firm" ? f.today : null,
         jobId: overrides.jobId ?? null,
         quantity: 10,
-        dueDate: "2299-01-05",
-        releaseDate: "2299-01-01",
+        dueDate: "2297-01-05",
+        releaseDate: "2297-01-01",
         periodId: week,
         splitIndex: overrides.splitIndex ?? 0,
         createdBy: USER
@@ -86,7 +92,7 @@ async function changeAction(
         plannedOrderId,
         requiresManualAction: false,
         suggestedQuantity: suggested.quantity ?? 10,
-        suggestedDate: suggested.date ?? "2299-01-05",
+        suggestedDate: suggested.date ?? "2297-01-05",
         horizonDate: f.today,
         createdBy: USER
       })
@@ -126,7 +132,8 @@ async function read(id: string) {
       "releaseDate",
       "splitIndex",
       "firmedBy",
-      "firmedAt"
+      "firmedAt",
+      "periodId"
     ])
     .where("id", "=", id)
     .where("companyId", "=", f.companyId)
@@ -148,23 +155,35 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
   beforeEach(async () => {
     f = await alwaysPostFixture();
     week = `${f.prefix}-week`;
-    // `period` has no company: this one is the test's own, removed after.
+    nextWeek = `${f.prefix}-next-week`;
+    // `period` has no company: these are the test's own, removed after.
     await seed(f, (trx) =>
       trx
         .insertInto("period")
-        .values({
-          id: week,
-          startDate: "2299-01-01",
-          endDate: "2299-01-07",
-          periodType: "Week"
-        })
+        .values([
+          {
+            id: week,
+            startDate: "2297-01-01",
+            endDate: "2297-01-07",
+            periodType: "Week"
+          },
+          {
+            id: nextWeek,
+            startDate: "2297-01-08",
+            endDate: "2297-01-14",
+            periodType: "Week"
+          }
+        ])
         .execute()
     );
   });
 
   afterEach(async () => {
     // the planned orders and their actions go with the period (ON DELETE CASCADE)
-    await f.db.deleteFrom("period").where("id", "=", week).execute();
+    await f.db
+      .deleteFrom("period")
+      .where("id", "in", [week, nextWeek])
+      .execute();
     await f.cleanup();
   });
 
@@ -215,17 +234,79 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
       const result = await updatePlannedOrder(f.service, {
         id,
         quantity: 12,
-        dueDate: "2299-01-12"
+        dueDate: "2297-01-12"
       });
       expect(result.error).toBeNull();
       expect(await read(id)).toMatchObject({
         status: "Firm",
         firmedBy: USER,
         quantity: 12,
-        dueDate: "2299-01-12",
-        // 2299-01-01 moved by the same 7 days
-        releaseDate: "2299-01-08"
+        dueDate: "2297-01-12",
+        // 2297-01-01 moved by the same 7 days
+        releaseDate: "2297-01-08"
       });
+    }
+  );
+
+  databaseTest(
+    "a moved due date moves the order to the week that holds it",
+    async () => {
+      const moved = await plannedOrder("next-week");
+      const result = await updatePlannedOrder(f.service, {
+        id: moved,
+        dueDate: "2297-01-10"
+      });
+      expect(result.error).toBeNull();
+      expect(await read(moved)).toMatchObject({
+        dueDate: "2297-01-10",
+        periodId: nextWeek
+      });
+
+      // no weekly period holds the new date: the order keeps its week
+      const kept = await plannedOrder("no-week", { splitIndex: 1 });
+      const outside = await updatePlannedOrder(f.service, {
+        id: kept,
+        dueDate: "2297-03-01"
+      });
+      expect(outside.error).toBeNull();
+      expect(await read(kept)).toMatchObject({
+        dueDate: "2297-03-01",
+        periodId: week
+      });
+
+      // a quantity edit alone leaves the week as it is
+      const sized = await plannedOrder("quantity-only", { splitIndex: 2 });
+      await updatePlannedOrder(f.service, { id: sized, quantity: 20 });
+      expect(await read(sized)).toMatchObject({ quantity: 20, periodId: week });
+    }
+  );
+
+  databaseTest(
+    "a change on a planned order is dismissed and reopened on its own worklist only",
+    async () => {
+      const make = await plannedOrder("worklist-make");
+      const actionId = await changeAction("Expedite", make, {
+        date: "2297-01-03"
+      });
+
+      // a Make planned order is production's: purchasing cannot dismiss it
+      const fromPurchasing = await dismissPurchasingPlanningActions(f.service, {
+        planningActionIds: [actionId]
+      });
+      expect(fromPurchasing.error).not.toBeNull();
+      expect(await actionStatus(actionId)).toBe("Open");
+
+      const dismissed = await dismissProductionPlanningActions(f.service, {
+        planningActionIds: [actionId]
+      });
+      expect(dismissed.error).toBeNull();
+      expect(await actionStatus(actionId)).toBe("Dismissed");
+
+      const reopened = await reopenProductionPlanningActions(f.service, {
+        planningActionIds: [actionId]
+      });
+      expect(reopened.error).toBeNull();
+      expect(await actionStatus(actionId)).toBe("Open");
     }
   );
 
@@ -233,7 +314,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
     "an applied Defer moves both dates and firms the order",
     async () => {
       const id = await plannedOrder("defer");
-      const actionId = await changeAction("Defer", id, { date: "2299-01-08" });
+      const actionId = await changeAction("Defer", id, { date: "2297-01-08" });
 
       const result = await applyPlanningActions(f.service, {
         planningActionIds: [actionId]
@@ -243,8 +324,8 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
       expect(await read(id)).toMatchObject({
         status: "Firm",
         quantity: 10,
-        dueDate: "2299-01-08",
-        releaseDate: "2299-01-04"
+        dueDate: "2297-01-08",
+        releaseDate: "2297-01-04"
       });
       expect(await actionStatus(actionId)).toBe("Actioned");
     }

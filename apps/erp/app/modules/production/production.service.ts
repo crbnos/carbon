@@ -12169,7 +12169,7 @@ export async function getPlanningActions(
         const query = client
           .from("planningAction")
           .select(
-            "*, item!planningAction_itemId_fkey(readableIdWithRevision, name), purchaseOrderLine!planningAction_purchaseOrderLineId_fkey(purchaseOrderId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job!planningAction_jobId_fkey(jobId, status)"
+            "*, item!planningAction_itemId_fkey(readableIdWithRevision, name), purchaseOrderLine!planningAction_purchaseOrderLineId_fkey(purchaseOrderId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job!planningAction_jobId_fkey(jobId, status), plannedOrder!planningAction_plannedOrderId_fkey(orderType, status)"
           )
           .eq("companyId", companyId)
           .eq("locationId", locationId)
@@ -12180,12 +12180,16 @@ export async function getPlanningActions(
         // Make worklist = new job suggestions + change actions on jobs.
         // Transfer and Borrow move stock between owners; each page lists
         // only its own kind's items, so they show on the item's own page.
+        // A change on a planned order is read here and kept below only when
+        // the planned order is of this kind (`orderType`).
         return (
           kind === "Buy"
             ? query.or(
-                "type.in.(Order,Transfer,Borrow),purchaseOrderLineId.not.is.null"
+                "type.in.(Order,Transfer,Borrow),purchaseOrderLineId.not.is.null,plannedOrderId.not.is.null"
               )
-            : query.or("type.in.(Make,Transfer,Borrow),jobId.not.is.null")
+            : query.or(
+                "type.in.(Make,Transfer,Borrow),jobId.not.is.null,plannedOrderId.not.is.null"
+              )
         )
           .order("suggestedDate", { ascending: true })
           .order("id", { ascending: true });
@@ -12202,7 +12206,11 @@ export async function getPlanningActions(
 
   const enriched = chunks
     .flatMap((chunk) => chunk.data ?? [])
-    .map(({ item, purchaseOrderLine, job, ...row }) => ({
+    // a change on the other worklist's planned order
+    .filter(
+      (row) => !row.plannedOrderId || row.plannedOrder?.orderType === kind
+    )
+    .map(({ item, purchaseOrderLine, job, plannedOrder, ...row }) => ({
       ...row,
       itemReadableId: item?.readableIdWithRevision ?? null,
       itemName: item?.name ?? null,
@@ -12226,7 +12234,8 @@ export async function getPlanningActions(
           ?.receiptPromisedDate ??
         null,
       jobReadableId: job?.jobId ?? null,
-      jobStatus: job?.status ?? null
+      jobStatus: job?.status ?? null,
+      plannedOrderStatus: plannedOrder?.status ?? null
     }))
     // the chunks are each in order; the page as a whole is not
     .sort(
@@ -12271,21 +12280,36 @@ async function planningActionIdList<Row>(
 /**
  * The worklist a page may write, the same split `getPlanningActions` reads:
  * Buy = new purchase suggestions and changes on PO lines, Make = new job
- * suggestions and changes on jobs. The writes below go through Kysely, past
+ * suggestions and changes on jobs. A change on a planned order belongs to the
+ * worklist of its `orderType`. The writes below go through Kysely, past
  * row-level security, so without it a user with purchasing rights could
  * dismiss or reassign production's actions by posting their ids.
  */
 function inPlanningWorklist(kind: PlanningActionKind) {
-  return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) =>
-    kind === "Buy"
+  return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) => {
+    const onPlannedOrderOfKind = eb.and([
+      eb("planningAction.plannedOrderId", "is not", null),
+      eb.exists(
+        eb
+          .selectFrom("plannedOrder")
+          .select("plannedOrder.id")
+          .whereRef("plannedOrder.id", "=", "planningAction.plannedOrderId")
+          .whereRef("plannedOrder.companyId", "=", "planningAction.companyId")
+          .where("plannedOrder.orderType", "=", kind)
+      )
+    ]);
+    return kind === "Buy"
       ? eb.or([
           eb("type", "in", ["Order", "Transfer", "Borrow"]),
-          eb("purchaseOrderLineId", "is not", null)
+          eb("purchaseOrderLineId", "is not", null),
+          onPlannedOrderOfKind
         ])
       : eb.or([
           eb("type", "in", ["Make", "Transfer", "Borrow"]),
-          eb("jobId", "is not", null)
+          eb("jobId", "is not", null),
+          onPlannedOrderOfKind
         ]);
+  };
 }
 
 export async function dismissPlanningActions(
@@ -12760,9 +12784,10 @@ export type PlannedOrderEdit = {
  * Edit planned orders in ONE statement. Each edit firms its row (a person now
  * holds it); a row already Firm keeps who firmed it. A moved due date moves
  * the release date by the same number of days, so the lead time between them
- * stays. A new quantity of a Make order restates `scrapQuantity` from the
- * item's scrap rate, as `updatePlanningJob` does for a job; a Buy order
- * carries no scrap. Only Planned and Firm rows change. Returns the ids it
+ * stays, and moves the row to the weekly period that holds the new due date
+ * (it keeps its period when none does). A new quantity of a Make order
+ * restates `scrapQuantity` from the item's scrap rate, as `updatePlanningJob`
+ * does for a job; a Buy order carries no scrap. Only Planned and Firm rows change. Returns the ids it
  * changed. Throws on failure; call it inside the caller's transaction.
  */
 export async function updatePlannedOrders(
@@ -12789,6 +12814,18 @@ export async function updatePlannedOrders(
           ELSE 0
         END,
         "dueDate" = COALESCE(v."dueDate", po."dueDate"),
+        -- the week of the new due date; the old week when no period holds it
+        "periodId" = CASE
+          WHEN v."dueDate" IS NULL THEN po."periodId"
+          ELSE COALESCE((
+            SELECT p."id" FROM "period" p
+            WHERE p."periodType" = 'Week'
+              AND p."startDate" <= v."dueDate"
+              AND p."endDate" >= v."dueDate"
+            ORDER BY p."startDate" DESC, p."id"
+            LIMIT 1
+          ), po."periodId")
+        END,
         "releaseDate" = po."releaseDate"
           + (COALESCE(v."dueDate", po."dueDate") - po."dueDate"),
         "status" = 'Firm',

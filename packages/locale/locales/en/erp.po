@@ -12950,6 +12950,9 @@ msgstr "Expiry begins when the selected process starts."
 msgid "Expiry trace"
 msgstr "Expiry trace"
 
+msgid "explode {explode}"
+msgstr "explode {explode}"
+
 msgid "Export"
 msgstr "Export"
 
@@ -13428,6 +13431,9 @@ msgstr "Failed to update supplier quote line"
 msgid "Failed to update the items"
 msgstr "Failed to update the items"
 
+msgid "Failed to update the planned order"
+msgstr "Failed to update the planned order"
+
 msgid "Failed to update the setting"
 msgstr "Failed to update the setting"
 
@@ -13529,6 +13535,9 @@ msgstr "Fees"
 
 msgid "FEFO (first-expiry-first-out)"
 msgstr "FEFO (first-expiry-first-out)"
+
+msgid "Fence"
+msgstr "Fence"
 
 msgid "Fetch"
 msgstr "Fetch"
@@ -13705,6 +13714,9 @@ msgstr "Finishing is refused until every line is picked or marked Short."
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Fire on quote lines, sales order lines and sales invoice lines."
+
+msgid "Firm"
+msgstr "Firm"
 
 msgid "First {count}"
 msgstr "First {count}"
@@ -16457,6 +16469,9 @@ msgstr "Keep matching items"
 msgid "Keep mine"
 msgstr "Keep mine"
 
+msgid "Keep my numbers"
+msgstr "Keep my numbers"
+
 msgid "Keep navigation open"
 msgstr "Keep navigation open"
 
@@ -16474,6 +16489,9 @@ msgstr "Keep Open"
 
 msgid "Keep picking"
 msgstr "Keep picking"
+
+msgid "Keep your numbers through plan updates?"
+msgstr "Keep your numbers through plan updates?"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Keeps orders, quotes, and settings behind a second check"
@@ -22609,6 +22627,15 @@ msgstr "Planned Order"
 msgid "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 msgstr "Planned order = MRP suggestion to cover projected demand based on the item's reorder policy (or manually added)."
 
+msgid "Planned order firmed"
+msgstr "Planned order firmed"
+
+msgid "Planned order returned to MRP"
+msgstr "Planned order returned to MRP"
+
+msgid "Planned Orders"
+msgstr "Planned Orders"
+
 msgid "Planned purchase order"
 msgstr "Planned purchase order"
 
@@ -23389,6 +23416,9 @@ msgstr "Projected on hand by week"
 
 msgid "Projected stock"
 msgstr "Projected stock"
+
+msgid "Projected stock {stock}"
+msgstr "Projected stock {stock}"
 
 msgid "Projected stock by week"
 msgstr "Projected stock by week"
@@ -24775,6 +24805,9 @@ msgstr "Release control setting updated"
 msgid "Release date"
 msgstr "Release date"
 
+msgid "Release Date"
+msgstr "Release Date"
+
 msgid "Release Items"
 msgstr "Release Items"
 
@@ -24798,6 +24831,9 @@ msgstr "Released"
 
 msgid "Released date"
 msgstr "Released date"
+
+msgid "Released inside the planning time fence: MRP keeps its quantity and dates."
+msgstr "Released inside the planning time fence: MRP keeps its quantity and dates."
 
 msgid "Released items bill on the next invoice run, within the line's funding."
 msgstr "Released items bill on the next invoice run, within the line's funding."
@@ -26547,6 +26583,9 @@ msgstr "Saving {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Saving a copy of your current data"
 
+msgid "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+msgstr "Saving this change firms the planned order. MRP then keeps its quantity and dates, and raises a planning action when it disagrees. Unfirm gives the order back to MRP."
+
 msgid "Saving..."
 msgstr "Saving..."
 
@@ -26685,6 +26724,9 @@ msgstr "Scrap {0}"
 
 msgid "Scrap / Cost of Quality"
 msgstr "Scrap / Cost of Quality"
+
+msgid "scrap +{scrap}"
+msgstr "scrap +{scrap}"
 
 msgid "Scrap Percent"
 msgstr "Scrap Percent"
@@ -33007,6 +33049,9 @@ msgstr "Undiscounted payments still to come, by fiscal year, less the interest t
 
 msgid "Undo"
 msgstr "Undo"
+
+msgid "Unfirm"
+msgstr "Unfirm"
 
 msgid "Unfurl Links"
 msgstr "Unfurl Links"
