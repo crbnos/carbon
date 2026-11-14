@@ -17306,6 +17306,12 @@ msgstr "Ubicación"
 msgid "Location / Item"
 msgstr "Ubicación / Artículo"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Nombre de Ubicación"
 
@@ -22656,6 +22662,12 @@ msgstr "Las rondas de planificación sugirieron reabastecimiento hasta un múlti
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "La planificación muestra solo acciones y órdenes sugeridas vencidas dentro de este número de días. Dejar vacío para usar el predeterminado de la empresa, o ingrese 0 para mostrar todo para este artículo."
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Límite inferior de planificación en una cantidad de reabastecimiento sugerida; distinto del MOQ de un proveedor, que vive en el registro de piezas del proveedor."
@@ -30868,6 +30880,9 @@ msgstr "La noche aún es joven, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "El número de días entre la colocación de una Orden de Compra con el proveedor preferido y la llegada de las mercancías al almacén; la planificación desplaza la demanda hacia atrás por esta cantidad."
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "El número de días para producir un lote de producción de este artículo, medido desde la liberación de la orden de trabajo hasta su finalización; la planificación desplaza la demanda hacia atrás por esta cantidad."

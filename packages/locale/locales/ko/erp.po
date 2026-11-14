@@ -17306,6 +17306,12 @@ msgstr "위치"
 msgid "Location / Item"
 msgstr "위치 / 항목"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "위치 이름"
 
@@ -22656,6 +22662,12 @@ msgstr "계획은 제안된 보충 수량을 이 숫자의 배수로 반올림�
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "계획은 이 많은 날짜 내에 필요한 조치 및 제안된 주문만 표시합니다. 회사 기본값을 사용하려면 공란으로 두거나, 이 품목의 모든 것을 표시하려면 0을 입력하세요."
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "계획에서 제안하는 보충 수량의 하한선으로, 공급업체-부품 레코드에 있는 공급업체의 MOQ와는 별개입니다."
@@ -30868,6 +30880,9 @@ msgstr "밤은 아직 젊습니다, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "우선 공급업체에 발주서를 작성한 후 상품이 하역장에 도착할 때까지의 일수; 계획이 이만큼 수요를 뒤로 오프셋합니다."
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "이 품목의 배치 하나를 제작하는 데 걸리는 일수(작업 지시 릴리스부터 완료까지 측정); 계획이 이만큼 수요를 뒤로 오프셋합니다."

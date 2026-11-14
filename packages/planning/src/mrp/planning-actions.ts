@@ -76,7 +76,8 @@ import {
   drawsByPeriod,
   earlierDate,
   laterDate,
-  sizeRowSupply
+  sizeRowSupply,
+  supplyTarget
 } from "./row-sizing.ts";
 
 export {
@@ -131,6 +132,7 @@ export type ExistingPlanningAction = {
   isASAP: boolean;
   purchaseOrderLineId: string | null;
   jobId: string | null;
+  plannedOrderId: string | null;
   requiresManualAction: boolean;
   supplierId: string | null;
   policyName: string | null;
@@ -144,22 +146,21 @@ export type ExistingPlanningAction = {
  * One Release per planned order (`OpenSupplyOrder.release`), dated the last
  * day to release it, raised only from `RELEASE_NOTICE_DAYS` before that day.
  * Released from the order itself — the planning pages link to it — so it is
- * never applied. An order MRP would Cancel gets none.
+ * never applied. An order MRP would Cancel gets none, and so does a planned
+ * order: MRP converts it, nobody releases it.
  */
 export function deriveReleaseActions(args: {
   openOrders: OpenSupplyOrder[];
   changeActions: Pick<
     ChangeCandidate,
-    "type" | "purchaseOrderLineId" | "jobId"
+    "type" | "purchaseOrderLineId" | "jobId" | "plannedOrderId"
   >[];
   periods: { id: string; startDate: string }[];
   todayDate: string;
 }): ChangeCandidate[] {
   const { openOrders, changeActions, periods, todayDate } = args;
   const cancelled = new Set(
-    changeActions
-      .filter((a) => a.type === "Cancel")
-      .map((a) => a.purchaseOrderLineId ?? a.jobId)
+    changeActions.filter((a) => a.type === "Cancel").map((a) => supplyTarget(a))
   );
   // the week a date falls in; an earlier date is the first week
   const periodFor = (dateIso: string) => {
@@ -174,10 +175,10 @@ export function deriveReleaseActions(args: {
   const actions: ChangeCandidate[] = [];
   for (const order of openOrders) {
     const release = order.release;
-    if (!release) continue;
+    if (!release || order.plannedOrderId) continue;
     // not yet: the run on the day before raises it
     if (daysBetween(release.date, todayDate) > RELEASE_NOTICE_DAYS) continue;
-    if (cancelled.has(order.purchaseOrderLineId ?? order.jobId ?? null)) {
+    if (cancelled.has(supplyTarget(order))) {
       continue;
     }
     const period = periodFor(release.date);
@@ -194,6 +195,7 @@ export function deriveReleaseActions(args: {
       isASAP: daysBetween(release.date, todayDate) <= 0,
       purchaseOrderLineId: order.purchaseOrderLineId ?? null,
       jobId: order.jobId ?? null,
+      plannedOrderId: null,
       requiresManualAction: false,
       supplierId: order.supplierId ?? null,
       policyName: null,
@@ -230,10 +232,11 @@ export function naturalKey(
     periodId: string;
     purchaseOrderLineId: string | null;
     jobId: string | null;
+    plannedOrderId: string | null;
   } & PlanningActionSegment,
   keyPeriod: (periodId: string) => string = (periodId) => periodId
 ): string {
-  const target = action.purchaseOrderLineId ?? action.jobId;
+  const target = supplyTarget(action);
   return [
     action.itemId,
     action.locationId,
@@ -381,6 +384,11 @@ export function diffPlanningActions(args: {
     if (current.requiresManualAction !== candidate.requiresManualAction) {
       patch.requiresManualAction = candidate.requiresManualAction;
     }
+    if (
+      (current.plannedOrderId ?? null) !== (candidate.plannedOrderId ?? null)
+    ) {
+      patch.plannedOrderId = candidate.plannedOrderId ?? null;
+    }
     if ((current.supplierId ?? null) !== candidate.supplierId) {
       patch.supplierId = candidate.supplierId;
     }
@@ -431,6 +439,7 @@ const PATCH_COLUMN_TYPES: Record<string, string> = {
   suggestedDate: "date",
   isASAP: "boolean",
   requiresManualAction: "boolean",
+  plannedOrderId: "text",
   supplierId: "text",
   policyName: "text",
   reason: "text",
@@ -560,6 +569,7 @@ export async function writePlanningActionDiff(
           isASAP: candidate.isASAP,
           purchaseOrderLineId: candidate.purchaseOrderLineId,
           jobId: candidate.jobId,
+          plannedOrderId: candidate.plannedOrderId ?? null,
           requiresManualAction: candidate.requiresManualAction,
           supplierId: candidate.supplierId,
           policyName: candidate.policyName,
@@ -735,6 +745,7 @@ export function memberMoveCandidates(
         isASAP: daysBetween(move.needDate, todayDate) <= 0,
         purchaseOrderLineId: null,
         jobId: null,
+        plannedOrderId: null,
         requiresManualAction: false,
         supplierId: null,
         policyName: null,
@@ -931,8 +942,7 @@ export function deriveRowActions(
   for (const candidate of merged) {
     const isNewSupply =
       (candidate.type === "Order" || candidate.type === "Make") &&
-      !candidate.purchaseOrderLineId &&
-      !candidate.jobId;
+      !supplyTarget(candidate);
     if (!isNewSupply) {
       passthrough.push(candidate);
       continue;
@@ -982,6 +992,7 @@ export function deriveRowActions(
       isASAP: daysBetween(period.startDate, todayDate) < 0,
       purchaseOrderLineId: null,
       jobId: null,
+      plannedOrderId: null,
       requiresManualAction: false,
       supplierId: null,
       policyName: null,
@@ -1407,6 +1418,7 @@ export async function generatePlanningActions(
         "isASAP",
         "purchaseOrderLineId",
         "jobId",
+        "plannedOrderId",
         "requiresManualAction",
         "supplierId",
         "policyName",
@@ -1508,6 +1520,7 @@ async function writePegs(
             "type",
             "purchaseOrderLineId",
             "jobId",
+            "plannedOrderId",
             "planningSegmentId",
             "fromProjectId",
             "toProjectId"

@@ -61,6 +61,7 @@ const newOrder = {
   type: "Order",
   purchaseOrderLineId: null,
   jobId: null,
+  plannedOrderId: null,
   requiresManualAction: false,
   supplierId: "sup-1",
   isASAP: false,

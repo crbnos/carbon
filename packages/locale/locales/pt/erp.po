@@ -17306,6 +17306,12 @@ msgstr "Localização"
 msgid "Location / Item"
 msgstr "Local / Item"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Nome da Localização"
 
@@ -22656,6 +22662,12 @@ msgstr "Os ciclos de planejamento sugeriram reabastecimento até um múltiplo in
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "O planejamento mostra apenas as ações e pedidos sugeridos com prazo dentro deste número de dias. Deixe vazio para usar o padrão da empresa ou digite 0 para mostrar tudo para este item."
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Limite inferior de planejamento em uma quantidade de reabastecimento sugerida; distinto do MOQ de um fornecedor, que vive no registro de parte do fornecedor."
@@ -30868,6 +30880,9 @@ msgstr "A noite ainda é jovem, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "O número de dias entre fazer um pedido de compra com o fornecedor preferencial e os produtos chegarem ao local; o deslocamento de planejamento retrocede a demanda por este período."
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "O número de dias para produzir um lote de produção deste item, medido da liberação da ordem de produção até a conclusão; o deslocamento de planejamento retrocede a demanda por este período."

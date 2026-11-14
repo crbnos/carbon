@@ -63,6 +63,20 @@ export function quantityAfterApply(
   return round(purchaseUnits * factor);
 }
 
+/**
+ * The order an open order or a change action targets: its PO line, its job
+ * or its planned order. Null for new supply, which has no order yet.
+ */
+export function supplyTarget(order: {
+  purchaseOrderLineId?: string | null;
+  jobId?: string | null;
+  plannedOrderId?: string | null;
+}): string | null {
+  return (
+    order.purchaseOrderLineId ?? order.jobId ?? order.plannedOrderId ?? null
+  );
+}
+
 export type DeriveChangeActionsInput = {
   onHand: number;
   /** total demand per period, chronological */
@@ -225,7 +239,7 @@ export function firstNeedPeriodByOrder(
 ): Map<string, string> {
   const needs = new Map<string, string>();
   for (const { order, firstNeed } of walkOrderCoverage(input)) {
-    const ref = order.purchaseOrderLineId ?? order.jobId;
+    const ref = supplyTarget(order);
     if (!ref || !firstNeed) continue;
     if (
       frozen &&
@@ -273,10 +287,13 @@ export function deriveChangeActions(
 
   const actions: ChangeCandidate[] = [];
   for (const { order, consumed, holdsFloor, firstNeed } of orders) {
+    // Planning changes a planned order itself: never a manual action.
+    const isPlannedOrder = Boolean(order.plannedOrderId);
     const target = {
       purchaseOrderLineId: order.purchaseOrderLineId ?? null,
       jobId: order.jobId ?? null,
-      requiresManualAction: order.requiresManualAction,
+      plannedOrderId: order.plannedOrderId ?? null,
+      requiresManualAction: !isPlannedOrder && order.requiresManualAction,
       supplierId: order.supplierId ?? null,
       policyName: null,
       triggerValues: null,
@@ -316,7 +333,8 @@ export function deriveChangeActions(
       const dateTarget = {
         ...target,
         requiresManualAction:
-          target.requiresManualAction || Boolean(order.dateIsPromised)
+          !isPlannedOrder &&
+          (target.requiresManualAction || Boolean(order.dateIsPromised))
       };
       // A frozen order cannot be pulled in; the need it misses is planned
       // as new supply (`firstNeedPeriodByOrder` leaves it where it lands).
@@ -407,7 +425,7 @@ export function projectionsWithExpedites(args: {
   periods: { id: string; startDate: string }[];
   changeActions: Pick<
     ChangeCandidate,
-    "type" | "periodId" | "purchaseOrderLineId" | "jobId"
+    "type" | "periodId" | "purchaseOrderLineId" | "jobId" | "plannedOrderId"
   >[];
   openOrders: OpenSupplyOrder[];
   /** The week each order is first needed in (`firstNeedPeriodByOrder`). */
@@ -436,7 +454,7 @@ export function projectionsWithExpedites(args: {
   const needPeriodByOrder = new Map<string, string>();
   for (const action of changeActions) {
     if (action.type !== "Expedite") continue;
-    const target = action.purchaseOrderLineId ?? action.jobId;
+    const target = supplyTarget(action);
     if (target) needPeriodByOrder.set(target, action.periodId);
   }
   for (const [target, periodId] of args.firstNeedPeriods ?? []) {
@@ -444,9 +462,7 @@ export function projectionsWithExpedites(args: {
   }
 
   for (const [target, periodId] of needPeriodByOrder) {
-    const order = openOrders.find(
-      (o) => (o.purchaseOrderLineId ?? o.jobId) === target
-    );
+    const order = openOrders.find((o) => supplyTarget(o) === target);
     const needIndex = periods.findIndex((p) => p.id === periodId);
     if (!order || needIndex < 0) continue;
 
@@ -488,9 +504,7 @@ export function convertOrdersToIncreases(args: {
   // an order an Expedite moved to today still matches this week's shortfall.
   const asOfToday = (dateIso: string) => laterDate(dateIso, args.todayDate);
 
-  const targeted = new Set(
-    changeActions.map((a) => a.purchaseOrderLineId ?? a.jobId ?? "")
-  );
+  const targeted = new Set(changeActions.map((a) => supplyTarget(a) ?? ""));
   const used = new Set<string>();
 
   return sizingCandidates.map((candidate) => {
@@ -498,11 +512,15 @@ export function convertOrdersToIncreases(args: {
       return candidate;
     }
     const match = openOrders.find((order) => {
-      const ref = order.purchaseOrderLineId ?? order.jobId ?? "";
+      const ref = supplyTarget(order) ?? "";
       if (!ref || targeted.has(ref) || used.has(ref)) return false;
-      const isBuy = Boolean(order.purchaseOrderLineId);
-      if (candidate.type === "Order" && !isBuy) return false;
-      if (candidate.type === "Make" && isBuy) return false;
+      // A planned order is of the row's own type, so it takes either; a PO
+      // line takes only an Order and a job only a Make.
+      if (!order.plannedOrderId) {
+        const isBuy = Boolean(order.purchaseOrderLineId);
+        if (candidate.type === "Order" && !isBuy) return false;
+        if (candidate.type === "Make" && isBuy) return false;
+      }
       if (isOrderFrozen(order, args.todayDate, args.leadTimeDays)) return false;
       // Growing an order past what one order holds (a batch, a fixed
       // reorder quantity, the maximum order quantity) breaks the rule it was
@@ -535,13 +553,15 @@ export function convertOrdersToIncreases(args: {
       match.quantity + candidate.suggestedQuantity
     );
     if (round(increasedTo - match.quantity) <= 0) return candidate;
-    used.add(match.purchaseOrderLineId ?? match.jobId ?? "");
+    used.add(supplyTarget(match) ?? "");
     return {
       ...candidate,
       type: "Increase",
       purchaseOrderLineId: match.purchaseOrderLineId ?? null,
       jobId: match.jobId ?? null,
-      requiresManualAction: match.requiresManualAction,
+      plannedOrderId: match.plannedOrderId ?? null,
+      // planning changes a planned order itself
+      requiresManualAction: !match.plannedOrderId && match.requiresManualAction,
       // the line's own supplier — the candidate carries the item's preferred
       // one, which need not be who this PO is with
       supplierId: match.supplierId ?? null,
@@ -751,6 +771,7 @@ export function sizeRowSupply(input: RowSizingInput): RowSizingResult {
           isASAP: daysBetween(startDate, todayDate) < 0,
           purchaseOrderLineId: null,
           jobId: null,
+          plannedOrderId: null,
           requiresManualAction: false,
           supplierId: kind === "Order" ? input.preferredSupplierId : null,
           policyName: "Stock Only",
@@ -797,6 +818,7 @@ export function sizeRowSupply(input: RowSizingInput): RowSizingResult {
       isASAP: order.isASAP,
       purchaseOrderLineId: null,
       jobId: null,
+      plannedOrderId: null,
       requiresManualAction: false,
       supplierId: kind === "Order" ? input.preferredSupplierId : null,
       policyName: isProjectSegment ? "Lot-for-Lot" : order.policyName,

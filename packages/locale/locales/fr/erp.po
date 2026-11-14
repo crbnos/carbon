@@ -17306,6 +17306,12 @@ msgstr "Emplacement"
 msgid "Location / Item"
 msgstr "Emplacement / Article"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Nom du lieu"
 
@@ -22656,6 +22662,12 @@ msgstr "Les cycles de planification ont suggéré un réapprovisionnement jusqu'
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "La planification n'affiche que les actions et les ordres suggérés dus dans ce nombre de jours. Laisser vide pour utiliser la valeur par défaut de la société, ou entrer 0 pour afficher tout pour cet article."
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Limite inférieure de la planification pour une quantité de réapprovisionnement suggérée; différente du MOQ d'un fournisseur, qui se trouve sur l'enregistrement pièce-fournisseur."
@@ -30868,6 +30880,9 @@ msgstr "La nuit est encore jeune, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Le nombre de jours entre la passation d'un bon de commande auprès du fournisseur préféré et l'arrivée des marchandises au quai; la planification décale les besoins en arrière de ce délai."
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Le nombre de jours pour fabriquer un lot de production de cet article, mesuré à partir du lancement de l'ordre de fabrication jusqu'à son achèvement ; les décalages de planification décalent la demande rétrospectivement de cette durée."

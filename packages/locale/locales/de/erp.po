@@ -17306,6 +17306,12 @@ msgstr "Standort"
 msgid "Location / Item"
 msgstr "Standort / Artikel"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Standortname"
 
@@ -22656,6 +22662,12 @@ msgstr "Planungsrunden schlugen eine Auffüllung bis zu einem ganzen Vielfachen 
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "Die Planung zeigt nur die Maßnahmen und vorgeschlagenen Bestellungen an, die innerhalb dieser Anzahl von Tagen fällig werden. Leer lassen, um den Standard des Unternehmens zu verwenden, oder 0 eingeben, um alles für diesen Artikel anzuzeigen."
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Untere Grenze der Planung für eine vorgeschlagene Auffüllungsmenge; unterscheidet sich vom MOQ des Lieferanten, der im Datensatz des Lieferanten-Teils lebt."
@@ -30868,6 +30880,9 @@ msgstr "Die Nacht ist noch jung, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Die Anzahl der Tage zwischen dem Aufgeben einer PO beim bevorzugten Lieferant und dem Eintreffen der Waren an der Rampe; die Planung versetzt den Bedarf um diesen Betrag rückwärts."
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Die Anzahl der Tage zum Herstellen eines Loses dieses Artikels, gemessen von der Freigabe des Fertigungsauftrags bis zur Fertigstellung; die Planung versetzt den Bedarf um diesen Betrag rückwärts."

@@ -17306,6 +17306,12 @@ msgstr "位置"
 msgid "Location / Item"
 msgstr "位置 / 物品"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "位置名称"
 
@@ -22656,6 +22662,12 @@ msgstr "计划将建议的补货数量舍入至该数字的整数倍。"
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "计划仅显示 X 天内到期的操作和建议订单。留空以使用公司默认值，或输入 0 以显示此物料的所有内容。"
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "计划对建议补货数量的下限；不同于供应商的最小订购量 (MOQ)，该值位于供应商-物料记录上。"
@@ -30868,6 +30880,9 @@ msgstr "夜还年轻，{name}。"
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "从向首选供应商下达采购订单到货物到达装卸码头的天数;计划偏移以此向后推移需求。"
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "从下达工单到完成一个该物料生产批次所需的天数;计划以此向后推移需求。"

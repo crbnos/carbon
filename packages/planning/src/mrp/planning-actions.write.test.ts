@@ -88,6 +88,7 @@ describe("diffPlanningActions on a re-run", () => {
       isASAP: false,
       purchaseOrderLineId: null,
       jobId: null,
+      plannedOrderId: null,
       requiresManualAction: false,
       supplierId: null,
       policyName: "Lot-for-Lot",

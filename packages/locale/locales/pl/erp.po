@@ -17306,6 +17306,12 @@ msgstr "Lokalizacja"
 msgid "Location / Item"
 msgstr "Lokalizacja / Pozycja"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Nazwa lokalizacji"
 
@@ -22656,6 +22662,12 @@ msgstr "Rundy planowania zasugerowały uzupełnienie do całkowitej wielokrotno�
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "Planowanie pokazuje tylko działania i sugerowane zamówienia należne w ciągu tylu dni. Pozostaw puste, aby użyć ustawienia domyślnego firmy, lub wpisz 0, aby pokazać wszystko dla tego artykułu."
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Dolna granica planowania dla sugerowanej ilości uzupełnienia; różni się od MOQ dostawcy, która znajduje się w rekordie części dostawcy."
@@ -30868,6 +30880,9 @@ msgstr "Noc jeszcze młoda, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Liczba dni między złożeniem ZO u preferowanego dostawcy a przybyciem towarów na dok; przesunięcie planistyczne przesuwa zapotrzebowanie wstecz o tyle dni."
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Liczba dni wymaganych do zbudowania jednej partii produkcyjnej tego artykułu, mierzona od zwolnienia zlecenia produkcyjnego do ukończenia; przesunięcie planistyczne przesuwa zapotrzebowanie wstecz o tyle dni."

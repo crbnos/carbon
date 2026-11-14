@@ -17306,6 +17306,12 @@ msgstr "Location"
 msgid "Location / Item"
 msgstr "Location / Item"
 
+msgid "Location default"
+msgstr "Location default"
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr "Location default: {locationTimeFenceDays}"
+
 msgid "Location Name"
 msgstr "Location Name"
 
@@ -22656,6 +22662,12 @@ msgstr "Planning rounds suggested replenishment up to a whole multiple of this n
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
+
+msgid "Planning time fence"
+msgstr "Planning time fence"
+
+msgid "Planning time fence (days)"
+msgstr "Planning time fence (days)"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
@@ -30868,6 +30880,9 @@ msgstr "The night's still young, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."

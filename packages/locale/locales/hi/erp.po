@@ -17306,6 +17306,12 @@ msgstr "स्थान"
 msgid "Location / Item"
 msgstr "स्थान / आइटम"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "स्थान का नाम"
 
@@ -22656,6 +22662,12 @@ msgstr "योजना राउंड इस संख्या के पू�
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "योजना केवल इतने दिनों के भीतर देय कार्रवाई और सुझाए गए आदेश दिखाती है। कंपनी डिफ़ॉल्ट का उपयोग करने के लिए खाली छोड़ें, या इस आइटम के लिए सब कुछ दिखाने के लिए 0 दर्ज करें।"
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "सुझाए गए पुनः भरण मात्रा पर योजना की निचली सीमा; एक आपूर्तिकर्ता के MOQ से अलग, जो आपूर्तिकर्ता-भाग रिकॉर्ड पर रहता है।"
@@ -30868,6 +30880,9 @@ msgstr "रात अभी युवा है, {name}।"
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "पसंदीदा आपूर्तिकर्ता के साथ एक PO देने और सामान डॉक पर पहुंचने के बीच दिनों की संख्या; योजना इस राशि से मांग को पीछे की ओर ऑफसेट करता है।"
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "इस आइटम का एक बैच बनाने के लिए दिनों की संख्या, जॉब जारी करने से पूर्णता तक मापी जाती है; योजना ऑफसेट मांग को इस राशि से पीछे की ओर स्थानांतरित करती है।"

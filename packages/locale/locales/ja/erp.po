@@ -17306,6 +17306,12 @@ msgstr "ロケーション"
 msgid "Location / Item"
 msgstr "場所 / 品目"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "ロケーション名"
 
@@ -22656,6 +22662,12 @@ msgstr "計画ラウンドは、この数の整数倍まで補充を提案しま
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "計画はこの日数以内に期限が到来するアクションと提案注文のみを表示します。会社のデフォルトを使用する場合は空のままにするか、この品目のすべてを表示する場合は0を入力してください。"
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "計画の発注提案数量の下限。仕入先部品レコードにある仕入先のMOQとは別。"
@@ -30868,6 +30880,9 @@ msgstr "まだ夜は若い、{name}。"
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "優先仕入先にPOを発注してから商品がドックに到着するまでの日数。計画オフセットは需要をこれだけ後ろにシフトさせます。"
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "この品目の1つのバッチを構築するのにかかる日数（製造指図のリリースから完了まで）。計画オフセットは需要をこれだけ後ろにシフトさせます。"

@@ -17306,6 +17306,12 @@ msgstr "Konum"
 msgid "Location / Item"
 msgstr "Konum / Ürün"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Konum Adı"
 
@@ -22656,6 +22662,12 @@ msgstr "Planlama turları, bu sayının tam katı kadar yenileme önermiştir."
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "Planlama yalnızca bu kadar gün içinde gerçekleşmesi gereken eylemleri ve önerilen siparişleri gösterir. Şirket varsayılanını kullanmak için boş bırakın, veya bu stok kartının tümünü görmek için 0 girin."
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Önerilen yenileme miktarı üzerinde planlamanın alt sınırı; bir tedarikçinin MOQ'sından farklı olan, tedarikçi parçası kaydında bulunan."
@@ -30868,6 +30880,9 @@ msgstr "Gece hala genç, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Tercih edilen tedarikçi ile Satın alma siparişi yerleştirme ile malların iskeleye ulaşması arasındaki gün sayısı; Planlama talebi bu kadar geriye doğru kaydırır."
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Bu Stok kartının bir Partisini üretmek için İş emri serbest bıraklışından tamamlanmaya kadar ölçülen gün sayısı; Planlama talebi bu kadar geriye doğru kaydırır."

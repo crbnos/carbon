@@ -17306,6 +17306,12 @@ msgstr "Местоположение"
 msgid "Location / Item"
 msgstr "Местоположение / Товар"
 
+msgid "Location default"
+msgstr ""
+
+msgid "Location default: {locationTimeFenceDays}"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Название местоположения"
 
@@ -22656,6 +22662,12 @@ msgstr "Циклы планирования предложили пополне�
 
 msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 msgstr "Планирование показывает только действия и рекомендуемые заказы, выполняемые в течение этого количества дней. Оставьте пусто, чтобы использовать значение по умолчанию организации, или введите 0, чтобы показать все для этой номенклатуры."
+
+msgid "Planning time fence"
+msgstr ""
+
+msgid "Planning time fence (days)"
+msgstr ""
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Нижняя граница планирования предлагаемого количества пополнения; отличается от минимального количества заказа поставщика, которое находится в карточке поставщик-номенклатура."
@@ -30868,6 +30880,9 @@ msgstr "Ночь еще молода, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Количество дней между размещением заказа у основного поставщика и прибытием товаров на склад; планирование смещает спрос назад на эту величину."
+
+msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
+msgstr ""
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Количество дней для производства одной серии этой номенклатуры, измеренное от запуска производственного заказа в работу до завершения; планирование смещает спрос назад на эту величину."

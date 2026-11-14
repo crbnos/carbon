@@ -52,6 +52,11 @@ export type PlanningActionCandidate = {
   isASAP: boolean;
   purchaseOrderLineId: string | null;
   jobId: string | null;
+  /**
+   * A change action on a planned order (`plannedOrder.id`). Such an action
+   * never needs manual action and is never a Release.
+   */
+  plannedOrderId: string | null;
   requiresManualAction: boolean;
   supplierId: string | null;
   policyName: string | null;
@@ -64,6 +69,12 @@ export type PlanningActionCandidate = {
 export type OpenSupplyOrder = {
   purchaseOrderLineId?: string;
   jobId?: string;
+  /**
+   * A planned order MRP holds as supply (Firm, or Planned inside the time
+   * fence). It is of the row's own replenishment type, and planning changes
+   * it directly, so it never requires manual action.
+   */
+  plannedOrderId?: string;
   quantity: number;
   /** the date the order is currently expected to land (ISO) */
   dueDate: string;
