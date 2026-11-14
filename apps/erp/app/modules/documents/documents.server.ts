@@ -267,6 +267,29 @@ export const getDocument = defineServiceFn({
 });
 
 /**
+ * Get a download link for a document's file.
+ *
+ * @remarks
+ * Returns the link the documents list gives the row (`/download/<token>` on
+ * this instance); the response carries a link, never the file. The document
+ * is read as the caller first, so a document the caller cannot see is not
+ * found. Opening the link needs no sign-in: it downloads the file and records
+ * the download in the document's history. The link has no expiry. Each
+ * download checks again that the user the link names may read the document:
+ * the caller, or for an API key its creator. A document an API key sees but
+ * its creator does not opens the "unavailable" page.
+ *
+ * @mcp read
+ */
+export const getDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ documentId: z.string().min(1) }),
+  permission: { view: "documents" },
+  async run(ctx, { documentId }) {
+    return service.documentDownloadUrl(ctx, documentId);
+  }
+});
+
+/**
  * Get documents
  *
  * @mcp read

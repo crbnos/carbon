@@ -24,6 +24,7 @@ import {
 import { sql } from "kysely";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { signRecordFileUrl } from "~/modules/documents/documents.service";
 import {
   cancelOpenPickingListsForJob,
   issueMaterial,
@@ -11096,5 +11097,32 @@ export const createJobDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for a job document
+ *
+ * @remarks
+ * A signed link to a file on the job's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `production_getJobDocuments` lists it, or the
+ * name given to `production_createJobDocumentUploadUrl`. A file that is not
+ * there is not found. `production_getJobDocuments` also lists the item's files
+ * (`bucket` `parts`) and the sales line's (`opportunity-line`): get those with
+ * `items_getItemDocumentDownloadUrl` and
+ * `sales_getOpportunityLineDocumentDownloadUrl`.
+ *
+ * @mcp read
+ */
+export const getJobDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ jobId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "production" },
+  async run(ctx, { jobId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "job",
+      entityId: jobId,
+      name
+    });
   }
 });

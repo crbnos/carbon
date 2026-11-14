@@ -3,10 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ServiceContext } from "@carbon/api/service-fn.server";
+import { generateDownloadToken } from "@carbon/auth/download-token.server";
 import type { Database } from "@carbon/database";
 import {
   getDocumentType,
   imageTransformErrorMessage,
+  isStorageNotFound,
   isUnsafeStoragePath,
   storage
 } from "@carbon/files";
@@ -15,6 +17,7 @@ import { trigger } from "@carbon/jobs";
 import { datetime, requireAffected, searchFilter } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
+import { ERP_URL, path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -443,4 +446,88 @@ export function refuseForeignPath(
     return null;
   }
   return ctx.error("validation", "The file must be in this company's storage");
+}
+
+/**
+ * The link to a document's file: the `/download/:token` link the documents
+ * list gives each row (`x+/documents+/search.tsx`). The caller reads the
+ * document first, so no link is made for one it cannot see. The token names
+ * `ctx.auditUserId` (an API key's creator) and, like the list's, has no
+ * expiry: `download.$token.tsx` reads the document again as that user on
+ * every download.
+ */
+export async function documentDownloadUrl(
+  ctx: ServiceContext,
+  documentId: string
+) {
+  const document = await ctx.asCaller.supabase
+    .from("document")
+    .select("id, name, path")
+    .eq("id", documentId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (document.error) {
+    return ctx.error("internal", "Failed to read the document", document.error);
+  }
+  if (!document.data) return ctx.error("notFound", "Document not found");
+  // The list mints no link for a row without a file either.
+  if (!document.data.path) {
+    return ctx.error("notFound", "The document has no file");
+  }
+
+  const token = await generateDownloadToken({
+    userId: ctx.auditUserId,
+    companyId: ctx.company.id,
+    documentId
+  });
+  return {
+    documentId,
+    name: document.data.name,
+    url: `${ERP_URL}${path.to.download(token)}`
+  };
+}
+
+/** How long a signed link to a record's file lasts: an hour, as the supplier
+ *  quote share page signs the part files it shows (`signItemFile`). */
+export const RECORD_FILE_URL_SECONDS = 60 * 60;
+
+/**
+ * A signed link to a file on a record's Files tab, valid
+ * `RECORD_FILE_URL_SECONDS`. The key is the one the record's upload URL
+ * operation gives the same name (`buildDocumentUploadPath`). The operation's
+ * gate is the access check, as the app's file route checks its caller and
+ * then reads with the service role; an API key is no storage user, so its
+ * own client could not sign.
+ */
+export async function signRecordFileUrl(
+  ctx: ServiceContext,
+  file: { folder: string; entityId: string; name: string }
+) {
+  const key = buildDocumentUploadPath({ companyId: ctx.company.id, ...file });
+  const foreign = refuseForeignPath(ctx, key);
+  if (foreign) return foreign;
+
+  const signed = await storage(ctx.asSystem.supabase)
+    .company(ctx.company.id)
+    .createSignedUrl(key, RECORD_FILE_URL_SECONDS);
+  if (!signed.data) {
+    if (await isStorageNotFound(signed.error)) {
+      return ctx.error("notFound", "File not found");
+    }
+    return ctx.error(
+      "internal",
+      "Failed to sign the file's link",
+      signed.error
+    );
+  }
+
+  // Set here, not through createSignedUrl's `download` option: that encodes
+  // the name twice, so `A+B.pdf` would download as `A%2BB.pdf`.
+  const url = new URL(signed.data.signedUrl);
+  url.searchParams.set("download", key.slice(key.lastIndexOf("/") + 1));
+  return {
+    path: key,
+    signedUrl: url.toString(),
+    expiresIn: RECORD_FILE_URL_SECONDS
+  };
 }
