@@ -732,6 +732,58 @@ describe("suggestions from the week's planned orders", () => {
     ).toEqual([{ quantity: 4, periodId: "last-week", plannedOrderId: "overdue" }]);
   });
 
+  // Last week's action still stands for what is overdue now; the current
+  // week's action stands for its own week. Each order is offered once.
+  it("gives last week's action the overdue planned orders and the current week's action its own, when both are open", () => {
+    const pastWeek = action({
+      id: "past",
+      type: "Make",
+      periodId: "last-week",
+      suggestedDate: "2026-09-24",
+      suggestedQuantity: 4
+    });
+    const thisWeek = action({
+      id: "current",
+      type: "Make",
+      periodId: "w0",
+      suggestedQuantity: 5
+    });
+    const plannedOrders = [
+      plannedOrder({
+        id: "overdue",
+        periodId: "last-week",
+        quantity: 4,
+        dueDate: "2026-09-24"
+      }),
+      plannedOrder({
+        id: "this-week",
+        periodId: "w0",
+        quantity: 5,
+        dueDate: "2026-10-02"
+      })
+    ];
+    const offered = (actions: Action[]) =>
+      productionOrdersFromActions(actions, {
+        todayDate: "2026-09-30",
+        weeks,
+        plannedOrders
+      }).map(({ planningActionId, plannedOrderId, quantity }) => ({
+        planningActionId,
+        plannedOrderId,
+        quantity
+      }));
+
+    expect(offered([pastWeek, thisWeek])).toEqual([
+      { planningActionId: "past", plannedOrderId: "overdue", quantity: 4 },
+      { planningActionId: "current", plannedOrderId: "this-week", quantity: 5 }
+    ]);
+    // with no action of last week, the current one counts the overdue order
+    expect(offered([{ ...thisWeek, suggestedQuantity: 9 }])).toEqual([
+      { planningActionId: "current", plannedOrderId: "overdue", quantity: 4 },
+      { planningActionId: "current", plannedOrderId: "this-week", quantity: 5 }
+    ]);
+  });
+
   it("offers an action of a later week not on the page no planned order", () => {
     const orders = productionOrdersFromActions(
       [

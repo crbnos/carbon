@@ -5377,13 +5377,46 @@ export const applyPlanningActions = defineServiceFn({
   }
 });
 /**
+ * Re-plan after a person changes a planned order.
+ *
+ * @remarks
+ * Firm, unfirm and edit change the supply MRP counts, and the planning pages
+ * list MRP's stored suggestions: without a run the week's Order / Make kept
+ * the old total until the next scheduled one. The run is company-wide, as
+ * every run is. A failed run never fails the change.
+ */
+export const replanAfterPlannedOrderChange = defineServiceFn({
+  input: z.object({ plannedOrderId: z.string() }),
+  // As `runMRP`. The planned order operations call it nested, which their own
+  // check admits (a "system" rule would refuse every person).
+  permission: { update: "inventory" },
+
+  async run(ctx, { plannedOrderId }) {
+    const mrp = await service.runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
+      type: "company",
+      id: ctx.company.id,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (mrp.error) {
+      logger.error("MRP failed after a planned order changed", {
+        companyId: ctx.company.id,
+        plannedOrderId,
+        error: mrp.error
+      });
+    }
+  }
+});
+
+/**
  * Firm a planned order.
  *
  * @remarks
  * A person holds a Firm planned order: MRP no longer changes its quantity or
  * dates, and raises a planning action when it disagrees. A Make planned order
  * needs `update: production`, a Buy planned order `update: purchasing`. A
- * Firm order is left as it is; a Converted one is refused.
+ * Firm order is left as it is; a Converted one is refused. MRP runs after
+ * the change (`replanAfterPlannedOrderChange`).
  */
 export const firmPlannedOrder = defineServiceFn({
   input: plannedOrderIdValidator,
@@ -5415,6 +5448,7 @@ export const firmPlannedOrder = defineServiceFn({
         "The planned order changed since it was read"
       );
     }
+    await replanAfterPlannedOrderChange(ctx, { plannedOrderId: id });
     return done;
   }
 });
@@ -5458,6 +5492,7 @@ export const unfirmPlannedOrder = defineServiceFn({
         "The planned order changed since it was read"
       );
     }
+    await replanAfterPlannedOrderChange(ctx, { plannedOrderId: id });
     return done;
   }
 });
@@ -5502,6 +5537,7 @@ export const updatePlannedOrder = defineServiceFn({
         "The planned order changed since it was read"
       );
     }
+    await replanAfterPlannedOrderChange(ctx, { plannedOrderId: id });
     return { id, status: "Firm" as const, message: "Planned order updated" };
   }
 });

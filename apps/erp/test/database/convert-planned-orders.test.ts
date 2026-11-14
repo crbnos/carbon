@@ -549,20 +549,157 @@ describe.skipIf(!hasLocalDatabase)("convertPlannedOrdersForActions", () => {
   );
 
   databaseTest(
-    "a stale or mismatched id converts nothing",
+    "a job whose planned order id is stale or of another type converts a planned order of its week",
     async () => {
       const buy = await plannedOrder({ orderType: "Buy" }, "wrong-type");
-      const jobId = await job("wrong-type");
+      const make = await plannedOrder({ orderType: "Make" }, "week-make");
+      const wrongType = await job("wrong-type");
+      const gone = await job("gone");
       const converted = await convertPlannedOrdersForActions(f.db, {
         companyId: f.companyId,
         userId: USER,
         documents: [
-          document(jobId, { plannedOrderId: buy }),
-          document(jobId, { plannedOrderId: `${f.prefix}-gone` })
+          document(wrongType, { plannedOrderId: buy }),
+          // the week has nothing left for this one
+          document(gone, { plannedOrderId: `${f.prefix}-gone` })
         ]
       });
-      expect(converted).toEqual([]);
+      expect(converted).toEqual([
+        { id: make, jobId: wrongType, purchaseOrderLineId: null }
+      ]);
       expect(await read(buy)).toMatchObject({ status: "Planned" });
+    }
+  );
+
+  databaseTest(
+    "a job with no id larger than the next Planned order takes the excess off the one after",
+    async () => {
+      const a = await plannedOrder(
+        { orderType: "Make", splitIndex: 0, quantity: 100 },
+        "excess-a"
+      );
+      const b = await plannedOrder(
+        { orderType: "Make", splitIndex: 1, quantity: 100 },
+        "excess-b"
+      );
+      const jobId = await job("excess-150");
+      await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [document(jobId, { quantity: 150 })]
+      });
+      expect(await read(a)).toMatchObject({ status: "Converted", jobId });
+      expect(await read(b)).toMatchObject({
+        status: "Planned",
+        quantity: 50,
+        jobId: null
+      });
+    }
+  );
+
+  databaseTest(
+    "a job with no id deletes a following Planned order its excess covers whole",
+    async () => {
+      const a = await plannedOrder(
+        { orderType: "Make", splitIndex: 0, quantity: 100 },
+        "cover-a"
+      );
+      const b = await plannedOrder(
+        { orderType: "Make", splitIndex: 1, quantity: 100 },
+        "cover-b"
+      );
+      const c = await plannedOrder(
+        { orderType: "Make", splitIndex: 2, quantity: 100 },
+        "cover-c"
+      );
+      const jobId = await job("cover-250");
+      await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [document(jobId, { quantity: 250 })]
+      });
+      const left = await f.db
+        .selectFrom("plannedOrder")
+        .select(["id", "status", "quantity"])
+        .where("companyId", "=", f.companyId)
+        .where("id", "in", [a, b, c])
+        .orderBy("splitIndex")
+        .execute();
+      expect(
+        left.map((row) => ({ ...row, quantity: Number(row.quantity) }))
+      ).toEqual([
+        { id: a, status: "Converted", quantity: 100 },
+        { id: c, status: "Planned", quantity: 50 }
+      ]);
+    }
+  );
+
+  databaseTest(
+    "reducing a planned order deletes its open and dismissed change actions",
+    async () => {
+      const firm = await plannedOrder(
+        { orderType: "Make", splitIndex: 0, firm: true, quantity: 100 },
+        "reduced-firm"
+      );
+      const planned = await plannedOrder(
+        { orderType: "Make", splitIndex: 1, quantity: 100 },
+        "reduced-planned"
+      );
+      // sized for 100: once a job covers part of it they would push the
+      // order back up
+      for (const target of [firm, planned]) {
+        await seed(f, (trx) =>
+          trx
+            .insertInto("planningAction")
+            .values(
+              (
+                [
+                  ["Increase", "Open", 115],
+                  ["Decrease", "Dismissed", 80]
+                ] as const
+              ).map(([type, status, suggestedQuantity]) => ({
+                id: `${target}-${type}`,
+                companyId: f.companyId,
+                type,
+                status,
+                itemId: f.partId,
+                locationId: f.locationId,
+                periodId: week1,
+                planningSegmentId: "",
+                plannedOrderId: target,
+                suggestedQuantity,
+                suggestedDate: f.today,
+                horizonDate: f.today,
+                createdBy: USER
+              }))
+            )
+            .execute()
+        );
+      }
+      const named = await job("reduce-named-40");
+      const unnamed = await job("reduce-unnamed-30");
+
+      await convertPlannedOrdersForActions(f.db, {
+        companyId: f.companyId,
+        userId: USER,
+        documents: [
+          document(named, { plannedOrderId: firm, quantity: 40 }),
+          // the Firm order is never a fallback: this takes the Planned one
+          document(unnamed, { quantity: 30 })
+        ]
+      });
+      expect(await read(firm)).toMatchObject({ status: "Firm", quantity: 60 });
+      expect(await read(planned)).toMatchObject({
+        status: "Planned",
+        quantity: 70
+      });
+      const actions = await f.db
+        .selectFrom("planningAction")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("plannedOrderId", "in", [firm, planned])
+        .execute();
+      expect(actions).toEqual([]);
     }
   );
 

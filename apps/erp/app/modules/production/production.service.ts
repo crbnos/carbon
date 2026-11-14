@@ -12623,11 +12623,21 @@ function documentConversionKey(
   });
 }
 
+/**
+ * The week holding today, which also holds every overdue planned order. None
+ * without today: then no planned order is overdue.
+ */
+function currentWeekOf(
+  calendar: ConversionCalendar | null | undefined
+): ConversionWeek | undefined {
+  return calendar?.today ? calendar.weeks[0] : undefined;
+}
+
 function conversionWeekOfDocument(
   periodId: string,
   calendar: ConversionCalendar | null | undefined
 ): string {
-  const current = calendar?.today ? calendar.weeks[0]?.id : undefined;
+  const current = currentWeekOf(calendar)?.id;
   return current && calendar?.earlierWeekIds.includes(periodId)
     ? current
     : periodId;
@@ -12652,26 +12662,32 @@ function conversionWeekOf(
 }
 
 /**
- * Which planned order each document converts, and which it only reduces.
- * Pure; no planned order is converted twice.
+ * Which planned order each document converts, which it only reduces, and
+ * which it covers whole. Pure; no planned order is converted twice.
  *
  * 1. A document that names its planned order converts that one, while it is
- *    still Planned or Firm, of the same item, location and type. A stale id
- *    converts nothing. A document SMALLER than the order it names converts
- *    nothing either: it takes its quantity off the order (`reductions`, the
- *    quantity left), which keeps its status. Several documents naming one
- *    order count together; the one that reaches its quantity converts it.
+ *    still Planned or Firm, of the same item, location, segment and type. A
+ *    document SMALLER than the order it names converts nothing: it takes its
+ *    quantity off the order (`reductions`, the quantity left), which keeps
+ *    its status. Several documents naming one order count together; the one
+ *    that reaches its quantity converts it. A document whose id is stale (the
+ *    order is gone, no longer Planned or Firm, or of another item, location,
+ *    segment or type) or names an order an earlier document of the batch
+ *    converted goes on as one that names none.
  * 2. The other documents convert the planned orders of their week left over,
  *    per (item, location, segment, week, type): first each to one of equal
  *    quantity (Planned before Firm, then `splitIndex`), then each one left to
  *    the next Planned order by `splitIndex` — by the rule of 1: a document
- *    smaller than what is left of that order only reduces it. A Firm order
- *    is the planner's number, so only its id or its quantity converts it. A
- *    planned order counts in the week `conversionWeekOf` gives it, so the
- *    current week also holds every overdue one: MRP sizes it, and sums it
- *    into the action, there. Without a calendar, its stored week. A
- *    document whose action's week is already past (`earlierWeekIds`) counts
- *    in the current week.
+ *    smaller than what is left of that order only reduces it. One LARGER
+ *    than it converts it and takes the excess off the week's next Planned
+ *    orders by `splitIndex`: each drops by what is left of the excess, and
+ *    one the excess covers whole is deleted (`deletions`). A Firm order is
+ *    the planner's number, so only its id or its quantity converts it, and an
+ *    excess never touches it. A planned order counts in the week
+ *    `conversionWeekOf` gives it, so the current week also holds every
+ *    overdue one: MRP sizes it, and sums it into the action, there. Without a
+ *    calendar, its stored week. A document whose action's week is already
+ *    past (`earlierWeekIds`) counts in the current week.
  */
 export function matchPlannedOrdersToDocuments(
   documents: PlannedOrderConversion[],
@@ -12680,17 +12696,22 @@ export function matchPlannedOrdersToDocuments(
 ): {
   conversions: { plannedOrderId: string; documentId: string }[];
   reductions: { plannedOrderId: string; quantity: number }[];
+  deletions: string[];
 } {
   const byId = new Map(candidates.map((row) => [row.id, row]));
+  // converted or deleted: no later document takes it
   const claimed = new Set<string>();
   const conversions: { plannedOrderId: string; documentId: string }[] = [];
+  const deletions: string[] = [];
   const claim = (row: ConvertiblePlannedOrder, documentId: string) => {
     claimed.add(row.id);
     conversions.push({ plannedOrderId: row.id, documentId });
   };
 
-  // the quantity of a named planned order its documents have not covered
+  // the quantity of a planned order its documents have not covered
   const left = new Map<string, number>();
+  // named documents whose planned order they cannot convert
+  const unconvertible = new Set<PlannedOrderConversion>();
   for (const document of documents) {
     if (!document.plannedOrderId) continue;
     const row = byId.get(document.plannedOrderId);
@@ -12699,8 +12720,10 @@ export function matchPlannedOrdersToDocuments(
       claimed.has(row.id) ||
       row.orderType !== document.orderType ||
       row.itemId !== document.itemId ||
-      row.locationId !== document.locationId
+      row.locationId !== document.locationId ||
+      row.planningSegmentId !== document.planningSegmentId
     ) {
+      unconvertible.add(document);
       continue;
     }
     const remainder = round(
@@ -12729,7 +12752,9 @@ export function matchPlannedOrdersToDocuments(
     else candidatesByKey.set(key, [row]);
   }
 
-  const unnamed = documents.filter((document) => !document.plannedOrderId);
+  const unnamed = documents.filter(
+    (document) => !document.plannedOrderId || unconvertible.has(document)
+  );
   const unmatched: PlannedOrderConversion[] = [];
   for (const document of unnamed) {
     const equal = (
@@ -12749,11 +12774,11 @@ export function matchPlannedOrdersToDocuments(
   // it is; one that reaches it converts it. Later documents count against
   // what the earlier ones left.
   for (const document of unmatched) {
-    const next = (
+    const [next, ...following] = (
       candidatesByKey.get(documentConversionKey(document, calendar)) ?? []
     )
       .filter((row) => !claimed.has(row.id) && row.status === "Planned")
-      .sort(bySplit)[0];
+      .sort(bySplit);
     if (!next) continue;
     const remainder = round(
       (left.get(next.id) ?? next.quantity) - document.quantity
@@ -12764,13 +12789,30 @@ export function matchPlannedOrdersToDocuments(
     }
     left.delete(next.id);
     claim(next, document.documentId);
+    // A larger document is also the supply of the week's next Planned
+    // orders: MRP would count it there, so they shrink or go.
+    let excess = -remainder;
+    for (const row of following) {
+      if (excess <= 0) break;
+      const quantity = left.get(row.id) ?? row.quantity;
+      const rest = round(quantity - excess);
+      if (rest > 0) {
+        left.set(row.id, rest);
+        break;
+      }
+      left.delete(row.id);
+      claimed.add(row.id);
+      deletions.push(row.id);
+      excess = round(excess - quantity);
+    }
   }
   return {
     conversions,
     reductions: [...left].map(([plannedOrderId, quantity]) => ({
       plannedOrderId,
       quantity
-    }))
+    })),
+    deletions
   };
 }
 
@@ -12800,16 +12842,21 @@ function restatedPlannedOrderScrap(quantity: RawBuilder<unknown>) {
  * A document smaller than the planned order it names, or (naming none) the
  * Planned order it falls back to, does not convert it: the order keeps its
  * status (a Firm one stays Firm) and drops to the quantity left, its Make
- * scrap restated as `updatePlannedOrders` does.
+ * scrap restated as `updatePlannedOrders` does. Its Open and Dismissed change
+ * actions are deleted too: they were sized for the old quantity, and an
+ * Increase applied later would put back what the document already covers.
+ * A document larger than the Planned order it falls back to reduces the
+ * week's next Planned orders the same way, and deletes one it covers whole
+ * (its actions cascade).
  *
  * A planned order no document stands for stays as it is, and the next MRP run
  * sizes it again. Two orders merged into one PO line are two documents, so
  * both planned orders point at that line.
  *
- * One read of the weeks, one read (`FOR UPDATE`), one update per kind of
- * change and one delete for the batch. Throws on failure; call it inside the
- * transaction that settles the actions (`withTransaction` joins one), under
- * the planning lock.
+ * One read of the weeks, one read (`FOR UPDATE`), one statement per kind of
+ * change and one delete of actions for the batch. Throws on failure; call it
+ * inside the transaction that settles the actions (`withTransaction` joins
+ * one), under the planning lock.
  */
 export async function convertPlannedOrdersForActions(
   db: Kysely<KyselyDatabase>,
@@ -12832,11 +12879,10 @@ export async function convertPlannedOrdersForActions(
       )
     )
   ];
+  // every document's week: one whose planned order is stale converts there
   const keys = [
     ...new Map(
-      args.documents
-        .filter((document) => !document.plannedOrderId)
-        .map((document) => [conversionKey(document), document])
+      args.documents.map((document) => [conversionKey(document), document])
     ).values()
   ];
 
@@ -12846,7 +12892,7 @@ export async function convertPlannedOrdersForActions(
       asOf: args.asOf
     });
     const weekById = new Map(calendar.weeks.map((week) => [week.id, week]));
-    const currentWeekId = calendar.today ? calendar.weeks[0]?.id : undefined;
+    const currentWeekId = currentWeekOf(calendar)?.id;
     // each key's week, by due date: the current one from the first day of
     // time, as it holds every overdue planned order; a past action week
     // reads as the current one
@@ -12896,18 +12942,21 @@ export async function convertPlannedOrdersForActions(
             .forUpdate()
             .execute();
 
-    const { conversions, reductions } = matchPlannedOrdersToDocuments(
-      args.documents,
-      candidates.map((row) => ({
-        ...row,
-        status: row.status as ConvertiblePlannedOrder["status"],
-        quantity: Number(row.quantity),
-        splitIndex: Number(row.splitIndex),
-        dueDate: String(row.dueDate)
-      })),
-      calendar
-    );
+    const { conversions, reductions, deletions } =
+      matchPlannedOrdersToDocuments(
+        args.documents,
+        candidates.map((row) => ({
+          ...row,
+          status: row.status as ConvertiblePlannedOrder["status"],
+          quantity: Number(row.quantity),
+          splitIndex: Number(row.splitIndex),
+          dueDate: String(row.dueDate)
+        })),
+        calendar
+      );
     const now = datetime.timestamp();
+    // the planned orders whose change actions no longer hold
+    const changedIds: string[] = [];
 
     if (reductions.length > 0) {
       const values = sql.join(
@@ -12916,7 +12965,7 @@ export async function convertPlannedOrdersForActions(
             sql`(${reduction.plannedOrderId}::text, ${reduction.quantity}::numeric)`
         )
       );
-      await sql`
+      const reduced = await sql<{ id: string }>`
         UPDATE "plannedOrder" po
         SET
           "quantity" = v."quantity",
@@ -12927,47 +12976,66 @@ export async function convertPlannedOrdersForActions(
         WHERE po.id = v.id
           AND po."companyId" = ${args.companyId}
           AND po."status" IN ('Planned', 'Firm')
+        RETURNING po.id
       `.execute(trx);
+      changedIds.push(...reduced.rows.map((row) => row.id));
     }
-    if (conversions.length === 0) return [];
 
-    const values = sql.join(
-      conversions.map(
-        (match) =>
-          sql`(${match.plannedOrderId}::text, ${match.documentId}::text)`
-      )
-    );
-    const converted = await sql<{
+    if (deletions.length > 0) {
+      // a document covers these whole; their actions cascade
+      await trx
+        .deleteFrom("plannedOrder")
+        .where("companyId", "=", args.companyId)
+        .where("id", "in", deletions)
+        .where("status", "=", "Planned")
+        .execute();
+    }
+
+    let converted: {
       id: string;
       jobId: string | null;
       purchaseOrderLineId: string | null;
-    }>`
-      UPDATE "plannedOrder" po
-      SET
-        "status" = 'Converted',
-        "jobId" = CASE WHEN po."orderType" = 'Make' THEN v."documentId" END,
-        "purchaseOrderLineId" = CASE WHEN po."orderType" = 'Buy' THEN v."documentId" END,
-        "firmedBy" = NULL,
-        "firmedAt" = NULL,
-        "updatedBy" = ${args.userId},
-        "updatedAt" = ${now}
-      FROM (VALUES ${values}) v ("id", "documentId")
-      WHERE po.id = v.id
-        AND po."companyId" = ${args.companyId}
-        AND po."status" IN ('Planned', 'Firm')
-      RETURNING po.id, po."jobId", po."purchaseOrderLineId"
-    `.execute(trx);
+    }[] = [];
+    if (conversions.length > 0) {
+      const values = sql.join(
+        conversions.map(
+          (match) =>
+            sql`(${match.plannedOrderId}::text, ${match.documentId}::text)`
+        )
+      );
+      const result = await sql<{
+        id: string;
+        jobId: string | null;
+        purchaseOrderLineId: string | null;
+      }>`
+        UPDATE "plannedOrder" po
+        SET
+          "status" = 'Converted',
+          "jobId" = CASE WHEN po."orderType" = 'Make' THEN v."documentId" END,
+          "purchaseOrderLineId" = CASE WHEN po."orderType" = 'Buy' THEN v."documentId" END,
+          "firmedBy" = NULL,
+          "firmedAt" = NULL,
+          "updatedBy" = ${args.userId},
+          "updatedAt" = ${now}
+        FROM (VALUES ${values}) v ("id", "documentId")
+        WHERE po.id = v.id
+          AND po."companyId" = ${args.companyId}
+          AND po."status" IN ('Planned', 'Firm')
+        RETURNING po.id, po."jobId", po."purchaseOrderLineId"
+      `.execute(trx);
+      converted = result.rows;
+      changedIds.push(...converted.map((row) => row.id));
+    }
 
-    const convertedIds = converted.rows.map((row) => row.id);
-    if (convertedIds.length > 0) {
+    if (changedIds.length > 0) {
       await trx
         .deleteFrom("planningAction")
         .where("companyId", "=", args.companyId)
-        .where("plannedOrderId", "in", convertedIds)
+        .where("plannedOrderId", "in", changedIds)
         .where("status", "in", ["Open", "Dismissed"])
         .execute();
     }
-    return converted.rows;
+    return converted;
   });
 }
 

@@ -144,6 +144,8 @@ type PlannedOrderContext = {
   weeks?: PlanningWeek[];
   /** Today on the location's calendar (else the first week's start). */
   todayDate?: string;
+  /** An action of a week already past is among the actions offered. */
+  hasPastWeekAction?: boolean;
 };
 
 /**
@@ -166,33 +168,49 @@ function plannedOrdersBeingCancelled(
   );
 }
 
+/** The page's weeks in date order, so the first is the one holding today. */
+function sortedWeeks(weeks: PlanningWeek[] | undefined): PlanningWeek[] {
+  return [...(weeks ?? [])].sort((a, b) =>
+    a.startDate.localeCompare(b.startDate)
+  );
+}
+
 /**
  * The unconverted planned orders of an action's week, in the order MRP split
  * them: by due date, then `splitIndex`. A planned order counts in the week
  * `plannedOrderWeekIndex` gives it (overdue in the first week, else the week
  * of its due date) — MRP's own rule — and not in its stored week. One MRP is
- * cancelling is left out. An action of a week already past (the week turned
- * before MRP ran again) is the first week's: what it counted is overdue now.
- * An action of a later week not on the page has none.
+ * cancelling is left out. An action of a later week not on the page has none.
+ *
+ * An action of a week already past (the week turned before MRP ran again)
+ * counted only what is overdue now: the planned orders due before the first
+ * week. The current week's action counted those too only when no such action
+ * is offered beside it; with one, it takes the orders due inside the first
+ * week, so no planned order is offered twice.
  */
 function plannedOrdersOfWeek(
   action: NewSupplyActionFields,
   context: PlannedOrderContext
 ): SuggestablePlannedOrder[] {
-  // the page's weeks in date order, so the first is the one holding today
-  const weeks = [...(context.weeks ?? [])].sort((a, b) =>
-    a.startDate.localeCompare(b.startDate)
-  );
+  const weeks = sortedWeeks(context.weeks);
   const index = actionWeekIndex(action, weeks);
   if (index === null) return [];
-  const today = context.todayDate ?? weeks[0].startDate;
+  const firstWeekStart = weeks[0].startDate;
+  const today = context.todayDate ?? firstWeekStart;
   const cancelled = plannedOrdersBeingCancelled(context.rowActions);
+  const pastWeek = isPastWeekAction(action, weeks);
+  // ISO dates order as strings
+  const isOverdue = (order: SuggestablePlannedOrder) =>
+    order.dueDate < firstWeekStart;
   return (context.plannedOrders ?? [])
     .filter(
       (order) =>
         (order.status === "Planned" || order.status === "Firm") &&
         !cancelled.has(order.id) &&
-        plannedOrderWeekIndex(order.dueDate, weeks, today) === index
+        plannedOrderWeekIndex(order.dueDate, weeks, today) === index &&
+        (pastWeek
+          ? isOverdue(order)
+          : index !== 0 || !context.hasPastWeekAction || !isOverdue(order))
     )
     .sort(
       (a, b) =>
@@ -218,6 +236,28 @@ function actionWeekIndex(
   return weeks.length > 0 && action.suggestedDate < weeks[0].startDate
     ? 0
     : null;
+}
+
+/** An action of a week before the page's first: its week is already past. */
+function isPastWeekAction(
+  action: Pick<NewSupplyActionFields, "periodId" | "suggestedDate">,
+  weeks: PlanningWeek[]
+): boolean {
+  return (
+    weeks.length > 0 &&
+    !weeks.some((week) => week.id === action.periodId) &&
+    // ISO dates order as strings
+    action.suggestedDate < weeks[0].startDate
+  );
+}
+
+/** Whether an action of a week already past is among the actions offered. */
+function hasPastWeekAction(
+  actions: NewSupplyActionFields[],
+  weeks: PlanningWeek[] | undefined
+): boolean {
+  const sorted = sortedWeeks(weeks);
+  return actions.some((action) => isPastWeekAction(action, sorted));
 }
 
 /**
@@ -296,21 +336,28 @@ export function productionOrdersFromActions(
     weeks?: PlanningWeek[];
   } = {}
 ): ProductionOrder[] {
+  const weekContext = {
+    ...context,
+    hasPastWeekAction: hasPastWeekAction(actions, context.weeks)
+  };
   return actions.flatMap((action) =>
-    suggestionsOf(action, context.item ?? {}, context.todayDate, context).map(
-      (batch) => ({
-        startDate: batch.startDate,
-        dueDate: batch.dueDate,
-        periodId: action.periodId,
-        quantity: batch.quantity,
-        isASAP: batch.isASAP,
-        planningActionId: action.id,
-        plannedOrderId: batch.plannedOrderId,
-        policyName: action.policyName ?? undefined,
-        reason: action.reason ?? undefined,
-        triggerValues: triggerValuesOf(action.triggerValues)
-      })
-    )
+    suggestionsOf(
+      action,
+      context.item ?? {},
+      context.todayDate,
+      weekContext
+    ).map((batch) => ({
+      startDate: batch.startDate,
+      dueDate: batch.dueDate,
+      periodId: action.periodId,
+      quantity: batch.quantity,
+      isASAP: batch.isASAP,
+      planningActionId: action.id,
+      plannedOrderId: batch.plannedOrderId,
+      policyName: action.policyName ?? undefined,
+      reason: action.reason ?? undefined,
+      triggerValues: triggerValuesOf(action.triggerValues)
+    }))
   );
 }
 
@@ -345,8 +392,12 @@ export function plannedOrdersFromActions(
   }
 ): PlannedOrder[] {
   const { conversionFactor } = context;
+  const weekContext = {
+    ...context,
+    hasPastWeekAction: hasPastWeekAction(actions, context.weeks)
+  };
   return actions.flatMap((action) =>
-    suggestionsOf(action, context.item ?? {}, undefined, context).map(
+    suggestionsOf(action, context.item ?? {}, undefined, weekContext).map(
       (batch) => ({
         startDate: batch.startDate,
         dueDate: batch.dueDate,

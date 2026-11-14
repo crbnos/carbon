@@ -8,8 +8,13 @@
 // that targets a planned order edits (and firms) or deletes it. A Converted
 // planned order is the history of its job or PO line and never changes.
 
-import { createServiceContext } from "@carbon/api/service-fn.server";
-import { afterEach, beforeEach, describe, expect } from "vitest";
+import {
+  createServiceContext,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect } from "vitest";
+import { runMRP } from "../../app/modules/production/production.service";
 import {
   applyPlanningActions,
   dismissProductionPlanningActions,
@@ -28,9 +33,21 @@ import {
   seed,
   USER
 } from "./fixtures/always-post";
-import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
+import { systemServiceOf } from "./fixtures/handles";
+import {
+  connectLocalTestPool,
+  databaseTest,
+  hasLocalDatabase
+} from "./fixtures/local-database";
+import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 let f: Fixture;
+// A firm, unfirm or edit runs MRP after it, and MRP holds its run lock on one
+// connection while it works on others: these operations get a pool.
+let pg: Kysely<KyselyDatabase>;
+// The system over `pg`, with no Supabase client: MRP fails at its first
+// read, and the change must stand.
+let service: ServiceContext;
 let week: string;
 let nextWeek: string;
 
@@ -151,9 +168,21 @@ async function actionStatus(id: string) {
   return row?.status ?? null;
 }
 
+beforeAll(() => {
+  if (hasLocalDatabase) pg = connectLocalTestPool();
+});
+
+afterAll(async () => {
+  await pg?.destroy();
+});
+
 describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
   beforeEach(async () => {
     f = await alwaysPostFixture();
+    service = systemServiceOf(
+      { db: pg, companyId: f.companyId, userId: USER },
+      f.service.company.groupId
+    );
     week = `${f.prefix}-week`;
     nextWeek = `${f.prefix}-next-week`;
     // `period` has no company: these are the test's own, removed after.
@@ -192,13 +221,13 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
     async () => {
       const id = await plannedOrder("firm");
 
-      const firmed = await firmPlannedOrder(f.service, { id });
+      const firmed = await firmPlannedOrder(service, { id });
       expect(firmed.error).toBeNull();
       const afterFirm = await read(id);
       expect(afterFirm).toMatchObject({ status: "Firm", firmedBy: USER });
       expect(afterFirm?.firmedAt).not.toBeNull();
 
-      const unfirmed = await unfirmPlannedOrder(f.service, { id });
+      const unfirmed = await unfirmPlannedOrder(service, { id });
       expect(unfirmed.error).toBeNull();
       expect(await read(id)).toMatchObject({
         status: "Planned",
@@ -217,7 +246,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
       // first one was Firm
       await plannedOrder("mrp");
 
-      const unfirmed = await unfirmPlannedOrder(f.service, { id: firm });
+      const unfirmed = await unfirmPlannedOrder(service, { id: firm });
       expect(unfirmed.error).toBeNull();
       expect(await read(firm)).toMatchObject({
         status: "Planned",
@@ -231,7 +260,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
     async () => {
       const id = await plannedOrder("edit");
 
-      const result = await updatePlannedOrder(f.service, {
+      const result = await updatePlannedOrder(service, {
         id,
         quantity: 12,
         dueDate: "2297-01-12"
@@ -252,7 +281,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
     "a moved due date moves the order to the week that holds it",
     async () => {
       const moved = await plannedOrder("next-week");
-      const result = await updatePlannedOrder(f.service, {
+      const result = await updatePlannedOrder(service, {
         id: moved,
         dueDate: "2297-01-10"
       });
@@ -264,7 +293,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
 
       // no weekly period holds the new date: refused, nothing changes
       const kept = await plannedOrder("no-week", { splitIndex: 1 });
-      const outside = await updatePlannedOrder(f.service, {
+      const outside = await updatePlannedOrder(service, {
         id: kept,
         quantity: 15,
         dueDate: "2297-03-01"
@@ -282,7 +311,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
 
       // a quantity edit alone leaves the week as it is
       const sized = await plannedOrder("quantity-only", { splitIndex: 2 });
-      await updatePlannedOrder(f.service, { id: sized, quantity: 20 });
+      await updatePlannedOrder(service, { id: sized, quantity: 20 });
       expect(await read(sized)).toMatchObject({ quantity: 20, periodId: week });
     }
   );
@@ -384,7 +413,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         jobId: await job("converted")
       });
 
-      const firmed = await firmPlannedOrder(f.service, { id });
+      const firmed = await firmPlannedOrder(service, { id });
       expect(firmed.error).toMatchObject({ category: "rule" });
 
       const actionId = await changeAction("Increase", id, { quantity: 15 });
@@ -423,7 +452,7 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
         // the operations read and write through `pg` only
         caller: {} as never,
         system: () => ({}) as never,
-        pg: () => f.db,
+        pg: () => pg,
         kv: () => ({}) as never
       });
 
@@ -434,6 +463,97 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
       const allowed = await firmPlannedOrder(purchaser, { id: buy });
       expect(allowed.error).toBeNull();
       expect(await read(buy)).toMatchObject({ status: "Firm" });
+    }
+  );
+});
+
+const client = hasLocalDatabase ? localServiceRoleClient() : null;
+
+describe.skipIf(!client)("a planned order change re-plans", () => {
+  beforeEach(async () => {
+    f = await alwaysPostFixture();
+  });
+
+  afterEach(async () => {
+    await f.cleanup();
+  });
+
+  databaseTest(
+    "an edited quantity is the week's Make once the edit returns",
+    async () => {
+      // a planner who may change Make planned orders, and may not run MRP
+      // on their own
+      const all = [f.companyId];
+      const ctx = createServiceContext({
+        actor: {
+          type: "user",
+          userId: USER,
+          permissions: {
+            production: { view: all, create: all, update: all, delete: all }
+          }
+        },
+        company: { id: f.companyId, groupId: f.service.company.groupId },
+        caller: client!,
+        system: () => client!,
+        pg: () => pg,
+        kv: () => {
+          throw new Error("No planned order operation reads the cache");
+        }
+      });
+      // below a reorder point of 1 with no stock: MRP plans one order of 5
+      await seed(f, (trx) =>
+        trx
+          .updateTable("itemPlanning")
+          .set({
+            reorderingPolicy: "Fixed Reorder Quantity",
+            reorderPoint: 1,
+            reorderQuantity: 5
+          })
+          .where("companyId", "=", f.companyId)
+          .where("locationId", "=", f.locationId)
+          .where("itemId", "=", f.assemblyId)
+          .execute()
+      );
+      const run = await runMRP(client!, pg, {
+        type: "company",
+        id: f.companyId,
+        companyId: f.companyId,
+        userId: USER
+      });
+      expect(run.error).toBeNull();
+      const planned = await f.db
+        .selectFrom("plannedOrder")
+        .select(["id", "periodId"])
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", f.assemblyId)
+        .executeTakeFirstOrThrow();
+      const makes = () =>
+        f.db
+          .selectFrom("planningAction")
+          .select(["periodId", "suggestedQuantity"])
+          .where("companyId", "=", f.companyId)
+          .where("itemId", "=", f.assemblyId)
+          .where("type", "=", "Make")
+          .where("status", "=", "Open")
+          .execute()
+          .then((rows) =>
+            rows.map((row) => ({
+              ...row,
+              suggestedQuantity: Number(row.suggestedQuantity)
+            }))
+          );
+      expect(await makes()).toEqual([
+        { periodId: planned.periodId, suggestedQuantity: 5 }
+      ]);
+
+      const edited = await updatePlannedOrder(ctx, {
+        id: planned.id,
+        quantity: 8
+      });
+      expect(edited.error).toBeNull();
+      expect(await makes()).toEqual([
+        { periodId: planned.periodId, suggestedQuantity: 8 }
+      ]);
     }
   );
 });

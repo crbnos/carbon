@@ -37,6 +37,26 @@ export function databaseTest(
   it.skipIf(!hasLocalDatabase)(name, fn, 60_000);
 }
 
+/**
+ * A pool of `max` connections, each with the trigger suppression of
+ * `connectLocalTestDatabase`. For code that holds one connection while it
+ * works on another (MRP holds its run lock in a transaction of its own).
+ */
+export function connectLocalTestPool(max = 4) {
+  const databaseUrl = process.env.SUPABASE_DB_URL;
+  if (!databaseUrl || !LOCAL_HOSTS.includes(new URL(databaseUrl).hostname)) {
+    throw new Error("These regressions require a local SUPABASE_DB_URL");
+  }
+  const pool = new Pool({ connectionString: databaseUrl, max });
+  pool.on("connect", (client) => {
+    // queued ahead of the connection's first query
+    void client.query(
+      "SELECT set_config('app.sync_in_progress', 'true', false)"
+    );
+  });
+  return getPostgresClient<KyselyDatabase>(pool, PostgresDriver);
+}
+
 /** One connection with trigger suppression on, as the fixtures' inserts need. */
 export async function connectLocalTestDatabase() {
   const databaseUrl = process.env.SUPABASE_DB_URL;

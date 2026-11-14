@@ -5,8 +5,11 @@
 import { describe, expect, it } from "vitest";
 import {
   buildAssemblyToolStepLinks,
+  type ConvertiblePlannedOrder,
   computeStepTimings,
+  matchPlannedOrdersToDocuments,
   maxToolQuantityByItem,
+  type PlannedOrderConversion,
   planAssemblyStepMarkerRemap,
   planAssemblyStepMarkerSync,
   planOrphanStepAdoption
@@ -338,5 +341,110 @@ describe("computeStepTimings", () => {
       ["c", 0]
     ]);
     expect(steps[1].averageSeconds).toBeNull();
+  });
+});
+
+describe("matchPlannedOrdersToDocuments", () => {
+  // one week (w1) of Make planned orders at one location, common segment
+  const plannedOrder = (
+    id: string,
+    overrides: Partial<ConvertiblePlannedOrder> = {}
+  ): ConvertiblePlannedOrder => ({
+    id,
+    itemId: "item",
+    locationId: "loc",
+    planningSegmentId: "",
+    periodId: "w1",
+    orderType: "Make",
+    status: "Planned",
+    quantity: 100,
+    splitIndex: 0,
+    dueDate: "2283-01-05",
+    ...overrides
+  });
+  const job = (
+    documentId: string,
+    overrides: Partial<PlannedOrderConversion> = {}
+  ): PlannedOrderConversion => ({
+    documentId,
+    quantity: 100,
+    plannedOrderId: null,
+    itemId: "item",
+    locationId: "loc",
+    planningSegmentId: "",
+    periodId: "w1",
+    orderType: "Make",
+    ...overrides
+  });
+
+  it("takes a larger job's excess off the week's next Planned orders, deleting one it covers whole", () => {
+    // 250 = A 100 (converted) + B 100 (covered, deleted) + 50 of C
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { quantity: 250 })],
+        [
+          plannedOrder("C", { splitIndex: 2 }),
+          plannedOrder("A", { splitIndex: 0 }),
+          plannedOrder("B", { splitIndex: 1 })
+        ]
+      )
+    ).toEqual({
+      conversions: [{ plannedOrderId: "A", documentId: "job" }],
+      reductions: [{ plannedOrderId: "C", quantity: 50 }],
+      deletions: ["B"]
+    });
+  });
+
+  it("never takes a larger job's excess off a Firm order", () => {
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { quantity: 150 })],
+        [
+          plannedOrder("A", { splitIndex: 0 }),
+          plannedOrder("F", { splitIndex: 1, status: "Firm" }),
+          plannedOrder("B", { splitIndex: 2 })
+        ]
+      )
+    ).toEqual({
+      conversions: [{ plannedOrderId: "A", documentId: "job" }],
+      reductions: [{ plannedOrderId: "B", quantity: 50 }],
+      deletions: []
+    });
+  });
+
+  it("converts by week a job whose planned order is gone or already converted in the batch", () => {
+    expect(
+      matchPlannedOrdersToDocuments(
+        [
+          job("first", { plannedOrderId: "A" }),
+          // A is the first job's: this one takes the week's next
+          job("same", { plannedOrderId: "A" }),
+          // no such planned order any more: the week's equal one
+          job("gone", { plannedOrderId: "deleted", quantity: 40 })
+        ],
+        [
+          plannedOrder("A", { splitIndex: 0 }),
+          plannedOrder("B", { splitIndex: 1 }),
+          plannedOrder("C", { splitIndex: 2, quantity: 40 })
+        ]
+      )
+    ).toEqual({
+      conversions: [
+        { plannedOrderId: "A", documentId: "first" },
+        { plannedOrderId: "B", documentId: "same" },
+        { plannedOrderId: "C", documentId: "gone" }
+      ],
+      reductions: [],
+      deletions: []
+    });
+  });
+
+  it("does not convert by id a planned order of another segment", () => {
+    expect(
+      matchPlannedOrdersToDocuments(
+        [job("job", { plannedOrderId: "P" })],
+        [plannedOrder("P", { planningSegmentId: "project" })]
+      )
+    ).toEqual({ conversions: [], reductions: [], deletions: [] });
   });
 });
