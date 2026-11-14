@@ -12358,6 +12358,10 @@ export async function markPlanningActionsActioned(
  * type, location and company match. Runs under MRP's advisory lock
  * (`planning-actions:<companyId>`) and returns the rows it changed, each with
  * the indexes (in `ordered`) of the orders that answered it.
+ *
+ * In the same transaction, under the same lock, it converts the planned
+ * orders of each settled action to the jobs (Make) or PO lines (Order) that
+ * answered it (`convertPlannedOrdersForActions`).
  */
 export async function settleNewSupplyPlanningActions(
   db: Kysely<KyselyDatabase>,
@@ -12367,13 +12371,16 @@ export async function settleNewSupplyPlanningActions(
     userId: string;
     type: "Order" | "Make";
     /** One per order placed, in the action's units (inventory units for an
-     *  Order); the segment defaults to common (''). */
+     *  Order); the segment defaults to common (''). `jobId` (Make) or
+     *  `purchaseOrderLineId` (Order) is the document the order created. */
     ordered: {
       itemId: string;
       periodId: string;
       planningSegmentId?: string;
       quantity: number;
       planningActionId?: string | null;
+      jobId?: string | null;
+      purchaseOrderLineId?: string | null;
     }[];
   }
 ) {
@@ -12462,12 +12469,152 @@ export async function settleNewSupplyPlanningActions(
           RETURNING pa.id, pa."itemId", pa."periodId", pa."planningSegmentId",
             pa."status", pa."suggestedQuantity", a."orderIndexes"
         `.execute(trx);
+
+        const documentByIndex = new Map(
+          ordered.map((order) => [
+            order.index,
+            args.type === "Make" ? order.jobId : order.purchaseOrderLineId
+          ])
+        );
+        await convertPlannedOrdersForActions(trx, {
+          companyId: args.companyId,
+          userId: args.userId,
+          settled: result.rows.map((row) => ({
+            itemId: row.itemId,
+            locationId: args.locationId,
+            planningSegmentId: row.planningSegmentId,
+            periodId: row.periodId,
+            orderType: args.type === "Make" ? "Make" : "Buy",
+            documentIds: row.orderIndexes.flatMap((index) => {
+              const documentId = documentByIndex.get(index);
+              return documentId ? [documentId] : [];
+            })
+          }))
+        });
+
         return result.rows.map((row) => ({
           ...row,
           suggestedQuantity: Number(row.suggestedQuantity)
         }));
       })
   );
+}
+
+/**
+ * Converts the planned orders that an applied Order / Make answered.
+ *
+ * An Order or Make action covers every planned order of its (item, location,
+ * segment, week) and type (Make ↔ `Make`, Order ↔ `Buy`); it names none. So
+ * each settled action links its documents, in the order they were placed, to
+ * its Planned and Firm planned orders, in `splitIndex` order: the first
+ * document to the first planned order, and so on. A linked row becomes
+ * Converted with its `jobId` or `purchaseOrderLineId`.
+ *
+ * The rule is one planned order per order placed, whether or not the action
+ * became Actioned: an action ordered only in part stays Open at the
+ * remainder, but the documents placed against it exist and are supply. A
+ * planned order with no document left for it stays as it is, and the next
+ * MRP run sizes it again. Two orders merged into one PO line are two orders
+ * placed, so both planned orders point at that line. A Firm row loses
+ * `firmedBy` / `firmedAt` when converted (the `plannedOrder_firm_chk` CHECK
+ * ties them to the Firm status).
+ *
+ * One statement for the whole batch. Throws on failure; call it inside the
+ * transaction that settles the actions (`withTransaction` joins one).
+ */
+export async function convertPlannedOrdersForActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    settled: {
+      itemId: string;
+      locationId: string;
+      planningSegmentId: string;
+      periodId: string;
+      orderType: "Make" | "Buy";
+      /** The jobs (Make) or PO lines (Buy) placed against the action, in order. */
+      documentIds: string[];
+    }[];
+  }
+): Promise<
+  { id: string; jobId: string | null; purchaseOrderLineId: string | null }[]
+> {
+  // One group per planning key, so a planned order is never matched twice.
+  const groups = new Map<
+    string,
+    { key: (typeof args.settled)[number]; documentIds: string[] }
+  >();
+  for (const entry of args.settled) {
+    if (entry.documentIds.length === 0) continue;
+    const key = [
+      entry.itemId,
+      entry.locationId,
+      entry.planningSegmentId,
+      entry.periodId,
+      entry.orderType
+    ].join("\u001f");
+    const group = groups.get(key);
+    if (group) group.documentIds.push(...entry.documentIds);
+    else groups.set(key, { key: entry, documentIds: [...entry.documentIds] });
+  }
+  if (groups.size === 0) return [];
+
+  const values = sql.join(
+    [...groups.values()].flatMap(({ key, documentIds }, group) =>
+      documentIds.map(
+        (documentId, position) =>
+          sql`(${group}::int, ${position + 1}::int, ${key.itemId}::text, ${key.locationId}::text, ${key.planningSegmentId}::text, ${key.periodId}::text, ${key.orderType}::"plannedOrderType", ${documentId}::text)`
+      )
+    )
+  );
+
+  return withTransaction(db, async (trx) => {
+    const result = await sql<{
+      id: string;
+      jobId: string | null;
+      purchaseOrderLineId: string | null;
+    }>`
+      WITH documents ("group", "position", "itemId", "locationId", "planningSegmentId", "periodId", "orderType", "documentId") AS (
+        VALUES ${values}
+      ),
+      keys AS (
+        SELECT DISTINCT "group", "itemId", "locationId", "planningSegmentId", "periodId", "orderType"
+        FROM documents
+      ),
+      candidates AS (
+        SELECT po.id, k."group",
+          row_number() OVER (
+            PARTITION BY k."group" ORDER BY po."splitIndex", po.id
+          ) AS "position"
+        FROM keys k
+        JOIN "plannedOrder" po
+          ON po."companyId" = ${args.companyId}
+         AND po."itemId" = k."itemId"
+         AND po."locationId" = k."locationId"
+         AND po."planningSegmentId" = k."planningSegmentId"
+         AND po."periodId" = k."periodId"
+         AND po."orderType" = k."orderType"
+        WHERE po."status" IN ('Planned', 'Firm')
+      )
+      UPDATE "plannedOrder" po
+      SET
+        "status" = 'Converted',
+        "jobId" = CASE WHEN d."orderType" = 'Make' THEN d."documentId" END,
+        "purchaseOrderLineId" = CASE WHEN d."orderType" = 'Buy' THEN d."documentId" END,
+        "firmedBy" = NULL,
+        "firmedAt" = NULL,
+        "updatedBy" = ${args.userId},
+        "updatedAt" = ${datetime.timestamp()}
+      FROM candidates c
+      JOIN documents d ON d."group" = c."group" AND d."position" = c."position"
+      WHERE po.id = c.id
+        AND po."companyId" = ${args.companyId}
+        AND po."status" IN ('Planned', 'Firm')
+      RETURNING po.id, po."jobId", po."purchaseOrderLineId"
+    `.execute(trx);
+    return result.rows;
+  });
 }
 
 /** Compensation for a failed apply: release a claimed (Actioned) row back to Open. */

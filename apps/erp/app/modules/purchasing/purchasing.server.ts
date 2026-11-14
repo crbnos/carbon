@@ -4408,7 +4408,9 @@ export const orderPlannedPurchases = defineServiceFn({
     }
 
     // Settled as soon as the lines exist, to keep short the window in which an
-    // MRP run could net a line and the settle then take it off again.
+    // MRP run could net a line and the settle then take it off again. The same
+    // transaction converts the settled actions' planned orders to these lines
+    // (`purchaseOrderLineId` in `ordered`).
     const warnings: string[] = [];
     const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
       companyId,

@@ -4722,7 +4722,8 @@ export const orderPlannedJobs = defineServiceFn({
 
     // Settled as soon as the jobs exist, before their methods, to keep short
     // the window in which an MRP run could net a job and the settle then take
-    // it off the suggestion a second time.
+    // it off the suggestion a second time. The same transaction converts the
+    // settled actions' planned orders to these jobs (`jobId` in `ordered`).
     const settled = await service.settleNewSupplyPlanningActions(db, {
       companyId,
       locationId,
