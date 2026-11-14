@@ -2868,9 +2868,6 @@ msgstr "Attivo"
 msgid "Active Jobs"
 msgstr "Ordini di produzione in corso"
 
-msgid "Active members"
-msgstr "Membri attivi"
-
 msgid "Active Methods Missing a Pull From"
 msgstr "Metodi attivi senza Pull From"
 
@@ -7018,6 +7015,9 @@ msgstr "Scegli fornitore"
 
 msgid "Choose suppliers"
 msgstr "Scegli fornitori"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "Scegli il tipo di dipendente che ogni gruppo assegna ai propri membri. Se una persona appartiene a più gruppi, prevale il tipo del gruppo di rango più alto."
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Scegli il primo giorno del periodo corrente o di uno dei 3 periodi precedenti."
@@ -12021,11 +12021,12 @@ msgstr "Account Dipendenti"
 msgid "Employee Reimbursements Payable"
 msgstr "Debiti per rimborsi ai dipendenti"
 
-msgid "Employee type"
-msgstr "Tipo dipendente"
-
 msgid "Employee Type"
 msgstr "Tipo di Dipendente"
+
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "Tipo di dipendente per {0}"
 
 msgid "Employee Types"
 msgstr "Tipi di Dipendenti"
@@ -14917,6 +14918,9 @@ msgstr "Ogni quanto questo strumento di misura deve essere ritarato; combinato c
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Ogni quanto questa manutenzione ricorre — Giornaliero, Settimanale, Mensile, Su conteggio ciclico; Giornaliero mostra il selettore del giorno della settimana, gli altri usano semplice aritmetica di intervalli."
 
+msgid "How SCIM works"
+msgstr "Come funziona SCIM"
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Quanto rigorosamente ogni proprietà del materiale deve corrispondere affinché le operazioni condividano un lotto su questo processo."
 
@@ -15048,9 +15052,6 @@ msgstr "Identificatore"
 
 msgid "Identifiers"
 msgstr "Identificatori"
-
-msgid "Identity provider"
-msgstr "Provider di identità"
 
 msgid "Identity Provider"
 msgstr "Provider di Identità"
@@ -17718,9 +17719,6 @@ msgstr "La produzione è bloccata"
 msgid "Map accounts"
 msgstr "Mappa conti"
 
-msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
-msgstr "Associa ogni gruppo inviato dal tuo provider di identità a un tipo dipendente. Un membro di più gruppi associati riceve il tipo con la priorità più bassa."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Associa righe fattura estratte"
 
@@ -19758,9 +19756,6 @@ msgstr "Nessuna notifica raggruppata"
 
 msgid "No groups assigned"
 msgstr "Nessun gruppo assegnato"
-
-msgid "No groups yet. Push groups from your identity provider to map them to employee types."
-msgstr "Nessun gruppo ancora. Invia i gruppi dal tuo provider di identità per associarli ai tipi dipendente."
 
 msgid "No image"
 msgstr "Nessuna immagine"
@@ -23464,6 +23459,9 @@ msgstr "Prima nota provvisoria"
 
 msgid "Provisional rate"
 msgstr "Tariffa provvisoria"
+
+msgid "Provisioned members"
+msgstr "Membri sottoposti a provisioning"
 
 msgid "Provisioning"
 msgstr "Provisioning"
@@ -35216,14 +35214,14 @@ msgstr "La tua esportazione è in preparazione. Ti avviseremo quando sarà pront
 msgid "Your GL accounts"
 msgstr "I tuoi conti di contabilità generale"
 
-msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
-msgstr "Il tuo provider di identità non può più aggiungere o rimuovere membri e le mappature dei gruppi vengono eliminate. I membri creati tramite il provisioning restano in questa azienda così come sono."
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "Il tuo provider di identità aggiunge, aggiorna e rimuove i membri che gestisce."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "Il tuo provider di identità non può più aggiungere o rimuovere membri. I membri da esso effettuati il provisioning restano invariati e, configurando di nuovo SCIM, la configurazione riprende da dove si era interrotta."
 
 msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
 msgstr "Il tuo provider di identità crea i membri con il tipo di dipendente e l'ubicazione predefiniti indicati di seguito. Associa i suoi gruppi ai tipi di dipendente dopo che li ha inviati."
-
-msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
-msgstr "Il tuo provider di identità gestisce il nome e lo stato attivo di ogni membro creato tramite provisioning e, per i gruppi associati, il tipo di dipendente. Le modifiche apportate qui vengono sovrascritte al suo prossimo aggiornamento. Disattivare un membro lo rimuove da questa azienda, elimina qui le sue chiavi API e termina le sue sessioni se non appartiene ad altre aziende."
 
 msgid "your Implementation Lead"
 msgstr "il tuo Implementation Lead"

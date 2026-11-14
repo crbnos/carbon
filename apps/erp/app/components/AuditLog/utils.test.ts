@@ -106,15 +106,12 @@ describe("buildAuditLogCsvRows", () => {
       entry({
         actorId: null,
         diff: {},
-        metadata: { origin: "scim", actorLabel: "SCIM (Okta)" }
+        metadata: { origin: "scim", actorLabel: "SCIM" }
       }),
       entry({ actorId: "u1", diff: {}, metadata: { actorLabel: "ignored" } })
     ]);
 
-    expect(rows.map((r) => r["Changed By"])).toEqual([
-      "SCIM (Okta)",
-      "Ada Lovelace"
-    ]);
+    expect(rows.map((r) => r["Changed By"])).toEqual(["SCIM", "Ada Lovelace"]);
   });
 
   it("writes numbers, booleans and objects as text", () => {

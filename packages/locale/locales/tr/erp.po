@@ -2868,9 +2868,6 @@ msgstr "Aktif"
 msgid "Active Jobs"
 msgstr "Aktif İş emirleri"
 
-msgid "Active members"
-msgstr "Aktif üyeler"
-
 msgid "Active Methods Missing a Pull From"
 msgstr "Çekme Kaynağı Olmayan Aktif Yöntemler"
 
@@ -7018,6 +7015,9 @@ msgstr "Tedarikçi seçin"
 
 msgid "Choose suppliers"
 msgstr "Tedarikçileri seçin"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "Her grubun üyelerine vereceği çalışan türünü seçin. Bir kişi birden fazla grupta yer alıyorsa, daha üst düzeydeki grubun türü geçerli olur."
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Geçerli dönem veya bundan önceki 3 dönemden birinin ilk gününü seçin."
@@ -12021,11 +12021,12 @@ msgstr "Çalışan Hesapları"
 msgid "Employee Reimbursements Payable"
 msgstr "Çalışan Geri Ödeme Borçları"
 
-msgid "Employee type"
-msgstr "Çalışan türü"
-
 msgid "Employee Type"
 msgstr "Çalışan Türü"
+
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} için çalışan türü"
 
 msgid "Employee Types"
 msgstr "Çalışan Tipleri"
@@ -14917,6 +14918,9 @@ msgstr "Bu ölçüm aletinin ne sıklıkla kalibre edilmesi gerektiği; Son Kali
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Bu bakım ne sıklıkla tekrarlanır — Günlük, Haftalık, Aylık, Periyodik Sayımında; Günlük seçim haftanın günü seçicisini gösterir, diğerleri daha basit aralık matematiğini kullanır."
 
+msgid "How SCIM works"
+msgstr "SCIM nasıl çalışır"
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Bu operasyon üzerinde bir partide paylaşmak için her malzeme özelliğinin ne kadar katı eşleşmesi gerekir."
 
@@ -15048,9 +15052,6 @@ msgstr "Tanımlayıcı"
 
 msgid "Identifiers"
 msgstr "Tanımlayıcılar"
-
-msgid "Identity provider"
-msgstr "Kimlik sağlayıcı"
 
 msgid "Identity Provider"
 msgstr "Kimlik Sağlayıcı"
@@ -17718,9 +17719,6 @@ msgstr "üretim engellendi"
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
 
-msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
-msgstr "Kimlik sağlayıcınızın gönderdiği her grubu bir çalışan türüyle eşleyin. Birden çok eşlenmiş grubun üyesi, en düşük öncelikli grubun türünü alır."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
 
@@ -19758,9 +19756,6 @@ msgstr "Gruplanmış bildirim yok"
 
 msgid "No groups assigned"
 msgstr "Atanmış grup yok"
-
-msgid "No groups yet. Push groups from your identity provider to map them to employee types."
-msgstr "Henüz grup yok. Grupları çalışan türleriyle eşlemek için kimlik sağlayıcınızdan gönderin."
 
 msgid "No image"
 msgstr "Resim yok"
@@ -23464,6 +23459,9 @@ msgstr "Geçici muhasebe fişi"
 
 msgid "Provisional rate"
 msgstr "Geçici Oran"
+
+msgid "Provisioned members"
+msgstr "Sağlanan üyeler"
 
 msgid "Provisioning"
 msgstr "Kullanıcı sağlama"
@@ -35216,14 +35214,14 @@ msgstr "Dışa aktarımınız hazırlanıyor. Hazır olduğunda size haber verec
 msgid "Your GL accounts"
 msgstr "Muhasebe hesaplarınız"
 
-msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
-msgstr "Kimlik sağlayıcınız artık üye ekleyemez ya da kaldıramaz ve grup eşlemeleri silinir. Onun sağladığı üyeler bu şirkette olduğu gibi kalır."
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "Kimlik sağlayıcınız, yönettiği üyeleri ekler, günceller ve kaldırır."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "Kimlik sağlayıcınız artık üye ekleyemez veya kaldıramaz. Onun sağladığı üyeler olduğu gibi kalır ve SCIM'i yeniden ayarlamak, kaldığı yerden devam eder."
 
 msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
 msgstr "Kimlik sağlayıcınız, üyeleri aşağıdaki varsayılan çalışan türü ve lokasyonla oluşturur. Gruplarını gönderdikten sonra çalışan türlerine eşleyin."
-
-msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
-msgstr "Kimlik sağlayıcınız, sağlanan her üyenin adını, aktif durumunu ve eşlenmiş gruplar için çalışan türünü yönetir. Burada yapılan değişiklikler, sağlayıcınızın bir sonraki güncellemesinde üzerine yazılır. Bir üyeyi pasifleştirmek, onu bu şirketten çıkarır, buradaki API anahtarlarını siler ve başka bir şirketi yoksa oturumlarını sonlandırır."
 
 msgid "your Implementation Lead"
 msgstr "sizin Uygulama Müdürünüz"

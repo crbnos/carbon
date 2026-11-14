@@ -9,10 +9,10 @@ import { flash } from "@carbon/auth/session.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
   createScimConnection,
-  deleteScimConnection,
   regenerateScimToken,
-  updateScimConnection,
-  updateScimGroupMapping
+  saveScimGroupMappings,
+  turnOffScimConnection,
+  updateScimConnection
 } from "@carbon/ee/scim.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -21,7 +21,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   scimConnectionValidator,
-  scimGroupMappingValidator
+  scimGroupMappingsValidator
 } from "~/modules/settings/settings.models";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -52,11 +52,11 @@ export async function action({ request }: ActionFunctionArgs) {
       if (validation.error) return validationError(validation.error);
 
       if (intent === "create") {
-        const created = await createScimConnection(serviceRole, {
-          ...validation.data,
-          companyId,
-          userId
-        });
+        const created = await createScimConnection(
+          serviceRole,
+          getDatabaseClient(),
+          { ...validation.data, companyId, userId }
+        );
         if (created.error || !created.data) {
           return data(
             { token: null },
@@ -116,35 +116,38 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    if (intent === "mapGroup") {
-      const validation = await validator(scimGroupMappingValidator).validate(
+    if (intent === "saveGroupMappings") {
+      const validation = await validator(scimGroupMappingsValidator).validate(
         formData
       );
       if (validation.error) return validationError(validation.error);
 
-      const mapped = await updateScimGroupMapping(
+      const saved = await saveScimGroupMappings(
         serviceRole,
         getDatabaseClient(),
         { ...validation.data, companyId, userId }
       );
-      if (mapped.error) {
+      if (saved.error) {
         return data(
-          { token: null },
-          await flash(request, error(mapped.error, mapped.error))
+          { token: null, success: false },
+          await flash(request, error(saved.error, saved.error))
         );
       }
       return data(
-        { token: null },
-        await flash(request, success("Group mapping saved"))
+        { token: null, success: true },
+        await flash(request, success("Group mappings saved"))
       );
     }
 
     if (intent === "delete") {
-      const deleted = await deleteScimConnection(serviceRole, { companyId });
-      if (deleted.error) {
+      const turnedOff = await turnOffScimConnection(serviceRole, {
+        companyId,
+        userId
+      });
+      if (turnedOff.error) {
         return data(
           { token: null },
-          await flash(request, error(deleted.error, deleted.error))
+          await flash(request, error(turnedOff.error, turnedOff.error))
         );
       }
       throw redirect(

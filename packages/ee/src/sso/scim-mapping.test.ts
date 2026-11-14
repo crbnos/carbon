@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   pickEmployeeType,
+  planGroupMappingSave,
   replaceCompanyGrants,
   stripCompanyGrants,
   typeGrantsFor
@@ -55,6 +56,66 @@ describe("pickEmployeeType", () => {
         "default"
       )
     ).toBe("default");
+  });
+});
+
+describe("planGroupMappingSave", () => {
+  const group = (
+    id: string,
+    employeeTypeId: string | null,
+    priority: number
+  ) => ({ id, employeeTypeId, priority });
+
+  it("numbers mapped groups in list order and writes only what changed", () => {
+    expect(
+      planGroupMappingSave(
+        [
+          group("a", "admin", 10),
+          group("b", "buyer", 20),
+          group("c", null, 100)
+        ],
+        [
+          { groupId: "b", employeeTypeId: "buyer" },
+          { groupId: "a", employeeTypeId: "admin" },
+          { groupId: "c", employeeTypeId: null }
+        ]
+      )
+    ).toEqual({
+      unknownGroupIds: [],
+      updates: [
+        { id: "b", employeeTypeId: "buyer", priority: 10 },
+        { id: "a", employeeTypeId: "admin", priority: 20 }
+      ],
+      removedGroupIds: []
+    });
+  });
+
+  it("reports an unmapped group and keeps its priority", () => {
+    expect(
+      planGroupMappingSave(
+        [group("a", "admin", 10), group("b", "buyer", 20)],
+        [
+          { groupId: "b", employeeTypeId: "buyer" },
+          { groupId: "a", employeeTypeId: null }
+        ]
+      )
+    ).toEqual({
+      unknownGroupIds: [],
+      updates: [
+        { id: "b", employeeTypeId: "buyer", priority: 10 },
+        { id: "a", employeeTypeId: null, priority: 10 }
+      ],
+      removedGroupIds: ["a"]
+    });
+  });
+
+  it("reports a group the company does not have", () => {
+    expect(
+      planGroupMappingSave(
+        [group("a", null, 100)],
+        [{ groupId: "x", employeeTypeId: "admin" }]
+      ).unknownGroupIds
+    ).toEqual(["x"]);
   });
 });
 

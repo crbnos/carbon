@@ -21,10 +21,10 @@ licences, test tools): `.ai/research/scim-provisioning.md`. User docs:
 | `packages/ee/src/sso/scim-protocol.ts` | Pure wire format: `parseScimFilter`, `applyUserPatch`, `applyGroupPatch`, `readUserResource`, `matchScimRoute`, resource bodies, discovery documents |
 | `packages/ee/src/sso/scim-mapping.ts` | Pure access decisions: `pickEmployeeType`, `typeGrantsFor`, `replaceCompanyGrants` |
 | `packages/ee/src/sso/scim.server.ts` | `handleScimRequest` (token → `scimConnection`, `requireEntitlement(…, "SCIM")`, rate limit, routing), the Users and Groups handlers, `reconcileEmployeeTypes` |
-| `packages/ee/src/sso/scim-connections.server.ts` | The settings card's reads and writes; every write but `deleteScimConnection` embeds `requireEntitlement` |
+| `packages/ee/src/sso/scim-connections.server.ts` | The settings card's reads and writes; every write but `turnOffScimConnection` embeds `requireEntitlement` |
 | `@carbon/ee/scim.server` | `sso/scim-index.server.ts`, the export of the two files above |
 | `apps/erp/app/routes/scim+/v2+/$.ts` | Loader and action both hand the request to `handleScimRequest` |
-| `apps/erp/app/routes/x+/settings+/scim.tsx` | Action-only, like `sso.tsx`: intents `create`, `update`, `regenerate`, `mapGroup`, `delete` |
+| `apps/erp/app/routes/x+/settings+/scim.tsx` | Action-only, like `sso.tsx`: intents `create`, `update`, `regenerate`, `saveGroupMappings`, `delete` |
 | `ScimProvisioning.ee.tsx` | The Provisioning section of Settings → Security |
 
 Tables (migration `20261112042955_scim-provisioning.sql`): `scimConnection`
@@ -43,6 +43,15 @@ with the service role and stamps `createdBy` / `updatedBy` with
 - **Gated by plan, not edition.** `SCIM` in `FEATURE_PLANS` (Business,
   Partner). SAML SSO's `isSsoEnabled()` does not apply: SCIM needs no GoTrue
   SSO API and no `auth` schema write, so it runs on Cloud.
+- **Turn off keeps the SCIM ids.** `turnOffScimConnection` clears
+  `tokenHash` and `tokenPreview` (both nullable for this), so every
+  `/scim/v2` request is refused, and keeps the connection row, the SCIM
+  people, the groups and the mappings. Every read and write of the settings
+  card filters `tokenHash IS NOT NULL`; `createScimConnection` resumes a
+  turned-off row with a new token and new defaults, and `regenerateScimToken`
+  never turns one back on. An IdP never forgets the ids Carbon gave it:
+  deleting them on turn-off made every later update answer 404 and every
+  group push drop its members.
 - **Only managed people.** Every read and write goes through a `scimUser` row.
   An employee the IdP never provisioned is never listed or changed.
 - **Accept every IdP shape.** Okta custom (AIW) apps send PUT for every
@@ -68,10 +77,17 @@ with the service role and stamps `createdBy` / `updatedBy` with
   `userName` hold the IdP's values. The name is written to `user` only when
   the person has no other company.
 - **Groups → employee types.** `reconcileEmployeeTypes` gives each active
-  provisioned person the type of their mapped group with the lowest
-  `priority`, else the connection's default. With no mapped group at all it
+  provisioned person the type of their mapped group that comes first by
+  `compareGroupPrecedence` (lowest `priority`, ties by `displayName`), else the
+  connection's default. The settings list shows mapped groups in that order
+  (`getScimConnection` sorts with the same function). The card keeps type and
+  order changes unsaved until **Save changes**, which posts the whole list to
+  `saveScimGroupMappings`: `planGroupMappingSave` numbers the mapped groups in
+  steps of 10 in list order (a newly mapped group is last), one transaction
+  writes the changed rows, then everyone is reconciled once. No screen asks
+  for a number. With no mapped group at all it
   does nothing, except after the LAST mapped group is deleted or unmapped
-  (`mappingRemoved`, from `deleteGroup` and `updateScimGroupMapping`): that
+  (`mappingRemoved`, from `deleteGroup` and `saveScimGroupMappings`): that
   group's members still hold its type and grants, so they move to the
   default. A type change rewrites this company's slice of
   `userPermission` with `replaceCompanyGrants`. It runs after every group
@@ -90,7 +106,7 @@ with the service role and stamps `createdBy` / `updatedBy` with
   wildcard.
 - **Audit.** Each create, deactivate, reactivate and type change writes an
   `employee` entry with `actorId: null` and `metadata.actorLabel`
-  (`SCIM (<IdP>)`), shown by the audit renderers through `nonUserActorLabel`.
+  (`SCIM_ACTOR_LABEL`, "SCIM"), shown by the audit renderers through `nonUserActorLabel`.
   The event-system trigger also writes its own "System" row for the same
   `employee` change.
 - **Never read timestamps through Kysely for a response.** Resource bodies read

@@ -19,10 +19,15 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
+import { type Kysely, sql } from "kysely";
 import { customAlphabet } from "nanoid";
 import { requireEntitlement } from "../entitlements.server";
 import { reconcileEmployeeTypes } from "./scim.server";
+import {
+  compareGroupPrecedence,
+  type GroupMappingChoice,
+  planGroupMappingSave
+} from "./scim-mapping";
 
 const logger = getLogger("ee", "scim-connections");
 
@@ -30,8 +35,6 @@ const tokenBody = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
   32
 );
-
-type IdentityProvider = Database["public"]["Enums"]["scimIdentityProvider"];
 
 type Result<T> = { data: T | null; error: string | null };
 
@@ -51,7 +54,8 @@ export function generateScimToken(): {
 /**
  * What the Provisioning card shows: the connection (never its token hash),
  * the pushed groups with their mappings and member counts, and how many
- * provisioned people are active. `data` is null when SCIM is not set up.
+ * provisioned people are active. `data` is null when SCIM is not set up or
+ * is turned off (no token).
  */
 export async function getScimConnection(
   client: SupabaseClient<Database>,
@@ -60,9 +64,10 @@ export async function getScimConnection(
   const connection = await client
     .from("scimConnection")
     .select(
-      "id, identityProvider, tokenPreview, defaultEmployeeTypeId, defaultLocationId, lastRequestAt, createdAt"
+      "id, tokenPreview, defaultEmployeeTypeId, defaultLocationId, lastRequestAt, createdAt"
     )
     .eq("companyId", companyId)
+    .not("tokenHash", "is", null)
     .maybeSingle();
   if (connection.error) return { data: null, error: connection.error };
   if (!connection.data) return { data: null, error: null };
@@ -73,9 +78,7 @@ export async function getScimConnection(
       .select(
         "id, displayName, employeeTypeId, priority, scimGroupMember(count)"
       )
-      .eq("companyId", companyId)
-      .order("priority")
-      .order("displayName"),
+      .eq("companyId", companyId),
     client
       .from("scimUser")
       .select("id", { count: "exact", head: true })
@@ -88,10 +91,13 @@ export async function getScimConnection(
   return {
     data: {
       connection: connection.data,
-      groups: (groups.data ?? []).map(({ scimGroupMember, ...group }) => ({
-        ...group,
-        memberCount: scimGroupMember?.[0]?.count ?? 0
-      })),
+      // In the order they win: the list shows the winning group first.
+      groups: (groups.data ?? [])
+        .map(({ scimGroupMember, ...group }) => ({
+          ...group,
+          memberCount: scimGroupMember?.[0]?.count ?? 0
+        }))
+        .sort(compareGroupPrecedence),
       activeCount: active.count ?? 0
     },
     error: null
@@ -126,12 +132,17 @@ async function checkDefaults(
   return null;
 }
 
+/**
+ * Set SCIM up, or turn it back on. A connection that was turned off is
+ * resumed with a new token and the new defaults, so the SCIM people and
+ * groups it kept, and the ids the IdP holds for them, still work.
+ */
 export async function createScimConnection(
   serviceRole: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     companyId: string;
     userId: string;
-    identityProvider: IdentityProvider;
     defaultEmployeeTypeId: string;
     defaultLocationId: string;
   }
@@ -142,9 +153,37 @@ export async function createScimConnection(
   if (refusal) return { data: null, error: refusal };
 
   const { token, tokenHash, tokenPreview } = generateScimToken();
+  const resumed = await serviceRole
+    .from("scimConnection")
+    .update({
+      tokenHash,
+      tokenPreview,
+      defaultEmployeeTypeId: input.defaultEmployeeTypeId,
+      defaultLocationId: input.defaultLocationId,
+      updatedBy: input.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("companyId", input.companyId)
+    .is("tokenHash", null)
+    .select("*")
+    .maybeSingle();
+  if (resumed.error) {
+    logger.error("Failed to turn the SCIM connection back on", {
+      companyId: input.companyId,
+      error: resumed.error
+    });
+    return { data: null, error: "Failed to set up SCIM" };
+  }
+  if (resumed.data) {
+    // The default type may have changed while SCIM was off.
+    await reconcileEmployeeTypes(db, serviceRole, {
+      connection: resumed.data
+    });
+    return { data: { token }, error: null };
+  }
+
   const inserted = await serviceRole.from("scimConnection").insert({
     companyId: input.companyId,
-    identityProvider: input.identityProvider,
     defaultEmployeeTypeId: input.defaultEmployeeTypeId,
     defaultLocationId: input.defaultLocationId,
     tokenHash,
@@ -171,7 +210,6 @@ export async function updateScimConnection(
   input: {
     companyId: string;
     userId: string;
-    identityProvider: IdentityProvider;
     defaultEmployeeTypeId: string;
     defaultLocationId: string;
   }
@@ -184,13 +222,13 @@ export async function updateScimConnection(
   const updated = await serviceRole
     .from("scimConnection")
     .update({
-      identityProvider: input.identityProvider,
       defaultEmployeeTypeId: input.defaultEmployeeTypeId,
       defaultLocationId: input.defaultLocationId,
       updatedBy: input.userId,
       updatedAt: datetime.timestamp()
     })
     .eq("companyId", input.companyId)
+    .not("tokenHash", "is", null)
     .select("*")
     .maybeSingle();
   if (updated.error || !updated.data) {
@@ -224,6 +262,8 @@ export async function regenerateScimToken(
       updatedAt: datetime.timestamp()
     })
     .eq("companyId", input.companyId)
+    // A connection that is turned off is turned on by a new setup only.
+    .not("tokenHash", "is", null)
     .select("id")
     .maybeSingle();
   if (updated.error || !updated.data) {
@@ -238,109 +278,146 @@ export async function regenerateScimToken(
 }
 
 /**
- * Turn SCIM off: the connection and its SCIM rows go; every Carbon user,
- * membership and employee stays as it is. Not gated, so a company that lost
- * the plan can still stop its IdP.
+ * Turn SCIM off: the token goes, so every `/scim/v2` request is refused. The
+ * connection row, the SCIM people and groups and the group mappings stay, so
+ * a new setup resumes them and the ids the IdP holds still work. Every Carbon
+ * user, membership and employee stays as it is. Not gated, so a company that
+ * lost the plan can still stop its IdP.
  */
-export async function deleteScimConnection(
+export async function turnOffScimConnection(
   serviceRole: SupabaseClient<Database>,
-  input: { companyId: string }
+  input: { companyId: string; userId: string }
 ): Promise<Result<true>> {
-  const deleted = await serviceRole
+  const turnedOff = await serviceRole
     .from("scimConnection")
-    .delete()
+    .update({
+      tokenHash: null,
+      tokenPreview: null,
+      updatedBy: input.userId,
+      updatedAt: datetime.timestamp()
+    })
     .eq("companyId", input.companyId);
-  if (deleted.error) {
-    logger.error("Failed to delete the SCIM connection", {
+  if (turnedOff.error) {
+    logger.error("Failed to turn off SCIM", {
       companyId: input.companyId,
-      error: deleted.error
+      error: turnedOff.error
     });
     return { data: null, error: "Failed to turn off SCIM" };
   }
   return { data: true, error: null };
 }
 
-export async function updateScimGroupMapping(
+/**
+ * Save the group mappings as the settings card shows them: each group's
+ * employee type, and mapped groups in the order they win. One transaction
+ * writes every changed group, then everyone's type is reconciled once.
+ */
+export async function saveScimGroupMappings(
   serviceRole: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   input: {
     companyId: string;
     userId: string;
-    groupId: string;
-    employeeTypeId: string | null;
-    priority: number;
+    groups: GroupMappingChoice[];
   }
 ): Promise<Result<{ changed: number }>> {
   await requireEntitlement(serviceRole, input.companyId, "SCIM");
-
-  if (input.employeeTypeId) {
-    const type = await serviceRole
-      .from("employeeType")
-      .select("id")
-      .eq("id", input.employeeTypeId)
-      .eq("companyId", input.companyId)
-      .maybeSingle();
-    if (type.error || !type.data) {
-      return { data: null, error: "Employee type not found" };
-    }
-  }
-
-  const previous = await db
-    .selectFrom("scimGroup")
-    .select("employeeTypeId")
-    .where("id", "=", input.groupId)
-    .where("companyId", "=", input.companyId)
-    .executeTakeFirst();
-  const mappingRemoved =
-    Boolean(previous?.employeeTypeId) && !input.employeeTypeId;
-
-  const updated = await serviceRole
-    .from("scimGroup")
-    .update({
-      employeeTypeId: input.employeeTypeId,
-      priority: input.priority,
-      updatedBy: input.userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", input.groupId)
-    .eq("companyId", input.companyId)
-    .select("id")
-    .maybeSingle();
-  if (updated.error || !updated.data) {
-    logger.error("Failed to update the SCIM group mapping", {
-      companyId: input.companyId,
-      groupId: input.groupId,
-      error: updated.error
-    });
-    return { data: null, error: "Group not found" };
-  }
 
   const connection = await serviceRole
     .from("scimConnection")
     .select("*")
     .eq("companyId", input.companyId)
-    .single();
-  if (connection.error) {
+    .not("tokenHash", "is", null)
+    .maybeSingle();
+  if (connection.error || !connection.data) {
     return { data: null, error: "SCIM is not set up for this company" };
   }
 
-  // Removing a mapping moves only this group's members, and must move them
-  // even when it was the last mapped group. Any other change can move anyone
-  // in any mapped group.
-  const scimUserIds = mappingRemoved
-    ? (
-        await db
-          .selectFrom("scimGroupMember")
-          .select("scimUserId")
-          .where("groupId", "=", input.groupId)
-          .where("companyId", "=", input.companyId)
-          .execute()
-      ).map((member) => member.scimUserId)
-    : undefined;
-  const reconciled = await reconcileEmployeeTypes(db, serviceRole, {
-    connection: connection.data,
-    scimUserIds,
-    mappingRemoved
+  const typeIds = [
+    ...new Set(
+      input.groups.flatMap((group) =>
+        group.employeeTypeId ? [group.employeeTypeId] : []
+      )
+    )
+  ];
+  if (typeIds.length > 0) {
+    const types = await serviceRole
+      .from("employeeType")
+      .select("id")
+      .eq("companyId", input.companyId)
+      .in("id", typeIds);
+    if (types.error || (types.data ?? []).length !== typeIds.length) {
+      return { data: null, error: "Employee type not found" };
+    }
+  }
+
+  const saved = await db.transaction().execute(async (trx) => {
+    const current = await trx
+      .selectFrom("scimGroup")
+      .select(["id", "employeeTypeId", "priority"])
+      .where("companyId", "=", input.companyId)
+      .where(
+        "id",
+        "in",
+        input.groups.map((group) => group.groupId)
+      )
+      .forUpdate()
+      .execute();
+    const plan = planGroupMappingSave(current, input.groups);
+    if (plan.unknownGroupIds.length > 0) return null;
+
+    if (plan.updates.length > 0) {
+      await sql`
+        UPDATE "scimGroup" AS g
+        SET "employeeTypeId" = v."employeeTypeId",
+            "priority" = v."priority",
+            "updatedBy" = ${input.userId},
+            "updatedAt" = now()
+        FROM (VALUES ${sql.join(
+          plan.updates.map(
+            (update) =>
+              sql`(${update.id}, ${update.employeeTypeId}::text, ${update.priority}::int)`
+          )
+        )}) AS v("id", "employeeTypeId", "priority")
+        WHERE g."id" = v."id" AND g."companyId" = ${input.companyId}
+      `.execute(trx);
+    }
+
+    const stillMapped = await trx
+      .selectFrom("scimGroup")
+      .select("id")
+      .where("companyId", "=", input.companyId)
+      .where("employeeTypeId", "is not", null)
+      .limit(1)
+      .executeTakeFirst();
+    const removedMembers =
+      plan.removedGroupIds.length > 0 && !stillMapped
+        ? await trx
+            .selectFrom("scimGroupMember")
+            .select("scimUserId")
+            .where("companyId", "=", input.companyId)
+            .where("groupId", "in", plan.removedGroupIds)
+            .execute()
+        : null;
+    return { changed: plan.updates.length > 0, removedMembers };
   });
+  if (!saved) return { data: null, error: "Group not found" };
+  if (!saved.changed) return { data: { changed: 0 }, error: null };
+
+  // With the last mapping gone, only its members still hold its type, and
+  // they move to the default. Otherwise any change can move anyone.
+  const reconciled = await reconcileEmployeeTypes(
+    db,
+    serviceRole,
+    saved.removedMembers
+      ? {
+          connection: connection.data,
+          scimUserIds: [
+            ...new Set(saved.removedMembers.map((member) => member.scimUserId))
+          ],
+          mappingRemoved: true
+        }
+      : { connection: connection.data }
+  );
   return { data: reconciled, error: null };
 }

@@ -2868,9 +2868,6 @@ msgstr "启用"
 msgid "Active Jobs"
 msgstr "启用的工单"
 
-msgid "Active members"
-msgstr "已启用成员"
-
 msgid "Active Methods Missing a Pull From"
 msgstr "启用的方法缺少拉取来源"
 
@@ -7018,6 +7015,9 @@ msgstr "选择供应商"
 
 msgid "Choose suppliers"
 msgstr "选择供应商"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "请为每个组选择其成员所属的员工类型。如果某人属于多个组，则以级别较高的组为准。"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "选择当前期间或之前 3 个期间中任意一个的第一天。"
@@ -12021,11 +12021,12 @@ msgstr "员工账户"
 msgid "Employee Reimbursements Payable"
 msgstr "员工报销应付"
 
-msgid "Employee type"
-msgstr "员工类型"
-
 msgid "Employee Type"
 msgstr "员工类型"
+
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} 的员工类型"
 
 msgid "Employee Types"
 msgstr "员工类型"
@@ -14917,6 +14918,9 @@ msgstr "此量具必须多久重新校准一次；与上次校准日期结合自
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "此维护的重复频率——每日、每周、每月、循环盘点；每日会显示星期选择器，其他则使用更简单的间隔计算。"
 
+msgid "How SCIM works"
+msgstr "SCIM 的工作原理"
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "在此工序上，为使多个操作能够共享一个生产批次，每个原材料属性必须匹配的严格程度。"
 
@@ -15048,9 +15052,6 @@ msgstr "标识符"
 
 msgid "Identifiers"
 msgstr "标识符"
-
-msgid "Identity provider"
-msgstr "身份提供商"
 
 msgid "Identity Provider"
 msgstr "身份提供商"
@@ -17718,9 +17719,6 @@ msgstr "生产受阻"
 msgid "Map accounts"
 msgstr "映射科目"
 
-msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
-msgstr "将身份提供商推送的每个群组映射到一种员工类型。属于多个已映射群组的成员将获得最低优先级群组对应的类型。"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "映射提取的发票行项目"
 
@@ -19758,9 +19756,6 @@ msgstr "没有分组通知"
 
 msgid "No groups assigned"
 msgstr "没有已分配的组"
-
-msgid "No groups yet. Push groups from your identity provider to map them to employee types."
-msgstr "暂无群组。请从身份提供商推送群组，以将其映射到员工类型。"
 
 msgid "No image"
 msgstr "没有图像"
@@ -23464,6 +23459,9 @@ msgstr "临时凭证"
 
 msgid "Provisional rate"
 msgstr "暂定费率"
+
+msgid "Provisioned members"
+msgstr "已预配的成员"
 
 msgid "Provisioning"
 msgstr "预配"
@@ -35219,14 +35217,14 @@ msgstr "正在准备您的导出文件。准备就绪后我们将通知您。"
 msgid "Your GL accounts"
 msgstr "您的总账科目"
 
-msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
-msgstr "身份提供商将无法再添加或移除成员，群组映射也将被删除。它此前预配的成员将保持原样留在本公司。"
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "身份提供商会添加、更新和删除其管理的成员。"
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "身份提供商不能再添加或移除成员。其已预配的成员保持不变，重新设置 SCIM 时将从上次中断处继续。"
 
 msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
 msgstr "您的身份提供商会使用下方的默认员工类型和地点创建成员。推送分组后，请将分组映射到员工类型。"
-
-msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
-msgstr "您的身份提供商负责管理每位已预配成员的姓名、启用状态，以及（针对已映射分组的）员工类型。此处所做的更改会在其下次更新时被覆盖。停用成员会将其从本公司移除、删除其在此处的API密钥；若该成员没有其他公司，还会结束其会话。"
 
 msgid "your Implementation Lead"
 msgstr "你的实施负责人"

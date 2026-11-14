@@ -2868,9 +2868,6 @@ msgstr "有効"
 msgid "Active Jobs"
 msgstr "有効な製造指図"
 
-msgid "Active members"
-msgstr "有効なメンバー"
-
 msgid "Active Methods Missing a Pull From"
 msgstr "引き出し元未設定の有効な製法"
 
@@ -7018,6 +7015,9 @@ msgstr "仕入先を選択"
 
 msgid "Choose suppliers"
 msgstr "仕入先を選択"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "各グループがメンバーに付与する従業員タイプを選択してください。複数のグループに所属している場合は、上位のグループの設定が優先されます。"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "当期または前3会計期間のいずれかの初日を選択してください。"
@@ -12021,11 +12021,12 @@ msgstr "従業員アカウント"
 msgid "Employee Reimbursements Payable"
 msgstr "従業員払戻金"
 
-msgid "Employee type"
-msgstr "従業員タイプ"
-
 msgid "Employee Type"
 msgstr "従業員タイプ"
+
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} の従業員タイプ"
 
 msgid "Employee Types"
 msgstr "従業員タイプ"
@@ -14917,6 +14918,9 @@ msgstr "この測定器をどのくらい頻繁に再校正する必要がある
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "この保全がどのくらい頻繁に繰り返されるか — 毎日、毎週、毎月、循環棚卸時。毎日の場合は曜日セレクタが表示され、その他は単純な間隔計算を使用します"
 
+msgid "How SCIM works"
+msgstr "SCIM の仕組み"
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "このプロセスで工程がバッチを共有する場合、各材料特性がどの程度厳密に一致する必要があるか"
 
@@ -15048,9 +15052,6 @@ msgstr "識別子"
 
 msgid "Identifiers"
 msgstr "識別子"
-
-msgid "Identity provider"
-msgstr "IDプロバイダー"
 
 msgid "Identity Provider"
 msgstr "IDプロバイダー"
@@ -17718,9 +17719,6 @@ msgstr "製造がブロックされています"
 msgid "Map accounts"
 msgstr "勘定をマップ"
 
-msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
-msgstr "IDプロバイダーから送信される各グループを従業員タイプに割り当ててください。複数の割り当て済みグループに属するメンバーには、最も優先度の低いグループのタイプが適用されます。"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "抽出された請求書明細をマップ"
 
@@ -19758,9 +19756,6 @@ msgstr "グループ化された通知がありません"
 
 msgid "No groups assigned"
 msgstr "グループが割り当てられていません"
-
-msgid "No groups yet. Push groups from your identity provider to map them to employee types."
-msgstr "グループはまだありません。IDプロバイダーからグループを送信し、従業員タイプに割り当ててください。"
 
 msgid "No image"
 msgstr "画像なし"
@@ -23464,6 +23459,9 @@ msgstr "仮仕訳"
 
 msgid "Provisional rate"
 msgstr "暫定レート"
+
+msgid "Provisioned members"
+msgstr "プロビジョニング済みメンバー"
 
 msgid "Provisioning"
 msgstr "プロビジョニング"
@@ -35216,14 +35214,14 @@ msgstr "エクスポートを準備しています。準備ができたら通知
 msgid "Your GL accounts"
 msgstr "あなたのGL勘定"
 
-msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
-msgstr "IDプロバイダーはメンバーを追加・除去できなくなり、グループマッピングは削除されます。プロビジョニングされたメンバーは、そのまま会社に残ります。"
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "IDプロバイダーは、管理対象のメンバーを追加、更新、削除します。"
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "ID プロバイダーはメンバーを追加または除去できなくなります。プロビジョニング済みのメンバーはそのまま維持され、SCIM を再設定すると中断したところから再開されます。"
 
 msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
 msgstr "IDプロバイダーは、下記のデフォルトの従業員タイプと拠点でメンバーを作成します。プッシュ後に、そのグループを従業員タイプに対応付けてください。"
-
-msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
-msgstr "IDプロバイダーは、プロビジョニングされた各メンバーの氏名、有効状態、および対応付け済みグループの従業員タイプを管理します。ここで行った変更は、次回の更新時に上書きされます。メンバーを無効化すると、そのメンバーはこの会社から除去され、ここにあるAPIキーが削除されます。他に所属する会社がない場合は、そのセッションも終了します。"
 
 msgid "your Implementation Lead"
 msgstr "あなたの実施リード"

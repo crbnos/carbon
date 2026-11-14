@@ -188,7 +188,7 @@ Refactor one at a time; each PR should leave the tree green.
 - ✅ **SCIM provisioning** — engine in `packages/ee/src/sso/scim*.ts`
   (`@carbon/ee/scim.server`). `handleScimRequest` embeds `requireEntitlement("SCIM")`
   on every request (an un-entitled company's IdP gets 403); the settings writes embed it
-  too, except `deleteScimConnection`, so a downgraded company can still turn SCIM off.
+  too, except `turnOffScimConnection`, so a downgraded company can still turn SCIM off.
   UI is `ScimProvisioning.ee.tsx` behind `usePlanGate({ feature: "SCIM" })`.
 - ✅ **MCP** — protocol engine moved to `packages/ee/src/mcp/` (`@carbon/ee/mcp`
   pure logic; `@carbon/ee/mcp.server` = `server.ts`). `serveMcpRequest` embeds

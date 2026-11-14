@@ -17,7 +17,7 @@ export interface AuditMetadata {
   userAgent?: string;
   origin?: "web" | "api" | "import" | "system" | "scim";
   requestId?: string;
-  /** The non-user actor to show when `actorId` is null, e.g. `SCIM (Okta)`. */
+  /** The non-user actor to show when `actorId` is null, e.g. `SCIM`. */
   actorLabel?: string;
 }
 

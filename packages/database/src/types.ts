@@ -73912,10 +73912,9 @@ export type Database = {
           defaultEmployeeTypeId: string
           defaultLocationId: string
           id: string
-          identityProvider: Database["public"]["Enums"]["scimIdentityProvider"]
           lastRequestAt: string | null
-          tokenHash: string
-          tokenPreview: string
+          tokenHash: string | null
+          tokenPreview: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -73926,10 +73925,9 @@ export type Database = {
           defaultEmployeeTypeId: string
           defaultLocationId: string
           id?: string
-          identityProvider: Database["public"]["Enums"]["scimIdentityProvider"]
           lastRequestAt?: string | null
-          tokenHash: string
-          tokenPreview: string
+          tokenHash?: string | null
+          tokenPreview?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -73940,10 +73938,9 @@ export type Database = {
           defaultEmployeeTypeId?: string
           defaultLocationId?: string
           id?: string
-          identityProvider?: Database["public"]["Enums"]["scimIdentityProvider"]
           lastRequestAt?: string | null
-          tokenHash?: string
-          tokenPreview?: string
+          tokenHash?: string | null
+          tokenPreview?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -112383,13 +112380,6 @@ export type Database = {
       salesRfqStatus: "Draft" | "Ready for Quote" | "Closed" | "Quoted"
       samplingPlanType: "All" | "First" | "Percentage" | "AQL"
       samplingStandard: "ANSI_Z1_4" | "ISO_2859_1"
-      scimIdentityProvider:
-        | "Okta"
-        | "Microsoft Entra ID"
-        | "Google Workspace"
-        | "JumpCloud"
-        | "OneLogin"
-        | "Other"
       serviceBillingMethod: "Time and Materials" | "Fixed Price"
       serviceCoverage: "Billable" | "Warranty" | "Contract"
       serviceEstimateStatus: "Draft" | "Sent" | "Accepted" | "Declined"

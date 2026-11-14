@@ -171,9 +171,8 @@ function scimBaseUrl(): string {
   return `${getAppUrl()}/scim/v2`;
 }
 
-export function scimActorLabel(identityProvider: string): string {
-  return `SCIM (${identityProvider})`;
-}
+/** The actor the audit log names for a change SCIM made. */
+export const SCIM_ACTOR_LABEL = "SCIM";
 
 // ---------------------------------------------------------------------------
 // The request edge
@@ -609,7 +608,7 @@ async function auditEmployees(
         diff: entry.diff,
         metadata: {
           origin: "scim",
-          actorLabel: scimActorLabel(connection.identityProvider)
+          actorLabel: SCIM_ACTOR_LABEL
         }
       }))
     );

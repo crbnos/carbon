@@ -2868,9 +2868,6 @@ msgstr "सक्रिय"
 msgid "Active Jobs"
 msgstr "सक्रिय जॉब"
 
-msgid "Active members"
-msgstr "सक्रिय सदस्य"
-
 msgid "Active Methods Missing a Pull From"
 msgstr "Pull From के बिना सक्रिय विधि"
 
@@ -7018,6 +7015,9 @@ msgstr "आपूर्तिकर्ता चुनें"
 
 msgid "Choose suppliers"
 msgstr "आपूर्तिकर्ता चुनें"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "प्रत्येक समूह अपने सदस्यों को जो कर्मचारी प्रकार देता है, उसे चुनें। यदि कोई व्यक्ति एक से अधिक समूहों में है, तो उच्च स्तर वाले समूह का प्रकार लागू होगा।"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "वर्तमान अवधि के पहले दिन या उससे पहले की 3 अवधियों में से किसी एक के पहले दिन को चुनें।"
@@ -12021,11 +12021,12 @@ msgstr "कर्मचारी खाते"
 msgid "Employee Reimbursements Payable"
 msgstr "कर्मचारी प्रतिपूर्ति देय"
 
-msgid "Employee type"
-msgstr "कर्मचारी प्रकार"
-
 msgid "Employee Type"
 msgstr "कर्मचारी प्रकार"
+
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} के लिए कर्मचारी प्रकार"
 
 msgid "Employee Types"
 msgstr "कर्मचारी प्रकार"
@@ -14917,6 +14918,9 @@ msgstr "यह गेज कितनी बार पुनः-अंशां�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "यह रखरखाव कितनी बार दोहराया जाता है — दैनिक, साप्ताहिक, मासिक, चक्रीय गणना पर; दैनिक सप्ताह-की-दिन चयनकर्ता को प्रकट करता है, अन्य सरल अंतराल गणित का उपयोग करते हैं।"
 
+msgid "How SCIM works"
+msgstr "SCIM कैसे काम करता है"
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "ऑपरेशन को इस प्रक्रिया पर एक बैच साझा करने के लिए प्रत्येक सामग्री संपत्ति कितनी सख्ती से मेल खानी चाहिए।"
 
@@ -15048,9 +15052,6 @@ msgstr "पहचानकर्ता"
 
 msgid "Identifiers"
 msgstr "पहचानकर्ता"
-
-msgid "Identity provider"
-msgstr "पहचान प्रदाता"
 
 msgid "Identity Provider"
 msgstr "आइडेंटिटी प्रदाता"
@@ -17718,9 +17719,6 @@ msgstr "विनिर्माण अवरुद्ध है"
 msgid "Map accounts"
 msgstr "खातों को मैप करें"
 
-msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
-msgstr "आपका पहचान प्रदाता जो हर ग्रुप भेजता है, उसे किसी कर्मचारी प्रकार से मैप करें। कई मैप किए गए ग्रुप के सदस्य को सबसे कम प्राथमिकता वाला प्रकार मिलता है।"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "निकाली गई चालान पंक्तियों को मैप करें"
 
@@ -19758,9 +19756,6 @@ msgstr "कोई समूहीकृत सूचनाएं नहीं"
 
 msgid "No groups assigned"
 msgstr "कोई समूह असाइन नहीं किया गया"
-
-msgid "No groups yet. Push groups from your identity provider to map them to employee types."
-msgstr "अभी कोई ग्रुप नहीं है। ग्रुप को कर्मचारी प्रकारों से मैप करने के लिए अपने पहचान प्रदाता से ग्रुप भेजें।"
 
 msgid "No image"
 msgstr "कोई छवि नहीं"
@@ -23464,6 +23459,9 @@ msgstr "अनंतिम जर्नल"
 
 msgid "Provisional rate"
 msgstr "अनंतिम दर"
+
+msgid "Provisioned members"
+msgstr "प्रावधानित सदस्य"
 
 msgid "Provisioning"
 msgstr "प्रोविज़निंग"
@@ -35219,14 +35217,14 @@ msgstr "आपका निर्यात तैयार किया जा �
 msgid "Your GL accounts"
 msgstr "आपके GL खाते"
 
-msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
-msgstr "आपका पहचान प्रदाता अब सदस्यों को जोड़ या निकाल नहीं पाएगा, और ग्रुप मैपिंग हटा दी जाएँगी। उसके द्वारा प्रोविज़न किए गए सदस्य इस कंपनी में जैसे हैं वैसे ही रहेंगे।"
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "आपका पहचान प्रदाता उसके द्वारा प्रबंधित सदस्यों को जोड़ता, अपडेट करता और हटाता है।"
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "आपका पहचान प्रदाता अब सदस्य न तो जोड़ सकता है और न ही निकाल सकता है। उसके द्वारा प्रावधानित सदस्य जैसे हैं वैसे ही रहते हैं, और SCIM को दोबारा सेट करने पर वहीं से जारी रहता है जहाँ यह रुका था।"
 
 msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
 msgstr "आपका पहचान प्रदाता नीचे दिए गए डिफ़ॉल्ट कर्मचारी प्रकार और स्थान के साथ सदस्य बनाता है। उसके समूह भेजे जाने के बाद, उन्हें कर्मचारी प्रकारों से मैप करें।"
-
-msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
-msgstr "आपका पहचान प्रदाता हर प्रावधान किए गए सदस्य का नाम, सक्रिय स्थिति और मैप किए गए समूहों के लिए कर्मचारी प्रकार नियंत्रित करता है। यहाँ किए गए बदलाव उसके अगले अपडेट में ओवरराइट हो जाएँगे। किसी सदस्य को निष्क्रिय करने पर वह इस कंपनी से निकाल दिया जाता है, यहाँ उसकी API कुंजियाँ हटा दी जाती हैं, और जब उसकी कोई दूसरी कंपनी न हो तो उसके सत्र समाप्त कर दिए जाते हैं।"
 
 msgid "your Implementation Lead"
 msgstr "आपके कार्यान्वयन नेता"

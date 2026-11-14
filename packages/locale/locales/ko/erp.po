@@ -2868,9 +2868,6 @@ msgstr "활성"
 msgid "Active Jobs"
 msgstr "진행 중인 작업 지시"
 
-msgid "Active members"
-msgstr "활성 구성원"
-
 msgid "Active Methods Missing a Pull From"
 msgstr "출처가 없는 활성 방법"
 
@@ -7018,6 +7015,9 @@ msgstr "공급업체 선택"
 
 msgid "Choose suppliers"
 msgstr "공급업체 선택"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "각 그룹이 구성원에게 부여할 직원 유형을 선택하세요. 한 사람이 둘 이상의 그룹에 속해 있으면 상위 그룹의 설정이 적용됩니다."
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "현재 기간 또는 그 이전 3개 기간 중 하나의 첫 날을 선택하세요."
@@ -12021,11 +12021,12 @@ msgstr "직원 계정"
 msgid "Employee Reimbursements Payable"
 msgstr "직원 환급금 매입채무"
 
-msgid "Employee type"
-msgstr "직원 유형"
-
 msgid "Employee Type"
 msgstr "직원 유형"
+
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0}의 직원 유형"
 
 msgid "Employee Types"
 msgstr "직원 유형"
@@ -14917,6 +14918,9 @@ msgstr "이 계측기를 재교정해야 하는 빈도입니다. 마지막 교�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "이 유지보수가 반복되는 빈도입니다 — 매일, 매주, 매월, 순환 실사 시; 매일을 선택하면 요일 선택 옵션이 표시되고 나머지는 더 간단한 간격 계산을 사용합니다."
 
+msgid "How SCIM works"
+msgstr "SCIM 작동 방식"
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "이 공정에서 공정이 배치를 공유하기 위해 각 자재 속성이 얼마나 엄격하게 일치해야 하는지"
 
@@ -15048,9 +15052,6 @@ msgstr "식별자"
 
 msgid "Identifiers"
 msgstr "식별자"
-
-msgid "Identity provider"
-msgstr "ID 공급자"
 
 msgid "Identity Provider"
 msgstr "자격 증명 공급자"
@@ -17718,9 +17719,6 @@ msgstr "제조가 차단되었습니다"
 msgid "Map accounts"
 msgstr "계정 매핑"
 
-msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
-msgstr "ID 공급자가 보내는 각 그룹을 직원 유형에 매핑하세요. 여러 매핑된 그룹에 속한 구성원은 가장 낮은 우선순위를 가진 그룹의 유형을 받습니다."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "추출한 송장 라인 매핑"
 
@@ -19758,9 +19756,6 @@ msgstr "그룹화된 알림이 없습니다"
 
 msgid "No groups assigned"
 msgstr "배정된 그룹이 없습니다"
-
-msgid "No groups yet. Push groups from your identity provider to map them to employee types."
-msgstr "아직 그룹이 없습니다. ID 공급자에서 그룹을 보내 직원 유형에 매핑하세요."
 
 msgid "No image"
 msgstr "이미지 없음"
@@ -23464,6 +23459,9 @@ msgstr "임시 전표"
 
 msgid "Provisional rate"
 msgstr "임시 요율"
+
+msgid "Provisioned members"
+msgstr "프로비저닝된 구성원"
 
 msgid "Provisioning"
 msgstr "프로비저닝"
@@ -35216,14 +35214,14 @@ msgstr "내보내기를 준비하고 있습니다. 준비가 끝나면 알려 �
 msgid "Your GL accounts"
 msgstr "총계정원장 계정"
 
-msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
-msgstr "ID 공급자는 더 이상 구성원을 추가하거나 제거할 수 없으며, 그룹 매핑은 삭제됩니다. ID 공급자가 프로비저닝한 구성원은 현재 상태 그대로 이 회사에 남습니다."
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "ID 공급자가 관리하는 구성원을 추가, 업데이트, 삭제합니다."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "ID 제공자는 더 이상 멤버를 추가하거나 제거할 수 없습니다. 프로비저닝한 멤버는 그대로 유지되며, SCIM을 다시 설정하면 중단된 지점부터 이어집니다."
 
 msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
 msgstr "아이덴티티 제공자는 아래의 기본 직원 유형과 사업장으로 구성원을 만듭니다. 제공자가 그룹을 보낸 뒤에는 그 그룹을 직원 유형에 매핑하세요."
-
-msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
-msgstr "프로비저닝된 구성원의 이름, 활성 상태 및 매핑된 그룹에 대한 직원 유형은 아이덴티티 제공자가 관리합니다. 여기서 변경한 내용은 제공자의 다음 업데이트 때 덮어쓰기됩니다. 구성원을 비활성화하면 해당 구성원이 이 회사에서 제거되고, 여기에 있는 해당 구성원의 API 키가 삭제되며, 다른 회사에 소속되어 있지 않은 경우 세션이 종료됩니다."
 
 msgid "your Implementation Lead"
 msgstr "귀사의 실행 리드"

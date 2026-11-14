@@ -19,7 +19,7 @@ Everything lives on **Settings → Security**, under **"Provisioning"**.
 
 <Steps>
 <Step>
-**Pick the defaults.** In **"Set up SCIM"**, choose your **"Identity provider"**, the **"Default employee type"** and the **"Default location"**. Each new member gets that type and location.
+**Pick the defaults.** In **"Set up SCIM"**, choose the **"Default employee type"** and the **"Default location"**. Each new member gets that type and location.
 </Step>
 <Step>
 **Generate the token.** Click **"Generate token"**. Carbon shows the **"SCIM base URL"** and the token once. Copy both.
@@ -32,7 +32,7 @@ Everything lives on **Settings → Security**, under **"Provisioning"**.
 </Step>
 </Steps>
 
-**"Regenerate token"** replaces the token. The old token stops working at once, so enter the new one in your identity provider. **"Turn off"** stops provisioning. The members it added stay in your company as they are.
+**"Regenerate token"** replaces the token. The old token stops working at once, so enter the new one in your identity provider. **"Turn off"** stops provisioning. The members it added stay in your company as they are. Carbon keeps the people and groups your identity provider sent and your group mappings, so setting SCIM up again picks up where it left off: enter the new token in your identity provider and it carries on with the people it already knows.
 
 ## What your identity provider controls
 
@@ -55,10 +55,12 @@ SCIM never touches a member your identity provider did not provision, such as a 
 
 ## Map groups to employee types
 
-Groups your identity provider pushes appear in **"Group Mappings"**. For each group, choose an **"Employee type"** and a **"Priority"**, then **"Save"**.
+**"Group Mappings"** appears once your identity provider sends a group. In Okta, assigning a group to the app adds its people but does not send the group: push it from the app's **Push Groups** tab. Microsoft Entra ID sends the groups assigned to the app.
+
+Choose an employee type for each group, then **"Save changes"**. **"Cancel"** drops the changes you have not saved. Mapped groups are listed first, in the order they win.
 
 - A member of a mapped group gets its employee type, with that type's permissions in your company.
-- A member of several mapped groups gets the type of the group with the lowest priority.
+- A member of several mapped groups gets the type of the group higher in the list. Use the arrows to move a group up or down. A group you map is added at the bottom.
 - A member of no mapped group gets the default employee type.
 - Until you map one group, SCIM never changes an employee type after it adds the person.
 - If you delete the last mapped group, or set it to **"Not mapped"**, its members go back to the default employee type.
@@ -67,7 +69,7 @@ A type change replaces the person's permissions in your company with the type's 
 
 ## Audit
 
-When the audit log is on, each SCIM change (a member added, deactivated, reactivated, or given a new type) is recorded on the employee, with **"SCIM (Okta)"** or the name of your identity provider as the actor.
+When the audit log is on, each SCIM change (a member added, deactivated, reactivated, or given a new type) is recorded on the employee, with **"SCIM"** as the actor.
 
 ## Limits
 

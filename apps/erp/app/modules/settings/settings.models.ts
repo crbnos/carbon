@@ -214,21 +214,8 @@ export const ssoDomainValidator = z.object({
     )
 });
 
-/** The identity providers a SCIM connection names (the `scimIdentityProvider` enum). */
-export const scimIdentityProviders = [
-  "Okta",
-  "Microsoft Entra ID",
-  "Google Workspace",
-  "JumpCloud",
-  "OneLogin",
-  "Other"
-] as const;
-
-/** The SCIM connection: which IdP pushes, and what a new member gets. */
+/** The SCIM connection: what a new member gets. */
 export const scimConnectionValidator = z.object({
-  identityProvider: z.enum(scimIdentityProviders, {
-    error: "Identity provider is required"
-  }),
   defaultEmployeeTypeId: z
     .string()
     .min(1, { message: "Default employee type is required" }),
@@ -241,21 +228,37 @@ export const scimConnectionValidator = z.object({
 export const SCIM_NOT_MAPPED = "none";
 
 /**
- * One IdP group's mapping. `SCIM_NOT_MAPPED` (or empty) means "not mapped"; a
- * member of several mapped groups gets the type of the lowest priority.
+ * The group mappings as the settings card shows them: every group's employee
+ * type (null for "Not mapped"), mapped groups first in the order they win.
+ * Sent as one JSON field, `groups`.
  */
-export const scimGroupMappingValidator = z.object({
-  groupId: z.string().min(1),
-  employeeTypeId: zfd
-    .text(z.string().optional())
-    .transform((value) => (!value || value === SCIM_NOT_MAPPED ? null : value)),
-  priority: zfd.numeric(
-    z
-      .number({ error: "Priority must be a number" })
-      .int({ message: "Priority must be a whole number" })
-      .min(0, { message: "Priority must be 0 or more" })
-      .max(1000, { message: "Priority must be 1000 or less" })
-  )
+export const scimGroupMappingsValidator = z.object({
+  groups: z
+    .string()
+    .transform((value, ctx) => {
+      try {
+        return JSON.parse(value) as unknown;
+      } catch {
+        ctx.addIssue({ code: "custom", message: "Invalid group mappings" });
+        return z.NEVER;
+      }
+    })
+    .pipe(
+      z
+        .array(
+          z.object({
+            groupId: z.string().min(1),
+            employeeTypeId: z.string().min(1).nullable()
+          })
+        )
+        .min(1)
+        .refine(
+          (groups) =>
+            new Set(groups.map((group) => group.groupId)).size ===
+            groups.length,
+          { message: "A group is listed twice" }
+        )
+    )
 });
 
 const companyAddress = {

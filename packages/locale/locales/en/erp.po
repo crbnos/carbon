@@ -2868,9 +2868,6 @@ msgstr "Active"
 msgid "Active Jobs"
 msgstr "Active Jobs"
 
-msgid "Active members"
-msgstr "Active members"
-
 msgid "Active Methods Missing a Pull From"
 msgstr "Active Methods Missing a Pull From"
 
@@ -7018,6 +7015,9 @@ msgstr "Choose supplier"
 
 msgid "Choose suppliers"
 msgstr "Choose suppliers"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Choose the first day of the current period or of one of the 3 periods before it."
@@ -12021,11 +12021,12 @@ msgstr "Employee Accounts"
 msgid "Employee Reimbursements Payable"
 msgstr "Employee Reimbursements Payable"
 
-msgid "Employee type"
-msgstr "Employee type"
-
 msgid "Employee Type"
 msgstr "Employee Type"
+
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "Employee type for {0}"
 
 msgid "Employee Types"
 msgstr "Employee Types"
@@ -14917,6 +14918,9 @@ msgstr "How often this gauge must be recalibrated; combined with Last Calibratio
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 
+msgid "How SCIM works"
+msgstr "How SCIM works"
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "How strictly each material property must match for operations to share a batch on this process."
 
@@ -15048,9 +15052,6 @@ msgstr "Identifier"
 
 msgid "Identifiers"
 msgstr "Identifiers"
-
-msgid "Identity provider"
-msgstr "Identity provider"
 
 msgid "Identity Provider"
 msgstr "Identity Provider"
@@ -17718,9 +17719,6 @@ msgstr "manufacturing is blocked"
 msgid "Map accounts"
 msgstr "Map accounts"
 
-msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
-msgstr "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Map Extracted Invoice Lines"
 
@@ -19758,9 +19756,6 @@ msgstr "No grouped notifications"
 
 msgid "No groups assigned"
 msgstr "No groups assigned"
-
-msgid "No groups yet. Push groups from your identity provider to map them to employee types."
-msgstr "No groups yet. Push groups from your identity provider to map them to employee types."
 
 msgid "No image"
 msgstr "No image"
@@ -23464,6 +23459,9 @@ msgstr "Provisional journal"
 
 msgid "Provisional rate"
 msgstr "Provisional rate"
+
+msgid "Provisioned members"
+msgstr "Provisioned members"
 
 msgid "Provisioning"
 msgstr "Provisioning"
@@ -35219,14 +35217,14 @@ msgstr "Your export is being prepared. We'll notify you when it's ready."
 msgid "Your GL accounts"
 msgstr "Your GL accounts"
 
-msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
-msgstr "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "Your identity provider adds, updates and removes the members it manages."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
 
 msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
 msgstr "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
-
-msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
-msgstr "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
 
 msgid "your Implementation Lead"
 msgstr "your Implementation Lead"

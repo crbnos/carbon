@@ -50824,9 +50824,6 @@ export default {
             $ref: "#/parameters/rowFilter.scimConnection.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.scimConnection.identityProvider"
-          },
-          {
             $ref: "#/parameters/rowFilter.scimConnection.tokenHash"
           },
           {
@@ -50919,9 +50916,6 @@ export default {
             $ref: "#/parameters/rowFilter.scimConnection.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.scimConnection.identityProvider"
-          },
-          {
             $ref: "#/parameters/rowFilter.scimConnection.tokenHash"
           },
           {
@@ -50966,9 +50960,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.scimConnection.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.scimConnection.identityProvider"
           },
           {
             $ref: "#/parameters/rowFilter.scimConnection.tokenHash"
@@ -163491,9 +163482,6 @@ export default {
       required: [
         "id",
         "companyId",
-        "identityProvider",
-        "tokenHash",
-        "tokenPreview",
         "defaultEmployeeTypeId",
         "defaultLocationId",
         "createdBy",
@@ -163510,18 +163498,6 @@ export default {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
-          type: "string"
-        },
-        identityProvider: {
-          enum: [
-            "Okta",
-            "Microsoft Entra ID",
-            "Google Workspace",
-            "JumpCloud",
-            "OneLogin",
-            "Other"
-          ],
-          format: 'public."scimIdentityProvider"',
           type: "string"
         },
         tokenHash: {
@@ -224353,12 +224329,6 @@ export default {
     },
     "rowFilter.scimConnection.companyId": {
       name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.scimConnection.identityProvider": {
-      name: "identityProvider",
       required: false,
       in: "query",
       type: "string"

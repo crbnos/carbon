@@ -2868,9 +2868,6 @@ msgstr "Активно"
 msgid "Active Jobs"
 msgstr "Активные производственные заказы"
 
-msgid "Active members"
-msgstr "Активные участники"
-
 msgid "Active Methods Missing a Pull From"
 msgstr "Активные методы без источника"
 
@@ -7018,6 +7015,9 @@ msgstr "Выберите поставщика"
 
 msgid "Choose suppliers"
 msgstr "Выберите поставщиков"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "Выберите тип сотрудника, который каждая группа присваивает своим участникам. Если сотрудник состоит в нескольких группах, применяется тип из группы с более высоким приоритетом."
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Выберите первый день текущего периода или одного из 3 периодов перед ним."
@@ -12021,11 +12021,12 @@ msgstr "Учетные записи сотрудников"
 msgid "Employee Reimbursements Payable"
 msgstr "Кредиторская задолженность за возмещение расходов сотрудникам"
 
-msgid "Employee type"
-msgstr "Тип сотрудника"
-
 msgid "Employee Type"
 msgstr "Тип сотрудника"
+
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "Тип сотрудника для {0}"
 
 msgid "Employee Types"
 msgstr "Типы сотрудников"
@@ -14917,6 +14918,9 @@ msgstr "Как часто это средство измерения должн�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Как часто это техобслуживание повторяется — Ежедневно, Еженедельно, Ежемесячно, На циклический пересчет; выбор «Ежедневно» показывает селектор дня недели, остальные используют более простую математику интервалов."
 
+msgid "How SCIM works"
+msgstr "Как работает SCIM"
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Насколько строго должны совпадать свойства материала для размещения операций в одной серии на этом процессе."
 
@@ -15048,9 +15052,6 @@ msgstr "Идентификатор"
 
 msgid "Identifiers"
 msgstr "Идентификаторы"
-
-msgid "Identity provider"
-msgstr "Поставщик удостоверений"
 
 msgid "Identity Provider"
 msgstr "Поставщик удостоверений"
@@ -17718,9 +17719,6 @@ msgstr "Производство заблокировано"
 msgid "Map accounts"
 msgstr "Сопоставить счета"
 
-msgid "Map each group your identity provider pushes to an employee type. A member of several mapped groups gets the type of the lowest priority."
-msgstr "Сопоставьте каждую группу, которую передаёт ваш поставщик удостоверений, с типом сотрудника. Участник нескольких сопоставленных групп получает тип с наименьшим приоритетом."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Сопоставить извлеченные строки счета-фактуры"
 
@@ -19758,9 +19756,6 @@ msgstr "Нет сгруппированных уведомлений"
 
 msgid "No groups assigned"
 msgstr "Нет назначенных групп"
-
-msgid "No groups yet. Push groups from your identity provider to map them to employee types."
-msgstr "Групп пока нет. Передайте группы от вашего поставщика удостоверений, чтобы сопоставить их с типами сотрудников."
 
 msgid "No image"
 msgstr "Нет изображения"
@@ -23464,6 +23459,9 @@ msgstr "Предварительная операция"
 
 msgid "Provisional rate"
 msgstr "Предварительная ставка"
+
+msgid "Provisioned members"
+msgstr "Синхронизированные участники"
 
 msgid "Provisioning"
 msgstr "Автоматическое создание учётных записей"
@@ -35216,14 +35214,14 @@ msgstr "Экспорт готовится. Мы уведомим вас, ког�
 msgid "Your GL accounts"
 msgstr "Ваши счета ГЛ"
 
-msgid "Your identity provider can no longer add or remove members, and the group mappings are deleted. Members it provisioned stay in this company as they are."
-msgstr "Ваш поставщик удостоверений больше не может добавлять или убирать участников, а сопоставления групп удалены. Участники, созданные им, остаются в этой организации без изменений."
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "Ваш поставщик удостоверений добавляет, обновляет и удаляет участников, которыми он управляет."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "Ваш поставщик удостоверений больше не может добавлять или убирать участников. Участники, которых он создал, остаются без изменений, а при повторной настройке SCIM процесс продолжается с того места, где остановился."
 
 msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
 msgstr "Ваш провайдер удостоверений создаёт пользователей с типом сотрудника и площадкой по умолчанию, указанными ниже. Сопоставьте его группы с типами сотрудников после того, как он их передаст."
-
-msgid "Your identity provider owns each provisioned member's name, active state and, for mapped groups, employee type. Changes made here are overwritten on its next update. Deactivating a member removes them from this company, deletes their API keys here, and ends their sessions when they have no other company."
-msgstr "Ваш провайдер удостоверений управляет именем и статусом активности каждого созданного пользователя, а для сопоставленных групп — типом сотрудника. Изменения, внесённые здесь, перезаписываются при его следующем обновлении. Деактивация пользователя удаляет его из этой организации, удаляет его API-ключи здесь и завершает его сеансы, если у него нет других организаций."
 
 msgid "your Implementation Lead"
 msgstr "ваш руководитель внедрения"

@@ -5,15 +5,15 @@
 export {
   handleScimRequest,
   reconcileEmployeeTypes,
-  type ScimDeps,
-  scimActorLabel
+  SCIM_ACTOR_LABEL,
+  type ScimDeps
 } from "./scim.server";
 export {
   createScimConnection,
-  deleteScimConnection,
   generateScimToken,
   getScimConnection,
   regenerateScimToken,
-  updateScimConnection,
-  updateScimGroupMapping
+  saveScimGroupMappings,
+  turnOffScimConnection,
+  updateScimConnection
 } from "./scim-connections.server";

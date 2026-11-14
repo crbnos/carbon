@@ -39,7 +39,7 @@ type AuditLogCsvEntry = Pick<
   Partial<Pick<AuditLogEntry, "metadata">>;
 
 /**
- * The non-user actor an entry names (`SCIM (Okta)`), or null when a person
+ * The non-user actor an entry names (`SCIM`), or null when a person
  * made the change or the entry carries no label (then it reads "System").
  */
 export function nonUserActorLabel(

@@ -8,25 +8,13 @@
 -- at (user, employee, userToCompany) are never created or deleted by a cascade
 -- from here. RLS rules live in packages/database/src/authz/manifest.ts.
 
-DO $$ BEGIN
-  CREATE TYPE "scimIdentityProvider" AS ENUM (
-    'Okta',
-    'Microsoft Entra ID',
-    'Google Workspace',
-    'JumpCloud',
-    'OneLogin',
-    'Other'
-  );
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-END $$;
-
 CREATE TABLE IF NOT EXISTS "scimConnection" (
   "id" TEXT NOT NULL DEFAULT id('scim'),
   "companyId" TEXT NOT NULL,
-  "identityProvider" "scimIdentityProvider" NOT NULL,
-  "tokenHash" TEXT NOT NULL,
-  "tokenPreview" TEXT NOT NULL,
+  -- NULL while SCIM is turned off. The row and the SCIM people and groups that
+  -- point at it stay, so the ids the IdP holds still work after a new setup.
+  "tokenHash" TEXT,
+  "tokenPreview" TEXT,
   -- employeeType and location have single-column keys; the engine checks both
   -- belong to the company before every write.
   "defaultEmployeeTypeId" TEXT NOT NULL REFERENCES "employeeType"("id"),

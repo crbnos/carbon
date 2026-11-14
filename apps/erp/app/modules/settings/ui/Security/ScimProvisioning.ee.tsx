@@ -2,7 +2,9 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { docUrl } from "@carbon/content/links";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -13,6 +15,7 @@ import {
   CardTitle,
   Heading,
   HStack,
+  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -20,21 +23,25 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  Select as PlainSelect,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { type ReactNode, useEffect, useState } from "react";
-import { LuUsers } from "react-icons/lu";
+import { type ReactNode, useRef, useState } from "react";
+import { LuArrowDown, LuArrowUp, LuUsers } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
-import { Hidden, Location, Number, Select, Submit } from "~/components/Form";
+import { Hidden, Location, Select, Submit } from "~/components/Form";
+import { ConfirmDelete } from "~/components/Modals";
 import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import {
   SCIM_NOT_MAPPED,
-  scimConnectionValidator,
-  scimGroupMappingValidator,
-  scimIdentityProviders
+  scimConnectionValidator
 } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 import { CopyableField, StatusDot } from "./SecurityFields";
@@ -42,7 +49,6 @@ import { CopyableField, StatusDot } from "./SecurityFields";
 export type ScimProvisioningData = {
   connection: {
     id: string;
-    identityProvider: (typeof scimIdentityProviders)[number];
     tokenPreview: string;
     defaultEmployeeTypeId: string;
     defaultLocationId: string;
@@ -67,11 +73,6 @@ type ScimProvisioningProps = {
 
 type TokenResponse = { token: string | null };
 
-const identityProviderOptions = scimIdentityProviders.map((provider) => ({
-  value: provider,
-  label: provider
-}));
-
 export default function ScimProvisioning({
   scim,
   baseUrl,
@@ -83,7 +84,6 @@ export default function ScimProvisioning({
   const createFetcher = useFetcher<TokenResponse>();
   const regenerateFetcher = useFetcher<TokenResponse>();
   const updateFetcher = useFetcher<TokenResponse>();
-  const deleteFetcher = useFetcher<TokenResponse>();
   const [regenerateOpen, setRegenerateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -100,20 +100,16 @@ export default function ScimProvisioning({
   const dismissToken = () => {
     if (shownToken) setDismissedTokens((tokens) => [...tokens, shownToken]);
   };
+  // The modal stays mounted so it animates closed; keep the token on screen
+  // while it does, instead of an empty field.
+  const lastShownToken = useRef<string | null>(null);
+  if (shownToken) lastShownToken.current = shownToken;
 
   const employeeTypeOptions = employeeTypes.map((type) => ({
     value: type.id,
     label: type.name
   }));
   const connection = scim?.connection ?? null;
-
-  // A successful turn-off revalidates the loader and the connection is gone:
-  // close the confirm with it, as the SSO card does, instead of leaving it over
-  // the setup form (and reopening on the next setup). A failed one keeps the
-  // connection, so the modal stays open with the error flash.
-  useEffect(() => {
-    if (!connection) setDeleteOpen(false);
-  }, [connection]);
 
   const header = (
     <div className="flex items-end justify-between gap-4 w-full">
@@ -141,7 +137,6 @@ export default function ScimProvisioning({
       action={path.to.scim}
       fetcher={createFetcher}
       defaultValues={{
-        identityProvider: "Okta",
         defaultEmployeeTypeId: "",
         defaultLocationId: ""
       }}
@@ -162,11 +157,6 @@ export default function ScimProvisioning({
         </CardHeader>
         <CardContent>
           <VStack spacing={4}>
-            <Select
-              name="identityProvider"
-              label={t`Identity provider`}
-              options={identityProviderOptions}
-            />
             <Select
               name="defaultEmployeeTypeId"
               label={t`Default employee type`}
@@ -214,7 +204,6 @@ export default function ScimProvisioning({
           action={path.to.scim}
           fetcher={updateFetcher}
           defaultValues={{
-            identityProvider: connection.identityProvider,
             defaultEmployeeTypeId: connection.defaultEmployeeTypeId,
             defaultLocationId: connection.defaultLocationId
           }}
@@ -227,12 +216,17 @@ export default function ScimProvisioning({
               </CardTitle>
               <CardDescription>
                 <Trans>
-                  Your identity provider owns each provisioned member's name,
-                  active state and, for mapped groups, employee type. Changes
-                  made here are overwritten on its next update. Deactivating a
-                  member removes them from this company, deletes their API keys
-                  here, and ends their sessions when they have no other company.
-                </Trans>
+                  Your identity provider adds, updates and removes the members
+                  it manages.
+                </Trans>{" "}
+                <a
+                  href={docUrl("docs/reference/scim-provisioning")}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  <Trans>How SCIM works</Trans>
+                </a>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -244,7 +238,7 @@ export default function ScimProvisioning({
                       scim_•••{connection.tokenPreview}
                     </span>
                   </Fact>
-                  <Fact label={t`Active members`}>
+                  <Fact label={t`Provisioned members`}>
                     {scim?.activeCount ?? 0}
                   </Fact>
                   <Fact label={t`Last request`}>
@@ -258,11 +252,6 @@ export default function ScimProvisioning({
                     )}
                   </Fact>
                 </div>
-                <Select
-                  name="identityProvider"
-                  label={t`Identity provider`}
-                  options={identityProviderOptions}
-                />
                 <Select
                   name="defaultEmployeeTypeId"
                   label={t`Default employee type`}
@@ -301,169 +290,109 @@ export default function ScimProvisioning({
         </ValidatedForm>
       )}
 
-      {connection && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>Group Mappings</Trans>
-            </CardTitle>
-            <CardDescription>
+      {/* Shown once the identity provider has sent a group: a company that
+          does not map groups has nothing to do here. */}
+      {connection && (scim?.groups.length ?? 0) > 0 && (
+        <GroupMappingsCard
+          groups={scim?.groups ?? []}
+          employeeTypeOptions={employeeTypeOptions}
+          canEdit={canEdit && !isGated}
+        />
+      )}
+
+      <Modal
+        open={shownToken !== null}
+        onOpenChange={(open) => {
+          if (!open) dismissToken();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Your SCIM token</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <VStack spacing={4}>
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  Enter the base URL and this token in your identity provider's
+                  provisioning settings. This token is shown once.
+                </Trans>
+              </p>
+              <CopyableField label={t`SCIM base URL`} value={baseUrl} />
+              <CopyableField
+                label={t`Token`}
+                value={shownToken ?? lastShownToken.current ?? ""}
+              />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={dismissToken}>
+              <Trans>Done</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        open={regenerateOpen}
+        onOpenChange={(open) => {
+          if (!open) setRegenerateOpen(false);
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Regenerate SCIM token</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
               <Trans>
-                Map each group your identity provider pushes to an employee
-                type. A member of several mapped groups gets the type of the
-                lowest priority.
+                The current token stops working at once. Provisioning stops
+                until you enter the new token in your identity provider.
               </Trans>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {(scim?.groups.length ?? 0) === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  No groups yet. Push groups from your identity provider to map
-                  them to employee types.
-                </Trans>
-              </p>
-            ) : (
-              <VStack spacing={4}>
-                {scim?.groups.map((group) => (
-                  <GroupMappingRow
-                    key={group.id}
-                    group={group}
-                    employeeTypeOptions={employeeTypeOptions}
-                    canEdit={canEdit && !isGated}
-                  />
-                ))}
-              </VStack>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {shownToken && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) dismissToken();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Your SCIM token</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <VStack spacing={4}>
-                <p className="text-sm text-muted-foreground">
-                  <Trans>
-                    Enter the base URL and this token in your identity
-                    provider's provisioning settings. This token is shown once.
-                  </Trans>
-                </p>
-                <CopyableField label={t`SCIM base URL`} value={baseUrl} />
-                <CopyableField label={t`Token`} value={shownToken} />
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <Button onClick={dismissToken}>
-                <Trans>Done</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
-
-      {regenerateOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) setRegenerateOpen(false);
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Regenerate SCIM token</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  The current token stops working at once. Provisioning stops
-                  until you enter the new token in your identity provider.
-                </Trans>
-              </p>
-            </ModalBody>
-            <ModalFooter>
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setRegenerateOpen(false)}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <regenerateFetcher.Form
+              method="post"
+              action={path.to.scim}
+              onSubmit={() => setRegenerateOpen(false)}
+            >
+              <input type="hidden" name="intent" value="regenerate" />
               <Button
-                variant="secondary"
-                onClick={() => setRegenerateOpen(false)}
+                type="submit"
+                isLoading={regenerateFetcher.state !== "idle"}
+                isDisabled={regenerateFetcher.state !== "idle"}
               >
-                <Trans>Cancel</Trans>
+                <Trans>Regenerate</Trans>
               </Button>
-              <regenerateFetcher.Form
-                method="post"
-                action={path.to.scim}
-                onSubmit={() => setRegenerateOpen(false)}
-              >
-                <input type="hidden" name="intent" value="regenerate" />
-                <Button
-                  type="submit"
-                  isLoading={regenerateFetcher.state !== "idle"}
-                  isDisabled={regenerateFetcher.state !== "idle"}
-                >
-                  <Trans>Regenerate</Trans>
-                </Button>
-              </regenerateFetcher.Form>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+            </regenerateFetcher.Form>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
-      {deleteOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) setDeleteOpen(false);
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Turn off SCIM provisioning</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  Your identity provider can no longer add or remove members,
-                  and the group mappings are deleted. Members it provisioned
-                  stay in this company as they are.
-                </Trans>
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={() => setDeleteOpen(false)}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <deleteFetcher.Form method="post" action={path.to.scim}>
-                <input type="hidden" name="intent" value="delete" />
-                <Button
-                  variant="destructive"
-                  type="submit"
-                  isLoading={deleteFetcher.state !== "idle"}
-                  isDisabled={deleteFetcher.state !== "idle"}
-                >
-                  <Trans>Turn off</Trans>
-                </Button>
-              </deleteFetcher.Form>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <ConfirmDelete
+        isOpen={deleteOpen}
+        action={path.to.scim}
+        fields={{ intent: "delete" }}
+        name={t`SCIM Provisioning`}
+        title={t`Turn off SCIM provisioning`}
+        text={t`Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off.`}
+        deleteText={t`Turn off`}
+        onCancel={() => setDeleteOpen(false)}
+        onSubmit={() => setDeleteOpen(false)}
+      />
     </>
   );
 }
@@ -477,71 +406,220 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function GroupMappingRow({
-  group,
+type ScimGroup = ScimProvisioningData["groups"][number];
+
+function GroupMappingsCard({
+  groups,
   employeeTypeOptions,
   canEdit
 }: {
-  group: ScimProvisioningData["groups"][number];
+  /** In the order they win (the loader sorts them). */
+  groups: ScimGroup[];
   employeeTypeOptions: { value: string; label: string }[];
   canEdit: boolean;
 }) {
-  const { t } = useLingui();
-  const fetcher = useFetcher<TokenResponse>();
+  // Only the unsaved edits live in state; the groups come from the loader.
+  const [types, setTypes] = useState<Record<string, string | null>>({});
+  const [order, setOrder] = useState<string[] | null>(null);
+  const discard = () => {
+    setTypes({});
+    setOrder(null);
+  };
+  const saveFetcher = useAction<{ success?: boolean }>({
+    onSuccess: discard,
+    // The action's flash already says what failed; keep the edits to retry.
+    onError: () => {}
+  });
+
+  const typeOf = (group: ScimGroup) =>
+    group.id in types ? (types[group.id] ?? null) : group.employeeTypeId;
+  const byId = new Map(groups.map((group) => [group.id, group]));
+  const savedOrder = groups
+    .filter((group) => group.employeeTypeId !== null)
+    .map((group) => group.id);
+  const baseOrder = order ?? savedOrder;
+  // Mapped groups in the order they win; a newly mapped group goes last.
+  const mapped = [
+    ...baseOrder.flatMap((id) => {
+      const group = byId.get(id);
+      return group && typeOf(group) !== null ? [group] : [];
+    }),
+    ...groups.filter(
+      (group) => typeOf(group) !== null && !baseOrder.includes(group.id)
+    )
+  ];
+  // Unmapped groups by name: their place in the order means nothing.
+  const unmapped = groups
+    .filter((group) => typeOf(group) === null)
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+  const isDirty =
+    groups.some((group) => typeOf(group) !== group.employeeTypeId) ||
+    mapped.map((group) => group.id).join() !== savedOrder.join();
+  const isSaving = saveFetcher.isPending;
+
+  const move = (position: number, direction: "up" | "down") => {
+    const next = mapped.map((group) => group.id);
+    const target = direction === "up" ? position - 1 : position + 1;
+    const moving = next[position];
+    const other = next[target];
+    if (!moving || !other) return;
+    next[position] = other;
+    next[target] = moving;
+    setOrder(next);
+  };
+
+  const save = () =>
+    saveFetcher.submit(
+      {
+        intent: "saveGroupMappings",
+        groups: JSON.stringify(
+          [...mapped, ...unmapped].map((group) => ({
+            groupId: group.id,
+            employeeTypeId: typeOf(group)
+          }))
+        )
+      },
+      { method: "post", action: path.to.scim }
+    );
 
   return (
-    <ValidatedForm
-      className="w-full rounded-md border border-border p-4 max-md:border-0 max-md:p-0 max-md:rounded-none"
-      validator={scimGroupMappingValidator}
-      method="post"
-      action={path.to.scim}
-      fetcher={fetcher}
-      defaultValues={{
-        groupId: group.id,
-        employeeTypeId: group.employeeTypeId ?? SCIM_NOT_MAPPED,
-        priority: group.priority
-      }}
-    >
-      <Hidden name="intent" value="mapGroup" />
-      <Hidden name="groupId" value={group.id} />
-      <VStack spacing={3}>
-        <HStack className="w-full justify-between">
-          <span className="text-sm font-medium">{group.displayName}</span>
-          <span className="text-xs text-muted-foreground">
-            {group.memberCount === 1 ? (
-              <Trans>1 member</Trans>
-            ) : (
-              <Trans>{group.memberCount} members</Trans>
-            )}
-          </span>
-        </HStack>
-        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex-1">
-            <Select
-              name="employeeTypeId"
-              label={t`Employee type`}
-              // "Not mapped" is the empty choice: no Optional tag or clear button.
-              isOptional={false}
-              options={[
-                { value: SCIM_NOT_MAPPED, label: t`Not mapped` },
-                ...employeeTypeOptions
-              ]}
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <Trans>Group Mappings</Trans>
+        </CardTitle>
+        <CardDescription>
+          <Trans>
+            Choose the employee type each group gives its members. If someone is
+            in more than one group, the higher one wins.
+          </Trans>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex w-full flex-col divide-y divide-border">
+          {[...mapped, ...unmapped].map((group, index) => (
+            <GroupMappingRow
+              key={group.id}
+              group={group}
+              value={typeOf(group) ?? SCIM_NOT_MAPPED}
+              onChange={(value) =>
+                setTypes((current) => ({
+                  ...current,
+                  [group.id]: value === SCIM_NOT_MAPPED ? null : value
+                }))
+              }
+              position={index < mapped.length ? index : null}
+              mappedCount={mapped.length}
+              onMove={move}
+              employeeTypeOptions={employeeTypeOptions}
+              isDisabled={!canEdit || isSaving}
             />
-          </div>
-          <div className="sm:w-32">
-            <Number
-              name="priority"
-              label={t`Priority`}
-              minValue={0}
-              maxValue={1000}
-            />
-          </div>
-          {/* One form per group: a shared save shortcut would be ambiguous. */}
-          <Submit isDisabled={!canEdit} withBlocker={false} shortcut={false}>
-            <Trans>Save</Trans>
-          </Submit>
+          ))}
         </div>
-      </VStack>
-    </ValidatedForm>
+      </CardContent>
+      <CardFooter className="justify-end">
+        <HStack spacing={2}>
+          <Button
+            variant="secondary"
+            isDisabled={!isDirty || isSaving}
+            onClick={discard}
+          >
+            <Trans>Cancel</Trans>
+          </Button>
+          <Button
+            isDisabled={!canEdit || !isDirty || isSaving}
+            isLoading={isSaving}
+            onClick={save}
+          >
+            <Trans>Save changes</Trans>
+          </Button>
+        </HStack>
+      </CardFooter>
+    </Card>
+  );
+}
+
+function GroupMappingRow({
+  group,
+  value,
+  onChange,
+  position,
+  mappedCount,
+  onMove,
+  employeeTypeOptions,
+  isDisabled
+}: {
+  group: ScimGroup;
+  value: string;
+  onChange: (value: string) => void;
+  /** The group's place among the mapped groups; null when it is unmapped. */
+  position: number | null;
+  mappedCount: number;
+  onMove: (position: number, direction: "up" | "down") => void;
+  employeeTypeOptions: { value: string; label: string }[];
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+
+  return (
+    <div className="flex w-full flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-col">
+        <span className="truncate text-sm font-medium">
+          {group.displayName}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {group.memberCount === 1 ? (
+            <Trans>1 member</Trans>
+          ) : (
+            <Trans>{group.memberCount} members</Trans>
+          )}
+        </span>
+      </div>
+      <HStack spacing={1}>
+        {position !== null && mappedCount > 1 && (
+          <>
+            <IconButton
+              aria-label={t`Move up`}
+              icon={<LuArrowUp />}
+              variant="ghost"
+              size="sm"
+              isDisabled={isDisabled || position === 0}
+              onClick={() => onMove(position, "up")}
+            />
+            <IconButton
+              aria-label={t`Move down`}
+              icon={<LuArrowDown />}
+              variant="ghost"
+              size="sm"
+              isDisabled={isDisabled || position === mappedCount - 1}
+              onClick={() => onMove(position, "down")}
+            />
+          </>
+        )}
+        <PlainSelect
+          value={value}
+          disabled={isDisabled}
+          onValueChange={onChange}
+        >
+          <SelectTrigger
+            className="w-full sm:w-56"
+            aria-label={t`Employee type for ${group.displayName}`}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={SCIM_NOT_MAPPED}>
+              <Trans>Not mapped</Trans>
+            </SelectItem>
+            {employeeTypeOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </PlainSelect>
+      </HStack>
+    </div>
   );
 }

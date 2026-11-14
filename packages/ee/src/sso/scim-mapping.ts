@@ -17,8 +17,8 @@ export type MappedGroup = {
 };
 
 /**
- * The type of the mapped group with the lowest `priority` (ties broken by
- * `displayName`), else the connection's default type. Unmapped groups take no
+ * The type of the mapped group that comes first by `compareGroupPrecedence`,
+ * else the connection's default type. Unmapped groups take no
  * part: a person in no mapped group gets the default.
  */
 export function pickEmployeeType(
@@ -30,11 +30,79 @@ export function pickEmployeeType(
       (group): group is MappedGroup & { employeeTypeId: string } =>
         group.employeeTypeId !== null
     )
-    .sort(
-      (a, b) =>
-        a.priority - b.priority || a.displayName.localeCompare(b.displayName)
-    );
+    .sort(compareGroupPrecedence);
   return mapped[0]?.employeeTypeId ?? defaultTypeId;
+}
+
+/**
+ * The order mapped groups win in: lower `priority` first, ties by
+ * `displayName`. The settings list shows mapped groups in this order, so the
+ * group at the top is the one that wins.
+ */
+export function compareGroupPrecedence(
+  a: Pick<MappedGroup, "priority" | "displayName">,
+  b: Pick<MappedGroup, "priority" | "displayName">
+): number {
+  return a.priority - b.priority || a.displayName.localeCompare(b.displayName);
+}
+
+/** The gap between two mapped groups' priorities after a save. */
+export const GROUP_PRIORITY_STEP = 10;
+
+export type GroupMappingChoice = {
+  groupId: string;
+  employeeTypeId: string | null;
+};
+
+/**
+ * What a save of the group mappings writes. `submitted` is the list as the
+ * settings card shows it: mapped groups in the order they win, then the rest.
+ * Mapped groups are renumbered from `GROUP_PRIORITY_STEP` in that order; an
+ * unmapped group keeps its priority, which takes no part. Only changed groups
+ * are in `updates`. `removedGroupIds` are the groups that lose their mapping.
+ */
+export function planGroupMappingSave(
+  current: { id: string; employeeTypeId: string | null; priority: number }[],
+  submitted: GroupMappingChoice[]
+): {
+  unknownGroupIds: string[];
+  updates: { id: string; employeeTypeId: string | null; priority: number }[];
+  removedGroupIds: string[];
+} {
+  const byId = new Map(current.map((group) => [group.id, group]));
+  const unknownGroupIds: string[] = [];
+  const updates: {
+    id: string;
+    employeeTypeId: string | null;
+    priority: number;
+  }[] = [];
+  const removedGroupIds: string[] = [];
+  let position = 0;
+
+  for (const choice of submitted) {
+    const group = byId.get(choice.groupId);
+    if (!group) {
+      unknownGroupIds.push(choice.groupId);
+      continue;
+    }
+    const priority = choice.employeeTypeId
+      ? ++position * GROUP_PRIORITY_STEP
+      : group.priority;
+    if (group.employeeTypeId && !choice.employeeTypeId) {
+      removedGroupIds.push(group.id);
+    }
+    if (
+      group.employeeTypeId !== choice.employeeTypeId ||
+      group.priority !== priority
+    ) {
+      updates.push({
+        id: group.id,
+        employeeTypeId: choice.employeeTypeId,
+        priority
+      });
+    }
+  }
+  return { unknownGroupIds, updates, removedGroupIds };
 }
 
 export type EmployeeTypePermissionRow = {
