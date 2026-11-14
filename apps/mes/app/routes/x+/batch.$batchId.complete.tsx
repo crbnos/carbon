@@ -244,6 +244,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
           batchId,
           companyId
         );
+        // A failed read is not a "no": thrown, it keeps the approval.
+        if (after.error) {
+          throw new Error("Failed to read the batch status", {
+            cause: after.error
+          });
+        }
         return (
           after.data?.status === "Completing" ||
           after.data?.status === "Completed"
