@@ -90,6 +90,7 @@ const PurchaseOrdersTable = memo(
     const finalizeFetcher = useFetcher();
 
     const deletePurchaseOrderModal = useDisclosure();
+    const finalizePurchaseOrderModal = useDisclosure();
 
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
@@ -535,7 +536,9 @@ const PurchaseOrdersTable = memo(
               !permissions.can("update", "purchasing")
             }
             onClick={() => {
-              if (row.id) setFinalizeOrderId(row.id);
+              if (!row.id) return;
+              setFinalizeOrderId(row.id);
+              finalizePurchaseOrderModal.onOpen();
             }}
           >
             <MenuIcon icon={<LuCheckCheck />} />
@@ -572,7 +575,14 @@ const PurchaseOrdersTable = memo(
           </MenuItem>
         </>
       ),
-      [deletePurchaseOrderModal, edit, fetcher, permissions, receive]
+      [
+        deletePurchaseOrderModal,
+        edit,
+        fetcher,
+        finalizePurchaseOrderModal,
+        permissions,
+        receive
+      ]
     );
 
     const lineItemRows =
@@ -614,7 +624,8 @@ const PurchaseOrdersTable = memo(
           <ListFinalizeModal
             purchaseOrderId={finalizeOrderId}
             fetcher={finalizeFetcher}
-            onClose={() => setFinalizeOrderId(null)}
+            open={finalizePurchaseOrderModal.isOpen}
+            onClose={finalizePurchaseOrderModal.onClose}
           />
         )}
 
@@ -641,10 +652,12 @@ PurchaseOrdersTable.displayName = "PurchaseOrdersTable";
 function ListFinalizeModal({
   purchaseOrderId,
   fetcher,
+  open,
   onClose
 }: {
   purchaseOrderId: string;
   fetcher: ReturnType<typeof useFetcher>;
+  open: boolean;
   onClose: () => void;
 }) {
   const defaults = useLoaderQuery<typeof finalizeDefaultsLoader>(
@@ -658,6 +671,7 @@ function ListFinalizeModal({
       purchaseOrder={defaults.data.purchaseOrder}
       defaultCc={defaults.data.defaultCc}
       fetcher={fetcher}
+      open={open}
       onClose={onClose}
     />
   );
