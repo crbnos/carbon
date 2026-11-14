@@ -14361,6 +14361,9 @@ msgstr "GL खाता जहां ग्राहकों को दी ग�
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL खाता जहां आपूर्तिकर्ताओं से ली गई जल्दी भुगतान छूट दर्ज की जाती है।"
 
+msgid "GL Codes"
+msgstr "जीएल कोड"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "लेजर विरोधी-संपत्ति खाता जमा किया जाता है जब प्रत्येक अवधि में मूल्यह्रास पोस्ट होता है और पूरी तरह से डेबिट किया जाता है जब संपत्ति को बेचा या स्क्रैप किया जाता है।"
 

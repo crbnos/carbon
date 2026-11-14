@@ -108172,6 +108172,17 @@ export type Database = {
           unitOfMeasureCode: string
         }[]
       }
+      get_invoice_line_gl_codes: {
+        Args: {
+          company_id: string
+          invoice_ids: string[]
+          invoice_type: string
+        }
+        Returns: {
+          glCodes: string
+          id: string
+        }[]
+      }
       get_item_change_notices: {
         Args: {
           company_id: string

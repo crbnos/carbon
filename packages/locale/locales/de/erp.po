@@ -14361,6 +14361,9 @@ msgstr "GL-Konto, auf dem den Kunden gewährte Frühzahlungsrabatte erfasst werd
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL-Konto, auf dem von Lieferanten in Anspruch genommene Frühzahlungsrabatte erfasst werden."
 
+msgid "GL Codes"
+msgstr "Sachkontonummern"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Gegenpositions-Sachkonto zur Bilanzaktiva, das gutgeschrieben wird, wenn Abschreibung in jeder Periode gebucht wird, und vollständig belastet wird, wenn das Anlagegut verkauft oder abgegangen ist."
 

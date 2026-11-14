@@ -14361,6 +14361,9 @@ msgstr "Счет учета для скидок за досрочную опла
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Счет GL, на котором фиксируются скидки на досрочную оплату, полученные от поставщиков."
 
+msgid "GL Codes"
+msgstr "Коды счетов ГЛ"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Контрактивный счет учета основных средств, который кредитуется по мере начисления амортизации в каждом периоде и полностью дебетуется при продаже или списании основного средства."
 

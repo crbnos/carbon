@@ -14361,6 +14361,9 @@ msgstr "Cuenta GL donde se registran los descuentos por pago anticipado otorgado
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Cuenta GL donde se registran los descuentos por pago anticipado obtenidos de los proveedores."
 
+msgid "GL Codes"
+msgstr "Códigos de cuentas contables"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Cuenta de activo de contrapartida del Libro mayor acreditada cuando se contabilizan depreciaciones cada período y debitada en su totalidad cuando el activo se vende o se desecha."
 

@@ -14361,6 +14361,9 @@ msgstr "Konto GL, na którym rejestruje się rabaty na wcześniejsze płatności
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Konto GL, na którym rejestruje się rabaty na wcześniejsze płatności uzyskane od dostawców."
 
+msgid "GL Codes"
+msgstr "Kody kont księgi głównej"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Konto księgowe contra-aktywów, które jest uznawane, gdy amortyzacja jest zaksięgowywana w każdym okresie, i obciążane w całości, gdy środek trwały jest sprzedany lub złomowany."
 

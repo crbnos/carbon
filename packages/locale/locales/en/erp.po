@@ -14361,6 +14361,9 @@ msgstr "GL account where early-payment discounts given to customers are recorded
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL account where early-payment discounts taken from suppliers are recorded."
 
+msgid "GL Codes"
+msgstr "GL Codes"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 

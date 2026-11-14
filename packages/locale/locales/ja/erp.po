@@ -14361,6 +14361,9 @@ msgstr "得意先に付与された早期支払割引が記録される勘定科
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "仕入先から受け取った早期支払割引が記録される勘定科目。"
 
+msgid "GL Codes"
+msgstr "GLコード"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "毎期減価償却が転記されるときにクレジットされ、固定資産が売却または除却されるときに全額がデビットされる対資産勘定科目。"
 
