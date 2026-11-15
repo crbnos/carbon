@@ -1542,7 +1542,7 @@ msgid "Location"
 msgstr "ロケーション"
 
 msgid "Location not known"
-msgstr "拠点が不明です"
+msgstr "保管場所が不明です"
 
 msgid "Locations"
 msgstr "拠点"
@@ -3017,6 +3017,9 @@ msgstr "ステップ"
 msgid "Steps are missing"
 msgstr "ステップが未記録です"
 
+msgid "Stock at:"
+msgstr "在庫場所："
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3377,6 +3380,9 @@ msgstr "下線"
 
 msgid "Undo"
 msgstr "元に戻す"
+
+msgid "Unissue"
+msgstr "払出を取り消す"
 
 msgid "Unissued serial/batch materials"
 msgstr "未払出のシリアル/バッチ材料"

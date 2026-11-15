@@ -17310,7 +17310,7 @@ msgid "Location Name"
 msgstr "위치 이름"
 
 msgid "Location not known"
-msgstr "사업장을 알 수 없습니다"
+msgstr "보관 위치를 알 수 없습니다"
 
 msgid "Location ownership updated"
 msgstr "사업장 소유권 업데이트"

@@ -1435,7 +1435,7 @@ function IssueMaterialBody({
                     }
                     onClick={() => setInventoryMode("issue")}
                   >
-                    Issue
+                    {t`Issue`}
                   </Button>
                   <Button
                     type="button"
@@ -1444,7 +1444,7 @@ function IssueMaterialBody({
                     }
                     onClick={() => setInventoryMode("unissue")}
                   >
-                    Unissue
+                    {t`Unissue`}
                   </Button>
                 </div>
               )}
@@ -1519,7 +1519,7 @@ function IssueMaterialBody({
                     {trackingType === "Inventory" &&
                       inventoryMode === "issue" && (
                         <div className="text-sm text-muted-foreground">
-                          <span className="font-medium">Stock at: </span>
+                          <span className="font-medium">{t`Stock at:`} </span>
                           {inventoryBins.data?.data.length
                             ? inventoryBins.data.data
                                 .map(
@@ -1549,7 +1549,7 @@ function IssueMaterialBody({
                 isLoadingItem
               }
             >
-              {inventoryMode === "unissue" ? "Unissue" : "Issue"}
+              {inventoryMode === "unissue" ? t`Unissue` : t`Issue`}
             </Button>
           </ModalFooter>
         </ValidatedForm>

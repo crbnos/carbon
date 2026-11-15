@@ -3017,6 +3017,9 @@ msgstr "चरण"
 msgid "Steps are missing"
 msgstr "चरण गायब हैं"
 
+msgid "Stock at:"
+msgstr "स्टॉक का स्थान:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3377,6 +3380,9 @@ msgstr "रेखांकित"
 
 msgid "Undo"
 msgstr "पूर्ववत् करें"
+
+msgid "Unissue"
+msgstr "जारी करना रद्द करें"
 
 msgid "Unissued serial/batch materials"
 msgstr "अजारी सीरीज़/बैच सामग्री"

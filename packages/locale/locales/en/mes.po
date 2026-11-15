@@ -3017,6 +3017,9 @@ msgstr "Steps"
 msgid "Steps are missing"
 msgstr "Steps are missing"
 
+msgid "Stock at:"
+msgstr "Stock at:"
+
 msgid "Stock transfer"
 msgstr "Stock transfer"
 
@@ -3377,6 +3380,9 @@ msgstr "Underline"
 
 msgid "Undo"
 msgstr "Undo"
+
+msgid "Unissue"
+msgstr "Unissue"
 
 msgid "Unissued serial/batch materials"
 msgstr "Unissued serial/batch materials"

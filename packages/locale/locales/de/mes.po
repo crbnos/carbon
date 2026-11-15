@@ -1542,7 +1542,7 @@ msgid "Location"
 msgstr "Standort"
 
 msgid "Location not known"
-msgstr "Standort unbekannt"
+msgstr "Lagerplatz unbekannt"
 
 msgid "Locations"
 msgstr "Standorte"
@@ -3017,6 +3017,9 @@ msgstr "Schritte"
 msgid "Steps are missing"
 msgstr "Schritte fehlen"
 
+msgid "Stock at:"
+msgstr "Bestand in:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3377,6 +3380,9 @@ msgstr "Unterstrichen"
 
 msgid "Undo"
 msgstr "Rückgängig machen"
+
+msgid "Unissue"
+msgstr "Ausgabe rückgängig machen"
 
 msgid "Unissued serial/batch materials"
 msgstr "Nicht ausgegebene Serien-/Chargenmaterialien"

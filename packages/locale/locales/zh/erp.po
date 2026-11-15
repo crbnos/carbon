@@ -17310,7 +17310,7 @@ msgid "Location Name"
 msgstr "位置名称"
 
 msgid "Location not known"
-msgstr "地点未知"
+msgstr "库位未知"
 
 msgid "Location ownership updated"
 msgstr "地点所有权已更新"

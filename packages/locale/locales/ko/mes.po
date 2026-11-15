@@ -1542,7 +1542,7 @@ msgid "Location"
 msgstr "위치"
 
 msgid "Location not known"
-msgstr "사업장을 알 수 없습니다"
+msgstr "보관 위치를 알 수 없습니다"
 
 msgid "Locations"
 msgstr "사업장"
@@ -3017,6 +3017,9 @@ msgstr "단계"
 msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
 
+msgid "Stock at:"
+msgstr "재고 위치:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3377,6 +3380,9 @@ msgstr "밑줄"
 
 msgid "Undo"
 msgstr "실행 취소"
+
+msgid "Unissue"
+msgstr "출고 취소"
 
 msgid "Unissued serial/batch materials"
 msgstr "출고되지 않은 일련번호/배치 자재"

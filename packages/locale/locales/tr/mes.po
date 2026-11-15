@@ -3017,6 +3017,9 @@ msgstr "Adımlar"
 msgid "Steps are missing"
 msgstr "Adımlar eksik"
 
+msgid "Stock at:"
+msgstr "Stok konumu:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3377,6 +3380,9 @@ msgstr "Altı çizili"
 
 msgid "Undo"
 msgstr "Geri al"
+
+msgid "Unissue"
+msgstr "Stok çıkışını geri al"
 
 msgid "Unissued serial/batch materials"
 msgstr "Yayımlanmamış seri/parti malzemeleri"

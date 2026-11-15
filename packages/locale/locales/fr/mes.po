@@ -3017,6 +3017,9 @@ msgstr "Étapes"
 msgid "Steps are missing"
 msgstr "Des étapes sont manquantes"
 
+msgid "Stock at:"
+msgstr "Stock à :"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3377,6 +3380,9 @@ msgstr "Souligné"
 
 msgid "Undo"
 msgstr "Annuler"
+
+msgid "Unissue"
+msgstr "Annuler la sortie"
 
 msgid "Unissued serial/batch materials"
 msgstr "Matériaux série/lot non distribués"

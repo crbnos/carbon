@@ -3017,6 +3017,9 @@ msgstr "Kroki"
 msgid "Steps are missing"
 msgstr "Brakuje kroków"
 
+msgid "Stock at:"
+msgstr "Stan magazynowy w:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3377,6 +3380,9 @@ msgstr "Podkreślenie"
 
 msgid "Undo"
 msgstr "Cofnij"
+
+msgid "Unissue"
+msgstr "Cofnij wydanie"
 
 msgid "Unissued serial/batch materials"
 msgstr "Niewydane materiały seryjne/partyjne"

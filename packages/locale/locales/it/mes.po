@@ -3017,6 +3017,9 @@ msgstr "Passi"
 msgid "Steps are missing"
 msgstr "Passi mancanti"
 
+msgid "Stock at:"
+msgstr "Disponibile in:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3377,6 +3380,9 @@ msgstr "Sottolineato"
 
 msgid "Undo"
 msgstr "Annulla"
+
+msgid "Unissue"
+msgstr "Annulla scarico"
 
 msgid "Unissued serial/batch materials"
 msgstr "Materiali seriali/lotto non prelevati"
