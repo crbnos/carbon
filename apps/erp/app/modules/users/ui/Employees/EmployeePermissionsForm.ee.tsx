@@ -4,6 +4,9 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   HStack,
   Modal,
@@ -36,6 +39,8 @@ type EmployeePermissionsFormProps = {
   name: string;
   employeeTypes: ListItem[];
   employeeTypePermissions: Record<string, Record<string, CompanyPermission>>;
+  /** An identity provider manages this person over SCIM. */
+  isScimManaged?: boolean;
   initialValues: z.infer<typeof employeeValidator> & {
     permissions: Record<string, CompanyPermission>;
   };
@@ -45,6 +50,7 @@ const EmployeePermissionsForm = ({
   name,
   employeeTypes,
   employeeTypePermissions,
+  isScimManaged = false,
   initialValues
 }: EmployeePermissionsFormProps) => {
   const { t } = useLingui();
@@ -125,6 +131,20 @@ const EmployeePermissionsForm = ({
             </ModalHeader>
             <ModalBody>
               <VStack spacing={4}>
+                {isScimManaged && (
+                  <Alert variant="info">
+                    <AlertTitle>
+                      <Trans>Managed by your identity provider</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        SCIM sets this person's name and active state, and their
+                        employee type once groups are mapped. A change made here
+                        can be overwritten on its next update.
+                      </Trans>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <Select
                   name="employeeType"
                   label={t`Employee Type`}

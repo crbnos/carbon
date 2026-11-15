@@ -14,7 +14,7 @@
  */
 
 import { hashApiKey } from "@carbon/auth/auth.server";
-import type { Database } from "@carbon/database";
+import { type Database, fetchAllFromTable } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -25,8 +25,10 @@ import { requireEntitlement } from "../entitlements.server";
 import { reconcileEmployeeTypes } from "./engine.server";
 import {
   compareGroupPrecedence,
+  type EmployeeTypePermissionRow,
   type GroupMappingChoice,
-  planGroupMappingSave
+  planGroupMappingSave,
+  typeGrantsFor
 } from "./mapping";
 
 const logger = getLogger("ee", "scim-connections");
@@ -102,6 +104,71 @@ export async function getScimConnection(
     },
     error: null
   };
+}
+
+/**
+ * Of `typeIds`, the employee types that grant no permission in this company.
+ * A member SCIM gives such a type can sign in and see nothing, so the
+ * settings card warns before it is chosen. Read with the service role:
+ * `employeeTypePermission` needs `users_update`, and a missing row must not
+ * look like an empty type.
+ */
+export async function getEmployeeTypesWithoutPermissions(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  typeIds: string[]
+): Promise<{ data: string[]; error: unknown }> {
+  if (typeIds.length === 0) return { data: [], error: null };
+  const rows = await fetchAllFromTable<
+    EmployeeTypePermissionRow & { employeeTypeId: string }
+  >(
+    serviceRole,
+    "employeeTypePermission",
+    "employeeTypeId, module, view, create, update, delete",
+    (query) =>
+      query
+        .in("employeeTypeId", typeIds)
+        .order("employeeTypeId")
+        .order("module")
+  );
+  if (rows.error) return { data: [], error: rows.error };
+
+  const byType = new Map<string, EmployeeTypePermissionRow[]>();
+  for (const row of rows.data) {
+    const list = byType.get(row.employeeTypeId) ?? [];
+    list.push(row);
+    byType.set(row.employeeTypeId, list);
+  }
+  return {
+    data: typeIds.filter(
+      (id) => typeGrantsFor(byType.get(id) ?? [], companyId).length === 0
+    ),
+    error: null
+  };
+}
+
+/**
+ * The people an identity provider manages in a company, active or not: it
+ * owns their name and active state and, once groups are mapped, their
+ * employee type, so a change made in Carbon can be overwritten. `userIds`
+ * narrows the read to those people.
+ */
+export async function getScimManagedUserIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userIds?: string[]
+): Promise<{ data: string[]; error: unknown }> {
+  const rows = await fetchAllFromTable<{ userId: string }>(
+    client,
+    "scimUser",
+    "userId",
+    (query) => {
+      const scoped = query.eq("companyId", companyId).order("userId");
+      return userIds ? scoped.in("userId", userIds) : scoped;
+    }
+  );
+  if (rows.error) return { data: [], error: rows.error };
+  return { data: rows.data.map((row) => row.userId), error: null };
 }
 
 /** Both defaults must belong to the company: their tables have single-column keys. */

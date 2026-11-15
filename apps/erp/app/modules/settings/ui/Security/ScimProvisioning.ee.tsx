@@ -6,6 +6,9 @@ import { docUrl } from "@carbon/content/links";
 import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   Card,
   CardContent,
@@ -32,7 +35,12 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useRef, useState } from "react";
-import { LuArrowDown, LuArrowUp, LuUsers } from "react-icons/lu";
+import {
+  LuArrowDown,
+  LuArrowUp,
+  LuTriangleAlert,
+  LuUsers
+} from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
 import { Hidden, Location, Select, Submit } from "~/components/Form";
@@ -67,7 +75,8 @@ export type ScimProvisioningData = {
 type ScimProvisioningProps = {
   scim: ScimProvisioningData | null;
   baseUrl: string;
-  employeeTypes: { id: string; name: string }[];
+  /** `hasNoPermissions`: the type grants nothing in this company. */
+  employeeTypes: { id: string; name: string; hasNoPermissions: boolean }[];
   canEdit: boolean;
 };
 
@@ -109,7 +118,29 @@ export default function ScimProvisioning({
     value: type.id,
     label: type.name
   }));
+  const typesWithoutPermissions = new Set(
+    employeeTypes.filter((type) => type.hasNoPermissions).map((type) => type.id)
+  );
   const connection = scim?.connection ?? null;
+  // The default type as picked on screen, to warn before it is saved. Keyed
+  // by the saved value so a save (or turn off) starts from the stored type.
+  const savedDefaultTypeId = connection?.defaultEmployeeTypeId ?? "";
+  const [defaultTypePick, setDefaultTypePick] = useState<{
+    saved: string;
+    picked: string;
+  } | null>(null);
+  const defaultTypeId =
+    defaultTypePick?.saved === savedDefaultTypeId
+      ? defaultTypePick.picked
+      : savedDefaultTypeId;
+  const onDefaultTypeChange = (option: { value: string } | null) =>
+    setDefaultTypePick({
+      saved: savedDefaultTypeId,
+      picked: option?.value ?? ""
+    });
+  const defaultTypeWarning = typesWithoutPermissions.has(defaultTypeId) ? (
+    <NoPermissionsAlert />
+  ) : null;
 
   const header = (
     <div className="flex items-end justify-between gap-4 w-full">
@@ -162,7 +193,9 @@ export default function ScimProvisioning({
               label={t`Default employee type`}
               placeholder={t`Select`}
               options={employeeTypeOptions}
+              onChange={onDefaultTypeChange}
             />
+            {defaultTypeWarning}
             <Location name="defaultLocationId" label={t`Default location`} />
           </VStack>
         </CardContent>
@@ -257,7 +290,9 @@ export default function ScimProvisioning({
                   label={t`Default employee type`}
                   helperText={t`Members in no mapped group get this type`}
                   options={employeeTypeOptions}
+                  onChange={onDefaultTypeChange}
                 />
+                {defaultTypeWarning}
                 <Location
                   name="defaultLocationId"
                   label={t`Default location`}
@@ -296,6 +331,7 @@ export default function ScimProvisioning({
         <GroupMappingsCard
           groups={scim?.groups ?? []}
           employeeTypeOptions={employeeTypeOptions}
+          typesWithoutPermissions={typesWithoutPermissions}
           canEdit={canEdit && !isGated}
         />
       )}
@@ -397,6 +433,23 @@ export default function ScimProvisioning({
   );
 }
 
+function NoPermissionsAlert() {
+  return (
+    <Alert variant="warning">
+      <LuTriangleAlert />
+      <AlertTitle>
+        <Trans>This employee type has no permissions</Trans>
+      </AlertTitle>
+      <AlertDescription>
+        <Trans>
+          Members who get it can sign in but cannot open anything. Give the type
+          permissions in Users → Employee Types, or pick another.
+        </Trans>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
@@ -411,11 +464,13 @@ type ScimGroup = ScimProvisioningData["groups"][number];
 function GroupMappingsCard({
   groups,
   employeeTypeOptions,
+  typesWithoutPermissions,
   canEdit
 }: {
   /** In the order they win (the loader sorts them). */
   groups: ScimGroup[];
   employeeTypeOptions: { value: string; label: string }[];
+  typesWithoutPermissions: Set<string>;
   canEdit: boolean;
 }) {
   // Only the unsaved edits live in state; the groups come from the loader.
@@ -427,8 +482,9 @@ function GroupMappingsCard({
   };
   const saveFetcher = useAction<{ success?: boolean }>({
     onSuccess: discard,
-    // The action's flash already says what failed; keep the edits to retry.
-    onError: () => {}
+    onError: () => {
+      // The action's flash already says what failed; keep the edits to retry.
+    }
   });
 
   const typeOf = (group: ScimGroup) =>
@@ -513,6 +569,9 @@ function GroupMappingsCard({
               mappedCount={mapped.length}
               onMove={move}
               employeeTypeOptions={employeeTypeOptions}
+              hasNoPermissions={typesWithoutPermissions.has(
+                typeOf(group) ?? ""
+              )}
               isDisabled={!canEdit || isSaving}
             />
           ))}
@@ -548,6 +607,7 @@ function GroupMappingRow({
   mappedCount,
   onMove,
   employeeTypeOptions,
+  hasNoPermissions,
   isDisabled
 }: {
   group: ScimGroup;
@@ -558,6 +618,8 @@ function GroupMappingRow({
   mappedCount: number;
   onMove: (position: number, direction: "up" | "down") => void;
   employeeTypeOptions: { value: string; label: string }[];
+  /** The chosen type grants nothing in this company. */
+  hasNoPermissions: boolean;
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
@@ -575,6 +637,12 @@ function GroupMappingRow({
             <Trans>{group.memberCount} members</Trans>
           )}
         </span>
+        {hasNoPermissions && (
+          <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-500">
+            <LuTriangleAlert className="size-3 shrink-0" />
+            <Trans>This employee type has no permissions</Trans>
+          </span>
+        )}
       </div>
       <HStack spacing={1}>
         {position !== null && mappedCount > 1 && (

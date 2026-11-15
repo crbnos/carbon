@@ -17725,6 +17725,12 @@ msgstr "구독 관리"
 msgid "Manage your subscription and billing information"
 msgstr "구독 및 결제 정보를 관리하세요"
 
+msgid "Managed by your identity provider"
+msgstr "ID 공급자에서 관리합니다"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "ID 공급자에서 관리합니다. 여기서 이름, 활성 상태 또는 직원 유형을 변경하면 다음 업데이트 때 덮어써질 수 있습니다."
+
 msgid "Manager"
 msgstr "관리자"
 
@@ -18134,6 +18140,9 @@ msgstr "매핑된 그룹에 속하지 않은 구성원은 이 유형을 받습�
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "구성원들이 MRP에서 소요량을 함께 순계산합니다. 그룹은 프로젝트의 사업장에 있어야 합니다."
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "이 직원 유형을 받은 구성원은 로그인할 수 있지만 아무것도 열 수 없습니다. 사용자 → 직원 유형에서 이 유형에 권한을 부여하거나 다른 유형을 선택하세요."
 
 msgid "Memo"
 msgstr "메모"
@@ -26699,6 +26708,9 @@ msgstr "SCIM 연결"
 msgid "SCIM Provisioning"
 msgstr "SCIM 프로비저닝"
 
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
+msgstr "SCIM이 이 직원의 이름과 활성 상태를 설정하고, 그룹이 매핑되면 직원 유형도 설정합니다. 여기서 변경한 내용은 다음 업데이트 때 덮어써질 수 있습니다."
+
 msgid "Scope"
 msgstr "범위"
 
@@ -31748,6 +31760,9 @@ msgstr "이 부서는 이 사업장에 작업장이 없습니다. 다른 부서 
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "이 다운로드 링크가 유효하지 않거나 변조되었습니다."
+
+msgid "This employee type has no permissions"
+msgstr "이 직원 유형에는 권한이 없습니다"
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "이 수치는 유지되어야 합니다. 값 삽입으로 다시 추가하세요."

@@ -821,7 +821,10 @@ export function schemas() {
           type: "complex",
           subAttributes: [attribute("givenName"), attribute("familyName")]
         }),
-        attribute("displayName"),
+        // Carbon builds it from the name and ignores a written value, so it
+        // must not be advertised as writable: a client that checks an
+        // update round-trips would see it change back.
+        attribute("displayName", { mutability: "readOnly" }),
         attribute("emails", {
           type: "complex",
           multiValued: true,

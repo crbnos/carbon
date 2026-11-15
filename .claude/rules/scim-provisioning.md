@@ -21,7 +21,7 @@ licences, test tools): `.ai/research/scim-provisioning.md`. User docs:
 | `packages/ee/src/scim/protocol.ts` | Pure wire format: `parseScimFilter`, `applyUserPatch`, `applyGroupPatch`, `readUserResource`, `matchScimRoute`, resource bodies, discovery documents |
 | `packages/ee/src/scim/mapping.ts` | Pure access decisions: `pickEmployeeType`, `typeGrantsFor`, `replaceCompanyGrants` |
 | `packages/ee/src/scim/engine.server.ts` | `handleScimRequest` (token → `scimConnection`, `requireEntitlement(…, "SCIM")`, rate limit, routing), the Users and Groups handlers, `reconcileEmployeeTypes` |
-| `packages/ee/src/scim/connections.server.ts` | The settings card's reads and writes; every write but `turnOffScimConnection` embeds `requireEntitlement` |
+| `packages/ee/src/scim/connections.server.ts` | The settings card's reads and writes; every write but `turnOffScimConnection` embeds `requireEntitlement`. Also `getScimManagedUserIds` (the Users screen's "SCIM" badge and the employee drawer's note) and `getEmployeeTypesWithoutPermissions` (the no-permissions warning; reads `employeeTypePermission` with the service role, since its RLS needs `users_update`) |
 | `@carbon/ee/scim.server` | `scim/index.server.ts`, the export of the two files above |
 | `apps/erp/app/routes/scim+/v2+/$.ts` | Loader and action both hand the request to `handleScimRequest` |
 | `apps/erp/app/routes/x+/settings+/scim.tsx` | Action-only, like `sso.tsx`: intents `create`, `update`, `regenerate`, `saveGroupMappings`, `delete` |
@@ -109,6 +109,11 @@ with the service role and stamps `createdBy` / `updatedBy` with
   (`SCIM_ACTOR_LABEL`, "SCIM"), shown by the audit renderers through `nonUserActorLabel`.
   The event-system trigger also writes its own "System" row for the same
   `employee` change.
+- **One log line per request.** `handleScimRequest` logs "SCIM request" with
+  `companyId`, method, path (no query string: an IdP filters by an email) and
+  status for every request it can tie to a company. Nothing is stored.
+- **`displayName` is read-only.** Carbon builds it from the name and ignores a
+  written value, so `/Schemas` marks it `mutability: "readOnly"`.
 - **Never read timestamps through Kysely for a response.** Resource bodies read
   the row back through supabase-js, so `meta.created` is a string.
 

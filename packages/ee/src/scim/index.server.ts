@@ -5,7 +5,9 @@
 export {
   createScimConnection,
   generateScimToken,
+  getEmployeeTypesWithoutPermissions,
   getScimConnection,
+  getScimManagedUserIds,
   regenerateScimToken,
   saveScimGroupMappings,
   turnOffScimConnection,

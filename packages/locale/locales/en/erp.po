@@ -17725,6 +17725,12 @@ msgstr "Manage Subscription"
 msgid "Manage your subscription and billing information"
 msgstr "Manage your subscription and billing information"
 
+msgid "Managed by your identity provider"
+msgstr "Managed by your identity provider"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+
 msgid "Manager"
 msgstr "Manager"
 
@@ -18134,6 +18140,9 @@ msgstr "Members in no mapped group get this type"
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "Members net their demand together in MRP. The group must be at the project's location"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
 
 msgid "Memo"
 msgstr "Memo"
@@ -26699,6 +26708,9 @@ msgstr "SCIM Connection"
 msgid "SCIM Provisioning"
 msgstr "SCIM Provisioning"
 
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
+msgstr "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
+
 msgid "Scope"
 msgstr "Scope"
 
@@ -31748,6 +31760,9 @@ msgstr "This department has no work centers at this location. Pick another depar
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "This download link is invalid or has been tampered with."
+
+msgid "This employee type has no permissions"
+msgstr "This employee type has no permissions"
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "This figure must stay. Add it back with Insert value."

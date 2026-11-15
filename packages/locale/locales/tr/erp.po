@@ -17725,6 +17725,12 @@ msgstr "Aboneliği Yönet"
 msgid "Manage your subscription and billing information"
 msgstr "Aboneliğinizi ve faturalandırma bilgilerinizi yönetin"
 
+msgid "Managed by your identity provider"
+msgstr "Kimlik sağlayıcınız tarafından yönetiliyor"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "Kimlik sağlayıcınız tarafından yönetiliyor. Buradan yapılan ad, aktif durum veya çalışan türü değişiklikleri, sağlayıcının bir sonraki güncellemesinde üzerine yazılabilir."
+
 msgid "Manager"
 msgstr "Yönetici"
 
@@ -18134,6 +18140,9 @@ msgstr "Hiçbir eşlenmiş grupta olmayan üyeler bu türü alır"
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "Üyeler taleplerini MRP'de birlikte netleştirirler. Grup, projenin bulunduğu lokasyonda olmalıdır."
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "Bunu alan üyeler oturum açabilir ancak hiçbir şeyi açamaz. Kullanıcılar → Çalışan Türleri bölümünden bu türe izin verin veya başka birini seçin."
 
 msgid "Memo"
 msgstr "Not"
@@ -26699,6 +26708,9 @@ msgstr "SCIM Bağlantısı"
 msgid "SCIM Provisioning"
 msgstr "SCIM Kullanıcı Sağlama"
 
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
+msgstr "SCIM, gruplar eşlendikten sonra bu çalışanın adını, aktif durumunu ve çalışan türünü ayarlar. Buradan yapılan bir değişiklik, bir sonraki güncellemede üzerine yazılabilir."
+
 msgid "Scope"
 msgstr "Kapsam"
 
@@ -31748,6 +31760,9 @@ msgstr "Bu departmanın bu konumda iş merkezi yok. Başka bir departman veya lo
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Bu indirme bağlantısı geçersiz veya değiştirilmiş."
+
+msgid "This employee type has no permissions"
+msgstr "Bu çalışan türünün hiçbir izni yok"
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "Bu değer kalmalıdır. Değer ekle ile geri ekleyin."

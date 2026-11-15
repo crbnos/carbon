@@ -17725,6 +17725,12 @@ msgstr "Управление подпиской"
 msgid "Manage your subscription and billing information"
 msgstr "Управляйте своей подпиской и информацией о выставлении счетов"
 
+msgid "Managed by your identity provider"
+msgstr "Управляется вашим поставщиком удостоверений"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "Управляется вашим поставщиком удостоверений. Изменения имени, признака «Активный» или типа сотрудника, внесённые здесь, могут быть перезаписаны при его следующем обновлении."
+
 msgid "Manager"
 msgstr "Менеджер"
 
@@ -18134,6 +18140,9 @@ msgstr "Участники, не входящие ни в одну сопост�
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "Члены консолидируют спрос вместе в MRP. Группа должна находиться на площадке проекта"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "Сотрудники с этим типом могут войти в систему, но ничего не могут открыть. Назначьте типу права доступа в разделе «Пользователи» → «Типы сотрудников» или выберите другой."
 
 msgid "Memo"
 msgstr "Памятка"
@@ -26699,6 +26708,9 @@ msgstr "Подключение SCIM"
 msgid "SCIM Provisioning"
 msgstr "Автоматическое создание учётных записей SCIM"
 
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
+msgstr "SCIM задаёт имя этого сотрудника и признак «Активный», а также его тип сотрудника после сопоставления групп. Изменение, внесённое здесь, может быть перезаписано при следующем обновлении."
+
 msgid "Scope"
 msgstr "Область действия"
 
@@ -31748,6 +31760,9 @@ msgstr "Этот отдел не имеет рабочих центров на �
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Эта ссылка для скачивания недействительна или была повреждена."
+
+msgid "This employee type has no permissions"
+msgstr "У этого типа сотрудников нет прав доступа"
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "Это значение должно остаться. Добавьте его снова через «Вставить значение»."

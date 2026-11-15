@@ -5,8 +5,12 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { getScimConnection } from "@carbon/ee/scim.server";
+import {
+  getEmployeeTypesWithoutPermissions,
+  getScimConnection
+} from "@carbon/ee/scim.server";
 import {
   getSamlSpUrls,
   getSsoConnection,
@@ -16,6 +20,7 @@ import {
 } from "@carbon/ee/sso.server";
 import { getAppUrl } from "@carbon/env";
 import { ValidatedForm, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
   Button,
@@ -68,6 +73,8 @@ import {
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "security-settings");
+
 export const handle: Handle = {
   breadcrumb: msg`Security`,
   to: path.to.security
@@ -106,10 +113,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     );
   }
+  const typesWithoutPermissions = await getEmployeeTypesWithoutPermissions(
+    getCarbonServiceRole(),
+    companyId,
+    (employeeTypes.data ?? []).map((type) => type.id)
+  );
+  // Only a warning: a failed read hides it rather than the page.
+  if (typesWithoutPermissions.error) {
+    logger.warning("Failed to read employee type permissions", {
+      companyId,
+      error: typesWithoutPermissions.error
+    });
+  }
+  const withoutPermissions = new Set(typesWithoutPermissions.data);
   const scim = {
     data: scimConnection.data as ScimProvisioningData | null,
     baseUrl: `${getAppUrl()}/scim/v2`,
-    employeeTypes: employeeTypes.data ?? []
+    employeeTypes: (employeeTypes.data ?? []).map((type) => ({
+      ...type,
+      hasNoPermissions: withoutPermissions.has(type.id)
+    }))
   };
 
   // The whole SSO surface keys off isSsoEnabled() (Enterprise edition + `sso`

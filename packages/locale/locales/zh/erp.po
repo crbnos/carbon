@@ -17725,6 +17725,12 @@ msgstr "管理订阅"
 msgid "Manage your subscription and billing information"
 msgstr "管理您的订阅和账单信息"
 
+msgid "Managed by your identity provider"
+msgstr "由身份提供商管理"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "由身份提供商管理。在此处对其姓名、启用状态或员工类型所做的更改，可能会在下次更新时被覆盖。"
+
 msgid "Manager"
 msgstr "经理"
 
@@ -18134,6 +18140,9 @@ msgstr "不属于任何已映射群组的成员将获得此类型"
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "成员在MRP中合并需求。该组必须位于项目的地点"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "获得该类型的成员可以登录，但无法打开任何内容。请在“用户 → 员工类型”中为该类型授予权限，或选择其他类型。"
 
 msgid "Memo"
 msgstr "备忘录"
@@ -26699,6 +26708,9 @@ msgstr "SCIM 连接"
 msgid "SCIM Provisioning"
 msgstr "SCIM 预配"
 
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
+msgstr "SCIM 会设置此员工的姓名和启用状态，并在分组映射完成后设置其员工类型。在此处所做的更改可能会在下次更新时被覆盖。"
+
 msgid "Scope"
 msgstr "范围"
 
@@ -31748,6 +31760,9 @@ msgstr "此部门在此地点没有工作中心。选择另一个部门或地点
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "此下载链接无效或已被篡改。"
+
+msgid "This employee type has no permissions"
+msgstr "此员工类型没有任何权限"
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "此数字必须保留。请使用“插入值”重新添加。"

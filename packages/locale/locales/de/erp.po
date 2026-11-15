@@ -17725,6 +17725,12 @@ msgstr "Abonnement verwalten"
 msgid "Manage your subscription and billing information"
 msgstr "Verwalten Sie Ihr Abonnement und Ihre Abrechnungsinformationen"
 
+msgid "Managed by your identity provider"
+msgstr "Von Ihrem Identitätsanbieter verwaltet"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "Von Ihrem Identitätsanbieter verwaltet. Hier vorgenommene Änderungen an Name, Aktivstatus oder Mitarbeitertyp können bei der nächsten Aktualisierung überschrieben werden."
+
 msgid "Manager"
 msgstr "Manager"
 
@@ -18134,6 +18140,9 @@ msgstr "Mitglieder ohne zugeordnete Gruppe erhalten diesen Typ"
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "Mitglieder verrechnen ihre Bedarfe im MRP zusammen. Die Gruppe muss am Standort des Projekts sein"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "Mitglieder, die ihn erhalten, können sich anmelden, aber nichts öffnen. Vergeben Sie unter Benutzer → Mitarbeitertypen Berechtigungen für den Typ oder wählen Sie einen anderen."
 
 msgid "Memo"
 msgstr "Memo"
@@ -26699,6 +26708,9 @@ msgstr "SCIM-Verbindung"
 msgid "SCIM Provisioning"
 msgstr "SCIM-Provisionierung"
 
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
+msgstr "SCIM legt Name und Aktivstatus dieser Person fest sowie ihren Mitarbeitertyp, sobald Gruppen zugeordnet sind. Eine hier vorgenommene Änderung kann bei der nächsten Aktualisierung überschrieben werden."
+
 msgid "Scope"
 msgstr "Umfang"
 
@@ -31748,6 +31760,9 @@ msgstr "Diese Abteilung hat keine Arbeitsplätze an diesem Standort. Wählen Sie
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Dieser Herunterlade-Link ist ungültig oder wurde manipuliert."
+
+msgid "This employee type has no permissions"
+msgstr "Dieser Mitarbeitertyp hat keine Berechtigungen"
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "Dieser Wert muss bleiben. Fügen Sie ihn mit „Wert einfügen“ wieder ein."

@@ -17725,6 +17725,12 @@ msgstr "सदस्यता प्रबंधित करें"
 msgid "Manage your subscription and billing information"
 msgstr "अपनी सदस्यता और बिलिंग जानकारी प्रबंधित करें"
 
+msgid "Managed by your identity provider"
+msgstr "आपके पहचान प्रदाता द्वारा प्रबंधित"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "आपके पहचान प्रदाता द्वारा प्रबंधित। यहाँ उनके नाम, सक्रिय स्थिति या कर्मचारी प्रकार में किए गए बदलाव उसके अगले अपडेट में ओवरराइट हो सकते हैं।"
+
 msgid "Manager"
 msgstr "प्रबंधक"
 
@@ -18134,6 +18140,9 @@ msgstr "जो सदस्य किसी भी मैप किए गए �
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "सदस्य MRP में अपनी मांग को एक साथ समायोजित करते हैं। समूह परियोजना के स्थान पर होना चाहिए"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "जिन सदस्यों को यह मिलेगा वे साइन इन कर सकेंगे, पर कुछ भी खोल नहीं पाएँगे। उपयोगकर्ता → कर्मचारी प्रकार में इस प्रकार को अनुमतियाँ दें, या कोई और चुनें।"
 
 msgid "Memo"
 msgstr "मेमो"
@@ -26699,6 +26708,9 @@ msgstr "SCIM कनेक्शन"
 msgid "SCIM Provisioning"
 msgstr "SCIM प्रोविज़निंग"
 
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
+msgstr "SCIM इस व्यक्ति का नाम और सक्रिय स्थिति सेट करता है, और समूह मैप होने के बाद उसका कर्मचारी प्रकार भी। यहाँ किया गया बदलाव उसके अगले अपडेट में ओवरराइट हो सकता है।"
+
 msgid "Scope"
 msgstr "दायरा"
 
@@ -31748,6 +31760,9 @@ msgstr "इस विभाग के पास इस स्थान पर �
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसके साथ छेड़छाड़ की गई है।"
+
+msgid "This employee type has no permissions"
+msgstr "इस कर्मचारी प्रकार की कोई अनुमति नहीं है"
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "यह आंकड़ा रहना चाहिए। इसे मान डालें से वापस जोड़ें।"

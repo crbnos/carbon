@@ -218,6 +218,23 @@ async function handle(request: Request, deps: ScimDeps): Promise<Response> {
   }
 
   const connection = lookup.data;
+  const url = new URL(request.url);
+  const response = await handleForCompany(request, url, deps, connection);
+  logger.info("SCIM request", {
+    companyId: connection.companyId,
+    method: request.method,
+    path: url.pathname,
+    status: response.status
+  });
+  return response;
+}
+
+async function handleForCompany(
+  request: Request,
+  url: URL,
+  deps: ScimDeps,
+  connection: ScimConnectionRow
+): Promise<Response> {
   const companyId = connection.companyId;
 
   try {
@@ -242,7 +259,6 @@ async function handle(request: Request, deps: ScimDeps): Promise<Response> {
   await touchConnection(deps.db, connection);
 
   const ctx: Ctx = { ...deps, connection, companyId, baseUrl: scimBaseUrl() };
-  const url = new URL(request.url);
   const route = matchScimRoute(url.pathname);
   if (!route) return scimError(404, "This SCIM endpoint does not exist.");
 

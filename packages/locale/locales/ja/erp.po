@@ -17725,6 +17725,12 @@ msgstr "サブスクリプションを管理"
 msgid "Manage your subscription and billing information"
 msgstr "サブスクリプションと請求情報を管理する"
 
+msgid "Managed by your identity provider"
+msgstr "ID プロバイダーで管理されています"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "ID プロバイダーで管理されています。ここで行った氏名、有効状態、従業員タイプの変更は、次回の更新で上書きされる場合があります。"
+
 msgid "Manager"
 msgstr "マネージャー"
 
@@ -18134,6 +18140,9 @@ msgstr "割り当て済みのグループに属さないメンバーには、こ
 
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "メンバーはMRPで所要量を相殺します。グループはプロジェクトの拠点にある必要があります"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "このタイプを割り当てられたメンバーはサインインできますが、何も開けません。ユーザー → 従業員タイプで、このタイプに権限を付与するか、別のタイプを選択してください。"
 
 msgid "Memo"
 msgstr "メモ"
@@ -26699,6 +26708,9 @@ msgstr "SCIM 接続"
 msgid "SCIM Provisioning"
 msgstr "SCIM プロビジョニング"
 
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
+msgstr "SCIM は、グループが対応付けられた後、この従業員の氏名、有効状態、従業員タイプを設定します。ここで行った変更は、次回の更新で上書きされる場合があります。"
+
 msgid "Scope"
 msgstr "スコープ"
 
@@ -31748,6 +31760,9 @@ msgstr "この部門はこの拠点に作業区がありません。別の部門
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
+
+msgid "This employee type has no permissions"
+msgstr "この従業員タイプには権限がありません"
 
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "この数値は残す必要があります。「値を挿入」で戻してください。"
