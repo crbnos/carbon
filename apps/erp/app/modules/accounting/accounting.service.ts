@@ -3768,6 +3768,8 @@ export async function reopenAccountingPeriod(
     .eq("companyId", args.companyId)
     .gt("startDate", period.data.startDate)
     .eq("closeStatus", "Closed");
+  // A failed count must not read as "none later": the snapshots go next.
+  if (laterClosed.error) return { data: null, error: laterClosed.error };
   if ((laterClosed.count ?? 0) > 0) {
     return {
       data: null,

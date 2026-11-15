@@ -35,3 +35,7 @@
 - Fixed: nothing showed which account a line is on. The dialog reads the posted account on open through `getSalesInvoiceLinePostedAccount` / `getPurchaseInvoiceLinePostedAccount`, from the same journal match the change uses (not `salesInvoiceLine.accountId`).
 - Fixed: View Period on a Closed period showed "Cannot close yet" and task actions. A Closed period's checklist is now read-only; Reopen Period stays.
 - Decision: the two reads are not `@mcp`. The change result already returns `fromAccountId`; publishing the reads is a follow-up if API callers need them.
+
+## Addendum 2026-11-15: review fixes
+
+- Reopen: a failed "later period Closed" count now refuses the reopen instead of reading as none, before any snapshot is deleted.
