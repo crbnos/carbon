@@ -20,12 +20,15 @@ import { normalizeConfiguration } from "../panel/status";
 import { apiCallPathKey, isBilledCall } from "./api-call-key";
 import {
   getOnshapeIntegration,
-  isOnshapeIntegrationId,
+  getOnshapePanelIntegration,
   ONSHAPE_DEFAULT_BASE_URL
 } from "./connection";
 import { type OnshapeDocument, OnshapeWVMType } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
-import type { OnshapeOAuthIntegrationId } from "./integration-id";
+import {
+  isOnshapePanelIntegrationId,
+  type OnshapeOAuthIntegrationId
+} from "./integration-id";
 import { getOnshapeOAuthConfig, refreshOnshapeAccessToken } from "./oauth";
 import {
   type WorkspaceSourceStates,
@@ -1014,26 +1017,17 @@ export async function getOnshapeClient(
   client: SupabaseClient<Database>,
   companyId: string,
   userId: string,
-  /** Omitted or a sync id: the company's active sync connection. */
+  /** Omitted or sync id: the sync connection; panel id: the active panel. */
   requestedIntegrationId?: OnshapeOAuthIntegrationId
 ): Promise<
   { client: OnshapeClient; error: null } | { client: null; error: string }
 > {
-  // Either sync connection — the public app or a Government private app.
-  // Past authorization they are the same API, just on a different host.
-  // The panel's connection must be active: uninstalling only sets
-  // `active = false` and leaves the tokens, so without the filter an
-  // uninstalled panel kept reading Onshape.
-  const integration =
-    requestedIntegrationId && !isOnshapeIntegrationId(requestedIntegrationId)
-      ? await client
-          .from("companyIntegration")
-          .select("*")
-          .eq("id", requestedIntegrationId)
-          .eq("companyId", companyId)
-          .eq("active", true)
-          .maybeSingle()
-      : await getOnshapeIntegration(client, companyId);
+  // The public and Government apps are one API past authorization, on another
+  // host. Uninstalling only sets `active = false` and keeps the tokens, so the
+  // panel's connection must be active.
+  const integration = isOnshapePanelIntegrationId(requestedIntegrationId)
+    ? await getOnshapePanelIntegration(client, companyId, { activeOnly: true })
+    : await getOnshapeIntegration(client, companyId);
 
   if (integration.error || !integration.data) {
     return { client: null, error: "Onshape integration not found" };
