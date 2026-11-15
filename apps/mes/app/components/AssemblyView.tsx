@@ -41,7 +41,6 @@ import {
   SidebarTrigger,
   Spinner,
   Status,
-  TruncatedTooltipText,
   toast,
   useDisclosure,
   useKeyboardWedge,
@@ -3582,8 +3581,7 @@ function StepCompleteAction({
     else if (record.value) recordedDisplay = record.value;
     else if (record.userValue) recordedDisplay = record.userValue;
 
-    // File steps store a long storage path — show just the file name; the full
-    // path stays available in the truncation tooltip.
+    // File steps store a long storage path — show just the file name.
     const displayText =
       type === "File" && recordedDisplay
         ? recordedDisplay.split("/").pop() || recordedDisplay
@@ -3593,12 +3591,11 @@ function StepCompleteAction({
       <div className="flex h-full items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
         <LuCheck className="size-4 shrink-0 text-emerald-500" />
         {displayText ? (
-          <TruncatedTooltipText
-            tooltip={recordedDisplay}
-            className="min-w-0 flex-1 truncate text-sm text-emerald-600 dark:text-emerald-400"
-          >
+          // Wraps instead of truncating: a touch screen has no hover to
+          // reveal the rest of the value.
+          <span className="min-w-0 flex-1 break-words text-sm text-emerald-600 dark:text-emerald-400">
             Recorded: {displayText}
-          </TruncatedTooltipText>
+          </span>
         ) : (
           <span className="min-w-0 flex-1 truncate text-sm text-emerald-600 dark:text-emerald-400">
             Completed
