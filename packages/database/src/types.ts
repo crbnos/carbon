@@ -107576,12 +107576,9 @@ export type Database = {
           exchangeRate: number
           openInBase: number
           openInCurrency: number
-          originalInBase: number
           settled: number
           supplierId: string
-          supplierReference: string
           totalAmount: number
-          transactionDate: string
         }[]
       }
       get_ap_tie_out: {
@@ -107630,10 +107627,8 @@ export type Database = {
           exchangeRate: number
           openInBase: number
           openInCurrency: number
-          originalInBase: number
           settled: number
           totalAmount: number
-          transactionDate: string
         }[]
       }
       get_ar_tie_out: {
