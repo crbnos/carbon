@@ -3516,6 +3516,9 @@ msgstr "何时"
 msgid "Whole batch"
 msgstr "整个生产批次"
 
+msgid "Winding"
+msgstr "蛇形"
+
 msgid "WIP"
 msgstr "在制品"
 

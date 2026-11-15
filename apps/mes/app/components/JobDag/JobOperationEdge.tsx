@@ -7,12 +7,14 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   type EdgeProps,
-  getSimpleBezierPath
+  getSimpleBezierPath,
+  getSmoothStepPath
 } from "@xyflow/react";
 import { memo } from "react";
 
 type JobOperationEdgeData = {
   quantity: number;
+  vertical: boolean;
 };
 
 function JobOperationEdgeImpl({
@@ -27,14 +29,17 @@ function JobOperationEdgeImpl({
 }: EdgeProps) {
   const { t } = useLingui();
   const d = data as unknown as JobOperationEdgeData | undefined;
-  const [edgePath, labelX, labelY] = getSimpleBezierPath({
+  const pathArgs = {
     sourceX,
     sourceY,
     sourcePosition,
     targetX,
     targetY,
     targetPosition
-  });
+  };
+  const [edgePath, labelX, labelY] = d?.vertical
+    ? getSmoothStepPath({ ...pathArgs, borderRadius: 20 })
+    : getSimpleBezierPath(pathArgs);
 
   const dimmed = d?.quantity === 0;
 

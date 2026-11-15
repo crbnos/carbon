@@ -3516,6 +3516,9 @@ msgstr "कब"
 msgid "Whole batch"
 msgstr "पूरा बैच"
 
+msgid "Winding"
+msgstr "घुमावदार"
+
 msgid "WIP"
 msgstr "WIP"
 

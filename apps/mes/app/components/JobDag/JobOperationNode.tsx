@@ -23,7 +23,6 @@ type JobOperationNodeData = {
   isRework: boolean;
   // Readable id of the live batch the operation runs in, or null.
   batchReadableId?: string | null;
-  direction: "LR" | "TB";
 };
 
 const STATUS_COLORS: Record<string, { border: string; bar: string }> = {
@@ -39,7 +38,6 @@ const STATUS_COLORS: Record<string, { border: string; bar: string }> = {
 function JobOperationNodeImpl({ data }: NodeProps) {
   const d = data as unknown as JobOperationNodeData;
   const colors = STATUS_COLORS[d.status] ?? STATUS_COLORS.Todo;
-  const isHorizontal = d.direction === "LR";
   const location = useLocation();
   const { t } = useLingui();
 
@@ -60,8 +58,21 @@ function JobOperationNodeImpl({ data }: NodeProps) {
   return (
     <>
       <Handle
+        id="target-left"
         type="target"
-        position={isHorizontal ? Position.Left : Position.Top}
+        position={Position.Left}
+        className="invisible"
+      />
+      <Handle
+        id="target-right"
+        type="target"
+        position={Position.Right}
+        className="invisible"
+      />
+      <Handle
+        id="target-top"
+        type="target"
+        position={Position.Top}
         className="invisible"
       />
       <Link
@@ -114,8 +125,21 @@ function JobOperationNodeImpl({ data }: NodeProps) {
         )}
       </Link>
       <Handle
+        id="source-left"
         type="source"
-        position={isHorizontal ? Position.Right : Position.Bottom}
+        position={Position.Left}
+        className="invisible"
+      />
+      <Handle
+        id="source-right"
+        type="source"
+        position={Position.Right}
+        className="invisible"
+      />
+      <Handle
+        id="source-bottom"
+        type="source"
+        position={Position.Bottom}
         className="invisible"
       />
     </>

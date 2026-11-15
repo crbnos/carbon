@@ -3516,6 +3516,9 @@ msgstr "Wann"
 msgid "Whole batch"
 msgstr "Ganzes Los"
 
+msgid "Winding"
+msgstr "Schlangenförmig"
+
 msgid "WIP"
 msgstr "WIP"
 

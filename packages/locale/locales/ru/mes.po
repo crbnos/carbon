@@ -3516,6 +3516,9 @@ msgstr "Когда"
 msgid "Whole batch"
 msgstr "Вся серия"
 
+msgid "Winding"
+msgstr "Змейкой"
+
 msgid "WIP"
 msgstr "Незавершенное производство"
 

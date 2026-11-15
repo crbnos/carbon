@@ -3516,6 +3516,9 @@ msgstr "Quand"
 msgid "Whole batch"
 msgstr "Tout le lot de production"
 
+msgid "Winding"
+msgstr "En serpentin"
+
 msgid "WIP"
 msgstr "En-cours"
 

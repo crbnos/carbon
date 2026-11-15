@@ -3516,6 +3516,9 @@ msgstr "언제"
 msgid "Whole batch"
 msgstr "전체 배치"
 
+msgid "Winding"
+msgstr "지그재그"
+
 msgid "WIP"
 msgstr "재공품"
 
