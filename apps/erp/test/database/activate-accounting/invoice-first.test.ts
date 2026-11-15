@@ -49,6 +49,7 @@ async function orderFiveParts(f: Fixture, unitPrice: number) {
         supplierInteractionId: interaction.id,
         currencyCode: "USD",
         exchangeRate: 1,
+        status: "To Receive and Invoice",
         companyId: f.companyId,
         createdBy: USER
       })
