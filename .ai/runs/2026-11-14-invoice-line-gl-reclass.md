@@ -39,3 +39,4 @@
 ## Addendum 2026-11-15: review fixes
 
 - Reopen: a failed "later period Closed" count now refuses the reopen instead of reading as none, before any snapshot is deleted.
+- Close checklist: Mark Done and Skip now read the task's period and refuse a Closed one on the server (`closeTaskChangeRefusal`, `accounting.utils.ts`, with the Auto and Blocker refusals it replaced inline); tested in `accounting.periods.test.ts`.

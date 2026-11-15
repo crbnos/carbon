@@ -1235,7 +1235,8 @@ export const createRunForPeriod = defineServiceFn({
  *
  * @remarks
  * For Action and Manual tasks: an automatic task is evaluated by the system
- * and cannot be completed by hand. `notes` are kept on the task.
+ * and cannot be completed by hand. `notes` are kept on the task. Refused
+ * while the task's period is Closed.
  *
  * @mcp
  */
@@ -1261,7 +1262,7 @@ export const closeTaskComplete = defineServiceFn({
  *
  * @remarks
  * A Blocker task can never be skipped: resolve what it checks instead. The
- * reason is required.
+ * reason is required. Refused while the task's period is Closed.
  *
  * @mcp
  */

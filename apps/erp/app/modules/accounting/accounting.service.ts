@@ -313,6 +313,7 @@ import {
   acquisitionLines,
   activationCutoverDates,
   buildDepreciationLines,
+  closeTaskChangeRefusal,
   type DepreciationLine,
   depreciationFloor,
   depreciationRunLinesMatch,
@@ -5359,16 +5360,52 @@ async function getPeriodCloseTaskById(
 ) {
   return (client as any)
     .from("periodCloseTask")
-    .select("id, taskType, severity, status, required, name")
+    .select(
+      "id, accountingPeriodId, taskType, severity, status, required, name"
+    )
     .eq("id", taskId)
     .eq("companyId", companyId)
     .single() as Promise<{
     data: Pick<
       PeriodCloseTaskRow,
-      "id" | "taskType" | "severity" | "status" | "required" | "name"
+      | "id"
+      | "accountingPeriodId"
+      | "taskType"
+      | "severity"
+      | "status"
+      | "required"
+      | "name"
     > | null;
     error: { message: string } | null;
   }>;
+}
+
+/** The refusal of a hand change to a close task, read with its period, or
+ *  null. The close screen hides the buttons; this is the server's check. */
+async function closeTaskChangeError(
+  client: SupabaseClient<Database>,
+  taskId: string,
+  companyId: string,
+  change: "complete" | "skip"
+): Promise<{ message: string } | null> {
+  const task = await getPeriodCloseTaskById(client, taskId, companyId);
+  if (task.error || !task.data) {
+    return task.error ?? { message: "Task not found" };
+  }
+  const period = await getAccountingPeriodById(
+    client,
+    task.data.accountingPeriodId,
+    companyId
+  );
+  if (period.error || !period.data) {
+    return period.error ?? { message: "Period not found" };
+  }
+  const message = closeTaskChangeRefusal(
+    task.data,
+    period.data.closeStatus,
+    change
+  );
+  return message ? { message } : null;
 }
 
 /** Not published: `accounting_closeTaskComplete` runs it. */
@@ -5376,25 +5413,13 @@ export async function completeCloseTask(
   client: SupabaseClient<Database>,
   args: { taskId: string; companyId: string; userId: string; notes?: string }
 ) {
-  const task = await getPeriodCloseTaskById(
+  const refused = await closeTaskChangeError(
     client,
     args.taskId,
-    args.companyId
+    args.companyId,
+    "complete"
   );
-  if (task.error || !task.data) {
-    return { data: null, error: task.error ?? { message: "Task not found" } };
-  }
-  // Auto tasks reflect a live evaluator and are completed by the close, not by
-  // hand.
-  if (task.data.taskType === "Auto") {
-    return {
-      data: null,
-      error: {
-        message:
-          "Automated tasks are evaluated by the system and cannot be completed manually"
-      }
-    };
-  }
+  if (refused) return { data: null, error: refused };
   return (client as any)
     .from("periodCloseTask")
     .update({
@@ -5429,25 +5454,13 @@ export async function skipCloseTask(
       error: { message: "A reason is required to skip a task" }
     };
   }
-  const task = await getPeriodCloseTaskById(
+  const refused = await closeTaskChangeError(
     client,
     args.taskId,
-    args.companyId
+    args.companyId,
+    "skip"
   );
-  if (task.error || !task.data) {
-    return { data: null, error: task.error ?? { message: "Task not found" } };
-  }
-  // Blocker tasks guard hard invariants — they can never be skipped, only
-  // resolved (acceptance criterion 9).
-  if (task.data.severity === "Blocker") {
-    return {
-      data: null,
-      error: {
-        message:
-          "Blocker tasks cannot be skipped; resolve the underlying issue first"
-      }
-    };
-  }
+  if (refused) return { data: null, error: refused };
   return (client as any)
     .from("periodCloseTask")
     .update({
