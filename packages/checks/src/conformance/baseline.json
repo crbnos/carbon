@@ -509,7 +509,7 @@
   "no-raw-rounding::apps/mes/app/components/Inspection/InspectionView.tsx::const h = Math.floor(s / 3600)",
   "no-raw-rounding::apps/mes/app/components/Inspection/InspectionView.tsx::const m = Math.floor((s % 3600) / 60)",
   "no-raw-rounding::apps/mes/app/components/Inspection/InspectionView.tsx::return Math.max(0, Math.floor((Date.now() - start) / 1000));",
-  "no-raw-rounding::apps/mes/app/components/JobDag/layout.ts::Math.floor((width - 2 * MARGIN + COLUMN_GAP) / (NODE_WIDTH + COLUMN_GAP))",
+  "no-raw-rounding::apps/mes/app/components/JobDag/layout.ts::return Math.max(1, Math.floor((width - VIEW_INSET) / (NODE_WIDTH + column)));",
   "no-raw-rounding::apps/mes/app/components/JobDag/layout.ts::const row = Math.floor(start / columns);",
   "no-raw-rounding::apps/mes/app/components/JobDag/layout.ts::const x = Math.round(graph.node(id).x);",
   "no-raw-rounding::apps/mes/app/components/JobOperation/JobOperation.tsx::Math.floor(",
