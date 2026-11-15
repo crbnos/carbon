@@ -285,9 +285,6 @@ msgstr "操作菜单"
 msgid "Active"
 msgstr "启用"
 
-msgid "Actual"
-msgstr "实际"
-
 msgid "Add"
 msgstr "添加"
 
@@ -1060,9 +1057,6 @@ msgstr "请输入身份验证器应用中的 6 位代码以继续。"
 
 msgid "Error"
 msgstr "错误"
-
-msgid "Estimated"
-msgstr "估计"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "生产批次中的每个工单都遵循这些步骤。同时为所有工单记录一个步骤。"
@@ -2344,9 +2338,6 @@ msgstr "预计完成:"
 
 msgid "PTO"
 msgstr "PTO"
-
-msgid "Pull from inventory"
-msgstr "从库存领用"
 
 msgid "Purchasing"
 msgstr "采购"

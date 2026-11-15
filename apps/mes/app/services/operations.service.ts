@@ -54,7 +54,12 @@ import type {
 } from "./models";
 import { inspectionFailedResult } from "./models";
 import { planStepBackflush } from "./step-backflush";
-import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
+import type {
+  BaseOperationWithDetails,
+  Job,
+  LiveStorageUnit,
+  StorageItem
+} from "./types";
 
 const log = getLogger("mes", "operations");
 
@@ -1742,18 +1747,25 @@ export async function getJobMaterialsByOperationId(
         .filter((itemId): itemId is string => !!itemId)
     )
   ];
-  if (inventoryItemIds.length > 0 && materials.data?.[0]?.companyId) {
-    const live = await client.rpc("get_job_issue_bins", {
-      p_company_id: materials.data[0].companyId,
-      p_job_id: operation.jobId,
-      p_item_ids: inventoryItemIds
+  const companyId = materials.data?.[0]?.companyId;
+  const live =
+    inventoryItemIds.length > 0 && companyId
+      ? await client.rpc("get_job_issue_bins", {
+          p_company_id: companyId,
+          p_job_id: operation.jobId,
+          p_item_ids: inventoryItemIds
+        })
+      : null;
+  if (live?.error) {
+    // The bins are a display aid: without them a material shows the bin it
+    // names, so a failed read does not fail the operation page.
+    log.error("Failed to read the issue bins of a job", {
+      jobId: operation.jobId,
+      error: live.error
     });
-    if (live.error) throw live.error;
-    const binsByItem = new Map<
-      string,
-      Array<{ id: string | null; name: string | null; quantity: number }>
-    >();
-    for (const bin of live.data ?? []) {
+  } else if (live && materials.data) {
+    const binsByItem = new Map<string, LiveStorageUnit[]>();
+    for (const bin of live.data) {
       const bins = binsByItem.get(bin.itemId) ?? [];
       bins.push({
         id: bin.storageUnitId,

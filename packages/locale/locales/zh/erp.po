@@ -23932,6 +23932,10 @@ msgstr "发运数量"
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "第 {lineNumber} 行的贷记数量"
 
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
+
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} 的退货数量"
 
@@ -28810,6 +28814,9 @@ msgstr "库存"
 
 msgid "Stock and planning"
 msgstr "库存和计划"
+
+msgid "Stock at:"
+msgstr ""
 
 msgid "Stock Availability"
 msgstr "库存可用性"

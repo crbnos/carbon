@@ -285,9 +285,6 @@ msgstr "Menu d'actions"
 msgid "Active"
 msgstr "Actif"
 
-msgid "Actual"
-msgstr "Réel"
-
 msgid "Add"
 msgstr "Ajouter"
 
@@ -1060,9 +1057,6 @@ msgstr "Entrez le code à 6 chiffres de votre application d'authentification pou
 
 msgid "Error"
 msgstr "Erreur"
-
-msgid "Estimated"
-msgstr "Estimé"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Chaque ordre de fabrication du lot de production suit ces étapes. Enregistrez une étape pour tous à la fois."
@@ -2344,9 +2338,6 @@ msgstr "Fin prévue :"
 
 msgid "PTO"
 msgstr "Congé"
-
-msgid "Pull from inventory"
-msgstr "Prélever du stock"
 
 msgid "Purchasing"
 msgstr "Achats"

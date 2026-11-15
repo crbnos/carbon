@@ -204,7 +204,7 @@ function IssueMaterialBody({
     data: InventoryBin[];
     error: unknown;
   }>(
-    trackingType === "Inventory" && selectedItemId
+    trackingType === "Inventory" && inventoryMode === "issue" && selectedItemId
       ? path.to.api.issueInventoryBins(selectedItemId, operationId)
       : null
   );
@@ -280,16 +280,12 @@ function IssueMaterialBody({
             ? `${expired ? "Expired" : "Expires"} ${formatExpiry(sn.expirationDate)}`
             : undefined;
           return {
-            label: (
-              <span className="flex flex-col gap-1">
-                {label}
-                <span className="text-xs text-muted-foreground">
-                  {sn.storageUnitName ?? t`Location not known`}
-                </span>
-              </span>
-            ),
+            label,
             value: sn.id,
-            helper: helper ?? sn.storageUnitName ?? t`Location not known`,
+            // One line under the lot: its bin, then its expiry.
+            helper: [sn.storageUnitName ?? t`Location not known`, helper]
+              .filter(Boolean)
+              .join(" · "),
             expirationDate: sn.expirationDate ?? null,
             isExpired: expired
           };
@@ -332,16 +328,12 @@ function IssueMaterialBody({
             ? `${expired ? "Expired" : "Expires"} ${formatExpiry(bn.expirationDate)}`
             : undefined;
           return {
-            label: (
-              <span className="flex flex-col gap-1">
-                {label}
-                <span className="text-xs text-muted-foreground">
-                  {bn.storageUnitName ?? t`Location not known`}
-                </span>
-              </span>
-            ),
+            label,
             value: bn.id,
-            helper: helper ?? bn.storageUnitName ?? t`Location not known`,
+            // One line under the lot: its bin, then its expiry.
+            helper: [bn.storageUnitName ?? t`Location not known`, helper]
+              .filter(Boolean)
+              .join(" · "),
             availableQuantity: bn.quantity,
             expirationDate: bn.expirationDate ?? null,
             isExpired: expired
@@ -440,6 +432,26 @@ function IssueMaterialBody({
       .fill("")
       .map((_, index) => ({ index, id: "" }))
   );
+  // A sole usable serial is unambiguous: with one unit to issue and one unit
+  // on the shelf there is nothing to choose, so it is selected (derived, as
+  // for a sole batch below).
+  // Not once the requirement is met: the modal is then opened to take a unit
+  // back, and a pre-filled lot would be one tap from issuing a second one.
+  const stillNeeded =
+    !material ||
+    (material.quantityIssued ?? 0) <
+      (material.quantity ?? material.estimatedQuantity ?? Infinity);
+  const issueSerialNumbers = useMemo(
+    () =>
+      stillNeeded &&
+      (batchId || parentId) &&
+      serialOptions.length === 1 &&
+      selectedSerialNumbers.length === 1 &&
+      !selectedSerialNumbers[0].id
+        ? [{ index: 0, id: serialOptions[0].value }]
+        : selectedSerialNumbers,
+    [stillNeeded, batchId, parentId, serialOptions, selectedSerialNumbers]
+  );
   const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
   const [scrapEntityTarget, setScrapEntityTarget] = useState<{
     id: string;
@@ -459,6 +471,7 @@ function IssueMaterialBody({
   // is disabled. Derive the default so an async stock read needs no state effect.
   const issueBatchNumbers = useMemo(
     () =>
+      stillNeeded &&
       (batchId || parentId) &&
       batchOptions.length === 1 &&
       selectedBatchNumbers.length === 1 &&
@@ -474,7 +487,14 @@ function IssueMaterialBody({
             }
           ]
         : selectedBatchNumbers,
-    [batchId, parentId, batchOptions, selectedBatchNumbers, initialQuantity]
+    [
+      stillNeeded,
+      batchId,
+      parentId,
+      batchOptions,
+      selectedBatchNumbers,
+      initialQuantity
+    ]
   );
   const [batchErrors, setBatchErrors] = useState<Record<number, string>>({});
   const [unconsumedBatches, setUnconsumedBatches] = useState<
@@ -670,10 +690,10 @@ function IssueMaterialBody({
     const byId = new Map(
       (serialNumbers?.data ?? []).map((s) => [s.id, s.expirationDate])
     );
-    return selectedSerialNumbers
+    return issueSerialNumbers
       .filter((s) => s.id && isExpiryPast(byId.get(s.id)))
       .map((s) => s.id);
-  }, [selectedSerialNumbers, serialNumbers, isExpiryPast]);
+  }, [issueSerialNumbers, serialNumbers, isExpiryPast]);
   const expiredBatchIds = useMemo(() => {
     const byId = new Map(
       (batchNumbers?.data ?? []).map((b) => [b.id, b.expirationDate])
@@ -1010,7 +1030,7 @@ function IssueMaterialBody({
     let hasErrors = false;
     const newErrors: Record<number, string> = {};
 
-    selectedSerialNumbers.forEach((sn) => {
+    issueSerialNumbers.forEach((sn) => {
       const error = validateSerialNumber(sn.id, sn.index);
       if (error) {
         newErrors[sn.index] = error;
@@ -1037,7 +1057,7 @@ function IssueMaterialBody({
         ? {
             materialId: material.id,
             parentTrackedEntityId: parentId,
-            children: selectedSerialNumbers.map((sn) => ({
+            children: issueSerialNumbers.map((sn) => ({
               trackedEntityId: sn.id,
               quantity: 1
             })),
@@ -1049,7 +1069,7 @@ function IssueMaterialBody({
             jobOperationId: operationId,
             itemId: selectedItemId,
             parentTrackedEntityId: parentId,
-            children: selectedSerialNumbers.map((sn) => ({
+            children: issueSerialNumbers.map((sn) => ({
               trackedEntityId: sn.id,
               quantity: 1
             })),
@@ -1064,7 +1084,7 @@ function IssueMaterialBody({
       });
     }
   }, [
-    selectedSerialNumbers,
+    issueSerialNumbers,
     validateSerialNumber,
     parentId,
     material?.id,
@@ -1620,7 +1640,7 @@ function IssueMaterialBody({
 
                   <TabsContent value="scan">
                     <div className="flex flex-col gap-4">
-                      {selectedSerialNumbers.map((sn, index) => (
+                      {issueSerialNumbers.map((sn, index) => (
                         <div
                           key={`${index}-serial-scan`}
                           className="flex flex-col gap-1"
@@ -1737,7 +1757,7 @@ function IssueMaterialBody({
 
                   <TabsContent value="select">
                     <div className="flex flex-col gap-4">
-                      {selectedSerialNumbers.map((sn, index) => (
+                      {issueSerialNumbers.map((sn, index) => (
                         <div
                           key={`${index}-serial-select`}
                           className="flex flex-col gap-1"

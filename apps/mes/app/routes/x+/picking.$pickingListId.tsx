@@ -686,16 +686,9 @@ function PickLineItem({
     const n = Number(line.quantityToPick ?? 0) / (perAssembly * factor);
     return Number.isInteger(n) ? n : null;
   })();
-  const liveStorageUnits =
-    (
-      line as Line & {
-        liveStorageUnits?: Array<{
-          id: string | null;
-          name: string | null;
-          quantity: number;
-        }>;
-      }
-    ).liveStorageUnits?.filter((unit) => unit.quantity > 0) ?? [];
+  const liveStorageUnits = line.liveStorageUnits.filter(
+    (unit) => unit.quantity > 0
+  );
   const isShortStock = liveStorageUnits.length === 0;
   const quantityToPick = Number(line.quantityToPick ?? 0);
   const quantityPicked = Number(line.quantityPicked ?? 0);
@@ -713,6 +706,12 @@ function PickLineItem({
   ).filter((t) => Number(t.quantityPicked ?? 0) > 0);
 
   const isFullyPicked = quantityToPick > 0 && quantityPicked >= quantityToPick;
+  // Once picked, the stock is at lineside and its warehouse bin may be empty:
+  // the line then names the bin it was picked from.
+  const pickedFrom =
+    quantityPicked > 0
+      ? (line.storageUnit as { name?: string } | null)?.name
+      : undefined;
   const isShort = line.status === "Short";
   const isCancelled = line.status === "Cancelled";
   const isResolved = isFullyPicked || isShort || isCancelled;
@@ -878,16 +877,16 @@ function PickLineItem({
         className="flex items-center justify-end gap-3 sm:gap-6 sm:shrink-0"
       >
         <div className="flex flex-wrap justify-end gap-x-2 text-base font-medium">
-          {liveStorageUnits.length > 0 ? (
-            liveStorageUnits.map((unit, index) => (
-              <span key={unit.id ?? `unassigned-${index}`}>
-                {unit.name ?? t`Location not known`}
-                {liveStorageUnits.length > 1 ? ` (${unit.quantity})` : ""}
-              </span>
-            ))
-          ) : (
-            <Trans>Location not known</Trans>
-          )}
+          {isFullyPicked && pickedFrom
+            ? pickedFrom
+            : liveStorageUnits.length > 0
+              ? liveStorageUnits.map((unit, index) => (
+                  <span key={unit.id ?? `unassigned-${index}`}>
+                    {unit.name ?? t`Location not known`}
+                    {liveStorageUnits.length > 1 ? ` (${unit.quantity})` : ""}
+                  </span>
+                ))
+              : (pickedFrom ?? <Trans>Location not known</Trans>)}
         </div>
         {isShortStock && !isFullyPicked ? (
           <Tooltip>

@@ -285,9 +285,6 @@ msgstr "Меню действий"
 msgid "Active"
 msgstr "Активные"
 
-msgid "Actual"
-msgstr "Факт"
-
 msgid "Add"
 msgstr "Добавить"
 
@@ -1060,9 +1057,6 @@ msgstr "Введите 6-значный код из приложения аут�
 
 msgid "Error"
 msgstr "Ошибка"
-
-msgid "Estimated"
-msgstr "План"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Каждый производственный заказ в серии следует этим шагам. Запишите шаг для всех одновременно."
@@ -2344,9 +2338,6 @@ msgstr "Прогнозируемое завершение:"
 
 msgid "PTO"
 msgstr "Отпуск"
-
-msgid "Pull from inventory"
-msgstr "Со склада"
 
 msgid "Purchasing"
 msgstr "Закупки"

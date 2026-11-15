@@ -35,7 +35,9 @@ export const path = {
         ),
       failureModes: `${api}/failure-modes`,
       issueInventoryBins: (itemId: string, operationId: string) =>
-        `${api}/issue-inventory-bins?itemId=${encodeURIComponent(itemId)}&operationId=${encodeURIComponent(operationId)}`,
+        generatePath(
+          `${api}/issue-inventory-bins?itemId=${itemId}&operationId=${operationId}`
+        ),
       loginVerifyCode: `${api}/login/verify-code`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),

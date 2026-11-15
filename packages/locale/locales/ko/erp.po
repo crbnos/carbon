@@ -23932,6 +23932,10 @@ msgstr "출하 수량"
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "{lineNumber} 라인 대변 수량"
 
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
+
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} 반품 수량"
 
@@ -28810,6 +28814,9 @@ msgstr "재고"
 
 msgid "Stock and planning"
 msgstr "재고 및 계획"
+
+msgid "Stock at:"
+msgstr ""
 
 msgid "Stock Availability"
 msgstr "재고 가용성"

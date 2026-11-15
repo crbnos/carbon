@@ -285,9 +285,6 @@ msgstr "Action Menu"
 msgid "Active"
 msgstr "Active"
 
-msgid "Actual"
-msgstr "Actual"
-
 msgid "Add"
 msgstr "Add"
 
@@ -1060,9 +1057,6 @@ msgstr "Enter the 6-digit code from your authenticator app to resume."
 
 msgid "Error"
 msgstr "Error"
-
-msgid "Estimated"
-msgstr "Estimated"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Every job in the batch follows these steps. Record a step for all of them at once."
@@ -2344,9 +2338,6 @@ msgstr "Projected completion:"
 
 msgid "PTO"
 msgstr "PTO"
-
-msgid "Pull from inventory"
-msgstr "Pull from inventory"
 
 msgid "Purchasing"
 msgstr "Purchasing"

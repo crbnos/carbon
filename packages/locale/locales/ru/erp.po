@@ -23932,6 +23932,10 @@ msgstr "Количество отправлено"
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "Количество к кредитованию по строке {lineNumber}"
 
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
+
 msgid "Quantity to return for {itemReadableId}"
 msgstr "Количество к возврату для {itemReadableId}"
 
@@ -28810,6 +28814,9 @@ msgstr "Запас"
 
 msgid "Stock and planning"
 msgstr "Запас и планирование"
+
+msgid "Stock at:"
+msgstr ""
 
 msgid "Stock Availability"
 msgstr "Наличие запаса"

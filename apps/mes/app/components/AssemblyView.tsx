@@ -99,6 +99,10 @@ import { TrackingTypeIcon } from "~/components/Icons";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
 import { MaintenanceDispatch } from "~/components/JobOperation/components/MaintenanceDispatch";
+import {
+  compareMaterialsByLocation,
+  MaterialSource
+} from "~/components/JobOperation/components/Materials";
 import { NeedMaterialModal } from "~/components/JobOperation/components/NeedMaterialModal";
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
@@ -845,7 +849,11 @@ export function AssemblyView({
       if (r !== 0) return r;
       const at = TYPE_ORDER.indexOf(a.itemType ?? "");
       const bt = TYPE_ORDER.indexOf(b.itemType ?? "");
-      return (at < 0 ? 99 : at) - (bt < 0 ? 99 : bt);
+      // Within a type, in the order the picker walks the shelves.
+      return (
+        (at < 0 ? 99 : at) - (bt < 0 ? 99 : bt) ||
+        compareMaterialsByLocation(a, b)
+      );
     });
 
   // Phase 2 (tool ↔ step, many-to-many): show only the tools involved in the current step —
@@ -3461,6 +3469,8 @@ function MaterialRow({
         <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
           {material.itemReadableId}
         </span>
+        {/* Where to pull it from, or that it is made on this job. */}
+        <MaterialSource material={material} />
       </div>
       {/* Count hard-right, with the tracking badges tucked beneath it. */}
       <div className="flex shrink-0 flex-col items-end gap-1">

@@ -285,9 +285,6 @@ msgstr "Menu azioni"
 msgid "Active"
 msgstr "Attivo"
 
-msgid "Actual"
-msgstr "Effettivo"
-
 msgid "Add"
 msgstr "Aggiungi"
 
@@ -1060,9 +1057,6 @@ msgstr "Inserisci il codice a 6 cifre dalla tua app di autenticazione per ripren
 
 msgid "Error"
 msgstr "Errore"
-
-msgid "Estimated"
-msgstr "Stimato"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Ogni ordine di produzione nel lotto di produzione segue questi passi. Registra un passo per tutti loro contemporaneamente."
@@ -2344,9 +2338,6 @@ msgstr "Completamento previsto:"
 
 msgid "PTO"
 msgstr "Permesso"
-
-msgid "Pull from inventory"
-msgstr "Preleva da magazzino"
 
 msgid "Purchasing"
 msgstr "Acquisti"

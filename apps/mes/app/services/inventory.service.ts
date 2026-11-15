@@ -101,7 +101,9 @@ export async function getBatchNumbersForItem(
     .gt("quantity", 0)
     .order("expirationDate", { ascending: true, nullsFirst: false })
     .order("createdAt", { ascending: true });
-  const entities = args.locationId
+  // The location read takes the job's stripes: with none, every lot is offered.
+  const locationId = args.stripes ? args.locationId : undefined;
+  const entities = locationId
     ? candidateEntities
     : await withoutNonNettableLots(client, args.companyId, candidateEntities);
 
@@ -110,7 +112,7 @@ export async function getBatchNumbersForItem(
     itemIds,
     entities,
     stripes: args.stripes,
-    locationId: args.locationId
+    locationId
   });
 }
 
@@ -130,8 +132,8 @@ async function issueEntitiesAtLocation<
   data: Array<T & { storageUnitName: string | null }> | null;
   error: unknown;
 }> {
-  const { entities, locationId } = args;
-  if (!locationId) {
+  const { entities, locationId, stripes } = args;
+  if (!locationId || !stripes) {
     const striped = await keepEntitiesOfStripes(client, args);
     return {
       ...striped,
@@ -151,7 +153,7 @@ async function issueEntitiesAtLocation<
     p_location_id: locationId,
     p_item_ids: args.itemIds,
     // A null element is common stock; the generated type cannot say so.
-    p_project_ids: args.stripes as string[] | undefined
+    p_project_ids: stripes as string[]
   });
   if (stock.error) return { ...entities, data: null, error: stock.error };
 
@@ -330,7 +332,9 @@ export async function getSerialNumbersForItem(
     .gt("quantity", 0)
     .order("expirationDate", { ascending: true, nullsFirst: false })
     .order("createdAt", { ascending: true });
-  const entities = args.locationId
+  // The location read takes the job's stripes: with none, every lot is offered.
+  const locationId = args.stripes ? args.locationId : undefined;
+  const entities = locationId
     ? candidateEntities
     : await withoutNonNettableLots(client, args.companyId, candidateEntities);
 
@@ -339,7 +343,7 @@ export async function getSerialNumbersForItem(
     itemIds,
     entities,
     stripes: args.stripes,
-    locationId: args.locationId
+    locationId
   });
 }
 

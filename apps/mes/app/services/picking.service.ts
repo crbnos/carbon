@@ -8,6 +8,7 @@ import { getErrorMessage, requireAffected } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type ErpPostingInput, erpPosting } from "~/services/erp";
 import { isPickingListLocked } from "~/services/models";
+import type { LiveStorageUnit } from "~/services/types";
 
 export async function getAssignedPickingLists(
   client: SupabaseClient<Database>,
@@ -116,10 +117,7 @@ export async function getPickingListForExecution(
   }
   const trackedEntities = trackedResult.data;
 
-  const liveBins = new Map<
-    string,
-    Array<{ id: string | null; name: string | null; quantity: number }>
-  >();
+  const liveBins = new Map<string, LiveStorageUnit[]>();
   for (const row of binsResult.data ?? []) {
     const bins = liveBins.get(row.pickingListLineId) ?? [];
     bins.push({

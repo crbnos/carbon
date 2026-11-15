@@ -23932,6 +23932,10 @@ msgstr "出荷数量"
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "明細 {lineNumber} の取消数量"
 
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
+
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId}の返品数量"
 
@@ -28810,6 +28814,9 @@ msgstr "在庫"
 
 msgid "Stock and planning"
 msgstr "在庫と計画"
+
+msgid "Stock at:"
+msgstr ""
 
 msgid "Stock Availability"
 msgstr "在庫可用性"

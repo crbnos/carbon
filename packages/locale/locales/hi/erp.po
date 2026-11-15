@@ -23932,6 +23932,10 @@ msgstr "भेजी गई मात्रा"
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "पंक्ति {lineNumber} के लिए जमा की जाने वाली मात्रा"
 
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
+
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} के लिए लौटाई जाने वाली मात्रा"
 
@@ -28810,6 +28814,9 @@ msgstr "स्टॉक"
 
 msgid "Stock and planning"
 msgstr "स्टॉक और योजना"
+
+msgid "Stock at:"
+msgstr ""
 
 msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"

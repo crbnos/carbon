@@ -285,9 +285,6 @@ msgstr "작업 메뉴"
 msgid "Active"
 msgstr "활성"
 
-msgid "Actual"
-msgstr "실제"
-
 msgid "Add"
 msgstr "추가"
 
@@ -1060,9 +1057,6 @@ msgstr "인증 앱에서 6자리 코드를 입력하여 계속하세요."
 
 msgid "Error"
 msgstr "오류"
-
-msgid "Estimated"
-msgstr "예상"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "배치의 모든 작업 지시는 이러한 단계를 따릅니다. 모두에 대해 한 번에 단계를 기록하세요."
@@ -2344,9 +2338,6 @@ msgstr "예상 완료:"
 
 msgid "PTO"
 msgstr "PTO"
-
-msgid "Pull from inventory"
-msgstr "재고 사용"
 
 msgid "Purchasing"
 msgstr "구매"

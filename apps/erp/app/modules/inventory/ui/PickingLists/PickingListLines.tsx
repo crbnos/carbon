@@ -55,6 +55,7 @@ import { isPickingListLocked } from "../../inventory.models";
 import type {
   getPickingList,
   getPickingListLines,
+  PickingListLiveBin,
   PickingListRecommendation
 } from "../../inventory.service";
 import { ShortPickModal } from "./ShortPickModal";
@@ -99,16 +100,16 @@ type PickingListLineData = NonNullable<
   Awaited<ReturnType<typeof getPickingListLines>>["data"]
 >;
 
-type LiveBin = { id: string | null; name: string | null; quantity: number };
+type PickingListLine = PickingListLineData[number] & {
+  liveStorageUnits?: PickingListLiveBin[];
+};
 
 type RecommendationsPromise = Promise<
   Record<string, PickingListRecommendation[]>
 >;
 
 type PickingListLinesProps = {
-  pickingListLines: Array<
-    PickingListLineData[number] & { liveStorageUnits?: LiveBin[] }
-  >;
+  pickingListLines: PickingListLine[];
   pickingListId: string;
   pickingList: PickingListData;
   recommendations: RecommendationsPromise;
@@ -122,7 +123,7 @@ type Kit = {
   jobReadableId: string | null;
   operationName: string | null;
   workCenterName: string | null;
-  lines: PickingListLinesProps["pickingListLines"];
+  lines: PickingListLine[];
 };
 
 const PickingListLines = ({
@@ -318,7 +319,7 @@ function PickingListLineItem({
   isLocked,
   recommendations
 }: {
-  line: PickingListLineData[number];
+  line: PickingListLine;
   lineNumber?: number;
   pickingListId: string;
   isLast: boolean;
@@ -406,8 +407,10 @@ function PickingListLineItem({
   const isTracked =
     item?.itemTrackingType === "Serial" || item?.itemTrackingType === "Batch";
   const isBatch = item?.itemTrackingType === "Batch";
-  const liveBins =
-    (line as { liveStorageUnits?: LiveBin[] }).liveStorageUnits ?? [];
+  const liveBins = line.liveStorageUnits ?? [];
+  // Once picked, the stock is at lineside and its warehouse bin may be empty:
+  // the line then names the bin it was picked from.
+  const pickedFrom = quantityPicked > 0 ? line.storageUnit?.name : undefined;
   // Warehouse on-hand available (incl. the unassigned/null bin). A null source
   // bin is NOT a shortage if there's on-hand sitting in the unassigned bin.
   const isShortStock = liveBins.length === 0;
@@ -616,11 +619,13 @@ function PickingListLineItem({
 
       <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 @3xl:shrink-0 @3xl:flex-nowrap max-md:gap-3">
         <div className="text-base font-medium">
-          {liveBins.length > 0 ? (
-            liveBins.map((bin) => bin.name ?? t`Location not known`).join(", ")
-          ) : (
-            <Trans>Location not known</Trans>
-          )}
+          {isPicked && pickedFrom
+            ? pickedFrom
+            : liveBins.length > 0
+              ? liveBins
+                  .map((bin) => bin.name ?? t`Location not known`)
+                  .join(", ")
+              : (pickedFrom ?? <Trans>Location not known</Trans>)}
         </div>
         {isShortStock && !isPicked && (
           <Tooltip>

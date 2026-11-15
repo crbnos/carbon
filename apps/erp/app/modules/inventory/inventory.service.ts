@@ -5326,6 +5326,14 @@ export async function getPickingListAvailability(
   return map;
 }
 
+/** A bin that holds stock a picking list line can draw now. `id` and `name`
+ *  are null for stock in no storage unit. */
+export type PickingListLiveBin = {
+  id: string | null;
+  name: string | null;
+  quantity: number;
+};
+
 /** Current positive warehouse stock by bin for each line on one picking list. */
 export async function getPickingListLiveBins(
   client: SupabaseClient<Database>,
@@ -5336,11 +5344,9 @@ export async function getPickingListLiveBins(
     p_company_id: companyId,
     p_picking_list_id: pickingListId
   });
-  const bins = new Map<
-    string,
-    Array<{ id: string | null; name: string | null; quantity: number }>
-  >();
-  for (const row of result.data ?? []) {
+  const bins = new Map<string, PickingListLiveBin[]>();
+  if (result.error) return { data: bins, error: result.error };
+  for (const row of result.data) {
     const list = bins.get(row.pickingListLineId) ?? [];
     list.push({
       id: row.storageUnitId,
@@ -5349,7 +5355,7 @@ export async function getPickingListLiveBins(
     });
     bins.set(row.pickingListLineId, list);
   }
-  return { data: bins, error: result.error };
+  return { data: bins, error: null };
 }
 
 export type PickingListRecommendation = {
@@ -25556,10 +25562,7 @@ export async function postPicking(
           if (row.storageUnitId === line.toStorageUnitId) continue;
           sourceBalances.set(
             row.storageUnitId,
-            round(
-              (sourceBalances.get(row.storageUnitId) ?? 0) -
-                Number(row.quantity)
-            )
+            round((sourceBalances.get(row.storageUnitId) ?? 0) - row.quantity)
           );
         }
         const taggedPicked = [...sourceBalances.values()].reduce(
@@ -25581,7 +25584,7 @@ export async function postPicking(
         }
         const legacyPicked = Math.max(
           0,
-          round(Number(line.quantityPicked ?? 0) - taggedPicked)
+          round((line.quantityPicked ?? 0) - taggedPicked)
         );
         if (left > 0 && legacyPicked > 0) {
           const take = round(Math.min(left, legacyPicked));
@@ -31397,27 +31400,42 @@ export async function issueMaterial(
           operationIds: string[],
           returnQuantity: number
         ) => {
-          const priorDraws = await trx
-            .selectFrom("itemLedger")
-            .select([
-              "storageUnitId",
-              "projectId",
-              (eb) => eb.fn.sum<number>("quantity").as("balance"),
-              sql<number>`max("entryNumber") filter (where "quantity" < 0)`.as(
-                "latestDraw"
-              )
-            ])
-            .where("companyId", "=", companyId)
-            .where("documentType", "=", "Job Consumption")
-            .where("documentId", "=", jobId)
-            .where("documentLineId", "in", operationIds)
-            .where("itemId", "=", rowItemId)
-            .where("locationId", "=", job?.locationId!)
-            .where("entryType", "=", "Consumption")
-            .where("trackedEntityId", "is", null)
-            .groupBy(["storageUnitId", "projectId"])
-            .orderBy("latestDraw", "desc")
-            .execute();
+          // Net every untracked draw of the item on this job by bin and
+          // stripe. A completion backflush writes no operation (the job's SQL
+          // backflush) or another operation's, so the operation only orders
+          // the sources: its own draws are returned first.
+          const priorDraws = (
+            await trx
+              .selectFrom("itemLedger")
+              .select([
+                "storageUnitId",
+                "projectId",
+                (eb) => eb.fn.sum<number>("quantity").as("balance"),
+                sql<
+                  number | null
+                >`max("entryNumber") filter (where "quantity" < 0)`.as(
+                  "latestDraw"
+                ),
+                sql<
+                  number | null
+                >`max("entryNumber") filter (where "quantity" < 0 and "documentLineId" in (${sql.join(operationIds)}))`.as(
+                  "latestOwnDraw"
+                )
+              ])
+              .where("companyId", "=", companyId)
+              .where("documentType", "=", "Job Consumption")
+              .where("documentId", "=", jobId)
+              .where("itemId", "=", rowItemId)
+              .where("locationId", "=", job?.locationId!)
+              .where("entryType", "=", "Consumption")
+              .where("trackedEntityId", "is", null)
+              .groupBy(["storageUnitId", "projectId"])
+              .execute()
+          ).sort(
+            (a, b) =>
+              Number(b.latestOwnDraw ?? -1) - Number(a.latestOwnDraw ?? -1) ||
+              Number(b.latestDraw ?? -1) - Number(a.latestDraw ?? -1)
+          );
           let left = round(returnQuantity);
           const returned: {
             storageUnitId: string | null;
@@ -31560,7 +31578,7 @@ export async function issueMaterial(
             adjustmentType === "Positive Adjmt." &&
             round(quantity) > previouslyIssued
           ) {
-            throw new Error(
+            throw new InvalidInputError(
               "Cannot unissue more than the material's issued quantity"
             );
           }

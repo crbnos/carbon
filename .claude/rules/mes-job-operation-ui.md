@@ -479,6 +479,16 @@ while its serial or batch materials are not scanned in.
   shape is a contract with `parseJobFilePath`
   (`apps/erp/app/utils/supabase.ts`), which gates the customer-portal file route.
 - **`components/Parameter.tsx`** — exports `ParametersListItem`.
+- **Material source and unissue.** `MaterialSource` (`components/Materials.tsx`) shows a
+  material's method and where its stock is now: `liveStorageUnits` from
+  `getJobMaterialsByOperationId` (RPC `get_job_issue_bins`, one read per job), "WIP" for a
+  made part, "Location not known" when no bin holds stock. A failed bin read is logged and the
+  material shows the bin it names. For an untracked material with a quantity issued,
+  `IssueMaterialModal` has an Issue / Unissue toggle: Unissue posts `Positive Adjmt.` up to
+  the issued quantity, and the ERP returns the stock to the bins it was drawn from. In Issue
+  mode the modal lists the bins with stock ("Stock at:", `api+/issue-inventory-bins.ts`). The
+  serial and batch lists show each lot's bin (`get_issue_tracked_entity_stock`, read when the
+  request names the operation, so the job's stripes are known).
 - Modals/sections: `IssueMaterialModal`, `QuantityModal` (type `scrap`/`finish`),
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.

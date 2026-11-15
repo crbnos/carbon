@@ -23932,6 +23932,10 @@ msgstr "Sevk edilen miktar"
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "{lineNumber} satırı için alacaklandırılacak miktar"
 
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
+
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} için iade edilecek miktar"
 
@@ -28810,6 +28814,9 @@ msgstr "Stok"
 
 msgid "Stock and planning"
 msgstr "Stok ve Planlama"
+
+msgid "Stock at:"
+msgstr ""
 
 msgid "Stock Availability"
 msgstr "Stok Mevcudiyeti"

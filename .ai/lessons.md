@@ -6,13 +6,23 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Issue-bin displays preserve stock stripes and picked ownership
+
+**Context:** A batched MES query reports the bins a job can issue from, including stock picked to a work center.
+
+**Problem:** Summing project and common ledger rows before testing for positive stock hid a positive project bin behind a negative common balance. Excluding every lineside bin hid stock already picked for the job.
+
+**Rule:** Test positive on-hand per eligible `(item, bin, projectId)` stripe, then combine display quantities. Show lineside stock only when the job has an outstanding picked claim at that bin, net of its consumption.
+
+**Applies to:** Issue-location reads, stock availability badges, and any query that merges warehouse and picked lineside stock.
+
 ## Reverse inventory from the original ledger sources
 
 **Context:** Picking a material in stages and unissuing project-job inventory.
 
 **Problem:** A saved bin can empty between picks, and a project job can consume both project and common stock. Reusing the saved bin or default project stripe for a reversal changes physical or ownership balances.
 
-**Rule:** Resolve stock after the draw lock for every pick, record its source per line, and reverse outstanding quantities by their original bin and stripe.
+**Rule:** Resolve stock after the draw lock for every pick, record its source per line, and reverse outstanding quantities by their original bin and stripe. Find the rows to reverse by document and item, not by a tag only some writers set: the job-completion backflush writes `Job Consumption` rows with no `documentLineId`. A refusal the person can act on is an `InvalidInputError`; a plain `Error` reads as a 500 and its text is withheld.
 
 **Applies to:** Picking transfers, unpick, job consumption, and unissue.
 
@@ -5001,16 +5011,6 @@ redirects (purchase orders, and the other records with a `/details` index).
 **Rule:** Before a script that calls the local Supabase API over portless, wake the stack (one request to the ERP URL), then run it with `NODE_EXTRA_CA_CERTS=$HOME/.portless/ca.pem`.
 
 **Applies to:** `pnpm db:seed:dev`, and any `tsx` script that calls `SUPABASE_URL` on a portless stack.
-
-## Issue-bin displays preserve stock stripes and picked ownership
-
-**Context:** A batched MES query reports the bins a job can issue from, including stock picked to a work center.
-
-**Problem:** Summing project and common ledger rows before testing for positive stock hid a positive project bin behind a negative common balance. Excluding every lineside bin hid stock already picked for the job.
-
-**Rule:** Test positive on-hand per eligible `(item, bin, projectId)` stripe, then combine display quantities. Show lineside stock only when the job has an outstanding picked claim at that bin, net of its consumption.
-
-**Applies to:** Issue-location reads, stock availability badges, and any query that merges warehouse and picked lineside stock.
 
 ## Measure completed typechecks before claiming a speedup
 

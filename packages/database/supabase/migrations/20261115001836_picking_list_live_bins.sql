@@ -1,6 +1,5 @@
 -- Current warehouse stock by bin for each line of one picking list. A line's
 -- saved source bin is only the suggestion made when the list was created.
-DROP FUNCTION IF EXISTS get_picking_list_live_bins(TEXT);
 CREATE OR REPLACE FUNCTION get_picking_list_live_bins(
   p_company_id TEXT,
   p_picking_list_id TEXT

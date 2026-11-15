@@ -93,7 +93,11 @@ databaseTest(
         quantity: 3,
         adjustmentType: "Positive Adjmt."
       });
-      expect(excessReturn.error).not.toBeNull();
+      // A refusal the operator can act on: the MES shows only errors below 500.
+      expect(excessReturn.error?.status).toBeLessThan(500);
+      expect(excessReturn.error?.message).toBe(
+        "Cannot unissue more than the material's issued quantity"
+      );
       const materialAfterRefusal = await f.db
         .selectFrom("jobMaterial")
         .select("quantityIssued")
@@ -908,6 +912,16 @@ databaseTest(
         [-20, null]
       ]);
 
+      // The job-completion backflush writes its draws with no operation. An
+      // unissue still returns them to the bins and stripes they came from.
+      await f.db
+        .updateTable("itemLedger")
+        .set({ documentLineId: null })
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .execute();
+
       const returned = await issue(f.ctx, {
         type: "partToOperation",
         id: job.operationId,
@@ -955,13 +969,13 @@ databaseTest(
         .groupBy("projectId")
         .execute();
       expect(
-        netIssues.map((row) => [row.projectId, Number(row.quantity)])
-      ).toEqual(
-        expect.arrayContaining([
-          [f.projectId, -2],
-          [null, 0]
-        ])
-      );
+        netIssues
+          .map((row) => [row.projectId, Number(row.quantity)] as const)
+          .sort((a, b) => a[1] - b[1])
+      ).toEqual([
+        [f.projectId, -2],
+        [null, 0]
+      ]);
     } finally {
       await f.cleanup();
     }

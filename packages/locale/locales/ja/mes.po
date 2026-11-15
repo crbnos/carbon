@@ -285,9 +285,6 @@ msgstr "アクションメニュー"
 msgid "Active"
 msgstr "アクティブ"
 
-msgid "Actual"
-msgstr "実績"
-
 msgid "Add"
 msgstr "追加"
 
@@ -1060,9 +1057,6 @@ msgstr "認証アプリから6桁のコードを入力して再開してくだ�
 
 msgid "Error"
 msgstr "エラー"
-
-msgid "Estimated"
-msgstr "見積"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "バッチ内のすべての製造指図がこれらのステップに従います。すべてのステップを一度に記録します。"
@@ -2344,9 +2338,6 @@ msgstr "完了予定:"
 
 msgid "PTO"
 msgstr "有給"
-
-msgid "Pull from inventory"
-msgstr "在庫から引当"
 
 msgid "Purchasing"
 msgstr "購買"

@@ -285,9 +285,6 @@ msgstr "क्रिया मेनू"
 msgid "Active"
 msgstr "सक्रिय"
 
-msgid "Actual"
-msgstr "वास्तविक"
-
 msgid "Add"
 msgstr "जोड़ें"
 
@@ -1060,9 +1057,6 @@ msgstr "अपने प्रमाणक ऐप्लिकेशन से 6-
 
 msgid "Error"
 msgstr "त्रुटि"
-
-msgid "Estimated"
-msgstr "अनुमानित"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "बैच में हर जॉब इन चरणों का पालन करता है। सभी के लिए एक बार में एक चरण रिकॉर्ड करें।"
@@ -2344,9 +2338,6 @@ msgstr "अनुमानित पूर्णता:"
 
 msgid "PTO"
 msgstr "अवकाश"
-
-msgid "Pull from inventory"
-msgstr "इन्वेंटरी से लें"
 
 msgid "Purchasing"
 msgstr "क्रय"

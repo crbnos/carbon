@@ -285,9 +285,6 @@ msgstr "İşlem Menüsü"
 msgid "Active"
 msgstr "Aktif"
 
-msgid "Actual"
-msgstr "Gerçek"
-
 msgid "Add"
 msgstr "Ekle"
 
@@ -1060,9 +1057,6 @@ msgstr "Devam etmek için kimlik doğrulama uygulamanızdan 6 haneli kodu girin.
 
 msgid "Error"
 msgstr "Hata"
-
-msgid "Estimated"
-msgstr "Tahmini"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Partideki her iş emri bu adımları takip eder. Tüm bunlar için bir adım kaydedin."
@@ -2344,9 +2338,6 @@ msgstr "Tahmini tamamlanma:"
 
 msgid "PTO"
 msgstr "İzin"
-
-msgid "Pull from inventory"
-msgstr "Stoktan kullan"
 
 msgid "Purchasing"
 msgstr "Satın alma"

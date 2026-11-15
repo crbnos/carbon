@@ -23932,6 +23932,10 @@ msgstr "Quantity shipped"
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "Quantity to credit for line {lineNumber}"
 
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr "Quantity to pick of {0}"
+
 msgid "Quantity to return for {itemReadableId}"
 msgstr "Quantity to return for {itemReadableId}"
 
@@ -28810,6 +28814,9 @@ msgstr "Stock"
 
 msgid "Stock and planning"
 msgstr "Stock and planning"
+
+msgid "Stock at:"
+msgstr "Stock at:"
 
 msgid "Stock Availability"
 msgstr "Stock Availability"

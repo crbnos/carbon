@@ -285,9 +285,6 @@ msgstr "Aktionsmenü"
 msgid "Active"
 msgstr "Aktiv"
 
-msgid "Actual"
-msgstr "Ist"
-
 msgid "Add"
 msgstr "Hinzufügen"
 
@@ -1060,9 +1057,6 @@ msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein, um fortz
 
 msgid "Error"
 msgstr "Fehler"
-
-msgid "Estimated"
-msgstr "Soll"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Jeder Fertigungsauftrag im Los folgt diesen Schritten. Zeichnen Sie einen Schritt für alle auf einmal auf."
@@ -2344,9 +2338,6 @@ msgstr "Voraussichtlicher Abschluss:"
 
 msgid "PTO"
 msgstr "PTO"
-
-msgid "Pull from inventory"
-msgstr "Aus Bestand entnehmen"
 
 msgid "Purchasing"
 msgstr "Einkauf"
