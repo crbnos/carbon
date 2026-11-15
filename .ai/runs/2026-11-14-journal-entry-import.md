@@ -28,3 +28,13 @@
 4. Tests: `shared.journal-entry-import.test.ts` covers row parsing, grouping, balance, an unknown account, Closed and Locked periods, the cutover, re-import and dimensions. `imports.models.test.ts` checks the new table's schema covers its fields.
 5. Docs: `import-export.mdx` (new section, permissions, troubleshooting), `accounting.mdx` (one line), `csv-import-system.md`, accounting `AGENTS.md`.
 6. Not done: a live run on a stack. This build had no stack.
+
+## 2026-11-15: dimension steps
+
+- Rebased onto `origin/main`; no conflicts.
+- Problem from a test in the running app: a file with no dimension columns showed five wizard steps, three of them Dimension steps that ask which dimension an unmapped Value column tags.
+- The wizard gave every enum field a step and had no way for one field's step to depend on another field's mapping.
+- Added `enumData.askWhenMapped` (a field of the same table) and `isEnumStepAsked` (`ImportCSVModal/enumSteps.ts`). `FieldMappings` asks only those steps and submits only their enum mappings, so a Default chosen before the Value column was unmapped is not sent. Tables without the option are unchanged.
+- Server unchanged: `readJournalEntryRow` ignores a slot with no value, with or without a dimension. A new test pins it.
+- Red then green: with `askWhenMapped` removed from the model, the three journal entry step tests in `enumSteps.test.ts` failed.
+- Results summary wording ("1 inserted, 0 updated, 4 need fixing" counts journals and rows together) left as is: shared import infrastructure, out of scope.

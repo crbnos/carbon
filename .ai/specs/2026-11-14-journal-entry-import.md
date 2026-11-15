@@ -111,3 +111,17 @@ accounting. The import uses the existing wizard.
 - [x] Draft by default; Posted posts through `postJournalEntry`.
 - [x] Importing the same file again skips its journals.
 - [x] The docs page lists the type.
+
+## Addendum 2026-11-15: dimension steps follow their Value column
+
+- Found in a test of the running app: a file with no dimension columns walked
+  through five wizard steps (Field Mapping, Status, Dimension 1, 2 and 3), each
+  Dimension step asking which dimension its Value column tags.
+- The wizard now asks for Dimension N only while Dimension N Value is mapped.
+  The Status step stays.
+- Mechanism, shared by every import: an enum field's `enumData.askWhenMapped`
+  names another field of the table (`isEnumStepAsked`,
+  `ImportCSVModal/enumSteps.ts`). A skipped step sends no enum mapping.
+- Server: unchanged. `readJournalEntryRow` already ignores a slot with no
+  value, so an absent Dimension N default needs no rule.
+- [x] A file without Dimension Value columns shows Field Mapping and Status only.

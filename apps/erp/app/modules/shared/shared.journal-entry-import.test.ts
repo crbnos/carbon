@@ -119,6 +119,14 @@ describe("readJournalEntryRow", () => {
     ).toBe(true);
   });
 
+  // The wizard skips a Dimension step whose Value column is unmapped, so the
+  // slot may arrive with a dimension and no value, or with neither.
+  it("tags nothing for a dimension chosen with no value", () => {
+    expect(readJournalEntryRow(record({ dimension1: "dim-region" }))).toEqual({
+      row: expect.objectContaining({ dimensions: [] })
+    });
+  });
+
   it("refuses a dimension value with no dimension", () => {
     expect(readJournalEntryRow(record({ dimension2Value: "North" }))).toEqual({
       error:

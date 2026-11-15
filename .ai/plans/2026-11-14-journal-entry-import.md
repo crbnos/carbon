@@ -16,3 +16,8 @@
 - [x] Task 8: Docs (`import-export.mdx`, `accounting.mdx`), rule (`csv-import-system.md`), accounting `AGENTS.md`.
 - [x] Task 9: Lingui extract, Biome, scoped typecheck and tests.
 - [ ] Task 10: Live check on a stack (not available to this build): import a file as Draft, as Posted, into a Closed period, and again.
+
+## Addendum 2026-11-15
+
+- [x] Task 11: Rebase onto `origin/main` (clean, no conflicts).
+- [x] Task 12: Ask for Dimension N only when Dimension N Value is mapped: `enumData.askWhenMapped` on the `dimensionN` fields, `isEnumStepAsked` (`ImportCSVModal/enumSteps.ts`) in `FieldMappings`, skipped steps send no enum mapping. Tests in `enumSteps.test.ts`, `imports.models.test.ts` and `shared.journal-entry-import.test.ts`; rule, docs and spec updated.

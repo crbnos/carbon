@@ -254,7 +254,9 @@ const dimensionFetcher = async (
 export const journalEntryImportStatuses = ["Draft", "Posted"] as const;
 
 // One pair per dimension slot: the dimension (an enum, usually set once for
-// the whole file as its Default) and the column that holds its values.
+// the whole file as its Default) and the column that holds its values. The
+// wizard asks for the dimension only when the Value column is mapped: without
+// values a slot tags nothing.
 const journalEntryDimensionField = (slot: number) =>
   ({
     label: `Dimension ${slot}`,
@@ -262,7 +264,8 @@ const journalEntryDimensionField = (slot: number) =>
     type: "enum",
     enumData: {
       description: `The dimension that Dimension ${slot} Value tags. Leave the column unmapped and choose the dimension as the Default to tag every line`,
-      fetcher: dimensionFetcher
+      fetcher: dimensionFetcher,
+      askWhenMapped: `dimension${slot}Value`
     }
   }) as const;
 const journalEntryDimensionValueField = (slot: number) =>

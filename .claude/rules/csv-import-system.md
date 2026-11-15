@@ -53,9 +53,19 @@ Three exported maps, all keyed by table name:
       creatableLookup?: "supplierType" | "customerType" | "customerStatus";
       creatableForm?: "paymentTerm" | "shippingMethod";
       options?: readonly string[];                      // static options
+      askWhenMapped?: string;                           // another field of the table
     };
   }
   ```
+- **Enum steps.** After Field Mapping the wizard asks one step per enum field
+  (`isEnumStepAsked`, `ImportCSVModal/enumSteps.ts`). An enum field with
+  `enumData.askWhenMapped` is asked only while that other field's column is
+  mapped ("None" counts as unmapped), and a skipped step sends no
+  `enumMappings` entry, so a Default chosen before the column was unmapped
+  does not reach the import. Every other enum field is always asked. Only the
+  journal entry `dimensionN` fields use it (asked when `dimensionNValue` is
+  mapped). `imports.models.test.ts` checks each `askWhenMapped` names a field
+  of its own table.
 - `importPermissions` — table → permission module. The one map: `importCsvFile`'s gate reads it.
 - `importSchemas` — `Record<keyof fieldMappings, z.ZodObject>` for per-table validation.
 
@@ -125,7 +135,9 @@ the manual entry's `createJournalEntry` and `saveJournalEntry` need.
   the reference), `status` (enum `Draft` | `Posted`, default `Draft`,
   `journalEntryImportStatuses`), and three dimension slots `dimensionN` (enum of the
   group's active dimensions, `dimensionFetcher`; usually left unmapped with the
-  dimension as its Default) + `dimensionNValue` (the value by name).
+  dimension as its Default) + `dimensionNValue` (the value by name). The wizard
+  asks for `dimensionN` only when `dimensionNValue` is mapped (`askWhenMapped`);
+  `readJournalEntryRow` ignores a slot with no value, dimension or not.
 - **The plan is pure** (`planJournalEntryImport`, tested by
   `shared.journal-entry-import.test.ts`): rows group by reference in first-appearance
   order. A row needs one of a debit or a credit above 0 (`saveJournalEntry`'s rule) and
