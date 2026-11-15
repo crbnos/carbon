@@ -3510,6 +3510,9 @@ msgstr "When"
 msgid "Whole batch"
 msgstr "Whole batch"
 
+msgid "Winding"
+msgstr "Winding"
+
 msgid "WIP"
 msgstr "WIP"
 

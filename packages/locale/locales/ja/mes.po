@@ -3510,6 +3510,9 @@ msgstr "いつ"
 msgid "Whole batch"
 msgstr "バッチ全体"
 
+msgid "Winding"
+msgstr "蛇行"
+
 msgid "WIP"
 msgstr "仕掛品"
 

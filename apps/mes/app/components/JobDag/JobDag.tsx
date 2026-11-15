@@ -11,7 +11,6 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import Dagre from "@dagrejs/dagre";
 import { useLingui } from "@lingui/react/macro";
 import {
   Background,
@@ -20,23 +19,30 @@ import {
   MiniMap,
   type Node,
   type NodeTypes,
-  Position,
   ReactFlow,
   ReactFlowProvider,
-  useEdgesState,
-  useNodesState,
-  useReactFlow
+  useNodesInitialized,
+  useReactFlow,
+  useStore
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuArrowDown, LuArrowRight, LuInfo, LuMaximize } from "react-icons/lu";
+import { useEffect, useMemo, useState } from "react";
+import {
+  LuArrowDown,
+  LuArrowRight,
+  LuArrowRightLeft,
+  LuInfo,
+  LuMaximize
+} from "react-icons/lu";
 import { JobOperationEdge } from "./JobOperationEdge";
 import { JobOperationNode } from "./JobOperationNode";
-
-type LayoutDirection = "LR" | "TB";
-
-const NODE_WIDTH = 200;
-const NODE_HEIGHT = 90;
+import {
+  dependencyHandles,
+  type LayoutDirection,
+  layoutOperations,
+  NODE_HEIGHT,
+  NODE_WIDTH
+} from "./layout";
 
 const nodeTypes: NodeTypes = {
   jobOperation: JobOperationNode as any
@@ -80,43 +86,24 @@ function computeLayout(
   operations: Operation[],
   dependencies: Dependency[],
   direction: LayoutDirection,
-  compact: boolean
+  compact: boolean,
+  width: number
 ): { nodes: Node[]; edges: Edge[] } {
-  const g = new Dagre.graphlib.Graph();
-  g.setGraph({
-    rankdir: direction,
-    // Phones: tighter spacing, so less panning at the 0.6 fit.
-    nodesep: compact ? 24 : 80,
-    ranksep: compact ? 56 : 120,
-    edgesep: 30,
-    marginx: 40,
-    marginy: 40
-  });
-  g.setDefaultEdgeLabel(() => ({}));
-
   const opsById = new Map(operations.map((op) => [op.id, op]));
-
-  for (const op of operations) {
-    g.setNode(op.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
-  }
-
-  for (const dep of dependencies) {
-    g.setEdge(dep.dependsOnId, dep.operationId);
-  }
-
-  Dagre.layout(g);
-
-  const isHorizontal = direction === "LR";
+  const positions = layoutOperations(
+    operations.map((op) => op.id),
+    dependencies,
+    direction,
+    width,
+    compact
+  );
 
   const nodes: Node[] = operations.map((op) => {
-    const pos = g.node(op.id);
+    const position = positions.get(op.id)!;
     return {
       id: op.id,
       type: "jobOperation",
-      position: {
-        x: pos.x - NODE_WIDTH / 2,
-        y: pos.y - NODE_HEIGHT / 2
-      },
+      position: { x: position.x, y: position.y },
       data: {
         id: op.id,
         description: op.description ?? "Untitled",
@@ -133,33 +120,85 @@ function computeLayout(
           (op.jobOperationBatch.status === "Active" ||
             op.jobOperationBatch.status === "Completing")
             ? op.jobOperationBatch.readableId
-            : null,
-        direction
-      },
-      sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
-      targetPosition: isHorizontal ? Position.Left : Position.Top
+            : null
+      }
     };
   });
 
   const edges: Edge[] = dependencies.map((dep) => {
     const upstream = opsById.get(dep.dependsOnId);
     const downstream = opsById.get(dep.operationId);
+    const handles = dependencyHandles(
+      positions.get(dep.dependsOnId)!,
+      positions.get(dep.operationId)!,
+      direction
+    );
     return {
       id: `${dep.dependsOnId}-${dep.operationId}`,
       source: dep.dependsOnId,
       target: dep.operationId,
+      sourceHandle: handles.sourceHandle,
+      targetHandle: handles.targetHandle,
       // React Flow's default names the edge by raw operation ids.
       ariaLabel: `${upstream?.description ?? dep.dependsOnId} → ${
         downstream?.description ?? dep.operationId
       }`,
       type: "jobOperationEdge",
       data: {
-        quantity: Number(upstream?.quantityComplete ?? 0)
+        quantity: Number(upstream?.quantityComplete ?? 0),
+        vertical: direction === "Winding" && handles.vertical
       }
     };
   });
 
   return { nodes, edges };
+}
+
+function useGraphViewport(
+  nodes: Node[],
+  direction: LayoutDirection,
+  width: number,
+  height: number,
+  isPhone: boolean
+) {
+  const { fitView, setViewport } = useReactFlow();
+  const nodesInitialized = useNodesInitialized();
+
+  useEffect(() => {
+    if (!width || !height || !nodesInitialized || !nodes.length) return;
+
+    // Start long winding graphs at the first row instead of centering their
+    // full height at tiny zoom.
+    const frame = requestAnimationFrame(() => {
+      let graphWidth = 0;
+      let graphHeight = 0;
+      for (const node of nodes) {
+        graphWidth = Math.max(graphWidth, node.position.x + NODE_WIDTH + 40);
+        graphHeight = Math.max(graphHeight, node.position.y + NODE_HEIGHT + 40);
+      }
+      if (direction === "Winding" && graphHeight > height) {
+        const zoom = Math.min(1, Math.max(0.6, (width - 32) / graphWidth));
+        void setViewport({
+          x: (width - graphWidth * zoom) / 2,
+          y: 24 - 40 * zoom,
+          zoom
+        });
+      } else {
+        void fitView({ padding: 0.1, minZoom: isPhone ? 0.6 : 0.1 });
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [
+    nodes,
+    direction,
+    width,
+    height,
+    isPhone,
+    nodesInitialized,
+    fitView,
+    setViewport
+  ]);
 }
 
 function JobDagInner({ operations, dependencies }: Props) {
@@ -169,36 +208,23 @@ function JobDagInner({ operations, dependencies }: Props) {
   const [chosenDirection, setDirection] = useState<LayoutDirection | null>(
     null
   );
-  const direction = chosenDirection ?? (isPhone ? "TB" : "LR");
+  const direction = chosenDirection ?? (isPhone ? "TB" : "Winding");
+  const width = useStore((state) => state.width);
+  const height = useStore((state) => state.height);
   const { fitView } = useReactFlow();
-  // On a phone, fitting the whole graph shrinks nodes past reading size, so
-  // fit no smaller than 0.6 and let the operator pan the rest.
-  const fitViewOptions = useMemo(
-    () => (isPhone ? { padding: 0.1, minZoom: 0.6 } : { padding: 0.1 }),
-    [isPhone]
-  );
 
   const { nodes: layoutNodes, edges: layoutEdges } = useMemo(
-    () => computeLayout(operations, dependencies, direction, isPhone),
-    [operations, dependencies, direction, isPhone]
+    () => computeLayout(operations, dependencies, direction, isPhone, width),
+    [operations, dependencies, direction, isPhone, width]
   );
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutEdges);
+  useGraphViewport(layoutNodes, direction, width, height, isPhone);
 
-  useEffect(() => {
-    setNodes(layoutNodes);
-    setEdges(layoutEdges);
-    setTimeout(() => fitView(fitViewOptions), 50);
-  }, [layoutNodes, layoutEdges, setNodes, setEdges, fitView, fitViewOptions]);
-
-  const toggleDirection = useCallback(() => {
-    setDirection(direction === "LR" ? "TB" : "LR");
-  }, [direction]);
-
-  const handleFitView = useCallback(() => {
-    fitView(fitViewOptions);
-  }, [fitView, fitViewOptions]);
+  const toggleDirection = () => {
+    setDirection(
+      direction === "Winding" ? "LR" : direction === "LR" ? "TB" : "Winding"
+    );
+  };
 
   return (
     <div className="relative flex flex-col h-full w-full">
@@ -215,16 +241,22 @@ function JobDagInner({ operations, dependencies }: Props) {
             "border border-border bg-background hover:bg-accent/60 transition-colors"
           )}
         >
-          {direction === "LR" ? (
+          {direction === "Winding" ? (
+            <LuArrowRightLeft className="w-3.5 h-3.5" />
+          ) : direction === "LR" ? (
             <LuArrowRight className="w-3.5 h-3.5" />
           ) : (
             <LuArrowDown className="w-3.5 h-3.5" />
           )}
-          {direction === "LR" ? t`Left to Right` : t`Top to Bottom`}
+          {direction === "Winding"
+            ? t`Winding`
+            : direction === "LR"
+              ? t`Left to Right`
+              : t`Top to Bottom`}
         </button>
         <button
           type="button"
-          onClick={handleFitView}
+          onClick={() => fitView({ padding: 0.1, duration: 200 })}
           className={cn(
             "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5 max-md:h-11 max-md:px-3",
             "border border-border bg-background hover:bg-accent/60 transition-colors"
@@ -237,17 +269,14 @@ function JobDagInner({ operations, dependencies }: Props) {
 
       <div className="relative flex-1">
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          nodes={layoutNodes}
+          edges={layoutEdges}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           proOptions={proOptions}
-          fitView
-          fitViewOptions={fitViewOptions}
           nodesDraggable={false}
           nodesConnectable={false}
+          elementsSelectable={false}
           // The link inside each node is the one tab stop.
           nodesFocusable={false}
           edgesFocusable={false}
@@ -255,12 +284,14 @@ function JobDagInner({ operations, dependencies }: Props) {
           maxZoom={2}
         >
           <Background gap={20} size={1} />
-          <MiniMap
-            nodeStrokeWidth={3}
-            pannable
-            zoomable
-            className="!bg-card !border-border max-md:!hidden"
-          />
+          {direction !== "Winding" && (
+            <MiniMap
+              nodeStrokeWidth={3}
+              pannable
+              zoomable
+              className="!bg-card !border-border max-md:!hidden"
+            />
+          )}
         </ReactFlow>
         <DagLegend />
       </div>

@@ -3510,6 +3510,9 @@ msgstr "Quando"
 msgid "Whole batch"
 msgstr "Todo o lote de produção"
 
+msgid "Winding"
+msgstr "Serpenteante"
+
 msgid "WIP"
 msgstr "Produto em processo"
 

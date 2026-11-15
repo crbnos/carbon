@@ -3510,6 +3510,9 @@ msgstr "Kiedy"
 msgid "Whole batch"
 msgstr "Całą partię produkcyjną"
 
+msgid "Winding"
+msgstr "Zygzak"
+
 msgid "WIP"
 msgstr "Produkcja w toku"
 

@@ -3510,6 +3510,9 @@ msgstr "Ne zaman"
 msgid "Whole batch"
 msgstr "Tüm Parti"
 
+msgid "Winding"
+msgstr "Kıvrımlı"
+
 msgid "WIP"
 msgstr "Yarı Mamul"
 
