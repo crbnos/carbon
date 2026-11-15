@@ -576,7 +576,9 @@ function PickingListLineItem({
         </span>
         <ItemThumbnail
           size="xl"
-          thumbnailPath={null}
+          thumbnailPath={
+            line.item?.thumbnailPath ?? line.item?.modelUpload?.thumbnailPath
+          }
           type={(item?.type as "Part") ?? "Part"}
         />
         <VStack spacing={0} className="flex-1 min-w-0">

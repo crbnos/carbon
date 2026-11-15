@@ -834,7 +834,7 @@ function PickLineItem({
           <div className="shrink-0 max-md:[&>*]:size-11 max-md:[&_svg]:size-7">
             <ItemThumbnail
               size="xl"
-              thumbnailPath={null}
+              thumbnailPath={item?.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
           </div>
