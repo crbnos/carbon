@@ -45,9 +45,10 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   - **Notifications:** the `documentId` is `<documentType>:<documentId>:<requestId>`.
 - **Changing a posted line's GL account** (`.ai/specs/2026-11-14-invoice-line-gl-reclass.md`) — `changeSalesInvoiceLineAccount` / `changePurchaseInvoiceLineAccount` (`update: ["invoicing", "accounting"]`, no approval) call `changeInvoiceLineAccount` (`invoicing.service.ts`), one Kysely transaction:
   - Eligible: a sales line whose revenue posted to the Sales account (`postingLineRevenue(line).book === "sales"`), a purchase **G/L Account** line not charged to a project (a `projectLedger` row with `documentLineId` = the line refuses). The new account is an active, non-group Revenue (sales) or Expense (purchase) account of the group.
-  - Finding the amount: no journal line names its invoice line, so `findInvoiceLinePosition` matches the line's group (`journalLineReference`) on the account the amount is on now (the line's `accountId`, then for a sales line the posting's "Sales Account" legs), the quantity, the order line reference and the sign, keeping only a group still holding its amount there; dimensions, then the amount the posting computed, break ties.
+  - Finding the amount: no journal line names its invoice line, so `locateInvoiceLinePosition` tries the accounts the amount may be on (the line's `accountId`, then for a sales line the posting's "Sales Account" legs) and `findInvoiceLinePosition` matches the line's group (`journalLineReference`) on each: the quantity, the order line reference and the sign, keeping only a group still holding its amount there; dimensions, then the amount the posting computed, break ties.
   - The journal: `sourceType` the invoice's own, description `Account change <Sales|Purchase> Invoice <id>`, dated on the original posting's date in its period, which must be Open (`lineAccountChangePeriodRefusal` names a Locked or Closed one). Two lines prefixed `Account change: ` (`LINE_ACCOUNT_CHANGE_PREFIX`), copying the original line's document keys and dimensions, so a void reverses them and the role readers ignore them. Then the line's `accountId` is set.
-  - Refused before the cutover date (`LINE_ACCOUNT_CHANGE_BEFORE_CUTOVER_ERROR`), for a Draft, Pending or Voided invoice, and when an `intercompanyEliminationLine` reads the group. The UI is `ui/InvoiceLineAccount/ChangeInvoiceLineAccount.tsx` in both line forms; the routes are `$invoiceId.$lineId.account.tsx`.
+  - Refused before the cutover date (`LINE_ACCOUNT_CHANGE_BEFORE_CUTOVER_ERROR`), for a Draft, Pending or Voided invoice, and when an `intercompanyEliminationLine` reads the group. The UI is `ui/InvoiceLineAccount/ChangeInvoiceLineAccount.tsx` in both line forms' header `CardAction`; the routes are `$invoiceId.$lineId.account.tsx`.
+  - The dialog shows the account the amount is on now: `getSalesInvoiceLinePostedAccount` / `getPurchaseInvoiceLinePostedAccount` (`view: ["invoicing", "accounting"]`, not `@mcp`) call `getInvoiceLinePostedAccount`, which runs the change's own match and refusals (`readInvoiceLinePosition`). Read when the dialog opens, from `api+/{sales,purchase}-invoice.$invoiceId.$lineId.account.ts`. Never `salesInvoiceLine.accountId`: sales posting does not read it, and convert copies the order line's account into it.
   - A synced invoice keeps its original account in the accounting provider.
 - **Invoice status** — `salesInvoiceStatusType` / `purchaseInvoiceStatusType`;
   `is{Sales,Purchase}InvoiceLocked` = not Draft. **`Partially Paid` and `Overdue` are DERIVED**
@@ -253,17 +254,17 @@ guarded by `requireUnlockedBulk`, not validators.
 
 Every route action that composes writes calls one `defineServiceFn` operation through
 `carbon(request)` (`api.invoicing.postSalesInvoice(input)`); the API and MCP publish the ones
-tagged `@mcp` (all below except the two `*Field` updates) as `invoicing_<name>`:
+tagged `@mcp` (all below except the two `*Field` updates and the two `*LinePostedAccount` reads) as `invoicing_<name>`:
 
 - Sales invoices: `updateSalesInvoiceField`, `postSalesInvoice`, `voidSalesInvoice`,
   `sendSalesInvoice`, `deleteDraftSalesInvoice`; `createSalesInvoiceLine` /
   `updateSalesInvoiceLine` / `deleteDraftSalesInvoiceLine` /
-  `changeSalesInvoiceLineAccount`
+  `changeSalesInvoiceLineAccount` / `getSalesInvoiceLinePostedAccount`
 - Purchase invoices: `createPurchaseInvoice`, `updatePurchaseInvoiceField`,
   `postPurchaseInvoice`, `voidPurchaseInvoice`, `deleteDraftPurchaseInvoice`,
   `mapPurchaseInvoiceLines`; `deleteDraftPurchaseInvoiceLine`
 - Purchase invoice lines: `createPurchaseInvoiceLine` / `updatePurchaseInvoiceLine` /
-  `changePurchaseInvoiceLineAccount`
+  `changePurchaseInvoiceLineAccount` / `getPurchaseInvoiceLinePostedAccount`
 - Payments: `createPayment`, `postPayment`, `voidPayment`
 - Memos: `postMemo`, `voidMemo`, `deleteDraftMemo`
 - Charges: `voidCharge`

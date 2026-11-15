@@ -7247,6 +7247,9 @@ msgstr "Kapanış Durumu"
 msgid "Closed"
 msgstr "Kapalı"
 
+msgid "Closed {periodLabel}"
+msgstr ""
+
 msgid "Closed at"
 msgstr "Kapandı"
 
@@ -9249,6 +9252,9 @@ msgstr "geçerli"
 
 msgid "Current"
 msgstr "Mevcut"
+
+msgid "Current account: {account}"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Cari Net Defter Değeri:"
@@ -30355,6 +30361,9 @@ msgstr "CSV içe aktarılmadı"
 msgid "The currencies you trade in and their rates"
 msgstr "Ticaret yaptığınız para birimleri ve bunların oranları"
 
+msgid "The current account could not be loaded."
+msgstr ""
+
 msgid "The current plan changed under this change request"
 msgstr "Bu değişiklik isteği altında mevcut plan değiştirilmiştir"
 
@@ -31925,6 +31934,9 @@ msgstr "Bu yol yalnızca sonra ne çalışacağını belirler"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Bu dönem hiçbir muhasebe fişi içermez ve kalıcı olarak silinebilir. Bu işlem geri alınamaz."
+
+msgid "This period is closed, so its checklist is read-only."
+msgstr ""
 
 msgid "This PIN will not be shown again."
 msgstr "Bu PIN bir daha gösterilmeyecek."

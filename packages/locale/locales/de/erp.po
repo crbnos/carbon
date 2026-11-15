@@ -7247,6 +7247,9 @@ msgstr "Schließstatus"
 msgid "Closed"
 msgstr "Geschlossen"
 
+msgid "Closed {periodLabel}"
+msgstr ""
+
 msgid "Closed at"
 msgstr "Geschlossen am"
 
@@ -9249,6 +9252,9 @@ msgstr "aktuell"
 
 msgid "Current"
 msgstr "Aktuell"
+
+msgid "Current account: {account}"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Aktueller Restbuchwert:"
@@ -30355,6 +30361,9 @@ msgstr "Die CSV wurde nicht importiert."
 msgid "The currencies you trade in and their rates"
 msgstr "Die Währungen, in denen Sie handeln, und deren Kurse"
 
+msgid "The current account could not be loaded."
+msgstr ""
+
 msgid "The current plan changed under this change request"
 msgstr "Der aktuelle Plan wurde unter dieser Änderungsanforderung geändert"
 
@@ -31925,6 +31934,9 @@ msgstr "Dieser Pfad entscheidet nur darüber, was als nächstes ausgeführt wird
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Dieser Zeitraum hat keine gebuchten Buchungssätze und kann dauerhaft gelöscht werden. Dies kann nicht rückgängig gemacht werden."
+
+msgid "This period is closed, so its checklist is read-only."
+msgstr ""
 
 msgid "This PIN will not be shown again."
 msgstr "Diese PIN wird nicht mehr angezeigt."

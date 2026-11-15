@@ -27,3 +27,11 @@
 - Investigation, spec, plan, execute: 2026-11-14.
 - Verification 2026-11-15: `vitest run app/modules/invoicing app/modules/accounting/accounting.periods.test.ts test/invoicing-operations.test.ts test/accounting-operations.test.ts test/mcp-tool-permissions.test.ts test/posting-permissions.test.ts` 12 files, 334 tests passed; `turbo run typecheck --filter=erp` passed; `check:manifest` ok (1812 operations, digest current); Biome clean; license headers 0 fixed.
 - Not run: the live-database path of `changeInvoiceLineAccount` and `reopenPeriod` (no stack for this worktree). The self-test steps are in the PR body.
+
+## Addendum 2026-11-15: fixes from testing in the app
+
+- Rebased onto `origin/main` `63d7140760`: no conflicts.
+- Fixed: the Change GL Account button covered the line card's collapse chevron; it now sits in a header `CardAction` beside it.
+- Fixed: nothing showed which account a line is on. The dialog reads the posted account on open through `getSalesInvoiceLinePostedAccount` / `getPurchaseInvoiceLinePostedAccount`, from the same journal match the change uses (not `salesInvoiceLine.accountId`).
+- Fixed: View Period on a Closed period showed "Cannot close yet" and task actions. A Closed period's checklist is now read-only; Reopen Period stays.
+- Decision: the two reads are not `@mcp`. The change result already returns `fromAccountId`; publishing the reads is a follow-up if API callers need them.

@@ -7247,6 +7247,9 @@ msgstr "Статус закрытия"
 msgid "Closed"
 msgstr "Закрыто"
 
+msgid "Closed {periodLabel}"
+msgstr ""
+
 msgid "Closed at"
 msgstr "Закрыто в"
 
@@ -9249,6 +9252,9 @@ msgstr "текущий"
 
 msgid "Current"
 msgstr "Текущее"
+
+msgid "Current account: {account}"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Текущая остаточная стоимость:"
@@ -30355,6 +30361,9 @@ msgstr "CSV не была импортирована"
 msgid "The currencies you trade in and their rates"
 msgstr "Валюты, в которых вы торгуете, и их курсы"
 
+msgid "The current account could not be loaded."
+msgstr ""
+
 msgid "The current plan changed under this change request"
 msgstr "Текущий план изменился в соответствии с этим запросом на изменение"
 
@@ -31925,6 +31934,9 @@ msgstr "Этот путь решает только, что будет запу�
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Этот период не имеет проведенных операций и может быть безвозвратно удален. Это невозможно отменить."
+
+msgid "This period is closed, so its checklist is read-only."
+msgstr ""
 
 msgid "This PIN will not be shown again."
 msgstr "Этот PIN больше не будет показан."

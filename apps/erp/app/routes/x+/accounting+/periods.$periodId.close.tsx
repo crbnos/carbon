@@ -224,17 +224,28 @@ export default function AccountingPeriodCloseRoute() {
       <ModalContent size="xxlarge">
         <ModalHeader>
           <ModalTitle>
-            <Trans>Close {periodLabel}</Trans>
+            {isClosed ? (
+              <Trans>Closed {periodLabel}</Trans>
+            ) : (
+              <Trans>Close {periodLabel}</Trans>
+            )}
           </ModalTitle>
           <ModalDescription>
-            <Trans>
-              Every required task must be Done or Skipped before the period can
-              be closed.
-            </Trans>
+            {isClosed ? (
+              <Trans>
+                This period is closed, so its checklist is read-only.
+              </Trans>
+            ) : (
+              <Trans>
+                Every required task must be Done or Skipped before the period
+                can be closed.
+              </Trans>
+            )}
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
-          {checklist.blockingReason && (
+          {/* A Closed period's checklist is a record: nothing to resolve. */}
+          {!isClosed && checklist.blockingReason && (
             <Alert variant="destructive" className="mb-4">
               <LuTriangleAlert className="h-4 w-4" />
               <AlertTitle>
@@ -388,6 +399,8 @@ function PeriodCloseTaskRow({
 
   const status = task.effectiveStatus;
   const isResolved = status === "Done" || status === "Skipped";
+  // A Closed period's checklist is read-only: no task offers an action.
+  const isReadOnly = closeStatus === "Closed";
   // The "Lock the period" step is an Action whose button performs the real
   // Open <-> Locked transition (below), not a generic "Mark Done"/"Skip".
   const taskName = task.name;
@@ -397,9 +410,12 @@ function PeriodCloseTaskRow({
   // completed by hand. Blocker tasks can never be skipped (server enforces it),
   // so they get no Skip button.
   const canComplete =
-    !isLockTask && task.taskType !== "Auto" && status === "Open";
+    !isReadOnly && !isLockTask && task.taskType !== "Auto" && status === "Open";
   const canSkip =
-    !isLockTask && task.severity !== "Blocker" && status === "Open";
+    !isReadOnly &&
+    !isLockTask &&
+    task.severity !== "Blocker" &&
+    status === "Open";
   // The two run checks offer to create the run that would clear them, unless
   // the period already has a Draft run (recalculate that one instead).
   const createRunIntent =
@@ -413,6 +429,7 @@ function PeriodCloseTaskRow({
   // The burden check offers to run the period's indirect rates, once the
   // period is locked (Government Contracting 5b).
   const canComputeBurden =
+    !isReadOnly &&
     task.autoCheckKey === "burden-computed" &&
     status === "Open" &&
     task.autoCheck?.failing === true &&
@@ -420,12 +437,14 @@ function PeriodCloseTaskRow({
   // The earned value check offers to write the period's snapshot, once the
   // period is locked (Government Contracting 5c).
   const canCloseEarnedValue =
+    !isReadOnly &&
     task.autoCheckKey === "earned-value-closed" &&
     status === "Open" &&
     task.autoCheck?.failing === true &&
     closeStatus === "Locked";
   const due = task.autoCheck?.due;
   const canCreateRun =
+    !isReadOnly &&
     createRunIntent !== null &&
     status === "Open" &&
     (due?.count ?? 0) > 0 &&
@@ -526,7 +545,7 @@ function PeriodCloseTaskRow({
                   </button>
                 </PeriodCloseUnpostedDocumentsPopover>
               )}
-            {status === "Open" && task.autoCheck?.failing && (
+            {!isReadOnly && status === "Open" && task.autoCheck?.failing && (
               <>
                 {createRunIntent && due && (
                   <PeriodRunDue

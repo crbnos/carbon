@@ -93,7 +93,7 @@ Periods close and reopen in order. Closing refuses if any **earlier** period isn
 
 ## Reopening
 
-To reopen a period, open **Accounting → Periods**, choose **View Period** on the Closed period, and click **Reopen Period**. The button needs accounting update and delete permission. Reopen the most recent Closed period first and work backwards to the month you need.
+To reopen a period, open **Accounting → Periods**, choose **View Period** on the Closed period, and click **Reopen Period**. The button needs accounting update and delete permission. Reopen the most recent Closed period first and work backwards to the month you need. A Closed period's checklist is read-only: it shows each task's status, with no blocking banner and no task actions.
 
 Reopening (`reopenAccountingPeriod`) flips a **Closed** period back to **Open**, clears its `closedAt`/`closedBy`, and deletes the balance snapshots the close wrote (its own and any later snapshot that embedded it, since snapshots are cumulative through their period's end date). After reopening, postings into the month resume and the balance reads fall back to a full-history scan until the period is closed again. A period that isn't Closed can't be reopened.
 

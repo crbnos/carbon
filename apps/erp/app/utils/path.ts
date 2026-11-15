@@ -334,6 +334,8 @@ export const path = {
       pullFromLocations: `${api}/items/pull-from-locations`,
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
+      purchaseInvoiceLineAccount: (invoiceId: string, lineId: string) =>
+        generatePath(`${api}/purchase-invoice/${invoiceId}/${lineId}/account`),
       purchaseOrderFinalize: (id: string) =>
         generatePath(`${api}/purchasing/purchase-order/${id}/finalize`),
       purchasesReportLines: `${api}/accounting/purchase-lines`,
@@ -368,6 +370,8 @@ export const path = {
         ),
       root: api,
       salesCustomerOverride: `${api}/sales/customer-override`,
+      salesInvoiceLineAccount: (invoiceId: string, lineId: string) =>
+        generatePath(`${api}/sales-invoice/${invoiceId}/${lineId}/account`),
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       salesOrders: `${api}/sales/orders`,
       salesResolvePrice: `${api}/sales/resolve-price`,

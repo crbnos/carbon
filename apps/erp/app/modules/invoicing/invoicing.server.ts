@@ -4439,3 +4439,46 @@ export const changePurchaseInvoiceLineAccount = defineServiceFn({
     );
   }
 });
+
+/**
+ * Get the account a posted sales invoice line's revenue is on now.
+ *
+ * @remarks
+ * Reads the journal group Change GL Account would move, never the line's own
+ * account, which sales posting does not read. Refused, as the change is, for
+ * a line that cannot change account. Not published: the Change GL Account
+ * dialog reads it when it opens.
+ */
+export const getSalesInvoiceLinePostedAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1)
+  }),
+  permission: { view: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "invoice-line-posted-account", () =>
+      service.getInvoiceLinePostedAccount(ctx, { side: "sales", ...input })
+    );
+  }
+});
+
+/**
+ * Get the account a posted purchase invoice line's cost is on now.
+ *
+ * @remarks
+ * Reads the journal group Change GL Account would move. Refused, as the
+ * change is, for a line that cannot change account. Not published: the
+ * Change GL Account dialog reads it when it opens.
+ */
+export const getPurchaseInvoiceLinePostedAccount = defineServiceFn({
+  input: z.object({
+    invoiceId: z.string().min(1),
+    lineId: z.string().min(1)
+  }),
+  permission: { view: ["invoicing", "accounting"] },
+  async run(ctx, input) {
+    return run(ctx, "invoice-line-posted-account", () =>
+      service.getInvoiceLinePostedAccount(ctx, { side: "purchase", ...input })
+    );
+  }
+});

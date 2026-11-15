@@ -7247,6 +7247,9 @@ msgstr "स्थिति बंद करें"
 msgid "Closed"
 msgstr "बंद"
 
+msgid "Closed {periodLabel}"
+msgstr ""
+
 msgid "Closed at"
 msgstr "द्वारा बंद किया गया"
 
@@ -9249,6 +9252,9 @@ msgstr "वर्तमान"
 
 msgid "Current"
 msgstr "वर्तमान"
+
+msgid "Current account: {account}"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "वर्तमान शुद्ध बही मूल्य:"
@@ -30355,6 +30361,9 @@ msgstr "CSV को आयात नहीं किया गया था।"
 msgid "The currencies you trade in and their rates"
 msgstr "आप जिन मुद्राओं में व्यापार करते हैं और उनकी दरें"
 
+msgid "The current account could not be loaded."
+msgstr ""
+
 msgid "The current plan changed under this change request"
 msgstr "इस परिवर्तन अनुरोध के तहत वर्तमान योजना बदल गई"
 
@@ -31925,6 +31934,9 @@ msgstr "यह path केवल यह तय करता है कि आग
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "इस अवधि में कोई जर्नल प्रविष्टि पोस्ट नहीं की गई है और इसे स्थायी रूप से हटाया जा सकता है। इसे पूर्ववत नहीं किया जा सकता।"
+
+msgid "This period is closed, so its checklist is read-only."
+msgstr ""
 
 msgid "This PIN will not be shown again."
 msgstr "यह PIN फिर से नहीं दिखाया जाएगा।"

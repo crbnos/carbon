@@ -9,6 +9,7 @@ import {
   Alert,
   AlertTitle,
   Badge,
+  CardAction,
   cn,
   FormControl,
   FormLabel,
@@ -590,16 +591,24 @@ const SalesInvoiceItemLineForm = ({
                       </TabsTrigger>
                     </TabsList>
                   )}
-                  {isEditing && !isFixedAsset && canChangeAccount && (
+                </div>
+                {isEditing && !isFixedAsset && canChangeAccount && (
+                  // Clear of the card's collapse chevron, as the other line
+                  // forms place their header actions.
+                  <CardAction className="pr-12">
                     <ChangeInvoiceLineAccount
                       action={path.to.salesInvoiceLineAccount(
                         invoiceId,
                         initialValues.id!
                       )}
+                      currentAccountPath={path.to.api.salesInvoiceLineAccount(
+                        invoiceId,
+                        initialValues.id!
+                      )}
                       accountClass="Revenue"
                     />
-                  )}
-                </div>
+                  </CardAction>
+                )}
               </HStack>
               <ModalCardBody>
                 <Hidden name="id" />

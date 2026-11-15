@@ -9,7 +9,8 @@ import {
   findInvoiceLinePosition,
   type InvoiceLineLeg,
   LINE_ACCOUNT_CHANGE_PREFIX,
-  lineAccountChangePeriodRefusal
+  lineAccountChangePeriodRefusal,
+  locateInvoiceLinePosition
 } from "./invoicing.service";
 
 const SALES = "acc-4000";
@@ -239,6 +240,61 @@ describe("changing a posted line's account", () => {
   it("finds nothing on an account the line was never posted to", () => {
     expect(
       findInvoiceLinePosition(salesLine("ref-1", 100), salesTarget(PARTS, 100))
+    ).toBe(null);
+  });
+});
+
+describe("the account a line's amount is on now", () => {
+  const { accountId: _, ...target } = salesTarget(SALES, 100);
+
+  it("ignores a sales line's account its posting never used", () => {
+    // Convert copies the order line's account onto the invoice line; sales
+    // posting credits the Sales Account regardless.
+    const position = locateInvoiceLinePosition(
+      salesLine("ref-1", 100),
+      "sales",
+      [PARTS],
+      target
+    );
+    expect(position?.leg.accountId).toBe(SALES);
+    expect(position?.amount).toBe(-100);
+  });
+
+  it("finds a sales line with no account of its own on the Sales Account", () => {
+    expect(
+      locateInvoiceLinePosition(salesLine("ref-1", 100), "sales", [], target)
+        ?.leg.accountId
+    ).toBe(SALES);
+  });
+
+  it("finds the account an earlier change moved the line to", () => {
+    const { legs } = apply(
+      salesLine("ref-1", 100),
+      salesTarget(SALES, 100),
+      PARTS
+    );
+    expect(
+      locateInvoiceLinePosition(legs, "sales", [PARTS], target)?.leg.accountId
+    ).toBe(PARTS);
+  });
+
+  it("looks only at a purchase line's own account", () => {
+    const posted = [
+      leg("acc-6000", 250, { description: "Office Supplies" }),
+      leg("acc-2000", 250, { description: "Accounts Payable" })
+    ];
+    const purchase = {
+      quantity: 1,
+      documentLineReference: null,
+      amount: 250,
+      dimensions: {}
+    };
+    expect(
+      locateInvoiceLinePosition(posted, "purchase", ["acc-6000"], purchase)?.leg
+        .accountId
+    ).toBe("acc-6000");
+    expect(
+      locateInvoiceLinePosition(posted, "purchase", ["acc-6100"], purchase)
     ).toBe(null);
   });
 });

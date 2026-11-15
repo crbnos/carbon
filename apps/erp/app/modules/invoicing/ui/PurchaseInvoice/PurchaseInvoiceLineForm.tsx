@@ -13,6 +13,7 @@ import {
 import {
   Badge,
   Button,
+  CardAction,
   cn,
   FormControl,
   FormLabel,
@@ -661,16 +662,24 @@ const PurchaseInvoiceLineForm = ({
                       </TabsTrigger>
                     </TabsList>
                   )}
-                  {isEditing && isGLAccount && canChangeAccount && (
+                </div>
+                {isEditing && isGLAccount && canChangeAccount && (
+                  // Clear of the card's collapse chevron, as the other line
+                  // forms place their header actions.
+                  <CardAction className="pr-12">
                     <ChangeInvoiceLineAccount
                       action={path.to.purchaseInvoiceLineAccount(
                         invoiceId,
                         initialValues.id!
                       )}
+                      currentAccountPath={path.to.api.purchaseInvoiceLineAccount(
+                        invoiceId,
+                        initialValues.id!
+                      )}
                       accountClass="Expense"
                     />
-                  )}
-                </div>
+                  </CardAction>
+                )}
               </HStack>
               <ModalCardBody>
                 <Hidden name="id" />

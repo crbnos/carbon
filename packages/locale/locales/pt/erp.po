@@ -7247,6 +7247,9 @@ msgstr "Status de Fechamento"
 msgid "Closed"
 msgstr "Fechado"
 
+msgid "Closed {periodLabel}"
+msgstr ""
+
 msgid "Closed at"
 msgstr "Fechado em"
 
@@ -9249,6 +9252,9 @@ msgstr "atual"
 
 msgid "Current"
 msgstr "Atual"
+
+msgid "Current account: {account}"
+msgstr ""
 
 msgid "Current Net Book Value:"
 msgstr "Valor Líquido Contábil Atual:"
@@ -30355,6 +30361,9 @@ msgstr "O CSV não foi importado"
 msgid "The currencies you trade in and their rates"
 msgstr "As moedas em que você negocia e suas taxas"
 
+msgid "The current account could not be loaded."
+msgstr ""
+
 msgid "The current plan changed under this change request"
 msgstr "O plano atual mudou sob esta solicitação de mudança"
 
@@ -31925,6 +31934,9 @@ msgstr "Este caminho apenas decide o que é executado a seguir"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Este período não tem lançamentos de diário nele e pode ser deletado permanentemente. Isso não pode ser desfeito."
+
+msgid "This period is closed, so its checklist is read-only."
+msgstr ""
 
 msgid "This PIN will not be shown again."
 msgstr "Este PIN não será exibido novamente."
