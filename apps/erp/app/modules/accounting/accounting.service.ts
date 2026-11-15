@@ -3552,6 +3552,15 @@ export async function unlockAccountingPeriod(
     .single();
 }
 
+/** Serializes the close and the reopen of a company's periods. Each checks
+ *  its neighbours (no earlier period open, no later period Closed), so a
+ *  close and a reopen of adjacent periods running at once could both pass. */
+async function lockPeriodLifecycle(trx: KyselyTx, companyId: string) {
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`accounting-period-lifecycle:${companyId}`}, 0))`.execute(
+    trx
+  );
+}
+
 export async function closeAccountingPeriod(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -3597,6 +3606,7 @@ export async function closeAccountingPeriod(
     .eq("companyId", args.companyId)
     .lt("startDate", period.data.startDate)
     .neq("closeStatus", "Closed");
+  if (earlierOpen.error) return { data: null, error: earlierOpen.error };
   if ((earlierOpen.count ?? 0) > 0) {
     return {
       data: null,
@@ -3615,9 +3625,13 @@ export async function closeAccountingPeriod(
   // Run previews synthesize schedules in their own rolled-back transactions.
   // Finish those before holding the period lock to avoid inverted lock order.
   const runPreview = await previewRuns(period.data.endDate);
+  const { startDate } = period.data;
   const now = datetime.timestamp();
   try {
     await db.transaction().execute(async (trx) => {
+      // Taken before the period, as reopen takes it: the earlier-period check
+      // below then sees a reopen that committed first.
+      await lockPeriodLifecycle(trx, args.companyId);
       // Match posting's FOR SHARE before reading the checklist. NO KEY UPDATE
       // still permits its separate client's task inserts to check their FK.
       const lockedPeriod = await trx
@@ -3629,6 +3643,19 @@ export async function closeAccountingPeriod(
         .executeTakeFirst();
       if (lockedPeriod?.closeStatus !== "Locked") {
         throw new Error("Period must be locked before closing.");
+      }
+      const earlierStillOpen = await trx
+        .selectFrom("accountingPeriod")
+        .select("id")
+        .where("companyId", "=", args.companyId)
+        .where("startDate", "<", startDate)
+        .where("closeStatus", "!=", "Closed")
+        .limit(1)
+        .executeTakeFirst();
+      if (earlierStillOpen) {
+        throw new Error(
+          "Earlier periods must be closed first (sequential close)"
+        );
       }
       const checklist = await loadPeriodCloseChecklist(
         client,
@@ -3743,74 +3770,70 @@ export async function closePeriodWithChecklist(
   );
 }
 
-/** Not published: `accounting_reopenPeriod` runs it. */
+/** Not published: `accounting_reopenPeriod` runs it. One transaction:
+ *  under the company's period lifecycle lock it checks the period and the
+ *  later ones, deletes the snapshots and opens the period. */
 export async function reopenAccountingPeriod(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { periodId: string; companyId: string; userId: string }
-) {
-  const period = await getAccountingPeriodById(
-    client,
-    args.periodId,
-    args.companyId
-  );
-  if (period.error || !period.data) {
-    return {
-      data: null,
-      error: period.error ?? { message: "Period not found" }
-    };
-  }
-  if (period.data.closeStatus !== "Closed") {
-    return { data: null, error: { message: "Period is not closed" } };
-  }
+): Promise<
+  { data: { id: string }; error: null } | { data: null; error: unknown }
+> {
+  const refused = (message: string) => ({ data: null, error: { message } });
+  try {
+    return await db.transaction().execute(async (trx) => {
+      await lockPeriodLifecycle(trx, args.companyId);
+      const period = await trx
+        .selectFrom("accountingPeriod")
+        .select(["closeStatus", "startDate", "endDate"])
+        .where("id", "=", args.periodId)
+        .where("companyId", "=", args.companyId)
+        .forNoKeyUpdate()
+        .executeTakeFirst();
+      if (!period) return refused("Period not found");
+      if (period.closeStatus !== "Closed")
+        return refused("Period is not closed");
 
-  // Reverse-sequential reopen: no later period may still be Closed.
-  const laterClosed = await (client.from("accountingPeriod") as any)
-    .select("id", { count: "exact", head: true })
-    .eq("companyId", args.companyId)
-    .gt("startDate", period.data.startDate)
-    .eq("closeStatus", "Closed");
-  // A failed count must not read as "none later": the snapshots go next.
-  if (laterClosed.error) return { data: null, error: laterClosed.error };
-  if ((laterClosed.count ?? 0) > 0) {
-    return {
-      data: null,
-      error: {
-        message:
+      // Reverse-sequential reopen: no later period may still be Closed.
+      const laterClosed = await trx
+        .selectFrom("accountingPeriod")
+        .select("id")
+        .where("companyId", "=", args.companyId)
+        .where("startDate", ">", period.startDate)
+        .where("closeStatus", "=", "Closed")
+        .limit(1)
+        .executeTakeFirst();
+      if (laterClosed) {
+        return refused(
           "Later periods must be reopened first (reopen from the most recent close backwards)"
+        );
       }
-    };
-  }
 
-  // Invariant #3 (accountingPeriodBalance migration): snapshots are cumulative
-  // through their period's endDate, so reopening this period invalidates its own
-  // snapshot and any later one that embeds it. Delete them BEFORE flipping to
-  // Open: if the delete fails we abort with the period still Closed (snapshots
-  // intact, consistent); if the flip later fails, the period stays Closed with
-  // no snapshots, so reads fall back to the full scan (correct, just slower)
-  // rather than trusting a stale snapshot once postings resume in the period.
-  // accountingPeriodBalance is not in the cloud-generated DB types yet, so the
-  // client is cast to reach it (same reason the period reads above use `as any`).
-  const deletedSnapshots = await (client as any)
-    .from("accountingPeriodBalance")
-    .delete()
-    .eq("companyId", args.companyId)
-    .gte("endingBalanceDate", period.data.endDate);
-  if (deletedSnapshots.error) {
-    return { data: null, error: deletedSnapshots.error };
+      // Invariant #3 (accountingPeriodBalance migration): snapshots are
+      // cumulative through their period's endDate, so reopening this period
+      // invalidates its own snapshot and any later one that embeds it.
+      await trx
+        .deleteFrom("accountingPeriodBalance")
+        .where("companyId", "=", args.companyId)
+        .where("endingBalanceDate", ">=", period.endDate)
+        .execute();
+      await trx
+        .updateTable("accountingPeriod")
+        .set({
+          closeStatus: "Open",
+          closedAt: null,
+          closedBy: null,
+          updatedBy: args.userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", args.periodId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      return { data: { id: args.periodId }, error: null };
+    });
+  } catch (err) {
+    return { data: null, error: err };
   }
-
-  return (client.from("accountingPeriod") as any)
-    .update({
-      closeStatus: "Open",
-      closedAt: null,
-      closedBy: null,
-      updatedBy: args.userId,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", args.periodId)
-    .eq("companyId", args.companyId)
-    .select("id")
-    .single();
 }
 
 export async function createFiscalYearPeriods(

@@ -57,7 +57,7 @@ flowchart LR
 
 ### Reopening a period
 
-- **Operation:** `reopenPeriod` (`accounting.server.ts`, `@mcp`) runs `reopenAccountingPeriod`: Closed only, reverse-sequential, deletes the snapshots, back to Open.
+- **Operation:** `reopenPeriod` (`accounting.server.ts`, `@mcp`) runs `reopenAccountingPeriod`: Closed only, reverse-sequential, deletes the snapshots, back to Open, in one Kysely transaction. It and the close take the company's period lifecycle lock first and check the neighbouring periods under it.
 - **UI:** the close screen of a Closed period (Accounting → Periods → View Period) shows **Reopen Period** instead of **Close Period**, for a user with accounting update and delete.
 - **Reverse-sequential rule kept:** a reopened month between two Closed months would let a posting change a balance a later Closed period's snapshot already embeds.
 

@@ -1120,7 +1120,7 @@ export const reopenPeriod = defineServiceFn({
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting", delete: "accounting" },
   async run(ctx, { periodId }) {
-    const result = await service.reopenAccountingPeriod(ctx.asCaller.supabase, {
+    const result = await service.reopenAccountingPeriod(ctx.asSystem.pg, {
       periodId,
       companyId: ctx.company.id,
       userId: ctx.auditUserId

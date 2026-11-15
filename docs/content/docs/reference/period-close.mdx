@@ -88,14 +88,14 @@ An `Action`/`Manual` task is marked Done with `completeTask` (optional notes). A
 The close itself (`closePeriodWithChecklist`) re-evaluates the whole checklist server-side. It refuses to close unless **every required task resolves to Done or Skipped and no Blocker check is failing**, surfacing the specific blocking task in the error. Never trust a disabled button: the gate is enforced on the server, and the DB trigger is the final backstop.
 
 <Callout type="warn" title="Sequential close and reopen">
-Periods close and reopen in order. Closing refuses if any **earlier** period isn't Closed (*"Earlier periods must be closed first"*). Reopening refuses if any **later** period is still Closed (*"Later periods must be reopened first"*) — you reopen from the most recent close backwards.
+Periods close and reopen in order. Closing refuses if any **earlier** period isn't Closed (*"Earlier periods must be closed first"*). Reopening refuses if any **later** period is still Closed (*"Later periods must be reopened first"*) — you reopen from the most recent close backwards. A company's closes and reopens run one at a time, so a close and a reopen of neighbouring periods started together cannot both pass these checks.
 </Callout>
 
 ## Reopening
 
 To reopen a period, open **Accounting → Periods**, choose **View Period** on the Closed period, and click **Reopen Period**. The button needs accounting update and delete permission. Reopen the most recent Closed period first and work backwards to the month you need. A Closed period's checklist is read-only: it shows each task's status, with no blocking banner and no task actions, and the server refuses to mark a task Done or Skipped until the period is reopened.
 
-Reopening (`reopenAccountingPeriod`) flips a **Closed** period back to **Open**, clears its `closedAt`/`closedBy`, and deletes the balance snapshots the close wrote (its own and any later snapshot that embedded it, since snapshots are cumulative through their period's end date). After reopening, postings into the month resume and the balance reads fall back to a full-history scan until the period is closed again. A period that isn't Closed can't be reopened.
+Reopening (`reopenAccountingPeriod`, one transaction) flips a **Closed** period back to **Open**, clears its `closedAt`/`closedBy`, and deletes the balance snapshots the close wrote (its own and any later snapshot that embedded it, since snapshots are cumulative through their period's end date). After reopening, postings into the month resume and the balance reads fall back to a full-history scan until the period is closed again. A period that isn't Closed can't be reopened.
 
 ### Correcting a historical period
 
