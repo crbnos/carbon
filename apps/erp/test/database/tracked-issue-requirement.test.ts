@@ -57,7 +57,7 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
   });
 
   /** A job that needs one kit, the unit it builds, and a lot of five kits. */
-  async function jobNeedingOneKit(key: string) {
+  async function jobNeedingOneKit(key: string, lotLocationId = f.locationId) {
     const job = await jobFixture(f, key);
     const makeMethod = await f.db
       .selectFrom("jobMakeMethod")
@@ -120,7 +120,7 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
           itemId: kitItemId,
           trackedEntityId: lotId,
           quantity: 5,
-          locationId: f.locationId,
+          locationId: lotLocationId,
           entryType: "Positive Adjmt.",
           companyId: f.companyId,
           createdBy: USER
@@ -233,6 +233,20 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
       expect((await job.issueKits(1, true)).error).toBeNull();
 
       expect(await job.state()).toEqual({ issued: 2, leftInLot: 3 });
+    }
+  );
+
+  // The operator cannot pick what is at another location: issuing it would
+  // take the job's location below zero for a lot it never held.
+  databaseTest(
+    "a lot in stock at another location is not issued to the job",
+    async () => {
+      const job = await jobNeedingOneKit("elsewhere", f.otherLocationId);
+
+      const refused = await job.issueKits(1);
+
+      expect(refused.error).toMatchObject({ status: 400 });
+      expect(await job.state()).toEqual({ issued: 0, leftInLot: 5 });
     }
   );
 });

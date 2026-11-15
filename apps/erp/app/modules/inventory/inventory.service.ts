@@ -22,12 +22,14 @@ import {
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
+  assertEntitiesAtLocation,
   assertEntitiesInCommonStock,
   assertEntitiesInStripes,
   drawFromStripes,
   itemLedgerInStripes,
   loadDemandStripes,
   loadProjectStock,
+  loadTrackedEntityLedger,
   loadTrackedEntityStripe,
   loadTrackedEntityStripes,
   type StockStripe,
@@ -25737,18 +25739,23 @@ export async function postPicking(
           .executeTakeFirstOrThrow();
         await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
-        // A pick line draws one stripe: the serial must sit in it.
+        // A pick line draws one stripe at the list's location: the serial
+        // must sit in both.
+        const ledger = await loadTrackedEntityLedger(trx, companyId, [
+          trackedEntityId
+        ]);
+        assertEntitiesAtLocation(
+          ledger,
+          [{ id: trackedEntityId, readableId: trackedEntityId, quantity: 1 }],
+          locationId
+        );
         await assertEntitiesInStripes(
           trx,
           companyId,
           [
             {
               readableId: trackedEntityId,
-              stripe: await loadTrackedEntityStripe(
-                trx,
-                companyId,
-                trackedEntityId
-              )
+              stripe: trackedEntityStripe(ledger, trackedEntityId)
             }
           ],
           [line.projectId ?? null]
@@ -25920,18 +25927,29 @@ export async function postPicking(
         // refusal a 400 the scan UI can show.
         assertEntityCoversPick({ entityQuantity, transferQuantity });
 
-        // A pick line draws one stripe: the lot must sit in it.
+        // A pick line draws one stripe at the list's location: the lot must
+        // sit in both.
+        const ledger = await loadTrackedEntityLedger(trx, companyId, [
+          trackedEntityId
+        ]);
+        assertEntitiesAtLocation(
+          ledger,
+          [
+            {
+              id: trackedEntityId,
+              readableId: trackedEntity.readableId,
+              quantity: Math.min(entityQuantity, transferQuantity)
+            }
+          ],
+          locationId
+        );
         await assertEntitiesInStripes(
           trx,
           companyId,
           [
             {
               readableId: trackedEntity.readableId,
-              stripe: await loadTrackedEntityStripe(
-                trx,
-                companyId,
-                trackedEntityId
-              )
+              stripe: trackedEntityStripe(ledger, trackedEntityId)
             }
           ],
           [line.projectId ?? null]
@@ -29802,6 +29820,25 @@ async function consumeTrackedEntitiesIntoOperation(
     })),
     await loadDemandStripes(trx, companyId, job?.projectId)
   );
+  // The job draws only the stock at its own location, from a bin there.
+  const requested = new Map(
+    children.map((child) => [child.trackedEntityId, child.quantity])
+  );
+  assertEntitiesAtLocation(
+    itemLedgers,
+    trackedEntities.map((entity) => ({
+      id: entity.id!,
+      readableId: entity.readableId,
+      quantity: Math.min(
+        Number(entity.quantity),
+        requested.get(entity.id!) ?? Number(entity.quantity)
+      )
+    })),
+    job?.locationId
+  );
+  const localLedgers = job?.locationId
+    ? itemLedgers.filter((row) => row.locationId === job.locationId)
+    : itemLedgers;
 
   // Get parent tracked entity details
   const parentTrackedEntity = await trx
@@ -29914,7 +29951,7 @@ async function consumeTrackedEntitiesIntoOperation(
         activitySourceDocument: "Job Material",
         activitySourceDocumentId: actualMaterialId!,
         bin: {
-          storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
+          storageUnitId: resolveTrackedEntityBin(localLedgers, trackedEntityId),
           locationId: job?.locationId ?? null
         },
         itemLedgerItemId: trackedEntity.sourceDocumentId,
@@ -30016,7 +30053,7 @@ async function consumeTrackedEntitiesIntoOperation(
         locationId: job?.locationId,
         // The split child has no rows in the pre-transaction ledger
         // snapshot — it sits at the parent's resolved bin.
-        storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
+        storageUnitId: resolveTrackedEntityBin(localLedgers, trackedEntityId),
         trackedEntityId: consumedEntityId,
         projectId: entityStripes.get(trackedEntityId) ?? null,
         createdBy: userId

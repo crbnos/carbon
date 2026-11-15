@@ -410,9 +410,14 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   (`getDefaultStorageUnitForJob(…, { source: true })`, quote-to-order conversion), and
   returned picked material does not go back into one.
 - **Consumption lot pickers leave quarantined lots out.** The MES issue modal's serial and
-  batch lists (`getSerialNumbersForItem` / `getBatchNumbersForItem`) and both maintenance
-  add-part modals drop lots whose stock is in a non-nettable unit
-  (`getNonNettableTrackedEntityIds`, `@carbon/database`); a failed read offers none.
+  batch lists (`getIssueLotsForItem`, over `get_issue_tracked_entity_stock`) and both maintenance
+  add-part modals (`getNonNettableTrackedEntityIds`, `@carbon/database`) drop lots whose stock
+  is in a non-nettable unit; a failed read offers none.
+- **A lot is drawn only where it is in stock.** A job issue (`consumeTrackedEntitiesIntoOperation`)
+  and a serial or batch pick (`postPicking`) refuse a lot whose stock is at another location
+  (`assertEntitiesAtLocation`, `@carbon/api/stock-stripes`); a unit with no stock anywhere (still
+  in production) passes. The MES issue lists and suggested allocation offer only the job's
+  location.
 - **CSV import** has a "Non-nettable" column for storage units and storage types
   (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone,
   true/false (also yes/no, y/n, 1/0, on/off) sets it, and anything else is a row error.
