@@ -5,8 +5,6 @@
 import { carbon } from "@carbon/api/carbon.server";
 import type { LoaderFunctionArgs } from "react-router";
 
-/** The account a posted line's revenue is on now, for the Change GL Account
- *  dialog. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { invoiceId, lineId } = params;
   if (!invoiceId || !lineId) {

@@ -399,7 +399,6 @@ function PeriodCloseTaskRow({
 
   const status = task.effectiveStatus;
   const isResolved = status === "Done" || status === "Skipped";
-  // A Closed period's checklist is read-only: no task offers an action.
   const isReadOnly = closeStatus === "Closed";
   // The "Lock the period" step is an Action whose button performs the real
   // Open <-> Locked transition (below), not a generic "Mark Done"/"Skip".

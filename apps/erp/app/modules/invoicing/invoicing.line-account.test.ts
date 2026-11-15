@@ -53,7 +53,6 @@ const leg = (
   ...extra
 });
 
-/** A posted sales line: revenue (credit), tax (credit) and AR (debit). */
 const salesLine = (
   reference: string,
   revenue: number,
@@ -74,7 +73,6 @@ const salesLine = (
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
 
-/** Debit-signed balance per account. */
 const balances = (legs: { accountId?: string | null; amount?: number }[]) => {
   const out: Record<string, number> = {};
   for (const row of legs) {
@@ -87,7 +85,6 @@ const balances = (legs: { accountId?: string | null; amount?: number }[]) => {
   return out;
 };
 
-/** Applies a change: the lines it writes, as legs the next change reads. */
 const apply = (
   legs: InvoiceLineLeg[],
   target: Parameters<typeof findInvoiceLinePosition>[1],
@@ -205,7 +202,6 @@ describe("changing a posted line's account", () => {
       PARTS
     );
     expect(position.leg.journalLineReference).toBe("ref-2");
-    // The other line is still on the Sales account.
     expect(
       findInvoiceLinePosition(
         legs,

@@ -18,7 +18,7 @@ Closest siblings: the invoice VOID (`postSalesInvoice` / `postPurchaseInvoice` `
 
 ## Addendum 2026-11-15: fixes from testing in the app
 
-- [x] 10. Line forms: Change GL Account in a header `CardAction` (`pr-12`), clear of the collapse chevron.
+- [x] 10. Line forms: Change GL Account in a header `CardAction`, clear of the collapse chevron.
 - [x] 11. `invoicing.service.ts`: `locateInvoiceLinePosition` (pure) and `readInvoiceLinePosition` shared by `changeInvoiceLineAccount` and the new `getInvoiceLinePostedAccount`; `invoicing.server.ts`: `getSalesInvoiceLinePostedAccount`, `getPurchaseInvoiceLinePostedAccount` (not `@mcp`); `api+/{sales,purchase}-invoice.$invoiceId.$lineId.account.ts`; the dialog reads it on open and shows the current account or the refusal.
 - [x] 12. Close route: a Closed period's checklist is read-only (no banner, no task actions, no run prompts).
 - [x] 13. Tests: `locateInvoiceLinePosition` cases in `invoicing.line-account.test.ts`. Sources in sync: spec, run log, invoicing and accounting `AGENTS.md`, `invoices.mdx`, `period-close.mdx`, Lingui catalogs.

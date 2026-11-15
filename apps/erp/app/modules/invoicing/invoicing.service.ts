@@ -20569,20 +20569,13 @@ export async function reverseRecognizedRevenue(
   });
 }
 
-// ── Invoice line account change ──────────────────────────────────────────────
-// A posted invoice line's account changes through a correcting journal, never by
-// editing the posting: the journal moves the line's posted amount from the
-// account it sits on to the new one, dated on the original posting's date.
-
-/** The description prefix of both lines an account change writes. The role
- *  readers (`classifyAccountingPostingRole`) match descriptions exactly, so
- *  these lines take no role. */
+/** Role readers (`classifyAccountingPostingRole`) match descriptions exactly,
+ *  so the prefixed change lines take no role. */
 export const LINE_ACCOUNT_CHANGE_PREFIX = "Account change: ";
 
 export const LINE_ACCOUNT_CHANGE_BEFORE_CUTOVER_ERROR =
   "This invoice is from before your accounting cutover. Record a journal entry to correct it instead.";
 
-/** One journal line an invoice's postings wrote, as an account change reads it. */
 export type InvoiceLineLeg = {
   id: string;
   accountId: string | null;
@@ -20598,29 +20591,23 @@ export type InvoiceLineLeg = {
   journalLineReference: string;
   accountDefaultRole: string | null;
   postingDate: string;
-  /** The line's dimension values, by entity type. */
   dimensions: Readonly<Record<string, string>>;
 };
 
-/** What the posting wrote for the invoice line, from the line's own fields. */
 export type InvoiceLinePositionTarget = {
-  /** The account the line's amount sits on now. */
   accountId: string;
   quantity: number;
   documentLineReference: string | null;
-  /** The posted amount, debit-signed: a revenue credit is negative. */
+  /** Debit-signed: a revenue credit is negative. */
   amount: number;
-  /** The dimension values the posting gave the line, by entity type. */
   dimensions: Readonly<Record<string, string | null>>;
 };
 
 export type InvoiceLinePosition = {
-  /** A leg of the group that holds the amount. The change copies its keys
-   *  and dimensions. */
+  /** The group's leg on the account; the change copies its keys and dimensions. */
   leg: InvoiceLineLeg & { accountId: string; accountClass: AccountClass };
   /** What the group holds on the account, debit-signed. */
   amount: number;
-  /** The date of the posting that wrote the group. */
   postingDate: string;
   /** Every leg of the group, on any account. */
   groupLegIds: string[];
@@ -20630,16 +20617,12 @@ const legValue = (leg: InvoiceLineLeg) =>
   leg.accountClass ? debitSigned(leg.accountClass, Number(leg.amount)) : 0;
 
 /**
- * The group of journal lines (one `journalLineReference`) that holds this
- * invoice line's posted amount on `target.accountId`, or null.
- *
- * A posting writes no link from a journal line to its invoice line, so the
- * group is matched on what the posting copies from the line: the quantity,
- * the order line reference and the amount's sign, and only a group whose
- * amount is still on the account (an earlier change moved it off). When
- * several groups match, the line's dimensions and then its amount decide.
- * Groups still tied after that are the same in every key: either one is the
- * line's.
+ * The `journalLineReference` group holding the line's amount on
+ * `target.accountId`, or null. No journal line links to its invoice line, so
+ * the group is matched on what the posting copies from the line (quantity,
+ * order line reference, sign) and must still hold its amount there. Ties
+ * break on dimensions, then amount; groups still tied are identical, so
+ * either is the line's.
  */
 export function findInvoiceLinePosition(
   legs: readonly InvoiceLineLeg[],
@@ -20649,8 +20632,7 @@ export function findInvoiceLinePosition(
   const onAccount = (leg: InvoiceLineLeg) =>
     leg.accountId === target.accountId && leg.accountClass !== null;
 
-  // What each group holds on the account now: its posting, every change into
-  // and out of it, and a void.
+  // Net of the posting, every change into and out of the group, and a void.
   const held = new Map<string, number>();
   for (const leg of legs) {
     if (!onAccount(leg)) continue;
@@ -20713,12 +20695,9 @@ export type LineAccountChangeLine = Omit<
   "id" | "journalId"
 >;
 
-/**
- * The two lines that move a group's amount: the amount off the account it
- * sits on, and onto the new one. Both carry the group's document keys, so a
- * void of the invoice reverses them with the posting, and a later change finds
- * the new line as it found the posting.
- */
+/** Both lines carry the group's document keys, so a void of the invoice
+ *  reverses them with the posting, and a later change finds the new line as
+ *  it found the posting. */
 export function buildLineAccountChangeLines(
   position: InvoiceLinePosition,
   to: { accountId: string; accountClass: AccountClass },
@@ -20766,8 +20745,6 @@ export function accountingPeriodName(period: PeriodNameFields): string {
     : `${period.startDate} to ${period.endDate}`;
 }
 
-/** Why an account change cannot post into the original posting's period,
- *  naming it, or null while it is Open. */
 export function lineAccountChangePeriodRefusal(
   period: PeriodNameFields & {
     closeStatus: string;
@@ -20804,8 +20781,6 @@ const LINE_ACCOUNT_SIDES = {
   }
 } as const;
 
-/** Posted, as a void reads it: a posting date and not Draft, Pending or
- *  Voided. */
 const isPostedInvoice = (invoice: {
   status: string;
   postingDate: string | null;
@@ -20825,10 +20800,6 @@ type LineAccountFacts = {
   target: Omit<InvoiceLinePositionTarget, "accountId">;
 };
 
-/** A sales line's posted revenue: its Sales Account leg as the posting
- *  computed it. Only a line whose revenue went straight to the Sales Account
- *  can change account; every other kind posts through accounts a schedule,
- *  a position or an asset reads. */
 async function salesLineAccountFacts(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -20881,8 +20852,6 @@ async function salesLineAccountFacts(
       ...invoice,
       postingDate: invoice.postingDate ? String(invoice.postingDate) : null
     },
-    // A line that never changed account names no account of its own, or one
-    // it was converted with; its revenue is on the Sales Account it posted to.
     accountIds: line.accountId ? [line.accountId] : [],
     target: {
       quantity: line.quantity,
@@ -20899,9 +20868,6 @@ async function salesLineAccountFacts(
   };
 }
 
-/** A purchase line's posted cost: the debit of a G/L Account line, as the
- *  posting computed it. Item, fixed asset and lease lines post through
- *  inventory, receipts, assets and leases, which read those accounts. */
 async function purchaseLineAccountFacts(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -20969,9 +20935,6 @@ async function purchaseLineAccountFacts(
   };
 }
 
-/** Every journal line the invoice's own postings wrote (the posting, a void,
- *  account changes), with its account's class, its journal's date and its
- *  dimensions. */
 async function invoiceLineLegs(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -21041,13 +21004,10 @@ async function invoiceLineLegs(
 }
 
 /**
- * Where a posted line's amount sits now: the first of the line's candidate
- * accounts that holds it. The candidates are the accounts the line names (a
- * purchase line's own account; a sales line's account, set by an earlier
- * change or copied from its order line at convert), then, for a sales line,
- * every account the invoice's posting credited as its Sales Account. Sales
- * posting never reads the line's account, so the account a sales line names
- * is only a candidate: it holds the amount only once a change moved it there.
+ * Tries the line's own account, then, for a sales line, every account the
+ * posting credited as its Sales Account. Sales posting never reads the line's
+ * account (convert copies the order line's into it), so it holds the amount
+ * only once a change moved it there.
  */
 export function locateInvoiceLinePosition(
   legs: readonly InvoiceLineLeg[],
@@ -21070,14 +21030,8 @@ export function locateInvoiceLinePosition(
   return null;
 }
 
-/**
- * The line's posted position, after every refusal that does not depend on
- * the new account: the invoice is posted and from after the accounting
- * cutover, the line is of a kind that can change, is not charged to a
- * project, its amount is found on an account, and no intercompany
- * elimination reads it. `lock` reads the invoice FOR UPDATE, for a change
- * inside its transaction.
- */
+/** Runs every refusal that does not depend on the new account. `lock` reads
+ *  the invoice FOR UPDATE: pass it only inside the change's transaction. */
 async function readInvoiceLinePosition(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -21159,8 +21113,6 @@ export const invoiceLinePostedAccountInput = z.object({
   lineId: z.string().min(1)
 });
 
-/** The account a posted line's amount sits on now, as an account change
- *  would move it. */
 export type InvoiceLinePostedAccount = {
   invoiceId: string;
   lineId: string;
@@ -21172,12 +21124,8 @@ export type InvoiceLinePostedAccount = {
   postingDate: string;
 };
 
-/**
- * The account a posted invoice line's amount sits on now: the journal match
- * `changeInvoiceLineAccount` moves, never the line's `accountId` (a sales
- * line's can name an account its posting never used). Refused, with the
- * change's own messages, for a line that cannot change account.
- */
+/** The journal match `changeInvoiceLineAccount` moves, never the line's
+ *  `accountId`; refused with the change's own messages. */
 export async function getInvoiceLinePostedAccount(
   ctx: ServiceContext,
   raw: z.input<typeof invoiceLinePostedAccountInput>
@@ -21207,14 +21155,8 @@ export async function getInvoiceLinePostedAccount(
   };
 }
 
-/**
- * Changes the account of a posted invoice line: one journal, dated on the
- * original posting's date in its period, that moves the line's posted amount
- * from the account it sits on to `accountId`, with the posting's dimensions
- * and document keys, then records the new account on the line. The period
- * must be Open. Refused before the accounting cutover's date, for a line
- * charged to a project, and for a line an intercompany elimination reads.
- */
+/** One journal dated on the original posting, in its period, which must be
+ *  Open; then the line records the new account. */
 export async function changeInvoiceLineAccount(
   ctx: ServiceContext,
   raw: z.input<typeof changeInvoiceLineAccountInput>
@@ -21230,7 +21172,7 @@ export async function changeInvoiceLineAccount(
 
   return db.transaction().execute(async (trx) => {
     await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-    // Reads the invoice FOR UPDATE: a void or a second change waits.
+    // Reads the invoice FOR UPDATE: a second change waits.
     const { facts, position } = await readInvoiceLinePosition(
       trx,
       companyId,
@@ -21255,8 +21197,7 @@ export async function changeInvoiceLineAccount(
       );
     }
 
-    // Dated on the original posting, in its period, which must be Open. A
-    // Provisional journal has no period.
+    // A Provisional journal has no period.
     const postingDate = position.postingDate;
     let accountingPeriodId: string | null = null;
     if (postingStatus === "Posted") {
@@ -21323,8 +21264,8 @@ export async function changeInvoiceLineAccount(
         }))
       )
       .execute();
-    // Both lines carry the posted line's dimensions, so every report by
-    // dimension moves with the account.
+    // Both lines take the posted line's dimensions. One call each: the helper
+    // maps an original line to a single copy.
     for (const changeLineId of lineIds) {
       await copyJournalLineDimensions(trx, {
         companyId,

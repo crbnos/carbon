@@ -189,9 +189,8 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   // (sales) AND re-posts the job's coverage (service); the API cannot name
   // two modules, so the operation's own gate checks both.
   sales_changeReturnLineToService: { module: null, actions: [] },
-  // Changing a posted invoice line's GL account posts a journal: it needs
-  // invoicing_update AND accounting_update, which the operation's own gate
-  // checks.
+  // Needs invoicing_update AND accounting_update; the operation's own gate
+  // checks both.
   invoicing_changePurchaseInvoiceLineAccount: { module: null, actions: [] },
   invoicing_changeSalesInvoiceLineAccount: { module: null, actions: [] },
   // Invoicing a completed service job needs service_update AND

@@ -177,7 +177,6 @@ const SalesInvoiceItemLineForm = ({
 
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isEditable = !isLocked;
-  // A posted line's account changes through a correcting journal.
   const canChangeAccount =
     !!routeData?.salesInvoice?.postingDate &&
     !["Draft", "Pending", "Voided"].includes(
@@ -593,8 +592,7 @@ const SalesInvoiceItemLineForm = ({
                   )}
                 </div>
                 {isEditing && !isFixedAsset && canChangeAccount && (
-                  // Clear of the card's collapse chevron, as the other line
-                  // forms place their header actions.
+                  // pr-12 keeps it clear of the card's collapse chevron.
                   <CardAction className="pr-12">
                     <ChangeInvoiceLineAccount
                       action={path.to.salesInvoiceLineAccount(

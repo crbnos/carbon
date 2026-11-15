@@ -86,9 +86,9 @@ None. No migration.
 
 ## Addendum 2026-11-15: fixes from testing in the app
 
-- **Button placement:** Change GL Account sits in the line card header's `CardAction` (`pr-12`), clear of the card's collapse chevron, as the quote and RFQ line forms place their header actions. It sat over the chevron before.
+- **Button placement:** Change GL Account sits in the line card header's `CardAction`, clear of the card's collapse chevron, as the quote and RFQ line forms place their header actions.
 - **Current account in the dialog:** the dialog shows "Current account: <number> <name>", the account the line's amount is posted to now.
-  - Derived from the journal match the change moves (`readInvoiceLinePosition` → `locateInvoiceLinePosition` → `findInvoiceLinePosition`), never from `salesInvoiceLine.accountId`: sales posting credits `accountDefault.salesAccount`, and convert copies the order line's account into the column, so it can name an account never posted to.
+  - Derived from the journal match the change moves, never from `salesInvoiceLine.accountId`: sales posting credits `accountDefault.salesAccount`, and convert copies the order line's account into the column, so it can name an account never posted to.
   - Read operations `getSalesInvoiceLinePostedAccount` / `getPurchaseInvoiceLinePostedAccount` (`view: ["invoicing", "accounting"]`, not `@mcp`), served by `api+/{sales,purchase}-invoice.$invoiceId.$lineId.account.ts` and read only when the dialog opens, so the line page loads nothing extra.
   - A line that cannot change account shows the change's own refusal in the dialog; the change still refuses it on submit.
   - The change's refusals that do not depend on the new account now run before the new account is checked.

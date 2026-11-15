@@ -858,8 +858,6 @@ export function paymentJournalDifference<
     .map((entry) => ({ ...entry.line, amount: entry.amount }));
 }
 
-/** The new GL account of a posted invoice line (`changeSalesInvoiceLineAccount`,
- *  `changePurchaseInvoiceLineAccount`). */
 export const invoiceLineAccountValidator = z.object({
   accountId: z.string().min(1, { message: "Account is required" })
 });

@@ -25,11 +25,8 @@ import type { AccountClass } from "~/modules/accounting/types";
 import type { InvoiceLinePostedAccount } from "~/modules/invoicing/invoicing.service";
 
 type ChangeInvoiceLineAccountProps = {
-  /** The line's `account` action route. */
   action: string;
-  /** The `api+` route that reads the account the line is posted to now. */
   currentAccountPath: string;
-  /** The class of account the line can move to. */
   accountClass: AccountClass;
 };
 
@@ -37,11 +34,8 @@ type PostedAccountResult =
   | { data: InvoiceLinePostedAccount; error: null }
   | { data: null; error: { message: string } };
 
-/**
- * "Change GL Account" on a posted invoice line: a correcting journal moves the
- * line's posted amount to the account picked here. No form element, so it can
- * sit inside the line's own (read-only) form.
- */
+/** No form element: it sits inside the line's own read-only form, and forms
+ *  cannot nest. */
 export function ChangeInvoiceLineAccount({
   action,
   currentAccountPath,
@@ -130,7 +124,6 @@ export function ChangeInvoiceLineAccount({
   );
 }
 
-/** The account the line's posted amount is on now, or why it cannot change. */
 function CurrentAccount({
   isPending,
   result,

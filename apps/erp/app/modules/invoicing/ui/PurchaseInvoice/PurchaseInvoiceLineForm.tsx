@@ -129,7 +129,6 @@ const PurchaseInvoiceLineForm = ({
   const isEditable = ["Draft"].includes(
     routeData?.purchaseInvoice?.status ?? ""
   );
-  // A posted line's account changes through a correcting journal.
   const canChangeAccount =
     !!routeData?.purchaseInvoice?.postingDate &&
     !["Draft", "Pending", "Voided"].includes(
@@ -664,8 +663,7 @@ const PurchaseInvoiceLineForm = ({
                   )}
                 </div>
                 {isEditing && isGLAccount && canChangeAccount && (
-                  // Clear of the card's collapse chevron, as the other line
-                  // forms place their header actions.
+                  // pr-12 keeps it clear of the card's collapse chevron.
                   <CardAction className="pr-12">
                     <ChangeInvoiceLineAccount
                       action={path.to.purchaseInvoiceLineAccount(
