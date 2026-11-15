@@ -933,6 +933,30 @@ export async function getStockTransferLines(
     .order("createdAt", { ascending: true });
 }
 
+/** Where each line's stock is now: the bins a pick can take it from. */
+export async function getStockTransferLiveBins(
+  client: SupabaseClient<Database>,
+  stockTransferId: string,
+  companyId: string
+) {
+  const result = await client.rpc("get_stock_transfer_live_bins", {
+    p_company_id: companyId,
+    p_stock_transfer_id: stockTransferId
+  });
+  const bins = new Map<string, PickingListLiveBin[]>();
+  if (result.error) return { data: bins, error: result.error };
+  for (const row of result.data) {
+    const list = bins.get(row.stockTransferLineId) ?? [];
+    list.push({
+      id: row.storageUnitId,
+      name: row.storageUnitName,
+      quantity: row.quantity
+    });
+    bins.set(row.stockTransferLineId, list);
+  }
+  return { data: bins, error: null };
+}
+
 export async function getStockTransferTracking(
   client: SupabaseClient<Database>,
   stockTransferId: string,
@@ -8708,7 +8732,9 @@ export async function stockTransferLineOf(
   if (!line.data) {
     return ctx.error("notFound", "Stock transfer line not found");
   }
-  if (line.data.stockTransfer?.status === "Completed") {
+  // An unpick is how a wrong pick is undone, also after the last pick
+  // completed the transfer: the posting reopens it.
+  if (forPick && line.data.stockTransfer?.status === "Completed") {
     return ctx.error("rule", "Cannot pick from a completed stock transfer.");
   }
   // Release runs the storage rules, so a Draft is not picked. Unpicking stays
@@ -11568,6 +11594,8 @@ async function lockStockTransferForPick(
     companyId: string;
     locationId: string;
     picking: boolean;
+    /** The line an unpick takes back: it reopens a Completed transfer. */
+    stockTransferLineId?: string;
   }
 ) {
   const transfer = await trx
@@ -11583,7 +11611,32 @@ async function lockStockTransferForPick(
     throw new InvalidInputError("The stock transfer is at another location");
   }
   if (transfer.status === "Completed") {
-    throw new InvalidInputError("Cannot pick from a completed stock transfer.");
+    if (input.picking) {
+      throw new InvalidInputError(
+        "Cannot pick from a completed stock transfer."
+      );
+    }
+    // A transfer completes by itself when its last line is picked (a one-line
+    // kanban refill completes on its only pick), so a wrong pick must still be
+    // undone: the unpick reopens it, in this transaction.
+    const otherPicked = await trx
+      .selectFrom("stockTransferLine")
+      .select("id")
+      .where("stockTransferId", "=", input.stockTransferId)
+      .where("companyId", "=", input.companyId)
+      .where("id", "!=", input.stockTransferLineId ?? "")
+      .where("pickedQuantity", ">", 0)
+      .limit(1)
+      .executeTakeFirst();
+    await trx
+      .updateTable("stockTransfer")
+      .set({
+        status: otherPicked ? "In Progress" : "Released",
+        completedAt: null
+      })
+      .where("id", "=", input.stockTransferId)
+      .where("companyId", "=", input.companyId)
+      .execute();
   }
   if (input.picking && transfer.status === "Draft") {
     throw new InvalidInputError(STOCK_TRANSFER_NOT_RELEASED);
@@ -11767,7 +11820,8 @@ export async function postStockTransfer(
           stockTransferId,
           companyId,
           locationId,
-          picking: false
+          picking: false,
+          stockTransferLineId
         });
         // Get stock transfer line details
         const stockTransferLine = await trx
@@ -12303,7 +12357,8 @@ export async function postStockTransfer(
           stockTransferId,
           companyId,
           locationId,
-          picking: false
+          picking: false,
+          stockTransferLineId
         });
         // Lock the line AND the entity: an unpick read-modify-writes the
         // entity's quantity/status and the line's pickedQuantity, so two
@@ -12453,7 +12508,8 @@ export async function postStockTransfer(
           stockTransferId,
           companyId,
           locationId,
-          picking: false
+          picking: false,
+          stockTransferLineId
         });
         // Lock the line AND the entity: an unpick read-modify-writes the
         // entity's quantity/status and the line's pickedQuantity, so two

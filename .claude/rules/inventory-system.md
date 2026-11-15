@@ -135,6 +135,36 @@ Key service functions (verified):
   (`inventory.utils.ts`) — these are the picking/job defaults.
 - Tracking: `getTrackedEntities`, `getAvailableTrackedEntities` (RPC `get_available_tracked_entities`),
   `getSerialNumbersForItem`, `getBatchNumbersForItem`, `getShelfLifeForItems`, `getPickOrder` (FEFO/FIFO).
+- Live bins (migration `20261115001836_picking_list_live_bins.sql`). A picking list line's
+  `storageUnitId` is the bin suggested when the list was made, then the bin the first pick
+  drew from. The ERP and MES picking pages do not read it for an unpicked line: they show
+  `getPickingListLiveBins` (RPC `get_picking_list_live_bins(p_company_id, p_picking_list_id)`):
+  the nettable warehouse bins that hold the line's item on the line's stripe now, fullest
+  first. A line with no row is out of stock; a picked line names the bin it was picked from.
+  `get_picking_list_availability` is no longer read by either page (`getPickingListAvailability`
+  stays as an operation). The MES reads two more: `get_job_issue_bins(p_company_id, p_job_id,
+  p_item_ids)` (the bins a job's untracked materials can issue from: positive stock per
+  eligible stripe, and lineside stock only up to the job's outstanding picked claim) and
+  `get_issue_tracked_entity_stock(p_company_id, p_location_id, p_item_ids, p_project_ids)`
+  (available lots of every revision of an item in one read, with the bin holding most).
+- Stock transfer lines, a kanban refill included, show the same
+  (`20261115053325_stock_transfer_live_bins.sql`): the transfer page loads
+  `getStockTransferLiveBins` (RPC `get_stock_transfer_live_bins(p_company_id,
+  p_stock_transfer_id)`: common stock in nettable warehouse bins and the line's From bin,
+  never its To bin) and follows `itemLedger` changes for its items. When the From bin no
+  longer holds what is left to pick, the line shows "Stock at: bin (qty), …", or "Location
+  not known" when no bin holds it. The pick still posts from the line's From bin
+  (`postStockTransfer`); the lines are ordered by item id with numbers as numbers.
+- Pick, unpick and unissue post from the ledger, not from the saved bin (`postPicking`,
+  `issueMaterial`). An untracked pick locks the draw (`lockUntrackedDraws`), reads the bins
+  again, chooses the source with `chooseSourceBin` and splits it with
+  `planStripedUntrackedDraw`; its `Direct Transfer` rows carry `documentLineId` = the picking
+  list line. An unpick returns what the line still holds to the bins those rows drew from,
+  newest first, never more than `quantityPicked`; rows picked before the tag go back to the
+  line's saved bin. An unissue (`Positive Adjmt.` on a job material) is refused above
+  `quantityIssued` and returns stock to the bins and stripes the job's `Job Consumption` rows
+  of that item drew from, the operation's own draws first. It reads by job and item, because
+  the job-completion SQL backflush writes no `documentLineId`.
 - Picking: `generatePickingList`, `getPickingListAvailability` (RPC `get_picking_list_availability`),
   `getPickingSchedule` (RPC `get_picking_schedule`). These honor `itemSupersession`
   (`20260730143512_picking-supersession.sql` + `inventory/supersession-pick.ts`
@@ -321,7 +351,7 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   a stock transfer does not, since moving stock out is how it is released. `postPicking`
   also refuses a pick (untracked, serial or batch) whose source unit is non-nettable at post
   time (`assertPickSourceNettable`), since a bin can become one after the list was
-  generated; it still does not re-check lineside. Shipments are not restricted: a shipment line can
+  generated; an untracked pick draws from the nettable warehouse bins that hold stock at post time (see Live bins above). Shipments are not restricted: a shipment line can
   name a non-nettable bin. A new sales order shipment line for an untracked item keeps the bin
   the order line names, even when short; a line with no bin takes a bin that holds its stock
   (`shipmentSourceBinChooser` → `chooseSourceBin`, `shared.service.ts`), and so does a quote

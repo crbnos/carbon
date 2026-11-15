@@ -109569,6 +109569,15 @@ export type Database = {
           updatedBy: string
         }[]
       }
+      get_stock_transfer_live_bins: {
+        Args: { p_company_id: string; p_stock_transfer_id: string }
+        Returns: {
+          quantity: number
+          stockTransferLineId: string
+          storageUnitId: string
+          storageUnitName: string
+        }[]
+      }
       get_supplier_ids_with_supplier_permission: {
         Args: { permission: string }
         Returns: string[]
