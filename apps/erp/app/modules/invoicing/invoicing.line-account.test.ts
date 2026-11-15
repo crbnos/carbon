@@ -10,6 +10,7 @@ import {
   type InvoiceLineLeg,
   LINE_ACCOUNT_CHANGE_PREFIX,
   lineAccountChangePeriodRefusal,
+  lineAccountChangeTargetRefusal,
   locateInvoiceLinePosition
 } from "./invoicing.service";
 
@@ -313,7 +314,8 @@ describe("a group that is not the line's", () => {
       }),
       ...salesLine("ref-b", 40)
     ];
-    // A's revenue moved onto its shipping account: A's group holds 110 there.
+    // A's revenue on its own shipping account, a move the change now refuses:
+    // A's group holds 110 there.
     const { legs } = apply(posted, salesTarget(SALES, 100), SHIPPING);
     // Sales then holds only B's 40, which is not A's amount.
     expect(
@@ -345,6 +347,46 @@ describe("a group that is not the line's", () => {
       position: null,
       refusal: "ambiguous"
     });
+  });
+});
+
+describe("a new account another leg of the line holds", () => {
+  // The line posts 100 to Sales and 10 to Shipping.
+  const posted = [
+    ...salesLine("ref-a", 100),
+    leg(SHIPPING, 10, {
+      journalLineReference: "ref-a",
+      description: "Shipping Revenue"
+    })
+  ];
+  const account = (id: string) => ({ id, number: "4050", name: "Shipping" });
+
+  it("refuses the line's own shipping account, naming it", () => {
+    const { position } = findInvoiceLinePosition(
+      posted,
+      salesTarget(SALES, 100)
+    );
+    expect(
+      lineAccountChangeTargetRefusal(position!, account(SHIPPING))
+    ).toContain("4050 Shipping");
+    expect(
+      lineAccountChangeTargetRefusal(position!, account(PARTS))
+    ).toBeNull();
+  });
+
+  it("accepts an account the line left again, which now holds nothing of it", () => {
+    const there = apply(posted, salesTarget(SALES, 100), PARTS);
+    const back = apply(there.legs, salesTarget(PARTS, 100), SALES);
+    const { position } = findInvoiceLinePosition(
+      back.legs,
+      salesTarget(SALES, 100)
+    );
+    expect(
+      lineAccountChangeTargetRefusal(position!, account(PARTS))
+    ).toBeNull();
+    expect(
+      lineAccountChangeTargetRefusal(position!, account(SHIPPING))
+    ).not.toBeNull();
   });
 });
 

@@ -76,6 +76,7 @@ A posted line coded to the wrong account can move to another without a void. Ope
 - **Period:** the period of the invoice's posting date must be Open. In a Locked period, unlock it first; in a Closed one, [reopen it](/docs/reference/period-close#reopening).
 - **Permission:** invoicing update and accounting update. No approval is asked for.
 - **Before the cutover:** an invoice dated before the accounting cutover cannot change account; record a journal entry instead.
+- **An account the line already posts to:** a sales line cannot move to an account its posting already holds another amount on, such as the shipping revenue account its shipping charge posted to; choose another account.
 - **Identical lines:** when another line of the invoice posted the same amount with the same quantity and dimensions (item, location, project, cost center), Carbon cannot tell the two postings apart and refuses the change; record a journal entry instead.
 - **Accounting sync:** an invoice already synced to an accounting provider keeps its original account there.
 

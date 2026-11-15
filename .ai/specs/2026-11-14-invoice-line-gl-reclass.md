@@ -53,6 +53,7 @@ flowchart LR
 | Line charged to a project | "This line is charged to a project, which posted it to the project's account. Record a journal entry to correct it instead." |
 | Intercompany elimination reads the line | "Intercompany eliminations read this line's posted account, so it cannot change…" |
 | Same account | "The line is already posted to this account." |
+| New account already holds another leg of the line (a sales line's shipping account) | "This line's posting already has another amount on 4050 Shipping Revenue, so the line cannot move there. Choose another account." |
 
 ### Reopening a period
 

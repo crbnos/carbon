@@ -20611,6 +20611,8 @@ export type InvoiceLinePosition = {
   postingDate: string;
   /** Every leg of the group, on any account. */
   groupLegIds: string[];
+  /** The other accounts the group holds an amount on (shipping, tax, AR). */
+  otherAccountIds: string[];
 };
 
 const legValue = (leg: InvoiceLineLeg) =>
@@ -20681,6 +20683,14 @@ export function findInvoiceLinePosition(
   const group = legs.filter(
     (row) => row.journalLineReference === leg.journalLineReference
   );
+  const others = new Map<string, number>();
+  for (const row of group) {
+    if (!row.accountId || row.accountId === target.accountId) continue;
+    others.set(
+      row.accountId,
+      round((others.get(row.accountId) ?? 0) + legValue(row))
+    );
+  }
   return {
     position: {
       leg: { ...leg, accountId: leg.accountId, accountClass: leg.accountClass },
@@ -20688,10 +20698,25 @@ export function findInvoiceLinePosition(
       postingDate: group
         .map((row) => row.postingDate)
         .reduce((a, b) => (b < a ? b : a)),
-      groupLegIds: group.map((row) => row.id)
+      groupLegIds: group.map((row) => row.id),
+      otherAccountIds: [...others]
+        .filter(([, value]) => !equals(value, 0))
+        .map(([accountId]) => accountId)
     },
     refusal: null
   };
+}
+
+/** Refuses a new account another leg of the line's posting holds an amount
+ *  on (a sales line's shipping account, say): the group would then hold both
+ *  there, and no later read could tell the line's share apart. */
+export function lineAccountChangeTargetRefusal(
+  position: Pick<InvoiceLinePosition, "otherAccountIds">,
+  to: { id: string; number: string | null; name: string | null }
+): string | null {
+  if (!position.otherAccountIds.includes(to.id)) return null;
+  const label = [to.number, to.name].filter(Boolean).join(" ") || to.id;
+  return `This line's posting already has another amount on ${label}, so the line cannot move there. Choose another account.`;
 }
 
 export type LineAccountChangeLine = Omit<
@@ -21193,7 +21218,7 @@ export async function changeInvoiceLineAccount(
 
     const to = await trx
       .selectFrom("account")
-      .select(["id", "class", "active", "isGroup"])
+      .select(["id", "number", "name", "class", "active", "isGroup"])
       .where("id", "=", accountId)
       .where("companyGroupId", "=", ctx.company.groupId)
       .executeTakeFirst();
@@ -21207,6 +21232,8 @@ export async function changeInvoiceLineAccount(
         "The line is already posted to this account."
       );
     }
+    const targetRefusal = lineAccountChangeTargetRefusal(position, to);
+    if (targetRefusal) throw new InvalidInputError(targetRefusal);
 
     // A Provisional journal has no period.
     const postingDate = position.postingDate;
