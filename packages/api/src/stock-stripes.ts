@@ -157,11 +157,13 @@ export function assertEntitiesAtLocation(
     );
   }
   const EPSILON = 1e-9;
-  const refused = entities.find(
-    (entity) =>
+  const refused = entities.find((entity) => {
+    const onHand = here.get(entity.id) ?? 0;
+    return (
       (elsewhere.get(entity.id) ?? 0) > EPSILON &&
-      (here.get(entity.id) ?? 0) < (entity.quantity ?? EPSILON) - EPSILON
-  );
+      (onHand <= EPSILON || onHand < (entity.quantity ?? 0) - EPSILON)
+    );
+  });
   if (refused) {
     const lot = refused.readableId ?? "The selected lot";
     const onHand = here.get(refused.id) ?? 0;
