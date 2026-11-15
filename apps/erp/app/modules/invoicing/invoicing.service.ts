@@ -10484,49 +10484,12 @@ export async function postSalesInvoice(
           invoiceHeader.postingDate,
           SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR
         );
-        // Get journal entries to reverse
-        const journalEntries = await documentJournalLines(db, companyId, {
-          documentId: invoiceId,
-          documentType: "Invoice"
-        });
-
-        // A Rental line's revenue legs reference the rental agreement, not the
-        // invoice, so the query above misses them; a contract line's
-        // revenue legs (and FX reclass) reference the contract. They share
-        // the posting journal and the journal line reference of their
-        // invoice line's AR leg, which is how they are found.
         const rentalLineIds = salesInvoiceLines.data
           .filter((line) => line.invoiceLineType === "Rental")
           .map((line) => line.id);
         const contractInvoiceLines = salesInvoiceLines.data.filter(
           (line) => !!line.customerContractLineId
         );
-        type JournalLineRecord = rows.Tables["journalLine"]["Row"];
-        let rentalJournalEntries: JournalLineRecord[] = [];
-        if (
-          (rentalLineIds.length > 0 || contractInvoiceLines.length > 0) &&
-          journalEntries.length > 0
-        ) {
-          const journalIds = [
-            ...new Set(
-              journalEntries.map((entry: JournalLineRecord) => entry.journalId)
-            )
-          ];
-          const references = [
-            ...new Set(
-              journalEntries
-                .map((entry: JournalLineRecord) => entry.journalLineReference)
-                .filter(
-                  (reference: string | null): reference is string => !!reference
-                )
-            )
-          ];
-          rentalJournalEntries = await documentJournalLines(db, companyId, {
-            documentType: ["Rental Agreement", "Contract"],
-            journalId: journalIds,
-            journalLineReference: references
-          });
-        }
 
         // Get shipments created from this invoice
         const { data: invoiceShipments } = await many(
@@ -10604,40 +10567,6 @@ export async function postSalesInvoice(
           }
         }
 
-        // Create reversing journal entries
-        const reversedJournalEntries = [
-          ...journalEntries,
-          ...rentalJournalEntries
-        ];
-        const reversingJournalEntries: Omit<
-          rows.Tables["journalLine"]["Insert"],
-          "journalId"
-        >[] = reversedJournalEntries.map((entry) => ({
-          accountId: entry.accountId,
-          // A reversed stand-in line names the same default, so the enable
-          // re-points both sides together.
-          accountDefaultRole: entry.accountDefaultRole,
-          description: `VOID: ${entry.description}`,
-          // A reversal is a sign flip of an already-posted value, which is
-          // exact — no rounding to do.
-          amount: -entry.amount,
-          quantity: -entry.quantity,
-          ...(entry.documentType === "Rental Agreement" ||
-          entry.documentType === "Contract"
-            ? {
-                documentType: entry.documentType,
-                documentId: entry.documentId
-              }
-            : {
-                documentType: "Invoice" as const,
-                documentId: invoiceHeader.id
-              }),
-          externalDocumentId: entry.externalDocumentId,
-          documentLineReference: entry.documentLineReference,
-          journalLineReference: entry.journalLineReference,
-          companyId
-        }));
-
         // Create reversing item ledger entries
         const reversingItemLedgerEntries: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
@@ -10679,6 +10608,77 @@ export async function postSalesInvoice(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // Locked before the journal is read, as a line account change locks
+          // it before it adds lines: those are reversed with the rest, never
+          // left on a voided invoice.
+          await trx
+            .selectFrom("salesInvoice")
+            .select("id")
+            .where("id", "=", invoiceId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .execute();
+          const journalEntries = await documentJournalLines(trx, companyId, {
+            documentId: invoiceId,
+            documentType: "Invoice"
+          });
+
+          // A Rental line's revenue legs reference the rental agreement, not
+          // the invoice, so the query above misses them; a contract line's
+          // revenue legs (and FX reclass) reference the contract. They share
+          // the posting journal and the journal line reference of their
+          // invoice line's AR leg, which is how they are found.
+          const rentalJournalEntries =
+            (rentalLineIds.length > 0 || contractInvoiceLines.length > 0) &&
+            journalEntries.length > 0
+              ? await documentJournalLines(trx, companyId, {
+                  documentType: ["Rental Agreement", "Contract"],
+                  journalId: [
+                    ...new Set(journalEntries.map((entry) => entry.journalId))
+                  ],
+                  journalLineReference: [
+                    ...new Set(
+                      journalEntries
+                        .map((entry) => entry.journalLineReference)
+                        .filter((reference): reference is string => !!reference)
+                    )
+                  ]
+                })
+              : [];
+
+          const reversedJournalEntries = [
+            ...journalEntries,
+            ...rentalJournalEntries
+          ];
+          const reversingJournalEntries: Omit<
+            rows.Tables["journalLine"]["Insert"],
+            "journalId"
+          >[] = reversedJournalEntries.map((entry) => ({
+            accountId: entry.accountId,
+            // A reversed stand-in line names the same default, so the enable
+            // re-points both sides together.
+            accountDefaultRole: entry.accountDefaultRole,
+            description: `VOID: ${entry.description}`,
+            // A reversal is a sign flip of an already-posted value, which is
+            // exact — no rounding to do.
+            amount: -entry.amount,
+            quantity: -entry.quantity,
+            ...(entry.documentType === "Rental Agreement" ||
+            entry.documentType === "Contract"
+              ? {
+                  documentType: entry.documentType,
+                  documentId: entry.documentId
+                }
+              : {
+                  documentType: "Invoice" as const,
+                  documentId: invoiceHeader.id
+                }),
+            externalDocumentId: entry.externalDocumentId,
+            documentLineReference: entry.documentLineReference,
+            journalLineReference: entry.journalLineReference,
+            companyId
+          }));
+
           if (invoiceLineIds.length > 0) {
             // Re-checked under lock: a run may have posted since the check
             // above, and its rows must never be dropped. Every row left is
@@ -16262,7 +16262,7 @@ export async function postPurchaseInvoice(
         );
       }
 
-      const [originalItemLedger, originalJournalLines, originalCostLedger] =
+      const [originalItemLedger, postedJournalLines, originalCostLedger] =
         await inOrder([
           () => many(db, "itemLedger", { documentId: invoiceId, companyId }),
           () =>
@@ -16515,28 +16515,6 @@ export async function postPurchaseInvoice(
         purchaseOrderStatusUpdatesVoid[purchaseOrderId] = status;
       }
 
-      const reversingJournalLines: Omit<
-        Database["public"]["Tables"]["journalLine"]["Insert"],
-        "journalId"
-      >[] = originalJournalLines.map((entry) => ({
-        accountId: entry.accountId,
-        // A reversed stand-in line names the same default, so the enable
-        // re-points both sides together.
-        accountDefaultRole: entry.accountDefaultRole,
-        accrual: entry.accrual,
-        description: `VOID: ${entry.description}`,
-        // A reversal is a sign flip of an already-posted value, which is
-        // exact — no rounding to do.
-        amount: -entry.amount,
-        quantity: -entry.quantity,
-        documentType: entry.documentType,
-        documentId: entry.documentId,
-        externalDocumentId: entry.externalDocumentId,
-        documentLineReference: entry.documentLineReference,
-        journalLineReference: entry.journalLineReference,
-        companyId
-      }));
-
       const reversingItemLedger: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
         originalItemLedger.data.map((entry) => ({
           postingDate: today,
@@ -16608,7 +16586,8 @@ export async function postPurchaseInvoice(
       const receivedItemIdsVoid = new Set(
         originalItemLedger.data.map((entry) => entry.itemId)
       );
-      const averageCostChangesVoid: AverageCostChange[] = [
+      // The journal's write-ups are added under the invoice lock below.
+      const stockAverageCostChangesVoid: AverageCostChange[] = [
         ...originalItemLedger.data.map((entry) => ({
           itemId: entry.itemId,
           quantity: -Number(entry.quantity),
@@ -16624,17 +16603,7 @@ export async function postPurchaseInvoice(
                 }
               ]
             : []
-        ),
-        ...originalJournalLines.flatMap((entry) => {
-          const itemId = entry.documentLineReference
-            ? itemIdByLineReferenceVoid.get(entry.documentLineReference)
-            : undefined;
-          return itemId &&
-            entry.accountId &&
-            inventoryAccountsVoid.has(entry.accountId)
-            ? [{ itemId, quantity: 0, value: -Number(entry.amount) }]
-            : [];
-        })
+        )
       ];
 
       const reversingCostLedger: Database["public"]["Tables"]["costLedger"]["Insert"][] =
@@ -16655,14 +16624,66 @@ export async function postPurchaseInvoice(
           postingDate: today
         }));
 
-      // A Provisional journal has no accounting period.
+      // A Provisional journal has no accounting period. Whether the void
+      // writes a journal can be read here: a line account change adds lines
+      // only to a posting that has some.
       const accountingPeriodIdVoid =
-        postingStatus === "Posted" && reversingJournalLines.length > 0
+        postingStatus === "Posted" && postedJournalLines.length > 0
           ? await getCurrentAccountingPeriod(companyId, db, today)
           : null;
 
       await db.transaction().execute(async (trx) => {
         await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+        // Locked before the journal is read, as a line account change locks
+        // it before it adds lines: those are reversed with the rest, never
+        // left on a voided invoice.
+        await trx
+          .selectFrom("purchaseInvoice")
+          .select("id")
+          .where("id", "=", invoiceId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .execute();
+        const originalJournalLines = await documentJournalLines(
+          trx,
+          companyId,
+          { documentId: invoiceId, documentType: "Invoice" }
+        );
+        const reversingJournalLines: Omit<
+          Database["public"]["Tables"]["journalLine"]["Insert"],
+          "journalId"
+        >[] = originalJournalLines.map((entry) => ({
+          accountId: entry.accountId,
+          // A reversed stand-in line names the same default, so the enable
+          // re-points both sides together.
+          accountDefaultRole: entry.accountDefaultRole,
+          accrual: entry.accrual,
+          description: `VOID: ${entry.description}`,
+          // A reversal is a sign flip of an already-posted value, which is
+          // exact — no rounding to do.
+          amount: -entry.amount,
+          quantity: -entry.quantity,
+          documentType: entry.documentType,
+          documentId: entry.documentId,
+          externalDocumentId: entry.externalDocumentId,
+          documentLineReference: entry.documentLineReference,
+          journalLineReference: entry.journalLineReference,
+          companyId
+        }));
+        const averageCostChangesVoid: AverageCostChange[] = [
+          ...stockAverageCostChangesVoid,
+          ...originalJournalLines.flatMap((entry) => {
+            const itemId = entry.documentLineReference
+              ? itemIdByLineReferenceVoid.get(entry.documentLineReference)
+              : undefined;
+            return itemId &&
+              entry.accountId &&
+              inventoryAccountsVoid.has(entry.accountId)
+              ? [{ itemId, quantity: 0, value: -Number(entry.amount) }]
+              : [];
+          })
+        ];
+
         await updateRowsById(
           trx,
           "purchaseOrderLine",
@@ -21208,7 +21229,7 @@ export async function changeInvoiceLineAccount(
 
   return db.transaction().execute(async (trx) => {
     await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-    // Reads the invoice FOR UPDATE: a second change waits.
+    // Reads the invoice FOR UPDATE: a second change, or a void, waits.
     const { facts, position } = await readInvoiceLinePosition(
       trx,
       companyId,
