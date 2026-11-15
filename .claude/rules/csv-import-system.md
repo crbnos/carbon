@@ -150,7 +150,9 @@ the manual entry's `createJournalEntry` and `saveJournalEntry` need.
   holds whole journals. The journal's rows must share the date and status, balance
   (`isBalanced`, `JOURNAL_BALANCE_TOLERANCE`), a Posted one needs a cutover
   (`ACCOUNTING_NOT_STARTED`), and a date in a period `periodPostingRefusal(…,
-  "accounting")` refuses (Closed) is refused with that message, for a Draft too.
+  "accounting")` refuses (Closed) is refused with that message, for a Draft too. A journal dated on or before the
+  newest `accountingPeriodBalance.endingBalanceDate` is refused too, a Draft
+  included: the balance readers add only journals after the newest snapshot.
   A Locked period accepts it, as it accepts a manual journal.
 - **Writes go through the manual entry's building blocks**, one journal at a time:
   `invokeCreate(ctx, { type: "journalEntry" })` (sequence, `sourceType` Manual,

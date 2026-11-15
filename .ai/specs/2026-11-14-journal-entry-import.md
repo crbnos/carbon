@@ -68,6 +68,7 @@ totals import uses:
 | Draft or Posted | Status enum, default Draft | A new manual entry is a Draft; the form offers Save (Draft) and Post. The wizard's Default sets the whole file. |
 | Locked period | Accepted | A manual journal posts as an `accounting` source: `periodPostingRefusal` refuses only Closed for it. |
 | Closed period | Refused with "Accounting period is closed. Reopen it before posting.", for a Draft too | No bypass; a Draft that could never post is not left behind. |
+| On or before the latest closing snapshot | Refused: "dated on or before <date>, the end of the latest closed period. Reopen the periods back to this date first.", for a Draft too | Balances start from the newest snapshot and add only later journals; added 2026-11-15 from self-review. |
 | Balance | Every journal, Draft too, `isBalanced` with `JOURNAL_BALANCE_TOLERANCE` | The file is another system's books; an unbalanced journal there is an error. |
 | Currency | Base currency only | Manual journal lines carry no currency. |
 | Dimensions | Three slots, dimension chosen as an enum Default | The wizard's fields are fixed per table; a company's dimensions are not. |

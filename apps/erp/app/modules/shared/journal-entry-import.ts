@@ -72,6 +72,12 @@ export type JournalEntryImportLookups = {
     closeStatus: string;
   }>;
   hasCutover: boolean;
+  /**
+   * The newest closing snapshot's date. Balances start from it and add only
+   * journals dated after it, so a journal on or before it would be in the
+   * ledger but in no balance.
+   */
+  latestSnapshotDate: string | null;
   /** References a previous import wrote, with their journal entry number. */
   importedReferences: ReadonlyMap<string, string>;
 };
@@ -334,6 +340,16 @@ export function planJournalEntryImport(
       continue;
     }
 
+    if (
+      lookups.latestSnapshotDate &&
+      first.postingDate <= lookups.latestSnapshotDate
+    ) {
+      refuse(
+        `Journal ${reference}: dated on or before ${lookups.latestSnapshotDate}, the end of the latest closed period. Reopen the periods back to this date first.`
+      );
+      continue;
+    }
+
     journals.push({
       reference,
       rows,
@@ -419,7 +435,7 @@ async function loadJournalEntryImportLookups(
     }
   }
 
-  const [accounts, dimensionRows, periods, settings, imported] =
+  const [accounts, dimensionRows, periods, settings, snapshot, imported] =
     await Promise.all([
       inChunks(accountNumbers, (chunk) =>
         db
@@ -457,6 +473,11 @@ async function loadJournalEntryImportLookups(
         .selectFrom("companySettings")
         .select("accountingCutoverDate")
         .where("id", "=", companyId)
+        .executeTakeFirst(),
+      db
+        .selectFrom("accountingPeriodBalance")
+        .select(sql<string | null>`MAX("endingBalanceDate")::text`.as("date"))
+        .where("companyId", "=", companyId)
         .executeTakeFirst(),
       // A mapping counts only while its journal exists: a deleted Draft can
       // be imported again.
@@ -548,6 +569,7 @@ async function loadJournalEntryImportLookups(
     dimensionValueIds,
     periods,
     hasCutover: hasAccountingCutover(settings),
+    latestSnapshotDate: snapshot?.date ?? null,
     importedReferences: new Map(
       imported.flatMap((row) =>
         row.externalId ? [[row.externalId, row.journalEntryId] as const] : []

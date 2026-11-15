@@ -140,15 +140,16 @@ A journal is imported whole or not at all:
 - Each journal must balance: its debits equal its credits. A journal that does not balance is refused, and the reason names its reference and both totals.
 - An unknown account number or dimension value refuses its row and holds back the rest of that journal.
 - A journal dated in a **Closed** period is refused with "Accounting period is closed. Reopen it before posting." Reopen the period first. A **Locked** period accepts the journal, as it accepts a manual journal entry.
+- A journal dated on or before the end of the latest **Closed** period is refused, even when its own month has no period. Balances start from that period's closing figures, so the journal would be in the general ledger but in no balance. Reopen the periods back to its date first, then close them again.
 - A **Posted** journal needs accounting to be set up. A **Draft** journal does not.
 
 Every row of a refused journal is listed under the rows to fix, so the file you download from the results holds whole journals. Each imported journal records its reference. When you import the same file again, its journals are **skipped**, and the reason names the journal entry each one became.
 
 <Callout type="warn" title="History before the accounting cutover counts in your balances">
-A Posted journal dated before your accounting cutover counts in every balance and report, together with the opening balance journal that setting up accounting posts. If that opening balance already holds the other system's trial balance, importing the same history as well counts it twice.
+A Posted journal dated before your accounting cutover counts in your balances, together with the opening balance journal that setting up accounting posts. If that opening balance already holds the other system's trial balance, importing the same history as well counts it twice.
 </Callout>
 
-Journals import one at a time, in the order their references first appear in the file. A large history imports faster in several files, for example one file per month.
+Journals import one at a time, in the order their references first appear in the file. Split a large history into several files, for example one per month, so each import finishes within the request time limit.
 
 ## Errors and partial failures
 

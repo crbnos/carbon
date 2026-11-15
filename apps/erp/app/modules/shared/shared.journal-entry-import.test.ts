@@ -64,6 +64,7 @@ const lookups = (
     { startDate: "2026-04-01", endDate: "2026-04-30", closeStatus: "Open" }
   ],
   hasCutover: true,
+  latestSnapshotDate: null,
   importedReferences: new Map(),
   ...overrides
 });
@@ -241,6 +242,18 @@ describe("planJournalEntryImport", () => {
     expect(plan.errors.map((e) => e.reason)).toEqual([
       "Journal GJ-1: Accounting period is closed. Reopen it before posting.",
       "Journal GJ-1: Accounting period is closed. Reopen it before posting."
+    ]);
+  });
+
+  it("refuses a journal dated on or before the latest closing snapshot, a Draft too", () => {
+    const plan = planJournalEntryImport(
+      file(),
+      lookups({ latestSnapshotDate: "2026-03-31" })
+    );
+    expect(plan.journals.map((j) => j.reference)).toEqual(["GJ-2"]);
+    expect(plan.errors.map((e) => e.reason)).toEqual([
+      "Journal GJ-1: dated on or before 2026-03-31, the end of the latest closed period. Reopen the periods back to this date first.",
+      "Journal GJ-1: dated on or before 2026-03-31, the end of the latest closed period. Reopen the periods back to this date first."
     ]);
   });
 
