@@ -14,6 +14,7 @@ import {
   Checkbox,
   Combobox as ComboboxBase,
   cn,
+  HStack,
   IconButton,
   Input,
   InputGroup,
@@ -66,9 +67,9 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import ItemThumbnail from "~/components/ItemThumbnail";
 import type {
-  getBatchNumbersForItem,
-  getSerialNumbersForItem,
+  getIssueLotsForItem,
   SuggestedAllocationLot
 } from "~/services/inventory.service";
 import { issueValidator } from "~/services/models";
@@ -222,8 +223,7 @@ function IssueMaterialBody({
   // Only the lots of the job's stock stripes: `issue` refuses any other.
   const { data: serialNumbers } = useSerialNumbers(
     trackingType === "Serial" ? selectedItemId : undefined,
-    operationId,
-    locationId
+    operationId
   );
   // Today in the local timezone — used for "is this entity expired"
   // comparisons throughout the modal. Memoized so we re-derive option
@@ -296,8 +296,7 @@ function IssueMaterialBody({
   // Batch number state and options
   const { data: batchNumbers } = useBatchNumbers(
     trackingType === "Batch" ? selectedItemId : undefined,
-    operationId,
-    locationId
+    operationId
   );
   const batchOptions = useMemo(() => {
     return (
@@ -422,6 +421,11 @@ function IssueMaterialBody({
     batchRemainingQuantity
   ]);
 
+  // The Scan tab starts empty: only the Select tab is filled in for the
+  // operator, so a scan always records the lot in their hands.
+  const [activeTab, setActiveTab] = useState("scan");
+  const isScanning = activeTab === "scan";
+
   // Serial numbers selection state
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<
     Array<{ index: number; id: string }>
@@ -443,6 +447,7 @@ function IssueMaterialBody({
       (material.quantity ?? material.estimatedQuantity ?? Infinity);
   const issueSerialNumbers = useMemo(
     () =>
+      !isScanning &&
       stillNeeded &&
       (batchId || parentId) &&
       serialOptions.length === 1 &&
@@ -450,7 +455,14 @@ function IssueMaterialBody({
       !selectedSerialNumbers[0].id
         ? [{ index: 0, id: serialOptions[0].value }]
         : selectedSerialNumbers,
-    [stillNeeded, batchId, parentId, serialOptions, selectedSerialNumbers]
+    [
+      isScanning,
+      stillNeeded,
+      batchId,
+      parentId,
+      serialOptions,
+      selectedSerialNumbers
+    ]
   );
   const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
   const [scrapEntityTarget, setScrapEntityTarget] = useState<{
@@ -471,6 +483,7 @@ function IssueMaterialBody({
   // is disabled. Derive the default so an async stock read needs no state effect.
   const issueBatchNumbers = useMemo(
     () =>
+      !isScanning &&
       stillNeeded &&
       (batchId || parentId) &&
       batchOptions.length === 1 &&
@@ -488,6 +501,7 @@ function IssueMaterialBody({
           ]
         : selectedBatchNumbers,
     [
+      isScanning,
       stillNeeded,
       batchId,
       parentId,
@@ -500,9 +514,6 @@ function IssueMaterialBody({
   const [unconsumedBatches, setUnconsumedBatches] = useState<
     Array<{ index: number; id: string }>
   >([{ index: 0, id: "" }]);
-
-  // Tab state
-  const [activeTab, setActiveTab] = useState("scan");
 
   // Pre-fill the selection with the picking list's recommendation (a default
   // only — fully editable below). Pre-selecting tracked entities is a
@@ -616,8 +627,7 @@ function IssueMaterialBody({
           ? suggestedAllocation
           : [];
   const hasSeededSuggestionRef = useRef(false);
-  useEffect(() => {
-    if (hasSeededSuggestionRef.current) return;
+  const seedSelection = () => {
     if (!seedAllocation.length) return;
     // Intersect the seed with what is actually still available before
     // applying it. The picked allocation is NOT netted by consumption
@@ -629,9 +639,14 @@ function IssueMaterialBody({
     // them nets the seed correctly.
     if (trackingType === "Batch") {
       if (batchNumbers?.data === undefined) return;
-      // Don't clobber a selection the operator already started if the (async)
-      // suggestion arrives after they picked.
-      if (selectedBatchNumbers.some((b) => b.id)) return;
+      // The operator already started a selection (the async suggestion
+      // arrived after they scanned or picked): theirs stands, and the seed is
+      // spent. Leaving it armed re-filled the field the moment they cleared
+      // it to type or scan another lot.
+      if (selectedBatchNumbers.some((b) => b.id)) {
+        hasSeededSuggestionRef.current = true;
+        return;
+      }
       const availableById = new Map(
         batchOptions.map((o) => [o.value, o.availableQuantity])
       );
@@ -656,7 +671,10 @@ function IssueMaterialBody({
       setActiveTab("select");
     } else if (trackingType === "Serial") {
       if (serialNumbers?.data === undefined) return;
-      if (selectedSerialNumbers.some((s) => s.id)) return;
+      if (selectedSerialNumbers.some((s) => s.id)) {
+        hasSeededSuggestionRef.current = true;
+        return;
+      }
       const availableIds = new Set(serialOptions.map((o) => o.value));
       const lots = seedAllocation.filter((lot) =>
         availableIds.has(lot.trackedEntityId)
@@ -670,6 +688,10 @@ function IssueMaterialBody({
       );
       setActiveTab("select");
     }
+  };
+  // biome-ignore lint/correctness/useExhaustiveDependencies: seeds once, when the async reads land
+  useEffect(() => {
+    if (!hasSeededSuggestionRef.current) seedSelection();
   }, [
     seedAllocation,
     trackingType,
@@ -680,6 +702,25 @@ function IssueMaterialBody({
     batchOptions,
     serialOptions
   ]);
+
+  // Scan starts from empty rows; Select gets its suggestion back.
+  const changeTab = (tab: string) => {
+    // The operator chose a tab: nothing fills in on its own after this.
+    hasSeededSuggestionRef.current = true;
+    setActiveTab(tab);
+    if (tab === "scan") {
+      setSelectedBatchNumbers([
+        { index: 0, id: "", quantity: initialQuantity }
+      ]);
+      setSelectedSerialNumbers((rows) =>
+        rows.map((row) => ({ ...row, id: "" }))
+      );
+      setBatchErrors({});
+      setSerialErrors({});
+    } else if (tab === "select") {
+      seedSelection();
+    }
+  };
 
   // Expiry override state. Surfaced when a selected serial/batch is expired.
   // Server enforces the actual company policy (Warn / Block / BlockWithOverride);
@@ -1381,19 +1422,36 @@ function IssueMaterialBody({
     trackedTabCount === 4 && "grid-cols-4"
   );
 
+  const headerItem = items.find(
+    (item) => item.id === (material?.itemId ?? selectedItemId)
+  );
+
   return (
     <>
       <ModalHeader>
-        <ModalTitle>
-          {material?.description ??
-            getItemReadableId(items, selectedItemId) ??
-            "Issue Material"}
-        </ModalTitle>
-        {!material && (
-          <ModalDescription>
-            Select an item and specify the quantity to issue
-          </ModalDescription>
-        )}
+        <HStack spacing={3}>
+          {headerItem && (
+            <div className="shrink-0">
+              <ItemThumbnail
+                size="xl"
+                thumbnailPath={headerItem.thumbnailPath}
+                type={(headerItem.type as "Part") ?? "Part"}
+              />
+            </div>
+          )}
+          <div className="min-w-0">
+            <ModalTitle>
+              {material?.description ??
+                headerItem?.name ??
+                getItemReadableId(items, selectedItemId) ??
+                "Issue Material"}
+            </ModalTitle>
+            <ModalDescription>
+              {headerItem?.readableIdWithRevision ??
+                "Select an item and specify the quantity to issue"}
+            </ModalDescription>
+          </div>
+        </HStack>
       </ModalHeader>
 
       {trackingType === "Inventory" ||
@@ -1598,7 +1656,7 @@ function IssueMaterialBody({
               )}
 
               {showContent && trackingType === "Serial" && (
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <Tabs value={activeTab} onValueChange={changeTab}>
                   <TabsList className={trackedTabsListClass}>
                     <TabsTrigger value="scan">
                       <LuQrCode className="mr-2" />
@@ -1872,7 +1930,7 @@ function IssueMaterialBody({
               )}
 
               {showContent && trackingType === "Batch" && (
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <Tabs value={activeTab} onValueChange={changeTab}>
                   <TabsList className={trackedTabsListClass}>
                     <TabsTrigger value="scan">
                       <LuQrCode className="mr-2" />
@@ -1930,9 +1988,16 @@ function IssueMaterialBody({
                                       parseTravelerCode(e.target.value) ??
                                         e.target.value
                                     );
+                                    const held = batchOptions.find(
+                                      (o) => o.value === newValue
+                                    )?.availableQuantity;
                                     updateBatchNumber({
                                       ...batch,
-                                      id: newValue
+                                      id: newValue,
+                                      quantity:
+                                        held === undefined
+                                          ? batch.quantity
+                                          : Math.min(batch.quantity, held)
                                     });
                                   }}
                                   onKeyDown={(e) => {
@@ -2295,27 +2360,19 @@ function IssueMaterialBody({
   );
 }
 
-function useSerialNumbers(
-  itemId?: string,
-  operationId?: string,
-  locationId?: string
-) {
+function useSerialNumbers(itemId: string | undefined, operationId: string) {
   const serialNumbersFetcher = useLoaderQuery<
-    Awaited<ReturnType<typeof getSerialNumbersForItem>>
-  >(itemId ? path.to.api.serialNumbers(itemId, operationId, locationId) : null);
+    Awaited<ReturnType<typeof getIssueLotsForItem>>
+  >(itemId ? path.to.api.serialNumbers(itemId, operationId) : null);
 
   return { data: serialNumbersFetcher.data };
 }
 
 // Hook for fetching batch numbers
-function useBatchNumbers(
-  itemId?: string,
-  operationId?: string,
-  locationId?: string
-) {
+function useBatchNumbers(itemId: string | undefined, operationId: string) {
   const batchNumbersFetcher = useLoaderQuery<
-    Awaited<ReturnType<typeof getBatchNumbersForItem>>
-  >(itemId ? path.to.api.batchNumbers(itemId, operationId, locationId) : null);
+    Awaited<ReturnType<typeof getIssueLotsForItem>>
+  >(itemId ? path.to.api.batchNumbers(itemId, operationId) : null);
 
   return { data: batchNumbersFetcher.data };
 }

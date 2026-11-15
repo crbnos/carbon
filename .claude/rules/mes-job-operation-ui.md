@@ -268,6 +268,16 @@ of a paused URL, which is itself a valid link.
   complete the kanban (`isKanbanCompleteScan`, `~/utils/kanban`). That check
   compares the label's PATH, because a label holds the origin it was printed
   from. It accepts the completed barcode override and the printed label.
+- An ERP item link (`/x/part/<id>`, also material, tool, consumable;
+  `parseItemCode`, `~/utils/itemScan`) scanned on the operation page is issued
+  to the job, and the operator stays on the page (`useItemScan` →
+  `x+/issue-scan.tsx` → `issueScannedItem`, `services/issue.server.ts`). The
+  server decides (`planItemScanIssue`, tested): an untracked material is set to
+  the quantity the job requires (`Set Quantity`), a batch material takes the
+  lots `getSuggestedAllocationForMaterial` suggests at the job's location for
+  what is still short. Both are safe to repeat: a second scan issues nothing. A
+  serial part, a part the job makes, a short lot or a work-center rule opens
+  the Issue dialog on the material. The assembly page does not take item scans.
 - A kanban Complete scan on a serial part completes the unit ON SCREEN:
   `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
   `?trackedEntityId` to `end.$operationId` when that unit is still open at the
@@ -351,9 +361,19 @@ was printed from.
   `parentTrackedEntityId` and exactly one child. `resolveTravelerMaterial`
   (`services/traveler.server.ts`) sets the material and quantity from the
   scanned unit. It refuses a unit that is not `Available`, an item the make
-  method does not use ("This job does not use …"), an item no material still
-  needs, and a batch-tracked material (batch lots issue from the Issue dialog).
+  method does not use ("This job does not use …") and an item no material still
+  needs. A scanned batch lot issues what the material still needs
+  (`pickTravelerMaterial`'s `needed`: the job's shortfall, or what a serial
+  unit does not hold yet), up to what the lot holds where the job can draw it
+  (`batchScanQuantity`, tested, over `get_issue_tracked_entity_stock`: the
+  job's location, nettable bins, its stripes), so one scan of a received lot's
+  label issues it. A quarantined lot, or one at another location, is refused.
   It is the gate; the chooser's filter only mirrors it.
+- **The Issue dialog's Scan tab starts empty.** Only the Select tab is filled
+  in (the picked or suggested lots, or a sole lot); switching to Scan clears
+  the rows, and switching back fills Select again. A scanned lot takes the
+  quantity needed, up to what it holds, and the scanner's Enter submits it.
+  The header shows the part's photo and number.
 - **What still needs the item** (`pickTravelerMaterial`, `~/utils/traveler`,
   tested). Only a material on this operation, then one with no operation, can
   take the unit (each group in id order). A serial parent
@@ -487,8 +507,10 @@ while its serial or batch materials are not scanned in.
   `IssueMaterialModal` has an Issue / Unissue toggle: Unissue posts `Positive Adjmt.` up to
   the issued quantity, and the ERP returns the stock to the bins it was drawn from. In Issue
   mode the modal lists the bins with stock ("Stock at:", `api+/issue-inventory-bins.ts`). The
-  serial and batch lists show each lot's bin (`get_issue_tracked_entity_stock`, read when the
-  request names the operation, so the job's stripes are known).
+  serial and batch lists (`getIssueLotsForItem`) offer only the lots in stock at the job's own
+  location, with each lot's bin (`get_issue_tracked_entity_stock`). The location and stripes are
+  read from the operation's job on the server (`getJobOperationIssueScope`), never taken from
+  the browser; the suggested allocation reads the same scope.
 - Modals/sections: `IssueMaterialModal`, `QuantityModal` (type `scrap`/`finish`),
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.

@@ -22,12 +22,14 @@ import {
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
+  assertEntitiesAtLocation,
   assertEntitiesInCommonStock,
   assertEntitiesInStripes,
   drawFromStripes,
   itemLedgerInStripes,
   loadDemandStripes,
   loadProjectStock,
+  loadTrackedEntityLedger,
   loadTrackedEntityStripe,
   loadTrackedEntityStripes,
   type StockStripe,
@@ -25737,18 +25739,23 @@ export async function postPicking(
           .executeTakeFirstOrThrow();
         await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
-        // A pick line draws one stripe: the serial must sit in it.
+        // A pick line draws one stripe at the list's location: the serial
+        // must sit in both.
+        const ledger = await loadTrackedEntityLedger(trx, companyId, [
+          trackedEntityId
+        ]);
+        assertEntitiesAtLocation(
+          ledger,
+          [{ id: trackedEntityId, readableId: trackedEntityId }],
+          locationId
+        );
         await assertEntitiesInStripes(
           trx,
           companyId,
           [
             {
               readableId: trackedEntityId,
-              stripe: await loadTrackedEntityStripe(
-                trx,
-                companyId,
-                trackedEntityId
-              )
+              stripe: trackedEntityStripe(ledger, trackedEntityId)
             }
           ],
           [line.projectId ?? null]
@@ -25920,18 +25927,19 @@ export async function postPicking(
         // refusal a 400 the scan UI can show.
         assertEntityCoversPick({ entityQuantity, transferQuantity });
 
-        // A pick line draws one stripe: the lot must sit in it.
+        // A pick line draws one stripe at the list's location: the lot must
+        // sit in both.
+        const ledger = await loadTrackedEntityLedger(trx, companyId, [
+          trackedEntityId
+        ]);
+        assertEntitiesAtLocation(ledger, [trackedEntity], locationId);
         await assertEntitiesInStripes(
           trx,
           companyId,
           [
             {
               readableId: trackedEntity.readableId,
-              stripe: await loadTrackedEntityStripe(
-                trx,
-                companyId,
-                trackedEntityId
-              )
+              stripe: trackedEntityStripe(ledger, trackedEntityId)
             }
           ],
           [line.projectId ?? null]
@@ -29802,6 +29810,8 @@ async function consumeTrackedEntitiesIntoOperation(
     })),
     await loadDemandStripes(trx, companyId, job?.projectId)
   );
+  // The job draws only the stock at its own location.
+  assertEntitiesAtLocation(itemLedgers, trackedEntities, job?.locationId);
 
   // Get parent tracked entity details
   const parentTrackedEntity = await trx

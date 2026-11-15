@@ -106,6 +106,61 @@ export function trackedEntityStripe(
   return best && best.key !== "" ? best.key : null;
 }
 
+/** A tracked entity's ledger rows, as the stripe and location checks read them. */
+export type TrackedEntityLedgerRow = {
+  trackedEntityId: string | null;
+  projectId?: string | null;
+  locationId: string | null;
+  quantity: number | string | null;
+};
+
+/** The ledger rows of the tracked entities. One query for any number of them. */
+export async function loadTrackedEntityLedger(
+  db: Kysely<DB> | KyselyTx,
+  companyId: string,
+  trackedEntityIds: readonly string[]
+): Promise<TrackedEntityLedgerRow[]> {
+  if (trackedEntityIds.length === 0) return [];
+  return db
+    .selectFrom("itemLedger")
+    .select(["trackedEntityId", "projectId", "locationId", "quantity"])
+    .where("trackedEntityId", "in", [...new Set(trackedEntityIds)])
+    .where("companyId", "=", companyId)
+    .execute();
+}
+
+/**
+ * Refuses tracked entities whose stock is at another location: a demand draws
+ * only what is on hand where it runs, and an operator cannot pick what is not
+ * there. An entity with no stock anywhere (a unit still in production) passes.
+ */
+export function assertEntitiesAtLocation(
+  rows: readonly TrackedEntityLedgerRow[],
+  entities: readonly { id: string; readableId: string | null }[],
+  locationId: string | null | undefined
+): void {
+  if (!locationId) return;
+  const here = new Map<string, number>();
+  const elsewhere = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.trackedEntityId) continue;
+    const net = row.locationId === locationId ? here : elsewhere;
+    net.set(
+      row.trackedEntityId,
+      (net.get(row.trackedEntityId) ?? 0) + Number(row.quantity ?? 0)
+    );
+  }
+  const refused = entities.find(
+    (entity) =>
+      (here.get(entity.id) ?? 0) <= 0 && (elsewhere.get(entity.id) ?? 0) > 0
+  );
+  if (refused) {
+    throw new InvalidInputError(
+      `${refused.readableId ?? "The selected lot"} is in stock at another location. Transfer it to this location first.`
+    );
+  }
+}
+
 /**
  * Refuses tracked entities whose stripe a demand may not draw: another
  * project's stock needs a Transfer or a Borrow first, and common demand

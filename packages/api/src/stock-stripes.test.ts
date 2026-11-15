@@ -3,7 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { InvalidInputError } from "./errors";
 import {
+  assertEntitiesAtLocation,
   drawFromStripes,
   splitAcrossStripes,
   stripesForDemand,
@@ -85,5 +87,41 @@ describe("stock stripes", () => {
     ];
     expect(trackedEntityStripe(rows, "lot")).toEqual("prj_1");
     expect(trackedEntityStripe(rows, "missing")).toBeNull();
+  });
+});
+
+describe("assertEntitiesAtLocation", () => {
+  const lot = { id: "lot", readableId: "CDMX-155" };
+  const row = (locationId: string, quantity: number) => ({
+    trackedEntityId: "lot",
+    locationId,
+    quantity
+  });
+
+  it("refuses a lot whose stock is at another location", () => {
+    expect(() =>
+      assertEntitiesAtLocation([row("cdmx", 40)], [lot], "ccb1")
+    ).toThrow(InvalidInputError);
+  });
+
+  it("refuses a lot that was moved out to another location", () => {
+    expect(() =>
+      assertEntitiesAtLocation(
+        [row("ccb1", 40), row("ccb1", -40), row("cdmx", 40)],
+        [lot],
+        "ccb1"
+      )
+    ).toThrow(InvalidInputError);
+  });
+
+  it("allows a lot with stock at the location", () => {
+    expect(() =>
+      assertEntitiesAtLocation([row("ccb1", 7), row("cdmx", 3)], [lot], "ccb1")
+    ).not.toThrow();
+  });
+
+  // A unit still in production has no ledger rows until it is completed.
+  it("allows a unit with no stock anywhere", () => {
+    expect(() => assertEntitiesAtLocation([], [lot], "ccb1")).not.toThrow();
   });
 });

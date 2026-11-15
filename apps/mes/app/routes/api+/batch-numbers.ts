@@ -4,38 +4,19 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  getBatchNumbersForItem,
-  getJobOperationStockStripes
-} from "~/services/inventory.service";
+import { getIssueLotsForItem } from "~/services/inventory.service";
 
+/**
+ * The lots the issue dialog offers. The location is the operation's job's,
+ * read on the server, never one the browser names.
+ */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
 
   const url = new URL(request.url);
   const itemId = url.searchParams.get("itemId");
-  const operationId = url.searchParams.get("operationId");
-  const locationId = url.searchParams.get("locationId");
-  if (!itemId) {
-    return {
-      data: [],
-      error: null
-    };
-  }
+  const jobOperationId = url.searchParams.get("operationId");
+  if (!itemId || !jobOperationId) return { data: [], error: null };
 
-  // A job issues only the lots of its stock stripes: its project's stock,
-  // then common stock (`issue` refuses any other lot).
-  const stripes = operationId
-    ? await getJobOperationStockStripes(client, {
-        jobOperationId: operationId,
-        companyId
-      })
-    : undefined;
-
-  return await getBatchNumbersForItem(client, {
-    companyId,
-    itemId,
-    locationId: locationId ?? undefined,
-    stripes
-  });
+  return getIssueLotsForItem(client, { itemId, companyId, jobOperationId });
 }
