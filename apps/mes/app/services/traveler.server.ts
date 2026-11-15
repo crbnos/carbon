@@ -6,7 +6,10 @@ import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { fetchAllByIds } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
-import { getJobOperationIssueScope } from "~/services/inventory.service";
+import {
+  getIssueLotStock,
+  getJobOperationIssueScope
+} from "~/services/inventory.service";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import {
   batchScanQuantity,
@@ -400,12 +403,12 @@ export async function resolveTravelerMaterial(
   if (picked.material.requiresBatchTracking && unit.itemId) {
     const scope = await getJobOperationIssueScope(client, args);
     const stock = scope.locationId
-      ? await client.rpc("get_issue_tracked_entity_stock", {
-          p_company_id: args.companyId,
-          p_location_id: scope.locationId,
-          p_item_ids: [unit.itemId],
-          // A null element is common stock; the generated type cannot say so.
-          p_project_ids: scope.stripes as string[]
+      ? await getIssueLotStock(client, {
+          companyId: args.companyId,
+          locationId: scope.locationId,
+          itemIds: [unit.itemId],
+          stripes: scope.stripes,
+          trackedEntityId: unit.id
         })
       : { data: [], error: null };
     if (stock.error) {
@@ -416,9 +419,10 @@ export async function resolveTravelerMaterial(
       });
       return { refusal: LOOKUP_FAILED };
     }
-    const available = (stock.data ?? [])
-      .filter((row) => row.trackedEntityId === unit.id)
-      .reduce((sum, row) => sum + (row.availableQuantity ?? 0), 0);
+    const available = (stock.data ?? []).reduce(
+      (sum, row) => sum + (row.availableQuantity ?? 0),
+      0
+    );
     const quantity = batchScanQuantity({
       needed: picked.needed,
       available: Math.min(available, unit.quantity)

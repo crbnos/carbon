@@ -25746,7 +25746,7 @@ export async function postPicking(
         ]);
         assertEntitiesAtLocation(
           ledger,
-          [{ id: trackedEntityId, readableId: trackedEntityId }],
+          [{ id: trackedEntityId, readableId: trackedEntityId, quantity: 1 }],
           locationId
         );
         await assertEntitiesInStripes(
@@ -25932,7 +25932,17 @@ export async function postPicking(
         const ledger = await loadTrackedEntityLedger(trx, companyId, [
           trackedEntityId
         ]);
-        assertEntitiesAtLocation(ledger, [trackedEntity], locationId);
+        assertEntitiesAtLocation(
+          ledger,
+          [
+            {
+              id: trackedEntityId,
+              readableId: trackedEntity.readableId,
+              quantity: Math.min(entityQuantity, transferQuantity)
+            }
+          ],
+          locationId
+        );
         await assertEntitiesInStripes(
           trx,
           companyId,
@@ -29810,8 +29820,25 @@ async function consumeTrackedEntitiesIntoOperation(
     })),
     await loadDemandStripes(trx, companyId, job?.projectId)
   );
-  // The job draws only the stock at its own location.
-  assertEntitiesAtLocation(itemLedgers, trackedEntities, job?.locationId);
+  // The job draws only the stock at its own location, from a bin there.
+  const requested = new Map(
+    children.map((child) => [child.trackedEntityId, child.quantity])
+  );
+  assertEntitiesAtLocation(
+    itemLedgers,
+    trackedEntities.map((entity) => ({
+      id: entity.id!,
+      readableId: entity.readableId,
+      quantity: Math.min(
+        Number(entity.quantity),
+        requested.get(entity.id!) ?? Number(entity.quantity)
+      )
+    })),
+    job?.locationId
+  );
+  const localLedgers = job?.locationId
+    ? itemLedgers.filter((row) => row.locationId === job.locationId)
+    : itemLedgers;
 
   // Get parent tracked entity details
   const parentTrackedEntity = await trx
@@ -29924,7 +29951,7 @@ async function consumeTrackedEntitiesIntoOperation(
         activitySourceDocument: "Job Material",
         activitySourceDocumentId: actualMaterialId!,
         bin: {
-          storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
+          storageUnitId: resolveTrackedEntityBin(localLedgers, trackedEntityId),
           locationId: job?.locationId ?? null
         },
         itemLedgerItemId: trackedEntity.sourceDocumentId,
@@ -30026,7 +30053,7 @@ async function consumeTrackedEntitiesIntoOperation(
         locationId: job?.locationId,
         // The split child has no rows in the pre-transaction ledger
         // snapshot — it sits at the parent's resolved bin.
-        storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
+        storageUnitId: resolveTrackedEntityBin(localLedgers, trackedEntityId),
         trackedEntityId: consumedEntityId,
         projectId: entityStripes.get(trackedEntityId) ?? null,
         createdBy: userId

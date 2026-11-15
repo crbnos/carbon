@@ -21,6 +21,58 @@ type Refusal = { success: false; message: string };
 const refuse = (message: string): Refusal => ({ success: false, message });
 
 /**
+ * The work center's rules that block a material movement at an operation, or
+ * null when none does (or the operation has no work center).
+ */
+async function workCenterRuleBlock(
+  { companyId, userId }: Caller,
+  input: {
+    jobOperationId: string;
+    itemId: string;
+    quantity: number;
+    workCenterId: string | null;
+    surface: "materialIssue" | "materialReceive";
+    acknowledged: boolean;
+  }
+) {
+  if (!input.workCenterId) return null;
+  const { jobOperationId, itemId, quantity } = input;
+  const ruleEval = await evaluateLinesForSurface({
+    client: await getCarbonServiceRole(),
+    companyId,
+    userId,
+    targetType: "workCenter",
+    surface: input.surface,
+    lines: [
+      {
+        lineId: jobOperationId,
+        itemId,
+        workCenterId: input.workCenterId,
+        operation: {
+          id: jobOperationId,
+          itemId,
+          quantity,
+          workInstructionId: null
+        },
+        quantity
+      }
+    ]
+  });
+  if (
+    ruleEval.violations.length === 0 ||
+    !isBlocked(ruleEval.violations, input.acknowledged)
+  ) {
+    return null;
+  }
+  return {
+    error: null,
+    data: null,
+    violations: ruleEval.violations,
+    ruleNames: ruleEval.ruleNames
+  };
+}
+
+/**
  * Issues an untracked material to a job operation, behind the gates every
  * caller shares: the operation is the company's, the operator's ability, and
  * the work center's rules (returned as violations until acknowledged).
@@ -68,46 +120,21 @@ export async function issueMaterialToOperation(
     return refuse(refusal);
   }
 
-  if (jobOperation.workCenterId) {
-    const ruleEval = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "workCenter",
+  const blocked = await workCenterRuleBlock(
+    { companyId, userId },
+    {
+      jobOperationId,
+      itemId,
+      quantity,
+      workCenterId: jobOperation.workCenterId,
       surface:
         adjustmentType === "Positive Adjmt."
           ? "materialReceive"
           : "materialIssue",
-      lines: [
-        {
-          lineId: jobOperationId,
-          itemId,
-          workCenterId: jobOperation.workCenterId,
-          operation: {
-            id: jobOperationId,
-            itemId,
-            quantity,
-            // In the runtime row, absent from the generated types.
-            workInstructionId:
-              (jobOperation as { workInstructionId?: string | null })
-                .workInstructionId ?? null
-          },
-          quantity
-        }
-      ]
-    });
-    if (
-      ruleEval.violations.length > 0 &&
-      isBlocked(ruleEval.violations, input.acknowledged ?? false)
-    ) {
-      return {
-        error: null,
-        data: null,
-        violations: ruleEval.violations,
-        ruleNames: ruleEval.ruleNames
-      };
+      acknowledged: input.acknowledged ?? false
     }
-  }
+  );
+  if (blocked) return blocked;
 
   const issued = await erpPosting(
     "issue",
@@ -161,7 +188,7 @@ export async function issueScannedItem(
 
   const operation = await serviceRole
     .from("jobOperation")
-    .select("jobMakeMethodId")
+    .select("jobMakeMethodId, workCenterId")
     .eq("id", jobOperationId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -224,6 +251,22 @@ export async function issueScannedItem(
     companyId
   });
   if (refusal) return refuse(refusal);
+
+  // The same work-center rules the untracked issue runs.
+  const blocked = await workCenterRuleBlock(caller, {
+    jobOperationId,
+    itemId,
+    quantity: plan.quantity,
+    workCenterId: operation.data.workCenterId,
+    surface: "materialIssue",
+    acknowledged: false
+  });
+  if (blocked) {
+    return {
+      ...refuse(`A rule applies to ${name}. Review it to issue.`),
+      materialId
+    };
+  }
 
   // The lots the picking order takes first, only from the job's own location.
   const scope = await getJobOperationIssueScope(serviceRole, {

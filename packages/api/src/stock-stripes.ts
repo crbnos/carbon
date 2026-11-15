@@ -130,13 +130,19 @@ export async function loadTrackedEntityLedger(
 }
 
 /**
- * Refuses tracked entities whose stock is at another location: a demand draws
- * only what is on hand where it runs, and an operator cannot pick what is not
- * there. An entity with no stock anywhere (a unit still in production) passes.
+ * Refuses a draw of tracked entities that their stock at the location does not
+ * cover while the rest is at another location: a demand draws only what is on
+ * hand where it runs, and an operator cannot pick what is not there. `quantity`
+ * is the draw (any positive amount when omitted). An entity with no stock at
+ * another location passes: a unit still in production has none anywhere.
  */
 export function assertEntitiesAtLocation(
   rows: readonly TrackedEntityLedgerRow[],
-  entities: readonly { id: string; readableId: string | null }[],
+  entities: readonly {
+    id: string;
+    readableId: string | null;
+    quantity?: number;
+  }[],
   locationId: string | null | undefined
 ): void {
   if (!locationId) return;
@@ -150,13 +156,19 @@ export function assertEntitiesAtLocation(
       (net.get(row.trackedEntityId) ?? 0) + Number(row.quantity ?? 0)
     );
   }
+  const EPSILON = 1e-9;
   const refused = entities.find(
     (entity) =>
-      (here.get(entity.id) ?? 0) <= 0 && (elsewhere.get(entity.id) ?? 0) > 0
+      (elsewhere.get(entity.id) ?? 0) > EPSILON &&
+      (here.get(entity.id) ?? 0) < (entity.quantity ?? EPSILON) - EPSILON
   );
   if (refused) {
+    const lot = refused.readableId ?? "The selected lot";
+    const onHand = here.get(refused.id) ?? 0;
     throw new InvalidInputError(
-      `${refused.readableId ?? "The selected lot"} is in stock at another location. Transfer it to this location first.`
+      onHand > EPSILON
+        ? `${lot} has only ${onHand} in stock at this location. Transfer the rest here first.`
+        : `${lot} is in stock at another location. Transfer it to this location first.`
     );
   }
 }

@@ -19,7 +19,21 @@ const issueScanValidator = z.object({
 /** An item sticker scanned on an operation screen: issue it to the job. */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId, caller, permissions } = await requirePermissions(
+    request,
+    {}
+  );
+  // The posting runs as the system, so it checks nothing about the caller. An
+  // operator on the floor may issue; an API key needs production update.
+  if (
+    caller === "apiKey" &&
+    !permissions.production?.update?.includes(companyId)
+  ) {
+    return {
+      success: false as const,
+      message: "This API key cannot update production"
+    };
+  }
 
   const validation = await validator(issueScanValidator).validate(
     await request.formData()

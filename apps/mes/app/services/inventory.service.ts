@@ -105,6 +105,44 @@ async function getIssueItemIds(
     : [args.itemId];
 }
 
+/**
+ * The Available stock of an item's lots a job can draw at a location: nettable
+ * bins, the job's stripes. One row per lot and stripe, read in ordered pages
+ * so an item with more lots than one page holds loses none. `trackedEntityId`
+ * narrows the read to one lot (a label scan).
+ */
+export async function getIssueLotStock(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    itemIds: string[];
+    stripes: (string | null)[];
+    trackedEntityId?: string;
+  }
+) {
+  return fetchAllRecords<{
+    trackedEntityId: string;
+    storageUnitName: string | null;
+    availableQuantity: number;
+  }>(() => {
+    const query = client.rpc("get_issue_tracked_entity_stock", {
+      p_company_id: args.companyId,
+      p_location_id: args.locationId,
+      p_item_ids: args.itemIds,
+      // A null element is common stock; the generated type cannot say so.
+      p_project_ids: args.stripes as string[]
+    });
+    return (
+      args.trackedEntityId
+        ? query.eq("trackedEntityId", args.trackedEntityId)
+        : query
+    )
+      .order("trackedEntityId")
+      .order("availableQuantity");
+  });
+}
+
 type IssueLot = {
   id: string;
   readableId: string | null;
@@ -134,12 +172,11 @@ export async function getIssueLotsForItem(
   ]);
   if (!scope.locationId) return { data: [], error: null };
 
-  const stock = await client.rpc("get_issue_tracked_entity_stock", {
-    p_company_id: args.companyId,
-    p_location_id: scope.locationId,
-    p_item_ids: itemIds,
-    // A null element is common stock; the generated type cannot say so.
-    p_project_ids: scope.stripes as string[]
+  const stock = await getIssueLotStock(client, {
+    companyId: args.companyId,
+    locationId: scope.locationId,
+    itemIds,
+    stripes: scope.stripes
   });
   if (stock.error) return { data: null, error: stock.error };
 

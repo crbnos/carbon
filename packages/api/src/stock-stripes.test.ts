@@ -114,6 +114,26 @@ describe("assertEntitiesAtLocation", () => {
     ).toThrow(InvalidInputError);
   });
 
+  it("refuses a draw the stock here does not cover when the rest is elsewhere", () => {
+    expect(() =>
+      assertEntitiesAtLocation(
+        [row("ccb1", 2), row("cdmx", 8)],
+        [{ ...lot, quantity: 5 }],
+        "ccb1"
+      )
+    ).toThrow(InvalidInputError);
+  });
+
+  it("allows a draw the stock here covers", () => {
+    expect(() =>
+      assertEntitiesAtLocation(
+        [row("ccb1", 7), row("cdmx", 3)],
+        [{ ...lot, quantity: 5 }],
+        "ccb1"
+      )
+    ).not.toThrow();
+  });
+
   it("allows a lot with stock at the location", () => {
     expect(() =>
       assertEntitiesAtLocation([row("ccb1", 7), row("cdmx", 3)], [lot], "ccb1")
