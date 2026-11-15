@@ -874,9 +874,6 @@ msgstr "{fieldLabel} घटाएँ"
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
-msgid "Default Storage Unit"
-msgstr "डिफ़ॉल्ट भंडारण इकाई"
-
 msgid "Delete"
 msgstr "हटाएं"
 
@@ -1357,6 +1354,9 @@ msgstr "अपर्याप्त मात्रा"
 msgid "Inventory"
 msgstr "इन्वेंटरी"
 
+msgid "Inventory action"
+msgstr "इन्वेंटरी कार्रवाई"
+
 msgid "Inventory adjustment completed"
 msgstr "इन्वेंटरी समायोजन पूर्ण हुआ"
 
@@ -1540,6 +1540,9 @@ msgstr "स्थानीय"
 
 msgid "Location"
 msgstr "स्थान"
+
+msgid "Location not known"
+msgstr "स्थान ज्ञात नहीं है"
 
 msgid "Locations"
 msgstr "स्थान"
@@ -2342,6 +2345,9 @@ msgstr "अनुमानित पूर्णता:"
 msgid "PTO"
 msgstr "अवकाश"
 
+msgid "Pull from inventory"
+msgstr "इन्वेंटरी से लें"
+
 msgid "Purchasing"
 msgstr "क्रय"
 
@@ -3043,6 +3049,9 @@ msgstr "सब-असेंबली {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "सब-असेंबली {0} · {1} — स्वयं पर दिखाया गया"
+
+msgid "Subassembly"
+msgstr "सब-असेंबली"
 
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"

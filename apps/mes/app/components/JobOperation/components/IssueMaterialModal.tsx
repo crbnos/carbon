@@ -90,6 +90,11 @@ interface ItemDetails {
 }
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
+type InventoryBin = {
+  storageUnitId: string | null;
+  storageUnitName: string | null;
+  quantity: number;
+};
 
 type IssueMaterialModalProps = {
   operationId: string;
@@ -179,6 +184,9 @@ function IssueMaterialBody({
   );
   const [itemDetails, setItemDetails] = useState<ItemDetails | null>(null);
   const [isLoadingItem, setIsLoadingItem] = useState(false);
+  const [inventoryMode, setInventoryMode] = useState<"issue" | "unissue">(
+    "issue"
+  );
 
   // Determine tracking type from material or item details
   const trackingType: TrackingType = useMemo(() => {
@@ -189,6 +197,17 @@ function IssueMaterialBody({
     }
     return itemDetails?.itemTrackingType ?? null;
   }, [material, itemDetails]);
+  const issuedQuantity = material?.quantityIssued ?? 0;
+  const canUnissue =
+    trackingType === "Inventory" && !!material?.id && issuedQuantity > 0;
+  const inventoryBins = useLoaderQuery<{
+    data: InventoryBin[];
+    error: unknown;
+  }>(
+    trackingType === "Inventory" && selectedItemId
+      ? path.to.api.issueInventoryBins(selectedItemId, operationId)
+      : null
+  );
 
   // Item options for the combobox
   const itemOptions = useMemo(() => {
@@ -203,7 +222,8 @@ function IssueMaterialBody({
   // Only the lots of the job's stock stripes: `issue` refuses any other.
   const { data: serialNumbers } = useSerialNumbers(
     trackingType === "Serial" ? selectedItemId : undefined,
-    operationId
+    operationId,
+    locationId
   );
   // Today in the local timezone — used for "is this entity expired"
   // comparisons throughout the modal. Memoized so we re-derive option
@@ -260,20 +280,28 @@ function IssueMaterialBody({
             ? `${expired ? "Expired" : "Expires"} ${formatExpiry(sn.expirationDate)}`
             : undefined;
           return {
-            label,
+            label: (
+              <span className="flex flex-col gap-1">
+                {label}
+                <span className="text-xs text-muted-foreground">
+                  {sn.storageUnitName ?? t`Location not known`}
+                </span>
+              </span>
+            ),
             value: sn.id,
-            helper,
+            helper: helper ?? sn.storageUnitName ?? t`Location not known`,
             expirationDate: sn.expirationDate ?? null,
             isExpired: expired
           };
         }) ?? []
     );
-  }, [serialNumbers, isExpiryPast, formatExpiry, expiredEntityPolicy]);
+  }, [serialNumbers, isExpiryPast, formatExpiry, expiredEntityPolicy, t]);
 
   // Batch number state and options
   const { data: batchNumbers } = useBatchNumbers(
     trackingType === "Batch" ? selectedItemId : undefined,
-    operationId
+    operationId,
+    locationId
   );
   const batchOptions = useMemo(() => {
     return (
@@ -304,16 +332,23 @@ function IssueMaterialBody({
             ? `${expired ? "Expired" : "Expires"} ${formatExpiry(bn.expirationDate)}`
             : undefined;
           return {
-            label,
+            label: (
+              <span className="flex flex-col gap-1">
+                {label}
+                <span className="text-xs text-muted-foreground">
+                  {bn.storageUnitName ?? t`Location not known`}
+                </span>
+              </span>
+            ),
             value: bn.id,
-            helper,
+            helper: helper ?? bn.storageUnitName ?? t`Location not known`,
             availableQuantity: bn.quantity,
             expirationDate: bn.expirationDate ?? null,
             isExpired: expired
           };
         }) ?? []
     );
-  }, [batchNumbers, isExpiryPast, formatExpiry, expiredEntityPolicy]);
+  }, [batchNumbers, isExpiryPast, formatExpiry, expiredEntityPolicy, t]);
 
   // Unconsume options for batch
   const unconsumeOptions = useMemo(() => {
@@ -420,6 +455,27 @@ function IssueMaterialBody({
   const [selectedBatchNumbers, setSelectedBatchNumbers] = useState<
     Array<{ index: number; id: string; quantity: number }>
   >([{ index: 0, id: "", quantity: initialQuantity }]);
+  // A sole usable lot is unambiguous even when automatic multi-lot allocation
+  // is disabled. Derive the default so an async stock read needs no state effect.
+  const issueBatchNumbers = useMemo(
+    () =>
+      (batchId || parentId) &&
+      batchOptions.length === 1 &&
+      selectedBatchNumbers.length === 1 &&
+      !selectedBatchNumbers[0].id
+        ? [
+            {
+              index: 0,
+              id: batchOptions[0].value,
+              quantity: Math.min(
+                initialQuantity,
+                batchOptions[0].availableQuantity
+              )
+            }
+          ]
+        : selectedBatchNumbers,
+    [batchId, parentId, batchOptions, selectedBatchNumbers, initialQuantity]
+  );
   const [batchErrors, setBatchErrors] = useState<Record<number, string>>({});
   const [unconsumedBatches, setUnconsumedBatches] = useState<
     Array<{ index: number; id: string }>
@@ -459,8 +515,8 @@ function IssueMaterialBody({
     | { quantityToPick?: number | null; quantityPicked?: number | null }
     | undefined;
   const hasPickingAllocation =
-    Number(pickedOverlay?.quantityToPick ?? 0) > 0 ||
-    Number(pickedOverlay?.quantityPicked ?? 0) > 0;
+    (pickedOverlay?.quantityToPick ?? 0) > 0 ||
+    (pickedOverlay?.quantityPicked ?? 0) > 0;
   // The genealogy safety gate: a seed is only trustworthy when the whole pick
   // provably belongs to ONE parent — the call site opted in (`allowPrefill`) and
   // the parent is a single entity (not a serialized multi-unit operation).
@@ -622,10 +678,10 @@ function IssueMaterialBody({
     const byId = new Map(
       (batchNumbers?.data ?? []).map((b) => [b.id, b.expirationDate])
     );
-    return selectedBatchNumbers
+    return issueBatchNumbers
       .filter((b) => b.id && isExpiryPast(byId.get(b.id)))
       .map((b) => b.id);
-  }, [selectedBatchNumbers, batchNumbers, isExpiryPast]);
+  }, [issueBatchNumbers, batchNumbers, isExpiryPast]);
   const hasExpiredSelection =
     expiredSerialIds.length > 0 || expiredBatchIds.length > 0;
 
@@ -1037,7 +1093,7 @@ function IssueMaterialBody({
     let hasErrors = false;
     const newErrors: Record<number, string> = {};
 
-    selectedBatchNumbers.forEach((bn) => {
+    issueBatchNumbers.forEach((bn) => {
       const error = validateBatchNumber(bn.id, bn.quantity, bn.index);
       if (error) {
         newErrors[bn.index] = error;
@@ -1064,7 +1120,7 @@ function IssueMaterialBody({
         ? {
             batchId,
             itemId: material?.itemId ?? selectedItemId,
-            children: selectedBatchNumbers.map((bn) => ({
+            children: issueBatchNumbers.map((bn) => ({
               trackedEntityId: bn.id,
               quantity: bn.quantity
             })),
@@ -1074,7 +1130,7 @@ function IssueMaterialBody({
           ? {
               materialId: material.id,
               parentTrackedEntityId: parentId,
-              children: selectedBatchNumbers.map((bn) => ({
+              children: issueBatchNumbers.map((bn) => ({
                 trackedEntityId: bn.id,
                 quantity: bn.quantity
               })),
@@ -1086,7 +1142,7 @@ function IssueMaterialBody({
               jobOperationId: operationId,
               itemId: selectedItemId,
               parentTrackedEntityId: parentId,
-              children: selectedBatchNumbers.map((bn) => ({
+              children: issueBatchNumbers.map((bn) => ({
                 trackedEntityId: bn.id,
                 quantity: bn.quantity
               })),
@@ -1101,7 +1157,7 @@ function IssueMaterialBody({
       });
     }
   }, [
-    selectedBatchNumbers,
+    issueBatchNumbers,
     validateBatchNumber,
     batchId,
     parentId,
@@ -1327,6 +1383,7 @@ function IssueMaterialBody({
         // services) - use ValidatedForm; the issue posting skips the
         // itemLedger for Non-Inventory items but still posts the WIP cost
         <ValidatedForm
+          key={inventoryMode}
           method="post"
           action={path.to.issue}
           validator={issueValidator}
@@ -1339,14 +1396,19 @@ function IssueMaterialBody({
             // zero/negative — that's how this modal ends up posting an
             // invalid form and the server bouncing it silently when a
             // material has been fully issued already.
-            quantity: Math.max(
-              1,
-              issuePerUnit
-                ? (material?.quantity ?? material?.estimatedQuantity ?? 1)
-                : (material?.estimatedQuantity ?? 0) -
-                    (material?.quantityIssued ?? 0)
-            ),
-            adjustmentType: "Negative Adjmt."
+            quantity:
+              inventoryMode === "unissue"
+                ? issuedQuantity
+                : Math.max(
+                    1,
+                    issuePerUnit
+                      ? (material?.quantity ?? material?.estimatedQuantity ?? 1)
+                      : (material?.estimatedQuantity ?? 0) - issuedQuantity
+                  ),
+            adjustmentType:
+              inventoryMode === "unissue"
+                ? "Positive Adjmt."
+                : "Negative Adjmt."
           }}
           fetcher={inventoryFetcher}
         >
@@ -1358,10 +1420,34 @@ function IssueMaterialBody({
             {!material?.id && jobOperationStepId && (
               <Hidden name="jobOperationStepId" value={jobOperationStepId} />
             )}
-            {material?.id && (
-              <Hidden name="adjustmentType" value="Negative Adjmt." />
-            )}
+            {material?.id && <Hidden name="adjustmentType" />}
             <div className="flex flex-col gap-4">
+              {canUnissue && (
+                <div
+                  role="group"
+                  aria-label={t`Inventory action`}
+                  className="flex gap-2"
+                >
+                  <Button
+                    type="button"
+                    variant={
+                      inventoryMode === "issue" ? "primary" : "secondary"
+                    }
+                    onClick={() => setInventoryMode("issue")}
+                  >
+                    Issue
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={
+                      inventoryMode === "unissue" ? "primary" : "secondary"
+                    }
+                    onClick={() => setInventoryMode("unissue")}
+                  >
+                    Unissue
+                  </Button>
+                </div>
+              )}
               {showItemSelector && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Item</label>
@@ -1426,7 +1512,24 @@ function IssueMaterialBody({
                       name="quantity"
                       label="Quantity"
                       minValue={INPUT_STEP.quantity}
+                      maxValue={
+                        inventoryMode === "unissue" ? issuedQuantity : undefined
+                      }
                     />
+                    {trackingType === "Inventory" &&
+                      inventoryMode === "issue" && (
+                        <div className="text-sm text-muted-foreground">
+                          <span className="font-medium">Stock at: </span>
+                          {inventoryBins.data?.data.length
+                            ? inventoryBins.data.data
+                                .map(
+                                  (bin) =>
+                                    `${bin.storageUnitName ?? t`Location not known`} (${bin.quantity})`
+                                )
+                                .join(", ")
+                            : t`Location not known`}
+                        </div>
+                      )}
                   </>
                 )}
             </div>
@@ -1446,7 +1549,7 @@ function IssueMaterialBody({
                 isLoadingItem
               }
             >
-              Issue
+              {inventoryMode === "unissue" ? "Unissue" : "Issue"}
             </Button>
           </ModalFooter>
         </ValidatedForm>
@@ -1791,7 +1894,7 @@ function IssueMaterialBody({
 
                   <TabsContent value="scan">
                     <div className="flex flex-col gap-4">
-                      {selectedBatchNumbers.map((batch, index) => (
+                      {issueBatchNumbers.map((batch, index) => (
                         <div key={index} className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
                             <div className="flex-1">
@@ -1899,6 +2002,9 @@ function IssueMaterialBody({
                           variant="secondary"
                           leftIcon={<LuCirclePlus />}
                           onClick={addBatchNumber}
+                          isDisabled={
+                            batchOptions.length <= issueBatchNumbers.length
+                          }
                         >
                           Add
                         </Button>
@@ -1908,7 +2014,7 @@ function IssueMaterialBody({
 
                   <TabsContent value="select">
                     <div className="flex flex-col gap-4">
-                      {selectedBatchNumbers.map((batch, index) => (
+                      {issueBatchNumbers.map((batch, index) => (
                         <div key={index} className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
                             <div className="flex-1">
@@ -1984,6 +2090,9 @@ function IssueMaterialBody({
                           variant="secondary"
                           leftIcon={<LuCirclePlus />}
                           onClick={addBatchNumber}
+                          isDisabled={
+                            batchOptions.length <= issueBatchNumbers.length
+                          }
                         >
                           Add Batch
                         </Button>
@@ -2166,19 +2275,27 @@ function IssueMaterialBody({
   );
 }
 
-function useSerialNumbers(itemId?: string, operationId?: string) {
+function useSerialNumbers(
+  itemId?: string,
+  operationId?: string,
+  locationId?: string
+) {
   const serialNumbersFetcher = useLoaderQuery<
     Awaited<ReturnType<typeof getSerialNumbersForItem>>
-  >(itemId ? path.to.api.serialNumbers(itemId, operationId) : null);
+  >(itemId ? path.to.api.serialNumbers(itemId, operationId, locationId) : null);
 
   return { data: serialNumbersFetcher.data };
 }
 
 // Hook for fetching batch numbers
-function useBatchNumbers(itemId?: string, operationId?: string) {
+function useBatchNumbers(
+  itemId?: string,
+  operationId?: string,
+  locationId?: string
+) {
   const batchNumbersFetcher = useLoaderQuery<
     Awaited<ReturnType<typeof getBatchNumbersForItem>>
-  >(itemId ? path.to.api.batchNumbers(itemId, operationId) : null);
+  >(itemId ? path.to.api.batchNumbers(itemId, operationId, locationId) : null);
 
   return { data: batchNumbersFetcher.data };
 }

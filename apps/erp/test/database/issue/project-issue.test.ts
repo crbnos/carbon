@@ -85,6 +85,22 @@ databaseTest(
       });
       expect(returned.error).toBeNull();
 
+      const excessReturn = await issue(f.ctx, {
+        type: "partToOperation",
+        id: job.operationId,
+        itemId,
+        materialId: job.materialId,
+        quantity: 3,
+        adjustmentType: "Positive Adjmt."
+      });
+      expect(excessReturn.error).not.toBeNull();
+      const materialAfterRefusal = await f.db
+        .selectFrom("jobMaterial")
+        .select("quantityIssued")
+        .where("id", "=", job.materialId)
+        .executeTakeFirstOrThrow();
+      expect(materialAfterRefusal.quantityIssued).toBe(2);
+
       const ledger = await f.db
         .selectFrom("projectLedger")
         .select([

@@ -17309,6 +17309,9 @@ msgstr "場所 / 品目"
 msgid "Location Name"
 msgstr "ロケーション名"
 
+msgid "Location not known"
+msgstr "拠点が不明です"
+
 msgid "Location ownership updated"
 msgstr "拠点の所有者が更新されました"
 

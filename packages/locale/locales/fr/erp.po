@@ -17309,6 +17309,9 @@ msgstr "Emplacement / Article"
 msgid "Location Name"
 msgstr "Nom du lieu"
 
+msgid "Location not known"
+msgstr "Site inconnu"
+
 msgid "Location ownership updated"
 msgstr "Propriété du site mise à jour"
 

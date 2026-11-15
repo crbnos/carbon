@@ -26,7 +26,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  NonNettableBadge,
   Skeleton,
   Status,
   Tooltip,
@@ -50,7 +49,6 @@ import { Await, useFetcher } from "react-router";
 import { Empty, ItemThumbnail } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePercentFormatter, usePermissions } from "~/hooks";
-import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isPickingListLocked } from "../../inventory.models";
@@ -101,12 +99,16 @@ type PickingListLineData = NonNullable<
   Awaited<ReturnType<typeof getPickingListLines>>["data"]
 >;
 
+type LiveBin = { id: string | null; name: string | null; quantity: number };
+
 type RecommendationsPromise = Promise<
   Record<string, PickingListRecommendation[]>
 >;
 
 type PickingListLinesProps = {
-  pickingListLines: PickingListLineData;
+  pickingListLines: Array<
+    PickingListLineData[number] & { liveStorageUnits?: LiveBin[] }
+  >;
   pickingListId: string;
   pickingList: PickingListData;
   recommendations: RecommendationsPromise;
@@ -120,7 +122,7 @@ type Kit = {
   jobReadableId: string | null;
   operationName: string | null;
   workCenterName: string | null;
-  lines: PickingListLineData;
+  lines: PickingListLinesProps["pickingListLines"];
 };
 
 const PickingListLines = ({
@@ -145,8 +147,22 @@ const PickingListLines = ({
       }
       groups.get(key)!.lines.push(line);
     }
+    for (const kit of groups.values()) {
+      kit.lines.sort(
+        (a, b) =>
+          (a.item?.readableId ?? "").localeCompare(
+            b.item?.readableId ?? "",
+            undefined,
+            { numeric: true }
+          ) || a.id.localeCompare(b.id)
+      );
+    }
     return Array.from(groups.values()).sort((a, b) => {
-      const job = (a.jobReadableId ?? "").localeCompare(b.jobReadableId ?? "");
+      const job = (a.jobReadableId ?? "").localeCompare(
+        b.jobReadableId ?? "",
+        undefined,
+        { numeric: true }
+      );
       if (job !== 0) return job;
       return (a.operationName ?? "").localeCompare(b.operationName ?? "");
     });
@@ -390,17 +406,11 @@ function PickingListLineItem({
   const isTracked =
     item?.itemTrackingType === "Serial" || item?.itemTrackingType === "Batch";
   const isBatch = item?.itemTrackingType === "Batch";
-  const source = (line as { storageUnit?: { name?: string } }).storageUnit
-    ?.name;
-  const nonNettable = useNonNettableStorageUnits();
-  const sourceNonNettable =
-    !!line.storageUnitId && nonNettable.has(line.storageUnitId);
+  const liveBins =
+    (line as { liveStorageUnits?: LiveBin[] }).liveStorageUnits ?? [];
   // Warehouse on-hand available (incl. the unassigned/null bin). A null source
   // bin is NOT a shortage if there's on-hand sitting in the unassigned bin.
-  const availableQuantity = Number(
-    (line as { availableQuantity?: number }).availableQuantity ?? 0
-  );
-  const isShortStock = availableQuantity <= 0;
+  const isShortStock = liveBins.length === 0;
   // Only lots that were actually PICKED (quantityPicked > 0) count as picked —
   // not mere allocations.
   const pickedLots = (
@@ -514,6 +524,16 @@ function PickingListLineItem({
           </Button>
         ) : (
           <>
+            {quantityPicked > 0 && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuUndo2 />}
+                isDisabled={!canPick || isPending}
+                onClick={() => pick(0)}
+              >
+                <Trans>Unpick</Trans>
+              </Button>
+            )}
             <Button
               variant="secondary"
               isDisabled={!canPick || isPending}
@@ -593,12 +613,14 @@ function PickingListLineItem({
       </HStack>
 
       <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 @3xl:shrink-0 @3xl:flex-nowrap max-md:gap-3">
-        {source ? (
-          <div className="flex items-center gap-2 text-base font-medium whitespace-nowrap">
-            {source}
-            {sourceNonNettable && <NonNettableBadge />}
-          </div>
-        ) : isShortStock && !isPicked ? (
+        <div className="text-base font-medium">
+          {liveBins.length > 0 ? (
+            liveBins.map((bin) => bin.name ?? t`Location not known`).join(", ")
+          ) : (
+            <Trans>Location not known</Trans>
+          )}
+        </div>
+        {isShortStock && !isPicked && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Badge
@@ -617,7 +639,7 @@ function PickingListLineItem({
               </Trans>
             </TooltipContent>
           </Tooltip>
-        ) : null}
+        )}
         {pickedLots.length > 0 && (
           <HStack spacing={1} className="max-w-[280px] flex-wrap justify-end">
             {pickedLots.map((lot) => (

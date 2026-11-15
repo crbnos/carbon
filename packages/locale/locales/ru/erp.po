@@ -17309,6 +17309,9 @@ msgstr "Местоположение / Товар"
 msgid "Location Name"
 msgstr "Название местоположения"
 
+msgid "Location not known"
+msgstr "Неизвестное местоположение"
+
 msgid "Location ownership updated"
 msgstr "Право собственности площадки обновлено"
 

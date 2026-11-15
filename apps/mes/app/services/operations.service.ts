@@ -1734,6 +1734,42 @@ export async function getJobMaterialsByOperationId(
     materials.data = [...(materials.data ?? []), ...processedKittedMaterials];
   }
 
+  const inventoryItemIds = [
+    ...new Set(
+      (materials.data ?? [])
+        .filter((material) => material.methodType === "Pull from Inventory")
+        .map((material) => material.itemId)
+        .filter((itemId): itemId is string => !!itemId)
+    )
+  ];
+  if (inventoryItemIds.length > 0 && materials.data?.[0]?.companyId) {
+    const live = await client.rpc("get_job_issue_bins", {
+      p_company_id: materials.data[0].companyId,
+      p_job_id: operation.jobId,
+      p_item_ids: inventoryItemIds
+    });
+    if (live.error) throw live.error;
+    const binsByItem = new Map<
+      string,
+      Array<{ id: string | null; name: string | null; quantity: number }>
+    >();
+    for (const bin of live.data ?? []) {
+      const bins = binsByItem.get(bin.itemId) ?? [];
+      bins.push({
+        id: bin.storageUnitId,
+        name: bin.storageUnitName,
+        quantity: bin.quantity
+      });
+      binsByItem.set(bin.itemId, bins);
+    }
+    materials.data = materials.data.map((material) => ({
+      ...material,
+      liveStorageUnits: material.itemId
+        ? (binsByItem.get(material.itemId) ?? [])
+        : []
+    }));
+  }
+
   // Step assignment (Phase 2: part ↔ step, many-to-many). The make-method view doesn't carry
   // the join rows, so look them up from jobMaterialStep and attach an array. No rows = the
   // material applies to the whole operation (shown on every step); 1+ rows scope it to those

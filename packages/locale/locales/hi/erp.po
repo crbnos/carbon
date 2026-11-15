@@ -17309,6 +17309,9 @@ msgstr "स्थान / आइटम"
 msgid "Location Name"
 msgstr "स्थान का नाम"
 
+msgid "Location not known"
+msgstr "स्थान ज्ञात नहीं है"
+
 msgid "Location ownership updated"
 msgstr "स्थान स्वामित्व अपडेट किया गया"
 

@@ -874,9 +874,6 @@ msgstr "减少{fieldLabel}"
 msgid "Default"
 msgstr "默认"
 
-msgid "Default Storage Unit"
-msgstr "默认存储单元"
-
 msgid "Delete"
 msgstr "删除"
 
@@ -1357,6 +1354,9 @@ msgstr "数量不足"
 msgid "Inventory"
 msgstr "库存管理"
 
+msgid "Inventory action"
+msgstr "库存操作"
+
 msgid "Inventory adjustment completed"
 msgstr "库存调整已完成"
 
@@ -1540,6 +1540,9 @@ msgstr "本地"
 
 msgid "Location"
 msgstr "位置"
+
+msgid "Location not known"
+msgstr "地点未知"
 
 msgid "Locations"
 msgstr "地点"
@@ -2342,6 +2345,9 @@ msgstr "预计完成:"
 msgid "PTO"
 msgstr "PTO"
 
+msgid "Pull from inventory"
+msgstr "从库存领用"
+
 msgid "Purchasing"
 msgstr "采购"
 
@@ -3043,6 +3049,9 @@ msgstr "子装配体 {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "子装配体 {0} · {1} — 单独显示"
+
+msgid "Subassembly"
+msgstr "子装配件"
 
 msgid "Submit anonymously"
 msgstr "匿名提交"

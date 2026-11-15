@@ -78,7 +78,10 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       userId,
       targetType: "workCenter",
-      surface: "materialIssue",
+      surface:
+        adjustmentType === "Positive Adjmt."
+          ? "materialReceive"
+          : "materialIssue",
       lines: [
         {
           lineId: jobOperationId,

@@ -5325,6 +5325,32 @@ export async function getPickingListAvailability(
   return map;
 }
 
+/** Current positive warehouse stock by bin for each line on one picking list. */
+export async function getPickingListLiveBins(
+  client: SupabaseClient<Database>,
+  pickingListId: string,
+  companyId: string
+) {
+  const result = await client.rpc("get_picking_list_live_bins", {
+    p_company_id: companyId,
+    p_picking_list_id: pickingListId
+  });
+  const bins = new Map<
+    string,
+    Array<{ id: string | null; name: string | null; quantity: number }>
+  >();
+  for (const row of result.data ?? []) {
+    const list = bins.get(row.pickingListLineId) ?? [];
+    list.push({
+      id: row.storageUnitId,
+      name: row.storageUnitName,
+      quantity: row.quantity
+    });
+    bins.set(row.pickingListLineId, list);
+  }
+  return { data: bins, error: result.error };
+}
+
 export type PickingListRecommendation = {
   trackedEntityId: string;
   readableId: string | null;
@@ -25394,7 +25420,35 @@ export async function postPicking(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
-        await assertPickSourceNettable(trx, companyId, line.storageUnitId);
+        // A new bin may receive stock after this line was generated. Once a
+        // line has picks, retain its source so an unpick returns to that bin.
+        let sourceStorageUnitId = line.storageUnitId;
+        if ((line.quantityPicked ?? 0) === 0) {
+          const stock =
+            (
+              await getUntrackedBinStock(trx, {
+                companyId,
+                itemIds: [line.itemId],
+                locationId,
+                stripes: [line.projectId ?? null]
+              })
+            ).get(line.itemId) ?? [];
+          const available = stock
+            .filter((bin) => bin.nettable && bin.quantity > 0)
+            .sort((a, b) => b.quantity - a.quantity);
+          const chosen =
+            available.find((bin) => bin.storageUnitId === line.storageUnitId) ??
+            available[0];
+          sourceStorageUnitId = chosen
+            ? chosen.storageUnitId
+            : line.storageUnitId;
+        }
+        await assertPickSourceNettable(trx, companyId, sourceStorageUnitId);
+        const nextQuantity = resolvePick({
+          lineQuantity: line.quantityToPick ?? 0,
+          pickedQuantity: line.quantityPicked ?? 0,
+          transferQuantity: quantity
+        });
 
         const inserts: ItemLedgerInsert[] = [
           {
@@ -25402,7 +25456,7 @@ export async function postPicking(
             itemId: line.itemId,
             quantity: round(-quantity),
             locationId,
-            storageUnitId: line.storageUnitId,
+            storageUnitId: sourceStorageUnitId,
             entryType: "Transfer",
             documentType: "Direct Transfer",
             documentId: pickingListId,
@@ -25432,11 +25486,8 @@ export async function postPicking(
         await trx
           .updateTable("pickingListLine")
           .set({
-            quantityPicked: resolvePick({
-              lineQuantity: Number(line.quantityToPick ?? 0),
-              pickedQuantity: Number(line.quantityPicked ?? 0),
-              transferQuantity: quantity
-            }),
+            quantityPicked: nextQuantity,
+            storageUnitId: sourceStorageUnitId,
             status: "Picked",
             updatedBy: userId,
             updatedAt: datetime.timestamp()
@@ -25474,11 +25525,19 @@ export async function postPicking(
           .forUpdate()
           .executeTakeFirstOrThrow();
 
+        // The request was calculated from a prior read. A repeated or stale
+        // unpick must never return more stock than this line still holds.
+        const quantityToUnpick = Math.min(
+          round(quantity),
+          Math.max(0, round(line.quantityPicked ?? 0))
+        );
+        if (quantityToUnpick <= 0) return;
+
         const inserts: ItemLedgerInsert[] = [
           {
             postingDate: today,
             itemId: line.itemId,
-            quantity: round(-quantity),
+            quantity: round(-quantityToUnpick),
             locationId,
             storageUnitId: line.toStorageUnitId,
             entryType: "Transfer",
@@ -25490,7 +25549,7 @@ export async function postPicking(
           {
             postingDate: today,
             itemId: line.itemId,
-            quantity: round(quantity),
+            quantity: quantityToUnpick,
             locationId,
             storageUnitId: line.storageUnitId,
             entryType: "Transfer",
@@ -25512,7 +25571,7 @@ export async function postPicking(
           .set({
             quantityPicked: Math.max(
               0,
-              round(round(Number(line.quantityPicked ?? 0)) - round(quantity))
+              round(round(line.quantityPicked ?? 0) - quantityToUnpick)
             ),
             status: "Pending",
             updatedBy: userId,
@@ -31376,6 +31435,18 @@ export async function issueMaterial(
 
           // Rounded once here: it drives the ledger rows, the budget
           // allocation and the quantityIssued write below.
+          const previouslyIssued = Math.max(
+            0,
+            round(material.quantityIssued ?? 0)
+          );
+          if (
+            adjustmentType === "Positive Adjmt." &&
+            round(quantity) > previouslyIssued
+          ) {
+            throw new Error(
+              "Cannot unissue more than the material's issued quantity"
+            );
+          }
           const quantityToIssue = round(
             adjustmentType === "Positive Adjmt."
               ? Number(quantity)

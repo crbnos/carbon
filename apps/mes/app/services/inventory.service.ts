@@ -65,6 +65,7 @@ export async function getBatchNumbersForItem(
   args: {
     itemId: string;
     companyId: string;
+    locationId?: string;
     isReadOnly?: boolean;
     // The job's stock stripes, in draw order (getJobOperationStockStripes).
     // Every lot when omitted.
@@ -74,7 +75,7 @@ export async function getBatchNumbersForItem(
   let itemIds = [args.itemId];
   const item = await client
     .from("item")
-    .select("*")
+    .select("type, readableId")
     .eq("id", args.itemId)
     .eq("companyId", args.companyId)
     .single();
@@ -91,26 +92,97 @@ export async function getBatchNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  const entities = await withoutNonNettableLots(
-    client,
-    args.companyId,
-    await client
-      .from("trackedEntity")
-      .select("*")
-      .eq("sourceDocument", "Item")
-      .in("sourceDocumentId", itemIds)
-      .eq("companyId", args.companyId)
-      .gt("quantity", 0)
-      .order("expirationDate", { ascending: true, nullsFirst: false })
-      .order("createdAt", { ascending: true })
-  );
+  const candidateEntities = await client
+    .from("trackedEntity")
+    .select("*")
+    .eq("sourceDocument", "Item")
+    .in("sourceDocumentId", itemIds)
+    .eq("companyId", args.companyId)
+    .gt("quantity", 0)
+    .order("expirationDate", { ascending: true, nullsFirst: false })
+    .order("createdAt", { ascending: true });
+  const entities = args.locationId
+    ? candidateEntities
+    : await withoutNonNettableLots(client, args.companyId, candidateEntities);
 
-  return keepEntitiesOfStripes(client, {
+  return issueEntitiesAtLocation(client, {
     companyId: args.companyId,
     itemIds,
     entities,
-    stripes: args.stripes
+    stripes: args.stripes,
+    locationId: args.locationId
   });
+}
+
+/** Resolve the current bin for issue options in one stock read across revisions. */
+async function issueEntitiesAtLocation<
+  T extends { id: string; quantity: number | null }
+>(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    itemIds: string[];
+    entities: { data: T[] | null; error: unknown };
+    stripes?: (string | null)[];
+    locationId?: string;
+  }
+): Promise<{
+  data: Array<T & { storageUnitName: string | null }> | null;
+  error: unknown;
+}> {
+  const { entities, locationId } = args;
+  if (!locationId) {
+    const striped = await keepEntitiesOfStripes(client, args);
+    return {
+      ...striped,
+      data:
+        striped.data?.map((entity) => ({
+          ...entity,
+          storageUnitName: null as string | null
+        })) ?? null
+    };
+  }
+  if (entities.error || !entities.data) {
+    return { ...entities, data: null };
+  }
+
+  const stock = await client.rpc("get_issue_tracked_entity_stock", {
+    p_company_id: args.companyId,
+    p_location_id: locationId,
+    p_item_ids: args.itemIds,
+    // A null element is common stock; the generated type cannot say so.
+    p_project_ids: args.stripes as string[] | undefined
+  });
+  if (stock.error) return { ...entities, data: null, error: stock.error };
+
+  const stockByEntity = new Map<
+    string,
+    { quantity: number; bins: Set<string> }
+  >();
+  for (const row of stock.data ?? []) {
+    const current = stockByEntity.get(row.trackedEntityId) ?? {
+      quantity: 0,
+      bins: new Set<string>()
+    };
+    current.quantity += row.availableQuantity ?? 0;
+    if (row.storageUnitName) current.bins.add(row.storageUnitName);
+    stockByEntity.set(row.trackedEntityId, current);
+  }
+
+  return {
+    ...entities,
+    data: entities.data.flatMap((entity) => {
+      const current = stockByEntity.get(entity.id);
+      if (!current || current.quantity <= 0) return [];
+      return [
+        {
+          ...entity,
+          quantity: Math.min(entity.quantity ?? 0, current.quantity),
+          storageUnitName: [...current.bins].join(", ") || null
+        }
+      ];
+    })
+  };
 }
 
 /** Issue pickers never offer a lot held in a non-nettable (quarantine) unit. */
@@ -222,6 +294,7 @@ export async function getSerialNumbersForItem(
   args: {
     itemId: string;
     companyId: string;
+    locationId?: string;
     // The job's stock stripes, in draw order (getJobOperationStockStripes).
     // Every serial when omitted.
     stripes?: (string | null)[];
@@ -230,7 +303,7 @@ export async function getSerialNumbersForItem(
   let itemIds = [args.itemId];
   const item = await client
     .from("item")
-    .select("*")
+    .select("type, readableId")
     .eq("id", args.itemId)
     .eq("companyId", args.companyId)
     .single();
@@ -247,26 +320,26 @@ export async function getSerialNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  const entities = await withoutNonNettableLots(
-    client,
-    args.companyId,
-    await client
-      .from("trackedEntity")
-      .select("*")
-      .eq("sourceDocument", "Item")
-      .in("sourceDocumentId", itemIds)
-      .eq("companyId", args.companyId)
-      .eq("status", "Available")
-      .gt("quantity", 0)
-      .order("expirationDate", { ascending: true, nullsFirst: false })
-      .order("createdAt", { ascending: true })
-  );
+  const candidateEntities = await client
+    .from("trackedEntity")
+    .select("*")
+    .eq("sourceDocument", "Item")
+    .in("sourceDocumentId", itemIds)
+    .eq("companyId", args.companyId)
+    .eq("status", "Available")
+    .gt("quantity", 0)
+    .order("expirationDate", { ascending: true, nullsFirst: false })
+    .order("createdAt", { ascending: true });
+  const entities = args.locationId
+    ? candidateEntities
+    : await withoutNonNettableLots(client, args.companyId, candidateEntities);
 
-  return keepEntitiesOfStripes(client, {
+  return issueEntitiesAtLocation(client, {
     companyId: args.companyId,
     itemIds,
     entities,
-    stripes: args.stripes
+    stripes: args.stripes,
+    locationId: args.locationId
   });
 }
 

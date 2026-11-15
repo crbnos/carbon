@@ -874,9 +874,6 @@ msgstr "Disminuir {fieldLabel}"
 msgid "Default"
 msgstr "Predeterminado"
 
-msgid "Default Storage Unit"
-msgstr "Unidad de Almacenamiento Predeterminada"
-
 msgid "Delete"
 msgstr "Eliminar"
 
@@ -1357,6 +1354,9 @@ msgstr "Cantidad insuficiente"
 msgid "Inventory"
 msgstr "Inventario"
 
+msgid "Inventory action"
+msgstr "Acción de inventario"
+
 msgid "Inventory adjustment completed"
 msgstr "Ajuste de inventario completado"
 
@@ -1540,6 +1540,9 @@ msgstr "Local"
 
 msgid "Location"
 msgstr "Ubicación"
+
+msgid "Location not known"
+msgstr "Ubicación desconocida"
 
 msgid "Locations"
 msgstr "Ubicaciones"
@@ -2342,6 +2345,9 @@ msgstr "Finalización prevista:"
 msgid "PTO"
 msgstr "PTO"
 
+msgid "Pull from inventory"
+msgstr "Tomar del inventario"
+
 msgid "Purchasing"
 msgstr "Compras"
 
@@ -3043,6 +3049,9 @@ msgstr "Subconjunto {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Subconjunto {0} · {1} — se muestra por separado"
+
+msgid "Subassembly"
+msgstr "Subensamble"
 
 msgid "Submit anonymously"
 msgstr "Enviar de forma anónima"

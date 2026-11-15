@@ -25,11 +25,17 @@ export const path = {
     addAndIssueServiceJobItem: (jobId: string) =>
       generatePath(`${x}/service/${jobId}/add-and-issue`),
     api: {
-      batchNumbers: (itemId: string, operationId?: string) =>
+      batchNumbers: (
+        itemId: string,
+        operationId?: string,
+        locationId?: string
+      ) =>
         generatePath(
-          `${api}/batch-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
+          `${api}/batch-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}${locationId ? `&locationId=${locationId}` : ""}`
         ),
       failureModes: `${api}/failure-modes`,
+      issueInventoryBins: (itemId: string, operationId: string) =>
+        `${api}/issue-inventory-bins?itemId=${encodeURIComponent(itemId)}&operationId=${encodeURIComponent(operationId)}`,
       loginVerifyCode: `${api}/login/verify-code`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
@@ -40,9 +46,13 @@ export const path = {
       pickedAllocation: (jobMaterialId: string) =>
         generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,
-      serialNumbers: (itemId: string, operationId?: string) =>
+      serialNumbers: (
+        itemId: string,
+        operationId?: string,
+        locationId?: string
+      ) =>
         generatePath(
-          `${api}/serial-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
+          `${api}/serial-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}${locationId ? `&locationId=${locationId}` : ""}`
         ),
       ssoCheck: `${api}/sso/check`,
       suggestedAllocation: (

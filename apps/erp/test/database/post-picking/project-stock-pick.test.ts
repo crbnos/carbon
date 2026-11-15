@@ -48,12 +48,36 @@ databaseTest(
         quantity: 10,
         unitCost: 10
       });
+      const sourceBinId = `${f.prefix}-new-source`;
+      const oldDefaultBinId = `${f.prefix}-old-default`;
+      await f.db.transaction().execute(async (trx) => {
+        await trx
+          .insertInto("storageUnit")
+          .values([
+            {
+              id: sourceBinId,
+              name: "New shelf",
+              locationId,
+              companyId: f.companyId,
+              createdBy: "system"
+            },
+            {
+              id: oldDefaultBinId,
+              name: "Default location",
+              locationId,
+              companyId: f.companyId,
+              createdBy: "system"
+            }
+          ])
+          .execute();
+      });
       await f.addStripeStock({
         itemId,
         locationId,
         projectId: f.projectId,
         quantity: 4,
-        unitCost: 12
+        unitCost: 12,
+        storageUnitId: sourceBinId
       });
       const job = await f.addConsumeToProjectJob("pick", {
         locationId,
@@ -68,11 +92,39 @@ databaseTest(
         .where("id", "=", job.jobId)
         .execute();
 
+      // A negative common balance in the same bin cannot hide the project's
+      // positive stock. The issue picker reads each eligible stripe first.
+      await f.db.transaction().execute(async (trx) => {
+        await trx
+          .insertInto("itemLedger")
+          .values({
+            postingDate: "2026-01-01",
+            entryType: "Negative Adjmt.",
+            itemId,
+            locationId,
+            storageUnitId: sourceBinId,
+            quantity: -5,
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+      });
+
+      const issueBins = async () =>
+        (
+          await sql<{
+            storageUnitId: string | null;
+            quantity: string;
+          }>`SELECT "storageUnitId", quantity FROM get_job_issue_bins(${f.companyId}, ${job.jobId}, ARRAY[${itemId}]::TEXT[])`.execute(
+            f.db
+          )
+        ).rows.map((row) => [row.storageUnitId, Number(row.quantity)]);
+      expect(await issueBins()).toContainEqual([sourceBinId, 4]);
+
       const linesideId = `${f.prefix}-lineside`;
       const pickingListId = `${f.prefix}-pl`;
       const pickingListLineId = `${f.prefix}-pll`;
       await f.db.transaction().execute(async (trx) => {
-        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx
           .insertInto("storageUnit")
           .values({
@@ -105,7 +157,7 @@ databaseTest(
             jobOperationId: job.operationId,
             itemId,
             quantityToPick: 4,
-            storageUnitId: null,
+            storageUnitId: oldDefaultBinId,
             toStorageUnitId: linesideId,
             projectId: f.projectId,
             companyId: f.companyId,
@@ -122,6 +174,7 @@ databaseTest(
         locationId
       });
       expect(picked.error).toBeNull();
+      expect(await issueBins()).toContainEqual([linesideId, 4]);
 
       // Both legs of the Transfer pair carry the project.
       const transfer = await f.db
@@ -139,9 +192,52 @@ databaseTest(
           row.projectId
         ])
       ).toEqual([
-        [-4, null, f.projectId],
+        [-4, sourceBinId, f.projectId],
         [4, linesideId, f.projectId]
       ]);
+
+      const pickedLine = await f.db
+        .selectFrom("pickingListLine")
+        .select("storageUnitId")
+        .where("id", "=", pickingListLineId)
+        .executeTakeFirstOrThrow();
+      expect(pickedLine.storageUnitId).toBe(sourceBinId);
+
+      const firstUnpick = await postPicking(f.ctx, {
+        type: "unpickInventory",
+        pickingListId,
+        pickingListLineId,
+        quantity: 4,
+        locationId
+      });
+      const repeatedUnpick = await postPicking(f.ctx, {
+        type: "unpickInventory",
+        pickingListId,
+        pickingListLineId,
+        quantity: 4,
+        locationId
+      });
+      expect(firstUnpick.error).toBeNull();
+      expect(repeatedUnpick.error).toBeNull();
+      const ledgerAfterUnpick = await f.db
+        .selectFrom("itemLedger")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Direct Transfer")
+        .where("documentId", "=", pickingListId)
+        .execute();
+      expect(ledgerAfterUnpick).toHaveLength(4);
+      expect(
+        (
+          await postPicking(f.ctx, {
+            type: "inventory",
+            pickingListId,
+            pickingListLineId,
+            quantity: 4,
+            locationId
+          })
+        ).error
+      ).toBeNull();
 
       // The material's budget is the picked stripe.
       const material = await f.db
@@ -166,6 +262,9 @@ databaseTest(
         quantity: 1
       });
       expect(backflush.error).toBeNull();
+      expect((await issueBins()).filter(([bin]) => bin === linesideId)).toEqual(
+        []
+      );
 
       const consumed = await f.db
         .selectFrom("itemLedger")
@@ -216,7 +315,6 @@ databaseTest(
       const stockTransferId = `${f.prefix}-st`;
       const stockTransferLineId = `${f.prefix}-stl`;
       await f.db.transaction().execute(async (trx) => {
-        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await trx
           .insertInto("item")
           .values({

@@ -17309,6 +17309,9 @@ msgstr "Konum / Ürün"
 msgid "Location Name"
 msgstr "Konum Adı"
 
+msgid "Location not known"
+msgstr "Bilinmeyen konum"
+
 msgid "Location ownership updated"
 msgstr "Lokasyon sahipliği güncellendi"
 

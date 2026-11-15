@@ -22,9 +22,7 @@ import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
 import {
-  LuArrowLeft,
   LuGitBranchPlus,
-  LuGitPullRequest,
   LuPackageCheck,
   LuQrCode,
   LuTriangleAlert
@@ -241,6 +239,54 @@ function ExpiredConsumedBadge({ material }: { material: JobMaterial }) {
   );
 }
 
+function MaterialSource({ material }: { material: JobMaterial }) {
+  const { t } = useLingui();
+  const madeHere = material.methodType === "Make to Order";
+  const liveStorageUnits = (
+    material as JobMaterial & {
+      liveStorageUnits?: Array<{
+        id: string | null;
+        name: string | null;
+        quantity: number;
+      }>;
+    }
+  ).liveStorageUnits?.filter((unit) => unit.quantity > 0);
+  const locations = madeHere
+    ? [t`WIP`]
+    : liveStorageUnits
+      ? liveStorageUnits.length
+        ? liveStorageUnits.map((unit) => unit.name ?? t`Location not known`)
+        : [t`Location not known`]
+      : [material.storageUnitName ?? t`Location not known`];
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <Badge variant="secondary">
+        <MethodIcon
+          type={material.methodType ?? ""}
+          isKit={material.kit ?? false}
+          className="mr-1"
+        />
+        {madeHere
+          ? material.kit
+            ? t`Kit`
+            : t`Subassembly`
+          : material.methodType === "Pull from Inventory"
+            ? t`Pull from inventory`
+            : (material.methodType ?? t`Inventory`)}
+      </Badge>
+      {locations.map((location, index) => (
+        <Badge key={`${location}-${index}`} variant="secondary">
+          {location}
+        </Badge>
+      ))}
+      {material.storageUnit?.effectiveNettable === false && (
+        <NonNettableBadge />
+      )}
+    </div>
+  );
+}
+
 type OperationMaterialsProps = {
   materials: JobMaterial[];
   operationId: string;
@@ -315,19 +361,6 @@ function MaterialsTable({
       </Button>
     ) : null;
 
-  const methodBadge = (material: JobMaterial) => (
-    <Badge variant="secondary">
-      <MethodIcon
-        type={material.methodType ?? ""}
-        isKit={material.kit ?? false}
-        className="mr-2"
-      />
-      {material.methodType === "Make to Order" && material.kit
-        ? t`Kit`
-        : material.methodType}
-    </Badge>
-  );
-
   const fadedIfUnrelated = (row: MaterialRow) =>
     !row.isRelatedToOperation && "opacity-50 hover:opacity-100";
 
@@ -390,26 +423,7 @@ function MaterialsTable({
                       </HStack>
                     </Td>
                     <Td className="hidden lg:table-cell">
-                      <div className="flex flex-row items-center gap-1">
-                        {methodBadge(material)}
-                        <LuArrowLeft
-                          className={cn(
-                            material.methodType === "Make to Order"
-                              ? "rotate-180"
-                              : ""
-                          )}
-                        />
-                        <Badge variant="secondary">
-                          <LuGitPullRequest className="size-3 mr-1" />
-                          {material.storageUnitName ??
-                            (material.methodType === "Make to Order"
-                              ? t`WIP`
-                              : t`Default Storage Unit`)}
-                        </Badge>
-                        {material.storageUnit?.effectiveNettable === false && (
-                          <NonNettableBadge />
-                        )}
-                      </div>
+                      <MaterialSource material={material} />
                     </Td>
                     <Td>
                       {estimatedQuantity(material, parentIsSerial)}
@@ -467,7 +481,7 @@ function MaterialsTable({
                         </HStack>
                       </Td>
                       <Td className="lg:table-cell hidden">
-                        {methodBadge(child.material)}
+                        <MaterialSource material={child.material} />
                       </Td>
                       <Td>
                         {estimatedQuantity(child.material, parentIsSerial)}
@@ -530,6 +544,7 @@ function MaterialsList({
               {material.description}
             </span>
           ) : null}
+          <MaterialSource material={material} />
           <div className="flex flex-wrap items-center gap-1">
             <TrackingBadge material={material} />
             <ExpiredConsumedBadge material={material} />

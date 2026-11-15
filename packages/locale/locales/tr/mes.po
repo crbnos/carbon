@@ -874,9 +874,6 @@ msgstr "{fieldLabel} alanını azalt"
 msgid "Default"
 msgstr "Varsayılan"
 
-msgid "Default Storage Unit"
-msgstr "Varsayılan Depolama Birimi"
-
 msgid "Delete"
 msgstr "Sil"
 
@@ -1357,6 +1354,9 @@ msgstr "Yetersiz miktar"
 msgid "Inventory"
 msgstr "Envanter"
 
+msgid "Inventory action"
+msgstr "Envanter aksiyonu"
+
 msgid "Inventory adjustment completed"
 msgstr "Stok düzeltme tamamlandı"
 
@@ -1540,6 +1540,9 @@ msgstr "Yerel"
 
 msgid "Location"
 msgstr "Konum"
+
+msgid "Location not known"
+msgstr "Bilinmeyen konum"
 
 msgid "Locations"
 msgstr "Lokasyonlar"
@@ -2342,6 +2345,9 @@ msgstr "Tahmini tamamlanma:"
 msgid "PTO"
 msgstr "İzin"
 
+msgid "Pull from inventory"
+msgstr "Stoktan kullan"
+
 msgid "Purchasing"
 msgstr "Satın alma"
 
@@ -3043,6 +3049,9 @@ msgstr "Alt derleme {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Alt derleme {0} · {1} — kendi başına gösterilir"
+
+msgid "Subassembly"
+msgstr "Alt montaj"
 
 msgid "Submit anonymously"
 msgstr "Anonim olarak gönder"

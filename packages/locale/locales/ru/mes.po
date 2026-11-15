@@ -874,9 +874,6 @@ msgstr "Уменьшить {fieldLabel}"
 msgid "Default"
 msgstr "По умолчанию"
 
-msgid "Default Storage Unit"
-msgstr "Единица хранения по умолчанию"
-
 msgid "Delete"
 msgstr "Удалить"
 
@@ -1357,6 +1354,9 @@ msgstr "Недостаточное количество"
 msgid "Inventory"
 msgstr "Запасы"
 
+msgid "Inventory action"
+msgstr "Действие с запасами"
+
 msgid "Inventory adjustment completed"
 msgstr "Корректировка запасов выполнена"
 
@@ -1540,6 +1540,9 @@ msgstr "Локально"
 
 msgid "Location"
 msgstr "Расположение"
+
+msgid "Location not known"
+msgstr "Неизвестное местоположение"
 
 msgid "Locations"
 msgstr "Площадки"
@@ -2342,6 +2345,9 @@ msgstr "Прогнозируемое завершение:"
 msgid "PTO"
 msgstr "Отпуск"
 
+msgid "Pull from inventory"
+msgstr "Со склада"
+
 msgid "Purchasing"
 msgstr "Закупки"
 
@@ -3043,6 +3049,9 @@ msgstr "Под-узел {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Под-узел {0} · {1} — показывается отдельно"
+
+msgid "Subassembly"
+msgstr "Узел"
 
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"

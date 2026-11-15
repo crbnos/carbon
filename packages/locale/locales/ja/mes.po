@@ -874,9 +874,6 @@ msgstr "{fieldLabel}を減らす"
 msgid "Default"
 msgstr "デフォルト"
 
-msgid "Default Storage Unit"
-msgstr "デフォルト保管ユニット"
-
 msgid "Delete"
 msgstr "削除"
 
@@ -1357,6 +1354,9 @@ msgstr "数量が不足しています"
 msgid "Inventory"
 msgstr "在庫管理"
 
+msgid "Inventory action"
+msgstr "在庫操作"
+
 msgid "Inventory adjustment completed"
 msgstr "在庫調整が完了しました"
 
@@ -1540,6 +1540,9 @@ msgstr "ローカル"
 
 msgid "Location"
 msgstr "ロケーション"
+
+msgid "Location not known"
+msgstr "拠点が不明です"
 
 msgid "Locations"
 msgstr "拠点"
@@ -2342,6 +2345,9 @@ msgstr "完了予定:"
 msgid "PTO"
 msgstr "有給"
 
+msgid "Pull from inventory"
+msgstr "在庫から引当"
+
 msgid "Purchasing"
 msgstr "購買"
 
@@ -3043,6 +3049,9 @@ msgstr "サブアセンブリ {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "サブアセンブリ {0} · {1} — 単独で表示"
+
+msgid "Subassembly"
+msgstr "サブアセンブリ"
 
 msgid "Submit anonymously"
 msgstr "匿名で提出"

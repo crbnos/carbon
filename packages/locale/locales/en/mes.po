@@ -874,9 +874,6 @@ msgstr "Decrease {fieldLabel}"
 msgid "Default"
 msgstr "Default"
 
-msgid "Default Storage Unit"
-msgstr "Default Storage Unit"
-
 msgid "Delete"
 msgstr "Delete"
 
@@ -1357,6 +1354,9 @@ msgstr "Insufficient quantity"
 msgid "Inventory"
 msgstr "Inventory"
 
+msgid "Inventory action"
+msgstr "Inventory action"
+
 msgid "Inventory adjustment completed"
 msgstr "Inventory adjustment completed"
 
@@ -1540,6 +1540,9 @@ msgstr "Local"
 
 msgid "Location"
 msgstr "Location"
+
+msgid "Location not known"
+msgstr "Location not known"
 
 msgid "Locations"
 msgstr "Locations"
@@ -2342,6 +2345,9 @@ msgstr "Projected completion:"
 msgid "PTO"
 msgstr "PTO"
 
+msgid "Pull from inventory"
+msgstr "Pull from inventory"
+
 msgid "Purchasing"
 msgstr "Purchasing"
 
@@ -3043,6 +3049,9 @@ msgstr "Sub-Assembly {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Sub-Assembly {0} · {1} — shown on its own"
+
+msgid "Subassembly"
+msgstr "Subassembly"
 
 msgid "Submit anonymously"
 msgstr "Submit anonymously"

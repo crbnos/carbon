@@ -17309,6 +17309,9 @@ msgstr "Location / Item"
 msgid "Location Name"
 msgstr "Location Name"
 
+msgid "Location not known"
+msgstr "Location not known"
+
 msgid "Location ownership updated"
 msgstr "Location ownership updated"
 
