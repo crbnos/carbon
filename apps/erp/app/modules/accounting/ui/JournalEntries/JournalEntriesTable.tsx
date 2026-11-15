@@ -287,8 +287,7 @@ const JournalEntriesTable = memo(
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}
           importCSV={
-            // The import creates, saves and posts journals, as the manual
-            // entry's New and Post do.
+            // The import's gate: create (`importRequiresCreate`) and update.
             permissions.can("create", "accounting") &&
             permissions.can("update", "accounting")
               ? [{ table: "journalEntry" as const, label: t`Journal Entries` }]

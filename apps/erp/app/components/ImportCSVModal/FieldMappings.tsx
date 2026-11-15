@@ -180,8 +180,6 @@ export function FieldMapping({
     );
   }, [fileColumns, firstRows]);
 
-  // One step per enum field the wizard asks about. A field with
-  // `askWhenMapped` drops out while that other field's column is unmapped.
   const enumFields: [
     string,
     {

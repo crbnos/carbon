@@ -2,11 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Journal entries from another accounting system: one row per journal line,
-// and the rows that share a Journal Reference are one journal entry. Each
-// journal is created, saved and posted by the building blocks a manual journal
-// entry uses, so its number, its Manual source, the period rules and the audit
-// trail are those of a manual entry.
+// Journal entries from another accounting system, one row per journal line.
 // Spec: .ai/specs/2026-11-14-journal-entry-import.md
 
 import { isDataLayerError } from "@carbon/api/errors";
@@ -48,10 +44,8 @@ type DimensionEntityType = Database["public"]["Enums"]["dimensionEntityType"];
 export type JournalEntryImportStatus =
   (typeof journalEntryImportStatuses)[number];
 
-/** The dimension slots of the file: `dimension1` + `dimension1Value`, … */
 export const JOURNAL_ENTRY_DIMENSION_SLOTS = [1, 2, 3] as const;
 
-/** `externalIntegrationMapping.entityType` of an imported journal's reference. */
 const JOURNAL_MAPPING_ENTITY = "journal";
 const CSV_INTEGRATION = "csv";
 
@@ -68,13 +62,10 @@ export type JournalEntryImportRow = {
 };
 
 export type JournalEntryImportLookups = {
-  /** The company group's active posting accounts, by number. */
   accountIdByNumber: ReadonlyMap<string, string>;
-  /** The company group's active dimensions, by id. */
   dimensions: ReadonlyMap<string, { name: string }>;
   /** Per dimension id: the value ids under each normalized value name. */
   dimensionValueIds: ReadonlyMap<string, ReadonlyMap<string, string[]>>;
-  /** The company's accounting periods that hold a date of the file. */
   periods: ReadonlyArray<{
     startDate: string;
     endDate: string;
@@ -95,7 +86,6 @@ export type PlannedJournalLine = {
 
 export type PlannedJournalEntry = {
   reference: string;
-  /** The file rows of the journal, in file order. */
   rows: number[];
   postingDate: string;
   description: string;
@@ -105,7 +95,6 @@ export type PlannedJournalEntry = {
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** A `YYYY-MM-DD` that is a real calendar date. */
 function isCalendarDate(value: string): boolean {
   if (!DATE.test(value)) return false;
   try {
@@ -128,10 +117,7 @@ function readAmount(
     : { error: `${label} must be a number of 0 or more` };
 }
 
-/**
- * Reads one mapped CSV row. Returns the row, or the reason it is refused.
- * Whether its account and dimension values exist is checked by the plan.
- */
+/** A row's own checks; the plan checks its account and dimension values. */
 export function readJournalEntryRow(
   record: Rec
 ): { row: JournalEntryImportRow } | { error: string } {
@@ -158,8 +144,7 @@ export function readJournalEntryRow(
     return { error: "Each line must have either a debit or credit amount" };
   }
 
-  // A blank status (the Default cleared, no column) is a Draft, as a new
-  // manual journal entry is.
+  // Blank (no column, Default cleared) is a Draft, as a new manual entry is.
   const statusText = (record.status ?? "").trim() || "Draft";
   const status = journalEntryImportStatuses.find(
     (option) => option === statusText
@@ -176,8 +161,7 @@ export function readJournalEntryRow(
         error: `Dimension ${slot} Value has no dimension. Choose the dimension for Dimension ${slot}`
       };
     }
-    // A line carries one value per dimension (journalLineDimension is
-    // unique on the line and the dimension).
+    // journalLineDimension is unique on (line, dimension): one value each.
     if (dimensions.some((d) => d.dimensionId === dimensionId)) {
       return {
         error: `Dimension ${slot} names a dimension another Dimension column already names`
@@ -243,12 +227,10 @@ function resolveLine(
 }
 
 /**
- * The journals of a file, or why each row is not imported. Rows group by
- * Journal Reference, in the order each reference first appears. A journal is
- * imported whole or not at all: when one of its rows is refused, or the
- * journal does not balance, every row of it is in `errors`, so the rows to
- * fix and import again are the whole journal. A reference a previous import
- * wrote is skipped.
+ * Rows group by Journal Reference, in first-appearance order. A journal is
+ * whole or nothing: any refusal puts every row of it in `errors`, so the rows
+ * to fix and import again are the whole journal. A reference a previous
+ * import wrote is skipped.
  */
 export function planJournalEntryImport(
   records: Rec[],
@@ -367,8 +349,7 @@ export function planJournalEntryImport(
   return { journals, errors, skipped };
 }
 
-// Where each entity-typed dimension takes its values, matched by the label
-// the journal entry form shows (DimensionSelector).
+// Values match the label the journal form's DimensionSelector shows.
 const ENTITY_DIMENSION_SOURCES: Record<
   Exclude<DimensionEntityType, "Custom">,
   { table: string; label: string; only?: "active" | "isChargeable" }
@@ -387,8 +368,7 @@ const ENTITY_DIMENSION_SOURCES: Record<
   Supplier: { table: "supplier", label: "name" },
   Item: { table: "item", label: "readableIdWithRevision" },
   ScrapReason: { table: "scrapReason", label: "name" },
-  // Only the values the form offers: active projects, chargeable elements
-  // (by their number, as a charge number reads).
+  // Only what the form offers: active projects, chargeable elements by number.
   Project: { table: "project", label: "name", only: "active" },
   ProjectElement: {
     table: "projectElement",
@@ -413,7 +393,6 @@ function distinct<T extends string>(values: Iterable<T>): T[] {
   return [...new Set([...values].filter((value) => value !== ""))];
 }
 
-/** Everything the plan checks a file against, read once per file. */
 async function loadJournalEntryImportLookups(
   db: Kysely<KyselyDatabase>,
   {
@@ -498,8 +477,6 @@ async function loadJournalEntryImportLookups(
       )
     ]);
 
-  // One read per value table: the custom values of every dimension at once,
-  // and each entity type's table once.
   const customIds = dimensionRows
     .filter((d) => d.entityType === "Custom")
     .map((d) => d.id);
@@ -590,12 +567,10 @@ function reasonOf(err: unknown, fallback: string, context: object) {
 }
 
 /**
- * Writes the journals of a file, one at a time in file order, each through
- * the manual journal entry's building blocks: `createDocument` (the next
- * journal entry number, a Draft of source Manual), `saveJournalEntryWithLines`
- * and, for Posted, `postJournalEntry`, both as the caller. A journal that
- * fails part-way is deleted while it is still a Draft, so a file never
- * leaves half a journal. Each imported journal records its reference in
+ * Writes each journal in file order through the manual journal entry's
+ * building blocks, as the caller, so its number, Manual source, period rules
+ * and audit trail are a manual entry's. A journal that fails part-way is
+ * deleted while still a Draft. Each one records its reference in
  * `externalIntegrationMapping`, so the same file imported again skips it.
  */
 export async function importJournalEntries(

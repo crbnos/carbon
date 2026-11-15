@@ -229,7 +229,6 @@ const employeeFetcher = async (
     .order("name");
 };
 
-// The company group's active dimensions, which a journal line can carry.
 const dimensionFetcher = async (
   client: SupabaseClient<Database>,
   companyId: string
@@ -249,14 +248,10 @@ const dimensionFetcher = async (
     .order("name");
 };
 
-// Journal entry import: a journal lands as a Draft, as a new manual journal
-// entry does, or is posted.
 export const journalEntryImportStatuses = ["Draft", "Posted"] as const;
 
-// One pair per dimension slot: the dimension (an enum, usually set once for
-// the whole file as its Default) and the column that holds its values. The
-// wizard asks for the dimension only when the Value column is mapped: without
-// values a slot tags nothing.
+// Without values a dimension slot tags nothing, so the wizard asks for the
+// dimension only when its Value column is mapped.
 const journalEntryDimensionField = (slot: number) =>
   ({
     label: `Dimension ${slot}`,
@@ -2233,9 +2228,8 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
 // Imports that post stock also require `create` on their module: the
 // single-record inventory adjustment route requires `create: inventory`, and
 // its Save button requires `update: inventory`, so an import of the same rows
-// requires both. A journal entry import likewise needs what a manual journal
-// entry does: `create: accounting` to create it, `update: accounting` to save
-// and post it.
+// requires both. A journal entry import needs what a manual entry does:
+// `create: accounting` to create it, `update: accounting` to save and post it.
 export const importRequiresCreate: ReadonlySet<keyof typeof fieldMappings> =
   new Set([
     "inventoryQuantity",

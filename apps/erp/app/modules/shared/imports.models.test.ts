@@ -27,8 +27,7 @@ describe("importSchemas covers every mappable field", () => {
   });
 });
 
-// A name that is not a field of the table would hide the field's wizard step
-// for good.
+// A name that is not a field of its table hides that wizard step for good.
 describe("askWhenMapped names a field of its own table", () => {
   const tables = Object.keys(fieldMappings) as (keyof typeof fieldMappings)[];
 
