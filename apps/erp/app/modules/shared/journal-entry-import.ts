@@ -592,8 +592,13 @@ function reasonOf(err: unknown, fallback: string, context: object) {
  * Writes each journal in file order through the manual journal entry's
  * building blocks, as the caller, so its number, Manual source, period rules
  * and audit trail are a manual entry's. A journal that fails part-way is
- * deleted while still a Draft. Each one records its reference in
- * `externalIntegrationMapping`, so the same file imported again skips it.
+ * deleted while still a Draft.
+ *
+ * Each journal claims its reference in `externalIntegrationMapping` right
+ * after it is created, before its lines are saved or it is posted, so a
+ * retried or overlapping import of the same file never writes a reference
+ * twice: the claim succeeds only when no existing journal holds the
+ * reference, and the import that loses it deletes its empty Draft.
  */
 export async function importJournalEntries(
   ctx: ServiceContext,
@@ -641,6 +646,30 @@ export async function importJournalEntries(
     }
     const journalId = String(created.data.id);
 
+    let claimed: string | undefined;
+    try {
+      claimed = await claimJournalReference(db, {
+        journalId,
+        reference: journal.reference,
+        companyId,
+        userId
+      });
+    } catch (err) {
+      await discardDraft(journalId);
+      refuse(reasonOf(err, "Failed to record the journal reference", context));
+      continue;
+    }
+    if (claimed !== journalId) {
+      await discardDraft(journalId);
+      for (const row of journal.rows) {
+        summary.skipped.push({
+          row,
+          reason: `Journal ${journal.reference} was imported by another import at the same time`
+        });
+      }
+      continue;
+    }
+
     const saved = await saveJournalEntryWithLines(ctx.asCaller.supabase, {
       journalEntryId: journalId,
       postingDate: journal.postingDate,
@@ -669,31 +698,68 @@ export async function importJournalEntries(
       }
     }
 
-    const now = datetime.timestamp();
-    await db
-      .insertInto("externalIntegrationMapping")
-      .values({
-        entityType: JOURNAL_MAPPING_ENTITY,
-        entityId: journalId,
-        integration: CSV_INTEGRATION,
-        externalId: journal.reference,
-        companyId,
-        allowDuplicateExternalId: false,
-        createdBy: userId,
-        createdAt: now,
-        updatedAt: now
-      })
-      // A mapping left by a journal since deleted points at the new one.
-      .onConflict((oc) =>
-        oc
-          .columns(["integration", "externalId", "entityType", "companyId"])
-          .where("allowDuplicateExternalId", "=", false)
-          .doUpdateSet((eb) => ({
-            entityId: eb.ref("excluded.entityId"),
-            updatedAt: eb.ref("excluded.updatedAt")
-          }))
-      )
-      .execute();
     summary.inserted += 1;
   }
+}
+
+/**
+ * Points the reference's mapping at the journal and returns the journal the
+ * mapping names afterwards. A mapping whose journal still exists is kept, so
+ * the returned id differs from `journalId` when another import holds the
+ * reference; a mapping left by a deleted journal is taken over.
+ */
+async function claimJournalReference(
+  db: Kysely<KyselyDatabase>,
+  {
+    journalId,
+    reference,
+    companyId,
+    userId
+  }: { journalId: string; reference: string; companyId: string; userId: string }
+) {
+  const now = datetime.timestamp();
+  const row = await db
+    .insertInto("externalIntegrationMapping")
+    .values({
+      entityType: JOURNAL_MAPPING_ENTITY,
+      entityId: journalId,
+      integration: CSV_INTEGRATION,
+      externalId: reference,
+      companyId,
+      allowDuplicateExternalId: false,
+      createdBy: userId,
+      createdAt: now,
+      updatedAt: now
+    })
+    .onConflict((oc) =>
+      oc
+        .columns(["integration", "externalId", "entityType", "companyId"])
+        .where("allowDuplicateExternalId", "=", false)
+        .doUpdateSet((eb) => ({
+          entityId: eb.ref("excluded.entityId"),
+          updatedAt: eb.ref("excluded.updatedAt")
+        }))
+        .where((eb) =>
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom("journal")
+                .select("journal.id")
+                .whereRef(
+                  "journal.id",
+                  "=",
+                  "externalIntegrationMapping.entityId"
+                )
+                .whereRef(
+                  "journal.companyId",
+                  "=",
+                  "externalIntegrationMapping.companyId"
+                )
+            )
+          )
+        )
+    )
+    .returning("entityId")
+    .executeTakeFirst();
+  return row?.entityId;
 }
