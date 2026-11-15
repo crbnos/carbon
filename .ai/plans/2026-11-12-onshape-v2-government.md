@@ -10,7 +10,7 @@ in Carbon. Everything past authorization is the existing panel runtime.
 
 - New integration id `onshape-v2-government`: its own `companyIntegration` row,
   vaulted `clientSecret` and tokens, `baseUrl` and `clientId` in metadata.
-  Always offered (`active: true`), `internalOnly` like `onshape-v2`.
+  Always offered (`active: true`) and not `internalOnly`, like `onshape-government`.
 - The panel's mapping namespace stays `onshape-v2` for both grants, as the sync
   keeps `onshape` for both: mappings name the source system, not the connection.
   Every `.eq("integration", ONSHAPE_V2_INTEGRATION_ID)` stays.

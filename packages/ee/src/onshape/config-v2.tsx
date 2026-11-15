@@ -60,7 +60,6 @@ export const OnshapeV2Government = defineIntegration({
   name: "Onshape V2 Government",
   id: ONSHAPE_V2_GOVERNMENT_INTEGRATION_ID,
   active: true,
-  internalOnly: true,
   category: "CAD",
   logo: Logo,
   setupInstructions: GovernmentPanelSetupInstructions,
