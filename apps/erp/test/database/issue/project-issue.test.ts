@@ -907,6 +907,61 @@ databaseTest(
         [-48, f.projectId],
         [-20, null]
       ]);
+
+      const returned = await issue(f.ctx, {
+        type: "partToOperation",
+        id: job.operationId,
+        itemId,
+        materialId: job.materialId,
+        quantity: 3,
+        adjustmentType: "Positive Adjmt."
+      });
+      expect(returned.error).toBeNull();
+      const returns = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .where("quantity", ">", 0)
+        .orderBy("quantity")
+        .execute();
+      expect(
+        returns.map((row) => [Number(row.quantity), row.projectId])
+      ).toEqual([
+        [1, f.projectId],
+        [2, null]
+      ]);
+
+      expect(
+        (await issue(f.ctx, {
+          type: "partToOperation",
+          id: job.operationId,
+          itemId,
+          materialId: job.materialId,
+          quantity: 1,
+          adjustmentType: "Positive Adjmt."
+        })).error
+      ).toBeNull();
+      const netIssues = await f.db
+        .selectFrom("itemLedger")
+        .select([
+          "projectId",
+          (eb) => eb.fn.sum<number>("quantity").as("quantity")
+        ])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .groupBy("projectId")
+        .execute();
+      expect(
+        netIssues.map((row) => [row.projectId, Number(row.quantity)])
+      ).toEqual(
+        expect.arrayContaining([
+          [f.projectId, -2],
+          [null, 0]
+        ])
+      );
     } finally {
       await f.cleanup();
     }

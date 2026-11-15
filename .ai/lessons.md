@@ -6,6 +6,16 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Reverse inventory from the original ledger sources
+
+**Context:** Picking a material in stages and unissuing project-job inventory.
+
+**Problem:** A saved bin can empty between picks, and a project job can consume both project and common stock. Reusing the saved bin or default project stripe for a reversal changes physical or ownership balances.
+
+**Rule:** Resolve stock after the draw lock for every pick, record its source per line, and reverse outstanding quantities by their original bin and stripe.
+
+**Applies to:** Picking transfers, unpick, job consumption, and unissue.
+
 ## Typed quantities do not need Number wrappers
 
 **Context:** Showing issued quantities and current bin stock in MES and ERP.
