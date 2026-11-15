@@ -285,9 +285,6 @@ msgstr "작업 메뉴"
 msgid "Active"
 msgstr "활성"
 
-msgid "Actual"
-msgstr "실제"
-
 msgid "Add"
 msgstr "추가"
 
@@ -874,9 +871,6 @@ msgstr "{fieldLabel} 감소"
 msgid "Default"
 msgstr "기본값"
 
-msgid "Default Storage Unit"
-msgstr "기본 보관 단위"
-
 msgid "Delete"
 msgstr "삭제"
 
@@ -1063,9 +1057,6 @@ msgstr "인증 앱에서 6자리 코드를 입력하여 계속하세요."
 
 msgid "Error"
 msgstr "오류"
-
-msgid "Estimated"
-msgstr "예상"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "배치의 모든 작업 지시는 이러한 단계를 따릅니다. 모두에 대해 한 번에 단계를 기록하세요."
@@ -1357,6 +1348,9 @@ msgstr "수량 부족"
 msgid "Inventory"
 msgstr "재고 관리"
 
+msgid "Inventory action"
+msgstr "재고 작업"
+
 msgid "Inventory adjustment completed"
 msgstr "재고 조정이 완료되었습니다"
 
@@ -1540,6 +1534,9 @@ msgstr "로컬"
 
 msgid "Location"
 msgstr "위치"
+
+msgid "Location not known"
+msgstr "보관 위치를 알 수 없습니다"
 
 msgid "Locations"
 msgstr "사업장"
@@ -3011,6 +3008,9 @@ msgstr "단계"
 msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
 
+msgid "Stock at:"
+msgstr "재고 위치:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3043,9 @@ msgstr "하위 조립체 {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "하위 조립체 {0} · {1} — 단독으로 표시됨"
+
+msgid "Subassembly"
+msgstr "서브어셈블리"
 
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
@@ -3368,6 +3371,9 @@ msgstr "밑줄"
 
 msgid "Undo"
 msgstr "실행 취소"
+
+msgid "Unissue"
+msgstr "출고 취소"
 
 msgid "Unissued serial/batch materials"
 msgstr "출고되지 않은 일련번호/배치 자재"

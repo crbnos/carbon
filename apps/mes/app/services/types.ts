@@ -47,6 +47,14 @@ export type Location = NonNullable<
 
 export type Job = NonNullable<Awaited<ReturnType<typeof getJob>>["data"]>;
 
+/** A bin that holds stock a line or material can draw now. `id` and `name`
+ *  are null for stock in no storage unit. */
+export type LiveStorageUnit = {
+  id: string | null;
+  name: string | null;
+  quantity: number;
+};
+
 export type JobMaterial = NonNullable<
   Awaited<ReturnType<typeof getJobMaterialsByOperationId>>
 >["materials"][number] & {

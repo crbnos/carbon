@@ -285,9 +285,6 @@ msgstr "Menu akcji"
 msgid "Active"
 msgstr "Aktywne"
 
-msgid "Actual"
-msgstr "Rzeczywiste"
-
 msgid "Add"
 msgstr "Dodaj"
 
@@ -874,9 +871,6 @@ msgstr "Zmniejsz: {fieldLabel}"
 msgid "Default"
 msgstr "Domyślnie"
 
-msgid "Default Storage Unit"
-msgstr "Domyślna jednostka magazynowa"
-
 msgid "Delete"
 msgstr "Usuń"
 
@@ -1063,9 +1057,6 @@ msgstr "Wpisz 6-cyfrowy kod z twojej aplikacji autoryzacyjnej, aby wznowić."
 
 msgid "Error"
 msgstr "Błąd"
-
-msgid "Estimated"
-msgstr "Szacowane"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Każde zlecenie produkcyjne w partii produkcyjnej następuje po tych krokach. Zapisz krok dla wszystkich naraz."
@@ -1357,6 +1348,9 @@ msgstr "Niewystarczająca ilość"
 msgid "Inventory"
 msgstr "Zapasy"
 
+msgid "Inventory action"
+msgstr "Akcja inwentarza"
+
 msgid "Inventory adjustment completed"
 msgstr "Korekta zapasów zakończona"
 
@@ -1540,6 +1534,9 @@ msgstr "Lokalne"
 
 msgid "Location"
 msgstr "Lokalizacja"
+
+msgid "Location not known"
+msgstr "Nieznana lokalizacja"
 
 msgid "Locations"
 msgstr "Lokalizacje"
@@ -3011,6 +3008,9 @@ msgstr "Kroki"
 msgid "Steps are missing"
 msgstr "Brakuje kroków"
 
+msgid "Stock at:"
+msgstr "Stan magazynowy w:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3043,9 @@ msgstr "Podzestawienie {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Podzestawienie {0} · {1} — wyświetlane osobno"
+
+msgid "Subassembly"
+msgstr "Podzespół"
 
 msgid "Submit anonymously"
 msgstr "Prześlij anonimowo"
@@ -3368,6 +3371,9 @@ msgstr "Podkreślenie"
 
 msgid "Undo"
 msgstr "Cofnij"
+
+msgid "Unissue"
+msgstr "Cofnij wydanie"
 
 msgid "Unissued serial/batch materials"
 msgstr "Niewydane materiały seryjne/partyjne"

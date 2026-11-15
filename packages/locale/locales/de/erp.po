@@ -17321,6 +17321,9 @@ msgstr "Standort / Artikel"
 msgid "Location Name"
 msgstr "Standortname"
 
+msgid "Location not known"
+msgstr "Lagerplatz unbekannt"
+
 msgid "Location ownership updated"
 msgstr "Standorteigentum aktualisiert"
 
@@ -23962,6 +23965,10 @@ msgstr "Versendete Menge"
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "Gutzuschreibende Menge für Position {lineNumber}"
 
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
+
 msgid "Quantity to return for {itemReadableId}"
 msgstr "Rücksendemenge für {itemReadableId}"
 
@@ -28840,6 +28847,9 @@ msgstr "Bestand"
 
 msgid "Stock and planning"
 msgstr "Bestand und Planung"
+
+msgid "Stock at:"
+msgstr ""
 
 msgid "Stock Availability"
 msgstr "Bestandsverfügbarkeit"

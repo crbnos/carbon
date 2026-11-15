@@ -285,9 +285,6 @@ msgstr "Aktionsmenü"
 msgid "Active"
 msgstr "Aktiv"
 
-msgid "Actual"
-msgstr "Ist"
-
 msgid "Add"
 msgstr "Hinzufügen"
 
@@ -874,9 +871,6 @@ msgstr "{fieldLabel} verringern"
 msgid "Default"
 msgstr "Standard"
 
-msgid "Default Storage Unit"
-msgstr "Standardlagereinheit"
-
 msgid "Delete"
 msgstr "Löschen"
 
@@ -1063,9 +1057,6 @@ msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein, um fortz
 
 msgid "Error"
 msgstr "Fehler"
-
-msgid "Estimated"
-msgstr "Soll"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Jeder Fertigungsauftrag im Los folgt diesen Schritten. Zeichnen Sie einen Schritt für alle auf einmal auf."
@@ -1357,6 +1348,9 @@ msgstr "Unzureichende Menge"
 msgid "Inventory"
 msgstr "Bestände"
 
+msgid "Inventory action"
+msgstr "Bestandsaktion"
+
 msgid "Inventory adjustment completed"
 msgstr "Bestandskorrektur abgeschlossen"
 
@@ -1540,6 +1534,9 @@ msgstr "Lokal"
 
 msgid "Location"
 msgstr "Standort"
+
+msgid "Location not known"
+msgstr "Lagerplatz unbekannt"
 
 msgid "Locations"
 msgstr "Standorte"
@@ -3011,6 +3008,9 @@ msgstr "Schritte"
 msgid "Steps are missing"
 msgstr "Schritte fehlen"
 
+msgid "Stock at:"
+msgstr "Bestand in:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3043,9 @@ msgstr "Untergruppe {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Untergruppe {0} · {1} — isoliert angezeigt"
+
+msgid "Subassembly"
+msgstr "Baugruppe"
 
 msgid "Submit anonymously"
 msgstr "Anonym einreichen"
@@ -3368,6 +3371,9 @@ msgstr "Unterstrichen"
 
 msgid "Undo"
 msgstr "Rückgängig machen"
+
+msgid "Unissue"
+msgstr "Ausgabe rückgängig machen"
 
 msgid "Unissued serial/batch materials"
 msgstr "Nicht ausgegebene Serien-/Chargenmaterialien"

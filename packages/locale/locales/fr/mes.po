@@ -285,9 +285,6 @@ msgstr "Menu d'actions"
 msgid "Active"
 msgstr "Actif"
 
-msgid "Actual"
-msgstr "Réel"
-
 msgid "Add"
 msgstr "Ajouter"
 
@@ -874,9 +871,6 @@ msgstr "Diminuer {fieldLabel}"
 msgid "Default"
 msgstr "Par défaut"
 
-msgid "Default Storage Unit"
-msgstr "Unité de stockage par défaut"
-
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -1063,9 +1057,6 @@ msgstr "Entrez le code à 6 chiffres de votre application d'authentification pou
 
 msgid "Error"
 msgstr "Erreur"
-
-msgid "Estimated"
-msgstr "Estimé"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Chaque ordre de fabrication du lot de production suit ces étapes. Enregistrez une étape pour tous à la fois."
@@ -1357,6 +1348,9 @@ msgstr "Quantité insuffisante"
 msgid "Inventory"
 msgstr "Stocks"
 
+msgid "Inventory action"
+msgstr "Action sur le stock"
+
 msgid "Inventory adjustment completed"
 msgstr "Ajustement de stock terminé"
 
@@ -1540,6 +1534,9 @@ msgstr "Local"
 
 msgid "Location"
 msgstr "Emplacement"
+
+msgid "Location not known"
+msgstr "Emplacement inconnu"
 
 msgid "Locations"
 msgstr "Sites"
@@ -3011,6 +3008,9 @@ msgstr "Étapes"
 msgid "Steps are missing"
 msgstr "Des étapes sont manquantes"
 
+msgid "Stock at:"
+msgstr "Stock à :"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3043,9 @@ msgstr "Sous-ensemble {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Sous-ensemble {0} · {1} — affiché seul"
+
+msgid "Subassembly"
+msgstr "Sous-ensemble"
 
 msgid "Submit anonymously"
 msgstr "Soumettre anonymement"
@@ -3368,6 +3371,9 @@ msgstr "Souligné"
 
 msgid "Undo"
 msgstr "Annuler"
+
+msgid "Unissue"
+msgstr "Annuler la sortie"
 
 msgid "Unissued serial/batch materials"
 msgstr "Matériaux série/lot non distribués"

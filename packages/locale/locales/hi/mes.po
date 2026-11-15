@@ -285,9 +285,6 @@ msgstr "क्रिया मेनू"
 msgid "Active"
 msgstr "सक्रिय"
 
-msgid "Actual"
-msgstr "वास्तविक"
-
 msgid "Add"
 msgstr "जोड़ें"
 
@@ -874,9 +871,6 @@ msgstr "{fieldLabel} घटाएँ"
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
-msgid "Default Storage Unit"
-msgstr "डिफ़ॉल्ट भंडारण इकाई"
-
 msgid "Delete"
 msgstr "हटाएं"
 
@@ -1063,9 +1057,6 @@ msgstr "अपने प्रमाणक ऐप्लिकेशन से 6-
 
 msgid "Error"
 msgstr "त्रुटि"
-
-msgid "Estimated"
-msgstr "अनुमानित"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "बैच में हर जॉब इन चरणों का पालन करता है। सभी के लिए एक बार में एक चरण रिकॉर्ड करें।"
@@ -1357,6 +1348,9 @@ msgstr "अपर्याप्त मात्रा"
 msgid "Inventory"
 msgstr "इन्वेंटरी"
 
+msgid "Inventory action"
+msgstr "इन्वेंटरी कार्रवाई"
+
 msgid "Inventory adjustment completed"
 msgstr "इन्वेंटरी समायोजन पूर्ण हुआ"
 
@@ -1540,6 +1534,9 @@ msgstr "स्थानीय"
 
 msgid "Location"
 msgstr "स्थान"
+
+msgid "Location not known"
+msgstr "स्थान ज्ञात नहीं है"
 
 msgid "Locations"
 msgstr "स्थान"
@@ -3011,6 +3008,9 @@ msgstr "चरण"
 msgid "Steps are missing"
 msgstr "चरण गायब हैं"
 
+msgid "Stock at:"
+msgstr "स्टॉक का स्थान:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3043,9 @@ msgstr "सब-असेंबली {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "सब-असेंबली {0} · {1} — स्वयं पर दिखाया गया"
+
+msgid "Subassembly"
+msgstr "सब-असेंबली"
 
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
@@ -3368,6 +3371,9 @@ msgstr "रेखांकित"
 
 msgid "Undo"
 msgstr "पूर्ववत् करें"
+
+msgid "Unissue"
+msgstr "जारी करना रद्द करें"
 
 msgid "Unissued serial/batch materials"
 msgstr "अजारी सीरीज़/बैच सामग्री"

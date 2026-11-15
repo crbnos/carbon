@@ -285,9 +285,6 @@ msgstr "Menu de ações"
 msgid "Active"
 msgstr "Ativo"
 
-msgid "Actual"
-msgstr "Real"
-
 msgid "Add"
 msgstr "Adicionar"
 
@@ -874,9 +871,6 @@ msgstr "Diminuir {fieldLabel}"
 msgid "Default"
 msgstr "Padrão"
 
-msgid "Default Storage Unit"
-msgstr "Unidade de Armazenamento Padrão"
-
 msgid "Delete"
 msgstr "Excluir"
 
@@ -1063,9 +1057,6 @@ msgstr "Digite o código de 6 dígitos do seu aplicativo autenticador para retom
 
 msgid "Error"
 msgstr "Erro"
-
-msgid "Estimated"
-msgstr "Estimado"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Cada ordem de produção no lote de produção segue estas etapas. Registre uma etapa para todas elas de uma vez."
@@ -1357,6 +1348,9 @@ msgstr "Quantidade insuficiente"
 msgid "Inventory"
 msgstr "Inventário"
 
+msgid "Inventory action"
+msgstr "Ação de inventário"
+
 msgid "Inventory adjustment completed"
 msgstr "Ajuste de estoque concluído"
 
@@ -1540,6 +1534,9 @@ msgstr "Local"
 
 msgid "Location"
 msgstr "Localização"
+
+msgid "Location not known"
+msgstr "Localização desconhecida"
 
 msgid "Locations"
 msgstr "Locais"
@@ -3011,6 +3008,9 @@ msgstr "Etapas"
 msgid "Steps are missing"
 msgstr "Etapas ausentes"
 
+msgid "Stock at:"
+msgstr "Estoque em:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3043,9 @@ msgstr "Sub-montagem {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Sub-montagem {0} · {1} — mostrada separadamente"
+
+msgid "Subassembly"
+msgstr "Subconjunto"
 
 msgid "Submit anonymously"
 msgstr "Enviar anonimamente"
@@ -3368,6 +3371,9 @@ msgstr "Sublinhado"
 
 msgid "Undo"
 msgstr "Desfazer"
+
+msgid "Unissue"
+msgstr "Anular saída"
 
 msgid "Unissued serial/batch materials"
 msgstr "Materiais de série/lote não emitidos"

@@ -3092,8 +3092,9 @@ export const pickStockTransferLine = defineServiceFn({
  *
  * @remarks
  * Moves the line's picked stock back to its source storage unit. A serial-
- * or batch-tracked line needs its `trackedEntityId`. A Completed transfer is
- * refused.
+ * or batch-tracked line needs its `trackedEntityId`. Unpicking a line of a
+ * Completed transfer reopens the transfer (In Progress, or Released when no
+ * other line is picked).
  *
  * @mcp
  */

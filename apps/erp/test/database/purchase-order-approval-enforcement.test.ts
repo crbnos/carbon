@@ -79,7 +79,7 @@ type Setup = {
 // 5 × 8 = 40, in USD at rate 1, released (To Receive and Invoice: nothing
 // received or invoiced yet).
 async function fixture(setup: Setup = {}) {
-  const db = await connectLocalTestDatabase();
+  const db = await connectLocalTestDatabase({ maxConnections: 2 });
   const p = `poatest-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
   const companyId = `${p}-company`;
   const groupId = `${p}-group`;

@@ -15,6 +15,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const itemId = url.searchParams.get("itemId");
   const operationId = url.searchParams.get("operationId");
+  const locationId = url.searchParams.get("locationId");
   if (!itemId) {
     return {
       data: [],
@@ -34,6 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const result = await getSerialNumbersForItem(client, {
     itemId,
     companyId,
+    locationId: locationId ?? undefined,
     stripes
   });
 

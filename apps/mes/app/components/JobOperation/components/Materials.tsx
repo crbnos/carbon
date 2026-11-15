@@ -22,17 +22,16 @@ import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
 import {
-  LuArrowLeft,
   LuGitBranchPlus,
-  LuGitPullRequest,
   LuPackageCheck,
   LuQrCode,
   LuTriangleAlert
 } from "react-icons/lu";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
+import ItemThumbnail from "~/components/ItemThumbnail";
 import type { JobMaterialPickedItem } from "~/services/inventory.service";
 import type { BatchMaterialTotal } from "~/services/operations.service";
-import type { JobMaterial } from "~/services/types";
+import type { JobMaterial, LiveStorageUnit } from "~/services/types";
 import { useItems } from "~/stores";
 
 type MaterialRow = {
@@ -50,6 +49,53 @@ type MaterialRow = {
 
 type MaterialGroup = { parent: MaterialRow; kitChildren: MaterialRow[] };
 
+// Numbers as numbers: "B-6" before "B-12".
+const naturalOrder = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: "base"
+});
+
+/**
+ * In the order a picker walks the shelves: by the bin that holds the part
+ * (A-4, B-1, B-6, B-12), then by part. A part with no known bin, or made
+ * here, comes last.
+ */
+export function compareMaterialsByLocation(a: JobMaterial, b: JobMaterial) {
+  const aBin = pickLocation(a);
+  const bBin = pickLocation(b);
+  return (
+    Number(aBin === null) - Number(bBin === null) ||
+    naturalOrder.compare(aBin ?? "", bBin ?? "") ||
+    naturalOrder.compare(a.itemReadableId ?? "", b.itemReadableId ?? "") ||
+    (a.id ?? "").localeCompare(b.id ?? "")
+  );
+}
+
+/** The bin a part is picked from: the first one its Source shows. */
+function pickLocation(material: JobMaterial): string | null {
+  if (material.methodType === "Make to Order") return null;
+  const live = (
+    material as JobMaterial & { liveStorageUnits?: LiveStorageUnit[] }
+  ).liveStorageUnits;
+  if (!live) return material.storageUnitName ?? null;
+  return live.find((unit) => unit.quantity > 0)?.name ?? null;
+}
+
+/** The part's photo, from the items list the app already holds. */
+function MaterialThumbnail({ material }: { material: JobMaterial }) {
+  const [items] = useItems();
+  const item = items.find((i) => i.id === material.itemId);
+  return (
+    <div className="shrink-0">
+      <ItemThumbnail
+        size="md"
+        thumbnailPath={item?.thumbnailPath}
+        type={(item?.type as "Part") ?? "Part"}
+      />
+    </div>
+  );
+}
+
 function toMaterialGroups({
   materials,
   operationId,
@@ -59,9 +105,12 @@ function toMaterialGroups({
   operationId: string;
   batchMaterialTotals?: Record<string, BatchMaterialTotal> | null;
 }): MaterialGroup[] {
-  const baseMaterials = materials.filter((m) => !m.isKitComponent);
+  const byLocation = compareMaterialsByLocation;
+  const baseMaterials = materials
+    .filter((m) => !m.isKitComponent)
+    .sort(byLocation);
   const kitChildrenByParentId = new Map<string, JobMaterial[]>();
-  for (const m of materials) {
+  for (const m of materials.filter((m) => m.isKitComponent).sort(byLocation)) {
     if (!m.isKitComponent || !m.kitParentId) continue;
     kitChildrenByParentId.set(m.kitParentId, [
       ...(kitChildrenByParentId.get(m.kitParentId) ?? []),
@@ -241,6 +290,49 @@ function ExpiredConsumedBadge({ material }: { material: JobMaterial }) {
   );
 }
 
+/** Where a part comes from: the bins that hold it now, or that it is made here. */
+export function MaterialSource({ material }: { material: JobMaterial }) {
+  const { t } = useLingui();
+  const madeHere = material.methodType === "Make to Order";
+  const liveStorageUnits = (
+    material as JobMaterial & { liveStorageUnits?: LiveStorageUnit[] }
+  ).liveStorageUnits?.filter((unit) => unit.quantity > 0);
+  const locations = madeHere
+    ? [t`WIP`]
+    : liveStorageUnits
+      ? liveStorageUnits.length
+        ? liveStorageUnits.map((unit) => unit.name ?? t`Location not known`)
+        : [t`Location not known`]
+      : [material.storageUnitName ?? t`Location not known`];
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {material.methodType !== "Pull from Inventory" && (
+        <Badge variant="secondary">
+          <MethodIcon
+            type={material.methodType ?? ""}
+            isKit={material.kit ?? false}
+            className="mr-1"
+          />
+          {madeHere
+            ? material.kit
+              ? t`Kit`
+              : t`Subassembly`
+            : (material.methodType ?? t`Inventory`)}
+        </Badge>
+      )}
+      {locations.map((location, index) => (
+        <Badge key={`${location}-${index}`} variant="secondary">
+          {location}
+        </Badge>
+      ))}
+      {material.storageUnit?.effectiveNettable === false && (
+        <NonNettableBadge />
+      )}
+    </div>
+  );
+}
+
 type OperationMaterialsProps = {
   materials: JobMaterial[];
   operationId: string;
@@ -315,19 +407,6 @@ function MaterialsTable({
       </Button>
     ) : null;
 
-  const methodBadge = (material: JobMaterial) => (
-    <Badge variant="secondary">
-      <MethodIcon
-        type={material.methodType ?? ""}
-        isKit={material.kit ?? false}
-        className="mr-2"
-      />
-      {material.methodType === "Make to Order" && material.kit
-        ? t`Kit`
-        : material.methodType}
-    </Badge>
-  );
-
   const fadedIfUnrelated = (row: MaterialRow) =>
     !row.isRelatedToOperation && "opacity-50 hover:opacity-100";
 
@@ -343,10 +422,10 @@ function MaterialsTable({
               <Trans>Source</Trans>
             </Th>
             <Th className="text-sm">
-              <Trans>Estimated</Trans>
+              <Trans>Required</Trans>
             </Th>
             <Th className="text-sm">
-              <Trans>Actual</Trans>
+              <Trans>Issued</Trans>
             </Th>
             <Th className="text-right" />
           </Tr>
@@ -369,7 +448,8 @@ function MaterialsTable({
                   <Tr className={cn("[&>td]:py-3", fadedIfUnrelated(parent))}>
                     <Td className="max-w-[20vw]">
                       <HStack spacing={2} className="justify-between min-w-0">
-                        <VStack spacing={0} className="min-w-0">
+                        <MaterialThumbnail material={material} />
+                        <VStack spacing={0} className="min-w-0 flex-1">
                           <span className="font-semibold text-base truncate max-w-full">
                             {getItemReadableId(items, material.itemId ?? "")}
                           </span>
@@ -390,26 +470,7 @@ function MaterialsTable({
                       </HStack>
                     </Td>
                     <Td className="hidden lg:table-cell">
-                      <div className="flex flex-row items-center gap-1">
-                        {methodBadge(material)}
-                        <LuArrowLeft
-                          className={cn(
-                            material.methodType === "Make to Order"
-                              ? "rotate-180"
-                              : ""
-                          )}
-                        />
-                        <Badge variant="secondary">
-                          <LuGitPullRequest className="size-3 mr-1" />
-                          {material.storageUnitName ??
-                            (material.methodType === "Make to Order"
-                              ? t`WIP`
-                              : t`Default Storage Unit`)}
-                        </Badge>
-                        {material.storageUnit?.effectiveNettable === false && (
-                          <NonNettableBadge />
-                        )}
-                      </div>
+                      <MaterialSource material={material} />
                     </Td>
                     <Td>
                       {estimatedQuantity(material, parentIsSerial)}
@@ -444,7 +505,8 @@ function MaterialsTable({
                     >
                       <Td className="pl-10 max-w-[20vw]">
                         <HStack spacing={2} className="justify-between min-w-0">
-                          <VStack spacing={0} className="min-w-0">
+                          <MaterialThumbnail material={child.material} />
+                          <VStack spacing={0} className="min-w-0 flex-1">
                             <span className="font-semibold truncate max-w-full">
                               {getItemReadableId(
                                 items,
@@ -467,7 +529,7 @@ function MaterialsTable({
                         </HStack>
                       </Td>
                       <Td className="lg:table-cell hidden">
-                        {methodBadge(child.material)}
+                        <MaterialSource material={child.material} />
                       </Td>
                       <Td>
                         {estimatedQuantity(child.material, parentIsSerial)}
@@ -514,6 +576,7 @@ function MaterialsList({
           !row.isRelatedToOperation && "opacity-50"
         )}
       >
+        <MaterialThumbnail material={material} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-baseline justify-between gap-2">
             <span className="truncate font-semibold">
@@ -530,6 +593,7 @@ function MaterialsList({
               {material.description}
             </span>
           ) : null}
+          <MaterialSource material={material} />
           <div className="flex flex-wrap items-center gap-1">
             <TrackingBadge material={material} />
             <ExpiredConsumedBadge material={material} />

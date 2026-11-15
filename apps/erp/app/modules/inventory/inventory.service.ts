@@ -58,6 +58,7 @@ import { toJson } from "@carbon/database/json";
 import {
   allocateAcrossBudgets,
   type BinStock,
+  chooseSourceBin,
   getOperationLinesideBin,
   getPickedBudgets,
   type LinesideClaim,
@@ -930,6 +931,30 @@ export async function getStockTransferLines(
     .eq("stockTransferId", stockTransferId)
     .order("itemReadableId", { ascending: true })
     .order("createdAt", { ascending: true });
+}
+
+/** Where each line's stock is now: the bins a pick can take it from. */
+export async function getStockTransferLiveBins(
+  client: SupabaseClient<Database>,
+  stockTransferId: string,
+  companyId: string
+) {
+  const result = await client.rpc("get_stock_transfer_live_bins", {
+    p_company_id: companyId,
+    p_stock_transfer_id: stockTransferId
+  });
+  const bins = new Map<string, PickingListLiveBin[]>();
+  if (result.error) return { data: bins, error: result.error };
+  for (const row of result.data) {
+    const list = bins.get(row.stockTransferLineId) ?? [];
+    list.push({
+      id: row.storageUnitId,
+      name: row.storageUnitName,
+      quantity: row.quantity
+    });
+    bins.set(row.stockTransferLineId, list);
+  }
+  return { data: bins, error: null };
 }
 
 export async function getStockTransferTracking(
@@ -5258,7 +5283,7 @@ export async function getPickingListLines(
   return client
     .from("pickingListLine")
     .select(
-      "*, item(name, readableId, itemTrackingType, unitOfMeasureCode), jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
+      "*, item(name, readableId, itemTrackingType, unitOfMeasureCode, thumbnailPath, modelUpload:modelUploadId(thumbnailPath)), jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
     )
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")
@@ -5323,6 +5348,38 @@ export async function getPickingListAvailability(
     );
   }
   return map;
+}
+
+/** A bin that holds stock a picking list line can draw now. `id` and `name`
+ *  are null for stock in no storage unit. */
+export type PickingListLiveBin = {
+  id: string | null;
+  name: string | null;
+  quantity: number;
+};
+
+/** Current positive warehouse stock by bin for each line on one picking list. */
+export async function getPickingListLiveBins(
+  client: SupabaseClient<Database>,
+  pickingListId: string,
+  companyId: string
+) {
+  const result = await client.rpc("get_picking_list_live_bins", {
+    p_company_id: companyId,
+    p_picking_list_id: pickingListId
+  });
+  const bins = new Map<string, PickingListLiveBin[]>();
+  if (result.error) return { data: bins, error: result.error };
+  for (const row of result.data) {
+    const list = bins.get(row.pickingListLineId) ?? [];
+    list.push({
+      id: row.storageUnitId,
+      name: row.storageUnitName,
+      quantity: row.quantity
+    });
+    bins.set(row.pickingListLineId, list);
+  }
+  return { data: bins, error: null };
 }
 
 export type PickingListRecommendation = {
@@ -8675,7 +8732,9 @@ export async function stockTransferLineOf(
   if (!line.data) {
     return ctx.error("notFound", "Stock transfer line not found");
   }
-  if (line.data.stockTransfer?.status === "Completed") {
+  // An unpick is how a wrong pick is undone, also after the last pick
+  // completed the transfer: the posting reopens it.
+  if (forPick && line.data.stockTransfer?.status === "Completed") {
     return ctx.error("rule", "Cannot pick from a completed stock transfer.");
   }
   // Release runs the storage rules, so a Draft is not picked. Unpicking stays
@@ -11535,6 +11594,8 @@ async function lockStockTransferForPick(
     companyId: string;
     locationId: string;
     picking: boolean;
+    /** The line an unpick takes back: it reopens a Completed transfer. */
+    stockTransferLineId?: string;
   }
 ) {
   const transfer = await trx
@@ -11550,7 +11611,32 @@ async function lockStockTransferForPick(
     throw new InvalidInputError("The stock transfer is at another location");
   }
   if (transfer.status === "Completed") {
-    throw new InvalidInputError("Cannot pick from a completed stock transfer.");
+    if (input.picking) {
+      throw new InvalidInputError(
+        "Cannot pick from a completed stock transfer."
+      );
+    }
+    // A transfer completes by itself when its last line is picked (a one-line
+    // kanban refill completes on its only pick), so a wrong pick must still be
+    // undone: the unpick reopens it, in this transaction.
+    const otherPicked = await trx
+      .selectFrom("stockTransferLine")
+      .select("id")
+      .where("stockTransferId", "=", input.stockTransferId)
+      .where("companyId", "=", input.companyId)
+      .where("id", "!=", input.stockTransferLineId ?? "")
+      .where("pickedQuantity", ">", 0)
+      .limit(1)
+      .executeTakeFirst();
+    await trx
+      .updateTable("stockTransfer")
+      .set({
+        status: otherPicked ? "In Progress" : "Released",
+        completedAt: null
+      })
+      .where("id", "=", input.stockTransferId)
+      .where("companyId", "=", input.companyId)
+      .execute();
   }
   if (input.picking && transfer.status === "Draft") {
     throw new InvalidInputError(STOCK_TRANSFER_NOT_RELEASED);
@@ -11734,7 +11820,8 @@ export async function postStockTransfer(
           stockTransferId,
           companyId,
           locationId,
-          picking: false
+          picking: false,
+          stockTransferLineId
         });
         // Get stock transfer line details
         const stockTransferLine = await trx
@@ -12270,7 +12357,8 @@ export async function postStockTransfer(
           stockTransferId,
           companyId,
           locationId,
-          picking: false
+          picking: false,
+          stockTransferLineId
         });
         // Lock the line AND the entity: an unpick read-modify-writes the
         // entity's quantity/status and the line's pickedQuantity, so two
@@ -12420,7 +12508,8 @@ export async function postStockTransfer(
           stockTransferId,
           companyId,
           locationId,
-          picking: false
+          picking: false,
+          stockTransferLineId
         });
         // Lock the line AND the entity: an unpick read-modify-writes the
         // entity's quantity/status and the line's pickedQuantity, so two
@@ -25394,34 +25483,66 @@ export async function postPicking(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
-        await assertPickSourceNettable(trx, companyId, line.storageUnitId);
-
-        const inserts: ItemLedgerInsert[] = [
+        const nextQuantity = resolvePick({
+          lineQuantity: line.quantityToPick ?? 0,
+          pickedQuantity: line.quantityPicked ?? 0,
+          transferQuantity: quantity
+        });
+        await lockUntrackedDraws(trx, {
+          companyId,
+          locationId,
+          itemIds: [line.itemId]
+        });
+        const bins =
+          (
+            await getUntrackedBinStock(trx, {
+              companyId,
+              itemIds: [line.itemId],
+              locationId,
+              stripes: [line.projectId ?? null]
+            })
+          ).get(line.itemId) ?? [];
+        const nettableBins = bins.filter((bin) => bin.nettable);
+        const sourceStorageUnitId = chooseSourceBin({
+          bins: nettableBins,
+          preferredStorageUnitId: line.storageUnitId,
+          quantity
+        });
+        const draws = planStripedUntrackedDraw({
+          bins: nettableBins,
+          stripes: [line.projectId ?? null],
+          preferredStorageUnitId: sourceStorageUnitId,
+          quantity
+        });
+        await assertPickSourceNettable(trx, companyId, sourceStorageUnitId);
+        const inserts: ItemLedgerInsert[] = draws.flatMap((draw) => [
           {
             postingDate: today,
             itemId: line.itemId,
-            quantity: round(-quantity),
+            quantity: round(-draw.quantity),
             locationId,
-            storageUnitId: line.storageUnitId,
+            storageUnitId: draw.storageUnitId,
             entryType: "Transfer",
             documentType: "Direct Transfer",
             documentId: pickingListId,
+            documentLineId: pickingListLineId,
             createdBy: userId,
             companyId
           },
           {
             postingDate: today,
             itemId: line.itemId,
-            quantity: round(quantity),
+            quantity: round(draw.quantity),
             locationId,
             storageUnitId: line.toStorageUnitId,
             entryType: "Transfer",
             documentType: "Direct Transfer",
             documentId: pickingListId,
+            documentLineId: pickingListLineId,
             createdBy: userId,
             companyId
           }
-        ];
+        ]);
 
         // Both legs carry the line's stripe: a pick moves the stock it drew.
         await trx
@@ -25432,11 +25553,11 @@ export async function postPicking(
         await trx
           .updateTable("pickingListLine")
           .set({
-            quantityPicked: resolvePick({
-              lineQuantity: Number(line.quantityToPick ?? 0),
-              pickedQuantity: Number(line.quantityPicked ?? 0),
-              transferQuantity: quantity
-            }),
+            quantityPicked: nextQuantity,
+            storageUnitId:
+              (line.quantityPicked ?? 0) > 0
+                ? line.storageUnitId
+                : sourceStorageUnitId,
             status: "Picked",
             updatedBy: userId,
             updatedAt: datetime.timestamp()
@@ -25474,32 +25595,95 @@ export async function postPicking(
           .forUpdate()
           .executeTakeFirstOrThrow();
 
-        const inserts: ItemLedgerInsert[] = [
+        // The request was calculated from a prior read. A repeated or stale
+        // unpick must never return more stock than this line still holds.
+        const quantityToUnpick = Math.min(
+          round(quantity),
+          Math.max(0, round(line.quantityPicked ?? 0))
+        );
+        if (quantityToUnpick <= 0) return;
+        const sourceRows = await trx
+          .selectFrom("itemLedger")
+          .select(["storageUnitId", "quantity"])
+          .where("companyId", "=", companyId)
+          .where("documentType", "=", "Direct Transfer")
+          .where("documentId", "=", pickingListId)
+          .where("documentLineId", "=", pickingListLineId)
+          .where("itemId", "=", line.itemId)
+          .where("locationId", "=", locationId)
+          .orderBy("entryNumber", "desc")
+          .execute();
+        const sourceBalances = new Map<string | null, number>();
+        for (const row of sourceRows) {
+          if (row.storageUnitId === line.toStorageUnitId) continue;
+          sourceBalances.set(
+            row.storageUnitId,
+            round((sourceBalances.get(row.storageUnitId) ?? 0) - row.quantity)
+          );
+        }
+        const taggedPicked = [...sourceBalances.values()].reduce(
+          (sum, balance) => round(sum + Math.max(0, balance)),
+          0
+        );
+        let left = quantityToUnpick;
+        const returns: {
+          storageUnitId: string | null;
+          quantity: number;
+          tagged: boolean;
+        }[] = [];
+        for (const [storageUnitId, balance] of sourceBalances) {
+          const take = round(Math.min(left, Math.max(0, balance)));
+          if (take <= 0) continue;
+          returns.push({ storageUnitId, quantity: take, tagged: true });
+          left = round(left - take);
+          if (left <= 0) break;
+        }
+        const legacyPicked = Math.max(
+          0,
+          round((line.quantityPicked ?? 0) - taggedPicked)
+        );
+        if (left > 0 && legacyPicked > 0) {
+          const take = round(Math.min(left, legacyPicked));
+          returns.push({
+            storageUnitId: line.storageUnitId,
+            quantity: take,
+            tagged: false
+          });
+          left = round(left - take);
+        }
+        if (left > 0) {
+          throw new InvalidInputError(
+            "The picked source quantities do not balance"
+          );
+        }
+        const inserts: ItemLedgerInsert[] = returns.flatMap((returned) => [
           {
             postingDate: today,
             itemId: line.itemId,
-            quantity: round(-quantity),
+            quantity: round(-returned.quantity),
             locationId,
             storageUnitId: line.toStorageUnitId,
             entryType: "Transfer",
             documentType: "Direct Transfer",
             documentId: pickingListId,
+            documentLineId: returned.tagged ? pickingListLineId : null,
             createdBy: userId,
             companyId
           },
           {
             postingDate: today,
             itemId: line.itemId,
-            quantity: round(quantity),
+            quantity: returned.quantity,
             locationId,
-            storageUnitId: line.storageUnitId,
+            storageUnitId: returned.storageUnitId,
             entryType: "Transfer",
             documentType: "Direct Transfer",
             documentId: pickingListId,
+            documentLineId: returned.tagged ? pickingListLineId : null,
             createdBy: userId,
             companyId
           }
-        ];
+        ]);
 
         // Both legs carry the line's stripe: a pick moves the stock it drew.
         await trx
@@ -25512,7 +25696,7 @@ export async function postPicking(
           .set({
             quantityPicked: Math.max(
               0,
-              round(round(Number(line.quantityPicked ?? 0)) - round(quantity))
+              round(round(line.quantityPicked ?? 0) - quantityToUnpick)
             ),
             status: "Pending",
             updatedBy: userId,
@@ -31238,11 +31422,9 @@ export async function issueMaterial(
             .executeTakeFirst()
         ]);
 
-        // The stock stripes this job's demand may draw: a return goes back
-        // to the first of them (Projects Phase 2a).
+        // The stock stripes this job's demand may draw (Projects Phase 2a).
         const stripes = await loadDemandStripes(trx, companyId, job?.projectId);
-        // A quantity of untracked stock at one bin: a return goes to the
-        // job's first stripe, a draw takes the stripes in order.
+        // A draw at one bin takes the stripes in order.
         const untrackedRows = async (
           rowItemId: string,
           storageUnitId: string | null | undefined,
@@ -31268,6 +31450,74 @@ export async function issueMaterial(
           (await untrackedRows(rowItemId, storageUnitId, signedQuantity)).map(
             (row) => ({ ...row, storageUnitId })
           );
+        const reverseUntrackedIssues = async (
+          rowItemId: string,
+          jobId: string,
+          operationIds: string[],
+          returnQuantity: number
+        ) => {
+          // Net every untracked draw of the item on this job by bin and
+          // stripe. A completion backflush writes no operation (the job's SQL
+          // backflush) or another operation's, so the operation only orders
+          // the sources: its own draws are returned first.
+          const priorDraws = (
+            await trx
+              .selectFrom("itemLedger")
+              .select([
+                "storageUnitId",
+                "projectId",
+                (eb) => eb.fn.sum<number>("quantity").as("balance"),
+                sql<
+                  number | null
+                >`max("entryNumber") filter (where "quantity" < 0)`.as(
+                  "latestDraw"
+                ),
+                sql<
+                  number | null
+                >`max("entryNumber") filter (where "quantity" < 0 and "documentLineId" in (${sql.join(operationIds)}))`.as(
+                  "latestOwnDraw"
+                )
+              ])
+              .where("companyId", "=", companyId)
+              .where("documentType", "=", "Job Consumption")
+              .where("documentId", "=", jobId)
+              .where("itemId", "=", rowItemId)
+              .where("locationId", "=", job?.locationId!)
+              .where("entryType", "=", "Consumption")
+              .where("trackedEntityId", "is", null)
+              .groupBy(["storageUnitId", "projectId"])
+              .execute()
+          ).sort(
+            (a, b) =>
+              Number(b.latestOwnDraw ?? -1) - Number(a.latestOwnDraw ?? -1) ||
+              Number(b.latestDraw ?? -1) - Number(a.latestDraw ?? -1)
+          );
+          let left = round(returnQuantity);
+          const returned: {
+            storageUnitId: string | null;
+            stripe: string | null;
+            quantity: number;
+          }[] = [];
+          for (const draw of priorDraws) {
+            const take = round(
+              Math.min(left, Math.max(0, -Number(draw.balance)))
+            );
+            if (take <= 0) continue;
+            returned.push({
+              storageUnitId: draw.storageUnitId,
+              stripe: draw.projectId ?? null,
+              quantity: take
+            });
+            left = round(left - take);
+            if (left <= 0) break;
+          }
+          if (left > 0) {
+            throw new InvalidInputError(
+              "The issued source quantities do not balance"
+            );
+          }
+          return returned;
+        };
         // A draw no bin rule decides, net of the rows this call planned.
         const planBinDraws = async (
           rowItemId: string,
@@ -31376,6 +31626,18 @@ export async function issueMaterial(
 
           // Rounded once here: it drives the ledger rows, the budget
           // allocation and the quantityIssued write below.
+          const previouslyIssued = Math.max(
+            0,
+            round(material.quantityIssued ?? 0)
+          );
+          if (
+            adjustmentType === "Positive Adjmt." &&
+            round(quantity) > previouslyIssued
+          ) {
+            throw new InvalidInputError(
+              "Cannot unissue more than the material's issued quantity"
+            );
+          }
           const quantityToIssue = round(
             adjustmentType === "Positive Adjmt."
               ? Number(quantity)
@@ -31455,29 +31717,35 @@ export async function issueMaterial(
                 });
               }
               const rows =
-                !strictSettings?.strict &&
-                adjustmentType !== "Positive Adjmt." &&
-                remaining > 0
-                  ? await planBinDraws(
+                adjustmentType === "Positive Adjmt."
+                  ? await reverseUntrackedIssues(
                       material.itemId,
-                      material.storageUnitId ??
-                        (material.defaultStorageUnit
-                          ? await getNettableDefaultStorageUnitId(
-                              trx,
-                              material.itemId,
-                              job?.locationId!,
-                              companyId
-                            )
-                          : null),
+                      material.jobId,
+                      pluckUnique(
+                        [id, material.jobOperationId],
+                        (operationId) => operationId
+                      ),
                       Number(remaining)
                     )
-                  : await binRows(
-                      material.itemId,
-                      storageUnitId ?? null,
-                      adjustmentType === "Positive Adjmt."
-                        ? Number(remaining)
-                        : -Number(remaining)
-                    );
+                  : !strictSettings?.strict && remaining > 0
+                    ? await planBinDraws(
+                        material.itemId,
+                        material.storageUnitId ??
+                          (material.defaultStorageUnit
+                            ? await getNettableDefaultStorageUnitId(
+                                trx,
+                                material.itemId,
+                                job?.locationId!,
+                                companyId
+                              )
+                            : null),
+                        Number(remaining)
+                      )
+                    : await binRows(
+                        material.itemId,
+                        storageUnitId ?? null,
+                        -Number(remaining)
+                      );
               for (const row of rows) {
                 itemLedgerInserts.push({
                   entryType: "Consumption",
@@ -31537,28 +31805,33 @@ export async function issueMaterial(
               companyId
             );
             const rows =
-              adjustmentType !== "Positive Adjmt." && Number(quantity) > 0
-                ? await planBinDraws(
+              adjustmentType === "Positive Adjmt."
+                ? await reverseUntrackedIssues(
                     itemId!,
-                    defaultStorageUnitId,
+                    jobOperation.jobId,
+                    [id],
                     Number(quantity)
                   )
-                : await binRows(
-                    itemId!,
-                    defaultStorageUnitId ??
-                      (
-                        await getStorageUnitWithHighestQuantity(trx, {
-                          companyId,
-                          itemId: itemId,
-                          locationId: job?.locationId!,
-                          stripes
-                        })
-                      )?.storageUnitId ??
-                      null,
-                    adjustmentType === "Positive Adjmt."
-                      ? Number(quantity)
-                      : -Number(quantity)
-                  );
+                : Number(quantity) > 0
+                  ? await planBinDraws(
+                      itemId!,
+                      defaultStorageUnitId,
+                      Number(quantity)
+                    )
+                  : await binRows(
+                      itemId!,
+                      defaultStorageUnitId ??
+                        (
+                          await getStorageUnitWithHighestQuantity(trx, {
+                            companyId,
+                            itemId: itemId,
+                            locationId: job?.locationId!,
+                            stripes
+                          })
+                        )?.storageUnitId ??
+                        null,
+                      -Number(quantity)
+                    );
             storageUnitId = rows[0]?.storageUnitId ?? null;
 
             for (const row of rows) {

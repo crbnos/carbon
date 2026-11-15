@@ -285,9 +285,6 @@ msgstr "Action Menu"
 msgid "Active"
 msgstr "Active"
 
-msgid "Actual"
-msgstr "Actual"
-
 msgid "Add"
 msgstr "Add"
 
@@ -874,9 +871,6 @@ msgstr "Decrease {fieldLabel}"
 msgid "Default"
 msgstr "Default"
 
-msgid "Default Storage Unit"
-msgstr "Default Storage Unit"
-
 msgid "Delete"
 msgstr "Delete"
 
@@ -1063,9 +1057,6 @@ msgstr "Enter the 6-digit code from your authenticator app to resume."
 
 msgid "Error"
 msgstr "Error"
-
-msgid "Estimated"
-msgstr "Estimated"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Every job in the batch follows these steps. Record a step for all of them at once."
@@ -1357,6 +1348,9 @@ msgstr "Insufficient quantity"
 msgid "Inventory"
 msgstr "Inventory"
 
+msgid "Inventory action"
+msgstr "Inventory action"
+
 msgid "Inventory adjustment completed"
 msgstr "Inventory adjustment completed"
 
@@ -1540,6 +1534,9 @@ msgstr "Local"
 
 msgid "Location"
 msgstr "Location"
+
+msgid "Location not known"
+msgstr "Location not known"
 
 msgid "Locations"
 msgstr "Locations"
@@ -3011,6 +3008,9 @@ msgstr "Steps"
 msgid "Steps are missing"
 msgstr "Steps are missing"
 
+msgid "Stock at:"
+msgstr "Stock at:"
+
 msgid "Stock transfer"
 msgstr "Stock transfer"
 
@@ -3043,6 +3043,9 @@ msgstr "Sub-Assembly {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Sub-Assembly {0} · {1} — shown on its own"
+
+msgid "Subassembly"
+msgstr "Subassembly"
 
 msgid "Submit anonymously"
 msgstr "Submit anonymously"
@@ -3368,6 +3371,9 @@ msgstr "Underline"
 
 msgid "Undo"
 msgstr "Undo"
+
+msgid "Unissue"
+msgstr "Unissue"
 
 msgid "Unissued serial/batch materials"
 msgstr "Unissued serial/batch materials"

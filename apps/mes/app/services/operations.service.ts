@@ -54,7 +54,12 @@ import type {
 } from "./models";
 import { inspectionFailedResult } from "./models";
 import { planStepBackflush } from "./step-backflush";
-import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
+import type {
+  BaseOperationWithDetails,
+  Job,
+  LiveStorageUnit,
+  StorageItem
+} from "./types";
 
 const log = getLogger("mes", "operations");
 
@@ -1732,6 +1737,49 @@ export async function getJobMaterialsByOperationId(
     );
 
     materials.data = [...(materials.data ?? []), ...processedKittedMaterials];
+  }
+
+  const inventoryItemIds = [
+    ...new Set(
+      (materials.data ?? [])
+        .filter((material) => material.methodType === "Pull from Inventory")
+        .map((material) => material.itemId)
+        .filter((itemId): itemId is string => !!itemId)
+    )
+  ];
+  const companyId = materials.data?.[0]?.companyId;
+  const live =
+    inventoryItemIds.length > 0 && companyId
+      ? await client.rpc("get_job_issue_bins", {
+          p_company_id: companyId,
+          p_job_id: operation.jobId,
+          p_item_ids: inventoryItemIds
+        })
+      : null;
+  if (live?.error) {
+    // The bins are a display aid: without them a material shows the bin it
+    // names, so a failed read does not fail the operation page.
+    log.error("Failed to read the issue bins of a job", {
+      jobId: operation.jobId,
+      error: live.error
+    });
+  } else if (live && materials.data) {
+    const binsByItem = new Map<string, LiveStorageUnit[]>();
+    for (const bin of live.data) {
+      const bins = binsByItem.get(bin.itemId) ?? [];
+      bins.push({
+        id: bin.storageUnitId,
+        name: bin.storageUnitName,
+        quantity: bin.quantity
+      });
+      binsByItem.set(bin.itemId, bins);
+    }
+    materials.data = materials.data.map((material) => ({
+      ...material,
+      liveStorageUnits: material.itemId
+        ? (binsByItem.get(material.itemId) ?? [])
+        : []
+    }));
   }
 
   // Step assignment (Phase 2: part ↔ step, many-to-many). The make-method view doesn't carry

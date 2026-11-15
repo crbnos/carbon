@@ -17321,6 +17321,9 @@ msgstr "위치 / 항목"
 msgid "Location Name"
 msgstr "위치 이름"
 
+msgid "Location not known"
+msgstr "보관 위치를 알 수 없습니다"
+
 msgid "Location ownership updated"
 msgstr "사업장 소유권 업데이트"
 
@@ -23962,6 +23965,10 @@ msgstr "출하 수량"
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "{lineNumber} 라인 대변 수량"
 
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
+
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} 반품 수량"
 
@@ -28840,6 +28847,9 @@ msgstr "재고"
 
 msgid "Stock and planning"
 msgstr "재고 및 계획"
+
+msgid "Stock at:"
+msgstr ""
 
 msgid "Stock Availability"
 msgstr "재고 가용성"

@@ -8,6 +8,7 @@ import { getErrorMessage, requireAffected } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type ErpPostingInput, erpPosting } from "~/services/erp";
 import { isPickingListLocked } from "~/services/models";
+import type { LiveStorageUnit } from "~/services/types";
 
 export async function getAssignedPickingLists(
   client: SupabaseClient<Database>,
@@ -68,12 +69,14 @@ export async function getAssignedPickingLists(
 
 export async function getPickingListForExecution(
   client: SupabaseClient<Database>,
-  pickingListId: string
+  pickingListId: string,
+  companyId: string
 ) {
   const { data: pickingList, error: plError } = await client
     .from("pickingList")
     .select("*, location:location(name)")
     .eq("id", pickingListId)
+    .eq("companyId", companyId)
     .single();
 
   if (plError || !pickingList) return { data: null, error: plError };
@@ -84,6 +87,7 @@ export async function getPickingListForExecution(
       "*, item:item(name, readableId, unitOfMeasureCode), jobMaterial:jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job:job(jobId), jobOperation:jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name)"
     )
     .eq("pickingListId", pickingListId)
+    .eq("companyId", companyId)
     // The ERP picking list reads the same order: line numbers are positions.
     .order("jobOperationId")
     .order("storageUnitId")
@@ -93,27 +97,35 @@ export async function getPickingListForExecution(
   if (lineError) return { data: null, error: lineError };
 
   const lineIds = lines?.map((l) => l.id) ?? [];
-  const { data: trackedEntities } =
+  const [trackedResult, binsResult] = await Promise.all([
     lineIds.length > 0
-      ? await client
+      ? client
           .from("pickingListLineTrackedEntity")
           .select("*, trackedEntity:trackedEntity(readableId, quantity)")
           .in("pickingListLineId", lineIds)
-      : { data: [] };
+      : Promise.resolve({ data: [], error: null }),
+    client.rpc("get_picking_list_live_bins", {
+      p_company_id: companyId,
+      p_picking_list_id: pickingListId
+    })
+  ]);
+  if (trackedResult.error || binsResult.error) {
+    return {
+      data: null,
+      error: trackedResult.error ?? binsResult.error
+    };
+  }
+  const trackedEntities = trackedResult.data;
 
-  // Warehouse on-hand per line (incl. the unassigned/null bin) → drives the
-  // "No Stock" warning. A null source bin is not a shortage if there's on-hand.
-  const availabilityResult = await client.rpc("get_picking_list_availability", {
-    p_picking_list_id: pickingListId
-  });
-  const availability = new Map<string, number>();
-  for (const row of availabilityResult.data ?? []) {
-    availability.set(
-      (row as { pickingListLineId: string }).pickingListLineId,
-      Number(
-        (row as { availableQuantity?: number | null }).availableQuantity ?? 0
-      )
-    );
+  const liveBins = new Map<string, LiveStorageUnit[]>();
+  for (const row of binsResult.data ?? []) {
+    const bins = liveBins.get(row.pickingListLineId) ?? [];
+    bins.push({
+      id: row.storageUnitId,
+      name: row.storageUnitName,
+      quantity: row.quantity
+    });
+    liveBins.set(row.pickingListLineId, bins);
   }
 
   return {
@@ -121,7 +133,7 @@ export async function getPickingListForExecution(
       ...pickingList,
       lines: lines?.map((line) => ({
         ...line,
-        availableQuantity: availability.get(line.id) ?? 0,
+        liveStorageUnits: liveBins.get(line.id) ?? [],
         trackedEntities:
           trackedEntities?.filter((te) => te.pickingListLineId === line.id) ??
           []

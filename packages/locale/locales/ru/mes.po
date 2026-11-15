@@ -285,9 +285,6 @@ msgstr "Меню действий"
 msgid "Active"
 msgstr "Активные"
 
-msgid "Actual"
-msgstr "Факт"
-
 msgid "Add"
 msgstr "Добавить"
 
@@ -874,9 +871,6 @@ msgstr "Уменьшить {fieldLabel}"
 msgid "Default"
 msgstr "По умолчанию"
 
-msgid "Default Storage Unit"
-msgstr "Единица хранения по умолчанию"
-
 msgid "Delete"
 msgstr "Удалить"
 
@@ -1063,9 +1057,6 @@ msgstr "Введите 6-значный код из приложения аут�
 
 msgid "Error"
 msgstr "Ошибка"
-
-msgid "Estimated"
-msgstr "План"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Каждый производственный заказ в серии следует этим шагам. Запишите шаг для всех одновременно."
@@ -1357,6 +1348,9 @@ msgstr "Недостаточное количество"
 msgid "Inventory"
 msgstr "Запасы"
 
+msgid "Inventory action"
+msgstr "Действие с запасами"
+
 msgid "Inventory adjustment completed"
 msgstr "Корректировка запасов выполнена"
 
@@ -1540,6 +1534,9 @@ msgstr "Локально"
 
 msgid "Location"
 msgstr "Расположение"
+
+msgid "Location not known"
+msgstr "Неизвестное местоположение"
 
 msgid "Locations"
 msgstr "Площадки"
@@ -3011,6 +3008,9 @@ msgstr "Шаги"
 msgid "Steps are missing"
 msgstr "Шаги не заполнены"
 
+msgid "Stock at:"
+msgstr "Запасы в:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3043,9 @@ msgstr "Под-узел {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Под-узел {0} · {1} — показывается отдельно"
+
+msgid "Subassembly"
+msgstr "Узел"
 
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"
@@ -3368,6 +3371,9 @@ msgstr "Подчёркнутый"
 
 msgid "Undo"
 msgstr "Отменить"
+
+msgid "Unissue"
+msgstr "Отменить выдачу"
 
 msgid "Unissued serial/batch materials"
 msgstr "Невыданные серийные/партионные материалы"

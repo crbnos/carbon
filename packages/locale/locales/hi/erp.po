@@ -17321,6 +17321,9 @@ msgstr "स्थान / आइटम"
 msgid "Location Name"
 msgstr "स्थान का नाम"
 
+msgid "Location not known"
+msgstr "स्थान ज्ञात नहीं है"
+
 msgid "Location ownership updated"
 msgstr "स्थान स्वामित्व अपडेट किया गया"
 
@@ -23962,6 +23965,10 @@ msgstr "भेजी गई मात्रा"
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "पंक्ति {lineNumber} के लिए जमा की जाने वाली मात्रा"
 
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
+
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} के लिए लौटाई जाने वाली मात्रा"
 
@@ -28840,6 +28847,9 @@ msgstr "स्टॉक"
 
 msgid "Stock and planning"
 msgstr "स्टॉक और योजना"
+
+msgid "Stock at:"
+msgstr ""
 
 msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"

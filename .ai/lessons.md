@@ -6,6 +6,46 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Issue-bin displays preserve stock stripes and picked ownership
+
+**Context:** A batched MES query reports the bins a job can issue from, including stock picked to a work center.
+
+**Problem:** Summing project and common ledger rows before testing for positive stock hid a positive project bin behind a negative common balance. Excluding every lineside bin hid stock already picked for the job.
+
+**Rule:** Test positive on-hand per eligible `(item, bin, projectId)` stripe, then combine display quantities. Show lineside stock only when the job has an outstanding picked claim at that bin, net of its consumption.
+
+**Applies to:** Issue-location reads, stock availability badges, and any query that merges warehouse and picked lineside stock.
+
+## Reverse inventory from the original ledger sources
+
+**Context:** Picking a material in stages and unissuing project-job inventory.
+
+**Problem:** A saved bin can empty between picks, and a project job can consume both project and common stock. Reusing the saved bin or default project stripe for a reversal changes physical or ownership balances.
+
+**Rule:** Resolve stock after the draw lock for every pick, record its source per line, and reverse outstanding quantities by their original bin and stripe. Find the rows to reverse by document and item, not by a tag only some writers set: the job-completion backflush writes `Job Consumption` rows with no `documentLineId`. A refusal the person can act on is an `InvalidInputError`; a plain `Error` reads as a 500 and its text is withheld.
+
+**Applies to:** Picking transfers, unpick, job consumption, and unissue.
+
+## Typed quantities do not need Number wrappers
+
+**Context:** Showing issued quantities and current bin stock in MES and ERP.
+
+**Problem:** New code wrapped `number` and nullable `number` values in `Number(...)`, adding noise around ordinary comparisons and arithmetic.
+
+**Rule:** Use a typed quantity directly, with `?? 0` when it is nullable. Convert only at a boundary where the value can actually be a string.
+
+**Applies to:** MES quantity displays, inventory RPC results, and ERP posting code using parsed numeric inputs.
+
+## Review the deployable diff, including new files
+
+**Context:** Adding MES bin loaders backed by new database RPCs.
+
+**Problem:** The service and UI changes were visible in the diff, but the new route and migration were untracked, so deploying the reviewed patch would leave the requests returning 404 and the RPCs missing. A follow-up picker change also called the single-item stock RPC once for every material revision.
+
+**Rule:** Before requesting review, check `git status --short` and `git diff --cached --stat` for every new route and migration that a changed call site needs. For stock shared across item revisions, collect the revision IDs and use one set-based, company-scoped read.
+
+**Applies to:** MES routes and inventory services, ERP inventory RPC callers, and `packages/database/supabase/migrations/`.
+
 ## Onshape individual release assets need the complete source identity
 
 **Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.
