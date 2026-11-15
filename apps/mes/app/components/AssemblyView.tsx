@@ -210,6 +210,20 @@ type Step = {
   jobOperationStepSlide?: Slide[];
 };
 
+// What a step's record holds, as the operator reads it. Null for a step that
+// records no value (a Task).
+function recordedStepValue(step: Step, record: StepRecord): string | null {
+  if (record.numericValue != null)
+    return `${record.numericValue}${step.unitOfMeasureCode ? ` ${step.unitOfMeasureCode}` : ""}`;
+  if (record.booleanValue != null) return record.booleanValue ? "Yes" : "No";
+  // File steps store a long storage path: show just the file name.
+  if (record.value)
+    return step.type === "File"
+      ? record.value.split("/").pop() || record.value
+      : record.value;
+  return record.userValue ?? null;
+}
+
 // The linked instruction's animated steps + converted artifacts (loader-resolved
 // when the operation carries an assemblyInstructionId and the model is converted).
 type AssemblyPlayback = {
@@ -1344,6 +1358,13 @@ export function AssemblyView({
   const laborFetcher = useFetcher();
   const openLaborEvent = openByType("Labor");
   const currentStepDone = step ? isStepDone(step) : false;
+  const currentStepRecord = step?.jobOperationStepRecord?.find(
+    (r) => r.index === activeIndex
+  );
+  const currentStepValue =
+    step && currentStepRecord
+      ? recordedStepValue(step, currentStepRecord)
+      : null;
   const stepDoneRef = useRef({ step: currentStep, done: currentStepDone });
   // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on the current step only
   useEffect(() => {
@@ -2520,7 +2541,7 @@ export function AssemblyView({
               <div className="flex shrink-0 flex-col gap-3 p-6">
                 {step ? (
                   <>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
                         {currentStep + 1}
                       </span>
@@ -2533,6 +2554,17 @@ export function AssemblyView({
                       {step.type ? (
                         <Badge variant="secondary" className="normal-case">
                           {step.type}
+                        </Badge>
+                      ) : null}
+                      {/* The recorded value is shown here, where it has room
+                          to wrap: a touch screen has no hover to reveal a
+                          truncated one. */}
+                      {currentStepValue ? (
+                        <Badge
+                          variant={isStepBadResult(step) ? "red" : "green"}
+                          className="min-w-0 max-w-full whitespace-normal break-words normal-case tabular-nums"
+                        >
+                          {currentStepValue}
                         </Badge>
                       ) : null}
                     </div>
@@ -3573,34 +3605,14 @@ function StepCompleteAction({
 
   // ── Already done: show recorded value + Undo button ──
   if (done && record) {
-    let recordedDisplay: string | null = null;
-    if (record.numericValue != null)
-      recordedDisplay = `${record.numericValue}${step.unitOfMeasureCode ? ` ${step.unitOfMeasureCode}` : ""}`;
-    else if (record.booleanValue != null)
-      recordedDisplay = record.booleanValue ? "Yes" : "No";
-    else if (record.value) recordedDisplay = record.value;
-    else if (record.userValue) recordedDisplay = record.userValue;
-
-    // File steps store a long storage path — show just the file name.
-    const displayText =
-      type === "File" && recordedDisplay
-        ? recordedDisplay.split("/").pop() || recordedDisplay
-        : recordedDisplay;
-
+    // The value itself is shown beside the step's Done badge, so this box
+    // stays one line and the same height as Skip.
     return (
       <div className="flex h-full items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
         <LuCheck className="size-4 shrink-0 text-emerald-500" />
-        {displayText ? (
-          // Wraps instead of truncating: a touch screen has no hover to
-          // reveal the rest of the value.
-          <span className="min-w-0 flex-1 break-words text-sm text-emerald-600 dark:text-emerald-400">
-            Recorded: {displayText}
-          </span>
-        ) : (
-          <span className="min-w-0 flex-1 truncate text-sm text-emerald-600 dark:text-emerald-400">
-            Completed
-          </span>
-        )}
+        <span className="min-w-0 flex-1 truncate text-sm text-emerald-600 dark:text-emerald-400">
+          {recordedStepValue(step, record) ? "Recorded" : "Completed"}
+        </span>
         <Button
           variant="ghost"
           size="sm"
