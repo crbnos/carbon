@@ -193,6 +193,16 @@ services:
         condition: service_started
     ports:
       - "${PORT_STUDIO}:3000"
+    # The image probes localhost, but Next.js binds to the container hostname.
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://' + require('node:os').hostname() + ':3000/api/platform/profile').then((r) => { if (r.status !== 200) throw new Error(r.status); })"
+      interval: 5s
+      timeout: 5s
+      retries: 3
     environment:
       STUDIO_PG_META_URL: http://meta:8080
       # Studio sends postgres-meta the database to query, built from these.
