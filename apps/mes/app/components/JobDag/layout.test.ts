@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { dependencyHandles, layoutOperations } from "./layout";
+import {
+  fitViewport,
+  layoutOperations,
+  openingViewport,
+  routePath,
+  windingColumns
+} from "./layout";
 
 const chain = Array.from({ length: 8 }, (_, index) => String(index));
 const chainDependencies = chain.slice(1).map((operationId, index) => ({
@@ -11,62 +17,143 @@ const chainDependencies = chain.slice(1).map((operationId, index) => ({
   dependsOnId: chain[index]
 }));
 
+const forward = { sourcePosition: "right", targetPosition: "left" };
+const backward = { sourcePosition: "left", targetPosition: "right" };
+
+// A 1000px pane holds three 200px columns with 96px gaps.
+const columns = windingColumns(1000, false);
+
 describe("winding job layout", () => {
+  it("fits three columns in a 1000px pane and one on a phone", () => {
+    expect(columns).toBe(3);
+    expect(windingColumns(390, true)).toBe(1);
+  });
+
   it("wraps a long chain at the available width and reverses every second row", () => {
-    const positions = layoutOperations(
+    const layout = layoutOperations(
       chain,
       chainDependencies,
       "Winding",
-      1000,
+      columns,
       false
     );
 
-    expect(chain.map((id) => positions.get(id))).toEqual([
-      { x: 40, y: 40, row: 0 },
-      { x: 336, y: 40, row: 0 },
-      { x: 632, y: 40, row: 0 },
-      { x: 632, y: 250, row: 1 },
-      { x: 336, y: 250, row: 1 },
-      { x: 40, y: 250, row: 1 },
-      { x: 40, y: 460, row: 2 },
-      { x: 336, y: 460, row: 2 }
+    expect(chain.map((id) => layout.positions.get(id))).toEqual([
+      { x: 40, y: 40, ...forward },
+      { x: 336, y: 40, ...forward },
+      { x: 632, y: 40, ...forward },
+      { x: 632, y: 250, ...backward },
+      { x: 336, y: 250, ...backward },
+      { x: 40, y: 250, ...backward },
+      { x: 40, y: 460, ...forward },
+      { x: 336, y: 460, ...forward }
     ]);
-    expect(
-      dependencyHandles(positions.get("2")!, positions.get("3")!, "Winding")
-    ).toEqual({
-      sourceHandle: "source-bottom",
-      targetHandle: "target-top",
-      vertical: true
-    });
-    expect(
-      dependencyHandles(positions.get("3")!, positions.get("4")!, "Winding")
-    ).toEqual({
-      sourceHandle: "source-left",
-      targetHandle: "target-right",
-      vertical: false
-    });
+    // Only the two wraps detour, each turning back in the lane outside its
+    // column: 48px right of the last column, 48px left of the first.
+    expect(layout.routes).toEqual(
+      new Map([
+        ["2-3", { exitX: 880, laneY: 190, entryX: 880 }],
+        ["5-6", { exitX: -8, laneY: 400, entryX: -8 }]
+      ])
+    );
+    expect(layout.bounds).toEqual({ x: -8, y: 40, width: 888, height: 510 });
   });
 
-  it("keeps parallel operations together without overlapping the next row", () => {
-    const positions = layoutOperations(
-      ["A", "B", "C", "D", "E"],
+  it("routes a wrap around the operations stacked beside its source", () => {
+    // S1 is a subassembly that joins at P4, so it stacks under P3 at the end
+    // of the first row. P3 → P4 must not run down through S1.
+    const layout = layoutOperations(
+      ["P1", "P2", "P3", "P4", "S1"],
       [
-        { dependsOnId: "A", operationId: "B" },
-        { dependsOnId: "A", operationId: "C" },
-        { dependsOnId: "B", operationId: "D" },
-        { dependsOnId: "C", operationId: "D" },
-        { dependsOnId: "D", operationId: "E" }
+        { dependsOnId: "P1", operationId: "P2" },
+        { dependsOnId: "P2", operationId: "P3" },
+        { dependsOnId: "P3", operationId: "P4" },
+        { dependsOnId: "S1", operationId: "P4" }
       ],
       "Winding",
-      1000,
+      columns,
       false
     );
 
-    expect(positions.get("B")?.x).toBe(positions.get("C")?.x);
-    expect(Math.abs(positions.get("B")!.y - positions.get("C")!.y)).toBe(146);
-    expect(positions.get("E")?.row).toBe(1);
-    expect(positions.get("E")!.y).toBeGreaterThan(
-      Math.max(positions.get("B")!.y, positions.get("C")!.y) + 90
+    expect(layout.positions.get("P3")).toEqual({ x: 632, y: 40, ...forward });
+    expect(layout.positions.get("S1")).toEqual({ x: 632, y: 186, ...forward });
+    expect(layout.positions.get("P4")).toEqual({
+      x: 632,
+      y: 396,
+      ...backward
+    });
+    expect(layout.routes).toEqual(
+      new Map([
+        ["P3-P4", { exitX: 880, laneY: 336, entryX: 880 }],
+        ["S1-P4", { exitX: 880, laneY: 336, entryX: 880 }]
+      ])
     );
+  });
+
+  it("routes a dependency that skips an operation under the row, not through it", () => {
+    const layout = layoutOperations(
+      ["A", "B", "C"],
+      [
+        { dependsOnId: "A", operationId: "B" },
+        { dependsOnId: "B", operationId: "C" },
+        { dependsOnId: "A", operationId: "C" }
+      ],
+      "Winding",
+      columns,
+      false
+    );
+
+    // Out of A into the gap before B, along the lane 60px under the row, and
+    // into C from the gap after B.
+    expect(layout.routes).toEqual(
+      new Map([["A-C", { exitX: 288, laneY: 190, entryX: 584 }]])
+    );
+  });
+
+  it.each(["Winding", "LR", "TB"] as const)(
+    "ignores a dependency on an operation that is not in the job (%s)",
+    (direction) => {
+      const layout = layoutOperations(
+        ["A", "B"],
+        [
+          { dependsOnId: "A", operationId: "B" },
+          { dependsOnId: "X", operationId: "B" }
+        ],
+        direction,
+        columns,
+        false
+      );
+
+      expect([...layout.positions.keys()]).toEqual(["A", "B"]);
+      expect(layout.routes).toEqual(new Map());
+    }
+  );
+});
+
+describe("routed edge path", () => {
+  it("turns back in the side lane with rounded corners", () => {
+    expect(
+      routePath(
+        { x: 832, y: 85 },
+        { x: 832, y: 295 },
+        { exitX: 880, laneY: 190, entryX: 880 }
+      )
+    ).toBe(
+      "M 832 85 L 864 85 Q 880 85 880 101 L 880 279 Q 880 295 864 295 L 832 295"
+    );
+  });
+});
+
+describe("graph viewport", () => {
+  const tall = { x: -8, y: 40, width: 888, height: 1000 };
+
+  it("opens a winding graph taller than the pane at its first row, full size", () => {
+    expect(
+      openingViewport(tall, { width: 1000, height: 600 }, "Winding", 0.1)
+    ).toEqual({ x: 64, y: -16, zoom: 1 });
+  });
+
+  it("fits the whole graph no smaller than the phone floor", () => {
+    expect(fitViewport(tall, { width: 390, height: 700 }, 0.6).zoom).toBe(0.6);
   });
 });

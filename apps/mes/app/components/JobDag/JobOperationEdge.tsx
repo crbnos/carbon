@@ -7,14 +7,15 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   type EdgeProps,
-  getSimpleBezierPath,
-  getSmoothStepPath
+  getSimpleBezierPath
 } from "@xyflow/react";
 import { memo } from "react";
+import { type EdgeRoute, routePath } from "./layout";
 
 type JobOperationEdgeData = {
   quantity: number;
-  vertical: boolean;
+  // Set when the edge detours through the gaps between nodes.
+  route?: EdgeRoute;
 };
 
 function JobOperationEdgeImpl({
@@ -29,17 +30,26 @@ function JobOperationEdgeImpl({
 }: EdgeProps) {
   const { t } = useLingui();
   const d = data as unknown as JobOperationEdgeData | undefined;
-  const pathArgs = {
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition
-  };
-  const [edgePath, labelX, labelY] = d?.vertical
-    ? getSmoothStepPath({ ...pathArgs, borderRadius: 20 })
-    : getSimpleBezierPath(pathArgs);
+  // A routed edge carries its quantity beside the source, where edges that
+  // share a lane have not yet merged.
+  const [edgePath, labelX, labelY] = d?.route
+    ? [
+        routePath(
+          { x: sourceX, y: sourceY },
+          { x: targetX, y: targetY },
+          d.route
+        ),
+        d.route.exitX,
+        sourceY
+      ]
+    : getSimpleBezierPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition
+      });
 
   const dimmed = d?.quantity === 0;
 
