@@ -101,7 +101,8 @@ import type {
   BulkActionScope,
   ColumnSizeMap,
   InfiniteOptions,
-  InfiniteRows
+  InfiniteRows,
+  ServerExportLinks
 } from "./types";
 import { useExactCount } from "./useExactCount";
 import { useGrowOnlyColumnWidths } from "./useGrowOnlyColumnWidths";
@@ -114,7 +115,9 @@ import {
   getAccessorKey,
   getColumnLabel,
   hasUniqueRowIds,
-  isServerSortable
+  isServerSortable,
+  selectExportColumns,
+  serverExportLinks
 } from "./utils";
 
 // A column's held width, as a header `min-width`. A body cell is at most
@@ -184,6 +187,8 @@ interface TableProps<T extends object> {
   withCsvExport?: boolean;
   /** Direct download route for a CSV assembled by the server. */
   csvExportHref?: string;
+  /** Direct CSV and workbook download routes for this table. */
+  serverExport?: ServerExportLinks;
   withSimpleSorting?: boolean;
   sort?: ReactNode;
   getRowId?: (originalRow: T, index: number) => string;
@@ -412,6 +417,7 @@ const Table = <T extends object>({
   withColumnOrdering = true,
   withCsvExport = true,
   csvExportHref,
+  serverExport,
   withSimpleSorting = true,
   sort,
   getRowId,
@@ -1587,12 +1593,24 @@ const Table = <T extends object>({
               count,
               hasMore,
               listKey,
-              exportOnServer: !!infiniteOptions?.exportOnServer,
               loadAll: infiniteRows.loadAll,
               resetKey: infiniteRows.resetKey
             }
           : undefined
       }
+    : undefined;
+
+  const directExport = serverExport
+    ? serverExportLinks({
+        search: location.search,
+        urls: serverExport,
+        columns: selectExportColumns({
+          columnAccessors,
+          columnOrder,
+          columnVisibility,
+          exportOnlyColumns
+        }).map((key) => ({ key, label: columnAccessors[key] }))
+      })
     : undefined;
 
   if (isPhoneList) {
@@ -1606,6 +1624,7 @@ const Table = <T extends object>({
         tableName={tableName}
         filters={filters}
         sortKeyToLabel={sortKeyToLabel}
+        serverExport={directExport}
         withSearch={withSearch}
         withSort={sort !== null}
         withPagination={withPagination}
@@ -1729,6 +1748,7 @@ const Table = <T extends object>({
             </>
           }
           csvExport={csvExport}
+          serverExport={directExport}
           titleBadge={titleBadge}
           importCSV={importCSV}
           hideControls={isTableEmpty && !hasRememberedChanges}
@@ -1749,6 +1769,7 @@ const Table = <T extends object>({
           data={tableData}
           infiniteExport={csvExport?.infinite}
           csvExportHref={csvExportHref}
+          serverExport={directExport}
           editMode={editMode}
           filters={filters}
           isEmpty={isTableEmpty}

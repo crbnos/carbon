@@ -101,8 +101,7 @@ export const salesInvoicesList = searchList({
     customerId: (row) => row.customerName,
     invoiceCustomerId: (row) => row.invoiceCustomerName,
     glCodes: (row) => row.glCodes
-  },
-  exportOnServer: true
+  }
 });
 
 export const purchaseInvoicesList = searchList({

@@ -30,8 +30,6 @@ export type InfiniteExport = {
   hasMore: boolean;
   /** The list's registry key. Without it the export stops at 1,000 rows. */
   listKey?: string;
-  /** The server builds every export of this list (`exportOnServer`). */
-  exportOnServer?: boolean;
   /** Loads pages until the list ends or `limit` rows are loaded. */
   loadAll: (
     limit: number
@@ -59,8 +57,7 @@ export type DownloadProps = {
  *
  * An infinite list first loads the rest of its rows, up to 1,000. Past 1,000,
  * a list with a `listKey` asks the server for a background export instead;
- * a list without one exports the first 1,000 rows. A list with
- * `exportOnServer` always asks the server, and loads no rows for it.
+ * a list without one exports the first 1,000 rows.
  */
 export function useCsvDownload({
   data,
@@ -168,17 +165,6 @@ export function useCsvDownload({
 
   const onClick = useCallback(async () => {
     if (!data?.length || isExportingRef.current) {
-      return;
-    }
-    if (infinite?.exportOnServer && infinite.listKey) {
-      isExportingRef.current = true;
-      setIsExporting(true);
-      try {
-        await startBackgroundExport(infinite.listKey);
-      } finally {
-        isExportingRef.current = false;
-        setIsExporting(false);
-      }
       return;
     }
     if (!infinite?.hasMore) {

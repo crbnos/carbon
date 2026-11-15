@@ -63,6 +63,8 @@ declare module "@tanstack/react-table" {
 
 export type ColumnSizeMap = Map<string, { width: number; startX: number }>;
 
+export type ServerExportLinks = { csv: string; xlsx: string };
+
 /**
  * Turns on infinite scroll for a list whose loader pages with a cursor
  * (`toPage`). The Table fetches the next page from the same route loader.
@@ -84,11 +86,6 @@ export type InfiniteOptions = {
    * a registered list gets the background export and bulk-action paths.
    */
   listKey?: string;
-  /**
-   * Set from the registry entry's `exportOnServer`: the CSV export always
-   * runs as the background export job, never in the browser.
-   */
-  exportOnServer?: boolean;
   /**
    * URL search params that do not define the list, for example the param
    * that opens a drawer over it. A change of one keeps the loaded pages, the

@@ -405,6 +405,11 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
         data={data}
         {...lineItemRows}
         infinite={infinite}
+        serverExport={{
+          csv: `${path.to.invoicingSales}.csv`,
+          xlsx: `${path.to.invoicingSales}.xlsx`
+        }}
+        withCsvExport={false}
         defaultColumnPinning={{
           left: ["invoiceId"]
         }}

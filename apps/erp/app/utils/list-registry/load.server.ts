@@ -41,7 +41,7 @@ export type ListLoaderData<TKey extends string, TRow> = {
 
 /** The Table's `infinite` prop for a page of a registered list. */
 export function listInfinite(
-  list: Pick<ListDefinition, "key" | "idColumn" | "exportOnServer">,
+  list: Pick<ListDefinition, "key" | "idColumn">,
   dataKey: string,
   nextCursor: string | null
 ): InfiniteOptions {
@@ -49,8 +49,7 @@ export function listInfinite(
     dataKey,
     nextCursor,
     listKey: list.key,
-    ...(list.idColumn ? { idColumn: list.idColumn } : {}),
-    ...(list.exportOnServer ? { exportOnServer: true } : {})
+    ...(list.idColumn ? { idColumn: list.idColumn } : {})
   };
 }
 

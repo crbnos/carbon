@@ -58,6 +58,9 @@ BEGIN
   SET LOCAL ROLE authenticated;
   ASSERT NOT EXISTS (SELECT 1 FROM customer WHERE id = customer_a),
     'Customer table stays private without sales_view';
+  ASSERT EXISTS (SELECT 1 FROM "salesInvoices"
+    WHERE id = invoice_a AND "companyId" = company_a),
+    'Invoice-only access still returns the invoice through the security-invoker view';
   SELECT * INTO STRICT result
     FROM public.get_sales_invoice_customer_names(company_a, ARRAY[invoice_a, invoice_b]);
   ASSERT result.id = invoice_a

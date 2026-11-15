@@ -18,9 +18,12 @@ DECLARE
   customer_b text;
   supplier_a text;
   supplier_interaction_a text;
+  purchase_item_a text;
   sales_invoice_a text;
   sales_invoice_b text;
+  sales_invoice_special text;
   purchase_invoice_a text;
+  purchase_invoice_unassigned text;
   revenue_a text;
   revenue_b text;
   revenue_default text;
@@ -44,6 +47,13 @@ BEGIN
     VALUES ('Supplier A', 'GL-S', company_a, 'system') RETURNING id INTO supplier_a;
   INSERT INTO "supplierInteraction" ("companyId", "supplierId")
     VALUES (company_a, supplier_a) RETURNING id INTO supplier_interaction_a;
+  INSERT INTO "unitOfMeasure" (code, name, "companyId", "createdBy")
+    VALUES ('EA', 'Each', company_a, 'system');
+  INSERT INTO item ("readableId", name, type, "replenishmentSystem",
+      "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
+    VALUES ('GL-PART', 'Unassigned purchase part', 'Part', 'Buy',
+      'Inventory', 'EA', company_a, 'system')
+    RETURNING id INTO purchase_item_a;
   INSERT INTO account (number, name, class, "incomeBalance", "companyGroupId", "createdBy")
     VALUES ('4000', 'Revenue A', 'Revenue', 'Income Statement', group_id, 'system')
     RETURNING id INTO revenue_a;
@@ -76,10 +86,19 @@ BEGIN
       "exchangeRate", "companyId", "createdBy", status)
     VALUES ('GL-SI-B', customer_b, 'USD', 1, company_b, 'system', 'Draft')
     RETURNING id INTO sales_invoice_b;
+  INSERT INTO "salesInvoice" ("invoiceId", "customerId", "currencyCode",
+      "exchangeRate", "companyId", "createdBy", status)
+    VALUES ('GL-SI-SPECIAL', customer_a, 'USD', 1, company_a, 'system', 'Draft')
+    RETURNING id INTO sales_invoice_special;
   INSERT INTO "purchaseInvoice" ("invoiceId", "supplierId", "supplierInteractionId",
       "currencyCode", "exchangeRate", "companyId", "createdBy", status)
     VALUES ('GL-PI-A', supplier_a, supplier_interaction_a, 'USD', 1, company_a, 'system', 'Draft')
     RETURNING id INTO purchase_invoice_a;
+  INSERT INTO "purchaseInvoice" ("invoiceId", "supplierId", "supplierInteractionId",
+      "currencyCode", "exchangeRate", "companyId", "createdBy", status)
+    VALUES ('GL-PI-UNASSIGNED', supplier_a, supplier_interaction_a,
+      'USD', 1, company_a, 'system', 'Draft')
+    RETURNING id INTO purchase_invoice_unassigned;
   INSERT INTO "salesInvoiceLine" ("invoiceId", "invoiceLineType", "unitOfMeasureCode",
       "companyId", "createdBy", quantity, "unitPrice", "exchangeRate", "accountId")
     VALUES
@@ -88,9 +107,19 @@ BEGIN
       (sales_invoice_a, 'Service', 'EA', company_a, 'system', 1, 10, 1, revenue_a),
       (sales_invoice_a, 'Service', 'EA', company_a, 'system', 1, 10, 1, NULL),
       (sales_invoice_b, 'Service', 'EA', company_b, 'system', 1, 10, 1, revenue_a);
+  INSERT INTO "salesInvoiceLine" ("invoiceId", "invoiceLineType", "unitOfMeasureCode",
+      "companyId", "createdBy", quantity, "unitPrice", "exchangeRate", "accountId",
+      "serviceStartDate", "serviceEndDate")
+    VALUES (sales_invoice_special, 'Service', 'EA', company_a, 'system',
+      1, 10, 1, NULL, DATE '2026-11-01', DATE '2026-11-30');
   INSERT INTO "purchaseInvoiceLine" ("invoiceId", "invoiceLineType",
       "companyId", "createdBy", quantity, "supplierUnitPrice", "exchangeRate", "accountId")
     VALUES (purchase_invoice_a, 'G/L Account', company_a, 'system', 1, 10, 1, expense_a);
+  INSERT INTO "purchaseInvoiceLine" ("invoiceId", "invoiceLineType",
+      "itemId", "companyId", "createdBy", quantity, "supplierUnitPrice",
+      "exchangeRate", "accountId")
+    VALUES (purchase_invoice_unassigned, 'Part', purchase_item_a,
+      company_a, 'system', 1, 10, 1, NULL);
 
   INSERT INTO "user" (id, email)
     VALUES (user_id, user_id || '@gl-codes.invalid');
@@ -108,6 +137,12 @@ BEGIN
   ASSERT (SELECT "glCodes" FROM public.get_invoice_line_gl_codes(
     company_a, 'purchase', ARRAY[purchase_invoice_a])) = '5000',
     'Purchase codes come from its lines';
+  ASSERT NOT EXISTS (SELECT 1 FROM public.get_invoice_line_gl_codes(
+    company_a, 'sales', ARRAY[sales_invoice_special])),
+    'Specialized unassigned sales lines do not imply the Sales default';
+  ASSERT NOT EXISTS (SELECT 1 FROM public.get_invoice_line_gl_codes(
+    company_a, 'purchase', ARRAY[purchase_invoice_unassigned])),
+    'Unassigned purchase lines do not imply an account';
   ASSERT NOT EXISTS (SELECT 1 FROM public.get_invoice_line_gl_codes(
     company_a, 'sales', ARRAY[sales_invoice_b])),
     'Foreign company invoice is not returned';
@@ -131,7 +166,7 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
   RESET ROLE;
-  RAISE NOTICE 'GREEN: sales and purchase codes, tenant scope, empty selection and permission revocation';
+  RAISE NOTICE 'GREEN: sales and purchase codes, unassigned specialized lines, tenant scope, empty selection and permission revocation';
 END;
 $proof$;
 ROLLBACK;
