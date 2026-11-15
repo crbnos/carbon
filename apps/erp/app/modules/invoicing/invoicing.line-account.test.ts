@@ -16,6 +16,7 @@ import {
 const SALES = "acc-4000";
 const PARTS = "acc-4010";
 const SERVICES = "acc-4020";
+const SHIPPING = "acc-4050";
 const RECEIVABLES = "acc-1200";
 const TAX = "acc-2200";
 
@@ -23,6 +24,7 @@ const CLASSES: Record<string, InvoiceLineLeg["accountClass"]> = {
   [SALES]: "Revenue",
   [PARTS]: "Revenue",
   [SERVICES]: "Revenue",
+  [SHIPPING]: "Revenue",
   [RECEIVABLES]: "Asset",
   [TAX]: "Liability",
   "acc-6000": "Expense",
@@ -90,7 +92,7 @@ const apply = (
   target: Parameters<typeof findInvoiceLinePosition>[1],
   toAccountId: string
 ) => {
-  const position = findInvoiceLinePosition(legs, target);
+  const { position } = findInvoiceLinePosition(legs, target);
   if (!position) throw new Error("No position");
   const lines = buildLineAccountChangeLines(
     position,
@@ -115,6 +117,8 @@ const apply = (
     ]
   };
 };
+
+const missing = { position: null, refusal: "missing" };
 
 const salesTarget = (accountId: string, amount: number, extra = {}) => ({
   accountId,
@@ -170,9 +174,9 @@ describe("changing a posted line's account", () => {
     const posted = salesLine("ref-1", 100);
     const first = apply(posted, salesTarget(SALES, 100), PARTS);
     // The posting's own leg no longer holds anything on the Sales account.
-    expect(findInvoiceLinePosition(first.legs, salesTarget(SALES, 100))).toBe(
-      null
-    );
+    expect(
+      findInvoiceLinePosition(first.legs, salesTarget(SALES, 100))
+    ).toEqual(missing);
     const second = apply(first.legs, salesTarget(PARTS, 100), SERVICES);
     expect(second.position.postingDate).toBe("2026-03-14");
     expect(balances(second.legs)).toEqual({
@@ -206,7 +210,7 @@ describe("changing a posted line's account", () => {
       findInvoiceLinePosition(
         legs,
         salesTarget(SALES, 100, { dimensions: { Location: "loc-a" } })
-      )?.leg.journalLineReference
+      ).position?.leg.journalLineReference
     ).toBe("ref-1");
   });
 
@@ -236,7 +240,7 @@ describe("changing a posted line's account", () => {
   it("finds nothing on an account the line was never posted to", () => {
     expect(
       findInvoiceLinePosition(salesLine("ref-1", 100), salesTarget(PARTS, 100))
-    ).toBe(null);
+    ).toEqual(missing);
   });
 });
 
@@ -246,7 +250,7 @@ describe("the account a line's amount is on now", () => {
   it("ignores a sales line's account its posting never used", () => {
     // Convert copies the order line's account onto the invoice line; sales
     // posting credits the Sales Account regardless.
-    const position = locateInvoiceLinePosition(
+    const { position } = locateInvoiceLinePosition(
       salesLine("ref-1", 100),
       "sales",
       [PARTS],
@@ -259,7 +263,7 @@ describe("the account a line's amount is on now", () => {
   it("finds a sales line with no account of its own on the Sales Account", () => {
     expect(
       locateInvoiceLinePosition(salesLine("ref-1", 100), "sales", [], target)
-        ?.leg.accountId
+        .position?.leg.accountId
     ).toBe(SALES);
   });
 
@@ -270,7 +274,8 @@ describe("the account a line's amount is on now", () => {
       PARTS
     );
     expect(
-      locateInvoiceLinePosition(legs, "sales", [PARTS], target)?.leg.accountId
+      locateInvoiceLinePosition(legs, "sales", [PARTS], target).position?.leg
+        .accountId
     ).toBe(PARTS);
   });
 
@@ -286,12 +291,60 @@ describe("the account a line's amount is on now", () => {
       dimensions: {}
     };
     expect(
-      locateInvoiceLinePosition(posted, "purchase", ["acc-6000"], purchase)?.leg
-        .accountId
+      locateInvoiceLinePosition(posted, "purchase", ["acc-6000"], purchase)
+        .position?.leg.accountId
     ).toBe("acc-6000");
     expect(
       locateInvoiceLinePosition(posted, "purchase", ["acc-6100"], purchase)
-    ).toBe(null);
+    ).toEqual(missing);
+  });
+});
+
+describe("a group that is not the line's", () => {
+  const { accountId: _, ...targetA } = salesTarget(SALES, 100);
+
+  it("refuses rather than take another line's amount when the line's own group holds more", () => {
+    // Line A posts 100 to Sales and 10 to Shipping, line B 40 to Sales.
+    const posted = [
+      ...salesLine("ref-a", 100),
+      leg(SHIPPING, 10, {
+        journalLineReference: "ref-a",
+        description: "Shipping Revenue"
+      }),
+      ...salesLine("ref-b", 40)
+    ];
+    // A's revenue moved onto its shipping account: A's group holds 110 there.
+    const { legs } = apply(posted, salesTarget(SALES, 100), SHIPPING);
+    // Sales then holds only B's 40, which is not A's amount.
+    expect(
+      locateInvoiceLinePosition(legs, "sales", [SHIPPING], targetA)
+    ).toEqual(missing);
+  });
+
+  it("refuses a sole group posted with another line's dimensions", () => {
+    const posted = salesLine("ref-b", 100, {
+      dimensions: { Location: "loc-b" }
+    });
+    expect(
+      findInvoiceLinePosition(
+        posted,
+        salesTarget(SALES, 100, { dimensions: { Location: "loc-a" } })
+      )
+    ).toEqual(missing);
+  });
+
+  it("refuses a sole group of another amount", () => {
+    expect(
+      findInvoiceLinePosition(salesLine("ref-b", 40), salesTarget(SALES, 100))
+    ).toEqual(missing);
+  });
+
+  it("refuses two groups it cannot tell apart", () => {
+    const posted = [...salesLine("ref-1", 100), ...salesLine("ref-2", 100)];
+    expect(locateInvoiceLinePosition(posted, "sales", [], targetA)).toEqual({
+      position: null,
+      refusal: "ambiguous"
+    });
   });
 });
 

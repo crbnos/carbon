@@ -20616,19 +20616,27 @@ export type InvoiceLinePosition = {
 const legValue = (leg: InvoiceLineLeg) =>
   leg.accountClass ? debitSigned(leg.accountClass, Number(leg.amount)) : 0;
 
+/** A position, or why there is none: no group holds the line's amount on
+ *  the account (`missing`), or several do and nothing tells them apart
+ *  (`ambiguous`). */
+export type InvoiceLinePositionMatch =
+  | { position: InvoiceLinePosition; refusal: null }
+  | { position: null; refusal: "missing" | "ambiguous" };
+
 /**
  * The `journalLineReference` group holding the line's amount on
- * `target.accountId`, or null. No journal line links to its invoice line, so
- * the group is matched on what the posting copies from the line (quantity,
- * order line reference, sign) and must still hold its amount there. Ties
- * break on dimensions, then amount; groups still tied are identical, so
- * either is the line's.
+ * `target.accountId`. No journal line links to its invoice line, so the group
+ * is matched on what the posting copies from the line (quantity, order line
+ * reference, dimensions) and on the amount the posting computed, and must
+ * still hold that amount there. Every group is checked the same way, a sole
+ * one too: a group that differs is another line's.
  */
 export function findInvoiceLinePosition(
   legs: readonly InvoiceLineLeg[],
   target: InvoiceLinePositionTarget
-): InvoiceLinePosition | null {
-  if (equals(target.amount, 0)) return null;
+): InvoiceLinePositionMatch {
+  const missing = { position: null, refusal: "missing" } as const;
+  if (equals(target.amount, 0)) return missing;
   const onAccount = (leg: InvoiceLineLeg) =>
     leg.accountId === target.accountId && leg.accountClass !== null;
 
@@ -20642,51 +20650,47 @@ export function findInvoiceLinePosition(
     );
   }
 
-  const groups = new Set<string>();
-  let candidates = legs.filter((leg) => {
-    if (!onAccount(leg)) return false;
-    if (leg.description?.startsWith("VOID: ")) return false;
-    if (!equals(Number(leg.quantity), round(target.quantity))) return false;
-    if ((leg.documentLineReference ?? null) !== target.documentLineReference) {
-      return false;
-    }
-    const value = legValue(leg);
-    if (equals(value, 0) || Math.sign(value) !== Math.sign(target.amount)) {
-      return false;
-    }
-    if (!equals(held.get(leg.journalLineReference) ?? 0, value)) return false;
-    if (groups.has(leg.journalLineReference)) return false;
-    groups.add(leg.journalLineReference);
-    return true;
-  });
-
+  // A dimension the leg lacks was inactive or empty when it posted.
   const matchesDimensions = (leg: InvoiceLineLeg) =>
     Object.entries(target.dimensions).every(
       ([entityType, value]) =>
         !(entityType in leg.dimensions) ||
         leg.dimensions[entityType] === (value ?? undefined)
     );
-  if (candidates.length > 1) candidates = candidates.filter(matchesDimensions);
-  if (candidates.length > 1) {
-    candidates = candidates.filter((leg) =>
-      equals(legValue(leg), target.amount)
-    );
-  }
-  const leg = [...candidates].sort((a, b) =>
-    a.id < b.id ? -1 : a.id > b.id ? 1 : 0
-  )[0];
-  if (!leg?.accountId || !leg.accountClass) return null;
+
+  const groups = new Set<string>();
+  const candidates = legs.filter((leg) => {
+    if (!onAccount(leg)) return false;
+    if (leg.description?.startsWith("VOID: ")) return false;
+    if (!equals(Number(leg.quantity), round(target.quantity))) return false;
+    if ((leg.documentLineReference ?? null) !== target.documentLineReference) {
+      return false;
+    }
+    if (!matchesDimensions(leg)) return false;
+    const value = legValue(leg);
+    if (!equals(value, target.amount)) return false;
+    if (!equals(held.get(leg.journalLineReference) ?? 0, value)) return false;
+    if (groups.has(leg.journalLineReference)) return false;
+    groups.add(leg.journalLineReference);
+    return true;
+  });
+  if (candidates.length > 1) return { position: null, refusal: "ambiguous" };
+  const leg = candidates[0];
+  if (!leg?.accountId || !leg.accountClass) return missing;
 
   const group = legs.filter(
     (row) => row.journalLineReference === leg.journalLineReference
   );
   return {
-    leg: { ...leg, accountId: leg.accountId, accountClass: leg.accountClass },
-    amount: held.get(leg.journalLineReference) ?? 0,
-    postingDate: group
-      .map((row) => row.postingDate)
-      .reduce((a, b) => (b < a ? b : a)),
-    groupLegIds: group.map((row) => row.id)
+    position: {
+      leg: { ...leg, accountId: leg.accountId, accountClass: leg.accountClass },
+      amount: held.get(leg.journalLineReference) ?? 0,
+      postingDate: group
+        .map((row) => row.postingDate)
+        .reduce((a, b) => (b < a ? b : a)),
+      groupLegIds: group.map((row) => row.id)
+    },
+    refusal: null
   };
 }
 
@@ -21014,7 +21018,7 @@ export function locateInvoiceLinePosition(
   side: "sales" | "purchase",
   lineAccountIds: readonly string[],
   target: Omit<InvoiceLinePositionTarget, "accountId">
-): InvoiceLinePosition | null {
+): InvoiceLinePositionMatch {
   const accountIds = new Set(lineAccountIds);
   if (side === "sales") {
     for (const leg of legs) {
@@ -21024,11 +21028,19 @@ export function locateInvoiceLinePosition(
     }
   }
   for (const accountId of accountIds) {
-    const position = findInvoiceLinePosition(legs, { ...target, accountId });
-    if (position) return position;
+    const match = findInvoiceLinePosition(legs, { ...target, accountId });
+    // A tie on any account ends the search: the line's group may be either.
+    if (match.refusal !== "missing") return match;
   }
-  return null;
+  return { position: null, refusal: "missing" };
 }
+
+const LINE_POSITION_REFUSALS = {
+  missing:
+    "This line's posted amount could not be found on its account, so it cannot change account. Record a journal entry to correct it instead.",
+  ambiguous:
+    "Another line of this invoice posted the same amount with the same quantity and dimensions, so this line's posting cannot be told apart from it. Record a journal entry to correct it instead."
+} as const;
 
 /** Runs every refusal that does not depend on the new account. `lock` reads
  *  the invoice FOR UPDATE: pass it only inside the change's transaction. */
@@ -21080,17 +21092,16 @@ async function readInvoiceLinePosition(
     invoiceId,
     LINE_ACCOUNT_SIDES[side].sourceType
   );
-  const position = locateInvoiceLinePosition(
+  const match = locateInvoiceLinePosition(
     legs,
     side,
     facts.accountIds,
     facts.target
   );
-  if (!position) {
-    throw new InvalidInputError(
-      "This line's posted amount could not be found on its account, so it cannot change account. Record a journal entry to correct it instead."
-    );
+  if (!match.position) {
+    throw new InvalidInputError(LINE_POSITION_REFUSALS[match.refusal]);
   }
+  const { position } = match;
 
   const eliminated = await db
     .selectFrom("intercompanyEliminationLine")
