@@ -21,9 +21,10 @@ import {
   type NodeTypes,
   ReactFlow,
   ReactFlowProvider,
-  useNodesInitialized,
+  type Rect,
   useReactFlow,
-  useStore
+  useStore,
+  useStoreApi
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useEffect, useMemo, useState } from "react";
@@ -37,11 +38,15 @@ import {
 import { JobOperationEdge } from "./JobOperationEdge";
 import { JobOperationNode } from "./JobOperationNode";
 import {
-  dependencyHandles,
+  dependencyId,
+  effectiveDirection,
+  fitViewport,
   type LayoutDirection,
   layoutOperations,
-  NODE_HEIGHT,
-  NODE_WIDTH
+  MAX_ZOOM,
+  MIN_ZOOM,
+  openingViewport,
+  windingColumns
 } from "./layout";
 
 const nodeTypes: NodeTypes = {
@@ -82,19 +87,21 @@ type Props = {
   dependencies: Dependency[];
 };
 
+const EMPTY_BOUNDS: Rect = { x: 0, y: 0, width: 0, height: 0 };
+
 function computeLayout(
   operations: Operation[],
   dependencies: Dependency[],
   direction: LayoutDirection,
-  compact: boolean,
-  width: number
-): { nodes: Node[]; edges: Edge[] } {
+  columns: number,
+  compact: boolean
+): { nodes: Node[]; edges: Edge[]; bounds: Rect } {
   const opsById = new Map(operations.map((op) => [op.id, op]));
-  const positions = layoutOperations(
+  const { positions, routes, bounds } = layoutOperations(
     operations.map((op) => op.id),
     dependencies,
     direction,
-    width,
+    columns,
     compact
   );
 
@@ -104,6 +111,8 @@ function computeLayout(
       id: op.id,
       type: "jobOperation",
       position: { x: position.x, y: position.y },
+      sourcePosition: position.sourcePosition,
+      targetPosition: position.targetPosition,
       data: {
         id: op.id,
         description: op.description ?? "Untitled",
@@ -125,80 +134,29 @@ function computeLayout(
     };
   });
 
-  const edges: Edge[] = dependencies.map((dep) => {
+  const edges: Edge[] = dependencies.flatMap((dep) => {
     const upstream = opsById.get(dep.dependsOnId);
     const downstream = opsById.get(dep.operationId);
-    const handles = dependencyHandles(
-      positions.get(dep.dependsOnId)!,
-      positions.get(dep.operationId)!,
-      direction
-    );
+    // A dependency on an operation that did not load has no node to reach.
+    if (!upstream || !downstream) return [];
+    const id = dependencyId(dep);
     return {
-      id: `${dep.dependsOnId}-${dep.operationId}`,
+      id,
       source: dep.dependsOnId,
       target: dep.operationId,
-      sourceHandle: handles.sourceHandle,
-      targetHandle: handles.targetHandle,
       // React Flow's default names the edge by raw operation ids.
-      ariaLabel: `${upstream?.description ?? dep.dependsOnId} → ${
-        downstream?.description ?? dep.operationId
+      ariaLabel: `${upstream.description ?? dep.dependsOnId} → ${
+        downstream.description ?? dep.operationId
       }`,
       type: "jobOperationEdge",
       data: {
-        quantity: Number(upstream?.quantityComplete ?? 0),
-        vertical: direction === "Winding" && handles.vertical
+        quantity: Number(upstream.quantityComplete ?? 0),
+        route: routes.get(id)
       }
     };
   });
 
-  return { nodes, edges };
-}
-
-function useGraphViewport(
-  nodes: Node[],
-  direction: LayoutDirection,
-  width: number,
-  height: number,
-  isPhone: boolean
-) {
-  const { fitView, setViewport } = useReactFlow();
-  const nodesInitialized = useNodesInitialized();
-
-  useEffect(() => {
-    if (!width || !height || !nodesInitialized || !nodes.length) return;
-
-    // Start long winding graphs at the first row instead of centering their
-    // full height at tiny zoom.
-    const frame = requestAnimationFrame(() => {
-      let graphWidth = 0;
-      let graphHeight = 0;
-      for (const node of nodes) {
-        graphWidth = Math.max(graphWidth, node.position.x + NODE_WIDTH + 40);
-        graphHeight = Math.max(graphHeight, node.position.y + NODE_HEIGHT + 40);
-      }
-      if (direction === "Winding" && graphHeight > height) {
-        const zoom = Math.min(1, Math.max(0.6, (width - 32) / graphWidth));
-        void setViewport({
-          x: (width - graphWidth * zoom) / 2,
-          y: 24 - 40 * zoom,
-          zoom
-        });
-      } else {
-        void fitView({ padding: 0.1, minZoom: isPhone ? 0.6 : 0.1 });
-      }
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [
-    nodes,
-    direction,
-    width,
-    height,
-    isPhone,
-    nodesInitialized,
-    fitView,
-    setViewport
-  ]);
+  return { nodes, edges, bounds };
 }
 
 function JobDagInner({ operations, dependencies }: Props) {
@@ -208,22 +166,60 @@ function JobDagInner({ operations, dependencies }: Props) {
   const [chosenDirection, setDirection] = useState<LayoutDirection | null>(
     null
   );
-  const direction = chosenDirection ?? (isPhone ? "TB" : "Winding");
-  const width = useStore((state) => state.width);
-  const height = useStore((state) => state.height);
-  const { fitView } = useReactFlow();
+  const store = useStoreApi();
+  const { setViewport } = useReactFlow();
+  // Subscribe to what the layout depends on, not to the pane size itself: a
+  // resize that fits the same number of columns must not lay the graph out again.
+  const ready = useStore((state) => state.width > 0 && state.height > 0);
+  const columns = useStore((state) => windingColumns(state.width, isPhone));
+  const direction = effectiveDirection(
+    chosenDirection ?? (isPhone ? "TB" : "Winding"),
+    ready ? columns : 2
+  );
+  const layoutColumns = direction === "Winding" ? columns : 1;
+  // On a phone, fitting the whole graph shrinks nodes past reading size, so
+  // fit no smaller than 0.6 and let the operator pan the rest.
+  const minZoom = isPhone ? 0.6 : MIN_ZOOM;
 
-  const { nodes: layoutNodes, edges: layoutEdges } = useMemo(
-    () => computeLayout(operations, dependencies, direction, isPhone, width),
-    [operations, dependencies, direction, isPhone, width]
+  const { nodes, edges, bounds } = useMemo(
+    () =>
+      ready
+        ? computeLayout(
+            operations,
+            dependencies,
+            direction,
+            layoutColumns,
+            isPhone
+          )
+        : { nodes: [], edges: [], bounds: EMPTY_BOUNDS },
+    [ready, operations, dependencies, direction, layoutColumns, isPhone]
   );
 
-  useGraphViewport(layoutNodes, direction, width, height, isPhone);
+  // Position the viewport when the graph's shape changes. A refresh that only
+  // changes quantities, or a resize, keeps the operator's pan and zoom.
+  const { x, y, width, height } = bounds;
+  useEffect(() => {
+    if (!width || !height) return;
+    void setViewport(
+      openingViewport(
+        { x, y, width, height },
+        store.getState(),
+        direction,
+        minZoom
+      )
+    );
+  }, [x, y, width, height, direction, minZoom, store, setViewport]);
 
   const toggleDirection = () => {
-    setDirection(
-      direction === "Winding" ? "LR" : direction === "LR" ? "TB" : "Winding"
-    );
+    const order: LayoutDirection[] =
+      columns > 1 ? ["Winding", "LR", "TB"] : ["LR", "TB"];
+    setDirection(order[(order.indexOf(direction) + 1) % order.length]);
+  };
+
+  const fit = () => {
+    void setViewport(fitViewport(bounds, store.getState(), minZoom), {
+      duration: 200
+    });
   };
 
   return (
@@ -256,7 +252,7 @@ function JobDagInner({ operations, dependencies }: Props) {
         </button>
         <button
           type="button"
-          onClick={() => fitView({ padding: 0.1, duration: 200 })}
+          onClick={fit}
           className={cn(
             "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5 max-md:h-11 max-md:px-3",
             "border border-border bg-background hover:bg-accent/60 transition-colors"
@@ -269,8 +265,8 @@ function JobDagInner({ operations, dependencies }: Props) {
 
       <div className="relative flex-1">
         <ReactFlow
-          nodes={layoutNodes}
-          edges={layoutEdges}
+          nodes={nodes}
+          edges={edges}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           proOptions={proOptions}
@@ -280,8 +276,8 @@ function JobDagInner({ operations, dependencies }: Props) {
           // The link inside each node is the one tab stop.
           nodesFocusable={false}
           edgesFocusable={false}
-          minZoom={0.1}
-          maxZoom={2}
+          minZoom={MIN_ZOOM}
+          maxZoom={MAX_ZOOM}
         >
           <Background gap={20} size={1} />
           {direction !== "Winding" && (
