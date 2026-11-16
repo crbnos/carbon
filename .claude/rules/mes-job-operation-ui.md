@@ -464,9 +464,21 @@ while its serial or batch materials are not scanned in.
   the author (the insert requires `createdBy` to be the caller). The request sits at the operation's
   work center and that work center's location, else the operator's location.
 - **The line feed.** `x+/line-feed.tsx` (`path.to.lineFeed`, a sidebar queue,
-  `alt+0`, `view: inventory`) shows the line feeder's queue at the operator's
-  location. `getLineFeed` (`services/inventory.service.ts`) reads 3 sources, and
-  `buildLineFeedRows` (`services/line-feed.ts`, tested) orders them:
+  `alt+0`, `view: inventory`) is a station board: one card per active work
+  center at the operator's location, built by `buildStationBoard`
+  (`services/line-feed.ts`, tested). Green (`wet`) has no shortage; yellow
+  (`low`) holds some of a short part, has an open material request, or has its
+  shortage covered by a transfer on its way; orange (`out`) holds none of a
+  part it needs; gray (`unknown`) has no lineside storage unit. The stations
+  that need stock come first. Each card lists its rows: parts out, parts low,
+  requests, then transfers on their way (with their storage unit). "Bring N"
+  is the shortage less the transfer lines already going to that station for
+  the item; a shortage they cover is not listed. Rows for a work center that
+  is not on the board (none, inactive, another location) get their own card,
+  ranked by the same status. The page also reloads on `workCenter` and
+  `storageUnit` changes, through the shared reference topic (`useTopic`).
+  `getLineFeed` (`services/inventory.service.ts`) reads 3 sources for the
+  rows, and `buildLineFeedRows` builds them:
   1. Open material requests, oldest first.
   2. Lineside shortages (`get_line_feed_shortages`, newest definition
      `20261113014205_line-feed-first-operation-stripes.sql`), largest first.

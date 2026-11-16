@@ -351,9 +351,6 @@ msgstr "已添加"
 msgid "Adjustment Type"
 msgstr "调整类型"
 
-msgid "Age"
-msgstr ""
-
 msgid "All"
 msgstr "全部"
 
@@ -423,6 +420,9 @@ msgstr "您确定要将此工序标记为完成吗？这会结束此工序的所
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "要求主管将 {processName} 技能添加到您的档案。"
+
+msgid "Asked"
+msgstr ""
 
 msgid "Assembly steps"
 msgstr "装配步骤"
@@ -545,6 +545,9 @@ msgstr "看板视图"
 
 msgid "Bold"
 msgstr "粗体"
+
+msgid "Bring {quantity}"
+msgstr ""
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链接。"
@@ -1580,6 +1583,9 @@ msgstr "缺少批次号"
 msgid "Lot tracked"
 msgstr "批次已追踪"
 
+msgid "Low"
+msgstr ""
+
 msgid "Machine"
 msgstr "机器"
 
@@ -1809,6 +1815,9 @@ msgstr "未配置问题类型"
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "尚未设置假期。请您的经理在 ERP 中设置。"
 
+msgid "No lineside storage"
+msgstr ""
+
 msgid "No maintenance scheduled for today"
 msgstr "今天没有计划的维护"
 
@@ -1914,6 +1923,9 @@ msgstr "尚未添加备件"
 msgid "No station"
 msgstr ""
 
+msgid "No stations at this location"
+msgstr ""
+
 msgid "No stock"
 msgstr "无库存"
 
@@ -1981,9 +1993,6 @@ msgstr "没有运行"
 msgid "Nothing scheduled at this work center"
 msgstr "该工作中心没有计划任务"
 
-msgid "Nothing to feed"
-msgstr ""
-
 msgid "Nothing to scrap"
 msgstr "没有需要报废的"
 
@@ -2008,6 +2017,9 @@ msgstr "最早优先"
 
 msgid "On Hold"
 msgstr "搁置"
+
+msgid "On its way"
+msgstr ""
 
 msgid "one combined lot · planned"
 msgstr "一个组合批次 · 已计划"
@@ -2091,6 +2103,9 @@ msgstr "或"
 
 msgid "Or enter this secret manually:"
 msgstr "或手动输入此密钥:"
+
+msgid "Out"
+msgstr ""
 
 msgid "Out of calibration"
 msgstr "需要校准"
@@ -2503,9 +2518,6 @@ msgstr "重新打开子装配件并创建替代件"
 msgid "Repairable"
 msgstr "可修复"
 
-msgid "Request"
-msgstr ""
-
 msgid "Request material"
 msgstr ""
 
@@ -2556,6 +2568,9 @@ msgstr "富文本"
 
 msgid "Running"
 msgstr "运行中"
+
+msgid "Running low"
+msgstr ""
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2728,6 +2743,9 @@ msgstr "选择完成数量"
 msgid "Select a customer"
 msgstr "选择客户"
 
+msgid "Select a location to see its stations"
+msgstr ""
+
 msgid "Select a rework quantity"
 msgstr "选择返工数量"
 
@@ -2856,9 +2874,6 @@ msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
 msgid "Short: {available} of {needed}"
-msgstr ""
-
-msgid "Shortage"
 msgstr ""
 
 msgid "Show description"
@@ -3019,12 +3034,6 @@ msgstr "缺少步骤"
 
 msgid "Stock at:"
 msgstr "库存位置："
-
-msgid "Stock transfer"
-msgstr ""
-
-msgid "Storage unit"
-msgstr ""
 
 msgid "Storage Unit"
 msgstr "存储单元"
@@ -3345,9 +3354,6 @@ msgstr "跟踪号"
 msgid "Training"
 msgstr "培训"
 
-msgid "Transfer"
-msgstr ""
-
 msgid "Traveler"
 msgstr ""
 
@@ -3398,6 +3404,9 @@ msgstr "未知"
 
 msgid "Unknown gauge"
 msgstr "未知量具"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlock"
 msgstr "解锁"
@@ -3515,6 +3524,9 @@ msgstr "保修"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "我们已向您发送了登录链接和6位代码。点击该链接或在此处输入代码。"
+
+msgid "Wet"
+msgstr ""
 
 msgid "What do you need?"
 msgstr ""
