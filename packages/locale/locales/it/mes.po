@@ -567,6 +567,9 @@ msgstr "Grassetto"
 msgid "Bring {quantity}"
 msgstr ""
 
+msgid "Bring kit"
+msgstr ""
+
 msgid "Build kit"
 msgstr ""
 
@@ -1562,9 +1565,6 @@ msgstr "Riga"
 msgid "Line feed"
 msgstr ""
 
-msgid "Line order"
-msgstr ""
-
 msgid "lines"
 msgstr "righe"
 
@@ -1627,6 +1627,9 @@ msgstr "Registra scarti per {0}"
 
 msgid "Login"
 msgstr "Accedi"
+
+msgid "Loose parts"
+msgstr ""
 
 msgid "Lot"
 msgstr "Lotto"
@@ -1871,6 +1874,9 @@ msgstr "Nessun controllo affidato a te"
 
 msgid "No issue types configured"
 msgstr "Nessun tipo di problema configurato"
+
+msgid "No kit"
+msgstr ""
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Nessun permesso è ancora stato configurato. Chiedi al tuo responsabile di configurarne uno nell'ERP."
@@ -2199,6 +2205,10 @@ msgstr "Disposizione Parziale"
 
 msgid "Parts"
 msgstr "Componenti"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "Conforme"
@@ -3029,6 +3039,12 @@ msgstr "Scadenza flessibile"
 msgid "Solid"
 msgstr "Tinta unita"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "Origine"
 
@@ -3225,6 +3241,9 @@ msgstr "Gli ordini di produzione e i componenti che compongono questa esecuzione
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "Gli ordini di produzione realizzano articoli diversi — tieni i componenti di ogni ordine di produzione separati."
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Il lotto sarà contrassegnato come Superato e {remaining} unità/unità rimanente/i saranno completate in questa operazione."
@@ -3641,9 +3660,6 @@ msgstr "Sito di lavoro"
 
 msgid "Working"
 msgstr "In corso"
-
-msgid "Worst first"
-msgstr ""
 
 msgid "Write a note…"
 msgstr "Scrivi una Nota…"

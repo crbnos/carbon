@@ -141,7 +141,11 @@ export default function LineFeedRoute() {
   const sortToggle = (
     <Button asChild variant="secondary">
       <Link to={withParam("sort", worstFirst ? null : "worst")} replace>
-        {worstFirst ? <Trans>Worst first</Trans> : <Trans>Line order</Trans>}
+        {worstFirst ? (
+          <Trans>Sort: worst first</Trans>
+        ) : (
+          <Trans>Sort: line order</Trans>
+        )}
       </Link>
     </Button>
   );
@@ -322,8 +326,10 @@ function LaneColumn({
         />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-base font-semibold">{name}</h2>
-          <div className="truncate text-sm font-medium">
-            {verdict[lane.verdict].label}
+          <div className="text-sm font-medium">
+            {lane.verdict === "ok" && station.status !== "wet"
+              ? stationLabel[station.status]
+              : verdict[lane.verdict].label}
             {verdict[lane.verdict].who && (
               <span className="font-normal text-muted-foreground">
                 {" · "}
@@ -340,13 +346,37 @@ function LaneColumn({
           chip={worstBin ? binLabel[worstBin] : t`OK`}
           tone={worstBin ? (worstBin === "low" ? "yellow" : "red") : "green"}
         >
-          {lane.raw.map((bin) => (
-            <RawBinLine
-              key={`${bin.itemId}:${bin.storageUnitId}`}
-              bin={bin}
-              names={names}
-            />
+          {lane.kits.map((kit) => (
+            <TierGroup
+              key={kit.itemId}
+              label={
+                <Trans>
+                  Parts of {names.itemReadableIds[kit.itemId] ?? t`the kit`}
+                </Trans>
+              }
+            >
+              {lane.raw
+                .filter((bin) => bin.kitItemIds.includes(kit.itemId))
+                .map((bin) => (
+                  <RawBinLine
+                    key={`${bin.itemId}:${bin.storageUnitId}`}
+                    bin={bin}
+                    names={names}
+                  />
+                ))}
+            </TierGroup>
           ))}
+          <TierGroup label={<Trans>Loose parts</Trans>}>
+            {lane.raw
+              .filter((bin) => bin.kitItemIds.length === 0)
+              .map((bin) => (
+                <RawBinLine
+                  key={`${bin.itemId}:${bin.storageUnitId}`}
+                  bin={bin}
+                  names={names}
+                />
+              ))}
+          </TierGroup>
         </Tier>
       )}
 
@@ -370,7 +400,12 @@ function LaneColumn({
         {lane.kits.map((kit) => (
           <StationKitLine key={kit.itemId} kit={kit} names={names} />
         ))}
-        {station.rows.map((row) => (
+        {lane.kits.length > 0 && lane.looseRows.length > 0 && (
+          <TierHeading>
+            <Trans>Loose parts</Trans>
+          </TierHeading>
+        )}
+        {lane.looseRows.map((row) => (
           <StationLine
             key={row.key}
             row={row}
@@ -404,6 +439,31 @@ const quantityOf = (units: { quantity: number }[]) =>
  * A tier of a lane. It opens when something in it needs attention and
  * collapses to its chip when everything is ok; a tap opens or closes it.
  */
+/** A heading inside a tier: what is part of a kit, and what is loose. */
+function TierHeading({ children }: { children: ReactNode }) {
+  return (
+    <li className="bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+      {children}
+    </li>
+  );
+}
+
+function TierGroup({
+  label,
+  children
+}: {
+  label: ReactNode;
+  children: ReactNode[];
+}) {
+  if (children.length === 0) return null;
+  return (
+    <>
+      <TierHeading>{label}</TierHeading>
+      {children}
+    </>
+  );
+}
+
 function Tier({
   label,
   chip,
@@ -602,13 +662,28 @@ function KitRackLine({ kit, names }: { kit: LaneKit; names: Names }) {
   );
 }
 
+/** A kit at the station: whether to bring one, the serials there, and how
+ *  many open units they cover. */
 function StationKitLine({ kit, names }: { kit: LaneKit; names: Names }) {
   const { locale } = useLocale();
-  const onHand = formatQuantity(quantityOf(kit.atStation), locale);
+  const onHand = formatQuantity(
+    kit.atStation.reduce((sum, unit) => sum + unit.quantity, 0),
+    locale
+  );
   const covers = formatQuantity(kit.covers, locale);
   const demand = formatQuantity(kit.demand, locale);
+  const badge = {
+    bring: { variant: "red", label: <Trans>Bring kit</Trans> },
+    out: { variant: "red", label: <Trans>No kit</Trans> },
+    coming: { variant: "gray", label: <Trans>On its way</Trans> },
+    ok: { variant: "green", label: <Trans>Kit</Trans> }
+  } as const;
+  const { variant, label } = badge[kit.stationStatus];
   return (
     <li className="flex items-center gap-3 px-3 py-2">
+      <Badge variant={variant} className="shrink-0">
+        {label}
+      </Badge>
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium">
           {names.itemReadableIds[kit.itemId] ?? <Trans>Unknown part</Trans>}

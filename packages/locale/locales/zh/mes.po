@@ -567,6 +567,9 @@ msgstr "粗体"
 msgid "Bring {quantity}"
 msgstr ""
 
+msgid "Bring kit"
+msgstr ""
+
 msgid "Build kit"
 msgstr ""
 
@@ -1562,9 +1565,6 @@ msgstr "行"
 msgid "Line feed"
 msgstr ""
 
-msgid "Line order"
-msgstr ""
-
 msgid "lines"
 msgstr "行"
 
@@ -1627,6 +1627,9 @@ msgstr "记录 {0} 的报废"
 
 msgid "Login"
 msgstr "登录"
+
+msgid "Loose parts"
+msgstr ""
 
 msgid "Lot"
 msgstr "批次"
@@ -1871,6 +1874,9 @@ msgstr "没有分配给您的检验"
 
 msgid "No issue types configured"
 msgstr "未配置问题类型"
+
+msgid "No kit"
+msgstr ""
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "尚未设置假期。请您的经理在 ERP 中设置。"
@@ -2199,6 +2205,10 @@ msgstr "部分处置"
 
 msgid "Parts"
 msgstr "零件"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "合格"
@@ -3029,6 +3039,12 @@ msgstr "软性截止日期"
 msgid "Solid"
 msgstr "纯色"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "来源"
 
@@ -3225,6 +3241,9 @@ msgstr "组成此次运行的工单和零件。"
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "各工单生产不同的物料 — 保持每个工单的零件分开。"
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "批次将标记为已通过，{remaining} 个剩余件将在此工序完成。"
@@ -3641,9 +3660,6 @@ msgstr "工作地点"
 
 msgid "Working"
 msgstr "工作中"
-
-msgid "Worst first"
-msgstr ""
 
 msgid "Write a note…"
 msgstr "写备注…"

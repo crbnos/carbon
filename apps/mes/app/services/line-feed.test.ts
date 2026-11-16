@@ -304,6 +304,13 @@ describe("buildLaneBoard", () => {
 
     expect(example.verdict).toBe("rawShort");
     expect(example.shortItemIds).toEqual(["IGN"]);
+    // The kit's shortage is the kit's line, not a loose part to bring.
+    expect(example.looseRows).toEqual([]);
+    expect(example.kits[0].stationStatus).toBe("ok");
+    expect(example.raw.map((bin) => bin.kitItemIds)).toEqual([
+      ["KIT"],
+      ["KIT"]
+    ]);
     expect(example.severity).toBe("amber");
 
     const [kit] = example.kits;
@@ -342,6 +349,7 @@ describe("buildLaneBoard", () => {
     expect(out.verdict).toBe("deliver");
     expect(out.severity).toBe("red");
     expect(out.work).toMatchObject({ deliver: 1, rawShort: 1 });
+    expect(out.kits[0].stationStatus).toBe("bring");
   });
 
   it("does not ask for a kit that is already on its way", () => {
@@ -437,6 +445,8 @@ describe("buildLaneBoard", () => {
       station("A3", "out", [shortage])
     );
     expect(direct.kits).toEqual([]);
+    expect(direct.looseRows).toEqual([shortage]);
+    expect(direct.raw[0].kitItemIds).toEqual([]);
     expect(direct.raw).toMatchObject([{ need: 8, status: "short" }]);
     expect(direct.verdict).toBe("rawShort");
     expect(direct.severity).toBe("red");

@@ -567,6 +567,9 @@ msgstr "Bold"
 msgid "Bring {quantity}"
 msgstr "Bring {quantity}"
 
+msgid "Bring kit"
+msgstr "Bring kit"
+
 msgid "Build kit"
 msgstr "Build kit"
 
@@ -1562,9 +1565,6 @@ msgstr "Line"
 msgid "Line feed"
 msgstr "Line feed"
 
-msgid "Line order"
-msgstr "Line order"
-
 msgid "lines"
 msgstr "lines"
 
@@ -1627,6 +1627,9 @@ msgstr "Log scrap for {0}"
 
 msgid "Login"
 msgstr "Login"
+
+msgid "Loose parts"
+msgstr "Loose parts"
 
 msgid "Lot"
 msgstr "Lot"
@@ -1871,6 +1874,9 @@ msgstr "No inspections assigned to you"
 
 msgid "No issue types configured"
 msgstr "No issue types configured"
+
+msgid "No kit"
+msgstr "No kit"
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "No leave is set up yet. Ask your manager to set one up in the ERP."
@@ -2199,6 +2205,10 @@ msgstr "Partial Disposition"
 
 msgid "Parts"
 msgstr "Parts"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr "Parts of {0}"
 
 msgid "Pass"
 msgstr "Pass"
@@ -3029,6 +3039,12 @@ msgstr "Soft deadline"
 msgid "Solid"
 msgstr "Solid"
 
+msgid "Sort: line order"
+msgstr "Sort: line order"
+
+msgid "Sort: worst first"
+msgstr "Sort: worst first"
+
 msgid "Source"
 msgstr "Source"
 
@@ -3225,6 +3241,9 @@ msgstr "The jobs and parts that make up this run."
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "The jobs make different items — keep each job's parts apart."
+
+msgid "the kit"
+msgstr "the kit"
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
@@ -3641,9 +3660,6 @@ msgstr "Work Site"
 
 msgid "Working"
 msgstr "Working"
-
-msgid "Worst first"
-msgstr "Worst first"
 
 msgid "Write a note…"
 msgstr "Write a note…"

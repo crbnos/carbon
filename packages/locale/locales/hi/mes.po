@@ -567,6 +567,9 @@ msgstr "बोल्ड"
 msgid "Bring {quantity}"
 msgstr ""
 
+msgid "Bring kit"
+msgstr ""
+
 msgid "Build kit"
 msgstr ""
 
@@ -1562,9 +1565,6 @@ msgstr "पंक्ति"
 msgid "Line feed"
 msgstr ""
 
-msgid "Line order"
-msgstr ""
-
 msgid "lines"
 msgstr "लाइनें"
 
@@ -1627,6 +1627,9 @@ msgstr "{0} के लिए स्क्रैप लॉग करें"
 
 msgid "Login"
 msgstr "लॉगिन"
+
+msgid "Loose parts"
+msgstr ""
 
 msgid "Lot"
 msgstr "लॉट"
@@ -1871,6 +1874,9 @@ msgstr "आपको सौंपा गया कोई निरीक्ष�
 
 msgid "No issue types configured"
 msgstr "कोई समस्या प्रकार कॉन्फ़िगर नहीं किया गया"
+
+msgid "No kit"
+msgstr ""
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "अभी कोई अवकाश सेट नहीं है। अपने प्रबंधक से ERP में एक सेट करने के लिए कहें।"
@@ -2199,6 +2205,10 @@ msgstr "आंशिक निपटान"
 
 msgid "Parts"
 msgstr "पार्ट्स"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "उत्तीर्ण"
@@ -3029,6 +3039,12 @@ msgstr "नरम समय-सीमा"
 msgid "Solid"
 msgstr "ठोस"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "स्रोत"
 
@@ -3225,6 +3241,9 @@ msgstr "जॉब्स और पार्ट्स जो इस रन को
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "जॉब्स विभिन्न आइटम बनाते हैं — प्रत्येक जॉब के पार्ट्स को अलग रखें।"
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "लॉट को उत्तीर्ण के रूप में चिह्नित किया जाएगा और {remaining} शेष इकाई(यों) को इस ऑपरेशन पर पूर्ण किया जाएगा।"
@@ -3641,9 +3660,6 @@ msgstr "कार्य स्थल"
 
 msgid "Working"
 msgstr "काम कर रहा है"
-
-msgid "Worst first"
-msgstr ""
 
 msgid "Write a note…"
 msgstr "एक नोट लिखें…"

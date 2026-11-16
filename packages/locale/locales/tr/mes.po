@@ -567,6 +567,9 @@ msgstr "Kalın"
 msgid "Bring {quantity}"
 msgstr ""
 
+msgid "Bring kit"
+msgstr ""
+
 msgid "Build kit"
 msgstr ""
 
@@ -1562,9 +1565,6 @@ msgstr "Satır"
 msgid "Line feed"
 msgstr ""
 
-msgid "Line order"
-msgstr ""
-
 msgid "lines"
 msgstr "satırlar"
 
@@ -1627,6 +1627,9 @@ msgstr "{0} için fire kaydı"
 
 msgid "Login"
 msgstr "Giriş Yap"
+
+msgid "Loose parts"
+msgstr ""
 
 msgid "Lot"
 msgstr "Lot"
@@ -1871,6 +1874,9 @@ msgstr "Size atanmış muayene yok"
 
 msgid "No issue types configured"
 msgstr "Sorun türü yapılandırılmadı"
+
+msgid "No kit"
+msgstr ""
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Henüz izin ayarlanmadı. Yöneticinizden ERP'de bir tane ayarlamasını isteyin."
@@ -2199,6 +2205,10 @@ msgstr "Kısmi Karar"
 
 msgid "Parts"
 msgstr "Parçalar"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "Uygun"
@@ -3029,6 +3039,12 @@ msgstr "Esnek son tarih"
 msgid "Solid"
 msgstr "Düz"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "Kaynak"
 
@@ -3225,6 +3241,9 @@ msgstr "Bu çalıştırmayı oluşturan iş emirleri ve parçalar."
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "İş emirleri farklı stok kartları üretir — her iş emrinin parçalarını ayrı tutun."
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Lot Geçti olarak işaretlenecek ve {remaining} kalan birim bu operasyonda tamamlanacak."
@@ -3641,9 +3660,6 @@ msgstr "İş Sahanı"
 
 msgid "Working"
 msgstr "Çalışıyor"
-
-msgid "Worst first"
-msgstr ""
 
 msgid "Write a note…"
 msgstr "Bir not yazın…"

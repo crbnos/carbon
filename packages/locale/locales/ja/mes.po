@@ -567,6 +567,9 @@ msgstr "太字"
 msgid "Bring {quantity}"
 msgstr ""
 
+msgid "Bring kit"
+msgstr ""
+
 msgid "Build kit"
 msgstr ""
 
@@ -1562,9 +1565,6 @@ msgstr "明細"
 msgid "Line feed"
 msgstr ""
 
-msgid "Line order"
-msgstr ""
-
 msgid "lines"
 msgstr "行"
 
@@ -1627,6 +1627,9 @@ msgstr "{0} のスクラップを記録"
 
 msgid "Login"
 msgstr "ログイン"
+
+msgid "Loose parts"
+msgstr ""
 
 msgid "Lot"
 msgstr "ロット"
@@ -1871,6 +1874,9 @@ msgstr "割り当てられた検査はありません"
 
 msgid "No issue types configured"
 msgstr "構成されたイシュータイプがありません"
+
+msgid "No kit"
+msgstr ""
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "休暇がまだ設定されていません。マネージャーにERPで設定するよう依頼してください。"
@@ -2199,6 +2205,10 @@ msgstr "一部処置"
 
 msgid "Parts"
 msgstr "部品"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "合格"
@@ -3029,6 +3039,12 @@ msgstr "目安納期"
 msgid "Solid"
 msgstr "単色"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "ソース"
 
@@ -3225,6 +3241,9 @@ msgstr "このランを構成する製造指図と部品"
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "製造指図は異なる品目を製造します — 各製造指図の部品は分けておく"
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "ロットは「合格」とマークされ、{remaining}個の残りユニットがこの工程で完了します。"
@@ -3641,9 +3660,6 @@ msgstr "作業現場"
 
 msgid "Working"
 msgstr "作業中"
-
-msgid "Worst first"
-msgstr ""
 
 msgid "Write a note…"
 msgstr "メモを書く…"

@@ -503,7 +503,9 @@ while its serial or batch materials are not scanned in.
   quantity and the shelf covers a kit), `rawShort` (a needed bin is empty or
   short). `laneVerdict` is the first non-zero count in that order; severity is
   red when the station is `out`, amber when it is `low` or the verdict is not
-  ok. A lane with no kit reads "Fed directly" and lists the source bins of the
+  ok. The shelf and station tiers split kit parts from loose parts
+  (`RawBin.kitItemIds`, `Lane.looseRows`); a kit's own shortage shows on its
+  kit line (`LaneKit.stationStatus`), not as a part to bring. A lane with no kit reads "Fed directly" and lists the source bins of the
   Transfer kanbans into its station. The sort (`?sort=worst`) and the lit
   summary count (`?show=`) live in the URL; the loader sorts. `kanban` does
   not broadcast, so a new card shows on the next stock, job or PO change.

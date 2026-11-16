@@ -567,6 +567,9 @@ msgstr "굵게"
 msgid "Bring {quantity}"
 msgstr ""
 
+msgid "Bring kit"
+msgstr ""
+
 msgid "Build kit"
 msgstr ""
 
@@ -1562,9 +1565,6 @@ msgstr "라인"
 msgid "Line feed"
 msgstr ""
 
-msgid "Line order"
-msgstr ""
-
 msgid "lines"
 msgstr "라인"
 
@@ -1627,6 +1627,9 @@ msgstr "{0} 스크랩 기록"
 
 msgid "Login"
 msgstr "로그인"
+
+msgid "Loose parts"
+msgstr ""
 
 msgid "Lot"
 msgstr "로트"
@@ -1871,6 +1874,9 @@ msgstr "회원님께 배정된 검사가 없습니다"
 
 msgid "No issue types configured"
 msgstr "구성된 문제 유형이 없음"
+
+msgid "No kit"
+msgstr ""
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "아직 휴가가 설정되지 않았습니다. 관리자에게 ERP에서 설정하도록 요청하세요."
@@ -2199,6 +2205,10 @@ msgstr "부분 처분 결정"
 
 msgid "Parts"
 msgstr "부품"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "합격"
@@ -3029,6 +3039,12 @@ msgstr "목표 기한"
 msgid "Solid"
 msgstr "단색"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "소스"
 
@@ -3225,6 +3241,9 @@ msgstr "이 실행을 구성하는 작업 지시와 부품입니다."
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "작업 지시가 서로 다른 품목을 생성합니다 — 각 작업 지시의 부품을 분리하여 보관하세요."
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "로트는 통과로 표시되고 이 공정에서 남은 {remaining}개가 완료됩니다."
@@ -3641,9 +3660,6 @@ msgstr "작업 현장"
 
 msgid "Working"
 msgstr "작업 중"
-
-msgid "Worst first"
-msgstr ""
 
 msgid "Write a note…"
 msgstr "메모 작성…"

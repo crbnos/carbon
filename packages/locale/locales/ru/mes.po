@@ -567,6 +567,9 @@ msgstr "Полужирный"
 msgid "Bring {quantity}"
 msgstr ""
 
+msgid "Bring kit"
+msgstr ""
+
 msgid "Build kit"
 msgstr ""
 
@@ -1562,9 +1565,6 @@ msgstr "Строка"
 msgid "Line feed"
 msgstr ""
 
-msgid "Line order"
-msgstr ""
-
 msgid "lines"
 msgstr "строки"
 
@@ -1627,6 +1627,9 @@ msgstr "Записать брак для {0}"
 
 msgid "Login"
 msgstr "Вход"
+
+msgid "Loose parts"
+msgstr ""
 
 msgid "Lot"
 msgstr "Партия"
@@ -1871,6 +1874,9 @@ msgstr "Вам не назначено ни одного контроля"
 
 msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
+
+msgid "No kit"
+msgstr ""
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Отпуск еще не настроен. Попросите своего менеджера настроить его в ERP."
@@ -2199,6 +2205,10 @@ msgstr "Частичное решение"
 
 msgid "Parts"
 msgstr "Детали"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "Годен"
@@ -3029,6 +3039,12 @@ msgstr "Гибкий срок"
 msgid "Solid"
 msgstr "Сплошной"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "Источник"
 
@@ -3225,6 +3241,9 @@ msgstr "Производственные заказы и детали, кото�
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "Производственные заказы производят разные изделия — держите детали каждого производственного заказа отдельно."
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Партия будет отмечена как Пройдена, и {remaining} оставшихся единиц будут завершены в этой операции."
@@ -3641,9 +3660,6 @@ msgstr "Объект"
 
 msgid "Working"
 msgstr "В работе"
-
-msgid "Worst first"
-msgstr ""
 
 msgid "Write a note…"
 msgstr "Напишите примечание…"

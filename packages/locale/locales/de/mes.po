@@ -567,6 +567,9 @@ msgstr "Fett"
 msgid "Bring {quantity}"
 msgstr ""
 
+msgid "Bring kit"
+msgstr ""
+
 msgid "Build kit"
 msgstr ""
 
@@ -1562,9 +1565,6 @@ msgstr "Position"
 msgid "Line feed"
 msgstr ""
 
-msgid "Line order"
-msgstr ""
-
 msgid "lines"
 msgstr "Zeilen"
 
@@ -1627,6 +1627,9 @@ msgstr "Ausschuss erfassen für {0}"
 
 msgid "Login"
 msgstr "Anmelden"
+
+msgid "Loose parts"
+msgstr ""
 
 msgid "Lot"
 msgstr "Charge"
@@ -1871,6 +1874,9 @@ msgstr "Keine Prüfungen für Sie zugeordnet"
 
 msgid "No issue types configured"
 msgstr "Keine Problemtypen konfiguriert"
+
+msgid "No kit"
+msgstr ""
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Es ist noch kein Urlaub eingerichtet. Bitten Sie Ihren Manager, einen in der ERP einzurichten."
@@ -2199,6 +2205,10 @@ msgstr "Teilweise Verwendungsentscheid"
 
 msgid "Parts"
 msgstr "Teile"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "Bestanden"
@@ -3029,6 +3039,12 @@ msgstr "Weiche Frist"
 msgid "Solid"
 msgstr "Einfarbig"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "Quelle"
 
@@ -3225,6 +3241,9 @@ msgstr "Die Fertigungsaufträge und Teile, die diesen Durchlauf ausmachen."
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "Die Fertigungsaufträge stellen verschiedene Artikel her – halten Sie die Teile jedes Fertigungsauftrags getrennt."
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Das Los wird als Bestanden markiert und {remaining} verbleibende Einheit(en) werden bei diesem Arbeitsgang abgeschlossen."
@@ -3641,9 +3660,6 @@ msgstr "Arbeitsstelle"
 
 msgid "Working"
 msgstr "In Arbeit"
-
-msgid "Worst first"
-msgstr ""
 
 msgid "Write a note…"
 msgstr "Notiz schreiben…"
