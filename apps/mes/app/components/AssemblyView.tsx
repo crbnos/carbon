@@ -1691,14 +1691,23 @@ export function AssemblyView({
 
   // Later operations: prompt the operator to scan/select the unit on arrival. Every
   // unit already carries a printed label (labels print at the first operation's
-  // completion), so there is nothing to auto-select. Prompt once per mount — even if
-  // the loader seeded a ?trackedEntityId — and only while units remain to build. The
-  // first operation auto-selects instead (loader default + the settle effect above).
+  // completion), so there is nothing to auto-select. Prompt once per mount, only
+  // while units remain to build. A ?trackedEntityId naming a unit still open here
+  // was scanned or selected (a traveler scan redirects with it; the operation
+  // route forwards to this view before it seeds a default), so it needs no prompt.
+  // The first operation auto-selects instead (loader default + the settle effect above).
   const arrivalPromptedRef = useRef(false);
   // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot arrival prompt
   useEffect(() => {
     if (!navigatesByEntity || isFirstOperation) return;
     if (arrivalPromptedRef.current) return;
+    const held = selectedEntityParam
+      ? unitEntities.find((entity) => entity.id === selectedEntityParam)
+      : undefined;
+    if (held && isUnitIncompleteForOperation(held, operationId)) {
+      arrivalPromptedRef.current = true;
+      return;
+    }
     // Cap to the unit axis (see the settle effect): don't prompt for serials the
     // job pre-generated beyond the operation quantity.
     const hasIncomplete = unitEntities.some((entity) =>
