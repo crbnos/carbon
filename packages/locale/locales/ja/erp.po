@@ -4160,6 +4160,9 @@ msgstr "任意のアイテムグループ"
 msgid "Any item type"
 msgstr "任意の品目タイプ"
 
+msgid "Any promised date saves without a warning."
+msgstr "約束日はすべて警告なしで保存されます。"
+
 msgid "Anything not explicitly listed in scope above"
 msgstr "上記の範囲に明示的にリストされていないもの"
 
@@ -6952,6 +6955,12 @@ msgstr "チェックポイント ·"
 msgid "Checkpoints"
 msgstr "チェックポイント"
 
+msgid "Checks free stock week by week, then the lead time."
+msgstr "空き在庫を週ごとに確認し、次にリードタイムを確認します。"
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "空き在庫を確認し、製造品目は工場のスケジュールも確認します。"
+
 msgid "Children"
 msgstr "子要素"
 
@@ -7533,6 +7542,9 @@ msgstr "比較対象を選択"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "提出された週を従業員のタイムカードと比較します。"
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "日付を品目のリードタイム（部品表を含む）と比較します。"
 
 msgid "Compatibility rules"
 msgstr "互換性ルール"

@@ -4160,6 +4160,9 @@ msgstr "모든 품목 그룹"
 msgid "Any item type"
 msgstr "모든 품목 유형"
 
+msgid "Any promised date saves without a warning."
+msgstr "모든 약속일이 경고 없이 저장됩니다."
+
 msgid "Anything not explicitly listed in scope above"
 msgstr "위 범위에 명시적으로 나열되지 않은 모든 사항"
 
@@ -6952,6 +6955,12 @@ msgstr "체크포인트 ·"
 msgid "Checkpoints"
 msgstr "체크포인트"
 
+msgid "Checks free stock week by week, then the lead time."
+msgstr "가용 재고를 주 단위로 확인한 다음 리드타임을 확인합니다."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "가용 재고를 확인한 다음 제조 품목은 작업장 일정을 확인합니다."
+
 msgid "Children"
 msgstr "하위 항목"
 
@@ -7533,6 +7542,9 @@ msgstr "…와 비교"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "제출된 주를 직원의 타임카드와 비교합니다."
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "날짜를 품목의 리드타임(자재 명세서 포함)과 비교합니다."
 
 msgid "Compatibility rules"
 msgstr "호환성 규칙"

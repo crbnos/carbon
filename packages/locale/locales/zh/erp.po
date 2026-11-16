@@ -4160,6 +4160,9 @@ msgstr "任何项目组"
 msgid "Any item type"
 msgstr "任何物料类型"
 
+msgid "Any promised date saves without a warning."
+msgstr "任何承诺日期都会直接保存，不发出警告。"
+
 msgid "Anything not explicitly listed in scope above"
 msgstr "未在上述范围内明确列出的任何内容"
 
@@ -6952,6 +6955,12 @@ msgstr "检查点 ·"
 msgid "Checkpoints"
 msgstr "检查点"
 
+msgid "Checks free stock week by week, then the lead time."
+msgstr "逐周检查可用库存，然后检查提前期。"
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "检查可用库存，然后为自制物品检查车间排程。"
+
 msgid "Children"
 msgstr "子项"
 
@@ -7533,6 +7542,9 @@ msgstr "与…比较"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "将提交的周与员工的工时记录进行比较。"
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "将日期与物品的提前期（含物料清单）进行比较。"
 
 msgid "Compatibility rules"
 msgstr "兼容性规则"

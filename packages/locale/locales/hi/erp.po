@@ -4160,6 +4160,9 @@ msgstr "कोई भी आइटम समूह"
 msgid "Any item type"
 msgstr "किसी भी आइटम प्रकार"
 
+msgid "Any promised date saves without a warning."
+msgstr "कोई भी वादा की गई तारीख बिना चेतावनी के सहेजी जाती है।"
+
 msgid "Anything not explicitly listed in scope above"
 msgstr "स्कोप में ऊपर स्पष्ट रूप से सूचीबद्ध कुछ भी नहीं"
 
@@ -6952,6 +6955,12 @@ msgstr "चेकपॉइंट ·"
 msgid "Checkpoints"
 msgstr "चेकपॉइंट्स"
 
+msgid "Checks free stock week by week, then the lead time."
+msgstr "हर सप्ताह मुक्त स्टॉक जाँचता है, फिर लीड टाइम।"
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "मुक्त स्टॉक जाँचता है, फिर बनाए जाने वाले आइटम के लिए शॉप का शेड्यूल।"
+
 msgid "Children"
 msgstr "संतानें"
 
@@ -7533,6 +7542,9 @@ msgstr "इसके साथ तुलना करें…"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "कर्मचारी के टाइमकार्ड के साथ सबमिट किए गए सप्ताह की तुलना करता है।"
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "तारीख की तुलना आइटम के लीड टाइम से करता है, सामग्री की सूची सहित।"
 
 msgid "Compatibility rules"
 msgstr "अनुकूलता नियम"

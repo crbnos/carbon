@@ -4160,6 +4160,9 @@ msgstr "Dowolna grupa artykułów"
 msgid "Any item type"
 msgstr "Dowolny typ artykułu"
 
+msgid "Any promised date saves without a warning."
+msgstr "Każda obiecana data zapisuje się bez ostrzeżenia."
+
 msgid "Anything not explicitly listed in scope above"
 msgstr "Wszystko, co nie jest wyraźnie wymienione w zakresie powyżej"
 
@@ -6952,6 +6955,12 @@ msgstr "Punkt kontrolny ·"
 msgid "Checkpoints"
 msgstr "Punkty kontrolne"
 
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Sprawdza wolny zapas tydzień po tygodniu, a potem czas realizacji."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "Sprawdza wolny zapas, a potem harmonogram warsztatu dla pozycji produkowanych."
+
 msgid "Children"
 msgstr "Elementy podrzędne"
 
@@ -7533,6 +7542,9 @@ msgstr "Porównaj z…"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "Porównuje przesłany tydzień z kartami pracy pracownika."
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "Porównuje datę z czasem realizacji pozycji, łącznie z listą materiałową."
 
 msgid "Compatibility rules"
 msgstr "Reguły Kompatybilności"

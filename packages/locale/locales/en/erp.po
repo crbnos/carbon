@@ -4160,6 +4160,9 @@ msgstr "Any item group"
 msgid "Any item type"
 msgstr "Any item type"
 
+msgid "Any promised date saves without a warning."
+msgstr "Any promised date saves without a warning."
+
 msgid "Anything not explicitly listed in scope above"
 msgstr "Anything not explicitly listed in scope above"
 
@@ -6952,6 +6955,12 @@ msgstr "Checkpoint ·"
 msgid "Checkpoints"
 msgstr "Checkpoints"
 
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Checks free stock week by week, then the lead time."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "Checks free stock, then the shop's schedule for made items."
+
 msgid "Children"
 msgstr "Children"
 
@@ -7533,6 +7542,9 @@ msgstr "Compare with…"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "Compares a submitted week with the employee's timecards."
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "Compares the date with the item's lead time, BOM included."
 
 msgid "Compatibility rules"
 msgstr "Compatibility rules"

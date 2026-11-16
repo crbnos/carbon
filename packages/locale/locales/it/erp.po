@@ -4160,6 +4160,9 @@ msgstr "Qualsiasi gruppo articoli"
 msgid "Any item type"
 msgstr "Qualsiasi tipo di articolo"
 
+msgid "Any promised date saves without a warning."
+msgstr "Qualsiasi data promessa viene salvata senza avviso."
+
 msgid "Anything not explicitly listed in scope above"
 msgstr "Qualsiasi cosa non esplicitamente elencata nell'ambito di cui sopra"
 
@@ -6952,6 +6955,12 @@ msgstr "Checkpoint ·"
 msgid "Checkpoints"
 msgstr "Checkpoint"
 
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Controlla la giacenza libera settimana per settimana, poi il lead time."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "Controlla la giacenza libera, poi il programma dell'officina per gli articoli prodotti."
+
 msgid "Children"
 msgstr "Figli"
 
@@ -7533,6 +7542,9 @@ msgstr "Confronta con…"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "Confronta una settimana inviata con la rilevazione tempi del dipendente."
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "Confronta la data con il lead time dell'articolo, distinta base inclusa."
 
 msgid "Compatibility rules"
 msgstr "Regole di Compatibilità"

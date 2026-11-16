@@ -4160,6 +4160,9 @@ msgstr "Herhangi bir ürün grubu"
 msgid "Any item type"
 msgstr "Herhangi bir stok kartı türü"
 
+msgid "Any promised date saves without a warning."
+msgstr "Herhangi bir taahhüt tarihi uyarı olmadan kaydedilir."
+
 msgid "Anything not explicitly listed in scope above"
 msgstr "Yukarıda açıkça kapsamda listelenmemiş herhangi bir şey"
 
@@ -6952,6 +6955,12 @@ msgstr "Kontrol Noktası ·"
 msgid "Checkpoints"
 msgstr "Kontrol Noktaları"
 
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Serbest stoku hafta hafta, ardından tedarik süresini kontrol eder."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "Serbest stoku, ardından üretilen kalemler için atölye planını kontrol eder."
+
 msgid "Children"
 msgstr "Alt öğeler"
 
@@ -7533,6 +7542,9 @@ msgstr "Karşılaştır…"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "Gönderilen bir haftayı çalışanın puantajı ile karşılaştırır."
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "Tarihi, ürün ağacı dahil olmak üzere kalemin tedarik süresiyle karşılaştırır."
 
 msgid "Compatibility rules"
 msgstr "Uyumluluk Kuralları"

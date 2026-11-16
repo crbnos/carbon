@@ -4160,6 +4160,9 @@ msgstr "Любая группа товаров"
 msgid "Any item type"
 msgstr "Любой тип номенклатуры"
 
+msgid "Any promised date saves without a warning."
+msgstr "Любая обещанная дата сохраняется без предупреждения."
+
 msgid "Anything not explicitly listed in scope above"
 msgstr "Все, что не указано явно в области действия выше"
 
@@ -6952,6 +6955,12 @@ msgstr "Контрольная точка ·"
 msgid "Checkpoints"
 msgstr "Контрольные точки"
 
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Проверяет свободный запас по неделям, затем срок поставки."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "Проверяет свободный запас, затем график цеха для производимых позиций."
+
 msgid "Children"
 msgstr "Подчинённые"
 
@@ -7533,6 +7542,9 @@ msgstr "Сравнить с…"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "Сравнивает отправленную неделю с табелями сотрудника."
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "Сравнивает дату со сроком поставки позиции с учётом спецификации материалов."
 
 msgid "Compatibility rules"
 msgstr "Правила совместимости"
