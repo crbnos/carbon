@@ -14722,6 +14722,9 @@ msgstr "保留凭证作为需要修正的警告"
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "在 <0>项目 → 审批</0>的计费选项卡上暂停、下达、注销或重新定价物料。"
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "假期"
 
@@ -16492,6 +16495,9 @@ msgstr "记录类型"
 
 msgid "Kit"
 msgstr "套件"
+
+msgid "Kit rack"
+msgstr ""
 
 msgid "label"
 msgstr "标签"

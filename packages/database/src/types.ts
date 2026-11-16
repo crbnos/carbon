@@ -78157,6 +78157,7 @@ export type Database = {
           effectiveNettable: boolean
           id: string
           isWorkCenterDefault: boolean
+          kitRack: boolean
           locationId: string
           name: string
           nettable: boolean
@@ -78177,6 +78178,7 @@ export type Database = {
           effectiveNettable?: boolean
           id?: string
           isWorkCenterDefault?: boolean
+          kitRack?: boolean
           locationId: string
           name: string
           nettable?: boolean
@@ -78197,6 +78199,7 @@ export type Database = {
           effectiveNettable?: boolean
           id?: string
           isWorkCenterDefault?: boolean
+          kitRack?: boolean
           locationId?: string
           name?: string
           nettable?: boolean
@@ -108482,6 +108485,25 @@ export type Database = {
           kanbanId: string
           projectedQuantity: number
           replenishmentLevel: number
+        }[]
+      }
+      get_line_feed_lanes: {
+        Args: { p_company_id: string; p_location_id: string }
+        Returns: {
+          itemId: string | null
+          jobId: string | null
+          kanbanId: string | null
+          need: number | null
+          parentKitItemId: string | null
+          quantity: number | null
+          readableId: string | null
+          replenishing: boolean | null
+          state: string
+          storageUnitId: string | null
+          target: number | null
+          tier: string
+          trackedEntityId: string | null
+          workCenterId: string
         }[]
       }
       get_line_feed_shortages: {

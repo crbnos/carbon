@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · Nothing ordered"
+msgstr " · Nothing ordered"
+
+msgid " · On order"
+msgstr " · On order"
+
 msgid ", not running"
 msgstr ", not running"
 
@@ -147,6 +153,12 @@ msgstr "{columns} does not match an existing record."
 msgid "{companyName} logo"
 msgstr "{companyName} logo"
 
+msgid "{complete} complete"
+msgstr "{complete} complete"
+
+msgid "{complete} complete · target {target}"
+msgstr "{complete} complete · target {target}"
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} of {quantity}"
 
@@ -192,6 +204,12 @@ msgstr "{name}: {value}"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} of {denominator}"
+
+msgid "{onHand} of {need}"
+msgstr "{onHand} of {need}"
+
+msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr "{onHand} on hand · covers {covers} of {demand}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -549,6 +567,9 @@ msgstr "Bold"
 msgid "Bring {quantity}"
 msgstr "Bring {quantity}"
 
+msgid "Build kit"
+msgstr "Build kit"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "But don't worry. You can use the forgot password flow to request a new magic link."
 
@@ -892,6 +913,9 @@ msgstr "Delete Step"
 msgid "Delete Timecard (<0/>)"
 msgstr "Delete Timecard (<0/>)"
 
+msgid "Deliver"
+msgstr "Deliver"
+
 msgid "Density"
 msgstr "Density"
 
@@ -1039,6 +1063,9 @@ msgstr "Emoji: {emoji}"
 msgid "Employee"
 msgstr "Employee"
 
+msgid "Empty"
+msgstr "Empty"
+
 msgid "Empty work centers"
 msgstr "Empty work centers"
 
@@ -1165,6 +1192,9 @@ msgstr "Failed to upload signature"
 msgid "Failure Mode"
 msgstr "Failure Mode"
 
+msgid "Fed directly"
+msgstr "Fed directly"
+
 msgid "File"
 msgstr "File"
 
@@ -1191,6 +1221,9 @@ msgstr "Findings"
 
 msgid "Finish"
 msgstr "Finish"
+
+msgid "Finish kit"
+msgstr "Finish kit"
 
 msgid "Finish setting up your account"
 msgstr "Finish setting up your account"
@@ -1333,6 +1366,9 @@ msgstr "In-app notifications are always delivered. Choose which topics also reac
 msgid "Inactive"
 msgstr "Inactive"
 
+msgid "Incomplete"
+msgstr "Incomplete"
+
 msgid "Increase {fieldLabel}"
 msgstr "Increase {fieldLabel}"
 
@@ -1448,6 +1484,21 @@ msgstr "Keyboard shortcuts"
 msgid "Kit"
 msgstr "Kit"
 
+msgid "Kit rack"
+msgstr "Kit rack"
+
+msgid "kits to build"
+msgstr "kits to build"
+
+msgid "kits to deliver"
+msgstr "kits to deliver"
+
+msgid "kits to finish"
+msgstr "kits to finish"
+
+msgid "Kitter"
+msgstr "Kitter"
+
 msgid "Labor"
 msgstr "Labor"
 
@@ -1510,6 +1561,9 @@ msgstr "Line"
 
 msgid "Line feed"
 msgstr "Line feed"
+
+msgid "Line order"
+msgstr "Line order"
 
 msgid "lines"
 msgstr "lines"
@@ -1662,6 +1716,9 @@ msgstr "Message"
 msgid "Metric"
 msgstr "Metric"
 
+msgid "Missing"
+msgstr "Missing"
+
 msgid "Mode"
 msgstr "Mode"
 
@@ -1787,6 +1844,9 @@ msgstr "No country found."
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "No customer asset has the serial {0}. Choose the customer."
+
+msgid "No default bin"
+msgstr "No default bin"
 
 msgid "No dispatches assigned to you"
 msgstr "No dispatches assigned to you"
@@ -2011,6 +2071,9 @@ msgstr "of {0}"
 
 msgid "Offline"
 msgstr "Offline"
+
+msgid "OK"
+msgstr "OK"
 
 msgid "Oldest first"
 msgstr "Oldest first"
@@ -2393,6 +2456,15 @@ msgstr "Quotes"
 
 msgid "Raise quality issue"
 msgstr "Raise quality issue"
+
+msgid "raw bins short"
+msgstr "raw bins short"
+
+msgid "Raw shelf"
+msgstr "Raw shelf"
+
+msgid "Raw short: {shortParts}"
+msgstr "Raw short: {shortParts}"
 
 msgid "Re"
 msgstr "Re"
@@ -3004,11 +3076,17 @@ msgstr "Start or pause the operation"
 msgid "Start work"
 msgstr "Start work"
 
+msgid "Station"
+msgstr "Station"
+
 msgid "Station User"
 msgstr "Station User"
 
 msgid "Station: {stationName}"
 msgstr "Station: {stationName}"
+
+msgid "stations out"
+msgstr "stations out"
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
@@ -3522,6 +3600,9 @@ msgstr "View Traceability"
 msgid "Warranty"
 msgstr "Warranty"
 
+msgid "Water spider"
+msgstr "Water spider"
+
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 
@@ -3560,6 +3641,9 @@ msgstr "Work Site"
 
 msgid "Working"
 msgstr "Working"
+
+msgid "Worst first"
+msgstr "Worst first"
 
 msgid "Write a note…"
 msgstr "Write a note…"

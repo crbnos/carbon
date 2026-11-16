@@ -490,6 +490,23 @@ while its serial or batch materials are not scanned in.
      its project's stock, then unassigned stock; every other job uses
      unassigned stock only. `onHand` is the stock that can cover the demand.
   3. Outstanding stock transfer lines to a work center's storage unit, oldest first.
+- **Lanes.** The board shows each station card as the bottom tier of a lane
+  (`buildLaneBoard`, tested; spec `.ai/specs/2026-11-16-line-feed-lanes.md`):
+  raw shelf, kit rack, station. A kit is a Make item whose default storage
+  unit (`pickMethod`) is a `storageUnit."kitRack"` unit, its slot on the rack;
+  a kit job builds it, so an incomplete kit is an open kit job with unissued
+  parts. `get_line_feed_lanes` (`20261116150000_line-feed-lanes.sql`) returns
+  one row per fact (its header lists the `tier`/`state` pairs). `buildLane`
+  counts the lane's work (`LaneWork`): `deliver` (the station is out of a kit,
+  none on its way, and the rack has one), `finish` (an incomplete kit whose
+  missing parts are on the shelf), `build` (the rack is below its Make kanban
+  quantity and the shelf covers a kit), `rawShort` (a needed bin is empty or
+  short). `laneVerdict` is the first non-zero count in that order; severity is
+  red when the station is `out`, amber when it is `low` or the verdict is not
+  ok. A lane with no kit reads "Fed directly" and lists the source bins of the
+  Transfer kanbans into its station. The sort (`?sort=worst`) and the lit
+  summary count (`?show=`) live in the URL; the loader sorts. `kanban` does
+  not broadcast, so a new card shows on the next stock, job or PO change.
 - **Resolve.** A request card posts to `x+/line-feed.$materialRequestId.resolve.tsx`,
   which calls `resolveMaterialRequest` with the user's client. Only the
   requester or an inventory editor can resolve it; the RLS refusal comes back

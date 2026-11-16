@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · Nothing ordered"
+msgstr ""
+
+msgid " · On order"
+msgstr ""
+
 msgid ", not running"
 msgstr ", nie działa"
 
@@ -147,6 +153,12 @@ msgstr "{columns} nie pasuje do istniejącego rekordu."
 msgid "{companyName} logo"
 msgstr "Logo firmy {companyName}"
 
+msgid "{complete} complete"
+msgstr ""
+
+msgid "{complete} complete · target {target}"
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} z {quantity}"
 
@@ -192,6 +204,12 @@ msgstr "{name}: {value}"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} z {denominator}"
+
+msgid "{onHand} of {need}"
+msgstr ""
+
+msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -549,6 +567,9 @@ msgstr "Pogrubienie"
 msgid "Bring {quantity}"
 msgstr ""
 
+msgid "Build kit"
+msgstr ""
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ale nie martw się. Możesz użyć funkcji resetowania hasła, aby poprosić o nowy magiczny link."
 
@@ -892,6 +913,9 @@ msgstr "Usuń krok"
 msgid "Delete Timecard (<0/>)"
 msgstr "Usuń kartę czasu (<0/>)"
 
+msgid "Deliver"
+msgstr ""
+
 msgid "Density"
 msgstr "Gęstość"
 
@@ -1039,6 +1063,9 @@ msgstr "Emoji: {emoji}"
 msgid "Employee"
 msgstr "Pracownik"
 
+msgid "Empty"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "Puste stanowiska robocze"
 
@@ -1165,6 +1192,9 @@ msgstr "Nie udało się przesłać podpisu"
 msgid "Failure Mode"
 msgstr "Tryb uszkodzenia"
 
+msgid "Fed directly"
+msgstr ""
+
 msgid "File"
 msgstr "Plik"
 
@@ -1191,6 +1221,9 @@ msgstr "Ustalenia"
 
 msgid "Finish"
 msgstr "Zakończ"
+
+msgid "Finish kit"
+msgstr ""
 
 msgid "Finish setting up your account"
 msgstr "Dokończ konfigurowanie swojego konta"
@@ -1333,6 +1366,9 @@ msgstr "Powiadomienia w aplikacji są zawsze dostarczone. Wybierz, które tematy
 msgid "Inactive"
 msgstr "Nieaktywny"
 
+msgid "Incomplete"
+msgstr ""
+
 msgid "Increase {fieldLabel}"
 msgstr "Zwiększ: {fieldLabel}"
 
@@ -1448,6 +1484,21 @@ msgstr "Skróty klawiaturowe"
 msgid "Kit"
 msgstr "Zestaw"
 
+msgid "Kit rack"
+msgstr ""
+
+msgid "kits to build"
+msgstr ""
+
+msgid "kits to deliver"
+msgstr ""
+
+msgid "kits to finish"
+msgstr ""
+
+msgid "Kitter"
+msgstr ""
+
 msgid "Labor"
 msgstr "Robocizna"
 
@@ -1509,6 +1560,9 @@ msgid "Line"
 msgstr "Pozycja"
 
 msgid "Line feed"
+msgstr ""
+
+msgid "Line order"
 msgstr ""
 
 msgid "lines"
@@ -1662,6 +1716,9 @@ msgstr "Wiadomość"
 msgid "Metric"
 msgstr "Metryczny"
 
+msgid "Missing"
+msgstr ""
+
 msgid "Mode"
 msgstr "Tryb"
 
@@ -1787,6 +1844,9 @@ msgstr "Nie znaleziono kraju."
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "Żaden składnik majątkowy klienta nie ma numeru seryjnego {0}. Wybierz klienta."
+
+msgid "No default bin"
+msgstr ""
 
 msgid "No dispatches assigned to you"
 msgstr "Brak zleceń utrzymania ruchu przydzielonych Tobie"
@@ -2011,6 +2071,9 @@ msgstr "z {0}"
 
 msgid "Offline"
 msgstr "Offline"
+
+msgid "OK"
+msgstr ""
 
 msgid "Oldest first"
 msgstr "Najstarsze pierwsze"
@@ -2393,6 +2456,15 @@ msgstr "Oferty"
 
 msgid "Raise quality issue"
 msgstr "Zgłoś problem jakościowy"
+
+msgid "raw bins short"
+msgstr ""
+
+msgid "Raw shelf"
+msgstr ""
+
+msgid "Raw short: {shortParts}"
+msgstr ""
 
 msgid "Re"
 msgstr "Odr."
@@ -3004,11 +3076,17 @@ msgstr "Uruchom lub wstrzymaj operację"
 msgid "Start work"
 msgstr "Rozpocznij pracę"
 
+msgid "Station"
+msgstr ""
+
 msgid "Station User"
 msgstr "Użytkownik stacji"
 
 msgid "Station: {stationName}"
 msgstr "Stacja: {stationName}"
+
+msgid "stations out"
+msgstr ""
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
@@ -3522,6 +3600,9 @@ msgstr ""
 msgid "Warranty"
 msgstr "Gwarancja"
 
+msgid "Water spider"
+msgstr ""
+
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Wysłaliśmy Ci link logowania i 6-cyfrowy kod. Kliknij link lub wpisz kod tutaj."
 
@@ -3560,6 +3641,9 @@ msgstr "Stanowisko robocze"
 
 msgid "Working"
 msgstr "W trakcie pracy"
+
+msgid "Worst first"
+msgstr ""
 
 msgid "Write a note…"
 msgstr "Napisz notatkę…"

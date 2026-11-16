@@ -255,3 +255,344 @@ export function buildStationBoard({
       (a.name ?? "").localeCompare(b.name ?? "", undefined, { numeric: true })
   );
 }
+
+type LaneRow =
+  Database["public"]["Functions"]["get_line_feed_lanes"]["Returns"][number];
+
+export type LaneRowInput = Pick<LaneRow, "workCenterId" | "tier" | "state"> &
+  Partial<Omit<LaneRow, "workCenterId" | "tier" | "state">>;
+
+export type RawBinStatus = "empty" | "short" | "low" | "ok";
+
+export type RawBin = {
+  itemId: string;
+  /** Null when the part has no default storage unit at the location. */
+  storageUnitId: string | null;
+  kanbanId: string | null;
+  onHand: number;
+  /** What the incomplete kits miss, plus a kit's worth per kit the rack lacks. */
+  need: number;
+  status: RawBinStatus;
+  /** An open purchase order line or job will refill it. */
+  replenishing: boolean;
+};
+
+export type KitUnit = {
+  trackedEntityId: string | null;
+  /** The kit's serial. */
+  readableId: string | null;
+  storageUnitId: string | null;
+  quantity: number;
+};
+
+export type IncompleteKit = {
+  jobId: string;
+  readableId: string | null;
+  storageUnitId: string | null;
+  /** Kits the job still has to build. */
+  quantity: number;
+  missing: { itemId: string; quantity: number }[];
+  /** The shelf holds every missing part. */
+  covered: boolean;
+};
+
+export type LaneKit = {
+  itemId: string;
+  /** The kit's slot on the rack: its default storage unit. */
+  storageUnitId: string | null;
+  kanbanId: string | null;
+  /** The rack's Make kanban quantity; null without a kanban. */
+  target: number | null;
+  replenishing: boolean;
+  /** Open units at the station that still need a kit. */
+  demand: number;
+  /** Kits at the station, capped at the demand: "covers N of M". */
+  covers: number;
+  atStation: KitUnit[];
+  complete: KitUnit[];
+  incomplete: IncompleteKit[];
+};
+
+/** What a lane has to do, counted. A count of zero means nothing to do. */
+export type LaneWork = {
+  /** Kits to bring: the station is out of a kit the rack has complete. */
+  deliver: number;
+  /** Incomplete kits whose missing parts are on the shelf. */
+  finish: number;
+  /** Kits the rack is below target by, when the shelf covers one. */
+  build: number;
+  /** Shelf bins that cannot cover what is needed from them. */
+  rawShort: number;
+};
+
+export type LaneVerdict = "deliver" | "finish" | "build" | "rawShort" | "ok";
+export type LaneSeverity = "red" | "amber" | "green";
+
+export type Lane = {
+  workCenterId: string | null;
+  name: string | null;
+  severity: LaneSeverity;
+  verdict: LaneVerdict;
+  work: LaneWork;
+  /** The parts behind a `rawShort` count. */
+  shortItemIds: string[];
+  raw: RawBin[];
+  kits: LaneKit[];
+  station: StationCard;
+};
+
+const verdictOrder = ["deliver", "finish", "build", "rawShort"] as const;
+
+/** The lane's bottleneck: the first kind of work it has, in the order of who
+ *  can act soonest (water spider, kitter, purchasing). */
+export function laneVerdict(work: LaneWork): LaneVerdict {
+  return verdictOrder.find((kind) => work[kind] > 0) ?? "ok";
+}
+
+/** Red when the station is out, amber when it is low or the lane has work. */
+export function laneSeverity(
+  status: StationStockStatus,
+  verdict: LaneVerdict
+): LaneSeverity {
+  if (status === "out") return "red";
+  return status === "low" || verdict !== "ok" ? "amber" : "green";
+}
+
+const severityOrder: Record<LaneSeverity, number> = {
+  red: 0,
+  amber: 1,
+  green: 2
+};
+
+const kitUnit = (row: LaneRowInput): KitUnit => ({
+  trackedEntityId: row.trackedEntityId ?? null,
+  readableId: row.readableId ?? null,
+  storageUnitId: row.storageUnitId ?? null,
+  quantity: row.quantity ?? 0
+});
+
+const total = (units: { quantity: number }[]) =>
+  units.reduce((sum, unit) => sum + unit.quantity, 0);
+
+function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
+  const kits = new Map<string, LaneKit>();
+  const jobs = new Map<string, IncompleteKit>();
+  for (const row of rows) {
+    if (row.tier !== "kit" || row.state !== "slot" || !row.itemId) continue;
+    kits.set(row.itemId, {
+      itemId: row.itemId,
+      storageUnitId: row.storageUnitId ?? null,
+      kanbanId: row.kanbanId ?? null,
+      target: row.target ?? null,
+      replenishing: row.replenishing ?? false,
+      demand: row.need ?? 0,
+      covers: 0,
+      atStation: [],
+      complete: [],
+      incomplete: []
+    });
+  }
+  for (const row of rows) {
+    if (row.state === "missing" || row.tier === "raw") continue;
+    const kit = row.itemId ? kits.get(row.itemId) : undefined;
+    if (!kit) continue;
+    if (row.tier === "station" && row.state === "kit") {
+      kit.atStation.push(kitUnit(row));
+    } else if (row.state === "complete") {
+      kit.complete.push(kitUnit(row));
+    } else if (row.state === "incomplete" && row.jobId) {
+      const job: IncompleteKit = {
+        jobId: row.jobId,
+        readableId: row.readableId ?? null,
+        storageUnitId: row.storageUnitId ?? null,
+        quantity: row.quantity ?? 0,
+        missing: [],
+        covered: false
+      };
+      jobs.set(row.jobId, job);
+      kit.incomplete.push(job);
+    }
+  }
+
+  // Shelf bins, one per part and bin. A part that feeds two kits adds both
+  // kits' needs to the one bin.
+  const bins = new Map<string, RawBin & { perKit: number; level: number }>();
+  const binByItem = new Map<string, RawBin>();
+  const components = new Map<string, { bin: RawBin; perKit: number }[]>();
+  const rackGap = (kit: LaneKit) =>
+    kit.target === null
+      ? 0
+      : Math.max(kit.target - total(kit.complete) - total(kit.incomplete), 0);
+  for (const row of rows) {
+    if (row.tier !== "raw" || !row.itemId) continue;
+    const key = `${row.itemId}:${row.storageUnitId}`;
+    let bin = bins.get(key);
+    if (!bin) {
+      bin = {
+        itemId: row.itemId,
+        storageUnitId: row.storageUnitId ?? null,
+        kanbanId: row.kanbanId ?? null,
+        onHand: row.quantity ?? 0,
+        need: 0,
+        status: "ok",
+        replenishing: row.replenishing ?? false,
+        perKit: 0,
+        level: row.target ?? 0
+      };
+      bins.set(key, bin);
+      if (!binByItem.has(row.itemId)) binByItem.set(row.itemId, bin);
+    }
+    const kit = row.parentKitItemId ? kits.get(row.parentKitItemId) : undefined;
+    if (!kit) continue;
+    const perKit = row.need ?? 0;
+    bin.perKit = Math.max(bin.perKit, perKit);
+    bin.need += perKit * rackGap(kit);
+    const parts = components.get(kit.itemId) ?? [];
+    parts.push({ bin, perKit });
+    components.set(kit.itemId, parts);
+  }
+
+  for (const row of rows) {
+    if (row.state !== "missing" || !row.jobId || !row.itemId) continue;
+    const quantity = row.quantity ?? 0;
+    jobs.get(row.jobId)?.missing.push({ itemId: row.itemId, quantity });
+    const bin = binByItem.get(row.itemId);
+    if (bin) bin.need += quantity;
+  }
+
+  // A part fed directly is needed by what the station is short of.
+  const inTransit = new Map<string, number>();
+  for (const line of station.rows) {
+    if (!line.itemId) continue;
+    if (line.kind === "transfer") {
+      inTransit.set(
+        line.itemId,
+        (inTransit.get(line.itemId) ?? 0) + (line.quantity ?? 0)
+      );
+    } else if (line.kind === "shortage" && !kits.has(line.itemId)) {
+      const bin = binByItem.get(line.itemId);
+      if (bin) bin.need += line.quantity ?? 0;
+    }
+  }
+
+  const work: LaneWork = { deliver: 0, finish: 0, build: 0, rawShort: 0 };
+  const shortItemIds: string[] = [];
+  const raw: RawBin[] = [];
+  for (const { perKit, level, ...bin } of bins.values()) {
+    bin.need = round(bin.need);
+    bin.status =
+      bin.onHand <= 0
+        ? "empty"
+        : bin.onHand < bin.need
+          ? "short"
+          : bin.onHand < Math.max(level, perKit)
+            ? "low"
+            : "ok";
+    if (bin.need > 0 && (bin.status === "empty" || bin.status === "short")) {
+      work.rawShort += 1;
+      shortItemIds.push(bin.itemId);
+    }
+    raw.push(bin);
+  }
+
+  for (const kit of kits.values()) {
+    const atStation = total(kit.atStation);
+    kit.covers = Math.min(atStation, kit.demand);
+    // The water spider brings a kit when the station runs out, not one per
+    // open unit: the rack is the buffer.
+    const out =
+      kit.demand > 0 && atStation + (inTransit.get(kit.itemId) ?? 0) <= 0;
+    if (out && kit.complete.length > 0) work.deliver += 1;
+
+    for (const job of kit.incomplete) {
+      job.covered = job.missing.every(
+        (line) => (binByItem.get(line.itemId)?.onHand ?? 0) >= line.quantity
+      );
+      if (job.covered) work.finish += job.quantity;
+    }
+
+    const parts = components.get(kit.itemId) ?? [];
+    const coversOneKit =
+      parts.length > 0 && parts.every((part) => part.bin.onHand >= part.perKit);
+    if (coversOneKit) work.build += rackGap(kit);
+  }
+
+  const verdict = laneVerdict(work);
+  return {
+    workCenterId: station.workCenterId,
+    name: station.name,
+    severity: laneSeverity(station.status, verdict),
+    verdict,
+    work,
+    shortItemIds,
+    raw,
+    kits: [...kits.values()],
+    station
+  };
+}
+
+/**
+ * The lane board: one lane per station card, each with its kit rack and raw
+ * shelf above it and the bottleneck that holds it up. Lanes run in line order
+ * (the lowest open operation order at the station, then the name), or worst
+ * first.
+ */
+export function buildLaneBoard({
+  stations,
+  laneRows,
+  sort = "line"
+}: {
+  stations: StationCard[];
+  laneRows: LaneRowInput[];
+  sort?: "line" | "worst";
+}): Lane[] {
+  const rowsByWorkCenter = new Map<string, LaneRowInput[]>();
+  const lineOrder = new Map<string, number>();
+  for (const row of laneRows) {
+    if (row.state === "line") {
+      lineOrder.set(row.workCenterId, row.quantity ?? 0);
+      continue;
+    }
+    const rows = rowsByWorkCenter.get(row.workCenterId);
+    if (rows) rows.push(row);
+    else rowsByWorkCenter.set(row.workCenterId, [row]);
+  }
+
+  const lanes = stations.map((station) =>
+    buildLane(
+      station,
+      (station.workCenterId && rowsByWorkCenter.get(station.workCenterId)) || []
+    )
+  );
+  const order = (lane: Lane) =>
+    (lane.workCenterId ? lineOrder.get(lane.workCenterId) : undefined) ??
+    Infinity;
+
+  return lanes.sort(
+    (a, b) =>
+      (sort === "worst"
+        ? severityOrder[a.severity] - severityOrder[b.severity]
+        : 0) ||
+      order(a) - order(b) ||
+      (a.name === null ? 1 : 0) - (b.name === null ? 1 : 0) ||
+      (a.name ?? "").localeCompare(b.name ?? "", undefined, { numeric: true })
+  );
+}
+
+export type LaneSummary = LaneWork & { out: number };
+
+/** The summary strip: stations out, and the board's work by kind. */
+export function summarizeLanes(lanes: Lane[]): LaneSummary {
+  const summary: LaneSummary = {
+    out: 0,
+    deliver: 0,
+    finish: 0,
+    build: 0,
+    rawShort: 0
+  };
+  for (const lane of lanes) {
+    if (lane.severity === "red") summary.out += 1;
+    for (const kind of verdictOrder) summary[kind] += lane.work[kind];
+  }
+  return summary;
+}

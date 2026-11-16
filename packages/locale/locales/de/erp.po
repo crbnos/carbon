@@ -14722,6 +14722,9 @@ msgstr "Den Buchungssatz als Warnung zum Beheben speichern."
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "Halten Sie, geben Sie frei, schreiben Sie ab oder bewerten Sie Artikel in <0>Projekte → Genehmigungen</0> auf der Registerkarte Abrechnung neu."
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "Feiertag"
 
@@ -16492,6 +16495,9 @@ msgstr "Art des Datensatzes"
 
 msgid "Kit"
 msgstr "Set"
+
+msgid "Kit rack"
+msgstr ""
 
 msgid "label"
 msgstr "Bezeichnung"

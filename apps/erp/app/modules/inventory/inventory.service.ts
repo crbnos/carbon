@@ -4692,14 +4692,22 @@ function toNettableColumn<
 export async function upsertStorageUnit(
   client: SupabaseClient<Database>,
   storageUnit:
-    | (Omit<z.infer<typeof storageUnitValidator>, "id" | "nonNettable"> & {
+    | (Omit<
+        z.infer<typeof storageUnitValidator>,
+        "id" | "nonNettable" | "kitRack"
+      > & {
         nonNettable?: boolean;
+        kitRack?: boolean;
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof storageUnitValidator>, "id" | "nonNettable"> & {
+    | (Omit<
+        z.infer<typeof storageUnitValidator>,
+        "id" | "nonNettable" | "kitRack"
+      > & {
         nonNettable?: boolean;
+        kitRack?: boolean;
         id: string;
         updatedBy: string;
         customFields?: Json;
