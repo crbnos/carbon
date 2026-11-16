@@ -193,16 +193,18 @@ export default function JobsRoute() {
                 className="pl-8"
               />
             </div>
-            <MultiSelect
-              className="sm:w-72"
-              aria-label={t`Filter by work center`}
-              placeholder={t`All work centers`}
-              options={workCenterOptions}
-              value={selectedWorkCenterIds}
-              onChange={setStoredWorkCenterIds}
-              isClearable
-              maxPreview={2}
-            />
+            {/* Fixed slot, so the clear button doesn't shrink the search box. */}
+            <div className="flex sm:w-80 sm:shrink-0">
+              <MultiSelect
+                aria-label={t`Filter by work center`}
+                placeholder={t`All work centers`}
+                options={workCenterOptions}
+                value={selectedWorkCenterIds}
+                onChange={setStoredWorkCenterIds}
+                isClearable
+                maxPreview={2}
+              />
+            </div>
           </div>
 
           {filteredJobs.length > 0 ? (
