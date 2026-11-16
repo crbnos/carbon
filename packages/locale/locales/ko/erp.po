@@ -14780,6 +14780,9 @@ msgstr "수정할 경고로 전표를 보류하세요."
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "항목을 <0>프로젝트 → 승인</0>의 청구 탭에서 보류, 릴리스, 제거 또는 재가격 설정합니다."
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "휴일"
 
@@ -16550,6 +16553,9 @@ msgstr "기록 유형"
 
 msgid "Kit"
 msgstr "키트"
+
+msgid "Kit rack"
+msgstr ""
 
 msgid "label"
 msgstr "라벨"

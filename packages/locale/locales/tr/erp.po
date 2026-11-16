@@ -14780,6 +14780,9 @@ msgstr "Düzeltilmesi için uyarı olarak muhasebe fişini beklet."
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "Faturalama sekmesinde <0>Projeler → Onaylar</0>'da öğeleri bekletme, serbest bırakma, silme veya yeniden fiyatlandırma."
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "Tatil"
 
@@ -16550,6 +16553,9 @@ msgstr "Kayıt türü"
 
 msgid "Kit"
 msgstr "Set"
+
+msgid "Kit rack"
+msgstr ""
 
 msgid "label"
 msgstr "etiket"

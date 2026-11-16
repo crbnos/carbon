@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261116142814",
+  "schemaVersion": "20261117063413",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-16T17:20:24.064Z",
+  "exportedAt": "2026-11-16T18:44:29.359Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -5207,7 +5207,8 @@
         "workCenterId",
         "isWorkCenterDefault",
         "nettable",
-        "effectiveNettable"
+        "effectiveNettable",
+        "kitRack"
       ]
     },
     {

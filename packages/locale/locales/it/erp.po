@@ -14780,6 +14780,9 @@ msgstr "Metti in sospeso la prima nota come avviso da correggere."
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "Tieni in sospeso, rilascia, cancella o reprezzare articoli in <0>Progetti → Approvazioni</0>, nella scheda Fatturazione."
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "Festività"
 
@@ -16550,6 +16553,9 @@ msgstr "Tipo di record"
 
 msgid "Kit"
 msgstr "Kit"
+
+msgid "Kit rack"
+msgstr ""
 
 msgid "label"
 msgstr "etichetta"

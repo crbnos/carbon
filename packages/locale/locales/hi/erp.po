@@ -14780,6 +14780,9 @@ msgstr "जर्नल को ठीक करने के लिए एक �
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "होल्ड, रिलीज़, हटाएँ या <0>परियोजना → अनुमोदन</0> में आइटम को फिर से मूल्य दें, बिलिंग टैब पर।"
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "छुट्टी"
 
@@ -16550,6 +16553,9 @@ msgstr "रिकॉर्ड का प्रकार"
 
 msgid "Kit"
 msgstr "किट"
+
+msgid "Kit rack"
+msgstr ""
 
 msgid "label"
 msgstr "लेबल"

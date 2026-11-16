@@ -14780,6 +14780,9 @@ msgstr "修正が必要な警告として仕訳を保留"
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "ホールド、リリース、償却、または品目を再価格設定 <0>プロジェクト → 承認</0>の請求タブで。"
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "祝日"
 
@@ -16550,6 +16553,9 @@ msgstr "レコード種別"
 
 msgid "Kit"
 msgstr "キット"
+
+msgid "Kit rack"
+msgstr ""
 
 msgid "label"
 msgstr "ラベル"

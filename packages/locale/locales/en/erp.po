@@ -14780,6 +14780,9 @@ msgstr "Hold the journal as a warning to fix."
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+
 msgid "Holiday"
 msgstr "Holiday"
 
@@ -16550,6 +16553,9 @@ msgstr "Kind of record"
 
 msgid "Kit"
 msgstr "Kit"
+
+msgid "Kit rack"
+msgstr "Kit rack"
 
 msgid "label"
 msgstr "label"

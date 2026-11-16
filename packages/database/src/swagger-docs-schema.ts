@@ -62515,6 +62515,9 @@ export default {
             $ref: "#/parameters/rowFilter.storageUnit.effectiveNettable"
           },
           {
+            $ref: "#/parameters/rowFilter.storageUnit.kitRack"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -62628,6 +62631,9 @@ export default {
             $ref: "#/parameters/rowFilter.storageUnit.effectiveNettable"
           },
           {
+            $ref: "#/parameters/rowFilter.storageUnit.kitRack"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -62693,6 +62699,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.storageUnit.effectiveNettable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.storageUnit.kitRack"
           },
           {
             $ref: "#/parameters/body.storageUnit"
@@ -135107,6 +135116,74 @@ export default {
         tags: ["(rpc) sync_archive_other_procedures"]
       }
     },
+    "/rpc/get_line_feed_lanes": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_line_feed_lanes"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_location_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_location_id", "p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_line_feed_lanes"]
+      }
+    },
     "/rpc/get_stock_transfer_live_bins": {
       get: {
         parameters: [
@@ -169499,7 +169576,8 @@ export default {
         "storageTypeIds",
         "isWorkCenterDefault",
         "nettable",
-        "effectiveNettable"
+        "effectiveNettable",
+        "kitRack"
       ],
       properties: {
         id: {
@@ -169597,6 +169675,11 @@ export default {
         },
         effectiveNettable: {
           default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        kitRack: {
+          default: false,
           format: "boolean",
           type: "boolean"
         }
@@ -230902,6 +230985,12 @@ export default {
     },
     "rowFilter.storageUnit.effectiveNettable": {
       name: "effectiveNettable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.storageUnit.kitRack": {
+      name: "kitRack",
       required: false,
       in: "query",
       type: "string"

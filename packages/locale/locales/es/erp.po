@@ -14780,6 +14780,9 @@ msgstr "Mantener el Asiento como advertencia para corregir."
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "Retener, liberar, dar de baja o reevaluar artículos en <0>Proyectos → Aprobaciones</0>, en la pestaña Facturación."
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "Día festivo"
 
@@ -16550,6 +16553,9 @@ msgstr "Tipo de registro"
 
 msgid "Kit"
 msgstr "Kit"
+
+msgid "Kit rack"
+msgstr ""
 
 msgid "label"
 msgstr "etiqueta"

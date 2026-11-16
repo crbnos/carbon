@@ -7073,10 +7073,18 @@ export const createStorageUnit = defineServiceFn({
         "Stock in it is not supply: MRP and planning ignore it, and picking never sources from it."
       )
       .optional(),
+    kitRack: z
+      .boolean()
+      .describe(
+        "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+      )
+      .optional(),
     customFields: z.unknown().optional()
   }),
   permission: { create: "inventory" },
   async run(ctx, { id: _id, ...input }) {
+    const refused = await service.refuseLinesideKitRack(ctx, input);
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertStorageUnit(
@@ -7110,17 +7118,34 @@ export const updateStorageUnit = defineServiceFn({
           "Stock in it is not supply: MRP and planning ignore it, and picking never sources from it."
         )
         .optional(),
+      kitRack: z
+        .boolean()
+        .describe(
+          "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+        )
+        .optional(),
       customFields: z.unknown().optional(),
       id: z.string().describe("The storage unit to update.").optional()
     })
     .required({ id: true }),
   permission: { update: "inventory" },
   async run(ctx, input) {
-    // The update matches by id alone: it must be this company's unit.
-    const owned = await refuseUnlessOwned(ctx, "storageUnit", {
-      id: input.id
+    // The update matches by id alone: it must be this company's unit. The
+    // same read gives the fields the update may leave as they are.
+    const current = await ctx.asCaller.supabase
+      .from("storageUnit")
+      .select("kitRack, workCenterId, parentId")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (!current.data) return ctx.error("notFound", NOT_FOUND, current.error);
+    // A key sent without a value clears the column; a key left out keeps it.
+    const refused = await service.refuseLinesideKitRack(ctx, {
+      ...current.data,
+      ...input,
+      kitRack: input.kitRack ?? current.data.kitRack
     });
-    if (owned) return owned;
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertStorageUnit(
