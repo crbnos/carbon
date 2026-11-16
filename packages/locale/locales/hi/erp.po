@@ -26623,9 +26623,6 @@ msgstr "सहेजा जा रहा है {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "आपके वर्तमान डेटा की प्रति सहेज रहे हैं"
 
-msgid "Saving keeps this date and records who kept it."
-msgstr "सहेजने पर यह तिथि बनी रहती है और यह दर्ज होता है कि इसे किसने रखा।"
-
 msgid "Saving..."
 msgstr "सहेज रहे हैं..."
 

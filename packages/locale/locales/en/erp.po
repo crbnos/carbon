@@ -26623,9 +26623,6 @@ msgstr "Saving {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Saving a copy of your current data"
 
-msgid "Saving keeps this date and records who kept it."
-msgstr "Saving keeps this date and records who kept it."
-
 msgid "Saving..."
 msgstr "Saving..."
 

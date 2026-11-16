@@ -26623,9 +26623,6 @@ msgstr "正在保存 {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "正在保存您当前数据的副本"
 
-msgid "Saving keeps this date and records who kept it."
-msgstr "保存后将保留此日期，并记录保留该日期的人员。"
-
 msgid "Saving..."
 msgstr "保存中..."
 

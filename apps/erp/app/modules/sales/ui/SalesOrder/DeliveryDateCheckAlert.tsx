@@ -123,9 +123,6 @@ export function DeliveryDateCheckAlert({
               <Trans>Use {earliest}</Trans>
             </Button>
           </div>
-          <span className="text-xs text-muted-foreground">
-            <Trans>Saving keeps this date and records who kept it.</Trans>
-          </span>
         </div>
       </AlertDescription>
     </Alert>

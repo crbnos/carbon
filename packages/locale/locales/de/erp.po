@@ -26623,9 +26623,6 @@ msgstr "Speichern {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Eine Kopie Ihrer aktuellen Daten wird gespeichert"
 
-msgid "Saving keeps this date and records who kept it."
-msgstr "Beim Speichern bleibt dieses Datum erhalten, und es wird erfasst, wer es beibehalten hat."
-
 msgid "Saving..."
 msgstr "Wird gespeichert..."
 

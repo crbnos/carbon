@@ -26623,9 +26623,6 @@ msgstr "Kaydediliyor {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "Mevcut verilerinizin bir kopyası kaydediliyor"
 
-msgid "Saving keeps this date and records who kept it."
-msgstr "Kaydetmek bu tarihi korur ve tarihi kimin koruduğunu kaydeder."
-
 msgid "Saving..."
 msgstr "Kaydediliyor..."
 

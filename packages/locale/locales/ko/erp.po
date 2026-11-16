@@ -26623,9 +26623,6 @@ msgstr "저장 중 {0}/{1}"
 msgid "Saving a copy of your current data"
 msgstr "현재 데이터의 사본 저장 중"
 
-msgid "Saving keeps this date and records who kept it."
-msgstr "저장하면 이 날짜가 유지되고 누가 유지했는지 기록됩니다."
-
 msgid "Saving..."
 msgstr "저장 중..."
 
