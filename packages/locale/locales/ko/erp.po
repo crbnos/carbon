@@ -5627,6 +5627,12 @@ msgstr "{itemReadableId}의 배치 번호"
 msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
+msgid "Batch numbers are entered by hand"
+msgstr ""
+
+msgid "Batch numbers are generated"
+msgstr ""
+
 msgid "Batch or Serial Number"
 msgstr "배치 또는 일련번호"
 
@@ -12216,6 +12222,9 @@ msgstr "담당자 또는 사업장이 없는 공급업체의 경우 발급 또�
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "자산 클래스에 세무 전용 감가상각 방법(예: MACRS, 가속상각)을 설정하려면 활성화하세요."
 
+msgid "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
+msgstr ""
+
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "원자재에 대한 ID와 설명을 자동 생성하려면 활성화하세요."
 
@@ -14288,6 +14297,9 @@ msgstr "새로운 4자리 PIN을 발급하세요. 작업자의 현재 PIN은 즉
 
 msgid "Generate and send customer invoices"
 msgstr "고객 송장 생성 및 발송"
+
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr ""
 
 msgid "Generate Billable Items"
 msgstr "청구 가능한 품목 생성"
@@ -19172,6 +19184,9 @@ msgstr "새 프로젝트 재고 이송"
 msgid "New purchase order"
 msgstr "새 발주서"
 
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr ""
+
 msgid "New Quality Document"
 msgstr "새 품질 문서"
 
@@ -20849,6 +20864,9 @@ msgstr "지금"
 
 msgid "Number"
 msgstr "번호"
+
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "구매 단위당 재고 단위 수"
@@ -24426,6 +24444,12 @@ msgstr "재계산 중…"
 
 msgid "Receipt"
 msgstr "입고"
+
+msgid "Receipt batch numbers are now entered by hand"
+msgstr ""
+
+msgid "Receipt batch numbers are now generated"
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "입고 ID"

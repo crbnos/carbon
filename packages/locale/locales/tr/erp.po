@@ -5627,6 +5627,12 @@ msgstr "{itemReadableId} için parti numarası"
 msgid "Batch number is required"
 msgstr "Parti numarası gereklidir"
 
+msgid "Batch numbers are entered by hand"
+msgstr ""
+
+msgid "Batch numbers are generated"
+msgstr ""
+
 msgid "Batch or Serial Number"
 msgstr "Parti veya Seri Numarası"
 
@@ -12216,6 +12222,9 @@ msgstr "İlgili kişisi veya lokasyonu olmayan bir tedarikçi için yayınlamay�
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "Varlık sınıfları için vergiye özgü amortisman yöntemlerini yapılandırmayı etkinleştirir (örneğin, MACRS, hızlandırılmış)."
 
+msgid "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
+msgstr ""
+
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Hammaddeler için ID'ler ve açıklamalar oluşturmayı etkinleştir."
 
@@ -14288,6 +14297,9 @@ msgstr "Yeni bir 4 haneli PIN oluştur. Operatörün mevcut PIN'i hemen çalış
 
 msgid "Generate and send customer invoices"
 msgstr "Müşteri faturalarını oluştur ve gönder"
+
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr ""
 
 msgid "Generate Billable Items"
 msgstr "Faturalandırılabilir Öğeler Oluştur"
@@ -19172,6 +19184,9 @@ msgstr "Yeni Proje Stok Transferi"
 msgid "New purchase order"
 msgstr "Yeni satın alma siparişi"
 
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr ""
+
 msgid "New Quality Document"
 msgstr "Yeni Kalite Belgesi"
 
@@ -20849,6 +20864,9 @@ msgstr "şimdi"
 
 msgid "Number"
 msgstr "Numara"
+
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Satın alma birimi başına envanter birimi sayısı"
@@ -24426,6 +24444,12 @@ msgstr "Yeniden hesaplanıyor…"
 
 msgid "Receipt"
 msgstr "Makbuz"
+
+msgid "Receipt batch numbers are now entered by hand"
+msgstr ""
+
+msgid "Receipt batch numbers are now generated"
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "Fiş No"

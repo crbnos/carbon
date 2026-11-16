@@ -119407,6 +119407,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.autoPickingListOnRelease"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.receiptBatchNumbersFromPurchaseOrder"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -119760,6 +119763,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.autoPickingListOnRelease"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.receiptBatchNumbersFromPurchaseOrder"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -120065,6 +120071,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.autoPickingListOnRelease"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.receiptBatchNumbersFromPurchaseOrder"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -196721,7 +196730,8 @@ export default {
         "requirePromisedDateToFinalizePurchaseOrder",
         "travelerLabels",
         "requireTrackedMaterialsIssued",
-        "autoPickingListOnRelease"
+        "autoPickingListOnRelease",
+        "receiptBatchNumbersFromPurchaseOrder"
       ],
       properties: {
         id: {
@@ -197242,6 +197252,11 @@ export default {
         },
         autoPickingListOnRelease: {
           default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        receiptBatchNumbersFromPurchaseOrder: {
+          default: true,
           format: "boolean",
           type: "boolean"
         }
@@ -261767,6 +261782,12 @@ export default {
     },
     "rowFilter.companySettings.autoPickingListOnRelease": {
       name: "autoPickingListOnRelease",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.receiptBatchNumbersFromPurchaseOrder": {
+      name: "receiptBatchNumbersFromPurchaseOrder",
       required: false,
       in: "query",
       type: "string"

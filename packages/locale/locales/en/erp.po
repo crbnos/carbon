@@ -5627,6 +5627,12 @@ msgstr "Batch number for {itemReadableId}"
 msgid "Batch number is required"
 msgstr "Batch number is required"
 
+msgid "Batch numbers are entered by hand"
+msgstr "Batch numbers are entered by hand"
+
+msgid "Batch numbers are generated"
+msgstr "Batch numbers are generated"
+
 msgid "Batch or Serial Number"
 msgstr "Batch or Serial Number"
 
@@ -12216,6 +12222,9 @@ msgstr "Enable to block issuing or posting for a supplier with no contact or no 
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 
+msgid "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
+msgstr "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
+
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Enable to generate IDs and descriptions for raw materials."
 
@@ -14288,6 +14297,9 @@ msgstr "Generate a new 4-digit PIN. The operator's current PIN stops working imm
 
 msgid "Generate and send customer invoices"
 msgstr "Generate and send customer invoices"
+
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr "Generate Batch Numbers from the Purchase Order"
 
 msgid "Generate Billable Items"
 msgstr "Generate Billable Items"
@@ -19172,6 +19184,9 @@ msgstr "New Project Stock Transfer"
 msgid "New purchase order"
 msgstr "New purchase order"
 
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+
 msgid "New Quality Document"
 msgstr "New Quality Document"
 
@@ -20849,6 +20864,9 @@ msgstr "now"
 
 msgid "Number"
 msgstr "Number"
+
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Number of inventory units per purchase unit"
@@ -24426,6 +24444,12 @@ msgstr "Recalculating…"
 
 msgid "Receipt"
 msgstr "Receipt"
+
+msgid "Receipt batch numbers are now entered by hand"
+msgstr "Receipt batch numbers are now entered by hand"
+
+msgid "Receipt batch numbers are now generated"
+msgstr "Receipt batch numbers are now generated"
 
 msgid "Receipt ID"
 msgstr "Receipt ID"

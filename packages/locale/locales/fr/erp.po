@@ -5627,6 +5627,12 @@ msgstr "Numéro de lot de production pour {itemReadableId}"
 msgid "Batch number is required"
 msgstr "Le numéro de lot de production est requis"
 
+msgid "Batch numbers are entered by hand"
+msgstr ""
+
+msgid "Batch numbers are generated"
+msgstr ""
+
 msgid "Batch or Serial Number"
 msgstr "Numéro de lot ou de série"
 
@@ -12216,6 +12222,9 @@ msgstr "Activez pour bloquer l'émission ou la comptabilisation pour un fourniss
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "Activez pour configurer les méthodes d'amortissement spécifiques aux impôts sur les catégories d'immobilisation (par exemple, MACRS, accéléré)."
 
+msgid "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
+msgstr ""
+
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Activez pour générer des identifiants et des descriptions pour les matières premières."
 
@@ -14288,6 +14297,9 @@ msgstr "Générer un nouveau code PIN à 4 chiffres. Le code PIN actuel de l'op�
 
 msgid "Generate and send customer invoices"
 msgstr "Générer et envoyer les factures clients"
+
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr ""
 
 msgid "Generate Billable Items"
 msgstr "Générer les articles facturables"
@@ -19172,6 +19184,9 @@ msgstr "Nouveau transfert de stock de projet"
 msgid "New purchase order"
 msgstr "Nouveau bon de commande"
 
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr ""
+
 msgid "New Quality Document"
 msgstr "Nouveau Document de Qualité"
 
@@ -20849,6 +20864,9 @@ msgstr "maintenant"
 
 msgid "Number"
 msgstr "Nombre"
+
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Nombre d'unités d'inventaire par unité d'achat"
@@ -24426,6 +24444,12 @@ msgstr "Recalcul en cours…"
 
 msgid "Receipt"
 msgstr "Reçu"
+
+msgid "Receipt batch numbers are now entered by hand"
+msgstr ""
+
+msgid "Receipt batch numbers are now generated"
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "ID de reçu"

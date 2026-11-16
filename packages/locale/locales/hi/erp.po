@@ -5627,6 +5627,12 @@ msgstr "{itemReadableId} के लिए बैच संख्या"
 msgid "Batch number is required"
 msgstr "बैच संख्या आवश्यक है"
 
+msgid "Batch numbers are entered by hand"
+msgstr ""
+
+msgid "Batch numbers are generated"
+msgstr ""
+
 msgid "Batch or Serial Number"
 msgstr "बैच या सीरियल नंबर"
 
@@ -12216,6 +12222,9 @@ msgstr "संपर्क या स्थान के बिना आपू�
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "परिसंपत्ति वर्गों पर कर-विशिष्ट मूल्यह्रास विधियों को कॉन्फ़िगर करने के लिए सक्षम करें (उदा., MACRS, त्वरित)।"
 
+msgid "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
+msgstr ""
+
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "कच्चे माल के लिए ID और विवरण उत्पन्न करने के लिए सक्षम करें।"
 
@@ -14288,6 +14297,9 @@ msgstr "एक नया 4-अंकीय PIN बनाएँ। ऑपरे�
 
 msgid "Generate and send customer invoices"
 msgstr "ग्राहक चालान उत्पन्न करें और भेजें"
+
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr ""
 
 msgid "Generate Billable Items"
 msgstr "बिल योग्य आइटम उत्पन्न करें"
@@ -19172,6 +19184,9 @@ msgstr "नया परियोजना स्टॉक स्थानां
 msgid "New purchase order"
 msgstr "नया क्रय आदेश"
 
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr ""
+
 msgid "New Quality Document"
 msgstr "नया गुणवत्ता दस्तावेज़"
 
@@ -20849,6 +20864,9 @@ msgstr "अभी"
 
 msgid "Number"
 msgstr "संख्या"
+
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "प्रति क्रय इकाई इन्वेंटरी इकाइयों की संख्या"
@@ -24426,6 +24444,12 @@ msgstr "पुनः गणना की जा रही है…"
 
 msgid "Receipt"
 msgstr "रसीद"
+
+msgid "Receipt batch numbers are now entered by hand"
+msgstr ""
+
+msgid "Receipt batch numbers are now generated"
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "रसीद आईडी"
