@@ -66,7 +66,7 @@ msgstr "{0}にはロット番号がありません。Carbonでバッチまたは
 #. placeholder {0}: result.unit.readableId
 #. placeholder {1}: result.unit.status
 msgid "{0} is {1}"
-msgstr ""
+msgstr "{0} は {1} です"
 
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
@@ -175,13 +175,13 @@ msgid "{hours} h"
 msgstr "{hours} 時間"
 
 msgid "{issued} of {required}"
-msgstr ""
+msgstr "{issued} / {required}"
 
 msgid "{label}, overdue"
 msgstr "{label}、期限超過"
 
 msgid "{lost} scanned pieces were not issued. Scan them again."
-msgstr ""
+msgstr "スキャンした {lost} 個は出庫されていません。もう一度スキャンしてください。"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB の制限"
@@ -386,7 +386,7 @@ msgid "Allocate units"
 msgstr "ユニットを割り当てる"
 
 msgid "Any part"
-msgstr ""
+msgstr "任意の部品"
 
 msgid "Appearance"
 msgstr "外観"
@@ -425,7 +425,7 @@ msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "スーパーバイザーにプロフィールに{processName}スキルを追加するよう依頼してください。"
 
 msgid "Asked"
-msgstr ""
+msgstr "依頼済み"
 
 msgid "Assembly steps"
 msgstr "組立ステップ"
@@ -550,7 +550,7 @@ msgid "Bold"
 msgstr "太字"
 
 msgid "Bring {quantity}"
-msgstr ""
+msgstr "{quantity} を持ってきてください"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "ご心配なく。パスワード忘却フローを使用して新しいマジックリンクをリクエストできます。"
@@ -643,10 +643,10 @@ msgstr "Carbon があなたに連絡する方法を選択します。"
 
 #. placeholder {0}: unit.readableId
 msgid "Choose the operation to issue {0} into"
-msgstr ""
+msgstr "{0} を出庫する工程を選択"
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "この個体で開く工程を選択"
 
 msgid "Clear"
 msgstr "クリア"
@@ -817,10 +817,10 @@ msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "過去{0}日間の未計画保全原価"
 
 msgid "Could not load the line feed"
-msgstr ""
+msgstr "ラインフィードを読み込めませんでした"
 
 msgid "Could not look up this label. Try again."
-msgstr ""
+msgstr "このラベルを検索できませんでした。もう一度お試しください。"
 
 msgid "Country code"
 msgstr "国番号"
@@ -1136,7 +1136,7 @@ msgid "Failed to register passkey"
 msgstr "パスキーの登録に失敗しました"
 
 msgid "Failed to resolve request"
-msgstr ""
+msgstr "リクエストを処理できませんでした"
 
 msgid "Failed to save measurement"
 msgstr "測定の保存に失敗しました"
@@ -1322,7 +1322,7 @@ msgid "In Progress"
 msgstr "進行中"
 
 msgid "In stock: {available}. Still needed: {needed}."
-msgstr ""
+msgstr "在庫: {available}。残り必要数: {needed}。"
 
 msgid "In warranty"
 msgstr "保証期間内"
@@ -1392,7 +1392,7 @@ msgstr "材料払出"
 
 #. placeholder {0}: selected.operation.jobReadableId
 msgid "Issue to {0}"
-msgstr ""
+msgstr "{0} へ出庫"
 
 msgid "Issue Type"
 msgstr "問題タイプ"
@@ -1407,16 +1407,16 @@ msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "{lotLabel} から {issuedQuantity} を発行しました — {remainingQuantity} が残っています"
 
 msgid "Issued {quantity} {name} ({issued} of {required})"
-msgstr ""
+msgstr "{name} を {quantity} 出庫済み（{issued} / {required}）"
 
 msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
-msgstr ""
+msgstr "{batches} から {name} を {quantity} 出庫済み（{issued} / {required}）"
 
 msgid "Issuing"
-msgstr ""
+msgstr "出庫中"
 
 msgid "Issuing. {waiting} more scanned."
-msgstr ""
+msgstr "出庫中。さらに {waiting} 件スキャン済み。"
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "まだ「{table}」レコードで使用されています。最初にそれを除去してください。"
@@ -1524,7 +1524,7 @@ msgid "Line"
 msgstr "明細"
 
 msgid "Line feed"
-msgstr ""
+msgstr "ラインフィード"
 
 msgid "lines"
 msgstr "行"
@@ -1599,7 +1599,7 @@ msgid "Lot tracked"
 msgstr "ロット追跡対象"
 
 msgid "Low"
-msgstr ""
+msgstr "低"
 
 msgid "Machine"
 msgstr "機械"
@@ -1660,7 +1660,7 @@ msgid "matches"
 msgstr "が一致"
 
 msgid "Material requested"
-msgstr ""
+msgstr "材料を請求済み"
 
 msgid "Materials"
 msgstr "材料"
@@ -1731,7 +1731,7 @@ msgid "Navigation"
 msgstr "ナビゲーション"
 
 msgid "Need material"
-msgstr ""
+msgstr "材料が必要"
 
 msgid "New"
 msgstr "新規"
@@ -1831,7 +1831,7 @@ msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "休暇がまだ設定されていません。マネージャーにERPで設定するよう依頼してください。"
 
 msgid "No lineside storage"
-msgstr ""
+msgstr "ラインサイド保管場所がありません"
 
 msgid "No maintenance scheduled for today"
 msgstr "本日の保全予定はありません。"
@@ -1885,7 +1885,7 @@ msgid "No photos yet"
 msgstr "写真がまだありません"
 
 msgid "No picking lists"
-msgstr ""
+msgstr "ピッキングリストがありません"
 
 msgid "No printer configured"
 msgstr "プリンターが設定されていません"
@@ -1936,10 +1936,10 @@ msgid "No spare parts added yet"
 msgstr "予備品はまだ追加されていません。"
 
 msgid "No station"
-msgstr ""
+msgstr "ステーションがありません"
 
 msgid "No stations at this location"
-msgstr ""
+msgstr "この拠点にはステーションがありません"
 
 msgid "No stock"
 msgstr "在庫なし"
@@ -1987,7 +1987,7 @@ msgid "Not usable stock. MRP and planning do not count it, and picking does not 
 msgstr "使用可能な在庫ではありません。MRPと計画には含まれず、ピッキングでも引き当てられません。"
 
 msgid "Note"
-msgstr ""
+msgstr "メモ"
 
 msgid "Notes"
 msgstr "メモ"
@@ -2034,7 +2034,7 @@ msgid "On Hold"
 msgstr "保留中"
 
 msgid "On its way"
-msgstr ""
+msgstr "輸送中"
 
 msgid "one combined lot · planned"
 msgstr "1つの統合ロット · 計画済"
@@ -2120,13 +2120,13 @@ msgid "Or enter this secret manually:"
 msgstr "またはこのシークレットを手動で入力してください："
 
 msgid "Out"
-msgstr ""
+msgstr "欠品"
 
 msgid "Out of calibration"
 msgstr "校正対象外"
 
 msgid "Out of stock"
-msgstr ""
+msgstr "在庫切れ"
 
 msgid "Output lot"
 msgstr "出力ロット"
@@ -2328,7 +2328,7 @@ msgid "Print batch list"
 msgstr "バッチリストを印刷"
 
 msgid "Print travelers"
-msgstr ""
+msgstr "現品票を印刷"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "承認した発注書に印刷"
@@ -2534,7 +2534,7 @@ msgid "Repairable"
 msgstr "修理可能"
 
 msgid "Request material"
-msgstr ""
+msgstr "材料を請求"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリからの6桁コードが必要です。"
@@ -2552,7 +2552,7 @@ msgid "Resolution"
 msgstr "解決策"
 
 msgid "Resolve"
-msgstr ""
+msgstr "解決"
 
 msgid "Result"
 msgstr "結果"
@@ -2585,7 +2585,7 @@ msgid "Running"
 msgstr "実行中"
 
 msgid "Running low"
-msgstr ""
+msgstr "残りわずか"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2633,7 +2633,7 @@ msgid "Scan a tracked entity to add the first sample column."
 msgstr "追跡対象をスキャンして、最初のサンプル列を追加します。"
 
 msgid "Scan in these parts first"
-msgstr ""
+msgstr "先にこれらの部品をスキャンしてください"
 
 msgid "Scan or enter a serial"
 msgstr "シリアルをスキャンするか入力してください"
@@ -2759,7 +2759,7 @@ msgid "Select a customer"
 msgstr "得意先を選択"
 
 msgid "Select a location to see its stations"
-msgstr ""
+msgstr "拠点を選択するとステーションが表示されます"
 
 msgid "Select a rework quantity"
 msgstr "手直し数量を選択"
@@ -2889,7 +2889,7 @@ msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
 
 msgid "Short: {available} of {needed}"
-msgstr ""
+msgstr "不足: {available} / {needed}"
 
 msgid "Show description"
 msgstr "説明を表示"
@@ -3174,7 +3174,7 @@ msgid "The timer and completion are shared by all {0} jobs. Steps, materials and
 msgstr "タイマーと完了はすべての{0}製造指図で共有されます。ステップ、材料、ファイルはこの製造指図専用です。"
 
 msgid "The unit changed. Scan again."
-msgstr ""
+msgstr "個体が変わりました。もう一度スキャンしてください。"
 
 msgid "The values break a rule on this record."
 msgstr "値はこのレコードのルールを破っています。"
@@ -3210,7 +3210,7 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "これらの品目にはまだピッキングする材料があります。今、完了するとリストが一部としてマークされます。"
 
 msgid "This barcode matches more than one unit"
-msgstr ""
+msgstr "このバーコードは複数の個体に一致します"
 
 msgid "This batch has no work instructions."
 msgstr "このバッチには作業手順書がありません。"
@@ -3228,13 +3228,13 @@ msgid "This is a pass / fail check. Press P or F."
 msgstr "これは合否判定の項目です。P または F を押してください。"
 
 msgid "This job does not use that part"
-msgstr ""
+msgstr "この製造指図ではその部品を使用しません"
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "この製造指図には請求レートがありません。時間が請求される前にオフィスに設定するよう依頼してください。"
 
 msgid "This label does not belong to a unit in this company"
-msgstr ""
+msgstr "このラベルはこの会社の個体ではありません"
 
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
@@ -3370,10 +3370,10 @@ msgid "Training"
 msgstr "教育訓練"
 
 msgid "Traveler"
-msgstr ""
+msgstr "現品票"
 
 msgid "Try again"
-msgstr ""
+msgstr "再試行"
 
 msgid "Two-factor authentication"
 msgstr "二要素認証"
@@ -3421,7 +3421,7 @@ msgid "Unknown gauge"
 msgstr "不明な測定器"
 
 msgid "Unknown part"
-msgstr ""
+msgstr "不明な部品"
 
 msgid "Unlock"
 msgstr "ロック解除"
@@ -3532,7 +3532,7 @@ msgid "View or open"
 msgstr "表示または開く"
 
 msgid "View Traceability"
-msgstr ""
+msgstr "トレーサビリティを表示"
 
 msgid "Warranty"
 msgstr "保証"
@@ -3541,10 +3541,10 @@ msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or 
 msgstr "サインインリンクと6桁コードをメールで送信しました。リンクをクリックするか、ここにコードを入力してください。"
 
 msgid "Wet"
-msgstr ""
+msgstr "湿式"
 
 msgid "What do you need?"
-msgstr ""
+msgstr "何が必要ですか？"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"
