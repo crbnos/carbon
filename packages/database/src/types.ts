@@ -70213,6 +70213,7 @@ export type Database = {
           opportunityId: string | null
           paymentTermId: string | null
           postingDate: string | null
+          salesPersonId: string | null
           sendError: string | null
           sentAt: string | null
           sentTo: string | null
@@ -70253,6 +70254,7 @@ export type Database = {
           opportunityId?: string | null
           paymentTermId?: string | null
           postingDate?: string | null
+          salesPersonId?: string | null
           sendError?: string | null
           sentAt?: string | null
           sentTo?: string | null
@@ -70293,6 +70295,7 @@ export type Database = {
           opportunityId?: string | null
           paymentTermId?: string | null
           postingDate?: string | null
+          salesPersonId?: string | null
           sendError?: string | null
           sentAt?: string | null
           sentTo?: string | null
@@ -70467,6 +70470,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "paymentTerm"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
           {
             foreignKeyName: "salesInvoice_shipmentId_fkey"
@@ -102920,6 +102958,7 @@ export type Database = {
           paymentTermId: string | null
           paymentTermName: string | null
           postingDate: string | null
+          salesPersonId: string | null
           sendError: string | null
           sentAt: string | null
           sentTo: string | null
@@ -103081,6 +103120,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "paymentTerm"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
           {
             foreignKeyName: "salesInvoice_shipmentId_fkey"
@@ -110548,6 +110622,7 @@ export type Database = {
           paymentTermId: string | null
           paymentTermName: string | null
           postingDate: string | null
+          salesPersonId: string | null
           sendError: string | null
           sentAt: string | null
           sentTo: string | null

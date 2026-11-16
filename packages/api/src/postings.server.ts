@@ -119,7 +119,10 @@ export type KanbanReplenishOutcome =
 
 /** Each posting's input, and the result its callers read. */
 export type PostingContract = {
-  "post-sales-invoice": { input: { invoiceId: string }; output: unknown };
+  "post-sales-invoice": {
+    input: { invoiceId: string; postingDate?: string };
+    output: unknown;
+  };
   "post-purchase-invoice": { input: { invoiceId: string }; output: unknown };
   "post-receipt": { input: { receiptId: string }; output: unknown };
   "post-shipment": {

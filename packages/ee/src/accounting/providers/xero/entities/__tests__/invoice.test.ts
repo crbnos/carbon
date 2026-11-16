@@ -250,7 +250,7 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
     expect(payload.LineItems[0]?.LineAmount).toBe(80);
   });
 
-  it("pushes a discounted line's NET amount", async () => {
+  it("pushes a net-posted (pre-split) discounted line's NET amount", async () => {
     const source = fxInvoice();
     // 2 × 50 base list, 20% off → 80 base merchandise, 64 EUR at 0.8.
     const payload = await makeInvoiceSyncer(db()).mapToRemote({
@@ -380,6 +380,72 @@ describe("Xero native sales components", () => {
       (syncer as unknown as { ensureDependencySynced: unknown })
         .ensureDependencySynced
     ).not.toHaveBeenCalled();
+  });
+});
+
+describe("Xero split line discount", () => {
+  const discountDb = (withDiscountMapping = true) =>
+    makeInvoiceDb({
+      accountDefault: { salesAccount: "acct_sales" },
+      accountMappings: [
+        ...mappedAccounts,
+        ...(withDiscountMapping
+          ? [
+              {
+                ...mappedAccounts[0]!,
+                id: "discount-map",
+                accountId: "acct_discount",
+                metadata: { externalCode: "4020" },
+                accountNumber: "4020",
+                accountName: "Sales Discounts"
+              }
+            ]
+          : [])
+      ]
+    });
+  const splitInvoice = (): Accounting.SalesInvoice => {
+    const source = invoice();
+    // 2 × 50 at 20% off, posted gross 100 with a 20 Sales Discount debit.
+    return {
+      ...source,
+      subtotal: 80,
+      totalAmount: 80,
+      balance: 80,
+      salesDiscountAccountId: "acct_discount",
+      postedSalesDiscountBase: 20,
+      lines: [
+        {
+          ...source.lines[0]!,
+          discountPercent: 0.2,
+          lineAmount: 80,
+          postsSalesDiscount: true
+        }
+      ]
+    };
+  };
+
+  it("sends gross merchandise to Sales and a negative line to Sales Discount", async () => {
+    const payload = await makeInvoiceSyncer(discountDb()).mapToRemote(
+      splitInvoice()
+    );
+    expect(
+      payload.LineItems.map((line) => [line.AccountCode, line.LineAmount])
+    ).toEqual([
+      ["4000", 100],
+      ["4020", -20]
+    ]);
+    expect(payload.LineItems[1]?.Description).toBe("Discount — Widget");
+  });
+
+  it("refuses an unmapped Sales Discount account before the customer push", async () => {
+    const syncer = makeInvoiceSyncer(discountDb(false));
+    await expect(syncer.mapToRemote(splitInvoice())).rejects.toMatchObject({
+      failure: {
+        errorCode: "UNMAPPED_ACCOUNTS",
+        message: expect.stringContaining("Sales Discount")
+      }
+    });
+    expect((syncer as any).ensureDependencySynced).not.toHaveBeenCalled();
   });
 });
 

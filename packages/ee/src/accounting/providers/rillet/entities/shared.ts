@@ -875,6 +875,8 @@ export abstract class RilletTransactionSyncer<
   private postingSyncSettingsPromise?: Promise<PostingSyncSettings>;
   private dimensionValueMappingsPromise?: Promise<Map<string, string>>;
   private dimensionFieldMappingsPromise?: Promise<Map<string, string>>;
+  /** `<area>:<fieldName>:<valueName>` → field ref, per syncer instance. */
+  private namedFieldValues = new Map<string, Promise<Rillet.ItemFieldRef>>();
 
   /**
    * Per-company posting-sync settings from
@@ -1084,6 +1086,57 @@ export abstract class RilletTransactionSyncer<
     }
 
     return { fieldIdByDimensionId, fieldValueIdsByValue };
+  }
+
+  /**
+   * Resolve a Rillet Field value by NAME — a field with no Carbon dimension
+   * behind it (the invoice "Sales Rep"). Reuses the Rillet Field with this
+   * name, else creates it for `area`, then reuses or upserts the value. No
+   * mapping row is stored: there is no Carbon dimension to key it on, so the
+   * names are the key and the result is memoized for this syncer.
+   *
+   * VERIFY: REVENUE field creation not sandbox-tested.
+   */
+  protected resolveNamedFieldValue(
+    fieldName: string,
+    area: "EXPENSES" | "REVENUE",
+    valueName: string
+  ): Promise<Rillet.ItemFieldRef> {
+    const key = `${area}:${fieldName}:${valueName.trim()}`;
+    let resolved = this.namedFieldValues.get(key);
+    if (!resolved) {
+      resolved = (async () => {
+        const name = valueName.trim();
+        let field = (await this.rilletProvider.listFields()).find(
+          (candidate) => candidate.name === fieldName
+        );
+        if (!field) {
+          field = await this.rilletProvider.createField(
+            fieldName,
+            area,
+            buildRilletIdempotencyKey({
+              companyId: this.companyId,
+              operation: "create-field",
+              localId: `${area}:${fieldName}`
+            })
+          );
+        }
+        const existing = (field.values ?? []).find(
+          (candidate) =>
+            candidate.name?.trim() === name && !candidate.deactivated
+        );
+        const value =
+          existing ??
+          (await this.rilletProvider.upsertFieldValue(field.id, name));
+        return { field_id: field.id, field_value_id: value.id };
+      })().catch((error) => {
+        // Don't cache a failure: a retried push must resolve again.
+        this.namedFieldValues.delete(key);
+        throw error;
+      });
+      this.namedFieldValues.set(key, resolved);
+    }
+    return resolved;
   }
 
   async pushToAccounting(entityId: string): Promise<SyncResult> {

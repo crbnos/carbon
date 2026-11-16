@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { toBaseAmount, toDocumentAmount } from "./accounting-currency.ts";
+import { SALES_DISCOUNT_POSTING_DESCRIPTION } from "./accounting-posting.ts";
 import { credit, debit } from "./ledger.ts";
 import { assertBalanced, EPSILON, round, SCALE } from "./precision.ts";
 
@@ -118,6 +119,10 @@ export type BuildSalesPostingLinesInput = {
   accounts: {
     receivables?: SalesPostingAccount | null;
     sales?: SalesPostingAccount | null;
+    /** `accountDefault.salesDiscountAccount`. A discounted line booked to the
+     *  Sales Account credits Sales the gross merchandise and debits this
+     *  account the discount ("Sales Discount"); required only then. */
+    salesDiscount?: SalesPostingAccount | null;
     shipping?: SalesPostingAccount | null;
     tax?: SalesPostingAccount | null;
   };
@@ -304,9 +309,13 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
   netBookValue: number | null;
   gainLoss: number | null;
   signedDebitTotal: number;
-  /** Base amount of each revenue leg as posted, in the order given (the Sales
-   *  Account leg alone when no `revenueLegs` were passed; empty for assets). */
+  /** Base amount of each revenue leg, in the order given (the Sales Account
+   *  leg alone when no `revenueLegs` were passed; empty for assets). Net of
+   *  the line discount, like `amounts.salesRevenueBase`. */
   revenueLegAmounts: number[];
+  /** The "Sales Discount" debit in base currency, signed like the line; 0
+   *  when the line has no discount or does not post to the Sales Account. */
+  salesDiscountBase: number;
 } {
   const {
     line,
@@ -331,7 +340,8 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
       netBookValue: null,
       gainLoss: null,
       signedDebitTotal: 0,
-      revenueLegAmounts: []
+      revenueLegAmounts: [],
+      salesDiscountBase: 0
     };
   }
   if (
@@ -430,6 +440,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     signedDebitTotal += side === "debit" ? baseAmount : -baseAmount;
   };
   const revenueLegAmounts: number[] = [];
+  let salesDiscountBase = 0;
   if (revenueLegs?.length) {
     const base = amounts.salesRevenueBase;
     let explicit = 0;
@@ -486,12 +497,42 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         true
       );
     } else {
+      // Revenue at gross: Sales takes the list-price merchandise and the line
+      // discount is its own debit on Sales Discount. Only this plain Sales
+      // booking splits; deferred, contract, service and rental legs (and
+      // `salesRevenueBase`, which they and the deferral schedule read) stay
+      // net. The discount is rounded once and Sales takes net + discount, so
+      // the split adds no rounding residual.
+      const discountPercent = finite(line.discountPercent ?? 0, "Discount");
+      salesDiscountBase =
+        discountPercent === 0
+          ? 0
+          : toBaseAmount(
+              finite(
+                finite(line.quantity, "Quantity") *
+                  finite(line.unitPrice ?? 0, "Unit price") *
+                  discountPercent,
+                "Sales discount"
+              ),
+              1
+            );
       push(
         accounts.sales,
         "Revenue",
         "credit",
-        amounts.salesRevenueBase,
+        round(amounts.salesRevenueBase + salesDiscountBase),
         "Sales Account",
+        false,
+        line.quantity,
+        undefined,
+        true
+      );
+      push(
+        accounts.salesDiscount,
+        "Revenue",
+        "debit",
+        salesDiscountBase,
+        SALES_DISCOUNT_POSTING_DESCRIPTION,
         false,
         line.quantity,
         undefined,
@@ -591,6 +632,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     netBookValue,
     gainLoss,
     signedDebitTotal,
-    revenueLegAmounts
+    revenueLegAmounts,
+    salesDiscountBase
   };
 }

@@ -32,6 +32,7 @@ const CHART = [
   leaf("ar", "Asset"),
   leaf("ic-ar", "Asset"),
   leaf("sales", "Revenue"),
+  leaf("discount", "Revenue"),
   leaf("shipping", "Revenue"),
   leaf("tax", "Liability"),
   leaf("deferred", "Liability"),
@@ -46,6 +47,7 @@ const defaultsWith = (overrides: Partial<AccountDefaults> = {}) =>
     receivablesAccount: "ar",
     intercompanyReceivablesAccount: "ic-ar",
     salesAccount: "sales",
+    salesDiscountAccount: "discount",
     salesShippingRevenueAccount: "shipping",
     salesTaxPayableAccount: "tax",
     deferredRevenueAccount: "deferred",
@@ -313,6 +315,48 @@ describe("a deferral line", () => {
       ["ar", "Accounts Receivable", 100]
     ]);
     expect(journal.deferrals).toEqual([]);
+  });
+});
+
+describe("a discounted line", () => {
+  const discounted = invoiceLine({ discountPercent: 0.1, taxPercent: 0.05 });
+
+  it("credits Sales the gross and debits Sales Discount the discount", () => {
+    const journal = buildSalesInvoiceJournal(
+      facts(accountsFor(defaultsWith(), "Posted"), { lines: [discounted] })
+    );
+    // Tax and AR stay on the net merchandise (100 − 10).
+    expect(summary(journal.lines)).toEqual([
+      ["sales", "Sales Account", 100],
+      ["discount", "Sales Discount", -10],
+      ["tax", "Sales Tax Payable", 4.5],
+      ["ar", "Accounts Receivable", 94.5]
+    ]);
+  });
+
+  it("keeps a deferred line net, with no Sales Discount leg", () => {
+    const accounts = accountsFor(defaultsWith(), "Posted", {
+      ...NO_NEEDS,
+      deferredRevenue: true
+    });
+    const journal = buildSalesInvoiceJournal(
+      facts(accounts, {
+        lines: [
+          {
+            ...discounted,
+            invoiceLineType: "Service",
+            serviceStartDate: "2026-01-01",
+            serviceEndDate: "2026-03-31"
+          }
+        ]
+      })
+    );
+    expect(summary(journal.lines)).toEqual([
+      ["deferred", "Deferred Revenue", 90],
+      ["tax", "Sales Tax Payable", 4.5],
+      ["ar", "Accounts Receivable", 94.5]
+    ]);
+    expect(journal.deferrals[0]?.amountBase).toBe(90);
   });
 });
 

@@ -253,6 +253,8 @@ export namespace Rillet {
     quantity: z.number(),
     total_amount: MonetaryAmountSchema,
     tax_amount: MonetaryAmountSchema.optional(),
+    // VERIFY: Rillet invoice item `fields` (dimension tags) not sandbox-tested.
+    fields: z.array(ItemFieldRefSchema).optional(),
     external_references: z.array(ExternalReferenceSchema).min(1)
   });
 

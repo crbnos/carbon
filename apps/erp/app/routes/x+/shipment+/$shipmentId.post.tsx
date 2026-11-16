@@ -11,7 +11,8 @@ import { zfd } from "zod-form-data";
 import { path } from "~/utils/path";
 
 // The post modal's form: `acknowledged` is set when the user accepts the
-// rule violations shown to them, `postingDate` dates a rental delivery.
+// rule violations shown to them, `postingDate` dates a rental or contract
+// delivery and a sales order shipment.
 const postForm = z.object({
   acknowledged: zfd.checkbox({ trueValue: "true" }),
   postingDate: zfd.text(z.string().optional())

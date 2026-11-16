@@ -600,13 +600,115 @@ it("a line discount nets merchandise only: 10 × 40 at 20% off and 10% tax", () 
     salesTaxBase: 35,
     grossReceivableBase: 388
   });
+  // Posted at gross: Sales takes the list-price 400 and Sales Discount the
+  // 80 off as a debit; tax and AR stay on the net.
   const input = fixture();
   input.line = line;
-  expect(byAccount(buildSalesPostingLines(input))).toEqual({
-    sales: 320,
+  input.accounts.salesDiscount = account("discount", "Revenue");
+  const result = buildSalesPostingLines(input);
+  expect(byAccount(result)).toEqual({
+    sales: 400,
+    discount: -80,
     tax: 32,
     ar: 352
   });
+  expect(
+    result.lines.find((row) => row.accountId === "discount")
+  ).toMatchObject({ description: "Sales Discount", quantity: 10 });
+  expect(result.amounts.salesRevenueBase).toEqual(320);
+  expect(result.saleProceeds).toEqual(320);
+  expect(result.revenueLegAmounts).toEqual([320]);
+  expect(result.salesDiscountBase).toEqual(80);
+  expect(result.signedDebitTotal).toEqual(0);
+});
+
+it("a discounted line with no Sales Discount account refuses to post", () => {
+  const input = fixture();
+  input.line = {
+    invoiceLineType: "Part",
+    quantity: 10,
+    unitPrice: 40,
+    discountPercent: 0.2
+  };
+  expect(() => buildSalesPostingLines(input)).toThrow(
+    "Invalid or missing Sales Discount account"
+  );
+  // An undiscounted line never needs it.
+  const plain = fixture();
+  expect(buildSalesPostingLines(plain).salesDiscountBase).toEqual(0);
+  expect(
+    buildSalesPostingLines(plain).lines.map((row) => row.description)
+  ).not.toContain("Sales Discount");
+});
+
+it("the discount splits off with no rounding residual, and mirrors on a credit line", () => {
+  const input = fixture();
+  input.accounts.salesDiscount = account("discount", "Revenue");
+  // 3 × 33.333333 at 7% off: gross 99.999999, discount 6.99999993.
+  input.line = {
+    invoiceLineType: "Part",
+    quantity: 3,
+    unitPrice: 33.333333,
+    discountPercent: 0.07,
+    taxPercent: 0.0825
+  };
+  const result = buildSalesPostingLines(input);
+  const amounts = byAccount(result);
+  expect(round(amounts.sales! + amounts.discount!)).toEqual(
+    result.amounts.salesRevenueBase
+  );
+  expect(result.signedDebitTotal).toEqual(0);
+
+  const negative = fixture();
+  negative.accounts.salesDiscount = account("discount", "Revenue");
+  negative.line = {
+    invoiceLineType: "Part",
+    quantity: -10,
+    unitPrice: 40,
+    discountPercent: 0.2
+  };
+  expect(byAccount(buildSalesPostingLines(negative))).toEqual({
+    sales: -400,
+    discount: 80,
+    ar: -320
+  });
+});
+
+it("only the plain Sales booking splits: deferral and revenue legs stay net", () => {
+  const line = {
+    invoiceLineType: "Service",
+    quantity: 10,
+    unitPrice: 40,
+    discountPercent: 0.2
+  };
+  const deferred = fixture();
+  deferred.line = line;
+  deferred.accounts.salesDiscount = account("discount", "Revenue");
+  deferred.deferredRevenueAccount = account("deferred", "Liability");
+  expect(byAccount(buildSalesPostingLines(deferred))).toEqual({
+    deferred: 320,
+    ar: 320
+  });
+
+  const legs = fixture();
+  legs.line = line;
+  legs.accounts.salesDiscount = account("discount", "Revenue");
+  legs.revenueLegs = [
+    {
+      account: account("deferred", "Liability"),
+      accountClass: "Liability",
+      description: "Deferred Revenue",
+      amount: 120
+    },
+    {
+      account: account("sales", "Revenue"),
+      accountClass: "Revenue",
+      description: "Sales Account"
+    }
+  ];
+  const result = buildSalesPostingLines(legs);
+  expect(byAccount(result)).toEqual({ deferred: 120, sales: 200, ar: 320 });
+  expect(result.salesDiscountBase).toEqual(0);
 });
 
 it("header shipping weights a discounted line by its net merchandise", () => {

@@ -32,6 +32,7 @@ import {
   Customer,
   CustomerContact,
   CustomerLocation,
+  Employee,
   Location,
   PaymentTerm
 } from "~/components/Form";
@@ -370,6 +371,26 @@ const SalesInvoiceProperties = () => {
           onChange={(value) => {
             if (value?.value) {
               onUpdate("locationId", value.value);
+            }
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          salesPersonId: routeData?.salesInvoice?.salesPersonId ?? undefined
+        }}
+        validator={zfd.text(z.string().optional())}
+        className="w-full"
+      >
+        <Employee
+          name="salesPersonId"
+          label={t`Sales Person`}
+          inline
+          isReadOnly={isDisabled}
+          onChange={(value) => {
+            if (value?.value) {
+              onUpdate("salesPersonId", value.value);
             }
           }}
         />

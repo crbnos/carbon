@@ -9,13 +9,18 @@ import {
   assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
   hasRevenueComponent,
+  hasSalesDiscountComponent,
   hasSalesRevenueComponent,
   hasServiceRevenueComponent,
   isRevenueComponent,
+  isSalesDiscountComponent,
   isServiceRevenueComponent
 } from "./sales-document-components";
 import {
+  bookedToSalesAccount,
+  postedSalesDiscountBase,
   requirePostedSalesAccountId,
+  requirePostedSalesDiscountAccountId,
   requirePostedServiceRevenueAccountId,
   requirePostedShippingAccountId,
   resolveReplayedRevenueAccounts
@@ -369,6 +374,116 @@ describe("buildSalesDocumentComponents", () => {
     expect(
       document.components.find((c) => c.kind === "TaxableAddOn")
     ).toMatchObject({ netAmount: 16 });
+  });
+
+  it("splits a discounted line into gross Merchandise and a negative Discount when its journal posted Sales Discount", () => {
+    const source = fixture();
+    // The same 4 × 25 at 20% off as above, posted after the split: Sales
+    // credited 100, Sales Discount debited 20.
+    const document = buildSalesDocumentComponents({
+      ...source,
+      subtotal: 113,
+      totalTax: 11,
+      totalAmount: 129,
+      balance: 129,
+      salesDiscountAccountId: "acct-discount",
+      postedSalesDiscountBase: 20,
+      lines: [
+        {
+          ...source.lines[0]!,
+          quantity: 4,
+          unitPrice: 25,
+          convertedUnitPrice: 20,
+          discountPercent: 0.2,
+          lineAmount: 80,
+          postsSalesDiscount: true
+        }
+      ]
+    } as Accounting.SalesInvoice);
+    // Document totals are unchanged by the split.
+    expect(document).toMatchObject({
+      subtotal: 94.4,
+      totalTax: 8.8,
+      totalAmount: 103.2
+    });
+    const merchandise = document.components.find(
+      (c) => c.kind === "Merchandise"
+    );
+    const discount = document.components.find((c) => c.kind === "Discount");
+    expect(merchandise).toMatchObject({
+      quantity: 4,
+      unitAmount: 20,
+      netAmount: 80,
+      taxPercent: 0.1,
+      taxAmount: 8
+    });
+    expect(discount).toMatchObject({
+      sourceLineId: "line",
+      quantity: 1,
+      unitAmount: -16,
+      netAmount: -16,
+      taxPercent: 0.1,
+      taxAmount: -1.6,
+      description: "Discount — Work"
+    });
+    // A Discount books to Sales Discount, never to the Sales account.
+    expect(isRevenueComponent(discount!)).toBe(false);
+    expect(isSalesDiscountComponent(discount!)).toBe(true);
+    expect(hasSalesDiscountComponent(document.components)).toBe(true);
+    const sum = (key: "netAmount" | "taxAmount") =>
+      round(document.components.reduce((total, c) => total + c[key], 0));
+    expect(sum("netAmount")).toBe(document.subtotal);
+    expect(sum("taxAmount")).toBe(document.totalTax);
+  });
+
+  it("refuses a split invoice whose posted Sales Discount total its lines do not explain", () => {
+    const source = fixture();
+    const invoice = {
+      ...source,
+      subtotal: 113,
+      totalTax: 11,
+      totalAmount: 129,
+      balance: 129,
+      salesDiscountAccountId: "acct-discount",
+      postedSalesDiscountBase: 20,
+      lines: [
+        {
+          ...source.lines[0]!,
+          quantity: 4,
+          unitPrice: 25,
+          convertedUnitPrice: 20,
+          discountPercent: 0.2,
+          lineAmount: 80,
+          // The loader's line rule said this line did not split.
+          postsSalesDiscount: false
+        }
+      ]
+    } as Accounting.SalesInvoice;
+    expect(failureOf(() => buildSalesDocumentComponents(invoice))).toEqual({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      invoiceId: "invoice"
+    });
+  });
+
+  it("requires the replayed Sales Discount account", () => {
+    const invoice = SalesInvoiceSchema.parse({
+      ...fixture(),
+      salesDiscountAccountId: null
+    });
+    expect(
+      failureOf(() => requirePostedSalesDiscountAccountId(invoice))
+    ).toEqual({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      invoiceId: "invoice"
+    });
+    expect(
+      requirePostedSalesDiscountAccountId({
+        ...invoice,
+        salesDiscountAccountId: "acct-discount"
+      })
+    ).toBe("acct-discount");
   });
 
   it("refuses a discounted line when the view's subtotal is not net of the discount", () => {
@@ -947,5 +1062,104 @@ describe("document rounding residual distribution", () => {
         document.decimalPlaces
       )
     ).toBe(document.totalTax);
+  });
+});
+
+// Invoices posted after discounts split carry a "Sales Discount" debit; those
+// posted before have none, so their provider document stays net.
+describe("the posted Sales Discount", () => {
+  const row = (
+    documentId: string,
+    description: string,
+    amount: number,
+    accountId = "discount-4020"
+  ) => ({
+    documentId,
+    accountId,
+    description,
+    amount,
+    accountClass: "Revenue",
+    isGroup: false
+  });
+
+  it("totals the debits per invoice and replays the discount account", () => {
+    const rows = [
+      row("split", "Sales Account", 100, "sales-4000"),
+      row("split", "Sales Discount", -12.5),
+      row("split", "Sales Discount", -7.5),
+      row("legacy", "Sales Account", 80, "sales-4000"),
+      // A void's reversal is never an original posting.
+      row("legacy", "VOID: Sales Discount", 20)
+    ];
+    const totals = postedSalesDiscountBase(rows);
+    expect(totals.get("split")).toBe(20);
+    expect(totals.has("legacy")).toBe(false);
+    const resolve = resolveReplayedRevenueAccounts(rows);
+    expect(resolve("SalesDiscount", "split")).toBe("discount-4020");
+    expect(resolve("SalesDiscount", "legacy")).toBeNull();
+  });
+
+  it("keeps a legacy (net-posted) discounted line net: no Discount component", () => {
+    const source = fixture();
+    const document = buildSalesDocumentComponents({
+      ...source,
+      subtotal: 113,
+      totalTax: 11,
+      totalAmount: 129,
+      balance: 129,
+      postedSalesDiscountBase: null,
+      lines: [
+        {
+          ...source.lines[0]!,
+          quantity: 4,
+          unitPrice: 25,
+          convertedUnitPrice: 20,
+          discountPercent: 0.2,
+          lineAmount: 80
+        }
+      ]
+    } as Accounting.SalesInvoice);
+    expect(document.components.some((c) => c.kind === "Discount")).toBe(false);
+    expect(
+      document.components.find((c) => c.kind === "Merchandise")
+    ).toMatchObject({ unitAmount: 16, netAmount: 64 });
+  });
+
+  it.each([
+    ["a Part", { invoiceLineType: "Part" }, true],
+    ["a pre-2026-11 Labor line", { invoiceLineType: "Labor" }, true],
+    [
+      "a dated Labor line (Labor never defers)",
+      {
+        invoiceLineType: "Labor",
+        serviceStartDate: "2026-01-01",
+        serviceEndDate: "2026-03-31"
+      },
+      true
+    ],
+    ["a service job line", { serviceJobId: "job" }, false],
+    ["a contract line", { customerContractLineId: "cl" }, false],
+    [
+      "a dated Service line (deferred)",
+      {
+        invoiceLineType: "Service",
+        serviceStartDate: "2026-01-01",
+        serviceEndDate: "2026-03-31"
+      },
+      false
+    ],
+    ["a Rental line", { invoiceLineType: "Rental" }, false],
+    ["a Fixed Asset line", { invoiceLineType: "Fixed Asset" }, false]
+  ])("books %s to the Sales account: %s", (_case, overrides, expected) => {
+    expect(
+      bookedToSalesAccount({
+        invoiceLineType: "Part",
+        serviceJobId: null,
+        customerContractLineId: null,
+        serviceStartDate: null,
+        serviceEndDate: null,
+        ...overrides
+      })
+    ).toBe(expected);
   });
 });

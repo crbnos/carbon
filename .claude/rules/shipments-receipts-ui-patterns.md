@@ -176,7 +176,7 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   via `fetcher.Form` to the void route). Shipment posting is gated by `ShipmentPostModal.tsx`.
   On a rental document the post modals show a date field, **Delivered on** / **Returned on**
   (default company today, no future date), sent as `postingDate`; `ShipmentPostModal` shows
-  **Delivered on** on a contract delivery too (`isDelivery`); `ReceiptPostModal` also blocks a
+  **Delivered on** on a contract delivery too (`isDelivery`), and **Posting Date** on a sales order shipment (`isDated`); `ReceiptPostModal` also blocks a
   ticked unit treated as a sale that has no Return To.
   **Both post modals are source-aware for return flows**, and must stay in step with
   `lines.tracking`'s guard or they reject what tracking accepted:
@@ -206,7 +206,7 @@ same renderer `file+/shipment+/$id[.]pdf.tsx` serves); receipt may call
 
 `postReceipt` and `postShipment` (`inventory.service.ts`, ported from the `post-receipt` and `post-shipment` server functions) take
 `{ type: "post" | "void", {receipt,shipment}Id, postingDate? }` (the context carries `companyId` / `userId`;
-`postingDate` is read only by the rental and contract sources, and `$id.post.tsx` passes it from the modal to the operation), run
+`postingDate` is read by the rental and contract sources and by a Sales Order shipment, which dates its ledgers, COGS journal and period with it through `resolveManualPostingDate`; `$id.post.tsx` passes it from the modal to the operation), run
 the service-role client + Kysely `db.transaction()`, and branch on `sourceDocument`:
 
 - **post-receipt** handles `Purchase Order`, `Inbound Transfer`, `Rental Agreement` (returns each

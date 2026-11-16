@@ -52,7 +52,7 @@ describe("buildQboInvoiceLines (invoice mapping fixture)", () => {
     ]);
   });
 
-  it("sends a discounted line at its NET unit price, so Qty × UnitPrice = Amount", () => {
+  it("sends a net-posted (pre-split) discounted line at its NET unit price, so Qty × UnitPrice = Amount", () => {
     const [line] = buildQboInvoiceLines(
       lineArguments(
         [
@@ -73,6 +73,39 @@ describe("buildQboInvoiceLines (invoice mapping fixture)", () => {
       (line?.SalesItemLineDetail?.Qty ?? 0) *
         (line?.SalesItemLineDetail?.UnitPrice ?? 0)
     ).toBe(line?.Amount);
+  });
+
+  it("splits a discounted line into gross merchandise and a negative Sales Discount item line when its journal did", () => {
+    const base = lineArguments(
+      [
+        makeLine({
+          quantity: 4,
+          unitPrice: 25,
+          discountPercent: 0.2,
+          lineAmount: 80,
+          postsSalesDiscount: true
+        })
+      ],
+      "77",
+      { salesDiscountAccountId: "acct-discount", postedSalesDiscountBase: 20 }
+    );
+    const lines = buildQboInvoiceLines({
+      ...base,
+      salesDiscountItemRemoteId: "discount-item"
+    });
+    expect(
+      lines.map((line) => [
+        line.Amount,
+        line.SalesItemLineDetail?.ItemRef?.value,
+        line.SalesItemLineDetail?.Qty,
+        line.SalesItemLineDetail?.UnitPrice
+      ])
+    ).toEqual([
+      [100, "77", 4, 25],
+      [-20, "discount-item", 1, -20]
+    ]);
+    // Without the Sales Discount item the line has no account to book to.
+    expect(() => buildQboInvoiceLines(base)).toThrow(/no QuickBooks item/);
   });
 
   it("gives a line with no Carbon item the synthetic sales item", () => {
@@ -504,7 +537,8 @@ describe("QBO service job revenue", () => {
 
 function lineArguments(
   lines: Accounting.SalesInvoiceLine[],
-  salesItemRemoteId: string | null
+  salesItemRemoteId: string | null,
+  overrides: Partial<Accounting.SalesInvoice> = {}
 ) {
   const source = fullInvoice();
   const subtotal = lines.reduce(
@@ -522,7 +556,8 @@ function lineArguments(
     subtotal,
     totalTax: 0,
     totalAmount: subtotal,
-    balance: subtotal
+    balance: subtotal,
+    ...overrides
   });
   return {
     document,

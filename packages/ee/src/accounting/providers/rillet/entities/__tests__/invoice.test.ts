@@ -138,7 +138,7 @@ function mapArguments(source = charges()) {
   };
 }
 describe("Rillet revenue recognition native sales components", () => {
-  it("sends a discounted line's NET amount", () => {
+  it("sends a net-posted (pre-split) discounted line's NET amount", () => {
     const source = charges();
     // 1 × 100 base list, 20% off → 80 base merchandise, 64 EUR at 0.8. Add-ons
     // and shipping are not discounted; tax is on the discounted merchandise.
@@ -160,6 +160,72 @@ describe("Rillet revenue recognition native sales components", () => {
       "4.00"
     ]);
     expect(payload.tax_amount).toEqual({ amount: "8.80", currency: "EUR" });
+  });
+
+  it("sends gross merchandise and a negative Discount on the Sales Discount account when the journal split it", () => {
+    const source = charges();
+    const payload = mapSalesInvoiceToRilletInvoice({
+      ...mapArguments({
+        ...source,
+        subtotal: 113,
+        totalTax: 11,
+        totalAmount: 129,
+        balance: 129,
+        salesDiscountAccountId: "acct-discount",
+        postedSalesDiscountBase: 20,
+        lines: [
+          {
+            ...source.lines[0]!,
+            discountPercent: 0.2,
+            lineAmount: 80,
+            postsSalesDiscount: true
+          }
+        ]
+      }),
+      salesDiscountProductRemoteId: "discount-product",
+      salesDiscountAccountCode: "4020"
+    });
+    expect(
+      payload.items.map((line) => [
+        line.product_id,
+        line.total_amount.amount,
+        line.revenue?.account_code
+      ])
+    ).toEqual([
+      ["rillet-prod-1", "80.00", undefined],
+      ["discount-product", "-16.00", "4020"],
+      ["rillet-prod-1", "16.00", undefined],
+      ["rillet-prod-1", "2.40", undefined],
+      ["shipping-product", "8.00", "4010"],
+      ["shipping-product", "4.00", "4010"]
+    ]);
+    // Tax is unchanged by the split: still on the net merchandise.
+    expect(payload.tax_amount).toEqual({ amount: "8.80", currency: "EUR" });
+  });
+
+  it("refuses a Discount component with no resolved Sales Discount product", () => {
+    const source = charges();
+    expect(() =>
+      mapSalesInvoiceToRilletInvoice(
+        mapArguments({
+          ...source,
+          subtotal: 113,
+          totalTax: 11,
+          totalAmount: 129,
+          balance: 129,
+          salesDiscountAccountId: "acct-discount",
+          postedSalesDiscountBase: 20,
+          lines: [
+            {
+              ...source.lines[0]!,
+              discountPercent: 0.2,
+              lineAmount: 80,
+              postsSalesDiscount: true
+            }
+          ]
+        })
+      )
+    ).toThrow(/no resolved Rillet product/);
   });
 
   it("exports the document currency components with shipping revenue override and native header tax exactly once", () => {
@@ -484,4 +550,85 @@ it("recognizes revenue and FX on the actual posting date when issue date differs
         item.revenue?.period?.end === "2026-09-09"
     )
   ).toBe(true);
+});
+
+describe("Rillet invoice Sales Rep field", () => {
+  const salesRepField = { field_id: "field-rep", field_value_id: "value-ada" };
+
+  it("tags every item with the Sales Rep field when the invoice has a rep", () => {
+    const payload = mapSalesInvoiceToRilletInvoice({
+      ...mapArguments(),
+      salesRepField
+    });
+    expect(payload.items.length).toBeGreaterThan(1);
+    for (const item of payload.items) {
+      expect(item.fields).toEqual([salesRepField]);
+      expect(Rillet.InvoiceItemSchema.parse(item).fields).toEqual([
+        salesRepField
+      ]);
+    }
+  });
+
+  it("sends no fields when the invoice has no rep", () => {
+    const payload = mapSalesInvoiceToRilletInvoice(mapArguments());
+    expect(payload.items.every((item) => item.fields === undefined)).toBe(true);
+  });
+
+  it("creates the REVENUE field and the rep's value by name, once", async () => {
+    const test = setupInvoice();
+    const provider = test.provider as any;
+    provider.listFields = vi.fn(async () => []);
+    provider.createField = vi.fn(async (name: string) => ({
+      id: "field-rep",
+      name,
+      values: []
+    }));
+    provider.upsertFieldValue = vi.fn(
+      async (_fieldId: string, name: string) => ({
+        id: "value-ada",
+        name
+      })
+    );
+    const source = { ...charges(), salesPersonName: "Ada Lovelace" };
+    const payload = await test.map(source);
+    await test.map(source);
+    expect(provider.createField).toHaveBeenCalledTimes(1);
+    expect(provider.createField).toHaveBeenCalledWith(
+      "Sales Rep",
+      "REVENUE",
+      expect.any(String)
+    );
+    expect(provider.upsertFieldValue).toHaveBeenCalledTimes(1);
+    expect(provider.upsertFieldValue).toHaveBeenCalledWith(
+      "field-rep",
+      "Ada Lovelace"
+    );
+    expect(
+      payload.items.every(
+        (item: Rillet.InvoiceItem) =>
+          item.fields?.[0]?.field_value_id === "value-ada"
+      )
+    ).toBe(true);
+  });
+
+  it("reuses an existing field and value without writing", async () => {
+    const test = setupInvoice();
+    const provider = test.provider as any;
+    provider.listFields = vi.fn(async () => [
+      {
+        id: "field-rep",
+        name: "Sales Rep",
+        values: [{ id: "value-ada", name: "Ada Lovelace" }]
+      }
+    ]);
+    provider.createField = vi.fn();
+    provider.upsertFieldValue = vi.fn();
+    const payload = await test.map({
+      ...charges(),
+      salesPersonName: "Ada Lovelace"
+    });
+    expect(provider.createField).not.toHaveBeenCalled();
+    expect(provider.upsertFieldValue).not.toHaveBeenCalled();
+    expect(payload.items[0].fields).toEqual([salesRepField]);
+  });
 });

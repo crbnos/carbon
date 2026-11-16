@@ -14,14 +14,17 @@ import {
 import {
   assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
+  hasSalesDiscountComponent,
   hasSalesRevenueComponent,
   hasServiceRevenueComponent,
+  isSalesDiscountComponent,
   isServiceRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
   loadSalesInvoices,
   requirePostedSalesAccountId,
+  requirePostedSalesDiscountAccountId,
   requirePostedServiceRevenueAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
@@ -82,6 +85,8 @@ export function buildXeroSalesInvoiceLines(args: {
   /** The Service Revenue account code; a service job's components. */
   serviceAccountCode: string | null;
   shippingAccountCode: string | null;
+  /** The replayed Sales Discount account code; a `Discount` component's. */
+  salesDiscountAccountCode?: string | null;
 }): Xero.InvoiceLineItem[] {
   assertXeroMoneyPrecision(
     args.document.subtotal,
@@ -96,17 +101,22 @@ export function buildXeroSalesInvoiceLines(args: {
   return args.document.components.map((component) => {
     const shipping =
       component.kind === "LineShipping" || component.kind === "HeaderShipping";
+    const discount = isSalesDiscountComponent(component);
     const service = !shipping && isServiceRevenueComponent(component);
+    // VERIFY: a Discount line is a NEGATIVE LineAmount (and tax) on the Sales
+    // Discount account; Xero's acceptance of it is not sandbox-tested.
     const accountCode = shipping
       ? args.shippingAccountCode
-      : service
-        ? args.serviceAccountCode
-        : args.salesAccountCode;
+      : discount
+        ? args.salesDiscountAccountCode
+        : service
+          ? args.serviceAccountCode
+          : args.salesAccountCode;
     if (!accountCode)
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
-        message: `Cannot sync invoice: missing ${shipping ? "shipping revenue" : service ? "service revenue" : "sales"} account mapping`,
+        message: `Cannot sync invoice: missing ${shipping ? "shipping revenue" : discount ? "sales discount" : service ? "service revenue" : "sales"} account mapping`,
         metadata: { invoiceId: args.document.invoiceId }
       });
     if (Math.abs(component.taxAmount) > Math.abs(component.netAmount)) {
@@ -163,6 +173,17 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       local,
       requirePostedSalesAccountId(local),
       "Sales Revenue"
+    );
+  }
+
+  /** The same replay for the line discounts: the Sales Discount account. */
+  private getSalesDiscountAccountCode(
+    local: Accounting.SalesInvoice
+  ): Promise<string> {
+    return this.getRevenueAccountCode(
+      local,
+      requirePostedSalesDiscountAccountId(local),
+      "Sales Discount"
     );
   }
 
@@ -343,11 +364,17 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     const shippingAccountCode = hasShipping
       ? await this.getShippingAccountCode(local)
       : null;
+    const salesDiscountAccountCode = hasSalesDiscountComponent(
+      document.components
+    )
+      ? await this.getSalesDiscountAccountCode(local)
+      : null;
     const lineItems = buildXeroSalesInvoiceLines({
       document,
       salesAccountCode,
       serviceAccountCode,
-      shippingAccountCode
+      shippingAccountCode,
+      salesDiscountAccountCode
     });
     // All currency/account/component requirements are checked before dependency writes.
     const existingRemoteId = await this.getRemoteId(local.id);

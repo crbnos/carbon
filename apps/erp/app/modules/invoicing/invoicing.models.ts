@@ -259,6 +259,7 @@ export const salesInvoiceValidator = z.object({
   invoiceCustomerLocationId: zfd.text(z.string().optional()),
   dateIssued: zfd.text(z.string().optional()),
   dateDue: zfd.text(z.string().optional()),
+  salesPersonId: zfd.text(z.string().optional()),
   supplierShippingCost: zfd.numeric(z.number().optional()),
   exchangeRate: zfd.numeric(z.number().optional()),
   exchangeRateUpdatedAt: zfd.text(z.string().optional())
@@ -285,6 +286,8 @@ export const stripeCustomerChoiceValidator = z.object({
 export const salesInvoicePostValidator = z
   .object({
     notification: z.enum(["Email", "Stripe", "None"]).optional(),
+    // The day the invoice is booked and issued on (today when blank).
+    postingDate: zfd.text(z.string().optional()),
     customerContact: zfd.text(z.string().optional()),
     cc: z.array(z.string()).optional(),
     // What the user agreed to do with the connected account's customer list.

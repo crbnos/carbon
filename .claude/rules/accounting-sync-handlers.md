@@ -302,6 +302,18 @@ recognition; AR_ONLY ignores the invoice rate and initially credits deferred
 revenue, so it cannot mirror Carbon's posting. Spec:
 `.ai/specs/implemented/2026-08-05-accounting-document-representation.md`.
 
+- **Rillet invoice Sales Rep**: `loadSalesInvoices` reads the rep's name
+  (`salesInvoice.salesPersonId` → `user.fullName`) into
+  `Accounting.SalesInvoice.salesPersonName`. The Rillet invoice syncer's
+  `mapToRemote` resolves a REVENUE Field named "Sales Rep"
+  (`SALES_REP_FIELD_NAME`) and a value named after the rep with
+  `resolveNamedFieldValue` (`entities/shared.ts`: reuse the Field and value by
+  name from `listFields`, else `createField` / `upsertFieldValue`; memoized per
+  syncer, no mapping row since no Carbon dimension backs it), and
+  `mapSalesInvoiceToRilletInvoice` puts `fields: [{ field_id, field_value_id }]`
+  on every item. No rep, no fields. Xero and QBO do not send the rep.
+  <!-- UNVERIFIED: Rillet invoice item `fields` and REVENUE field creation are not sandbox-tested -->
+
 - **AP bills = account-costed replay of the posted "Purchase Invoice" journal**,
   NOT the item's account. `core/document-costing.ts` is the shared core:
   `loadBillCostingLines(db, { companyId, billId })` reads the
@@ -429,16 +441,47 @@ revenue, so it cannot mirror Carbon's posting. Spec:
     sweep include mapped voided documents/payments, and mapping tombstones stop
     repeated deletes. Compare independent remote GL, including recognition
     and reversal, instead of treating create HTTP200 as accounting parity.
-- **Sales invoice line discount reaches providers at NET.** `salesInvoiceLine.discountPercent`
-  (a 0–1 fraction, merchandise only; add-ons and shipping are never discounted) is loaded by
-  `loadSalesInvoices` (`sales-invoice-source.ts`, `lineAmount = quantity × unitPrice × (1 −
-  discountPercent)`, the expression the `salesInvoices` view and `calculateSalesPostingAmounts`
-  use) and carried on `SalesInvoiceLineSchema.discountPercent` (optional; absent = 0, so a line
-  pulled back from a provider carries its net price). `buildSalesDocumentComponents` sends every
-  provider the NET unit price: `unitPrice` and `convertedUnitPrice` are both LIST prices, the
-  discount is applied to each before they are reconciled, and a discounted converted price is
-  rounded to storage scale. Pinned by `sales-document-components.test.ts` and the Xero / QBO /
-  Rillet invoice tests. Contract invoices (drafted by `create-contract-invoices`) are ordinary
+- **Sales invoice line discount: gross revenue plus a Sales Discount line, or NET for older
+  invoices.** `salesInvoiceLine.discountPercent` (a 0–1 fraction, merchandise only; add-ons and
+  shipping are never discounted) is loaded by `loadSalesInvoices` (`sales-invoice-source.ts`,
+  `lineAmount = quantity × unitPrice × (1 − discountPercent)`, the expression the `salesInvoices`
+  view and `calculateSalesPostingAmounts` use) and carried on
+  `SalesInvoiceLineSchema.discountPercent` (optional; absent = 0, so a line pulled back from a
+  provider carries its net price). **The posting** (`buildSalesPostingLines`,
+  `@carbon/database` `sales-posting-amounts.ts`) splits the discount on the plain Sales booking
+  only: Sales is credited the GROSS merchandise (`quantity × unitPrice`, plus add-ons) and a
+  debit line described "Sales Discount" (`SALES_DISCOUNT_POSTING_DESCRIPTION`,
+  `accounting-posting.ts`) goes to `accountDefault.salesDiscountAccount` (seeded 4020, class
+  Revenue). The discount is rounded once at storage scale and Sales takes net + discount, so the
+  split adds no residual. AR, tax (on the net) and `salesRevenueBase` (net — the deferral
+  schedule, `saleProceeds`, `revenueLegAmounts` and the contract / service / rental planners read
+  it) are unchanged. Deferred, contract, service job, rental (revenue legs) and fixed-asset lines
+  stay net, with no Sales Discount leg. The sync tells the two shapes apart per invoice from the
+  posted journal: `classifyAccountingPostingRole` maps "Sales Discount" to `SalesDiscount`
+  ("VOID: Sales Discount" stays unclassified), `postedSalesDiscountBase` totals those debits per
+  invoice, and `resolveReplayedRevenueAccounts` replays `salesDiscountAccountId`
+  (`requirePostedSalesDiscountAccountId` refuses with `UNMAPPED_ACCOUNTS` when the journal names
+  no single Revenue leaf). A line gets `postsSalesDiscount` when its invoice's journal has a
+  Sales Discount line, it has a discount, and `bookedToSalesAccount` (the ee mirror of
+  `postingLineRevenue`, `invoicing.service.ts`) says it posted to Sales.
+  `buildSalesDocumentComponents` then sends such a line as gross `Merchandise` (the LIST unit
+  price) plus a `Discount` component: quantity 1, net −(gross × discount), the line's tax
+  percent (gross tax + negative discount tax = tax on the net, so the tax reconciliation holds),
+  description "Discount — <line>". `isRevenueComponent` is false for a Discount;
+  `isSalesDiscountComponent` / `hasSalesDiscountComponent` route it. `assertDiscountsMatchPosting`
+  refuses the invoice (`UNMAPPED_ACCOUNTS` Warning) when the flagged lines' discounts do not sum
+  to the posted Sales Discount total, so a drift between the line rule and the posting cannot
+  misstate it. **Legacy fallback:** an invoice posted before the split has no Sales Discount line
+  (its Sales credit is net); its lines carry no flag and every provider gets the NET unit price as
+  before (`unitPrice` and `convertedUnitPrice` are both LIST prices, the discount is applied to
+  each, a discounted converted price is rounded to storage scale). Providers: Rillet sends the
+  Discount as a negative item on a synthetic product for the discount account
+  (`ensureSalesProduct`) with `revenue.account_code` = its code; Xero a negative line with
+  `AccountCode` = its code; QBO a negative `SalesItemLineDetail` on a synthetic item for it
+  (`ensureSalesItem`). <!-- UNVERIFIED: no provider has accepted a negative Discount line in a
+  sandbox; each mapper carries a VERIFY comment --> Pinned by `sales-document-components.test.ts`
+  (split, legacy net, mismatch refusal, the line rule) and the Xero / QBO / Rillet invoice tests.
+  Contract invoices (drafted by `create-contract-invoices`) are ordinary
   `Service` lines with a `discountPercent`, and no mapper treats them differently. But Carbon
   posts their revenue legs to Contract Assets / Deferred Revenue with `documentType 'Contract'`
   / `documentId` = the contract (`planContractInvoiceLine`, `invoicing.service.ts`), never to Sales, so

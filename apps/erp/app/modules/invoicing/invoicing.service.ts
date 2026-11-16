@@ -256,6 +256,7 @@ import {
   getCompanyTimeZone as getCachedCompanyTimeZone,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
+  getManualPostingPeriod,
   INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
   type JournalLineDimensionValues,
   journalLineDimensionRows,
@@ -268,6 +269,7 @@ import {
   refuseUnlessOwned,
   refuseVoidBeforeCutover,
   resolveInventoryAccount,
+  resolveManualPostingDate,
   SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   salesInvoiceStandIns,
   samePosition,
@@ -328,7 +330,7 @@ const PURCHASE_INVOICES_LIST_COLUMNS =
   "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,purchaseOrderIds,purchaseOrderReadableIds,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
 
 const SALES_INVOICES_LIST_COLUMNS =
-  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt" as const;
+  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,salesPersonId,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt" as const;
 
 /**
  * Compute an invoice's Due Date from its Issue Date and Payment Term.
@@ -1277,6 +1279,7 @@ export async function insertSalesInvoice(
     invoiceCustomerLocationId?: string;
     dateIssued?: string;
     dateDue?: string;
+    salesPersonId?: string;
     exchangeRate?: number;
     exchangeRateUpdatedAt?: string;
     customFields?: Json;
@@ -1358,6 +1361,7 @@ export async function insertSalesInvoice(
         input.invoiceCustomerId ?? invoiceCustomerId ?? input.customerId,
       invoiceCustomerContactId: input.invoiceCustomerContactId ?? null,
       invoiceCustomerLocationId: input.invoiceCustomerLocationId ?? null,
+      salesPersonId: input.salesPersonId ?? null,
       opportunityId: opportunity.data?.id,
       currencyCode: input.currencyCode ?? "USD",
       exchangeRate,
@@ -1418,6 +1422,7 @@ export async function updateSalesInvoice(
     invoiceCustomerLocationId?: string | null;
     dateIssued?: string | null;
     dateDue?: string | null;
+    salesPersonId?: string | null;
     exchangeRate?: number;
     exchangeRateUpdatedAt?: string;
     customFields?: Json;
@@ -7389,6 +7394,9 @@ export function planSalesInvoiceAccounts(
     receivables.standard,
     receivables.intercompany,
     defaults.salesAccount,
+    // A discounted line booked to Sales debits its discount here
+    // (`buildSalesPostingLines`); validated only when a line needs it.
+    defaults.salesDiscountAccount,
     shippingAccountId,
     defaults.salesTaxPayableAccount
   );
@@ -7643,10 +7651,11 @@ export function resolveSalesInvoiceAccounts(
     shippingAccountId: plan.shippingAccountId,
     account,
     receivablesAccountId,
-    /** The accounts of the AR, sales, shipping and tax legs. */
+    /** The accounts of the AR, sales, sales discount, shipping and tax legs. */
     charges: (intercompany: boolean) => ({
       receivables: account(receivablesAccountId(intercompany)),
       sales: account(plan.defaults.salesAccount),
+      salesDiscount: account(plan.defaults.salesDiscountAccount),
       shipping: account(plan.shippingAccountId),
       tax: account(plan.defaults.salesTaxPayableAccount),
       serviceRevenue: serviceJob?.serviceRevenue ?? null
@@ -9039,7 +9048,11 @@ const postSalesInvoiceLogger = getLogger(
 
 export const postSalesInvoiceInput = z.object({
   type: z.enum(["post", "void"]).default("post"),
-  invoiceId: z.string()
+  invoiceId: z.string(),
+  // The day a post is booked and issued on (YYYY-MM-DD). Omitted: today.
+  // Never in the future, never before the accounting cutover. A void ignores
+  // it.
+  postingDate: z.string().optional().nullable()
 });
 
 const RECOGNIZED_REVENUE_VOID_ERROR =
@@ -9054,7 +9067,11 @@ export async function postSalesInvoice(
   ctx: ServiceContext,
   raw: z.input<typeof postSalesInvoiceInput>
 ) {
-  const { type, invoiceId } = postSalesInvoiceInput.parse(raw);
+  const {
+    type,
+    invoiceId,
+    postingDate: requestedPostingDate
+  } = postSalesInvoiceInput.parse(raw);
 
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
@@ -9137,6 +9154,16 @@ export async function postSalesInvoice(
 
     switch (type) {
       case "post": {
+        // The day the invoice is booked and issued on: today unless the
+        // caller chose an earlier one (a back-loaded invoice). Never in the
+        // future, never before the accounting cutover.
+        const invoicePostingDate = await resolveManualPostingDate(
+          db,
+          companyId,
+          requestedPostingDate,
+          today
+        );
+
         const headerShippingAllocations = allocateSalesHeaderShipping(
           salesInvoiceLines.data,
           shippingCost
@@ -9790,7 +9817,7 @@ export async function postSalesInvoice(
               ?.itemTrackingType ?? "Inventory";
           if (itemTrackingType === "Inventory") {
             itemLedgerInserts.push({
-              postingDate: today,
+              postingDate: invoicePostingDate,
               itemId: invoiceLine.itemId!,
               quantity: round(-invoiceLine.quantity),
               locationId: invoiceLine.locationId,
@@ -9823,7 +9850,12 @@ export async function postSalesInvoice(
         // A Provisional journal has no accounting period.
         const accountingPeriodId =
           postingStatus === "Posted"
-            ? await getCurrentAccountingPeriod(companyId, db, today)
+            ? await getManualPostingPeriod(
+                companyId,
+                db,
+                invoicePostingDate,
+                today
+              )
             : null;
 
         await db.transaction().execute(async (trx) => {
@@ -9879,7 +9911,7 @@ export async function postSalesInvoice(
                   customerId: invoiceHeader.customerId,
                   externalDocumentId: invoiceHeader.customerReference,
                   status: "Posted",
-                  postingDate: today,
+                  postingDate: invoicePostingDate,
                   postedBy: userId,
                   invoiced: true,
                   opportunityId: invoiceHeader.opportunityId,
@@ -10023,7 +10055,7 @@ export async function postSalesInvoice(
                   remainingQuantity: 0,
                   projectId: null,
                   companyId,
-                  postingDate: today
+                  postingDate: invoicePostingDate
                 })
                 .execute();
             }
@@ -10045,7 +10077,7 @@ export async function postSalesInvoice(
                 journalEntryId,
                 accountingPeriodId,
                 description: `Sales Invoice ${invoiceHeader.invoiceId}`,
-                postingDate: today,
+                postingDate: invoicePostingDate,
                 companyId,
                 sourceType: "Sales Invoice",
                 status: postingStatus,
@@ -10120,7 +10152,7 @@ export async function postSalesInvoice(
                   journal.contractMovements.map(({ movement, ...entry }) => ({
                     ...entry,
                     entryType: "Invoice" as const,
-                    postingDate: today,
+                    postingDate: invoicePostingDate,
                     deferredAmount: movement.deferredAmount,
                     deferredBase: movement.deferredBase,
                     assetAmount: movement.assetAmount,
@@ -10414,7 +10446,7 @@ export async function postSalesInvoice(
               .updateTable("fixedAsset")
               .set({
                 status: "Disposed",
-                disposalDate: today,
+                disposalDate: invoicePostingDate,
                 disposalMethod: "Sale",
                 updatedBy: userId
               })
@@ -10431,7 +10463,7 @@ export async function postSalesInvoice(
                 journal.directDisposals.map((entry) => ({
                   fixedAssetId: entry.assetId,
                   disposalMethod: "Sale" as const,
-                  disposalDate: today,
+                  disposalDate: invoicePostingDate,
                   saleProceeds: entry.saleProceeds,
                   netBookValueAtDisposal: entry.netBookValue,
                   gainLoss: entry.gainLoss,
@@ -10442,7 +10474,7 @@ export async function postSalesInvoice(
               .execute();
           }
 
-          // Posting stamps dateIssued with today, so recompute dateDue from
+          // Posting stamps dateIssued with the posting date, so recompute dateDue from
           // the payment term to keep it consistent with the new issue date.
           // With no payment term the invoice still gets one, via Net 30.
           const paymentTerm = invoiceHeader.paymentTermId
@@ -10453,14 +10485,14 @@ export async function postSalesInvoice(
                 .where("companyId", "=", companyId)
                 .executeTakeFirst()
             : undefined;
-          const dateDue = calculateDueDate(today, paymentTerm);
+          const dateDue = calculateDueDate(invoicePostingDate, paymentTerm);
 
           await trx
             .updateTable("salesInvoice")
             .set({
-              dateIssued: today,
+              dateIssued: invoicePostingDate,
               ...(dateDue ? { dateDue } : {}),
-              postingDate: today,
+              postingDate: invoicePostingDate,
               status: "Submitted"
             })
             .where("id", "=", invoiceId)
