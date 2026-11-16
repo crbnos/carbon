@@ -277,7 +277,11 @@ of a paused URL, which is itself a valid link.
   taken off the shelf. An untracked material takes it as a `Negative Adjmt.`, a
   batch material from the lot `getSuggestedAllocationForMaterial` suggests at
   the job's location. The toast counts ("Issued 1 X (3 of 5)"); a scan after
-  the job has all it requires issues nothing ("This job already has all its X"). A
+  the job has all it requires issues nothing ("This job already has all its X").
+  `useItemScan` queues a scan made while an issue is in flight and sends it
+  next, so no piece is lost; its wedge callback returns no promise, because a
+  pending scan makes the wedge drop every other scan. A refusal empties the
+  queue. A
   serial part, a part the job makes, a short lot or a work-center rule opens
   the Issue dialog on the material. The scan also issues while the Issue
   dialog is open, and the dialog then closes. On the assembly page an item
