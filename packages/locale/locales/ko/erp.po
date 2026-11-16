@@ -14208,6 +14208,9 @@ msgstr "새로운 4자리 PIN을 발급하세요. 작업자의 현재 PIN은 즉
 msgid "Generate and send customer invoices"
 msgstr "고객 송장 생성 및 발송"
 
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr ""
+
 msgid "Generate Billable Items"
 msgstr "청구 가능한 품목 생성"
 
@@ -19076,6 +19079,9 @@ msgstr "새 프로젝트 재고 이송"
 msgid "New purchase order"
 msgstr "새 발주서"
 
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr ""
+
 msgid "New Quality Document"
 msgstr "새 품질 문서"
 
@@ -20750,6 +20756,9 @@ msgstr "지금"
 
 msgid "Number"
 msgstr "번호"
+
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "구매 단위당 재고 단위 수"
@@ -24325,6 +24334,12 @@ msgstr "재계산 중…"
 msgid "Receipt"
 msgstr "입고"
 
+msgid "Receipt batch numbers are now entered by hand"
+msgstr ""
+
+msgid "Receipt batch numbers are now generated"
+msgstr ""
+
 msgid "Receipt ID"
 msgstr "입고 ID"
 
@@ -24436,6 +24451,9 @@ msgstr "입고됨: {assetName}"
 
 msgid "Receiver Email (To)"
 msgstr "수신자 이메일 (받는 사람)"
+
+msgid "Receivers enter every batch number by hand."
+msgstr ""
 
 msgid "Receives the invoice email"
 msgstr "송장 이메일을 수신합니다."

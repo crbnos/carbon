@@ -107,7 +107,14 @@ const inventorySettingsForm = z.discriminatedUnion("intent", [
   returnPickedMaterialTimingValidator.extend({
     intent: z.literal("returnPickedMaterialTiming")
   }),
-  settingsToggle("receiptQuantitiesStartAtZero", "receiptQuantitiesStartAtZero")
+  settingsToggle(
+    "receiptQuantitiesStartAtZero",
+    "receiptQuantitiesStartAtZero"
+  ),
+  settingsToggle(
+    "receiptBatchNumbersFromPurchaseOrder",
+    "receiptBatchNumbersFromPurchaseOrder"
+  )
 ]);
 
 export async function action(args: ActionFunctionArgs) {
@@ -274,6 +281,10 @@ export default function InventorySettingsRoute() {
           </CardContent>
         </Card>
 
+        <BatchNumbersFromPurchaseOrderCard
+          saved={companySettings.receiptBatchNumbersFromPurchaseOrder}
+        />
+
         <SettingsSectionHeader>
           <Trans>Traceability</Trans>
         </SettingsSectionHeader>
@@ -415,6 +426,66 @@ export default function InventorySettingsRoute() {
         </Card>
       </SettingsPage>
     </ScrollArea>
+  );
+}
+
+const BATCH_NUMBERS_INTENT = "receiptBatchNumbersFromPurchaseOrder";
+
+// Its own fetcher, so saving it never disables the other receiving switch.
+function BatchNumbersFromPurchaseOrderCard({ saved }: { saved: boolean }) {
+  const { t } = useLingui();
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (data?.receiptBatchNumbersFromPurchaseOrder === undefined) return;
+      toast.success(
+        data.receiptBatchNumbersFromPurchaseOrder
+          ? t`Receipt batch numbers are now generated`
+          : t`Receipt batch numbers are now entered by hand`
+      );
+    }
+  });
+  const enabled = useSavedToggle(fetcher, BATCH_NUMBERS_INTENT, saved);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <Trans>Generate Batch Numbers from the Purchase Order</Trans>
+        </CardTitle>
+        <CardDescription>
+          <Trans>
+            Number each batch received against a purchase order with the
+            purchase order and the day it was received, such as
+            PO000123-20261116. A second delivery on the same day gets -2.
+          </Trans>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <HStack className="justify-between items-center">
+          <span className="text-sm text-muted-foreground">
+            {enabled ? (
+              <Trans>
+                New purchase order receipts fill in batch numbers. Receivers can
+                still change them before posting.
+              </Trans>
+            ) : (
+              <Trans>Receivers enter every batch number by hand.</Trans>
+            )}
+          </span>
+          <Switch
+            aria-label={t`Generate Batch Numbers from the Purchase Order`}
+            checked={enabled}
+            onCheckedChange={(checked) =>
+              fetcher.submit(
+                { intent: BATCH_NUMBERS_INTENT, enabled: checked.toString() },
+                { method: "POST" }
+              )
+            }
+            disabled={fetcher.state !== "idle"}
+          />
+        </HStack>
+      </CardContent>
+    </Card>
   );
 }
 

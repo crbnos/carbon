@@ -14208,6 +14208,9 @@ msgstr "生成新的4位数PIN。操作员的当前PIN将立即停止工作。"
 msgid "Generate and send customer invoices"
 msgstr "生成并发送客户发票"
 
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr ""
+
 msgid "Generate Billable Items"
 msgstr "生成计费物料"
 
@@ -19076,6 +19079,9 @@ msgstr "新项目库存调拨"
 msgid "New purchase order"
 msgstr "新采购订单"
 
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr ""
+
 msgid "New Quality Document"
 msgstr "新质量文件"
 
@@ -20750,6 +20756,9 @@ msgstr "现在"
 
 msgid "Number"
 msgstr "数字"
+
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "每个采购件的库存件数"
@@ -24325,6 +24334,12 @@ msgstr "重新计算中…"
 msgid "Receipt"
 msgstr "收据"
 
+msgid "Receipt batch numbers are now entered by hand"
+msgstr ""
+
+msgid "Receipt batch numbers are now generated"
+msgstr ""
+
 msgid "Receipt ID"
 msgstr "收据ID"
 
@@ -24436,6 +24451,9 @@ msgstr "已接收：{assetName}"
 
 msgid "Receiver Email (To)"
 msgstr "收件人电子邮件(收件人)"
+
+msgid "Receivers enter every batch number by hand."
+msgstr ""
 
 msgid "Receives the invoice email"
 msgstr "接收发票邮件"

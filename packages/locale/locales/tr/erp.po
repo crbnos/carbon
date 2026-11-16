@@ -14208,6 +14208,9 @@ msgstr "Yeni bir 4 haneli PIN oluştur. Operatörün mevcut PIN'i hemen çalış
 msgid "Generate and send customer invoices"
 msgstr "Müşteri faturalarını oluştur ve gönder"
 
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr ""
+
 msgid "Generate Billable Items"
 msgstr "Faturalandırılabilir Öğeler Oluştur"
 
@@ -19076,6 +19079,9 @@ msgstr "Yeni Proje Stok Transferi"
 msgid "New purchase order"
 msgstr "Yeni satın alma siparişi"
 
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr ""
+
 msgid "New Quality Document"
 msgstr "Yeni Kalite Belgesi"
 
@@ -20750,6 +20756,9 @@ msgstr "şimdi"
 
 msgid "Number"
 msgstr "Numara"
+
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Satın alma birimi başına envanter birimi sayısı"
@@ -24325,6 +24334,12 @@ msgstr "Yeniden hesaplanıyor…"
 msgid "Receipt"
 msgstr "Makbuz"
 
+msgid "Receipt batch numbers are now entered by hand"
+msgstr ""
+
+msgid "Receipt batch numbers are now generated"
+msgstr ""
+
 msgid "Receipt ID"
 msgstr "Fiş No"
 
@@ -24436,6 +24451,9 @@ msgstr "Teslim alındı: {assetName}"
 
 msgid "Receiver Email (To)"
 msgstr "Alıcı E-posta (Kime)"
+
+msgid "Receivers enter every batch number by hand."
+msgstr ""
 
 msgid "Receives the invoice email"
 msgstr "Fatura e-postasını alır"

@@ -254,7 +254,8 @@ export const writeMissingJournals = defineServiceFn({
  * material warns or refuses, and when unconsumed picked material is returned
  * (when the job completes, or when each operation is done), and whether a
  * new receipt's lines start at a received quantity of 0 instead of the
- * quantity still to receive.
+ * quantity still to receive, and whether a purchase order receipt numbers
+ * its batches from the purchase order and the day received.
  *
  * @mcp
  */
@@ -274,7 +275,8 @@ export const updateInventorySettings = defineServiceFn({
       .enum(incompletePickingListPolicies)
       .optional(),
     returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).optional(),
-    receiptQuantitiesStartAtZero: z.boolean().optional()
+    receiptQuantitiesStartAtZero: z.boolean().optional(),
+    receiptBatchNumbersFromPurchaseOrder: z.boolean().optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {

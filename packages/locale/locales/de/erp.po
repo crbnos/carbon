@@ -14208,6 +14208,9 @@ msgstr "Generieren Sie eine neue 4-stellige PIN. Die aktuelle PIN des Werkers fu
 msgid "Generate and send customer invoices"
 msgstr "Kundenrechnungen generieren und versenden"
 
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr ""
+
 msgid "Generate Billable Items"
 msgstr "Gebührenfreie Artikel generieren"
 
@@ -19076,6 +19079,9 @@ msgstr "Neue Projektbestandsverlagerung"
 msgid "New purchase order"
 msgstr "Neue Bestellung"
 
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr ""
+
 msgid "New Quality Document"
 msgstr "Neues Qualitätsdokument"
 
@@ -20750,6 +20756,9 @@ msgstr "jetzt"
 
 msgid "Number"
 msgstr "Zahl"
+
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr ""
 
 msgid "Number of inventory units per purchase unit"
 msgstr "Anzahl der Bestandseinheiten pro Kaufeinheit"
@@ -24325,6 +24334,12 @@ msgstr "Wird neu berechnet…"
 msgid "Receipt"
 msgstr "Beleg"
 
+msgid "Receipt batch numbers are now entered by hand"
+msgstr ""
+
+msgid "Receipt batch numbers are now generated"
+msgstr ""
+
 msgid "Receipt ID"
 msgstr "Beleg-ID"
 
@@ -24436,6 +24451,9 @@ msgstr "Erhalten: {assetName}"
 
 msgid "Receiver Email (To)"
 msgstr "Empfänger-E-Mail (An)"
+
+msgid "Receivers enter every batch number by hand."
+msgstr ""
 
 msgid "Receives the invoice email"
 msgstr "Erhält die Rechnungs-E-Mail"

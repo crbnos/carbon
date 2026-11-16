@@ -81,6 +81,10 @@ import {
 } from "@carbon/database/picked-consumption";
 import { equals } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
+import {
+  assignReceiptBatchNumbers,
+  receiptBatchNumberBase
+} from "@carbon/database/receipt-batch-numbers";
 import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
 import type * as rows from "@carbon/database/rows";
 import type * as rowsModule from "@carbon/database/rows";
@@ -11545,16 +11549,23 @@ async function getFallbackLocationId(
   return location.data?.id ?? null;
 }
 
-async function receiptQuantitiesStartAtZero(
+async function receiptSettings(
   db: Kysely<KyselyDatabase>,
   companyId: string
-): Promise<boolean> {
+): Promise<{ startAtZero: boolean; batchNumbersFromPurchaseOrder: boolean }> {
   const row = await db
     .selectFrom("companySettings")
-    .select("receiptQuantitiesStartAtZero")
+    .select([
+      "receiptQuantitiesStartAtZero",
+      "receiptBatchNumbersFromPurchaseOrder"
+    ])
     .where("id", "=", companyId)
     .executeTakeFirst();
-  return row?.receiptQuantitiesStartAtZero === true;
+  return {
+    startAtZero: row?.receiptQuantitiesStartAtZero === true,
+    batchNumbersFromPurchaseOrder:
+      row?.receiptBatchNumbersFromPurchaseOrder === true
+  };
 }
 
 export const createDocumentPermission = {
@@ -12444,7 +12455,19 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero, batchNumbersFromPurchaseOrder } =
+        await receiptSettings(db, companyId);
+      const batchNumberBase =
+        batchNumbersFromPurchaseOrder && purchaseOrder.data.purchaseOrderId
+          ? receiptBatchNumberBase(
+              purchaseOrder.data.purchaseOrderId,
+              datetime.today(
+                locationId
+                  ? await getLocationTimeZone(db, locationId, companyId)
+                  : await getCompanyTimeZone(db, companyId)
+              )
+            )
+          : null;
 
       const receiptLineItems = purchaseOrderLines.data.reduce<
         ReceiptLineItem[]
@@ -12527,6 +12550,21 @@ export async function createDocument(
             .returning(["id", "receiptId"])
             .where("companyId", "=", companyId)
             .execute();
+          // The lines are rebuilt: their batches and serials go with them, or
+          // a regenerated batch number would find its old one taken.
+          const lineEntities = await trx
+            .selectFrom("trackedEntity")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where(
+              sql<boolean>`attributes @> ${JSON.stringify({ Receipt: receiptId })}::jsonb`
+            )
+            .execute();
+          await releaseReceiptSerialEntities(
+            trx,
+            companyId,
+            lineEntities.map((entity) => entity.id)
+          );
           // delete existing receipt lines
           await trx
             .deleteFrom("receiptLine")
@@ -12556,7 +12594,7 @@ export async function createDocument(
         }
 
         if (receiptLineItems.length > 0) {
-          await trx
+          const lines = await trx
             .insertInto("receiptLine")
             .values(
               receiptLineItems.map((line) => ({
@@ -12565,7 +12603,33 @@ export async function createDocument(
                 locationId
               }))
             )
+            .returning([
+              "id",
+              "itemId",
+              "receivedQuantity",
+              "requiresBatchTracking"
+            ])
             .execute();
+
+          if (batchNumberBase) {
+            await assignReceiptBatchNumbers(trx, {
+              companyId,
+              receiptId,
+              purchaseOrderId: purchaseOrder.data.id!,
+              base: batchNumberBase,
+              lines: lines.flatMap((line) =>
+                line.requiresBatchTracking && line.itemId
+                  ? [
+                      {
+                        id: line.id,
+                        itemId: line.itemId,
+                        receivedQuantity: Number(line.receivedQuantity ?? 0)
+                      }
+                    ]
+                  : []
+              )
+            });
+          }
         }
 
         const unreceivedFaLines = (fixedAssetPoLines.data ?? []).filter(
@@ -12663,7 +12727,7 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
@@ -12865,7 +12929,7 @@ export async function createDocument(
       if (hasReceipt && receipt.data!.status !== "Draft")
         throw new Error(`Cannot re-source a ${receipt.data!.status} receipt`);
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = salesReturnOrderLines.data.reduce<
         ReceiptLineItem[]
@@ -13036,7 +13100,7 @@ export async function createDocument(
         return acc;
       }, {});
 
-      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+      const { startAtZero } = await receiptSettings(db, companyId);
 
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
