@@ -46,6 +46,9 @@ export type SalesPostingMetadata = {
    *  legs only (Sales, Deferred Revenue, the Rental revenue legs); AR, tax,
    *  shipping and disposal legs carry no project. */
   projectId?: string | null;
+  /** The sales rep (a user id) of the sales order the line bills: the
+   *  Employee dimension, on every leg of the line like the customer. */
+  salesPersonId?: string | null;
 };
 
 /** A rental revenue leg references the agreement it earns under, a contract

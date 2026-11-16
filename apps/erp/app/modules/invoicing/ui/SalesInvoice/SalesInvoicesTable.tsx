@@ -234,23 +234,6 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
         }
       },
       {
-        accessorKey: "salesPersonId",
-        header: t`Sales Person`,
-        cell: ({ row }) => (
-          <EmployeeAvatar employeeId={row.original.salesPersonId} />
-        ),
-        meta: {
-          filter: {
-            type: "static",
-            options: people.map((employee) => ({
-              value: employee.id,
-              label: employee.name
-            }))
-          },
-          icon: <LuUser />
-        }
-      },
-      {
         accessorKey: "dateIssued",
         header: t`Issued Date`,
         cell: (item) => (

@@ -843,6 +843,10 @@ export abstract class RilletPushOnlyEntitySyncer<
   }
 }
 
+/** The areas a Field this syncer provisions applies to: expense-side
+ *  (journal entries, bills) and revenue-side (invoices). */
+export const RILLET_FIELD_AREAS = ["EXPENSES", "REVENUE"] as const;
+
 /**
  * Base class for immutable Rillet posting amounts (invoice, bill, journal).
  * Invoice/bill adapters opt into native deletion on local void. Journal
@@ -875,8 +879,6 @@ export abstract class RilletTransactionSyncer<
   private postingSyncSettingsPromise?: Promise<PostingSyncSettings>;
   private dimensionValueMappingsPromise?: Promise<Map<string, string>>;
   private dimensionFieldMappingsPromise?: Promise<Map<string, string>>;
-  /** `<area>:<fieldName>:<valueName>` → field ref, per syncer instance. */
-  private namedFieldValues = new Map<string, Promise<Rillet.ItemFieldRef>>();
 
   /**
    * Per-company posting-sync settings from
@@ -1000,10 +1002,14 @@ export abstract class RilletTransactionSyncer<
 
         let fieldId = existingFieldIdByName.get(name);
         if (!fieldId) {
-          // Journal entries + bills are expense-side (EXPENSES applicability).
+          // One Carbon dimension is one Rillet Field, shared by journal
+          // entries and bills (EXPENSES) and invoices (REVENUE), so a new
+          // Field applies to both. A Field created before this (EXPENSES
+          // only) is reused as is; its REVENUE applicability is not updated.
+          // VERIFY: invoice item `fields` on an EXPENSES-only Field.
           const created = await this.rilletProvider.createField(
             name,
-            "EXPENSES",
+            RILLET_FIELD_AREAS,
             buildRilletIdempotencyKey({
               companyId: this.companyId,
               operation: "create-field",
@@ -1086,57 +1092,6 @@ export abstract class RilletTransactionSyncer<
     }
 
     return { fieldIdByDimensionId, fieldValueIdsByValue };
-  }
-
-  /**
-   * Resolve a Rillet Field value by NAME — a field with no Carbon dimension
-   * behind it (the invoice "Sales Rep"). Reuses the Rillet Field with this
-   * name, else creates it for `area`, then reuses or upserts the value. No
-   * mapping row is stored: there is no Carbon dimension to key it on, so the
-   * names are the key and the result is memoized for this syncer.
-   *
-   * VERIFY: REVENUE field creation not sandbox-tested.
-   */
-  protected resolveNamedFieldValue(
-    fieldName: string,
-    area: "EXPENSES" | "REVENUE",
-    valueName: string
-  ): Promise<Rillet.ItemFieldRef> {
-    const key = `${area}:${fieldName}:${valueName.trim()}`;
-    let resolved = this.namedFieldValues.get(key);
-    if (!resolved) {
-      resolved = (async () => {
-        const name = valueName.trim();
-        let field = (await this.rilletProvider.listFields()).find(
-          (candidate) => candidate.name === fieldName
-        );
-        if (!field) {
-          field = await this.rilletProvider.createField(
-            fieldName,
-            area,
-            buildRilletIdempotencyKey({
-              companyId: this.companyId,
-              operation: "create-field",
-              localId: `${area}:${fieldName}`
-            })
-          );
-        }
-        const existing = (field.values ?? []).find(
-          (candidate) =>
-            candidate.name?.trim() === name && !candidate.deactivated
-        );
-        const value =
-          existing ??
-          (await this.rilletProvider.upsertFieldValue(field.id, name));
-        return { field_id: field.id, field_value_id: value.id };
-      })().catch((error) => {
-        // Don't cache a failure: a retried push must resolve again.
-        this.namedFieldValues.delete(key);
-        throw error;
-      });
-      this.namedFieldValues.set(key, resolved);
-    }
-    return resolved;
   }
 
   async pushToAccounting(entityId: string): Promise<SyncResult> {

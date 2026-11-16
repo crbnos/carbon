@@ -302,18 +302,6 @@ recognition; AR_ONLY ignores the invoice rate and initially credits deferred
 revenue, so it cannot mirror Carbon's posting. Spec:
 `.ai/specs/implemented/2026-08-05-accounting-document-representation.md`.
 
-- **Rillet invoice Sales Rep**: `loadSalesInvoices` reads the rep's name
-  (`salesInvoice.salesPersonId` → `user.fullName`) into
-  `Accounting.SalesInvoice.salesPersonName`. The Rillet invoice syncer's
-  `mapToRemote` resolves a REVENUE Field named "Sales Rep"
-  (`SALES_REP_FIELD_NAME`) and a value named after the rep with
-  `resolveNamedFieldValue` (`entities/shared.ts`: reuse the Field and value by
-  name from `listFields`, else `createField` / `upsertFieldValue`; memoized per
-  syncer, no mapping row since no Carbon dimension backs it), and
-  `mapSalesInvoiceToRilletInvoice` puts `fields: [{ field_id, field_value_id }]`
-  on every item. No rep, no fields. Xero and QBO do not send the rep.
-  <!-- UNVERIFIED: Rillet invoice item `fields` and REVENUE field creation are not sandbox-tested -->
-
 - **AP bills = account-costed replay of the posted "Purchase Invoice" journal**,
   NOT the item's account. `core/document-costing.ts` is the shared core:
   `loadBillCostingLines(db, { companyId, billId })` reads the
@@ -747,6 +735,32 @@ value's readable label), persisting both in `externalIntegrationMapping`
 a dimension whose Field or value can't be provisioned is dropped from that line's
 refs. `createField` (`POST /fields`) is VERIFY-flagged — confirm the payload on
 the Rillet sandbox.
+
+**AR invoices send dimensions too (Rillet).** `loadSalesInvoices` loads the
+`journalLineDimension` rows of the posted invoice journal in one read
+(`loadJournalLineDimensions`) and `postedLineDimensions`
+(`core/sales-invoice-source.ts`) gives each invoice line the dimensions of its
+revenue legs (Sales Account / Service Revenue / Sales Discount roles), one per
+dimension. A leg is matched by `documentLineReference` =
+`sales-invoice:<salesOrderLineId>`, so a line not billed from a sales order line
+(manual, contract, rental) gets none, and so does an invoice posted before its
+legs carried dimensions. `SalesInvoiceLineSchema.dimensions` carries them and
+`buildSalesDocumentComponents` copies them onto each component of the line
+(never HeaderShipping). The Rillet invoice syncer calls `resolveLineDimensions`
+over the components (only when one carries dimensions) and the mapper puts
+`fields: [{ field_id, field_value_id }]` on each item. The posting tags every
+leg of a sales order line with **Employee = the order's rep**
+(`salesOrder.salesPersonId`, a user id; `salesLineDimensions`), beside Customer,
+Project and the rest, and the Sales Order shipment COGS legs carry it too
+(`buildSalesShipmentJournal`), so the rep reaches Rillet as a Field on invoices
+and journal entries with no rep-specific sync code.
+A new Field is created for BOTH areas (`RILLET_FIELD_AREAS`:
+`settings: { EXPENSES, REVENUE }`), because one Carbon dimension maps to one
+Rillet Field shared by bills, journals and invoices. A Field created earlier as
+EXPENSES only is reused as is; the sync does not update a remote Field's
+settings. <!-- UNVERIFIED: Rillet invoice item `fields`, a two-area Field, and an
+EXPENSES-only Field on an invoice item are not sandbox-tested --> Xero and QBO
+invoices send no dimensions (their invoice mappers have none).
 
 **Xero/QBO keep the slot system** (`dimensionSlots` + `maxJournalDimensionSlots`
 = 2 each; `validateDimensionSlots`, the Dimensions settings tab). For Rillet the

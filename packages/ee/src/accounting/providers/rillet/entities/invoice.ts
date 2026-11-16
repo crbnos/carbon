@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { datetime } from "@carbon/utils";
+import { buildDimensionValueMappingEntityId } from "../../../core/dimension-mapping";
 import {
   JournalEntrySyncError,
   toPostingDateString
@@ -112,9 +113,6 @@ function preflightRilletComponents(document: SalesDocumentComponents): void {
     });
 }
 
-/** The Rillet REVENUE Field that carries an invoice's sales rep. */
-export const SALES_REP_FIELD_NAME = "Sales Rep";
-
 export function mapSalesInvoiceToRilletInvoice(args: {
   invoice: Accounting.SalesInvoice;
   document: SalesDocumentComponents;
@@ -133,9 +131,12 @@ export function mapSalesInvoiceToRilletInvoice(args: {
   /** Link back to the Carbon invoice — REQUIRED by Rillet on
    * CUSTOMER_CUSTOM references. */
   documentUrl: string;
-  /** The "Sales Rep" REVENUE field value for the invoice's sales rep; tags
-   * every item. Absent when the invoice has no rep. */
-  salesRepField?: Rillet.ItemFieldRef | null;
+  /** The Rillet Field and value of each dimension the components carry
+   *  (`resolveLineDimensions`). Absent: no item gets fields. */
+  dimensions?: {
+    fieldIdByDimensionId: ReadonlyMap<string, string>;
+    fieldValueIdsByValue: ReadonlyMap<string, string>;
+  };
 }): RilletInvoiceCreate {
   const { invoice } = args;
   const document = args.document;
@@ -167,6 +168,24 @@ export function mapSalesInvoiceToRilletInvoice(args: {
         message: `Invoice component ${component.id} has no resolved Rillet product/account mapping`,
         metadata: { invoiceId: document.invoiceId, componentId: component.id }
       });
+    // The line's posted dimensions as Rillet Field values, like a bill line.
+    const fields: Rillet.ItemFieldRef[] = [];
+    for (const dimension of args.dimensions
+      ? (component.dimensions ?? [])
+      : []) {
+      const fieldId = args.dimensions!.fieldIdByDimensionId.get(
+        dimension.dimensionId
+      );
+      const fieldValueId = args.dimensions!.fieldValueIdsByValue.get(
+        buildDimensionValueMappingEntityId(
+          dimension.dimensionId,
+          dimension.valueId
+        )
+      );
+      // Field or value not provisioned: drop this ref.
+      if (fieldId && fieldValueId)
+        fields.push({ field_id: fieldId, field_value_id: fieldValueId });
+    }
     return {
       product_id: productId,
       description: component.description,
@@ -184,6 +203,8 @@ export function mapSalesInvoiceToRilletInvoice(args: {
         // recognition item is not sandbox-tested.
         ...(accountCode ? { account_code: accountCode } : {})
       },
+      // VERIFY: Rillet invoice item `fields` not sandbox-tested.
+      ...(fields.length > 0 ? { fields } : {}),
       external_references: [
         customerCustomExternalReference(component.id, args.documentUrl)
       ]
@@ -215,10 +236,7 @@ export function mapSalesInvoiceToRilletInvoice(args: {
         }
       : {}),
     ...(args.subsidiaryId ? { subsidiary_id: args.subsidiaryId } : {}),
-    // VERIFY: Rillet invoice item `fields` not sandbox-tested.
-    items: args.salesRepField
-      ? items.map((item) => ({ ...item, fields: [args.salesRepField!] }))
-      : items,
+    items,
     // CUSTOMER_CUSTOM satisfies Rillet rev-rec validation (accepted integration
     // type); the carbon / carbon-company refs stay for origin auditing.
     external_references: [
@@ -458,15 +476,14 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
         })
       : null;
 
-    // The sales rep rides on every item as a REVENUE Field "Sales Rep" whose
-    // value is the rep's name. No rep, no field.
-    const salesRepField = local.salesPersonName?.trim()
-      ? await this.resolveNamedFieldValue(
-          SALES_REP_FIELD_NAME,
-          "REVENUE",
-          local.salesPersonName
-        )
-      : null;
+    // Send every posted dimension of the lines (the Customer, the Project,
+    // the sales order's rep as Employee, …): provision each Rillet Field and
+    // value as a bill does. An invoice whose lines carry none reads nothing.
+    const dimensions = document.components.some(
+      (component) => component.dimensions?.length
+    )
+      ? await this.resolveLineDimensions(document.components)
+      : undefined;
 
     // Dynamic import: keeps @carbon/env (module-load env validation) out of
     // the module graph for consumers and tests that never push an invoice
@@ -486,7 +503,7 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
       subsidiaryId: this.rilletProvider.subsidiaryId,
       companyId: this.companyId,
       documentUrl: `${getAppUrl()}/x/sales-invoice/${local.id}`,
-      salesRepField
+      dimensions
     });
   }
 

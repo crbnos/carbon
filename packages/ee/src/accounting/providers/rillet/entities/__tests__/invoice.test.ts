@@ -400,6 +400,7 @@ function setupInvoice(missingShipping = false) {
   return {
     map: (source: Accounting.SalesInvoice) =>
       (syncer as any).mapToRemote(source),
+    syncer,
     ensureDependencySynced,
     ensureShippingProduct,
     ensureSalesProduct,
@@ -552,83 +553,74 @@ it("recognizes revenue and FX on the actual posting date when issue date differs
   ).toBe(true);
 });
 
-describe("Rillet invoice Sales Rep field", () => {
-  const salesRepField = { field_id: "field-rep", field_value_id: "value-ada" };
+describe("Rillet invoice dimensions", () => {
+  const customer = { dimensionId: "dim-customer", valueId: "cust-1" };
+  const rep = { dimensionId: "dim-employee", valueId: "user-rep" };
+  const resolved = {
+    fieldIdByDimensionId: new Map([
+      ["dim-customer", "field-customer"],
+      ["dim-employee", "field-employee"]
+    ]),
+    // The rep's value is not provisioned here: its ref is dropped.
+    fieldValueIdsByValue: new Map([["dim-customer:cust-1", "value-acme"]])
+  };
+  const withDimensions = (): Accounting.SalesInvoice => {
+    const source = charges();
+    return {
+      ...source,
+      lines: [{ ...source.lines[0]!, dimensions: [customer, rep] }]
+    };
+  };
 
-  it("tags every item with the Sales Rep field when the invoice has a rep", () => {
+  it("sends a line's provisioned dimensions on each of its items, header shipping none", () => {
     const payload = mapSalesInvoiceToRilletInvoice({
-      ...mapArguments(),
-      salesRepField
+      ...mapArguments(withDimensions()),
+      dimensions: resolved
     });
-    expect(payload.items.length).toBeGreaterThan(1);
+    const refs = [{ field_id: "field-customer", field_value_id: "value-acme" }];
+    // Merchandise, the two add-ons and line shipping come from the line;
+    // header shipping has no line.
+    expect(payload.items.map((item) => item.fields)).toEqual([
+      refs,
+      refs,
+      refs,
+      refs,
+      undefined
+    ]);
     for (const item of payload.items) {
-      expect(item.fields).toEqual([salesRepField]);
-      expect(Rillet.InvoiceItemSchema.parse(item).fields).toEqual([
-        salesRepField
-      ]);
+      expect(Rillet.InvoiceItemSchema.parse(item).fields).toEqual(item.fields);
     }
   });
 
-  it("sends no fields when the invoice has no rep", () => {
-    const payload = mapSalesInvoiceToRilletInvoice(mapArguments());
+  it("sends no fields when the lines carry no dimensions", () => {
+    const payload = mapSalesInvoiceToRilletInvoice({
+      ...mapArguments(),
+      dimensions: resolved
+    });
     expect(payload.items.every((item) => item.fields === undefined)).toBe(true);
   });
 
-  it("creates the REVENUE field and the rep's value by name, once", async () => {
+  it("resolves the Fields once for the invoice and tags its items", async () => {
     const test = setupInvoice();
-    const provider = test.provider as any;
-    provider.listFields = vi.fn(async () => []);
-    provider.createField = vi.fn(async (name: string) => ({
-      id: "field-rep",
-      name,
-      values: []
-    }));
-    provider.upsertFieldValue = vi.fn(
-      async (_fieldId: string, name: string) => ({
-        id: "value-ada",
-        name
-      })
-    );
-    const source = { ...charges(), salesPersonName: "Ada Lovelace" };
-    const payload = await test.map(source);
-    await test.map(source);
-    expect(provider.createField).toHaveBeenCalledTimes(1);
-    expect(provider.createField).toHaveBeenCalledWith(
-      "Sales Rep",
-      "REVENUE",
-      expect.any(String)
-    );
-    expect(provider.upsertFieldValue).toHaveBeenCalledTimes(1);
-    expect(provider.upsertFieldValue).toHaveBeenCalledWith(
-      "field-rep",
-      "Ada Lovelace"
-    );
-    expect(
-      payload.items.every(
-        (item: Rillet.InvoiceItem) =>
-          item.fields?.[0]?.field_value_id === "value-ada"
-      )
-    ).toBe(true);
+    const { syncer } = test;
+    const resolveLineDimensions = vi
+      .spyOn(syncer as any, "resolveLineDimensions")
+      .mockResolvedValue(resolved as never);
+    const payload = await test.map(withDimensions());
+    expect(resolveLineDimensions).toHaveBeenCalledTimes(1);
+    expect(payload.items[0].fields).toEqual([
+      { field_id: "field-customer", field_value_id: "value-acme" }
+    ]);
   });
 
-  it("reuses an existing field and value without writing", async () => {
+  it("reads no dimension mappings for an invoice without dimensions", async () => {
     const test = setupInvoice();
-    const provider = test.provider as any;
-    provider.listFields = vi.fn(async () => [
-      {
-        id: "field-rep",
-        name: "Sales Rep",
-        values: [{ id: "value-ada", name: "Ada Lovelace" }]
-      }
-    ]);
-    provider.createField = vi.fn();
-    provider.upsertFieldValue = vi.fn();
-    const payload = await test.map({
-      ...charges(),
-      salesPersonName: "Ada Lovelace"
-    });
-    expect(provider.createField).not.toHaveBeenCalled();
-    expect(provider.upsertFieldValue).not.toHaveBeenCalled();
-    expect(payload.items[0].fields).toEqual([salesRepField]);
+    const { syncer } = test;
+    const resolveLineDimensions = vi.spyOn(
+      syncer as any,
+      "resolveLineDimensions"
+    );
+    await test.map(charges());
+    expect(resolveLineDimensions).not.toHaveBeenCalled();
   });
 });

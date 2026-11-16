@@ -1361,7 +1361,14 @@ export const SalesInvoiceLineSchema = z.object({
   // provider then gets gross Merchandise plus a negative Discount component.
   // Absent or false: the line posted net (an invoice posted before the
   // split, or a line booked to deferred, contract, service or rental legs).
-  postsSalesDiscount: z.boolean().optional()
+  postsSalesDiscount: z.boolean().optional(),
+  // The dimensions the posted journal stamped on this line's revenue legs
+  // (Sales Account / Service Revenue / Sales Discount), one per dimension:
+  // the Customer, the Project, the sales order's rep (Employee), … Absent
+  // when the line's legs cannot be found (`postedLineDimensions`).
+  dimensions: z
+    .array(z.object({ dimensionId: z.string(), valueId: z.string() }))
+    .optional()
 });
 
 export const SalesInvoiceSchema = z.object({
@@ -1422,8 +1429,6 @@ export const SalesInvoiceSchema = z.object({
   dateDue: withNullable(z.string()),
   datePaid: withNullable(z.string()),
   customerReference: withNullable(z.string()),
-  /** The sales rep's name (`salesInvoice.salesPersonId` → `user.fullName`). */
-  salesPersonName: withNullable(z.string()).optional(),
   subtotal: z.number(),
   totalTax: z.number(),
   totalDiscount: z.number(),

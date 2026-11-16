@@ -18,6 +18,7 @@ import {
 } from "./sales-document-components";
 import {
   bookedToSalesAccount,
+  postedLineDimensions,
   postedSalesDiscountBase,
   requirePostedSalesAccountId,
   requirePostedSalesDiscountAccountId,
@@ -1161,5 +1162,68 @@ describe("the posted Sales Discount", () => {
         ...overrides
       })
     ).toBe(expected);
+  });
+});
+
+describe("postedLineDimensions", () => {
+  const leg = (
+    id: string,
+    description: string,
+    reference: string | null,
+    documentId = "invoice"
+  ) => ({ id, documentId, documentLineReference: reference, description });
+  const customer = { dimensionId: "dim-customer", valueId: "customer" };
+  const rep = { dimensionId: "dim-employee", valueId: "user-rep" };
+  const project = { dimensionId: "dim-project", valueId: "project-1" };
+
+  it("gives a sales order line the dimensions of its revenue legs, once per dimension", () => {
+    const result = postedLineDimensions(
+      [
+        leg("jl-sales", "Sales Account", "sales-invoice:sol-1"),
+        leg("jl-discount", "Sales Discount", "sales-invoice:sol-1"),
+        leg("jl-ar", "Accounts Receivable", "sales-invoice:sol-1"),
+        // Another invoice's leg for the same order line is not this line's.
+        leg("jl-other", "Sales Account", "sales-invoice:sol-1", "invoice-2")
+      ],
+      [
+        { id: "line-1", invoiceId: "invoice", salesOrderLineId: "sol-1" },
+        // A manual line has no reference to match.
+        { id: "line-2", invoiceId: "invoice", salesOrderLineId: null }
+      ],
+      new Map([
+        ["jl-sales", [customer, project, rep]],
+        ["jl-discount", [customer, rep]],
+        ["jl-ar", [{ dimensionId: "dim-ar-only", valueId: "x" }]],
+        ["jl-other", [{ dimensionId: "dim-customer", valueId: "other" }]]
+      ])
+    );
+    expect(result).toEqual(new Map([["line-1", [customer, project, rep]]]));
+  });
+
+  it("gives nothing to a line whose legs carry no dimensions", () => {
+    const result = postedLineDimensions(
+      [leg("jl-sales", "Sales Account", "sales-invoice:sol-1")],
+      [{ id: "line-1", invoiceId: "invoice", salesOrderLineId: "sol-1" }],
+      new Map()
+    );
+    expect(result).toEqual(new Map());
+  });
+});
+
+describe("buildSalesDocumentComponents dimensions", () => {
+  it("carries a line's dimensions onto each of its components", () => {
+    const source = fixture();
+    const dimensions = [{ dimensionId: "dim-employee", valueId: "user-rep" }];
+    const document = buildSalesDocumentComponents({
+      ...source,
+      lines: source.lines.map((line, index) =>
+        index === 0 ? { ...line, dimensions } : line
+      )
+    } as Accounting.SalesInvoice);
+    for (const component of document.components) {
+      expect(component.dimensions).toEqual(
+        component.sourceLineId === source.lines[0]!.id ? dimensions : undefined
+      );
+    }
   });
 });

@@ -495,9 +495,47 @@ describe("dimensions", () => {
       FixedAssetClass: null,
       Item: "item-1",
       Project: "project-1",
-      Customer: "customer-1"
+      Customer: "customer-1",
+      Employee: null
     });
     expect(receivable).toMatchObject({ Project: null, Customer: "customer-1" });
+  });
+
+  it("tag every leg of a sales order line with the order's rep as the Employee", () => {
+    const journal = buildSalesInvoiceJournal(
+      facts(accountsFor(defaultsWith(), "Posted"), {
+        lines: [
+          invoiceLine({ salesOrderId: "so-1" }),
+          invoiceLine({ id: "line-2", salesOrderId: null, salesOrderLineId: null })
+        ],
+        salesPersonBySalesOrderId: new Map([["so-1", "user-rep"]])
+      })
+    );
+    const rows = journalLineDimensionRows({
+      journalLineIds: journal.lines.map((_, index) => `jl-${index + 1}`),
+      lines: journal.metadata.map((meta) => ({
+        dimensions: salesLineDimensions(meta, "customer-1")
+      })),
+      dimensionIdByEntity: new Map([["Employee", "dim-employee"]]),
+      companyId: "company-1"
+    });
+    // Line 1 posts Sales + AR. Line 2 has no sales order line, so the invoice
+    // ships it and also posts its COGS pair. Only line 1's legs bill the
+    // order, so only they carry its rep.
+    expect(summary(journal.lines)).toEqual([
+      ["sales", "Sales Account", 100],
+      ["ar", "Accounts Receivable", 100],
+      ["sales", "Sales Account", 100],
+      ["ar", "Accounts Receivable", 100],
+      ["cogs", "Cost of Goods Sold", 0],
+      ["finished", "Finished Goods Account", 0]
+    ]);
+    expect(
+      rows.map((row) => [row.journalLineId, row.dimensionId, row.valueId])
+    ).toEqual([
+      ["jl-1", "dim-employee", "user-rep"],
+      ["jl-2", "dim-employee", "user-rep"]
+    ]);
   });
 
   it("write a row per value whose entity type has an active dimension", () => {

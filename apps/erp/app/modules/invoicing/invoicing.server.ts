@@ -109,8 +109,7 @@ const salesInvoiceFields = [
   "customerReference",
   "exchangeRate",
   "dateDue",
-  "datePaid",
-  "salesPersonId"
+  "datePaid"
 ] as const;
 
 /**
@@ -2884,7 +2883,6 @@ export const insertSalesInvoice = defineServiceFn({
     invoiceCustomerLocationId: z.string().optional(),
     dateIssued: z.string().optional(),
     dateDue: z.string().optional(),
-    salesPersonId: z.string().optional(),
     exchangeRate: z.number().optional(),
     exchangeRateUpdatedAt: z.string().optional(),
     customFields: z.unknown().optional()

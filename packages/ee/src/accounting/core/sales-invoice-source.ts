@@ -2,9 +2,11 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { journalReference } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { classifyAccountingPostingRole, datetime, round } from "@carbon/utils";
-import { JournalEntrySyncError } from "./posting";
+import { loadJournalLineDimensions } from "./dimension-mapping";
+import { JournalEntrySyncError, type JournalLineDimensionRef } from "./posting";
 import type { Accounting } from "./types";
 
 /** The posting roles whose original revenue account an AR document replays. */
@@ -103,11 +105,6 @@ export async function loadSalesInvoices(
         .onRef("baseCurrency.code", "=", "company.baseCurrencyCode")
         .onRef("baseCurrency.companyGroupId", "=", "company.companyGroupId")
     )
-    .leftJoin(
-      "user as salesPerson",
-      "salesPerson.id",
-      "salesInvoice.salesPersonId"
-    )
     .select([
       "salesInvoice.id",
       "salesInvoice.invoiceId",
@@ -121,7 +118,6 @@ export async function loadSalesInvoices(
       "salesInvoice.dateDue",
       "salesInvoice.datePaid",
       "salesInvoice.customerReference",
-      "salesPerson.fullName as salesPersonName",
       "salesInvoices.subtotal",
       "salesInvoices.totalTax",
       "salesInvoice.totalDiscount",
@@ -165,6 +161,7 @@ export async function loadSalesInvoices(
       "salesInvoiceLine.customerContractLineId",
       "salesInvoiceLine.serviceStartDate",
       "salesInvoiceLine.serviceEndDate",
+      "salesInvoiceLine.salesOrderLineId",
       "item.readableIdWithRevision as itemReadableIdWithRevision"
     ])
     .where("salesInvoiceLine.companyId", "=", companyId)
@@ -189,7 +186,9 @@ export async function loadSalesInvoices(
         .onRef("account.companyGroupId", "=", "company.companyGroupId")
     )
     .select([
+      "journalLine.id",
       "journalLine.documentId",
+      "journalLine.documentLineReference",
       "journalLine.accountId",
       "journalLine.description",
       "journalLine.amount",
@@ -284,6 +283,16 @@ export async function loadSalesInvoices(
   // revenue at gross; one without (posted before the split, or with no
   // discount on a Sales-booked line) posted net, and stays net remotely.
   const postedSalesDiscount = postedSalesDiscountBase(postingRows);
+  // The dimensions of every posted line of these invoices, in one read.
+  const dimensionsByJournalLine = await loadJournalLineDimensions(db, {
+    companyId,
+    journalLineIds: postingRows.map((row) => row.id)
+  });
+  const lineDimensions = postedLineDimensions(
+    postingRows,
+    lineRows,
+    dimensionsByJournalLine
+  );
 
   // Group lines by invoice ID
   const linesByInvoiceId = new Map<string, (typeof lineRows)[number][]>();
@@ -341,7 +350,6 @@ export async function loadSalesInvoices(
       dateDue: row.dateDue,
       datePaid: row.datePaid,
       customerReference: row.customerReference,
-      salesPersonName: row.salesPersonName,
       subtotal: Number(row.subtotal),
       totalTax: Number(row.totalTax),
       totalDiscount: Number(row.totalDiscount) || 0,
@@ -382,7 +390,10 @@ export async function loadSalesInvoices(
               customerContractLineId: line.customerContractLineId ?? null,
               serviceStartDate: line.serviceStartDate ?? null,
               serviceEndDate: line.serviceEndDate ?? null
-            })
+            }),
+          ...(lineDimensions.has(line.id)
+            ? { dimensions: lineDimensions.get(line.id) }
+            : {})
         };
       }),
       updatedAt: row.updatedAt ?? datetime.timestamp(),
@@ -390,6 +401,66 @@ export async function loadSalesInvoices(
     });
   }
 
+  return result;
+}
+
+/** The revenue legs whose dimensions an invoice line sends. */
+const DIMENSION_ROLES: ReadonlySet<string> = new Set([
+  "SalesRevenue",
+  "ServiceRevenue",
+  "SalesDiscount"
+]);
+
+/**
+ * Per invoice line, the dimensions its posted revenue legs carry, one per
+ * dimension (the first leg's value wins). A leg is matched to the line by
+ * `documentLineReference` = `sales-invoice:<salesOrderLineId>` within the
+ * same invoice, so only a line billed from a sales order line is found: a
+ * manual, contract or rental line has no reference and gets none. An
+ * invoice posted before its legs carried dimensions gets none either.
+ */
+export function postedLineDimensions(
+  postingRows: ReadonlyArray<{
+    id: string;
+    documentId: string | null;
+    documentLineReference: string | null;
+    description: string | null;
+  }>,
+  lines: ReadonlyArray<{
+    id: string;
+    invoiceId: string;
+    salesOrderLineId: string | null;
+  }>,
+  dimensionsByJournalLine: ReadonlyMap<
+    string,
+    ReadonlyArray<JournalLineDimensionRef>
+  >
+): Map<string, JournalLineDimensionRef[]> {
+  const byReference = new Map<string, Map<string, JournalLineDimensionRef>>();
+  for (const row of postingRows) {
+    if (!row.documentId || !row.documentLineReference) continue;
+    const role = classifyAccountingPostingRole(row.description);
+    if (!role || !DIMENSION_ROLES.has(role)) continue;
+    const key = `${row.documentId}|${row.documentLineReference}`;
+    const dimensions = byReference.get(key) ?? new Map();
+    for (const ref of dimensionsByJournalLine.get(row.id) ?? []) {
+      if (!dimensions.has(ref.dimensionId))
+        dimensions.set(ref.dimensionId, {
+          dimensionId: ref.dimensionId,
+          valueId: ref.valueId
+        });
+    }
+    byReference.set(key, dimensions);
+  }
+  const result = new Map<string, JournalLineDimensionRef[]>();
+  for (const line of lines) {
+    if (!line.salesOrderLineId) continue;
+    const dimensions = byReference.get(
+      `${line.invoiceId}|${journalReference.to.salesInvoice(line.salesOrderLineId)}`
+    );
+    if (dimensions && dimensions.size > 0)
+      result.set(line.id, [...dimensions.values()]);
+  }
   return result;
 }
 

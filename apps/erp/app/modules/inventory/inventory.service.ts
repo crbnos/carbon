@@ -18820,6 +18820,7 @@ export function buildSalesShipmentJournal({
   externalDocumentId,
   customerId,
   customerTypeId,
+  salesPersonId = null,
   defaults,
   lines,
   relievedCostByItem,
@@ -18830,6 +18831,9 @@ export function buildSalesShipmentJournal({
   externalDocumentId: string | null;
   customerId: string | null;
   customerTypeId: string | null;
+  /** The sales order's rep (a user id): the Employee dimension of every
+   *  line, as on the invoice of the same order. */
+  salesPersonId?: string | null;
   defaults: ShipmentAccountDefaults;
   lines: SalesShipmentLine[];
   /** The cost each item's shipment relieved, positive. */
@@ -18877,7 +18881,8 @@ export function buildSalesShipmentJournal({
         CustomerType: customerTypeId,
         Item: line.itemId,
         ItemPostingGroup: line.itemPostingGroupId,
-        Location: line.locationId
+        Location: line.locationId,
+        Employee: salesPersonId
       }
     };
     journalLines.push(
@@ -18910,7 +18915,8 @@ export function buildSalesShipmentJournal({
         Customer: customerId,
         CustomerType: customerTypeId,
         Location: asset.locationId,
-        FixedAssetClass: asset.fixedAssetClassId
+        FixedAssetClass: asset.fixedAssetClassId,
+        Employee: salesPersonId
       }
     };
     if (asset.accumulatedDepreciation > 0) {
@@ -19806,7 +19812,8 @@ export async function postShipment(
                       "ItemPostingGroup",
                       "Location",
                       "CostCenter",
-                      "FixedAssetClass"
+                      "FixedAssetClass",
+                      "Employee"
                     ]
                   },
                   { columns: ["id", "entityType"] }
@@ -20766,6 +20773,7 @@ export async function postShipment(
                 externalDocumentId: salesOrder.data.customerReference,
                 customerId: salesOrder.data.customerId,
                 customerTypeId: customer.data.customerTypeId ?? null,
+                salesPersonId: salesOrder.data.salesPersonId,
                 defaults: accountDefaults.data,
                 lines: journalShipmentLines,
                 relievedCostByItem,

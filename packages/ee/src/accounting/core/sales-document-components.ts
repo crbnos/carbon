@@ -12,7 +12,7 @@ import {
   SCALE,
   toDocumentAmount
 } from "@carbon/utils";
-import { JournalEntrySyncError } from "./posting";
+import { JournalEntrySyncError, type JournalLineDimensionRef } from "./posting";
 import type { Accounting } from "./types";
 
 export type SalesDocumentComponent = {
@@ -56,6 +56,10 @@ export type SalesDocumentComponent = {
   netAmount: number;
   taxPercent: number;
   taxAmount: number;
+  /** The source line's posted revenue-leg dimensions
+   *  (`SalesInvoiceLineSchema.dimensions`). Absent for HeaderShipping and for
+   *  a line with none. */
+  dimensions?: JournalLineDimensionRef[];
 };
 
 /** A line whose proceeds are NOT sales revenue in Carbon's own journal. */
@@ -373,7 +377,8 @@ export function buildSalesDocumentComponents(
         unitAmount,
         netAmount: toDocumentAmount(baseNet, rate, decimals),
         taxPercent,
-        taxAmount: toDocumentAmount(baseTax, rate, decimals)
+        taxAmount: toDocumentAmount(baseTax, rate, decimals),
+        ...(line?.dimensions?.length ? { dimensions: line.dimensions } : {})
       }
     });
   };

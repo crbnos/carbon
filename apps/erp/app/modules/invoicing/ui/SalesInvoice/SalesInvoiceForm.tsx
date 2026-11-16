@@ -27,7 +27,6 @@ import {
   CustomerLocation,
   CustomFormFields,
   DatePicker,
-  Employee,
   Hidden,
   Input,
   Location,
@@ -276,7 +275,6 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
                 }}
               />
               <Location name="locationId" label={t`Shipping Location`} />
-              <Employee name="salesPersonId" label={t`Sales Person`} />
               <CustomFormFields table="salesInvoice" />
             </div>
           </VStack>

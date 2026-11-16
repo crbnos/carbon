@@ -330,7 +330,7 @@ const PURCHASE_INVOICES_LIST_COLUMNS =
   "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,purchaseOrderIds,purchaseOrderReadableIds,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
 
 const SALES_INVOICES_LIST_COLUMNS =
-  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,salesPersonId,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt" as const;
+  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt" as const;
 
 /**
  * Compute an invoice's Due Date from its Issue Date and Payment Term.
@@ -1279,7 +1279,6 @@ export async function insertSalesInvoice(
     invoiceCustomerLocationId?: string;
     dateIssued?: string;
     dateDue?: string;
-    salesPersonId?: string;
     exchangeRate?: number;
     exchangeRateUpdatedAt?: string;
     customFields?: Json;
@@ -1361,7 +1360,6 @@ export async function insertSalesInvoice(
         input.invoiceCustomerId ?? invoiceCustomerId ?? input.customerId,
       invoiceCustomerContactId: input.invoiceCustomerContactId ?? null,
       invoiceCustomerLocationId: input.invoiceCustomerLocationId ?? null,
-      salesPersonId: input.salesPersonId ?? null,
       opportunityId: opportunity.data?.id,
       currencyCode: input.currencyCode ?? "USD",
       exchangeRate,
@@ -1422,7 +1420,6 @@ export async function updateSalesInvoice(
     invoiceCustomerLocationId?: string | null;
     dateIssued?: string | null;
     dateDue?: string | null;
-    salesPersonId?: string | null;
     exchangeRate?: number;
     exchangeRateUpdatedAt?: string;
     customFields?: Json;
@@ -7736,7 +7733,9 @@ export type SalesInvoiceLine = Pick<
   // Read by the service job book only (`planServiceJobRevenue`).
   Partial<
     Pick<Tables["salesInvoiceLine"]["Row"], "serviceJobId" | "sortOrder">
-  >;
+  > &
+  // Read for the sales rep (`salesPersonBySalesOrderId`) only.
+  Partial<Pick<Tables["salesInvoiceLine"]["Row"], "salesOrderId">>;
 
 /** The line types that sell an item. */
 export const ITEM_LINE_TYPES: ReadonlySet<string> = new Set([
@@ -7947,6 +7946,9 @@ export type SalesInvoiceJournalFacts = {
     string,
     Pick<Tables["salesOrderLine"]["Row"], "locationId" | "sentComplete">
   >;
+  /** Each billed sales order's sales rep (`salesOrder.salesPersonId`), by
+   *  sales order id: the Employee dimension of the lines that bill it. */
+  salesPersonBySalesOrderId?: ReadonlyMap<string, string | null>;
   assets: ReadonlyMap<
     string,
     Pick<Tables["fixedAsset"]["Row"], "locationId" | "fixedAssetClassId">
@@ -8026,6 +8028,11 @@ function lineMetadata(
   line: SalesInvoiceLine
 ): SalesPostingMetadata {
   const projectId = line.projectId ?? null;
+  // A line billed from a sales order carries the order's rep; any other
+  // line (manual, contract, rental) has none.
+  const salesPersonId = line.salesOrderId
+    ? (facts.salesPersonBySalesOrderId?.get(line.salesOrderId) ?? null)
+    : null;
   if (line.invoiceLineType === "Fixed Asset") {
     const asset = line.assetId ? facts.assets.get(line.assetId) : undefined;
     const salesOrderLine = line.salesOrderLineId
@@ -8042,7 +8049,8 @@ function lineMetadata(
         null,
       costCenterId: null,
       fixedAssetClassId: asset?.fixedAssetClassId ?? null,
-      projectId
+      projectId,
+      salesPersonId
     };
   }
   if (line.invoiceLineType === "Rental") {
@@ -8057,7 +8065,8 @@ function lineMetadata(
       locationId: line.locationId ?? null,
       costCenterId: null,
       fixedAssetClassId: null,
-      projectId
+      projectId,
+      salesPersonId
     };
   }
   return {
@@ -8069,7 +8078,8 @@ function lineMetadata(
     locationId: line.locationId ?? null,
     costCenterId: null,
     fixedAssetClassId: null,
-    projectId
+    projectId,
+    salesPersonId
   };
 }
 
@@ -8610,7 +8620,8 @@ export function buildSalesInvoiceJournal(
 
 /** A line's dimension values by entity type, in write order
  *  (`journalLineDimensionRows`). The project is on the revenue side only
- *  (`buildSalesPostingLines`); the customer is on every line. */
+ *  (`buildSalesPostingLines`); the customer and the sales order's rep
+ *  (Employee) are on every line. */
 export function salesLineDimensions(
   meta: SalesPostingMetadata,
   customerId: string | null
@@ -8623,7 +8634,8 @@ export function salesLineDimensions(
     FixedAssetClass: meta.fixedAssetClassId,
     Item: meta.itemId,
     Project: meta.projectId ?? null,
-    Customer: customerId
+    Customer: customerId,
+    Employee: meta.salesPersonId ?? null
   };
 }
 export type RentalLineType = "Rent" | "Charge" | "Purchase Option";
@@ -9210,21 +9222,23 @@ export async function postSalesInvoice(
           ? customer.data.intercompanyCompanyId
           : null;
 
-        const salesOrders = await many(db, "salesOrder", {
-          salesOrderId: salesOrderLines.reduce<string[]>(
-            (acc, salesOrderLine) => {
-              if (
-                salesOrderLine.salesOrderId &&
-                !acc.includes(salesOrderLine.salesOrderId)
-              ) {
-                acc.push(salesOrderLine.salesOrderId);
-              }
-              return acc;
-            },
-            []
-          ),
-          companyId
-        });
+        // The sales rep of every order the lines bill, in one read: the
+        // Employee dimension of those lines.
+        const salesOrders = await many(
+          db,
+          "salesOrder",
+          {
+            id: [
+              ...new Set(
+                salesInvoiceLines.data.flatMap((line) =>
+                  line.salesOrderId ? [line.salesOrderId] : []
+                )
+              )
+            ],
+            companyId
+          },
+          { columns: ["id", "salesPersonId"] }
+        );
 
         if (salesOrders.error) throw new Error("Failed to fetch sales orders");
 
@@ -9303,7 +9317,8 @@ export async function postSalesInvoice(
               "FixedAssetClass",
               "Customer",
               "Item",
-              "Project"
+              "Project",
+              "Employee"
             ]
           },
           { columns: ["id", "entityType"] }
@@ -9749,6 +9764,9 @@ export async function postSalesInvoice(
           ),
           salesOrderLines: new Map(
             salesOrderLines.map((line) => [line.id, line])
+          ),
+          salesPersonBySalesOrderId: new Map(
+            salesOrders.data.map((order) => [order.id, order.salesPersonId])
           ),
           assets: assetsById,
           rentalAgreementLines: new Map(
