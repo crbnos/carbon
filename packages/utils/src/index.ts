@@ -10,6 +10,7 @@ export * from "@carbon/database/sales-posting-amounts";
 export * from "./accounting";
 export * from "./address";
 export * from "./arrays";
+export * from "./assembly-instruction-job";
 export * from "./assembly-units";
 export * from "./async";
 export * from "./avatar";

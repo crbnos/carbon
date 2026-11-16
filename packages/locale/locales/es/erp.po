@@ -154,6 +154,7 @@ msgid "{0, plural, one {# row links to data outside this company, so it can't be
 msgstr "{0, plural, one {# fila vincula a datos fuera de esta empresa, por lo que no se puede hacer backup. Omitirla permite hacer backup del resto.} other {# filas vinculan a datos fuera de esta empresa, por lo que no se pueden hacer backup. Omitirlas permite hacer backup del resto.}}"
 
 #. placeholder {0}: added.steps
+#. placeholder {0}: operation.methodOperationStep.length
 msgid "{0, plural, one {# step} other {# steps}}"
 msgstr "{0, plural, one {# paso} other {# pasos}}"
 
@@ -17069,6 +17070,9 @@ msgstr "Grupo de operadores"
 msgid "Operator Pool Reservation"
 msgstr "Reserva de grupo de operadores"
 
+msgid "Operator Preview"
+msgstr ""
+
 msgid "Operator Reservation"
 msgstr "Reserva del Operador"
 
@@ -17080,6 +17084,21 @@ msgstr "Operadores"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Los operadores pueden usar estaciones de trabajo compartidas con autenticación PIN."
+
+msgid "Operators do not see this operation. A supplier does the work."
+msgstr ""
+
+msgid "Operators get the Assembly screen, one step at a time."
+msgstr ""
+
+msgid "Operators get the Inspection screen."
+msgstr ""
+
+msgid "Operators get the Inspection screen. The characteristics come from the plan."
+msgstr ""
+
+msgid "Operators get the Operation screen."
+msgstr ""
 
 msgid "Operators start on the Scan tab"
 msgstr "Los operarios comienzan en la pestaña Escanear"
@@ -17259,9 +17278,6 @@ msgstr "Varianza de Gastos Indirectos"
 
 msgid "Outside Processing"
 msgstr "Subcontratación"
-
-msgid "Outside Processing does not use this. A supplier does the work, so operators never see this operation. Change Operation Type in Details to use it."
-msgstr ""
 
 msgid "Outstanding"
 msgstr "Pendiente"
@@ -25029,6 +25045,12 @@ msgstr "las horas de trabajo de la estación a partir de sus turnos, menos los d
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "La configuración del paso — esta ejecución predice el registro de los valores que usó."
 
+msgid "The steps come from the assembly instruction."
+msgstr ""
+
+msgid "The steps come from the procedure."
+msgstr ""
+
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "Los tamaños de existencias en que este material se compra y se mantiene; cada tamaño se convierte en una variante seleccionable separada en órdenes de trabajo y pedidos de compra."
 
@@ -27702,7 +27724,10 @@ msgstr "Lo que el arrendatario debe en un arrendamiento: el valor presente de lo
 msgid "What the operator does and records, in order."
 msgstr ""
 
-msgid "What the operator sees for this operation in the Assembly view."
+msgid "What the operator gets"
+msgstr ""
+
+msgid "What the operator sees on the shop floor, from the saved steps. Nothing here records or starts work."
 msgstr ""
 
 msgid "What these rows mean"
@@ -28241,6 +28266,9 @@ msgstr "Cancelación contable de existencias desperdiciadas o devueltas a travé
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Reducir el valor de un activo a lo largo de su vida útil — un lote mensual que crea, revisa como borrador y luego contabiliza."
 
+msgid "Written here"
+msgstr ""
+
 msgid "Written with a warning"
 msgstr "Escrito con una advertencia"
 
@@ -28358,6 +28386,9 @@ msgstr "Recibiste este artículo"
 
 msgid "You received this lot"
 msgstr "Recibiste este lote"
+
+msgid "You write the steps in the Steps tab."
+msgstr ""
 
 msgid "You're live on Carbon"
 msgstr "Estás en vivo en Carbon"

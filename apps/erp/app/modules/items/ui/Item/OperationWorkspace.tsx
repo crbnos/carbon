@@ -45,7 +45,6 @@ import {
   initialOperation,
   makeOperationItem,
   OperationForm,
-  OperationPreview,
   ParametersForm,
   ToolsForm
 } from "./BillOfProcess";
@@ -54,19 +53,15 @@ import {
   useMethodAccess,
   useMethodConfigurator
 } from "./MethodPageFrame";
-import { getMethodSearch, getOperationTabSources } from "./methodPageUtils";
+import type { OperationTab } from "./methodPageUtils";
+import {
+  getMethodSearch,
+  getOperationTabSources,
+  getOperationTabs
+} from "./methodPageUtils";
+import { OperatorPreviewButton } from "./OperatorPreview";
 
 type Procedure = NonNullable<Awaited<ReturnType<typeof getProcedure>>["data"]>;
-
-const TABS = [
-  "details",
-  "instructions",
-  "parameters",
-  "steps",
-  "tools",
-  "preview"
-] as const;
-type OperationTab = (typeof TABS)[number];
 
 const noop = () => {};
 
@@ -155,9 +150,10 @@ export function OperationWorkspace({
     );
   }
 
+  const tabs = getOperationTabs(item.data.operationType);
   const requested = params.get("tab") as OperationTab | null;
   const tab: OperationTab =
-    !isNew && requested && TABS.includes(requested) ? requested : "details";
+    !isNew && requested && tabs.includes(requested) ? requested : "details";
 
   const linkedDocument = item.data.assemblyInstructionId
     ? {
@@ -192,36 +188,41 @@ export function OperationWorkspace({
           <TabsTrigger value="details">
             <Trans>Details</Trans>
           </TabsTrigger>
-          <TabsTrigger value="instructions" disabled={isNew}>
-            <Trans>Instructions</Trans>
-          </TabsTrigger>
-          <TabsTrigger value="parameters" disabled={isNew}>
-            <span className="flex items-center gap-2">
-              <Trans>Parameters</Trans>
-              {sources.parameters === "own" && parameters.length > 0 && (
-                <Count count={parameters.length} />
-              )}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="steps" disabled={isNew}>
-            <span className="flex items-center gap-2">
-              <Trans>Steps</Trans>
-              {sources.steps === "own" && steps.length > 0 && (
-                <Count count={steps.length} />
-              )}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="tools" disabled={isNew}>
-            <span className="flex items-center gap-2">
-              <Trans>Tools</Trans>
-              {sources.tools === "own" && tools.length > 0 && (
-                <Count count={tools.length} />
-              )}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="preview" disabled={isNew}>
-            <Trans>Preview</Trans>
-          </TabsTrigger>
+          {tabs.includes("steps") && (
+            <TabsTrigger value="steps" disabled={isNew}>
+              <span className="flex items-center gap-2">
+                <Trans>Steps</Trans>
+                {sources.steps === "own" && steps.length > 0 && (
+                  <Count count={steps.length} />
+                )}
+              </span>
+            </TabsTrigger>
+          )}
+          {tabs.includes("parameters") && (
+            <TabsTrigger value="parameters" disabled={isNew}>
+              <span className="flex items-center gap-2">
+                <Trans>Parameters</Trans>
+                {sources.parameters === "own" && parameters.length > 0 && (
+                  <Count count={parameters.length} />
+                )}
+              </span>
+            </TabsTrigger>
+          )}
+          {tabs.includes("instructions") && (
+            <TabsTrigger value="instructions" disabled={isNew}>
+              <Trans>Instructions</Trans>
+            </TabsTrigger>
+          )}
+          {tabs.includes("tools") && (
+            <TabsTrigger value="tools" disabled={isNew}>
+              <span className="flex items-center gap-2">
+                <Trans>Tools</Trans>
+                {sources.tools === "own" && tools.length > 0 && (
+                  <Count count={tools.length} />
+                )}
+              </span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabPanel value="details">
@@ -255,9 +256,7 @@ export function OperationWorkspace({
               <Purpose>
                 <Trans>Text the operator reads while working.</Trans>
               </Purpose>
-              {sources.instructions === "notUsed" ? (
-                <NotUsedNotice />
-              ) : sources.instructions === "procedure" ? (
+              {sources.instructions === "procedure" ? (
                 <ProcedureNotice procedure={procedure}>
                   {procedure?.content ? (
                     <div
@@ -292,9 +291,7 @@ export function OperationWorkspace({
                   operator record a value, add a Measurement step.
                 </Trans>
               </Purpose>
-              {sources.parameters === "notUsed" ? (
-                <NotUsedNotice />
-              ) : sources.parameters === "procedure" ? (
+              {sources.parameters === "procedure" ? (
                 <ProcedureNotice procedure={procedure}>
                   <ProcedureParameters procedure={procedure} />
                 </ProcedureNotice>
@@ -312,12 +309,16 @@ export function OperationWorkspace({
             </TabPanel>
 
             <TabPanel value="steps">
-              <Purpose>
-                <Trans>What the operator does and records, in order.</Trans>
-              </Purpose>
-              {sources.steps === "notUsed" ? (
-                <NotUsedNotice />
-              ) : sources.steps === "procedure" ? (
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <p className="text-sm text-muted-foreground">
+                  <Trans>What the operator does and records, in order.</Trans>
+                </p>
+                <OperatorPreviewButton
+                  operationId={item.id}
+                  isDisabled={isNew}
+                />
+              </div>
+              {sources.steps === "procedure" ? (
                 <ProcedureNotice procedure={procedure}>
                   <ProcedureSteps procedure={procedure} />
                 </ProcedureNotice>
@@ -347,34 +348,12 @@ export function OperationWorkspace({
                   tools in the Assembly view.
                 </Trans>
               </Purpose>
-              {sources.tools === "notUsed" ? (
-                <NotUsedNotice />
-              ) : (
-                <ToolsForm
-                  tools={tools}
-                  operationId={item.id}
-                  temporaryItems={temporaryItems}
-                  isDisabled={isReadOnly}
-                />
-              )}
-            </TabPanel>
-
-            <TabPanel value="preview">
-              <Purpose>
-                <Trans>
-                  What the operator sees for this operation in the Assembly
-                  view.
-                </Trans>
-              </Purpose>
-              {sources.preview === "notUsed" ? (
-                <NotUsedNotice />
-              ) : sources.preview === "procedure" ? (
-                <ProcedureNotice procedure={procedure} />
-              ) : sources.preview === "linked" ? (
-                <LinkedDocumentNotice document={linkedDocument} />
-              ) : (
-                <OperationPreview steps={steps} tools={tools} />
-              )}
+              <ToolsForm
+                tools={tools}
+                operationId={item.id}
+                temporaryItems={temporaryItems}
+                isDisabled={isReadOnly}
+              />
             </TabPanel>
           </>
         )}
@@ -403,18 +382,6 @@ function TabPanel({
 
 function Purpose({ children }: { children: React.ReactNode }) {
   return <p className="mb-4 text-sm text-muted-foreground">{children}</p>;
-}
-
-function NotUsedNotice() {
-  return (
-    <p className="text-sm">
-      <Trans>
-        Outside Processing does not use this. A supplier does the work, so
-        operators never see this operation. Change Operation Type in Details to
-        use it.
-      </Trans>
-    </p>
-  );
 }
 
 function ProcedureNotice({

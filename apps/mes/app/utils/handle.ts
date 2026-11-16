@@ -10,4 +10,7 @@ export type Handle = {
   // The tables this route shows. The shell (`RouteRealtime`) reloads the page
   // when one of them changes; each must be in REALTIME_TABLES.
   realtime?: RouteRealtimeTable[];
+  // The page shows alone, without the sidebar, tab bar or overlays, because
+  // another app frames it (the ERP's operator preview).
+  chromeless?: boolean;
 };

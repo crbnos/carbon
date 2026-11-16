@@ -73,7 +73,8 @@ import {
   Form,
   Outlet,
   useLoaderData,
-  useLocation
+  useLocation,
+  useMatches
 } from "react-router";
 import { AppSidebar } from "~/components";
 import { ConsolePill } from "~/components/ConsolePill";
@@ -95,6 +96,7 @@ import {
   getLocationsByCompany
 } from "~/services/operations.service";
 import { getOpenClockEntry } from "~/services/people.service";
+import type { Handle } from "~/utils/handle";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("mes", "auth");
@@ -381,6 +383,10 @@ export default function AuthenticatedRoute() {
 
   const { pathname } = useLocation();
   const showTabBar = isTabBarPath(pathname);
+  // A page the ERP frames (the operator preview) shows alone, without the shell.
+  const chromeless = useMatches().some(
+    (match) => (match.handle as Handle | undefined)?.chromeless
+  );
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Session lock (NIST 3.1.10) — client idle UX only; server enforces in
@@ -551,98 +557,108 @@ export default function AuthenticatedRoute() {
           >
             <RealtimeDataProvider>
               {company?.id && <RouteRealtime companyId={company.id} />}
-              <SidebarProvider defaultOpen={false}>
-                <TooltipProvider delayDuration={0}>
-                  <AppSidebar
-                    activeEvents={activeEvents}
-                    activeMaintenanceCount={activeMaintenanceCount}
-                    company={company}
-                    companies={companies}
-                    consoleEnabled={
-                      consoleEnabled && (consoleMode || canEnterConsoleMode)
-                    }
-                    consoleMode={consoleMode}
-                    location={location}
-                    locations={locations}
-                    openClockEntry={openClockEntry}
-                    pinnedInUser={pinnedInUser}
-                    timeCardEnabled={timeCardEnabled}
-                    moreOpen={moreOpen}
-                    onMoreOpenChange={setMoreOpen}
-                  />
-                  {/* From lg the shell does not scroll, so the page area stops at the
-                      screen and each page's own scroller takes the overflow. */}
-                  <div
-                    data-app-card
-                    className={cn(
-                      "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
-                      showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
+              {chromeless ? (
+                <SidebarProvider defaultOpen={false}>
+                  <TooltipProvider delayDuration={0}>
+                    <div className="h-dvh w-full overflow-hidden bg-card">
+                      <Outlet key={companyId} />
+                    </div>
+                  </TooltipProvider>
+                </SidebarProvider>
+              ) : (
+                <SidebarProvider defaultOpen={false}>
+                  <TooltipProvider delayDuration={0}>
+                    <AppSidebar
+                      activeEvents={activeEvents}
+                      activeMaintenanceCount={activeMaintenanceCount}
+                      company={company}
+                      companies={companies}
+                      consoleEnabled={
+                        consoleEnabled && (consoleMode || canEnterConsoleMode)
+                      }
+                      consoleMode={consoleMode}
+                      location={location}
+                      locations={locations}
+                      openClockEntry={openClockEntry}
+                      pinnedInUser={pinnedInUser}
+                      timeCardEnabled={timeCardEnabled}
+                      moreOpen={moreOpen}
+                      onMoreOpenChange={setMoreOpen}
+                    />
+                    {/* From lg the shell does not scroll, so the page area stops at the
+                        screen and each page's own scroller takes the overflow. */}
+                    <div
+                      data-app-card
+                      className={cn(
+                        "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
+                        showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
+                      )}
+                    >
+                      {/* A company switch stays on the same page. Without the key the page
+                          keeps its state, so a form still held the previous company's
+                          values and saving wrote them to the new one. */}
+                      <AnnouncementBar
+                        announcement={announcement}
+                        // The pinned-in operator on a console, so one
+                        // operator's dismissal is not everyone's.
+                        userId={loaderData.effectiveUserId ?? user?.id ?? ""}
+                        dismissLabel={t`Dismiss`}
+                        defaultLinkLabel={t`Learn more`}
+                      />
+                      <Outlet key={companyId} />
+                    </div>
+                    <MesTabBar
+                      activeEvents={activeEvents}
+                      activeMaintenanceCount={activeMaintenanceCount}
+                      moreOpen={moreOpen}
+                      onMoreOpenChange={setMoreOpen}
+                    />
+                    <ShortcutHelp />
+                    {user && company?.id && (
+                      <AccountSettings
+                        api={path.to.erpApi}
+                        user={user}
+                        companyId={company.id}
+                      />
                     )}
-                  >
-                    {/* A company switch stays on the same page. Without the key the page
-                        keeps its state, so a form still held the previous company's
-                        values and saving wrote them to the new one. */}
-                    <AnnouncementBar
-                      announcement={announcement}
-                      // The pinned-in operator on a console, so one
-                      // operator's dismissal is not everyone's.
-                      userId={loaderData.effectiveUserId ?? user?.id ?? ""}
-                      dismissLabel={t`Dismiss`}
-                      defaultLinkLabel={t`Learn more`}
-                    />
-                    <Outlet key={companyId} />
-                  </div>
-                  <MesTabBar
-                    activeEvents={activeEvents}
-                    activeMaintenanceCount={activeMaintenanceCount}
-                    moreOpen={moreOpen}
-                    onMoreOpenChange={setMoreOpen}
-                  />
-                  <ShortcutHelp />
-                  {user && company?.id && (
-                    <AccountSettings
-                      api={path.to.erpApi}
-                      user={user}
-                      companyId={company.id}
-                    />
-                  )}
-                  {timeCardEnabled && (
-                    <Suspense fallback={null}>
-                      <Await resolve={openClockEntry}>
-                        {(resolved) => (
-                          <TimeCardWarning
-                            openClockEntry={
-                              resolved?.data
-                                ? {
-                                    id: resolved.data.id,
-                                    clockIn: resolved.data.clockIn
-                                  }
-                                : null
-                            }
-                          />
-                        )}
-                      </Await>
-                    </Suspense>
-                  )}
-                  {scanPending && <ScanPendingOverlay />}
-                  {consoleMode && !pinnedInUser && (
-                    <PinInOverlay
-                      companyId={company.companyId!}
-                      locationEmployeeIds={locationEmployeeIds}
-                      sessionUserId={user?.id ?? ""}
-                      hasPinnedUser={false}
-                    />
-                  )}
-                  {consoleMode && pinnedInUser && (
-                    <ConsolePill
-                      user={pinnedInUser}
-                      companyId={company.companyId!}
-                      locationEmployeeIds={locationEmployeeIds}
-                      sessionUserId={user?.id ?? ""}
-                    />
-                  )}
-                </TooltipProvider>
-              </SidebarProvider>
+                    {timeCardEnabled && (
+                      <Suspense fallback={null}>
+                        <Await resolve={openClockEntry}>
+                          {(resolved) => (
+                            <TimeCardWarning
+                              openClockEntry={
+                                resolved?.data
+                                  ? {
+                                      id: resolved.data.id,
+                                      clockIn: resolved.data.clockIn
+                                    }
+                                  : null
+                              }
+                            />
+                          )}
+                        </Await>
+                      </Suspense>
+                    )}
+                    {scanPending && <ScanPendingOverlay />}
+                    {consoleMode && !pinnedInUser && (
+                      <PinInOverlay
+                        companyId={company.companyId!}
+                        locationEmployeeIds={locationEmployeeIds}
+                        sessionUserId={user?.id ?? ""}
+                        hasPinnedUser={false}
+                      />
+                    )}
+                    {consoleMode && pinnedInUser && (
+                      <ConsolePill
+                        user={pinnedInUser}
+                        companyId={company.companyId!}
+                        locationEmployeeIds={locationEmployeeIds}
+                        sessionUserId={user?.id ?? ""}
+                      />
+                    )}
+                  </TooltipProvider>
+                </SidebarProvider>
+              )}
             </RealtimeDataProvider>
           </PrintingProvider>
         </CarbonProvider>

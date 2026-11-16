@@ -725,7 +725,14 @@ export async function getAssemblyPlaybackByOperationId(
     .single();
   const instructionId = operation.data?.assemblyInstructionId;
   if (!instructionId) return null;
+  return getAssemblyPlaybackByInstructionId(client, instructionId);
+}
 
+/** The playback of one assembly instruction: its converted model and animated steps. */
+export async function getAssemblyPlaybackByInstructionId(
+  client: SupabaseClient<Database>,
+  instructionId: string
+) {
   const instruction = await client
     .from("assemblyInstruction")
     .select("id, modelUpload(glbPath, graphPath)")

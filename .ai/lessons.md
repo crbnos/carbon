@@ -4327,3 +4327,10 @@ the error set against an untouched checkout of `main`.
 **Problem:** `Combobox` and `SelectControlled` copy their `value` prop into the form with `setValue`. `useControllableValue` marks a field touched when the value differs from its default. A field with no default (Location, a unit hint, an empty id) was touched at mount, and `Submit` showed "Unsaved changes" on an untouched form. The same form then stayed touched after a save.
 **Rule:** Put each code-set value in the form's `defaultValues`. If a form stays mounted after a save, give it a `key` from the saved row, so a save starts a clean form.
 **Applies to:** Any `ValidatedForm` with a controlled `value` prop that lives on its own route.
+
+## One MES route can let the ERP frame it
+
+**Context:** The ERP shows the real MES operator screen in a modal, through an iframe.
+**Problem:** Every MES response carries `X-Frame-Options: SAMEORIGIN` (`securityMiddleware`) and CSP `frame-ancestors 'self'` (`entry.server.tsx`). Both refuse a frame from another origin.
+**Rule:** Give the one route a `headers` export with `Content-Security-Policy: frame-ancestors 'self' <origin>`. `securityMiddleware` and `entry.server` only fill headers a route did not set, and browsers follow `frame-ancestors` over `X-Frame-Options`. Never widen it in the shared middleware.
+**Applies to:** `apps/mes/app/routes/x+/preview.$operationId.tsx`, `apps/erp/app/routes/onshape+/panel.tsx`, any route another app frames.

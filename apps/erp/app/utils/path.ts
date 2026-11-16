@@ -1144,7 +1144,9 @@ export const path = {
       mesJobOperationStart: (id: string, type: "Setup" | "Labor" | "Machine") =>
         `${MES_URL}/x/start/${id}?type=${type}`,
       mesJobOperationsForJob: (jobId: string) =>
-        `${MES_URL}/x/operations?search=${encodeURIComponent(jobId)}`
+        `${MES_URL}/x/operations?search=${encodeURIComponent(jobId)}`,
+      mesOperationPreview: (methodOperationId: string) =>
+        `${MES_URL}/x/preview/${methodOperationId}`
     },
     externalCustomer: (id: string) => generatePath(`/share/customer/${id}`),
     externalCustomerFile: (id: string, path: string) =>

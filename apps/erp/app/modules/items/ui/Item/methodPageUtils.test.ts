@@ -7,6 +7,7 @@ import {
   getAdjacentLineIds,
   getMethodSearch,
   getOperationTabSources,
+  getOperationTabs,
   getPartMethodNodeLink,
   getPartMethodTab,
   isPartMethodLinePath
@@ -18,8 +19,7 @@ describe("getOperationTabSources", () => {
       instructions: "own",
       parameters: "own",
       steps: "own",
-      tools: "own",
-      preview: "own"
+      tools: "own"
     });
   });
 
@@ -30,22 +30,48 @@ describe("getOperationTabSources", () => {
       instructions: "procedure",
       parameters: "procedure",
       steps: "procedure",
-      tools: "own",
-      preview: "procedure"
+      tools: "own"
     });
   });
 
   it.each([
     ["assemblyInstructionId", "Assembly"],
     ["inspectionDocumentId", "Inspection"]
-  ])("takes only steps and preview from %s", (field, operationType) => {
+  ])("takes only steps from %s", (field, operationType) => {
     expect(getOperationTabSources({ operationType, [field]: "x" })).toEqual({
       instructions: "own",
       parameters: "own",
       steps: "linked",
-      tools: "own",
-      preview: "linked"
+      tools: "own"
     });
+  });
+
+  it("takes steps from a procedure first, whatever the type", () => {
+    expect(
+      getOperationTabSources({
+        operationType: "Assembly",
+        procedureId: "p",
+        assemblyInstructionId: "a"
+      }).steps
+    ).toBe("procedure");
+  });
+
+  it("takes steps from an assembly instruction left on a Process operation", () => {
+    expect(
+      getOperationTabSources({
+        operationType: "Process",
+        assemblyInstructionId: "a"
+      }).steps
+    ).toBe("linked");
+  });
+
+  it("ignores an inspection plan outside the Inspection type", () => {
+    expect(
+      getOperationTabSources({
+        operationType: "Process",
+        inspectionDocumentId: "d"
+      }).steps
+    ).toBe("own");
   });
 
   it("uses nothing for Outside Processing, even with a stale link", () => {
@@ -147,5 +173,50 @@ describe("getAdjacentLineIds", () => {
       previousId: null,
       nextId: null
     });
+  });
+});
+
+describe("getOperationTabSources on a mixed row", () => {
+  it("takes the steps from a procedure before an assembly instruction, as job creation does", () => {
+    expect(
+      getOperationTabSources({
+        operationType: "Assembly",
+        procedureId: "p",
+        assemblyInstructionId: "a"
+      }).steps
+    ).toBe("procedure");
+  });
+});
+
+describe("getOperationTabs", () => {
+  it("shows every tab for a Process operation", () => {
+    expect(getOperationTabs("Process")).toEqual([
+      "details",
+      "steps",
+      "parameters",
+      "instructions",
+      "tools"
+    ]);
+  });
+
+  it("drops Instructions for an Assembly operation", () => {
+    expect(getOperationTabs("Assembly")).toEqual([
+      "details",
+      "steps",
+      "parameters",
+      "tools"
+    ]);
+  });
+
+  it("keeps Details and Steps for an Inspection operation", () => {
+    expect(getOperationTabs("Inspection")).toEqual(["details", "steps"]);
+  });
+
+  it("keeps only Details for Outside Processing", () => {
+    expect(getOperationTabs("Outside Processing")).toEqual(["details"]);
+  });
+
+  it("treats a missing type as Process", () => {
+    expect(getOperationTabs(null)).toHaveLength(5);
   });
 });

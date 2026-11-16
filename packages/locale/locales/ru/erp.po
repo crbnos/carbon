@@ -154,6 +154,7 @@ msgid "{0, plural, one {# row links to data outside this company, so it can't be
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому она не может быть зарезервирована. Пропуск позволит зарезервировать все остальное.} other {# строк связаны с данными вне этой организации, поэтому они не могут быть зарезервированы. Пропуск позволит зарезервировать все остальное.}}"
 
 #. placeholder {0}: added.steps
+#. placeholder {0}: operation.methodOperationStep.length
 msgid "{0, plural, one {# step} other {# steps}}"
 msgstr "{0, plural, one {# шаг} other {# шаги}}"
 
@@ -17069,6 +17070,9 @@ msgstr "Пул операторов"
 msgid "Operator Pool Reservation"
 msgstr "Резервирование пула операторов"
 
+msgid "Operator Preview"
+msgstr ""
+
 msgid "Operator Reservation"
 msgstr "Резервирование оператора"
 
@@ -17080,6 +17084,21 @@ msgstr "Операторы"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Операторы могут использовать общие рабочие станции с аутентификацией по PIN."
+
+msgid "Operators do not see this operation. A supplier does the work."
+msgstr ""
+
+msgid "Operators get the Assembly screen, one step at a time."
+msgstr ""
+
+msgid "Operators get the Inspection screen."
+msgstr ""
+
+msgid "Operators get the Inspection screen. The characteristics come from the plan."
+msgstr ""
+
+msgid "Operators get the Operation screen."
+msgstr ""
 
 msgid "Operators start on the Scan tab"
 msgstr "Операторы начинают на вкладке Сканирование"
@@ -17259,9 +17278,6 @@ msgstr "Отклонение косвенных затрат"
 
 msgid "Outside Processing"
 msgstr "Кооперация"
-
-msgid "Outside Processing does not use this. A supplier does the work, so operators never see this operation. Change Operation Type in Details to use it."
-msgstr ""
 
 msgid "Outstanding"
 msgstr "Неоплаченные"
@@ -25029,6 +25045,12 @@ msgstr "рабочие часы рабочего центра согласно �
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Настройки этого шага — этот запуск предшествует записи использованных им значений."
 
+msgid "The steps come from the assembly instruction."
+msgstr ""
+
+msgid "The steps come from the procedure."
+msgstr ""
+
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "Размеры запасов, в которых приобретается и хранится этот материал; каждый размер становится отдельным выбираемым вариантом в производственных заказах и заказах на поставку."
 
@@ -27702,7 +27724,10 @@ msgstr "Что арендатор должен по аренде: текущая
 msgid "What the operator does and records, in order."
 msgstr ""
 
-msgid "What the operator sees for this operation in the Assembly view."
+msgid "What the operator gets"
+msgstr ""
+
+msgid "What the operator sees on the shop floor, from the saved steps. Nothing here records or starts work."
 msgstr ""
 
 msgid "What these rows mean"
@@ -28241,6 +28266,9 @@ msgstr "Списание запасов, забракованных или во�
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Уменьшение стоимости актива в течение его жизни — ежемесячная серия, которую вы создаете, рассматриваете как черновик, затем проводите."
 
+msgid "Written here"
+msgstr ""
+
 msgid "Written with a warning"
 msgstr "Написано с предупреждением"
 
@@ -28358,6 +28386,9 @@ msgstr "Вы получили этот товар"
 
 msgid "You received this lot"
 msgstr "Вы получили эту партию"
+
+msgid "You write the steps in the Steps tab."
+msgstr ""
 
 msgid "You're live on Carbon"
 msgstr "Вы работаете на Carbon"

@@ -154,6 +154,7 @@ msgid "{0, plural, one {# row links to data outside this company, so it can't be
 msgstr "{0, plural, one {# ligne se connecte à des données en dehors de cette Société, donc elle ne peut pas être sauvegardée. L'ignorer sauvegarde tout le reste.} other {# lignes se connectent à des données en dehors de cette Société, donc elles ne peuvent pas être sauvegardées. Les ignorer sauvegarde tout le reste.}}"
 
 #. placeholder {0}: added.steps
+#. placeholder {0}: operation.methodOperationStep.length
 msgid "{0, plural, one {# step} other {# steps}}"
 msgstr "{0, plural, one {# étape} other {# étapes}}"
 
@@ -17069,6 +17070,9 @@ msgstr "Pool d'opérateurs"
 msgid "Operator Pool Reservation"
 msgstr "Réservation de pool d'opérateurs"
 
+msgid "Operator Preview"
+msgstr ""
+
 msgid "Operator Reservation"
 msgstr "Réservation d'Opérateur"
 
@@ -17080,6 +17084,21 @@ msgstr "Opérateurs"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Les opérateurs peuvent utiliser des postes de travail partagés avec authentification par PIN."
+
+msgid "Operators do not see this operation. A supplier does the work."
+msgstr ""
+
+msgid "Operators get the Assembly screen, one step at a time."
+msgstr ""
+
+msgid "Operators get the Inspection screen."
+msgstr ""
+
+msgid "Operators get the Inspection screen. The characteristics come from the plan."
+msgstr ""
+
+msgid "Operators get the Operation screen."
+msgstr ""
 
 msgid "Operators start on the Scan tab"
 msgstr "Les opérateurs commencent par l'onglet Scanner"
@@ -17259,9 +17278,6 @@ msgstr "Écart de Frais Généraux"
 
 msgid "Outside Processing"
 msgstr "Sous-traitance"
-
-msgid "Outside Processing does not use this. A supplier does the work, so operators never see this operation. Change Operation Type in Details to use it."
-msgstr ""
 
 msgid "Outstanding"
 msgstr "En attente"
@@ -25029,6 +25045,12 @@ msgstr "les heures de travail de la station à partir de ses équipes, moins les
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Les paramètres de l'étape — cette exécution est antérieure à l'enregistrement des valeurs qu'elle a utilisées."
 
+msgid "The steps come from the assembly instruction."
+msgstr ""
+
+msgid "The steps come from the procedure."
+msgstr ""
+
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "Les tailles de stock dans lesquelles cette matière est achetée et stockée ; chaque taille devient une variante sélectionnable distincte sur les ordres de fabrication et les bons de commande."
 
@@ -27702,7 +27724,10 @@ msgstr "Ce que le preneur doit sur un bail : la valeur actuelle des paiements no
 msgid "What the operator does and records, in order."
 msgstr ""
 
-msgid "What the operator sees for this operation in the Assembly view."
+msgid "What the operator gets"
+msgstr ""
+
+msgid "What the operator sees on the shop floor, from the saved steps. Nothing here records or starts work."
 msgstr ""
 
 msgid "What these rows mean"
@@ -28241,6 +28266,9 @@ msgstr "Passage en perte du stock mis au rebut ou retourné par les rejets de co
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Réduire progressivement la valeur d'un bien sur sa durée de vie — un lot mensuel que vous créez, examinez en tant que brouillon, puis comptabilisez."
 
+msgid "Written here"
+msgstr ""
+
 msgid "Written with a warning"
 msgstr "Écrit avec un avertissement"
 
@@ -28358,6 +28386,9 @@ msgstr "Vous avez reçu cet article"
 
 msgid "You received this lot"
 msgstr "Vous avez reçu ce lot"
+
+msgid "You write the steps in the Steps tab."
+msgstr ""
 
 msgid "You're live on Carbon"
 msgstr "Vous êtes en direct sur Carbon"

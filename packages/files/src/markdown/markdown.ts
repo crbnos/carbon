@@ -288,6 +288,19 @@ function documentMarkdown(doc: JSONContent): string {
 }
 
 /**
+ * A step description as the document a job step stores. Job creation and the
+ * MES operator preview both use it. An object passes through, text becomes a
+ * paragraph, and an empty value becomes `{}`.
+ */
+export function toStepDocument(value: unknown): JSONContent {
+  if (value && typeof value === "object") return value as JSONContent;
+  if (typeof value === "string" && value.length > 0) {
+    return TiptapText(value, { format: "text" }).toDocument();
+  }
+  return {};
+}
+
+/**
  * Rich text in one place: give it a stored document, a document encoded as
  * text, or text, and ask for the form you need.
  *

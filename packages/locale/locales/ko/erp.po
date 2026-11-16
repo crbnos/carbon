@@ -154,6 +154,7 @@ msgid "{0, plural, one {# row links to data outside this company, so it can't be
 msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어 있어서 백업할 수 없습니다. 이를 건너뛰면 다른 모든 것이 백업됩니다.} other {# 행은 이 회사 외부의 데이터에 연결되어 있어서 백업할 수 없습니다. 이를 건너뛰면 다른 모든 것이 백업됩니다.}}"
 
 #. placeholder {0}: added.steps
+#. placeholder {0}: operation.methodOperationStep.length
 msgid "{0, plural, one {# step} other {# steps}}"
 msgstr "{0, plural, one {# 단계} other {# 단계}}"
 
@@ -17069,6 +17070,9 @@ msgstr "작업자 풀"
 msgid "Operator Pool Reservation"
 msgstr "작업자 풀 예약"
 
+msgid "Operator Preview"
+msgstr ""
+
 msgid "Operator Reservation"
 msgstr "작업자 예약"
 
@@ -17080,6 +17084,21 @@ msgstr "작업자"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "작업자는 PIN 인증을 통해 공유 워크스테이션을 사용할 수 있습니다."
+
+msgid "Operators do not see this operation. A supplier does the work."
+msgstr ""
+
+msgid "Operators get the Assembly screen, one step at a time."
+msgstr ""
+
+msgid "Operators get the Inspection screen."
+msgstr ""
+
+msgid "Operators get the Inspection screen. The characteristics come from the plan."
+msgstr ""
+
+msgid "Operators get the Operation screen."
+msgstr ""
 
 msgid "Operators start on the Scan tab"
 msgstr "작업자가 스캔 탭에서 시작"
@@ -17259,9 +17278,6 @@ msgstr "외주 공정작업"
 
 msgid "Outside Processing"
 msgstr "외주 가공"
-
-msgid "Outside Processing does not use this. A supplier does the work, so operators never see this operation. Change Operation Type in Details to use it."
-msgstr ""
 
 msgid "Outstanding"
 msgstr "미해결"
@@ -25029,6 +25045,12 @@ msgstr "그 작업장의 교대조로부터의 근무 시간(휴일 및 오프�
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "단계의 설정입니다 — 이 실행은 사용한 값을 기록하기 전의 것입니다."
 
+msgid "The steps come from the assembly instruction."
+msgstr ""
+
+msgid "The steps come from the procedure."
+msgstr ""
+
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "이 자재를 구매하고 보관하는 재고 크기입니다. 각 크기는 작업 지시 및 발주서에서 별도의 선택 가능한 변형이 됩니다."
 
@@ -27702,7 +27724,10 @@ msgstr "리스이용자가 리스에 대해 부담하는 금액: 아직 지불�
 msgid "What the operator does and records, in order."
 msgstr ""
 
-msgid "What the operator sees for this operation in the Assembly view."
+msgid "What the operator gets"
+msgstr ""
+
+msgid "What the operator sees on the shop floor, from the saved steps. Nothing here records or starts work."
 msgstr ""
 
 msgid "What these rows mean"
@@ -28241,6 +28266,9 @@ msgstr "검사 거부 및 NCR 처분 결정을 통해 폐기되거나 반품된 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "자산의 가치를 내용연수에 걸쳐 상각하는 것 — 매월 생성하여 초안으로 검토한 후 전기하는 배치 작업입니다."
 
+msgid "Written here"
+msgstr ""
+
 msgid "Written with a warning"
 msgstr "경고와 함께 작성됨"
 
@@ -28358,6 +28386,9 @@ msgstr "이 품목을 입고받았습니다"
 
 msgid "You received this lot"
 msgstr "이 로트를 입고받았습니다"
+
+msgid "You write the steps in the Steps tab."
+msgstr ""
 
 msgid "You're live on Carbon"
 msgstr "Carbon 도입 완료"

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Badge, Td, Th } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { LuWorkflow } from "react-icons/lu";
 import { Link, useLocation, useNavigate } from "react-router";
 import { useWorkCenters } from "~/components/Form/WorkCenters";
@@ -148,21 +148,28 @@ export function BillOfProcessTable({
             </Td>
             <Td className="whitespace-nowrap px-2 tabular-nums @max-[40rem]:hidden">
               {sources.steps === "procedure" ? (
-                <Badge variant="secondary">
-                  <Trans>Procedure</Trans>
-                </Badge>
+                <Trans>Procedure</Trans>
               ) : sources.steps === "linked" ? (
-                <Badge variant="secondary">
-                  {operation.assemblyInstructionId ? (
-                    <Trans>Assembly Instruction</Trans>
-                  ) : (
-                    <Trans>Inspection Plan</Trans>
-                  )}
-                </Badge>
+                operation.assemblyInstructionId ? (
+                  <Trans>Assembly Instruction</Trans>
+                ) : (
+                  <Trans>Inspection Plan</Trans>
+                )
               ) : sources.steps === "notUsed" ? (
                 "—"
               ) : (
-                operation.methodOperationStep.length
+                <div className="flex flex-col leading-tight">
+                  <span>
+                    <Plural
+                      value={operation.methodOperationStep.length}
+                      one="# step"
+                      other="# steps"
+                    />
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    <Trans>Written here</Trans>
+                  </span>
+                </div>
               )}
             </Td>
             <Td className="whitespace-nowrap px-2 tabular-nums @max-[48rem]:hidden">

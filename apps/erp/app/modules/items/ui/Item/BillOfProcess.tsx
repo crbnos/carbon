@@ -73,6 +73,7 @@ import {
   LuLock,
   LuMaximize2,
   LuMinimize2,
+  LuMonitor,
   LuSquareFunction,
   LuTrash,
   LuTriangleAlert,
@@ -169,6 +170,8 @@ import type {
   MakeMethod
 } from "../../types";
 import { OperationRowDetails, OperationRowTitle } from "./MethodRow";
+import type { OperationTabSource } from "./methodPageUtils";
+import { getOperationTabSources } from "./methodPageUtils";
 import type { ReleaseLockProps } from "./ReleaseLockAlert";
 import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
 
@@ -1007,12 +1010,6 @@ export function OperationForm({
     }
   }, [item.id, methodOperationFetcher.data, setTemporaryItems, onSubmit]);
 
-  const machineDisclosure = useDisclosure();
-  const laborDisclosure = useDisclosure();
-  const assemblyDisclosure = useDisclosure();
-  const setupDisclosure = useDisclosure();
-  const procedureDisclosure = useDisclosure();
-
   const [processData, setProcessData] = useState<{
     description: string;
     laborTime: number;
@@ -1359,48 +1356,94 @@ export function OperationForm({
         />
       </div>
 
+      <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+        <HStack>
+          <LuMonitor />
+          <Label>
+            <Trans>What the operator gets</Trans>
+          </Label>
+        </HStack>
+        {(processData.operationType === "Process" ||
+          !!processData.procedureId) && (
+          <Procedure
+            name="procedureId"
+            label={t`Procedure`}
+            processId={processData.processId}
+            value={processData.procedureId}
+            isConfigured={rulesByField.has(key("procedureId"))}
+            onConfigure={
+              configurable && !temporaryItems[item.id]
+                ? () => {
+                    onConfigure({
+                      label: t`Procedure`,
+                      field: key("procedureId"),
+                      code: rulesByField.get(key("procedureId"))?.code,
+                      defaultValue: processData.procedureId,
+                      returnType: {
+                        type: "text",
+                        helperText:
+                          "the unique identifier for the procedure. you can get this from the URL when editing a procedure"
+                      }
+                    });
+                  }
+                : undefined
+            }
+            onChange={(value) => {
+              setProcessData((d) => ({
+                ...d,
+                procedureId: value?.value as string
+              }));
+            }}
+          />
+        )}
+        {(processData.operationType === "Assembly" ||
+          !!processData.assemblyInstructionId) && (
+          <AssemblyInstruction
+            name="assemblyInstructionId"
+            label={t`Assembly Instruction`}
+            itemId={itemId}
+            value={processData.assemblyInstructionId}
+            onChange={(value) => {
+              setProcessData((d) => ({
+                ...d,
+                assemblyInstructionId: value?.value as string
+              }));
+            }}
+          />
+        )}
+        {processData.operationType === "Inspection" && (
+          <InspectionDocument
+            name="inspectionDocumentId"
+            label={t`Inspection Plan`}
+            isOptional={false}
+            itemId={itemId}
+            value={processData.inspectionDocumentId}
+            onChange={(value) => {
+              setProcessData((d) => ({
+                ...d,
+                inspectionDocumentId: value?.value as string
+              }));
+            }}
+          />
+        )}
+        <p className="text-sm text-muted-foreground">
+          <OperatorSentence
+            operationType={processData.operationType}
+            stepSource={getOperationTabSources(processData).steps}
+          />
+        </p>
+      </div>
+
       {processData.operationType !== "Outside Processing" && (
         <>
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-            <HStack
-              className="w-full justify-between cursor-pointer"
-              onClick={setupDisclosure.onToggle}
-            >
-              <HStack>
-                <TimeTypeIcon type="Setup" />
-                <Label>
-                  <Trans>Setup</Trans>
-                </Label>
-              </HStack>
-              <HStack>
-                {(processData.setupTime ?? 0) > 0 && (
-                  <Badge variant="secondary">
-                    <TimeTypeIcon type="Setup" className="h-3 w-3 mr-1" />
-                    {processData.setupTime} {processData.setupUnit}
-                  </Badge>
-                )}
-                <IconButton
-                  icon={<LuChevronRight />}
-                  aria-label={
-                    setupDisclosure.isOpen ? t`Collapse Setup` : t`Expand Setup`
-                  }
-                  variant="ghost"
-                  size="md"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setupDisclosure.onToggle();
-                  }}
-                  className={`transition-transform ${
-                    setupDisclosure.isOpen ? "rotate-90" : ""
-                  }`}
-                />
-              </HStack>
+            <HStack>
+              <TimeTypeIcon type="Setup" />
+              <Label>
+                <Trans>Setup</Trans>
+              </Label>
             </HStack>
-            <div
-              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                setupDisclosure.isOpen ? "" : "hidden"
-              }`}
-            >
+            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
               <UnitHint
                 name="setupHint"
                 label={t`Setup`}
@@ -1477,45 +1520,13 @@ export function OperationForm({
           </div>
 
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-            <HStack
-              className="w-full justify-between cursor-pointer"
-              onClick={laborDisclosure.onToggle}
-            >
-              <HStack>
-                <TimeTypeIcon type="Labor" />
-                <Label>
-                  <Trans>Labor</Trans>
-                </Label>
-              </HStack>
-              <HStack>
-                {(processData.laborTime ?? 0) > 0 && (
-                  <Badge variant="secondary">
-                    <TimeTypeIcon type="Labor" className="h-3 w-3 mr-1" />
-                    {processData.laborTime} {processData.laborUnit}
-                  </Badge>
-                )}
-                <IconButton
-                  icon={<LuChevronRight />}
-                  aria-label={
-                    laborDisclosure.isOpen ? t`Collapse Labor` : t`Expand Labor`
-                  }
-                  variant="ghost"
-                  size="md"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    laborDisclosure.onToggle();
-                  }}
-                  className={`transition-transform ${
-                    laborDisclosure.isOpen ? "rotate-90" : ""
-                  }`}
-                />
-              </HStack>
+            <HStack>
+              <TimeTypeIcon type="Labor" />
+              <Label>
+                <Trans>Labor</Trans>
+              </Label>
             </HStack>
-            <div
-              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                laborDisclosure.isOpen ? "" : "hidden"
-              }`}
-            >
+            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
               <UnitHint
                 name="laborHint"
                 label={t`Labor`}
@@ -1592,47 +1603,13 @@ export function OperationForm({
           </div>
           {processData.operationType === "Process" && (
             <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-              <HStack
-                className="w-full justify-between cursor-pointer"
-                onClick={machineDisclosure.onToggle}
-              >
-                <HStack>
-                  <TimeTypeIcon type="Machine" />
-                  <Label>
-                    <Trans>Machine</Trans>
-                  </Label>
-                </HStack>
-                <HStack>
-                  {(processData?.machineTime ?? 0) > 0 && (
-                    <Badge variant="secondary">
-                      <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
-                      {processData.machineTime} {processData.machineUnit}
-                    </Badge>
-                  )}
-                  <IconButton
-                    icon={<LuChevronRight />}
-                    aria-label={
-                      machineDisclosure.isOpen
-                        ? t`Collapse Machine`
-                        : t`Expand Machine`
-                    }
-                    variant="ghost"
-                    size="md"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      machineDisclosure.onToggle();
-                    }}
-                    className={`transition-transform ${
-                      machineDisclosure.isOpen ? "rotate-90" : ""
-                    }`}
-                  />
-                </HStack>
+              <HStack>
+                <TimeTypeIcon type="Machine" />
+                <Label>
+                  <Trans>Machine</Trans>
+                </Label>
               </HStack>
-              <div
-                className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                  machineDisclosure.isOpen ? "" : "hidden"
-                }`}
-              >
+              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                 <UnitHint
                   name="machineHint"
                   label={t`Machine`}
@@ -1708,176 +1685,6 @@ export function OperationForm({
               </div>
             </div>
           )}
-
-          {processData.operationType === "Process" && (
-            <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-              <HStack
-                className="w-full justify-between cursor-pointer"
-                onClick={procedureDisclosure.onToggle}
-              >
-                <HStack>
-                  <LuListChecks />
-                  <Label>Procedure</Label>
-                </HStack>
-                <HStack>
-                  {processData.procedureId && (
-                    <Badge variant="secondary">
-                      <LuListChecks className="h-3 w-3 mr-1" />
-                      Procedure
-                    </Badge>
-                  )}
-                  <IconButton
-                    icon={<LuChevronRight />}
-                    aria-label={
-                      procedureDisclosure.isOpen
-                        ? "Collapse Procedure"
-                        : "Expand Procedure"
-                    }
-                    variant="ghost"
-                    size="md"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      procedureDisclosure.onToggle();
-                    }}
-                    className={`transition-transform ${
-                      procedureDisclosure.isOpen ? "rotate-90" : ""
-                    }`}
-                  />
-                </HStack>
-              </HStack>
-              <div
-                className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4 ${
-                  procedureDisclosure.isOpen ? "" : "hidden"
-                }`}
-              >
-                <Procedure
-                  name="procedureId"
-                  label={t`Procedure`}
-                  processId={processData.processId}
-                  value={processData.procedureId}
-                  isConfigured={rulesByField.has(key("procedureId"))}
-                  onConfigure={
-                    configurable && !temporaryItems[item.id]
-                      ? () => {
-                          onConfigure({
-                            label: t`Procedure`,
-                            field: key("procedureId"),
-                            code: rulesByField.get(key("procedureId"))?.code,
-                            defaultValue: processData.procedureId,
-                            returnType: {
-                              type: "text",
-                              helperText:
-                                "the unique identifier for the procedure. you can get this from the URL when editing a procedure"
-                            }
-                          });
-                        }
-                      : undefined
-                  }
-                  onChange={(value) => {
-                    setProcessData((d) => ({
-                      ...d,
-                      procedureId: value?.value as string
-                    }));
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {processData.operationType === "Assembly" && (
-            <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-              <HStack
-                className="w-full justify-between cursor-pointer"
-                onClick={assemblyDisclosure.onToggle}
-              >
-                <HStack>
-                  <OperationTypeIcon type="Assembly" />
-                  <Label>Assembly Instruction</Label>
-                </HStack>
-                <HStack>
-                  {processData.assemblyInstructionId && (
-                    <Badge variant="secondary">
-                      <OperationTypeIcon
-                        type="Assembly"
-                        className="h-3 w-3 mr-1"
-                      />
-                      Assembly Instruction
-                    </Badge>
-                  )}
-                  <IconButton
-                    icon={<LuChevronRight />}
-                    aria-label={
-                      assemblyDisclosure.isOpen
-                        ? "Collapse Assembly Instruction"
-                        : "Expand Assembly Instruction"
-                    }
-                    variant="ghost"
-                    size="md"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      assemblyDisclosure.onToggle();
-                    }}
-                    className={`transition-transform ${
-                      assemblyDisclosure.isOpen ? "rotate-90" : ""
-                    }`}
-                  />
-                </HStack>
-              </HStack>
-              <div
-                className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4 ${
-                  assemblyDisclosure.isOpen ? "" : "hidden"
-                }`}
-              >
-                <AssemblyInstruction
-                  name="assemblyInstructionId"
-                  label={t`Assembly Instruction`}
-                  itemId={itemId}
-                  value={processData.assemblyInstructionId}
-                  onChange={(value) => {
-                    setProcessData((d) => ({
-                      ...d,
-                      assemblyInstructionId: value?.value as string
-                    }));
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {processData.operationType === "Inspection" && (
-            <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-              <HStack className="w-full justify-between">
-                <HStack>
-                  <OperationTypeIcon type="Inspection" />
-                  <Label>Inspection Plan</Label>
-                </HStack>
-                {processData.inspectionDocumentId && (
-                  <Badge variant="secondary">
-                    <OperationTypeIcon
-                      type="Inspection"
-                      className="h-3 w-3 mr-1"
-                    />
-                    Inspection Plan
-                  </Badge>
-                )}
-              </HStack>
-              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4">
-                <InspectionDocument
-                  name="inspectionDocumentId"
-                  label={t`Inspection Plan`}
-                  isOptional={false}
-                  itemId={itemId}
-                  value={processData.inspectionDocumentId}
-                  onChange={(value) => {
-                    setProcessData((d) => ({
-                      ...d,
-                      inspectionDocumentId: value?.value as string
-                    }));
-                  }}
-                />
-              </div>
-            </div>
-          )}
         </>
       )}
       <motion.div
@@ -1900,6 +1707,54 @@ export function OperationForm({
         </motion.div>
       </motion.div>
     </ValidatedForm>
+  );
+}
+
+/** One plain sentence: which shop floor screen the operator gets, and where its steps come from. */
+/**
+ * What the operator gets, said in the words the job uses: the screen of the
+ * type, then where the steps come from (`getOperationTabSources`, the same
+ * rule as the Steps tab, the preview and job creation).
+ */
+function OperatorSentence({
+  operationType,
+  stepSource
+}: {
+  operationType: string;
+  stepSource: OperationTabSource;
+}) {
+  if (operationType === "Outside Processing") {
+    return (
+      <Trans>
+        Operators do not see this operation. A supplier does the work.
+      </Trans>
+    );
+  }
+  if (operationType === "Inspection" && stepSource !== "procedure") {
+    return (
+      <Trans>
+        Operators get the Inspection screen. The characteristics come from the
+        plan.
+      </Trans>
+    );
+  }
+  return (
+    <>
+      {operationType === "Assembly" ? (
+        <Trans>Operators get the Assembly screen, one step at a time.</Trans>
+      ) : operationType === "Inspection" ? (
+        <Trans>Operators get the Inspection screen.</Trans>
+      ) : (
+        <Trans>Operators get the Operation screen.</Trans>
+      )}{" "}
+      {stepSource === "procedure" ? (
+        <Trans>The steps come from the procedure.</Trans>
+      ) : stepSource === "linked" ? (
+        <Trans>The steps come from the assembly instruction.</Trans>
+      ) : (
+        <Trans>You write the steps in the Steps tab.</Trans>
+      )}
+    </>
   );
 }
 

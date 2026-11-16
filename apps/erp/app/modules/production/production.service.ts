@@ -101,7 +101,7 @@ import {
 } from "@carbon/database/supersession-pick";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
-import { TiptapText } from "@carbon/files/markdown";
+import { TiptapText, toStepDocument } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
 import type { JobSource } from "@carbon/lib/telemetry";
 import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
@@ -133,6 +133,10 @@ import {
   datetime,
   debit,
   getErrorMessage,
+  getInstructionJobSteps,
+  getInstructionMaterialLinks,
+  getInstructionStepSlides,
+  getInstructionTools,
   groupBy,
   HOUR_MS,
   isUniqueViolation,
@@ -13913,11 +13917,7 @@ const getMethodLogger = getLogger("erp", "get-method");
  * pass through, strings are wrapped, and null/empty become {}.
  */
 function toTiptapDoc(value: unknown): Json {
-  if (value && typeof value === "object") return value as Json;
-  if (typeof value === "string" && value.length > 0) {
-    return TiptapText(value, { format: "text" }).toDocument() as Json;
-  }
-  return {};
+  return toStepDocument(value) as Json;
 }
 
 // quoteLine's jsonb columns — run through toJsonColumns() in quoteToQuote's per-line copy.
@@ -22915,65 +22915,36 @@ async function insertAssemblyDataForJobOperation(
 
   if (!instruction) return new Set<string>();
 
-  // A sub-assembly (header) row is not a build action, so it never becomes a
-  // job step; its member steps are copied in play order like any other.
-  const sourceSteps = (instruction.assemblyInstructionStep ?? [])
-    .filter((step) => !step.isSubAssembly)
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-  if (sourceSteps.length === 0) return new Set<string>();
+  // Every caller runs this on a job operation it has just inserted, with no
+  // procedure, so the instruction's steps are the operation's only steps.
+  const jobSteps = getInstructionJobSteps(
+    instruction.assemblyInstructionStep ?? []
+  );
+  if (jobSteps.length === 0) return new Set<string>();
 
-  const sourceStepIds = sourceSteps.map((step) => step.id);
+  const sourceStepIds = jobSteps.map((step) => step.assemblyInstructionStepId);
   const sourceSlides = await selectRows(
     trx,
     "assemblyInstructionStepSlide",
     { stepId: sourceStepIds, companyId },
     { orderBy: ["sortOrder"] }
   );
-  const sourceTools = await selectRows(trx, "assemblyInstructionStepTool", {
-    stepId: sourceStepIds,
-    companyId
-  });
-  const slidesByStep = new Map<string, typeof sourceSlides>();
-  for (const slide of sourceSlides) {
-    const list = slidesByStep.get(slide.stepId) ?? [];
-    list.push(slide);
-    slidesByStep.set(slide.stepId, list);
-  }
-  const toolsByStep = new Map<string, { itemId: string; quantity: number }[]>();
-  for (const tool of sourceTools) {
-    const list = toolsByStep.get(tool.stepId) ?? [];
-    list.push({ itemId: tool.itemId, quantity: tool.quantity ?? 1 });
-    toolsByStep.set(tool.stepId, list);
-  }
-
-  // The operation's own steps (its procedure's, inserted before this) number
-  // from 1 as well: the instruction's steps follow them, or the two interleave.
-  const ownSteps = await trx
-    .selectFrom("jobOperationStep")
-    .select((eb) => eb.fn.max("sortOrder").as("lastSortOrder"))
-    .where("operationId", "=", operationId)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  const firstSortOrder = Number(ownSteps?.lastSortOrder ?? 0) + 1;
+  const instructionTools = getInstructionTools(
+    await selectRows(trx, "assemblyInstructionStepTool", {
+      stepId: sourceStepIds,
+      companyId
+    })
+  );
 
   // Correlate inserted job steps back to their source steps via the provenance
   // column, not row order.
   const insertedSteps = await trx
     .insertInto("jobOperationStep")
     .values(
-      sourceSteps.map((source, index) => ({
+      jobSteps.map((step) => ({
+        ...step,
+        description: toTiptapDoc(step.description),
         operationId,
-        name: source.title || `Step ${index + 1}`,
-        type: source.type ?? "Task",
-        description: toTiptapDoc(source.description ?? source.instructionText),
-        required: source.required ?? false,
-        unitOfMeasureCode: source.unitOfMeasureCode,
-        minValue: source.minValue,
-        maxValue: source.maxValue,
-        listValues: source.listValues,
-        fileTypes: source.fileTypes,
-        sortOrder: firstSortOrder + index,
-        assemblyInstructionStepId: source.id,
         companyId,
         createdBy: userId
       }))
@@ -22984,71 +22955,26 @@ async function insertAssemblyDataForJobOperation(
     insertedSteps.map((step) => [step.assemblyInstructionStepId, step.id])
   );
 
-  // Per-step slides: the instruction's 3D model leads as a model slide,
-  // followed by the step's authored slides (image XOR model, with captions,
-  // sizes, and annotation pins).
-  const slideRows: {
-    stepId: string;
-    imagePath: string | null;
-    modelUploadId: string | null;
-    caption: string | null;
-    sortOrder: number;
-    size: string;
-    annotations: string;
-    companyId: string;
-    createdBy: string;
-  }[] = [];
-  for (const source of sourceSteps) {
-    const targetStepId = targetIdBySource.get(source.id);
-    if (!targetStepId) continue;
-    const authored = slidesByStep.get(source.id) ?? [];
-    const modelUploadId = instruction.modelUploadId;
-    if (
-      modelUploadId &&
-      !authored.some((slide) => slide.modelUploadId === modelUploadId)
-    ) {
-      slideRows.push({
-        stepId: targetStepId,
-        imagePath: null,
-        modelUploadId,
-        caption: null,
-        sortOrder: 0,
-        size: "medium",
-        annotations: JSON.stringify([]),
-        companyId,
-        createdBy: userId
-      });
-    }
-    for (const slide of authored) {
-      slideRows.push({
-        stepId: targetStepId,
-        imagePath: slide.imagePath,
-        modelUploadId: slide.modelUploadId,
-        caption: slide.caption,
-        sortOrder: slide.sortOrder ?? 1,
-        size: slide.size ?? "medium",
-        annotations: JSON.stringify(slide.annotations ?? []),
-        companyId,
-        createdBy: userId
-      });
-    }
-  }
+  const slideRows = jobSteps.flatMap((step) => {
+    const targetStepId = targetIdBySource.get(step.assemblyInstructionStepId);
+    if (!targetStepId) return [];
+    return getInstructionStepSlides(
+      step.assemblyInstructionStepId,
+      sourceSlides,
+      instruction.modelUploadId
+    ).map((slide) => ({
+      ...slide,
+      stepId: targetStepId,
+      annotations: JSON.stringify(slide.annotations),
+      companyId,
+      createdBy: userId
+    }));
+  });
   if (slideRows.length > 0) {
     await trx.insertInto("jobOperationStepSlide").values(slideRows).execute();
   }
 
-  // Per-step tools: one jobOperationTool row per distinct tool item (quantity =
-  // max across steps) plus the tool ↔ step scope links.
-  const maxQuantityByItemId = new Map<string, number>();
-  for (const tools of toolsByStep.values()) {
-    for (const tool of tools) {
-      maxQuantityByItemId.set(
-        tool.itemId,
-        Math.max(maxQuantityByItemId.get(tool.itemId) ?? 0, tool.quantity)
-      );
-    }
-  }
-  if (maxQuantityByItemId.size > 0) {
+  if (instructionTools.length > 0) {
     // The operation may already carry rows for these tools (the quote → job
     // direction copies quoteOperationTool BEFORE this runs). Link steps to the
     // existing row instead of inserting a duplicate the MES would list twice.
@@ -23060,17 +22986,17 @@ async function insertAssemblyDataForJobOperation(
     const toolRowIdByItemId = new Map(
       existingTools.map((tool) => [tool.toolId, tool.id])
     );
-    const missingTools = [...maxQuantityByItemId.entries()].filter(
-      ([itemId]) => !toolRowIdByItemId.has(itemId)
+    const missingTools = instructionTools.filter(
+      (tool) => !toolRowIdByItemId.has(tool.itemId)
     );
     if (missingTools.length > 0) {
       const insertedTools = await trx
         .insertInto("jobOperationTool")
         .values(
-          missingTools.map(([itemId, quantity]) => ({
+          missingTools.map((tool) => ({
             operationId,
-            toolId: itemId,
-            quantity,
+            toolId: tool.itemId,
+            quantity: tool.quantity,
             companyId,
             createdBy: userId
           }))
@@ -23081,23 +23007,15 @@ async function insertAssemblyDataForJobOperation(
         toolRowIdByItemId.set(tool.toolId, tool.id);
       }
     }
-    const toolLinkRows: {
-      jobOperationToolId: string;
-      jobOperationStepId: string;
-    }[] = [];
-    for (const source of sourceSteps) {
-      const targetStepId = targetIdBySource.get(source.id);
-      if (!targetStepId) continue;
-      for (const tool of toolsByStep.get(source.id) ?? []) {
+    const toolLinkRows = instructionTools.flatMap((tool) =>
+      tool.stepIds.flatMap((stepId) => {
+        const jobOperationStepId = targetIdBySource.get(stepId);
         const jobOperationToolId = toolRowIdByItemId.get(tool.itemId);
-        if (jobOperationToolId) {
-          toolLinkRows.push({
-            jobOperationToolId,
-            jobOperationStepId: targetStepId
-          });
-        }
-      }
-    }
+        return jobOperationStepId && jobOperationToolId
+          ? [{ jobOperationToolId, jobOperationStepId }]
+          : [];
+      })
+    );
     if (toolLinkRows.length > 0) {
       await trx
         .insertInto("jobOperationToolStep")
@@ -23108,7 +23026,7 @@ async function insertAssemblyDataForJobOperation(
   // Tool ids the instruction accounts for — the method → job copy paths filter
   // methodOperationTool by this set so the same tool isn't inserted a second
   // time (unlinked, so the MES would show it on every step AND on its step).
-  return new Set(maxQuantityByItemId.keys());
+  return new Set(instructionTools.map((tool) => tool.itemId));
 }
 
 // Post-materials pass: link the assembly-materialized job steps to the job's
@@ -23150,28 +23068,25 @@ async function linkAssemblyStepMaterialsForJobOperations(
 
     const jobMaterials = await trx
       .selectFrom("jobMaterial")
-      .select(["id", "itemId"])
+      .select(["id", "itemId", "order"])
       .where("jobMakeMethodId", "=", operation.jobMakeMethodId)
       .where("companyId", "=", companyId)
       .execute();
-    const materialIdByItemId = new Map(
-      jobMaterials.map((material) => [material.itemId, material.id])
-    );
     const jobStepBySourceStep = new Map(
       steps.map((step) => [step.assemblyInstructionStepId as string, step.id])
     );
 
-    const linkRows = stepMaterials.flatMap((link) => {
+    const linkRows = getInstructionMaterialLinks(
+      stepMaterials,
+      jobMaterials
+    ).flatMap((link) => {
       const jobOperationStepId = jobStepBySourceStep.get(link.stepId);
-      const jobMaterialId = link.itemId
-        ? materialIdByItemId.get(link.itemId)
-        : undefined;
-      return jobOperationStepId && jobMaterialId
+      return jobOperationStepId
         ? [
             {
-              jobMaterialId,
+              jobMaterialId: link.materialId,
               jobOperationStepId,
-              quantity: link.quantity ?? null
+              quantity: link.quantity
             }
           ]
         : [];

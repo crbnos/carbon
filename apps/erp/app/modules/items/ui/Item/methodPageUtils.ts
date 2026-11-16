@@ -18,7 +18,6 @@ export type OperationTabSources = {
   parameters: OperationTabSource;
   steps: OperationTabSource;
   tools: OperationTabSource;
-  preview: OperationTabSource;
 };
 
 export function getOperationTabSources(operation: {
@@ -32,14 +31,19 @@ export function getOperationTabSources(operation: {
       instructions: "notUsed",
       parameters: "notUsed",
       steps: "notUsed",
-      tools: "notUsed",
-      preview: "notUsed"
+      tools: "notUsed"
     };
   }
 
+  // Job creation copies a linked procedure first, whatever the type
+  // (`insertProcedureDataForJobOperation` in production.service.ts).
   const fromProcedure = !!operation.procedureId;
+  // Jobs copy an assembly instruction's steps for any type; an inspection
+  // plan replaces the steps only on the Inspection screen.
   const fromLinkedDocument =
-    !!operation.assemblyInstructionId || !!operation.inspectionDocumentId;
+    !!operation.assemblyInstructionId ||
+    (operation.operationType === "Inspection" &&
+      !!operation.inspectionDocumentId);
   const steps: OperationTabSource = fromProcedure
     ? "procedure"
     : fromLinkedDocument
@@ -50,9 +54,31 @@ export function getOperationTabSources(operation: {
     instructions: fromProcedure ? "procedure" : "own",
     parameters: fromProcedure ? "procedure" : "own",
     steps,
-    tools: "own",
-    preview: steps
+    tools: "own"
   };
+}
+
+/** The tabs of an opened operation: only what the operator screen of the type uses. */
+export type OperationTab =
+  | "details"
+  | "steps"
+  | "parameters"
+  | "instructions"
+  | "tools";
+
+export function getOperationTabs(
+  operationType?: string | null
+): OperationTab[] {
+  switch (operationType) {
+    case "Outside Processing":
+      return ["details"];
+    case "Inspection":
+      return ["details", "steps"];
+    case "Assembly":
+      return ["details", "steps", "parameters", "tools"];
+    default:
+      return ["details", "steps", "parameters", "instructions", "tools"];
+  }
 }
 
 export type PartMethodTab = "bill-of-material" | "bill-of-process";
