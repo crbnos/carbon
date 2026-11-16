@@ -12,6 +12,10 @@ import {
   makeCompanyPermissionsFromClaims,
   makeCompanyPermissionsFromEmployeeType
 } from "@carbon/ee/permissions.server";
+import {
+  getScimManagedUserIds,
+  getScimOwnedFields
+} from "@carbon/ee/scim.server";
 import { validator } from "@carbon/form";
 import {
   Modal,
@@ -92,11 +96,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const client = getCarbonServiceRole();
 
-  const [rawClaims, employee, employeeTypes] = await Promise.all([
-    getClaims(client, employeeId, companyId),
-    getEmployee(client, employeeId, companyId),
-    getEmployeeTypes(client, companyId)
-  ]);
+  const [rawClaims, employee, employeeTypes, scimManaged, scimOwned] =
+    await Promise.all([
+      getClaims(client, employeeId, companyId),
+      getEmployee(client, employeeId, companyId),
+      getEmployeeTypes(client, companyId),
+      getScimManagedUserIds(client, companyId, [employeeId]),
+      getScimOwnedFields(client, companyId, employeeId)
+    ]);
 
   if (rawClaims.error || employee.error || rawClaims.data === null) {
     redirect(
@@ -144,7 +151,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     permissions: claims?.permissions,
     employee: employee.data,
     employeeTypes: types,
-    employeeTypePermissions
+    employeeTypePermissions,
+    // A failed read only hides the note; the drawer still works.
+    isScimManaged: scimManaged.data.includes(employeeId),
+    // The save refuses a type change too; this only shows it.
+    isTypeSetByScim: scimOwned.data.employeeType
   };
 }
 
@@ -165,8 +176,14 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function UsersEmployeeRoute() {
-  const { permissions, employee, employeeTypes, employeeTypePermissions } =
-    useLoaderData<typeof loader>();
+  const {
+    permissions,
+    employee,
+    employeeTypes,
+    employeeTypePermissions,
+    isScimManaged,
+    isTypeSetByScim
+  } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "PERMISSIONS" });
 
   if (isGated) {
@@ -185,6 +202,8 @@ export default function UsersEmployeeRoute() {
       name={employee?.name || ""}
       employeeTypes={employeeTypes}
       employeeTypePermissions={employeeTypePermissions}
+      isScimManaged={isScimManaged}
+      isTypeSetByScim={isTypeSetByScim}
       // @ts-expect-error
       initialValues={initialValues}
     />

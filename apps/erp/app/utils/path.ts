@@ -2683,6 +2683,7 @@ export const path = {
     saveViews: `${x}/shared/views`,
     scheduleForecast: `${x}/scheduling/forecast`,
     scheduleOutbound: `${x}/scheduling/outbound`,
+    scim: `${x}/settings/scim`,
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),
     scrapReasons: `${x}/production/scrap-reasons`,

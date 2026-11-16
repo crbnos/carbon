@@ -4,6 +4,7 @@
 
 import { error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
+import { getScimManagedUserIds } from "@carbon/ee/scim.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -34,11 +35,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     bypassRls: true,
     // The invites and the MFA users cover the whole company, so page 1 has them.
     firstPage: async ({ client, companyId }) => {
-      const [employeeTypes, invites, mfaUsers] = await Promise.all([
-        getEmployeeTypes(client, companyId),
-        getUnrevokedInviteEmails(client, companyId),
-        getUsersWithVerifiedMfa(client, companyId)
-      ]);
+      const [employeeTypes, invites, mfaUsers, scimManaged] = await Promise.all(
+        [
+          getEmployeeTypes(client, companyId),
+          getUnrevokedInviteEmails(client, companyId),
+          getUsersWithVerifiedMfa(client, companyId),
+          getScimManagedUserIds(client, companyId)
+        ]
+      );
+      if (scimManaged.error) {
+        logger.error("Failed to load the people SCIM manages", {
+          error: scimManaged.error,
+          companyId
+        });
+      }
 
       if (mfaUsers.error) {
         logger.error("Failed to load MFA status for employees", {
@@ -67,7 +77,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
           ? []
           : ((mfaUsers.data as { userId: string }[] | null)?.map(
               (r) => r.userId
-            ) ?? [])
+            ) ?? []),
+        scimManagedUserIds: scimManaged.data
       };
     },
     onError: { redirectTo: path.to.users, message: "Error loading employees" }
@@ -81,7 +92,8 @@ export default function UsersEmployeesRoute() {
     infinite,
     employeeTypes,
     unrevokedInviteEmails,
-    mfaEnrolledUserIds
+    mfaEnrolledUserIds,
+    scimManagedUserIds
   } = useLoaderData<typeof loader>();
 
   return (
@@ -93,6 +105,7 @@ export default function UsersEmployeesRoute() {
         employeeTypes={employeeTypes}
         unrevokedInviteEmails={unrevokedInviteEmails}
         mfaEnrolledUserIds={mfaEnrolledUserIds}
+        scimManagedUserIds={scimManagedUserIds}
       />
       <RecordOutlet />
     </VStack>

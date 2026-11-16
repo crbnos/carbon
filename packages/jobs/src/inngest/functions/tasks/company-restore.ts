@@ -17,6 +17,7 @@ import {
   rebuildDerivedGroups
 } from "../../../backups/derived-groups";
 import { applyTableRenames } from "../../../backups/renames";
+import { restoreLoadsColumn, restoreLoadsTable } from "../../../backups/schema";
 import { removeBucketPrefix } from "../../../backups/storage";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
@@ -85,6 +86,9 @@ export async function wipeAndLoad(
     substrateIds?: Map<string, Set<unknown>>;
     /** Live phase progress (`wipe` then `load`). Throttled by the caller. */
     onProgress?: (p: JobProgress) => Promise<void>;
+    /** Leave out `RESTORE_STRIPPED_COLUMNS` (a restore from a backup, not a
+     *  revert to the snapshot it took). */
+    stripSecrets?: boolean;
   }
 ): Promise<{ rows: number; idRewrite: Map<string, string> }> {
   const {
@@ -94,7 +98,8 @@ export async function wipeAndLoad(
     includeGroup,
     targetGroupId,
     substrateIds,
-    onProgress
+    onProgress,
+    stripSecrets = false
   } = opts;
 
   // Refuse if the schema would let a kept row dangle once we wipe (drift guard).
@@ -113,6 +118,7 @@ export async function wipeAndLoad(
   const loadTables = wipeTables.filter(
     (t) =>
       !(remap && isUserScopedIdentityTable(t)) &&
+      restoreLoadsTable(t.name, { foreign: remap }) &&
       (backup.data[t.name]?.length ?? 0) > 0
   );
   const backupColumns = new Map(
@@ -179,7 +185,10 @@ export async function wipeAndLoad(
         backupColumns.get(table.name) ??
         new Set(Object.keys(backup.data[table.name]![0] ?? {}));
       const columns = table.columns.filter(
-        (c) => !c.isGenerated && backupCols.has(c.name)
+        (c) =>
+          !c.isGenerated &&
+          backupCols.has(c.name) &&
+          restoreLoadsColumn(table.name, c.name, { stripSecrets })
       );
       if (columns.length === 0) continue;
 
@@ -658,7 +667,8 @@ export const companyRestoreFunction = inngest.createFunction(
           includeGroup,
           targetGroupId,
           substrateIds,
-          onProgress: report
+          onProgress: report,
+          stripSecrets: true
         });
 
         // 3. Files (best-effort, non-transactional) — copied BEFORE marking ready

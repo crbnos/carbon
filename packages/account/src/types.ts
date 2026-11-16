@@ -15,6 +15,8 @@ export type AccountProfileData = {
   user: Account | null;
   /** A short-lived link to the user's signature image, if they have one. */
   signatureUrl: string | null;
+  /** The user's identity provider sets their name, so it is read-only. */
+  isNameSetByIdentityProvider?: boolean;
 };
 
 export type AccountNotificationsData = {

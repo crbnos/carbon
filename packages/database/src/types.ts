@@ -74202,6 +74202,569 @@ export type Database = {
           }
         ]
       }
+      scimConnection: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          defaultEmployeeTypeId: string
+          defaultLocationId: string
+          id: string
+          lastRequestAt: string | null
+          tokenHash: string | null
+          tokenPreview: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          defaultEmployeeTypeId: string
+          defaultLocationId: string
+          id?: string
+          lastRequestAt?: string | null
+          tokenHash?: string | null
+          tokenPreview?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          defaultEmployeeTypeId?: string
+          defaultLocationId?: string
+          id?: string
+          lastRequestAt?: string | null
+          tokenHash?: string | null
+          tokenPreview?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scimConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: true
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: true
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "scimConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: true
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "scimConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "scimConnection_defaultEmployeeTypeId_fkey"
+            columns: ["defaultEmployeeTypeId"]
+            isOneToOne: false
+            referencedRelation: "employeeType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_defaultLocationId_fkey"
+            columns: ["defaultLocationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      scimGroup: {
+        Row: {
+          companyId: string
+          connectionId: string
+          createdAt: string
+          createdBy: string
+          displayName: string
+          employeeTypeId: string | null
+          externalId: string | null
+          id: string
+          priority: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          connectionId: string
+          createdAt?: string
+          createdBy: string
+          displayName: string
+          employeeTypeId?: string | null
+          externalId?: string | null
+          id?: string
+          priority?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          connectionId?: string
+          createdAt?: string
+          createdBy?: string
+          displayName?: string
+          employeeTypeId?: string | null
+          externalId?: string | null
+          id?: string
+          priority?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scimGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "scimGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "scimGroup_connectionId_companyId_fkey"
+            columns: ["connectionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "scimConnection"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "scimGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "scimGroup_employeeTypeId_fkey"
+            columns: ["employeeTypeId"]
+            isOneToOne: false
+            referencedRelation: "employeeType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      scimGroupMember: {
+        Row: {
+          companyId: string
+          groupId: string
+          scimUserId: string
+        }
+        Insert: {
+          companyId: string
+          groupId: string
+          scimUserId: string
+        }
+        Update: {
+          companyId?: string
+          groupId?: string
+          scimUserId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scimGroupMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroupMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimGroupMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "scimGroupMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "scimGroupMember_groupId_companyId_fkey"
+            columns: ["groupId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "scimGroup"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "scimGroupMember_scimUserId_companyId_fkey"
+            columns: ["scimUserId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "scimUser"
+            referencedColumns: ["id", "companyId"]
+          }
+        ]
+      }
+      scimUser: {
+        Row: {
+          active: boolean
+          companyId: string
+          connectionId: string
+          createdAt: string
+          createdBy: string
+          email: string
+          externalId: string | null
+          familyName: string | null
+          givenName: string | null
+          id: string
+          updatedAt: string | null
+          updatedBy: string | null
+          userId: string
+          userName: string
+        }
+        Insert: {
+          active?: boolean
+          companyId: string
+          connectionId: string
+          createdAt?: string
+          createdBy: string
+          email: string
+          externalId?: string | null
+          familyName?: string | null
+          givenName?: string | null
+          id?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId: string
+          userName: string
+        }
+        Update: {
+          active?: boolean
+          companyId?: string
+          connectionId?: string
+          createdAt?: string
+          createdBy?: string
+          email?: string
+          externalId?: string | null
+          familyName?: string | null
+          givenName?: string | null
+          id?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId?: string
+          userName?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scimUser_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "scimUser_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "scimUser_connectionId_companyId_fkey"
+            columns: ["connectionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "scimConnection"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "scimUser_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "scimUser_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "scimUser_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scimUser_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       scrapReason: {
         Row: {
           companyId: string

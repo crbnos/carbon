@@ -518,6 +518,10 @@ msgstr "{0} पंक्तियां"
 msgid "{0} lines to map"
 msgstr "{0} लाइनें मैप करने के लिए"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "{0} सदस्य"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1470,6 +1474,9 @@ msgstr "1 नौकरी बनाई गई"
 
 msgid "1 line"
 msgstr "1 पंक्ति"
+
+msgid "1 member"
+msgstr "1 सदस्य"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 पार्ट छोड़ा गया — इसके पास पहले से एक खुला जॉब है"
@@ -3041,6 +3048,9 @@ msgstr "साइन इन करते समय एक प्रमाणक 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "एक ऑपरेशन सेक्शन जोड़ें जो प्रत्येक रूटिंग ऑपरेशन को उसके अपेक्षित समय और स्कैन बारकोड के साथ सूचीबद्ध करता है।"
 
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Okta या Microsoft Entra ID से सदस्यों को अपने-आप जोड़ें और निकालें, ताकि आपका IT विभाग जिन लोगों को हटाता है, उनकी Carbon तक पहुँच खत्म हो जाए।"
+
 msgid "Add another option"
 msgstr "एक और विकल्प जोड़ें"
 
@@ -4023,7 +4033,7 @@ msgid "An open-ended lease is short-term: activating it posts no journal, and ea
 msgstr "एक खुला पट्टा अल्पकालिक है: इसे सक्रिय करते समय कोई जर्नल पोस्ट नहीं होता है, और प्रत्येक चालान को खर्च के रूप में दर्ज किया जाता है।"
 
 msgid "An operation cannot complete until every serial and batch part on it is issued."
-msgstr ""
+msgstr "ऑपरेशन तब तक पूर्ण नहीं किया जा सकता जब तक उस पर मौजूद हर सीरियल और बैच पार्ट निर्गत न कर दिया जाए।"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "एक आपूर्तिकर्ता द्वारा किया गया एक ऑपरेशन एक इन-हाउस वर्क सेंटर के बजाय, एक उप-अनुबंध क्रय आदेश द्वारा कवर किया गया।"
@@ -4355,10 +4365,10 @@ msgid "Approve all"
 msgstr "सभी को अनुमोदित करें"
 
 msgid "Approve and delete"
-msgstr ""
+msgstr "अनुमोदित करें और हटाएँ"
 
 msgid "Approve and Delete"
-msgstr ""
+msgstr "अनुमोदित करें और हटाएँ"
 
 msgid "Approve Request"
 msgstr "अनुरोध अनुमोदित करें"
@@ -4376,19 +4386,19 @@ msgid "Approved On"
 msgstr "पर अनुमोदित"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr ""
+msgstr "अनुमोदित करने पर इसकी प्राप्तियाँ {receipts} भी प्रतिवर्तित हो जाती हैं: उनके द्वारा लाया गया स्टॉक हटा दिया जाता है और उनकी पोस्टिंग प्रतिवर्तित कर दी जाती है। यदि वह स्टॉक तब से उपयोग हो चुका है, तो यह अस्वीकार कर दिया जाता है।"
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
-msgstr ""
+msgstr "अनुमोदित करने पर {readableId} अभी हटा दिया जाएगा। इसे पूर्ववत नहीं किया जा सकता।"
 
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
-msgstr ""
+msgstr "अनुमोदित करने पर क्रय आदेश और उसकी सभी पंक्तियाँ अभी हटा दी जाएँगी। इसे पूर्ववत नहीं किया जा सकता।"
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
-msgstr ""
+msgstr "अनुमोदित करने पर {receipts} प्रतिवर्तित होंगी, फिर क्रय आदेश और उसकी सभी पंक्तियाँ हटा दी जाएँगी। इसे पूर्ववत नहीं किया जा सकता।"
 
 msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
-msgstr ""
+msgstr "अनुमोदित करने पर {readableId} अमान्य हो जाएगा, जिससे उसकी पोस्टिंग प्रतिवर्तित होगी, फिर उसे हटा दिया जाएगा। इसे पूर्ववत नहीं किया जा सकता।"
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "अनुमानित — निर्धारित तारीखों से प्राप्त; इस पंक्ति के लिए कोई क्षमता आरक्षण मौजूद नहीं है।"
@@ -5672,7 +5682,7 @@ msgid "Beginning"
 msgstr "आरंभ"
 
 msgid "Being approved now…"
-msgstr ""
+msgstr "अभी अनुमोदित किया जा रहा है…"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -6384,7 +6394,7 @@ msgid "Cancel purchase order {target}"
 msgstr "क्रय आदेश {target} रद्द करें"
 
 msgid "Cancel Request"
-msgstr ""
+msgstr "अनुरोध रद्द करें"
 
 msgid "Cancel Return"
 msgstr "रिटर्न रद्द करें"
@@ -7021,6 +7031,9 @@ msgstr "आपूर्तिकर्ता चुनें"
 msgid "Choose suppliers"
 msgstr "आपूर्तिकर्ता चुनें"
 
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "प्रत्येक समूह अपने सदस्यों को जो कर्मचारी प्रकार देता है, उसे चुनें। यदि कोई व्यक्ति एक से अधिक समूहों में है, तो उच्च स्तर वाले समूह का प्रकार लागू होगा।"
+
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "वर्तमान अवधि के पहले दिन या उससे पहले की 3 अवधियों में से किसी एक के पहले दिन को चुनें।"
 
@@ -7571,7 +7584,7 @@ msgid "Completing"
 msgstr "पूरा कर रहा है"
 
 msgid "Completing a job's first operation prints its unit labels."
-msgstr ""
+msgstr "जॉब के पहले ऑपरेशन को पूर्ण करने पर उसके यूनिट लेबल प्रिंट होते हैं।"
 
 msgid "Completing this training grants or renews the selected ability."
 msgstr "इस प्रशिक्षण को पूरा करने से चयनित कौशल प्रदान किया जाता है या नवीनीकृत होता है।"
@@ -8075,7 +8088,7 @@ msgid "Control how operators pick material and track time on the shop floor."
 msgstr "नियंत्रित करें कि ऑपरेटर शॉप फ्लोर पर सामग्री कैसे चुनते हैं और समय कैसे ट्रैक करते हैं।"
 
 msgid "Control how parts and labels move from the pick to the finished unit."
-msgstr ""
+msgstr "नियंत्रित करें कि पार्ट्स और लेबल पिकिंग से तैयार इकाई तक कैसे जाते हैं।"
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "नियंत्रित करें कि क्या आइटम ID (पार्ट्स, सामग्री, उपभोग्य सामग्री, टूल और सेवा) में लोअरकेस वर्ण हो सकते हैं।"
@@ -8879,7 +8892,7 @@ msgid "Create Operator"
 msgstr "ऑपरेटर बनाएँ"
 
 msgid "Create picking lists on release"
-msgstr ""
+msgstr "जारी करने पर पिकिंग सूचियाँ बनाएँ"
 
 msgid "Create PO Line"
 msgstr "PO पंक्ति बनाएँ"
@@ -9900,6 +9913,9 @@ msgstr "डिफ़ॉल्ट cc"
 msgid "Default CC Recipients"
 msgstr "डिफ़ॉल्ट CC प्राप्तकर्ता"
 
+msgid "Default employee type"
+msgstr "डिफ़ॉल्ट कर्मचारी प्रकार"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "डिफ़ॉल्ट GL खाता जिसमें एक स्थिर-संपत्ति के निपटान के परिणामस्वरूप लाभ में क्रेडिट किया जाता है।"
 
@@ -9917,6 +9933,9 @@ msgstr "आवधिक मूल्यह्रास रन के लिए �
 
 msgid "Default horizon (days)"
 msgstr "डिफ़ॉल्ट क्षितिज (दिन)"
+
+msgid "Default location"
+msgstr "डिफ़ॉल्ट स्थान"
 
 msgid "Default Method"
 msgstr "डिफ़ॉल्ट विधि"
@@ -11437,7 +11456,7 @@ msgid "Each physical unit gets its own tracked entity and unique number — one 
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
 
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
-msgstr ""
+msgstr "हर जारी किए गए जॉब को एक पिकिंग सूची मिलती है। उसके पार्ट्स उन सभी वर्क सेंटर की लाइनसाइड भंडारण इकाई में जाते हैं जो उनका उपयोग करते हैं।"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "प्रत्येक किराये की समझौते या अनुबंध के विक्रय प्रतिनिधि (या इसके निर्माता) को इसके चालानों का दैनिक सारांश मिलता है।"
@@ -12006,7 +12025,7 @@ msgid "Email notifications not configured"
 msgstr "ईमेल सूचनाएं कॉन्फ़िगर नहीं की गई हैं"
 
 msgid "Email order on acceptance"
-msgstr ""
+msgstr "स्वीकृति पर आदेश ईमेल करें"
 
 msgid "Email recipients"
 msgstr "ईमेल प्राप्तकर्ता"
@@ -12021,7 +12040,7 @@ msgid "Emails of the attendees (guests)"
 msgstr "प्रतिभागियों (मेहमानों) के ईमेल"
 
 msgid "Emails the sales order to the customer when they accept this quote online."
-msgstr ""
+msgstr "जब ग्राहक इस कोटेशन को ऑनलाइन स्वीकार करता है, तो विक्रय आदेश ग्राहक को ईमेल किया जाता है।"
 
 msgid "Emoji"
 msgstr "इमोजी"
@@ -12040,6 +12059,10 @@ msgstr "कर्मचारी प्रतिपूर्ति देय"
 
 msgid "Employee Type"
 msgstr "कर्मचारी प्रकार"
+
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} के लिए कर्मचारी प्रकार"
 
 msgid "Employee Types"
 msgstr "कर्मचारी प्रकार"
@@ -12327,6 +12350,9 @@ msgstr "अपने प्रमाणकर्ता ऐप से 6-अंक
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "पुनः शुरू करने के लिए अपने ऑथेंटिकेटर ऐप से 6-अंकीय कोड दर्ज करें।"
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "अपने पहचान प्रदाता की प्रोविज़निंग सेटिंग्स में बेस URL और यह टोकन दर्ज करें। यह टोकन केवल एक बार दिखाया जाता है।"
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "अपने निजी OAuth एप्लिकेशन का Onshape URL, क्लाइंट ID और क्लाइंट सीक्रेट दर्ज करें, फिर सहेजें।"
@@ -13887,22 +13913,22 @@ msgid "For Form 6765 Section E"
 msgstr "फॉर्म 6765 खंड E के लिए"
 
 msgid "Force delete"
-msgstr ""
+msgstr "ज़बरन हटाएँ"
 
 msgid "Force Delete"
-msgstr ""
+msgstr "ज़बरन हटाएँ"
 
 msgid "Force Delete (Admin)"
-msgstr ""
+msgstr "ज़बरन हटाएँ (एडमिन)"
 
 msgid "Force delete {purchaseOrderReadableId}"
-msgstr ""
+msgstr "{purchaseOrderReadableId} ज़बरन हटाएँ"
 
 msgid "Force delete {readableId}"
-msgstr ""
+msgstr "{readableId} ज़बरन हटाएँ"
 
 msgid "Force delete waiting for another Admin's approval"
-msgstr ""
+msgstr "ज़बरन हटाने के लिए किसी अन्य एडमिन के अनुमोदन की प्रतीक्षा है"
 
 msgid "Forecast"
 msgstr "पूर्वानुमान"
@@ -14222,6 +14248,9 @@ msgstr "सामग्री के गुणों के आधार पर 
 
 msgid "Generate Picking List"
 msgstr "पिकिंग सूची जेनरेट करें"
+
+msgid "Generate token"
+msgstr "टोकन बनाएँ"
 
 msgid "Generated {created} steps from the motion plan"
 msgstr "गति योजना से {created} चरण उत्पन्न किए गए"
@@ -14553,6 +14582,9 @@ msgstr "द्वारा समूह"
 
 msgid "Group by material"
 msgstr "सामग्री के अनुसार समूह बनाएं"
+
+msgid "Group Mappings"
+msgstr "ग्रुप मैपिंग"
 
 msgid "Group Members"
 msgstr "समूह सदस्य"
@@ -14921,6 +14953,9 @@ msgstr "यह गेज कितनी बार पुनः-अंशां�
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "यह रखरखाव कितनी बार दोहराया जाता है — दैनिक, साप्ताहिक, मासिक, चक्रीय गणना पर; दैनिक सप्ताह-की-दिन चयनकर्ता को प्रकट करता है, अन्य सरल अंतराल गणित का उपयोग करते हैं।"
+
+msgid "How SCIM works"
+msgstr "SCIM कैसे काम करता है"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "ऑपरेशन को इस प्रक्रिया पर एक बैच साझा करने के लिए प्रत्येक सामग्री संपत्ति कितनी सख्ती से मेल खानी चाहिए।"
@@ -15306,7 +15341,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "निष्क्रिय श्रेणियां नए समय के लिए नहीं चुनी जा सकतीं"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "इकाई चुनते समय निष्क्रिय इकाइयाँ नहीं दी जातीं"
 
 msgid "Inbound inspection"
 msgstr "इनबाउंड निरीक्षण"
@@ -16108,7 +16143,7 @@ msgid "It decides what the next step asks for."
 msgstr "यह तय करता है कि अगला चरण क्या माँगता है।"
 
 msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
-msgstr ""
+msgstr "यह {status} है: अनुमोदन से पहले यह अमान्य होगा, जिससे इसकी पोस्टिंग प्रतिवर्तित होगी। यदि अमान्य करना अस्वीकार हो, तो इसकी पोस्टिंग इसके बजाय जर्नल द्वारा प्रतिवर्तित की जाएगी।"
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "यह अनुमोदित है लेकिन लागू नहीं किया जा सकता। इसे फिर से खोलें, इन पंक्तियों की जांच करें, फिर इसे फिर से सबमिट करें।"
@@ -16120,13 +16155,13 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "इसका उपयोग अभी भी एक \"{table}\" रिकॉर्ड द्वारा किया जा रहा है; पहले उसे निकालें।"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr ""
+msgstr "यह आपूर्तिकर्ता की ओर की बही को कभी नहीं छूता। पहले आदेश के शिपमेंट और अग्रिम भुगतान अमान्य करें, और क्रय चालानों से इसकी पंक्तियाँ हटाएँ। ऐसा करने तक अनुरोध अस्वीकार किया जाता है।"
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
-msgstr ""
+msgstr "{readableId} की स्थिति चाहे जो हो, यह उसे स्थायी रूप से हटा देता है। इसे पूर्ववत नहीं किया जा सकता।"
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
-msgstr ""
+msgstr "यह इस क्रय आदेश और उसकी सभी पंक्तियों को, उसकी स्थिति या अनुमोदन चाहे जो हो, स्थायी रूप से हटा देता है। इसे पूर्ववत नहीं किया जा सकता।"
 
 msgid "It shows with no hours until you add some."
 msgstr "यह शून्य घंटे के साथ दिखाई देता है जब तक आप कुछ न जोड़ें।"
@@ -16267,7 +16302,7 @@ msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "इसका राजस्व उस पर वापस जाता है जो प्रत्येक पंक्ति को मान्यता देने के लिए बाकी है।"
 
 msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
-msgstr ""
+msgstr "इसका स्टॉक वापस निकाल लिया जाता है, भले ही उसका उपयोग तब से हो चुका हो (हाथ में मौजूद मात्रा ऋणात्मक हो सकती है), और जो इसने प्राप्त किया था वह उसके आदेश को लौटा दिया जाता है।"
 
 msgid "Job"
 msgstr "Job"
@@ -16523,7 +16558,7 @@ msgid "Labels"
 msgstr "लेबल"
 
 msgid "Labels print at the first operation"
-msgstr ""
+msgstr "लेबल पहले ऑपरेशन पर प्रिंट होते हैं"
 
 msgid "Labor"
 msgstr "श्रम"
@@ -16676,6 +16711,9 @@ msgstr "अंतिम बार पुश किया गया: {lastPushed}
 
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
+
+msgid "Last request"
+msgstr "आखिरी अनुरोध"
 
 msgid "Last run"
 msgstr "अंतिम रन"
@@ -16925,6 +16963,9 @@ msgstr "अपने सदस्यों को SAML के साथ अप�
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "परियोजना स्टॉक वाली परियोजनाओं को इस स्थान पर इस आइटम का अप्रयुक्त अनिर्दिष्ट स्टॉक का उपयोग करने दें"
 
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "आपका पहचान प्रदाता SCIM के ज़रिए सदस्यों को जोड़ने, अपडेट करने और निकालने दें।"
+
 msgid "Let's Build"
 msgstr "चलिए निर्माण करें"
 
@@ -17081,7 +17122,7 @@ msgid "Line Details"
 msgstr "पंक्ति विवरण"
 
 msgid "Line Flow"
-msgstr ""
+msgstr "लाइन फ़्लो"
 
 msgid "Line Item"
 msgstr "लाइन आइटम"
@@ -17699,6 +17740,12 @@ msgstr "सदस्यता प्रबंधित करें"
 msgid "Manage your subscription and billing information"
 msgstr "अपनी सदस्यता और बिलिंग जानकारी प्रबंधित करें"
 
+msgid "Managed by your identity provider"
+msgstr "आपके पहचान प्रदाता द्वारा प्रबंधित"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "आपके पहचान प्रदाता द्वारा प्रबंधित। यहाँ उनके नाम, सक्रिय स्थिति या कर्मचारी प्रकार में किए गए बदलाव उसके अगले अपडेट में ओवरराइट हो सकते हैं।"
+
 msgid "Manager"
 msgstr "प्रबंधक"
 
@@ -18103,8 +18150,14 @@ msgstr "सदस्य"
 msgid "Members"
 msgstr "सदस्य"
 
+msgid "Members in no mapped group get this type"
+msgstr "जो सदस्य किसी भी मैप किए गए ग्रुप में नहीं हैं, उन्हें यह प्रकार मिलेगा"
+
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "सदस्य MRP में अपनी मांग को एक साथ समायोजित करते हैं। समूह परियोजना के स्थान पर होना चाहिए"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "जिन सदस्यों को यह मिलेगा वे साइन इन कर सकेंगे, पर कुछ भी खोल नहीं पाएँगे। उपयोगकर्ता → कर्मचारी प्रकार में इस प्रकार को अनुमतियाँ दें, या कोई और चुनें।"
 
 msgid "Memo"
 msgstr "मेमो"
@@ -20649,10 +20702,10 @@ msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr ""
+msgstr "अभी कुछ नहीं हटाया गया है। अनुरोध अन्य एडमिन के अनुमोदनों के पास जाता है, और उनमें से किसी एक के अनुमोदित करने पर इसे हटा दिया जाता है।"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
-msgstr ""
+msgstr "अभी कुछ नहीं हटाया गया है। अनुरोध अन्य एडमिन के अनुमोदनों के पास जाता है, और उनमें से किसी एक के अनुमोदित करने पर आदेश हटा दिया जाता है।"
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "कुछ भी देय नहीं है। जब अवधि आती है, तो चालान स्वचालित रूप से बनाए जाते हैं।"
@@ -21493,7 +21546,7 @@ msgid "Operators can use shared workstations with PIN authentication."
 msgstr "ऑपरेटर PIN प्रमाणीकरण के साथ साझा वर्कस्टेशन का उपयोग कर सकते हैं।"
 
 msgid "Operators see a warning about unissued serial and batch parts and can still complete."
-msgstr ""
+msgstr "ऑपरेटरों को बिना निर्गत सीरियल और बैच पार्ट्स की चेतावनी दिखती है, और वे फिर भी पूर्ण कर सकते हैं।"
 
 msgid "Operators start on the Scan tab"
 msgstr "ऑपरेटर Scan टैब से शुरू करते हैं"
@@ -21658,7 +21711,7 @@ msgid "Other Income GL account for the monthly interest earned on the net invest
 msgstr "बिक्रय-प्रकार पट्टों में शुद्ध निवेश पर अर्जित मासिक ब्याज के लिए अन्य आय लेजर खाता।"
 
 msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
-msgstr ""
+msgstr "इससे वित्त पोषित या वापस किए गए अन्य भुगतान पहले इससे अलग किए जाते हैं; वे पोस्ट रहते हैं।"
 
 msgid "Other Type"
 msgstr "अन्य प्रकार"
@@ -22195,10 +22248,10 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "इस चालान के लिए आवंटित भुगतान और क्रेडिट। आवंटित राशियाँ और विनिमय अंतर की राशियाँ कंपनी की आधार मुद्रा में हैं। स्रोत दस्तावेज़ खोलने के लिए किसी पंक्ति पर क्लिक करें।"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr ""
+msgstr "इसे लागू किए गए भुगतान और मेमो पहले अलग किए जाते हैं: हर भुगतान पोस्ट रहता है, अप्रयुक्त क्रेडिट के रूप में, जिसे आप कहीं और लागू कर सकते हैं या ज़बरन हटा सकते हैं। इससे मान्यता प्राप्त राजस्व प्रतिवर्तित होता है।"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
-msgstr ""
+msgstr "इसे लागू किए गए भुगतान और मेमो पहले अलग किए जाते हैं: हर भुगतान पोस्ट रहता है, अप्रयुक्त क्रेडिट के रूप में, जिसे आप कहीं और लागू कर सकते हैं या ज़बरन हटा सकते हैं। इसके द्वारा पूंजीकृत अचल संपत्ति में जोड़ा गया मूल्य वापस निकाल लिया जाता है; पहले से पोस्ट किया गया मूल्यह्रास बना रहता है।"
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "इस तारीख से पहले देय भुगतान Carbon के बाहर किए गए"
@@ -22513,13 +22566,13 @@ msgid "Picking Lists"
 msgstr "पिकिंग सूचियाँ"
 
 msgid "Picking lists are created by hand"
-msgstr ""
+msgstr "पिकिंग सूचियाँ हाथ से बनाई जाती हैं"
 
 msgid "Picking lists on release disabled"
-msgstr ""
+msgstr "जारी करने पर पिकिंग सूचियाँ अक्षम"
 
 msgid "Picking lists on release enabled"
-msgstr ""
+msgstr "जारी करने पर पिकिंग सूचियाँ सक्षम"
 
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "पिकिंग सबसे पहले समाप्त होने वाली ट्रैक की गई वस्तुओं को प्राथमिकता देता है, इसलिए डिफ़ॉल्ट रूप से सबसे जल्द समाप्त होने वाला स्टॉक पहले निकलता है।"
@@ -23099,7 +23152,7 @@ msgid "Print Label"
 msgstr "लेबल प्रिंट करें"
 
 msgid "Print label on completion"
-msgstr ""
+msgstr "पूर्ण होने पर लेबल प्रिंट करें"
 
 msgid "Print Labels"
 msgstr "लेबल प्रिंट करें"
@@ -23113,10 +23166,10 @@ msgid "Print Output ({0})"
 msgstr "प्रिंट आउटपुट ({0})"
 
 msgid "Print this item's serial label when its job's last operation completes."
-msgstr ""
+msgstr "जब आइटम के जॉब का अंतिम ऑपरेशन पूर्ण हो, तब उस आइटम का सीरियल लेबल प्रिंट करें।"
 
 msgid "Print travelers at the pick"
-msgstr ""
+msgstr "पिकिंग पर ट्रैवलर प्रिंट करें"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "उन क्रय आदेशों पर प्रिंट किया गया जिन्हें आप अनुमोदित करते हैं।"
@@ -23511,6 +23564,12 @@ msgstr "अनंतिम जर्नल"
 msgid "Provisional rate"
 msgstr "अनंतिम दर"
 
+msgid "Provisioned members"
+msgstr "प्रावधानित सदस्य"
+
+msgid "Provisioning"
+msgstr "प्रोविज़निंग"
+
 msgid "PTO"
 msgstr "PTO"
 
@@ -23624,7 +23683,7 @@ msgid "Purchase order for {supplierName}"
 msgstr "{supplierName} के लिए क्रय आदेश"
 
 msgid "Purchase Order Force Delete"
-msgstr ""
+msgstr "क्रय आदेश ज़बरन हटाएँ"
 
 msgid "Purchase Order ID"
 msgstr "क्रय आदेश ID"
@@ -23967,7 +24026,7 @@ msgstr "पंक्ति {lineNumber} के लिए जमा की जा
 
 #. placeholder {0}: item?.name ?? ""
 msgid "Quantity to pick of {0}"
-msgstr ""
+msgstr "{0} की पिकिंग मात्रा"
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} के लिए लौटाई जाने वाली मात्रा"
@@ -24661,11 +24720,17 @@ msgstr "शर्तों से पुनः उत्पन्न करे�
 msgid "Regenerate payments from the terms?"
 msgstr "शर्तों से भुगतान पुनः उत्पन्न करें?"
 
+msgid "Regenerate SCIM token"
+msgstr "SCIM टोकन फिर से बनाएँ"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "इस स्थान के लिए अभी शेड्यूल फिर से जेनरेट करें। यह अंतिम शेड्यूलिंग परिवर्तन के लगभग 30 सेकंड बाद स्वचालित रूप से भी चलता है (संपादन बैच किए जाते हैं, इसलिए कई त्वरित परिवर्तन एकल पुनर्जनन को ट्रिगर करते हैं)।"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D मॉडल से थंबनेल पुनः उत्पन्न करें"
+
+msgid "Regenerate token"
+msgstr "टोकन फिर से बनाएँ"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "गति योजना से {created} चरण पुनर्जीवित किए गए"
@@ -24834,7 +24899,7 @@ msgid "Released with problems: {0}"
 msgstr "समस्याओं के साथ जारी: {0}"
 
 msgid "Releasing a job creates its picking list"
-msgstr ""
+msgstr "जॉब जारी करने पर उसकी पिकिंग सूची बनती है"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "बैच जारी करने से इसकी जॉब्स जारी हो जाती हैं, और प्रत्येक को शॉप फ्लोर के लिए तैयार होना चाहिए।"
@@ -25309,7 +25374,7 @@ msgid "Request date"
 msgstr "अनुरोध तारीख"
 
 msgid "Request Force Delete"
-msgstr ""
+msgstr "अनुरोध ज़बरन हटाएँ"
 
 msgid "Request Quote"
 msgstr "कोटेशन का अनुरोध करें"
@@ -25318,7 +25383,7 @@ msgid "Requested"
 msgstr "अनुरोधित"
 
 msgid "Requested by"
-msgstr ""
+msgstr "अनुरोधकर्ता"
 
 msgid "Requested By"
 msgstr "द्वारा अनुरोधित"
@@ -25394,7 +25459,7 @@ msgid "Require tiered sign-off on purchase orders, quality documents, suppliers,
 msgstr "क्रय आदेशों, गुणवत्ता दस्तावेज़ों, आपूर्तिकर्ताओं और परिवर्तन सूचनाओं पर राशि सीमा और अनुमोदनकर्ता समूहों के आधार पर बहु-स्तरीय साइन-ऑफ आवश्यक है।"
 
 msgid "Require tracked parts before completion"
-msgstr ""
+msgstr "पूर्ण करने से पहले ट्रैक किए गए पार्ट्स आवश्यक करें"
 
 msgid "Require two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
@@ -25424,10 +25489,10 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "नियंत्रित वातावरण में आवश्यक — ऑडिट लॉगिंग को बंद नहीं किया जा सकता।"
 
 msgid "Required tracked parts disabled"
-msgstr ""
+msgstr "आवश्यक ट्रैक किए गए पार्ट्स अक्षम"
 
 msgid "Required tracked parts enabled"
-msgstr ""
+msgstr "आवश्यक ट्रैक किए गए पार्ट्स सक्षम"
 
 msgid "Requirement"
 msgstr "आवश्यकता"
@@ -26682,6 +26747,18 @@ msgstr "शेड्यूलिंग संघर्ष"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "शेड्यूलिंग संघर्ष: ऑपरेशन नियत तिथि तक पूरे नहीं हो सकते"
 
+msgid "SCIM base URL"
+msgstr "SCIM बेस URL"
+
+msgid "SCIM Connection"
+msgstr "SCIM कनेक्शन"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM प्रोविज़निंग"
+
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM इस व्यक्ति का नाम और सक्रिय स्थिति सेट करता है, और समूह मैप होने के बाद उनका कर्मचारी प्रकार भी। इन्हें अपने आइडेंटिटी प्रोवाइडर में बदलें।"
+
 msgid "Scope"
 msgstr "दायरा"
 
@@ -27342,7 +27419,7 @@ msgid "Send Notifications"
 msgstr "सूचनाएं भेजें"
 
 msgid "Send order confirmation"
-msgstr ""
+msgstr "ऑर्डर पुष्टि भेजें"
 
 msgid "Send Reminder"
 msgstr "अनुस्मारक भेजें"
@@ -27594,6 +27671,12 @@ msgstr "लक्ष्य निर्धारित करें"
 msgid "Set at activation"
 msgstr "सक्रियण पर सेट करें"
 
+msgid "Set by your identity provider"
+msgstr "आपके आइडेंटिटी प्रोवाइडर द्वारा सेट किया गया"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "आपके आइडेंटिटी प्रोवाइडर की समूह मैपिंग द्वारा सेट किया गया"
+
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Carbon को अपनी कंपनी के संचालन के अनुसार सेट अप करें: साइटें, पार्ट्स, BOM, प्रक्रिया सूची, और जिन प्रवाहों का आप उपयोग करते हैं।"
 
@@ -27674,6 +27757,9 @@ msgstr "लेखांकन को रिपोर्ट, जर्नल प�
 
 msgid "Set up authenticator app"
 msgstr "प्रमाणकर्ता ऐप सेटअप करें"
+
+msgid "Set up SCIM"
+msgstr "SCIM सेट अप करें"
 
 msgid "Set up the right way"
 msgstr "सही तरीके से सेटअप करें"
@@ -28712,7 +28798,7 @@ msgid "Starting"
 msgstr "शुरुआत"
 
 msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
-msgstr ""
+msgstr "पिकिंग सूची शुरू करने पर हर इकाई के लिए एक ट्रैवलर प्रिंट होता है। पहले ऑपरेशन पर कोई लेबल प्रिंट नहीं होता।"
 
 msgid "Starting…"
 msgstr "शुरू हो रहा है…"
@@ -28849,7 +28935,7 @@ msgid "Stock and planning"
 msgstr "स्टॉक और योजना"
 
 msgid "Stock at:"
-msgstr ""
+msgstr "इस स्थान पर स्टॉक:"
 
 msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"
@@ -29506,7 +29592,7 @@ msgid "supplier stage"
 msgstr "आपूर्तिकर्ता चरण"
 
 msgid "Supplier stage"
-msgstr ""
+msgstr "आपूर्तिकर्ता चरण"
 
 msgid "Supplier Stage"
 msgstr "आपूर्तिकर्ता चरण"
@@ -30346,6 +30432,9 @@ msgstr "आप जिन मुद्राओं में व्यापा�
 
 msgid "The current plan changed under this change request"
 msgstr "इस परिवर्तन अनुरोध के तहत वर्तमान योजना बदल गई"
+
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "मौजूदा टोकन तुरंत काम करना बंद कर देगा। जब तक आप अपने पहचान प्रदाता में नया टोकन दर्ज नहीं करते, प्रोविज़निंग रुकी रहेगी।"
 
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "ग्राहक प्रभावी रूप से इकाई को खरीदता है। यह शुरुआत में आपकी अचल संपत्ति से बाहर निकल जाता है, बिक्री दर्ज की जाती है, और अवधि के दौरान प्राप्य पर ब्याज अर्जित होता है।"
@@ -31732,6 +31821,9 @@ msgstr "इस विभाग के पास इस स्थान पर �
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसके साथ छेड़छाड़ की गई है।"
 
+msgid "This employee type has no permissions"
+msgstr "इस कर्मचारी प्रकार की कोई अनुमति नहीं है"
+
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "यह आंकड़ा रहना चाहिए। इसे मान डालें से वापस जोड़ें।"
 
@@ -31804,7 +31896,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "यह वेबहुक के लिए एक अद्वितीय पहचानकर्ता है"
 
 msgid "This is an Admin override"
-msgstr ""
+msgstr "यह एडमिन ओवरराइड है"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "यह एक ITAR-नियंत्रित वातावरण है। पहुंच U.S. व्यक्तियों तक सीमित है।"
@@ -32397,6 +32489,9 @@ msgstr "साइडबार टॉगल करें"
 msgid "Toggle views"
 msgstr "दृश्य टॉगल करें"
 
+msgid "Token"
+msgstr "टोकन"
+
 msgid "Tol-"
 msgstr "Tol-"
 
@@ -32636,10 +32731,10 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "ट्रैक की गई सामग्री को पिकिंग क्रम (FEFO) द्वारा पूर्व-चयनित किया जाता है, भले ही पिकिंग सूची के बिना।"
 
 msgid "Tracked parts are not required"
-msgstr ""
+msgstr "ट्रैक किए गए पार्ट्स आवश्यक नहीं हैं"
 
 msgid "Tracked parts must be scanned in"
-msgstr ""
+msgstr "ट्रैक किए गए पार्ट्स को स्कैन करके अंदर लेना होगा"
 
 msgid "Tracking"
 msgstr "ट्रैकिंग"
@@ -32765,13 +32860,13 @@ msgid "Travel"
 msgstr "यात्रा"
 
 msgid "Traveler labels disabled"
-msgstr ""
+msgstr "ट्रैवलर लेबल अक्षम"
 
 msgid "Traveler labels enabled"
-msgstr ""
+msgstr "ट्रैवलर लेबल सक्षम"
 
 msgid "Traveler Link"
-msgstr ""
+msgstr "ट्रैवलर लिंक"
 
 msgid "Traveler materials disabled"
 msgstr "ट्रैवलर सामग्री अक्षम की गई"
@@ -32786,7 +32881,7 @@ msgid "Traveler operations enabled"
 msgstr "ट्रैवलर ऑपरेशन सक्षम किए गए"
 
 msgid "Travelers print at the pick"
-msgstr ""
+msgstr "ट्रैवलर पिकिंग पर प्रिंट होते हैं"
 
 msgid "Treatment"
 msgstr "व्यवहार"
@@ -32827,8 +32922,14 @@ msgstr "फिर से कोशिश करें"
 msgid "Tuesday"
 msgstr "मंगलवार"
 
+msgid "Turn off"
+msgstr "बंद करें"
+
 msgid "Turn Off"
-msgstr ""
+msgstr "बंद करें"
+
+msgid "Turn off SCIM provisioning"
+msgstr "SCIM प्रोविज़निंग बंद करें"
 
 msgid "Turn On"
 msgstr "चालू करें"
@@ -32843,7 +32944,7 @@ msgid "Turn on the built-in pieces"
 msgstr "बिल्ट-इन पीसेस को चालू करें"
 
 msgid "Turn on to create one picking list for each job when it is released."
-msgstr ""
+msgstr "जारी होने पर हर जॉब के लिए एक पिकिंग सूची बनाने के लिए चालू करें।"
 
 msgid "Turned off sync"
 msgstr "सिंक बंद किया गया"
@@ -32901,10 +33002,10 @@ msgid "Type {0} to confirm"
 msgstr "पुष्टि करने के लिए {0} टाइप करें"
 
 msgid "Type {purchaseOrderReadableId} to confirm"
-msgstr ""
+msgstr "पुष्टि के लिए {purchaseOrderReadableId} टाइप करें"
 
 msgid "Type {readableId} to confirm"
-msgstr ""
+msgstr "पुष्टि के लिए {readableId} टाइप करें"
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "एक variable insert करने के लिए {TRIGGER} दर्ज करें"
@@ -33064,7 +33165,7 @@ msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "अद्वितीय, बड़े अक्षरों में, बिना स्थान के (अधिकतम 10 वर्ण)"
 
 msgid "Unique, without spaces (max 10 characters), such as kg or BX"
-msgstr ""
+msgstr "अनोखा, बिना स्पेस के (अधिकतम 10 अक्षर), जैसे kg या BX"
 
 msgid "Unit"
 msgstr "इकाई"
@@ -34486,10 +34587,10 @@ msgid "What to set up"
 msgstr "सेटअप करने के लिए क्या"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr ""
+msgstr "गलत क्या दर्ज हुआ, और उसे सुधारा या अमान्य करना क्यों संभव नहीं है"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
-msgstr ""
+msgstr "गलत क्या दर्ज हुआ, और ऑर्डर को सुधारा या बंद करना क्यों संभव नहीं है"
 
 msgid "What we're assuming"
 msgstr "हम क्या मान रहे हैं"
@@ -35284,6 +35385,15 @@ msgstr "आपका निर्यात तैयार किया जा �
 msgid "Your GL accounts"
 msgstr "आपके GL खाते"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "आपका पहचान प्रदाता उसके द्वारा प्रबंधित सदस्यों को जोड़ता, अपडेट करता और हटाता है।"
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "आपका पहचान प्रदाता अब सदस्य न तो जोड़ सकता है और न ही निकाल सकता है। उसके द्वारा प्रावधानित सदस्य जैसे हैं वैसे ही रहते हैं, और SCIM को दोबारा सेट करने पर वहीं से जारी रहता है जहाँ यह रुका था।"
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "आपका पहचान प्रदाता नीचे दिए गए डिफ़ॉल्ट कर्मचारी प्रकार और स्थान के साथ सदस्य बनाता है। उसके समूह भेजे जाने के बाद, उन्हें कर्मचारी प्रकारों से मैप करें।"
+
 msgid "your Implementation Lead"
 msgstr "आपके कार्यान्वयन नेता"
 
@@ -35333,7 +35443,10 @@ msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "आपका वास्तविक डेटा लोड हो गया है और आपने एक नमूना जांचा है और इसे मंजूरी दे दी है।"
 
 msgid "Your reason and the decision are kept in the audit log."
-msgstr ""
+msgstr "आपका कारण और निर्णय ऑडिट लॉग में सुरक्षित रखे जाते हैं।"
+
+msgid "Your SCIM token"
+msgstr "आपका SCIM टोकन"
 
 msgid "Your session was locked after inactivity."
 msgstr "निष्क्रियता के बाद आपका सत्र लॉक कर दिया गया।"

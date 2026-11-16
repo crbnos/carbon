@@ -214,6 +214,53 @@ export const ssoDomainValidator = z.object({
     )
 });
 
+/** The SCIM connection: what a new member gets. */
+export const scimConnectionValidator = z.object({
+  defaultEmployeeTypeId: z
+    .string()
+    .min(1, { message: "Default employee type is required" }),
+  defaultLocationId: z
+    .string()
+    .min(1, { message: "Default location is required" })
+});
+
+/** The "Not mapped" choice of a group mapping — a Select item cannot be empty. */
+export const SCIM_NOT_MAPPED = "none";
+
+/**
+ * The group mappings as the settings card shows them: every group's employee
+ * type (null for "Not mapped"), mapped groups first in the order they win.
+ * Sent as one JSON field, `groups`.
+ */
+export const scimGroupMappingsValidator = z.object({
+  groups: z
+    .string()
+    .transform((value, ctx) => {
+      try {
+        return JSON.parse(value) as unknown;
+      } catch {
+        ctx.addIssue({ code: "custom", message: "Invalid group mappings" });
+        return z.NEVER;
+      }
+    })
+    .pipe(
+      z
+        .array(
+          z.object({
+            groupId: z.string().min(1),
+            employeeTypeId: z.string().min(1).nullable()
+          })
+        )
+        .min(1)
+        .refine(
+          (groups) =>
+            new Set(groups.map((group) => group.groupId)).size ===
+            groups.length,
+          { message: "A group is listed twice" }
+        )
+    )
+});
+
 const companyAddress = {
   name: z.string().trim().min(1, { message: "Name is required" }),
   addressLine1: z.string().min(1, { message: "Address is required" }),

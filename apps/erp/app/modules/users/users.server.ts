@@ -489,6 +489,14 @@ export const updateEmployeePermissions = defineServiceFn({
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
+    const scimRefusal = await service.scimOwnedChangeRefusal(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id,
+      { employeeTypeId: employeeType }
+    );
+    if (scimRefusal) return ctx.error("rule", scimRefusal);
+
     const result = await updateEmployee(ctx.asCaller.supabase, {
       id,
       employeeType,
@@ -1413,6 +1421,14 @@ export const updateOwnProfile = defineServiceFn({
   input: accountProfileValidator,
   permission: {},
   async run(ctx, profile) {
+    const scimRefusal = await service.scimOwnedChangeRefusal(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      ctx.auditUserId,
+      profile
+    );
+    if (scimRefusal) return ctx.error("rule", scimRefusal);
+
     const saved = await service.updatePublicAccount(ctx.asCaller.supabase, {
       id: ctx.auditUserId,
       ...profile
@@ -1750,6 +1766,14 @@ export const updatePublicAccount = defineServiceFn({
   }),
   permission: {},
   async run(ctx, input) {
+    const scimRefusal = await service.scimOwnedChangeRefusal(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      input.id,
+      input
+    );
+    if (scimRefusal) return ctx.error("rule", scimRefusal);
+
     return unwrap(
       ctx,
       await service.updatePublicAccount(ctx.asCaller.supabase, input as never)

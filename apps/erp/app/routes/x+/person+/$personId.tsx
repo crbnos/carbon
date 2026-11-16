@@ -5,6 +5,7 @@
 import { accountProfileValidator } from "@carbon/account";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { RecordOutlet } from "@carbon/react";
@@ -21,6 +22,7 @@ import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import {
   getAllAttributeCategories,
+  scimOwnedChangeRefusal,
   updatePublicAccount
 } from "~/modules/users/users.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -75,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "people"
   });
   const { personId } = params;
@@ -90,6 +92,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { firstName, lastName, about, phone } = validation.data;
+
+  const scimRefusal = await scimOwnedChangeRefusal(
+    getCarbonServiceRole(),
+    companyId,
+    personId,
+    { firstName, lastName }
+  );
+  if (scimRefusal) {
+    return data({}, await flash(request, error(null, scimRefusal)));
+  }
 
   const updateAccount = await updatePublicAccount(client, {
     id: personId,

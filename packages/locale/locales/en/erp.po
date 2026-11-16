@@ -518,6 +518,10 @@ msgstr "{0} lines"
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "{0} members"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1470,6 +1474,9 @@ msgstr "1 job created"
 
 msgid "1 line"
 msgstr "1 line"
+
+msgid "1 member"
+msgstr "1 member"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 part skipped — it already has an open job"
@@ -3040,6 +3047,9 @@ msgstr "Add an extra layer of security by requiring a code from an authenticator
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
 
 msgid "Add another option"
 msgstr "Add another option"
@@ -7021,6 +7031,9 @@ msgstr "Choose supplier"
 msgid "Choose suppliers"
 msgstr "Choose suppliers"
 
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Choose the first day of the current period or of one of the 3 periods before it."
 
@@ -9900,6 +9913,9 @@ msgstr "Default cc"
 msgid "Default CC Recipients"
 msgstr "Default CC Recipients"
 
+msgid "Default employee type"
+msgstr "Default employee type"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Default GL account credited when a fixed-asset disposal results in a gain."
 
@@ -9917,6 +9933,9 @@ msgstr "Default GL expense account for periodic depreciation runs."
 
 msgid "Default horizon (days)"
 msgstr "Default horizon (days)"
+
+msgid "Default location"
+msgstr "Default location"
 
 msgid "Default Method"
 msgstr "Default Method"
@@ -12041,6 +12060,10 @@ msgstr "Employee Reimbursements Payable"
 msgid "Employee Type"
 msgstr "Employee Type"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "Employee type for {0}"
+
 msgid "Employee Types"
 msgstr "Employee Types"
 
@@ -12327,6 +12350,9 @@ msgstr "Enter the 6-digit code from your authenticator app"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Enter the 6-digit code from your authenticator app to resume."
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
@@ -14223,6 +14249,9 @@ msgstr "Generate material IDs and descriptions based on the properties of the ma
 msgid "Generate Picking List"
 msgstr "Generate Picking List"
 
+msgid "Generate token"
+msgstr "Generate token"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "Generated {created} steps from the motion plan"
 
@@ -14553,6 +14582,9 @@ msgstr "Group by"
 
 msgid "Group by material"
 msgstr "Group by material"
+
+msgid "Group Mappings"
+msgstr "Group Mappings"
 
 msgid "Group Members"
 msgstr "Group Members"
@@ -14921,6 +14953,9 @@ msgstr "How often this gauge must be recalibrated; combined with Last Calibratio
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
+
+msgid "How SCIM works"
+msgstr "How SCIM works"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "How strictly each material property must match for operations to share a batch on this process."
@@ -16677,6 +16712,9 @@ msgstr "Last pushed {lastPushed}"
 msgid "Last Quarter"
 msgstr "Last Quarter"
 
+msgid "Last request"
+msgstr "Last request"
+
 msgid "Last run"
 msgstr "Last run"
 
@@ -16924,6 +16962,9 @@ msgstr "Let members sign in through your identity provider with SAML."
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "Let projects with project stock use spare unassigned stock of this item at this location"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "Let your identity provider add, update and remove members with SCIM."
 
 msgid "Let's Build"
 msgstr "Let's Build"
@@ -17699,6 +17740,12 @@ msgstr "Manage Subscription"
 msgid "Manage your subscription and billing information"
 msgstr "Manage your subscription and billing information"
 
+msgid "Managed by your identity provider"
+msgstr "Managed by your identity provider"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+
 msgid "Manager"
 msgstr "Manager"
 
@@ -18103,8 +18150,14 @@ msgstr "Member"
 msgid "Members"
 msgstr "Members"
 
+msgid "Members in no mapped group get this type"
+msgstr "Members in no mapped group get this type"
+
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "Members net their demand together in MRP. The group must be at the project's location"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
 
 msgid "Memo"
 msgstr "Memo"
@@ -23511,6 +23564,12 @@ msgstr "Provisional journal"
 msgid "Provisional rate"
 msgstr "Provisional rate"
 
+msgid "Provisioned members"
+msgstr "Provisioned members"
+
+msgid "Provisioning"
+msgstr "Provisioning"
+
 msgid "PTO"
 msgstr "PTO"
 
@@ -24661,11 +24720,17 @@ msgstr "Regenerate from Terms"
 msgid "Regenerate payments from the terms?"
 msgstr "Regenerate payments from the terms?"
 
+msgid "Regenerate SCIM token"
+msgstr "Regenerate SCIM token"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Regenerate thumbnail from the 3D model"
+
+msgid "Regenerate token"
+msgstr "Regenerate token"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "Regenerated {created} steps from the motion plan"
@@ -26682,6 +26747,18 @@ msgstr "Scheduling conflict"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "Scheduling conflict: operations cannot meet due date"
 
+msgid "SCIM base URL"
+msgstr "SCIM base URL"
+
+msgid "SCIM Connection"
+msgstr "SCIM Connection"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM Provisioning"
+
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+
 msgid "Scope"
 msgstr "Scope"
 
@@ -27594,6 +27671,12 @@ msgstr "Set a target"
 msgid "Set at activation"
 msgstr "Set at activation"
 
+msgid "Set by your identity provider"
+msgstr "Set by your identity provider"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "Set by your identity provider's group mappings"
+
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 
@@ -27674,6 +27757,9 @@ msgstr "Set up accounting to use reports, journal entries, accounting periods, d
 
 msgid "Set up authenticator app"
 msgstr "Set up authenticator app"
+
+msgid "Set up SCIM"
+msgstr "Set up SCIM"
 
 msgid "Set up the right way"
 msgstr "Set up the right way"
@@ -30347,6 +30433,9 @@ msgstr "The currencies you trade in and their rates"
 msgid "The current plan changed under this change request"
 msgstr "The current plan changed under this change request"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 
@@ -31732,6 +31821,9 @@ msgstr "This department has no work centers at this location. Pick another depar
 msgid "This download link is invalid or has been tampered with."
 msgstr "This download link is invalid or has been tampered with."
 
+msgid "This employee type has no permissions"
+msgstr "This employee type has no permissions"
+
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "This figure must stay. Add it back with Insert value."
 
@@ -32397,6 +32489,9 @@ msgstr "Toggle sidebar"
 msgid "Toggle views"
 msgstr "Toggle views"
 
+msgid "Token"
+msgstr "Token"
+
 msgid "Tol-"
 msgstr "Tol-"
 
@@ -32827,8 +32922,14 @@ msgstr "Try again"
 msgid "Tuesday"
 msgstr "Tuesday"
 
+msgid "Turn off"
+msgstr "Turn off"
+
 msgid "Turn Off"
 msgstr "Turn Off"
+
+msgid "Turn off SCIM provisioning"
+msgstr "Turn off SCIM provisioning"
 
 msgid "Turn On"
 msgstr "Turn On"
@@ -35284,6 +35385,15 @@ msgstr "Your export is being prepared. We'll notify you when it's ready."
 msgid "Your GL accounts"
 msgstr "Your GL accounts"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "Your identity provider adds, updates and removes the members it manages."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+
 msgid "your Implementation Lead"
 msgstr "your Implementation Lead"
 
@@ -35334,6 +35444,9 @@ msgstr "Your real data is loaded and you have checked a sample and approved it."
 
 msgid "Your reason and the decision are kept in the audit log."
 msgstr "Your reason and the decision are kept in the audit log."
+
+msgid "Your SCIM token"
+msgstr "Your SCIM token"
 
 msgid "Your session was locked after inactivity."
 msgstr "Your session was locked after inactivity."

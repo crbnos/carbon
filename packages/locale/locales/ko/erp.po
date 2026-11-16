@@ -518,6 +518,10 @@ msgstr "{0} 라인"
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "구성원 {0}명"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1470,6 +1474,9 @@ msgstr "1개 작업이 생성됨"
 
 msgid "1 line"
 msgstr "1 라인"
+
+msgid "1 member"
+msgstr "구성원 1명"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1개 부품이 건너뜀 — 이미 활성 작업이 있음"
@@ -3041,6 +3048,9 @@ msgstr "로그인할 때 인증 앱의 코드를 입력하도록 요구하여 �
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "각 라우팅 공정의 예상 시간과 스캔 바코드를 나열하는 공정 섹션을 추가합니다."
 
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Okta 또는 Microsoft Entra ID에서 구성원을 자동으로 추가하고 제거하여, IT 팀이 퇴사 처리한 사람이 Carbon에 대한 접근 권한을 잃도록 합니다."
+
 msgid "Add another option"
 msgstr "옵션 추가"
 
@@ -4023,7 +4033,7 @@ msgid "An open-ended lease is short-term: activating it posts no journal, and ea
 msgstr "개방형 리스는 단기 리스입니다: 활성화하면 전표를 작성하지 않으며 각 송장은 비용으로 계상됩니다."
 
 msgid "An operation cannot complete until every serial and batch part on it is issued."
-msgstr ""
+msgstr "해당 공정의 모든 시리얼 및 배치 부품이 출고되기 전까지는 공정을 완료 처리할 수 없습니다."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "사내 작업장이 아닌 외부 공급업체에서 수행되고 외주 발주서로 커버되는 공정"
@@ -4355,10 +4365,10 @@ msgid "Approve all"
 msgstr "모두 승인"
 
 msgid "Approve and delete"
-msgstr ""
+msgstr "승인 후 삭제"
 
 msgid "Approve and Delete"
-msgstr ""
+msgstr "승인 후 삭제"
 
 msgid "Approve Request"
 msgstr "요청 승인"
@@ -4376,19 +4386,19 @@ msgid "Approved On"
 msgstr "승인 날짜"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr ""
+msgstr "승인하면 입고 건 {receipts}도 함께 역분개됩니다. 입고된 재고는 제거되고 해당 전기는 역분개됩니다. 그 이후 해당 재고가 사용되었다면 승인이 거부됩니다."
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
-msgstr ""
+msgstr "승인하면 {readableId} 레코드가 즉시 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
 
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
-msgstr ""
+msgstr "승인하면 발주서와 모든 라인이 즉시 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
-msgstr ""
+msgstr "승인하면 {receipts}을(를) 역분개한 뒤 발주서와 모든 라인을 삭제합니다. 이 작업은 되돌릴 수 없습니다."
 
 msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
-msgstr ""
+msgstr "승인하면 {readableId}을(를) 무효 처리하여 전기를 역분개한 뒤 삭제합니다. 이 작업은 되돌릴 수 없습니다."
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "대략적 — 예정된 날짜에서 파생됨, 이 행에 대한 용량 예약이 없습니다."
@@ -5672,7 +5682,7 @@ msgid "Beginning"
 msgstr "시작"
 
 msgid "Being approved now…"
-msgstr ""
+msgstr "지금 승인 처리 중…"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -6384,7 +6394,7 @@ msgid "Cancel purchase order {target}"
 msgstr "발주서 {target} 취소"
 
 msgid "Cancel Request"
-msgstr ""
+msgstr "요청 취소"
 
 msgid "Cancel Return"
 msgstr "반품 취소"
@@ -7021,6 +7031,9 @@ msgstr "공급업체 선택"
 msgid "Choose suppliers"
 msgstr "공급업체 선택"
 
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "각 그룹이 구성원에게 부여할 직원 유형을 선택하세요. 한 사람이 둘 이상의 그룹에 속해 있으면 상위 그룹의 설정이 적용됩니다."
+
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "현재 기간 또는 그 이전 3개 기간 중 하나의 첫 날을 선택하세요."
 
@@ -7571,7 +7584,7 @@ msgid "Completing"
 msgstr "완료 중"
 
 msgid "Completing a job's first operation prints its unit labels."
-msgstr ""
+msgstr "작업 지시의 첫 번째 공정을 완료 처리하면 단위 라벨이 인쇄됩니다."
 
 msgid "Completing this training grants or renews the selected ability."
 msgstr "이 교육을 완료하면 선택한 역량을 부여하거나 갱신합니다."
@@ -8075,7 +8088,7 @@ msgid "Control how operators pick material and track time on the shop floor."
 msgstr "현장에서 작업자의 자재 피킹 및 시간 추적 방식을 제어합니다."
 
 msgid "Control how parts and labels move from the pick to the finished unit."
-msgstr ""
+msgstr "부품과 라벨이 피킹부터 완성품까지 이동하는 방식을 설정합니다."
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "품목 ID(부품, 자재, 소모품, 공구, 서비스)에 소문자 포함 여부를 제어합니다."
@@ -8879,7 +8892,7 @@ msgid "Create Operator"
 msgstr "작업자 생성"
 
 msgid "Create picking lists on release"
-msgstr ""
+msgstr "릴리스 시 피킹 리스트 생성"
 
 msgid "Create PO Line"
 msgstr "발주서 라인 생성"
@@ -9900,6 +9913,9 @@ msgstr "기본 참조자"
 msgid "Default CC Recipients"
 msgstr "기본 참조(CC) 수신자"
 
+msgid "Default employee type"
+msgstr "기본 직원 유형"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "고정자산 처분으로 이익이 발생할 때 입금되는 기본 GL 계정입니다."
 
@@ -9917,6 +9933,9 @@ msgstr "정기 감가상각 처리에 대한 기본 총계정원장 비용 계�
 
 msgid "Default horizon (days)"
 msgstr "기본 호라이즌(일)"
+
+msgid "Default location"
+msgstr "기본 사업장"
 
 msgid "Default Method"
 msgstr "기본 방법"
@@ -11437,7 +11456,7 @@ msgid "Each physical unit gets its own tracked entity and unique number — one 
 msgstr "각 물리적 개는 자신의 추적 대상과 고유 번호를 받습니다 — 하나의 추적 대상, 하나의 개."
 
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
-msgstr ""
+msgstr "릴리스된 작업 지시마다 피킹 리스트가 하나씩 생성됩니다. 부품은 해당 부품을 사용하는 각 작업장의 라인사이드 보관 단위로 보내집니다."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "각 임차료 계약 또는 계약의 영업 담당자(또는 작성자)는 매일 해당 송장 요약을 받습니다."
@@ -12006,7 +12025,7 @@ msgid "Email notifications not configured"
 msgstr "이메일 알림이 설정되지 않음"
 
 msgid "Email order on acceptance"
-msgstr ""
+msgstr "수락 시 주문 이메일 발송"
 
 msgid "Email recipients"
 msgstr "이메일 수신자"
@@ -12021,7 +12040,7 @@ msgid "Emails of the attendees (guests)"
 msgstr "참석자(게스트)의 이메일 주소"
 
 msgid "Emails the sales order to the customer when they accept this quote online."
-msgstr ""
+msgstr "고객이 이 견적서를 온라인으로 수락하면 수주 내용을 고객에게 이메일로 보냅니다."
 
 msgid "Emoji"
 msgstr "이모지"
@@ -12040,6 +12059,10 @@ msgstr "직원 환급금 매입채무"
 
 msgid "Employee Type"
 msgstr "직원 유형"
+
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0}의 직원 유형"
 
 msgid "Employee Types"
 msgstr "직원 유형"
@@ -12327,6 +12350,9 @@ msgstr "인증자 앱에서 6자리 코드를 입력하세요"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "계속하려면 인증 앱의 6자리 코드를 입력하세요."
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "ID 공급자의 프로비저닝 설정에 기본 URL과 이 토큰을 입력하세요. 이 토큰은 한 번만 표시됩니다."
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "개인 OAuth 애플리케이션의 Onshape URL, 클라이언트 ID 및 클라이언트 암호를 입력한 후 저장하세요."
@@ -13887,22 +13913,22 @@ msgid "For Form 6765 Section E"
 msgstr "양식 6765 섹션 E용"
 
 msgid "Force delete"
-msgstr ""
+msgstr "강제 삭제"
 
 msgid "Force Delete"
-msgstr ""
+msgstr "강제 삭제"
 
 msgid "Force Delete (Admin)"
-msgstr ""
+msgstr "강제 삭제 (관리자)"
 
 msgid "Force delete {purchaseOrderReadableId}"
-msgstr ""
+msgstr "{purchaseOrderReadableId} 강제 삭제"
 
 msgid "Force delete {readableId}"
-msgstr ""
+msgstr "{readableId} 강제 삭제"
 
 msgid "Force delete waiting for another Admin's approval"
-msgstr ""
+msgstr "다른 관리자의 승인을 기다리는 강제 삭제"
 
 msgid "Forecast"
 msgstr "예측"
@@ -14222,6 +14248,9 @@ msgstr "자재 속성을 기반으로 자재 ID와 설명을 생성합니다."
 
 msgid "Generate Picking List"
 msgstr "피킹 리스트 생성"
+
+msgid "Generate token"
+msgstr "토큰 생성"
 
 msgid "Generated {created} steps from the motion plan"
 msgstr "동작 계획에서 {created}개 단계 생성"
@@ -14553,6 +14582,9 @@ msgstr "그룹화 기준"
 
 msgid "Group by material"
 msgstr "재료별로 그룹화"
+
+msgid "Group Mappings"
+msgstr "그룹 매핑"
 
 msgid "Group Members"
 msgstr "그룹 구성원"
@@ -14921,6 +14953,9 @@ msgstr "이 계측기를 재교정해야 하는 빈도입니다. 마지막 교�
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "이 유지보수가 반복되는 빈도입니다 — 매일, 매주, 매월, 순환 실사 시; 매일을 선택하면 요일 선택 옵션이 표시되고 나머지는 더 간단한 간격 계산을 사용합니다."
+
+msgid "How SCIM works"
+msgstr "SCIM 작동 방식"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "이 공정에서 공정이 배치를 공유하기 위해 각 자재 속성이 얼마나 엄격하게 일치해야 하는지"
@@ -15306,7 +15341,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "비활성 카테고리는 새로운 시간을 위해 선택될 수 없습니다."
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "단위를 선택할 때 비활성 단위는 표시되지 않습니다."
 
 msgid "Inbound inspection"
 msgstr "수입 검사"
@@ -16108,7 +16143,7 @@ msgid "It decides what the next step asks for."
 msgstr "다음 단계가 요청하는 것을 결정합니다."
 
 msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
-msgstr ""
+msgstr "현재 상태는 {status}입니다. 승인하면 먼저 무효 처리되어 전기가 역분개됩니다. 무효 처리가 거부되면 대신 전표로 전기를 역분개합니다."
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "승인되었지만 적용할 수 없습니다. 다시 열어 이 행을 확인한 후 다시 제출하세요."
@@ -16120,13 +16155,13 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "「{table}」 레코드에서 아직 사용 중입니다. 먼저 제거하세요."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr ""
+msgstr "공급업체 측 장부는 변경되지 않습니다. 먼저 해당 발주의 출하와 선급금을 무효 처리하고, 매입 송장에서 해당 라인을 제거하세요. 그렇지 않으면 요청이 거부됩니다."
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
-msgstr ""
+msgstr "상태와 관계없이 {readableId}을(를) 영구 삭제합니다. 이 작업은 되돌릴 수 없습니다."
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
-msgstr ""
+msgstr "상태나 승인 여부와 관계없이 이 발주서와 모든 라인을 영구 삭제합니다. 이 작업은 되돌릴 수 없습니다."
 
 msgid "It shows with no hours until you add some."
 msgstr "시간을 추가할 때까지 시간이 없이 표시됩니다."
@@ -16267,7 +16302,7 @@ msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "그 매출은 각 라인이 인식해야 할 남은 부분으로 돌아갑니다."
 
 msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
-msgstr ""
+msgstr "이후 사용되었더라도 해당 재고는 다시 빠지며(현재고가 음수가 될 수 있음), 입고받은 수량은 발주에 되돌려집니다."
 
 msgid "Job"
 msgstr "작업"
@@ -16523,7 +16558,7 @@ msgid "Labels"
 msgstr "라벨"
 
 msgid "Labels print at the first operation"
-msgstr ""
+msgstr "라벨은 첫 번째 공정에서 인쇄됨"
 
 msgid "Labor"
 msgstr "노무"
@@ -16676,6 +16711,9 @@ msgstr "마지막 푸시: {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "지난 분기"
+
+msgid "Last request"
+msgstr "마지막 요청"
 
 msgid "Last run"
 msgstr "최근 실행"
@@ -16925,6 +16963,9 @@ msgstr "멤버가 SAML을 통한 ID 제공자로 로그인하도록 허용합니
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "프로젝트 주식이 있는 프로젝트가 이 위치에서 이 항목의 예비 미할당 주식을 사용하도록 허용"
 
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "ID 공급자가 SCIM을 통해 구성원을 추가, 업데이트, 제거하도록 하세요."
+
 msgid "Let's Build"
 msgstr "제조해 봅시다"
 
@@ -17081,7 +17122,7 @@ msgid "Line Details"
 msgstr "라인 상세정보"
 
 msgid "Line Flow"
-msgstr ""
+msgstr "라인 흐름"
 
 msgid "Line Item"
 msgstr "라인 품목"
@@ -17699,6 +17740,12 @@ msgstr "구독 관리"
 msgid "Manage your subscription and billing information"
 msgstr "구독 및 결제 정보를 관리하세요"
 
+msgid "Managed by your identity provider"
+msgstr "ID 공급자에서 관리합니다"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "ID 공급자에서 관리합니다. 여기서 이름, 활성 상태 또는 직원 유형을 변경하면 다음 업데이트 때 덮어써질 수 있습니다."
+
 msgid "Manager"
 msgstr "관리자"
 
@@ -18103,8 +18150,14 @@ msgstr "구성원"
 msgid "Members"
 msgstr "구성원"
 
+msgid "Members in no mapped group get this type"
+msgstr "매핑된 그룹에 속하지 않은 구성원은 이 유형을 받습니다."
+
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "구성원들이 MRP에서 소요량을 함께 순계산합니다. 그룹은 프로젝트의 사업장에 있어야 합니다."
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "이 직원 유형을 받은 구성원은 로그인할 수 있지만 아무것도 열 수 없습니다. 사용자 → 직원 유형에서 이 유형에 권한을 부여하거나 다른 유형을 선택하세요."
 
 msgid "Memo"
 msgstr "메모"
@@ -20649,10 +20702,10 @@ msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr ""
+msgstr "아직 아무것도 삭제되지 않았습니다. 요청은 다른 관리자의 승인 대기열로 넘어가며, 관리자 중 한 명이 승인하면 삭제됩니다."
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
-msgstr ""
+msgstr "아직 아무것도 삭제되지 않았습니다. 요청은 다른 관리자의 승인 대기열로 넘어가며, 관리자 중 한 명이 승인하면 발주서가 삭제됩니다."
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "기한이 없습니다. 송장은 기간이 도래하면 자동으로 생성됩니다."
@@ -21493,7 +21546,7 @@ msgid "Operators can use shared workstations with PIN authentication."
 msgstr "작업자는 PIN 인증을 통해 공유 워크스테이션을 사용할 수 있습니다."
 
 msgid "Operators see a warning about unissued serial and batch parts and can still complete."
-msgstr ""
+msgstr "작업자에게 미출고 시리얼 및 배치 부품에 대한 경고가 표시되지만, 그래도 완료 처리할 수 있습니다."
 
 msgid "Operators start on the Scan tab"
 msgstr "작업자가 스캔 탭에서 시작"
@@ -21658,7 +21711,7 @@ msgid "Other Income GL account for the monthly interest earned on the net invest
 msgstr "판매형 리스의 순투자에서 발생한 매월 이자에 대한 영업외수익 계정과목."
 
 msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
-msgstr ""
+msgstr "이 항목이 자금을 대거나 환불하는 다른 지불 건은 먼저 적용이 해제되며, 전기 상태는 유지됩니다."
 
 msgid "Other Type"
 msgstr "기타 유형"
@@ -22195,10 +22248,10 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "이 송장에 적용된 지불 및 크레딧입니다. 적용된 금액과 외환 손익 금액은 회사 기본 통화로 표시됩니다. 원본 문서를 열려면 행을 클릭하세요."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr ""
+msgstr "이 항목에 적용된 지불 및 크레딧 메모는 먼저 적용이 해제됩니다. 각 지불은 전기된 상태로 유지되며, 다른 곳에 적용하거나 강제 삭제할 수 있는 미적용 크레딧으로 남습니다. 이 항목에서 이미 인식된 매출은 역분개됩니다."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
-msgstr ""
+msgstr "이 항목에 적용된 지불 및 크레딧 메모는 먼저 적용이 해제됩니다. 각 지불은 전기된 상태로 유지되며, 다른 곳에 적용하거나 강제 삭제할 수 있는 미적용 크레딧으로 남습니다. 이 항목이 자본화된 고정자산에 더한 가치는 다시 차감되며, 이미 전기된 감가상각은 그대로 유지됩니다."
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "이 날짜 이전의 만기 지불은 Carbon 외부에서 지불되었습니다"
@@ -22513,13 +22566,13 @@ msgid "Picking Lists"
 msgstr "피킹 리스트"
 
 msgid "Picking lists are created by hand"
-msgstr ""
+msgstr "피킹 리스트는 수동으로 생성됩니다"
 
 msgid "Picking lists on release disabled"
-msgstr ""
+msgstr "릴리스 시 피킹 리스트 생성 비활성화됨"
 
 msgid "Picking lists on release enabled"
-msgstr ""
+msgstr "릴리스 시 피킹 리스트 생성 활성화됨"
 
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "피킹 시 추적 개체를 유효기한이 빠른 순으로 제시하여, 기본적으로 유효기한이 가장 임박한 재고가 먼저 출고됩니다."
@@ -23099,7 +23152,7 @@ msgid "Print Label"
 msgstr "라벨 인쇄"
 
 msgid "Print label on completion"
-msgstr ""
+msgstr "완료 처리 시 라벨 인쇄"
 
 msgid "Print Labels"
 msgstr "라벨 인쇄"
@@ -23113,10 +23166,10 @@ msgid "Print Output ({0})"
 msgstr "인쇄 출력({0})"
 
 msgid "Print this item's serial label when its job's last operation completes."
-msgstr ""
+msgstr "작업 지시의 마지막 공정이 완료되면 이 품목의 시리얼 라벨을 인쇄합니다."
 
 msgid "Print travelers at the pick"
-msgstr ""
+msgstr "피킹 시 작업 이동표 인쇄"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "승인하는 발주서에 인쇄됩니다."
@@ -23511,6 +23564,12 @@ msgstr "임시 전표"
 msgid "Provisional rate"
 msgstr "임시 요율"
 
+msgid "Provisioned members"
+msgstr "프로비저닝된 구성원"
+
+msgid "Provisioning"
+msgstr "프로비저닝"
+
 msgid "PTO"
 msgstr "휴가"
 
@@ -23624,7 +23683,7 @@ msgid "Purchase order for {supplierName}"
 msgstr "{supplierName} 발주서"
 
 msgid "Purchase Order Force Delete"
-msgstr ""
+msgstr "발주서 강제 삭제"
 
 msgid "Purchase Order ID"
 msgstr "발주서 ID"
@@ -23967,7 +24026,7 @@ msgstr "{lineNumber} 라인 대변 수량"
 
 #. placeholder {0}: item?.name ?? ""
 msgid "Quantity to pick of {0}"
-msgstr ""
+msgstr "{0}의 피킹 수량"
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} 반품 수량"
@@ -24661,11 +24720,17 @@ msgstr "조건에서 재생성"
 msgid "Regenerate payments from the terms?"
 msgstr "조건에서 지불을 재생성하시겠습니까?"
 
+msgid "Regenerate SCIM token"
+msgstr "SCIM 토큰 재생성"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "이 사업장의 일정을 지금 다시 생성하세요. 마지막 일정 변경 후 약 30초에 자동으로 실행됩니다(편집이 일괄 처리되므로 여러 빠른 변경으로 인해 단일 재생성이 트리거됩니다)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D 모델에서 썸네일 재생성"
+
+msgid "Regenerate token"
+msgstr "토큰 재생성"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "모션 계획에서 {created}개 단계 재생성함"
@@ -24834,7 +24899,7 @@ msgid "Released with problems: {0}"
 msgstr "릴리스됨 (문제 있음): {0}"
 
 msgid "Releasing a job creates its picking list"
-msgstr ""
+msgstr "작업 지시를 릴리스하면 피킹 리스트가 생성됩니다"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "배치를 릴리스하면 포함된 작업 지시들도 릴리스되고, 각각은 현장에 준비되어야 합니다."
@@ -25309,7 +25374,7 @@ msgid "Request date"
 msgstr "요청 날짜"
 
 msgid "Request Force Delete"
-msgstr ""
+msgstr "요청 강제 삭제"
 
 msgid "Request Quote"
 msgstr "견적 요청"
@@ -25318,7 +25383,7 @@ msgid "Requested"
 msgstr "요청됨"
 
 msgid "Requested by"
-msgstr ""
+msgstr "요청자"
 
 msgid "Requested By"
 msgstr "요청한 사람"
@@ -25394,7 +25459,7 @@ msgid "Require tiered sign-off on purchase orders, quality documents, suppliers,
 msgstr "금액 임계값 및 승인자 그룹을 기반으로 발주서, 품질 문서, 공급업체 및 변경 통지에 대한 계층화된 승인 필요"
 
 msgid "Require tracked parts before completion"
-msgstr ""
+msgstr "완료 처리 전 추적 부품 필수"
 
 msgid "Require two-factor authentication"
 msgstr "2단계 인증 필수"
@@ -25424,10 +25489,10 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "통제된 환경에서 필수입니다 — 감사 로깅을 끌 수 없습니다."
 
 msgid "Required tracked parts disabled"
-msgstr ""
+msgstr "필수 추적 부품 사용 안 함"
 
 msgid "Required tracked parts enabled"
-msgstr ""
+msgstr "필수 추적 부품 사용"
 
 msgid "Requirement"
 msgstr "요구사항"
@@ -26682,6 +26747,18 @@ msgstr "스케줄링 충돌"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "일정 충돌: 공정으로는 마감일을 맞출 수 없음"
 
+msgid "SCIM base URL"
+msgstr "SCIM 기본 URL"
+
+msgid "SCIM Connection"
+msgstr "SCIM 연결"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM 프로비저닝"
+
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM이 이 개인의 이름과 활성 상태를 설정하며, 그룹이 매핑되면 직원 유형도 설정합니다. 이 값들은 ID 공급자에서 변경하세요."
+
 msgid "Scope"
 msgstr "범위"
 
@@ -27342,7 +27419,7 @@ msgid "Send Notifications"
 msgstr "알림 보내기"
 
 msgid "Send order confirmation"
-msgstr ""
+msgstr "주문 확인서 보내기"
 
 msgid "Send Reminder"
 msgstr "리마인더 보내기"
@@ -27594,6 +27671,12 @@ msgstr "목표 설정"
 msgid "Set at activation"
 msgstr "활성화 시 설정"
 
+msgid "Set by your identity provider"
+msgstr "ID 공급자에서 설정됨"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "ID 공급자의 그룹 매핑에서 설정됨"
+
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "회사의 운영 방식에 맞게 Carbon을 설정하세요: 사업장, 부품, BOM, 공정 목록 및 사용 워크플로우"
 
@@ -27674,6 +27757,9 @@ msgstr "보고서, 전표, 회계 기간, 감가상각 실행 등을 사용하�
 
 msgid "Set up authenticator app"
 msgstr "인증자 앱 설정"
+
+msgid "Set up SCIM"
+msgstr "SCIM 설정"
 
 msgid "Set up the right way"
 msgstr "올바른 방식으로 설정하기"
@@ -28712,7 +28798,7 @@ msgid "Starting"
 msgstr "시작 중"
 
 msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
-msgstr ""
+msgstr "피킹 리스트를 시작하면 수량 1개마다 작업 이동표를 한 장씩 인쇄합니다. 첫 번째 공정은 라벨을 인쇄하지 않습니다."
 
 msgid "Starting…"
 msgstr "시작 중…"
@@ -28849,7 +28935,7 @@ msgid "Stock and planning"
 msgstr "재고 및 계획"
 
 msgid "Stock at:"
-msgstr ""
+msgstr "재고 위치:"
 
 msgid "Stock Availability"
 msgstr "재고 가용성"
@@ -29506,7 +29592,7 @@ msgid "supplier stage"
 msgstr "공급업체 단계"
 
 msgid "Supplier stage"
-msgstr ""
+msgstr "공급업체 단계"
 
 msgid "Supplier Stage"
 msgstr "공급업체 단계"
@@ -30346,6 +30432,9 @@ msgstr "거래에 사용하는 통화와 환율"
 
 msgid "The current plan changed under this change request"
 msgstr "현재 계획이 이 변경 요청에서 변경되었습니다"
+
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "현재 토큰은 즉시 작동을 멈춥니다. ID 공급자에 새 토큰을 입력할 때까지 프로비저닝이 중단됩니다."
 
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "고객이 실질적으로 개를 구매합니다. 개시일에 귀사의 고정자산에서 제거되고, 판매가 전기되며, 약관 기간 동안 미수금에 대한 이자가 발생합니다."
@@ -31732,6 +31821,9 @@ msgstr "이 부서는 이 사업장에 작업장이 없습니다. 다른 부서 
 msgid "This download link is invalid or has been tampered with."
 msgstr "이 다운로드 링크가 유효하지 않거나 변조되었습니다."
 
+msgid "This employee type has no permissions"
+msgstr "이 직원 유형에는 권한이 없습니다"
+
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "이 수치는 유지되어야 합니다. 값 삽입으로 다시 추가하세요."
 
@@ -31804,7 +31896,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "웹훅의 고유 식별자입니다"
 
 msgid "This is an Admin override"
-msgstr ""
+msgstr "관리자 재정의입니다"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "이것은 ITAR 통제 환경입니다. 접근은 미국인에게만 제한됩니다."
@@ -32397,6 +32489,9 @@ msgstr "사이드바 전환"
 msgid "Toggle views"
 msgstr "보기 전환"
 
+msgid "Token"
+msgstr "토큰"
+
 msgid "Tol-"
 msgstr "공차-"
 
@@ -32636,10 +32731,10 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "추적 자재는 피킹 리스트가 없어도 피킹 순서(FEFO)에 따라 미리 선택됩니다."
 
 msgid "Tracked parts are not required"
-msgstr ""
+msgstr "추적 부품은 필수가 아닙니다"
 
 msgid "Tracked parts must be scanned in"
-msgstr ""
+msgstr "추적 부품은 스캔해서 투입해야 합니다"
 
 msgid "Tracking"
 msgstr "추적"
@@ -32765,13 +32860,13 @@ msgid "Travel"
 msgstr "출장"
 
 msgid "Traveler labels disabled"
-msgstr ""
+msgstr "작업 이동표 라벨 사용 안 함"
 
 msgid "Traveler labels enabled"
-msgstr ""
+msgstr "작업 이동표 라벨 사용"
 
 msgid "Traveler Link"
-msgstr ""
+msgstr "작업 이동표 링크"
 
 msgid "Traveler materials disabled"
 msgstr "작업 이동표 자재가 비활성화되었습니다"
@@ -32786,7 +32881,7 @@ msgid "Traveler operations enabled"
 msgstr "작업 이동표 공정 활성화됨"
 
 msgid "Travelers print at the pick"
-msgstr ""
+msgstr "피킹 시 작업 이동표 인쇄"
 
 msgid "Treatment"
 msgstr "처리"
@@ -32827,8 +32922,14 @@ msgstr "다시 시도"
 msgid "Tuesday"
 msgstr "화요일"
 
+msgid "Turn off"
+msgstr "끄기"
+
 msgid "Turn Off"
-msgstr ""
+msgstr "끄기"
+
+msgid "Turn off SCIM provisioning"
+msgstr "SCIM 프로비저닝 끄기"
 
 msgid "Turn On"
 msgstr "켜기"
@@ -32843,7 +32944,7 @@ msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
 
 msgid "Turn on to create one picking list for each job when it is released."
-msgstr ""
+msgstr "릴리스될 때 작업 지시마다 피킹 리스트를 하나씩 생성하려면 켜세요."
 
 msgid "Turned off sync"
 msgstr "동기화가 꺼졌습니다"
@@ -32901,10 +33002,10 @@ msgid "Type {0} to confirm"
 msgstr "확인하려면 {0}을(를) 입력하세요."
 
 msgid "Type {purchaseOrderReadableId} to confirm"
-msgstr ""
+msgstr "{purchaseOrderReadableId} 입력하여 확인"
 
 msgid "Type {readableId} to confirm"
-msgstr ""
+msgstr "{readableId} 입력하여 확인"
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "변수를 삽입하려면 {TRIGGER}를 입력하세요."
@@ -33064,7 +33165,7 @@ msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "고유하고 대문자이며 공백 없이(최대 10자)"
 
 msgid "Unique, without spaces (max 10 characters), such as kg or BX"
-msgstr ""
+msgstr "고유해야 하며 공백 없이 입력 (최대 10자), 예: kg 또는 BX"
 
 msgid "Unit"
 msgstr "단위"
@@ -34486,10 +34587,10 @@ msgid "What to set up"
 msgstr "설정할 항목"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr ""
+msgstr "잘못 입력된 내용과, 수정하거나 무효 처리할 수 없는 이유"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
-msgstr ""
+msgstr "잘못 입력된 내용과, 수정하거나 마감할 수 없는 이유"
 
 msgid "What we're assuming"
 msgstr "저희가 전제하는 사항"
@@ -35281,6 +35382,15 @@ msgstr "내보내기를 준비하고 있습니다. 준비가 끝나면 알려 �
 msgid "Your GL accounts"
 msgstr "총계정원장 계정"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "ID 공급자가 관리하는 구성원을 추가, 업데이트, 삭제합니다."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "ID 제공자는 더 이상 멤버를 추가하거나 제거할 수 없습니다. 프로비저닝한 멤버는 그대로 유지되며, SCIM을 다시 설정하면 중단된 지점부터 이어집니다."
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "아이덴티티 제공자는 아래의 기본 직원 유형과 사업장으로 구성원을 만듭니다. 제공자가 그룹을 보낸 뒤에는 그 그룹을 직원 유형에 매핑하세요."
+
 msgid "your Implementation Lead"
 msgstr "귀사의 실행 리드"
 
@@ -35330,7 +35440,10 @@ msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "실제 데이터가 로드되었고 샘플을 확인하여 승인했습니다."
 
 msgid "Your reason and the decision are kept in the audit log."
-msgstr ""
+msgstr "사유와 결정 내용은 감사 로그에 보관됩니다."
+
+msgid "Your SCIM token"
+msgstr "SCIM 토큰"
 
 msgid "Your session was locked after inactivity."
 msgstr "세션이 비활성으로 인해 잠겼습니다."
