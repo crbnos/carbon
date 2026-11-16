@@ -15,7 +15,7 @@ import { getIntegration } from "~/modules/settings/settings.service";
 // verifySenseWebhook.
 export const config = { runtime: "nodejs" };
 
-const logger = getLogger("erp", "webhook-sense");
+const logger = getLogger("erp", "webhook", "sense");
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if (!params.companyId) {
@@ -76,7 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       secret
     })
   ) {
-    logger.warn("Sense webhook rejected", {
+    logger.warning("Sense webhook rejected", {
       companyId,
       reason: secret ? "invalid-signature" : "no-stored-secret"
     });

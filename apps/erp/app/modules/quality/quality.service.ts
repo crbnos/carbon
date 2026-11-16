@@ -5586,7 +5586,11 @@ export async function closeIssue(
     }
     return { data: { ...closed, warning }, error: null };
   } catch (err) {
-    logger.error("closeIssue failed", { companyId, nonConformanceId, err });
+    logger.error("Failed to close the issue", {
+      companyId,
+      nonConformanceId,
+      error: err
+    });
     return engine.engineErrResult(err, "Failed to close NCR");
   }
 }

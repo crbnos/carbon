@@ -4,6 +4,7 @@
 
 import { CarbonEdition } from "@carbon/auth";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
 import { Edition } from "@carbon/utils";
 
 // The list ships with this package and is bundled into the consuming app (ERP /
@@ -18,6 +19,8 @@ const blockedDomains = new Set(
     .map((line) => line.trim().toLowerCase())
     .filter((line) => line.length > 0 && !line.startsWith("#"))
 );
+
+const logger = getLogger("auth");
 
 /** Shown to the user when their domain is blocked. Kept generic and actionable. */
 export const SELF_SIGNUP_BLOCKED_MESSAGE =
@@ -85,10 +88,10 @@ export async function isPlatformSignupDisabled(): Promise<boolean> {
     return platformSignup.disabled;
   } catch (err) {
     const disabled = CarbonEdition === Edition.Enterprise;
-    console.warn(
-      `could not read auth settings; treating sign-ups as ${disabled ? "disabled" : "allowed"}`,
-      err
-    );
+    logger.warning("Could not read auth settings; using the edition default", {
+      signupsDisabled: disabled,
+      error: err
+    });
     return disabled;
   }
 }

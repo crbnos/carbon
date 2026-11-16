@@ -3,9 +3,12 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { RampApiError, type RampClient } from "./client";
 import { getRampIntegration, RAMP } from "./connection";
+
+const logger = getLogger("ee", "ramp");
 
 /** Ramp caps a `POST /accounting/accounts` batch at 500 gl_accounts. */
 export const RAMP_ACCOUNTS_BATCH_SIZE = 500;
@@ -334,9 +337,9 @@ export async function pushChartOfAccounts(
   for (const { account } of toUpdate) {
     const rampId = rampIdByAccountId.get(account.id);
     if (!rampId) {
-      console.warn(
-        `[ramp] no ramp_id for account ${account.id}; skipping update this run`
-      );
+      logger.warning("No ramp_id for account; skipping update this run", {
+        accountId: account.id
+      });
       continue;
     }
     // name, code and visibility are PATCHable in Ramp; classification is

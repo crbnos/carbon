@@ -75,11 +75,6 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   if (result.error) {
-    logger.error("Failed to create revision", {
-      companyId,
-      itemId: validation.data.copyFromId,
-      error: result.error
-    });
     return { success: false, message: "Failed to create revision" };
   }
 

@@ -15,7 +15,7 @@ import { getIntegration } from "~/modules/settings/settings.service";
 // verifyLinearWebhook.
 export const config = { runtime: "nodejs" };
 
-const logger = getLogger("erp", "webhook-linear-companyid");
+const logger = getLogger("erp", "webhook", "linear");
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { companyId } = params;

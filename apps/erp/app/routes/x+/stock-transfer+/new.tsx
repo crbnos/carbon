@@ -56,16 +56,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("companyId", companyId)
       .maybeSingle();
     if (location.error) {
-      logger.error("Failed to load the location for a new stock transfer", {
-        companyId,
-        locationId: requested,
-        error: location.error
-      });
       throw redirect(
         path.to.stockTransfers,
         await flash(
           request,
-          error(location.error, "Failed to load the location")
+          error(location.error, "Failed to load the location", {
+            locationId: requested
+          })
         )
       );
     }
@@ -98,14 +95,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
   const failure = stock.error ?? storageUnits.error ?? trackedStock.error;
   if (failure || !trackedStock.data) {
-    logger.error("Failed to load stock for a new stock transfer", {
-      companyId,
-      locationId,
-      error: failure
-    });
     throw redirect(
       path.to.stockTransfers,
-      await flash(request, error(failure, "Failed to load stock"))
+      await flash(
+        request,
+        error(failure, "Failed to load stock", { locationId })
+      )
     );
   }
 

@@ -12,7 +12,7 @@ import { data } from "react-router";
 import { z } from "zod";
 import { getIntegration } from "~/modules/settings/settings.service";
 
-const logger = getLogger("erp", "webhook-paperless-parts-companyid");
+const logger = getLogger("erp", "webhook", "paperless-parts");
 
 const integrationValidator = z.object({
   apiKey: z.string(),
@@ -152,7 +152,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return data({ success: false }, { status: 401 });
     }
 
-    logger.info("payload", payload);
+    logger.info("Received a Paperless Parts webhook", { companyId, payload });
 
     await trigger("paperless-parts", {
       apiKey,

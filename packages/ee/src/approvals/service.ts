@@ -596,10 +596,9 @@ export async function getApproverUserIdsForRule(
       : { data: [] as string[], error: null };
 
   if (fromGroups.error) {
-    logger.error(
-      "getApproverUserIdsForRule: users_for_groups failed",
-      fromGroups.error
-    );
+    logger.error("getApproverUserIdsForRule: users_for_groups failed", {
+      error: fromGroups.error
+    });
     return defaultId ? [defaultId] : [];
   }
 

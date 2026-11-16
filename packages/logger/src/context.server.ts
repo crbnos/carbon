@@ -3,12 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { AsyncLocalStorage } from "node:async_hooks";
+import type { Sink } from "@logtape/logtape";
 import {
   createContext,
   type MiddlewareFunction,
   type RouterContext,
   type RouterContextProvider
 } from "react-router";
+import { nameRequestSpan } from "./span";
 
 /**
  * Makes React Router's per-request `context` readable from anywhere on the
@@ -49,11 +51,7 @@ const storage = new AsyncLocalStorage<RequestContext>();
 export const requestContextMiddleware: MiddlewareFunction<Response> = (
   { context, request },
   next
-) => {
-  context.set(isReadRequestContext, isReadRequest(request));
-  context.set(requestContext, request);
-  return storage.run(context, () => next());
-};
+) => runInRequestContext(context, next, { request });
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -100,15 +98,63 @@ export function getRequestContext<T>(context: RouterContext<T>): T | undefined {
   return storage.getStore()?.get(context);
 }
 
+/** What every log line written during the request carries. */
+export type LogContext = {
+  requestId?: string;
+  companyId?: string;
+  userId?: string;
+  [key: string]: string | undefined;
+};
+
+const logContext = createContext<LogContext | null>(null);
+
+/**
+ * Adds to what every log line of the current request carries: the request id
+ * once it is assigned, the company and user once auth resolves them. A log
+ * call's own property of the same name wins. No-op outside a request.
+ */
+export function addLogContext(properties: LogContext): void {
+  const provider = storage.getStore();
+  if (!provider) return;
+  provider.set(logContext, { ...provider.get(logContext), ...properties });
+}
+
+/** The current request's log context, or undefined outside a request. */
+export function getLogContext(): LogContext | undefined {
+  return storage.getStore()?.get(logContext) ?? undefined;
+}
+
+/** A sink that adds the current request's log context to each record. */
+export function withRequestLogContext(sink: Sink): Sink {
+  return (record) => {
+    const context = getLogContext();
+    sink(
+      context
+        ? { ...record, properties: { ...context, ...record.properties } }
+        : record
+    );
+  };
+}
+
 export const requestDetailContext = createContext<string | null>(null);
 
 /**
  * What a route that serves many things on one path ran for this request:
  * the Inngest function behind `/api/inngest`, the tool behind `/api/mcp`.
- * The access log prints it after the path. No-op outside a request.
+ * The access log prints it after the path, and the request span is named
+ * `METHOD /path detail`. Keep it to a bounded set of values. No-op outside a
+ * request.
  */
 export function describeRequest(detail: string) {
-  storage.getStore()?.set(requestDetailContext, detail);
+  const provider = storage.getStore();
+  if (!provider) return;
+  provider.set(requestDetailContext, detail);
+  const request = provider.get(requestContext);
+  if (request) {
+    nameRequestSpan(
+      `${request.method} ${new URL(request.url).pathname} ${detail}`
+    );
+  }
 }
 
 /** Backing store for `oncePerRequest`, kept in the router context itself. */
@@ -171,7 +217,6 @@ export function runInRequestContext<T>(
   fn: () => T,
   options?: { isRead?: boolean; request?: Request }
 ): T {
-  // As the middleware decides it: from the request's method, when there is one.
   const isRead =
     options?.isRead ??
     (options?.request ? isReadRequest(options.request) : true);

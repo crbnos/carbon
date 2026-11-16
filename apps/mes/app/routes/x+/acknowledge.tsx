@@ -94,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     if (error) {
-      logger.error(`[acknowledge] Failed to record entity cert:`, error);
+      logger.error("Failed to record the entity certification", error);
       return { success: false, message: "Failed to record certification" };
     }
 
@@ -124,7 +124,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     if (error) {
-      logger.error(`[acknowledge] Failed to record user cert:`, error);
+      logger.error("Failed to record the user certification", error);
       return { success: false, message: "Failed to record certification" };
     }
 

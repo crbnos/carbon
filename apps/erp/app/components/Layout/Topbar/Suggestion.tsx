@@ -137,7 +137,9 @@ const Suggestion = () => {
         });
 
       if (imageUpload.error) {
-        logger.error(imageUpload.error);
+        logger.error("Failed to upload the suggestion image", {
+          error: imageUpload.error
+        });
         toastError(t`Failed to upload image`, imageUpload.error);
       }
 

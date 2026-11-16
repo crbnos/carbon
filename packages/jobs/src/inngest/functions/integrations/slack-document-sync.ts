@@ -428,7 +428,7 @@ async function getDocumentData(
     case "receipt":
     case "shipment":
     default:
-      log.warning(`Document type ${documentType} not yet implemented`);
+      log.warning("Document type not yet implemented", { documentType });
       return null;
   }
 }

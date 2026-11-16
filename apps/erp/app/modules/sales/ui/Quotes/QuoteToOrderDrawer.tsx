@@ -159,7 +159,7 @@ const QuoteToOrderDrawer = ({
       );
 
       if (error) {
-        logger.error("Error updating opportunity:", error);
+        logger.error("Failed to update the opportunity", { error });
         toastError(t`Failed to update opportunity with purchase order`, error);
       } else {
         setTimeout(() => {

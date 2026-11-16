@@ -54,7 +54,7 @@ export const indirectRatesFunction = inngest.createFunction(
         logger.error("Indirect rate run failed for {companyId}", {
           companyId,
           accountingPeriodId,
-          message: result.error.message
+          error: result.error
         });
       }
       return result;

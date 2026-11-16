@@ -22,12 +22,14 @@ import {
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
+  assertEntitiesAtLocation,
   assertEntitiesInCommonStock,
   assertEntitiesInStripes,
   drawFromStripes,
   itemLedgerInStripes,
   loadDemandStripes,
   loadProjectStock,
+  loadTrackedEntityLedger,
   loadTrackedEntityStripe,
   loadTrackedEntityStripes,
   type StockStripe,
@@ -58,6 +60,7 @@ import { toJson } from "@carbon/database/json";
 import {
   allocateAcrossBudgets,
   type BinStock,
+  chooseSourceBin,
   getOperationLinesideBin,
   getPickedBudgets,
   type LinesideClaim,
@@ -107,6 +110,10 @@ import {
   type StockTransferLineDraft
 } from "@carbon/database/stock-transfer";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
+import {
+  claimTravelerPrint,
+  releaseTravelerPrintClaim
+} from "@carbon/database/travelers";
 import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
@@ -926,6 +933,30 @@ export async function getStockTransferLines(
     .eq("stockTransferId", stockTransferId)
     .order("itemReadableId", { ascending: true })
     .order("createdAt", { ascending: true });
+}
+
+/** Where each line's stock is now: the bins a pick can take it from. */
+export async function getStockTransferLiveBins(
+  client: SupabaseClient<Database>,
+  stockTransferId: string,
+  companyId: string
+) {
+  const result = await client.rpc("get_stock_transfer_live_bins", {
+    p_company_id: companyId,
+    p_stock_transfer_id: stockTransferId
+  });
+  const bins = new Map<string, PickingListLiveBin[]>();
+  if (result.error) return { data: bins, error: result.error };
+  for (const row of result.data) {
+    const list = bins.get(row.stockTransferLineId) ?? [];
+    list.push({
+      id: row.storageUnitId,
+      name: row.storageUnitName,
+      quantity: row.quantity
+    });
+    bins.set(row.stockTransferLineId, list);
+  }
+  return { data: bins, error: null };
 }
 
 export async function getStockTransferTracking(
@@ -5254,7 +5285,7 @@ export async function getPickingListLines(
   return client
     .from("pickingListLine")
     .select(
-      "*, item(name, readableId, itemTrackingType, unitOfMeasureCode), jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
+      "*, item(name, readableId, itemTrackingType, unitOfMeasureCode, thumbnailPath, modelUpload:modelUploadId(thumbnailPath)), jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
     )
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")
@@ -5319,6 +5350,38 @@ export async function getPickingListAvailability(
     );
   }
   return map;
+}
+
+/** A bin that holds stock a picking list line can draw now. `id` and `name`
+ *  are null for stock in no storage unit. */
+export type PickingListLiveBin = {
+  id: string | null;
+  name: string | null;
+  quantity: number;
+};
+
+/** Current positive warehouse stock by bin for each line on one picking list. */
+export async function getPickingListLiveBins(
+  client: SupabaseClient<Database>,
+  pickingListId: string,
+  companyId: string
+) {
+  const result = await client.rpc("get_picking_list_live_bins", {
+    p_company_id: companyId,
+    p_picking_list_id: pickingListId
+  });
+  const bins = new Map<string, PickingListLiveBin[]>();
+  if (result.error) return { data: bins, error: result.error };
+  for (const row of result.data) {
+    const list = bins.get(row.pickingListLineId) ?? [];
+    list.push({
+      id: row.storageUnitId,
+      name: row.storageUnitName,
+      quantity: row.quantity
+    });
+    bins.set(row.pickingListLineId, list);
+  }
+  return { data: bins, error: null };
 }
 
 export type PickingListRecommendation = {
@@ -6009,8 +6072,21 @@ class PickingReadError extends Error {
   }
 }
 
+/** The refusal of `generatePickingList` when no line needs picking. */
+export const NO_MATERIALS_TO_PICK =
+  "No materials require picking for the selected operations";
+
+/**
+ * Build a Draft picking list for the given job operations at a location.
+ *
+ * Every read and every decision happens first, through `client`. Then one
+ * transaction on `db` takes the picking list number, inserts the header and
+ * inserts its lines, so a failure writes nothing. When no line needs picking
+ * it returns `NO_MATERIALS_TO_PICK` and writes nothing.
+ */
 export async function generatePickingList(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationIds: string[];
     locationId: string;
@@ -6018,46 +6094,15 @@ export async function generatePickingList(
     createdBy: string;
     assignee?: string | null;
     dueDate?: string | null;
+    /**
+     * Leave out materials whose item is made in-house (replenishment Make). A
+     * release picking list sets it: a sub-assembly comes from its own line,
+     * not from the warehouse.
+     */
+    excludeMadeParts?: boolean;
   }
 ) {
-  // 1. Get the next sequence number
-  const sequenceResult = await settingsService.getNextSequence(
-    client,
-    "pickingList",
-    args.companyId
-  );
-  if (sequenceResult.error || !sequenceResult.data) {
-    return {
-      data: null,
-      error: sequenceResult.error ?? "Failed to get sequence"
-    };
-  }
-  const pickingListId = sequenceResult.data as string;
-
-  // 2. Create the picking list header
-  const headerInsert = await client
-    .from("pickingList")
-    .insert([
-      {
-        pickingListId,
-        status: "Draft" as const,
-        locationId: args.locationId,
-        assignee: args.assignee ?? null,
-        dueDate: args.dueDate ?? null,
-        companyId: args.companyId,
-        createdBy: args.createdBy
-      }
-    ])
-    .select("id, pickingListId")
-    .single();
-
-  if (headerInsert.error) {
-    return { data: null, error: headerInsert.error };
-  }
-
-  const plId = headerInsert.data.id;
-
-  // 3. Map each operation to its work center (for the lineside destination)
+  // 1. Map each operation to its work center (for the lineside destination)
   // and find the earliest selected operation of each make method (lowest
   // "order", id tie-break) — materials with no operation assignment attach to
   // it, mirroring get_picking_schedule's first-operation attribution.
@@ -6067,7 +6112,6 @@ export async function generatePickingList(
     .in("id", args.jobOperationIds);
 
   if (operations.error) {
-    await client.from("pickingList").delete().eq("id", plId);
     return { data: null, error: operations.error };
   }
 
@@ -6095,7 +6139,7 @@ export async function generatePickingList(
   }
   const makeMethodIds = Array.from(firstSelectedOpByMakeMethod.keys());
 
-  // 4. Get jobMaterial records with quantityToIssue > 0: those assigned to the
+  // 2. Get jobMaterial records with quantityToIssue > 0: those assigned to the
   // selected operations, plus unassigned ones (jobOperationId NULL — demanded
   // at every operation of their method in MES) on the selected make methods.
   const quoted = (ids: string[]) => ids.map((id) => `"${id}"`).join(",");
@@ -6116,7 +6160,6 @@ export async function generatePickingList(
   const materials = await materialsQuery;
 
   if (materials.error) {
-    await client.from("pickingList").delete().eq("id", plId);
     return { data: null, error: materials.error };
   }
 
@@ -6142,12 +6185,39 @@ export async function generatePickingList(
       .eq("companyId", args.companyId)
       .in("itemId", materialItemIds);
     if (supersessions.error) {
-      await client.from("pickingList").delete().eq("id", plId);
       return { data: null, error: supersessions.error };
     }
     for (const row of supersessions.data ?? []) {
       supersessionByItem.set(row.itemId, row);
     }
+  }
+
+  // With `excludeMadeParts`, a pick is left out when the item it PICKS is made
+  // in-house. The test runs on the resolved pick targets below, after
+  // supersession, so a Make predecessor with a Buy successor still picks the
+  // successor, and a Buy material redirected to a Make successor is left out.
+  // Every item a pick can target is a material item, the item it was swapped
+  // from, or a successor, so one read covers them all.
+  const madeItemIds = new Set<string>();
+  if (args.excludeMadeParts && materialItemIds.length > 0) {
+    const targetItemIds = Array.from(
+      new Set([
+        ...materialItemIds,
+        ...Array.from(supersessionByItem.values())
+          .map((row) => row.successorItemId)
+          .filter((id): id is string => !!id)
+      ])
+    );
+    const madeItems = await client
+      .from("item")
+      .select("id")
+      .in("id", targetItemIds)
+      .eq("companyId", args.companyId)
+      .eq("replenishmentSystem", "Make");
+    if (madeItems.error) {
+      return { data: null, error: madeItems.error };
+    }
+    for (const item of madeItems.data ?? []) madeItemIds.add(item.id);
   }
   // Business date for supersession effectivity. Uses UTC to match the SQL
   // schedule/availability path — get_picking_schedule and
@@ -6167,7 +6237,6 @@ export async function generatePickingList(
     Array.from(new Set((materials.data ?? []).map((m) => m.jobId)))
   );
   if (jobStripes.error || !jobStripes.data) {
-    await client.from("pickingList").delete().eq("id", plId);
     return { data: null, error: jobStripes.error };
   }
   const stripesByJob = jobStripes.data;
@@ -6442,7 +6511,10 @@ export async function generatePickingList(
 
   // Lazily resolve (and cache) the lineside destination per work center. A
   // pick is a transfer from the warehouse source to this lineside shelf;
-  // production later consumes from it.
+  // production later consumes from it. The RPC may create the lineside storage
+  // unit, but it is a get-or-create (the next call returns the same unit), so
+  // it stays a read-phase call outside the transaction: a list that is not
+  // created leaves at most a lineside unit the next list reuses.
 
   const linesideByWorkCenter = new Map<string, string | null>();
   const resolveLineside = async (
@@ -6457,17 +6529,18 @@ export async function generatePickingList(
       p_company_id: args.companyId,
       p_user_id: args.createdBy
     });
+    // A failed call must not read as "no lineside bin": the line would be
+    // created with no destination. The caller's catch returns the error
+    // before anything is written.
+    if (result.error) throw new PickingReadError(result.error);
     const linesideId = (result.data as string | null) ?? null;
     linesideByWorkCenter.set(workCenterId, linesideId);
     return linesideId;
   };
 
-  // Accumulate all line rows and per-material FIFO allocations first, then write
-  // them in atomic batch inserts. On any insert error we delete the header,
-  // which cascades to lines and tracked-entity allocations (ON DELETE CASCADE),
-  // so a partially-built picking list can never survive.
+  // Build every line row first; nothing is written until all of them are
+  // known (step 4), so a failed read leaves no picking list behind.
   const lineRows: Array<{
-    pickingListId: string;
     jobId: string;
     jobMaterialId: string;
     jobOperationId: string | null;
@@ -6501,7 +6574,7 @@ export async function generatePickingList(
         ? (workCenterByOperation.get(effectiveOperationId) ?? null)
         : null;
 
-      // 5. Resolve the destination: the operation's work-center lineside shelf.
+      // Resolve the destination: the operation's work-center lineside shelf.
       const toStorageUnitId = await resolveLineside(opWorkCenterId);
 
       // The stock TEST uses total non-lineside on-hand (including the unassigned
@@ -6597,12 +6670,18 @@ export async function generatePickingList(
         if (newCredit) {
           chargeUnclaimed(newCredit, split.stagedNewUsed);
         }
-        if (split.picks.length === 0) continue;
-        targets = split.picks.map((pick) => ({
-          itemId: pick.item === "predecessor" ? predecessorItemId : successorId,
-          quantity: pick.quantity
-        }));
+        targets = split.picks
+          .map((pick) => ({
+            itemId:
+              pick.item === "predecessor" ? predecessorItemId : successorId,
+            quantity: pick.quantity
+          }))
+          .filter((pick) => !madeItemIds.has(pick.itemId));
+        if (targets.length === 0) continue;
       } else {
+        // A made target is left out before its lineside credit is charged, so
+        // the credit stays for the materials that are picked.
+        if (madeItemIds.has(target.itemId)) continue;
         const need = quantityToIssue * target.factor;
         if (toStorageUnitId) {
           const credit = await linesideCreditFor(
@@ -6655,7 +6734,6 @@ export async function generatePickingList(
         }
 
         lineRows.push({
-          pickingListId: plId,
           jobId: mat.jobId,
           jobMaterialId: mat.id,
           jobOperationId: effectiveOperationId,
@@ -6675,41 +6753,67 @@ export async function generatePickingList(
     }
   } catch (err) {
     if (err instanceof PickingReadError) {
-      await client.from("pickingList").delete().eq("id", plId);
       return { data: null, error: err.postgrestError };
     }
     throw err;
   }
 
-  // 7. If no lines to pick, delete the empty header and report.
+  // 3. Nothing to pick: nothing was written, so there is nothing to undo.
   if (lineRows.length === 0) {
-    await client.from("pickingList").delete().eq("id", plId);
     return {
       data: null,
-      error: "No materials require picking for the selected operations"
+      error: NO_MATERIALS_TO_PICK
     };
   }
 
-  // 8. Atomic batch insert of all lines. Tracked lots are not pre-allocated;
-  // they're chosen at pick time via the TrackedEntityPicker.
-  const linesInsert = await client
-    .from("pickingListLine")
-    .insert(lineRows)
-    .select("id");
-
-  if (linesInsert.error || !linesInsert.data) {
-    await client.from("pickingList").delete().eq("id", plId); // cascade cleanup
-    return { data: null, error: linesInsert.error ?? "Failed to create lines" };
+  // 4. One transaction: the number, the header and every line. A failure rolls
+  // all of it back, so no header is ever left without its lines. Tracked lots
+  // are not pre-allocated; they're chosen at pick time via the
+  // TrackedEntityPicker.
+  try {
+    const created = await withTransaction(db, async (trx) => {
+      const pickingListId = await sequence.getNextSequence(
+        trx,
+        "pickingList",
+        args.companyId
+      );
+      const header = await trx
+        .insertInto("pickingList")
+        .values({
+          pickingListId,
+          status: "Draft",
+          locationId: args.locationId,
+          assignee: args.assignee ?? null,
+          dueDate: args.dueDate ?? null,
+          companyId: args.companyId,
+          createdBy: args.createdBy
+        })
+        .returning(["id", "pickingListId"])
+        .executeTakeFirstOrThrow();
+      await trx
+        .insertInto("pickingListLine")
+        .values(lineRows.map((row) => ({ ...row, pickingListId: header.id })))
+        .execute();
+      return header;
+    });
+    return {
+      data: {
+        id: created.id,
+        pickingListId: created.pickingListId
+      },
+      error: null
+    };
+  } catch (err) {
+    logger.error("Failed to create the picking list", {
+      companyId: args.companyId,
+      locationId: args.locationId,
+      error: err
+    });
+    return {
+      data: null,
+      error: getErrorMessage(err, "Failed to create the picking list")
+    };
   }
-
-  // 9. Return the created picking list
-  return {
-    data: {
-      id: plId,
-      pickingListId
-    },
-    error: null
-  };
 }
 
 /**
@@ -8274,10 +8378,10 @@ export async function autoPrint(
     locationId,
     context
   }: {
-    sourceDocument: "Receipt" | "Shipment" | "Kanban";
+    sourceDocument: "Receipt" | "Shipment" | "Kanban" | "PickingList";
     sourceDocumentId: string;
     locationId: string | null;
-    context: "receiving" | "shipping" | "kanban";
+    context: "receiving" | "shipping" | "kanban" | "inventory";
   }
 ) {
   if (!locationId) return;
@@ -8299,6 +8403,107 @@ export async function autoPrint(
     }
   } catch (error) {
     logger.error("Auto-print failed", { error });
+  }
+}
+
+/**
+ * Print a picking list's travelers once, after a status change or a pick.
+ * With `companySettings.travelerLabels` on, it first checks that the
+ * printer of the list's location auto-prints (`inventory` context), so a
+ * list whose printer does not auto-print is not claimed and prints once
+ * auto-print is turned on. Then `claimTravelerPrint` sets the list's
+ * `travelersPrintedAt`, and only the call that sets it queues the print
+ * job. When the job cannot be queued, `releaseTravelerPrintClaim` gives the
+ * claim back, so the next pick or status change tries again. With the
+ * setting off nothing is claimed. Never throws: a print failure must not
+ * fail the pick.
+ */
+export async function printTravelersOnStart(
+  ctx: ServiceContext,
+  pickingListId: string
+) {
+  const companyId = ctx.company.id;
+  try {
+    const settings = await settingsService.getCompanySettings(
+      ctx.asSystem.supabase,
+      companyId
+    );
+    if (settings.data?.travelerLabels !== true) return;
+
+    const list = await ctx.asSystem.supabase
+      .from("pickingList")
+      .select("locationId")
+      .eq("id", pickingListId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (list.error) {
+      logger.error("Traveler print: could not read the picking list", {
+        companyId,
+        pickingListId,
+        error: list.error
+      });
+      return;
+    }
+    const locationId = list.data?.locationId ?? null;
+    if (!locationId) return;
+
+    const config = await getCachedPrinterConfig(
+      ctx.asSystem.supabase,
+      companyId,
+      locationId,
+      "inventory"
+    );
+    if (!(config?.autoPrint ?? true)) return;
+
+    const at = datetime.timestamp();
+    const claim = await claimTravelerPrint(ctx.asSystem.supabase, {
+      pickingListId,
+      companyId,
+      at
+    });
+    if (claim.error) {
+      logger.error("Traveler print claim failed", {
+        companyId,
+        pickingListId,
+        error: claim.error
+      });
+      return;
+    }
+    if (!claim.claimed) return;
+
+    try {
+      await trigger("print-job", {
+        sourceDocument: "PickingList",
+        sourceDocumentId: pickingListId,
+        companyId,
+        userId: ctx.auditUserId,
+        locationId: claim.locationId ?? locationId
+      });
+    } catch (error) {
+      logger.error("Traveler print could not be queued", {
+        companyId,
+        pickingListId,
+        error
+      });
+      const released = await releaseTravelerPrintClaim(ctx.asSystem.supabase, {
+        pickingListId,
+        companyId,
+        at
+      });
+      if (released.error) {
+        logger.error("Traveler print claim could not be given back", {
+          companyId,
+          pickingListId,
+          error: released.error
+        });
+      }
+    }
+  } catch (error) {
+    logger.error("Traveler print failed", {
+      companyId,
+      pickingListId,
+      error
+    });
   }
 }
 
@@ -8529,7 +8734,9 @@ export async function stockTransferLineOf(
   if (!line.data) {
     return ctx.error("notFound", "Stock transfer line not found");
   }
-  if (line.data.stockTransfer?.status === "Completed") {
+  // An unpick is how a wrong pick is undone, also after the last pick
+  // completed the transfer: the posting reopens it.
+  if (forPick && line.data.stockTransfer?.status === "Completed") {
     return ctx.error("rule", "Cannot pick from a completed stock transfer.");
   }
   // Release runs the storage rules, so a Draft is not picked. Unpicking stays
@@ -11389,6 +11596,8 @@ async function lockStockTransferForPick(
     companyId: string;
     locationId: string;
     picking: boolean;
+    /** The line an unpick takes back: it reopens a Completed transfer. */
+    stockTransferLineId?: string;
   }
 ) {
   const transfer = await trx
@@ -11404,7 +11613,32 @@ async function lockStockTransferForPick(
     throw new InvalidInputError("The stock transfer is at another location");
   }
   if (transfer.status === "Completed") {
-    throw new InvalidInputError("Cannot pick from a completed stock transfer.");
+    if (input.picking) {
+      throw new InvalidInputError(
+        "Cannot pick from a completed stock transfer."
+      );
+    }
+    // A transfer completes by itself when its last line is picked (a one-line
+    // kanban refill completes on its only pick), so a wrong pick must still be
+    // undone: the unpick reopens it, in this transaction.
+    const otherPicked = await trx
+      .selectFrom("stockTransferLine")
+      .select("id")
+      .where("stockTransferId", "=", input.stockTransferId)
+      .where("companyId", "=", input.companyId)
+      .where("id", "!=", input.stockTransferLineId ?? "")
+      .where("pickedQuantity", ">", 0)
+      .limit(1)
+      .executeTakeFirst();
+    await trx
+      .updateTable("stockTransfer")
+      .set({
+        status: otherPicked ? "In Progress" : "Released",
+        completedAt: null
+      })
+      .where("id", "=", input.stockTransferId)
+      .where("companyId", "=", input.companyId)
+      .execute();
   }
   if (input.picking && transfer.status === "Draft") {
     throw new InvalidInputError(STOCK_TRANSFER_NOT_RELEASED);
@@ -11467,10 +11701,7 @@ export async function postStockTransfer(
   let expiredWarning: string | undefined;
   let splitEntityId: string | undefined;
 
-  logger.info({
-    function: "post-stock-transfer",
-    ...validatedPayload
-  });
+  logger.info("Posting a stock transfer", validatedPayload);
 
   switch (validatedPayload.type) {
     case "inventory": {
@@ -11591,7 +11822,8 @@ export async function postStockTransfer(
           stockTransferId,
           companyId,
           locationId,
-          picking: false
+          picking: false,
+          stockTransferLineId
         });
         // Get stock transfer line details
         const stockTransferLine = await trx
@@ -12127,7 +12359,8 @@ export async function postStockTransfer(
           stockTransferId,
           companyId,
           locationId,
-          picking: false
+          picking: false,
+          stockTransferLineId
         });
         // Lock the line AND the entity: an unpick read-modify-writes the
         // entity's quantity/status and the line's pickedQuantity, so two
@@ -12277,7 +12510,8 @@ export async function postStockTransfer(
           stockTransferId,
           companyId,
           locationId,
-          picking: false
+          picking: false,
+          stockTransferLineId
         });
         // Lock the line AND the entity: an unpick read-modify-writes the
         // entity's quantity/status and the line's pickedQuantity, so two
@@ -14320,7 +14554,7 @@ export async function postReceipt(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  logger.info({ type, receiptId, userId, companyId });
+  logger.info("Posting a receipt", { type, receiptId, userId, companyId });
   const fixedAssetWrites = new FixedAssetWrites();
   if (type === "post")
     await assertPostable(db, "receipt", receiptId, companyId);
@@ -15959,7 +16193,7 @@ export async function postReceipt(
             }
           );
           if (unaccrued.length > 0) {
-            logger.warn(
+            logger.warning(
               "Units invoiced before receipt have no GR/IR accrual; the receipt costs them at PO cost",
               {
                 companyId,
@@ -19147,7 +19381,7 @@ export async function postShipment(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  logger.info({ type, shipmentId, userId, companyId });
+  logger.info("Posting a shipment", { type, shipmentId, userId, companyId });
   const fixedAssetWrites = new FixedAssetWrites();
   if (type === "post")
     await assertPostable(db, "shipment", shipmentId, companyId);
@@ -20239,7 +20473,7 @@ export async function postShipment(
               });
 
               if (Object.keys(jobUpdates).length > 0) {
-                logger.info("Final job updates to be applied:", jobUpdates);
+                logger.info("Applying the final job updates", { jobUpdates });
                 await updateRowsById(
                   trx,
                   "job",
@@ -20704,10 +20938,9 @@ export async function postShipment(
               }
 
               if (Object.keys(jobOperationsUpdates).length > 0) {
-                logger.info(
-                  "Final job updates to be applied:",
+                logger.info("Applying the final job operation updates", {
                   jobOperationsUpdates
-                );
+                });
                 await updateRowsById(
                   trx,
                   "jobOperation",
@@ -22599,10 +22832,9 @@ export async function postShipment(
 
               // Update jobs to reverse shipped quantities
               if (Object.keys(jobUpdates).length > 0) {
-                logger.info(
-                  "Final job void updates to be applied:",
+                logger.info("Applying the final job void updates", {
                   jobUpdates
-                );
+                });
                 await updateRowsById(
                   trx,
                   "job",
@@ -22951,10 +23183,9 @@ export async function postShipment(
 
               // Update job operations to reset status
               if (Object.keys(jobOperationsUpdates).length > 0) {
-                logger.info(
-                  "Final job operation void updates to be applied:",
+                logger.info("Applying the final job operation void updates", {
                   jobOperationsUpdates
-                );
+                });
                 await updateRowsById(
                   trx,
                   "jobOperation",
@@ -25254,34 +25485,66 @@ export async function postPicking(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
-        await assertPickSourceNettable(trx, companyId, line.storageUnitId);
-
-        const inserts: ItemLedgerInsert[] = [
+        const nextQuantity = resolvePick({
+          lineQuantity: line.quantityToPick ?? 0,
+          pickedQuantity: line.quantityPicked ?? 0,
+          transferQuantity: quantity
+        });
+        await lockUntrackedDraws(trx, {
+          companyId,
+          locationId,
+          itemIds: [line.itemId]
+        });
+        const bins =
+          (
+            await getUntrackedBinStock(trx, {
+              companyId,
+              itemIds: [line.itemId],
+              locationId,
+              stripes: [line.projectId ?? null]
+            })
+          ).get(line.itemId) ?? [];
+        const nettableBins = bins.filter((bin) => bin.nettable);
+        const sourceStorageUnitId = chooseSourceBin({
+          bins: nettableBins,
+          preferredStorageUnitId: line.storageUnitId,
+          quantity
+        });
+        const draws = planStripedUntrackedDraw({
+          bins: nettableBins,
+          stripes: [line.projectId ?? null],
+          preferredStorageUnitId: sourceStorageUnitId,
+          quantity
+        });
+        await assertPickSourceNettable(trx, companyId, sourceStorageUnitId);
+        const inserts: ItemLedgerInsert[] = draws.flatMap((draw) => [
           {
             postingDate: today,
             itemId: line.itemId,
-            quantity: round(-quantity),
+            quantity: round(-draw.quantity),
             locationId,
-            storageUnitId: line.storageUnitId,
+            storageUnitId: draw.storageUnitId,
             entryType: "Transfer",
             documentType: "Direct Transfer",
             documentId: pickingListId,
+            documentLineId: pickingListLineId,
             createdBy: userId,
             companyId
           },
           {
             postingDate: today,
             itemId: line.itemId,
-            quantity: round(quantity),
+            quantity: round(draw.quantity),
             locationId,
             storageUnitId: line.toStorageUnitId,
             entryType: "Transfer",
             documentType: "Direct Transfer",
             documentId: pickingListId,
+            documentLineId: pickingListLineId,
             createdBy: userId,
             companyId
           }
-        ];
+        ]);
 
         // Both legs carry the line's stripe: a pick moves the stock it drew.
         await trx
@@ -25292,11 +25555,11 @@ export async function postPicking(
         await trx
           .updateTable("pickingListLine")
           .set({
-            quantityPicked: resolvePick({
-              lineQuantity: Number(line.quantityToPick ?? 0),
-              pickedQuantity: Number(line.quantityPicked ?? 0),
-              transferQuantity: quantity
-            }),
+            quantityPicked: nextQuantity,
+            storageUnitId:
+              (line.quantityPicked ?? 0) > 0
+                ? line.storageUnitId
+                : sourceStorageUnitId,
             status: "Picked",
             updatedBy: userId,
             updatedAt: datetime.timestamp()
@@ -25334,32 +25597,95 @@ export async function postPicking(
           .forUpdate()
           .executeTakeFirstOrThrow();
 
-        const inserts: ItemLedgerInsert[] = [
+        // The request was calculated from a prior read. A repeated or stale
+        // unpick must never return more stock than this line still holds.
+        const quantityToUnpick = Math.min(
+          round(quantity),
+          Math.max(0, round(line.quantityPicked ?? 0))
+        );
+        if (quantityToUnpick <= 0) return;
+        const sourceRows = await trx
+          .selectFrom("itemLedger")
+          .select(["storageUnitId", "quantity"])
+          .where("companyId", "=", companyId)
+          .where("documentType", "=", "Direct Transfer")
+          .where("documentId", "=", pickingListId)
+          .where("documentLineId", "=", pickingListLineId)
+          .where("itemId", "=", line.itemId)
+          .where("locationId", "=", locationId)
+          .orderBy("entryNumber", "desc")
+          .execute();
+        const sourceBalances = new Map<string | null, number>();
+        for (const row of sourceRows) {
+          if (row.storageUnitId === line.toStorageUnitId) continue;
+          sourceBalances.set(
+            row.storageUnitId,
+            round((sourceBalances.get(row.storageUnitId) ?? 0) - row.quantity)
+          );
+        }
+        const taggedPicked = [...sourceBalances.values()].reduce(
+          (sum, balance) => round(sum + Math.max(0, balance)),
+          0
+        );
+        let left = quantityToUnpick;
+        const returns: {
+          storageUnitId: string | null;
+          quantity: number;
+          tagged: boolean;
+        }[] = [];
+        for (const [storageUnitId, balance] of sourceBalances) {
+          const take = round(Math.min(left, Math.max(0, balance)));
+          if (take <= 0) continue;
+          returns.push({ storageUnitId, quantity: take, tagged: true });
+          left = round(left - take);
+          if (left <= 0) break;
+        }
+        const legacyPicked = Math.max(
+          0,
+          round((line.quantityPicked ?? 0) - taggedPicked)
+        );
+        if (left > 0 && legacyPicked > 0) {
+          const take = round(Math.min(left, legacyPicked));
+          returns.push({
+            storageUnitId: line.storageUnitId,
+            quantity: take,
+            tagged: false
+          });
+          left = round(left - take);
+        }
+        if (left > 0) {
+          throw new InvalidInputError(
+            "The picked source quantities do not balance"
+          );
+        }
+        const inserts: ItemLedgerInsert[] = returns.flatMap((returned) => [
           {
             postingDate: today,
             itemId: line.itemId,
-            quantity: round(-quantity),
+            quantity: round(-returned.quantity),
             locationId,
             storageUnitId: line.toStorageUnitId,
             entryType: "Transfer",
             documentType: "Direct Transfer",
             documentId: pickingListId,
+            documentLineId: returned.tagged ? pickingListLineId : null,
             createdBy: userId,
             companyId
           },
           {
             postingDate: today,
             itemId: line.itemId,
-            quantity: round(quantity),
+            quantity: returned.quantity,
             locationId,
-            storageUnitId: line.storageUnitId,
+            storageUnitId: returned.storageUnitId,
             entryType: "Transfer",
             documentType: "Direct Transfer",
             documentId: pickingListId,
+            documentLineId: returned.tagged ? pickingListLineId : null,
             createdBy: userId,
             companyId
           }
-        ];
+        ]);
 
         // Both legs carry the line's stripe: a pick moves the stock it drew.
         await trx
@@ -25372,7 +25698,7 @@ export async function postPicking(
           .set({
             quantityPicked: Math.max(
               0,
-              round(round(Number(line.quantityPicked ?? 0)) - round(quantity))
+              round(round(line.quantityPicked ?? 0) - quantityToUnpick)
             ),
             status: "Pending",
             updatedBy: userId,
@@ -25413,18 +25739,23 @@ export async function postPicking(
           .executeTakeFirstOrThrow();
         await assertPickSourceNettable(trx, companyId, fromStorageUnitId);
 
-        // A pick line draws one stripe: the serial must sit in it.
+        // A pick line draws one stripe at the list's location: the serial
+        // must sit in both.
+        const ledger = await loadTrackedEntityLedger(trx, companyId, [
+          trackedEntityId
+        ]);
+        assertEntitiesAtLocation(
+          ledger,
+          [{ id: trackedEntityId, readableId: trackedEntityId, quantity: 1 }],
+          locationId
+        );
         await assertEntitiesInStripes(
           trx,
           companyId,
           [
             {
               readableId: trackedEntityId,
-              stripe: await loadTrackedEntityStripe(
-                trx,
-                companyId,
-                trackedEntityId
-              )
+              stripe: trackedEntityStripe(ledger, trackedEntityId)
             }
           ],
           [line.projectId ?? null]
@@ -25596,18 +25927,29 @@ export async function postPicking(
         // refusal a 400 the scan UI can show.
         assertEntityCoversPick({ entityQuantity, transferQuantity });
 
-        // A pick line draws one stripe: the lot must sit in it.
+        // A pick line draws one stripe at the list's location: the lot must
+        // sit in both.
+        const ledger = await loadTrackedEntityLedger(trx, companyId, [
+          trackedEntityId
+        ]);
+        assertEntitiesAtLocation(
+          ledger,
+          [
+            {
+              id: trackedEntityId,
+              readableId: trackedEntity.readableId,
+              quantity: Math.min(entityQuantity, transferQuantity)
+            }
+          ],
+          locationId
+        );
         await assertEntitiesInStripes(
           trx,
           companyId,
           [
             {
               readableId: trackedEntity.readableId,
-              stripe: await loadTrackedEntityStripe(
-                trx,
-                companyId,
-                trackedEntityId
-              )
+              stripe: trackedEntityStripe(ledger, trackedEntityId)
             }
           ],
           [line.projectId ?? null]
@@ -28979,6 +29321,199 @@ async function valueServiceJobMovements(
   return costs;
 }
 
+/**
+ * Refuses to consume a serial unit that its own job is still building: an
+ * operation of the unit's own make method (`attributes["Job Make Method"]`)
+ * that is not Done or Canceled, applies to the unit and has no completion
+ * marker (`Operation <id>`) on it. An operation with
+ * `jobOperationTrackedEntity` rows applies only to the units listed; one with
+ * none applies to every unit. The MES `isUnitInProduction` makes the same
+ * test. A failed read throws, so the posting is refused.
+ */
+async function assertUnitsNotInProduction(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  entities: Array<{
+    id: string;
+    readableId: string | null;
+    itemId: string | null;
+    sourceDocumentId: string | null;
+    attributes: unknown;
+  }>
+): Promise<void> {
+  const makeMethodOf = (attributes: unknown) => {
+    const value = (attributes as Record<string, unknown> | null)?.[
+      "Job Make Method"
+    ];
+    return typeof value === "string" ? value : null;
+  };
+  const candidates = entities.filter((entity) =>
+    makeMethodOf(entity.attributes)
+  );
+  if (candidates.length === 0) return;
+
+  const itemIds = Array.from(
+    new Set(
+      candidates
+        .map((entity) => entity.itemId ?? entity.sourceDocumentId)
+        .filter((id): id is string => !!id)
+    )
+  );
+  const serialItems =
+    itemIds.length > 0
+      ? await trx
+          .selectFrom("item")
+          .select("id")
+          .where("id", "in", itemIds)
+          .where("companyId", "=", companyId)
+          .where("itemTrackingType", "=", "Serial")
+          .execute()
+      : [];
+  const serialItemIds = new Set(serialItems.map((item) => item.id));
+  const units = candidates.filter((entity) =>
+    serialItemIds.has(entity.itemId ?? entity.sourceDocumentId ?? "")
+  );
+  if (units.length === 0) return;
+
+  const makeMethodIds = Array.from(
+    new Set(units.map((unit) => makeMethodOf(unit.attributes)!))
+  );
+  const openOperations = await trx
+    .selectFrom("jobOperation")
+    .innerJoin("job", "job.id", "jobOperation.jobId")
+    .select(["jobOperation.id", "jobOperation.jobMakeMethodId"])
+    .where("jobOperation.jobMakeMethodId", "in", makeMethodIds)
+    .where("jobOperation.companyId", "=", companyId)
+    .where("jobOperation.status", "not in", ["Done", "Canceled"])
+    // A Completed, Closed or Cancelled job builds nothing more: an operation
+    // it left open (a skipped one, or every one a cancel left) never closes.
+    .where("job.status", "not in", ["Completed", "Closed", "Cancelled"])
+    .execute();
+  if (openOperations.length === 0) return;
+
+  const scopeRows = await trx
+    .selectFrom("jobOperationTrackedEntity")
+    .select(["jobOperationId", "trackedEntityId"])
+    .where(
+      "jobOperationId",
+      "in",
+      openOperations.map((operation) => operation.id)
+    )
+    .where("companyId", "=", companyId)
+    .execute();
+  const scopes = new Map<string, Set<string>>();
+  for (const row of scopeRows) {
+    const scoped = scopes.get(row.jobOperationId) ?? new Set<string>();
+    scoped.add(row.trackedEntityId);
+    scopes.set(row.jobOperationId, scoped);
+  }
+
+  for (const unit of units) {
+    const makeMethodId = makeMethodOf(unit.attributes);
+    const attributes = (unit.attributes ?? {}) as Record<string, unknown>;
+    const building = openOperations.some((operation) => {
+      if (operation.jobMakeMethodId !== makeMethodId) return false;
+      const scoped = scopes.get(operation.id);
+      if (scoped && !scoped.has(unit.id)) return false;
+      return !(`Operation ${operation.id}` in attributes);
+    });
+    if (building) {
+      throw new InvalidInputError(
+        `${unit.readableId ?? unit.id} is still being built on its own job`
+      );
+    }
+  }
+}
+
+/**
+ * The re-check a traveler scan makes under the job material's row lock. A
+ * serial parent (its make method requires serial tracking) needs the
+ * material's quantity per unit: what is consumed into the parent for this
+ * material now (`Consume` inputs less `Unconsume` outputs per component,
+ * without scrapped components) must be below it. Any other parent needs the
+ * job's remaining quantity (`estimatedQuantity`, else `quantity`, less
+ * `quantityIssued`) above zero. The MES `resolveTravelerMaterial` makes the
+ * same test before the posting; this one is authoritative. The Issue dialog
+ * makes it too: `overIssue` on the refusal lets the dialog ask the operator
+ * to confirm.
+ */
+async function assertTravelerRequirementOpen(
+  trx: Transaction<KyselyDatabase>,
+  {
+    companyId,
+    jobMaterial,
+    parentTrackedEntityId
+  }: {
+    companyId: string;
+    jobMaterial: Selectable<KyselyDatabase["jobMaterial"]>;
+    parentTrackedEntityId: string;
+  }
+): Promise<void> {
+  const makeMethod = await trx
+    .selectFrom("jobMakeMethod")
+    .select("requiresSerialTracking")
+    .where("id", "=", jobMaterial.jobMakeMethodId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+
+  if (!makeMethod?.requiresSerialTracking) {
+    const required = jobMaterial.estimatedQuantity ?? jobMaterial.quantity ?? 0;
+    const remaining = round(required - (jobMaterial.quantityIssued ?? 0));
+    if (remaining <= EPSILON) {
+      throw new InvalidInputError(
+        `This job already has all its ${jobMaterial.description || "material"}`,
+        { overIssue: true }
+      );
+    }
+    return;
+  }
+
+  const consumed = await sql<{ quantity: number | null }>`
+    WITH "fitted" AS (
+      SELECT tai."trackedEntityId", SUM(tai."quantity") AS "quantity"
+      FROM "trackedActivity" ta
+      JOIN "trackedActivityOutput" tao
+        ON tao."trackedActivityId" = ta."id"
+      JOIN "trackedActivityInput" tai
+        ON tai."trackedActivityId" = ta."id"
+      WHERE ta."type" = 'Consume'
+        AND ta."companyId" = ${companyId}
+        AND tao."trackedEntityId" = ${parentTrackedEntityId}
+        AND ta."attributes"->>'Job Material' = ${jobMaterial.id}
+      GROUP BY tai."trackedEntityId"
+    ),
+    "returned" AS (
+      SELECT tao."trackedEntityId", SUM(tao."quantity") AS "quantity"
+      FROM "trackedActivity" ta
+      JOIN "trackedActivityInput" tai
+        ON tai."trackedActivityId" = ta."id"
+      JOIN "trackedActivityOutput" tao
+        ON tao."trackedActivityId" = ta."id"
+      WHERE ta."type" = 'Unconsume'
+        AND ta."companyId" = ${companyId}
+        AND tai."trackedEntityId" = ${parentTrackedEntityId}
+        AND ta."attributes"->>'Job Material' = ${jobMaterial.id}
+      GROUP BY tao."trackedEntityId"
+    )
+    SELECT COALESCE(SUM(GREATEST(f."quantity" - COALESCE(r."quantity", 0), 0)), 0) AS "quantity"
+    FROM "fitted" f
+    LEFT JOIN "returned" r ON r."trackedEntityId" = f."trackedEntityId"
+    JOIN "trackedEntity" te
+      ON te."id" = f."trackedEntityId" AND te."companyId" = ${companyId}
+    WHERE te."status" <> 'Scrapped'
+  `.execute(trx);
+
+  const remaining = round(
+    (jobMaterial.quantity ?? 0) - (consumed.rows[0]?.quantity ?? 0)
+  );
+  if (remaining <= EPSILON) {
+    throw new InvalidInputError(
+      `This unit already has its ${jobMaterial.description || "material"}`,
+      { overIssue: true }
+    );
+  }
+}
+
 // The per-operation tracked-consumption write sequence, extracted verbatim from
 // the trackedEntitiesToOperation case so trackedEntitiesToBatch can run it once
 // per member inside ONE transaction. Reads run against `trx`, so sequential
@@ -28995,6 +29530,8 @@ async function consumeTrackedEntitiesIntoOperation(
     unitNumber,
     overrideExpired,
     overrideReason,
+    travelerScan,
+    refuseOverIssue,
     companyId,
     userId,
     companyToday,
@@ -29012,6 +29549,14 @@ async function consumeTrackedEntitiesIntoOperation(
     unitNumber?: number;
     overrideExpired?: boolean;
     overrideReason?: string | null;
+    /**
+     * An MES traveler scan: lock the job material and refuse the issue when
+     * its requirement is already filled (`assertTravelerRequirementOpen`).
+     * Batch members leave it off.
+     */
+    travelerScan?: boolean;
+    /** The Issue dialog, not yet confirmed: the same lock and refusal. */
+    refuseOverIssue?: boolean;
     companyId: string;
     userId: string;
     companyToday: CalendarDate;
@@ -29079,18 +29624,43 @@ async function consumeTrackedEntitiesIntoOperation(
     expiredWarning = expiredCheck.warning;
   }
 
+  // A serial unit its own job is still building cannot be consumed into
+  // another job: its remaining operations would fail, and the cost and the
+  // genealogy would record an unfinished unit.
+  await assertUnitsNotInProduction(trx, companyId, trackedEntities);
+
   let jobMaterial: Selectable<KyselyDatabase["jobMaterial"]> | undefined;
   let actualMaterialId: string | undefined = materialId;
   const firstTrackedEntity = trackedEntities[0];
 
   if (materialId) {
-    // Existing behavior: fetch the jobMaterial
-    jobMaterial = await trx
+    // Existing behavior: fetch the jobMaterial. A traveler scan locks it, so
+    // two scans into the same requirement run one after the other and the
+    // second reads what the first consumed.
+    let jobMaterialQuery = trx
       .selectFrom("jobMaterial")
       .where("id", "=", materialId)
       .where("companyId", "=", companyId)
-      .selectAll()
-      .executeTakeFirst();
+      .selectAll();
+    if (travelerScan || refuseOverIssue) {
+      jobMaterialQuery = jobMaterialQuery.forUpdate();
+    }
+    jobMaterial = await jobMaterialQuery.executeTakeFirst();
+
+    // An unplanned material has no requirement for the dialog to exceed.
+    const planned =
+      (jobMaterial?.estimatedQuantity ?? jobMaterial?.quantity ?? 0) > 0;
+    if (
+      (travelerScan || (refuseOverIssue && planned)) &&
+      jobMaterial &&
+      firstTrackedEntity?.sourceDocumentId === jobMaterial.itemId
+    ) {
+      await assertTravelerRequirementOpen(trx, {
+        companyId,
+        jobMaterial,
+        parentTrackedEntityId
+      });
+    }
 
     // Check if any tracked entity has a different sourceDocumentId than the material's itemId
     if (
@@ -29250,6 +29820,25 @@ async function consumeTrackedEntitiesIntoOperation(
     })),
     await loadDemandStripes(trx, companyId, job?.projectId)
   );
+  // The job draws only the stock at its own location, from a bin there.
+  const requested = new Map(
+    children.map((child) => [child.trackedEntityId, child.quantity])
+  );
+  assertEntitiesAtLocation(
+    itemLedgers,
+    trackedEntities.map((entity) => ({
+      id: entity.id!,
+      readableId: entity.readableId,
+      quantity: Math.min(
+        Number(entity.quantity),
+        requested.get(entity.id!) ?? Number(entity.quantity)
+      )
+    })),
+    job?.locationId
+  );
+  const localLedgers = job?.locationId
+    ? itemLedgers.filter((row) => row.locationId === job.locationId)
+    : itemLedgers;
 
   // Get parent tracked entity details
   const parentTrackedEntity = await trx
@@ -29362,7 +29951,7 @@ async function consumeTrackedEntitiesIntoOperation(
         activitySourceDocument: "Job Material",
         activitySourceDocumentId: actualMaterialId!,
         bin: {
-          storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
+          storageUnitId: resolveTrackedEntityBin(localLedgers, trackedEntityId),
           locationId: job?.locationId ?? null
         },
         itemLedgerItemId: trackedEntity.sourceDocumentId,
@@ -29464,7 +30053,7 @@ async function consumeTrackedEntitiesIntoOperation(
         locationId: job?.locationId,
         // The split child has no rows in the pre-transaction ledger
         // snapshot — it sits at the parent's resolved bin.
-        storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
+        storageUnitId: resolveTrackedEntityBin(localLedgers, trackedEntityId),
         trackedEntityId: consumedEntityId,
         projectId: entityStripes.get(trackedEntityId) ?? null,
         createdBy: userId
@@ -29732,7 +30321,7 @@ export async function issueMaterial(
     userId: ctx.auditUserId
   };
 
-  logger.info(validatedPayload);
+  logger.info("Issuing material", validatedPayload);
 
   const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
     [];
@@ -30870,11 +31459,9 @@ export async function issueMaterial(
             .executeTakeFirst()
         ]);
 
-        // The stock stripes this job's demand may draw: a return goes back
-        // to the first of them (Projects Phase 2a).
+        // The stock stripes this job's demand may draw (Projects Phase 2a).
         const stripes = await loadDemandStripes(trx, companyId, job?.projectId);
-        // A quantity of untracked stock at one bin: a return goes to the
-        // job's first stripe, a draw takes the stripes in order.
+        // A draw at one bin takes the stripes in order.
         const untrackedRows = async (
           rowItemId: string,
           storageUnitId: string | null | undefined,
@@ -30900,6 +31487,74 @@ export async function issueMaterial(
           (await untrackedRows(rowItemId, storageUnitId, signedQuantity)).map(
             (row) => ({ ...row, storageUnitId })
           );
+        const reverseUntrackedIssues = async (
+          rowItemId: string,
+          jobId: string,
+          operationIds: string[],
+          returnQuantity: number
+        ) => {
+          // Net every untracked draw of the item on this job by bin and
+          // stripe. A completion backflush writes no operation (the job's SQL
+          // backflush) or another operation's, so the operation only orders
+          // the sources: its own draws are returned first.
+          const priorDraws = (
+            await trx
+              .selectFrom("itemLedger")
+              .select([
+                "storageUnitId",
+                "projectId",
+                (eb) => eb.fn.sum<number>("quantity").as("balance"),
+                sql<
+                  number | null
+                >`max("entryNumber") filter (where "quantity" < 0)`.as(
+                  "latestDraw"
+                ),
+                sql<
+                  number | null
+                >`max("entryNumber") filter (where "quantity" < 0 and "documentLineId" in (${sql.join(operationIds)}))`.as(
+                  "latestOwnDraw"
+                )
+              ])
+              .where("companyId", "=", companyId)
+              .where("documentType", "=", "Job Consumption")
+              .where("documentId", "=", jobId)
+              .where("itemId", "=", rowItemId)
+              .where("locationId", "=", job?.locationId!)
+              .where("entryType", "=", "Consumption")
+              .where("trackedEntityId", "is", null)
+              .groupBy(["storageUnitId", "projectId"])
+              .execute()
+          ).sort(
+            (a, b) =>
+              Number(b.latestOwnDraw ?? -1) - Number(a.latestOwnDraw ?? -1) ||
+              Number(b.latestDraw ?? -1) - Number(a.latestDraw ?? -1)
+          );
+          let left = round(returnQuantity);
+          const returned: {
+            storageUnitId: string | null;
+            stripe: string | null;
+            quantity: number;
+          }[] = [];
+          for (const draw of priorDraws) {
+            const take = round(
+              Math.min(left, Math.max(0, -Number(draw.balance)))
+            );
+            if (take <= 0) continue;
+            returned.push({
+              storageUnitId: draw.storageUnitId,
+              stripe: draw.projectId ?? null,
+              quantity: take
+            });
+            left = round(left - take);
+            if (left <= 0) break;
+          }
+          if (left > 0) {
+            throw new InvalidInputError(
+              "The issued source quantities do not balance"
+            );
+          }
+          return returned;
+        };
         // A draw no bin rule decides, net of the rows this call planned.
         const planBinDraws = async (
           rowItemId: string,
@@ -31008,6 +31663,18 @@ export async function issueMaterial(
 
           // Rounded once here: it drives the ledger rows, the budget
           // allocation and the quantityIssued write below.
+          const previouslyIssued = Math.max(
+            0,
+            round(material.quantityIssued ?? 0)
+          );
+          if (
+            adjustmentType === "Positive Adjmt." &&
+            round(quantity) > previouslyIssued
+          ) {
+            throw new InvalidInputError(
+              "Cannot unissue more than the material's issued quantity"
+            );
+          }
           const quantityToIssue = round(
             adjustmentType === "Positive Adjmt."
               ? Number(quantity)
@@ -31087,29 +31754,35 @@ export async function issueMaterial(
                 });
               }
               const rows =
-                !strictSettings?.strict &&
-                adjustmentType !== "Positive Adjmt." &&
-                remaining > 0
-                  ? await planBinDraws(
+                adjustmentType === "Positive Adjmt."
+                  ? await reverseUntrackedIssues(
                       material.itemId,
-                      material.storageUnitId ??
-                        (material.defaultStorageUnit
-                          ? await getNettableDefaultStorageUnitId(
-                              trx,
-                              material.itemId,
-                              job?.locationId!,
-                              companyId
-                            )
-                          : null),
+                      material.jobId,
+                      pluckUnique(
+                        [id, material.jobOperationId],
+                        (operationId) => operationId
+                      ),
                       Number(remaining)
                     )
-                  : await binRows(
-                      material.itemId,
-                      storageUnitId ?? null,
-                      adjustmentType === "Positive Adjmt."
-                        ? Number(remaining)
-                        : -Number(remaining)
-                    );
+                  : !strictSettings?.strict && remaining > 0
+                    ? await planBinDraws(
+                        material.itemId,
+                        material.storageUnitId ??
+                          (material.defaultStorageUnit
+                            ? await getNettableDefaultStorageUnitId(
+                                trx,
+                                material.itemId,
+                                job?.locationId!,
+                                companyId
+                              )
+                            : null),
+                        Number(remaining)
+                      )
+                    : await binRows(
+                        material.itemId,
+                        storageUnitId ?? null,
+                        -Number(remaining)
+                      );
               for (const row of rows) {
                 itemLedgerInserts.push({
                   entryType: "Consumption",
@@ -31169,28 +31842,33 @@ export async function issueMaterial(
               companyId
             );
             const rows =
-              adjustmentType !== "Positive Adjmt." && Number(quantity) > 0
-                ? await planBinDraws(
+              adjustmentType === "Positive Adjmt."
+                ? await reverseUntrackedIssues(
                     itemId!,
-                    defaultStorageUnitId,
+                    jobOperation.jobId,
+                    [id],
                     Number(quantity)
                   )
-                : await binRows(
-                    itemId!,
-                    defaultStorageUnitId ??
-                      (
-                        await getStorageUnitWithHighestQuantity(trx, {
-                          companyId,
-                          itemId: itemId,
-                          locationId: job?.locationId!,
-                          stripes
-                        })
-                      )?.storageUnitId ??
-                      null,
-                    adjustmentType === "Positive Adjmt."
-                      ? Number(quantity)
-                      : -Number(quantity)
-                  );
+                : Number(quantity) > 0
+                  ? await planBinDraws(
+                      itemId!,
+                      defaultStorageUnitId,
+                      Number(quantity)
+                    )
+                  : await binRows(
+                      itemId!,
+                      defaultStorageUnitId ??
+                        (
+                          await getStorageUnitWithHighestQuantity(trx, {
+                            companyId,
+                            itemId: itemId,
+                            locationId: job?.locationId!,
+                            stripes
+                          })
+                        )?.storageUnitId ??
+                        null,
+                      -Number(quantity)
+                    );
             storageUnitId = rows[0]?.storageUnitId ?? null;
 
             for (const row of rows) {
@@ -31856,6 +32534,8 @@ export async function issueMaterial(
         unitNumber,
         overrideExpired,
         overrideReason,
+        travelerScan,
+        allowOverIssue,
         companyId,
         userId
       } = validatedPayload;
@@ -31900,6 +32580,8 @@ export async function issueMaterial(
           unitNumber,
           overrideExpired,
           overrideReason,
+          travelerScan,
+          refuseOverIssue: !travelerScan && !allowOverIssue,
           companyId,
           userId,
           companyToday,

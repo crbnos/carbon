@@ -37,7 +37,7 @@ const source: Record<string, string | undefined> =
 if (!isBrowser && !source.VITEST && !source.SKIP_ENV_VALIDATION) {
   const report = validateEnv(source);
   if (report.fatal) throw new Error(formatReport(report));
-  // biome-ignore lint/suspicious/noConsole: @carbon/logger depends on this package
+  // biome-ignore lint/suspicious/noConsole: a multi-line report for whoever starts the server; a log line would quote and escape it
   if (report.problems.length) console.warn(formatReport(report));
 }
 

@@ -19,7 +19,7 @@ import { formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
@@ -46,7 +46,10 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
+import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
+import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
@@ -115,12 +118,46 @@ export const ProductionPlanningOrderDrawer = memo(
   }: ProductionPlanningOrderDrawerProps) => {
     const { revalidate } = useRevalidator();
     const { t } = useLingui();
-    // Order: a refusal is toasted by useAction.
+    const pastStartToast = usePastStartToast();
+    // Bumped when the rows are re-read, to close any cell editor left open.
+    const [suggestionsVersion, setSuggestionsVersion] = useState(0);
+    const reseedSuggestions = useCallback(() => {
+      onSuggestionsStale(row);
+      setSuggestionsVersion((version) => version + 1);
+    }, [onSuggestionsStale, row]);
+    const submittedOrders = useRef<ProductionOrder[]>([]);
+    // A refusal is toasted by useAction. On success the orders refused for
+    // starting in the past stay in the drawer as they were sent; with none,
+    // it re-seeds from the suggestions, which keep what was not ordered.
     const fetcher = useAction<typeof bulkUpdateAction>({
-      onSuccess: () => {
-        toast.success(t`Orders submitted`);
-        setOrders(row, []);
-        onClose();
+      onSuccess: (result) => {
+        const data = "data" in result ? result.data : null;
+        const refused = refusedOrdersOfRow(
+          { ...row, id: row.id!, orders: submittedOrders.current },
+          data && "refusedOrders" in data ? data.refusedOrders : []
+        );
+        if (refused.length > 0) {
+          setOrders(row, refused);
+          setSuggestionsVersion((version) => version + 1);
+        } else {
+          reseedSuggestions();
+        }
+        const problems =
+          data && "warnings" in data ? [...data.warnings, ...data.errors] : [];
+        if (problems.length > 0) toast.error(problems.join(" · "));
+        const failed = data && "errors" in data && data.errors.length > 0;
+        if (refused.length === 0 && !failed) {
+          toast.success(t`Orders submitted`);
+          onClose();
+          return;
+        }
+        const created = data && "jobs" in data ? data.jobs.length : 0;
+        setOpenJobsVersion((version) => version + 1);
+        if (refused.length > 0) {
+          toast.error(pastStartToast(created, refused.length));
+        } else if (created > 0) {
+          toast.success(t`Orders submitted`);
+        }
       }
     });
     const { locale } = useLocale();
@@ -323,7 +360,7 @@ export const ProductionPlanningOrderDrawer = memo(
             if (result.data.warning) toast.error(result.data.warning);
             else toast.success(t`Planned job`);
             // MRP ran: the suggestions, the grid row and this list all moved
-            onSuggestionsStale(row);
+            reseedSuggestions();
             setOpenJobsVersion((version) => version + 1);
             void revalidate();
           } else {
@@ -335,25 +372,74 @@ export const ProductionPlanningOrderDrawer = memo(
           setPlanningJobId(null);
         }
       },
-      [locationId, onSuggestionsStale, revalidate, row, t]
+      [locationId, reseedSuggestions, revalidate, t]
     );
 
+    // Release: a Planned job goes to the floor from here, without waiting for
+    // MRP's Release suggestion (raised only the day before the job must
+    // start). It runs the jobs table's release, so the job page's checks, the
+    // schedule run and the release picking list all apply.
+    const [releasingJobId, setReleasingJobId] = useState<string | null>(null);
+    const { onReleaseJob, isReleasing } = useJobPlanningRelease({
+      onReleased: () => {
+        // MRP ran in the release: the suggestions and this list moved
+        reseedSuggestions();
+        setOpenJobsVersion((version) => version + 1);
+      }
+    });
+    const releaseJob = useCallback(
+      (jobId: string) => {
+        setReleasingJobId(jobId);
+        onReleaseJob(jobId);
+      },
+      [onReleaseJob]
+    );
+
+    // Left-aligned: the Suggestion column runs past the drawer's width, so a
+    // button at its right end sits off screen.
     const renderPlanCommand = useCallback(
-      (openRow: OpenOrderRow) =>
-        openRow.status === "Draft" && actionHandlers.canUpdate ? (
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              variant="secondary"
-              isLoading={planningJobId === openRow.id}
-              isDisabled={planningJobId !== null}
-              onClick={() => onPlanDraftJob(openRow.id)}
-            >
-              <Trans>Plan</Trans>
-            </Button>
-          </div>
-        ) : null,
-      [actionHandlers.canUpdate, onPlanDraftJob, planningJobId]
+      (openRow: OpenOrderRow) => {
+        if (!actionHandlers.canUpdate) return null;
+        if (openRow.status === "Draft") {
+          return (
+            <div className="flex">
+              <Button
+                size="sm"
+                variant="secondary"
+                isLoading={planningJobId === openRow.id}
+                isDisabled={planningJobId !== null || isReleasing}
+                onClick={() => onPlanDraftJob(openRow.id)}
+              >
+                <Trans>Plan</Trans>
+              </Button>
+            </div>
+          );
+        }
+        if (openRow.status === "Planned") {
+          return (
+            <div className="flex">
+              <Button
+                size="sm"
+                variant="secondary"
+                isLoading={isReleasing && releasingJobId === openRow.id}
+                isDisabled={isReleasing || planningJobId !== null}
+                onClick={() => releaseJob(openRow.id)}
+              >
+                <Trans>Release</Trans>
+              </Button>
+            </div>
+          );
+        }
+        return null;
+      },
+      [
+        actionHandlers.canUpdate,
+        onPlanDraftJob,
+        planningJobId,
+        isReleasing,
+        releasingJobId,
+        releaseJob
+      ]
     );
 
     const renderOpenJobStatus = useCallback(
@@ -417,9 +503,17 @@ export const ProductionPlanningOrderDrawer = memo(
       [beyondFenceOrders]
     );
 
+    // A new fence re-seeds the rows too.
+    const onFenceChange = useCallback(
+      (date: Parameters<typeof onTimeFenceChange>[0]) => {
+        onTimeFenceChange(date);
+        setSuggestionsVersion((version) => version + 1);
+      },
+      [onTimeFenceChange]
+    );
     const onIncludeBeyondFence = useCallback(() => {
-      if (lastBeyondFenceDate) onTimeFenceChange(lastBeyondFenceDate);
-    }, [lastBeyondFenceDate, onTimeFenceChange]);
+      if (lastBeyondFenceDate) onFenceChange(lastBeyondFenceDate);
+    }, [lastBeyondFenceDate, onFenceChange]);
 
     // Memoize handlers
     const onAddOrder = useCallback(() => {
@@ -447,6 +541,7 @@ export const ProductionPlanningOrderDrawer = memo(
           };
         });
 
+        submittedOrders.current = ordersWithPeriods;
         const payload = {
           locationId,
           items: [
@@ -494,7 +589,7 @@ export const ProductionPlanningOrderDrawer = memo(
                 item={row}
                 fenceDate={timeFenceDate}
                 isFenceOverridden={isTimeFenceOverridden}
-                onFenceChange={onTimeFenceChange}
+                onFenceChange={onFenceChange}
               />
 
               <DeferredDrawerSections>
@@ -515,6 +610,7 @@ export const ProductionPlanningOrderDrawer = memo(
                   todayIso={locationToday}
                   quantityHeader={t`Quantity`}
                   orderByHeader={t`Start By`}
+                  resetKey={suggestionsVersion}
                   onChange={onSuggestedOrdersChange}
                   onAdd={onAddOrder}
                 />
@@ -544,7 +640,11 @@ export const ProductionPlanningOrderDrawer = memo(
             </div>
           </DrawerBody>
           <DrawerFooter>
-            <Button variant="secondary" onClick={onClose}>
+            <Button
+              variant="secondary"
+              onClick={onClose}
+              isDisabled={fetcher.state !== "idle"}
+            >
               <Trans>Close</Trans>
             </Button>
             <Button
@@ -568,6 +668,7 @@ export const ProductionPlanningOrderDrawer = memo(
         onAddOrder,
         onSubmit,
         onSuggestedOrdersChange,
+        suggestionsVersion,
         lastBeyondFenceDate,
         beyondFenceOrders,
         onIncludeBeyondFence,
@@ -581,14 +682,20 @@ export const ProductionPlanningOrderDrawer = memo(
         locationToday,
         timeFenceDate,
         isTimeFenceOverridden,
-        onTimeFenceChange,
+        onFenceChange,
         fenceLabel,
         t
       ]
     );
 
     return (
-      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Drawer
+        open={isOpen}
+        onOpenChange={(open) => {
+          // closing mid-order would lose the result that clears the draft
+          if (!open && fetcher.state === "idle") onClose();
+        }}
+      >
         {drawerContent}
       </Drawer>
     );

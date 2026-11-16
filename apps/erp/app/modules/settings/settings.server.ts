@@ -401,7 +401,9 @@ export const updateItemsSettings = defineServiceFn({
  * unit draws its serial number (when the job is created, when it is released,
  * or the first time the unit is worked on, scrapped or received), and whether
  * one location requires an assigned operator before the scheduler places work
- * there. The staffing rule lives on the location row and is written for the
+ * there, whether travelers print at the pick, whether an operation needs its
+ * tracked parts issued before completion, and whether releasing a job creates
+ * its picking list. The staffing rule lives on the location row and is written for the
  * company's own location only, so a settings admin without the resources
  * permission can still set it. Changing it re-plans the location.
  *
@@ -416,6 +418,9 @@ export const updateProductionSettings = defineServiceFn({
     includeOperationsOnTraveler: z.boolean().optional(),
     autoSelectMaterialWithoutPickingList: z.boolean().optional(),
     serialNumberTiming: z.enum(serialNumberTimings).optional(),
+    travelerLabels: z.boolean().optional(),
+    requireTrackedMaterialsIssued: z.boolean().optional(),
+    autoPickingListOnRelease: z.boolean().optional(),
     locationStaffing: z
       .object({
         locationId: z.string().min(1),
@@ -2029,7 +2034,7 @@ export const createApiKey = defineServiceFn({
     const rawKey = `crbn_${nanoid()}`;
     let created: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
-      created = await upsertApiKey(ctx.asCaller.supabase, {
+      created = await upsertApiKey(ctx.asSystem.supabase, {
         name,
         scopes,
         expiresAt: expiresAt || undefined,
@@ -2065,8 +2070,9 @@ export const updateApiKey = defineServiceFn({
   async run(ctx, { id, name, scopes, expiresAt, rateLimit }) {
     let updated: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
-      updated = await upsertApiKey(ctx.asCaller.supabase, {
+      updated = await upsertApiKey(ctx.asSystem.supabase, {
         id,
+        companyId: ctx.company.id,
         name,
         scopes,
         expiresAt: expiresAt || undefined,
@@ -2099,7 +2105,7 @@ export const revokeApiKey = defineServiceFn({
     const keyHash = await service.invalidateApiKeyCache(id, ctx.company.id);
     let deleted: Awaited<ReturnType<typeof deleteApiKey>>;
     try {
-      deleted = await deleteApiKey(ctx.asCaller.supabase, id);
+      deleted = await deleteApiKey(ctx.asSystem.supabase, id, ctx.company.id);
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
     }
@@ -2461,7 +2467,7 @@ export const transitionSyncOperations = defineServiceFn({
       );
     }
     if (result.failures.length > 0) {
-      logger.warn("Sync operations were not transitioned", {
+      logger.warning("Sync operations were not transitioned", {
         companyId: ctx.company.id,
         to,
         failures: result.failures
@@ -3361,6 +3367,12 @@ export const createItemSerialSequence = defineServiceFn({
       .describe(
         "When this item's units draw their serial numbers. Omit or null to follow the company setting."
       ),
+    printLabelOnCompletion: z
+      .boolean()
+      .optional()
+      .describe(
+        "Print the serial label when the job's last operation completes."
+      ),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -3401,6 +3413,12 @@ export const updateItemSerialSequence = defineServiceFn({
         .optional()
         .describe(
           "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
+        ),
+      printLabelOnCompletion: z
+        .boolean()
+        .optional()
+        .describe(
+          "Print the serial label when the job's last operation completes."
         ),
       id: z
         .string()

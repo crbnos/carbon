@@ -41,7 +41,6 @@ import {
   SidebarTrigger,
   Spinner,
   Status,
-  TruncatedTooltipText,
   toast,
   useDisclosure,
   useKeyboardWedge,
@@ -84,6 +83,7 @@ import {
   LuImage,
   LuListChecks,
   LuListFilter,
+  LuPackageSearch,
   LuPause,
   LuPlay,
   LuTimer,
@@ -98,11 +98,18 @@ import { TrackingTypeIcon } from "~/components/Icons";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
 import { MaintenanceDispatch } from "~/components/JobOperation/components/MaintenanceDispatch";
+import {
+  compareMaterialsByLocation,
+  MaterialSource,
+  ShortStockBadge
+} from "~/components/JobOperation/components/Materials";
+import { NeedMaterialModal } from "~/components/JobOperation/components/NeedMaterialModal";
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
+import { useTravelerScan } from "~/components/JobOperation/hooks/useTravelerScan";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
@@ -118,6 +125,7 @@ import type {
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
+import { parseItemCode } from "~/utils/itemScan";
 import {
   isKanbanCompleteScan,
   kanbanCompleteTarget,
@@ -208,6 +216,20 @@ type Step = {
   jobOperationStepSlide?: Slide[];
 };
 
+// What a step's record holds, as the operator reads it. Null for a step that
+// records no value (a Task).
+function recordedStepValue(step: Step, record: StepRecord): string | null {
+  if (record.numericValue != null)
+    return `${record.numericValue}${step.unitOfMeasureCode ? ` ${step.unitOfMeasureCode}` : ""}`;
+  if (record.booleanValue != null) return record.booleanValue ? "Yes" : "No";
+  // File steps store a long storage path: show just the file name.
+  if (record.value)
+    return step.type === "File"
+      ? record.value.split("/").pop() || record.value
+      : record.value;
+  return record.userValue ?? null;
+}
+
 // The linked instruction's animated steps + converted artifacts (loader-resolved
 // when the operation carries an assemblyInstructionId and the model is converted).
 type AssemblyPlayback = {
@@ -291,6 +313,7 @@ type Operation = {
   duration?: number | null;
   jobDeadlineType?: string | null;
   reworkId?: string | null;
+  jobMakeMethodId?: string | null;
 };
 
 type Props = {
@@ -326,6 +349,8 @@ type Props = {
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
   isFirstOperation: boolean;
+  isFirstOpenOperation?: boolean;
+  requireTrackedMaterialsIssued?: boolean;
   openEvent: { id: string; startTime: string } | null;
   events: ProductionEvent[];
   nonConformanceActions: ContainmentAction[];
@@ -540,6 +565,8 @@ export function AssemblyView({
   requiresSerialTracking,
   requiresBatchTracking,
   isFirstOperation,
+  isFirstOpenOperation = false,
+  requireTrackedMaterialsIssued = false,
   openEvent,
   events,
   nonConformanceActions,
@@ -568,6 +595,7 @@ export function AssemblyView({
 
   const issueModal = useDisclosure();
   const qualityModal = useDisclosure();
+  const needMaterialModal = useDisclosure();
   const completeModal = useDisclosure();
   const scrapModal = useDisclosure();
   const reworkModal = useDisclosure();
@@ -781,9 +809,7 @@ export function AssemblyView({
     if (result && result.success === false) {
       log.error(
         "Failed to create inspection steps for non-conformance actions",
-        {
-          message: result.message
-        }
+        { reason: result.message }
       );
       toast.error(result.message ?? "Failed to create containment steps");
     }
@@ -838,7 +864,11 @@ export function AssemblyView({
       if (r !== 0) return r;
       const at = TYPE_ORDER.indexOf(a.itemType ?? "");
       const bt = TYPE_ORDER.indexOf(b.itemType ?? "");
-      return (at < 0 ? 99 : at) - (bt < 0 ? 99 : bt);
+      // Within a type, in the order the picker walks the shelves.
+      return (
+        (at < 0 ? 99 : at) - (bt < 0 ? 99 : bt) ||
+        compareMaterialsByLocation(a, b)
+      );
     });
 
   // Phase 2 (tool ↔ step, many-to-many): show only the tools involved in the current step —
@@ -1338,6 +1368,13 @@ export function AssemblyView({
   const laborFetcher = useFetcher();
   const openLaborEvent = openByType("Labor");
   const currentStepDone = step ? isStepDone(step) : false;
+  const currentStepRecord = step?.jobOperationStepRecord?.find(
+    (r) => r.index === activeIndex
+  );
+  const currentStepValue =
+    step && currentStepRecord
+      ? recordedStepValue(step, currentStepRecord)
+      : null;
   const stepDoneRef = useRef({ step: currentStep, done: currentStepDone });
   // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on the current step only
   useEffect(() => {
@@ -1929,6 +1966,35 @@ export function AssemblyView({
   // Block: no production work here. The routes refuse it too.
   const abilityBlocked = abilityWarning?.policy === "Block";
 
+  // A traveler scan issues the unit into this operation, opens the unit it
+  // already sits in, or goes to its traveler.
+  useTravelerScan({
+    operationId,
+    jobMakeMethodId: operation?.jobMakeMethodId,
+    parentTrackedEntityId: currentEntity?.id ?? trackedEntities[0]?.id,
+    jobOperationStepId: step?.id,
+    unitNumber: activeIndex + 1,
+    active: !issueModal.isOpen && !abilityBlocked
+  });
+
+  // An item sticker names a part, not a unit to fit: the operator stays here
+  // and the Issue dialog opens on the part. Each unit takes its own scan.
+  useKeyboardWedge({
+    test: (input) => !!parseItemCode(input),
+    callback: (input) => {
+      const itemId = parseItemCode(input);
+      const material = allMaterials.find((m) => m.itemId === itemId);
+      if (!material) {
+        toast.error(t`This job does not use that part`);
+        return;
+      }
+      setSelectedMaterial(material);
+      issueModal.onOpen();
+    },
+    inTextFields: true,
+    active: !abilityBlocked
+  });
+
   // The header's actions; the md+ header and the phone app bar share them.
   const headerActions = (
     <>
@@ -2503,7 +2569,7 @@ export function AssemblyView({
               <div className="flex shrink-0 flex-col gap-3 p-6">
                 {step ? (
                   <>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
                         {currentStep + 1}
                       </span>
@@ -2516,6 +2582,17 @@ export function AssemblyView({
                       {step.type ? (
                         <Badge variant="secondary" className="normal-case">
                           {step.type}
+                        </Badge>
+                      ) : null}
+                      {/* The recorded value is shown here, where it has room
+                          to wrap: a touch screen has no hover to reveal a
+                          truncated one. */}
+                      {currentStepValue ? (
+                        <Badge
+                          variant={isStepBadResult(step) ? "red" : "green"}
+                          className="min-w-0 max-w-full whitespace-normal break-words normal-case tabular-nums"
+                        >
+                          {currentStepValue}
                         </Badge>
                       ) : null}
                     </div>
@@ -2801,6 +2878,22 @@ export function AssemblyView({
         onClose={qualityModal.onClose}
       />
 
+      <NeedMaterialModal
+        operationId={operationId}
+        materials={allMaterials.flatMap((material) =>
+          material.itemId
+            ? [
+                {
+                  itemId: material.itemId as string,
+                  label: (material.itemReadableId ?? material.itemId) as string
+                }
+              ]
+            : []
+        )}
+        isOpen={needMaterialModal.isOpen}
+        onClose={needMaterialModal.onClose}
+      />
+
       {operation && completeModal.openCount > 0 && (
         <QuantityModal
           key={`complete-${completeModal.openCount}`}
@@ -2815,6 +2908,8 @@ export function AssemblyView({
           laborProductionEvent={openByType("Labor")}
           machineProductionEvent={openByType("Machine")}
           allStepsRecorded={allStepsRecorded}
+          isFirstOpenOperation={isFirstOpenOperation}
+          requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
           onClose={completeModal.onClose}
         />
       )}
@@ -2941,6 +3036,14 @@ export function AssemblyView({
                 onClick={() => {
                   actionsSheet.onClose();
                   qualityModal.onOpen();
+                }}
+              />
+              <ActionSheetButton
+                icon={<LuPackageSearch className="size-4 shrink-0" />}
+                label={t`Need material`}
+                onClick={() => {
+                  actionsSheet.onClose();
+                  needMaterialModal.onOpen();
                 }}
               />
               {/* Manager-only override: record every remaining step for this unit at once.
@@ -3417,6 +3520,9 @@ function MaterialRow({
         <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
           {material.itemReadableId}
         </span>
+        {/* Where to pull it from, or that it is made on this job. */}
+        <MaterialSource material={material} />
+        <ShortStockBadge material={material} />
       </div>
       {/* Count hard-right, with the tracking badges tucked beneath it. */}
       <div className="flex shrink-0 flex-col items-end gap-1">
@@ -3485,7 +3591,6 @@ function StepCompleteAction({
   const busy = fetcher.state !== "idle";
   const recordModal = useDisclosure();
 
-  // Find the existing record for this unit (if done)
   const record = (step.jobOperationStepRecord ?? []).find(
     (r) => r.index === activeIndex
   );
@@ -3531,36 +3636,14 @@ function StepCompleteAction({
 
   // ── Already done: show recorded value + Undo button ──
   if (done && record) {
-    let recordedDisplay: string | null = null;
-    if (record.numericValue != null)
-      recordedDisplay = `${record.numericValue}${step.unitOfMeasureCode ? ` ${step.unitOfMeasureCode}` : ""}`;
-    else if (record.booleanValue != null)
-      recordedDisplay = record.booleanValue ? "Yes" : "No";
-    else if (record.value) recordedDisplay = record.value;
-    else if (record.userValue) recordedDisplay = record.userValue;
-
-    // File steps store a long storage path — show just the file name; the full
-    // path stays available in the truncation tooltip.
-    const displayText =
-      type === "File" && recordedDisplay
-        ? recordedDisplay.split("/").pop() || recordedDisplay
-        : recordedDisplay;
-
+    // The value itself is shown beside the step's Done badge, so this box
+    // stays one line and the same height as Skip.
     return (
       <div className="flex h-full items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
         <LuCheck className="size-4 shrink-0 text-emerald-500" />
-        {displayText ? (
-          <TruncatedTooltipText
-            tooltip={recordedDisplay}
-            className="min-w-0 flex-1 truncate text-sm text-emerald-600 dark:text-emerald-400"
-          >
-            Recorded: {displayText}
-          </TruncatedTooltipText>
-        ) : (
-          <span className="min-w-0 flex-1 truncate text-sm text-emerald-600 dark:text-emerald-400">
-            Completed
-          </span>
-        )}
+        <span className="min-w-0 flex-1 truncate text-sm text-emerald-600 dark:text-emerald-400">
+          {recordedStepValue(step, record) ? "Recorded" : "Completed"}
+        </span>
         <Button
           variant="ghost"
           size="sm"

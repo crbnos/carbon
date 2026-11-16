@@ -56,14 +56,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       requireOpen: true
     });
     if (result.error) {
-      logger.error("Failed to accept inspection", {
-        companyId,
-        inspectionId: id,
-        error: result.error
-      });
       throw redirect(
         back,
-        await flash(request, error(result.error, "Failed to accept inspection"))
+        await flash(
+          request,
+          error(result.error, "Failed to accept inspection", {
+            inspectionId: id
+          })
+        )
       );
     }
     throw redirect(

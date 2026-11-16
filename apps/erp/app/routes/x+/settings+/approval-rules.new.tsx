@@ -90,10 +90,7 @@ export async function action({ request }: ActionFunctionArgs) {
       path.to.approvalRules,
       await flash(
         request,
-        error(
-          result.error,
-          result.error?.message ?? "Failed to create approval rule."
-        )
+        error(result.error, "Failed to create approval rule.")
       )
     );
   }

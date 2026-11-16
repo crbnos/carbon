@@ -898,26 +898,29 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     }
   }
 
-  // The job favorite is tier 06's — job refs do not exist yet.
+  // The job favorite is tier 06's — job refs do not exist yet. A walkthrough
+  // dataset has no quotes or orders, so it gets no favorites.
   const sentQuote = data.opportunities.find(
     (spec) => spec.quote?.status === "Sent"
   );
-  if (!sentQuote?.quote) {
+  if (sentQuote?.quote) {
+    await insertRow(ctx, "quoteFavorite", {
+      quoteId: need(ctx.refs.documents, sentQuote.quote.ref),
+      userId
+    });
+  } else if (data.opportunities.length > 0) {
     throw new Error(`Seed: no Sent quote to favorite`);
   }
-  await insertRow(ctx, "quoteFavorite", {
-    quoteId: need(ctx.refs.documents, sentQuote.quote.ref),
-    userId
-  });
 
   const firstReleased = data.releasedOrders[0];
-  if (!firstReleased?.order) {
+  if (firstReleased?.order) {
+    await insertRow(ctx, "salesOrderFavorite", {
+      salesOrderId: need(ctx.refs.documents, firstReleased.order.ref),
+      userId
+    });
+  } else if (firstReleased) {
     throw new Error(`Seed: no released order to favorite`);
   }
-  await insertRow(ctx, "salesOrderFavorite", {
-    salesOrderId: need(ctx.refs.documents, firstReleased.order.ref),
-    userId
-  });
 
   await seedServiceJobs(ctx);
 }

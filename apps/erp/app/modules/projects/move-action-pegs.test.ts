@@ -104,7 +104,8 @@ it("supersedes an applied action's pegs and copies them onto its PO line", async
       {
         planningActionId: "pa_1",
         supplyType: "Purchase Order Line",
-        supplyId: "pol_1"
+        supplies: [{ supplyId: "pol_1", quantity: 50, dueDate: "2026-11-30" }],
+        keepRemainder: false
       }
     ]
   });
@@ -136,6 +137,36 @@ it("supersedes an applied action's pegs and copies them onto its PO line", async
     expect.arrayContaining(["prj_1", 20, "prj_2", 30, "u1"])
   );
   expect(parameters).not.toContain("pa_1");
+});
+
+it("leaves the pegs a partial order does not cover on the action", async () => {
+  const { db, driver } = database([
+    [pegOnAction("prj_1", 20), pegOnAction("prj_2", 30)],
+    []
+  ]);
+  await moveActionPegsToSupply(db, {
+    companyId: "c1",
+    userId: "u1",
+    moves: [
+      {
+        planningActionId: "pa_1",
+        supplyType: "Job",
+        supplies: [{ supplyId: "job_1", quantity: 35, dueDate: "2026-11-30" }],
+        keepRemainder: true
+      }
+    ]
+  });
+  const insert = driver.sent.find((query) =>
+    query.sql.startsWith('insert into "projectPeg"')
+  );
+  const parameters = insert?.parameters ?? [];
+  // prj_1's 20 and 15 of prj_2's 30 go to the job; prj_2's other 15 stay
+  expect(parameters.filter((value) => value === "job_1")).toHaveLength(2);
+  expect(
+    parameters.filter((value) => value === "Planning Action")
+  ).toHaveLength(1);
+  expect(parameters).toEqual(expect.arrayContaining([20, 15, "pa_1"]));
+  expect(parameters.filter((value) => value === 15)).toHaveLength(2);
 });
 
 it("sends nothing when no grouped order was applied", async () => {

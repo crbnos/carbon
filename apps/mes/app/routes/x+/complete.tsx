@@ -17,10 +17,11 @@ import { completeQuantityValidator } from "~/services/models";
 import {
   abilityBlockRefusal,
   finishJobOperation,
+  getRequiredScanShortfall,
   insertProductionQuantity,
   insertProductionQuantityIfCurrent
 } from "~/services/operations.service";
-import { autoPrintFirstOperationLabel } from "~/services/printing.server";
+import { autoPrintOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
@@ -115,6 +116,23 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  const shortfall = await getRequiredScanShortfall(serviceRole, {
+    companyId,
+    jobOperationId: jobOperation.data.id,
+    trackedEntityId: validation.data.trackedEntityId,
+    parentIsSerial: validation.data.trackingType === "Serial",
+    quantity: validation.data.quantity
+  });
+  if (shortfall.message) {
+    return data(
+      {},
+      await flash(request, {
+        ...error(null, shortfall.message),
+        flash: "error"
+      })
+    );
+  }
+
   // Mirror the DB auto-Done predicate (sync_update_job_operation_quantities,
   // 20260807090629): scrap does NOT count toward targetQuantity — the op is
   // finished only once GOOD (+ reworked) quantity reaches the target.
@@ -159,10 +177,10 @@ export async function action({ request }: ActionFunctionArgs) {
     // Print the entity that was just completed (from form), not the new reserved one
     const completedEntityId = validation.data.trackedEntityId;
 
-    // Auto-print label on first operation only (entity was just minted)
+    // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
     const printEntityId = completedEntityId || newTrackedEntityId;
     if (printEntityId) {
-      await autoPrintFirstOperationLabel({
+      await autoPrintOperationLabel({
         serviceRole,
         trackedEntityId: printEntityId,
         jobOperationId: jobOperation.data.id,
@@ -238,9 +256,9 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    // Auto-print label on first operation only (batch entity was just minted)
+    // Auto-print the unit label at the first or last operation (autoPrintOperationLabel decides)
     if (validation.data.trackedEntityId) {
-      await autoPrintFirstOperationLabel({
+      await autoPrintOperationLabel({
         serviceRole,
         trackedEntityId: validation.data.trackedEntityId,
         jobOperationId: jobOperation.data.id,

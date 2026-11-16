@@ -2,10 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { cn, useViewport } from "@carbon/react";
 import type { ReactNode } from "react";
 import { Children, useEffect, useState } from "react";
 import { createPortalSlot } from "./slots";
+
+const logger = getLogger("erp", "mobile-chrome");
 
 /**
  * Pages put controls into the compact app bar and bottom bar through these
@@ -28,8 +31,9 @@ export function AppBarActions({ children }: { children: ReactNode }) {
     process.env.NODE_ENV !== "production" &&
     Children.count(children) > MAX_APP_BAR_ACTIONS
   ) {
-    // biome-ignore lint/suspicious/noConsole: dev-only authoring warning
-    console.warn("[AppBarActions] the app bar holds at most 2 actions");
+    logger.warning("The app bar holds at most 2 actions", {
+      count: Children.count(children)
+    });
   }
   return <appBarActionsSlot.Fill>{children}</appBarActionsSlot.Fill>;
 }

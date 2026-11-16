@@ -9032,7 +9032,8 @@ export function leaseSettlementJournalLines(
   });
 }
 const postSalesInvoiceLogger = getLogger(
-  "server-functions",
+  "erp",
+  "invoicing",
   "post-sales-invoice"
 );
 
@@ -9059,7 +9060,12 @@ export async function postSalesInvoice(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  postSalesInvoiceLogger.info({ type, invoiceId, userId, companyId });
+  postSalesInvoiceLogger.info("Posting a sales invoice", {
+    type,
+    invoiceId,
+    userId,
+    companyId
+  });
   if (type === "post")
     await assertPostable(db, "salesInvoice", invoiceId, companyId);
   try {
@@ -16117,7 +16123,8 @@ export function calculatePurchasePostingAmounts(input: {
   });
 }
 const postPurchaseInvoiceLogger = getLogger(
-  "server-functions",
+  "erp",
+  "invoicing",
   "post-purchase-invoice"
 );
 
@@ -16194,7 +16201,12 @@ export async function postPurchaseInvoice(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  postPurchaseInvoiceLogger.info({ type, invoiceId, userId, skipReceiptPost });
+  postPurchaseInvoiceLogger.info("Posting a purchase invoice", {
+    type,
+    invoiceId,
+    userId,
+    skipReceiptPost
+  });
   const fixedAssetWrites = new FixedAssetWrites();
   if (type === "post")
     await assertPostable(db, "purchaseInvoice", invoiceId, companyId);
@@ -17638,7 +17650,7 @@ export async function postPurchaseInvoice(
         const item = items.data.find((item) => item.id === invoiceLine.itemId);
         const itemTrackingType = item?.itemTrackingType ?? "Inventory";
 
-        postPurchaseInvoiceLogger.debug({
+        postPurchaseInvoiceLogger.debug("Resolved the invoice line item", {
           invoiceLineItemId: invoiceLine.itemId,
           foundItem: item,
           itemTrackingType,
@@ -19275,7 +19287,7 @@ export async function auditDocumentForceDelete(
       }
     ]);
   } catch (err) {
-    logger.warn("audit write skipped for a force delete", { error: err });
+    logger.warning("audit write skipped for a force delete", { error: err });
   }
 }
 

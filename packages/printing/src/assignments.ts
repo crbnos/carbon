@@ -23,6 +23,7 @@ const sourceDocumentContexts: Record<string, PrinterContext> = {
   Shipment: "shipping",
   Receipt: "receiving",
   StockTransfer: "inventory",
+  PickingList: "inventory",
   StorageUnit: "inventory",
   Kanban: "kanban"
 };

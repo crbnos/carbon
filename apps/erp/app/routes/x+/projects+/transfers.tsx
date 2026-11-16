@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -16,8 +15,6 @@ import ProjectStockTransfersTable from "~/modules/projects/ui/Transfers/ProjectS
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
-
-const logger = getLogger("erp", "project-stock-transfers");
 
 export const handle: Handle = {
   breadcrumb: msg`Transfers`,
@@ -44,10 +41,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (transfers.error) {
-    logger.error("Failed to load project stock transfers", {
-      companyId,
-      error: transfers.error
-    });
     throw redirect(
       path.to.projects,
       await flash(

@@ -20,10 +20,13 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { OeeProviderUnavailableError } from "@carbon/ee/oee";
 import { getOeeProvider, postEndedMachineEvents } from "@carbon/ee/oee.server";
+import { getLogger } from "@carbon/logger";
 import { parseAbsolute } from "@internationalized/date";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import { syncOeeDevice } from "./oee-sync-device";
+
+const logger = getLogger("jobs", "oee-sync");
 
 const MAX_ERROR_LENGTH = 500;
 
@@ -110,10 +113,12 @@ async function syncDevices({
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error(
-        `[OEE SYNC] ${companyId}/${integrationId}: device ${device.id} failed`,
+      logger.error("OEE device sync failed", {
+        companyId,
+        integrationId,
+        deviceId: device.id,
         error
-      );
+      });
       failed.push(device.id);
       await db
         .updateTable("workCenterDevice")
@@ -122,10 +127,11 @@ async function syncDevices({
         .where("companyId", "=", companyId)
         .execute()
         .catch((writeError) =>
-          console.error(
-            `[OEE SYNC] ${companyId}: could not record the error on ${device.id}`,
-            writeError
-          )
+          logger.error("Could not record the OEE device sync error", {
+            companyId,
+            deviceId: device.id,
+            error: writeError
+          })
         );
       // The provider is down: every other device would fail the same way.
       if (error instanceof OeeProviderUnavailableError) {

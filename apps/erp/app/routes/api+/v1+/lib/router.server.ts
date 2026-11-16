@@ -9,7 +9,7 @@
 
 import type { ManifestEntry } from "@carbon/api";
 import { jsonSchema, jsonSchemaInput } from "@carbon/api/schema";
-import { annotateRequestSpan, withSpan } from "@carbon/logger/tracing.server";
+import { annotateRequestSpan, withSpan } from "@carbon/logger/span";
 import { base } from "./base.server";
 import {
   OPERATIONS,

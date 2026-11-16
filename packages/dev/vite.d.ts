@@ -40,6 +40,9 @@ export type CarbonOptions = {
   splitServer?: boolean;
   /** Write a Brotli `.br` beside each client asset (not on Vercel). */
   precompress?: boolean;
+  /** Files to transform when the dev server starts, in a cloud container
+   *  only (scripts/cloud-dev.sh); paths relative to the app. */
+  cloudWarmup?: { ssrFiles?: string[]; clientFiles?: string[] };
 };
 
 /** Every Carbon app's own Vite plugins; React Router and Tailwind stay separate. */

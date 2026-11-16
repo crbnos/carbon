@@ -8454,6 +8454,7 @@ export type Database = {
           allowLowercaseItemIds: boolean
           assetTaxDepreciationEnabled: boolean
           assetTaxRate: number | null
+          autoPickingListOnRelease: boolean
           autoSelectMaterialWithoutPickingList: boolean
           autoStartOperationTimer: boolean
           burdenRateType: Database["public"]["Enums"]["indirectRateType"]
@@ -8513,6 +8514,7 @@ export type Database = {
           requirePurchaseOrderApprovalSignature: boolean
           requireSupplierContactAndLocation: boolean
           requireSupplierContactEmail: boolean
+          requireTrackedMaterialsIssued: boolean
           rescheduleToleranceDays: number
           returnPickedMaterialTiming: string
           rfqReadyNotificationGroup: string[]
@@ -8535,6 +8537,7 @@ export type Database = {
           timesheetApprovalRequired: boolean
           timesheetEntryWindowDays: number
           timesheetTimecardCheck: string
+          travelerLabels: boolean
           updateLeadTimesOnReceipt: boolean
           useCalendarWeeks: boolean
           useMetric: boolean
@@ -8551,6 +8554,7 @@ export type Database = {
           allowLowercaseItemIds?: boolean
           assetTaxDepreciationEnabled?: boolean
           assetTaxRate?: number | null
+          autoPickingListOnRelease?: boolean
           autoSelectMaterialWithoutPickingList?: boolean
           autoStartOperationTimer?: boolean
           burdenRateType?: Database["public"]["Enums"]["indirectRateType"]
@@ -8610,6 +8614,7 @@ export type Database = {
           requirePurchaseOrderApprovalSignature?: boolean
           requireSupplierContactAndLocation?: boolean
           requireSupplierContactEmail?: boolean
+          requireTrackedMaterialsIssued?: boolean
           rescheduleToleranceDays?: number
           returnPickedMaterialTiming?: string
           rfqReadyNotificationGroup?: string[]
@@ -8632,6 +8637,7 @@ export type Database = {
           timesheetApprovalRequired?: boolean
           timesheetEntryWindowDays?: number
           timesheetTimecardCheck?: string
+          travelerLabels?: boolean
           updateLeadTimesOnReceipt?: boolean
           useCalendarWeeks?: boolean
           useMetric?: boolean
@@ -8648,6 +8654,7 @@ export type Database = {
           allowLowercaseItemIds?: boolean
           assetTaxDepreciationEnabled?: boolean
           assetTaxRate?: number | null
+          autoPickingListOnRelease?: boolean
           autoSelectMaterialWithoutPickingList?: boolean
           autoStartOperationTimer?: boolean
           burdenRateType?: Database["public"]["Enums"]["indirectRateType"]
@@ -8707,6 +8714,7 @@ export type Database = {
           requirePurchaseOrderApprovalSignature?: boolean
           requireSupplierContactAndLocation?: boolean
           requireSupplierContactEmail?: boolean
+          requireTrackedMaterialsIssued?: boolean
           rescheduleToleranceDays?: number
           returnPickedMaterialTiming?: string
           rfqReadyNotificationGroup?: string[]
@@ -8729,6 +8737,7 @@ export type Database = {
           timesheetApprovalRequired?: boolean
           timesheetEntryWindowDays?: number
           timesheetTimecardCheck?: string
+          travelerLabels?: boolean
           updateLeadTimesOnReceipt?: boolean
           useCalendarWeeks?: boolean
           useMetric?: boolean
@@ -30362,6 +30371,7 @@ export type Database = {
           itemId: string
           next: number
           prefix: string | null
+          printLabelOnCompletion: boolean
           serialNumberTiming: string | null
           size: number
           step: number
@@ -30377,6 +30387,7 @@ export type Database = {
           itemId: string
           next?: number
           prefix?: string | null
+          printLabelOnCompletion?: boolean
           serialNumberTiming?: string | null
           size?: number
           step?: number
@@ -30392,6 +30403,7 @@ export type Database = {
           itemId?: string
           next?: number
           prefix?: string | null
+          printLabelOnCompletion?: boolean
           serialNumberTiming?: string | null
           size?: number
           step?: number
@@ -39787,6 +39799,289 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "materialSubstance"
             referencedColumns: ["id"]
+          }
+        ]
+      }
+      materialRequest: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          itemId: string | null
+          jobOperationId: string | null
+          locationId: string
+          note: string | null
+          resolvedAt: string | null
+          resolvedBy: string | null
+          status: Database["public"]["Enums"]["materialRequestStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+          workCenterId: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          itemId?: string | null
+          jobOperationId?: string | null
+          locationId: string
+          note?: string | null
+          resolvedAt?: string | null
+          resolvedBy?: string | null
+          status?: Database["public"]["Enums"]["materialRequestStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCenterId?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          itemId?: string | null
+          jobOperationId?: string | null
+          locationId?: string
+          note?: string | null
+          resolvedAt?: string | null
+          resolvedBy?: string | null
+          status?: Database["public"]["Enums"]["materialRequestStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCenterId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "materialRequest_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationQueueTime"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithDependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_locationId_fkey"
+            columns: ["locationId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "materialRequest_resolvedBy_fkey"
+            columns: ["resolvedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_resolvedBy_fkey"
+            columns: ["resolvedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_resolvedBy_fkey"
+            columns: ["resolvedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_resolvedBy_fkey"
+            columns: ["resolvedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_resolvedBy_fkey"
+            columns: ["resolvedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "materialRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "materialRequest_workCenterId_fkey"
+            columns: ["workCenterId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workCenter"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "materialRequest_workCenterId_fkey"
+            columns: ["workCenterId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workCenters"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "materialRequest_workCenterId_fkey"
+            columns: ["workCenterId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workCentersWithBlockingStatus"
+            referencedColumns: ["id", "companyId"]
           }
         ]
       }
@@ -49272,6 +49567,7 @@ export type Database = {
           notes: Json | null
           pickingListId: string
           status: Database["public"]["Enums"]["pickingListStatus"]
+          travelersPrintedAt: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -49287,6 +49583,7 @@ export type Database = {
           notes?: Json | null
           pickingListId: string
           status?: Database["public"]["Enums"]["pickingListStatus"]
+          travelersPrintedAt?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -49302,6 +49599,7 @@ export type Database = {
           notes?: Json | null
           pickingListId?: string
           status?: Database["public"]["Enums"]["pickingListStatus"]
+          travelersPrintedAt?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -92726,6 +93024,7 @@ export type Database = {
             | null
           next: number | null
           prefix: string | null
+          printLabelOnCompletion: boolean | null
           serialNumberTiming: string | null
           size: number | null
           step: number | null
@@ -108005,6 +108304,19 @@ export type Database = {
           unitOfMeasureCode: string
         }[]
       }
+      get_issue_tracked_entity_stock: {
+        Args: {
+          p_company_id: string
+          p_item_ids: string[]
+          p_location_id: string
+          p_project_ids?: string[]
+        }
+        Returns: {
+          availableQuantity: number
+          storageUnitName: string
+          trackedEntityId: string
+        }[]
+      }
       get_item_change_notices: {
         Args: {
           company_id: string
@@ -108082,6 +108394,15 @@ export type Database = {
       get_item_used_in: {
         Args: { company_id: string; item_id: string }
         Returns: Json
+      }
+      get_job_issue_bins: {
+        Args: { p_company_id: string; p_item_ids: string[]; p_job_id: string }
+        Returns: {
+          itemId: string
+          quantity: number
+          storageUnitId: string
+          storageUnitName: string
+        }[]
       }
       get_job_method: {
         Args: { jid: string }
@@ -108295,6 +108616,17 @@ export type Database = {
           kanbanId: string
           projectedQuantity: number
           replenishmentLevel: number
+        }[]
+      }
+      get_line_feed_shortages: {
+        Args: { p_company_id: string; p_location_id: string }
+        Returns: {
+          itemId: string
+          onHand: number
+          required: number
+          short: number
+          storageUnitId: string
+          workCenterId: string
         }[]
       }
       get_lineside_credit: {
@@ -108566,6 +108898,15 @@ export type Database = {
         Returns: {
           availableQuantity: number
           pickingListLineId: string
+        }[]
+      }
+      get_picking_list_live_bins: {
+        Args: { p_company_id: string; p_picking_list_id: string }
+        Returns: {
+          pickingListLineId: string
+          quantity: number
+          storageUnitId: string
+          storageUnitName: string
         }[]
       }
       get_picking_list_tracked_available: {
@@ -109362,6 +109703,15 @@ export type Database = {
           updatedBy: string
         }[]
       }
+      get_stock_transfer_live_bins: {
+        Args: { p_company_id: string; p_stock_transfer_id: string }
+        Returns: {
+          quantity: number
+          stockTransferLineId: string
+          storageUnitId: string
+          storageUnitName: string
+        }[]
+      }
       get_supplier_ids_with_supplier_permission: {
         Args: { permission: string }
         Returns: string[]
@@ -109483,6 +109833,17 @@ export type Database = {
           updatedAt: string
           updatedBy: string
           version: number
+        }[]
+      }
+      get_traveler_target: {
+        Args: { p_company_id: string; p_tracked_entity_id: string }
+        Returns: {
+          depth: number
+          itemId: string
+          jobId: string
+          jobMakeMethodId: string
+          status: Database["public"]["Enums"]["trackedEntityStatus"]
+          trackedEntityId: string
         }[]
       }
       get_unit_of_measure_usage: {
@@ -111567,6 +111928,7 @@ export type Database = {
         | "OEM Required"
       maintenanceSource: "Scheduled" | "Reactive" | "Non-Conformance"
       makeMethodStatus: "Draft" | "Active" | "Archived"
+      materialRequestStatus: "Open" | "Resolved"
       memoDirection: "Credit" | "Debit"
       memoStatus: "Draft" | "Posted" | "Voided"
       methodOperationOrder: "After Previous" | "With Previous"

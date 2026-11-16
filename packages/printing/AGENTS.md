@@ -36,7 +36,8 @@ import { getDocumentTypesForSource, documentTypeRegistry } from "@carbon/printin
 
 // Assignments & routing
 import { resolveContextAssignment, getPrinterContextForSource, printerContexts } from "@carbon/printing";
-// Contexts: default | shipping | receiving | inventory | workCenter
+// Contexts: default | shipping | receiving | inventory | kanban | workCenter
+// Sources: Shipment → shipping, Receipt → receiving, StockTransfer / PickingList / StorageUnit → inventory, Kanban → kanban
 
 // Server
 import { getCachedPrinterConfig, invalidatePrinterCache, sendToProxyBox } from "@carbon/printing/printing.server";
