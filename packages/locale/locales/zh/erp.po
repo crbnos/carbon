@@ -4033,7 +4033,7 @@ msgid "An open-ended lease is short-term: activating it posts no journal, and ea
 msgstr "无期限租赁属于短期租赁：激活时不会过账凭证，每份发票均作为费用处理。"
 
 msgid "An operation cannot complete until every serial and batch part on it is issued."
-msgstr ""
+msgstr "在其上所有序列号和生产批次零件发料完成之前，工序无法完成。"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "一项由外部供应商而非内部工作中心执行的工序，由分包采购订单涵盖。"
@@ -4365,10 +4365,10 @@ msgid "Approve all"
 msgstr "全部审批"
 
 msgid "Approve and delete"
-msgstr ""
+msgstr "审批并删除"
 
 msgid "Approve and Delete"
-msgstr ""
+msgstr "审批并删除"
 
 msgid "Approve Request"
 msgstr "审批请求"
@@ -4386,19 +4386,19 @@ msgid "Approved On"
 msgstr "批准日期"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr ""
+msgstr "审批时还会冲销其收货 {receipts}：移除其带入的库存，并冲销其过账。若该库存此后已被使用，则会被拒绝。"
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
-msgstr ""
+msgstr "审批将立即删除 {readableId}。此操作无法撤销。"
 
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
-msgstr ""
+msgstr "审批将立即删除该采购订单及其所有行。此操作无法撤销。"
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
-msgstr ""
+msgstr "审批将先冲销 {receipts}，然后删除该采购订单及其所有行。此操作无法撤销。"
 
 msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
-msgstr ""
+msgstr "审批将作废 {readableId}（冲销其过账），然后将其删除。此操作无法撤销。"
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "近似 — 由计划日期推导；此行不存在产能预留。"
@@ -5682,7 +5682,7 @@ msgid "Beginning"
 msgstr "开始"
 
 msgid "Being approved now…"
-msgstr ""
+msgstr "正在审批…"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -6394,7 +6394,7 @@ msgid "Cancel purchase order {target}"
 msgstr "取消采购订单 {target}"
 
 msgid "Cancel Request"
-msgstr ""
+msgstr "取消请求"
 
 msgid "Cancel Return"
 msgstr "取消退货"
@@ -7584,7 +7584,7 @@ msgid "Completing"
 msgstr "完成中"
 
 msgid "Completing a job's first operation prints its unit labels."
-msgstr ""
+msgstr "完成工单的第一道工序时将打印其单件标签。"
 
 msgid "Completing this training grants or renews the selected ability."
 msgstr "完成此培训将授予或更新所选能力。"
@@ -8088,7 +8088,7 @@ msgid "Control how operators pick material and track time on the shop floor."
 msgstr "控制操作员在车间内如何拣货原材料和跟踪时间。"
 
 msgid "Control how parts and labels move from the pick to the finished unit."
-msgstr ""
+msgstr "控制零件和标签如何从拣货流转到成品件。"
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "控制物料编号（零件、原料、耗材、工具和服务）是否可以包含小写字符。"
@@ -8892,7 +8892,7 @@ msgid "Create Operator"
 msgstr "创建操作员"
 
 msgid "Create picking lists on release"
-msgstr ""
+msgstr "下达时创建拣货单"
 
 msgid "Create PO Line"
 msgstr "创建采购订单行"
@@ -11456,7 +11456,7 @@ msgid "Each physical unit gets its own tracked entity and unique number — one 
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
 
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
-msgstr ""
+msgstr "每个已下达的工单生成一张拣货单。其零件会分配到使用这些零件的每个工作中心的线边存储单元。"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "每个租赁协议或合约的销售人员（或其创建者）每日获得其发票摘要。"
@@ -12025,7 +12025,7 @@ msgid "Email notifications not configured"
 msgstr "电子邮件通知未配置"
 
 msgid "Email order on acceptance"
-msgstr ""
+msgstr "接受时发送订单邮件"
 
 msgid "Email recipients"
 msgstr "电子邮件收件人"
@@ -12040,7 +12040,7 @@ msgid "Emails of the attendees (guests)"
 msgstr "与会者(客人)的电子邮件"
 
 msgid "Emails the sales order to the customer when they accept this quote online."
-msgstr ""
+msgstr "客户在线接受此报价单时，向客户发送销售订单邮件。"
 
 msgid "Emoji"
 msgstr "表情符号"
@@ -13913,22 +13913,22 @@ msgid "For Form 6765 Section E"
 msgstr "表格 6765 E 部分"
 
 msgid "Force delete"
-msgstr ""
+msgstr "强制删除"
 
 msgid "Force Delete"
-msgstr ""
+msgstr "强制删除"
 
 msgid "Force Delete (Admin)"
-msgstr ""
+msgstr "强制删除（管理员）"
 
 msgid "Force delete {purchaseOrderReadableId}"
-msgstr ""
+msgstr "强制删除 {purchaseOrderReadableId}"
 
 msgid "Force delete {readableId}"
-msgstr ""
+msgstr "强制删除 {readableId}"
 
 msgid "Force delete waiting for another Admin's approval"
-msgstr ""
+msgstr "强制删除等待其他管理员审批"
 
 msgid "Forecast"
 msgstr "预测"
@@ -15341,7 +15341,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "已停用的分类无法为新工时选择"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "选择单位时不提供已停用的单位"
 
 msgid "Inbound inspection"
 msgstr "来料检验"
@@ -16143,7 +16143,7 @@ msgid "It decides what the next step asks for."
 msgstr "它决定下一步骤需要什么。"
 
 msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
-msgstr ""
+msgstr "当前状态为 {status}：审批时会先作废并冲销其过账。若作废被拒绝，则改为通过凭证冲销其过账。"
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "已审批但无法应用。重新打开它，检查这些行，然后再次提交。"
@@ -16155,13 +16155,13 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "它仍然被「{table}」记录使用；请先删除它。"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr ""
+msgstr "此操作绝不影响供应商一方的账目。请先作废该订单的收货和预付款，并从采购发票中移除其行。在完成这些操作之前，该请求将被拒绝。"
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
-msgstr ""
+msgstr "无论其状态如何，都将永久删除 {readableId}。此操作无法撤销。"
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
-msgstr ""
+msgstr "无论其状态或审批情况如何，都将永久删除该采购订单及其所有行。此操作无法撤销。"
 
 msgid "It shows with no hours until you add some."
 msgstr "添加工时后才会显示。"
@@ -16302,7 +16302,7 @@ msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "其收入返还到每一行剩余待确认的部分。"
 
 msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
-msgstr ""
+msgstr "即使此后已被使用，其库存也会被收回（现存量可能变为负数），其收到的数量会退还给其订单。"
 
 msgid "Job"
 msgstr "工作"
@@ -16558,7 +16558,7 @@ msgid "Labels"
 msgstr "标签"
 
 msgid "Labels print at the first operation"
-msgstr ""
+msgstr "标签在第一道工序打印"
 
 msgid "Labor"
 msgstr "人工"
@@ -17122,7 +17122,7 @@ msgid "Line Details"
 msgstr "行详情"
 
 msgid "Line Flow"
-msgstr ""
+msgstr "产线流转"
 
 msgid "Line Item"
 msgstr "行物品"
@@ -20702,10 +20702,10 @@ msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr ""
+msgstr "目前尚未删除任何内容。该请求将提交给其他管理员审批，经其中一位管理员批准后即删除。"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
-msgstr ""
+msgstr "目前尚未删除任何内容。该请求将提交给其他管理员审批，经其中一位管理员批准后即删除该订单。"
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "当前没有应付款项。当到期期间来临时，发票会自动生成。"
@@ -21546,7 +21546,7 @@ msgid "Operators can use shared workstations with PIN authentication."
 msgstr "操作员可以使用带有PIN身份验证的共享工作站。"
 
 msgid "Operators see a warning about unissued serial and batch parts and can still complete."
-msgstr ""
+msgstr "操作员会看到关于未发料的序列号和生产批次零件的警告，但仍可完成。"
 
 msgid "Operators start on the Scan tab"
 msgstr "操作员从扫码选项卡开始"
@@ -21711,7 +21711,7 @@ msgid "Other Income GL account for the monthly interest earned on the net invest
 msgstr "营业外收入总账科目，用于记录销售型租赁净投资每月赚取的利息。"
 
 msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
-msgstr ""
+msgstr "它所资助或退还的其他付款会先从其上取消核销；这些付款仍保持已过账。"
 
 msgid "Other Type"
 msgstr "其他类型"
@@ -22248,10 +22248,10 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "分配至此发票的付款和抵扣款。已分配金额和汇兑差额均以公司基本货币表示。点击某一行以打开源单据。"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr ""
+msgstr "已核销到它的付款和贷项通知单会先取消核销：每笔付款保持已过账，并转为未核销的贷项，可核销到其他单据或强制删除。已从其确认的收入将被冲销。"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
-msgstr ""
+msgstr "已核销到它的付款和贷项通知单会先取消核销：每笔付款保持已过账，并转为未核销的贷项，可核销到其他单据或强制删除。其为资本化固定资产增加的价值将被收回；已过账的折旧保持不变。"
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "此日期前应支付的款项已在Carbon外支付"
@@ -22566,13 +22566,13 @@ msgid "Picking Lists"
 msgstr "拣货单"
 
 msgid "Picking lists are created by hand"
-msgstr ""
+msgstr "拣货单需手动创建"
 
 msgid "Picking lists on release disabled"
-msgstr ""
+msgstr "下达时创建拣货单已禁用"
 
 msgid "Picking lists on release enabled"
-msgstr ""
+msgstr "下达时创建拣货单已启用"
 
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "拣货按最早有效期优先的方式处理可追踪实体，以便最即将过期的库存首先出库。"
@@ -23152,7 +23152,7 @@ msgid "Print Label"
 msgstr "打印标签"
 
 msgid "Print label on completion"
-msgstr ""
+msgstr "完成时打印标签"
 
 msgid "Print Labels"
 msgstr "打印标签"
@@ -23166,10 +23166,10 @@ msgid "Print Output ({0})"
 msgstr "打印输出 ({0})"
 
 msgid "Print this item's serial label when its job's last operation completes."
-msgstr ""
+msgstr "工单的最后一道工序完成时，打印该物料的序列号标签。"
 
 msgid "Print travelers at the pick"
-msgstr ""
+msgstr "在拣货时打印流转卡"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "打印在您审批的采购订单上。"
@@ -23683,7 +23683,7 @@ msgid "Purchase order for {supplierName}"
 msgstr "{supplierName} 的采购订单"
 
 msgid "Purchase Order Force Delete"
-msgstr ""
+msgstr "采购订单强制删除"
 
 msgid "Purchase Order ID"
 msgstr "采购订单ID"
@@ -24026,7 +24026,7 @@ msgstr "第 {lineNumber} 行的贷记数量"
 
 #. placeholder {0}: item?.name ?? ""
 msgid "Quantity to pick of {0}"
-msgstr ""
+msgstr "{0} 的拣货数量"
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} 的退货数量"
@@ -24899,7 +24899,7 @@ msgid "Released with problems: {0}"
 msgstr "已下达，存在问题：{0}"
 
 msgid "Releasing a job creates its picking list"
-msgstr ""
+msgstr "下达工单时会创建其拣货单"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "下达生产批次会下达其工单，每个工单都必须为车间做好准备。"
@@ -25374,7 +25374,7 @@ msgid "Request date"
 msgstr "请求日期"
 
 msgid "Request Force Delete"
-msgstr ""
+msgstr "请求强制删除"
 
 msgid "Request Quote"
 msgstr "请求报价"
@@ -25383,7 +25383,7 @@ msgid "Requested"
 msgstr "已申请"
 
 msgid "Requested by"
-msgstr ""
+msgstr "请求人"
 
 msgid "Requested By"
 msgstr "请求人"
@@ -25459,7 +25459,7 @@ msgid "Require tiered sign-off on purchase orders, quality documents, suppliers,
 msgstr "根据金额阈值和审批人组对采购订单、质量文档、供应商和变更通知进行分级审批。"
 
 msgid "Require tracked parts before completion"
-msgstr ""
+msgstr "完成前需要追踪零件"
 
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
@@ -25489,10 +25489,10 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "在受控环境中需要 — 审计日志无法关闭。"
 
 msgid "Required tracked parts disabled"
-msgstr ""
+msgstr "已禁用必需的追踪零件"
 
 msgid "Required tracked parts enabled"
-msgstr ""
+msgstr "已启用必需的追踪零件"
 
 msgid "Requirement"
 msgstr "要求"
@@ -27419,7 +27419,7 @@ msgid "Send Notifications"
 msgstr "发送通知"
 
 msgid "Send order confirmation"
-msgstr ""
+msgstr "发送订单确认"
 
 msgid "Send Reminder"
 msgstr "发送提醒"
@@ -28798,7 +28798,7 @@ msgid "Starting"
 msgstr "开始中"
 
 msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
-msgstr ""
+msgstr "开始拣货单时，每件打印一张流转卡。第一道工序不打印标签。"
 
 msgid "Starting…"
 msgstr "正在启动…"
@@ -28935,7 +28935,7 @@ msgid "Stock and planning"
 msgstr "库存和计划"
 
 msgid "Stock at:"
-msgstr ""
+msgstr "库存位于："
 
 msgid "Stock Availability"
 msgstr "库存可用性"
@@ -29592,7 +29592,7 @@ msgid "supplier stage"
 msgstr "供应商阶段"
 
 msgid "Supplier stage"
-msgstr ""
+msgstr "供应商阶段"
 
 msgid "Supplier Stage"
 msgstr "供应商阶段"
@@ -31896,7 +31896,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "这是webhook的唯一标识符"
 
 msgid "This is an Admin override"
-msgstr ""
+msgstr "这是管理员覆盖"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "这是一个ITAR管制环境。访问仅限于美国人。"
@@ -32731,10 +32731,10 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "追踪原材料按拣货顺序（先到期先出）预选，即使没有拣货单。"
 
 msgid "Tracked parts are not required"
-msgstr ""
+msgstr "不需要追踪零件"
 
 msgid "Tracked parts must be scanned in"
-msgstr ""
+msgstr "追踪零件必须扫码录入"
 
 msgid "Tracking"
 msgstr "追踪"
@@ -32860,13 +32860,13 @@ msgid "Travel"
 msgstr "出差"
 
 msgid "Traveler labels disabled"
-msgstr ""
+msgstr "流转卡标签已禁用"
 
 msgid "Traveler labels enabled"
-msgstr ""
+msgstr "流转卡标签已启用"
 
 msgid "Traveler Link"
-msgstr ""
+msgstr "流转卡链接"
 
 msgid "Traveler materials disabled"
 msgstr "流转卡物料已禁用"
@@ -32881,7 +32881,7 @@ msgid "Traveler operations enabled"
 msgstr "流转卡工序已启用"
 
 msgid "Travelers print at the pick"
-msgstr ""
+msgstr "流转卡在拣货时打印"
 
 msgid "Treatment"
 msgstr "处理"
@@ -32926,7 +32926,7 @@ msgid "Turn off"
 msgstr "关闭"
 
 msgid "Turn Off"
-msgstr ""
+msgstr "关闭"
 
 msgid "Turn off SCIM provisioning"
 msgstr "关闭 SCIM 预配"
@@ -32944,7 +32944,7 @@ msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
 
 msgid "Turn on to create one picking list for each job when it is released."
-msgstr ""
+msgstr "开启后，每个工单下达时都会创建一张拣货单。"
 
 msgid "Turned off sync"
 msgstr "已关闭同步"
@@ -33002,10 +33002,10 @@ msgid "Type {0} to confirm"
 msgstr "输入 {0} 以确认"
 
 msgid "Type {purchaseOrderReadableId} to confirm"
-msgstr ""
+msgstr "输入 {purchaseOrderReadableId} 以确认"
 
 msgid "Type {readableId} to confirm"
-msgstr ""
+msgstr "输入 {readableId} 以确认"
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "输入 {TRIGGER} 以插入变量"
@@ -33165,7 +33165,7 @@ msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "唯一、大写、无空格（最多 10 个字符）"
 
 msgid "Unique, without spaces (max 10 characters), such as kg or BX"
-msgstr ""
+msgstr "唯一且不含空格（最多 10 个字符），例如 kg 或 BX"
 
 msgid "Unit"
 msgstr "单位"
@@ -34587,10 +34587,10 @@ msgid "What to set up"
 msgstr "要设置什么"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr ""
+msgstr "录入的错误内容，以及为何不能改为更正或作废"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
-msgstr ""
+msgstr "录入的错误内容，以及为何不能改为更正或关闭订单"
 
 msgid "What we're assuming"
 msgstr "我们的假设"
@@ -35443,7 +35443,7 @@ msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "您的真实数据已加载，您已检查样本并批准了它。"
 
 msgid "Your reason and the decision are kept in the audit log."
-msgstr ""
+msgstr "您的原因和决定将保存在审计日志中。"
 
 msgid "Your SCIM token"
 msgstr "您的 SCIM 令牌"

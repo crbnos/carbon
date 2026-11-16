@@ -89,10 +89,16 @@ const WRITE_BATCH = 500;
 const CONTROLLED_REFUSAL =
   "This is a controlled environment. Add members in Carbon so an administrator can attest to them; SCIM can then update and deactivate them.";
 
-const ratelimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(REQUESTS_PER_MINUTE, "1 m")
-});
+// Made on the first SCIM request, not at import: the settings screens and
+// the users module import this file only for its reads.
+let ratelimit: Ratelimit | undefined;
+function scimRatelimit(): Ratelimit {
+  ratelimit ??= new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(REQUESTS_PER_MINUTE, "1 m")
+  });
+  return ratelimit;
+}
 
 export type ScimDeps = {
   db: Kysely<KyselyDatabase>;
@@ -251,7 +257,7 @@ async function handleForCompany(
     throw err;
   }
 
-  const { success } = await ratelimit.limit(`scim:${connection.id}`);
+  const { success } = await scimRatelimit().limit(`scim:${connection.id}`);
   if (!success) {
     return scimError(429, "Too many SCIM requests. Retry later.", undefined, {
       "Retry-After": RETRY_AFTER_SECONDS
