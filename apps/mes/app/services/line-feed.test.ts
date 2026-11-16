@@ -220,6 +220,9 @@ describe("laneVerdict", () => {
     expect(laneSeverity("low", "ok")).toBe("amber");
     expect(laneSeverity("wet", "rawShort")).toBe("amber");
     expect(laneSeverity("wet", "ok")).toBe("green");
+    // No lineside storage: its stock cannot be read, so it is not green.
+    expect(laneSeverity("unknown", "ok")).toBe("unknown");
+    expect(laneSeverity("unknown", "rawShort")).toBe("amber");
   });
 });
 
@@ -400,6 +403,26 @@ describe("buildLaneBoard", () => {
     expect(finish.severity).toBe("amber");
   });
 
+  it("raw short: an incomplete kit misses a part that is on no shelf", () => {
+    const stuck = lane([
+      slot(1),
+      kitAt("atStation", "KIT-2"),
+      kitAt("complete", "KIT-3"),
+      kitAt("complete", "KIT-4"),
+      a3("incomplete", { itemId: "KIT", jobId: "job", quantity: 1 }),
+      a3("missing", {
+        itemId: "GASKET",
+        parentKitItemId: "KIT",
+        jobId: "job",
+        quantity: 1
+      }),
+      ...shelf(6)
+    ]);
+    expect(stuck.verdict).toBe("rawShort");
+    expect(stuck.shortItemIds).toEqual(["GASKET"]);
+    expect(stuck.kits[0].incomplete[0].covered).toBe(false);
+  });
+
   it("build kit: the rack is below target and the shelf covers one kit", () => {
     const build = lane([
       slot(1),
@@ -409,6 +432,7 @@ describe("buildLaneBoard", () => {
     ]);
     expect(build.verdict).toBe("build");
     expect(build.work.build).toBe(2);
+    expect(build.kits[0].rackGap).toBe(2);
     expect(build.raw[0]).toMatchObject({ need: 4, status: "ok" });
   });
 
@@ -454,9 +478,15 @@ describe("buildLaneBoard", () => {
       station("A3", "out", [shortage])
     );
     expect(direct.kits).toEqual([]);
-    expect(direct.looseRows).toEqual([shortage]);
+    // The kanban's source bin is also where to grab the part.
+    expect(direct.looseRows).toEqual([
+      {
+        ...shortage,
+        source: { storageUnitId: "WH1-B9", onHand: 5, quantity: 5 }
+      }
+    ]);
 
-    // With stock on a shelf, the row says where to grab it and how much.
+    // With no kanban, the row says which shelf bin to grab it from.
     const grab = lane(
       [
         {
@@ -476,6 +506,28 @@ describe("buildLaneBoard", () => {
       quantity: 5
     });
     expect(grab.raw).toEqual([]);
+
+    // The station's Transfer kanban names its source: that bin wins while it
+    // holds stock.
+    const kanban = lane(
+      [
+        a3("bin", { itemId: "BOLT", storageUnitId: "WH1-B9", quantity: 20 }),
+        {
+          workCenterId: "A3",
+          tier: "raw",
+          state: "source",
+          itemId: "BOLT",
+          storageUnitId: "WH1-A1",
+          quantity: 5
+        }
+      ],
+      station("A3", "out", [shortage])
+    );
+    expect(kanban.looseRows[0].source).toEqual({
+      storageUnitId: "WH1-B9",
+      onHand: 20,
+      quantity: 8
+    });
     expect(direct.raw[0].kitItemIds).toEqual([]);
     expect(direct.raw).toMatchObject([{ need: 8, status: "short" }]);
     expect(direct.verdict).toBe("rawShort");

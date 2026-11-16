@@ -108490,19 +108490,19 @@ export type Database = {
       get_line_feed_lanes: {
         Args: { p_company_id: string; p_location_id: string }
         Returns: {
-          itemId: string | null
-          jobId: string | null
-          kanbanId: string | null
-          need: number | null
-          parentKitItemId: string | null
-          quantity: number | null
-          readableId: string | null
-          replenishing: boolean | null
+          itemId: string
+          jobId: string
+          kanbanId: string
+          need: number
+          parentKitItemId: string
+          quantity: number
+          readableId: string
+          replenishing: boolean
           state: string
-          storageUnitId: string | null
-          target: number | null
+          storageUnitId: string
+          target: number
           tier: string
-          trackedEntityId: string | null
+          trackedEntityId: string
           workCenterId: string
         }[]
       }

@@ -72,17 +72,21 @@ const emptyLineFeed = {
   storageUnitNames: {},
   jobReadableIds: {},
   stockTransferReadableIds: {},
+  canTransfer: false,
   // A failed read is not an empty queue: the screen says so and offers a retry.
   loadFailed: false,
   noLocation: false
 } satisfies Names & Record<string, unknown>;
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, permissions } = await requirePermissions(request, {
     view: "inventory"
   });
   const locationId = context.get(userContext)?.locationId;
   if (!locationId) return { ...emptyLineFeed, noLocation: true };
+  // A hint for the Move buttons; the transfer action checks it again.
+  const canTransfer =
+    permissions.inventory?.create?.includes(companyId) ?? false;
 
   const sort =
     new URL(request.url).searchParams.get("sort") === "worst"
@@ -98,7 +102,12 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     return { ...emptyLineFeed, loadFailed: true };
   }
 
-  return { ...lineFeed.data, loadFailed: false, noLocation: false };
+  return {
+    ...lineFeed.data,
+    canTransfer,
+    loadFailed: false,
+    noLocation: false
+  };
 }
 
 type SummaryKind = keyof LaneSummary;
@@ -115,7 +124,7 @@ const inSummary = (lane: Lane, kind: SummaryKind) =>
   kind === "out" ? lane.severity === "red" : lane.work[kind] > 0;
 
 export default function LineFeedRoute() {
-  const { lanes, summary, loadFailed, noLocation, ...names } =
+  const { lanes, summary, canTransfer, loadFailed, noLocation, ...names } =
     useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
   const { t } = useLingui();
@@ -192,6 +201,7 @@ export default function LineFeedRoute() {
                 lane={lane}
                 name={lane.name ?? t`No station`}
                 dimmed={shown !== undefined && !inSummary(lane, shown)}
+                canTransfer={canTransfer}
                 names={names}
               />
             ))}
@@ -264,7 +274,8 @@ const laneTone: Record<LaneSeverity, { lane: string; dot: string }> = {
     lane: "border-yellow-600/40 bg-yellow-500/15",
     dot: "bg-yellow-500"
   },
-  red: { lane: "border-red-600/50 bg-red-500/15", dot: "bg-red-500" }
+  red: { lane: "border-red-600/50 bg-red-500/15", dot: "bg-red-500" },
+  unknown: { lane: "border-border bg-muted/40", dot: "bg-muted-foreground/40" }
 };
 
 type Tone = "green" | "yellow" | "red" | "gray";
@@ -277,11 +288,14 @@ function LaneColumn({
   lane,
   name,
   dimmed,
+  canTransfer,
   names
 }: {
   lane: Lane;
   name: string;
   dimmed: boolean;
+  /** The user may move stock: the rows offer it. */
+  canTransfer: boolean;
   names: Names;
 }) {
   const { t } = useLingui();
@@ -314,11 +328,7 @@ function LaneColumn({
     lane.raw.some((bin) => bin.status === status)
   );
   const binLabel = { empty: t`Empty`, short: t`Short`, low: t`Low` };
-  const rackLow = lane.kits.some(
-    (kit) =>
-      kit.target !== null &&
-      quantityOf(kit.complete) + quantityOf(kit.incomplete) < kit.target
-  );
+  const rackLow = lane.kits.some((kit) => kit.rackGap > 0);
 
   return (
     <section
@@ -410,7 +420,7 @@ function LaneColumn({
           <StationKitLine
             key={kit.itemId}
             kit={kit}
-            workCenterId={lane.workCenterId}
+            workCenterId={canTransfer ? lane.workCenterId : null}
             names={names}
           />
         ))}
@@ -423,6 +433,7 @@ function LaneColumn({
           <StationLine
             key={row.key}
             row={row}
+            canTransfer={canTransfer}
             part={
               row.itemId ? (names.itemReadableIds[row.itemId] ?? null) : null
             }
@@ -457,10 +468,6 @@ function LaneColumn({
 const quantityOf = (units: { quantity: number }[]) =>
   units.reduce((sum, unit) => sum + unit.quantity, 0);
 
-/**
- * A tier of a lane. It opens when something in it needs attention and
- * collapses to its chip when everything is ok; a tap opens or closes it.
- */
 /** A heading inside a tier: what is part of a kit, and what is loose. */
 function TierHeading({ children }: { children: ReactNode }) {
   return (
@@ -486,6 +493,10 @@ function TierGroup({
   );
 }
 
+/**
+ * A tier of a lane. It opens when something in it needs attention and
+ * collapses to its chip when everything is ok; a tap opens or closes it.
+ */
 function Tier({
   label,
   chip,
@@ -613,6 +624,14 @@ function KitRackLine({ kit, names }: { kit: LaneKit; names: Names }) {
     kit.target === null ? null : formatQuantity(kit.target, locale);
   const unitName = (id: string | null) =>
     (id && names.storageUnitNames[id]) || null;
+  const count =
+    target === null ? (
+      <Trans>{complete} complete</Trans>
+    ) : (
+      <Trans>
+        {complete} complete · target {target}
+      </Trans>
+    );
 
   return (
     <li className="flex flex-col gap-2 px-3 py-2">
@@ -624,17 +643,31 @@ function KitRackLine({ kit, names }: { kit: LaneKit; names: Names }) {
           </div>
           <div className="truncate text-xs text-muted-foreground">
             {unitName(kit.storageUnitId)}
+            {kit.rackGap > 0 &&
+              (kit.replenishing ? (
+                <Trans> · Kit job open</Trans>
+              ) : (
+                <Trans> · No kit job open</Trans>
+              ))}
           </div>
         </div>
-        <span className="shrink-0 text-sm tabular-nums">
-          {target === null ? (
-            <Trans>{complete} complete</Trans>
-          ) : (
-            <Trans>
-              {complete} complete · target {target}
-            </Trans>
-          )}
-        </span>
+        {target === null || !kit.kanbanId ? (
+          <span className="shrink-0 text-sm tabular-nums">{count}</span>
+        ) : (
+          // The rack's kanban card opens in the ERP.
+          <a
+            href={path.to.erpKanban(kit.kanbanId)}
+            target="_blank"
+            rel="noreferrer"
+            className="flex min-h-11 shrink-0 items-center gap-1 text-sm tabular-nums no-underline"
+          >
+            {count}
+            <LuExternalLink
+              className="size-3 text-muted-foreground"
+              aria-hidden
+            />
+          </a>
+        )}
       </div>
       {kit.complete.length > 0 && (
         <div className="flex flex-wrap gap-1">
@@ -694,14 +727,13 @@ function StationKitLine({
   names
 }: {
   kit: LaneKit;
+  /** Null when the kit cannot be brought from here: no station, or the user
+   *  may not move stock. */
   workCenterId: string | null;
   names: Names;
 }) {
   const { locale } = useLocale();
-  const onHand = formatQuantity(
-    kit.atStation.reduce((sum, unit) => sum + unit.quantity, 0),
-    locale
-  );
+  const onHand = formatQuantity(quantityOf(kit.atStation), locale);
   const covers = formatQuantity(kit.covers, locale);
   const demand = formatQuantity(kit.demand, locale);
   const badge = {
@@ -743,6 +775,7 @@ function StationKitLine({
 
 function StationLine({
   row,
+  canTransfer,
   part,
   thumbnailPath,
   source,
@@ -750,6 +783,7 @@ function StationLine({
   reference
 }: {
   row: LineFeedRow;
+  canTransfer: boolean;
   part: string | null;
   thumbnailPath?: string;
   /** The name of the bin to grab a short part from. */
@@ -797,7 +831,7 @@ function StationLine({
             </span>
           </div>
         </div>
-        {row.source && row.workCenterId && row.itemId && (
+        {canTransfer && row.source && row.workCenterId && row.itemId && (
           <TransferButton
             workCenterId={row.workCenterId}
             itemId={row.itemId}
@@ -866,7 +900,8 @@ function StationLine({
 /**
  * Grab it, tap, carry it over: one tap moves the stock from the source bin to
  * the station's bin. The server decides the destination and caps the
- * quantity at what the station is still short of.
+ * quantity at what the station is still short of. The action flashes what
+ * happened: a move that lands removes this button before it could say so.
  */
 function TransferButton({
   workCenterId,
@@ -879,12 +914,8 @@ function TransferButton({
   source: StockSource;
   from: string | null;
 }) {
-  const { t } = useLingui();
   const { locale } = useLocale();
-  const fetcher = useAction<{ success: boolean; message?: string }>({
-    onSuccess: () => toast.success(t`Moved to the station`),
-    onError: (data) => toast.error(data.message ?? t`Failed to transfer`)
-  });
+  const fetcher = useAction<{ success: boolean }>();
   const quantity = formatQuantity(source.quantity, locale);
 
   return (

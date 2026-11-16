@@ -689,26 +689,6 @@ export async function insertManualInventoryAdjustment(
   return { data: result.data?.itemLedger ?? null, error: null };
 }
 
-/** What a station is short of one item, and the bin that takes it. */
-export async function getStationShortage(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    locationId: string;
-    workCenterId: string;
-    itemId: string;
-  }
-) {
-  return client
-    .rpc("get_line_feed_shortages", {
-      p_location_id: args.locationId,
-      p_company_id: args.companyId
-    })
-    .eq("workCenterId", args.workCenterId)
-    .eq("itemId", args.itemId)
-    .maybeSingle();
-}
-
 /**
  * The line feed for one location: a lane per work center (`buildLaneBoard`)
  * with its raw shelf, kit rack and station card (open material requests,

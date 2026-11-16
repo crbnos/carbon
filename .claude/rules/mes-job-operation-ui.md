@@ -503,21 +503,27 @@ while its serial or batch materials are not scanned in.
   quantity and the shelf covers a kit), `rawShort` (a needed bin is empty or
   short). `laneVerdict` is the first non-zero count in that order; severity is
   red when the station is `out`, amber when it is `low` or the verdict is not
-  ok. The shelf and station tiers split kit parts from loose parts
+  ok, `unknown` (gray) when it has no lineside storage. The shelf and station tiers split kit parts from loose parts
   (`RawBin.kitItemIds`, `Lane.looseRows`); a kit's own shortage shows on its
   kit line (`LaneKit.stationStatus`), not as a part to bring. A lane with no kit reads "Fed directly" and lists the source bins of the
   Transfer kanbans into its station. The sort (`?sort=worst`) and the lit
   summary count (`?show=`) live in the URL; the loader sorts. `kanban` does
   not broadcast, so a new card shows on the next stock, job or PO change.
 - **Grab and move.** A short loose part shows its picture and where to grab
-  it (`LineFeedRow.source`, from the function's `raw`/`source` rows: the
-  item's default bin when it holds stock, else the fullest bin of unassigned,
+  it (`LineFeedRow.source`): the source bin of the station's Transfer kanban
+  while it holds stock, else the function's `raw`/`source` row (the item's
+  default bin when it holds stock, else the fullest bin of unassigned,
   nettable stock off the line). "Move N from BIN" posts to
-  `x+/line-feed.transfer.tsx`, which reads the station's shortage again
-  (`getStationShortage`) for the destination bin and the most that may move,
-  so a resend moves nothing, then calls the ERP's
+  `x+/line-feed.transfer.tsx`, which calls `transferToStation`
+  (`services/line-feed.server.ts`). It reads the station's shortage again,
+  less the transfer lines already on their way, for the destination bin and
+  the most that may move, and checks that a named serial is still in the
+  source bin, so a resend creates nothing. Then it calls the ERP's
   `api+/inventory.stock-transfer.move.ts` (`createStockTransfer` with
-  `moveNow`). "Bring kit" is the same move for the rack kit's serial.
+  `moveNow`). "Bring kit" is the same move for the rack kit's serial. The
+  action answers with a flash, because a move that lands unmounts its button.
+  The loader's `canTransfer` (create inventory) hides the buttons from a
+  user the action would turn away.
 - **Resolve.** A request card posts to `x+/line-feed.$materialRequestId.resolve.tsx`,
   which calls `resolveMaterialRequest` with the user's client. Only the
   requester or an inventory editor can resolve it; the RLS refusal comes back

@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · Kit job open"
+msgstr " · Kit job open"
+
+msgid " · No kit job open"
+msgstr " · No kit job open"
+
 msgid " · Nothing ordered"
 msgstr " · Nothing ordered"
 
@@ -1177,9 +1183,6 @@ msgstr "Failed to save the hours"
 msgid "Failed to submit the week"
 msgstr "Failed to submit the week"
 
-msgid "Failed to transfer"
-msgstr "Failed to transfer"
-
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Failed to upload {0}"
@@ -1765,9 +1768,6 @@ msgstr "Move {quantity} from {from}"
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "Move column: {0}"
-
-msgid "Moved to the station"
-msgstr "Moved to the station"
 
 msgid "Must be at least {minValue} {unitOfMeasureCode}"
 msgstr "Must be at least {minValue} {unitOfMeasureCode}"

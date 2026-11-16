@@ -317,6 +317,9 @@ export type LaneKit = {
   kanbanId: string | null;
   /** The rack's Make kanban quantity; null without a kanban. */
   target: number | null;
+  /** Kits the rack is below its target by, counting the incomplete ones. */
+  rackGap: number;
+  /** A job for the kit is open. */
   replenishing: boolean;
   /** Open units at the station that still need a kit. */
   demand: number;
@@ -343,12 +346,13 @@ export type LaneWork = {
   finish: number;
   /** Kits the rack is below target by, when the shelf covers one. */
   build: number;
-  /** Shelf bins that cannot cover what is needed from them. */
+  /** Shelf bins that cannot cover what is needed from them, and the parts an
+   *  incomplete kit misses that are on no shelf. */
   rawShort: number;
 };
 
 export type LaneVerdict = "deliver" | "finish" | "build" | "rawShort" | "ok";
-export type LaneSeverity = "red" | "amber" | "green";
+export type LaneSeverity = "red" | "amber" | "green" | "unknown";
 
 export type Lane = {
   workCenterId: string | null;
@@ -373,19 +377,25 @@ export function laneVerdict(work: LaneWork): LaneVerdict {
   return verdictOrder.find((kind) => work[kind] > 0) ?? "ok";
 }
 
-/** Red when the station is out, amber when it is low or the lane has work. */
+/**
+ * Red when the station is out, amber when it is low or the lane has work.
+ * A station with no lineside storage is `unknown`, not green: its stock
+ * cannot be read.
+ */
 export function laneSeverity(
   status: StationStockStatus,
   verdict: LaneVerdict
 ): LaneSeverity {
   if (status === "out") return "red";
-  return status === "low" || verdict !== "ok" ? "amber" : "green";
+  if (status === "low" || verdict !== "ok") return "amber";
+  return status === "unknown" ? "unknown" : "green";
 }
 
 const severityOrder: Record<LaneSeverity, number> = {
   red: 0,
   amber: 1,
-  green: 2
+  green: 2,
+  unknown: 3
 };
 
 const kitUnit = (row: LaneRowInput): KitUnit => ({
@@ -409,6 +419,7 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
       storageUnitId: row.storageUnitId ?? null,
       kanbanId: row.kanbanId ?? null,
       target: row.target ?? null,
+      rackGap: 0,
       replenishing: row.replenishing ?? false,
       demand: row.need ?? 0,
       covers: 0,
@@ -440,26 +451,28 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
     }
   }
 
+  for (const kit of kits.values()) {
+    if (kit.target !== null) {
+      kit.rackGap = Math.max(
+        kit.target - total(kit.complete) - total(kit.incomplete),
+        0
+      );
+    }
+  }
+
   // Where each part the station consumes can be grabbed.
   const sources = new Map<string, LaneRowInput>();
   for (const row of rows) {
     if (row.state === "source" && row.itemId) sources.set(row.itemId, row);
   }
-  const grab = (row: LaneRowInput, need: number): StockSource => ({
-    storageUnitId: row.storageUnitId ?? "",
-    onHand: row.quantity ?? 0,
-    quantity: Math.min(need, row.quantity ?? 0)
-  });
 
   // Shelf bins, one per part and bin. A part that feeds two kits adds both
   // kits' needs to the one bin.
   const bins = new Map<string, RawBin & { perKit: number; level: number }>();
   const binByItem = new Map<string, RawBin>();
   const components = new Map<string, { bin: RawBin; perKit: number }[]>();
-  const rackGap = (kit: LaneKit) =>
-    kit.target === null
-      ? 0
-      : Math.max(kit.target - total(kit.complete) - total(kit.incomplete), 0);
+  // The source bin of a Transfer kanban into this station, by part.
+  const directByItem = new Map<string, RawBin>();
   for (const row of rows) {
     if (row.state !== "bin" || !row.itemId) continue;
     const key = `${row.itemId}:${row.storageUnitId}`;
@@ -480,23 +493,31 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
       bins.set(key, bin);
       if (!binByItem.has(row.itemId)) binByItem.set(row.itemId, bin);
     }
+    if (!row.parentKitItemId && !directByItem.has(row.itemId)) {
+      directByItem.set(row.itemId, bin);
+    }
     const kit = row.parentKitItemId ? kits.get(row.parentKitItemId) : undefined;
     if (!kit) continue;
     const perKit = row.need ?? 0;
     bin.kitItemIds.push(kit.itemId);
     bin.perKit = Math.max(bin.perKit, perKit);
-    bin.need += perKit * rackGap(kit);
+    bin.need += perKit * kit.rackGap;
     const parts = components.get(kit.itemId) ?? [];
     parts.push({ bin, perKit });
     components.set(kit.itemId, parts);
   }
 
+  // A part can be on several bins, and short once.
+  const short = new Set<string>();
   for (const row of rows) {
     if (row.state !== "missing" || !row.jobId || !row.itemId) continue;
     const quantity = row.quantity ?? 0;
     jobs.get(row.jobId)?.missing.push({ itemId: row.itemId, quantity });
     const bin = binByItem.get(row.itemId);
     if (bin) bin.need += quantity;
+    // A kit job's part that the kit's method no longer lists has no shelf
+    // row: the kit still waits on it.
+    else short.add(row.itemId);
   }
 
   // A part fed directly is needed by what the station is short of.
@@ -514,8 +535,12 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
     }
   }
 
-  const work: LaneWork = { deliver: 0, finish: 0, build: 0, rawShort: 0 };
-  const shortItemIds: string[] = [];
+  const work: LaneWork = {
+    deliver: 0,
+    finish: 0,
+    build: 0,
+    rawShort: short.size
+  };
   const raw: RawBin[] = [];
   for (const { perKit, level, ...bin } of bins.values()) {
     bin.need = round(bin.need);
@@ -529,7 +554,7 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
             : "ok";
     if (bin.need > 0 && (bin.status === "empty" || bin.status === "short")) {
       work.rawShort += 1;
-      shortItemIds.push(bin.itemId);
+      short.add(bin.itemId);
     }
     raw.push(bin);
   }
@@ -570,7 +595,7 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
     const parts = components.get(kit.itemId) ?? [];
     const coversOneKit =
       parts.length > 0 && parts.every((part) => part.bin.onHand >= part.perKit);
-    if (coversOneKit) work.build += rackGap(kit);
+    if (coversOneKit) work.build += kit.rackGap;
   }
 
   const verdict = laneVerdict(work);
@@ -580,17 +605,32 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
     severity: laneSeverity(station.status, verdict),
     verdict,
     work,
-    shortItemIds,
+    shortItemIds: [...short],
     raw,
     kits: [...kits.values()],
     station,
     looseRows: station.rows.flatMap((line) => {
       if (line.kind !== "shortage" || !line.itemId) return [line];
       if (kits.has(line.itemId)) return [];
-      const source = sources.get(line.itemId);
-      return source
-        ? [{ ...line, source: grab(source, line.quantity ?? 0) }]
-        : [line];
+      // The bin the station's own Transfer kanban draws from, while it holds
+      // stock; else the item's default or fullest bin.
+      const direct = directByItem.get(line.itemId);
+      const from =
+        direct?.storageUnitId && direct.onHand > 0
+          ? { storageUnitId: direct.storageUnitId, onHand: direct.onHand }
+          : sources.get(line.itemId);
+      if (!from?.storageUnitId) return [line];
+      const onHand = "onHand" in from ? from.onHand : (from.quantity ?? 0);
+      return [
+        {
+          ...line,
+          source: {
+            storageUnitId: from.storageUnitId,
+            onHand,
+            quantity: Math.min(line.quantity ?? 0, onHand)
+          }
+        }
+      ];
     })
   };
 }

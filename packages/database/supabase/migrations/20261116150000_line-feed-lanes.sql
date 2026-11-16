@@ -16,7 +16,8 @@ ALTER TABLE "storageUnit" ADD CONSTRAINT "storageUnit_kitRack_not_lineside"
 --   station   line         a work center with open operations; quantity = its lowest operation order
 --   station   kit          a kit at the station; quantity on hand, by serial
 --   kit       slot         a kit item the station consumes; need = open station demand,
---                          target = the Make kanban quantity at the slot
+--                          target = the Make kanban quantity at the slot (a kanban with
+--                          no storage unit counts at the item's default one)
 --   kit       complete     a kit on the rack; quantity on hand, by serial
 --   kit       incomplete   an open kit job with unissued parts; quantity = kits still to build
 --   kit       missing      an unissued part of that job; quantity missing
@@ -87,6 +88,9 @@ AS $$
       jm."itemId",
       SUM(COALESCE(jm."estimatedQuantity", 0) - COALESCE(jm."quantityIssued", 0)) AS "quantity"
     FROM "jobMaterial" jm
+    INNER JOIN "item" i
+      ON i."id" = jm."itemId"
+      AND i."companyId" = p_company_id
     LEFT JOIN first_open_operation fo
       ON jm."jobOperationId" IS NULL
       AND fo."jobMakeMethodId" = jm."jobMakeMethodId"
@@ -95,6 +99,7 @@ AS $$
       AND oo."jobId" = jm."jobId"
     WHERE jm."companyId" = p_company_id
       AND jm."methodType" = 'Pull from Inventory'
+      AND i."itemTrackingType" <> 'Non-Inventory'
       AND COALESCE(jm."estimatedQuantity", 0) > COALESCE(jm."quantityIssued", 0)
       AND oo."workCenterId" IS NOT NULL
     GROUP BY oo."workCenterId", jm."itemId"
@@ -213,15 +218,23 @@ AS $$
       held."quantity" DESC,
       held."storageUnitId"
   ),
-  -- The card that refills a rack slot (Make) or a shelf bin (Buy or Make).
+  -- The card that refills a rack slot (Make) or a shelf bin (Buy or Make). A
+  -- card with no storage unit refills the item's default one, where its job or
+  -- purchase order line lands.
   card AS (
-    SELECT k."itemId", k."storageUnitId", MIN(k."id") AS "id", SUM(k."quantity") AS "quantity"
+    SELECT k."itemId",
+      COALESCE(k."storageUnitId", pm."defaultStorageUnitId") AS "storageUnitId",
+      MIN(k."id") AS "id",
+      SUM(k."quantity") AS "quantity"
     FROM "kanban" k
+    LEFT JOIN "pickMethod" pm
+      ON pm."itemId" = k."itemId"
+      AND pm."locationId" = k."locationId"
+      AND pm."companyId" = k."companyId"
     WHERE k."companyId" = p_company_id
       AND k."locationId" = p_location_id
       AND k."replenishmentSystem" IN ('Buy', 'Make')
-      AND k."storageUnitId" IS NOT NULL
-    GROUP BY k."itemId", k."storageUnitId"
+    GROUP BY k."itemId", COALESCE(k."storageUnitId", pm."defaultStorageUnitId")
   ),
   stocked_item AS (
     SELECT ki."itemId" FROM kit_item ki

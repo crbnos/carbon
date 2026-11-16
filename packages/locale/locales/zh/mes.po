@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · Kit job open"
+msgstr ""
+
+msgid " · No kit job open"
+msgstr ""
+
 msgid " · Nothing ordered"
 msgstr ""
 
@@ -1177,9 +1183,6 @@ msgstr "工时保存失败"
 msgid "Failed to submit the week"
 msgstr "周提交失败"
 
-msgid "Failed to transfer"
-msgstr ""
-
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "上传 {0} 失败"
@@ -1765,9 +1768,6 @@ msgstr ""
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "移动列：{0}"
-
-msgid "Moved to the station"
-msgstr ""
 
 msgid "Must be at least {minValue} {unitOfMeasureCode}"
 msgstr "必须不小于 {minValue} {unitOfMeasureCode}"

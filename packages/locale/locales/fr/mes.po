@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · Kit job open"
+msgstr ""
+
+msgid " · No kit job open"
+msgstr ""
+
 msgid " · Nothing ordered"
 msgstr ""
 
@@ -1177,9 +1183,6 @@ msgstr "Impossible d'enregistrer les heures"
 msgid "Failed to submit the week"
 msgstr "Impossible de soumettre la semaine"
 
-msgid "Failed to transfer"
-msgstr ""
-
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Échec du téléversement de {0}"
@@ -1765,9 +1768,6 @@ msgstr ""
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "Déplacer la colonne : {0}"
-
-msgid "Moved to the station"
-msgstr ""
 
 msgid "Must be at least {minValue} {unitOfMeasureCode}"
 msgstr "Doit être d'au moins {minValue} {unitOfMeasureCode}"
