@@ -762,7 +762,6 @@ export const JobOperation = ({
   // already sits in, or goes to its traveler.
   useTravelerScan({
     operationId: operation.id,
-    jobMakeMethodId: operation.jobMakeMethodId,
     parentTrackedEntityId: trackedEntityId,
     active: !issueModal.isOpen && !isBatched && !abilityBlocked
   });

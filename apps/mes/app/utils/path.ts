@@ -16,6 +16,9 @@ const file = `/file`;
 // operator chrome (sidebar, pin-in overlay, time-card warning).
 const display = "/display";
 
+/** Marks an operation link a traveler scan opened (`?scanned`). */
+export const TRAVELER_PARAM = "scanned";
+
 export const path = {
   to: {
     acknowledge: `${x}/acknowledge`,
@@ -283,7 +286,7 @@ export const path = {
     timecard: `${api}/timecard`,
     timesheet: `${x}/timesheet`,
     traveler: (id: string) => generatePath(`${x}/traveler/${id}`),
-    travelerResolve: `${x}/traveler/resolve`,
+    travelerScan: `${x}/traveler/scan`,
     triggerCorrection: `${x}/trigger-correction`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
