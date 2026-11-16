@@ -57,6 +57,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error(nonConformance.error.message);
   }
 
+  // bypassRls makes the service-role client, so the URL id is only proven to
+  // name a row, not one in the caller's company. Mirror the parent issue
+  // loader and reject a row from another company before returning it.
+  if (nonConformance.data.companyId !== companyId) {
+    throw redirect(path.to.issues);
+  }
+
   return {
     nonConformance: nonConformance.data,
     actionTasks: getIssueActionTasks(client, id, companyId),
