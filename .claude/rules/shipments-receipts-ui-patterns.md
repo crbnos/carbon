@@ -176,7 +176,7 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   via `fetcher.Form` to the void route). Shipment posting is gated by `ShipmentPostModal.tsx`.
   On a rental document the post modals show a date field, **Delivered on** / **Returned on**
   (default company today, no future date), sent as `postingDate`; `ShipmentPostModal` shows
-  **Delivered on** on a contract delivery too (`isDelivery`), and **Posting Date** on a sales order shipment (`isDated`); `ReceiptPostModal` also blocks a
+  **Delivered on** on a contract delivery too (`isDelivery`); a sales order shipment shows no date and posts today (an API or MCP caller may pass `postingDate`); `ReceiptPostModal` also blocks a
   ticked unit treated as a sale that has no Return To.
   **Both post modals are source-aware for return flows**, and must stay in step with
   `lines.tracking`'s guard or they reject what tracking accepted:

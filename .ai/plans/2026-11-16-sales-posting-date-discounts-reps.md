@@ -18,8 +18,8 @@ the rep of the sales order, posted as an Employee dimension (no invoice column).
       batch split, disposal date, COGS journal, period.
 - [x] `postSalesInvoice`: optional `postingDate`; dates journal, ledgers, period,
       `dateIssued`, `postingDate`, and `dateDue` from it.
-- [x] UI: date picker in `ShipmentPostModal` (Sales Order, rental and contract shipments) and `SalesInvoicePostModal`,
-      default company today, max today.
+- [x] UI: no date picker (user, 2026-11-16). The post modals post today; only an API or
+      MCP caller passes `postingDate`. (A first build added pickers; removed.)
 - [x] Tests: dated post lands on the date; a future date and a pre-cutover date refuse.
 
 ## B. Gross revenue + Sales Discount leg

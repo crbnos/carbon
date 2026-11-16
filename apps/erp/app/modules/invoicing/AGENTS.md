@@ -271,7 +271,7 @@ How they behave:
   `post-sales-invoice`. A failed post puts the claim back to Draft. After the post, the PDF,
   the email or the Stripe send never undo it: a failure stamps `sendError` and returns
   `warning`.
-  An optional `postingDate` (the post modal's **Posting Date**, default company today) dates
+  An optional `postingDate` (API and MCP only; the post modal always posts today) dates
   the post: journal, item and cost ledgers, the direct-line shipment, contract ledger entries,
   fixed asset disposals, the accounting period (`getManualPostingPeriod`), and the invoice's
   `dateIssued` / `postingDate`; `dateDue` is recomputed from it by the payment term. It is
