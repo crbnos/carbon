@@ -1107,3 +1107,137 @@ export function customerPortalEarliestExpiry(
   const stored = parseDate(storedExpiresOn);
   return (stored.compare(tomorrow) < 0 ? stored : tomorrow).toString();
 }
+
+type DeliveryDateStatus = Database["public"]["Enums"]["deliveryDateStatus"];
+type SalesOrderLineType = Database["public"]["Enums"]["salesOrderLineType"];
+
+/** The sales order line types a delivery date check applies to: they ship an item. */
+export const DELIVERY_CHECKED_LINE_TYPES: ReadonlySet<SalesOrderLineType> =
+  new Set<SalesOrderLineType>(["Part", "Material", "Tool", "Consumable"]);
+type DeliveryDateConstraint =
+  Database["public"]["Enums"]["deliveryDateConstraint"];
+
+export type StoredDeliveryDate = {
+  deliveryDateStatus: DeliveryDateStatus | null;
+  deliveryDateOverriddenBy: string | null;
+};
+
+/** The columns a delivery date check writes; a missing key keeps its value. */
+export type DeliveryDateColumns = {
+  deliveryDateStatus?: DeliveryDateStatus | null;
+  deliveryDateConstraint?: DeliveryDateConstraint | null;
+  earliestDeliveryDate?: string | null;
+  deliveryDateCheckedAt?: string | null;
+  deliveryDateOverriddenBy?: string | null;
+  deliveryDateOverriddenAt?: string | null;
+};
+
+/**
+ * The columns one delivery date check writes on a sales order line, and
+ * whether the write records a newly kept date (spec section 7):
+ * 1. No result (the line is not checked): clear the result, keep who kept a
+ *    date. Nothing is written when no result was stored either.
+ * 2. Pending: the capacity check still runs; keep who kept a date.
+ * 3. Met, saved by a user: clear who kept a date.
+ * 4. Missed, saved by a user: record the user and the time only when no one
+ *    kept the date yet, or the promised date or the quantity changed.
+ *    Otherwise keep the record.
+ * Without a user's save (a quote conversion), the kept-date record stays.
+ */
+export function nextDeliveryDateRecord(args: {
+  stored: StoredDeliveryDate | null;
+  result: {
+    status: DeliveryDateStatus;
+    constraint: DeliveryDateConstraint | null;
+    earliestDate: string | null;
+  } | null;
+  save: { userId: string; changed: boolean } | null;
+  now: string;
+}): { columns: DeliveryDateColumns; keptNow: boolean } {
+  const { stored, result, save, now } = args;
+
+  if (!result) {
+    if (!stored?.deliveryDateStatus) return { columns: {}, keptNow: false };
+    return {
+      columns: {
+        deliveryDateStatus: null,
+        deliveryDateConstraint: null,
+        earliestDeliveryDate: null,
+        deliveryDateCheckedAt: null
+      },
+      keptNow: false
+    };
+  }
+
+  if (result.status === "Pending") {
+    return {
+      columns: {
+        deliveryDateStatus: "Pending",
+        deliveryDateConstraint: null,
+        earliestDeliveryDate: null,
+        deliveryDateCheckedAt: null
+      },
+      keptNow: false
+    };
+  }
+
+  const checked: DeliveryDateColumns = {
+    deliveryDateStatus: result.status,
+    deliveryDateConstraint: result.constraint,
+    earliestDeliveryDate:
+      result.status === "Missed" ? result.earliestDate : null,
+    deliveryDateCheckedAt: now
+  };
+  if (!save) return { columns: checked, keptNow: false };
+
+  if (result.status === "Met") {
+    return {
+      columns: {
+        ...checked,
+        deliveryDateOverriddenBy: null,
+        deliveryDateOverriddenAt: null
+      },
+      keptNow: false
+    };
+  }
+
+  if (!stored?.deliveryDateOverriddenBy || save.changed) {
+    return {
+      columns: {
+        ...checked,
+        deliveryDateOverriddenBy: save.userId,
+        deliveryDateOverriddenAt: now
+      },
+      keptNow: true
+    };
+  }
+  return { columns: checked, keptNow: false };
+}
+
+/** The promised date and quantity a line save wrote. */
+export type SavedDeliveryDate = {
+  promisedDate?: string | null;
+  saleQuantity?: number;
+};
+
+/**
+ * Whether a line still holds what a save wrote, so a background check started
+ * by that save may record who kept its date. A later save of another date or
+ * quantity supersedes it: its own check records the keep. An event without
+ * the saved values (sent before they were added) still applies.
+ */
+export function saveIsCurrent(
+  row: { promisedDate: unknown; saleQuantity: unknown },
+  saved: SavedDeliveryDate
+): boolean {
+  if (saved.promisedDate === undefined && saved.saleQuantity === undefined) {
+    return true;
+  }
+  const rowDate = row.promisedDate
+    ? String(row.promisedDate).slice(0, 10)
+    : null;
+  return (
+    rowDate === (saved.promisedDate?.slice(0, 10) || null) &&
+    Number(row.saleQuantity ?? 0) === Number(saved.saleQuantity ?? 0)
+  );
+}

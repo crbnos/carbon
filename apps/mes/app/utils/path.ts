@@ -84,6 +84,7 @@ export const path = {
     // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
     erpApi: `${x}/proxy/api`,
     erpInspection: (id: string) => `${ERP_URL}/x/inspection/${id}`,
+    erpKanban: (id: string) => `${ERP_URL}/x/inventory/kanbans/${id}`,
     erpStockTransfer: (id: string) => `${ERP_URL}/x/stock-transfer/${id}`,
     erpTraceability: (id: string) =>
       `${getAppUrl()}${x}/traceability/graph?trackedEntityId=${id}`,
@@ -222,6 +223,7 @@ export const path = {
     lineFeed: `${x}/line-feed`,
     lineFeedResolve: (id: string) =>
       generatePath(`${x}/line-feed/${id}/resolve`),
+    lineFeedTransfer: `${x}/line-feed/transfer`,
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",

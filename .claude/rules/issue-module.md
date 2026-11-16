@@ -98,7 +98,9 @@ in the migrations — **newest wins**; core tables created in
   rows, up to `link.qty` drawn from the bins it has stock in (largest first); for
   a unit with none (job work in progress), `-link.qty` at the NCR's location; non-tracked `Inventory` **non-inspection** Scrap → `-row.qty` write-off;
   non-tracked `Inventory` **inspection-originated** Use-As-Is/Rework → `+row.qty` restore
-  (undoing the reject write-off); inspection-originated Return to Supplier → nothing, because
+  (undoing the reject write-off; each restore row carries its disposition row
+  in `itemLedger.documentLineId`, which Put Away reads to offer only Use As Is
+  stock); inspection-originated Return to Supplier → nothing, because
   the supplier return shipment puts those units back before it ships them
   (`getReturnLineWriteOffs` in `postShipment`, at the write-off's own cost, Dr Inventory /
   Cr Scrap; voiding the shipment writes them off again) — without it the shipment relieved

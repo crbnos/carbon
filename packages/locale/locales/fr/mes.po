@@ -12,6 +12,18 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · Kit job open"
+msgstr ""
+
+msgid " · No kit job open"
+msgstr ""
+
+msgid " · Nothing ordered"
+msgstr ""
+
+msgid " · On order"
+msgstr ""
+
 msgid ", not running"
 msgstr ", arrêté"
 
@@ -147,6 +159,12 @@ msgstr "{columns} ne correspond pas à un enregistrement existant."
 msgid "{companyName} logo"
 msgstr "Logo de {companyName}"
 
+msgid "{complete} complete"
+msgstr ""
+
+msgid "{complete} complete · target {target}"
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} sur {quantity}"
 
@@ -192,6 +210,12 @@ msgstr "{name} : {value}"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} sur {denominator}"
+
+msgid "{onHand} of {need}"
+msgstr ""
+
+msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -360,9 +384,6 @@ msgstr "Ajoutée"
 msgid "Adjustment Type"
 msgstr "Type d'ajustement"
 
-msgid "Age"
-msgstr ""
-
 msgid "All"
 msgstr "Tout"
 
@@ -435,6 +456,9 @@ msgstr "Êtes-vous sûr de vouloir marquer cette opération comme terminée ? Ce
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Demandez à un superviseur d'ajouter la compétence {processName} à votre profil."
+
+msgid "Asked"
+msgstr ""
 
 msgid "Assembly steps"
 msgstr "Étapes d'assemblage"
@@ -557,6 +581,15 @@ msgstr "Vue tableau"
 
 msgid "Bold"
 msgstr "Gras"
+
+msgid "Bring {quantity}"
+msgstr ""
+
+msgid "Bring kit"
+msgstr ""
+
+msgid "Build kit"
+msgstr ""
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Mais ne vous inquiétez pas. Vous pouvez utiliser la procédure de réinitialisation de mot de passe pour demander un nouveau lien magique."
@@ -901,6 +934,9 @@ msgstr "Supprimer l'étape"
 msgid "Delete Timecard (<0/>)"
 msgstr "Supprimer la feuille de temps (<0/>)"
 
+msgid "Deliver"
+msgstr ""
+
 msgid "Density"
 msgstr "Densité"
 
@@ -1051,6 +1087,9 @@ msgstr "Emoji: {emoji}"
 msgid "Employee"
 msgstr "Employé"
 
+msgid "Empty"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "Postes de travail vides"
 
@@ -1180,6 +1219,9 @@ msgstr "Échec du téléversement de la signature"
 msgid "Failure Mode"
 msgstr "Mode de défaillance"
 
+msgid "Fed directly"
+msgstr ""
+
 msgid "File"
 msgstr "Fichier"
 
@@ -1206,6 +1248,9 @@ msgstr "Constatations"
 
 msgid "Finish"
 msgstr "Terminer"
+
+msgid "Finish kit"
+msgstr ""
 
 msgid "Finish setting up your account"
 msgstr "Terminez la configuration de votre compte"
@@ -1275,6 +1320,9 @@ msgstr "Aller à l'étape {0} : {1}"
 #. placeholder {1}: s.name ?? ""
 msgid "Go to step {0}: {1} (done)"
 msgstr "Aller à l'étape {0} : {1} (fait)"
+
+msgid "Grab from {source} · {onHand} there"
+msgstr ""
 
 msgid "Gradient"
 msgstr "Dégradé"
@@ -1360,6 +1408,9 @@ msgstr "Les notifications dans l'application sont toujours remises. Choisissez l
 
 msgid "Inactive"
 msgstr "Inactif"
+
+msgid "Incomplete"
+msgstr ""
 
 msgid "Increase {fieldLabel}"
 msgstr "Augmenter {fieldLabel}"
@@ -1481,6 +1532,21 @@ msgstr "Raccourcis clavier"
 
 msgid "Kit"
 msgstr "Kit"
+
+msgid "Kit rack"
+msgstr ""
+
+msgid "kits to build"
+msgstr ""
+
+msgid "kits to deliver"
+msgstr ""
+
+msgid "kits to finish"
+msgstr ""
+
+msgid "Kitter"
+msgstr ""
 
 msgid "Labor"
 msgstr "Main-d'œuvre"
@@ -1608,6 +1674,9 @@ msgstr "Enregistrer le rebut pour {0}"
 msgid "Login"
 msgstr "Connexion"
 
+msgid "Loose parts"
+msgstr ""
+
 msgid "Lot"
 msgstr "Lot"
 
@@ -1616,6 +1685,9 @@ msgstr "Numéros de lot manquants"
 
 msgid "Lot tracked"
 msgstr "Lot suivi"
+
+msgid "Low"
+msgstr ""
 
 msgid "Machine"
 msgstr "Machine"
@@ -1693,6 +1765,9 @@ msgstr "Message"
 msgid "Metric"
 msgstr "Métrique"
 
+msgid "Missing"
+msgstr ""
+
 msgid "Mode"
 msgstr "Mode"
 
@@ -1720,6 +1795,12 @@ msgstr "Plus d'options pour {0}"
 
 msgid "More than one unit has this serial. Choose one."
 msgstr "Plusieurs unités ont ce numéro de série. Choisissez-en une."
+
+msgid "Move {quantity}"
+msgstr ""
+
+msgid "Move {quantity} from {from}"
+msgstr ""
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1819,6 +1900,9 @@ msgstr "Aucun pays trouvé."
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "Aucun bien client n'a ce numéro de série {0}. Choisissez le client."
 
+msgid "No default bin"
+msgstr ""
+
 msgid "No dispatches assigned to you"
 msgstr "Aucune intervention de maintenance qui vous est assignée"
 
@@ -1843,8 +1927,14 @@ msgstr "Aucun contrôle ne vous est attribué"
 msgid "No issue types configured"
 msgstr "Aucun type de problème configuré"
 
+msgid "No kit"
+msgstr ""
+
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Aucun congé n'est configuré. Demandez à votre responsable de le configurer dans l'ERP."
+
+msgid "No lineside storage"
+msgstr ""
 
 msgid "No maintenance scheduled for today"
 msgstr "Aucune maintenance planifiée pour aujourd'hui"
@@ -1951,6 +2041,9 @@ msgstr "Aucune pièce de rechange ajoutée"
 msgid "No station"
 msgstr ""
 
+msgid "No stations at this location"
+msgstr ""
+
 msgid "No stock"
 msgstr "Aucun stock"
 
@@ -1980,6 +2073,9 @@ msgstr "Exclu du calcul des besoins"
 
 msgid "None"
 msgstr "Aucun"
+
+msgid "None on the shelf"
+msgstr ""
 
 msgid "Normal"
 msgstr "Normal"
@@ -2018,9 +2114,6 @@ msgstr "Rien en cours"
 msgid "Nothing scheduled at this work center"
 msgstr "Rien de programmé à ce poste de travail"
 
-msgid "Nothing to feed"
-msgstr ""
-
 msgid "Nothing to scrap"
 msgstr "Rien à rebuter"
 
@@ -2040,11 +2133,17 @@ msgstr "de {0}"
 msgid "Offline"
 msgstr "Hors ligne"
 
+msgid "OK"
+msgstr ""
+
 msgid "Oldest first"
 msgstr "Le plus ancien en premier"
 
 msgid "On Hold"
 msgstr "Suspendu"
+
+msgid "On its way"
+msgstr ""
 
 msgid "one combined lot · planned"
 msgstr "un lot combiné · planifié"
@@ -2129,6 +2228,9 @@ msgstr "ou"
 msgid "Or enter this secret manually:"
 msgstr "Ou entrez ce secret manuellement :"
 
+msgid "Out"
+msgstr ""
+
 msgid "Out of calibration"
 msgstr "Hors d'étalonnage"
 
@@ -2158,6 +2260,10 @@ msgstr "Traitement partiel"
 
 msgid "Parts"
 msgstr "Pièces"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "Conforme"
@@ -2416,6 +2522,15 @@ msgstr "Devis"
 msgid "Raise quality issue"
 msgstr "Signaler un problème qualité"
 
+msgid "raw bins short"
+msgstr ""
+
+msgid "Raw shelf"
+msgstr ""
+
+msgid "Raw short: {shortParts}"
+msgstr ""
+
 msgid "Re"
 msgstr "Re"
 
@@ -2543,9 +2658,6 @@ msgstr "Rouvrir le sous-ensemble et créer une unité de remplacement"
 msgid "Repairable"
 msgstr "Réparable"
 
-msgid "Request"
-msgstr ""
-
 msgid "Request material"
 msgstr ""
 
@@ -2596,6 +2708,9 @@ msgstr "Texte enrichi"
 
 msgid "Running"
 msgstr "En cours"
+
+msgid "Running low"
+msgstr ""
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2768,6 +2883,9 @@ msgstr "Sélectionner une quantité de production"
 msgid "Select a customer"
 msgstr "Sélectionner un client"
 
+msgid "Select a location to see its stations"
+msgstr ""
+
 msgid "Select a rework quantity"
 msgstr "Sélectionnez une quantité de retouche"
 
@@ -2898,9 +3016,6 @@ msgstr "Prélèvement court {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr ""
 
-msgid "Shortage"
-msgstr ""
-
 msgid "Show description"
 msgstr "Afficher la description"
 
@@ -2982,6 +3097,12 @@ msgstr "Échéance souple"
 msgid "Solid"
 msgstr "Uni"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "Source"
 
@@ -3029,11 +3150,17 @@ msgstr "Démarrer ou mettre en pause l'opération"
 msgid "Start work"
 msgstr "Commencer le travail"
 
+msgid "Station"
+msgstr ""
+
 msgid "Station User"
 msgstr "Utilisateur du poste"
 
 msgid "Station: {stationName}"
 msgstr "Poste : {stationName}"
+
+msgid "stations out"
+msgstr ""
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
@@ -3059,12 +3186,6 @@ msgstr "Des étapes sont manquantes"
 
 msgid "Stock at:"
 msgstr "Stock à :"
-
-msgid "Stock transfer"
-msgstr ""
-
-msgid "Storage unit"
-msgstr ""
 
 msgid "Storage Unit"
 msgstr "Unité de stockage"
@@ -3187,6 +3308,9 @@ msgstr "Les ordres de fabrication et les pièces qui composent cette série."
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "Les ordres de fabrication produisent des articles différents — gardez les pièces de chaque ordre séparées."
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Le lot sera marqué comme Réussi et {remaining} unité(s) restante(s) seront complétées à cette opération."
@@ -3394,9 +3518,6 @@ msgstr "Numéro de suivi"
 msgid "Training"
 msgstr "Formation"
 
-msgid "Transfer"
-msgstr ""
-
 msgid "Traveler"
 msgstr ""
 
@@ -3447,6 +3568,9 @@ msgstr "Inconnu"
 
 msgid "Unknown gauge"
 msgstr "Instrument de mesure inconnu"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlock"
 msgstr "Déverrouiller"
@@ -3562,8 +3686,14 @@ msgstr ""
 msgid "Warranty"
 msgstr "Garantie"
 
+msgid "Water spider"
+msgstr ""
+
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Nous vous avons envoyé par e-mail un lien de connexion et un code à 6 chiffres. Suivez le lien ou entrez le code ici."
+
+msgid "Wet"
+msgstr ""
 
 msgid "What do you need?"
 msgstr ""
