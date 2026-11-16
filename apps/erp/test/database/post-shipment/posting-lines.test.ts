@@ -35,7 +35,8 @@ const line = (
 
 const salesShipment = (
   lines: SalesShipmentLine[],
-  relievedCostByItem: Map<string, number>
+  relievedCostByItem: Map<string, number>,
+  salesPersonId: string | null = null
 ) =>
   buildSalesShipmentJournal({
     shipmentId: "shp-1",
@@ -43,6 +44,7 @@ const salesShipment = (
     externalDocumentId: "PO-77",
     customerId: "cust-1",
     customerTypeId: "ctype-1",
+    salesPersonId,
     defaults,
     lines,
     relievedCostByItem,
@@ -192,7 +194,8 @@ describe("buildSalesShipmentJournal", () => {
       Customer: "cust-1",
       CustomerType: null,
       Location: "loc-2",
-      FixedAssetClass: "fac-1"
+      FixedAssetClass: "fac-1",
+      Employee: null
     });
   });
 });
@@ -284,6 +287,35 @@ describe("buildReturnShipmentJournal", () => {
 });
 
 describe("journalLineDimensionRows of a shipment journal", () => {
+  it("writes the sales order's rep as the Employee dimension of both COGS legs", () => {
+    const journal = salesShipment(
+      [line({ shipmentLineId: "sl-1" })],
+      new Map([["item-a", 1]]),
+      "user-rep"
+    );
+    const rows = journalLineDimensionRows({
+      journalLineIds: ["jl-1", "jl-2"],
+      lines: journal.lines,
+      dimensionIdByEntity: new Map([["Employee", "dim-employee"]]),
+      companyId: "co-1"
+    });
+
+    expect(rows).toEqual([
+      {
+        journalLineId: "jl-1",
+        dimensionId: "dim-employee",
+        valueId: "user-rep",
+        companyId: "co-1"
+      },
+      {
+        journalLineId: "jl-2",
+        dimensionId: "dim-employee",
+        valueId: "user-rep",
+        companyId: "co-1"
+      }
+    ]);
+  });
+
   it("writes a value only for an active dimension, in the line's order", () => {
     const journal = salesShipment(
       [line({ shipmentLineId: "sl-1", itemPostingGroupId: null })],

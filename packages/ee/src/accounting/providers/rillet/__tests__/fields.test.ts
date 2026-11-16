@@ -377,3 +377,28 @@ describe("Rillet field targets", () => {
     expect(parseRilletFieldTarget("field:")).toBeNull();
   });
 });
+
+describe("RilletProvider.createField", () => {
+  it("creates one Field applicable to both expense and revenue documents", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ field: { ...DEPARTMENT_FIELD, values: [] } })
+    );
+
+    const field = await makeProvider().createField("Department", [
+      "EXPENSES",
+      "REVENUE"
+    ]);
+
+    expect(field.id).toBe(DEPARTMENT_FIELD.id);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "https://api.rillet.com/fields"
+    );
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      name: "Department",
+      settings: {
+        EXPENSES: { mandatory: false, display: "STANDALONE" },
+        REVENUE: { mandatory: false, display: "STANDALONE" }
+      }
+    });
+  });
+});

@@ -609,6 +609,8 @@ export const sendSalesInvoice = defineServiceFn({
  * invoice posted, stamps the send error on it and returns `warning`.
  * `locale` formats the PDF.
  *
+ * @param postingDate - The day the invoice is booked on (YYYY-MM-DD), today when omitted. It dates the journal, the item and cost ledgers, the accounting period, and the invoice's issue date; the due date follows from it by the payment term. A date in the future, or before the company's accounting cutover, is refused; after the cutover the date's accounting period must be open.
+ *
  * @mcp
  */
 export const postSalesInvoice = defineServiceFn({
@@ -764,7 +766,8 @@ export const postSalesInvoice = defineServiceFn({
       ctx,
       "post-sales-invoice",
       {
-        invoiceId
+        invoiceId,
+        postingDate: input.postingDate
       },
       service.postSalesInvoice
     );

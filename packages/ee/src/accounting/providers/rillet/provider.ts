@@ -778,9 +778,14 @@ export class RilletProvider extends BaseProvider {
    * GET /fields shape (v3 spec changelog 2026-08-04) — confirm against the
    * live Rillet sandbox before relying on auto-provisioning in production.
    */
+  /**
+   * Create a Field applicable to each of `areas` (one settings entry per
+   * area). VERIFY: a settings payload carrying both EXPENSES and REVENUE is
+   * not sandbox-tested.
+   */
   async createField(
     name: string,
-    area: "EXPENSES" | "REVENUE",
+    areas: ReadonlyArray<"EXPENSES" | "REVENUE">,
     idempotencyKey?: string
   ): Promise<Rillet.Field> {
     return this.writeEntity<Rillet.Field>({
@@ -790,7 +795,12 @@ export class RilletProvider extends BaseProvider {
       operation: "create field",
       payload: {
         name,
-        settings: { [area]: { mandatory: false, display: "STANDALONE" } }
+        settings: Object.fromEntries(
+          areas.map((area) => [
+            area,
+            { mandatory: false, display: "STANDALONE" }
+          ])
+        )
       },
       idempotencyKey
     });

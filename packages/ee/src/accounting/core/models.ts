@@ -1355,7 +1355,20 @@ export const SalesInvoiceLineSchema = z.object({
   lineAmount: z.number(),
   // The service job a line bills. Its revenue posts to Service Revenue, not
   // the Sales account, so the provider line takes `serviceRevenueAccountId`.
-  serviceJobId: withNullable(z.string())
+  serviceJobId: withNullable(z.string()),
+  // True when the posted journal split this line's discount: Sales credited
+  // the gross merchandise and "Sales Discount" debited the discount. The
+  // provider then gets gross Merchandise plus a negative Discount component.
+  // Absent or false: the line posted net (an invoice posted before the
+  // split, or a line booked to deferred, contract, service or rental legs).
+  postsSalesDiscount: z.boolean().optional(),
+  // The dimensions the posted journal stamped on this line's revenue legs
+  // (Sales Account / Service Revenue / Sales Discount), one per dimension:
+  // the Customer, the Project, the sales order's rep (Employee), … Absent
+  // when the line's legs cannot be found (`postedLineDimensions`).
+  dimensions: z
+    .array(z.object({ dimensionId: z.string(), valueId: z.string() }))
+    .optional()
 });
 
 export const SalesInvoiceSchema = z.object({
@@ -1397,6 +1410,19 @@ export const SalesInvoiceSchema = z.object({
    * name exactly one account.
    */
   serviceRevenueAccountId: withNullable(z.string()),
+  /**
+   * The account the ORIGINAL journal debited for line discounts ("Sales
+   * Discount" lines), replayed like `salesRevenueAccountId`. Null when the
+   * journal has no such line (an undiscounted invoice, or one posted before
+   * discounts split) or names more than one account.
+   */
+  salesDiscountAccountId: withNullable(z.string()).optional(),
+  /**
+   * The base-currency total of the posted "Sales Discount" debits, positive
+   * for a debit. Null when the journal has no such line: its revenue posted
+   * net, so the provider document stays net too.
+   */
+  postedSalesDiscountBase: withNullable(z.number()).optional(),
   exchangeRate: z.number(),
   postingDate: z.string().nullish(),
   dateIssued: withNullable(z.string()),

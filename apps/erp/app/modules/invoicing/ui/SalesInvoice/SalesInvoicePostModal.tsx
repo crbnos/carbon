@@ -188,6 +188,7 @@ const SalesInvoicePostBody = ({
         notification: notificationType,
         customerContact: customerContactId ?? undefined,
         cc: defaultCc,
+        postingDate: companyToday.toString(),
         stripeDueDate:
           isStripe && needsStripeDueDate
             ? companyToday.add({ days: 30 }).toString()
@@ -246,6 +247,12 @@ const SalesInvoicePostBody = ({
               </Table>
             </div>
           )}
+
+          <DatePicker
+            name="postingDate"
+            label={t`Posting Date`}
+            maxValue={companyToday}
+          />
 
           {(canEmail || canStripe) && (
             <SelectControlled

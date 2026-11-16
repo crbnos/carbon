@@ -217,6 +217,7 @@ import {
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   getExpiredEntityPolicy,
+  getManualPostingPeriod,
   getNettableDefaultStorageUnitId,
   getOffsetAccount,
   getStorageUnitWithHighestQuantity,
@@ -232,6 +233,7 @@ import {
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
   resolveInventoryAccount,
+  resolveManualPostingDate,
   STOCK_CORRECTION_BEFORE_CUTOVER_ERROR,
   serialUnitCost,
   type UnitCostChild,
@@ -18818,6 +18820,7 @@ export function buildSalesShipmentJournal({
   externalDocumentId,
   customerId,
   customerTypeId,
+  salesPersonId = null,
   defaults,
   lines,
   relievedCostByItem,
@@ -18828,6 +18831,9 @@ export function buildSalesShipmentJournal({
   externalDocumentId: string | null;
   customerId: string | null;
   customerTypeId: string | null;
+  /** The sales order's rep (a user id): the Employee dimension of every
+   *  line, as on the invoice of the same order. */
+  salesPersonId?: string | null;
   defaults: ShipmentAccountDefaults;
   lines: SalesShipmentLine[];
   /** The cost each item's shipment relieved, positive. */
@@ -18875,7 +18881,8 @@ export function buildSalesShipmentJournal({
         CustomerType: customerTypeId,
         Item: line.itemId,
         ItemPostingGroup: line.itemPostingGroupId,
-        Location: line.locationId
+        Location: line.locationId,
+        Employee: salesPersonId
       }
     };
     journalLines.push(
@@ -18908,7 +18915,8 @@ export function buildSalesShipmentJournal({
         Customer: customerId,
         CustomerType: customerTypeId,
         Location: asset.locationId,
-        FixedAssetClass: asset.fixedAssetClassId
+        FixedAssetClass: asset.fixedAssetClassId,
+        Employee: salesPersonId
       }
     };
     if (asset.accumulatedDepreciation > 0) {
@@ -19579,7 +19587,12 @@ async function adjustmentItemCosts(
 export const postShipmentInput = z.object({
   type: z.enum(["post", "void"]),
   shipmentId: z.string(),
-  /** The delivery date of a rental shipment. Other sources ignore it. */
+  /**
+   * The day the shipment is booked on: the delivery date of a rental or
+   * contract shipment, the posting date of a sales order shipment (ledger,
+   * cost layers, COGS journal and period). Today when omitted. Other sources
+   * ignore it.
+   */
   postingDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -19709,6 +19722,16 @@ export async function postShipment(
             if (!shipmentHeader.sourceDocumentId)
               throw new Error("Shipment has no sourceDocumentId");
 
+            // The day the shipment is booked on: today unless the caller
+            // chose an earlier one (a back-loaded shipment). Never in the
+            // future, never before the accounting cutover.
+            const shipmentPostingDate = await resolveManualPostingDate(
+              db,
+              companyId,
+              postingDate,
+              today
+            );
+
             // A sales order ships common stock only (Projects Phase 2a).
             await assertEntitiesInCommonStock(
               db,
@@ -19789,7 +19812,8 @@ export async function postShipment(
                       "ItemPostingGroup",
                       "Location",
                       "CostCenter",
-                      "FixedAssetClass"
+                      "FixedAssetClass",
+                      "Employee"
                     ]
                   },
                   { columns: ["id", "entityType"] }
@@ -20027,7 +20051,7 @@ export async function postShipment(
 
               if (itemTrackingType === "Inventory") {
                 itemLedgerInserts.push({
-                  postingDate: today,
+                  postingDate: shipmentPostingDate,
                   itemId: shipmentLine.itemId,
                   quantity: round(-shippedQuantity),
                   locationId: shipmentLine.locationId ?? locationId,
@@ -20049,7 +20073,7 @@ export async function postShipment(
                     )?.["Shipment Line"] === shipmentLine.id
                 )?.id;
                 itemLedgerInserts.push({
-                  postingDate: today,
+                  postingDate: shipmentPostingDate,
                   itemId: shipmentLine.itemId,
                   quantity: round(-shippedQuantity),
                   locationId: shipmentLine.locationId ?? locationId,
@@ -20078,7 +20102,7 @@ export async function postShipment(
 
                 lineTracking?.forEach((tracking) => {
                   itemLedgerInserts.push({
-                    postingDate: today,
+                    postingDate: shipmentPostingDate,
                     itemId: shipmentLine.itemId,
                     quantity: -1,
                     locationId: shipmentLine.locationId ?? locationId,
@@ -20178,7 +20202,7 @@ export async function postShipment(
                 };
 
                 if (sentComplete && !salesOrderLine.sentDate) {
-                  updates[salesOrderLine.id]!.sentDate = today;
+                  updates[salesOrderLine.id]!.sentDate = shipmentPostingDate;
                 }
 
                 return updates;
@@ -20279,7 +20303,7 @@ export async function postShipment(
 
               fixedAssetWrites.patch(faSoLine.assetId!, {
                 status: "Disposed",
-                disposalDate: today,
+                disposalDate: shipmentPostingDate,
                 disposalMethod: "Sale",
                 updatedBy: userId
               });
@@ -20288,7 +20312,7 @@ export async function postShipment(
                 {
                   fixedAssetId: faSoLine.assetId!,
                   disposalMethod: "Sale",
-                  disposalDate: today,
+                  disposalDate: shipmentPostingDate,
                   saleProceeds: 0,
                   netBookValueAtDisposal: nbv,
                   // Gain/loss is unknown until proceeds are invoiced; the NBV is
@@ -20305,7 +20329,7 @@ export async function postShipment(
               salesOrderLineUpdates[faSoLine.id] = {
                 quantitySent: faSoLine.saleQuantity,
                 sentComplete: true,
-                sentDate: today
+                sentDate: shipmentPostingDate
               };
             }
 
@@ -20404,7 +20428,12 @@ export async function postShipment(
             // accounting period.
             const accountingPeriodId =
               postingStatus === "Posted"
-                ? await getCurrentAccountingPeriod(companyId, db, today)
+                ? await getManualPostingPeriod(
+                    companyId,
+                    db,
+                    shipmentPostingDate,
+                    today
+                  )
                 : null;
 
             await db.transaction().execute(async (trx) => {
@@ -20466,7 +20495,7 @@ export async function postShipment(
                 .updateTable("shipment")
                 .set({
                   status: "Posted",
-                  postingDate: today,
+                  postingDate: shipmentPostingDate,
                   postedBy: userId
                 })
                 .where("id", "=", shipmentId)
@@ -20545,7 +20574,7 @@ export async function postShipment(
                     itemLedgerItemId: shipmentLine?.itemId ?? null,
                     companyId: splitInfo.companyId,
                     userId,
-                    postingDate: today,
+                    postingDate: shipmentPostingDate,
                     childStatus: "Consumed"
                   });
 
@@ -20689,7 +20718,7 @@ export async function postShipment(
                 customerLocationId: salesOrderDelivery.data.dropShipment
                   ? salesOrderDelivery.data.customerLocationId
                   : salesOrder.data.customerLocationId,
-                shippedDate: today
+                shippedDate: shipmentPostingDate
               });
 
               if (Object.keys(jobUpdates).length > 0) {
@@ -20733,7 +20762,7 @@ export async function postShipment(
                     remainingQuantity: 0,
                     projectId: null,
                     companyId,
-                    postingDate: today
+                    postingDate: shipmentPostingDate
                   })
                   .execute();
               }
@@ -20744,6 +20773,7 @@ export async function postShipment(
                 externalDocumentId: salesOrder.data.customerReference,
                 customerId: salesOrder.data.customerId,
                 customerTypeId: customer.data.customerTypeId ?? null,
+                salesPersonId: salesOrder.data.salesPersonId,
                 defaults: accountDefaults.data,
                 lines: journalShipmentLines,
                 relievedCostByItem,
@@ -20753,7 +20783,7 @@ export async function postShipment(
                 await insertShipmentJournal(trx, {
                   journal,
                   accountingPeriodId,
-                  postingDate: today,
+                  postingDate: shipmentPostingDate,
                   postingStatus,
                   dimensionIdByEntity: dimensionMap,
                   companyId,

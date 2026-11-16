@@ -1759,8 +1759,9 @@ export const updateShipment = defineServiceFn({
  *      the post split), acknowledged sales rules are recorded on the order,
  *      and the shipment-posted workflow moment is raised.
  *
- * `postingDate` dates a rental delivery; every other shipment posts today.
  * `locale` formats the packing slip.
+ *
+ * @param postingDate - The day the shipment is booked on (YYYY-MM-DD), today when omitted: the delivery date of a rental or contract delivery, and for a sales order shipment the date of its ledger rows, cost layers, COGS journal and sent dates. A date in the future is refused; for a sales order shipment so is a date before the company's accounting cutover, and after the cutover the date's accounting period must be open. Other sources post today.
  *
  * @mcp
  */

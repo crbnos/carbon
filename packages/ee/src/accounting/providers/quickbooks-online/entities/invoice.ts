@@ -13,14 +13,17 @@ import {
 import {
   assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
+  hasSalesDiscountComponent,
   hasSalesRevenueComponent,
   hasServiceRevenueComponent,
+  isSalesDiscountComponent,
   isServiceRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
   loadSalesInvoices,
   requirePostedSalesAccountId,
+  requirePostedSalesDiscountAccountId,
   requirePostedServiceRevenueAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
@@ -99,6 +102,9 @@ export function buildQboInvoiceLines(args: {
   /** The item for the Service Revenue account; a service job's components. */
   serviceItemRemoteId: string | null;
   shippingItemRemoteId: string | null;
+  /** The item for the replayed Sales Discount account; a `Discount`
+   *  component's (a negative line). */
+  salesDiscountItemRemoteId?: string | null;
   lineTaxCodeRefs: ReadonlyMap<string, Qbo.Ref>;
 }): Array<Omit<Qbo.InvoiceLine, "Id">> {
   return args.document.components.map((component) => {
@@ -109,11 +115,17 @@ export function buildQboInvoiceLines(args: {
     // account (no per-line override). Carbon posts all merchandise revenue to
     // one account and all service job revenue to one, so per-item items
     // bought no GL fidelity.
+    // VERIFY: a Discount line is a NEGATIVE SalesItemLineDetail on a
+    // synthetic item for the Sales Discount account; QuickBooks' acceptance
+    // of a negative item line (rather than a DiscountLineDetail) is not
+    // sandbox-tested.
     const itemId = shipping
       ? args.shippingItemRemoteId
-      : isServiceRevenueComponent(component)
-        ? args.serviceItemRemoteId
-        : args.salesItemRemoteId;
+      : isSalesDiscountComponent(component)
+        ? args.salesDiscountItemRemoteId
+        : isServiceRevenueComponent(component)
+          ? args.serviceItemRemoteId
+          : args.salesItemRemoteId;
     if (!itemId)
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
@@ -373,6 +385,11 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     )
       ? requirePostedServiceRevenueAccountId(local)
       : null;
+    const salesDiscountAccountId = hasSalesDiscountComponent(
+      document.components
+    )
+      ? requirePostedSalesDiscountAccountId(local)
+      : null;
     // Tax, account, component and currency preflight finishes before any
     // dependency writes.
     const customerRemoteId = await this.ensureDependencySynced(
@@ -389,6 +406,13 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     const serviceItemRemoteId = serviceRevenueAccountId
       ? await (await this.getShippingItemSyncer()).ensureSalesItem({
           revenueAccountId: serviceRevenueAccountId
+        })
+      : null;
+    // The line discounts, negative, on an item for the replayed Sales
+    // Discount account.
+    const salesDiscountItemRemoteId = salesDiscountAccountId
+      ? await (await this.getShippingItemSyncer()).ensureSalesItem({
+          revenueAccountId: salesDiscountAccountId
         })
       : null;
     const shippingItemRemoteId = shippingAccountId
@@ -422,6 +446,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
         salesItemRemoteId,
         serviceItemRemoteId,
         shippingItemRemoteId,
+        salesDiscountItemRemoteId,
         lineTaxCodeRefs: tax.lineTaxCodeRefs
       })
     };

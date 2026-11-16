@@ -12,7 +12,7 @@ import {
   SCALE,
   toDocumentAmount
 } from "@carbon/utils";
-import { JournalEntrySyncError } from "./posting";
+import { JournalEntrySyncError, type JournalLineDimensionRef } from "./posting";
 import type { Accounting } from "./types";
 
 export type SalesDocumentComponent = {
@@ -20,6 +20,10 @@ export type SalesDocumentComponent = {
   sourceLineId: string | null;
   kind:
     | "Merchandise"
+    /** A line's discount, negative, when its posted journal split it onto
+     *  "Sales Discount" (`postsSalesDiscount`); its Merchandise is then
+     *  gross. Books to `salesDiscountAccountId`, never to Sales. */
+    | "Discount"
     | "TaxableAddOn"
     | "NonTaxableAddOn"
     | "LineShipping"
@@ -52,6 +56,10 @@ export type SalesDocumentComponent = {
   netAmount: number;
   taxPercent: number;
   taxAmount: number;
+  /** The source line's posted revenue-leg dimensions
+   *  (`SalesInvoiceLineSchema.dimensions`). Absent for HeaderShipping and for
+   *  a line with none. */
+  dimensions?: JournalLineDimensionRef[];
 };
 
 /** A line whose proceeds are NOT sales revenue in Carbon's own journal. */
@@ -65,12 +73,34 @@ const NON_REVENUE_LINE_TYPES: ReadonlySet<string> = new Set(["Fixed Asset"]);
  * from `kind`, so the three adapters cannot drift apart on it.
  */
 export function isRevenueComponent(component: SalesDocumentComponent): boolean {
-  if (component.kind === "LineShipping" || component.kind === "HeaderShipping")
+  if (
+    component.kind === "LineShipping" ||
+    component.kind === "HeaderShipping" ||
+    component.kind === "Discount"
+  )
     return false;
   return !(
     component.invoiceLineType &&
     NON_REVENUE_LINE_TYPES.has(component.invoiceLineType)
   );
+}
+
+/**
+ * Does this component book to the replayed Sales Discount account? Only a
+ * `Discount` component does; it is not a revenue component, so no mapper
+ * binds it to the Sales account by accident.
+ */
+export function isSalesDiscountComponent(
+  component: SalesDocumentComponent
+): boolean {
+  return component.kind === "Discount";
+}
+
+/** Does this document need the replayed Sales Discount account? */
+export function hasSalesDiscountComponent(
+  components: readonly SalesDocumentComponent[]
+): boolean {
+  return components.some(isSalesDiscountComponent);
 }
 
 /** Does this document have any component that posts to sales revenue? */
@@ -175,6 +205,47 @@ function lineDiscount(line: Accounting.SalesInvoiceLine): number {
   return finite(line.discountPercent ?? 0, "Line discount");
 }
 
+/** Did the posted journal split this line's discount onto Sales Discount? */
+function splitsDiscount(line: Accounting.SalesInvoiceLine): boolean {
+  return line.postsSalesDiscount === true && lineDiscount(line) !== 0;
+}
+
+/**
+ * The split lines must account for the posted "Sales Discount" total exactly
+ * (each discount rounded at storage scale, as `buildSalesPostingLines`
+ * posts it). A difference means the line rule (`bookedToSalesAccount`) and
+ * the posting disagree about which lines split, so refuse the invoice rather
+ * than send the provider a discount the ledger does not have.
+ */
+function assertDiscountsMatchPosting(
+  source: Accounting.SalesInvoice,
+  lines: readonly Accounting.SalesInvoiceLine[]
+): void {
+  const split = lines.filter(splitsDiscount);
+  const posted = source.postedSalesDiscountBase ?? null;
+  if (split.length === 0 && posted === null) return;
+  const expected = split.reduce(
+    (sum, line) =>
+      sum + round(line.quantity * line.unitPrice * lineDiscount(line)),
+    0
+  );
+  const envelope = (split.length + 1) / (2 * 10 ** SCALE) + EPSILON;
+  if (Math.abs(expected - (posted ?? 0)) > envelope) {
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync invoice: its posted Sales Discount total does not match the discounted lines booked to the Sales account",
+      metadata: {
+        invoiceId: source.id,
+        postedSalesDiscountBase: posted,
+        expectedSalesDiscountBase: round(expected),
+        lineIds: split.map((line) => line.id)
+      }
+    });
+  }
+}
+
 function precision(value: number): void {
   if (!Number.isInteger(value) || value < 0 || value > SCALE) {
     throw new Error("Missing or unsupported currency decimal precision");
@@ -203,6 +274,7 @@ export function buildSalesDocumentComponents(
   if (new Set(lines.map((line) => line.id)).size !== lines.length) {
     throw new Error("Invoice source line IDs must be unique");
   }
+  assertDiscountsMatchPosting(source, lines);
   const headerAllocations = allocateSalesHeaderShipping(lines, header);
   const baseAmounts = lines.map((line) =>
     calculateSalesPostingAmounts({
@@ -259,11 +331,13 @@ export function buildSalesDocumentComponents(
     const quantity = args.quantity ?? 1;
     let unitAmount = toDocumentAmount(baseNet, rate, decimals);
     if (kind === "Merchandise" && line) {
-      // Both prices are LIST prices; the provider is sent the NET unit price,
-      // so the line discount is applied to each before they are compared. A
-      // discounted price is a rate, so it is rounded to storage scale; an
-      // undiscounted mirror is sent exactly as stored.
-      const discount = lineDiscount(line);
+      // Both prices are LIST prices. A line whose journal split its discount
+      // sends the list price (its Discount component carries the rest);
+      // otherwise the provider is sent the NET unit price, so the line
+      // discount is applied to each before they are compared. A discounted
+      // price is a rate, so it is rounded to storage scale; an undiscounted
+      // mirror is sent exactly as stored.
+      const discount = splitsDiscount(line) ? 0 : lineDiscount(line);
       const net = 1 - discount;
       const netUnit = line.unitPrice * net;
       const convertedUnit =
@@ -303,21 +377,46 @@ export function buildSalesDocumentComponents(
         unitAmount,
         netAmount: toDocumentAmount(baseNet, rate, decimals),
         taxPercent,
-        taxAmount: toDocumentAmount(baseTax, rate, decimals)
+        taxAmount: toDocumentAmount(baseTax, rate, decimals),
+        ...(line?.dimensions?.length ? { dimensions: line.dimensions } : {})
       }
     });
   };
   for (const line of lines) {
-    push({
-      kind: "Merchandise",
-      line,
-      // The same expression `calculateSalesPostingAmounts` and the
-      // `salesInvoices` view use, so the reconciliation above holds.
-      baseNet: line.quantity * line.unitPrice * (1 - lineDiscount(line)),
-      taxPercent: line.taxPercent,
-      quantity: line.quantity,
-      description: line.description ?? line.itemCode ?? "Invoice line"
-    });
+    const description = line.description ?? line.itemCode ?? "Invoice line";
+    if (splitsDiscount(line)) {
+      // Gross merchandise to Sales and the discount, negative, to Sales
+      // Discount, as the journal posted them. Both carry the line's tax rate:
+      // gross tax plus the (negative) discount tax is the tax on the net, so
+      // the tax reconciliation above still holds.
+      const gross = line.quantity * line.unitPrice;
+      push({
+        kind: "Merchandise",
+        line,
+        baseNet: gross,
+        taxPercent: line.taxPercent,
+        quantity: line.quantity,
+        description
+      });
+      push({
+        kind: "Discount",
+        line,
+        baseNet: -(gross * lineDiscount(line)),
+        taxPercent: line.taxPercent,
+        description: `Discount — ${description}`
+      });
+    } else {
+      push({
+        kind: "Merchandise",
+        line,
+        // The same expression `calculateSalesPostingAmounts` and the
+        // `salesInvoices` view use, so the reconciliation above holds.
+        baseNet: line.quantity * line.unitPrice * (1 - lineDiscount(line)),
+        taxPercent: line.taxPercent,
+        quantity: line.quantity,
+        description
+      });
+    }
     push({
       kind: "TaxableAddOn",
       line,

@@ -843,6 +843,10 @@ export abstract class RilletPushOnlyEntitySyncer<
   }
 }
 
+/** The areas a Field this syncer provisions applies to: expense-side
+ *  (journal entries, bills) and revenue-side (invoices). */
+export const RILLET_FIELD_AREAS = ["EXPENSES", "REVENUE"] as const;
+
 /**
  * Base class for immutable Rillet posting amounts (invoice, bill, journal).
  * Invoice/bill adapters opt into native deletion on local void. Journal
@@ -998,10 +1002,14 @@ export abstract class RilletTransactionSyncer<
 
         let fieldId = existingFieldIdByName.get(name);
         if (!fieldId) {
-          // Journal entries + bills are expense-side (EXPENSES applicability).
+          // One Carbon dimension is one Rillet Field, shared by journal
+          // entries and bills (EXPENSES) and invoices (REVENUE), so a new
+          // Field applies to both. A Field created before this (EXPENSES
+          // only) is reused as is; its REVENUE applicability is not updated.
+          // VERIFY: invoice item `fields` on an EXPENSES-only Field.
           const created = await this.rilletProvider.createField(
             name,
-            "EXPENSES",
+            RILLET_FIELD_AREAS,
             buildRilletIdempotencyKey({
               companyId: this.companyId,
               operation: "create-field",

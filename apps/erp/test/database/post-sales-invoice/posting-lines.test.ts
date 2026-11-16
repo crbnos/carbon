@@ -32,6 +32,7 @@ const CHART = [
   leaf("ar", "Asset"),
   leaf("ic-ar", "Asset"),
   leaf("sales", "Revenue"),
+  leaf("discount", "Revenue"),
   leaf("shipping", "Revenue"),
   leaf("tax", "Liability"),
   leaf("deferred", "Liability"),
@@ -46,6 +47,7 @@ const defaultsWith = (overrides: Partial<AccountDefaults> = {}) =>
     receivablesAccount: "ar",
     intercompanyReceivablesAccount: "ic-ar",
     salesAccount: "sales",
+    salesDiscountAccount: "discount",
     salesShippingRevenueAccount: "shipping",
     salesTaxPayableAccount: "tax",
     deferredRevenueAccount: "deferred",
@@ -316,6 +318,48 @@ describe("a deferral line", () => {
   });
 });
 
+describe("a discounted line", () => {
+  const discounted = invoiceLine({ discountPercent: 0.1, taxPercent: 0.05 });
+
+  it("credits Sales the gross and debits Sales Discount the discount", () => {
+    const journal = buildSalesInvoiceJournal(
+      facts(accountsFor(defaultsWith(), "Posted"), { lines: [discounted] })
+    );
+    // Tax and AR stay on the net merchandise (100 − 10).
+    expect(summary(journal.lines)).toEqual([
+      ["sales", "Sales Account", 100],
+      ["discount", "Sales Discount", -10],
+      ["tax", "Sales Tax Payable", 4.5],
+      ["ar", "Accounts Receivable", 94.5]
+    ]);
+  });
+
+  it("keeps a deferred line net, with no Sales Discount leg", () => {
+    const accounts = accountsFor(defaultsWith(), "Posted", {
+      ...NO_NEEDS,
+      deferredRevenue: true
+    });
+    const journal = buildSalesInvoiceJournal(
+      facts(accounts, {
+        lines: [
+          {
+            ...discounted,
+            invoiceLineType: "Service",
+            serviceStartDate: "2026-01-01",
+            serviceEndDate: "2026-03-31"
+          }
+        ]
+      })
+    );
+    expect(summary(journal.lines)).toEqual([
+      ["deferred", "Deferred Revenue", 90],
+      ["tax", "Sales Tax Payable", 4.5],
+      ["ar", "Accounts Receivable", 94.5]
+    ]);
+    expect(journal.deferrals[0]?.amountBase).toBe(90);
+  });
+});
+
 describe("a direct inventory line's COGS pair", () => {
   const direct = invoiceLine({ salesOrderLineId: null });
 
@@ -451,9 +495,47 @@ describe("dimensions", () => {
       FixedAssetClass: null,
       Item: "item-1",
       Project: "project-1",
-      Customer: "customer-1"
+      Customer: "customer-1",
+      Employee: null
     });
     expect(receivable).toMatchObject({ Project: null, Customer: "customer-1" });
+  });
+
+  it("tag every leg of a sales order line with the order's rep as the Employee", () => {
+    const journal = buildSalesInvoiceJournal(
+      facts(accountsFor(defaultsWith(), "Posted"), {
+        lines: [
+          invoiceLine({ salesOrderId: "so-1" }),
+          invoiceLine({ id: "line-2", salesOrderId: null, salesOrderLineId: null })
+        ],
+        salesPersonBySalesOrderId: new Map([["so-1", "user-rep"]])
+      })
+    );
+    const rows = journalLineDimensionRows({
+      journalLineIds: journal.lines.map((_, index) => `jl-${index + 1}`),
+      lines: journal.metadata.map((meta) => ({
+        dimensions: salesLineDimensions(meta, "customer-1")
+      })),
+      dimensionIdByEntity: new Map([["Employee", "dim-employee"]]),
+      companyId: "company-1"
+    });
+    // Line 1 posts Sales + AR. Line 2 has no sales order line, so the invoice
+    // ships it and also posts its COGS pair. Only line 1's legs bill the
+    // order, so only they carry its rep.
+    expect(summary(journal.lines)).toEqual([
+      ["sales", "Sales Account", 100],
+      ["ar", "Accounts Receivable", 100],
+      ["sales", "Sales Account", 100],
+      ["ar", "Accounts Receivable", 100],
+      ["cogs", "Cost of Goods Sold", 0],
+      ["finished", "Finished Goods Account", 0]
+    ]);
+    expect(
+      rows.map((row) => [row.journalLineId, row.dimensionId, row.valueId])
+    ).toEqual([
+      ["jl-1", "dim-employee", "user-rep"],
+      ["jl-2", "dim-employee", "user-rep"]
+    ]);
   });
 
   it("write a row per value whose entity type has an active dimension", () => {

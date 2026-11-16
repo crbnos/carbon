@@ -2,19 +2,64 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { journalReference } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { classifyAccountingPostingRole, datetime } from "@carbon/utils";
-import { JournalEntrySyncError } from "./posting";
+import { classifyAccountingPostingRole, datetime, round } from "@carbon/utils";
+import { loadJournalLineDimensions } from "./dimension-mapping";
+import { JournalEntrySyncError, type JournalLineDimensionRef } from "./posting";
 import type { Accounting } from "./types";
 
 /** The posting roles whose original revenue account an AR document replays. */
-type RevenueRole = "ShippingRevenue" | "SalesRevenue" | "ServiceRevenue";
+type RevenueRole =
+  | "ShippingRevenue"
+  | "SalesRevenue"
+  | "SalesDiscount"
+  | "ServiceRevenue";
 
 const REVENUE_ROLES: ReadonlySet<string> = new Set<RevenueRole>([
   "ShippingRevenue",
   "SalesRevenue",
+  "SalesDiscount",
   "ServiceRevenue"
 ]);
+
+/** The line types that sell an item (`ITEM_LINE_TYPES`, `invoicing.service.ts`). */
+const ITEM_LINE_TYPES: ReadonlySet<string> = new Set([
+  "Part",
+  "Service",
+  "Consumable",
+  "Fixture",
+  "Material",
+  "Tool"
+]);
+
+/**
+ * Does the posting book this line's revenue to the Sales Account, the one
+ * booking that splits a line discount into gross Sales and a "Sales
+ * Discount" debit? Mirrors `postingLineRevenue` (`invoicing.service.ts`):
+ * a service job line books Service Revenue, a contract line its contract
+ * position, a dated Service line Deferred Revenue, and a Rental or Fixed
+ * Asset line its own legs. `buildSalesDocumentComponents` checks the result
+ * against the posted discount total, so a drift between the two refuses
+ * the invoice instead of misstating it.
+ */
+export function bookedToSalesAccount(line: {
+  invoiceLineType: string;
+  serviceJobId: string | null;
+  customerContractLineId: string | null;
+  serviceStartDate: string | null;
+  serviceEndDate: string | null;
+}): boolean {
+  const lineType =
+    line.invoiceLineType === "Labor" ? "Service" : line.invoiceLineType;
+  if (!ITEM_LINE_TYPES.has(lineType)) return false;
+  if (line.serviceJobId || line.customerContractLineId) return false;
+  return !(
+    line.invoiceLineType === "Service" &&
+    line.serviceStartDate &&
+    line.serviceEndDate
+  );
+}
 
 const isRevenueRole = (role: string | null): role is RevenueRole =>
   role !== null && REVENUE_ROLES.has(role);
@@ -113,6 +158,10 @@ export async function loadSalesInvoices(
       "salesInvoiceLine.nonTaxableAddOnCost",
       "salesInvoiceLine.taxPercent",
       "salesInvoiceLine.serviceJobId",
+      "salesInvoiceLine.customerContractLineId",
+      "salesInvoiceLine.serviceStartDate",
+      "salesInvoiceLine.serviceEndDate",
+      "salesInvoiceLine.salesOrderLineId",
       "item.readableIdWithRevision as itemReadableIdWithRevision"
     ])
     .where("salesInvoiceLine.companyId", "=", companyId)
@@ -137,9 +186,12 @@ export async function loadSalesInvoices(
         .onRef("account.companyGroupId", "=", "company.companyGroupId")
     )
     .select([
+      "journalLine.id",
       "journalLine.documentId",
+      "journalLine.documentLineReference",
       "journalLine.accountId",
       "journalLine.description",
+      "journalLine.amount",
       "account.class as accountClass",
       "account.isGroup"
     ])
@@ -227,6 +279,20 @@ export async function loadSalesInvoices(
     postingRows,
     serviceAccrualRows
   );
+  // An invoice whose journal debits "Sales Discount" posted its Sales
+  // revenue at gross; one without (posted before the split, or with no
+  // discount on a Sales-booked line) posted net, and stays net remotely.
+  const postedSalesDiscount = postedSalesDiscountBase(postingRows);
+  // The dimensions of every posted line of these invoices, in one read.
+  const dimensionsByJournalLine = await loadJournalLineDimensions(db, {
+    companyId,
+    journalLineIds: postingRows.map((row) => row.id)
+  });
+  const lineDimensions = postedLineDimensions(
+    postingRows,
+    lineRows,
+    dimensionsByJournalLine
+  );
 
   // Group lines by invoice ID
   const linesByInvoiceId = new Map<string, (typeof lineRows)[number][]>();
@@ -275,6 +341,8 @@ export async function loadSalesInvoices(
       shippingRevenueAccountId: replayed("ShippingRevenue", row.id),
       salesRevenueAccountId: replayed("SalesRevenue", row.id),
       serviceRevenueAccountId: replayed("ServiceRevenue", row.id),
+      salesDiscountAccountId: replayed("SalesDiscount", row.id),
+      postedSalesDiscountBase: postedSalesDiscount.get(row.id) ?? null,
       headerShippingCost: Number(row.headerShippingCost ?? 0),
       exchangeRate: Number(row.exchangeRate),
       postingDate: row.postingDate,
@@ -312,7 +380,20 @@ export async function loadSalesInvoices(
           discountPercent,
           taxPercent,
           lineAmount: quantity * unitPrice * (1 - discountPercent),
-          serviceJobId: line.serviceJobId ?? null
+          serviceJobId: line.serviceJobId ?? null,
+          postsSalesDiscount:
+            postedSalesDiscount.has(row.id) &&
+            discountPercent !== 0 &&
+            bookedToSalesAccount({
+              invoiceLineType: line.invoiceLineType,
+              serviceJobId: line.serviceJobId ?? null,
+              customerContractLineId: line.customerContractLineId ?? null,
+              serviceStartDate: line.serviceStartDate ?? null,
+              serviceEndDate: line.serviceEndDate ?? null
+            }),
+          ...(lineDimensions.has(line.id)
+            ? { dimensions: lineDimensions.get(line.id) }
+            : {})
         };
       }),
       updatedAt: row.updatedAt ?? datetime.timestamp(),
@@ -323,10 +404,95 @@ export async function loadSalesInvoices(
   return result;
 }
 
+/** The revenue legs whose dimensions an invoice line sends. */
+const DIMENSION_ROLES: ReadonlySet<string> = new Set([
+  "SalesRevenue",
+  "ServiceRevenue",
+  "SalesDiscount"
+]);
+
+/**
+ * Per invoice line, the dimensions its posted revenue legs carry, one per
+ * dimension (the first leg's value wins). A leg is matched to the line by
+ * `documentLineReference` = `sales-invoice:<salesOrderLineId>` within the
+ * same invoice, so only a line billed from a sales order line is found: a
+ * manual, contract or rental line has no reference and gets none. An
+ * invoice posted before its legs carried dimensions gets none either.
+ */
+export function postedLineDimensions(
+  postingRows: ReadonlyArray<{
+    id: string;
+    documentId: string | null;
+    documentLineReference: string | null;
+    description: string | null;
+  }>,
+  lines: ReadonlyArray<{
+    id: string;
+    invoiceId: string;
+    salesOrderLineId: string | null;
+  }>,
+  dimensionsByJournalLine: ReadonlyMap<
+    string,
+    ReadonlyArray<JournalLineDimensionRef>
+  >
+): Map<string, JournalLineDimensionRef[]> {
+  const byReference = new Map<string, Map<string, JournalLineDimensionRef>>();
+  for (const row of postingRows) {
+    if (!row.documentId || !row.documentLineReference) continue;
+    const role = classifyAccountingPostingRole(row.description);
+    if (!role || !DIMENSION_ROLES.has(role)) continue;
+    const key = `${row.documentId}|${row.documentLineReference}`;
+    const dimensions = byReference.get(key) ?? new Map();
+    for (const ref of dimensionsByJournalLine.get(row.id) ?? []) {
+      if (!dimensions.has(ref.dimensionId))
+        dimensions.set(ref.dimensionId, {
+          dimensionId: ref.dimensionId,
+          valueId: ref.valueId
+        });
+    }
+    byReference.set(key, dimensions);
+  }
+  const result = new Map<string, JournalLineDimensionRef[]>();
+  for (const line of lines) {
+    if (!line.salesOrderLineId) continue;
+    const dimensions = byReference.get(
+      `${line.invoiceId}|${journalReference.to.salesInvoice(line.salesOrderLineId)}`
+    );
+    if (dimensions && dimensions.size > 0)
+      result.set(line.id, [...dimensions.values()]);
+  }
+  return result;
+}
+
+/**
+ * Per invoice, the base total its posted journal debited to "Sales Discount"
+ * (a positive number for a debit). An invoice with no such line is absent.
+ */
+export function postedSalesDiscountBase(
+  postingRows: Array<{
+    documentId: string | null;
+    description: string | null;
+    amount: number | string | null;
+  }>
+): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const row of postingRows) {
+    if (!row.documentId) continue;
+    if (classifyAccountingPostingRole(row.description) !== "SalesDiscount")
+      continue;
+    // Revenue class: a debit is stored negative.
+    totals.set(
+      row.documentId,
+      round((totals.get(row.documentId) ?? 0) - Number(row.amount ?? 0))
+    );
+  }
+  return totals;
+}
+
 /**
  * The original revenue account each invoice's posted journal names, per role,
- * from its "Sales Account" / "Shipping Revenue" / "Service Revenue" journal
- * lines, plus the service accrual rows an invoice with no "Service Revenue"
+ * from its "Sales Account" / "Sales Discount" / "Shipping Revenue" /
+ * "Service Revenue" journal lines, plus the service accrual rows an invoice with no "Service Revenue"
  * line cleared.
  */
 export function resolveReplayedRevenueAccounts(
@@ -362,12 +528,14 @@ export function resolveReplayedRevenueAccounts(
   const revenueAccounts: Record<RevenueRole, Map<string, Set<string>>> = {
     ShippingRevenue: new Map(),
     SalesRevenue: new Map(),
+    SalesDiscount: new Map(),
     ServiceRevenue: new Map()
   };
   // Invoices whose posting for a role is unusable, whatever else it posted.
   const unusableRoles: Record<RevenueRole, Set<string>> = {
     ShippingRevenue: new Set(),
     SalesRevenue: new Set(),
+    SalesDiscount: new Set(),
     ServiceRevenue: new Set()
   };
   const recordAccount = (
@@ -455,6 +623,25 @@ export function requirePostedSalesAccountId(
       metadata: { invoiceId: invoice.id }
     });
   return invoice.salesRevenueAccountId;
+}
+
+/**
+ * Discount components must replay the original Sales Discount account, never
+ * today's default. Asked only of an invoice whose journal has a "Sales
+ * Discount" line (`postedSalesDiscountBase` is set).
+ */
+export function requirePostedSalesDiscountAccountId(
+  invoice: Accounting.SalesInvoice
+): string {
+  if (!invoice.salesDiscountAccountId)
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync invoice: its posted journal does not name exactly one Sales Discount account — it is absent, posted to more than one account, or not a Revenue leaf account in the company group",
+      metadata: { invoiceId: invoice.id }
+    });
+  return invoice.salesDiscountAccountId;
 }
 
 /**

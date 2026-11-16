@@ -429,16 +429,47 @@ revenue, so it cannot mirror Carbon's posting. Spec:
     sweep include mapped voided documents/payments, and mapping tombstones stop
     repeated deletes. Compare independent remote GL, including recognition
     and reversal, instead of treating create HTTP200 as accounting parity.
-- **Sales invoice line discount reaches providers at NET.** `salesInvoiceLine.discountPercent`
-  (a 0–1 fraction, merchandise only; add-ons and shipping are never discounted) is loaded by
-  `loadSalesInvoices` (`sales-invoice-source.ts`, `lineAmount = quantity × unitPrice × (1 −
-  discountPercent)`, the expression the `salesInvoices` view and `calculateSalesPostingAmounts`
-  use) and carried on `SalesInvoiceLineSchema.discountPercent` (optional; absent = 0, so a line
-  pulled back from a provider carries its net price). `buildSalesDocumentComponents` sends every
-  provider the NET unit price: `unitPrice` and `convertedUnitPrice` are both LIST prices, the
-  discount is applied to each before they are reconciled, and a discounted converted price is
-  rounded to storage scale. Pinned by `sales-document-components.test.ts` and the Xero / QBO /
-  Rillet invoice tests. Contract invoices (drafted by `create-contract-invoices`) are ordinary
+- **Sales invoice line discount: gross revenue plus a Sales Discount line, or NET for older
+  invoices.** `salesInvoiceLine.discountPercent` (a 0–1 fraction, merchandise only; add-ons and
+  shipping are never discounted) is loaded by `loadSalesInvoices` (`sales-invoice-source.ts`,
+  `lineAmount = quantity × unitPrice × (1 − discountPercent)`, the expression the `salesInvoices`
+  view and `calculateSalesPostingAmounts` use) and carried on
+  `SalesInvoiceLineSchema.discountPercent` (optional; absent = 0, so a line pulled back from a
+  provider carries its net price). **The posting** (`buildSalesPostingLines`,
+  `@carbon/database` `sales-posting-amounts.ts`) splits the discount on the plain Sales booking
+  only: Sales is credited the GROSS merchandise (`quantity × unitPrice`, plus add-ons) and a
+  debit line described "Sales Discount" (`SALES_DISCOUNT_POSTING_DESCRIPTION`,
+  `accounting-posting.ts`) goes to `accountDefault.salesDiscountAccount` (seeded 4020, class
+  Revenue). The discount is rounded once at storage scale and Sales takes net + discount, so the
+  split adds no residual. AR, tax (on the net) and `salesRevenueBase` (net — the deferral
+  schedule, `saleProceeds`, `revenueLegAmounts` and the contract / service / rental planners read
+  it) are unchanged. Deferred, contract, service job, rental (revenue legs) and fixed-asset lines
+  stay net, with no Sales Discount leg. The sync tells the two shapes apart per invoice from the
+  posted journal: `classifyAccountingPostingRole` maps "Sales Discount" to `SalesDiscount`
+  ("VOID: Sales Discount" stays unclassified), `postedSalesDiscountBase` totals those debits per
+  invoice, and `resolveReplayedRevenueAccounts` replays `salesDiscountAccountId`
+  (`requirePostedSalesDiscountAccountId` refuses with `UNMAPPED_ACCOUNTS` when the journal names
+  no single Revenue leaf). A line gets `postsSalesDiscount` when its invoice's journal has a
+  Sales Discount line, it has a discount, and `bookedToSalesAccount` (the ee mirror of
+  `postingLineRevenue`, `invoicing.service.ts`) says it posted to Sales.
+  `buildSalesDocumentComponents` then sends such a line as gross `Merchandise` (the LIST unit
+  price) plus a `Discount` component: quantity 1, net −(gross × discount), the line's tax
+  percent (gross tax + negative discount tax = tax on the net, so the tax reconciliation holds),
+  description "Discount — <line>". `isRevenueComponent` is false for a Discount;
+  `isSalesDiscountComponent` / `hasSalesDiscountComponent` route it. `assertDiscountsMatchPosting`
+  refuses the invoice (`UNMAPPED_ACCOUNTS` Warning) when the flagged lines' discounts do not sum
+  to the posted Sales Discount total, so a drift between the line rule and the posting cannot
+  misstate it. **Legacy fallback:** an invoice posted before the split has no Sales Discount line
+  (its Sales credit is net); its lines carry no flag and every provider gets the NET unit price as
+  before (`unitPrice` and `convertedUnitPrice` are both LIST prices, the discount is applied to
+  each, a discounted converted price is rounded to storage scale). Providers: Rillet sends the
+  Discount as a negative item on a synthetic product for the discount account
+  (`ensureSalesProduct`) with `revenue.account_code` = its code; Xero a negative line with
+  `AccountCode` = its code; QBO a negative `SalesItemLineDetail` on a synthetic item for it
+  (`ensureSalesItem`). <!-- UNVERIFIED: no provider has accepted a negative Discount line in a
+  sandbox; each mapper carries a VERIFY comment --> Pinned by `sales-document-components.test.ts`
+  (split, legacy net, mismatch refusal, the line rule) and the Xero / QBO / Rillet invoice tests.
+  Contract invoices (drafted by `create-contract-invoices`) are ordinary
   `Service` lines with a `discountPercent`, and no mapper treats them differently. But Carbon
   posts their revenue legs to Contract Assets / Deferred Revenue with `documentType 'Contract'`
   / `documentId` = the contract (`planContractInvoiceLine`, `invoicing.service.ts`), never to Sales, so
@@ -704,6 +735,32 @@ value's readable label), persisting both in `externalIntegrationMapping`
 a dimension whose Field or value can't be provisioned is dropped from that line's
 refs. `createField` (`POST /fields`) is VERIFY-flagged — confirm the payload on
 the Rillet sandbox.
+
+**AR invoices send dimensions too (Rillet).** `loadSalesInvoices` loads the
+`journalLineDimension` rows of the posted invoice journal in one read
+(`loadJournalLineDimensions`) and `postedLineDimensions`
+(`core/sales-invoice-source.ts`) gives each invoice line the dimensions of its
+revenue legs (Sales Account / Service Revenue / Sales Discount roles), one per
+dimension. A leg is matched by `documentLineReference` =
+`sales-invoice:<salesOrderLineId>`, so a line not billed from a sales order line
+(manual, contract, rental) gets none, and so does an invoice posted before its
+legs carried dimensions. `SalesInvoiceLineSchema.dimensions` carries them and
+`buildSalesDocumentComponents` copies them onto each component of the line
+(never HeaderShipping). The Rillet invoice syncer calls `resolveLineDimensions`
+over the components (only when one carries dimensions) and the mapper puts
+`fields: [{ field_id, field_value_id }]` on each item. The posting tags every
+leg of a sales order line with **Employee = the order's rep**
+(`salesOrder.salesPersonId`, a user id; `salesLineDimensions`), beside Customer,
+Project and the rest, and the Sales Order shipment COGS legs carry it too
+(`buildSalesShipmentJournal`), so the rep reaches Rillet as a Field on invoices
+and journal entries with no rep-specific sync code.
+A new Field is created for BOTH areas (`RILLET_FIELD_AREAS`:
+`settings: { EXPENSES, REVENUE }`), because one Carbon dimension maps to one
+Rillet Field shared by bills, journals and invoices. A Field created earlier as
+EXPENSES only is reused as is; the sync does not update a remote Field's
+settings. <!-- UNVERIFIED: Rillet invoice item `fields`, a two-area Field, and an
+EXPENSES-only Field on an invoice item are not sandbox-tested --> Xero and QBO
+invoices send no dimensions (their invoice mappers have none).
 
 **Xero/QBO keep the slot system** (`dimensionSlots` + `maxJournalDimensionSlots`
 = 2 each; `validateDimensionSlots`, the Dimensions settings tab). For Rillet the

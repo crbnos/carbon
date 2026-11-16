@@ -138,7 +138,7 @@ function mapArguments(source = charges()) {
   };
 }
 describe("Rillet revenue recognition native sales components", () => {
-  it("sends a discounted line's NET amount", () => {
+  it("sends a net-posted (pre-split) discounted line's NET amount", () => {
     const source = charges();
     // 1 × 100 base list, 20% off → 80 base merchandise, 64 EUR at 0.8. Add-ons
     // and shipping are not discounted; tax is on the discounted merchandise.
@@ -160,6 +160,72 @@ describe("Rillet revenue recognition native sales components", () => {
       "4.00"
     ]);
     expect(payload.tax_amount).toEqual({ amount: "8.80", currency: "EUR" });
+  });
+
+  it("sends gross merchandise and a negative Discount on the Sales Discount account when the journal split it", () => {
+    const source = charges();
+    const payload = mapSalesInvoiceToRilletInvoice({
+      ...mapArguments({
+        ...source,
+        subtotal: 113,
+        totalTax: 11,
+        totalAmount: 129,
+        balance: 129,
+        salesDiscountAccountId: "acct-discount",
+        postedSalesDiscountBase: 20,
+        lines: [
+          {
+            ...source.lines[0]!,
+            discountPercent: 0.2,
+            lineAmount: 80,
+            postsSalesDiscount: true
+          }
+        ]
+      }),
+      salesDiscountProductRemoteId: "discount-product",
+      salesDiscountAccountCode: "4020"
+    });
+    expect(
+      payload.items.map((line) => [
+        line.product_id,
+        line.total_amount.amount,
+        line.revenue?.account_code
+      ])
+    ).toEqual([
+      ["rillet-prod-1", "80.00", undefined],
+      ["discount-product", "-16.00", "4020"],
+      ["rillet-prod-1", "16.00", undefined],
+      ["rillet-prod-1", "2.40", undefined],
+      ["shipping-product", "8.00", "4010"],
+      ["shipping-product", "4.00", "4010"]
+    ]);
+    // Tax is unchanged by the split: still on the net merchandise.
+    expect(payload.tax_amount).toEqual({ amount: "8.80", currency: "EUR" });
+  });
+
+  it("refuses a Discount component with no resolved Sales Discount product", () => {
+    const source = charges();
+    expect(() =>
+      mapSalesInvoiceToRilletInvoice(
+        mapArguments({
+          ...source,
+          subtotal: 113,
+          totalTax: 11,
+          totalAmount: 129,
+          balance: 129,
+          salesDiscountAccountId: "acct-discount",
+          postedSalesDiscountBase: 20,
+          lines: [
+            {
+              ...source.lines[0]!,
+              discountPercent: 0.2,
+              lineAmount: 80,
+              postsSalesDiscount: true
+            }
+          ]
+        })
+      )
+    ).toThrow(/no resolved Rillet product/);
   });
 
   it("exports the document currency components with shipping revenue override and native header tax exactly once", () => {
@@ -334,6 +400,7 @@ function setupInvoice(missingShipping = false) {
   return {
     map: (source: Accounting.SalesInvoice) =>
       (syncer as any).mapToRemote(source),
+    syncer,
     ensureDependencySynced,
     ensureShippingProduct,
     ensureSalesProduct,
@@ -484,4 +551,76 @@ it("recognizes revenue and FX on the actual posting date when issue date differs
         item.revenue?.period?.end === "2026-09-09"
     )
   ).toBe(true);
+});
+
+describe("Rillet invoice dimensions", () => {
+  const customer = { dimensionId: "dim-customer", valueId: "cust-1" };
+  const rep = { dimensionId: "dim-employee", valueId: "user-rep" };
+  const resolved = {
+    fieldIdByDimensionId: new Map([
+      ["dim-customer", "field-customer"],
+      ["dim-employee", "field-employee"]
+    ]),
+    // The rep's value is not provisioned here: its ref is dropped.
+    fieldValueIdsByValue: new Map([["dim-customer:cust-1", "value-acme"]])
+  };
+  const withDimensions = (): Accounting.SalesInvoice => {
+    const source = charges();
+    return {
+      ...source,
+      lines: [{ ...source.lines[0]!, dimensions: [customer, rep] }]
+    };
+  };
+
+  it("sends a line's provisioned dimensions on each of its items, header shipping none", () => {
+    const payload = mapSalesInvoiceToRilletInvoice({
+      ...mapArguments(withDimensions()),
+      dimensions: resolved
+    });
+    const refs = [{ field_id: "field-customer", field_value_id: "value-acme" }];
+    // Merchandise, the two add-ons and line shipping come from the line;
+    // header shipping has no line.
+    expect(payload.items.map((item) => item.fields)).toEqual([
+      refs,
+      refs,
+      refs,
+      refs,
+      undefined
+    ]);
+    for (const item of payload.items) {
+      expect(Rillet.InvoiceItemSchema.parse(item).fields).toEqual(item.fields);
+    }
+  });
+
+  it("sends no fields when the lines carry no dimensions", () => {
+    const payload = mapSalesInvoiceToRilletInvoice({
+      ...mapArguments(),
+      dimensions: resolved
+    });
+    expect(payload.items.every((item) => item.fields === undefined)).toBe(true);
+  });
+
+  it("resolves the Fields once for the invoice and tags its items", async () => {
+    const test = setupInvoice();
+    const { syncer } = test;
+    const resolveLineDimensions = vi
+      .spyOn(syncer as any, "resolveLineDimensions")
+      .mockResolvedValue(resolved as never);
+    const payload = await test.map(withDimensions());
+    expect(resolveLineDimensions).toHaveBeenCalledTimes(1);
+    expect(payload.items[0].fields).toEqual([
+      { field_id: "field-customer", field_value_id: "value-acme" }
+    ]);
+  });
+
+  it("reads no dimension mappings for an invoice without dimensions", async () => {
+    const test = setupInvoice();
+    const { syncer } = test;
+    const resolveLineDimensions = vi.spyOn(
+      syncer as any,
+      "resolveLineDimensions"
+    );
+    await test.map(charges());
+    expect(resolveLineDimensions).not.toHaveBeenCalled();
+  });
 });

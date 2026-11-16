@@ -87,6 +87,10 @@ const ShipmentPostBody = ({
   // A rental or contract delivery is dated: the day the customer received it.
   const isDelivery =
     isRental || routeData?.shipment?.sourceDocument === "Customer Contract";
+  // A sales order shipment can be back-dated: its ledger rows and COGS
+  // journal post on the posting date.
+  const isDated =
+    isDelivery || routeData?.shipment?.sourceDocument === "Sales Order";
   const companyToday = useCompanyToday();
   const [postingDate, setPostingDate] = useState(companyToday);
 
@@ -298,13 +302,17 @@ const ShipmentPostBody = ({
         <p className="text-sm text-muted-foreground mb-4">
           <Trans>Are you sure you want to post this shipment?</Trans>
         </p>
-        {isDelivery && (
+        {isDated && (
           <FormControl className="mb-4">
             <FormLabel>
-              <Trans>Delivered on</Trans>
+              {isDelivery ? (
+                <Trans>Delivered on</Trans>
+              ) : (
+                <Trans>Posting Date</Trans>
+              )}
             </FormLabel>
             <DatePicker
-              aria-label={t`Delivered on`}
+              aria-label={isDelivery ? t`Delivered on` : t`Posting Date`}
               value={parseDate(postingDate)}
               maxValue={parseDate(companyToday)}
               onChange={(d) => d && setPostingDate(d.toString())}
@@ -395,7 +403,7 @@ const ShipmentPostBody = ({
             onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData();
-              if (isDelivery) formData.set("postingDate", postingDate);
+              if (isDated) formData.set("postingDate", postingDate);
               ruleViolations.submit(formData);
             }}
           >

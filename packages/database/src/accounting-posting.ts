@@ -116,11 +116,20 @@ export const DEPOSIT_DESCRIPTIONS = [
 export const REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION =
   "Employee reimbursement payable";
 
+/** The description of a sales invoice line's discount leg: a debit on
+ *  `accountDefault.salesDiscountAccount` beside the gross "Sales Account"
+ *  credit (`buildSalesPostingLines`). The provider sync reads it back
+ *  (`classifyAccountingPostingRole` → `SalesDiscount`) to learn that an
+ *  invoice posted its revenue at gross, so writer and reader share this one
+ *  constant. */
+export const SALES_DISCOUNT_POSTING_DESCRIPTION = "Sales Discount";
+
 export type AccountingPostingRole =
   | "Receivables"
   | "Payables"
   | "ShippingRevenue"
   | "SalesRevenue"
+  | "SalesDiscount"
   | "ServiceRevenue";
 
 /** Roles come from the original journal, never a mutable account name or default. */
@@ -138,6 +147,8 @@ export function classifyAccountingPostingRole(
       return "ShippingRevenue";
     case "Sales Account":
       return "SalesRevenue";
+    case SALES_DISCOUNT_POSTING_DESCRIPTION:
+      return "SalesDiscount";
     // A service job line's revenue leg (`planServiceJobLine`). Its
     // "Contract Assets" leg is not revenue and stays unclassified.
     case "Service Revenue":

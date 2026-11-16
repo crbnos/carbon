@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { datetime } from "@carbon/utils";
+import { buildDimensionValueMappingEntityId } from "../../../core/dimension-mapping";
 import {
   JournalEntrySyncError,
   toPostingDateString
@@ -10,14 +11,17 @@ import {
 import {
   assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
+  hasSalesDiscountComponent,
   hasSalesRevenueComponent,
   hasServiceRevenueComponent,
+  isSalesDiscountComponent,
   isServiceRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
   loadSalesInvoices,
   requirePostedSalesAccountId,
+  requirePostedSalesDiscountAccountId,
   requirePostedServiceRevenueAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
@@ -118,11 +122,21 @@ export function mapSalesInvoiceToRilletInvoice(args: {
   salesProductRemoteId: string | null;
   /** The product for the Service Revenue account; a service job's components. */
   serviceProductRemoteId: string | null;
+  /** The product and account code of the replayed Sales Discount account; a
+   *  `Discount` component's. Absent when the document has none. */
+  salesDiscountProductRemoteId?: string | null;
+  salesDiscountAccountCode?: string | null;
   subsidiaryId: string | null;
   companyId: string;
   /** Link back to the Carbon invoice — REQUIRED by Rillet on
    * CUSTOMER_CUSTOM references. */
   documentUrl: string;
+  /** The Rillet Field and value of each dimension the components carry
+   *  (`resolveLineDimensions`). Absent: no item gets fields. */
+  dimensions?: {
+    fieldIdByDimensionId: ReadonlyMap<string, string>;
+    fieldValueIdsByValue: ReadonlyMap<string, string>;
+  };
 }): RilletInvoiceCreate {
   const { invoice } = args;
   const document = args.document;
@@ -134,18 +148,44 @@ export function mapSalesInvoiceToRilletInvoice(args: {
   const items: Rillet.InvoiceItem[] = document.components.map((component) => {
     const shipping =
       component.kind === "LineShipping" || component.kind === "HeaderShipping";
+    const discount = isSalesDiscountComponent(component);
     const productId = shipping
       ? args.shippingProductRemoteId
-      : isServiceRevenueComponent(component)
-        ? args.serviceProductRemoteId
-        : args.salesProductRemoteId;
-    if (!productId || (shipping && !args.shippingAccountCode))
+      : discount
+        ? args.salesDiscountProductRemoteId
+        : isServiceRevenueComponent(component)
+          ? args.serviceProductRemoteId
+          : args.salesProductRemoteId;
+    const accountCode = shipping
+      ? args.shippingAccountCode
+      : discount
+        ? args.salesDiscountAccountCode
+        : null;
+    if (!productId || ((shipping || discount) && !accountCode))
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
         message: `Invoice component ${component.id} has no resolved Rillet product/account mapping`,
         metadata: { invoiceId: document.invoiceId, componentId: component.id }
       });
+    // The line's posted dimensions as Rillet Field values, like a bill line.
+    const fields: Rillet.ItemFieldRef[] = [];
+    for (const dimension of args.dimensions
+      ? (component.dimensions ?? [])
+      : []) {
+      const fieldId = args.dimensions!.fieldIdByDimensionId.get(
+        dimension.dimensionId
+      );
+      const fieldValueId = args.dimensions!.fieldValueIdsByValue.get(
+        buildDimensionValueMappingEntityId(
+          dimension.dimensionId,
+          dimension.valueId
+        )
+      );
+      // Field or value not provisioned: drop this ref.
+      if (fieldId && fieldValueId)
+        fields.push({ field_id: fieldId, field_value_id: fieldValueId });
+    }
     return {
       product_id: productId,
       description: component.description,
@@ -158,8 +198,13 @@ export function mapSalesInvoiceToRilletInvoice(args: {
       revenue: {
         period: { start: invoiceDate, end: invoiceDate },
         pattern: "DAILY",
-        ...(shipping ? { account_code: args.shippingAccountCode! } : {})
+        // VERIFY: a Discount item is a NEGATIVE total_amount on the Sales
+        // Discount account; Rillet's acceptance of a negative revenue
+        // recognition item is not sandbox-tested.
+        ...(accountCode ? { account_code: accountCode } : {})
       },
+      // VERIFY: Rillet invoice item `fields` not sandbox-tested.
+      ...(fields.length > 0 ? { fields } : {}),
       external_references: [
         customerCustomExternalReference(component.id, args.documentUrl)
       ]
@@ -216,10 +261,23 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
   >;
   private shippingItemSyncerPromise?: Promise<RilletItemSyncer>;
 
-  private async getShippingAccount(
+  private async getSalesDiscountAccount(
     local: Accounting.SalesInvoice
   ): Promise<{ id: string; code: string }> {
-    const id = requirePostedShippingAccountId(local);
+    const id = requirePostedSalesDiscountAccountId(local);
+    const code = (await this.loadAccountCodes()).get(id);
+    if (!code)
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message:
+          "Cannot sync invoice: original Sales Discount account has no Rillet mapping",
+        metadata: { invoiceId: local.id, unmappedAccountIds: [id] }
+      });
+    return { id, code };
+  }
+
+  private loadAccountCodes(): ReturnType<typeof loadRilletAccountCodesById> {
     this.shippingAccountCodesPromise ??= loadRilletAccountCodesById(
       this.database,
       {
@@ -230,7 +288,14 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
       this.shippingAccountCodesPromise = undefined;
       throw error;
     });
-    const code = (await this.shippingAccountCodesPromise).get(id);
+    return this.shippingAccountCodesPromise;
+  }
+
+  private async getShippingAccount(
+    local: Accounting.SalesInvoice
+  ): Promise<{ id: string; code: string }> {
+    const id = requirePostedShippingAccountId(local);
+    const code = (await this.loadAccountCodes()).get(id);
     if (!code)
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
@@ -363,6 +428,9 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     )
       ? requirePostedServiceRevenueAccountId(local)
       : null;
+    const salesDiscountAccount = hasSalesDiscountComponent(document.components)
+      ? await this.getSalesDiscountAccount(local)
+      : null;
 
     const customerRemoteId = await this.ensureDependencySynced(
       "customer",
@@ -391,6 +459,15 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
           baseCurrencyDecimals: local.baseCurrencyDecimalPlaces
         })
       : null;
+    // The line discounts, negative, on a product for the replayed Sales
+    // Discount account.
+    const salesDiscountProductRemoteId = salesDiscountAccount
+      ? await (await this.getShippingItemSyncer()).ensureSalesProduct({
+          revenueAccountId: salesDiscountAccount.id,
+          baseCurrencyCode: local.baseCurrencyCode,
+          baseCurrencyDecimals: local.baseCurrencyDecimalPlaces
+        })
+      : null;
     const shippingProductRemoteId = shippingAccount
       ? await (await this.getShippingItemSyncer()).ensureShippingProduct({
           shippingAccountId: shippingAccount.id,
@@ -398,6 +475,15 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
           baseCurrencyDecimals: local.baseCurrencyDecimalPlaces
         })
       : null;
+
+    // Send every posted dimension of the lines (the Customer, the Project,
+    // the sales order's rep as Employee, …): provision each Rillet Field and
+    // value as a bill does. An invoice whose lines carry none reads nothing.
+    const dimensions = document.components.some(
+      (component) => component.dimensions?.length
+    )
+      ? await this.resolveLineDimensions(document.components)
+      : undefined;
 
     // Dynamic import: keeps @carbon/env (module-load env validation) out of
     // the module graph for consumers and tests that never push an invoice
@@ -410,11 +496,14 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
       shippingProductRemoteId,
       salesProductRemoteId,
       serviceProductRemoteId,
+      salesDiscountProductRemoteId,
+      salesDiscountAccountCode: salesDiscountAccount?.code ?? null,
       shippingAccountCode: shippingAccount?.code ?? null,
       customerRemoteId,
       subsidiaryId: this.rilletProvider.subsidiaryId,
       companyId: this.companyId,
-      documentUrl: `${getAppUrl()}/x/sales-invoice/${local.id}`
+      documentUrl: `${getAppUrl()}/x/sales-invoice/${local.id}`,
+      dimensions
     });
   }
 

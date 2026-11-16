@@ -285,6 +285,8 @@ export const stripeCustomerChoiceValidator = z.object({
 export const salesInvoicePostValidator = z
   .object({
     notification: z.enum(["Email", "Stripe", "None"]).optional(),
+    // The day the invoice is booked and issued on (today when blank).
+    postingDate: zfd.text(z.string().optional()),
     customerContact: zfd.text(z.string().optional()),
     cc: z.array(z.string()).optional(),
     // What the user agreed to do with the connected account's customer list.
