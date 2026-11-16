@@ -308,6 +308,7 @@ import {
   priceOverrideScopeError,
   QUOTE_BASE_PRICE_SOURCES,
   resolvePreservedQuoteLinePriceFields,
+  saveIsCurrent,
   toMatchedRule,
   withBasePriceSource
 } from "./sales.utils";
@@ -15088,6 +15089,7 @@ export type DeliveryDateSave = {
   keptNow: boolean;
   pending: boolean;
   changed: boolean;
+  saved: { promisedDate: string | null; saleQuantity: number };
 };
 
 /**
@@ -15175,7 +15177,12 @@ export async function deliveryDateColumnsForSave(
     save: { userId: ctx.auditUserId, changed },
     now: datetime.timestamp()
   });
-  return { ...record, pending: result?.status === "Pending", changed };
+  return {
+    ...record,
+    pending: result?.status === "Pending",
+    changed,
+    saved: { promisedDate, saleQuantity: quantity }
+  };
 }
 
 /**
@@ -15230,7 +15237,10 @@ export async function afterDeliveryDateSave(
         salesOrderId: args.salesOrderId,
         lineIds: [args.lineId],
         userId: ctx.auditUserId,
-        save: { changedLineIds: args.save.changed ? [args.lineId] : [] }
+        save: {
+          changedLineIds: args.save.changed ? [args.lineId] : [],
+          ...args.save.saved
+        }
       });
     }
   } catch (error) {
@@ -15249,7 +15259,13 @@ export const checkSalesOrderDeliveryDatesInput = z.object({
   /** `skip`: answer a line that needs the simulation by its lead time */
   capacity: z.enum(["run", "defer", "skip"]),
   /** set when a user's save started the check */
-  save: z.object({ changedLineIds: z.array(z.string()) }).optional()
+  save: z
+    .object({
+      changedLineIds: z.array(z.string()),
+      promisedDate: z.string().nullable().optional(),
+      saleQuantity: z.number().optional()
+    })
+    .optional()
 });
 
 export const checkSalesOrderDeliveryDatesPermission = "system" as const;
@@ -15318,7 +15334,9 @@ export async function checkSalesOrderDeliveryDates(
       salesOrderId: input.salesOrderId,
       orderStatus: rows[0]!.orderStatus,
       orderLocationId: rows[0]!.orderLocationId,
-      excludeLineIds: lineIds
+      // A dated line claims its stock as a checked line. An undated one is not
+      // checked, so it stays sibling demand, due now.
+      excludeLineIds: rows.filter((r) => r.promisedDate).map((r) => r.id)
     })
   ]);
   const { results } = await runDeliveryDateCheck(
@@ -15345,13 +15363,17 @@ export async function checkSalesOrderDeliveryDates(
   for (const row of rows) {
     const result = results.get(row.id) ?? null;
     if (result?.status === "Pending") pendingLineIds.push(row.id);
+    // A save the line no longer holds does not record the keep: the later
+    // save's own check does.
+    const save =
+      input.save && saveIsCurrent(row, input.save) ? input.save : null;
     const { columns, keptNow } = nextDeliveryDateRecord({
       stored: row,
       result,
-      save: input.save
+      save: save
         ? {
             userId: ctx.auditUserId,
-            changed: input.save.changedLineIds.includes(row.id)
+            changed: save.changedLineIds.includes(row.id)
           }
         : null,
       now
@@ -15361,6 +15383,12 @@ export async function checkSalesOrderDeliveryDates(
     const next = { ...row, ...columns };
     values.push(sql`(
       ${row.id}::text,
+      ${row.itemId ?? null}::text,
+      ${row.lineLocationId ?? null}::text,
+      ${row.methodType ?? null}::"methodType",
+      ${row.saleQuantity ?? null}::numeric,
+      ${row.quantitySent ?? null}::numeric,
+      ${row.promisedDate ? String(row.promisedDate).slice(0, 10) : null}::date,
       ${next.deliveryDateStatus ?? null}::"deliveryDateStatus",
       ${next.deliveryDateConstraint ?? null}::"deliveryDateConstraint",
       ${next.earliestDeliveryDate ? String(next.earliestDeliveryDate).slice(0, 10) : null}::date,
@@ -15370,8 +15398,11 @@ export async function checkSalesOrderDeliveryDates(
     )`);
   }
 
+  // Only a line that still holds what was checked takes the result: a save
+  // during the simulation has its own check.
+  const written = new Set<string>();
   if (values.length > 0) {
-    await sql`
+    const updated = await sql<{ id: string }>`
       UPDATE "salesOrderLine" AS sol SET
         "deliveryDateStatus" = v."status",
         "deliveryDateConstraint" = v."checkConstraint",
@@ -15380,14 +15411,24 @@ export async function checkSalesOrderDeliveryDates(
         "deliveryDateOverriddenBy" = v."overriddenBy",
         "deliveryDateOverriddenAt" = v."overriddenAt"
       FROM (VALUES ${sql.join(values)}) AS v(
-        "id", "status", "checkConstraint", "earliestDate", "checkedAt",
-        "overriddenBy", "overriddenAt"
+        "id", "itemId", "locationId", "methodType", "saleQuantity",
+        "quantitySent", "promisedDate", "status", "checkConstraint",
+        "earliestDate", "checkedAt", "overriddenBy", "overriddenAt"
       )
       WHERE sol."id" = v."id" AND sol."companyId" = ${companyId}
+        AND sol."itemId" IS NOT DISTINCT FROM v."itemId"
+        AND sol."locationId" IS NOT DISTINCT FROM v."locationId"
+        AND sol."methodType" IS NOT DISTINCT FROM v."methodType"
+        AND sol."saleQuantity" IS NOT DISTINCT FROM v."saleQuantity"
+        AND sol."quantitySent" IS NOT DISTINCT FROM v."quantitySent"
+        AND sol."promisedDate" IS NOT DISTINCT FROM v."promisedDate"
+      RETURNING sol."id"
     `.execute(db);
+    for (const { id } of updated.rows) written.add(id);
   }
+  const keptAndWritten = keptLineIds.filter((id) => written.has(id));
 
-  for (const _lineId of keptLineIds) {
+  for (const _lineId of keptAndWritten) {
     // The workflow catalog has no sales order line entity, so the moment
     // names the order; one moment per newly kept line.
     await raiseMoment("sales.deliveryDateOverridden", {
@@ -15399,7 +15440,10 @@ export async function checkSalesOrderDeliveryDates(
       actorId: ctx.auditUserId
     });
   }
-  return { pendingLineIds, keptLineIds };
+  return {
+    pendingLineIds: pendingLineIds.filter((id) => written.has(id)),
+    keptLineIds: keptAndWritten
+  };
 }
 
 /**

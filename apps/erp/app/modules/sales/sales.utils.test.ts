@@ -29,6 +29,7 @@ import {
   repricedUnitPrice,
   resolveJobConfiguration,
   resolvePreservedQuoteLinePriceFields,
+  saveIsCurrent,
   toMatchedRule,
   withBasePriceSource
 } from "./sales.utils";
@@ -1092,5 +1093,42 @@ describe("nextDeliveryDateRecord", () => {
       },
       keptNow: false
     });
+  });
+});
+
+describe("saveIsCurrent", () => {
+  // The line as the background check reads it (Kysely: DATE as a string,
+  // NUMERIC as a string).
+  const row = { promisedDate: "2026-11-25", saleQuantity: "2" };
+
+  it("applies a save the line still holds", () => {
+    expect(
+      saveIsCurrent(row, { promisedDate: "2026-11-25", saleQuantity: 2 })
+    ).toBe(true);
+  });
+
+  it("drops a save whose date a later save changed", () => {
+    expect(
+      saveIsCurrent(row, { promisedDate: "2026-11-20", saleQuantity: 2 })
+    ).toBe(false);
+  });
+
+  it("drops a save whose quantity a later save changed", () => {
+    expect(
+      saveIsCurrent(row, { promisedDate: "2026-11-25", saleQuantity: 100 })
+    ).toBe(false);
+  });
+
+  it("matches a line with no promised date", () => {
+    expect(
+      saveIsCurrent(
+        { promisedDate: null, saleQuantity: "2" },
+        { promisedDate: null, saleQuantity: 2 }
+      )
+    ).toBe(true);
+  });
+
+  it("applies an event sent without the saved values", () => {
+    expect(saveIsCurrent(row, {})).toBe(true);
   });
 });

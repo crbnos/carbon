@@ -1213,3 +1213,31 @@ export function nextDeliveryDateRecord(args: {
   }
   return { columns: checked, keptNow: false };
 }
+
+/** The promised date and quantity a line save wrote. */
+export type SavedDeliveryDate = {
+  promisedDate?: string | null;
+  saleQuantity?: number;
+};
+
+/**
+ * Whether a line still holds what a save wrote, so a background check started
+ * by that save may record who kept its date. A later save of another date or
+ * quantity supersedes it: its own check records the keep. An event without
+ * the saved values (sent before they were added) still applies.
+ */
+export function saveIsCurrent(
+  row: { promisedDate: unknown; saleQuantity: unknown },
+  saved: SavedDeliveryDate
+): boolean {
+  if (saved.promisedDate === undefined && saved.saleQuantity === undefined) {
+    return true;
+  }
+  const rowDate = row.promisedDate
+    ? String(row.promisedDate).slice(0, 10)
+    : null;
+  return (
+    rowDate === (saved.promisedDate?.slice(0, 10) || null) &&
+    Number(row.saleQuantity ?? 0) === Number(saved.saleQuantity ?? 0)
+  );
+}

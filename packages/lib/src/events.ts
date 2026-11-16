@@ -699,7 +699,12 @@ export type Events = {
       salesOrderId: string;
       lineIds: string[];
       userId: string;
-      save?: { changedLineIds: string[] };
+      save?: {
+        changedLineIds: string[];
+        /** what the save wrote, so a later save supersedes this one */
+        promisedDate?: string | null;
+        saleQuantity?: number;
+      };
     };
   };
 
