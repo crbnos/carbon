@@ -3185,6 +3185,9 @@ msgstr "Add Job"
 msgid "Add Journal Entry"
 msgstr "Add Journal Entry"
 
+msgid "Add Label Template"
+msgstr "Add Label Template"
+
 msgid "Add labor"
 msgstr "Add labor"
 
@@ -3378,6 +3381,9 @@ msgstr "Add steps to preview the operator view."
 
 msgid "Add Supplier"
 msgstr "Add Supplier"
+
+msgid "Add Template"
+msgstr "Add Template"
 
 msgid "Add the charge numbers you worked on this week, then click a day to log time."
 msgstr "Add the charge numbers you worked on this week, then click a day to log time."
@@ -5582,6 +5588,9 @@ msgstr "Batch is not available"
 msgid "Batch items require a sales order"
 msgstr "Batch items require a sales order"
 
+msgid "Batch Label"
+msgstr "Batch Label"
+
 msgid "Batch number"
 msgstr "Batch number"
 
@@ -5873,6 +5882,12 @@ msgstr "Bills the work charged to this element and the elements below it"
 
 msgid "Bills until it is cancelled"
 msgstr "Bills until it is cancelled"
+
+msgid "BinderyPress template ID"
+msgstr "BinderyPress template ID"
+
+msgid "BinderyPress templates by label type and media size. A printer uses the template for its media size; labels without one print with the built-in layout."
+msgstr "BinderyPress templates by label type and media size. A printer uses the template for its media size; labels without one print with the built-in layout."
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Blank = computed from the ability's recertification period"
@@ -10403,6 +10418,11 @@ msgstr "Delete Supplier Type"
 msgid "Delete the {0} invoice"
 msgstr "Delete the {0} invoice"
 
+#. placeholder {0}: labelTypeNames[deleting.labelType]
+#. placeholder {1}: getMediaSizeLabel(deleting.mediaSizeId)
+msgid "Delete the {0} template for {1}? These labels will print with the built-in layout."
+msgstr "Delete the {0} template for {1}? These labels will print with the built-in layout."
+
 #. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "Delete the milestone {0}? Its elements stay, without a milestone."
@@ -11698,6 +11718,9 @@ msgstr "Edit Journal Entry"
 
 msgid "Edit Kanban"
 msgstr "Edit Kanban"
+
+msgid "Edit Label Template"
+msgstr "Edit Label Template"
 
 msgid "Edit labor"
 msgstr "Edit labor"
@@ -16406,6 +16429,9 @@ msgstr "Just one"
 msgid "Kanban"
 msgstr "Kanban"
 
+msgid "Kanban Card"
+msgstr "Kanban Card"
+
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban for {kanbanName}"
 
@@ -16509,6 +16535,15 @@ msgstr "Label size"
 msgid "Label Size"
 msgstr "Label Size"
 
+msgid "Label template created"
+msgstr "Label template created"
+
+msgid "Label template updated"
+msgstr "Label template updated"
+
+msgid "Label Templates"
+msgstr "Label Templates"
+
 msgid "Label to complete the current operation for this kanban"
 msgstr "Label to complete the current operation for this kanban"
 
@@ -16518,6 +16553,9 @@ msgstr "Label to create a {0} for this kanban"
 
 msgid "Label to start the next operation for this kanban"
 msgstr "Label to start the next operation for this kanban"
+
+msgid "Label Type"
+msgstr "Label Type"
 
 msgid "Labels"
 msgstr "Labels"
@@ -16845,9 +16883,6 @@ msgstr "Leave a comment..."
 
 msgid "Leave any related receipts untouched"
 msgstr "Leave any related receipts untouched"
-
-msgid "Leave blank for built-in"
-msgstr "Leave blank for built-in"
 
 msgid "Leave blank to use the next revision automatically"
 msgstr "Leave blank to use the next revision automatically"
@@ -19816,6 +19851,9 @@ msgstr "No jobs were created"
 
 msgid "No journal lines in scope for this period"
 msgstr "No journal lines in scope for this period"
+
+msgid "No label templates. Every label prints with the built-in layout."
+msgstr "No label templates. Every label prints with the built-in layout."
 
 msgid "No labels"
 msgstr "No labels"
@@ -27441,6 +27479,9 @@ msgstr "Serial number is not available"
 msgid "Serial number is required"
 msgstr "Serial number is required"
 
+msgid "Serial Number Label"
+msgstr "Serial Number Label"
+
 msgid "Serial Number:"
 msgstr "Serial Number:"
 
@@ -28975,6 +29016,9 @@ msgstr "Storage Unit (optional)"
 
 msgid "Storage unit for {itemName}"
 msgstr "Storage unit for {itemName}"
+
+msgid "Storage Unit Label"
+msgstr "Storage Unit Label"
 
 msgid "storage units"
 msgstr "storage units"

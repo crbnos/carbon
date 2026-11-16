@@ -30,7 +30,6 @@ export type PrinterRoute = {
   mediaSizeId: string | null;
   printerUrl: string;
   apiKey: string | null;
-  templateId: string | null;
 };
 
 export type PrintJobStatus =

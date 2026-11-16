@@ -3185,6 +3185,9 @@ msgstr "Добавить производственный заказ"
 msgid "Add Journal Entry"
 msgstr "Добавить проводку"
 
+msgid "Add Label Template"
+msgstr "Добавить шаблон этикетки"
+
 msgid "Add labor"
 msgstr "Добавить труд"
 
@@ -3378,6 +3381,9 @@ msgstr "Добавьте шаги для предварительного про
 
 msgid "Add Supplier"
 msgstr "Добавить поставщика"
+
+msgid "Add Template"
+msgstr "Добавить шаблон"
 
 msgid "Add the charge numbers you worked on this week, then click a day to log time."
 msgstr "Добавьте номера начислений, над которыми вы работали на этой неделе, затем нажмите на день, чтобы зафиксировать время."
@@ -4023,7 +4029,7 @@ msgid "An open-ended lease is short-term: activating it posts no journal, and ea
 msgstr "Договор аренды без указания срока - краткосрочная аренда: при его активировании не создается никакая операция, и каждый счет-фактура списывается в расходы."
 
 msgid "An operation cannot complete until every serial and batch part on it is issued."
-msgstr ""
+msgstr "Операцию нельзя завершить, пока не выданы все детали, учитываемые по серийным номерам или по сериям, которые к ней относятся."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Операция, выполняемая внешним поставщиком вместо изготовления на собственном рабочем центре, предусмотренная заказом поставщику на субподряд."
@@ -4355,10 +4361,10 @@ msgid "Approve all"
 msgstr "Утвердить все"
 
 msgid "Approve and delete"
-msgstr ""
+msgstr "Утвердить и удалить"
 
 msgid "Approve and Delete"
-msgstr ""
+msgstr "Утвердить и удалить"
 
 msgid "Approve Request"
 msgstr "Утвердить запрос"
@@ -4376,19 +4382,19 @@ msgid "Approved On"
 msgstr "Утверждено"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr ""
+msgstr "Утверждение также сторнирует его поступления {receipts}: запас, который они принесли, будет списан, а их проводки сторнированы. Действие отклоняется, если этот запас был использован после этого."
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
-msgstr ""
+msgstr "Утверждение немедленно удалит {readableId}. Это нельзя отменить."
 
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
-msgstr ""
+msgstr "Утверждение немедленно удалит заказ поставщику и все его строки. Это нельзя отменить."
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
-msgstr ""
+msgstr "Утверждение сторнирует {receipts}, затем удалит заказ поставщику и все его строки. Это нельзя отменить."
 
 msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
-msgstr ""
+msgstr "Утверждение аннулирует {readableId}: его проводки будут сторнированы, после чего документ будет удалён. Это нельзя отменить."
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Приблизительно — получено из запланированных дат; нет резервирования мощности для этой строки."
@@ -5582,6 +5588,9 @@ msgstr "Серия недоступна"
 msgid "Batch items require a sales order"
 msgstr "Позиции, производимые сериями, требуют заказ покупателя"
 
+msgid "Batch Label"
+msgstr "Этикетка серии"
+
 msgid "Batch number"
 msgstr "Номер партии"
 
@@ -5672,7 +5681,7 @@ msgid "Beginning"
 msgstr "Начало"
 
 msgid "Being approved now…"
-msgstr ""
+msgstr "Утверждается…"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -5873,6 +5882,12 @@ msgstr "Выставляет счета за работу, зарядованн�
 
 msgid "Bills until it is cancelled"
 msgstr "Выставляет счета до отмены"
+
+msgid "BinderyPress template ID"
+msgstr "ID шаблона BinderyPress"
+
+msgid "BinderyPress templates by label type and media size. A printer uses the template for its media size; labels without one print with the built-in layout."
+msgstr "Шаблоны BinderyPress по типу этикетки и размеру носителя. Принтер использует шаблон для своего размера носителя; этикетки без шаблона печатаются во встроенном макете."
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Пусто = рассчитывается из периода переаттестации навыка"
@@ -6384,7 +6399,7 @@ msgid "Cancel purchase order {target}"
 msgstr "Отменить заказ поставщику {target}"
 
 msgid "Cancel Request"
-msgstr ""
+msgstr "Отмена запроса"
 
 msgid "Cancel Return"
 msgstr "Отменить возврат"
@@ -7571,7 +7586,7 @@ msgid "Completing"
 msgstr "Завершение"
 
 msgid "Completing a job's first operation prints its unit labels."
-msgstr ""
+msgstr "Завершение первой операции производственного заказа печатает этикетки на каждую единицу."
 
 msgid "Completing this training grants or renews the selected ability."
 msgstr "Завершение этого обучения предоставляет или обновляет выбранный навык."
@@ -8075,7 +8090,7 @@ msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Управление тем, как операторы отбирают материал и отслеживают время на цехе."
 
 msgid "Control how parts and labels move from the pick to the finished unit."
-msgstr ""
+msgstr "Задайте, как детали и этикетки проходят путь от отбора до готовой единицы."
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "Управляйте тем, могут ли коды элементов (детали, материалы, расходники, инструменты и услуги) содержать символы нижнего регистра."
@@ -8879,7 +8894,7 @@ msgid "Create Operator"
 msgstr "Создать оператора"
 
 msgid "Create picking lists on release"
-msgstr ""
+msgstr "Создавать листы отбора при запуске в работу"
 
 msgid "Create PO Line"
 msgstr "Создать строку заказа поставщику"
@@ -10403,6 +10418,11 @@ msgstr "Удалить тип поставщика"
 msgid "Delete the {0} invoice"
 msgstr "Удалить счет от {0}"
 
+#. placeholder {0}: labelTypeNames[deleting.labelType]
+#. placeholder {1}: getMediaSizeLabel(deleting.mediaSizeId)
+msgid "Delete the {0} template for {1}? These labels will print with the built-in layout."
+msgstr "Удалить шаблон {0} для {1}? Эти этикетки будут печататься во встроенном макете."
+
 #. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "Удалить веху {0}? Её элементы останутся без вехи."
@@ -11437,7 +11457,7 @@ msgid "Each physical unit gets its own tracked entity and unique number — one 
 msgstr "Каждая физическая единица получает свой отслеживаемый объект и уникальный номер — один объект, одна единица."
 
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
-msgstr ""
+msgstr "Каждый запущенный производственный заказ получает один лист отбора. Его детали передаются в единицу хранения прилинейного запаса каждого рабочего центра, который их использует."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Менеджер по продажам каждого договора аренды или контракта (или его создатель) получает ежедневное резюме своих счетов-фактур."
@@ -11698,6 +11718,9 @@ msgstr "Изменить проводку"
 
 msgid "Edit Kanban"
 msgstr "Изменить канбан"
+
+msgid "Edit Label Template"
+msgstr "Изменить шаблон этикетки"
 
 msgid "Edit labor"
 msgstr "Изменить труд"
@@ -12006,7 +12029,7 @@ msgid "Email notifications not configured"
 msgstr "Уведомления по электронной почте не настроены"
 
 msgid "Email order on acceptance"
-msgstr ""
+msgstr "Отправлять заказ по email при принятии"
 
 msgid "Email recipients"
 msgstr "Получатели e-mail"
@@ -12021,7 +12044,7 @@ msgid "Emails of the attendees (guests)"
 msgstr "Адреса электронной почты участников (гостей)"
 
 msgid "Emails the sales order to the customer when they accept this quote online."
-msgstr ""
+msgstr "Отправляет заказ покупателя покупателю по email, когда тот принимает это коммерческое предложение онлайн."
 
 msgid "Emoji"
 msgstr "Эмодзи"
@@ -13887,22 +13910,22 @@ msgid "For Form 6765 Section E"
 msgstr "Для формы 6765 раздел E"
 
 msgid "Force delete"
-msgstr ""
+msgstr "Принудительно удалить"
 
 msgid "Force Delete"
-msgstr ""
+msgstr "Принудительно удалить"
 
 msgid "Force Delete (Admin)"
-msgstr ""
+msgstr "Принудительно удалить (администратор)"
 
 msgid "Force delete {purchaseOrderReadableId}"
-msgstr ""
+msgstr "Принудительно удалить {purchaseOrderReadableId}"
 
 msgid "Force delete {readableId}"
-msgstr ""
+msgstr "Принудительно удалить {readableId}"
 
 msgid "Force delete waiting for another Admin's approval"
-msgstr ""
+msgstr "Принудительное удаление ожидает утверждения другим администратором"
 
 msgid "Forecast"
 msgstr "Прогноз"
@@ -15306,7 +15329,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "Неактивные категории не могут быть выбраны для новых отметок времени"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "Неактивные единицы не предлагаются при выборе единицы"
 
 msgid "Inbound inspection"
 msgstr "Входной контроль"
@@ -16108,7 +16131,7 @@ msgid "It decides what the next step asks for."
 msgstr "Это определяет, что просит следующий шаг."
 
 msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
-msgstr ""
+msgstr "Документ в статусе {status}: утверждение сначала аннулирует его, сторнируя проводки. Если аннулирование отклонено, проводки сторнируются операцией."
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Оно утверждено, но не может быть применено. Откройте его заново, проверьте эти строки, затем отправьте снова."
@@ -16120,13 +16143,13 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Оно все еще используется записью «{table}»; сначала уберите эту запись."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr ""
+msgstr "Это никогда не затрагивает учёт поставщика. Сначала аннулируйте отгрузки и предоплаты заказа и удалите его строки из полученных счетов-фактур. Запрос будет отклонён, пока вы этого не сделаете."
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
-msgstr ""
+msgstr "Удаляет {readableId} навсегда, независимо от статуса. Это нельзя отменить."
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
-msgstr ""
+msgstr "Этот заказ поставщику и все его строки будут удалены навсегда независимо от статуса и утверждения. Это нельзя отменить."
 
 msgid "It shows with no hours until you add some."
 msgstr "Отображается без часов, пока вы не добавите часы."
@@ -16267,7 +16290,7 @@ msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Её выручка распределяется на оставшиеся к признанию суммы по каждой строке."
 
 msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
-msgstr ""
+msgstr "Его запас списывается обратно, даже если он уже был использован (остаток может стать отрицательным), а поступившие по нему товары возвращаются в заказ."
 
 msgid "Job"
 msgstr "Задание"
@@ -16406,6 +16429,9 @@ msgstr "Только один"
 msgid "Kanban"
 msgstr "Канбан"
 
+msgid "Kanban Card"
+msgstr "Карточка канбан"
+
 msgid "Kanban for {kanbanName}"
 msgstr "Канбан для {kanbanName}"
 
@@ -16509,6 +16535,15 @@ msgstr "Размер этикетки"
 msgid "Label Size"
 msgstr "Размер этикетки"
 
+msgid "Label template created"
+msgstr "Шаблон этикетки создан"
+
+msgid "Label template updated"
+msgstr "Шаблон этикетки обновлён"
+
+msgid "Label Templates"
+msgstr "Шаблоны этикеток"
+
 msgid "Label to complete the current operation for this kanban"
 msgstr "Этикетка для завершения текущей операции для этого канбана"
 
@@ -16519,11 +16554,14 @@ msgstr "Этикетка для создания {0} для этого канб�
 msgid "Label to start the next operation for this kanban"
 msgstr "Этикетка для начала следующей операции для этого канбана"
 
+msgid "Label Type"
+msgstr "Тип этикетки"
+
 msgid "Labels"
 msgstr "Метки"
 
 msgid "Labels print at the first operation"
-msgstr ""
+msgstr "Этикетки печатаются на первой операции"
 
 msgid "Labor"
 msgstr "Труд"
@@ -16846,9 +16884,6 @@ msgstr "Оставить комментарий..."
 msgid "Leave any related receipts untouched"
 msgstr "Оставить все связанные квитанции без изменений"
 
-msgid "Leave blank for built-in"
-msgstr "Оставьте пустым для встроенного"
-
 msgid "Leave blank to use the next revision automatically"
 msgstr "Оставить пусто, чтобы использовать следующую ревизию автоматически"
 
@@ -17081,7 +17116,7 @@ msgid "Line Details"
 msgstr "Детали строки"
 
 msgid "Line Flow"
-msgstr ""
+msgstr "Поток линии"
 
 msgid "Line Item"
 msgstr "Товар строки"
@@ -19817,6 +19852,9 @@ msgstr "Производственные заказы не были создан
 msgid "No journal lines in scope for this period"
 msgstr "Нет строк операций в этом периоде"
 
+msgid "No label templates. Every label prints with the built-in layout."
+msgstr "Шаблонов этикеток нет. Каждая этикетка печатается по встроенному макету."
+
 msgid "No labels"
 msgstr "Нет меток"
 
@@ -20649,10 +20687,10 @@ msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr ""
+msgstr "Пока ничего не удалено. Запрос отправляется на утверждение другим администраторам, и он будет удалён, когда один из них его утвердит."
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
-msgstr ""
+msgstr "Пока ничего не удалено. Запрос отправляется на утверждение другим администраторам, и заказ будет удалён, когда один из них его утвердит."
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Ничего не требуется. Счета-фактуры создаются автоматически при наступлении периода."
@@ -21493,7 +21531,7 @@ msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Операторы могут использовать общие рабочие станции с аутентификацией по PIN."
 
 msgid "Operators see a warning about unissued serial and batch parts and can still complete."
-msgstr ""
+msgstr "Операторы видят предупреждение о невыданных деталях с серийными номерами и сериями, но всё равно могут завершить."
 
 msgid "Operators start on the Scan tab"
 msgstr "Операторы начинают на вкладке Сканирование"
@@ -21658,7 +21696,7 @@ msgid "Other Income GL account for the monthly interest earned on the net invest
 msgstr "Счет учета прочих доходов для ежемесячного процента, полученного по чистым инвестициям в лизинг продажного типа."
 
 msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
-msgstr ""
+msgstr "Сначала с него снимаются другие платежи, которые он финансирует или возмещает; они остаются проведёнными."
 
 msgid "Other Type"
 msgstr "Другой тип"
@@ -22195,10 +22233,10 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "Платежи и авансы, применённые к этому счету. Применённые суммы и обменные курсы указаны в базовой валюте организации. Нажмите строку, чтобы открыть документ-основание."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr ""
+msgstr "Сначала с него снимаются применённые к нему платежи и кредит-ноты: каждый платёж остаётся проведённым в виде неприменённой суммы, которую можно применить к другому документу или принудительно удалить. Выручка, уже признанная по нему, сторнируется."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
-msgstr ""
+msgstr "Сначала с него снимаются применённые к нему платежи и кредит-ноты: каждый платёж остаётся проведённым в виде неприменённой суммы, которую можно применить к другому документу или принудительно удалить. Стоимость, которую он добавил к капитализированному основному средству, будет изъята; уже проведённая амортизация остаётся."
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "Платежи, подлежащие оплате до этой даты, были оплачены вне Carbon"
@@ -22513,13 +22551,13 @@ msgid "Picking Lists"
 msgstr "Листы отбора"
 
 msgid "Picking lists are created by hand"
-msgstr ""
+msgstr "Листы отбора создаются вручную"
 
 msgid "Picking lists on release disabled"
-msgstr ""
+msgstr "Листы отбора при запуске в работу отключены"
 
 msgid "Picking lists on release enabled"
-msgstr ""
+msgstr "Листы отбора при запуске в работу включены"
 
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "Отбор предлагает отслеживаемые товары в первую очередь с наиболее ранним сроком истечения, поэтому запас с ближайшим сроком истечения уходит первым по умолчанию."
@@ -23099,7 +23137,7 @@ msgid "Print Label"
 msgstr "Печать этикетки"
 
 msgid "Print label on completion"
-msgstr ""
+msgstr "Печатать этикетку при завершении"
 
 msgid "Print Labels"
 msgstr "Печать этикеток"
@@ -23113,10 +23151,10 @@ msgid "Print Output ({0})"
 msgstr "Вывод печати ({0})"
 
 msgid "Print this item's serial label when its job's last operation completes."
-msgstr ""
+msgstr "Печатать этикетку серийного номера этой номенклатуры, когда завершается последняя операция её производственного заказа."
 
 msgid "Print travelers at the pick"
-msgstr ""
+msgstr "Печатать маршрутные листы при отборе"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "Напечатано на заказы поставщику, которые вы утверждаете."
@@ -23624,7 +23662,7 @@ msgid "Purchase order for {supplierName}"
 msgstr "Заказ поставщику для {supplierName}"
 
 msgid "Purchase Order Force Delete"
-msgstr ""
+msgstr "Принудительное удаление заказа поставщику"
 
 msgid "Purchase Order ID"
 msgstr "ID Заказа поставщику"
@@ -23967,7 +24005,7 @@ msgstr "Количество к кредитованию по строке {line
 
 #. placeholder {0}: item?.name ?? ""
 msgid "Quantity to pick of {0}"
-msgstr ""
+msgstr "Количество к отбору: {0}"
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "Количество к возврату для {itemReadableId}"
@@ -24834,7 +24872,7 @@ msgid "Released with problems: {0}"
 msgstr "Запущено с проблемами: {0}"
 
 msgid "Releasing a job creates its picking list"
-msgstr ""
+msgstr "Запуск производственного заказа в работу создаёт его лист отбора"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Запуск серии запускает её производственные заказы, и каждый должен быть готов к цеху."
@@ -25309,7 +25347,7 @@ msgid "Request date"
 msgstr "Дата запроса"
 
 msgid "Request Force Delete"
-msgstr ""
+msgstr "Принудительное удаление запроса"
 
 msgid "Request Quote"
 msgstr "Запросить коммерческое предложение"
@@ -25318,7 +25356,7 @@ msgid "Requested"
 msgstr "Запрошено"
 
 msgid "Requested by"
-msgstr ""
+msgstr "Запросил"
 
 msgid "Requested By"
 msgstr "Запрошено"
@@ -25394,7 +25432,7 @@ msgid "Require tiered sign-off on purchase orders, quality documents, suppliers,
 msgstr "Требуется многоуровневое утверждение заказов поставщикам, документов качества, поставщиков и извещений об изменении в зависимости от пороговых сумм и групп утверждающих."
 
 msgid "Require tracked parts before completion"
-msgstr ""
+msgstr "Требовать прослеживаемые детали перед завершением"
 
 msgid "Require two-factor authentication"
 msgstr "Требовать двухфакторную аутентификацию"
@@ -25424,10 +25462,10 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "Требуется в контролируемой среде — ведение журнала аудита невозможно отключить."
 
 msgid "Required tracked parts disabled"
-msgstr ""
+msgstr "Требование прослеживаемых деталей отключено"
 
 msgid "Required tracked parts enabled"
-msgstr ""
+msgstr "Требование прослеживаемых деталей включено"
 
 msgid "Requirement"
 msgstr "Требование"
@@ -27342,7 +27380,7 @@ msgid "Send Notifications"
 msgstr "Отправлять уведомления"
 
 msgid "Send order confirmation"
-msgstr ""
+msgstr "Отправлять подтверждение заказа"
 
 msgid "Send Reminder"
 msgstr "Отправить напоминание"
@@ -27440,6 +27478,9 @@ msgstr "Серийный номер недоступен"
 
 msgid "Serial number is required"
 msgstr "Требуется серийный номер"
+
+msgid "Serial Number Label"
+msgstr "Этикетка серийного номера"
 
 msgid "Serial Number:"
 msgstr "Серийный номер:"
@@ -28712,7 +28753,7 @@ msgid "Starting"
 msgstr "Запуск"
 
 msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
-msgstr ""
+msgstr "Запуск листа отбора печатает один маршрутный лист на единицу. Первая операция этикетку не печатает."
 
 msgid "Starting…"
 msgstr "Начинаю…"
@@ -28849,7 +28890,7 @@ msgid "Stock and planning"
 msgstr "Запас и планирование"
 
 msgid "Stock at:"
-msgstr ""
+msgstr "Запас на:"
 
 msgid "Stock Availability"
 msgstr "Наличие запаса"
@@ -28975,6 +29016,9 @@ msgstr "Единица хранения (опционально)"
 
 msgid "Storage unit for {itemName}"
 msgstr "Единица хранения для {itemName}"
+
+msgid "Storage Unit Label"
+msgstr "Этикетка единицы хранения"
 
 msgid "storage units"
 msgstr "единицы хранения"
@@ -29506,7 +29550,7 @@ msgid "supplier stage"
 msgstr "этап поставщика"
 
 msgid "Supplier stage"
-msgstr ""
+msgstr "Этап поставщика"
 
 msgid "Supplier Stage"
 msgstr "Этап поставщика"
@@ -31804,7 +31848,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "Это уникальный идентификатор для вебхука"
 
 msgid "This is an Admin override"
-msgstr ""
+msgstr "Это переопределение администратора"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Это среда, контролируемая ITAR. Доступ ограничен для лиц США."
@@ -32636,10 +32680,10 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "Отслеживаемый материал предварительно выбирается в порядке отбора (FEFO), даже без листа отбора"
 
 msgid "Tracked parts are not required"
-msgstr ""
+msgstr "Прослеживаемые детали не требуются"
 
 msgid "Tracked parts must be scanned in"
-msgstr ""
+msgstr "Прослеживаемые детали нужно отсканировать при входе"
 
 msgid "Tracking"
 msgstr "Отслеживание"
@@ -32765,13 +32809,13 @@ msgid "Travel"
 msgstr "Деловая поездка"
 
 msgid "Traveler labels disabled"
-msgstr ""
+msgstr "Этикетки маршрутного листа отключены"
 
 msgid "Traveler labels enabled"
-msgstr ""
+msgstr "Этикетки маршрутного листа включены"
 
 msgid "Traveler Link"
-msgstr ""
+msgstr "Ссылка на маршрутный лист"
 
 msgid "Traveler materials disabled"
 msgstr "Материалы маршрутного листа отключены"
@@ -32786,7 +32830,7 @@ msgid "Traveler operations enabled"
 msgstr "Операции маршрутного листа включены"
 
 msgid "Travelers print at the pick"
-msgstr ""
+msgstr "Маршрутные листы печатаются при отборе"
 
 msgid "Treatment"
 msgstr "Учет"
@@ -32828,7 +32872,7 @@ msgid "Tuesday"
 msgstr "Вторник"
 
 msgid "Turn Off"
-msgstr ""
+msgstr "Выключить"
 
 msgid "Turn On"
 msgstr "Включить"
@@ -32843,7 +32887,7 @@ msgid "Turn on the built-in pieces"
 msgstr "Включите встроенные компоненты"
 
 msgid "Turn on to create one picking list for each job when it is released."
-msgstr ""
+msgstr "Включите, чтобы создавать один лист отбора для каждого производственного заказа при его запуске в работу."
 
 msgid "Turned off sync"
 msgstr "Синхронизация отключена"
@@ -32901,10 +32945,10 @@ msgid "Type {0} to confirm"
 msgstr "Введите {0} для подтверждения"
 
 msgid "Type {purchaseOrderReadableId} to confirm"
-msgstr ""
+msgstr "Введите {purchaseOrderReadableId}, чтобы подтвердить"
 
 msgid "Type {readableId} to confirm"
-msgstr ""
+msgstr "Введите {readableId}, чтобы подтвердить"
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Введите {TRIGGER} для вставки переменной"
@@ -33064,7 +33108,7 @@ msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Уникальный, заглавными буквами, без пробелов (макс. 10 символов)"
 
 msgid "Unique, without spaces (max 10 characters), such as kg or BX"
-msgstr ""
+msgstr "Уникальное значение, без пробелов (не более 10 символов), например kg или BX"
 
 msgid "Unit"
 msgstr "Единица"
@@ -34486,10 +34530,10 @@ msgid "What to set up"
 msgstr "Что настроить"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr ""
+msgstr "Что было введено ошибочно и почему это нельзя исправить или аннулировать"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
-msgstr ""
+msgstr "Что было введено ошибочно и почему заказ нельзя исправить или закрыть"
 
 msgid "What we're assuming"
 msgstr "Что мы предполагаем"
@@ -35330,7 +35374,7 @@ msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ваши реальные данные загружены, вы проверили образец и одобрили его."
 
 msgid "Your reason and the decision are kept in the audit log."
-msgstr ""
+msgstr "Ваша причина и решение сохраняются в журнале аудита."
 
 msgid "Your session was locked after inactivity."
 msgstr "Ваш сеанс был заблокирован из-за неактивности."

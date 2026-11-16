@@ -1058,6 +1058,7 @@ export const manifest = {
   kanban: company("inventory"),
   laborCategory: company("projects"),
   laborCategoryRate: company("projects"),
+  labelTemplate: company("printing", { read: "printing_view" }),
   lease: company("purchasing", { read: "purchasing_view" }),
   // Written only by post-lease and the lease run (Kysely); read-only over the API.
   leaseEvent: company("purchasing", {

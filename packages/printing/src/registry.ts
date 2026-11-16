@@ -51,6 +51,30 @@ export type DocumentTypeId = (typeof documentTypeRegistry)[number]["id"];
 export type SourceDocument =
   (typeof documentTypeRegistry)[number]["sourceDocuments"][number];
 
+/**
+ * The slots a company sets a BinderyPress template for, one per label type and
+ * media size. A product label fills the serial or the batch slot by the item's
+ * tracking type; every other document type is its own slot.
+ */
+export const labelTemplateTypes = [
+  "serialLabel",
+  "batchLabel",
+  "kanbanCard",
+  "storageUnitLabel"
+] as const;
+
+export type LabelTemplateType = (typeof labelTemplateTypes)[number];
+
+export function getLabelTemplateType(
+  documentTypeId: DocumentTypeId,
+  trackingType?: string | null
+): LabelTemplateType {
+  if (documentTypeId === "productLabel") {
+    return trackingType === "Serial" ? "serialLabel" : "batchLabel";
+  }
+  return documentTypeId;
+}
+
 export function getDocumentTypesForSource(
   sourceDocument: string
 ): DocumentTypeId[] {
