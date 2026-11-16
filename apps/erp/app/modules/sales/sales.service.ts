@@ -208,6 +208,7 @@ import {
   getCurrencyByCode,
   getExchangeRate
 } from "../accounting/accounting.service";
+import { ACTIVE_JOB_STATUSES } from "../production/production.models";
 import * as productionPostings from "../production/production.service";
 import type {
   operationParameterValidator,
@@ -14883,17 +14884,6 @@ export async function salesOrderLineGate(
   });
 }
 
-/**
- * A job whose schedule holds its line's date: the statuses MRP counts as open
- * (`openSalesOrderLines`). A Draft job has no schedule yet.
- */
-const OPEN_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
-  "Planned",
-  "Ready",
-  "In Progress",
-  "Paused"
-];
-
 /** Orders whose open lines MRP counts as demand (`openSalesOrderLines`). */
 const DEMAND_ORDER_STATUSES: ReadonlySet<SalesOrderStatus> =
   new Set<SalesOrderStatus>(["To Ship", "To Ship and Invoice"]);
@@ -15029,7 +15019,8 @@ export async function salesOrderLinesWithOpenJobs(
     .select("salesOrderLineId")
     .where("salesOrderLineId", "in", lineIds)
     .where("companyId", "=", ctx.company.id)
-    .where("status", "in", OPEN_JOB_STATUSES)
+    // A job whose schedule holds its line's date; a Draft job has none yet.
+    .where("status", "in", ACTIVE_JOB_STATUSES)
     .execute();
   return new Set(
     rows.map((r) => r.salesOrderLineId).filter((id): id is string => !!id)

@@ -369,6 +369,10 @@ export const path = {
       root: api,
       salesCustomerOverride: `${api}/sales/customer-override`,
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
+      salesOrderDeliveryDate: (orderId: string, line: Record<string, string>) =>
+        `${generatePath(`${api}/sales-order/${orderId}/delivery-date`)}?${new URLSearchParams(
+          line
+        )}`,
       salesOrders: `${api}/sales/orders`,
       salesResolvePrice: `${api}/sales/resolve-price`,
       salesRfq: (id: string) => generatePath(`${api}/sales-rfq/${id}`),
@@ -2599,8 +2603,6 @@ export const path = {
       generatePath(`${x}/sales-order/${id}/confirm`),
     salesOrderContract: (orderId: string) =>
       generatePath(`${x}/sales-order/${orderId}/contract`),
-    salesOrderDeliveryDate: (orderId: string) =>
-      generatePath(`${x}/sales-order/${orderId}/delivery-date`),
     salesOrderDetails: (id: string) =>
       generatePath(`${x}/sales-order/${id}/details`),
     salesOrderExchangeRate: (id: string) =>

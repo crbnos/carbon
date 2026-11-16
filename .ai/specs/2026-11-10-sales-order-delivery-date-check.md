@@ -224,7 +224,9 @@ ALTER TYPE "deliveryDateStatus" ADD VALUE IF NOT EXISTS 'Pending';
 | `sales.models.ts` | `salesOrderLineValidator` gains `requestedDate`; new `deliveryDateCheckValidator` |
 | `settings.server.ts` | `updateSalesSettings` accepts `deliveryDateControl` |
 | `items.models.ts` / `items.server.ts` | `itemPlanningValidator` and `updateItemPlanning` accept `deliveryDateControl` |
-| Route `x+/sales-order+/$orderId.delivery-date.tsx` | New action. It calls `api.sales.checkSalesOrderLineDeliveryDate` |
+| Route `api+/sales-order.$orderId.delivery-date.ts` | New GET loader, cached by URL (`cachedClientLoader`). It calls `api.sales.checkSalesOrderLineDeliveryDate` |
+| `packages/query/src/useLoaderQuery.ts` | New option `keepPreviousData`: the last URL's answer stays while a new URL loads |
+| `ui/SalesOrder/useDeliveryDateCheck.ts` | New hook. It debounces the URL by 400 ms and reads it with `useLoaderQuery`. `DeliveryDateCheckAlert` only displays the answer |
 | Workflow catalog | New moment `sales.deliveryDateOverridden` with the outputs `salesOrder` and `overriddenBy` (`packages/workflows-core/src/moments.ts`, `packages/ee/src/workflows/catalog/moments.ts`, `pnpm run generate:workflow-catalog`). The catalog has no sales order line entity, so the moment names the order. |
 
 ## Closest Sibling
@@ -233,14 +235,14 @@ The quote lead-time check (`.ai/specs/2026-09-22-quote-lead-time-prediction.md`)
 
 | This feature | Copies |
 |---|---|
-| Check route `$orderId.delivery-date.tsx` | `routes/x+/quote+/$quoteId.$lineId.lead-time.tsx` |
-| JSON fetcher in the form | `QuoteLeadTimeModal.tsx` (fetcher posting JSON) |
+| Check route `api+/sales-order.$orderId.delivery-date.ts` | `routes/api+/items.$itemId.serial-costs.ts` (a cached `api+` read) |
+| The read in the form | `useLoaderQuery` (`@carbon/query`) |
 | Settings card | `settings/ui/Planning/PlanningHorizonCard.tsx` |
 | Item override | `itemPlanning.planningHorizonDays` in `ItemPlanningForm.tsx` |
 | Line flag in the explorer | `QuoteLineStatusIcon` in `QuoteExplorer.tsx` |
 | Moment | `sales.quoteAccepted` |
 
-Deviations, each a Design Decision above: an inline alert instead of a modal; the check runs on save, not only on demand.
+Deviations, each a Design Decision above: an inline alert instead of a modal; the check runs on save, not only on demand. The check is a cached GET read, not the sibling's JSON POST: a read needs no action, and an action makes the order page reload its loaders.
 
 ## UI Changes
 
@@ -319,3 +321,4 @@ The page archetypes are the sibling's: the sales order record page (explorer + l
 - 2026-11-16: Removed the optional reason for a kept date. The form shows a note in its place. The column `deliveryDateOverrideReason` and the `reason` field of the job event are gone. A company that needs a reason asks for it in the workflow of the moment.
 - 2026-11-16: The spinner delay counts from the request, not from the edit. The form sends the check 400 ms after the last edit. Before this change, the 250 ms delay ran out during that wait, so the spinner showed on every edit. Now a check that runs past 300 ms shows the spinner (`useSpinDelay`, as the tables do), and a faster check shows none.
 - 2026-11-16: Brought the spec up to date with the code. The overview diagram, section 6, the data model and the service table now show the background job, the `Pending` migration and the current function names.
+- 2026-11-16: The line form reads the check through the client cache. The check is a GET loader (`api+/sales-order.$orderId.delivery-date.ts`) cached by URL, and `useDeliveryDateCheck` reads it with `useLoaderQuery`. A date already checked answers from the cache, and the last answer stays while a new one loads. The old POST route and the plain `fetch` are gone. A superseded request is not cancelled: it ends in the background and fills the cache.
