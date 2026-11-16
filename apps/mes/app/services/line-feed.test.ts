@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildLineFeedRows,
+  buildStationStatuses,
   type LineFeedRequestInput,
   type LineFeedTransferInput
 } from "./line-feed";
@@ -65,6 +66,53 @@ describe("buildLineFeedRows", () => {
       "mr_new",
       "item_large",
       "item_small"
+    ]);
+  });
+});
+
+describe("buildStationStatuses", () => {
+  const workCenters = [
+    { id: "wc_wet", name: "Weld" },
+    { id: "wc_low", name: "Assembly" },
+    { id: "wc_out", name: "Paint" },
+    { id: "wc_asked", name: "Test" },
+    { id: "wc_none", name: "Saw" }
+  ];
+  const stations = buildStationStatuses({
+    workCenters,
+    stationWorkCenterIds: ["wc_wet", "wc_low", "wc_out", "wc_asked"],
+    shortages: [
+      { workCenterId: "wc_low", onHand: 2 },
+      { workCenterId: "wc_out", onHand: 3 },
+      { workCenterId: "wc_out", onHand: 0 }
+    ],
+    requests: [{ workCenterId: "wc_asked" }, { workCenterId: null }]
+  });
+  const byId = Object.fromEntries(
+    stations.map((station) => [station.workCenterId, station])
+  );
+
+  it("is out when a needed part has no stock, low when it has some", () => {
+    expect(byId.wc_out).toMatchObject({ status: "out", out: 1, low: 1 });
+    expect(byId.wc_low).toMatchObject({ status: "low", out: 0, low: 1 });
+  });
+
+  it("is low when an operator asked for material", () => {
+    expect(byId.wc_asked).toMatchObject({ status: "low", requests: 1 });
+  });
+
+  it("is wet with no shortage, and unknown without lineside storage", () => {
+    expect(byId.wc_wet.status).toBe("wet");
+    expect(byId.wc_none.status).toBe("unknown");
+  });
+
+  it("lists the stations that need stock first", () => {
+    expect(stations.map((station) => station.workCenterId)).toEqual([
+      "wc_out",
+      "wc_low",
+      "wc_asked",
+      "wc_wet",
+      "wc_none"
     ]);
   });
 });

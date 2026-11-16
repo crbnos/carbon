@@ -34,6 +34,8 @@ export type LineFeedRow = {
   storageUnitId: string | null;
   itemId: string | null;
   quantity: number | null;
+  /** A shortage's usable stock at the station: 0 means the part is out. */
+  onHand?: number;
   createdAt: string | null;
   materialRequestId?: string;
   stockTransferId?: string;
@@ -84,6 +86,7 @@ export function buildLineFeedRows({
       storageUnitId: shortage.storageUnitId,
       itemId: shortage.itemId,
       quantity: shortage.short,
+      onHand: shortage.onHand,
       createdAt: null
     }));
 
@@ -101,4 +104,96 @@ export function buildLineFeedRows({
     }));
 
   return [...requestRows, ...shortageRows, ...transferRows];
+}
+
+/**
+ * Whether a station's line is wet: `wet` has the stock its open work needs,
+ * `low` has some of a part but not enough (or an operator asked for material),
+ * `out` has none of a part it needs. `unknown` has no lineside storage unit,
+ * so its stock cannot be read.
+ */
+export type StationStockStatus = "out" | "low" | "wet" | "unknown";
+
+export type StationStatus = {
+  workCenterId: string;
+  name: string;
+  status: StationStockStatus;
+  /** Parts the station needs and holds none of. */
+  out: number;
+  /** Parts the station holds, but less than its open work needs. */
+  low: number;
+  /** Open material requests from the station. */
+  requests: number;
+};
+
+const stationStatusOrder: Record<StationStockStatus, number> = {
+  out: 0,
+  low: 1,
+  wet: 2,
+  unknown: 3
+};
+
+/** One status per work center, the stations that need stock first. */
+export function buildStationStatuses({
+  workCenters,
+  stationWorkCenterIds,
+  shortages,
+  requests
+}: {
+  workCenters: { id: string; name: string }[];
+  /** The work centers that have a lineside storage unit. */
+  stationWorkCenterIds: Iterable<string>;
+  shortages: Pick<LineFeedShortage, "workCenterId" | "onHand">[];
+  requests: Pick<LineFeedRequestInput, "workCenterId">[];
+}): StationStatus[] {
+  const withStorage = new Set(stationWorkCenterIds);
+  const counts = new Map<
+    string,
+    { out: number; low: number; requests: number }
+  >();
+  const countsFor = (workCenterId: string) => {
+    let count = counts.get(workCenterId);
+    if (!count) {
+      count = { out: 0, low: 0, requests: 0 };
+      counts.set(workCenterId, count);
+    }
+    return count;
+  };
+
+  for (const shortage of shortages) {
+    const count = countsFor(shortage.workCenterId);
+    if (shortage.onHand > 0) count.low += 1;
+    else count.out += 1;
+  }
+  for (const request of requests) {
+    if (request.workCenterId) countsFor(request.workCenterId).requests += 1;
+  }
+
+  return workCenters
+    .map((workCenter): StationStatus => {
+      const count = counts.get(workCenter.id) ?? {
+        out: 0,
+        low: 0,
+        requests: 0
+      };
+      const status: StationStockStatus =
+        count.out > 0
+          ? "out"
+          : count.low > 0 || count.requests > 0
+            ? "low"
+            : withStorage.has(workCenter.id)
+              ? "wet"
+              : "unknown";
+      return {
+        workCenterId: workCenter.id,
+        name: workCenter.name,
+        status,
+        ...count
+      };
+    })
+    .sort(
+      (a, b) =>
+        stationStatusOrder[a.status] - stationStatusOrder[b.status] ||
+        a.name.localeCompare(b.name)
+    );
 }

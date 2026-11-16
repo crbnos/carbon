@@ -351,9 +351,6 @@ msgstr "Hinzugefügt"
 msgid "Adjustment Type"
 msgstr "Korrekturtyp"
 
-msgid "Age"
-msgstr ""
-
 msgid "All"
 msgstr "Alle"
 
@@ -423,6 +420,9 @@ msgstr "Möchten Sie diesen Arbeitsgang wirklich als erledigt markieren? Dies be
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Bitten Sie einen Vorgesetzten, die {processName} Qualifikation zu Ihrem Profil hinzuzufügen."
+
+msgid "Asked"
+msgstr ""
 
 msgid "Assembly steps"
 msgstr "Montageschritte"
@@ -545,6 +545,9 @@ msgstr "Boardansicht"
 
 msgid "Bold"
 msgstr "Fett"
+
+msgid "Bring {quantity}"
+msgstr ""
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Aber machen Sie sich keine Sorgen. Sie können den Passwort-Zurücksetzen-Ablauf verwenden, um einen neuen Magic Link anzufordern."
@@ -1580,6 +1583,9 @@ msgstr "Chargennummern fehlen"
 msgid "Lot tracked"
 msgstr "Chargenverfolgt"
 
+msgid "Low"
+msgstr ""
+
 msgid "Machine"
 msgstr "Maschine"
 
@@ -1809,6 +1815,9 @@ msgstr "Keine Problemtypen konfiguriert"
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Es ist noch kein Urlaub eingerichtet. Bitten Sie Ihren Manager, einen in der ERP einzurichten."
 
+msgid "No lineside storage"
+msgstr ""
+
 msgid "No maintenance scheduled for today"
 msgstr "Keine Instandhaltung für heute geplant"
 
@@ -1914,6 +1923,9 @@ msgstr "Noch keine Ersatzteile hinzugefügt"
 msgid "No station"
 msgstr ""
 
+msgid "No stations at this location"
+msgstr ""
+
 msgid "No stock"
 msgstr "Kein Bestand"
 
@@ -1981,9 +1993,6 @@ msgstr "Nichts läuft"
 msgid "Nothing scheduled at this work center"
 msgstr "Nichts an diesem Arbeitsplatz geplant"
 
-msgid "Nothing to feed"
-msgstr ""
-
 msgid "Nothing to scrap"
 msgstr "Nichts zum Ausschuss"
 
@@ -2008,6 +2017,9 @@ msgstr "Älteste zuerst"
 
 msgid "On Hold"
 msgstr "Angehalten"
+
+msgid "On its way"
+msgstr ""
 
 msgid "one combined lot · planned"
 msgstr "eine kombinierte Charge · geplant"
@@ -2091,6 +2103,9 @@ msgstr "oder"
 
 msgid "Or enter this secret manually:"
 msgstr "Oder geben Sie dieses Geheimnis manuell ein:"
+
+msgid "Out"
+msgstr ""
 
 msgid "Out of calibration"
 msgstr "Außerhalb der Kalibrierung"
@@ -2503,9 +2518,6 @@ msgstr "Baugruppe wieder öffnen und Ersatzeinheit erstellen"
 msgid "Repairable"
 msgstr "Reparierbar"
 
-msgid "Request"
-msgstr ""
-
 msgid "Request material"
 msgstr ""
 
@@ -2556,6 +2568,9 @@ msgstr "Rich-Text"
 
 msgid "Running"
 msgstr "Läuft"
+
+msgid "Running low"
+msgstr ""
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2858,9 +2873,6 @@ msgstr "Kurzkommissionierung {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr ""
 
-msgid "Shortage"
-msgstr ""
-
 msgid "Show description"
 msgstr "Beschreibung anzeigen"
 
@@ -3019,12 +3031,6 @@ msgstr "Schritte fehlen"
 
 msgid "Stock at:"
 msgstr "Bestand in:"
-
-msgid "Stock transfer"
-msgstr ""
-
-msgid "Storage unit"
-msgstr ""
 
 msgid "Storage Unit"
 msgstr "Lagereinheit"
@@ -3345,9 +3351,6 @@ msgstr "Sendungsnummer"
 msgid "Training"
 msgstr "Schulung"
 
-msgid "Transfer"
-msgstr ""
-
 msgid "Traveler"
 msgstr ""
 
@@ -3515,6 +3518,9 @@ msgstr "Garantie"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Wir haben Ihnen einen Anmeldungslink und einen 6-stelligen Code per E-Mail gesendet. Folgen Sie dem Link, oder geben Sie den Code hier ein."
+
+msgid "Wet"
+msgstr ""
 
 msgid "What do you need?"
 msgstr ""

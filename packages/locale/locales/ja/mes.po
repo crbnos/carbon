@@ -351,9 +351,6 @@ msgstr "追加完了"
 msgid "Adjustment Type"
 msgstr "調整タイプ"
 
-msgid "Age"
-msgstr ""
-
 msgid "All"
 msgstr "すべて"
 
@@ -423,6 +420,9 @@ msgstr "この工程を完了としてマークしてもよろしいですか？
 
 msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "スーパーバイザーにプロフィールに{processName}スキルを追加するよう依頼してください。"
+
+msgid "Asked"
+msgstr ""
 
 msgid "Assembly steps"
 msgstr "組立ステップ"
@@ -545,6 +545,9 @@ msgstr "ボード表示"
 
 msgid "Bold"
 msgstr "太字"
+
+msgid "Bring {quantity}"
+msgstr ""
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "ご心配なく。パスワード忘却フローを使用して新しいマジックリンクをリクエストできます。"
@@ -1580,6 +1583,9 @@ msgstr "ロット番号がありません"
 msgid "Lot tracked"
 msgstr "ロット追跡対象"
 
+msgid "Low"
+msgstr ""
+
 msgid "Machine"
 msgstr "機械"
 
@@ -1809,6 +1815,9 @@ msgstr "構成されたイシュータイプがありません"
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "休暇がまだ設定されていません。マネージャーにERPで設定するよう依頼してください。"
 
+msgid "No lineside storage"
+msgstr ""
+
 msgid "No maintenance scheduled for today"
 msgstr "本日の保全予定はありません。"
 
@@ -1914,6 +1923,9 @@ msgstr "予備品はまだ追加されていません。"
 msgid "No station"
 msgstr ""
 
+msgid "No stations at this location"
+msgstr ""
+
 msgid "No stock"
 msgstr "在庫なし"
 
@@ -1981,9 +1993,6 @@ msgstr "稼働中の作業はありません"
 msgid "Nothing scheduled at this work center"
 msgstr "この作業区には予定がありません。"
 
-msgid "Nothing to feed"
-msgstr ""
-
 msgid "Nothing to scrap"
 msgstr "スクラップするものがない"
 
@@ -2008,6 +2017,9 @@ msgstr "最も古い順"
 
 msgid "On Hold"
 msgstr "保留中"
+
+msgid "On its way"
+msgstr ""
 
 msgid "one combined lot · planned"
 msgstr "1つの統合ロット · 計画済"
@@ -2091,6 +2103,9 @@ msgstr "または"
 
 msgid "Or enter this secret manually:"
 msgstr "またはこのシークレットを手動で入力してください："
+
+msgid "Out"
+msgstr ""
 
 msgid "Out of calibration"
 msgstr "校正対象外"
@@ -2503,9 +2518,6 @@ msgstr "サブアセンブリを再オープンし、代替品を作成"
 msgid "Repairable"
 msgstr "修理可能"
 
-msgid "Request"
-msgstr ""
-
 msgid "Request material"
 msgstr ""
 
@@ -2556,6 +2568,9 @@ msgstr "リッチテキスト"
 
 msgid "Running"
 msgstr "実行中"
+
+msgid "Running low"
+msgstr ""
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2858,9 +2873,6 @@ msgstr "短いピック {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr ""
 
-msgid "Shortage"
-msgstr ""
-
 msgid "Show description"
 msgstr "説明を表示"
 
@@ -3019,12 +3031,6 @@ msgstr "ステップが未記録です"
 
 msgid "Stock at:"
 msgstr "在庫場所："
-
-msgid "Stock transfer"
-msgstr ""
-
-msgid "Storage unit"
-msgstr ""
 
 msgid "Storage Unit"
 msgstr "保管ユニット"
@@ -3345,9 +3351,6 @@ msgstr "追跡番号"
 msgid "Training"
 msgstr "教育訓練"
 
-msgid "Transfer"
-msgstr ""
-
 msgid "Traveler"
 msgstr ""
 
@@ -3515,6 +3518,9 @@ msgstr "保証"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "サインインリンクと6桁コードをメールで送信しました。リンクをクリックするか、ここにコードを入力してください。"
+
+msgid "Wet"
+msgstr ""
 
 msgid "What do you need?"
 msgstr ""
