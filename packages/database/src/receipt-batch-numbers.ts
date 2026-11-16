@@ -9,13 +9,12 @@ import type { KyselyDatabase } from "./client.ts";
 // a generated number. Past it a line is left for the receiver to number.
 const MAX_SAME_DAY = 20;
 
-/** `PO000123-20261116`: the purchase order and the day it was received. */
+/** `PO000123-20261116`: the purchase order and the day (`YYYY-MM-DD`) received. */
 export function receiptBatchNumberBase(
   purchaseOrderReadableId: string,
-  receivedOn: { year: number; month: number; day: number }
+  receivedOn: string
 ): string {
-  const pad = (n: number, width = 2) => String(n).padStart(width, "0");
-  return `${purchaseOrderReadableId}-${pad(receivedOn.year, 4)}${pad(receivedOn.month)}${pad(receivedOn.day)}`;
+  return `${purchaseOrderReadableId}-${receivedOn.replaceAll("-", "")}`;
 }
 
 export function receiptBatchNumberCandidates(base: string): string[] {
@@ -77,12 +76,15 @@ export async function assignReceiptBatchNumbers(
     trx
   );
 
+  // An entity written before `itemId` existed names its item in
+  // `sourceDocumentId` only.
+  const itemOf = sql<string>`coalesce("itemId", "sourceDocumentId")`;
   const taken = await trx
     .selectFrom("trackedEntity")
-    .select(["itemId", "readableId"])
+    .select([itemOf.as("itemId"), "readableId"])
     .where("companyId", "=", companyId)
     .where("readableId", "in", receiptBatchNumberCandidates(base))
-    .where("itemId", "in", [...new Set(lines.map((line) => line.itemId))])
+    .where(itemOf, "in", [...new Set(lines.map((line) => line.itemId))])
     .execute();
 
   const numbers = planReceiptBatchNumbers(base, lines, taken);
@@ -100,5 +102,46 @@ export async function assignReceiptBatchNumbers(
       ${numbered.map((line) => numbers.get(line.id)!)}::text[],
       ${numbered.map((line) => line.receivedQuantity)}::numeric[]
     ) AS v(line_id, batch_number, quantity)
+  `.execute(trx);
+}
+
+/**
+ * Keeps each batch a Draft receipt is creating (one with no stock movements)
+ * at its line's received quantity, settling the status as `update_receipt_line_batch_tracking` does.
+ * A batch numbered before the quantity was entered (a generated one) would
+ * otherwise keep the quantity it was numbered with, and labels print it.
+ */
+export async function syncReceiptBatchQuantities(
+  trx: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    receiptId: string;
+    lines: { id: string; receivedQuantity: number }[];
+  }
+): Promise<void> {
+  const { companyId, receiptId, lines } = args;
+  if (lines.length === 0) return;
+  await sql`
+    UPDATE "trackedEntity" te
+    SET "quantity" = v.quantity,
+        "status" = CASE
+          WHEN v.quantity <= 0 AND te."status" NOT IN ('Scrapped', 'Rejected')
+            THEN 'Consumed'
+          WHEN v.quantity > 0 AND te."status" = 'Consumed' THEN 'On Hold'
+          ELSE te."status"
+        END::"trackedEntityStatus"
+    FROM unnest(
+      ${lines.map((line) => line.id)}::text[],
+      ${lines.map((line) => line.receivedQuantity)}::numeric[]
+    ) AS v(line_id, quantity)
+    WHERE te."companyId" = ${companyId}
+      AND te."attributes" @> ${JSON.stringify({ Receipt: receiptId })}::jsonb
+      AND te."attributes" ->> 'Receipt Line' = v.line_id
+      -- Only batches the receipt is creating: a returned or transferred batch
+      -- is existing stock whose quantity the receipt does not own.
+      AND NOT EXISTS (
+        SELECT 1 FROM "itemLedger" il
+        WHERE il."trackedEntityId" = te.id AND il."companyId" = te."companyId"
+      )
   `.execute(trx);
 }

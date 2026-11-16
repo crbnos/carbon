@@ -11,6 +11,7 @@ import {
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import * as materialRequests from "@carbon/database/material-request";
+import { syncReceiptBatchQuantities } from "@carbon/database/receipt-batch-numbers";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   dedupeViolations,
@@ -805,7 +806,8 @@ export const updateReceiptLines = defineServiceFn({
                 "id",
                 "receiptId",
                 "receivedQuantity",
-                "requiresSerialTracking"
+                "requiresSerialTracking",
+                "requiresBatchTracking"
               ])
               .execute();
             if (updated.length === 0) return true;
@@ -818,11 +820,26 @@ export const updateReceiptLines = defineServiceFn({
               .where("status", "=", "Draft")
               .execute();
             for (const receipt of receipts) {
+              const lines = updated.filter((l) => l.receiptId === receipt.id);
               await service.reconcileReceiptSerialsInTransaction(trx, {
                 receiptId: receipt.id,
                 companyId: ctx.company.id,
                 isSalesReturn: receipt.sourceDocument === "Sales Return Order",
-                lines: updated.filter((l) => l.receiptId === receipt.id)
+                lines
+              });
+              await syncReceiptBatchQuantities(trx, {
+                receiptId: receipt.id,
+                companyId: ctx.company.id,
+                lines: lines.flatMap((l) =>
+                  l.requiresBatchTracking
+                    ? [
+                        {
+                          id: l.id,
+                          receivedQuantity: Number(l.receivedQuantity)
+                        }
+                      ]
+                    : []
+                )
               });
             }
             return true;

@@ -2,8 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
 import { expect } from "vitest";
+import { updateReceiptLines } from "../../app/modules/inventory/inventory.server";
 import { invokeCreate } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
@@ -14,6 +16,7 @@ import {
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
+import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 /** A purchase order with one batch line and one serial line. */
 async function purchaseOrder(f: Fixture) {
@@ -151,6 +154,56 @@ databaseTest(
       const { purchaseOrderId } = await purchaseOrder(f);
 
       expect(await batchesOf(f, await receive(f, purchaseOrderId))).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a generated batch follows its line's received quantity while the receipt is a draft",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await f.db
+        .updateTable("companySettings")
+        .set({ receiptQuantitiesStartAtZero: true })
+        .where("id", "=", f.companyId)
+        .execute();
+      const { purchaseOrderId, batchItemId } = await purchaseOrder(f);
+      const receiptId = await receive(f, purchaseOrderId);
+
+      const [atZero] = await batchesOf(f, receiptId);
+      expect(atZero).toMatchObject({ status: "Consumed" });
+      expect(Number(atZero!.quantity)).toBe(0);
+
+      const line = await f.db
+        .selectFrom("receiptLine")
+        .select("id")
+        .where("receiptId", "=", receiptId)
+        .where("itemId", "=", batchItemId)
+        .executeTakeFirstOrThrow();
+      const client = localServiceRoleClient()!;
+      const ctx = createServiceContext({
+        actor: { type: "system", onBehalfOf: USER },
+        company: { id: f.companyId, groupId: f.groupId },
+        caller: client,
+        system: () => client,
+        pg: () => f.db,
+        kv: () => {
+          throw new Error("No operation here reads the cache");
+        }
+      });
+      const updated = await updateReceiptLines(ctx, {
+        ids: [line.id],
+        field: "receivedQuantity",
+        value: "3"
+      });
+      expect(updated.error).toBeFalsy();
+
+      const [received] = await batchesOf(f, receiptId);
+      expect(received).toMatchObject({ status: "On Hold" });
+      expect(Number(received!.quantity)).toBe(3);
     } finally {
       await f.cleanup();
     }

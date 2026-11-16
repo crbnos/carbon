@@ -11568,6 +11568,47 @@ async function receiptSettings(
   };
 }
 
+/**
+ * Deletes a Draft receipt's lines so they can be rebuilt from a new source,
+ * releasing the batches and serials tagged with them (deleted with no stock
+ * history, else unlinked) rather than leaving them on dead line ids. The
+ * receipt is locked and re-read here: a post that won the race refuses.
+ */
+async function deleteDraftReceiptLines(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  receiptId: string
+): Promise<void> {
+  const draft = await trx
+    .selectFrom("receipt")
+    .select("id")
+    .where("id", "=", receiptId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Draft")
+    .forUpdate()
+    .executeTakeFirst();
+  if (!draft) throw new Error("Only a Draft receipt can be rebuilt");
+
+  const entities = await trx
+    .selectFrom("trackedEntity")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where(
+      sql<boolean>`attributes @> ${JSON.stringify({ Receipt: receiptId })}::jsonb`
+    )
+    .execute();
+  await releaseReceiptSerialEntities(
+    trx,
+    companyId,
+    entities.map((entity) => entity.id)
+  );
+  await trx
+    .deleteFrom("receiptLine")
+    .where("receiptId", "=", receiptId)
+    .where("companyId", "=", companyId)
+    .execute();
+}
+
 export const createDocumentPermission = {
   by: "type",
   rules: {
@@ -12461,11 +12502,13 @@ export async function createDocument(
         batchNumbersFromPurchaseOrder && purchaseOrder.data.purchaseOrderId
           ? receiptBatchNumberBase(
               purchaseOrder.data.purchaseOrderId,
-              datetime.today(
-                locationId
-                  ? await getLocationTimeZone(db, locationId, companyId)
-                  : await getCompanyTimeZone(db, companyId)
-              )
+              datetime
+                .today(
+                  locationId
+                    ? await getLocationTimeZone(db, locationId, companyId)
+                    : await getCompanyTimeZone(db, companyId)
+                )
+                .toString()
             )
           : null;
 
@@ -12543,6 +12586,10 @@ export async function createDocument(
               sourceDocument: "Purchase Order",
               sourceDocumentId: purchaseOrder.data.id,
               sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+              // Batches copy the receipt's supplier: a new purchase order
+              // may be another supplier's.
+              supplierId: purchaseOrder.data.supplierId,
+              supplierInteractionId: purchaseOrder.data.supplierInteractionId,
               locationId: locationId,
               updatedBy: userId
             })
@@ -12550,27 +12597,7 @@ export async function createDocument(
             .returning(["id", "receiptId"])
             .where("companyId", "=", companyId)
             .execute();
-          // The lines are rebuilt: their batches and serials go with them, or
-          // a regenerated batch number would find its old one taken.
-          const lineEntities = await trx
-            .selectFrom("trackedEntity")
-            .select("id")
-            .where("companyId", "=", companyId)
-            .where(
-              sql<boolean>`attributes @> ${JSON.stringify({ Receipt: receiptId })}::jsonb`
-            )
-            .execute();
-          await releaseReceiptSerialEntities(
-            trx,
-            companyId,
-            lineEntities.map((entity) => entity.id)
-          );
-          // delete existing receipt lines
-          await trx
-            .deleteFrom("receiptLine")
-            .where("receiptId", "=", receiptId)
-            .where("companyId", "=", companyId)
-            .execute();
+          await deleteDraftReceiptLines(trx, companyId, receiptId);
         } else {
           receiptIdReadable = await getNextSequence(trx, "receipt", companyId);
           const newReceipt = await trx
@@ -12806,11 +12833,7 @@ export async function createDocument(
           id = insertReceipt[0]?.id ?? "";
         }
 
-        await trx
-          .deleteFrom("receiptLine")
-          .where("receiptId", "=", id)
-          .where("companyId", "=", companyId)
-          .execute();
+        if (hasReceipt) await deleteDraftReceiptLines(trx, companyId, id);
 
         await trx
           .insertInto("receiptLine")
@@ -13010,11 +13033,7 @@ export async function createDocument(
           id = insertReceipt[0]?.id ?? "";
         }
 
-        await trx
-          .deleteFrom("receiptLine")
-          .where("receiptId", "=", id)
-          .where("companyId", "=", companyId)
-          .execute();
+        if (hasReceipt) await deleteDraftReceiptLines(trx, companyId, id);
 
         await trx
           .insertInto("receiptLine")

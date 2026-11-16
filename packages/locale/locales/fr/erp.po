@@ -5602,6 +5602,12 @@ msgstr "Numéro de lot de production pour {itemReadableId}"
 msgid "Batch number is required"
 msgstr "Le numéro de lot de production est requis"
 
+msgid "Batch numbers are entered by hand"
+msgstr ""
+
+msgid "Batch numbers are generated"
+msgstr ""
+
 msgid "Batch or Serial Number"
 msgstr "Numéro de lot ou de série"
 
@@ -12137,6 +12143,9 @@ msgstr "Activez pour bloquer l'émission ou la comptabilisation pour un fourniss
 
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "Activez pour configurer les méthodes d'amortissement spécifiques aux impôts sur les catégories d'immobilisation (par exemple, MACRS, accéléré)."
+
+msgid "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
+msgstr ""
 
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Activez pour générer des identifiants et des descriptions pour les matières premières."
@@ -24451,9 +24460,6 @@ msgstr "Reçu : {assetName}"
 
 msgid "Receiver Email (To)"
 msgstr "E-mail du destinataire (À)"
-
-msgid "Receivers enter every batch number by hand."
-msgstr ""
 
 msgid "Receives the invoice email"
 msgstr "Reçoit l'e-mail de facture"

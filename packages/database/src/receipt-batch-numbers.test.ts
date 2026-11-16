@@ -5,10 +5,10 @@ import {
 } from "./receipt-batch-numbers";
 
 describe("receiptBatchNumberBase", () => {
-  it("joins the purchase order and the zero-padded day", () => {
-    expect(
-      receiptBatchNumberBase("PO000123", { year: 2026, month: 3, day: 7 })
-    ).toBe("PO000123-20260307");
+  it("joins the purchase order and the day", () => {
+    expect(receiptBatchNumberBase("PO000123", "2026-03-07")).toBe(
+      "PO000123-20260307"
+    );
   });
 });
 
