@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useRevalidator } from "@carbon/query";
 import { toast, useKeyboardWedge } from "@carbon/react";
 import { useRef } from "react";
-import { useNavigate, useRevalidator } from "react-router";
+import { useNavigate } from "react-router";
 import { parseTravelerCode } from "~/utils/traveler";
 import { postTravelerScan } from "~/utils/travelerScan";
 
