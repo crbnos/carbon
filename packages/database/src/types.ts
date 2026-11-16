@@ -51179,10 +51179,10 @@ export type Database = {
       }
       printerRoute: {
         Row: {
-          apiKey: string | null
           companyId: string
           createdAt: string
           format: string
+          hasApiKey: boolean
           id: string
           locationId: string | null
           mediaSizeId: string | null
@@ -51191,10 +51191,10 @@ export type Database = {
           updatedAt: string | null
         }
         Insert: {
-          apiKey?: string | null
           companyId: string
           createdAt?: string
           format: string
+          hasApiKey?: boolean
           id?: string
           locationId?: string | null
           mediaSizeId?: string | null
@@ -51203,10 +51203,10 @@ export type Database = {
           updatedAt?: string | null
         }
         Update: {
-          apiKey?: string | null
           companyId?: string
           createdAt?: string
           format?: string
+          hasApiKey?: boolean
           id?: string
           locationId?: string | null
           mediaSizeId?: string | null
@@ -109125,6 +109125,10 @@ export type Database = {
         Args: { p_table_name: string }
         Returns: string[]
       }
+      get_printer_api_key: {
+        Args: { p_company_id: string; p_printer_route_id: string }
+        Returns: string
+      }
       get_production_planning: {
         Args: { company_id: string; location_id: string; periods: string[] }
         Returns: {
@@ -111021,6 +111025,14 @@ export type Database = {
         Returns: undefined
       }
       set_inngest_event_url: { Args: { p_url: string }; Returns: undefined }
+      set_printer_api_key: {
+        Args: {
+          p_api_key: string
+          p_company_id: string
+          p_printer_route_id: string
+        }
+        Returns: undefined
+      }
       set_shelf_life_for_operation: {
         Args: {
           p_event: Database["public"]["Enums"]["shelfLifeTriggerTiming"]

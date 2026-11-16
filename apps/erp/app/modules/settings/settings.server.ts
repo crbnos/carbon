@@ -67,6 +67,7 @@ import {
   createPrintJob,
   deleteLabelTemplate,
   deletePrinterRoute,
+  getPrinterApiKey,
   getPrintingSettings,
   getPrintJob,
   getPrintJobContent,
@@ -75,6 +76,7 @@ import {
   printerRouteValidator,
   reprintValidator,
   setContextAssignment,
+  setPrinterApiKey,
   updateAssignmentValidator,
   updatePrintingSettings,
   upsertLabelTemplate,
@@ -1403,14 +1405,18 @@ export const updateSubsidiaryDetails = defineServiceFn({
  * A printer route is a printer the company prints to: its name, format (ZPL
  * labels or PDF documents), media size, URL and optional API key, and
  * location. With an `id` the company's route is updated, without one a
- * route is created. The cached printer routing is dropped, so the change
- * applies to the next print. Not published: the server POSTs to the URL it
- * saves, so an API caller could aim it at any address.
+ * route is created. The API key is kept in Supabase Vault and is write-only:
+ * a blank key keeps the saved one, `removeApiKey` clears it. When the key
+ * cannot be stored, a route this call created is deleted again, so a retry
+ * does not hit the unique name. The cached printer routing is dropped, so the
+ * change applies to the next print. Not published: the server POSTs to the
+ * URL it saves, so an API caller could aim it at any address.
  */
 export const savePrinterRoute = defineServiceFn({
   input: printerRouteValidator,
   permission: { update: "settings" },
   async run(ctx, route) {
+    const created = !route.id;
     const result = await upsertPrinterRoute(ctx.asCaller.supabase, {
       id: route.id || undefined,
       companyId: ctx.company.id,
@@ -1418,7 +1424,6 @@ export const savePrinterRoute = defineServiceFn({
       format: route.format,
       mediaSizeId: route.mediaSizeId || null,
       printerUrl: route.printerUrl,
-      apiKey: route.apiKey || null,
       locationId: route.locationId || null
     });
     if (result.error) {
@@ -1428,8 +1433,45 @@ export const savePrinterRoute = defineServiceFn({
         result.error
       );
     }
+
+    // The route row is saved even if the key below fails, so drop the cache now.
     await invalidatePrinterCache(ctx.company.id);
-    return { created: !route.id };
+
+    // A key of only whitespace is a blank field: it keeps the saved key.
+    const apiKey = route.removeApiKey
+      ? null
+      : route.apiKey?.trim() || undefined;
+    if (apiKey !== undefined) {
+      const saved = await setPrinterApiKey(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        result.data.id,
+        apiKey
+      );
+      if (saved.error) {
+        if (created) {
+          // System client: a caller who may create routes may not delete them.
+          const undone = await deletePrinterRoute(
+            ctx.asSystem.supabase,
+            result.data.id,
+            ctx.company.id
+          );
+          if (undone.error) {
+            logger.warning("Failed to delete a printer route after its key", {
+              printerRouteId: result.data.id,
+              error: undone.error
+            });
+          }
+        }
+        return ctx.error(
+          "internal",
+          "Failed to save the printer API key",
+          saved.error
+        );
+      }
+    }
+
+    return { created };
   }
 });
 
@@ -1447,7 +1489,7 @@ export const testPrinterRoute = defineServiceFn({
   async run(ctx, { routeId }) {
     const { data: route } = await ctx.asCaller.supabase
       .from("printerRoute")
-      .select("printerUrl, format, mediaSizeId, apiKey")
+      .select("printerUrl, format, mediaSizeId, hasApiKey")
       .eq("id", routeId)
       .eq("companyId", ctx.company.id)
       .single();
@@ -1467,7 +1509,21 @@ export const testPrinterRoute = defineServiceFn({
     const headers: Record<string, string> = {
       "Content-Type": "application/octet-stream"
     };
-    if (route.apiKey) headers["X-API-Key"] = route.apiKey;
+    if (route.hasApiKey) {
+      const apiKey = await getPrinterApiKey(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        routeId
+      );
+      if (apiKey.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the printer API key",
+          apiKey.error
+        );
+      }
+      if (apiKey.data) headers["X-API-Key"] = apiKey.data;
+    }
 
     try {
       const response = await fetch(route.printerUrl, {
@@ -1556,8 +1612,8 @@ export const removeLabelTemplate = defineServiceFn({
  * Delete a printer route.
  *
  * @remarks
- * Deletes the company's printer route, then clears it from every printer
- * assignment that named it (a location's default, its shipping and receiving
+ * Deletes the company's printer route and its API key, then clears it from
+ * every printer assignment that named it (a location's default, its shipping and receiving
  * printers, and its work centers), so no assignment points at a printer that
  * is gone. The cached printer routing is dropped.
  *
@@ -1575,6 +1631,24 @@ export const removePrinterRoute = defineServiceFn({
         "Failed to delete printer route",
         result.error
       );
+    }
+
+    // The key of a deleted route can no longer be read; this only tidies it.
+    // Only when a row went: RLS can leave the route in place without an error,
+    // and its key must stay with it.
+    if (result.data?.length) {
+      const cleared = await setPrinterApiKey(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        id,
+        null
+      );
+      if (cleared.error) {
+        logger.warning("Failed to delete a printer API key", {
+          printerRouteId: id,
+          error: cleared.error
+        });
+      }
     }
 
     const { data: existing } = await getPrintingSettings(

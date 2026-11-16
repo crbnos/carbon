@@ -66,7 +66,8 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
      for delivery (else mark `completed`). After the step, one `step.sendEvent("deliver", …)` sends a
      `carbon/print-job-deliver` event per collected job.
 3. **Deliver** — `print-job-deliver.ts` (event `carbon/print-job-deliver`, `retries: 0`): loads the job,
-   sets `printing`, looks up the route `apiKey` by `printerUrl`, `sendToProxyBox` (PDF content is
+   sets `printing`, finds the route by `printerUrl` and, when it `hasApiKey`, reads the key with
+   `getPrinterApiKey` (the `get_printer_api_key` RPC), `sendToProxyBox` (PDF content is
    base64 → Buffer), then `completed`. Timeouts throw `NonRetriableError` (content may already have
    printed — avoid duplicate copies).
 
@@ -98,7 +99,12 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 ## Printer routing & assignments
 
 - **`printerRoute`** table (`pr` id) = physical printer: `companyId, locationId?, name, format(zpl|pdf
-  CHECK), mediaSizeId?, printerUrl, apiKey?`. Unique `(companyId, COALESCE(locationId,''),
+  CHECK), mediaSizeId?, printerUrl, hasApiKey`. The ProxyBox API key is in Supabase Vault
+  as `printer:<companyId>:<routeId>` (`20261117091847_printer-api-key-vault.sql`), never in a column
+  and never sent to the browser: `set_printer_api_key` / `get_printer_api_key` are service role only
+  (`setPrinterApiKey` / `getPrinterApiKey`). The settings form treats it as write-only (blank keeps
+  it, `removeApiKey` clears it); deleting a route clears its key, and a key whose route is gone is
+  never read. Unique `(companyId, COALESCE(locationId,''),
   name)`. (`20260326000000_print-manager.sql`.) A route has no template: templates are per label type
   and media size (above).
 - **Assignments** live in `companySettings.printing` JSONB (`PrintingSettings` →

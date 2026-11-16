@@ -2,7 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Input, Select, Submit, ValidatedForm } from "@carbon/form";
+import {
+  Boolean as BooleanField,
+  Input,
+  Password,
+  Select,
+  Submit,
+  ValidatedForm
+} from "@carbon/form";
 import type { PrinterRoute } from "@carbon/printing";
 import { printerRouteValidator } from "@carbon/printing";
 import { useAction } from "@carbon/query";
@@ -223,8 +230,7 @@ export function PrintersCard({
                     name: printerToEdit.name,
                     format: printerToEdit.format,
                     mediaSizeId: printerToEdit.mediaSizeId ?? undefined,
-                    printerUrl: printerToEdit.printerUrl,
-                    apiKey: printerToEdit.apiKey ?? undefined
+                    printerUrl: printerToEdit.printerUrl
                   }
                 : { format: "zpl" }
             }
@@ -279,11 +285,22 @@ export function PrintersCard({
                     label={t`Printer URL`}
                     placeholder="https://pbx-XXXX.pbxz.cloud/api/v1/print/..."
                   />
-                  <Input
+                  <Password
                     name="apiKey"
                     label={t`API Key`}
-                    placeholder={t`Optional`}
+                    placeholder={
+                      printerToEdit?.hasApiKey
+                        ? t`Saved. Leave blank to keep it`
+                        : t`Optional`
+                    }
+                    autoComplete="new-password"
                   />
+                  {printerToEdit?.hasApiKey && (
+                    <BooleanField
+                      name="removeApiKey"
+                      label={t`Remove API key`}
+                    />
+                  )}
                 </div>
               </div>
             </ModalBody>

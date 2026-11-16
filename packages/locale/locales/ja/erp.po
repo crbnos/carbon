@@ -25018,6 +25018,9 @@ msgstr "{label}を除去"
 msgid "Remove {name}"
 msgstr "{name}を除去"
 
+msgid "Remove API key"
+msgstr ""
+
 msgid "Remove Asset"
 msgstr "資産を除去"
 
@@ -26670,6 +26673,9 @@ msgstr "保存済みビュー"
 
 msgid "Saved Views"
 msgstr "保存済みビュー"
+
+msgid "Saved. Leave blank to keep it"
+msgstr ""
 
 #. placeholder {0}: bulkProgress.done
 #. placeholder {1}: bulkProgress.total

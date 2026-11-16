@@ -29,7 +29,8 @@ export type PrinterRoute = {
   format: "zpl" | "pdf";
   mediaSizeId: string | null;
   printerUrl: string;
-  apiKey: string | null;
+  /** The API key itself is in Supabase Vault and never leaves the server. */
+  hasApiKey: boolean;
 };
 
 export type PrintJobStatus =

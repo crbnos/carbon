@@ -204,7 +204,7 @@ export async function getPrinterRoute(
 ) {
   return client
     .from("printerRoute")
-    .select("id, locationId, name, format, mediaSizeId, printerUrl, apiKey")
+    .select("id, locationId, name, format, mediaSizeId, printerUrl, hasApiKey")
     .eq("id", routeId)
     .eq("companyId", companyId)
     .single();
@@ -220,7 +220,6 @@ export async function upsertPrinterRoute(
     format: string;
     mediaSizeId?: string | null;
     printerUrl: string;
-    apiKey?: string | null;
   }
 ) {
   if (route.id) {
@@ -232,21 +231,54 @@ export async function upsertPrinterRoute(
         format: route.format,
         mediaSizeId: route.mediaSizeId ?? null,
         printerUrl: route.printerUrl,
-        apiKey: route.apiKey ?? null,
         updatedAt: new Date().toISOString()
       })
       .eq("id", route.id)
-      .eq("companyId", route.companyId);
+      .eq("companyId", route.companyId)
+      .select("id")
+      .single();
   }
 
-  return client.from("printerRoute").insert({
-    companyId: route.companyId,
-    locationId: route.locationId ?? null,
-    name: route.name,
-    format: route.format,
-    mediaSizeId: route.mediaSizeId ?? null,
-    printerUrl: route.printerUrl,
-    apiKey: route.apiKey ?? null
+  return client
+    .from("printerRoute")
+    .insert({
+      companyId: route.companyId,
+      locationId: route.locationId ?? null,
+      name: route.name,
+      format: route.format,
+      mediaSizeId: route.mediaSizeId ?? null,
+      printerUrl: route.printerUrl
+    })
+    .select("id")
+    .single();
+}
+
+/**
+ * Sets, replaces or (with null) removes a printer's API key, kept in Supabase
+ * Vault and flagged by `printerRoute.hasApiKey`. Needs the service role client.
+ */
+export async function setPrinterApiKey(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  printerRouteId: string,
+  apiKey: string | null
+) {
+  return client.rpc("set_printer_api_key", {
+    p_company_id: companyId,
+    p_printer_route_id: printerRouteId,
+    p_api_key: apiKey ?? ""
+  });
+}
+
+/** A printer's API key from Supabase Vault. Needs the service role client. */
+export async function getPrinterApiKey(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  printerRouteId: string
+) {
+  return client.rpc("get_printer_api_key", {
+    p_company_id: companyId,
+    p_printer_route_id: printerRouteId
   });
 }
 
@@ -259,7 +291,8 @@ export async function deletePrinterRoute(
     .from("printerRoute")
     .delete()
     .eq("id", routeId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id");
 }
 
 // -- Label Templates --

@@ -25018,6 +25018,9 @@ msgstr "Quitar {label}"
 msgid "Remove {name}"
 msgstr "Quitar {name}"
 
+msgid "Remove API key"
+msgstr ""
+
 msgid "Remove Asset"
 msgstr "Quitar activo"
 
@@ -26670,6 +26673,9 @@ msgstr "Vistas guardadas"
 
 msgid "Saved Views"
 msgstr "Vistas Guardadas"
+
+msgid "Saved. Leave blank to keep it"
+msgstr ""
 
 #. placeholder {0}: bulkProgress.done
 #. placeholder {1}: bulkProgress.total

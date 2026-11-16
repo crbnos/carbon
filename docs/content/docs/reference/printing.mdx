@@ -33,7 +33,7 @@ A **printer route** is one physical printer (`printerRoute` table, `202603260000
 <Field name="format" type='"zpl" | "pdf"' required>"ZPL (Thermal Label)" or "PDF (Document)". A CHECK constraint enforces the two values.</Field>
 <Field name="mediaSizeId" type="text" required>The label size this printer loads. ZPL printers only offer thermal (ZPL-capable) sizes; PDF printers offer all.</Field>
 <Field name="printerUrl" type="url" required>The ProxyBox HTTP endpoint jobs are delivered to, e.g. `https://pbx-XXXX.pbxz.cloud/api/v1/print/…`.</Field>
-<Field name="apiKey" type="text">Optional key sent as an `X-API-Key` header on delivery.</Field>
+<Field name="apiKey" type="text">Optional key sent as an `X-API-Key` header on delivery. Carbon stores it encrypted in Supabase Vault, never in the `printerRoute` row, and never sends it back to the browser: the form shows only whether a key is saved. Leave the field blank to keep the saved key, or tick **Remove API key** to clear it.</Field>
 <Field name="locationId" type="text">The location the printer lives at (optional; a route can be company-wide).</Field>
 </FieldTable>
 
