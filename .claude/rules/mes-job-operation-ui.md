@@ -283,6 +283,12 @@ of a paused URL, which is itself a valid link.
   dialog is open, and the dialog then closes. On the assembly page an item
   scan opens the Issue dialog on the part (each unit takes its own scan). The
   layout never opens an item link on either page.
+- The layout's raw-id lookup (`resolveFetcher`, `x+/traveler.resolve.tsx`) is a
+  fetcher load, so the router loads it again after EVERY action on the page.
+  The layout acts on a result only for a scan that is waiting for it
+  (`awaitingResolve`). Without that, each issue after one bare unit-number
+  scan reopened that unit's traveler page. `useTravelerScan` guards the same
+  way with `scanContext`. Any new scan lookup needs the same guard.
 - A kanban Complete scan on a serial part completes the unit ON SCREEN:
   `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
   `?trackedEntityId` to `end.$operationId` when that unit is still open at the

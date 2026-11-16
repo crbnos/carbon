@@ -448,6 +448,11 @@ export default function AuthenticatedRoute() {
   const onOperationPage =
     pathname.startsWith("/x/operation/") || pathname.startsWith("/x/assembly/");
   const resolveFetcher = useFetcher<typeof resolveLoader>();
+  // Set by a scan, cleared when its lookup is acted on. The router loads the
+  // lookup again after every action on the page, and that result belongs to
+  // no scan: acting on it reopened the last scanned unit's traveler after
+  // each issue.
+  const awaitingResolve = useRef(false);
   useKeyboardWedge({
     test: (input) =>
       (input.startsWith(MES_URL) || input.startsWith(ERP_URL)) &&
@@ -461,6 +466,7 @@ export default function AuthenticatedRoute() {
       const travelerId = parseTravelerCode(input);
       if (travelerId) return navigate(path.to.traveler(travelerId));
       // A raw id from an old label: the server finds the unit it names.
+      awaitingResolve.current = true;
       return resolveFetcher.load(
         `${path.to.travelerResolve}?code=${encodeURIComponent(input)}`
       );
@@ -477,6 +483,8 @@ export default function AuthenticatedRoute() {
       return;
     }
     processedResolveData.current = result;
+    if (!awaitingResolve.current) return;
+    awaitingResolve.current = false;
     if (result.status === "found") {
       navigate(path.to.traveler(result.trackedEntityId));
     } else if (result.status === "ambiguous") {
