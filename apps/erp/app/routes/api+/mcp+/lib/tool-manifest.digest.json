@@ -204,7 +204,7 @@
     {"name":"inventory_getPickingList","classification":"READ","schema":"172a7bc99691","response":"0e09ad67eaae","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListAvailability","classification":"READ","schema":"172a7bc99691","response":"a2c799262a3c","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListLine","classification":"READ","schema":"e2b1df794940","response":"4599f17fed69","permission":"inventory:view","paginates":false},
-    {"name":"inventory_getPickingListLines","classification":"READ","schema":"172a7bc99691","response":"00c5e9eff84d","permission":"inventory:view","paginates":false},
+    {"name":"inventory_getPickingListLines","classification":"READ","schema":"172a7bc99691","response":"4a56ea4fc9eb","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListRecommendations","classification":"READ","schema":"172a7bc99691","response":"24283057a15d","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListRelatedItems","classification":"READ","schema":"172a7bc99691","response":"97b485f3b5e3","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingLists","classification":"READ","schema":"ba6b9e047408","response":"143c1acfb4cd","permission":"inventory:view","paginates":true},

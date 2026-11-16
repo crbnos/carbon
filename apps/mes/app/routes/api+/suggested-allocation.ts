@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import {
-  getJobOperationStockStripes,
+  getJobOperationIssueScope,
   getSuggestedAllocationForMaterial
 } from "~/services/inventory.service";
 
@@ -19,29 +19,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const itemId = url.searchParams.get("itemId");
-  const locationId = url.searchParams.get("locationId");
   const quantity = Number(url.searchParams.get("quantity") ?? "0");
   const operationId = url.searchParams.get("operationId");
 
-  if (!itemId || !locationId || !Number.isFinite(quantity) || quantity <= 0) {
+  if (!itemId || !Number.isFinite(quantity) || quantity <= 0) {
     return { data: [], error: null };
   }
 
-  // Suggest the lots of the stripes the job may draw: its project's stock,
-  // then common stock.
-  const projectIds = operationId
-    ? await getJobOperationStockStripes(client, {
+  // Suggest only what the job can draw: stock at its own location (read here,
+  // never taken from the browser), in its project's stripe, then common stock.
+  const scope = operationId
+    ? await getJobOperationIssueScope(client, {
         jobOperationId: operationId,
         companyId
       })
     : undefined;
+  const locationId = scope
+    ? scope.locationId
+    : url.searchParams.get("locationId");
+  if (!locationId) return { data: [], error: null };
 
   const data = await getSuggestedAllocationForMaterial(client, {
     itemId,
     companyId,
     locationId,
     quantity,
-    projectIds
+    projectIds: scope?.stripes
   });
 
   return { data, error: null };

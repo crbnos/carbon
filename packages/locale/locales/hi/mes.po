@@ -285,9 +285,6 @@ msgstr "क्रिया मेनू"
 msgid "Active"
 msgstr "सक्रिय"
 
-msgid "Actual"
-msgstr "वास्तविक"
-
 msgid "Add"
 msgstr "जोड़ें"
 
@@ -874,9 +871,6 @@ msgstr "{fieldLabel} घटाएँ"
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
-msgid "Default Storage Unit"
-msgstr "डिफ़ॉल्ट भंडारण इकाई"
-
 msgid "Delete"
 msgstr "हटाएं"
 
@@ -1063,9 +1057,6 @@ msgstr "अपने प्रमाणक ऐप्लिकेशन से 6-
 
 msgid "Error"
 msgstr "त्रुटि"
-
-msgid "Estimated"
-msgstr "अनुमानित"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "बैच में हर जॉब इन चरणों का पालन करता है। सभी के लिए एक बार में एक चरण रिकॉर्ड करें।"
@@ -1324,6 +1315,9 @@ msgstr "खुले मेनू में"
 msgid "In Progress"
 msgstr "प्रगति में"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "वारंटी में"
 
@@ -1356,6 +1350,9 @@ msgstr "अपर्याप्त मात्रा"
 
 msgid "Inventory"
 msgstr "इन्वेंटरी"
+
+msgid "Inventory action"
+msgstr "इन्वेंटरी कार्रवाई"
 
 msgid "Inventory adjustment completed"
 msgstr "इन्वेंटरी समायोजन पूर्ण हुआ"
@@ -1540,6 +1537,9 @@ msgstr "स्थानीय"
 
 msgid "Location"
 msgstr "स्थान"
+
+msgid "Location not known"
+msgstr "स्थान ज्ञात नहीं है"
 
 msgid "Locations"
 msgstr "स्थान"
@@ -2094,6 +2094,9 @@ msgstr "या इस गुप्त को मैन्युअल रूप 
 
 msgid "Out of calibration"
 msgstr "अंशांकन से बाहर"
+
+msgid "Out of stock"
+msgstr ""
 
 msgid "Output lot"
 msgstr "आउटपुट लॉट"
@@ -2855,6 +2858,9 @@ msgstr "कम"
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3014,6 +3020,9 @@ msgstr "चरण"
 msgid "Steps are missing"
 msgstr "चरण गायब हैं"
 
+msgid "Stock at:"
+msgstr "स्टॉक का स्थान:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3046,6 +3055,9 @@ msgstr "सब-असेंबली {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "सब-असेंबली {0} · {1} — स्वयं पर दिखाया गया"
+
+msgid "Subassembly"
+msgstr "सब-असेंबली"
 
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
@@ -3193,6 +3205,9 @@ msgstr "इस निरीक्षण योजना में कोई क�
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "यह पास / फ़ेल जाँच है। P या F दबाएँ।"
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "इस जॉब की कोई बिलिंग दर नहीं है। समय बिल किए जाने से पहले कार्यालय से इसे सेट करने के लिए कहें।"
@@ -3372,6 +3387,9 @@ msgstr "रेखांकित"
 msgid "Undo"
 msgstr "पूर्ववत् करें"
 
+msgid "Unissue"
+msgstr "जारी करना रद्द करें"
+
 msgid "Unissued serial/batch materials"
 msgstr "अजारी सीरीज़/बैच सामग्री"
 
@@ -3512,6 +3530,9 @@ msgstr "कब"
 
 msgid "Whole batch"
 msgstr "पूरा बैच"
+
+msgid "Winding"
+msgstr "घुमावदार"
 
 msgid "WIP"
 msgstr "WIP"

@@ -108733,6 +108733,19 @@ export type Database = {
           unitOfMeasureCode: string
         }[]
       }
+      get_issue_tracked_entity_stock: {
+        Args: {
+          p_company_id: string
+          p_item_ids: string[]
+          p_location_id: string
+          p_project_ids?: string[]
+        }
+        Returns: {
+          availableQuantity: number
+          storageUnitName: string
+          trackedEntityId: string
+        }[]
+      }
       get_item_change_notices: {
         Args: {
           company_id: string
@@ -108810,6 +108823,15 @@ export type Database = {
       get_item_used_in: {
         Args: { company_id: string; item_id: string }
         Returns: Json
+      }
+      get_job_issue_bins: {
+        Args: { p_company_id: string; p_item_ids: string[]; p_job_id: string }
+        Returns: {
+          itemId: string
+          quantity: number
+          storageUnitId: string
+          storageUnitName: string
+        }[]
       }
       get_job_method: {
         Args: { jid: string }
@@ -109305,6 +109327,15 @@ export type Database = {
         Returns: {
           availableQuantity: number
           pickingListLineId: string
+        }[]
+      }
+      get_picking_list_live_bins: {
+        Args: { p_company_id: string; p_picking_list_id: string }
+        Returns: {
+          pickingListLineId: string
+          quantity: number
+          storageUnitId: string
+          storageUnitName: string
         }[]
       }
       get_picking_list_tracked_available: {
@@ -110099,6 +110130,15 @@ export type Database = {
           unitOfMeasureCode: string
           updatedAt: string
           updatedBy: string
+        }[]
+      }
+      get_stock_transfer_live_bins: {
+        Args: { p_company_id: string; p_stock_transfer_id: string }
+        Returns: {
+          quantity: number
+          stockTransferLineId: string
+          storageUnitId: string
+          storageUnitName: string
         }[]
       }
       get_supplier_ids_with_supplier_permission: {

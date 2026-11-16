@@ -6,8 +6,13 @@ import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { fetchAllByIds } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import {
+  getIssueLotStock,
+  getJobOperationIssueScope
+} from "~/services/inventory.service";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import {
+  batchScanQuantity,
   isUnitInOperationScope,
   pickTravelerMaterial,
   type TravelerConsumption
@@ -292,7 +297,7 @@ export async function resolveTravelerMaterial(
   const [unitRead, operationRead] = await Promise.all([
     client
       .from("trackedEntity")
-      .select("id, status, quantity, itemId")
+      .select("id, status, quantity, itemId, sourceDocument, sourceDocumentId")
       .eq("id", args.trackedEntityId)
       .eq("companyId", args.companyId)
       .maybeSingle(),
@@ -312,10 +317,17 @@ export async function resolveTravelerMaterial(
     });
     return { refusal: LOOKUP_FAILED };
   }
-  const unit = unitRead.data;
-  if (!unit) {
+  const scanned = unitRead.data;
+  if (!scanned) {
     return { refusal: "This label does not belong to a unit in this company" };
   }
+  // A received lot names its item as its source document.
+  const unit = {
+    ...scanned,
+    itemId:
+      scanned.itemId ??
+      (scanned.sourceDocument === "Item" ? scanned.sourceDocumentId : null)
+  };
   if (unit.status !== "Available") {
     return { refusal: `This unit is ${unit.status} and cannot be issued` };
   }
@@ -385,8 +397,42 @@ export async function resolveTravelerMaterial(
         : `This job already has all its ${readableId}`
     };
   }
-  if (picked.material.requiresBatchTracking) {
-    return { refusal: "Issue batch lots from the Issue dialog" };
+  // One scan of a lot's label takes what is still needed, up to what the
+  // lot holds where the job can draw it: the same stock the Issue dialog
+  // lists, so a quarantined lot or one at another location is refused.
+  if (picked.material.requiresBatchTracking && unit.itemId) {
+    const scope = await getJobOperationIssueScope(client, args);
+    const stock = scope.locationId
+      ? await getIssueLotStock(client, {
+          companyId: args.companyId,
+          locationId: scope.locationId,
+          itemIds: [unit.itemId],
+          stripes: scope.stripes,
+          trackedEntityId: unit.id
+        })
+      : { data: [], error: null };
+    if (stock.error) {
+      log.error("Could not read a scanned lot's stock", {
+        companyId: args.companyId,
+        trackedEntityId: unit.id,
+        error: stock.error
+      });
+      return { refusal: LOOKUP_FAILED };
+    }
+    const available = (stock.data ?? []).reduce(
+      (sum, row) => sum + (row.availableQuantity ?? 0),
+      0
+    );
+    const quantity = batchScanQuantity({
+      needed: picked.needed,
+      available: Math.min(available, unit.quantity)
+    });
+    if (quantity <= 0) {
+      return {
+        refusal: `This lot of ${readableId} is not in stock this job can use at its location`
+      };
+    }
+    return { materialId: picked.material.id, quantity };
   }
 
   return { materialId: picked.material.id, quantity: unit.quantity };

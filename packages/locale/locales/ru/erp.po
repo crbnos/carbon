@@ -1691,6 +1691,12 @@ msgstr "Закрытый проект не принимает больше на�
 msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 msgstr "Цвет задаёт акцент. Градиентные и сплошные темы также окрашивают навигацию, боковую панель и страницу."
 
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+msgstr "Организация может подключаться к одной панели Onshape одновременно. Удалите Onshape V2 Government, затем подключите Onshape V2."
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
+msgstr "Организация может подключаться к одной панели Onshape одновременно. Удалите Onshape V2, затем подключите Onshape V2 Government."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Организация может подключаться к одному Onshape одновременно. Удалите Onshape Government, затем подключите Onshape."
 
@@ -8664,6 +8670,9 @@ msgstr "Не удалось завершить подключение к Onshape
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Не удалось завершить подключение Onshape Government"
 
+msgid "Couldn't complete the Onshape V2 Government connection"
+msgstr "Не удалось завершить подключение Onshape V2 Government"
+
 msgid "Couldn't confirm the account"
 msgstr "Не удалось подтвердить аккаунт"
 
@@ -8696,6 +8705,9 @@ msgstr "Не удалось сохранить подключение к Onshape
 
 msgid "Couldn't save the Onshape Government connection"
 msgstr "Не удалось сохранить подключение Onshape Government"
+
+msgid "Couldn't save the Onshape V2 Government connection"
+msgstr "Не удалось сохранить подключение Onshape V2 Government"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Не удалось сохранить подключение к Ramp"
@@ -17350,6 +17362,9 @@ msgstr "Местоположение / Товар"
 msgid "Location Name"
 msgstr "Название местоположения"
 
+msgid "Location not known"
+msgstr "Неизвестное местоположение"
+
 msgid "Location ownership updated"
 msgstr "Право собственности площадки обновлено"
 
@@ -18798,6 +18813,14 @@ msgstr "Чистые инвестиции в лизинг"
 
 msgid "Net Investment in Leases (default)"
 msgstr "Чистые инвестиции в лизинг (по умолчанию)"
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "За вычетом {0}, уже уплаченных в качестве предоплаты."
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "За вычетом {0}, уже полученных в качестве авансового платежа."
 
 msgid "Net right-of-use asset"
 msgstr "Чистый актив права использования"
@@ -21151,6 +21174,24 @@ msgstr "Onshape отклонил авторизацию"
 msgid "Onshape Status"
 msgstr "Статус Onshape"
 
+msgid "Onshape V2 Government denied the connection"
+msgstr "Onshape V2 Government отклонил подключение"
+
+msgid "Onshape V2 Government didn't return an authorization code"
+msgstr "Onshape V2 Government не вернул код авторизации"
+
+msgid "Onshape V2 Government is already connected"
+msgstr "Onshape V2 Government уже подключен"
+
+msgid "Onshape V2 Government isn't configured"
+msgstr "Onshape V2 Government не настроен"
+
+msgid "Onshape V2 Government rejected the authorization"
+msgstr "Onshape V2 Government отклонил авторизацию"
+
+msgid "Onshape V2 is already connected"
+msgstr "Onshape V2 уже подключен"
+
 msgid "Onshape version"
 msgstr "Версия Onshape"
 
@@ -21337,6 +21378,9 @@ msgstr "Открыть учет на дату переходу. Включени
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Откройте интеграцию Onshape Government и сохраните ее настройки для повторного подключения."
+
+msgid "Open the Onshape V2 Government integration and save its settings to connect again."
+msgstr "Откройте интеграцию Onshape V2 Government и сохраните ее настройки для повторного подключения."
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Откройте интеграцию Ramp и попробуйте подключиться снова, чтобы завершить настройку."
@@ -23979,6 +24023,10 @@ msgstr "Количество отправлено"
 
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "Количество к кредитованию по строке {lineNumber}"
+
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "Количество к возврату для {itemReadableId}"
@@ -28886,6 +28934,9 @@ msgstr "Запас"
 msgid "Stock and planning"
 msgstr "Запас и планирование"
 
+msgid "Stock at:"
+msgstr ""
+
 msgid "Stock Availability"
 msgstr "Наличие запаса"
 
@@ -30978,6 +31029,9 @@ msgstr "Подключение Onshape истекло"
 
 msgid "The Onshape Government connection expired"
 msgstr "Срок действия подключения Onshape Government истек"
+
+msgid "The Onshape V2 Government connection expired"
+msgstr "Срок действия подключения Onshape V2 Government истек"
 
 #. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."

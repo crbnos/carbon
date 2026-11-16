@@ -1691,6 +1691,12 @@ msgstr "Kapatılmış bir proje daha fazla ücret almaz ve yeniden açılamaz. T
 msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 msgstr "Renk vurguyu belirler. Gradyan ve düz temalar gezinmeyi, kenar çubuğunu ve sayfayı da renklendirir."
 
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+msgstr "Bir şirket aynı anda bir Onshape paneline bağlanabilir. Onshape V2 Government'ı kaldırın, ardından Onshape V2'ye bağlanın."
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
+msgstr "Bir şirket aynı anda bir Onshape paneline bağlanabilir. Onshape V2'yi kaldırın, ardından Onshape V2 Government'a bağlanın."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Bir şirket aynı anda bir Onshape'e bağlanabilir. Onshape Government'ı kaldırın, ardından Onshape'e bağlanın."
 
@@ -8664,6 +8670,9 @@ msgstr "Onshape bağlantısı tamamlanamadı"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government bağlantısı tamamlanamadı"
 
+msgid "Couldn't complete the Onshape V2 Government connection"
+msgstr "Onshape V2 Government bağlantısı tamamlanamadı"
+
 msgid "Couldn't confirm the account"
 msgstr "Hesap doğrulanamadı"
 
@@ -8696,6 +8705,9 @@ msgstr "Onshape bağlantısı kaydedilemedi"
 
 msgid "Couldn't save the Onshape Government connection"
 msgstr "Onshape Government bağlantısı kaydedilemedi"
+
+msgid "Couldn't save the Onshape V2 Government connection"
+msgstr "Onshape V2 Government bağlantısı kaydedilemedi"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp bağlantısı kaydedilemedi"
@@ -17350,6 +17362,9 @@ msgstr "Konum / Ürün"
 msgid "Location Name"
 msgstr "Konum Adı"
 
+msgid "Location not known"
+msgstr "Bilinmeyen konum"
+
 msgid "Location ownership updated"
 msgstr "Lokasyon sahipliği güncellendi"
 
@@ -18798,6 +18813,14 @@ msgstr "Net Kiralama Yatırımı"
 
 msgid "Net Investment in Leases (default)"
 msgstr "Net Kiralama Yatırımı (varsayılan)"
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "Avans olarak önceden ödenen {0} düşülmüştür."
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "Depozito olarak önceden alınan {0} düşülmüştür."
 
 msgid "Net right-of-use asset"
 msgstr "Net kullanım hakkı varlığı"
@@ -21151,6 +21174,24 @@ msgstr "Onshape yetkilendirmeyi reddetti"
 msgid "Onshape Status"
 msgstr "Onshape Durumu"
 
+msgid "Onshape V2 Government denied the connection"
+msgstr "Onshape V2 Government bağlantıyı reddetti"
+
+msgid "Onshape V2 Government didn't return an authorization code"
+msgstr "Onshape V2 Government yetkilendirme kodu döndürmedi"
+
+msgid "Onshape V2 Government is already connected"
+msgstr "Onshape V2 Government zaten bağlı"
+
+msgid "Onshape V2 Government isn't configured"
+msgstr "Onshape V2 Government yapılandırılmadı"
+
+msgid "Onshape V2 Government rejected the authorization"
+msgstr "Onshape V2 Government yetkilendirmeyi reddetti"
+
+msgid "Onshape V2 is already connected"
+msgstr "Onshape V2 zaten bağlı"
+
 msgid "Onshape version"
 msgstr "Onshape sürümü"
 
@@ -21337,6 +21378,9 @@ msgstr "Cutover tarihinde defteri-kebiri açınız. Muhasebeyi etkinleştirmek g
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government entegrasyonunu açın ve yeniden bağlanmak için ayarlarını kaydedin."
+
+msgid "Open the Onshape V2 Government integration and save its settings to connect again."
+msgstr "Onshape V2 Government entegrasyonunu açın ve yeniden bağlanmak için ayarlarını kaydedin."
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Ramp entegrasyonunu açın ve kurulumu tamamlamak için yeniden bağlanmayı deneyin."
@@ -23979,6 +24023,10 @@ msgstr "Sevk edilen miktar"
 
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "{lineNumber} satırı için alacaklandırılacak miktar"
+
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} için iade edilecek miktar"
@@ -28886,6 +28934,9 @@ msgstr "Stok"
 msgid "Stock and planning"
 msgstr "Stok ve Planlama"
 
+msgid "Stock at:"
+msgstr ""
+
 msgid "Stock Availability"
 msgstr "Stok Mevcudiyeti"
 
@@ -30978,6 +31029,9 @@ msgstr "Onshape bağlantısının süresi doldu"
 
 msgid "The Onshape Government connection expired"
 msgstr "Onshape Government bağlantısının süresi doldu"
+
+msgid "The Onshape V2 Government connection expired"
+msgstr "Onshape V2 Government bağlantısının süresi doldu"
 
 #. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."

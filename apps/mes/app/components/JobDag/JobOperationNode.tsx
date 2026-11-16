@@ -23,7 +23,6 @@ type JobOperationNodeData = {
   isRework: boolean;
   // Readable id of the live batch the operation runs in, or null.
   batchReadableId?: string | null;
-  direction: "LR" | "TB";
 };
 
 const STATUS_COLORS: Record<string, { border: string; bar: string }> = {
@@ -36,10 +35,13 @@ const STATUS_COLORS: Record<string, { border: string; bar: string }> = {
   Canceled: { border: "border-red-500", bar: "bg-red-500" }
 };
 
-function JobOperationNodeImpl({ data }: NodeProps) {
+function JobOperationNodeImpl({
+  data,
+  sourcePosition = Position.Bottom,
+  targetPosition = Position.Top
+}: NodeProps) {
   const d = data as unknown as JobOperationNodeData;
   const colors = STATUS_COLORS[d.status] ?? STATUS_COLORS.Todo;
-  const isHorizontal = d.direction === "LR";
   const location = useLocation();
   const { t } = useLingui();
 
@@ -59,18 +61,16 @@ function JobOperationNodeImpl({ data }: NodeProps) {
 
   return (
     <>
-      <Handle
-        type="target"
-        position={isHorizontal ? Position.Left : Position.Top}
-        className="invisible"
-      />
+      <Handle type="target" position={targetPosition} className="invisible" />
       <Link
         to={withOrigin(path.to.operation(d.id), location)}
         // A native link drag would fight the canvas pan.
         draggable={false}
         aria-label={label}
         className={cn(
-          "block w-[200px] rounded-lg border-2 bg-card px-3 py-2 shadow-sm cursor-pointer hover:bg-accent/50 transition-colors",
+          // The flow turns pointer events off on a node that is neither
+          // selectable nor draggable; the link still has to take the tap.
+          "pointer-events-auto block w-[200px] rounded-lg border-2 bg-card px-3 py-2 shadow-sm cursor-pointer hover:bg-accent/50 transition-colors",
           colors.border
         )}
       >
@@ -113,11 +113,7 @@ function JobOperationNodeImpl({ data }: NodeProps) {
           </div>
         )}
       </Link>
-      <Handle
-        type="source"
-        position={isHorizontal ? Position.Right : Position.Bottom}
-        className="invisible"
-      />
+      <Handle type="source" position={sourcePosition} className="invisible" />
     </>
   );
 }

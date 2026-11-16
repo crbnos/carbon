@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  batchScanQuantity,
   isUnitInOperationScope,
   parseTravelerCode,
   pickTravelerMaterial,
@@ -279,7 +280,7 @@ describe("pickTravelerMaterial", () => {
         itemId: "item_chamber",
         unitConsumed: []
       })
-    ).toEqual({ kind: "issue", material: atMerge });
+    ).toEqual({ kind: "issue", material: atMerge, needed: 1 });
   });
 
   it("takes the unassigned material once this operation's is in the unit", () => {
@@ -290,7 +291,7 @@ describe("pickTravelerMaterial", () => {
         itemId: "item_chamber",
         unitConsumed: [chamber("jm_cc", 1)]
       })
-    ).toEqual({ kind: "issue", material: unassigned });
+    ).toEqual({ kind: "issue", material: unassigned, needed: 1 });
   });
 
   it("counts a chamber booked to another material of the item", () => {
@@ -320,7 +321,26 @@ describe("pickTravelerMaterial", () => {
           { materialId: "jm_bolt", itemId: "item_bolt", quantity: 1 }
         ]
       })
-    ).toEqual({ kind: "issue", material: atMerge });
+    ).toEqual({ kind: "issue", material: atMerge, needed: 1 });
+  });
+
+  // 2 kg of plate per unit, 0.5 kg already in this unit.
+  it("needs only what a serial unit does not hold yet", () => {
+    const plate = base({
+      id: "jm_plate",
+      jobOperationId: "op_merge",
+      quantity: 2
+    });
+    expect(
+      pickTravelerMaterial({
+        materials: [plate],
+        jobOperationId: "op_merge",
+        itemId: "item_plate",
+        unitConsumed: [
+          { materialId: "jm_plate", itemId: "item_plate", quantity: 0.5 }
+        ]
+      })
+    ).toEqual({ kind: "issue", material: plate, needed: 1.5 });
   });
 
   it("gives an untracked parent what the job has not issued", () => {
@@ -331,7 +351,11 @@ describe("pickTravelerMaterial", () => {
         itemId: "item_chamber",
         unitConsumed: null
       })
-    ).toEqual({ kind: "issue", material: { ...atMerge, quantityIssued: 3 } });
+    ).toEqual({
+      kind: "issue",
+      material: { ...atMerge, quantityIssued: 3 },
+      needed: 1
+    });
     expect(
       pickTravelerMaterial({
         materials: [{ ...atMerge, quantityIssued: 4 }],
@@ -364,5 +388,20 @@ describe("isUnitInOperationScope", () => {
 
   it("applies an operation with no scope rows to every unit", () => {
     expect(isUnitInOperationScope(scopes, "op_paint", "te_a")).toBe(true);
+  });
+});
+
+describe("batchScanQuantity", () => {
+  it("takes what the job needs from a lot that holds more", () => {
+    expect(batchScanQuantity({ needed: 5, available: 1990 })).toBe(5);
+  });
+
+  it("takes the whole lot when it holds less than the job needs", () => {
+    expect(batchScanQuantity({ needed: 5, available: 3 })).toBe(3);
+  });
+
+  // A quarantined lot, or one at another location, has nothing to draw.
+  it("takes nothing from a lot with no stock the job can draw", () => {
+    expect(batchScanQuantity({ needed: 5, available: 0 })).toBe(0);
   });
 });

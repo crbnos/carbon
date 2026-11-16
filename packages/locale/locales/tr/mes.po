@@ -285,9 +285,6 @@ msgstr "İşlem Menüsü"
 msgid "Active"
 msgstr "Aktif"
 
-msgid "Actual"
-msgstr "Gerçek"
-
 msgid "Add"
 msgstr "Ekle"
 
@@ -874,9 +871,6 @@ msgstr "{fieldLabel} alanını azalt"
 msgid "Default"
 msgstr "Varsayılan"
 
-msgid "Default Storage Unit"
-msgstr "Varsayılan Depolama Birimi"
-
 msgid "Delete"
 msgstr "Sil"
 
@@ -1063,9 +1057,6 @@ msgstr "Devam etmek için kimlik doğrulama uygulamanızdan 6 haneli kodu girin.
 
 msgid "Error"
 msgstr "Hata"
-
-msgid "Estimated"
-msgstr "Tahmini"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Partideki her iş emri bu adımları takip eder. Tüm bunlar için bir adım kaydedin."
@@ -1324,6 +1315,9 @@ msgstr "Açık bir menüde"
 msgid "In Progress"
 msgstr "Devam Ediyor"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "Garanti Altında"
 
@@ -1356,6 +1350,9 @@ msgstr "Yetersiz miktar"
 
 msgid "Inventory"
 msgstr "Envanter"
+
+msgid "Inventory action"
+msgstr "Envanter aksiyonu"
 
 msgid "Inventory adjustment completed"
 msgstr "Stok düzeltme tamamlandı"
@@ -1540,6 +1537,9 @@ msgstr "Yerel"
 
 msgid "Location"
 msgstr "Konum"
+
+msgid "Location not known"
+msgstr "Bilinmeyen konum"
 
 msgid "Locations"
 msgstr "Lokasyonlar"
@@ -2094,6 +2094,9 @@ msgstr "Ya da bu sırrı manuel olarak girin:"
 
 msgid "Out of calibration"
 msgstr "Kalibrasyon dışı"
+
+msgid "Out of stock"
+msgstr ""
 
 msgid "Output lot"
 msgstr "Çıktı Lotu"
@@ -2855,6 +2858,9 @@ msgstr "Azalt"
 msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3014,6 +3020,9 @@ msgstr "Adımlar"
 msgid "Steps are missing"
 msgstr "Adımlar eksik"
 
+msgid "Stock at:"
+msgstr "Stok konumu:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3046,6 +3055,9 @@ msgstr "Alt derleme {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Alt derleme {0} · {1} — kendi başına gösterilir"
+
+msgid "Subassembly"
+msgstr "Alt montaj"
 
 msgid "Submit anonymously"
 msgstr "Anonim olarak gönder"
@@ -3193,6 +3205,9 @@ msgstr "Bu kontrol planında iş talimatı yok."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Bu bir geçti / kaldı kontrolüdür. P veya F tuşuna basın."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Bu iş emrinin fatura oranı yoktur. Zaman faturalandırılmadan önce ofis tarafından ayarlanmasını isteyin."
@@ -3372,6 +3387,9 @@ msgstr "Altı çizili"
 msgid "Undo"
 msgstr "Geri al"
 
+msgid "Unissue"
+msgstr "Stok çıkışını geri al"
+
 msgid "Unissued serial/batch materials"
 msgstr "Yayımlanmamış seri/parti malzemeleri"
 
@@ -3512,6 +3530,9 @@ msgstr "Ne zaman"
 
 msgid "Whole batch"
 msgstr "Tüm Parti"
+
+msgid "Winding"
+msgstr "Kıvrımlı"
 
 msgid "WIP"
 msgstr "Yarı Mamul"

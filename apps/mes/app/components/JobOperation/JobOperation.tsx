@@ -191,6 +191,7 @@ import {
 } from "./components/Step";
 import { TableSkeleton } from "./components/TableSkeleton";
 import { useFiles } from "./hooks/useFiles";
+import { useItemScan } from "./hooks/useItemScan";
 import { useOperation } from "./hooks/useOperation";
 import { useTravelerScan } from "./hooks/useTravelerScan";
 
@@ -774,6 +775,24 @@ export const JobOperation = ({
     });
     issueModal.onOpen();
   };
+
+  // An item sticker scan issues what the job still needs of that item. When
+  // the operator must choose (a serial part, a short lot), the Issue dialog
+  // opens on the material. With the dialog already open the scan still
+  // issues, and the dialog closes: its item link is no lot number.
+  useItemScan({
+    operationId: operation.id,
+    parentTrackedEntityId: trackedEntityId,
+    active: !isBatched && !abilityBlocked,
+    onIssued: issueModal.onClose,
+    onChoose: (materialId) =>
+      materials.then((resolved) =>
+        openIssueModal(
+          resolved.materials.find((material) => material.id === materialId) ??
+            null
+        )
+      )
+  });
 
   // Mounted by BOTH the per-job materials table and the batch overview —
   // the batch scope's Pick opens the same shared-pick modal.

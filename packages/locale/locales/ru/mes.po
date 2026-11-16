@@ -285,9 +285,6 @@ msgstr "Меню действий"
 msgid "Active"
 msgstr "Активные"
 
-msgid "Actual"
-msgstr "Факт"
-
 msgid "Add"
 msgstr "Добавить"
 
@@ -874,9 +871,6 @@ msgstr "Уменьшить {fieldLabel}"
 msgid "Default"
 msgstr "По умолчанию"
 
-msgid "Default Storage Unit"
-msgstr "Единица хранения по умолчанию"
-
 msgid "Delete"
 msgstr "Удалить"
 
@@ -1063,9 +1057,6 @@ msgstr "Введите 6-значный код из приложения аут�
 
 msgid "Error"
 msgstr "Ошибка"
-
-msgid "Estimated"
-msgstr "План"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Каждый производственный заказ в серии следует этим шагам. Запишите шаг для всех одновременно."
@@ -1324,6 +1315,9 @@ msgstr "В открытом меню"
 msgid "In Progress"
 msgstr "В работе"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "В гарантии"
 
@@ -1356,6 +1350,9 @@ msgstr "Недостаточное количество"
 
 msgid "Inventory"
 msgstr "Запасы"
+
+msgid "Inventory action"
+msgstr "Действие с запасами"
 
 msgid "Inventory adjustment completed"
 msgstr "Корректировка запасов выполнена"
@@ -1540,6 +1537,9 @@ msgstr "Локально"
 
 msgid "Location"
 msgstr "Расположение"
+
+msgid "Location not known"
+msgstr "Неизвестное местоположение"
 
 msgid "Locations"
 msgstr "Площадки"
@@ -2094,6 +2094,9 @@ msgstr "Или введите этот секрет вручную:"
 
 msgid "Out of calibration"
 msgstr "Вне калибровки"
+
+msgid "Out of stock"
+msgstr ""
 
 msgid "Output lot"
 msgstr "Партия выпуска"
@@ -2855,6 +2858,9 @@ msgstr "Недостача"
 msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3014,6 +3020,9 @@ msgstr "Шаги"
 msgid "Steps are missing"
 msgstr "Шаги не заполнены"
 
+msgid "Stock at:"
+msgstr "Запасы в:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3046,6 +3055,9 @@ msgstr "Под-узел {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Под-узел {0} · {1} — показывается отдельно"
+
+msgid "Subassembly"
+msgstr "Узел"
 
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"
@@ -3193,6 +3205,9 @@ msgstr "В этом плане контроля нет рабочих инстр
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Это проверка «годен / не годен». Нажмите P или F."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "У этого производственного заказа нет ставки расчетов. Попросите офис установить её перед тем, как время будет рассчитано."
@@ -3372,6 +3387,9 @@ msgstr "Подчёркнутый"
 msgid "Undo"
 msgstr "Отменить"
 
+msgid "Unissue"
+msgstr "Отменить выдачу"
+
 msgid "Unissued serial/batch materials"
 msgstr "Невыданные серийные/партионные материалы"
 
@@ -3512,6 +3530,9 @@ msgstr "Когда"
 
 msgid "Whole batch"
 msgstr "Вся серия"
+
+msgid "Winding"
+msgstr "Змейкой"
 
 msgid "WIP"
 msgstr "Незавершенное производство"

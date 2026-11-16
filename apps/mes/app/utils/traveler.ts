@@ -126,7 +126,14 @@ export function pickTravelerMaterial<T extends TravelerMaterial>({
   /** The scanned unit's item. */
   itemId: string | null;
   unitConsumed: TravelerConsumption[] | null;
-}): { kind: "issue"; material: T } | { kind: "full" } | { kind: "notUsed" } {
+}):
+  | {
+      kind: "issue";
+      material: T /** What the material still needs. */;
+      needed: number;
+    }
+  | { kind: "full" }
+  | { kind: "notUsed" } {
   const byId = (a: T, b: T) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   const eligible = [
     ...materials.filter((m) => m.jobOperationId === jobOperationId).sort(byId),
@@ -136,7 +143,9 @@ export function pickTravelerMaterial<T extends TravelerMaterial>({
 
   if (!unitConsumed) {
     const material = eligible.find((m) => jobMaterialShortfall(m) > EPSILON);
-    return material ? { kind: "issue", material } : { kind: "full" };
+    return material
+      ? { kind: "issue", material, needed: jobMaterialShortfall(material) }
+      : { kind: "full" };
   }
 
   const known = new Set(materials.map((m) => m.id));
@@ -163,9 +172,24 @@ export function pickTravelerMaterial<T extends TravelerMaterial>({
     const covered = Math.min(need, unattributed);
     need = round(need - covered);
     unattributed = round(unattributed - covered);
-    if (need > EPSILON) return { kind: "issue", material };
+    if (need > EPSILON) return { kind: "issue", material, needed: need };
   }
   return { kind: "full" };
+}
+
+/**
+ * How much one scan of a batch lot's label issues: what the material still
+ * needs, up to what the lot holds in stock the job can draw (its own
+ * location, nettable bins, its stripes). Zero when the lot has none there.
+ */
+export function batchScanQuantity({
+  needed,
+  available
+}: {
+  needed: number;
+  available: number;
+}): number {
+  return Math.max(0, round(Math.min(needed, available)));
 }
 
 /**

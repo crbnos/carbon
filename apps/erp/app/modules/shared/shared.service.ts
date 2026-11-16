@@ -12338,15 +12338,20 @@ export async function createDocument(
         locationId = userLocationId ?? null;
       }
 
+      // Every line becomes a receipt line, whatever location it names, so
+      // every line's item is read: posting writes a batch or serial line's
+      // stock only when its tracking flag is set.
+      const receiptItemIds = [
+        ...new Set(
+          purchaseOrderLines.data
+            .map((d) => d.itemId)
+            .filter((id): id is string => !!id)
+        )
+      ];
       const items = await many(
         db,
         "item",
-        {
-          companyId,
-          id: purchaseOrderLines.data
-            .filter((d) => d.locationId === locationId)
-            .map((d) => d.itemId) as string[]
-        },
+        { companyId, id: receiptItemIds },
         { columns: ["id", "itemTrackingType"] }
       );
       const serializedItems = new Set(
@@ -12366,9 +12371,6 @@ export async function createDocument(
       // one explicitly. Scoped by locationId because a single item can
       // be stocked across multiple locations with different defaults
       // per location (that's why pickMethod exists).
-      const receiptItemIds = purchaseOrderLines.data
-        .filter((d): d is typeof d & { itemId: string } => !!d.itemId)
-        .map((d) => d.itemId);
       const pickMethods = await many(
         db,
         "pickMethod",

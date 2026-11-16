@@ -6,6 +6,46 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Issue-bin displays preserve stock stripes and picked ownership
+
+**Context:** A batched MES query reports the bins a job can issue from, including stock picked to a work center.
+
+**Problem:** Summing project and common ledger rows before testing for positive stock hid a positive project bin behind a negative common balance. Excluding every lineside bin hid stock already picked for the job.
+
+**Rule:** Test positive on-hand per eligible `(item, bin, projectId)` stripe, then combine display quantities. Show lineside stock only when the job has an outstanding picked claim at that bin, net of its consumption.
+
+**Applies to:** Issue-location reads, stock availability badges, and any query that merges warehouse and picked lineside stock.
+
+## Reverse inventory from the original ledger sources
+
+**Context:** Picking a material in stages and unissuing project-job inventory.
+
+**Problem:** A saved bin can empty between picks, and a project job can consume both project and common stock. Reusing the saved bin or default project stripe for a reversal changes physical or ownership balances.
+
+**Rule:** Resolve stock after the draw lock for every pick, record its source per line, and reverse outstanding quantities by their original bin and stripe. Find the rows to reverse by document and item, not by a tag only some writers set: the job-completion backflush writes `Job Consumption` rows with no `documentLineId`. A refusal the person can act on is an `InvalidInputError`; a plain `Error` reads as a 500 and its text is withheld.
+
+**Applies to:** Picking transfers, unpick, job consumption, and unissue.
+
+## Typed quantities do not need Number wrappers
+
+**Context:** Showing issued quantities and current bin stock in MES and ERP.
+
+**Problem:** New code wrapped `number` and nullable `number` values in `Number(...)`, adding noise around ordinary comparisons and arithmetic.
+
+**Rule:** Use a typed quantity directly, with `?? 0` when it is nullable. Convert only at a boundary where the value can actually be a string.
+
+**Applies to:** MES quantity displays, inventory RPC results, and ERP posting code using parsed numeric inputs.
+
+## Review the deployable diff, including new files
+
+**Context:** Adding MES bin loaders backed by new database RPCs.
+
+**Problem:** The service and UI changes were visible in the diff, but the new route and migration were untracked, so deploying the reviewed patch would leave the requests returning 404 and the RPCs missing. A follow-up picker change also called the single-item stock RPC once for every material revision.
+
+**Rule:** Before requesting review, check `git status --short` and `git diff --cached --stat` for every new route and migration that a changed call site needs. For stock shared across item revisions, collect the revision IDs and use one set-based, company-scoped read.
+
+**Applies to:** MES routes and inventory services, ERP inventory RPC callers, and `packages/database/supabase/migrations/`.
+
 ## Onshape individual release assets need the complete source identity
 
 **Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.
@@ -1041,13 +1081,13 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/dev/src/commands/restore.ts`, `packages/database/src/types.ts`.
 
-## Kysely returns NUMERIC as a string; supabase-js returns it as a number
+## A client swap can change runtime value types (Kysely once returned NUMERIC as a string)
 
 **Context:** `upsertQuoteLinePrices` was converted from supabase-js to a Kysely transaction so its delete + reinsert would roll back as a unit. The conversion typechecked, and the shipped result silently stopped preserving `shippingCost`, `discountPercent` and `leadTime` on every markup change.
 
 **Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsc` cannot see it — the mismatch exists only at runtime.
 
-**Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number — node-postgres via `setTypeParser`, registered once in `packages/database/src/client.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
+**Rule:** NUMERIC (oid 1700) decodes to a JS number: `packages/database/src/client.ts` registers the `setTypeParser` override once, so runtime matches the generated types. Do not wrap a NUMERIC read in `Number(...)`; the wrappers still at Kysely call sites are from before the parser and do nothing. `BIGINT` and float8 still arrive as strings, as does a NUMERIC from a pool that is not built through the shared factory. Do not convert those for tidiness: `Number()` on a `BIGINT` loses precision past `Number.MAX_SAFE_INTEGER`. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically. Exercise it against a real database.
 
 **Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**`, and the `getPostgresClient` pool in `packages/database/src/client.ts`.
 
@@ -5001,3 +5041,18 @@ redirects (purchase orders, and the other records with a `/details` index).
 **Rule:** When a caller retries only on failure (an IdP, a webhook sender), store the new state after the side effects that grant or remove access succeed. Answer 5xx when one of them fails, so the retry runs them again. Each step must be idempotent.
 
 **Applies to:** `packages/ee/src/scim/engine.server.ts` and any inbound sync or webhook handler that changes access.
+
+## Measure completed typechecks before claiming a speedup
+
+**Context:** The ERP typecheck speed investigation first produced an incremental
+configuration and several bounded checks, but no completed before/after run.
+
+**Problem:** A cache configuration looked promising, yet a cold check and edits
+to large query-heavy services could still take minutes. Reporting the config
+change as a speedup before measuring those cases obscured the remaining cost.
+
+**Rule:** Complete and time a cold check, an unchanged rerun, and a representative
+changed-file check before claiming a typecheck improvement. Report those cases
+separately and keep Turbo cache hits distinct from TypeScript incremental runs.
+
+**Applies to:** ERP typecheck performance work and other cached validation tasks.
