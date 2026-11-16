@@ -262,6 +262,33 @@ function PickedBreakdown({
   );
 }
 
+/**
+ * The stock the job can draw does not cover what it still needs of the part.
+ * `available of needed`, so the operator sees how much to expect.
+ */
+export function ShortStockBadge({ material }: { material: JobMaterial }) {
+  const { t } = useLingui();
+  const shortage = material.stockShortage;
+  if (!shortage) return null;
+  const { available, needed } = shortage;
+  return (
+    <Badge
+      variant="red"
+      className="w-fit gap-1 shrink-0 tabular-nums"
+      title={t`In stock: ${available}. Still needed: ${needed}.`}
+    >
+      <LuTriangleAlert className="size-3" />
+      {available > 0 ? (
+        <Trans>
+          Short: {available} of {needed}
+        </Trans>
+      ) : (
+        <Trans>Out of stock</Trans>
+      )}
+    </Badge>
+  );
+}
+
 function TrackingBadge({ material }: { material: JobMaterial }) {
   const type = material.requiresBatchTracking
     ? "Batch"
@@ -456,6 +483,7 @@ function MaterialsTable({
                           <span className="text-muted-foreground text-sm truncate max-w-full">
                             {material.description}
                           </span>
+                          <ShortStockBadge material={material} />
                           <PickedBreakdown
                             materialItemId={material.itemId}
                             pickedByItem={material.pickedByItem}
@@ -516,6 +544,7 @@ function MaterialsTable({
                             <span className="text-muted-foreground text-xs truncate max-w-full">
                               {child.material.description}
                             </span>
+                            <ShortStockBadge material={child.material} />
                             <PickedBreakdown
                               materialItemId={child.material.itemId}
                               pickedByItem={child.material.pickedByItem}
@@ -595,6 +624,7 @@ function MaterialsList({
           ) : null}
           <MaterialSource material={material} />
           <div className="flex flex-wrap items-center gap-1">
+            <ShortStockBadge material={material} />
             <TrackingBadge material={material} />
             <ExpiredConsumedBadge material={material} />
             <PickedBadge

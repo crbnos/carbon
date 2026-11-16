@@ -1315,6 +1315,9 @@ msgstr "在打开的菜单中"
 msgid "In Progress"
 msgstr "进行中"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "保修期内"
 
@@ -2092,6 +2095,9 @@ msgstr "或手动输入此密钥:"
 msgid "Out of calibration"
 msgstr "需要校准"
 
+msgid "Out of stock"
+msgstr ""
+
 msgid "Output lot"
 msgstr "输出批次"
 
@@ -2849,6 +2855,9 @@ msgstr "缺货"
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3193,6 +3202,9 @@ msgstr "此检验计划没有作业指导书。"
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "这是合格 / 不合格检查。请按 P 或 F。"
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "此工单没有账单费率。请要求办公室在时间被账单处理之前设置它。"

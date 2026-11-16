@@ -1315,6 +1315,9 @@ msgstr "열린 메뉴에서"
 msgid "In Progress"
 msgstr "진행 중"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "보증 기간 내"
 
@@ -2092,6 +2095,9 @@ msgstr "또는 이 비밀을 수동으로 입력하세요:"
 msgid "Out of calibration"
 msgstr "교정 기한 만료"
 
+msgid "Out of stock"
+msgstr ""
+
 msgid "Output lot"
 msgstr "출력 로트"
 
@@ -2849,6 +2855,9 @@ msgstr "짧게"
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3193,6 +3202,9 @@ msgstr "이 검사 계획에는 작업 표준서가 없습니다."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "합격 / 불합격 검사입니다. P 또는 F를 누르세요."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "이 작업 지시에는 청구 요금이 없습니다. 시간이 청구되기 전에 사무실에서 설정하도록 요청하십시오."
