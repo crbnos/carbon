@@ -21506,9 +21506,6 @@ msgstr "IAS 21 के अनुसार इक्विटी शेष को 
 msgid "Optional pages & sections"
 msgstr "वैकल्पिक पृष्ठ और अनुभाग"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "वैकल्पिक। सहेजने पर तिथि बनी रहेगी और दर्ज होगा कि इसे किसने रखा।"
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "वैकल्पिक। इस तारीख के बाद नई खरीद सुझाव बंद करता है।"
 
@@ -24257,9 +24254,6 @@ msgstr "परिवर्तन का कारण"
 msgid "Reason for declining (Optional)"
 msgstr "अस्वीकार करने का कारण (वैकल्पिक)"
 
-msgid "Reason for keeping this date"
-msgstr "यह तिथि रखने का कारण"
-
 msgid "Reason for late entry"
 msgstr "देरी से प्रविष्टि का कारण"
 
@@ -26526,6 +26520,9 @@ msgstr "सहेजा जा रहा है {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "आपके वर्तमान डेटा की प्रति सहेज रहे हैं"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "सहेजने पर यह तिथि बनी रहती है और यह दर्ज होता है कि इसे किसने रखा।"
 
 msgid "Saving..."
 msgstr "सहेज रहे हैं..."

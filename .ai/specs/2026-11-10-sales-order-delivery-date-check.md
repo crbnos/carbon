@@ -128,10 +128,11 @@ These lines get no check, and their result columns are NULL:
 The form shows the warning before the save. If the user saves with a failing date, the user keeps the date:
 
 1. The server sets `deliveryDateOverriddenBy` = the user and `deliveryDateOverriddenAt` = now.
-2. The server stores the optional reason from the form in `deliveryDateOverrideReason`.
-3. The server raises the moment `sales.deliveryDateOverridden` after the write.
+2. The server raises the moment `sales.deliveryDateOverridden` after the write.
 
-If a later save passes the check, the server clears the 3 override columns. A converted line that fails has no override. The sales order shows it as "Date not confirmed" until a user saves the line.
+The form asks for no reason. A company that needs one can ask for it in the workflow that the moment starts.
+
+If a later save passes the check, the server clears the 2 override columns. A converted line that fails has no override. The sales order shows it as "Date not confirmed" until a user saves the line.
 
 ### Design Decisions
 
@@ -150,7 +151,7 @@ If a later save passes the check, the server clears the 3 override columns. A co
 | Block or warn | Warn only; the save never stops | No product surveyed hard-blocks; the user decided (research pattern 5) |
 | UI of the warning | An inline alert under Promised Date, with "Use earliest date"; no modal | The sales-rule modal (`useRuleViolations`) treats any non-violation payload as success and is commercial-licence code; an inline alert needs no resubmit |
 | Who may keep a failing date | Any user who can save the line; no new permission | The user decided; no RBAC change |
-| Record of a kept date | `deliveryDateOverriddenBy`, `deliveryDateOverriddenAt`, optional `deliveryDateOverrideReason` | The user decided |
+| Record of a kept date | `deliveryDateOverriddenBy` and `deliveryDateOverriddenAt`; no reason field | The user decided; the user removed the optional reason on 2026-11-16 |
 | Notification | The moment `sales.deliveryDateOverridden`; each company builds its own workflow | The user decided; no hard-coded recipient |
 | Quote conversion | Check every new line after the conversion; flag failures; never stop the conversion | The user decided; SAP checks again at order creation |
 | Holding stock or capacity | Not in this spec | Research pattern 7: only a supply order holds capacity; ATP subtraction already stops a double promise of stock; MRP v2 planned orders are the designed way to hold supply |
@@ -186,8 +187,7 @@ ALTER TABLE "salesOrderLine"
   ADD COLUMN "earliestDeliveryDate" DATE,
   ADD COLUMN "deliveryDateCheckedAt" TIMESTAMP WITH TIME ZONE,
   ADD COLUMN "deliveryDateOverriddenBy" TEXT REFERENCES "user"("id"),
-  ADD COLUMN "deliveryDateOverriddenAt" TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN "deliveryDateOverrideReason" TEXT;
+  ADD COLUMN "deliveryDateOverriddenAt" TIMESTAMP WITH TIME ZONE;
 
 CREATE INDEX "salesOrderLine_deliveryDateOverriddenBy_idx"
   ON "salesOrderLine" ("deliveryDateOverriddenBy");
@@ -212,9 +212,9 @@ CREATE VIEW "salesOrderLines" WITH(SECURITY_INVOKER=true) AS ( ...same body... )
 | `packages/planning/src/promising/delivery-date-check.ts` | New. Pure `decideDeliveryDate(...)` (the table in section 3); orchestrator `checkDeliveryDates({ db, client, companyId, userId, lines })` |
 | `packages/planning/src/scheduling/quote-lead-time.ts` | `runQuoteLeadTimeWhatIf` accepts an optional `routing`; export the `QuoteLineRouting` type |
 | `packages/planning/src/index.ts` | Export `checkDeliveryDates` and its types |
-| `sales.service.ts` | New `resolveDeliveryDateControls(ctx, keys)` (company level + `itemPlanning` override); `runDeliveryDateCheck(ctx, candidates)` (skips the lines of section 6, calls `checkDeliveryDates`); `checkSalesOrderDeliveryDates(ctx, { salesOrderId, lineIds?, recordOverride, overrideReason? })` (writes every result in one Kysely `UPDATE … FROM (VALUES …)`, scoped by `companyId`); `recordSalesOrderLineDeliveryDate` (after a save, raises the moment); `checkConvertedSalesOrderDeliveryDates` (after a conversion) |
+| `sales.service.ts` | New `resolveDeliveryDateControls(ctx, keys)` (company level + `itemPlanning` override); `runDeliveryDateCheck(ctx, candidates)` (skips the lines of section 6, calls `checkDeliveryDates`); `checkSalesOrderDeliveryDates(ctx, { salesOrderId, lineIds?, capacity, save? })` (writes every result in one Kysely `UPDATE … FROM (VALUES …)`, scoped by `companyId`); `recordSalesOrderLineDeliveryDate` (after a save, raises the moment); `checkConvertedSalesOrderDeliveryDates` (after a conversion) |
 | `sales.server.ts` | New `checkSalesOrderLineDeliveryDate` (`{ view: "sales" }`, `@mcp read`); `createSalesOrderLine` / `updateSalesOrderLine` run the check after the save; `convertQuote` / `acceptDigitalQuote` run it after the conversion |
-| `sales.models.ts` | `salesOrderLineValidator` gains `requestedDate` and `deliveryDateOverrideReason`; new `deliveryDateCheckValidator` |
+| `sales.models.ts` | `salesOrderLineValidator` gains `requestedDate`; new `deliveryDateCheckValidator` |
 | `settings.server.ts` | `updateSalesSettings` accepts `deliveryDateControl` |
 | `items.models.ts` / `items.server.ts` | `itemPlanningValidator` and `updateItemPlanning` accept `deliveryDateControl` |
 | Route `x+/sales-order+/$orderId.delivery-date.tsx` | New action. It calls `api.sales.checkSalesOrderLineDeliveryDate` |
@@ -248,7 +248,7 @@ The page archetypes are the sibling's: the sales order record page (explorer + l
      - Stock: "Only 40 are free by Nov 17, 2026. The earliest delivery date is Nov 29, 2026."
      - Capacity: "The shop cannot finish this by Nov 17, 2026. The earliest delivery date is Dec 1, 2026." + the engine's cause.
    - A button "Use Dec 6, 2026" sets Promised Date to the earliest date.
-   - An optional text field "Reason for keeping this date".
+   - A note: "Saving keeps this date and records who kept it."
 4. **Sales order explorer**: a calendar icon on a line whose status is `Missed`. Amber: "Date not confirmed". Muted: "Date kept by {user}". The tooltip shows the earliest date.
 
 ## Acceptance Criteria
@@ -256,8 +256,8 @@ The page archetypes are the sibling's: the sales order record page (explorer + l
 - [ ] With the company level `None`, a new sales order line saves as today and its result columns stay NULL.
 - [ ] With `Lead Time`: an assembly has an own lead time of 5 days. Its Make to Order sub-assembly has 7 days, and the bought part inside it has 14 days. The cumulative lead time is 26 days. A line promised for today + 10 shows the warning with earliest date today + 26. A line promised for today + 30 shows no warning.
 - [ ] Clicking "Use {date}" sets Promised Date to the earliest date, and the warning goes away.
-- [ ] Saving the line with a failing date stores `deliveryDateStatus = Missed`, the earliest date, the user and the time, and the reason when given. The server raises the moment `sales.deliveryDateOverridden` once.
-- [ ] Saving the line later with a passing date clears the 3 override columns.
+- [ ] Saving the line with a failing date stores `deliveryDateStatus = Missed`, the earliest date, the user and the time. The server raises the moment `sales.deliveryDateOverridden` once.
+- [ ] Saving the line later with a passing date clears the 2 override columns.
 - [ ] With `Stock`: 100 on hand, another order for 80 due next week, and no supply. A Pull from Inventory line for 30 due this week fails with 20 free. Its earliest date is the fence date. A line for 20 passes.
 - [ ] With `Stock`: a PO for 50 arrives in week 2. A line for 60 due this week (on hand 20, no other demand) gets the start of week 2 as its earliest date.
 - [ ] With `Capacity`: a Make to Order line for an item with a routing returns the end-of-queue finish of the quote engine as its earliest date. An item with no routing falls back to the fence.
@@ -280,7 +280,7 @@ The page archetypes are the sibling's: the sales order record page (explorer + l
 
 - [x] Days or weeks for ATP? — **Answer:** weeks, as MRP, so both give the same answer (user, 2026-11-10).
 - [x] Which lead time applies to a make item? — **Answer:** the cumulative lead time through its BOM (user, 2026-11-10).
-- [x] Who may keep a failing date, and is a reason required? — **Answer:** any user who can save the line. The system records who and when. The reason is optional. A moment lets each company add approval or alerts (user accepted the suggestion, 2026-11-10).
+- [x] Who may keep a failing date, and is a reason required? — **Answer:** any user who can save the line. The system records who and when. The form asks for no reason (the user removed the optional field, 2026-11-16). A moment lets each company add approval or alerts (user accepted the suggestion, 2026-11-10).
 - [x] Does the check run on converted lines? — **Answer:** yes, without a stop; failures get a flag (user accepted the suggestion, 2026-11-10).
 - [x] Must an accepted line hold stock or capacity? — **Answer:** no; ATP with look-ahead subtracts it; MRP v2 planned orders hold supply later (user accepted the suggestion, 2026-11-10).
 - [x] Does a make item's `leadTime` include its components? — **Autonomous:** no; the glossary defines it as the own build time, so the components add to it.
@@ -309,4 +309,4 @@ The page archetypes are the sibling's: the sales order record page (explorer + l
   6. The earliest date is never after the fence. A promised date before today never passes. A week covered by its own supply offers the day the goods arrive.
   7. Free stock counts the stock of projects without project stock, and project material demand, as MRP does.
   8. An open job means Planned, Ready, In Progress or Paused, as MRP counts it.
-
+- 2026-11-16: Removed the optional reason for a kept date. The form shows a note in its place. The column `deliveryDateOverrideReason` and the `reason` field of the job event are gone. A company that needs a reason asks for it in the workflow of the moment.

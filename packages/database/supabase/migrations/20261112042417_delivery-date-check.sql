@@ -29,8 +29,7 @@ ALTER TABLE "salesOrderLine"
   ADD COLUMN IF NOT EXISTS "earliestDeliveryDate" DATE,
   ADD COLUMN IF NOT EXISTS "deliveryDateCheckedAt" TIMESTAMP WITH TIME ZONE,
   ADD COLUMN IF NOT EXISTS "deliveryDateOverriddenBy" TEXT REFERENCES "user"("id"),
-  ADD COLUMN IF NOT EXISTS "deliveryDateOverriddenAt" TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN IF NOT EXISTS "deliveryDateOverrideReason" TEXT;
+  ADD COLUMN IF NOT EXISTS "deliveryDateOverriddenAt" TIMESTAMP WITH TIME ZONE;
 
 CREATE INDEX IF NOT EXISTS "salesOrderLine_deliveryDateOverriddenBy_idx"
   ON "salesOrderLine" ("deliveryDateOverriddenBy");

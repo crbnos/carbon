@@ -21506,9 +21506,6 @@ msgstr "Opcjonalna stała stawka używana przy tłumaczeniu sald kapitału włas
 msgid "Optional pages & sections"
 msgstr "Opcjonalne strony i sekcje"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "Opcjonalnie. Zapisanie zachowuje datę i rejestruje, kto ją zachował."
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Opcjonalnie. Wstrzymuje nowe propozycje zakupów po tej dacie."
 
@@ -24257,9 +24254,6 @@ msgstr "Przyczyna Zmiany"
 msgid "Reason for declining (Optional)"
 msgstr "Powód odrzucenia (Opcjonalnie)"
 
-msgid "Reason for keeping this date"
-msgstr "Powód zachowania tej daty"
-
 msgid "Reason for late entry"
 msgstr "Przyczyna opóźnionego wpisu"
 
@@ -26526,6 +26520,9 @@ msgstr "Zapisywanie {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Zapisywanie kopii twoich bieżących danych"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "Zapisanie zachowuje tę datę i rejestruje, kto ją zachował."
 
 msgid "Saving..."
 msgstr "Zapisywanie..."

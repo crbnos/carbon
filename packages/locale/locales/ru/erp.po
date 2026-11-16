@@ -21506,9 +21506,6 @@ msgstr "Дополнительный фиксированный курс, исп
 msgid "Optional pages & sections"
 msgstr "Дополнительные страницы и разделы"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "Необязательно. Сохранение оставит дату и запишет, кто её оставил."
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Опционально. Останавливает новые предложения по закупкам после этой даты."
 
@@ -24257,9 +24254,6 @@ msgstr "Причина изменения"
 msgid "Reason for declining (Optional)"
 msgstr "Причина отказа (Необязательно)"
 
-msgid "Reason for keeping this date"
-msgstr "Причина сохранения этой даты"
-
 msgid "Reason for late entry"
 msgstr "Причина позднего ввода"
 
@@ -26526,6 +26520,9 @@ msgstr "Сохранение {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Сохранение копии текущих данных"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "При сохранении эта дата остаётся, и фиксируется, кто её оставил."
 
 msgid "Saving..."
 msgstr "Сохранение..."

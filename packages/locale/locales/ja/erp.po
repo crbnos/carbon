@@ -21506,9 +21506,6 @@ msgstr "IAS 21 に従って純資産残高を換算する際に使用するオ�
 msgid "Optional pages & sections"
 msgstr "オプションページとセクション"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "任意。保存すると納期は維持され、維持した担当者が記録されます。"
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "オプション。この日付以降、新規の購買提案が行われなくなります。"
 
@@ -24257,9 +24254,6 @@ msgstr "変更の理由"
 msgid "Reason for declining (Optional)"
 msgstr "辞退する理由（オプション）"
 
-msgid "Reason for keeping this date"
-msgstr "この納期を維持する理由"
-
 msgid "Reason for late entry"
 msgstr "遅延入力の理由"
 
@@ -26526,6 +26520,9 @@ msgstr "保存中 {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "現在のデータのコピーを保存中"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "保存すると、この日付が維持され、誰が維持したかが記録されます。"
 
 msgid "Saving..."
 msgstr "保存中..."

@@ -1027,9 +1027,6 @@ export const salesOrderLineValidator = z
     promisedDate: zfd.text(z.string().optional()),
     // The customer's wish, kept apart from the date the company promises.
     requestedDate: zfd.text(z.string().optional()),
-    // Why the user keeps a promised date the delivery date check fails. Not a
-    // line column on its own: the save records it with who kept the date.
-    deliveryDateOverrideReason: zfd.text(z.string().max(500).optional()),
     saleQuantity: zfd.numeric(z.number().optional()),
     serviceId: zfd.text(z.string().optional()),
     serviceStartDate: zfd.text(z.string().optional()),

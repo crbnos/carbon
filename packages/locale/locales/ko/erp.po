@@ -21506,9 +21506,6 @@ msgstr "IAS 21에 따라 자본 잔액을 환산할 때 사용하는 선택적 �
 msgid "Optional pages & sections"
 msgstr "선택적 페이지 및 섹션"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "선택 사항. 저장하면 날짜가 유지되고, 유지한 사람이 기록됩니다."
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "선택사항. 이 날짜 이후로 새로운 구매 제안을 중단합니다."
 
@@ -24257,9 +24254,6 @@ msgstr "변경 이유"
 msgid "Reason for declining (Optional)"
 msgstr "거절 사유(선택 사항)"
 
-msgid "Reason for keeping this date"
-msgstr "이 날짜를 유지하는 이유"
-
 msgid "Reason for late entry"
 msgstr "늦은 입력 사유"
 
@@ -26526,6 +26520,9 @@ msgstr "저장 중 {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "현재 데이터의 사본 저장 중"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "저장하면 이 날짜가 유지되고 누가 유지했는지 기록됩니다."
 
 msgid "Saving..."
 msgstr "저장 중..."

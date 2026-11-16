@@ -699,7 +699,7 @@ export type Events = {
       salesOrderId: string;
       lineIds: string[];
       userId: string;
-      save?: { reason: string | null; changedLineIds: string[] };
+      save?: { changedLineIds: string[] };
     };
   };
 

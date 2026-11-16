@@ -1116,7 +1116,6 @@ type DeliveryDateConstraint =
 export type StoredDeliveryDate = {
   deliveryDateStatus: DeliveryDateStatus | null;
   deliveryDateOverriddenBy: string | null;
-  deliveryDateOverrideReason: string | null;
 };
 
 /** The columns a delivery date check writes; a missing key keeps its value. */
@@ -1127,7 +1126,6 @@ export type DeliveryDateColumns = {
   deliveryDateCheckedAt?: string | null;
   deliveryDateOverriddenBy?: string | null;
   deliveryDateOverriddenAt?: string | null;
-  deliveryDateOverrideReason?: string | null;
 };
 
 /**
@@ -1137,9 +1135,9 @@ export type DeliveryDateColumns = {
  *    date. Nothing is written when no result was stored either.
  * 2. Pending: the capacity check still runs; keep who kept a date.
  * 3. Met, saved by a user: clear who kept a date.
- * 4. Missed, saved by a user: record the user, the time and the reason only
- *    when no one kept the date yet, or the promised date or the quantity
- *    changed. Otherwise keep the record; a new reason replaces the old one.
+ * 4. Missed, saved by a user: record the user and the time only when no one
+ *    kept the date yet, or the promised date or the quantity changed.
+ *    Otherwise keep the record.
  * Without a user's save (a quote conversion), the kept-date record stays.
  */
 export function nextDeliveryDateRecord(args: {
@@ -1149,7 +1147,7 @@ export function nextDeliveryDateRecord(args: {
     constraint: DeliveryDateConstraint | null;
     earliestDate: string | null;
   } | null;
-  save: { userId: string; reason?: string | null; changed: boolean } | null;
+  save: { userId: string; changed: boolean } | null;
   now: string;
 }): { columns: DeliveryDateColumns; keptNow: boolean } {
   const { stored, result, save, now } = args;
@@ -1193,29 +1191,20 @@ export function nextDeliveryDateRecord(args: {
       columns: {
         ...checked,
         deliveryDateOverriddenBy: null,
-        deliveryDateOverriddenAt: null,
-        deliveryDateOverrideReason: null
+        deliveryDateOverriddenAt: null
       },
       keptNow: false
     };
   }
 
-  const reason = save.reason?.trim() || null;
   if (!stored?.deliveryDateOverriddenBy || save.changed) {
     return {
       columns: {
         ...checked,
         deliveryDateOverriddenBy: save.userId,
-        deliveryDateOverriddenAt: now,
-        deliveryDateOverrideReason: reason
+        deliveryDateOverriddenAt: now
       },
       keptNow: true
-    };
-  }
-  if (reason && reason !== stored.deliveryDateOverrideReason) {
-    return {
-      columns: { ...checked, deliveryDateOverrideReason: reason },
-      keptNow: false
     };
   }
   return { columns: checked, keptNow: false };

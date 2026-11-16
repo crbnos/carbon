@@ -164,7 +164,7 @@ export type PostingContract = {
       salesOrderId: string;
       lineIds?: string[];
       capacity: "run" | "defer" | "skip";
-      save?: { reason?: string | null; changedLineIds: string[] };
+      save?: { changedLineIds: string[] };
     };
     output: { pendingLineIds: string[]; keptLineIds: string[] };
   };

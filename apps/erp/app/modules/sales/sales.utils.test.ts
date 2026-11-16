@@ -957,8 +957,7 @@ describe("nextDeliveryDateRecord", () => {
   const NOW = "2026-11-16T10:00:00Z";
   const kept = {
     deliveryDateStatus: "Missed" as const,
-    deliveryDateOverriddenBy: "user_a",
-    deliveryDateOverrideReason: "Partial shipment agreed"
+    deliveryDateOverriddenBy: "user_a"
   };
   const missed = {
     status: "Missed" as const,
@@ -1001,7 +1000,7 @@ describe("nextDeliveryDateRecord", () => {
       nextDeliveryDateRecord({
         stored: null,
         result: missed,
-        save: { userId: "user_a", reason: " Partial shipment ", changed: true },
+        save: { userId: "user_a", changed: true },
         now: NOW
       })
     ).toEqual({
@@ -1011,23 +1010,29 @@ describe("nextDeliveryDateRecord", () => {
         earliestDeliveryDate: "2026-12-08",
         deliveryDateCheckedAt: NOW,
         deliveryDateOverriddenBy: "user_a",
-        deliveryDateOverriddenAt: NOW,
-        deliveryDateOverrideReason: "Partial shipment"
+        deliveryDateOverriddenAt: NOW
       },
       keptNow: true
     });
   });
 
   it("keeps the record when another user saves the line without changing date or quantity", () => {
-    const next = nextDeliveryDateRecord({
-      stored: kept,
-      result: missed,
-      save: { userId: "user_b", changed: false },
-      now: NOW
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: missed,
+        save: { userId: "user_b", changed: false },
+        now: NOW
+      })
+    ).toEqual({
+      columns: {
+        deliveryDateStatus: "Missed",
+        deliveryDateConstraint: "Lead Time",
+        earliestDeliveryDate: "2026-12-08",
+        deliveryDateCheckedAt: NOW
+      },
+      keptNow: false
     });
-    expect(next.keptNow).toBe(false);
-    expect(next.columns).not.toHaveProperty("deliveryDateOverriddenBy");
-    expect(next.columns).not.toHaveProperty("deliveryDateOverrideReason");
   });
 
   it("records a new keep when the promised date or quantity changed", () => {
@@ -1044,17 +1049,6 @@ describe("nextDeliveryDateRecord", () => {
     });
   });
 
-  it("replaces only the reason when a user types a new one on a kept line", () => {
-    expect(
-      nextDeliveryDateRecord({
-        stored: kept,
-        result: missed,
-        save: { userId: "user_b", reason: "Customer called", changed: false },
-        now: NOW
-      }).columns
-    ).toMatchObject({ deliveryDateOverrideReason: "Customer called" });
-  });
-
   it("clears who kept the date once a save passes", () => {
     expect(
       nextDeliveryDateRecord({
@@ -1066,8 +1060,7 @@ describe("nextDeliveryDateRecord", () => {
     ).toMatchObject({
       deliveryDateStatus: "Met",
       deliveryDateOverriddenBy: null,
-      deliveryDateOverriddenAt: null,
-      deliveryDateOverrideReason: null
+      deliveryDateOverriddenAt: null
     });
   });
 

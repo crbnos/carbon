@@ -21506,9 +21506,6 @@ msgstr "Optional fixed rate used when translating equity balances per IAS 21 (in
 msgid "Optional pages & sections"
 msgstr "Optional pages & sections"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "Optional. Saving keeps the date and records who kept it."
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Optional. Stops new purchase suggestions after this date."
 
@@ -24257,9 +24254,6 @@ msgstr "Reason for Change"
 msgid "Reason for declining (Optional)"
 msgstr "Reason for declining (Optional)"
 
-msgid "Reason for keeping this date"
-msgstr "Reason for keeping this date"
-
 msgid "Reason for late entry"
 msgstr "Reason for late entry"
 
@@ -26526,6 +26520,9 @@ msgstr "Saving {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Saving a copy of your current data"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "Saving keeps this date and records who kept it."
 
 msgid "Saving..."
 msgstr "Saving..."

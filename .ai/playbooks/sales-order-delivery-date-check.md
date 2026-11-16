@@ -25,8 +25,8 @@ Routes: /x/settings/sales · /x/sales-order/<id>/new · /x/sales-order/<id>/<lin
 - Click the button "Use 8 Dec 2026". Verify `input[name=promisedDate]` is 2026-12-08 and the alert is gone.
 
 ### 4. Keep a failing date
-- Set the date back inside the fence. Fill "Reason for keeping this date". requestSubmit "Save" and acknowledge the research warning.
-- Verify in the DB: `deliveryDateStatus = Missed`, `deliveryDateConstraint = Lead Time`, the earliest date, `deliveryDateOverriddenBy` = test user, the reason. The explorer row shows the image "Date kept". The Inngest dev server (`/v1/events`) has `carbon/workflow-moment.raised` with `moment: sales.deliveryDateOverridden`.
+- Set the date back inside the fence. Check that the warning shows the note "Saving keeps this date and records who kept it." requestSubmit "Save" and acknowledge the research warning.
+- Verify in the DB: `deliveryDateStatus = Missed`, `deliveryDateConstraint = Lead Time`, the earliest date, `deliveryDateOverriddenBy` = test user. The explorer row shows the image "Date kept". The Inngest dev server (`/v1/events`) has `carbon/workflow-moment.raised` with `moment: sales.deliveryDateOverridden`.
 
 ### 5. A passing date clears the record
 - On the line's details route, set a date after the fence and save. Verify: `Met`, and the 3 override columns are NULL.

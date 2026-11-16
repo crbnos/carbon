@@ -21506,9 +21506,6 @@ msgstr "Tasa fija opcional utilizada al traducir saldos de patrimonio según IAS
 msgid "Optional pages & sections"
 msgstr "Páginas y secciones opcionales"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "Opcional. Al guardar se mantiene la fecha y se registra quién la mantuvo."
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Opcional. Detiene las sugerencias de compra después de esta fecha."
 
@@ -24257,9 +24254,6 @@ msgstr "Razón del cambio"
 msgid "Reason for declining (Optional)"
 msgstr "Motivo de rechazo (Opcional)"
 
-msgid "Reason for keeping this date"
-msgstr "Motivo para mantener esta fecha"
-
 msgid "Reason for late entry"
 msgstr "Motivo de entrada tardía"
 
@@ -26526,6 +26520,9 @@ msgstr "Guardando {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Guardando una copia de tus datos actuales"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "Al guardar se conserva esta fecha y se registra quién la conservó."
 
 msgid "Saving..."
 msgstr "Guardando..."

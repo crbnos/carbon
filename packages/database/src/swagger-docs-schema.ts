@@ -78748,9 +78748,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateOverriddenAt"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateOverrideReason"
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId"
           },
           {
@@ -92914,9 +92911,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverrideReason"
-          },
-          {
             $ref: "#/parameters/select"
           },
           {
@@ -93141,9 +93135,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverrideReason"
-          },
-          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -93320,9 +93311,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverrideReason"
           },
           {
             $ref: "#/parameters/body.salesOrderLine"
@@ -176088,10 +176076,6 @@ export default {
           format: "timestamp with time zone",
           type: "string"
         },
-        deliveryDateOverrideReason: {
-          format: "text",
-          type: "string"
-        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -183294,10 +183278,6 @@ export default {
         },
         deliveryDateOverriddenAt: {
           format: "timestamp with time zone",
-          type: "string"
-        },
-        deliveryDateOverrideReason: {
-          format: "text",
           type: "string"
         }
       },
@@ -238217,12 +238197,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesOrderLines.deliveryDateOverrideReason": {
-      name: "deliveryDateOverrideReason",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.salesOrderLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -246197,12 +246171,6 @@ export default {
     },
     "rowFilter.salesOrderLine.deliveryDateOverriddenAt": {
       name: "deliveryDateOverriddenAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.salesOrderLine.deliveryDateOverrideReason": {
-      name: "deliveryDateOverrideReason",
       required: false,
       in: "query",
       type: "string"

@@ -71477,7 +71477,6 @@ export type Database = {
             | null
           deliveryDateOverriddenAt: string | null
           deliveryDateOverriddenBy: string | null
-          deliveryDateOverrideReason: string | null
           deliveryDateStatus:
             | Database["public"]["Enums"]["deliveryDateStatus"]
             | null
@@ -71539,7 +71538,6 @@ export type Database = {
             | null
           deliveryDateOverriddenAt?: string | null
           deliveryDateOverriddenBy?: string | null
-          deliveryDateOverrideReason?: string | null
           deliveryDateStatus?:
             | Database["public"]["Enums"]["deliveryDateStatus"]
             | null
@@ -71601,7 +71599,6 @@ export type Database = {
             | null
           deliveryDateOverriddenAt?: string | null
           deliveryDateOverriddenBy?: string | null
-          deliveryDateOverrideReason?: string | null
           deliveryDateStatus?:
             | Database["public"]["Enums"]["deliveryDateStatus"]
             | null
@@ -102973,7 +102970,6 @@ export type Database = {
             | null
           deliveryDateOverriddenAt: string | null
           deliveryDateOverriddenBy: string | null
-          deliveryDateOverrideReason: string | null
           deliveryDateStatus:
             | Database["public"]["Enums"]["deliveryDateStatus"]
             | null

@@ -21506,9 +21506,6 @@ msgstr "Optionale feste Rate, die bei der Umrechnung von Eigenkapitalsalden nach
 msgid "Optional pages & sections"
 msgstr "Optionale Seiten & Abschnitte"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "Optional. Beim Speichern bleibt der Termin erhalten, und es wird protokolliert, wer ihn beibehalten hat."
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Optional. Beendet neue Kaufvorschläge nach diesem Datum."
 
@@ -24257,9 +24254,6 @@ msgstr "Grund für Änderung"
 msgid "Reason for declining (Optional)"
 msgstr "Grund für Ablehnung (Optional)"
 
-msgid "Reason for keeping this date"
-msgstr "Grund für die Beibehaltung dieses Termins"
-
 msgid "Reason for late entry"
 msgstr "Grund für verspätete Eingabe"
 
@@ -26526,6 +26520,9 @@ msgstr "Speichern {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Eine Kopie Ihrer aktuellen Daten wird gespeichert"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "Beim Speichern bleibt dieses Datum erhalten, und es wird erfasst, wer es beibehalten hat."
 
 msgid "Saving..."
 msgstr "Wird gespeichert..."

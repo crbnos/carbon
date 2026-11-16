@@ -21506,9 +21506,6 @@ msgstr "Taux fixe optionnel utilisé lors de la traduction des soldes des capita
 msgid "Optional pages & sections"
 msgstr "Pages et sections optionnelles"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "Facultatif. Enregistrer conserve la date et note qui l'a conservée."
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Facultatif. Arrête les nouvelles suggestions d'achat après cette date."
 
@@ -24257,9 +24254,6 @@ msgstr "Raison du changement"
 msgid "Reason for declining (Optional)"
 msgstr "Raison du refus (Facultatif)"
 
-msgid "Reason for keeping this date"
-msgstr "Motif de conservation de cette date"
-
 msgid "Reason for late entry"
 msgstr "Raison de l'entrée tardive"
 
@@ -26526,6 +26520,9 @@ msgstr "Enregistrement {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Enregistrement d'une copie de vos données actuelles"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "L'enregistrement conserve cette date et indique qui l'a conservée."
 
 msgid "Saving..."
 msgstr "Enregistrement..."

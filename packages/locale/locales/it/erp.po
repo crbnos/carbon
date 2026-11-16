@@ -21506,9 +21506,6 @@ msgstr "Tasso fisso opzionale utilizzato quando si traducono i saldi del patrimo
 msgid "Optional pages & sections"
 msgstr "Pagine e sezioni opzionali"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "Facoltativo. Salvando, la data viene mantenuta e viene registrato chi l'ha mantenuta."
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Facoltativo. Interrompe le nuove proposte di acquisto dopo questa data."
 
@@ -24257,9 +24254,6 @@ msgstr "Motivo della Modifica"
 msgid "Reason for declining (Optional)"
 msgstr "Motivo del rifiuto (Facoltativo)"
 
-msgid "Reason for keeping this date"
-msgstr "Motivo per mantenere questa data"
-
 msgid "Reason for late entry"
 msgstr "Motivo dell'inserimento tardivo"
 
@@ -26526,6 +26520,9 @@ msgstr "Salvataggio {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Salvataggio di una copia dei dati attuali"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "Salvando, questa data viene mantenuta e viene registrato chi l'ha mantenuta."
 
 msgid "Saving..."
 msgstr "Salvataggio in corso..."

@@ -6540,19 +6540,13 @@ export async function upsertSalesOrderShipment(
 export async function upsertSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLine:
-    | (Omit<
-        z.infer<typeof salesOrderLineValidator>,
-        "id" | "deliveryDateOverrideReason"
-      > &
+    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> &
         DeliveryDateColumns & {
           companyId: string;
           createdBy: string;
           customFields?: Json;
         })
-    | (Omit<
-        z.infer<typeof salesOrderLineValidator>,
-        "id" | "deliveryDateOverrideReason"
-      > &
+    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> &
         DeliveryDateColumns & {
           id: string;
           updatedBy: string;
@@ -15131,7 +15125,6 @@ export async function deliveryDateColumnsForSave(
       saleQuantity?: number;
       promisedDate?: string;
     };
-    overrideReason?: string;
   }
 ): Promise<DeliveryDateSave> {
   const db = ctx.asSystem.pg;
@@ -15151,8 +15144,7 @@ export async function deliveryDateColumnsForSave(
             "saleQuantity",
             "quantitySent",
             "deliveryDateStatus",
-            "deliveryDateOverriddenBy",
-            "deliveryDateOverrideReason"
+            "deliveryDateOverriddenBy"
           ])
           .where("id", "=", args.lineId)
           .where("companyId", "=", companyId)
@@ -15197,11 +15189,7 @@ export async function deliveryDateColumnsForSave(
   const record = nextDeliveryDateRecord({
     stored: stored ?? null,
     result,
-    save: {
-      userId: ctx.auditUserId,
-      reason: args.overrideReason,
-      changed
-    },
+    save: { userId: ctx.auditUserId, changed },
     now: datetime.timestamp()
   });
   return { ...record, pending: result?.status === "Pending", changed };
@@ -15238,7 +15226,6 @@ export async function afterDeliveryDateSave(
     salesOrderId: string;
     lineId: string;
     save: DeliveryDateSave;
-    overrideReason?: string;
   }
 ) {
   try {
@@ -15260,10 +15247,7 @@ export async function afterDeliveryDateSave(
         salesOrderId: args.salesOrderId,
         lineIds: [args.lineId],
         userId: ctx.auditUserId,
-        save: {
-          reason: args.overrideReason ?? null,
-          changedLineIds: args.save.changed ? [args.lineId] : []
-        }
+        save: { changedLineIds: args.save.changed ? [args.lineId] : [] }
       });
     }
   } catch (error) {
@@ -15282,12 +15266,7 @@ export const checkSalesOrderDeliveryDatesInput = z.object({
   /** `skip`: answer a line that needs the simulation by its lead time */
   capacity: z.enum(["run", "defer", "skip"]),
   /** set when a user's save started the check */
-  save: z
-    .object({
-      reason: z.string().nullable().optional(),
-      changedLineIds: z.array(z.string())
-    })
-    .optional()
+  save: z.object({ changedLineIds: z.array(z.string()) }).optional()
 });
 
 export const checkSalesOrderDeliveryDatesPermission = "system" as const;
@@ -15337,8 +15316,7 @@ export async function checkSalesOrderDeliveryDates(
       "salesOrderLine.deliveryDateOverriddenBy as deliveryDateOverriddenBy",
       sql<string | null>`"salesOrderLine"."deliveryDateOverriddenAt"::text`.as(
         "deliveryDateOverriddenAt"
-      ),
-      "salesOrderLine.deliveryDateOverrideReason as deliveryDateOverrideReason"
+      )
     ])
     .where("salesOrderLine.salesOrderId", "=", input.salesOrderId)
     .where("salesOrderLine.companyId", "=", companyId);
@@ -15390,7 +15368,6 @@ export async function checkSalesOrderDeliveryDates(
       save: input.save
         ? {
             userId: ctx.auditUserId,
-            reason: input.save.reason,
             changed: input.save.changedLineIds.includes(row.id)
           }
         : null,
@@ -15406,8 +15383,7 @@ export async function checkSalesOrderDeliveryDates(
       ${next.earliestDeliveryDate ? String(next.earliestDeliveryDate).slice(0, 10) : null}::date,
       ${next.deliveryDateCheckedAt ? String(next.deliveryDateCheckedAt) : null}::timestamptz,
       ${next.deliveryDateOverriddenBy ?? null}::text,
-      ${next.deliveryDateOverriddenAt ? String(next.deliveryDateOverriddenAt) : null}::timestamptz,
-      ${next.deliveryDateOverrideReason ?? null}::text
+      ${next.deliveryDateOverriddenAt ? String(next.deliveryDateOverriddenAt) : null}::timestamptz
     )`);
   }
 
@@ -15419,11 +15395,10 @@ export async function checkSalesOrderDeliveryDates(
         "earliestDeliveryDate" = v."earliestDate",
         "deliveryDateCheckedAt" = v."checkedAt",
         "deliveryDateOverriddenBy" = v."overriddenBy",
-        "deliveryDateOverriddenAt" = v."overriddenAt",
-        "deliveryDateOverrideReason" = v."reason"
+        "deliveryDateOverriddenAt" = v."overriddenAt"
       FROM (VALUES ${sql.join(values)}) AS v(
         "id", "status", "checkConstraint", "earliestDate", "checkedAt",
-        "overriddenBy", "overriddenAt", "reason"
+        "overriddenBy", "overriddenAt"
       )
       WHERE sol."id" = v."id" AND sol."companyId" = ${companyId}
     `.execute(db);

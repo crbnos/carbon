@@ -2352,16 +2352,7 @@ export const createSalesOrderLine = defineServiceFn({
   input: salesOrderLineInput,
   permission: { create: "sales" },
 
-  async run(
-    ctx,
-    {
-      id: _id,
-      acknowledged,
-      customFields,
-      deliveryDateOverrideReason,
-      ...input
-    }
-  ) {
+  async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
     const companyId = ctx.company.id;
     const line = service.withLineTarget(input);
     const locked = await service.unlockedSalesOrder(
@@ -2394,8 +2385,7 @@ export const createSalesOrderLine = defineServiceFn({
     const deliveryDate = await service.deliveryDateForSave(ctx, {
       salesOrderId: line.salesOrderId,
       lineId: null,
-      line,
-      overrideReason: deliveryDateOverrideReason
+      line
     });
     const created = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       ...line,
@@ -2427,8 +2417,7 @@ export const createSalesOrderLine = defineServiceFn({
       await service.afterDeliveryDateSave(ctx, {
         salesOrderId: line.salesOrderId,
         lineId: created.data.id,
-        save: deliveryDate,
-        overrideReason: deliveryDateOverrideReason
+        save: deliveryDate
       });
     }
     return { salesOrderLineId: created.data.id };
@@ -2448,10 +2437,7 @@ export const updateSalesOrderLine = defineServiceFn({
   input: salesOrderLineInput.safeExtend({ id: z.string() }),
   permission: { create: "sales" },
 
-  async run(
-    ctx,
-    { id, acknowledged, customFields, deliveryDateOverrideReason, ...input }
-  ) {
+  async run(ctx, { id, acknowledged, customFields, ...input }) {
     const line = service.withLineTarget(input);
     // The line must be on the order whose lock state is checked.
     const refused = await refuseUnlessOwned(ctx, "salesOrderLine", {
@@ -2478,8 +2464,7 @@ export const updateSalesOrderLine = defineServiceFn({
     const deliveryDate = await service.deliveryDateForSave(ctx, {
       salesOrderId: line.salesOrderId,
       lineId: id,
-      line,
-      overrideReason: deliveryDateOverrideReason
+      line
     });
     const updated = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       id,
@@ -2511,8 +2496,7 @@ export const updateSalesOrderLine = defineServiceFn({
       await service.afterDeliveryDateSave(ctx, {
         salesOrderId: line.salesOrderId,
         lineId: id,
-        save: deliveryDate,
-        overrideReason: deliveryDateOverrideReason
+        save: deliveryDate
       });
     }
     return { salesOrderLineId: id };

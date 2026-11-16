@@ -16,7 +16,6 @@ import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useRef, useState } from "react";
 import { LuCalendarX } from "react-icons/lu";
-import { Input } from "~/components/Form";
 import { useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -52,8 +51,6 @@ type DeliveryDateCheckAlertProps = {
   quantity: number;
   locationId: string;
   promisedDate: string | null;
-  /** the reason saved with an earlier kept date */
-  defaultReason?: string | null;
   onUseEarliestDate: (date: string) => void;
 };
 
@@ -61,8 +58,8 @@ type DeliveryDateCheckAlertProps = {
  * Checks the line's promised date as the user edits it (spec "UI Changes"
  * item 3). It warns and offers the earliest date; it never blocks the save.
  * Saving with the warning shown keeps the date, and the server records who
- * kept it, with the optional reason below. A check that takes a moment shows
- * a spinner; at the Capacity level it says the shop's schedule is checked.
+ * kept it and when. A check that takes a moment shows a spinner; at the
+ * Capacity level it says the shop's schedule is checked.
  */
 export function DeliveryDateCheckAlert({
   orderId,
@@ -73,7 +70,6 @@ export function DeliveryDateCheckAlert({
   quantity,
   locationId,
   promisedDate,
-  defaultReason,
   onUseEarliestDate
 }: DeliveryDateCheckAlertProps) {
   const { t } = useLingui();
@@ -257,12 +253,9 @@ export function DeliveryDateCheckAlert({
               <Trans>Use {earliest}</Trans>
             </Button>
           </div>
-          <Input
-            name="deliveryDateOverrideReason"
-            label={t`Reason for keeping this date`}
-            helperText={t`Optional. Saving keeps the date and records who kept it.`}
-            defaultValue={defaultReason ?? undefined}
-          />
+          <span className="text-xs text-muted-foreground">
+            <Trans>Saving keeps this date and records who kept it.</Trans>
+          </span>
         </div>
       </AlertDescription>
     </Alert>

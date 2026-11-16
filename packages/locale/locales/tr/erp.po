@@ -21506,9 +21506,6 @@ msgstr "Özkaynak bakiyelerini IAS 21'e göre çevirirken kullanılan isteğe ba
 msgid "Optional pages & sections"
 msgstr "İsteğe bağlı sayfalar ve bölümler"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "İsteğe bağlı. Kaydetmek tarihi korur ve tarihi kimin koruduğunu kaydeder."
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "İsteğe bağlı. Bu tarihten sonra yeni satın alma önerilerini durdurur."
 
@@ -24257,9 +24254,6 @@ msgstr "Değişiklik Nedeni"
 msgid "Reason for declining (Optional)"
 msgstr "Reddetme nedeni (İsteğe bağlı)"
 
-msgid "Reason for keeping this date"
-msgstr "Bu tarihi koruma nedeni"
-
 msgid "Reason for late entry"
 msgstr "Geç Giriş Nedeni"
 
@@ -26526,6 +26520,9 @@ msgstr "Kaydediliyor {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Mevcut verilerinizin bir kopyası kaydediliyor"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "Kaydetmek bu tarihi korur ve tarihi kimin koruduğunu kaydeder."
 
 msgid "Saving..."
 msgstr "Kaydediliyor..."

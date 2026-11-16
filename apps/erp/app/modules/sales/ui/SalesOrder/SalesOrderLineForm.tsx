@@ -874,9 +874,6 @@ const SalesOrderLineForm = ({
                           quantity={saleQuantity}
                           locationId={locationId}
                           promisedDate={promisedDate}
-                          defaultReason={
-                            initialValues.deliveryDateOverrideReason
-                          }
                           onUseEarliestDate={setPromisedDate}
                         />
                       )}

@@ -21506,9 +21506,6 @@ msgstr "在根据IAS 21转换所有者权益余额时使用的可选固定汇率
 msgid "Optional pages & sections"
 msgstr "可选页面和部分"
 
-msgid "Optional. Saving keeps the date and records who kept it."
-msgstr "可选。保存时将保留该日期，并记录保留人。"
-
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "可选。在此日期之后停止新采购建议。"
 
@@ -24257,9 +24254,6 @@ msgstr "变更原因"
 msgid "Reason for declining (Optional)"
 msgstr "拒绝原因（可选）"
 
-msgid "Reason for keeping this date"
-msgstr "保留此日期的原因"
-
 msgid "Reason for late entry"
 msgstr "迟交原因"
 
@@ -26526,6 +26520,9 @@ msgstr "正在保存 {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "正在保存您当前数据的副本"
+
+msgid "Saving keeps this date and records who kept it."
+msgstr "保存后将保留此日期，并记录保留该日期的人员。"
 
 msgid "Saving..."
 msgstr "保存中..."

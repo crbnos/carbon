@@ -466,5 +466,10 @@ The user asked for these after a two-reviewer code review. Each item names the f
 1. No result (the line is not checked): clear the status, the constraint and the earliest date. Keep the kept-date record.
 2. `Pending`: set the status. Keep the kept-date record.
 3. `Met`: clear the kept-date record.
-4. `Missed`, saved by a user: record the user, the time and the reason only if no record exists, or the promised date or the quantity changed. Raise the moment only then. Otherwise keep the record; a new non-empty reason replaces the old one.
+4. `Missed`, saved by a user: record the user and the time only if no record exists, or the promised date or the quantity changed. Raise the moment only then. Otherwise keep the record.
 5. A quote conversion never records a kept date.
+
+## Change on 2026-11-16: no reason field
+The user removed the optional "Reason for keeping this date" field. The steps above that name `deliveryDateOverrideReason` are history only.
+- [x] R1: Drop the column, the validator field, the form input and the `reason` field of the job event and the posting
+- [x] R2: The warning shows the note "Saving keeps this date and records who kept it." in place of the input
