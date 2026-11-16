@@ -63,9 +63,7 @@ import {
   ssoConnectionValidator,
   ssoDomainValidator
 } from "~/modules/settings/settings.models";
-import ScimProvisioning, {
-  type ScimProvisioningData
-} from "~/modules/settings/ui/Security/ScimProvisioning.ee";
+import ScimProvisioning from "~/modules/settings/ui/Security/ScimProvisioning.ee";
 import {
   CopyableField,
   StatusDot
@@ -127,7 +125,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const withoutPermissions = new Set(typesWithoutPermissions.data);
   const scim = {
-    data: scimConnection.data as ScimProvisioningData | null,
+    data: scimConnection.data,
     baseUrl: `${getAppUrl()}/scim/v2`,
     employeeTypes: (employeeTypes.data ?? []).map((type) => ({
       ...type,

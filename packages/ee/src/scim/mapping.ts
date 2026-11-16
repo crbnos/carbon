@@ -2,6 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { Database } from "@carbon/database";
+
 /**
  * The two decisions SCIM makes about a person's access, kept pure so
  * `mapping.test.ts` pins them: which employee type the person's IdP
@@ -10,11 +12,12 @@
  * [companyId, …] }`), so only this company's id may ever move.
  */
 
-export type MappedGroup = {
-  employeeTypeId: string | null;
-  priority: number;
-  displayName: string;
-};
+type Tables = Database["public"]["Tables"];
+
+export type MappedGroup = Pick<
+  Tables["scimGroup"]["Row"],
+  "employeeTypeId" | "priority" | "displayName"
+>;
 
 /**
  * The type of the mapped group that comes first by `compareGroupPrecedence`,
@@ -105,13 +108,10 @@ export function planGroupMappingSave(
   return { unknownGroupIds, updates, removedGroupIds };
 }
 
-export type EmployeeTypePermissionRow = {
-  module: string;
-  view: string[];
-  create: string[];
-  update: string[];
-  delete: string[];
-};
+export type EmployeeTypePermissionRow = Pick<
+  Tables["employeeTypePermission"]["Row"],
+  "module" | "view" | "create" | "update" | "delete"
+>;
 
 const ACTIONS = ["view", "create", "update", "delete"] as const;
 

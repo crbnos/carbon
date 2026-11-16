@@ -40,7 +40,7 @@ Everything lives on **Settings → Security**, under **"Provisioning"**.
 |---|---|
 | A person is assigned | They join your company with the default employee type and location. If they already have a Carbon account with that email, Carbon uses it. If they are already an active employee here, nothing about them changes. |
 | A person is disabled, unassigned or deleted | They leave your company, their API keys in your company are deleted, and if they belong to no other Carbon company, every session they have ends. |
-| A person is enabled again | They rejoin your company with the employee type their groups give. |
+| A person is enabled again | They rejoin your company with the employee type their mapped groups give, or with the type they had before when no group is mapped. |
 | A name changes | Carbon updates the name, unless the person also belongs to another Carbon company. |
 | An email or user name changes | Carbon stores it for the identity provider, but the person's Carbon sign-in email does not change. |
 | Group membership changes | The person's employee type follows the group mappings (below). |
@@ -75,7 +75,7 @@ When the audit log is on, each SCIM change (a member added, deactivated, reactiv
 
 ## Backups
 
-A restore from a backup brings SCIM back turned off: a token from the backup might have been regenerated or turned off since, so Carbon never brings it back. The members, groups and group mappings are kept. Generate a new token and enter it in your identity provider, and it carries on with the people it already knows. Restoring another company's backup brings no SCIM setup with it.
+A restore from a backup brings SCIM back turned off: a token from the backup might have been regenerated or turned off since, so Carbon never brings it back. The provisioned members, groups and group mappings come back as they were when the backup was taken. Generate a new token and enter it in your identity provider to turn SCIM on again. Restoring another company's backup brings no SCIM setup with it.
 
 ## Limits
 

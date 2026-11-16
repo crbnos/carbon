@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import type { TableName } from "@carbon/database/audit.config";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Kysely, sql } from "kysely";
@@ -70,7 +71,7 @@ export const SECRET_TABLES = [
  * point at the source company's people and employee types, so a foreign
  * restore and an import leave these tables empty (SCIM is set up again).
  */
-export const FOREIGN_SKIPPED_TABLES = [
+export const FOREIGN_SKIPPED_TABLES: readonly TableName[] = [
   "scimConnection",
   "scimUser",
   "scimGroup",
@@ -85,7 +86,12 @@ export const FOREIGN_SKIPPED_TABLES = [
  * generates a new token. Reverting a restore keeps them: its snapshot is
  * minutes old and holds the current token.
  */
-export const RESTORE_STRIPPED_COLUMNS: Record<string, readonly string[]> = {
+export const RESTORE_STRIPPED_COLUMNS: {
+  [T in TableName]?: readonly Extract<
+    keyof Database["public"]["Tables"][T]["Row"],
+    string
+  >[];
+} = {
   scimConnection: ["tokenHash", "tokenPreview"]
 };
 
@@ -94,7 +100,9 @@ export function restoreLoadsTable(
   tableName: string,
   { foreign }: { foreign: boolean }
 ): boolean {
-  return !(foreign && FOREIGN_SKIPPED_TABLES.includes(tableName));
+  return !(
+    foreign && (FOREIGN_SKIPPED_TABLES as readonly string[]).includes(tableName)
+  );
 }
 
 /** Whether a restore loads a column's values (else the column's default). */
@@ -103,9 +111,10 @@ export function restoreLoadsColumn(
   columnName: string,
   { stripSecrets }: { stripSecrets: boolean }
 ): boolean {
-  return !(
-    stripSecrets && RESTORE_STRIPPED_COLUMNS[tableName]?.includes(columnName)
-  );
+  const stripped = (
+    RESTORE_STRIPPED_COLUMNS as Partial<Record<string, readonly string[]>>
+  )[tableName];
+  return !(stripSecrets && stripped?.includes(columnName));
 }
 
 export const COMPANY_SINGLETON_TABLES = [

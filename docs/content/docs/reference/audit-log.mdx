@@ -47,7 +47,7 @@ Carbon tracks a fixed set of entities. Anything not on this list is not audited.
 | Depreciation Run | Revenue Recognition Run |
 | Lease | |
 
-Each entry records the **operation** (`INSERT`, `UPDATE`, or `DELETE`), **actor**, field-level diff, request **metadata** (IP address, user agent, and origin), and **timestamp**. System and service-role changes show *System* as the actor. Diffs exclude bookkeeping fields such as `updatedAt`, `updatedBy`, and internal embeddings.
+Each entry records the **operation** (`INSERT`, `UPDATE`, or `DELETE`), **actor**, field-level diff, request **metadata** (IP address, user agent, and origin), and **timestamp**. System and service-role changes show *System* as the actor, unless they come from a named source: changes your identity provider makes over [SCIM provisioning](/docs/reference/scim-provisioning) show *SCIM*. Diffs exclude bookkeeping fields such as `updatedAt`, `updatedBy`, and internal embeddings.
 
 ## Viewing and filtering
 

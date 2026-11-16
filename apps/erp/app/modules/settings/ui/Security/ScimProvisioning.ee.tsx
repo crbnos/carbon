@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { docUrl } from "@carbon/content/links";
+import type { getScimConnection } from "@carbon/ee/scim.server";
 import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -54,23 +55,10 @@ import {
 import { path } from "~/utils/path";
 import { CopyableField, StatusDot } from "./SecurityFields";
 
-export type ScimProvisioningData = {
-  connection: {
-    id: string;
-    tokenPreview: string;
-    defaultEmployeeTypeId: string;
-    defaultLocationId: string;
-    lastRequestAt: string | null;
-  };
-  groups: {
-    id: string;
-    displayName: string;
-    employeeTypeId: string | null;
-    priority: number;
-    memberCount: number;
-  }[];
-  activeCount: number;
-};
+/** What `getScimConnection` reads for the settings card. */
+export type ScimProvisioningData = NonNullable<
+  Awaited<ReturnType<typeof getScimConnection>>["data"]
+>;
 
 type ScimProvisioningProps = {
   scim: ScimProvisioningData | null;

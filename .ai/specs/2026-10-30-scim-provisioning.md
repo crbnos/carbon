@@ -12,10 +12,12 @@ A customer's identity provider (Okta, Microsoft Entra ID, or any SCIM 2.0
 client) creates, updates, deactivates and regroups Carbon employees over
 SCIM 2.0 at `/scim/v2`. The main outcome is automatic offboarding. When the
 IdP sets `active: false` or sends DELETE, Carbon removes the person from that
-company with the existing per-company deactivation. Carbon also deletes the
+company with the existing per-company deactivation, which also deletes the
 person's API keys in that company. If the person has no other company, Carbon
 ends every session they have. IdP groups map to employee types. A person in no
-mapped group gets the connection's default employee type. The admin sets up
+mapped group gets the connection's default employee type. The fields the IdP
+owns are read-only in Carbon, and each SCIM change is one audit row labelled
+"SCIM". The admin sets up
 SCIM in a new Provisioning section on Settings → Security. SCIM runs on Cloud
 and on self-hosted, behind a new `SCIM` plan feature (Business, Partner).
 
@@ -36,12 +38,12 @@ sequenceDiagram
         Engine->>GoTrue: "admin.createUser"
         Engine->>DB: "employee, membership, permissions"
     else "active false or DELETE"
-        Engine->>DB: "deactivateUser, delete apiKey rows"
+        Engine->>DB: "deactivateUser (API keys first, then membership)"
         Engine->>GoTrue: "logout scope=global (no other company)"
     else "group members change"
         Engine->>DB: "reconcile employeeTypeId + permissions"
     end
-    Engine->>DB: "audit entry, actor SCIM"
+    Note over Engine,DB: "every write is labelled SCIM for the audit log"
     Engine-->>IdP: "application/scim+json"
 ```
 
@@ -75,26 +77,36 @@ hire in Carbon too.
    research, answer 3): PUT and PATCH, `op` in any case, string booleans,
    no-path value objects with dotted keys, and filtered paths.
 2. **One `scimConnection` per company.** It holds the hashed bearer token, the
-   IdP name, the default employee type and the default location.
+   default employee type and the default location. Turning SCIM off clears
+   the token and keeps the row, so the ids the IdP holds still work after a
+   new setup.
 3. **A thin route, a commercial engine.** The route calls
    `handleScimRequest` in `@carbon/ee/scim.server`. The engine resolves the
    token, runs `requireEntitlement(…, "SCIM")`, applies the rate limit, and
    routes the request.
 4. **Per-company offboarding.** `active: false` and DELETE call the existing
-   `deactivateUser` (`@carbon/auth/users.server`). Then the engine deletes the
-   person's `apiKey` rows in the company. If the person has no other company,
-   the engine signs the person out of GoTrue everywhere.
+   `deactivateUser` (`@carbon/auth/users.server`). It deletes the person's
+   `apiKey` rows in the company first, then the membership. If the person has
+   no other company, the engine signs the person out of GoTrue everywhere.
 5. **Group → employee type mapping.** Pushed IdP groups land in `scimGroup`.
-   The admin maps a group to an employee type on the Provisioning card. When a
-   person's groups change, the engine picks the mapped type with the best
-   priority. Then it rewrites the person's permission grants for this company
+   The admin maps a group to an employee type on the Provisioning card and
+   orders the mapped groups. When a person's groups change, the engine picks
+   the type of the mapped group that comes first. Then it rewrites the person's permission grants for this company
    from that type.
 6. **A Provisioning section on Settings → Security**, beside SAML SSO. The
    admin creates the connection, copies the base URL and the token (shown
    once), regenerates the token, maps groups, and turns SCIM off.
-7. **Audit.** Every SCIM change writes an `employee` audit entry with
-   `actorId: null` and `metadata.actorLabel: "SCIM"`. The audit UI
-   shows the label instead of "System".
+7. **Audit.** The engine labels its writes "SCIM" (`app.actor_label` in a
+   transaction, the `x-carbon-actor` header on its service-role client).
+   `dispatch_event_batch` copies the label into each audit row's
+   `metadata.actorLabel`, so each change is one row and the audit UI shows
+   "SCIM" instead of "System".
+8. **The IdP's fields are read-only.** The name (while the person belongs to
+   no other company) and, once a group is mapped, the employee type show
+   read-only in Carbon, and every save refuses a change to them.
+9. **Backups.** A restore from a backup brings SCIM back turned off, so an
+   old token never works again. A restore of another company's backup and an
+   import load no SCIM rows.
 
 ### Request lifecycle
 
@@ -128,9 +140,10 @@ hire in Carbon too.
    4. Revoke the person's open invites for this company.
    5. Write the name to `user` only when the person has no other company.
    6. Insert `scimUser`.
-7. After the commit: bust the claims cache, sync the Stripe seats (Cloud),
-   write the audit entry. If the transaction failed and step 4 made the auth
-   user, delete the auth user.
+7. After the commit: bust the claims cache and sync the Stripe seats (Cloud).
+   If the transaction failed and step 4 made the auth user, delete the auth
+   user. The transaction is labelled "SCIM", so the audit row needs no extra
+   write.
 8. Answer `201` with the User resource.
 
 #### `PUT` / `PATCH /Users/{id}`
@@ -147,29 +160,30 @@ hire in Carbon too.
 
 #### Deactivation (`active: false` or `DELETE /Users/{id}`)
 
-1. Call `deactivateUser(serviceRole, userId, companyId)`. It strips this
-   company from `userPermission`, deletes `userToCompany`, sets
-   `employee.active = false`, deletes group `membership` rows, revokes open
-   invites and busts the claims cache.
-2. Read the person's `apiKey` rows in this company. Delete them. Bust each
-   cached key hash.
-3. If the person has no `userToCompany` row left, call GoTrue
+1. Call `deactivateUser` on `getCarbonServiceRoleAs("SCIM")`. It deletes the
+   person's `apiKey` rows in this company and busts each cached key hash.
+   Then it strips this company from `userPermission`, deletes
+   `userToCompany`, sets `employee.active = false`, deletes group
+   `membership` rows, revokes open invites and busts the claims cache.
+2. If the person has no `userToCompany` row left, call GoTrue
    `/logout?scope=global` with a token signed for the person. GoTrue revokes
    every refresh token.
-4. For PATCH or PUT, set `scimUser.active = false`. For DELETE, delete the
+3. For PATCH or PUT, set `scimUser.active = false`. For DELETE, delete the
    `scimUser` row.
-5. Sync the Stripe seats (Cloud). Write the audit entry.
+4. Sync the Stripe seats (Cloud).
 
 #### Group membership change
 
 1. Store the group change in `scimGroup` / `scimGroupMember`.
 2. Collect the affected `scimUser` ids.
 3. If the connection has no mapped group, stop.
-4. For each affected active person, pick the type: the mapped group with the
-   lowest `priority` (ties: `displayName`), else the default type.
+4. For each affected active person, pick the type: the mapped group that
+   comes first by `compareGroupPrecedence` (lowest `priority`, ties by
+   `displayName`), else the default type. `priority` is the admin's list
+   order: the card saves it in steps of 10 (`planGroupMappingSave`).
 5. For each person whose `employee.employeeTypeId` differs, set the new type
    and rewrite this company's grants from it. Use one read and batched writes.
-6. Bust the claims caches. Write one audit entry per changed person.
+6. Bust the claims caches. The transaction is labelled "SCIM".
 
 Saving a mapping or the default type on the Provisioning card runs steps 4–6
 for every active person of the connection.
@@ -180,19 +194,19 @@ for every active person of the connection.
 |----------|--------|-----------|
 | Deployment and plan (Q1) | Cloud and self-hosted. New `SCIM` key in `FEATURE_PLANS`: Business, Partner. `requireEntitlement` in the engine. Community is blocked by `companyHasFeature`. | SCIM needs `auth.admin.createUser` (already on Cloud), Carbon tables and the public GoTrue `/logout`. It needs no GoTrue SSO admin API and no `auth` schema write. Every surveyed product puts SCIM on its top plan. |
 | Not tied to SAML SSO | SCIM works without SSO. With SSO on, SCIM keeps the invite domain rule and seeds the SSO identity. | Cloud has no SAML. Provisioned people sign in by magic link, Google or password. |
-| Fields the IdP owns (Q2) | The IdP owns `active`, the name and (with mappings) the employee type. Last writer wins: Carbon shows no lock in v1. | Okta and Entra overwrite on every push. A lock needs changes in 4 people forms. The Provisioning card and the docs say which fields the IdP owns. |
+| Fields the IdP owns (Q2) | The IdP owns `active`, the name (while the person belongs to no other company) and, once a group is mapped, the employee type. Carbon shows the name and the type read-only (`getScimOwnedFields`), and every save refuses a change to them (`scimOwnedChangeRefusal`). Deactivate stays available. | Okta and Entra overwrite on every push, so an edit in Carbon was silently undone. Linear and Atlassian lock SCIM-managed users; Slack and GitHub lock the synced fields. Linear also keeps a manual suspend. |
 | Name writes | Only for a person with no other company. | `user` is global. One company's IdP must not rename a person that another company also sees. |
 | Email writes | Never. SCIM stores the IdP's `userName` and email on `scimUser` only. | The sign-in email is global. An IdP that can change it can take over the person's other companies. |
-| Group mapping (Q3) | IdP groups → employee types only. Lowest `priority` wins, ties by `displayName`. No mapped group → the default type. No mapping at all → SCIM never changes a type after create. | SAP maps groups to business roles. Linear gives unmapped people the base role. Carbon has one type per employee, so precedence must be explicit. Location and department stay manual. |
+| Group mapping (Q3) | IdP groups → employee types only. The admin orders the mapped groups; the first wins (lowest `priority`, ties by `displayName`). No mapped group → the default type. No mapping at all → SCIM never changes a type after create. | SAP maps groups to business roles. Linear gives unmapped people the base role. Carbon has one type per employee, so precedence must be explicit. Location and department stay manual. |
 | A type change rewrites grants | The engine replaces this company's slice of `userPermission` with the type's grants. Hand edits to that person's grants are lost. | A type change in Carbon already means "these permissions". Merging would keep the access the IdP removed. |
-| Deactivate (Q4) | The existing per-company `deactivateUser`, plus delete the person's `apiKey` rows in the company, plus GoTrue global logout when no company is left. The global `user` stays. | A key authenticates as its creator with no membership check, so it keeps access open. GitHub org-level SCIM keeps the personal account. Slack and Notion sign the person out. |
+| Deactivate (Q4) | The existing per-company `deactivateUser`, which deletes the person's `apiKey` rows in the company before the membership (so a manual deactivation does too), plus GoTrue global logout when no company is left. The global `user` stays. | A key authenticates as its creator with no membership check, so it keeps access open. GitHub org-level SCIM keeps the personal account. Slack and Notion sign the person out. |
 | Sessions with other companies | Keep the GoTrue session. | A global logout would sign the person out of companies this IdP does not own. Membership delete and the claims cache bust already block this company at the next request. |
 | DELETE | Same as `active: false`, then delete the `scimUser` row, so a later GET answers 404. | Entra sends DELETE only after its 30-day hard delete, and expects 404 then. |
 | Manual deactivation in Carbon | Sticks. The engine acts on `active` changes only, so an IdP push with `active: true` does not undo it. A deactivate then reactivate in the IdP brings the person back. | Admins keep a break-glass. Linear has the same override. |
 | Seats (Q5) | No cap. Sync the Stripe quantity after each membership change. The card shows the count of active provisioned people. | No product caps provisioning. Carbon has no seat cap anywhere today. |
 | Existing users on first sync (Q6) | Match by email (no case). An active employee is adopted as is. A person with no membership here joins with the default type. A customer or supplier contact is refused. Store `externalId` and `userName` on `scimUser`. | Linear, Notion and Atlassian match by email. SCIM grants no more than an invite already can: an admin can invite any email today. |
 | GET /Users scope | Lists `scimUser` rows only, never unmanaged employees. | SCIM must not touch people it does not manage, such as shop-floor operators on shared terminals. |
-| Audit (Q7) | One `employee` audit entry per change, `actorId: null`, `metadata.origin: "scim"`, `metadata.actorLabel: "SCIM"`. The 3 audit renderers show `actorLabel` when there is no actor. | The audit columns are FKs to `user`, so a synthetic actor id is not possible. `employee` is already an audited entity. |
+| Audit (Q7) | One audit row per change, from the event-system trigger, with `metadata.actorLabel: "SCIM"`. The engine labels its writes (`app.actor_label`, or the `x-carbon-actor` header on a service-role request, trusted from the service role only), and `dispatch_event_batch` copies the label into AUDIT events. The 3 audit renderers show `actorLabel` when there is no actor. | The audit columns are FKs to `user`, so a synthetic actor id is not possible. `employee` has no `updatedBy`, so the trigger's row had no actor; an entry of the engine's own made every change appear twice. |
 | Controlled environment | SCIM can adopt an active employee, update and deactivate. It refuses every other join and every reactivation (`403`). | An invite records the U.S.-person attestation. SCIM cannot give it. Offboarding still works. |
 | Token | `scim_` + 32 random base62 characters. Store `tokenHash` (SHA-256 hex, `hashApiKey`) and `tokenPreview` (last 4). Show once. Regenerate replaces the hash. | The API-key pattern (`apiKey.keyHash`). Okta and Entra store one static bearer token. |
 | Rate limit | 600 requests per minute per connection. Answer `429` with `Retry-After: 60`. | Okta waits `Retry-After` seconds. Entra runs 5–10 requests in parallel. |
@@ -200,11 +214,12 @@ for every active person of the connection.
 | Where the code lives | Engine in `packages/ee/src/scim/`, exported as `@carbon/ee/scim.server`. Settings UI in `ScimProvisioning.ee.tsx`. | The commercial-licensing rule: one folder per feature. It imports the three SSO helpers it needs from `sso/`. |
 | Multi-tenancy (heuristic 1) | All 4 tables have `companyId`, composite PK `("id", "companyId")`, `id('…')` defaults. `scimGroupMember` has PK `("groupId", "scimUserId", "companyId")`. | Convention. |
 | Service shape (heuristic 2) | Engine functions take `db` and `serviceRole` and return `{ data, error }`. The HTTP handler returns a `Response` and never throws. | Convention. The MCP engine (`serveMcpRequest`) is the precedent for an ee handler. |
-| RLS (heuristic 3) | `company("settings", { read: "settings_view" })` for all 4 tables in `authz/manifest.ts`. | `apiKey` uses the same rule. The engine writes with the service role. |
+| RLS (heuristic 3) | `company("settings", { read: "settings_view", create: false, update: false, delete: false })` for all 4 tables in `authz/manifest.ts`. | No API writes: a `settings_update` user could otherwise set `tokenHash` to a token they know. The engine writes with the service role. |
 | Permissions (heuristic 4) | Security loader: `view: "settings"`. `x+/settings+/scim.tsx` action: `update: "settings"`. The SCIM route authenticates by token only. | Same as `sso.tsx`. |
 | Forms (heuristic 5) | `ValidatedForm` + `scimConnectionValidator` / `scimGroupMappingsValidator` in `settings.models.ts`. | Convention. |
 | Module layout (heuristic 6) | No new ERP module. Settings route + ee files. No barrel in `apps/erp`. | Same as SAML SSO. |
-| Backward compatibility (heuristic 7) | Additive. No behavior changes for people without a `scimUser` row. `AuditMetadata` gains two optional fields. | Preserve behavior. |
+| Backups | A restore from a backup leaves `tokenHash` / `tokenPreview` out (`RESTORE_STRIPPED_COLUMNS`), so SCIM comes back turned off. A restore of another company's backup and an import load no SCIM rows (`FOREIGN_SKIPPED_TABLES`). | A backup can hold a token regenerated or turned off since. The token hash is unique across all companies, and the rows point at the source company's people and types. |
+| Backward compatibility (heuristic 7) | Additive for SCIM. Two shared changes: `deactivateUser` now deletes the person's API keys in the company, and `dispatch_event_batch` carries an actor label. `AuditMetadata` gains two optional fields. | A key outliving the membership was an open access path for every deactivation, not only SCIM's. |
 
 ## Data Model Changes
 
@@ -215,8 +230,8 @@ RLS rules go in `packages/database/src/authz/manifest.ts`, not the migration.
 CREATE TABLE "scimConnection" (
   "id" TEXT NOT NULL DEFAULT id('scim'),
   "companyId" TEXT NOT NULL,
-  "tokenHash" TEXT NOT NULL,
-  "tokenPreview" TEXT NOT NULL,
+  "tokenHash" TEXT,      -- NULL while SCIM is turned off
+  "tokenPreview" TEXT,
   "defaultEmployeeTypeId" TEXT NOT NULL REFERENCES "employeeType"("id"),
   "defaultLocationId" TEXT NOT NULL REFERENCES "location"("id"),
   "lastRequestAt" TIMESTAMP WITH TIME ZONE,
@@ -292,12 +307,15 @@ Notes:
 - `employeeType` and `location` have single-column PKs. The engine checks
   that both belong to the company before every write, as
   `createEmployeeAccount` does.
-- Turning SCIM off deletes the `scimConnection` row. The cascade deletes the
-  SCIM rows. Carbon users, memberships and employees stay.
+- Turning SCIM off clears `tokenHash` and `tokenPreview` and keeps every row,
+  so a new setup resumes them. Carbon users, memberships and employees stay.
 - The engine stamps `createdBy` / `updatedBy` with `'system'` on the SCIM
   rows. The `system` user exists since `20230123004317_companies-rls.sql`.
 - `AuditMetadata` (`packages/database/src/audit.types.ts`) gains
-  `origin: "scim"` and `actorLabel?: string`. No SQL change.
+  `origin: "scim"` and `actorLabel?: string`.
+- `dispatch_event_batch` (a managed event-system function) reads the actor
+  label and adds it to AUDIT events' `handlerConfig.metadata`. It ships in the
+  generated migration `…_event-actor-label.sql`.
 
 ## API / Service Changes
 
@@ -305,37 +323,52 @@ Notes:
 
 | Function | File | Does |
 |---|---|---|
-| `handleScimRequest(request, deps)` | `scim.server.ts` | Authenticates, gates, rate-limits, routes. Returns a `Response`. |
+| `handleScimRequest(request, deps)` | `scim/engine.server.ts` | Authenticates, gates, rate-limits, routes, logs one line. Returns a `Response`. |
+| `reconcileEmployeeTypes(db, input)` | `scim/engine.server.ts` | Gives each active provisioned person their mapped type and grants. |
 | `createScimConnection(serviceRole, db, input)` | `scim/connections.server.ts` | `requireEntitlement`. Makes the token. Returns the raw token once. |
-| `updateScimConnection(serviceRole, db, input)` | `scim/connections.server.ts` | `requireEntitlement`. Saves the IdP, default type and location. Reconciles. |
+| `updateScimConnection(serviceRole, db, input)` | `scim/connections.server.ts` | `requireEntitlement`. Saves the default type and location. Reconciles. |
 | `regenerateScimToken(serviceRole, input)` | `scim/connections.server.ts` | `requireEntitlement`. Replaces the hash. Returns the raw token once. |
 | `turnOffScimConnection(serviceRole, input)` | `scim/connections.server.ts` | Clears the token; keeps the connection row, the SCIM people and groups and the mappings. Not gated, so a downgraded company can still turn SCIM off. |
 | `getScimConnection(client, companyId)` | `scim/connections.server.ts` | The card's read: connection, groups with member counts, active count. |
 | `saveScimGroupMappings(serviceRole, db, input)` | `scim/connections.server.ts` | `requireEntitlement`. Takes every group's type in list order, numbers the mapped groups by that order and writes the changed rows in one transaction. Reconciles once. |
+| `getScimManagedUserIds(client, companyId, userIds?)` | `scim/connections.server.ts` | Which people SCIM provisioned: the Users screen badge and the drawer note. |
+| `getScimOwnedFields(serviceRole, companyId, userId)` | `scim/connections.server.ts` | Whether the IdP owns the person's name and employee type. |
+| `getEmployeeTypesWithoutPermissions(serviceRole, companyId, typeIds)` | `scim/connections.server.ts` | The types that grant nothing, for the card's warning. |
 
 **Pure modules (unit-tested, no I/O):**
 
-- `scim/protocol.ts`: `parseScimFilter`, `normalizePatchOperations`,
-  `applyUserPatch`, `applyGroupMemberPatch`, `toScimUser`, `toScimGroup`,
-  `scimListResponse`, `scimError`, the discovery documents.
-- `scim/mapping.ts`: `pickEmployeeType(memberships, defaultTypeId)`,
-  `replaceCompanyGrants(current, typeGrants, companyId)`,
-  `primaryEmail(resource)`.
+- `scim/protocol.ts`: `parseScimFilter`, `readUserResource`,
+  `applyUserPatch`, `readGroupResource`, `applyGroupPatch`, `pickEmail`,
+  `matchScimRoute`, `toScimUser`, `toScimGroup`, `scimListResponse`,
+  `scimError`, the discovery documents.
+- `scim/mapping.ts`: `pickEmployeeType`, `compareGroupPrecedence`,
+  `planGroupMappingSave`, `typeGrantsFor`, `replaceCompanyGrants`.
 
 **`@carbon/auth`:** `signUserAccessToken(userId)` in
 `lib/supabase/client.server.ts`. `getUserScopedClient` calls it, so there is
 one signer. The engine passes the token to
-`serviceRole.auth.admin.signOut(token, "global")`.
+`serviceRole.auth.admin.signOut(token, "global")`. `getCarbonServiceRoleAs(label)`
+in the same file is the service-role client that sends `x-carbon-actor`.
+`deleteUserApiKeys` (`users.server.ts`) is the API-key cleanup `deactivateUser`
+runs first.
+
+**ERP `users` module:** `scimOwnedChangeRefusal` (`users.service.ts`) refuses
+a change to a field SCIM owns, in `updateEmployeePermissions`,
+`updateOwnProfile`, `updatePublicAccount` and the person route's save.
 
 **ERP routes:**
 
-- `routes/scim+/v2.$.ts` — `loader` and `action` both call
+- `routes/scim+/v2+/$.ts` — `loader` and `action` both call
   `handleScimRequest(request, { db: getDatabaseClient(), serviceRole })`.
 - `routes/x+/settings+/scim.tsx` — action-only, like `sso.tsx`. Intents:
   `create`, `update`, `regenerate`, `delete`, `saveGroupMappings`. GET redirects to
   Security.
 - `routes/x+/settings+/security.tsx` — the loader adds `scim` (connection,
-  groups, active count, base URL `${getAppUrl()}/scim/v2`, employee types).
+  groups, active count, base URL `${getAppUrl()}/scim/v2`, employee types
+  with `hasNoPermissions`).
+- `routes/x+/users+/employees.tsx` and `employees.$employeeId.tsx` — the
+  badge, the drawer note and the read-only type. `routes/x+/person+/` and
+  `api+/account.profile.ts` — the read-only name.
 
 **SCIM endpoints** (all under `/scim/v2`, `Content-Type: application/scim+json`):
 
@@ -394,7 +427,8 @@ Archetype: the Settings page with cards, the same as Security
    the token with copy buttons, and "This token is shown once."
 5. **Connection card:** base URL (`CopyableField`), token `scim_•••abcd`, last
    request time, active provisioned count, and the form for the default type
-   and default location. Footer: "Turn off" (confirm modal),
+   and default location. A warning shows under the default type when it
+   grants no permissions. Footer: "Turn off" (`ConfirmDelete`),
    "Regenerate token" (confirm modal), "Save changes".
 6. **Group mappings card:** one row per pushed group: name, member count and
    an employee type Select (with "Not mapped"). Mapped groups come first, in
@@ -403,6 +437,11 @@ Archetype: the Settings page with cards, the same as Security
    identity provider sends a group.
 7. **Text on the card:** "Your identity provider adds, updates and removes
    the members it manages." and a link to the docs page.
+8. **Users → Accounts:** a "SCIM" badge beside a provisioned person's status;
+   the employee drawer shows that the IdP manages them and, once a group is
+   mapped, the employee type read-only.
+9. **Person profile and account settings:** the name read-only while SCIM
+   owns it, with the helper text "Set by your identity provider".
 
 Audit log: the table, the drawer and the CSV export show
 `metadata.actorLabel` when `actorId` is null, else "System".
@@ -418,9 +457,12 @@ Audit log: the table, the drawer and the CSV export show
 - [ ] A person who belongs to a second company keeps access to that company after deactivation in the first.
 - [ ] `PATCH` with `active: true` reactivates the person with the type's grants.
 - [ ] `DELETE /Users/{id}` answers `204`. Then `GET /Users/{id}` answers `404`. The global `user` row and the person's records stay.
-- [ ] `POST /Groups` with 2 members, then a mapping to type "Purchasing" with priority 1, changes both people's type and grants. Removing one member with `{"op":"remove","path":"members[value eq \"<id>\"]"}` sets that person back to the default type.
+- [ ] `POST /Groups` with 2 members, then a mapping to type "Purchasing", changes both people's type and grants. Removing one member with `{"op":"remove","path":"members[value eq \"<id>\"]"}` sets that person back to the default type.
 - [ ] An employee with no `scimUser` row is never listed, changed or deactivated by SCIM.
-- [ ] Each create, deactivate, reactivate and type change writes an `employee` audit entry. The audit log shows "SCIM" as the actor.
+- [ ] Each create, deactivate, reactivate and type change writes one `employee` audit row. The audit log shows "SCIM" as the actor.
+- [ ] A provisioned person's name (one company) and, with a mapped group, their employee type show read-only, and a save that changes them is refused.
+- [ ] A deactivation from the Users screen deletes the person's API keys in the company.
+- [ ] A restore from a backup brings SCIM back turned off; a restore of another company's backup loads no SCIM rows.
 - [ ] With `CONTROLLED_ENVIRONMENT=true`, `POST /Users` for an unknown email answers `403`. Deactivation still works.
 - [ ] Unit tests pin the filter parser, the PATCH normalizer (Okta and both Entra shapes), `pickEmployeeType` and `replaceCompanyGrants`.
 - [ ] `pnpm exec turbo run typecheck --filter=@carbon/ee --filter=@carbon/auth --filter=@carbon/database --filter=erp`, Biome and the ee tests pass.
@@ -429,14 +471,15 @@ Audit log: the table, the drawer and the CSV export show
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| A leaked SCIM token lets an attacker add an admin-type person or remove everyone | High | Hashed at rest, shown once, regenerate kills the old token, rate limit. The default type is the admin's choice. Every change is in the audit log with the IdP label. |
+| A leaked SCIM token lets an attacker add an admin-type person or remove everyone | High | Hashed at rest, shown once, regenerate kills the old token, rate limit. The default type is the admin's choice. Every change is in the audit log as "SCIM". |
 | An IdP sets an email that belongs to a person in another company, and SCIM adds that person here | Med | Same trust as an invite today. SCIM never changes that person's email or name, and the person gets no access to the other company. With SSO on, the verified-domain rule applies. |
 | Hosted Supabase stops accepting HS256 tokens from the legacy JWT secret, so the global logout fails | Med | Workflows and the Onshape panel already depend on it. The engine logs a failed logout and still finishes the deactivation: the membership is gone, so this company is blocked anyway. The test phase checks it. |
-| A type change wipes a person's hand-edited grants | Med | Only when the type changes. The card text says the IdP owns the type for mapped groups. |
+| A type change wipes a person's hand-edited grants | Med | Only when the type changes. With a mapped group the type is read-only, and the docs say the IdP owns it. |
 | Deactivation is not one transaction: `deactivateUser` writes through supabase-js | Med | It is the existing deactivation, kept on purpose. Each step is idempotent, and the IdP retries. A retry finishes the missing steps. |
 | Okta and Entra send a shape the parser does not know | Med | Unit tests pin both IdPs' documented shapes. An unknown op answers `400` with the reason, which the IdP shows to its admin. |
 | A group PATCH with 1000 members makes 1000 grant rewrites | Low | One read, batched `UPDATE … FROM (VALUES …)` of 500 rows, one transaction. |
-| Manual edits in Carbon fight the IdP | Low | Documented. Manual deactivation sticks on purpose. |
+| Manual edits in Carbon fight the IdP | Low | The owned fields are read-only and saves refuse them. Manual deactivation sticks on purpose. |
+| A restore turns SCIM off | Low | On purpose: the backup's token may be revoked. The docs tell the admin to generate a new token; the SCIM people and groups come back from the backup. |
 
 ## Open Questions
 
@@ -446,12 +489,12 @@ Audit log: the table, the drawer and the CSV export show
 > flags it for review at the PR.
 
 - [x] Q1. Cloud, self-hosted, or both? Which edition or plan? — **Autonomous:** Both. A new `SCIM` feature for Business and Partner, locked with `requireEntitlement` in the engine. SCIM needs no self-hosted primitive (research, "Carbon today"), and every surveyed product puts SCIM on its top plan.
-- [x] Q2. Which fields does the IdP own? Read-only or last-writer-wins? — **Autonomous:** The IdP owns name, active state and (with mappings) employee type. Last writer wins, with no UI lock in v1. The card and the docs say so. Carbon never changes the sign-in email, and it writes the name only for a person with no other company.
-- [x] Q3. Map groups to employee types only, or locations and departments too? What about a person in no mapped group? — **Autonomous:** Employee types only, with an explicit priority. A person in no mapped group gets the connection's default type. With no mapping at all, SCIM never changes a type after create.
+- [x] Q2. Which fields does the IdP own? Read-only or last-writer-wins? — **Autonomous:** The IdP owns name, active state and (with mappings) employee type. Last writer wins, with no UI lock in v1. The card and the docs say so. Carbon never changes the sign-in email, and it writes the name only for a person with no other company. *Later changed (2026-11-15): the owned fields are read-only.*
+- [x] Q3. Map groups to employee types only, or locations and departments too? What about a person in no mapped group? — **Autonomous:** Employee types only, with an explicit priority (*later shown as list order, 2026-11-14*). A person in no mapped group gets the connection's default type. With no mapping at all, SCIM never changes a type after create.
 - [x] Q4. Deactivate: membership only, or API keys too? — **Autonomous:** Both. Plus a GoTrue global logout when the person has no company left. A key authenticates as its creator with no membership check, so it keeps access open.
 - [x] Q5. Seats: unlimited, cap, or flag? — **Autonomous:** Unlimited. Stripe sync after each change, and the active count on the card. No product caps provisioning, and Carbon has no seat cap today.
 - [x] Q6. Existing users on the first sync? — **Autonomous:** Match by email, no case. Adopt an active employee as is. Add a non-member with the default type. Refuse a customer or supplier contact. Store `userName` and `externalId` on `scimUser`.
-- [x] Q7. Audit every SCIM change with actor "SCIM"? — **Autonomous:** Yes. An `employee` audit entry with `actorId: null` and `metadata.actorLabel`. The 3 audit renderers show the label.
+- [x] Q7. Audit every SCIM change with actor "SCIM"? — **Autonomous:** Yes. An `employee` audit entry with `actorId: null` and `metadata.actorLabel`. The 3 audit renderers show the label. *Later changed (2026-11-15): the label rides the trigger's own row, so each change is one row.*
 - [x] Q8 (found while designing). What does SCIM do in a controlled environment? — **Autonomous:** It refuses every join that is not an adopt, and every reactivation (`403`). It still updates and deactivates. An invite records the U.S.-person attestation, and SCIM cannot.
 - [x] Q9 (found while designing). Does an IdP push with `active: true` undo a manual deactivation in Carbon? — **Autonomous:** No. The engine acts on changes of `active` only.
 

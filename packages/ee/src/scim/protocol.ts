@@ -2,6 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { Database } from "@carbon/database";
+
 /**
  * The SCIM 2.0 wire format (RFC 7643 / 7644) for Carbon's provisioning
  * endpoint: filters, PATCH operations, resource bodies and responses. Pure — no
@@ -668,25 +670,23 @@ export function applyGroupPatch(
 // Resource bodies
 // ---------------------------------------------------------------------------
 
-export type ScimUserRow = {
-  id: string;
-  userName: string;
-  externalId: string | null;
-  email: string;
-  givenName: string | null;
-  familyName: string | null;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string | null;
-};
+export type ScimUserRow = Pick<
+  Database["public"]["Tables"]["scimUser"]["Row"],
+  | "id"
+  | "userName"
+  | "externalId"
+  | "email"
+  | "givenName"
+  | "familyName"
+  | "active"
+  | "createdAt"
+  | "updatedAt"
+>;
 
-export type ScimGroupRow = {
-  id: string;
-  displayName: string;
-  externalId: string | null;
-  createdAt: string;
-  updatedAt: string | null;
-};
+export type ScimGroupRow = Pick<
+  Database["public"]["Tables"]["scimGroup"]["Row"],
+  "id" | "displayName" | "externalId" | "createdAt" | "updatedAt"
+>;
 
 export function toScimUser(row: ScimUserRow, baseUrl: string) {
   const formatted = [row.givenName, row.familyName].filter(Boolean).join(" ");
