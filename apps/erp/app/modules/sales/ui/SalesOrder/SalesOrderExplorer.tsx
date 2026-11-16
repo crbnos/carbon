@@ -378,8 +378,8 @@ function DeliveryDateFlag({ line }: { line: SalesOrderLine }) {
       </TooltipTrigger>
       <TooltipContent>
         {keptBy
-          ? t`Date kept by ${keptBy}. Earliest delivery date: ${earliest}.`
-          : t`Date not confirmed. Earliest delivery date: ${earliest}.`}
+          ? t`${keptBy} kept this date. The earliest delivery date is ${earliest}.`
+          : t`Date not confirmed. The earliest delivery date is ${earliest}.`}
       </TooltipContent>
     </Tooltip>
   );

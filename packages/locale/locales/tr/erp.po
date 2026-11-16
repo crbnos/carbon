@@ -1059,6 +1059,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# açık iş emirinin depolama bir
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# değer alındı.} other {# değer alındı.}}"
 
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} bu tarihi korudu. En erken teslim tarihi {earliest}."
+
 msgid "{kpiLabel} by day"
 msgstr "Güne göre {kpiLabel}"
 
@@ -2282,9 +2285,6 @@ msgstr "Bir satış siparişi silindi"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Bir satış siparişi satırı belirli bir ürünün sipariş ayrıntılarını içerir"
 
-msgid "A sales order line keeps a date it cannot meet"
-msgstr "Satış siparişi satırı karşılayamayacağı bir tarihi tutuyor"
-
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "Sipariş veren müşterinin başlık adresinden farklı bir müşteriye ve konuma doğrudan gönderilen bir satış siparişi; sevkiyatın hedefi başlığı geçersiz kılar."
 
@@ -2476,6 +2476,9 @@ msgstr "Bunlardan biri doğru olduğunda bir adet satış olarak muhasebeleştir
 
 msgid "a user"
 msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "Bir kullanıcı karşılanamayacak bir satış siparişi tarihini korur"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Kullanıcı, mallar alındığında her parti veya seri için son kullanma tarihini kaydeder. Tedarikçiler farklı son kullanma tarihlerine sahip partiler gönderdiğinde kullanılır."
@@ -6949,11 +6952,11 @@ msgstr "Kontrol Noktası ·"
 msgid "Checkpoints"
 msgstr "Kontrol Noktaları"
 
-msgid "Checks free stock by week, then the lead time."
-msgstr "Haftalık serbest stoku, ardından teslim süresini kontrol eder."
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Serbest stoku hafta hafta, ardından teslim süresini kontrol eder."
 
-msgid "Checks free stock, then simulates the shop's schedule for a made item."
-msgstr "Serbest stoku kontrol eder, ardından üretilen bir kalem için atölye planını simüle eder."
+msgid "Checks free stock. For a made item, also simulates the shop's schedule."
+msgstr "Serbest stoku kontrol eder. Üretilen bir kalem için atölye planını da simüle eder."
 
 msgid "Children"
 msgstr "Alt öğeler"
@@ -9686,14 +9689,11 @@ msgstr "Düzenleme Tarihi"
 msgid "Date kept"
 msgstr "Tarih korundu"
 
-msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
-msgstr ""
-
 msgid "Date not confirmed"
 msgstr "Tarih teyit edilmedi"
 
-msgid "Date not confirmed. Earliest delivery date: {earliest}."
-msgstr "Tarih teyit edilmedi. En erken teslim tarihi: {earliest}."
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "Tarih teyit edilmedi. En erken teslim tarihi {earliest}."
 
 msgid "Date paid"
 msgstr "Ödeme tarihi"
@@ -11419,8 +11419,8 @@ msgstr "Her varlığın aşağıdaki ödeme satırları, bu koşullardan kendi �
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği personeli gösterir."
 
-msgid "Each check adds to the one above it."
-msgstr "Her kontrol, bir üstündekine eklenir."
+msgid "Each check also runs the ones above it."
+msgstr "Her kontrol, üstündekileri de çalıştırır."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Bu satırı finanse eden her sözleşme değişikliği, ACRN'ye göre."
@@ -14011,8 +14011,8 @@ msgstr "Dört göz ilkesi uygulaması devre dışı bırakıldı"
 msgid "Four-eyes enforcement enabled"
 msgstr "İki imzalı onay etkinleştirildi"
 
-msgid "Free stock by {promised}: {free}."
-msgstr ""
+msgid "Free stock by {promised} is only {free}."
+msgstr "{promised} tarihine kadar serbest stok yalnızca {free}."
 
 msgid "Freeze the old system, no new transactions"
 msgstr "Eski sistemi dondur, yeni işlem yok"
@@ -22717,7 +22717,7 @@ msgstr "Planlama"
 msgid "Planning action"
 msgstr "Planlama aksiyonu"
 
-msgid "Planning and sales"
+msgid "Planning and Sales"
 msgstr "Planlama ve satış"
 
 msgid "Planning group"
@@ -34277,8 +34277,8 @@ msgstr "Uyarı ver ama izin ver"
 msgid "Warn this many days before expiry"
 msgstr "Son kullanma tarihinden önce bu kadar gün uyar"
 
-msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
-msgstr "Bir satış siparişi satırının taahhüt edilen tarihi karşılanamadığında uyarır. Bir kalemin Planlama sekmesi bunu geçersiz kılabilir."
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "Bir satış siparişi satırının taahhüt edilen tarihi karşılanamadığında uyarır. Tek bir kalem için farklı bir kontrol kullanmak üzere bunu kalemin Planlama sekmesinde ayarlayın."
 
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Gelen bir ürünü kontrol eden kişinin, onu alan kişiyle aynı olması durumunda uyarı ver."
@@ -34286,8 +34286,8 @@ msgstr "Gelen bir ürünü kontrol eden kişinin, onu alan kişiyle aynı olmas�
 msgid "Warning"
 msgstr "Uyarı"
 
-msgid "Warns when the date is sooner than the item's lead time through its BOM."
-msgstr "Tarih, kalemin ürün ağacı boyunca teslim süresinden önceyse uyarır."
+msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
+msgstr "Tarih, kalemin ürün ağacı dahil toplam teslim süresinden önceyse uyarır."
 
 msgid "Warranty"
 msgstr "Garantı"

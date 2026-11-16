@@ -1059,6 +1059,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# 개의 미결 작업 지시에 �
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, other {값 #개를 가져왔습니다.}}"
 
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy}님이 이 날짜를 유지했습니다. 가장 빠른 납기일은 {earliest}입니다."
+
 msgid "{kpiLabel} by day"
 msgstr "일별 {kpiLabel}"
 
@@ -2282,9 +2285,6 @@ msgstr "수주가 삭제됨"
 msgid "A sales order line contains order details for a particular item"
 msgstr "수주 라인은 특정 품목에 대한 주문 세부 정보를 포함합니다"
 
-msgid "A sales order line keeps a date it cannot meet"
-msgstr "수주 라인이 맞출 수 없는 날짜를 유지하고 있습니다"
-
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "주문 고객의 헤더 주소와 다른 고객 및 위치로 직접 배송되는 판매 주문입니다. 배송 목적지가 헤더 주소를 무시합니다."
 
@@ -2476,6 +2476,9 @@ msgstr "개가 다음 중 하나라도 참인 경우 판매로 취급되고, 그
 
 msgid "a user"
 msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "사용자가 맞출 수 없는 수주 날짜를 유지합니다"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "사용자는 상품을 수령할 때 각 배치 또는 시리얼의 유통기한을 기록합니다. 공급업체가 다른 유통기한을 가진 로트로 배송할 때 사용합니다."
@@ -6949,11 +6952,11 @@ msgstr "체크포인트 ·"
 msgid "Checkpoints"
 msgstr "체크포인트"
 
-msgid "Checks free stock by week, then the lead time."
-msgstr "주별 가용 재고를 확인한 다음 리드 타임을 확인합니다."
+msgid "Checks free stock week by week, then the lead time."
+msgstr "주 단위로 가용 재고를 확인한 다음 리드 타임을 확인합니다."
 
-msgid "Checks free stock, then simulates the shop's schedule for a made item."
-msgstr "가용 재고를 확인한 다음 제조 품목에 대해 작업장 일정을 시뮬레이션합니다."
+msgid "Checks free stock. For a made item, also simulates the shop's schedule."
+msgstr "가용 재고를 확인합니다. 제조 품목의 경우 작업장 일정도 시뮬레이션합니다."
 
 msgid "Children"
 msgstr "하위 항목"
@@ -9686,14 +9689,11 @@ msgstr "발행일"
 msgid "Date kept"
 msgstr "날짜 유지됨"
 
-msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
-msgstr ""
-
 msgid "Date not confirmed"
 msgstr "날짜 미확정"
 
-msgid "Date not confirmed. Earliest delivery date: {earliest}."
-msgstr "날짜 미확정. 가장 빠른 납기일: {earliest}."
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "날짜 미확정. 가장 빠른 납기일은 {earliest}입니다."
 
 msgid "Date paid"
 msgstr "결제일"
@@ -11419,8 +11419,8 @@ msgstr "아래의 각 자산 지불 라인은 각 자산의 지불에서 이 약
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "각 셀은 그 날 일에 필요한 인원 대비 할당된 인원입니다."
 
-msgid "Each check adds to the one above it."
-msgstr "각 검사는 위의 검사에 더해집니다."
+msgid "Each check also runs the ones above it."
+msgstr "각 검사는 위의 검사도 함께 실행합니다."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "이 라인에 자금을 제공하는 각 계약 수정사항(ACRN별)"
@@ -14011,8 +14011,8 @@ msgstr "이중 승인 기능이 비활성화되었습니다"
 msgid "Four-eyes enforcement enabled"
 msgstr "이중 승인 강제 활성화"
 
-msgid "Free stock by {promised}: {free}."
-msgstr ""
+msgid "Free stock by {promised} is only {free}."
+msgstr "{promised}까지의 가용 재고는 {free}뿐입니다."
 
 msgid "Freeze the old system, no new transactions"
 msgstr "기존 시스템 동결, 신규 거래 없음"
@@ -22717,7 +22717,7 @@ msgstr "계획"
 msgid "Planning action"
 msgstr "계획 조치"
 
-msgid "Planning and sales"
+msgid "Planning and Sales"
 msgstr "계획 및 영업"
 
 msgid "Planning group"
@@ -34277,8 +34277,8 @@ msgstr "경고 후 허용"
 msgid "Warn this many days before expiry"
 msgstr "유통기한 {0}일 전에 경고"
 
-msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
-msgstr "판매 주문 라인의 약속 날짜를 맞출 수 없을 때 경고합니다. 품목의 계획 탭에서 이를 재정의할 수 있습니다."
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "판매 주문 라인의 약속 날짜를 맞출 수 없을 때 경고합니다. 한 품목에 다른 검사를 사용하려면 해당 품목의 계획 탭에서 설정하세요."
 
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "입고 품목을 검사하는 사람이 해당 품목을 입고 처리한 사람과 동일할 경우 경고합니다."
@@ -34286,8 +34286,8 @@ msgstr "입고 품목을 검사하는 사람이 해당 품목을 입고 처리�
 msgid "Warning"
 msgstr "경고"
 
-msgid "Warns when the date is sooner than the item's lead time through its BOM."
-msgstr "날짜가 BOM을 통한 품목의 리드 타임보다 이를 때 경고합니다."
+msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
+msgstr "날짜가 BOM을 포함한 품목의 전체 리드 타임보다 이를 때 경고합니다."
 
 msgid "Warranty"
 msgstr "보증"

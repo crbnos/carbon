@@ -38,7 +38,7 @@ export const WORKFLOW_MOMENTS = {
     outputs: { quote: t.entity("quote"), salesOrder: t.entity("salesOrder") }
   },
   "sales.deliveryDateOverridden": {
-    label: "A sales order line keeps a date it cannot meet",
+    label: "A user keeps a sales order date that can't be met",
     permission: "sales",
     outputs: {
       salesOrder: t.entity("salesOrder"),

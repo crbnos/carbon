@@ -197,7 +197,7 @@ const ItemPlanningForm = ({
               {/* <Boolean name="critical" label={t`Critical`} /> */}
             </FormSection>
 
-            <FormSection title={t`Planning and sales`}>
+            <FormSection title={t`Planning and Sales`}>
               <Number
                 name="planningHorizonDays"
                 label={t`Planning Horizon (Days)`}

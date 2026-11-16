@@ -97,7 +97,7 @@ export function DeliveryDateCheckAlert({
           <span>
             {check.constraint === "Stock" ? (
               <Trans>
-                Free stock by {promised}: {free}.
+                Free stock by {promised} is only {free}.
               </Trans>
             ) : check.constraint === "Capacity" ? (
               <Trans>The shop cannot finish this by {promised}.</Trans>

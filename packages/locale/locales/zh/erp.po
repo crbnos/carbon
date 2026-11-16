@@ -1059,6 +1059,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# 个未结工单的物料没有�
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, other {已取 # 个值。}}"
 
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} 保留了此日期。最早交货日期为 {earliest}。"
+
 msgid "{kpiLabel} by day"
 msgstr "按日{kpiLabel}"
 
@@ -2282,9 +2285,6 @@ msgstr "销售订单已删除"
 msgid "A sales order line contains order details for a particular item"
 msgstr "销售订单行包含特定项目的订单详情"
 
-msgid "A sales order line keeps a date it cannot meet"
-msgstr "销售订单行保留了一个无法满足的日期"
-
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "销售订单直接运送给与订购客户的抬头地址不同的客户和地点；货运目的地优先于抬头地址。"
 
@@ -2476,6 +2476,9 @@ msgstr "当以下任何条件为真时，件作为销售处理，否则作为租
 
 msgid "a user"
 msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "用户保留了无法满足的销售订单日期"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "用户在收货时记录每个生产批次或序列号的有效期。当供应商发运具有不同有效期的批次时使用。"
@@ -6949,11 +6952,11 @@ msgstr "检查点 ·"
 msgid "Checkpoints"
 msgstr "检查点"
 
-msgid "Checks free stock by week, then the lead time."
-msgstr "按周检查可用库存，然后检查提前期。"
+msgid "Checks free stock week by week, then the lead time."
+msgstr "逐周检查可用库存，然后检查提前期。"
 
-msgid "Checks free stock, then simulates the shop's schedule for a made item."
-msgstr "检查可用库存，然后为自制物料模拟车间排程。"
+msgid "Checks free stock. For a made item, also simulates the shop's schedule."
+msgstr "检查可用库存。对于自制物料，还会模拟车间排程。"
 
 msgid "Children"
 msgstr "子项"
@@ -9686,14 +9689,11 @@ msgstr "签发日期"
 msgid "Date kept"
 msgstr "日期已保留"
 
-msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
-msgstr ""
-
 msgid "Date not confirmed"
 msgstr "日期未确认"
 
-msgid "Date not confirmed. Earliest delivery date: {earliest}."
-msgstr "日期未确认。最早交货日期：{earliest}。"
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "日期未确认。最早交货日期为 {earliest}。"
 
 msgid "Date paid"
 msgstr "支付日期"
@@ -11419,8 +11419,8 @@ msgstr "下方每项资产的付款行从这些条款在其付款处生成。更
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
 
-msgid "Each check adds to the one above it."
-msgstr "每项检查都在上一项的基础上增加。"
+msgid "Each check also runs the ones above it."
+msgstr "每项检查也会运行其上方的检查。"
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "每个为此行提供资金的合同修改（按 ACRN）。"
@@ -14011,8 +14011,8 @@ msgstr "双人复核已禁用"
 msgid "Four-eyes enforcement enabled"
 msgstr "四眼原则强制执行已启用"
 
-msgid "Free stock by {promised}: {free}."
-msgstr ""
+msgid "Free stock by {promised} is only {free}."
+msgstr "截至 {promised} 的可用库存仅为 {free}。"
 
 msgid "Freeze the old system, no new transactions"
 msgstr "冻结旧系统，禁止新交易"
@@ -22717,7 +22717,7 @@ msgstr "计划"
 msgid "Planning action"
 msgstr "计划行动"
 
-msgid "Planning and sales"
+msgid "Planning and Sales"
 msgstr "计划与销售"
 
 msgid "Planning group"
@@ -34277,8 +34277,8 @@ msgstr "警告但允许"
 msgid "Warn this many days before expiry"
 msgstr "在有效期前提醒多少天"
 
-msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
-msgstr "当销售订单行的承诺日期无法满足时发出警告。物料的“计划”选项卡可以覆盖此设置。"
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "当销售订单行的承诺日期无法满足时发出警告。要为某个物料使用不同的检查，请在该物料的“计划”选项卡中设置。"
 
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "当检验入库物料的人与收货人相同时发出警告。"
@@ -34286,8 +34286,8 @@ msgstr "当检验入库物料的人与收货人相同时发出警告。"
 msgid "Warning"
 msgstr "警告"
 
-msgid "Warns when the date is sooner than the item's lead time through its BOM."
-msgstr "当日期早于物料按其物料清单计算的提前期时发出警告。"
+msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
+msgstr "当日期早于物料的总提前期（含其物料清单）时发出警告。"
 
 msgid "Warranty"
 msgstr "保修"

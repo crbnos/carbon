@@ -1059,6 +1059,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# खुले जॉब में
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# मान लिया गया।} other {# मान लिए गए।}}"
 
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} ने यह तिथि रखी। सबसे जल्दी की डिलीवरी तिथि {earliest} है।"
+
 msgid "{kpiLabel} by day"
 msgstr "दिन के अनुसार {kpiLabel}"
 
@@ -2282,9 +2285,6 @@ msgstr "एक विक्रय आदेश हटाया गया है"
 msgid "A sales order line contains order details for a particular item"
 msgstr "एक विक्रय आदेश पंक्ति एक विशेष आइटम के लिए आदेश विवरण शामिल करती है"
 
-msgid "A sales order line keeps a date it cannot meet"
-msgstr "विक्रय आदेश पंक्ति में ऐसी तिथि है जो पूरी नहीं हो सकती"
-
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "एक बिक्रय आदेश सीधे एक अलग ग्राहक और स्थान पर भेजा गया है, जो आदेश देने वाले ग्राहक के हेडर पते से अलग है; शिपमेंट का गंतव्य हेडर को ओवरराइड करता है।"
 
@@ -2476,6 +2476,9 @@ msgstr "एक इकाई को बिक्री के रूप में
 
 msgid "a user"
 msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "कोई उपयोगकर्ता ऐसी विक्रय आदेश तिथि रखता है जो पूरी नहीं हो सकती"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "एक उपयोगकर्ता प्रत्येक बैच या सीरीज पर समाप्ति तिथि दर्ज करता है जब माल प्राप्त होता है। जब आपूर्तिकर्ता विभिन्न समाप्ति तिथियों के साथ लॉट भेजते हैं तो इसका उपयोग करें।"
@@ -6949,11 +6952,11 @@ msgstr "चेकपॉइंट ·"
 msgid "Checkpoints"
 msgstr "चेकपॉइंट्स"
 
-msgid "Checks free stock by week, then the lead time."
-msgstr "हर सप्ताह मुक्त स्टॉक जाँचता है, फिर लीड टाइम।"
+msgid "Checks free stock week by week, then the lead time."
+msgstr "हफ़्ते-दर-हफ़्ते मुक्त स्टॉक जाँचता है, फिर लीड टाइम।"
 
-msgid "Checks free stock, then simulates the shop's schedule for a made item."
-msgstr "मुक्त स्टॉक जाँचता है, फिर बनाए जाने वाले आइटम के लिए शॉप के शेड्यूल का सिमुलेशन करता है।"
+msgid "Checks free stock. For a made item, also simulates the shop's schedule."
+msgstr "मुक्त स्टॉक जाँचता है। बनाए जाने वाले आइटम के लिए शॉप के शेड्यूल का सिमुलेशन भी करता है।"
 
 msgid "Children"
 msgstr "संतानें"
@@ -9686,14 +9689,11 @@ msgstr "जारी करने की तारीख"
 msgid "Date kept"
 msgstr "तिथि रखी गई"
 
-msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
-msgstr ""
-
 msgid "Date not confirmed"
 msgstr "तिथि की पुष्टि नहीं हुई"
 
-msgid "Date not confirmed. Earliest delivery date: {earliest}."
-msgstr "तिथि की पुष्टि नहीं हुई। सबसे जल्दी की डिलीवरी तिथि: {earliest}।"
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "तिथि की पुष्टि नहीं हुई। सबसे जल्दी की डिलीवरी तिथि {earliest} है।"
 
 msgid "Date paid"
 msgstr "भुगतान की तारीख"
@@ -11419,8 +11419,8 @@ msgstr "प्रत्येक संपत्ति की भुगतान
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "प्रत्येक सेल उन लोगों को दर्शाता है जो दिन के काम के लिए आवश्यक लोगों के खिलाफ असाइन किए गए हैं।"
 
-msgid "Each check adds to the one above it."
-msgstr "हर जाँच अपने ऊपर वाली जाँच में जुड़ती है।"
+msgid "Each check also runs the ones above it."
+msgstr "हर जाँच अपने ऊपर वाली जाँचें भी चलाती है।"
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "प्रत्येक अनुबंध संशोधन जो इस पंक्ति को निधि देता है, ACRN द्वारा।"
@@ -14011,8 +14011,8 @@ msgstr "चार आँखें प्रवर्तन अक्षम क�
 msgid "Four-eyes enforcement enabled"
 msgstr "चार-आंखें प्रवर्तन सक्षम किया गया"
 
-msgid "Free stock by {promised}: {free}."
-msgstr ""
+msgid "Free stock by {promised} is only {free}."
+msgstr "{promised} तक मुक्त स्टॉक केवल {free} है।"
 
 msgid "Freeze the old system, no new transactions"
 msgstr "पुरानी प्रणाली को फ्रीज करें, कोई नया लेनदेन नहीं"
@@ -22717,7 +22717,7 @@ msgstr "योजना"
 msgid "Planning action"
 msgstr "योजना कार्रवाई"
 
-msgid "Planning and sales"
+msgid "Planning and Sales"
 msgstr "योजना और बिक्री"
 
 msgid "Planning group"
@@ -34277,8 +34277,8 @@ msgstr "चेतावनी दें लेकिन अनुमति द�
 msgid "Warn this many days before expiry"
 msgstr "समाप्ति से पहले इतने दिन पहले चेतावनी दें"
 
-msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
-msgstr "जब किसी बिक्री ऑर्डर लाइन की वादा की गई तारीख पूरी नहीं हो सकती, तो चेतावनी देता है। किसी आइटम का योजना टैब इसे बदल सकता है।"
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "जब किसी बिक्री ऑर्डर लाइन की वादा की गई तारीख पूरी नहीं हो सकती, तो चेतावनी देता है। किसी एक आइटम के लिए अलग जाँच इस्तेमाल करने हेतु, उसे आइटम के योजना टैब पर सेट करें।"
 
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "चेतावनी दें जब आने वाली वस्तु का निरीक्षण करने वाला व्यक्ति वही व्यक्ति हो जिसने इसे प्राप्त किया था।"
@@ -34286,8 +34286,8 @@ msgstr "चेतावनी दें जब आने वाली वस्�
 msgid "Warning"
 msgstr "चेतावनी"
 
-msgid "Warns when the date is sooner than the item's lead time through its BOM."
-msgstr "जब तारीख आइटम के BOM के माध्यम से लीड टाइम से पहले हो, तो चेतावनी देता है।"
+msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
+msgstr "जब तारीख आइटम के कुल लीड टाइम से पहले हो, जिसमें उसका BOM शामिल है, तो चेतावनी देता है।"
 
 msgid "Warranty"
 msgstr "वारंटी"

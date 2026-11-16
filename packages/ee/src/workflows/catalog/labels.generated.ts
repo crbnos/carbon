@@ -696,7 +696,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "receipt.status.changed": msg`A receipt's status changes`,
   "receipt.supplierId.changed": msg`A receipt's supplier changes`,
   "receipt.update": msg`Update a receipt`,
-  "sales.deliveryDateOverridden": msg`A sales order line keeps a date it cannot meet`,
+  "sales.deliveryDateOverridden": msg`A user keeps a sales order date that can't be met`,
   "sales.quoteAccepted": msg`A quote is accepted`,
   "sales.quoteSent": msg`A quote is sent`,
   "salesOrder.assignee.changed": msg`A sales order's assignee changes`,

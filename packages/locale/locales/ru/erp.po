@@ -1059,6 +1059,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# открытый произво�
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {Взято # значение.} few {Взято # значения.} many {Взято # значений.} other {Взято # значения.}}"
 
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} сохранил(а) эту дату. Ближайшая дата поставки: {earliest}."
+
 msgid "{kpiLabel} by day"
 msgstr "{kpiLabel} по дням"
 
@@ -2282,9 +2285,6 @@ msgstr "Заказ покупателя удален"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Строка заказа покупателя содержит детали заказа для конкретной номенклатуры"
 
-msgid "A sales order line keeps a date it cannot meet"
-msgstr "Строка заказа покупателя сохраняет дату, которую невозможно выдержать"
-
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "Заказ на продажу, отправленный напрямую другому клиенту и в другое место, чем адрес клиента в заголовке заказа; пункт назначения отправки переопределяет адрес в заголовке."
 
@@ -2476,6 +2476,9 @@ msgstr "Единица рассматривается как продажа, е�
 
 msgid "a user"
 msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "Пользователь сохраняет дату заказа покупателя, которую невозможно выдержать"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Пользователь записывает срок годности для каждой серии при получении товара. Используется, когда поставщики отправляют партии с разными датами окончания срока годности."
@@ -6949,11 +6952,11 @@ msgstr "Контрольная точка ·"
 msgid "Checkpoints"
 msgstr "Контрольные точки"
 
-msgid "Checks free stock by week, then the lead time."
-msgstr "Проверяет свободный запас по неделям, затем срок поставки."
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Проверяет свободный запас неделя за неделей, затем срок поставки."
 
-msgid "Checks free stock, then simulates the shop's schedule for a made item."
-msgstr "Проверяет свободный запас, затем моделирует график цеха для производимой номенклатуры."
+msgid "Checks free stock. For a made item, also simulates the shop's schedule."
+msgstr "Проверяет свободный запас. Для производимой номенклатуры также моделирует график цеха."
 
 msgid "Children"
 msgstr "Подчинённые"
@@ -9686,13 +9689,10 @@ msgstr "Дата выпуска"
 msgid "Date kept"
 msgstr "Дата соблюдена"
 
-msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
-msgstr ""
-
 msgid "Date not confirmed"
 msgstr "Дата не подтверждена"
 
-msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
 msgstr "Дата не подтверждена. Ближайшая дата поставки: {earliest}."
 
 msgid "Date paid"
@@ -11419,8 +11419,8 @@ msgstr "Строки платежей каждого актива ниже ра�
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Каждая ячейка — это назначенные сотрудники в сравнении с необходимыми для работы в день сотрудниками."
 
-msgid "Each check adds to the one above it."
-msgstr "Каждая проверка дополняет предыдущую."
+msgid "Each check also runs the ones above it."
+msgstr "Каждая проверка выполняет и те, что выше."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Каждое изменение контракта, финансирующее эту строку, по ACRN."
@@ -14011,8 +14011,8 @@ msgstr "Контроль четырех глаз отключен"
 msgid "Four-eyes enforcement enabled"
 msgstr "Контроль четырех глаз включен"
 
-msgid "Free stock by {promised}: {free}."
-msgstr ""
+msgid "Free stock by {promised} is only {free}."
+msgstr "Свободный запас на {promised} составляет всего {free}."
 
 msgid "Freeze the old system, no new transactions"
 msgstr "Заморозить старую систему, новых транзакций нет"
@@ -22717,7 +22717,7 @@ msgstr "Планирование"
 msgid "Planning action"
 msgstr "Действие планирования"
 
-msgid "Planning and sales"
+msgid "Planning and Sales"
 msgstr "Планирование и продажи"
 
 msgid "Planning group"
@@ -34277,8 +34277,8 @@ msgstr "Предупредить, но разрешить"
 msgid "Warn this many days before expiry"
 msgstr "Предупредить за столько дней до срока годности"
 
-msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
-msgstr "Предупреждает, если обещанную дату строки заказа на продажу нельзя выдержать. На вкладке «Планирование» номенклатуры это можно переопределить."
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "Предупреждает, если обещанную дату строки заказа на продажу нельзя выдержать. Чтобы задать другую проверку для одной номенклатуры, укажите её на вкладке «Планирование» этой номенклатуры."
 
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Предупреждать, когда лицо, проверяющее входящий товар, является тем же лицом, которое его получило."
@@ -34286,8 +34286,8 @@ msgstr "Предупреждать, когда лицо, проверяющее 
 msgid "Warning"
 msgstr "Предупреждение"
 
-msgid "Warns when the date is sooner than the item's lead time through its BOM."
-msgstr "Предупреждает, если дата раньше срока поставки номенклатуры с учётом её спецификации."
+msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
+msgstr "Предупреждает, если дата раньше общего срока поставки номенклатуры с учётом её спецификации."
 
 msgid "Warranty"
 msgstr "Гарантия"

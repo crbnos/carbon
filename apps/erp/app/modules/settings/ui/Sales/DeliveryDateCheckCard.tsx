@@ -48,8 +48,8 @@ export function DeliveryDateCheckCard({
           </CardTitle>
           <CardDescription>
             <Trans>
-              Warn when a sales order line's promised date can't be met. An
-              item's Planning tab can override this.
+              Warn when a sales order line's promised date can't be met. To use
+              a different check for one item, set it on the item's Planning tab.
             </Trans>
           </CardDescription>
         </CardHeader>

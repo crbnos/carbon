@@ -15,7 +15,7 @@ function DeliveryDateCheckHelp({ checks }: { checks: Check[] }) {
   return (
     <div className="flex flex-col gap-2.5">
       <p>
-        <Trans>Each check adds to the one above it.</Trans>
+        <Trans>Each check also runs the ones above it.</Trans>
       </p>
       <div className="flex flex-col gap-1.5">
         {checks.map((check) => (
@@ -40,15 +40,15 @@ const DeliveryDateControl = (props: Omit<SelectProps, "options">) => {
     },
     "Lead Time": {
       label: t`Lead Time`,
-      description: t`Warns when the date is sooner than the item's lead time through its BOM.`
+      description: t`Warns when the date is sooner than the item's total lead time, including its BOM.`
     },
     Stock: {
       label: t`Stock`,
-      description: t`Checks free stock by week, then the lead time.`
+      description: t`Checks free stock week by week, then the lead time.`
     },
     Capacity: {
       label: t`Capacity`,
-      description: t`Checks free stock, then simulates the shop's schedule for a made item.`
+      description: t`Checks free stock. For a made item, also simulates the shop's schedule.`
     }
   };
   const options = deliveryDateControlTypes.map((value) => ({

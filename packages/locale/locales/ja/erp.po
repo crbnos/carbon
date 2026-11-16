@@ -1059,6 +1059,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {#個のオープン製造指図に
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, other {# 件の値を取得しました。}}"
 
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} がこの納期を維持しました。最短納期は {earliest} です。"
+
 msgid "{kpiLabel} by day"
 msgstr "日別の{kpiLabel}"
 
@@ -2282,9 +2285,6 @@ msgstr "受注が削除される"
 msgid "A sales order line contains order details for a particular item"
 msgstr "受注明細には特定の品目の注文詳細が含まれています"
 
-msgid "A sales order line keeps a date it cannot meet"
-msgstr "受注明細に、満たせない納期が残っています"
-
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "注文顧客のヘッダーアドレスとは異なる顧客および場所に直接出荷される販売注文。出荷先がヘッダーのアドレスを上書きします。"
 
@@ -2476,6 +2476,9 @@ msgstr "以下のいずれかが当てはまる場合、個は売上として処
 
 msgid "a user"
 msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "ユーザーが満たせない受注の納期を維持しました"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "ユーザーは商品受取時に各バッチまたはシリアルの使用期限を記録します。仕入先が異なる使用期限のロットを出荷する場合に使用します。"
@@ -6949,11 +6952,11 @@ msgstr "チェックポイント ·"
 msgid "Checkpoints"
 msgstr "チェックポイント"
 
-msgid "Checks free stock by week, then the lead time."
-msgstr "週ごとの空き在庫を確認し、その後リードタイムを確認します。"
+msgid "Checks free stock week by week, then the lead time."
+msgstr "週ごとに空き在庫を確認し、その後リードタイムを確認します。"
 
-msgid "Checks free stock, then simulates the shop's schedule for a made item."
-msgstr "空き在庫を確認し、その後製造品について工場のスケジュールをシミュレーションします。"
+msgid "Checks free stock. For a made item, also simulates the shop's schedule."
+msgstr "空き在庫を確認します。製造品の場合は、工場のスケジュールもシミュレーションします。"
 
 msgid "Children"
 msgstr "子要素"
@@ -9686,14 +9689,11 @@ msgstr "発行日"
 msgid "Date kept"
 msgstr "納期維持"
 
-msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
-msgstr ""
-
 msgid "Date not confirmed"
 msgstr "納期未確定"
 
-msgid "Date not confirmed. Earliest delivery date: {earliest}."
-msgstr "納期未確定。最短納期: {earliest}。"
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "納期未確定。最短納期は {earliest} です。"
 
 msgid "Date paid"
 msgstr "支払日"
@@ -11419,8 +11419,8 @@ msgstr "以下の各資産の支払明細は、その支払でこれらの条件
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "各セルは、その日の作業に必要な人員に対して配置された人員です"
 
-msgid "Each check adds to the one above it."
-msgstr "各チェックは、その上のチェックに追加して行われます。"
+msgid "Each check also runs the ones above it."
+msgstr "各チェックは、その上のチェックもあわせて実行します。"
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "この明細に資金を提供する契約変更書（ACRN 別）。"
@@ -14011,8 +14011,8 @@ msgstr "フォーアイズチェックが無効化されました"
 msgid "Four-eyes enforcement enabled"
 msgstr "四眼チェック制御を有効化"
 
-msgid "Free stock by {promised}: {free}."
-msgstr ""
+msgid "Free stock by {promised} is only {free}."
+msgstr "{promised} までの空き在庫は {free} のみです。"
 
 msgid "Freeze the old system, no new transactions"
 msgstr "古いシステムをフリーズし、新しいトランザクションを禁止"
@@ -22717,7 +22717,7 @@ msgstr "計画"
 msgid "Planning action"
 msgstr "計画提案"
 
-msgid "Planning and sales"
+msgid "Planning and Sales"
 msgstr "計画と販売"
 
 msgid "Planning group"
@@ -34277,8 +34277,8 @@ msgstr "警告するが許可する"
 msgid "Warn this many days before expiry"
 msgstr "使用期限の何日前に警告"
 
-msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
-msgstr "受注明細の約束日に間に合わない場合に警告します。品目の「計画」タブでこれを上書きできます。"
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "受注明細の約束日に間に合わない場合に警告します。特定の品目で別のチェックを使うには、その品目の「計画」タブで設定します。"
 
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "受け取った人と同じ人が受け入れ品を検査する場合に警告します。"
@@ -34286,8 +34286,8 @@ msgstr "受け取った人と同じ人が受け入れ品を検査する場合に
 msgid "Warning"
 msgstr "警告"
 
-msgid "Warns when the date is sooner than the item's lead time through its BOM."
-msgstr "日付が品目の部品表を通じたリードタイムより早い場合に警告します。"
+msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
+msgstr "日付が、部品表を含む品目の合計リードタイムより早い場合に警告します。"
 
 msgid "Warranty"
 msgstr "保証"

@@ -1059,6 +1059,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# ordre de fabrication ouvert a de
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# valeur prise.} other {# valeurs prises.}}"
 
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} a conservé cette date. La première date de livraison possible est le {earliest}."
+
 msgid "{kpiLabel} by day"
 msgstr "{kpiLabel} par jour"
 
@@ -2282,9 +2285,6 @@ msgstr "Une commande client est supprimée"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Une ligne de commande client contient les détails de la commande pour un article particulier"
 
-msgid "A sales order line keeps a date it cannot meet"
-msgstr "Une ligne de commande client conserve une date qu'elle ne peut pas respecter"
-
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "Une commande client expédiée directement à un client et un lieu différents de l'adresse d'en-tête du client commandant; la destination de l'expédition remplace celle de l'en-tête."
 
@@ -2476,6 +2476,9 @@ msgstr "Une unité est traitée comme une vente lorsque l'une de ces conditions 
 
 msgid "a user"
 msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "Un utilisateur conserve une date de commande client impossible à tenir"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Un Utilisateur enregistre la date de Péremption pour chaque Lot de production ou numéro de série quand les marchandises sont reçues. À utiliser quand les Fournisseurs expédient des Lots avec différentes dates de péremption."
@@ -6949,11 +6952,11 @@ msgstr "Point de contrôle ·"
 msgid "Checkpoints"
 msgstr "Points de contrôle"
 
-msgid "Checks free stock by week, then the lead time."
-msgstr "Vérifie le stock disponible par semaine, puis le délai."
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Vérifie le stock disponible semaine par semaine, puis le délai."
 
-msgid "Checks free stock, then simulates the shop's schedule for a made item."
-msgstr "Vérifie le stock disponible, puis simule le planning de l'atelier pour un article fabriqué."
+msgid "Checks free stock. For a made item, also simulates the shop's schedule."
+msgstr "Vérifie le stock disponible. Pour un article fabriqué, simule aussi le planning de l'atelier."
 
 msgid "Children"
 msgstr "Enfants"
@@ -9686,14 +9689,11 @@ msgstr "Date d'émission"
 msgid "Date kept"
 msgstr "Date conservée"
 
-msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
-msgstr ""
-
 msgid "Date not confirmed"
 msgstr "Date non confirmée"
 
-msgid "Date not confirmed. Earliest delivery date: {earliest}."
-msgstr "Date non confirmée. Première date de livraison possible : {earliest}."
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "Date non confirmée. La première date de livraison possible est le {earliest}."
 
 msgid "Date paid"
 msgstr "Date de paiement"
@@ -11419,8 +11419,8 @@ msgstr "Les lignes de paiement de chaque actif ci-dessous sont générées à pa
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Chaque cellule affiche les personnes assignées par rapport aux personnes que le travail du jour nécessite."
 
-msgid "Each check adds to the one above it."
-msgstr "Chaque vérification s'ajoute à celle du dessus."
+msgid "Each check also runs the ones above it."
+msgstr "Chaque vérification exécute aussi celles du dessus."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Chaque modification de contrat qui finance cette ligne, par ACRN."
@@ -14011,8 +14011,8 @@ msgstr "Contrôle à quatre yeux désactivé"
 msgid "Four-eyes enforcement enabled"
 msgstr "Contrôle par quatre yeux activé"
 
-msgid "Free stock by {promised}: {free}."
-msgstr ""
+msgid "Free stock by {promised} is only {free}."
+msgstr "Le stock disponible au {promised} n'est que de {free}."
 
 msgid "Freeze the old system, no new transactions"
 msgstr "Geler l'ancien système, aucune nouvelle transaction"
@@ -22717,7 +22717,7 @@ msgstr "Planification"
 msgid "Planning action"
 msgstr "Action de planification"
 
-msgid "Planning and sales"
+msgid "Planning and Sales"
 msgstr "Planification et ventes"
 
 msgid "Planning group"
@@ -34277,8 +34277,8 @@ msgstr "Avertir mais autoriser"
 msgid "Warn this many days before expiry"
 msgstr "Avertir ce nombre de jours avant péremption"
 
-msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
-msgstr "Avertit lorsque la date promise d'une ligne de commande client ne peut pas être tenue. L'onglet Planification d'un article peut remplacer ce réglage."
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "Avertit lorsque la date promise d'une ligne de commande client ne peut pas être tenue. Pour utiliser une autre vérification pour un article, définissez-la dans l'onglet Planification de l'article."
 
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Avertir lorsque la personne inspectant un article entrant est la même personne qui l'a reçu."
@@ -34286,8 +34286,8 @@ msgstr "Avertir lorsque la personne inspectant un article entrant est la même p
 msgid "Warning"
 msgstr "Avertissement"
 
-msgid "Warns when the date is sooner than the item's lead time through its BOM."
-msgstr "Avertit lorsque la date est antérieure au délai de l'article à travers sa nomenclature."
+msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
+msgstr "Avertit lorsque la date est antérieure au délai total de l'article, nomenclature comprise."
 
 msgid "Warranty"
 msgstr "Garantie"
