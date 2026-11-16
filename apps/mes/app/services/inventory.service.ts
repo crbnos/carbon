@@ -689,6 +689,26 @@ export async function insertManualInventoryAdjustment(
   return { data: result.data?.itemLedger ?? null, error: null };
 }
 
+/** What a station is short of one item, and the bin that takes it. */
+export async function getStationShortage(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    workCenterId: string;
+    itemId: string;
+  }
+) {
+  return client
+    .rpc("get_line_feed_shortages", {
+      p_location_id: args.locationId,
+      p_company_id: args.companyId
+    })
+    .eq("workCenterId", args.workCenterId)
+    .eq("itemId", args.itemId)
+    .maybeSingle();
+}
+
 /**
  * The line feed for one location: a lane per work center (`buildLaneBoard`)
  * with its raw shelf, kit rack and station card (open material requests,
@@ -837,7 +857,7 @@ export async function getLineFeed(
     fetchAllByIds(itemIds, (batch) =>
       client
         .from("item")
-        .select("id, readableIdWithRevision")
+        .select("id, readableIdWithRevision, thumbnailPath")
         .in("id", batch)
         .eq("companyId", companyId)
         .order("id")
@@ -870,10 +890,12 @@ export async function getLineFeed(
   // The readable ids a card shows: each line's part, the job a request came
   // from, and the stock transfer a transfer line belongs to.
   const itemReadableIds: Record<string, string> = {};
+  const itemThumbnailPaths: Record<string, string> = {};
   for (const item of items.data ?? []) {
     if (item.readableIdWithRevision) {
       itemReadableIds[item.id] = item.readableIdWithRevision;
     }
+    if (item.thumbnailPath) itemThumbnailPaths[item.id] = item.thumbnailPath;
   }
   for (const request of requestRows) {
     if (request.itemId && request.item?.readableIdWithRevision) {
@@ -913,6 +935,7 @@ export async function getLineFeed(
       lanes: board,
       summary: summarizeLanes(board),
       itemReadableIds,
+      itemThumbnailPaths,
       storageUnitNames,
       jobReadableIds,
       stockTransferReadableIds

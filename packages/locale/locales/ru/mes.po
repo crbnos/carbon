@@ -1177,6 +1177,9 @@ msgstr "Не удалось сохранить часы"
 msgid "Failed to submit the week"
 msgstr "Не удалось отправить неделю"
 
+msgid "Failed to transfer"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Не удалось загрузить {0}"
@@ -1283,6 +1286,9 @@ msgstr "Перейти к шагу {0}: {1}"
 #. placeholder {1}: s.name ?? ""
 msgid "Go to step {0}: {1} (done)"
 msgstr "Перейти к шагу {0}: {1} (готово)"
+
+msgid "Grab from {source} · {onHand} there"
+msgstr ""
 
 msgid "Gradient"
 msgstr "Градиент"
@@ -1750,9 +1756,18 @@ msgstr "Дополнительные параметры для {0}"
 msgid "More than one unit has this serial. Choose one."
 msgstr "Более одной единицы имеет этот серийный номер. Выберите одну."
 
+msgid "Move {quantity}"
+msgstr ""
+
+msgid "Move {quantity} from {from}"
+msgstr ""
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "Переместить столбец: {0}"
+
+msgid "Moved to the station"
+msgstr ""
 
 msgid "Must be at least {minValue} {unitOfMeasureCode}"
 msgstr "Должно быть не менее {minValue} {unitOfMeasureCode}"
@@ -2021,6 +2036,9 @@ msgstr "Не учитывается в MRP"
 
 msgid "None"
 msgstr "Нет"
+
+msgid "None on the shelf"
+msgstr ""
 
 msgid "Normal"
 msgstr "Нормальный"

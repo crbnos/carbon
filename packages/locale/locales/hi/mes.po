@@ -1177,6 +1177,9 @@ msgstr "घंटे सहेजने में विफल रहा"
 msgid "Failed to submit the week"
 msgstr "सप्ताह सबमिट करने में विफल रहा"
 
+msgid "Failed to transfer"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0} अपलोड करने में विफल"
@@ -1283,6 +1286,9 @@ msgstr "चरण {0} पर जाएँ: {1}"
 #. placeholder {1}: s.name ?? ""
 msgid "Go to step {0}: {1} (done)"
 msgstr "चरण {0} पर जाएँ: {1} (हो गया)"
+
+msgid "Grab from {source} · {onHand} there"
+msgstr ""
 
 msgid "Gradient"
 msgstr "ग्रेडिएंट"
@@ -1750,9 +1756,18 @@ msgstr "{0} के लिए अधिक विकल्प"
 msgid "More than one unit has this serial. Choose one."
 msgstr "इस क्रमांक वाली एक से अधिक इकाई है। एक चुनें।"
 
+msgid "Move {quantity}"
+msgstr ""
+
+msgid "Move {quantity} from {from}"
+msgstr ""
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "कॉलम को स्थानांतरित करें: {0}"
+
+msgid "Moved to the station"
+msgstr ""
 
 msgid "Must be at least {minValue} {unitOfMeasureCode}"
 msgstr "कम से कम {minValue} {unitOfMeasureCode} होना चाहिए"
@@ -2021,6 +2036,9 @@ msgstr "MRP से बाहर"
 
 msgid "None"
 msgstr "कोई नहीं"
+
+msgid "None on the shelf"
+msgstr ""
 
 msgid "Normal"
 msgstr "सामान्य"

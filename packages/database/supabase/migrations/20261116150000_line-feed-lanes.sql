@@ -22,6 +22,9 @@ ALTER TABLE "storageUnit" ADD CONSTRAINT "storageUnit_kitRack_not_lineside"
 --   kit       missing      an unissued part of that job; quantity missing
 --   raw       bin          a shelf bin; quantity on hand, need = quantity per kit,
 --                          target = the bin's kanban quantity
+--   raw       source       where to grab a part the station consumes: the item's
+--                          default bin when it holds stock, else the fullest bin;
+--                          quantity on hand there
 --
 -- A raw bin with a "parentKitItemId" feeds that kit. Without one it is the
 -- source of a Transfer kanban into the station (a part fed directly).
@@ -181,6 +184,35 @@ AS $$
       AND (il."trackedEntityStatus" IS NULL OR il."trackedEntityStatus" NOT IN ('Rejected', 'Scrapped'))
     GROUP BY il."itemId", il."storageUnitId"
   ),
+  -- Unassigned, nettable stock off the line. A kit has none: it comes from
+  -- its rack.
+  source AS (
+    SELECT DISTINCT ON (held."itemId") held."itemId", held."storageUnitId", held."quantity"
+    FROM (
+      SELECT il."itemId", il."storageUnitId", SUM(il."quantity") AS "quantity"
+      FROM "itemLedger" il
+      INNER JOIN "storageUnit" su ON su."id" = il."storageUnitId"
+      WHERE il."companyId" = p_company_id
+        AND il."locationId" = p_location_id
+        AND il."itemId" IN (SELECT d."itemId" FROM demand d)
+        AND il."projectId" IS NULL
+        AND (il."trackedEntityStatus" IS NULL OR il."trackedEntityStatus" NOT IN ('Rejected', 'Scrapped'))
+        AND su."workCenterId" IS NULL
+        AND NOT su."kitRack"
+        AND su."effectiveNettable"
+        AND su."active"
+      GROUP BY il."itemId", il."storageUnitId"
+      HAVING SUM(il."quantity") > 0
+    ) held
+    LEFT JOIN "pickMethod" pm
+      ON pm."itemId" = held."itemId"
+      AND pm."locationId" = p_location_id
+      AND pm."companyId" = p_company_id
+    ORDER BY held."itemId",
+      (pm."defaultStorageUnitId" = held."storageUnitId") DESC NULLS LAST,
+      held."quantity" DESC,
+      held."storageUnitId"
+  ),
   -- The card that refills a rack slot (Make) or a shelf bin (Buy or Make).
   card AS (
     SELECT k."itemId", k."storageUnitId", MIN(k."id") AS "id", SUM(k."quantity") AS "quantity"
@@ -265,5 +297,11 @@ AS $$
   LEFT JOIN kit k ON k."itemId" = s."kitItemId"
   LEFT JOIN shelf_stock ss ON ss."itemId" = s."itemId" AND ss."storageUnitId" = s."storageUnitId"
   LEFT JOIN card c ON c."itemId" = s."itemId" AND c."storageUnitId" = s."storageUnitId"
-  LEFT JOIN inbound i ON i."itemId" = s."itemId";
+  LEFT JOIN inbound i ON i."itemId" = s."itemId"
+
+  UNION ALL
+  SELECT d."workCenterId", 'raw', 'source', src."itemId", NULL, src."storageUnitId", NULL,
+    NULL, NULL, NULL, src."quantity", NULL, NULL, NULL
+  FROM demand d
+  INNER JOIN source src ON src."itemId" = d."itemId";
 $$;

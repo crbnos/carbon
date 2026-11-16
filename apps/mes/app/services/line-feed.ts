@@ -46,6 +46,18 @@ export type LineFeedRow = {
   materialRequestId?: string;
   stockTransferId?: string;
   note?: string | null;
+  /** Where to grab a part the station is short of. Set by `buildLaneBoard`. */
+  source?: StockSource;
+};
+
+/** A bin to grab a part from, and how much of what to bring it holds. */
+export type StockSource = {
+  storageUnitId: string;
+  onHand: number;
+  /** The most one transfer brings: the need, capped at what the bin holds. */
+  quantity: number;
+  /** The serial to move, for a kit. */
+  trackedEntityId?: string;
 };
 
 // ISO timestamps from Postgres sort correctly as strings.
@@ -316,6 +328,8 @@ export type LaneKit = {
    * one is on its way.
    */
   stationStatus: "bring" | "out" | "coming" | "ok";
+  /** The rack kit to bring when the status is `bring`. */
+  source?: StockSource;
   atStation: KitUnit[];
   complete: KitUnit[];
   incomplete: IncompleteKit[];
@@ -426,6 +440,17 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
     }
   }
 
+  // Where each part the station consumes can be grabbed.
+  const sources = new Map<string, LaneRowInput>();
+  for (const row of rows) {
+    if (row.state === "source" && row.itemId) sources.set(row.itemId, row);
+  }
+  const grab = (row: LaneRowInput, need: number): StockSource => ({
+    storageUnitId: row.storageUnitId ?? "",
+    onHand: row.quantity ?? 0,
+    quantity: Math.min(need, row.quantity ?? 0)
+  });
+
   // Shelf bins, one per part and bin. A part that feeds two kits adds both
   // kits' needs to the one bin.
   const bins = new Map<string, RawBin & { perKit: number; level: number }>();
@@ -436,7 +461,7 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
       ? 0
       : Math.max(kit.target - total(kit.complete) - total(kit.incomplete), 0);
   for (const row of rows) {
-    if (row.tier !== "raw" || !row.itemId) continue;
+    if (row.state !== "bin" || !row.itemId) continue;
     const key = `${row.itemId}:${row.storageUnitId}`;
     let bin = bins.get(key);
     if (!bin) {
@@ -522,7 +547,18 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
           ? "bring"
           : "out";
     }
-    if (kit.stationStatus === "bring") work.deliver += 1;
+    if (kit.stationStatus === "bring") {
+      work.deliver += 1;
+      const [unit] = kit.complete;
+      if (unit.storageUnitId) {
+        kit.source = {
+          storageUnitId: unit.storageUnitId,
+          onHand: unit.quantity,
+          quantity: 1,
+          trackedEntityId: unit.trackedEntityId ?? undefined
+        };
+      }
+    }
 
     for (const job of kit.incomplete) {
       job.covered = job.missing.every(
@@ -548,10 +584,14 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
     raw,
     kits: [...kits.values()],
     station,
-    looseRows: station.rows.filter(
-      (line) =>
-        !(line.kind === "shortage" && line.itemId && kits.has(line.itemId))
-    )
+    looseRows: station.rows.flatMap((line) => {
+      if (line.kind !== "shortage" || !line.itemId) return [line];
+      if (kits.has(line.itemId)) return [];
+      const source = sources.get(line.itemId);
+      return source
+        ? [{ ...line, source: grab(source, line.quantity ?? 0) }]
+        : [line];
+    })
   };
 }
 

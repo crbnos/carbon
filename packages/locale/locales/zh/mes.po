@@ -1177,6 +1177,9 @@ msgstr "工时保存失败"
 msgid "Failed to submit the week"
 msgstr "周提交失败"
 
+msgid "Failed to transfer"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "上传 {0} 失败"
@@ -1283,6 +1286,9 @@ msgstr "前往步骤 {0}：{1}"
 #. placeholder {1}: s.name ?? ""
 msgid "Go to step {0}: {1} (done)"
 msgstr "前往步骤 {0}：{1}（已完成）"
+
+msgid "Grab from {source} · {onHand} there"
+msgstr ""
 
 msgid "Gradient"
 msgstr "渐变"
@@ -1750,9 +1756,18 @@ msgstr "{0} 的更多选项"
 msgid "More than one unit has this serial. Choose one."
 msgstr "多个件具有此序列号。选择一个。"
 
+msgid "Move {quantity}"
+msgstr ""
+
+msgid "Move {quantity} from {from}"
+msgstr ""
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "移动列：{0}"
+
+msgid "Moved to the station"
+msgstr ""
 
 msgid "Must be at least {minValue} {unitOfMeasureCode}"
 msgstr "必须不小于 {minValue} {unitOfMeasureCode}"
@@ -2021,6 +2036,9 @@ msgstr "不计入MRP"
 
 msgid "None"
 msgstr "无"
+
+msgid "None on the shelf"
+msgstr ""
 
 msgid "Normal"
 msgstr "正常检验"

@@ -221,6 +221,7 @@ export const path = {
     lineFeed: `${x}/line-feed`,
     lineFeedResolve: (id: string) =>
       generatePath(`${x}/line-feed/${id}/resolve`),
+    lineFeedTransfer: `${x}/line-feed/transfer`,
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",

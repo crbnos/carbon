@@ -244,7 +244,12 @@ describe("buildLaneBoard", () => {
   const slot = (need: number) =>
     a3("slot", { itemId: "KIT", storageUnitId: "KIT-RACK-1", need, target: 3 });
   const kitAt = (state: "atStation" | "complete", serial: string) =>
-    a3(state, { itemId: "KIT", trackedEntityId: serial, quantity: 1 });
+    a3(state, {
+      itemId: "KIT",
+      trackedEntityId: serial,
+      storageUnitId: state === "complete" ? "KIT-RACK-1" : "A3-LINE",
+      quantity: 1
+    });
   const incomplete = (jobId: string, missing: number) => [
     a3("incomplete", {
       itemId: "KIT",
@@ -350,6 +355,10 @@ describe("buildLaneBoard", () => {
     expect(out.severity).toBe("red");
     expect(out.work).toMatchObject({ deliver: 1, rawShort: 1 });
     expect(out.kits[0].stationStatus).toBe("bring");
+    expect(out.kits[0].source).toMatchObject({
+      trackedEntityId: "KIT-3",
+      quantity: 1
+    });
   });
 
   it("does not ask for a kit that is already on its way", () => {
@@ -446,6 +455,27 @@ describe("buildLaneBoard", () => {
     );
     expect(direct.kits).toEqual([]);
     expect(direct.looseRows).toEqual([shortage]);
+
+    // With stock on a shelf, the row says where to grab it and how much.
+    const grab = lane(
+      [
+        {
+          workCenterId: "A3",
+          tier: "raw",
+          state: "source",
+          itemId: "BOLT",
+          storageUnitId: "WH1-B9",
+          quantity: 5
+        }
+      ],
+      station("A3", "out", [shortage])
+    );
+    expect(grab.looseRows[0].source).toEqual({
+      storageUnitId: "WH1-B9",
+      onHand: 5,
+      quantity: 5
+    });
+    expect(grab.raw).toEqual([]);
     expect(direct.raw[0].kitItemIds).toEqual([]);
     expect(direct.raw).toMatchObject([{ need: 8, status: "short" }]);
     expect(direct.verdict).toBe("rawShort");

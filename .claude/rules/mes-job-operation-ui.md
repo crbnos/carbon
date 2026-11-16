@@ -509,6 +509,15 @@ while its serial or batch materials are not scanned in.
   Transfer kanbans into its station. The sort (`?sort=worst`) and the lit
   summary count (`?show=`) live in the URL; the loader sorts. `kanban` does
   not broadcast, so a new card shows on the next stock, job or PO change.
+- **Grab and move.** A short loose part shows its picture and where to grab
+  it (`LineFeedRow.source`, from the function's `raw`/`source` rows: the
+  item's default bin when it holds stock, else the fullest bin of unassigned,
+  nettable stock off the line). "Move N from BIN" posts to
+  `x+/line-feed.transfer.tsx`, which reads the station's shortage again
+  (`getStationShortage`) for the destination bin and the most that may move,
+  so a resend moves nothing, then calls the ERP's
+  `api+/inventory.stock-transfer.move.ts` (`createStockTransfer` with
+  `moveNow`). "Bring kit" is the same move for the rack kit's serial.
 - **Resolve.** A request card posts to `x+/line-feed.$materialRequestId.resolve.tsx`,
   which calls `resolveMaterialRequest` with the user's client. Only the
   requester or an inventory editor can resolve it; the RLS refusal comes back

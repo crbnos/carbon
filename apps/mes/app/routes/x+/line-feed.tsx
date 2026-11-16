@@ -10,10 +10,16 @@ import { formatQuantity } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
-import { LuCheck, LuChevronDown, LuExternalLink } from "react-icons/lu";
+import {
+  LuArrowRightLeft,
+  LuCheck,
+  LuChevronDown,
+  LuExternalLink
+} from "react-icons/lu";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData, useSearchParams } from "react-router";
 import { DateTime } from "~/components";
+import ItemThumbnail from "~/components/ItemThumbnail";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
 import { userContext } from "~/context";
@@ -26,7 +32,8 @@ import type {
   LaneSummary,
   LineFeedRow,
   RawBin,
-  StationStockStatus
+  StationStockStatus,
+  StockSource
 } from "~/services/line-feed";
 import type { Handle } from "~/utils/handle";
 import { pageMeta } from "~/utils/meta";
@@ -51,6 +58,7 @@ export const meta: MetaFunction = () => pageMeta("Line feed");
 
 type Names = {
   itemReadableIds: Record<string, string>;
+  itemThumbnailPaths: Record<string, string>;
   storageUnitNames: Record<string, string>;
   jobReadableIds: Record<string, string>;
   stockTransferReadableIds: Record<string, string>;
@@ -60,6 +68,7 @@ const emptyLineFeed = {
   lanes: [] as Lane[],
   summary: { out: 0, deliver: 0, finish: 0, build: 0, rawShort: 0 },
   itemReadableIds: {},
+  itemThumbnailPaths: {},
   storageUnitNames: {},
   jobReadableIds: {},
   stockTransferReadableIds: {},
@@ -398,7 +407,12 @@ function LaneColumn({
         tone={stationTone[station.status]}
       >
         {lane.kits.map((kit) => (
-          <StationKitLine key={kit.itemId} kit={kit} names={names} />
+          <StationKitLine
+            key={kit.itemId}
+            kit={kit}
+            workCenterId={lane.workCenterId}
+            names={names}
+          />
         ))}
         {lane.kits.length > 0 && lane.looseRows.length > 0 && (
           <TierHeading>
@@ -411,6 +425,14 @@ function LaneColumn({
             row={row}
             part={
               row.itemId ? (names.itemReadableIds[row.itemId] ?? null) : null
+            }
+            thumbnailPath={
+              row.itemId ? names.itemThumbnailPaths[row.itemId] : undefined
+            }
+            source={
+              row.source
+                ? (names.storageUnitNames[row.source.storageUnitId] ?? null)
+                : null
             }
             storageUnit={
               row.storageUnitId
@@ -525,9 +547,7 @@ function RawBinLine({ bin, names }: { bin: RawBin; names: Names }) {
 
   const line = (
     <>
-      <Badge variant={variant} className="shrink-0">
-        {label}
-      </Badge>
+      <ItemThumbnail thumbnailPath={names.itemThumbnailPaths[bin.itemId]} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium">
           {names.itemReadableIds[bin.itemId] ?? <Trans>Unknown part</Trans>}
@@ -546,15 +566,18 @@ function RawBinLine({ bin, names }: { bin: RawBin; names: Names }) {
             ))}
         </div>
       </div>
-      <span className="shrink-0 text-sm tabular-nums">
-        {bin.need > 0 ? (
-          <Trans>
-            {onHand} of {need}
-          </Trans>
-        ) : (
-          onHand
-        )}
-      </span>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <Badge variant={variant}>{label}</Badge>
+        <span className="text-sm tabular-nums">
+          {bin.need > 0 ? (
+            <Trans>
+              {onHand} of {need}
+            </Trans>
+          ) : (
+            onHand
+          )}
+        </span>
+      </div>
     </>
   );
 
@@ -594,6 +617,7 @@ function KitRackLine({ kit, names }: { kit: LaneKit; names: Names }) {
   return (
     <li className="flex flex-col gap-2 px-3 py-2">
       <div className="flex items-center gap-3">
+        <ItemThumbnail thumbnailPath={names.itemThumbnailPaths[kit.itemId]} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">
             {names.itemReadableIds[kit.itemId] ?? <Trans>Unknown part</Trans>}
@@ -664,7 +688,15 @@ function KitRackLine({ kit, names }: { kit: LaneKit; names: Names }) {
 
 /** A kit at the station: whether to bring one, the serials there, and how
  *  many open units they cover. */
-function StationKitLine({ kit, names }: { kit: LaneKit; names: Names }) {
+function StationKitLine({
+  kit,
+  workCenterId,
+  names
+}: {
+  kit: LaneKit;
+  workCenterId: string | null;
+  names: Names;
+}) {
   const { locale } = useLocale();
   const onHand = formatQuantity(
     kit.atStation.reduce((sum, unit) => sum + unit.quantity, 0),
@@ -680,23 +712,31 @@ function StationKitLine({ kit, names }: { kit: LaneKit; names: Names }) {
   } as const;
   const { variant, label } = badge[kit.stationStatus];
   return (
-    <li className="flex items-center gap-3 px-3 py-2">
-      <Badge variant={variant} className="shrink-0">
-        {label}
-      </Badge>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">
-          {names.itemReadableIds[kit.itemId] ?? <Trans>Unknown part</Trans>}
+    <li className="flex flex-col gap-2 px-3 py-2">
+      <div className="flex items-center gap-3">
+        <ItemThumbnail thumbnailPath={names.itemThumbnailPaths[kit.itemId]} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">
+            {names.itemReadableIds[kit.itemId] ?? <Trans>Unknown part</Trans>}
+          </div>
+          <div className="truncate text-xs text-muted-foreground">
+            <Trans>
+              {onHand} on hand · covers {covers} of {demand}
+            </Trans>
+          </div>
         </div>
-        <div className="truncate text-xs text-muted-foreground">
-          {kit.atStation.map((unit) => unit.readableId).join(", ")}
-        </div>
+        <Badge variant={variant} className="shrink-0">
+          {label}
+        </Badge>
       </div>
-      <span className="shrink-0 text-right text-sm tabular-nums">
-        <Trans>
-          {onHand} on hand · covers {covers} of {demand}
-        </Trans>
-      </span>
+      {kit.source && workCenterId && (
+        <TransferButton
+          workCenterId={workCenterId}
+          itemId={kit.itemId}
+          source={kit.source}
+          from={names.storageUnitNames[kit.source.storageUnitId] ?? null}
+        />
+      )}
     </li>
   );
 }
@@ -704,11 +744,16 @@ function StationKitLine({ kit, names }: { kit: LaneKit; names: Names }) {
 function StationLine({
   row,
   part,
+  thumbnailPath,
+  source,
   storageUnit,
   reference
 }: {
   row: LineFeedRow;
   part: string | null;
+  thumbnailPath?: string;
+  /** The name of the bin to grab a short part from. */
+  source: string | null;
   /** Where a transfer is going: a station can have several storage units. */
   storageUnit: string | null;
   reference: string | null;
@@ -718,20 +763,48 @@ function StationLine({
     row.quantity === null ? null : formatQuantity(row.quantity, locale);
 
   if (row.kind === "shortage") {
+    const onHand = row.source
+      ? formatQuantity(row.source.onHand, locale)
+      : null;
     return (
-      <li className="flex items-center gap-3 px-3 py-2">
-        <Badge
-          variant={row.stockStatus === "out" ? "red" : "yellow"}
-          className="shrink-0"
-        >
-          {row.stockStatus === "out" ? <Trans>Out</Trans> : <Trans>Low</Trans>}
-        </Badge>
-        <span className="min-w-0 flex-1 truncate text-sm font-medium">
-          {part ?? <Trans>Unknown part</Trans>}
-        </span>
-        <span className="shrink-0 text-sm tabular-nums">
-          <Trans>Bring {quantity}</Trans>
-        </span>
+      <li className="flex flex-col gap-2 px-3 py-2">
+        <div className="flex items-center gap-3">
+          <ItemThumbnail thumbnailPath={thumbnailPath} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">
+              {part ?? <Trans>Unknown part</Trans>}
+            </div>
+            <div className="truncate text-xs text-muted-foreground">
+              {row.source ? (
+                <Trans>
+                  Grab from {source} · {onHand} there
+                </Trans>
+              ) : (
+                <Trans>None on the shelf</Trans>
+              )}
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <Badge variant={row.stockStatus === "out" ? "red" : "yellow"}>
+              {row.stockStatus === "out" ? (
+                <Trans>Out</Trans>
+              ) : (
+                <Trans>Low</Trans>
+              )}
+            </Badge>
+            <span className="text-sm tabular-nums">
+              <Trans>Bring {quantity}</Trans>
+            </span>
+          </div>
+        </div>
+        {row.source && row.workCenterId && row.itemId && (
+          <TransferButton
+            workCenterId={row.workCenterId}
+            itemId={row.itemId}
+            source={row.source}
+            from={source}
+          />
+        )}
       </li>
     );
   }
@@ -787,6 +860,72 @@ function StationLine({
         <ResolveButton materialRequestId={row.materialRequestId} />
       )}
     </li>
+  );
+}
+
+/**
+ * Grab it, tap, carry it over: one tap moves the stock from the source bin to
+ * the station's bin. The server decides the destination and caps the
+ * quantity at what the station is still short of.
+ */
+function TransferButton({
+  workCenterId,
+  itemId,
+  source,
+  from
+}: {
+  workCenterId: string;
+  itemId: string;
+  source: StockSource;
+  from: string | null;
+}) {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  const fetcher = useAction<{ success: boolean; message?: string }>({
+    onSuccess: () => toast.success(t`Moved to the station`),
+    onError: (data) => toast.error(data.message ?? t`Failed to transfer`)
+  });
+  const quantity = formatQuantity(source.quantity, locale);
+
+  return (
+    <fetcher.Form
+      method="post"
+      action={path.to.lineFeedTransfer}
+      className="w-full"
+    >
+      <input type="hidden" name="workCenterId" value={workCenterId} />
+      <input type="hidden" name="itemId" value={itemId} />
+      <input
+        type="hidden"
+        name="fromStorageUnitId"
+        value={source.storageUnitId}
+      />
+      <input type="hidden" name="quantity" value={source.quantity} />
+      {source.trackedEntityId && (
+        <input
+          type="hidden"
+          name="trackedEntityId"
+          value={source.trackedEntityId}
+        />
+      )}
+      <Button
+        type="submit"
+        variant="secondary"
+        size="lg"
+        leftIcon={<LuArrowRightLeft />}
+        isLoading={fetcher.isPending}
+        isDisabled={fetcher.isPending}
+        className="w-full"
+      >
+        {from ? (
+          <Trans>
+            Move {quantity} from {from}
+          </Trans>
+        ) : (
+          <Trans>Move {quantity}</Trans>
+        )}
+      </Button>
+    </fetcher.Form>
   );
 }
 

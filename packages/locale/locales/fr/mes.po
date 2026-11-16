@@ -1177,6 +1177,9 @@ msgstr "Impossible d'enregistrer les heures"
 msgid "Failed to submit the week"
 msgstr "Impossible de soumettre la semaine"
 
+msgid "Failed to transfer"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Échec du téléversement de {0}"
@@ -1283,6 +1286,9 @@ msgstr "Aller à l'étape {0} : {1}"
 #. placeholder {1}: s.name ?? ""
 msgid "Go to step {0}: {1} (done)"
 msgstr "Aller à l'étape {0} : {1} (fait)"
+
+msgid "Grab from {source} · {onHand} there"
+msgstr ""
 
 msgid "Gradient"
 msgstr "Dégradé"
@@ -1750,9 +1756,18 @@ msgstr "Plus d'options pour {0}"
 msgid "More than one unit has this serial. Choose one."
 msgstr "Plusieurs unités ont ce numéro de série. Choisissez-en une."
 
+msgid "Move {quantity}"
+msgstr ""
+
+msgid "Move {quantity} from {from}"
+msgstr ""
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "Déplacer la colonne : {0}"
+
+msgid "Moved to the station"
+msgstr ""
 
 msgid "Must be at least {minValue} {unitOfMeasureCode}"
 msgstr "Doit être d'au moins {minValue} {unitOfMeasureCode}"
@@ -2021,6 +2036,9 @@ msgstr "Exclu du calcul des besoins"
 
 msgid "None"
 msgstr "Aucun"
+
+msgid "None on the shelf"
+msgstr ""
 
 msgid "Normal"
 msgstr "Normal"
