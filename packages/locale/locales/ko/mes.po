@@ -351,9 +351,6 @@ msgstr "추가됨"
 msgid "Adjustment Type"
 msgstr "조정 유형"
 
-msgid "Age"
-msgstr "경과 기간"
-
 msgid "All"
 msgstr "전체"
 
@@ -1996,9 +1993,6 @@ msgstr "실행 중인 것 없음"
 msgid "Nothing scheduled at this work center"
 msgstr "이 작업장에 예정된 작업이 없습니다"
 
-msgid "Nothing to feed"
-msgstr "공급할 항목이 없습니다"
-
 msgid "Nothing to scrap"
 msgstr "스크랩할 것이 없습니다"
 
@@ -2524,9 +2518,6 @@ msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 msgid "Repairable"
 msgstr "수리 가능"
 
-msgid "Request"
-msgstr "요청"
-
 msgid "Request material"
 msgstr "자재 요청"
 
@@ -2885,9 +2876,6 @@ msgstr "{itemName} 부족 피킹"
 msgid "Short: {available} of {needed}"
 msgstr "부족: {available} / {needed}"
 
-msgid "Shortage"
-msgstr "부족"
-
 msgid "Show description"
 msgstr "설명 표시"
 
@@ -3046,12 +3034,6 @@ msgstr "단계가 누락되었습니다"
 
 msgid "Stock at:"
 msgstr "재고 위치:"
-
-msgid "Stock transfer"
-msgstr "재고 이송"
-
-msgid "Storage unit"
-msgstr "보관 단위"
 
 msgid "Storage Unit"
 msgstr "보관 단위"
@@ -3371,9 +3353,6 @@ msgstr "추적 번호"
 
 msgid "Training"
 msgstr "교육"
-
-msgid "Transfer"
-msgstr "이송"
 
 msgid "Traveler"
 msgstr "작업 이동표"

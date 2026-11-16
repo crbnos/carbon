@@ -351,9 +351,6 @@ msgstr "जोड़ा गया"
 msgid "Adjustment Type"
 msgstr "समायोजन प्रकार"
 
-msgid "Age"
-msgstr "आयु"
-
 msgid "All"
 msgstr "सभी"
 
@@ -1996,9 +1993,6 @@ msgstr "कुछ नहीं चल रहा"
 msgid "Nothing scheduled at this work center"
 msgstr "इस वर्क सेंटर पर कुछ भी शेड्यूल नहीं है"
 
-msgid "Nothing to feed"
-msgstr "फ़ीड करने के लिए कुछ नहीं"
-
 msgid "Nothing to scrap"
 msgstr "स्क्रैप करने के लिए कुछ नहीं"
 
@@ -2524,9 +2518,6 @@ msgstr "सब-असेंबली को फिर से खोलें औ
 msgid "Repairable"
 msgstr "मरम्मत योग्य"
 
-msgid "Request"
-msgstr "अनुरोध"
-
 msgid "Request material"
 msgstr "सामग्री का अनुरोध करें"
 
@@ -2885,9 +2876,6 @@ msgstr "Short pick {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr "कमी: {needed} में से {available}"
 
-msgid "Shortage"
-msgstr "कमी"
-
 msgid "Show description"
 msgstr "विवरण दिखाएं"
 
@@ -3046,12 +3034,6 @@ msgstr "चरण गायब हैं"
 
 msgid "Stock at:"
 msgstr "स्टॉक का स्थान:"
-
-msgid "Stock transfer"
-msgstr "स्टॉक स्थानांतरण"
-
-msgid "Storage unit"
-msgstr "भंडारण इकाई"
 
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"
@@ -3371,9 +3353,6 @@ msgstr "ट्रैकिंग नंबर"
 
 msgid "Training"
 msgstr "प्रशिक्षण"
-
-msgid "Transfer"
-msgstr "स्थानांतरण"
 
 msgid "Traveler"
 msgstr "ट्रैवलर"

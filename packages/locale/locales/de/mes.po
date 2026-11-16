@@ -351,9 +351,6 @@ msgstr "Hinzugefügt"
 msgid "Adjustment Type"
 msgstr "Korrekturtyp"
 
-msgid "Age"
-msgstr "Alter"
-
 msgid "All"
 msgstr "Alle"
 
@@ -1996,9 +1993,6 @@ msgstr "Nichts läuft"
 msgid "Nothing scheduled at this work center"
 msgstr "Nichts an diesem Arbeitsplatz geplant"
 
-msgid "Nothing to feed"
-msgstr "Nichts zuzuführen"
-
 msgid "Nothing to scrap"
 msgstr "Nichts zum Ausschuss"
 
@@ -2524,9 +2518,6 @@ msgstr "Baugruppe wieder öffnen und Ersatzeinheit erstellen"
 msgid "Repairable"
 msgstr "Reparierbar"
 
-msgid "Request"
-msgstr "Anfrage"
-
 msgid "Request material"
 msgstr "Material anfordern"
 
@@ -2885,9 +2876,6 @@ msgstr "Kurzkommissionierung {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr "Fehlmenge: {available} von {needed}"
 
-msgid "Shortage"
-msgstr "Fehlmenge"
-
 msgid "Show description"
 msgstr "Beschreibung anzeigen"
 
@@ -3046,12 +3034,6 @@ msgstr "Schritte fehlen"
 
 msgid "Stock at:"
 msgstr "Bestand in:"
-
-msgid "Stock transfer"
-msgstr "Umlagerung"
-
-msgid "Storage unit"
-msgstr "Lagereinheit"
 
 msgid "Storage Unit"
 msgstr "Lagereinheit"
@@ -3371,9 +3353,6 @@ msgstr "Sendungsnummer"
 
 msgid "Training"
 msgstr "Schulung"
-
-msgid "Transfer"
-msgstr "Umlagerung"
 
 msgid "Traveler"
 msgstr "Laufkarte"

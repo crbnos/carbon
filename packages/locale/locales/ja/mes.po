@@ -351,9 +351,6 @@ msgstr "追加完了"
 msgid "Adjustment Type"
 msgstr "調整タイプ"
 
-msgid "Age"
-msgstr "経過日数"
-
 msgid "All"
 msgstr "すべて"
 
@@ -1996,9 +1993,6 @@ msgstr "稼働中の作業はありません"
 msgid "Nothing scheduled at this work center"
 msgstr "この作業区には予定がありません。"
 
-msgid "Nothing to feed"
-msgstr "供給するものがありません"
-
 msgid "Nothing to scrap"
 msgstr "スクラップするものがない"
 
@@ -2524,9 +2518,6 @@ msgstr "サブアセンブリを再オープンし、代替品を作成"
 msgid "Repairable"
 msgstr "修理可能"
 
-msgid "Request"
-msgstr "要求"
-
 msgid "Request material"
 msgstr "資材を要求"
 
@@ -2885,9 +2876,6 @@ msgstr "短いピック {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr "不足: {needed} 中 {available}"
 
-msgid "Shortage"
-msgstr "不足"
-
 msgid "Show description"
 msgstr "説明を表示"
 
@@ -3046,12 +3034,6 @@ msgstr "ステップが未記録です"
 
 msgid "Stock at:"
 msgstr "在庫場所："
-
-msgid "Stock transfer"
-msgstr "在庫転送"
-
-msgid "Storage unit"
-msgstr "保管ユニット"
 
 msgid "Storage Unit"
 msgstr "保管ユニット"
@@ -3371,9 +3353,6 @@ msgstr "追跡番号"
 
 msgid "Training"
 msgstr "教育訓練"
-
-msgid "Transfer"
-msgstr "転送"
 
 msgid "Traveler"
 msgstr "現品票"

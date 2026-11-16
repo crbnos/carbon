@@ -351,9 +351,6 @@ msgstr "Adicionado"
 msgid "Adjustment Type"
 msgstr "Tipo de ajuste"
 
-msgid "Age"
-msgstr "Idade"
-
 msgid "All"
 msgstr "Todos"
 
@@ -1996,9 +1993,6 @@ msgstr "Nada em execução"
 msgid "Nothing scheduled at this work center"
 msgstr "Nada agendado neste centro de trabalho"
 
-msgid "Nothing to feed"
-msgstr "Nada para alimentar"
-
 msgid "Nothing to scrap"
 msgstr "Nada para refugar"
 
@@ -2524,9 +2518,6 @@ msgstr "Reabrir o subconjunto e criar uma unidade de substituição"
 msgid "Repairable"
 msgstr "Reparável"
 
-msgid "Request"
-msgstr "Solicitar"
-
 msgid "Request material"
 msgstr "Solicitar material"
 
@@ -2885,9 +2876,6 @@ msgstr "Colheita curta {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr "Em falta: {available} de {needed}"
 
-msgid "Shortage"
-msgstr "Falta"
-
 msgid "Show description"
 msgstr "Mostrar descrição"
 
@@ -3046,12 +3034,6 @@ msgstr "Etapas ausentes"
 
 msgid "Stock at:"
 msgstr "Estoque em:"
-
-msgid "Stock transfer"
-msgstr "Transferência de estoque"
-
-msgid "Storage unit"
-msgstr "Unidade de armazenamento"
 
 msgid "Storage Unit"
 msgstr "Unidade de Armazenamento"
@@ -3371,9 +3353,6 @@ msgstr "Número de rastreamento"
 
 msgid "Training"
 msgstr "Treinamento"
-
-msgid "Transfer"
-msgstr "Transferência"
 
 msgid "Traveler"
 msgstr "Ficha de acompanhamento"

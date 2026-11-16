@@ -351,9 +351,6 @@ msgstr "Eklendi"
 msgid "Adjustment Type"
 msgstr "Düzeltme türü"
 
-msgid "Age"
-msgstr "Yaş"
-
 msgid "All"
 msgstr "Tümü"
 
@@ -1996,9 +1993,6 @@ msgstr "Hiçbir şey çalışmıyor"
 msgid "Nothing scheduled at this work center"
 msgstr "Bu iş merkezinde hiçbir şey planlanmadı"
 
-msgid "Nothing to feed"
-msgstr "Beslenecek bir şey yok"
-
 msgid "Nothing to scrap"
 msgstr "Fire edilecek birşey yok"
 
@@ -2524,9 +2518,6 @@ msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
 msgid "Repairable"
 msgstr "Onarılabilir"
 
-msgid "Request"
-msgstr "Talep"
-
 msgid "Request material"
 msgstr "Malzeme talep et"
 
@@ -2885,9 +2876,6 @@ msgstr "Kısmi toplama {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr "Eksik: {available} / {needed}"
 
-msgid "Shortage"
-msgstr "Eksiklik"
-
 msgid "Show description"
 msgstr "Açıklamayı göster"
 
@@ -3046,12 +3034,6 @@ msgstr "Adımlar eksik"
 
 msgid "Stock at:"
 msgstr "Stok konumu:"
-
-msgid "Stock transfer"
-msgstr "Stok transferi"
-
-msgid "Storage unit"
-msgstr "Depolama birimi"
 
 msgid "Storage Unit"
 msgstr "Depolama Birimi"
@@ -3371,9 +3353,6 @@ msgstr "İzleme numarası"
 
 msgid "Training"
 msgstr "Eğitim"
-
-msgid "Transfer"
-msgstr "Transfer"
 
 msgid "Traveler"
 msgstr "İş takip kartı"

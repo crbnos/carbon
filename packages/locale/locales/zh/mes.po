@@ -351,9 +351,6 @@ msgstr "已添加"
 msgid "Adjustment Type"
 msgstr "调整类型"
 
-msgid "Age"
-msgstr "账龄"
-
 msgid "All"
 msgstr "全部"
 
@@ -1996,9 +1993,6 @@ msgstr "没有运行"
 msgid "Nothing scheduled at this work center"
 msgstr "该工作中心没有计划任务"
 
-msgid "Nothing to feed"
-msgstr "无需上料"
-
 msgid "Nothing to scrap"
 msgstr "没有需要报废的"
 
@@ -2524,9 +2518,6 @@ msgstr "重新打开子装配件并创建替代件"
 msgid "Repairable"
 msgstr "可修复"
 
-msgid "Request"
-msgstr "申请"
-
 msgid "Request material"
 msgstr "申请物料"
 
@@ -2885,9 +2876,6 @@ msgstr "短缺拣货 {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr "缺料：可用 {available} / 需要 {needed}"
 
-msgid "Shortage"
-msgstr "短缺"
-
 msgid "Show description"
 msgstr "显示描述"
 
@@ -3046,12 +3034,6 @@ msgstr "缺少步骤"
 
 msgid "Stock at:"
 msgstr "库存位置："
-
-msgid "Stock transfer"
-msgstr "库存调拨"
-
-msgid "Storage unit"
-msgstr "存储单元"
 
 msgid "Storage Unit"
 msgstr "存储单元"
@@ -3371,9 +3353,6 @@ msgstr "跟踪号"
 
 msgid "Training"
 msgstr "培训"
-
-msgid "Transfer"
-msgstr "调拨"
 
 msgid "Traveler"
 msgstr "流转卡"

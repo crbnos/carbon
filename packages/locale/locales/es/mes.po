@@ -351,9 +351,6 @@ msgstr "Agregado"
 msgid "Adjustment Type"
 msgstr "Tipo de ajuste"
 
-msgid "Age"
-msgstr "Antigüedad"
-
 msgid "All"
 msgstr "Todos"
 
@@ -1996,9 +1993,6 @@ msgstr "Nada en ejecución"
 msgid "Nothing scheduled at this work center"
 msgstr "Nada programado en este centro de trabajo"
 
-msgid "Nothing to feed"
-msgstr "Nada que alimentar"
-
 msgid "Nothing to scrap"
 msgstr "Nada que enviar a desperdicio"
 
@@ -2524,9 +2518,6 @@ msgstr "Reabrir el subensamble y crear una unidad de reemplazo"
 msgid "Repairable"
 msgstr "Reparable"
 
-msgid "Request"
-msgstr "Solicitar"
-
 msgid "Request material"
 msgstr "Solicitar material"
 
@@ -2885,9 +2876,6 @@ msgstr "Picking corto {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr "Faltante: {available} de {needed}"
 
-msgid "Shortage"
-msgstr "Faltante"
-
 msgid "Show description"
 msgstr "Mostrar descripción"
 
@@ -3046,12 +3034,6 @@ msgstr "Faltan pasos"
 
 msgid "Stock at:"
 msgstr "Existencias en:"
-
-msgid "Stock transfer"
-msgstr "Transferencia de existencias"
-
-msgid "Storage unit"
-msgstr "Unidad de almacenamiento"
 
 msgid "Storage Unit"
 msgstr "Unidad de Almacenamiento"
@@ -3371,9 +3353,6 @@ msgstr "Número de seguimiento"
 
 msgid "Training"
 msgstr "Capacitación"
-
-msgid "Transfer"
-msgstr "Transferencia"
 
 msgid "Traveler"
 msgstr "Hoja viajera"

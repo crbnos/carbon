@@ -351,9 +351,6 @@ msgstr "Dodano"
 msgid "Adjustment Type"
 msgstr "Typ korekty"
 
-msgid "Age"
-msgstr "Wiek"
-
 msgid "All"
 msgstr "Wszystkie"
 
@@ -1996,9 +1993,6 @@ msgstr "Nic nie działa"
 msgid "Nothing scheduled at this work center"
 msgstr "Nic nie zaplanowano na tym stanowisku roboczym"
 
-msgid "Nothing to feed"
-msgstr "Nic do zasilenia"
-
 msgid "Nothing to scrap"
 msgstr "Nic do braków"
 
@@ -2524,9 +2518,6 @@ msgstr "Ponownie otwórz podzespół i utwórz zastępczą jednostkę"
 msgid "Repairable"
 msgstr "Do naprawy"
 
-msgid "Request"
-msgstr "Żądanie"
-
 msgid "Request material"
 msgstr "Zażądaj materiału"
 
@@ -2885,9 +2876,6 @@ msgstr "Krótki pick {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr "Brak: {available} z {needed}"
 
-msgid "Shortage"
-msgstr "Niedobór"
-
 msgid "Show description"
 msgstr "Pokaż opis"
 
@@ -3046,12 +3034,6 @@ msgstr "Brakuje kroków"
 
 msgid "Stock at:"
 msgstr "Stan magazynowy w:"
-
-msgid "Stock transfer"
-msgstr "Przesunięcie zapasu"
-
-msgid "Storage unit"
-msgstr "Jednostka magazynowa"
 
 msgid "Storage Unit"
 msgstr "Jednostka magazynowa"
@@ -3371,9 +3353,6 @@ msgstr "Numer śledzenia"
 
 msgid "Training"
 msgstr "Szkolenie"
-
-msgid "Transfer"
-msgstr "Przesunięcie"
 
 msgid "Traveler"
 msgstr "Przewodnik"

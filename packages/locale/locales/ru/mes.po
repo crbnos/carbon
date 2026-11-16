@@ -351,9 +351,6 @@ msgstr "Добавлено"
 msgid "Adjustment Type"
 msgstr "Тип корректировки"
 
-msgid "Age"
-msgstr "Возраст"
-
 msgid "All"
 msgstr "Все"
 
@@ -1996,9 +1993,6 @@ msgstr "Ничего не работает"
 msgid "Nothing scheduled at this work center"
 msgstr "Ничего не запланировано на этом рабочем центре"
 
-msgid "Nothing to feed"
-msgstr "Нечего подавать"
-
 msgid "Nothing to scrap"
 msgstr "Нечего браковать"
 
@@ -2524,9 +2518,6 @@ msgstr "Открыть заново узел и создать единицу д
 msgid "Repairable"
 msgstr "Подлежит ремонту"
 
-msgid "Request"
-msgstr "Запрос"
-
 msgid "Request material"
 msgstr "Запросить материал"
 
@@ -2885,9 +2876,6 @@ msgstr "Короткий отбор {itemName}"
 msgid "Short: {available} of {needed}"
 msgstr "Нехватка: {available} из {needed}"
 
-msgid "Shortage"
-msgstr "Нехватка"
-
 msgid "Show description"
 msgstr "Показать описание"
 
@@ -3046,12 +3034,6 @@ msgstr "Шаги не заполнены"
 
 msgid "Stock at:"
 msgstr "Запасы в:"
-
-msgid "Stock transfer"
-msgstr "Перемещение запасов"
-
-msgid "Storage unit"
-msgstr "Единица хранения"
 
 msgid "Storage Unit"
 msgstr "Единица хранения"
@@ -3371,9 +3353,6 @@ msgstr "Номер отслеживания"
 
 msgid "Training"
 msgstr "Обучение"
-
-msgid "Transfer"
-msgstr "Перемещение"
 
 msgid "Traveler"
 msgstr "Маршрутный лист"
