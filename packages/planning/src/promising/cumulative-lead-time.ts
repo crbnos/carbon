@@ -93,7 +93,9 @@ export async function loadCumulativeLeadTimes(
   const roots = Array.from(new Set(itemIds));
   if (roots.length === 0) return new Map();
 
-  // UNION (not UNION ALL) drops a repeated edge, so a cycle stops.
+  // UNION (not UNION ALL) drops a repeated edge, so a cycle stops. The BOM is
+  // the one MRP explodes (`bomChildren`): no quantity-0 line (a configured
+  // item's other configurations) and no correction material.
   const edgeRows = await sql<{ parentItemId: string; childItemId: string }>`
     WITH RECURSIVE "edge" AS (
       SELECT am."itemId" AS "parentItemId", mm."itemId" AS "childItemId"
@@ -102,6 +104,7 @@ export async function loadCumulativeLeadTimes(
         ON i."id" = am."itemId" AND i."companyId" = am."companyId"
       JOIN "methodMaterial" mm
         ON mm."makeMethodId" = am."id" AND mm."companyId" = am."companyId"
+        AND mm."quantity" > 0 AND mm."methodCorrectionId" IS NULL
       WHERE am."companyId" = ${companyId}
         AND am."itemId" IN (${sql.join(roots)})
         AND i."replenishmentSystem" <> 'Buy'
@@ -115,6 +118,7 @@ export async function loadCumulativeLeadTimes(
         ON am."itemId" = e."childItemId" AND am."companyId" = ${companyId}
       JOIN "methodMaterial" mm
         ON mm."makeMethodId" = am."id" AND mm."companyId" = am."companyId"
+        AND mm."quantity" > 0 AND mm."methodCorrectionId" IS NULL
     )
     SELECT "parentItemId", "childItemId" FROM "edge"
   `.execute(db);

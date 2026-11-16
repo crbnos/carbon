@@ -58,24 +58,25 @@ export function weekIndexOf(
   return index === -1 ? null : index;
 }
 
-/**
- * Free stock (available to promise) at the end of each week, cumulative with
- * look-ahead: the smallest projected balance from that week to the last week,
- * never below 0. Taking the smallest LATER balance keeps a new order from
- * using stock a later order already holds.
- */
-export function freeStockByWeek(args: {
+type WeeklyFlows = {
   onHand: number;
   supply: DatedQuantity[];
   demand: DatedQuantity[];
   weeks: string[];
   todayIso: string;
-}): number[] {
+};
+
+/** Each week's own supply, and the smallest projected balance from that
+ * week to the last week (not floored). */
+function lookAhead(args: WeeklyFlows) {
   const { onHand, supply, demand, weeks, todayIso } = args;
+  const received = new Array<number>(weeks.length).fill(0);
   const net = new Array<number>(weeks.length).fill(0);
   for (const row of supply) {
     const index = weekIndexOf(weeks, row.date, todayIso);
-    if (index !== null) net[index]! += row.quantity;
+    if (index === null) continue;
+    received[index]! += row.quantity;
+    net[index]! += row.quantity;
   }
   for (const row of demand) {
     const index = weekIndexOf(weeks, row.date, todayIso);
@@ -89,13 +90,32 @@ export function freeStockByWeek(args: {
     balance.push(running);
   }
 
-  const free = new Array<number>(weeks.length).fill(0);
-  let lowest = Number.POSITIVE_INFINITY;
+  const lowest = new Array<number>(weeks.length).fill(0);
+  let min = Number.POSITIVE_INFINITY;
   for (let i = weeks.length - 1; i >= 0; i--) {
-    lowest = Math.min(lowest, balance[i]!);
-    free[i] = Math.max(lowest, 0);
+    min = Math.min(min, balance[i]!);
+    lowest[i] = min;
   }
-  return free;
+  return { received, lowest };
+}
+
+/**
+ * Free stock (available to promise) at the end of each week, cumulative with
+ * look-ahead: the smallest projected balance from that week to the last week,
+ * never below 0. Taking the smallest LATER balance keeps a new order from
+ * using stock a later order already holds.
+ */
+export function freeStockByWeek(args: WeeklyFlows): number[] {
+  return lookAhead(args).lowest.map((lowest) => Math.max(lowest, 0));
+}
+
+/**
+ * Free stock of each week before that week's own supply arrives. A date in
+ * the week but before the goods come can promise only this much.
+ */
+export function freeStockBeforeArrivalByWeek(args: WeeklyFlows): number[] {
+  const { received, lowest } = lookAhead(args);
+  return lowest.map((value, i) => Math.max(value - received[i]!, 0));
 }
 
 /**

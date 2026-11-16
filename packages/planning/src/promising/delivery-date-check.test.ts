@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  freeStockBeforeArrivalByWeek,
   freeStockByWeek,
   lastArrivalByWeek,
   type SupplyAndDemand,
@@ -48,6 +49,21 @@ function stock(onHand: number, demand: { date: string; quantity: number }[]) {
       weeks,
       todayIso: TODAY
     })
+  };
+}
+
+/** Free stock per week with dated supply, and when each week's goods come. */
+function stockWithSupply(
+  onHand: number,
+  supply: { date: string; quantity: number }[]
+) {
+  const weeks = weekStarts(TODAY, FENCE);
+  const flows = { onHand, supply, demand: [], weeks, todayIso: TODAY };
+  return {
+    weeks,
+    free: freeStockByWeek(flows),
+    arrivals: lastArrivalByWeek(weeks, supply, TODAY),
+    freeBeforeArrival: freeStockBeforeArrivalByWeek(flows)
   };
 }
 
@@ -268,6 +284,48 @@ describe("decideDeliveryDate", () => {
         })
       )
     ).toMatchObject({ status: "Missed", earliestDate: "2026-11-26" });
+  });
+
+  // The goods for the week of 22 Nov arrive on Thursday 26 Nov.
+  it("misses a date in the goods' week that comes before they arrive", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          promisedDate: "2026-11-24",
+          stock: stockWithSupply(0, [{ date: "2026-11-26", quantity: 50 }])
+        })
+      )
+    ).toMatchObject({
+      status: "Missed",
+      constraint: "Stock",
+      earliestDate: "2026-11-26",
+      freeQuantity: 0
+    });
+  });
+
+  it("passes a date before the week's goods arrive when stock on hand covers it", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          promisedDate: "2026-11-24",
+          stock: stockWithSupply(40, [{ date: "2026-11-26", quantity: 50 }])
+        })
+      )
+    ).toMatchObject({ status: "Met", constraint: "Stock", freeQuantity: 40 });
+  });
+
+  it("passes a date on the day the goods arrive", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          promisedDate: "2026-11-26",
+          stock: stockWithSupply(0, [{ date: "2026-11-26", quantity: 50 }])
+        })
+      )
+    ).toMatchObject({ status: "Met", constraint: "Stock", freeQuantity: 50 });
   });
 });
 

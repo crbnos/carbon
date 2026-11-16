@@ -13,6 +13,7 @@ import { runQuoteLeadTimeWhatIf } from "../scheduling/quote-lead-time.ts";
 import {
   type DatedQuantity,
   earliestWeekWithStock,
+  freeStockBeforeArrivalByWeek,
   freeStockByWeek,
   lastArrivalByWeek,
   loadSupplyAndDemand,
@@ -83,7 +84,13 @@ export type DeliveryDecisionInput = {
    * Free stock per week up to the fence, and the day the last supply of each
    * week arrives; given for a Pull from Inventory line under Stock or Capacity.
    */
-  stock?: { weeks: string[]; free: number[]; arrivals?: (string | null)[] };
+  stock?: {
+    weeks: string[];
+    free: number[];
+    arrivals?: (string | null)[];
+    /** each week's free stock before that week's own supply arrives */
+    freeBeforeArrival?: number[];
+  };
   /** the capacity answer; undefined while it has not run */
   capacity?: CapacityAnswer;
   /** false for an item with no make method, so capacity cannot help */
@@ -191,20 +198,31 @@ function decideFromToday(input: DeliveryDecisionInput): DeliveryDecision {
 
   // Pull from Inventory under Stock or Capacity: free stock first.
   const stock = input.stock ?? { weeks: [], free: [] };
+  // Before a week's goods arrive, only the stock without them is free.
+  const arrival = (week: number) => stock.arrivals?.[week] ?? null;
+  const beforeArrival = (week: number) => stock.freeBeforeArrival?.[week] ?? 0;
   const promisedWeek = weekIndexOf(stock.weeks, promisedDate, todayIso);
-  const free = promisedWeek === null ? 0 : (stock.free[promisedWeek] ?? 0);
+  const promisedArrival = promisedWeek === null ? null : arrival(promisedWeek);
+  const free =
+    promisedWeek === null
+      ? 0
+      : promisedArrival !== null && promisedDate < promisedArrival
+        ? beforeArrival(promisedWeek)
+        : (stock.free[promisedWeek] ?? 0);
   const stockExtra = { freeQuantity: free };
   if (free >= quantity) return met("Stock", stockExtra);
 
-  // A week covered by its own supply is good from the day the goods come.
+  // A week covered only with its own supply is good from the day it comes.
   const stockWeek = earliestWeekWithStock(stock.free, quantity);
   const stockDate =
     stockWeek === null
       ? null
-      : later(
-          stock.weeks[stockWeek]!,
-          stock.arrivals?.[stockWeek] ?? stock.weeks[stockWeek]!
-        );
+      : beforeArrival(stockWeek) >= quantity
+        ? stock.weeks[stockWeek]!
+        : later(
+            stock.weeks[stockWeek]!,
+            arrival(stockWeek) ?? stock.weeks[stockWeek]!
+          );
 
   if (useCapacity) {
     if (!capacity) return { needsCapacity: true, shortfall: quantity - free };
@@ -404,16 +422,18 @@ export function buildDecisionInputs(args: {
     let stock: DeliveryDecisionInput["stock"];
     if (flows) {
       const weeks = weekStarts(todayIso, fenceDate);
+      const weekly = {
+        onHand: flows.onHand,
+        supply: flows.supply,
+        demand: [...flows.demand, ...(claimed.get(flowKey) ?? [])],
+        weeks,
+        todayIso
+      };
       stock = {
         weeks,
-        free: freeStockByWeek({
-          onHand: flows.onHand,
-          supply: flows.supply,
-          demand: [...flows.demand, ...(claimed.get(flowKey) ?? [])],
-          weeks,
-          todayIso
-        }),
-        arrivals: lastArrivalByWeek(weeks, flows.supply, todayIso)
+        free: freeStockByWeek(weekly),
+        arrivals: lastArrivalByWeek(weeks, flows.supply, todayIso),
+        freeBeforeArrival: freeStockBeforeArrivalByWeek(weekly)
       };
       claim(flowKey, later(line.promisedDate, todayIso), line.quantity);
     }
