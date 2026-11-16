@@ -1052,8 +1052,8 @@ export async function isApprovalRequired(
 }
 
 /**
- * `isApprovalRequired`, reading the rule through `db`: a posting asks it
- * inside its transaction, which an API read cannot see. The plan check stays
+ * `isApprovalRequired`, reading the rule through `db`: a posting asks it on
+ * its own connection, without an API call. The plan check stays
  * on `client`; it reads the company's plan, and only on Carbon Cloud. The
  * tier is the one `getApprovalRuleByAmount` picks.
  */

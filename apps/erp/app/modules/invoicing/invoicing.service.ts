@@ -17934,8 +17934,8 @@ export async function postPurchaseInvoice(
           .orderBy("id")
           .forUpdate()
           .execute();
-        // Read inside this transaction, so the check sees the orders it
-        // just locked.
+        // On this transaction's connection: a posting reads the database
+        // only, never the API.
         const lockedFundsRefused = await purchaseOrderFundsGate(
           ctx,
           invoicePurchaseOrderIds,

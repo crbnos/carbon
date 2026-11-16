@@ -2423,8 +2423,8 @@ export type PurchaseOrderApprovalState = {
 
 /**
  * Each order's status, total and approved amount, in two queries. Read
- * through `db`, so a posting asks it inside its transaction and sees the
- * orders it locked (`approvalRequest` has no API read policy either).
+ * through `db`, so a posting can ask it on its own connection without an API
+ * call (`approvalRequest` has no API read policy either).
  */
 export async function getPurchaseOrderApprovalStates(
   db: Kysely<KyselyDatabase>,
