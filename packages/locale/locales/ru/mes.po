@@ -271,6 +271,9 @@ msgstr "Пр"
 msgid "Accept"
 msgstr "Принять"
 
+msgid "Accept first article?"
+msgstr "Принять первый образец?"
+
 msgid "Accept inspection?"
 msgstr "Принять контроль?"
 
@@ -324,6 +327,9 @@ msgstr "Добавить {phrase}"
 msgid "Add & Issue"
 msgstr "Добавить и выдать"
 
+msgid "Add a note to this reading"
+msgstr "Добавить примечание к этому показанию"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в настройки печати, чтобы печатать наклейки непосредственно."
 
@@ -338,6 +344,9 @@ msgstr "Добавить фильтр"
 
 msgid "Add Inventory"
 msgstr "Добавить запас"
+
+msgid "Add note"
+msgstr "Добавить примечание"
 
 msgid "Add option"
 msgstr "Добавить вариант"
@@ -405,6 +414,9 @@ msgstr "Распределить неудачные единицы"
 
 msgid "Allocate units"
 msgstr "Распределить единицы"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "допустимое {allowableLabel} (бонус {bonusLabel})"
 
 msgid "Any part"
 msgstr ""
@@ -1048,6 +1060,9 @@ msgstr "Изменить"
 msgid "Edit {fieldLabel}"
 msgstr "Изменить {fieldLabel}"
 
+msgid "Edit note"
+msgstr "Изменить примечание"
+
 msgid "Edit Passkey"
 msgstr "Изменить ключ доступа"
 
@@ -1140,6 +1155,9 @@ msgstr "Не пройдено"
 
 msgid "Failed characteristics"
 msgstr "Не прошедшие проверку характеристики"
+
+msgid "Failed features"
+msgstr "Несоответствующие характеристики"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Не удалось выполнить корректировку запасов"
@@ -1242,6 +1260,19 @@ msgstr "Завершить с неподобранным материалом?"
 
 msgid "First"
 msgstr "Первая"
+
+msgid "First article"
+msgstr "Первый образец"
+
+msgid "First article plan missing for {description}"
+msgstr "План первого образца отсутствует для {description}"
+
+msgid "First article plan missing for {part}"
+msgstr "План первого образца отсутствует для {part}"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "Первый образец требуется для {0}"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -1384,8 +1415,14 @@ msgstr ""
 msgid "Increase {fieldLabel}"
 msgstr "Увеличить {fieldLabel}"
 
+msgid "Inspect"
+msgstr "Проверить"
+
 msgid "Inspect Item"
 msgstr "Проверить элемент"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "Проверить первую единицу по каждой характеристике перед запуском остальных."
 
 msgid "inspected"
 msgstr "проверенный"
@@ -2568,6 +2605,9 @@ msgstr "Регистрация не удалась"
 msgid "Reject"
 msgstr "Отклонить"
 
+msgid "Reject first article?"
+msgstr "Отклонить первый образец?"
+
 msgid "Reject inspection?"
 msgstr "Отклонить контроль?"
 
@@ -3216,6 +3256,9 @@ msgstr "Переводит рабочий центр в режим offline"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Коснитесь дня, чтобы добавить время к {selectedLabel}. Перетащите нижний край столбца, чтобы изменить его часы."
 
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "Сообщите отделу качества — для этой детали требуется первый образец, но у неё нет активного плана контроля."
+
 msgid "Text color"
 msgstr "Цвет текста"
 
@@ -3237,6 +3280,12 @@ msgstr "Дата находится перед окном ввода. Причи
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "Вся партия {0} будет отклонена как несоответствующая — {passes} успешных прохождений и {fails} отказов до сих пор. Отправьте единицы ниже в брак или на доработку, или только запишите результат."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "Первый образец будет отмечен как непройденный, а его результаты заблокированы. Никакие количества не записываются."
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "Первый образец будет отмечен как пройденный, а его результаты заблокированы. Никакие количества не записываются."
 
 #. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."

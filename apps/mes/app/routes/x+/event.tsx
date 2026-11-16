@@ -20,6 +20,7 @@ import {
   startMachineProductionEvent,
   startProductionEvent
 } from "~/services/operations.service";
+import { generateFirstArticlesForStartedJob } from "~/services/quality.server";
 import { assignSerialNumberOnFirstTouch } from "~/services/serial-number.server";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
 import { path, requestReferrer } from "~/utils/path";
@@ -151,15 +152,30 @@ async function productionEventAction({ request }: ActionFunctionArgs) {
       companyId,
       createdBy: userId
     };
+    const onJobReleased = (jobId: string) =>
+      generateFirstArticlesForStartedJob(serviceRole, {
+        jobId,
+        companyId,
+        userId
+      });
     const startEvent = machineWorkCenterId
       ? await startMachineProductionEvent(
           db,
           client,
           { ...event, workCenterId: machineWorkCenterId },
           trackedEntityId,
-          unitIndex
+          unitIndex,
+          "mes",
+          onJobReleased
         )
-      : await startProductionEvent(client, event, trackedEntityId, unitIndex);
+      : await startProductionEvent(
+          client,
+          event,
+          trackedEntityId,
+          unitIndex,
+          "mes",
+          onJobReleased
+        );
 
     if (startEvent.error) {
       return data(

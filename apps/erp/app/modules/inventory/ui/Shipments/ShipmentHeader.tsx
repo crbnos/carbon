@@ -25,9 +25,18 @@ import type {
 } from "~/modules/inventory/types";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import { path } from "~/utils/path";
+import CertificateOfConformanceMenu from "./CertificateOfConformanceMenu";
 import ShipmentPostModal from "./ShipmentPostModal";
 import ShipmentStatus from "./ShipmentStatus";
 import ShipmentVoidModal from "./ShipmentVoidModal";
+
+// Certificates of Conformance go to customers only.
+// The shipments that sell parts to a customer: the only ones a Certificate
+// of Conformance covers (`certifiesShipment`).
+const CERTIFIABLE_SHIPMENT_SOURCES = new Set<string>([
+  "Sales Order",
+  "Sales Invoice"
+]);
 
 const ShipmentHeader = () => {
   const { t } = useLingui();
@@ -133,6 +142,15 @@ const ShipmentHeader = () => {
                   pdf: path.to.file.shipmentLabelsPdf,
                   zpl: path.to.file.shipmentLabelsZpl
                 }}
+              />
+            )}
+            {CERTIFIABLE_SHIPMENT_SOURCES.has(
+              shipment.sourceDocument ?? ""
+            ) && (
+              <CertificateOfConformanceMenu
+                shipmentId={shipmentId}
+                isPosted={isPosted}
+                isVoided={isVoided}
               />
             )}
             {shipment.sourceDocument === "Sales Order" &&

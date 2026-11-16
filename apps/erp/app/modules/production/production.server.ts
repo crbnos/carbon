@@ -46,6 +46,7 @@ import {
   getPlanningSegmentOwners,
   moveActionPegsToSupply
 } from "~/modules/projects/projects.service";
+import { afterJobsReleased } from "~/modules/quality/quality.service";
 import { isSalesOrderClosed } from "~/modules/sales/sales.models";
 import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import {
@@ -255,9 +256,9 @@ export const planDraftJob = defineServiceFn({
  *
  * @remarks
  * The step every release path shares (`releaseJobs`, `releaseBatchMemberJobs`).
- * Per job, in order: refresh requirements, run MRP, flip to Ready, number the
- * serial units when the item's timing is `jobRelease`, put outside operations
- * on purchase orders, stamp releasedDate. Scheduling is the
+ * Per job, in order: refresh requirements, run MRP, flip to Ready, create its
+ * first article lots, number the serial units when the item's timing is
+ * `jobRelease`, put outside operations on purchase orders, stamp releasedDate. Scheduling is the
  * caller's (one location run, or a notify, after all jobs are released).
  * Validation (`getJobReleaseReadiness`) is the caller's, BEFORE this runs.
  *
@@ -353,6 +354,14 @@ export const releaseCheckedJobs = defineServiceFn({
         );
       }
       releasedJobIds.push(id);
+
+      // The job is on the floor from here, so its first article lots are too —
+      // even if a later step (purchase orders) fails. Best-effort, never throws.
+      await afterJobsReleased(ctx.asSystem.pg, ctx.asCaller.supabase, {
+        jobIds: [id],
+        companyId,
+        userId
+      });
 
       // Under the jobRelease serial number timing (the item's, else the
       // company's) every unit is numbered now. The job is already Ready, so a

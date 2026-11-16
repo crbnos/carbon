@@ -6,7 +6,7 @@ import { serviceErrorMessage } from "@carbon/query";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBlocker, useFetcher } from "react-router";
 import type { action as saveAction } from "~/routes/x+/inspection-document+/$id.save";
 import { path } from "~/utils/path";
@@ -22,7 +22,9 @@ import {
   buildFeatureRowsFromLoader,
   type DragKind,
   type FeatureRow,
+  featureCharacteristicPayload,
   getBalloonValueOrNull,
+  invalidBonusCharacteristic,
   type PdfMetrics,
   type SelectorRect,
   selectorRectsFromBalloonRecords
@@ -45,6 +47,17 @@ type SaveSnapshot = {
   balloonDeleteIds: string[];
 };
 
+/** A characteristic deleted locally, kept until the delete has saved so a
+ * refused delete can put it back where it was. */
+export type DeletedFeatureSnapshot = {
+  row: FeatureRow;
+  index: number;
+  anchors: SelectorRect[];
+};
+
+const REFUSED_FEATURE_DELETE_PATTERN =
+  /Feature "(.*)" has recorded results and cannot be deleted/;
+
 /**
  * Which rows the server has: the ids minted here that no save has created
  * yet, the deletes still to send, and the save in flight. The drawing and the
@@ -58,6 +71,11 @@ export type SaveLedger = {
   pendingFeatureDeleteIdsRef: MutableRefObject<Set<string>>;
   /** Persisted balloon ids to hard-delete on the next save (unballoon). */
   pendingBalloonDeleteIdsRef: MutableRefObject<Set<string>>;
+  /** Rows (and their anchors) whose delete is queued, by featureId, so a
+   * delete the server refuses can be undone. */
+  deletedFeatureSnapshotsRef: MutableRefObject<
+    Map<string, DeletedFeatureSnapshot>
+  >;
   /** The save in flight; null when none is. */
   inFlightSaveRef: MutableRefObject<SaveSnapshot | null>;
   isUnsaved: (id: string) => boolean;
@@ -70,6 +88,9 @@ export function useSaveLedger(): SaveLedger {
   const unsavedIdsRef = useRef(new Set<string>());
   const pendingFeatureDeleteIdsRef = useRef(new Set<string>());
   const pendingBalloonDeleteIdsRef = useRef(new Set<string>());
+  const deletedFeatureSnapshotsRef = useRef(
+    new Map<string, DeletedFeatureSnapshot>()
+  );
   const inFlightSaveRef = useRef<SaveSnapshot | null>(null);
   const isUnsaved = useCallback(
     (id: string) => unsavedIdsRef.current.has(id),
@@ -87,6 +108,7 @@ export function useSaveLedger(): SaveLedger {
     unsavedIdsRef,
     pendingFeatureDeleteIdsRef,
     pendingBalloonDeleteIdsRef,
+    deletedFeatureSnapshotsRef,
     inFlightSaveRef,
     isUnsaved,
     queueDelete
@@ -110,7 +132,7 @@ type FeaturePayload = {
   samplingInspectionLevel: FeatureRow["samplingInspectionLevel"];
   samplingSeverity: FeatureRow["samplingSeverity"];
   gaugeTypeId: string | null;
-};
+} & ReturnType<typeof featureCharacteristicPayload>;
 
 function featurePayload(r: FeatureRow): FeaturePayload {
   return {
@@ -129,7 +151,8 @@ function featurePayload(r: FeatureRow): FeaturePayload {
     samplingAql: r.samplingAql,
     samplingInspectionLevel: r.samplingInspectionLevel,
     samplingSeverity: r.samplingSeverity,
-    gaugeTypeId: r.gaugeTypeId
+    gaugeTypeId: r.gaugeTypeId,
+    ...featureCharacteristicPayload(r)
   };
 }
 
@@ -161,7 +184,9 @@ type UseInspectionDocumentAutosaveArgs = {
  * is in flight is picked up when it returns. Someone without update
  * permission can still look around, but nothing they change is saved.
  * Leaving with unsaved changes saves them first, then continues; only a
- * failed save asks (`isLeaving && saveFailed`).
+ * failed or unsaveable save asks (`isLeaving && cannotSave`). An MMC/LMC
+ * characteristic without its size feature or feature of size is refused by
+ * the save validators, so it is not sent until it is complete.
  *
  * The saved sampling, PDF and parameters are what the editor held on its
  * first render, the loader's values.
@@ -190,6 +215,7 @@ export function useInspectionDocumentAutosave({
     unsavedIdsRef,
     pendingFeatureDeleteIdsRef,
     pendingBalloonDeleteIdsRef,
+    deletedFeatureSnapshotsRef,
     inFlightSaveRef,
     isUnsaved
   } = ledger;
@@ -205,6 +231,49 @@ export function useInspectionDocumentAutosave({
   const pdfReplaceToastRef = useRef(false);
   /** Whether a save has succeeded yet — the label shows nothing before. */
   const [hasSaved, setHasSaved] = useState(false);
+
+  // A save refused to delete a characteristic that has recorded results: put
+  // the named row back with its anchor (every row that save deleted, when the
+  // name matches none of them) and drop it from the pending deletes. Putting
+  // it back changes the rows, so the rest of the refused save goes out again —
+  // without the delete.
+  const restoreRefusedFeatureDeletes = useCallback(
+    (label: string, featureDeleteIds: string[]) => {
+      const deleted = featureDeleteIds
+        .map((id) => deletedFeatureSnapshotsRef.current.get(id))
+        .filter((s): s is DeletedFeatureSnapshot => s != null);
+      const named = deleted.filter((s) => s.row.label === label);
+      const toRestore = (named.length > 0 ? named : deleted).sort(
+        (a, b) => a.index - b.index
+      );
+      if (toRestore.length === 0) return;
+
+      const restoredIds = new Set(toRestore.map((s) => s.row.featureId));
+      for (const id of restoredIds) {
+        pendingFeatureDeleteIdsRef.current.delete(id);
+        deletedFeatureSnapshotsRef.current.delete(id);
+      }
+      setFeatureRows((prev) => {
+        const next = prev.filter((r) => !restoredIds.has(r.featureId));
+        for (const s of toRestore) {
+          next.splice(Math.min(s.index, next.length), 0, s.row);
+        }
+        return next;
+      });
+      setSelectorRects((prev) => [
+        ...prev,
+        ...toRestore
+          .flatMap((s) => s.anchors)
+          .filter((anchor) => !prev.some((sel) => sel.id === anchor.id))
+      ]);
+    },
+    [
+      deletedFeatureSnapshotsRef,
+      pendingFeatureDeleteIdsRef,
+      setFeatureRows,
+      setSelectorRects
+    ]
+  );
 
   // Merges each save response into the editor's current state. It reads the
   // current rows, so it also runs on every edit; handledSaveDataRef makes each
@@ -222,9 +291,14 @@ export function useInspectionDocumentAutosave({
     if (!data?.success) {
       failedSaveRef.current = sent;
       pdfReplaceToastRef.current = false;
-      toast.error(
-        serviceErrorMessage(result) ?? t`Failed to save inspection plan`
-      );
+      const message = serviceErrorMessage(result);
+      toast.error(message ?? t`Failed to save inspection plan`);
+      const refused = message
+        ? REFUSED_FEATURE_DELETE_PATTERN.exec(message)
+        : null;
+      if (refused) {
+        restoreRefusedFeatureDeletes(refused[1] ?? "", sent.featureDeleteIds);
+      }
       return;
     }
 
@@ -241,6 +315,7 @@ export function useInspectionDocumentAutosave({
     for (const id of sent.createdIds) unsavedIdsRef.current.delete(id);
     for (const id of sent.featureDeleteIds) {
       pendingFeatureDeleteIdsRef.current.delete(id);
+      deletedFeatureSnapshotsRef.current.delete(id);
     }
     for (const id of sent.balloonDeleteIds) {
       pendingBalloonDeleteIdsRef.current.delete(id);
@@ -266,8 +341,10 @@ export function useInspectionDocumentAutosave({
     anchorRects,
     pdfUrl,
     t,
+    restoreRefusedFeatureDeletes,
     inFlightSaveRef,
     unsavedIdsRef,
+    deletedFeatureSnapshotsRef,
     pendingFeatureDeleteIdsRef,
     pendingBalloonDeleteIdsRef,
     setPdfMetricsDirty,
@@ -443,6 +520,19 @@ export function useInspectionDocumentAutosave({
     failedSave.docSampling === docSampling &&
     failedSave.parameterRows === parameterRows &&
     failedSave.pdfUrl === pdfUrl;
+  const invalidCharacteristic = useMemo(
+    () => invalidBonusCharacteristic(featureRows),
+    [featureRows]
+  );
+  const invalidCharacteristicMessage =
+    invalidCharacteristic === "sizeFeature"
+      ? t`Choose the size feature for MMC/LMC characteristics`
+      : invalidCharacteristic === "featureOfSize"
+        ? t`Choose Internal or External feature of size for MMC/LMC characteristics`
+        : null;
+  /** The invalid-characteristic message last toasted — said once, not per edit. */
+  const reportedInvalidMessageRef = useRef<string | null>(null);
+  const cannotSave = saveFailed || invalidCharacteristicMessage != null;
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -452,15 +542,30 @@ export function useInspectionDocumentAutosave({
   const isLeaving = blocker.state === "blocked";
 
   useEffect(() => {
+    if (invalidCharacteristicMessage == null) {
+      reportedInvalidMessageRef.current = null;
+    }
     if (!hasUnsavedChanges || isSaving || uploading || saveFailed) return;
     if (dragKind !== null) return;
-    const timer = setTimeout(saveChanges, isLeaving ? 0 : AUTOSAVE_DELAY_MS);
+    const delay = isLeaving ? 0 : AUTOSAVE_DELAY_MS;
+    if (invalidCharacteristicMessage != null) {
+      if (reportedInvalidMessageRef.current === invalidCharacteristicMessage) {
+        return;
+      }
+      const timer = setTimeout(() => {
+        reportedInvalidMessageRef.current = invalidCharacteristicMessage;
+        toast.error(invalidCharacteristicMessage);
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+    const timer = setTimeout(saveChanges, delay);
     return () => clearTimeout(timer);
   }, [
     hasUnsavedChanges,
     isSaving,
     uploading,
     saveFailed,
+    invalidCharacteristicMessage,
     dragKind,
     isLeaving,
     saveChanges
@@ -481,6 +586,8 @@ export function useInspectionDocumentAutosave({
     isSaving,
     hasUnsavedChanges,
     saveFailed,
+    cannotSave,
+    invalidCharacteristicMessage,
     hasSaved,
     blocker,
     isLeaving,

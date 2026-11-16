@@ -15,6 +15,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -55,11 +56,13 @@ import {
   LuCirclePause,
   LuCirclePlay,
   LuCircleStop,
+  LuClipboardCheck,
   LuClipboardList,
   LuClock,
   LuFolderKanban,
   LuList,
   LuLoaderCircle,
+  LuPlus,
   LuQrCode,
   LuSettings,
   LuShoppingCart,
@@ -94,6 +97,12 @@ import {
 } from "~/hooks";
 import { useCompanySettings } from "~/hooks/useCompanySettings";
 import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
+import type {
+  JobFirstArticleInspection,
+  JobFirstArticleNeeds
+} from "~/modules/quality/types";
+import FirstArticleStatus from "~/modules/quality/ui/FirstArticles/FirstArticleStatus";
+import { useFirstArticleLabels } from "~/modules/quality/ui/FirstArticles/useFirstArticleLabels";
 import type { action as cancelAction } from "~/routes/x+/job+/$jobId.cancel";
 import type { action as completeAction } from "~/routes/x+/job+/$jobId.complete";
 import type { action as statusAction } from "~/routes/x+/job+/$jobId.status";
@@ -105,9 +114,14 @@ import {
   isJobDeletable,
   jobCompleteValidator
 } from "../../production.models";
-import type { JobProjectCharge } from "../../production.service";
+import type {
+  FirstArticleWithoutPlan,
+  JobProjectCharge,
+  JobReleaseReadiness
+} from "../../production.service";
 import { getJobMethodTree } from "../../production.utils";
 import type { Job } from "../../types";
+import { FirstArticlePlanLinks } from "./FirstArticlePlanLinks";
 import JobStatus from "./JobStatus";
 import {
   getDefaultSerialCompleteQuantity,
@@ -169,6 +183,9 @@ const JobHeader = () => {
     job: Job;
     projectCharge?: JobProjectCharge | null;
     unbatchedBatchableOperations?: number;
+    firstArticles?: JobFirstArticleInspection[];
+    firstArticlesDue?: JobFirstArticleNeeds["due"];
+    firstArticlesCoveredElsewhere?: JobFirstArticleNeeds["coveredElsewhere"];
   }>(path.to.job(jobId));
   const projectCharge = routeData?.projectCharge;
 
@@ -198,6 +215,20 @@ const JobHeader = () => {
   const status = routeData?.job?.status;
   const unbatchedBatchableOperations =
     routeData?.unbatchedBatchableOperations ?? 0;
+  const firstArticles = routeData?.firstArticles ?? [];
+  const firstArticlesDue = routeData?.firstArticlesDue ?? [];
+  const firstArticlesCoveredElsewhere =
+    routeData?.firstArticlesCoveredElsewhere ?? [];
+  // Only a job with first article work shows the menu. A first article for a
+  // reason the data can't see starts from Quality → First Articles → New.
+  const showFirstArticleMenu =
+    firstArticles.length > 0 ||
+    firstArticlesDue.length > 0 ||
+    firstArticlesCoveredElsewhere.length > 0;
+  const openFirstArticles = firstArticles.filter(
+    (firstArticle) => firstArticle.status !== "Approved"
+  );
+  const firstArticleLabels = useFirstArticleLabels();
 
   const getOptionFromPath = (jobId: string) => {
     if (location.pathname.includes(path.to.jobMaterials(jobId)))
@@ -365,6 +396,32 @@ const JobHeader = () => {
           }
         >
           {t`${unbatchedBatchableOperations} awaiting batching`}
+        </Status>
+      )}
+      {firstArticlesDue.length > 0 && (
+        <Status
+          color="orange"
+          tooltip={firstArticlesDue
+            .map(
+              (due) =>
+                `${due.description}: ${firstArticleLabels.reason(due.reason)}`
+            )
+            .join(", ")}
+        >
+          {t`FAI due`}
+        </Status>
+      )}
+      {openFirstArticles.length > 0 && (
+        <Status
+          color="yellow"
+          tooltip={openFirstArticles
+            .map(
+              (firstArticle) =>
+                `${firstArticle.inspection?.inspectionId ?? ""}: ${firstArticleLabels.status(firstArticle.status)}`
+            )
+            .join(", ")}
+        >
+          {t`FAI open`}
         </Status>
       )}
     </>
@@ -578,6 +635,96 @@ const JobHeader = () => {
               </SplitButton>
             </RecordAction>
 
+            {showFirstArticleMenu && (
+              <RecordAction slot="overflow">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      leftIcon={<LuClipboardList />}
+                      rightIcon={<LuChevronDown />}
+                      variant="secondary"
+                    >
+                      <Trans>First Article</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-72">
+                    {firstArticles.length > 0 &&
+                      firstArticlesCoveredElsewhere.length > 0 && (
+                        <DropdownMenuLabel>
+                          <Trans>This job</Trans>
+                        </DropdownMenuLabel>
+                      )}
+                    {firstArticles.map((firstArticle) => (
+                      <DropdownMenuItem key={firstArticle.id} asChild>
+                        <Link to={path.to.firstArticle(firstArticle.id)}>
+                          <DropdownMenuIcon icon={<LuClipboardCheck />} />
+                          <span className="flex min-w-0 flex-1 flex-col">
+                            <span className="truncate">
+                              {firstArticle.item?.readableIdWithRevision}
+                            </span>
+                            <span className="truncate text-xs text-muted-foreground">
+                              {firstArticle.inspection?.inspectionId}
+                            </span>
+                          </span>
+                          <FirstArticleStatus status={firstArticle.status} />
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                    {firstArticles.length > 0 && <DropdownMenuSeparator />}
+                    {firstArticlesCoveredElsewhere.length > 0 && (
+                      <>
+                        <DropdownMenuLabel>
+                          <Trans>Covered by another job</Trans>
+                        </DropdownMenuLabel>
+                        {firstArticlesCoveredElsewhere.map(
+                          ({
+                            jobMakeMethodId,
+                            firstArticleInspectionId,
+                            description: part,
+                            inspectionReadableId: firstArticle,
+                            jobReadableId: otherJob,
+                            status
+                          }) => (
+                            <DropdownMenuItem
+                              key={`${jobMakeMethodId}:${firstArticleInspectionId}`}
+                              asChild
+                            >
+                              <Link
+                                to={path.to.firstArticle(
+                                  firstArticleInspectionId
+                                )}
+                              >
+                                <DropdownMenuIcon icon={<LuClipboardCheck />} />
+                                <span className="flex min-w-0 flex-1 flex-col">
+                                  <span className="truncate">{part}</span>
+                                  <span className="truncate text-xs text-muted-foreground">
+                                    {t`${firstArticle} on ${otherJob}`}
+                                  </span>
+                                </span>
+                                <FirstArticleStatus status={status} />
+                              </Link>
+                            </DropdownMenuItem>
+                          )
+                        )}
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem
+                      disabled={!permissions.can("create", "quality")}
+                      asChild
+                    >
+                      <Link
+                        to={`${path.to.newFirstArticle}?jobId=${encodeURIComponent(jobId)}`}
+                      >
+                        <DropdownMenuIcon icon={<LuPlus />} />
+                        <Trans>New First Article</Trans>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </RecordAction>
+            )}
+
             <RecordAction slot={isReleasable ? "overflow" : "primary"}>
               <Button
                 onClick={completeModal.onOpen}
@@ -733,6 +880,9 @@ export function JobStartModal({
   const [missingOperationAssemblies, setMissingOperationAssemblies] = useState<
     { bomId: string; description: string }[]
   >([]);
+  const [firstArticlesWithoutPlan, setFirstArticlesWithoutPlan] = useState<
+    FirstArticleWithoutPlan[]
+  >([]);
   const [
     eachOutsideOperationHasASupplier,
     setEachOutsideOperationHasASupplier
@@ -763,30 +913,37 @@ export function JobStartModal({
 
   const validate = async (choicesOverride?: Record<string, string>) => {
     if (!carbon || !job) return;
-    const [makeMethod, materials, operations, methodTree, storageUnitLines] =
-      await Promise.all([
-        carbon
-          .from("jobMakeMethod")
-          .select("*")
-          .eq("jobId", job.id!)
-          .is("parentMaterialId", null)
-          .single(),
-        carbon
-          .from("jobMaterialWithMakeMethodId")
-          .select("*")
-          .eq("jobId", job.id!),
-        carbon.from("jobOperation").select("*").eq("jobId", job.id!),
-        getJobMethodTree(carbon, job.id!),
-        strictBackflush
-          ? carbon
-              .from("jobMaterial")
-              .select(
-                "id, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision), storageUnit(name, effectiveNettable)"
-              )
-              .eq("jobId", job.id!)
-              .eq("companyId", job.companyId!)
-          : Promise.resolve({ data: [], error: null })
-      ]);
+    const [
+      makeMethod,
+      materials,
+      operations,
+      methodTree,
+      storageUnitLines,
+      partsWithoutFirstArticlePlan
+    ] = await Promise.all([
+      carbon
+        .from("jobMakeMethod")
+        .select("*")
+        .eq("jobId", job.id!)
+        .is("parentMaterialId", null)
+        .single(),
+      carbon
+        .from("jobMaterialWithMakeMethodId")
+        .select("*")
+        .eq("jobId", job.id!),
+      carbon.from("jobOperation").select("*").eq("jobId", job.id!),
+      getJobMethodTree(carbon, job.id!),
+      strictBackflush
+        ? carbon
+            .from("jobMaterial")
+            .select(
+              "id, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision), storageUnit(name, effectiveNettable)"
+            )
+            .eq("jobId", job.id!)
+            .eq("companyId", job.companyId!)
+        : Promise.resolve({ data: [], error: null }),
+      getFirstArticlesWithoutPlan(job.id!)
+    ]);
 
     // Check for existing purchase order lines for outside operations
     const outsideOperations =
@@ -991,6 +1148,7 @@ export function JobStartModal({
         materialsWithoutStorageUnit(storageUnitLines.data ?? [])
       );
       setStorageUnitCheckFailed(!!storageUnitLines.error);
+      setFirstArticlesWithoutPlan(partsWithoutFirstArticlePlan);
 
       // Show the release UI whenever there are outside operations still needing handling,
       // whether or not they have a supplier yet
@@ -1052,6 +1210,7 @@ export function JobStartModal({
             <ModalBody>
               <VStack>
                 {missingOperationAssemblies.length === 0 &&
+                  firstArticlesWithoutPlan.length === 0 &&
                   missingStorageUnits.length === 0 &&
                   !(strictAtJobLocation && storageUnitCheckFailed) &&
                   eachOutsideOperationHasASupplier && (
@@ -1200,6 +1359,27 @@ export function JobStartModal({
                     </AlertDescription>
                   </Alert>
                 )}
+                {firstArticlesWithoutPlan.length > 0 && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Missing First Article Plans</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        These parts need a first article inspection but have no
+                        active inspection plan to inspect against. Publish the
+                        part's plan, or assign an active plan to its First
+                        Article slot, before releasing.
+                      </Trans>
+                      <p className="mt-2">
+                        <FirstArticlePlanLinks
+                          parts={firstArticlesWithoutPlan}
+                        />
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 {strictAtJobLocation && storageUnitCheckFailed && (
                   <Alert variant="destructive">
                     <LuTriangleAlert />
@@ -1261,6 +1441,7 @@ export function JobStartModal({
                 isDisabled={
                   release.isPending ||
                   missingOperationAssemblies.length > 0 ||
+                  firstArticlesWithoutPlan.length > 0 ||
                   missingStorageUnits.length > 0 ||
                   (strictAtJobLocation && storageUnitCheckFailed) ||
                   !eachOutsideOperationHasASupplier
@@ -1444,6 +1625,29 @@ function JobExpediteModal({
       </ModalContent>
     </Modal>
   );
+}
+
+// Parts of this job that need a first article at release but resolve no
+// inspection plan, from the server's release readiness — the check the release
+// action enforces. Empty when it cannot be read: the action still refuses.
+async function getFirstArticlesWithoutPlan(
+  jobId: string
+): Promise<FirstArticleWithoutPlan[]> {
+  try {
+    const response = await fetch(
+      path.to.api.batchReleaseReadiness({ jobIds: [jobId] })
+    );
+    if (!response.ok) return [];
+    const body = (await response.json()) as
+      | JobReleaseReadiness
+      | { error: string };
+    return "jobs" in body
+      ? (body.jobs.find((job) => job.id === jobId)?.firstArticlesWithoutPlan ??
+          [])
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 // What the job has received as of now, from api+/production.job.$jobId.receipts.

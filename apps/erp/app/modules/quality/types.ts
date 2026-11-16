@@ -6,6 +6,12 @@ import type { Database } from "@carbon/database";
 import type { ChangeNoticeStatus } from "~/modules/items/types";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
+  getCertificates,
+  getComplianceStatements,
+  getFirstArticleInspection,
+  getFirstArticleInspections,
+  getFirstArticleInspectionsByJob,
+  getFirstArticlesDueForJob,
   getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
@@ -33,6 +39,40 @@ import type {
   getRequiredActions,
   getRisks
 } from "./quality.service";
+
+export type { CertificationLineageRow } from "./certificationLineage";
+export type {
+  FirstArticleIndexPartType,
+  Form3Row
+} from "./firstArticleRows";
+
+export type Certificate = NonNullable<
+  Awaited<ReturnType<typeof getCertificates>>["data"]
+>[number];
+
+export type ComplianceStatement = NonNullable<
+  Awaited<ReturnType<typeof getComplianceStatements>>["data"]
+>[number];
+
+export type FirstArticleInspectionListItem = NonNullable<
+  Awaited<ReturnType<typeof getFirstArticleInspections>>["data"]
+>[number];
+
+export type FirstArticleInspectionDetail = NonNullable<
+  Awaited<ReturnType<typeof getFirstArticleInspection>>["data"]
+>;
+
+export type FirstArticleInspectionProduct =
+  FirstArticleInspectionDetail["products"][number];
+
+export type JobFirstArticleInspection = NonNullable<
+  Awaited<ReturnType<typeof getFirstArticleInspectionsByJob>>["data"]
+>[number];
+
+/** The job header's "FAI due" parts and the parts another job's FAI covers. */
+export type JobFirstArticleNeeds = Awaited<
+  ReturnType<typeof getFirstArticlesDueForJob>
+>;
 
 export type Gauge = NonNullable<
   Awaited<ReturnType<typeof getGauges>>["data"]
@@ -231,5 +271,6 @@ export type BalloonFeature = {
 export type InspectionDocumentContent = {
   pdfUrl: string | null;
   name: string | null;
+  drawingRevision: string | null;
   features: BalloonFeature[];
 };

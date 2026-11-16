@@ -4,6 +4,7 @@
 
 import { interpolateString, tokensAllEmpty } from "../merge";
 import type { DocumentTemplateType } from "../schema";
+import { certificateOfConformanceTexts } from "./certificateOfConformance";
 import { issueTexts } from "./issue";
 import { jobTravelerTexts } from "./jobTraveler";
 import { packingSlipTexts } from "./packingSlip";
@@ -19,6 +20,7 @@ import { trackingLabelTexts } from "./trackingLabel";
 import type { DocumentTextCatalog, TextCatalog, TextEntry } from "./types";
 import { HIDEABLE_KINDS } from "./types";
 
+export * from "./certificateOfConformance";
 export * from "./issue";
 export * from "./jobTraveler";
 export * from "./packingSlip";
@@ -94,7 +96,8 @@ export const TEXT_CATALOG: TextCatalog = {
   stockTransfer: stockTransferTexts,
   jobTraveler: jobTravelerTexts,
   issue: issueTexts,
-  trackingLabel: trackingLabelTexts
+  trackingLabel: trackingLabelTexts,
+  certificateOfConformance: certificateOfConformanceTexts
 };
 
 /** The text entries of one block type (or "document") of one document type. */

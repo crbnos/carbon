@@ -12,6 +12,7 @@ import {
   collectValues,
   type DocumentTemplateType,
   getTextEntries,
+  isDocumentEditType,
   isEditableValue,
   resolveTemplate
 } from "../template";
@@ -53,9 +54,10 @@ describe("DOCUMENT_PDFS", () => {
     return text.join(" ");
   }
 
-  const pageDocuments = documentTypes.filter(
-    (documentType) => documentType !== "trackingLabel"
-  );
+  // The documents one record can print differently from its template. A
+  // tracking label has no edits, and an issued certificate is a stored record:
+  // it changes by reissue, never by an edit.
+  const pageDocuments = documentTypes.filter(isDocumentEditType);
 
   /** What makes each document print the tables its sample leaves out. */
   const everyTable: Partial<
@@ -274,7 +276,7 @@ describe("DOCUMENT_PDFS", () => {
     60000
   );
 
-  const documentsWithNotes = documentTypes.filter((documentType) =>
+  const documentsWithNotes = pageDocuments.filter((documentType) =>
     resolveTemplate(documentType, null).blocks.some(
       (block) => block.type === "notes" && block.visible
     )

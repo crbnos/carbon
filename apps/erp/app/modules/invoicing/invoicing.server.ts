@@ -36,6 +36,8 @@ import {
 import { sql } from "kysely";
 import { z } from "zod";
 import { upsertDocument } from "~/modules/documents/documents.service";
+import { autoIssueInvoiceShipmentCertificates } from "~/modules/inventory/certificateOfConformance.pdf";
+import { shipmentFirstArticleWarnings } from "~/modules/inventory/inventory.service";
 import {
   resolveItemIdFromExtractedText,
   upsertPart
@@ -598,8 +600,9 @@ export const sendSalesInvoice = defineServiceFn({
  * @remarks
  * In order, before anything is written: the customer must have a reachable
  * contact when the company requires one; the sales-rule gate re-checks every
- * line (an error, or a warning not `acknowledged`, returns `violations` and
- * posts nothing); for `notification` Stripe, the Stripe customer the user
+ * line, and a part the invoice ships directly whose first article is not
+ * approved adds a warning (an error, or a warning not `acknowledged`, returns
+ * `violations` and posts nothing); for `notification` Stripe, the Stripe customer the user
  * confirmed (`stripeCustomerAction`) is resolved and linked. Then the invoice
  * is claimed (Draft to Pending, refused when it is no longer a Draft) and
  * posted by the `post-sales-invoice` server function; a failed post returns
@@ -680,19 +683,60 @@ export const postSalesInvoice = defineServiceFn({
       violations: dedupeViolations(found.violations),
       ruleNames: found.ruleNames
     };
+
+    // A part the invoice ships directly whose first article is not approved:
+    // the warning the shipment post gives, since this post ships it.
+    const invoiceLines = await serviceRole
+      .from("salesInvoiceLine")
+      .select("*")
+      .eq("invoiceId", invoiceId)
+      .eq("companyId", companyId);
+    if (invoiceLines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to post sales invoice",
+        invoiceLines.error
+      );
+    }
+    const firstArticles = await shipmentFirstArticleWarnings(serviceRole, {
+      companyId,
+      customerId: invoiceCustomer.data.customerId,
+      lines: invoiceLines.data
+        .filter(
+          (line) =>
+            service.isDirectItemLine(line) &&
+            line.invoiceLineType !== "Service" &&
+            !line.serviceJobId
+        )
+        .map((line) => ({
+          id: line.id,
+          itemId: line.itemId,
+          quantity: line.quantity
+        }))
+    });
+    const gate = {
+      violations: dedupeViolations([
+        ...check.violations,
+        ...firstArticles.violations
+      ]),
+      ruleNames: { ...check.ruleNames, ...firstArticles.ruleNames }
+    };
     if (
-      check.violations.length > 0 &&
-      isBlocked(check.violations, input.acknowledged)
+      gate.violations.length > 0 &&
+      isBlocked(gate.violations, input.acknowledged)
     ) {
-      await recordSalesRuleOutcome(serviceRole, {
-        companyId,
-        userId,
-        documentType: "salesInvoice",
-        documentId: invoiceId,
-        outcome: "blocked",
-        ...check
-      });
-      return check;
+      // The record holds sales rules only.
+      if (check.violations.length > 0) {
+        await recordSalesRuleOutcome(serviceRole, {
+          companyId,
+          userId,
+          documentType: "salesInvoice",
+          documentId: invoiceId,
+          outcome: "blocked",
+          ...check
+        });
+      }
+      return gate;
     }
 
     if (
@@ -811,6 +855,14 @@ export const postSalesInvoice = defineServiceFn({
       salesInvoiceId: invoiceId
     });
 
+    // Before the PDF and the notification, so nothing they do can skip it.
+    // Never changes the post's result: every failure is in the outcome.
+    const certificate = await autoIssueInvoiceShipmentCertificates(
+      ctx.asSystem.pg,
+      serviceRole,
+      { invoiceId, companyId, userId, locale }
+    );
+
     const sentVia =
       notification === "Email" || notification === "Stripe"
         ? notification
@@ -824,7 +876,7 @@ export const postSalesInvoice = defineServiceFn({
       stripeDueDate: input.stripeDueDate,
       locale
     });
-    return { invoiceId, sentVia, warning };
+    return { invoiceId, sentVia, warning, certificate };
   }
 });
 // --- Purchase invoices --------------------------------------------------------

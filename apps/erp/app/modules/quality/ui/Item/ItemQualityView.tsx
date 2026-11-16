@@ -44,8 +44,8 @@ type ItemQualityViewProps = {
 };
 
 // The item Quality tab: the item's inspection documents and the usage-slot
-// assignments driving which document each inspection flow uses (v1: Receipt
-// for inbound inspection; FAI / Production slots are additive later). Sampling
+// assignments driving which document each inspection flow uses (Receipt for
+// inbound inspection, First Article for AS9102 FAIs). Sampling
 // rules live on the inspection document itself (default + per-feature).
 const ItemQualityView = ({
   itemId,
@@ -60,6 +60,17 @@ const ItemQualityView = ({
   // Archived plans are retired versions — hide them from the list. They stay
   // reachable from Quality → Inspection Plans and the assignment picker.
   const visibleDocuments = documents.filter((doc) => doc.status !== "Archived");
+
+  const usageSlots: Record<
+    (typeof inspectionDocumentUsages)[number],
+    { label: string; help?: string }
+  > = {
+    Receipt: { label: t`Receipt` },
+    "First Article": {
+      label: t`First Article`,
+      help: t`Used for first article inspections of this part. Supersedes the part's only plan.`
+    }
+  };
 
   return (
     <VStack spacing={4} className="w-full">
@@ -150,12 +161,17 @@ const ItemQualityView = ({
                     <div className="flex-1">
                       <InspectionDocument
                         name="inspectionDocumentId"
-                        label={usage === "Receipt" ? t`Receipt` : usage}
+                        label={usageSlots[usage].label}
+                        help={usageSlots[usage].help}
                         itemId={itemId}
                         isOptional
                       />
                     </div>
-                    <Submit isDisabled={!canUpdate} variant="secondary">
+                    <Submit
+                      isDisabled={!canUpdate}
+                      variant="secondary"
+                      className="h-10 max-md:h-11"
+                    >
                       <Trans>Save</Trans>
                     </Submit>
                   </HStack>

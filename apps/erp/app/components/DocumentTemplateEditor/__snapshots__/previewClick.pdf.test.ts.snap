@@ -1,5 +1,295 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`clicking a real PDF > opens the right text on the certificateOfConformance sample 1`] = `
+[
+  {
+    "PREVIEW": "document:title (panel)",
+  },
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "100": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "CERTIFICATE OF CONFORMITY": "document:title (panel)",
+  },
+  {
+    "(": "document:title (panel)",
+  },
+  {
+    "in accordance with IAQG standard 9163)": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "PAGE": "document:title (panel)",
+  },
+  {
+    "Page 1 of 1": "document:title (panel)",
+  },
+  {
+    "2": "document:title (panel)",
+  },
+  {
+    "CERTIFICATE NUMBER": "document:title (panel)",
+  },
+  {
+    "COC000012": "document:title (panel)",
+  },
+  {
+    "3": "document:title (panel)",
+  },
+  {
+    "DATE": "document:title (panel)",
+  },
+  {
+    "Jun 5, 2026": "document:title (panel)",
+  },
+  {
+    "4": "document:title (panel)",
+  },
+  {
+    "ORGANIZATION NAME AND ADDRESS": "document:title (panel)",
+  },
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "100": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "US": "document:title (panel)",
+  },
+  {
+    "5": "document:title (panel)",
+  },
+  {
+    "CUSTOMER NAME AND ADDRESS": "document:title (panel)",
+  },
+  {
+    "Globex Aerospace": "document:title (panel)",
+  },
+  {
+    "500": "document:title (panel)",
+  },
+  {
+    "Commerce Blvd": "document:title (panel)",
+  },
+  {
+    "Chicago, IL 60601": "document:title (panel)",
+  },
+  {
+    "US": "document:title (panel)",
+  },
+  {
+    "6": "document:title (panel)",
+  },
+  {
+    "PURCHASE ORDER NUMBER": "document:title (panel)",
+  },
+  {
+    "PO-88421": "document:title (panel)",
+  },
+  {
+    "7": "document:title (panel)",
+  },
+  {
+    "Item Number": "document:title (panel)",
+  },
+  {
+    "8": "document:title (panel)",
+  },
+  {
+    "Quantity": "document:title (panel)",
+  },
+  {
+    "9": "document:title (panel)",
+  },
+  {
+    "Description": "document:title (panel)",
+  },
+  {
+    "10": "document:title (panel)",
+  },
+  {
+    "Revision": "document:title (panel)",
+  },
+  {
+    "11": "document:title (panel)",
+  },
+  {
+    "Traceability": "document:title (panel)",
+  },
+  {
+    "12": "document:title (panel)",
+  },
+  {
+    "Remarks": "document:title (panel)",
+  },
+  {
+    "1 —": "document:title (panel)",
+  },
+  {
+    "GX-4471": "document:title (panel)",
+  },
+  {
+    "10": "document:title (panel)",
+  },
+  {
+    "EA": "document:title (panel)",
+  },
+  {
+    "Actuator bracket, 7075-T6": "document:title (panel)",
+  },
+  {
+    "C": "document:title (panel)",
+  },
+  {
+    "LOT-2026-0412 (6)": "document:title (panel)",
+  },
+  {
+    "LOT-2026-0415 (4)": "document:title (panel)",
+  },
+  {
+    "None": "document:title (panel)",
+  },
+  {
+    "2 —": "document:title (panel)",
+  },
+  {
+    "HSG-220": "document:title (panel)",
+  },
+  {
+    "3": "document:title (panel)",
+  },
+  {
+    "EA": "document:title (panel)",
+  },
+  {
+    "Sensor housing, anodized": "document:title (panel)",
+  },
+  {
+    "N/C": "document:title (panel)",
+  },
+  {
+    "SN-000981 (1)": "document:title (panel)",
+  },
+  {
+    "SN-000982 (1)": "document:title (panel)",
+  },
+  {
+    "SN-000983 (1)": "document:title (panel)",
+  },
+  {
+    "None": "document:title (panel)",
+  },
+  {
+    "13": "document:title (panel)",
+  },
+  {
+    "CONFORMITY DETAILS": "document:title (panel)",
+  },
+  {
+    "Shelf Life": "document:title (panel)",
+  },
+  {
+    "None": "document:title (panel)",
+  },
+  {
+    "First Article Inspection": "document:title (panel)",
+  },
+  {
+    "FAI000004 — GX-4471 Rev C": "document:title (panel)",
+  },
+  {
+    "Material Certificates": "document:title (panel)",
+  },
+  {
+    "Mill cert HT-77812 (Alcoa) — LOT-2026-0412": "document:title (panel)",
+  },
+  {
+    "Mill cert HT-77830 (Alcoa) — LOT-2026-0415": "document:title (panel)",
+  },
+  {
+    "Process Certificates": "document:title (panel)",
+  },
+  {
+    "None": "document:title (panel)",
+  },
+  {
+    "Deviations, Concessions and Waivers": "document:title (panel)",
+  },
+  {
+    "None": "document:title (panel)",
+  },
+  {
+    "Nonconformances": "document:title (panel)",
+  },
+  {
+    "None": "document:title (panel)",
+  },
+  {
+    "Compliance Statements": "document:title (panel)",
+  },
+  {
+    "DFARS: Specialty metals comply with DFARS 252.225-7009.": "document:title (panel)",
+  },
+  {
+    "RoHS: Product complies with Directive 2011/65/EU (RoHS).": "document:title (panel)",
+  },
+  {
+    "Reason for Update": "document:title (panel)",
+  },
+  {
+    "None": "document:title (panel)",
+  },
+  {
+    "14": "document:title (panel)",
+  },
+  {
+    "STATEMENT OF CONFORMITY": "document:title (panel)",
+  },
+  {
+    "It is hereby certified that apart from the deviations, concessions, or waivers noted in "Conformity Details", the product(s) /": "document:title (panel)",
+  },
+  {
+    "service(s) detailed above has (have) been manufactured / maintained / reworked / performed / inspected / tested and conform": "document:title (panel)",
+  },
+  {
+    "to applicable specifications, drawings, and purchase order and contract requirements.": "document:title (panel)",
+  },
+  {
+    "Document electronically generated and validated.": "document:title (panel)",
+  },
+  {
+    "PREVIEW — NOT ISSUED": "document:title (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "COC000012": "document:page (panel)",
+  },
+  {
+    "Page 1 of 1": "document:page (panel)",
+  },
+]
+`;
+
 exports[`clicking a real PDF > opens the right text on the issue sample 1`] = `
 [
   {

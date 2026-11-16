@@ -22,6 +22,7 @@ import {
   startMachineProductionEvent,
   startProductionEvent
 } from "~/services/operations.service";
+import { generateFirstArticlesForStartedJob } from "~/services/quality.server";
 import { assignSerialNumberOnFirstTouch } from "~/services/serial-number.server";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
 import { path } from "~/utils/path";
@@ -261,6 +262,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId,
     createdBy: userId
   };
+  const onJobReleased = (jobId: string) =>
+    generateFirstArticlesForStartedJob(serviceRole, {
+      jobId,
+      companyId,
+      userId
+    });
   const startEvent = machineWorkCenterId
     ? await startMachineProductionEvent(
         db,
@@ -268,14 +275,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         { ...event, workCenterId: machineWorkCenterId },
         trackedEntityId || undefined,
         undefined,
-        "mes_qr"
+        "mes_qr",
+        onJobReleased
       )
     : await startProductionEvent(
         serviceRole,
         event,
         trackedEntityId || undefined,
         undefined,
-        "mes_qr"
+        "mes_qr",
+        onJobReleased
       );
 
   if (startEvent.error) {

@@ -325,13 +325,16 @@ function InspectionCard({ inspection }: { inspection: InspectionRow }) {
     </Card>
   );
 
-  // A job-operation lot opens around its operation; a receipt or manual lot
-  // opens on its own (its Reject still runs the ERP's write-off and NCR).
+  // A job-operation lot opens around its operation, a first article lot on
+  // its first article page; a receipt or manual lot opens on its own (its
+  // Reject still runs the ERP's write-off and NCR).
   const to =
     inspection.sourceDocument === "Job Operation" &&
     inspection.sourceDocumentLineId
       ? path.to.inspection(inspection.sourceDocumentLineId)
-      : path.to.manualInspection(inspection.id);
+      : inspection.sourceDocument === "First Article"
+        ? path.to.firstArticle(inspection.id)
+        : path.to.manualInspection(inspection.id);
 
   return <Link to={withOrigin(to, path.to.inspections)}>{body}</Link>;
 }

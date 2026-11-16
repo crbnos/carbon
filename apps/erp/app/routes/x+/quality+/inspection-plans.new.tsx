@@ -61,7 +61,7 @@ export default function BalloonNewRoute() {
 
   return (
     <InspectionDocumentForm
-      initialValues={{ name: "", partId: "" }}
+      initialValues={{ name: "", partId: "", drawingRevision: "" }}
       open={dialog.open}
       onClose={dialog.close}
     />

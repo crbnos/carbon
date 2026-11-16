@@ -126,6 +126,7 @@ describe("getJobReleaseReadiness", () => {
         missingAssemblies: [
           { makeMethodId: "sub-late", description: "Late Bracket" }
         ],
+        firstArticlesWithoutPlan: [],
         outsideOperationsWithoutSupplier: [],
         supplierIds: ["supplier-a"],
         materialsWithoutStorageUnit: []

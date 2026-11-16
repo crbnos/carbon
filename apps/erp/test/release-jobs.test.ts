@@ -281,6 +281,7 @@ const ready = (id: string, overrides: Record<string, unknown> = {}) => ({
   nothingToMake: false,
   makeToAssetError: null,
   missingAssemblies: [],
+  firstArticlesWithoutPlan: [],
   outsideOperationsWithoutSupplier: [],
   materialsWithoutStorageUnit: [],
   supplierIds: [] as string[],
