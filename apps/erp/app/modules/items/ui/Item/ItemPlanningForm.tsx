@@ -11,7 +11,8 @@ import {
   CardHeader,
   CardTitle,
   Combobox,
-  HStack
+  HStack,
+  VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -19,8 +20,9 @@ import type { z } from "zod";
 import {
   Boolean,
   CustomFormFields,
+  DeliveryDateControl,
   Employee,
-  FormGroup,
+  FormSection,
   Hidden,
   Number,
   Select as SelectForm,
@@ -37,15 +39,21 @@ import { ItemReorderPolicy } from "./ItemReorderPolicy";
 
 type ItemPlanningFormProps = {
   // the DB row carries responsibleEmployee / planningHorizonDays /
-  // planningTimeFenceDays as nullable; the validator treats them as optional —
-  // accept both
+  // planningTimeFenceDays / deliveryDateControl as nullable; the validator
+  // treats them as optional — accept both
   initialValues: Omit<
     z.infer<typeof itemPlanningValidator>,
-    "responsibleEmployee" | "planningHorizonDays" | "planningTimeFenceDays"
+    | "responsibleEmployee"
+    | "planningHorizonDays"
+    | "planningTimeFenceDays"
+    | "deliveryDateControl"
   > & {
     responsibleEmployee?: string | null;
     planningHorizonDays?: number | null;
     planningTimeFenceDays?: number | null;
+    deliveryDateControl?:
+      | z.infer<typeof itemPlanningValidator>["deliveryDateControl"]
+      | null;
   };
   // the location's planning time fence, which an empty item value inherits;
   // undefined when it could not be read
@@ -69,22 +77,24 @@ const ItemPlanningForm = ({
   }));
 
   const [policy, setPolicy] = useState(initialValues.reorderingPolicy);
+  // A Select shows its placeholder only for an empty value, not null. An
+  // empty override means "inherit" (the location's fence, the company's
+  // horizon); a null default renders as 0 in a number field and saves 0,
+  // which overrides the default with "none".
+  const defaultValues: ItemPlanningFormProps["initialValues"] = {
+    ...initialValues,
+    planningHorizonDays: initialValues.planningHorizonDays ?? undefined,
+    planningTimeFenceDays: initialValues.planningTimeFenceDays ?? undefined,
+    responsibleEmployee: initialValues.responsibleEmployee ?? undefined,
+    deliveryDateControl: initialValues.deliveryDateControl ?? undefined
+  };
 
   return (
     <Card>
       <ValidatedForm
         method="post"
         validator={itemPlanningValidator}
-        defaultValues={{
-          ...initialValues,
-          // An empty override means "inherit" (the location's fence, the
-          // company's horizon). A null default renders as 0 in the number
-          // field and saves 0, which overrides the default with "none".
-          planningHorizonDays: initialValues.planningHorizonDays ?? undefined,
-          planningTimeFenceDays:
-            initialValues.planningTimeFenceDays ?? undefined,
-          responsibleEmployee: initialValues.responsibleEmployee ?? undefined
-        }}
+        defaultValues={defaultValues}
       >
         <HStack className="w-full justify-between items-start max-md:items-center">
           <CardHeader>
@@ -112,11 +122,8 @@ const ItemPlanningForm = ({
         <CardContent>
           <Hidden name="itemId" />
           <Hidden name="locationId" />
-          <div className="flex w-full flex-col gap-6">
-            <FormGroup
-              title={t`Reorder policy`}
-              description={t`How MRP sizes new supply for this item at this location.`}
-            >
+          <VStack spacing={4}>
+            <FormSection title={t`Reordering`}>
               <SelectForm
                 name="reorderingPolicy"
                 label={t`Reordering Policy`}
@@ -202,12 +209,9 @@ const ItemPlanningForm = ({
                 </>
               )}
               {/* <Boolean name="critical" label={t`Critical`} /> */}
-            </FormGroup>
+            </FormSection>
 
-            <FormGroup
-              title={t`Planning window`}
-              description={t`Which suggestions the planning pages show, and which planned orders MRP holds still.`}
-            >
+            <FormSection title={t`Planning and Sales`}>
               <Number
                 name="planningHorizonDays"
                 label={t`Planning Horizon (Days)`}
@@ -226,25 +230,32 @@ const ItemPlanningForm = ({
                     : t`Location default: ${locationTimeFenceDays}`
                 }
               />
-            </FormGroup>
 
-            <FormGroup title={t`Ownership`}>
+              <DeliveryDateControl
+                name="deliveryDateControl"
+                label={t`Delivery Date Check`}
+                placeholder={t`Company default`}
+                helperText={t`Leave empty to use the check in Settings → Sales.`}
+              />
+
               <Employee
                 name="responsibleEmployee"
                 label={t`Responsible Employee`}
                 type="assignee"
               />
 
-              <Boolean
-                bordered
-                name="allowCommonSupplyForProjects"
-                label={t`Unassigned stock for projects`}
-                description={t`Let projects with project stock use spare unassigned stock of this item at this location`}
-              />
-            </FormGroup>
+              <div className="col-span-3 max-md:col-span-full">
+                <Boolean
+                  bordered
+                  name="allowCommonSupplyForProjects"
+                  label={t`Unassigned stock for projects`}
+                  description={t`Let projects with project stock use spare unassigned stock of this item at this location`}
+                />
+              </div>
 
-            <CustomFormFields table="itemPlanning" />
-          </div>
+              <CustomFormFields table="itemPlanning" />
+            </FormSection>
+          </VStack>
         </CardContent>
         <CardFooter>
           <Submit isDisabled={!permissions.can("update", "parts")}>

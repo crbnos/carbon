@@ -274,6 +274,10 @@ msgstr "{0, plural, one {Removing this path will also disconnect # connection.} 
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -1054,6 +1058,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# open job has materials with no s
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {Took # value.} other {Took # values.}}"
+
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} kept this date. The earliest delivery date is {earliest}."
 
 msgid "{kpiLabel} by day"
 msgstr "{kpiLabel} by day"
@@ -2469,6 +2476,12 @@ msgstr "A unit draws its number the first time it is worked on, scrapped or rece
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "A unit is treated as a sale when any of these is true, and as a rental otherwise."
+
+msgid "a user"
+msgstr "a user"
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "A user keeps a sales order date that can't be met"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
@@ -4149,6 +4162,9 @@ msgstr "Any item group"
 
 msgid "Any item type"
 msgstr "Any item type"
+
+msgid "Any promised date saves without a warning."
+msgstr "Any promised date saves without a warning."
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Anything not explicitly listed in scope above"
@@ -6903,6 +6919,9 @@ msgstr "Chart of Accounts"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check"
+msgstr "Check"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Check operations on the left to build the batch."
 
@@ -6924,6 +6943,15 @@ msgstr "Checking Stripe for this customer…"
 msgid "Checking the batch's jobs..."
 msgstr "Checking the batch's jobs..."
 
+msgid "Checking the delivery date"
+msgstr "Checking the delivery date"
+
+msgid "Checking the delivery date…"
+msgstr "Checking the delivery date…"
+
+msgid "Checking the shop's schedule…"
+msgstr "Checking the shop's schedule…"
+
 msgid "Checking the Stripe customer link…"
 msgstr "Checking the Stripe customer link…"
 
@@ -6932,6 +6960,12 @@ msgstr "Checkpoint ·"
 
 msgid "Checkpoints"
 msgstr "Checkpoints"
+
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Checks free stock week by week, then the lead time."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "Checks free stock, then the shop's schedule for made items."
 
 msgid "Children"
 msgstr "Children"
@@ -7514,6 +7548,9 @@ msgstr "Compare with…"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "Compares a submitted week with the employee's timecards."
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "Compares the date with the item's lead time, BOM included."
 
 msgid "Compatibility rules"
 msgstr "Compatibility rules"
@@ -8651,6 +8688,9 @@ msgstr "Could not release {0}: {1}"
 msgid "Could not save"
 msgstr "Could not save"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr "Couldn't check the delivery date. You can still save."
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "Couldn't check whether {appName} is connected."
 
@@ -9658,6 +9698,15 @@ msgstr "Date issued"
 msgid "Date Issued"
 msgstr "Date Issued"
 
+msgid "Date kept"
+msgstr "Date kept"
+
+msgid "Date not confirmed"
+msgstr "Date not confirmed"
+
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "Date not confirmed. The earliest delivery date is {earliest}."
+
 msgid "Date paid"
 msgstr "Date paid"
 
@@ -10530,6 +10579,12 @@ msgstr "Delivery Country"
 
 msgid "Delivery Date"
 msgstr "Delivery Date"
+
+msgid "Delivery Date Check"
+msgstr "Delivery Date Check"
+
+msgid "Delivery date check updated"
+msgstr "Delivery date check updated"
 
 msgid "Delivery Location"
 msgstr "Delivery Location"
@@ -13986,6 +14041,9 @@ msgstr "Four-eyes enforcement disabled"
 msgid "Four-eyes enforcement enabled"
 msgstr "Four-eyes enforcement enabled"
 
+msgid "Free stock by {promised} is only {free}."
+msgstr "Free stock by {promised} is only {free}."
+
 msgid "Freeze the old system, no new transactions"
 msgstr "Freeze the old system, no new transactions"
 
@@ -14749,6 +14807,9 @@ msgstr "Hold the journal as a warning to fix."
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+
 msgid "Holiday"
 msgstr "Holiday"
 
@@ -14936,9 +14997,6 @@ msgstr "How many were actually picked?"
 
 msgid "How many, and the rate each one bills."
 msgstr "How many, and the rate each one bills."
-
-msgid "How MRP sizes new supply for this item at this location."
-msgstr "How MRP sizes new supply for this item at this location."
 
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "How often the customer is invoiced, and from when. The invoices below follow."
@@ -16532,6 +16590,9 @@ msgstr "Kind of record"
 msgid "Kit"
 msgstr "Kit"
 
+msgid "Kit rack"
+msgstr "Kit rack"
+
 msgid "label"
 msgstr "label"
 
@@ -16902,6 +16963,9 @@ msgstr "Leave empty to pick a color from the name"
 
 msgid "Leave empty to use the account default"
 msgstr "Leave empty to use the account default"
+
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "Leave empty to use the check in Settings → Sales."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Leave empty, or enter 0, to show everything MRP plans."
@@ -22710,6 +22774,9 @@ msgstr "Planning"
 msgid "Planning action"
 msgstr "Planning action"
 
+msgid "Planning and Sales"
+msgstr "Planning and Sales"
+
 msgid "Planning group"
 msgstr "Planning group"
 
@@ -22763,9 +22830,6 @@ msgstr "Planning time fence (days)"
 
 msgid "Planning time fence days"
 msgstr "Planning time fence days"
-
-msgid "Planning window"
-msgstr "Planning window"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
@@ -25246,9 +25310,6 @@ msgstr "Reorder Point"
 msgid "Reorder Point:"
 msgstr "Reorder Point:"
 
-msgid "Reorder policy"
-msgstr "Reorder policy"
-
 msgid "Reorder Policy"
 msgstr "Reorder Policy"
 
@@ -25263,6 +25324,9 @@ msgstr "Reorder Quantity"
 
 msgid "Reorder Quantity:"
 msgstr "Reorder Quantity:"
+
+msgid "Reordering"
+msgstr "Reordering"
 
 msgid "Reordering policy"
 msgstr "Reordering policy"
@@ -30561,6 +30625,9 @@ msgstr "The document could not be downloaded."
 msgid "The document could not be opened."
 msgstr "The document could not be opened."
 
+msgid "The earliest delivery date is {earliest}."
+msgstr "The earliest delivery date is {earliest}."
+
 msgid "The early hours, {name}."
 msgstr "The early hours, {name}."
 
@@ -31343,6 +31410,9 @@ msgstr "The services this contract bills: one-time fees and recurring charges. C
 msgid "The shelves and bins where stock physically sits"
 msgstr "The shelves and bins where stock physically sits"
 
+msgid "The shop cannot finish this by {promised}."
+msgstr "The shop cannot finish this by {promised}."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "The shop supplies and consumables you keep on hand"
 
@@ -31812,6 +31882,9 @@ msgstr "This customer type's rate"
 
 msgid "This customer's rate"
 msgstr "This customer's rate"
+
+msgid "This date cannot be met"
+msgstr "This date cannot be met"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "This department has no work centers at {locationName}. Pick another department or location."
@@ -33525,6 +33598,9 @@ msgstr "Updated successfully"
 msgid "Updated task status"
 msgstr "Updated task status"
 
+msgid "Updating…"
+msgstr "Updating…"
+
 msgid "Upgrade"
 msgstr "Upgrade"
 
@@ -33656,6 +33732,9 @@ msgstr "Use ... to get the next part ID"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
+
+msgid "Use {earliest}"
+msgstr "Use {earliest}"
 
 msgid "Use a different account"
 msgstr "Use a different account"
@@ -34288,11 +34367,17 @@ msgstr "Warn but allow"
 msgid "Warn this many days before expiry"
 msgstr "Warn this many days before expiry"
 
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Warn when the person inspecting an inbound item is the same person who received it."
 
 msgid "Warning"
 msgstr "Warning"
+
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
 
 msgid "Warranty"
 msgstr "Warranty"
@@ -34880,9 +34965,6 @@ msgstr "Which manufacturing event starts the shelf-life clock — for example, f
 
 msgid "Which operation was this?"
 msgstr "Which operation was this?"
-
-msgid "Which suggestions the planning pages show, and which planned orders MRP holds still."
-msgstr "Which suggestions the planning pages show, and which planned orders MRP holds still."
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."

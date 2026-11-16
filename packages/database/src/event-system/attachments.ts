@@ -259,7 +259,7 @@ export const attachments = {
   },
   nonConformance: {
     before: ["check_nonconformance_inspection_release"],
-    after: ["sync_advance_document_sequence"],
+    after: ["sync_advance_document_sequence", "sync_receipt_inspection_status"],
     events: true,
     statement: ["broadcast_table_changes"]
   },
@@ -270,7 +270,8 @@ export const attachments = {
   nonConformanceApprovalTask: { events: true },
   nonConformanceItem: { events: true, statement: ["broadcast_table_changes"] },
   nonConformanceInspection: {
-    before: ["check_nonconformance_inspection_link"]
+    before: ["check_nonconformance_inspection_link"],
+    after: ["sync_receipt_inspection_status"]
   },
   nonConformanceRequiredAction: {
     before: ["sync_protect_system_required_actions"],

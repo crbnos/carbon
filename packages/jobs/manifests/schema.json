@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261116093528",
+  "schemaVersion": "20261117063504",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-16T09:43:21.574Z",
+  "exportedAt": "2026-11-16T19:06:09.098Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -518,7 +518,8 @@
         "requirePromisedDateToFinalizePurchaseOrder",
         "travelerLabels",
         "requireTrackedMaterialsIssued",
-        "autoPickingListOnRelease"
+        "autoPickingListOnRelease",
+        "deliveryDateControl"
       ]
     },
     {
@@ -3936,7 +3937,8 @@
         "responsibleEmployee",
         "planningHorizonDays",
         "allowCommonSupplyForProjects",
-        "planningTimeFenceDays"
+        "planningTimeFenceDays",
+        "deliveryDateControl"
       ]
     },
     {
@@ -5207,7 +5209,8 @@
         "workCenterId",
         "isWorkCenterDefault",
         "nettable",
-        "effectiveNettable"
+        "effectiveNettable",
+        "kitRack"
       ]
     },
     {
@@ -8142,7 +8145,14 @@
         "configuration",
         "serviceStartDate",
         "serviceEndDate",
-        "salesReturnOrderLineId"
+        "salesReturnOrderLineId",
+        "requestedDate",
+        "deliveryDateStatus",
+        "deliveryDateConstraint",
+        "earliestDeliveryDate",
+        "deliveryDateCheckedAt",
+        "deliveryDateOverriddenBy",
+        "deliveryDateOverriddenAt"
       ]
     },
     {

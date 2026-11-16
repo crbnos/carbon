@@ -274,7 +274,8 @@ function useNewStorageUnitModal(locationId?: string | null) {
           name: create.item,
           locationId,
           storageTypeIds: [],
-          nonNettable: false
+          nonNettable: false,
+          kitRack: false
         }}
       />
     ) : null;

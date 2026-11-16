@@ -16796,6 +16796,8 @@ export function buildItemLedgerRow(args: {
   entryType: Database["public"]["Enums"]["itemLedgerType"];
   documentType?: ItemLedgerDocumentType | null;
   documentId?: string | null;
+  // The document line the movement belongs to, when the reader needs it.
+  documentLineId?: string | null;
   correctionOfItemLedgerId?: string | null;
   itemId: string;
   locationId: string | null;
@@ -16814,6 +16816,7 @@ export function buildItemLedgerRow(args: {
     entryType: args.entryType,
     documentType: args.documentType ?? null,
     documentId: args.documentId ?? null,
+    documentLineId: args.documentLineId ?? null,
     correctionOfItemLedgerId: args.correctionOfItemLedgerId ?? null,
     itemId: args.itemId,
     locationId: args.locationId,
@@ -17288,6 +17291,9 @@ export interface BookAdjustmentArgs {
     // the fix.
     documentType?: Database["public"]["Enums"]["itemLedgerDocumentType"] | null;
     documentId?: string | null;
+    // The document line: an NCR's restore names the disposition row it
+    // restores for, so Put Away can tell Use As Is stock from Rework stock.
+    documentLineId?: string | null;
     correctionOfItemLedgerId?: string | null;
     comment?: string | null;
     // Reason for scrap/unscrap movements (documentType 'Scrap'); NULL for
@@ -17507,6 +17513,7 @@ export async function bookAdjustment(
         entryType: ledger.entryType,
         documentType: ledger.documentType,
         documentId: ledger.documentId,
+        documentLineId: ledger.documentLineId,
         correctionOfItemLedgerId: ledger.correctionOfItemLedgerId,
         itemId: ledger.itemId,
         locationId: ledger.locationId,

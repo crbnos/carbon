@@ -1349,6 +1349,11 @@ export const terms = {
     definition: msg`Turn planned orders into documents: ordering a week's Order or Make suggestion creates Planned jobs or Planned purchase order lines and marks that week's planned orders Converted, one per job or line created. Not the same as Release, which moves a Planned job or purchase order to its next status.`,
     aliases: ["convert"]
   },
+  "delivery-date-check": {
+    term: msg`Delivery Date Check`,
+    definition: msg`Warns when a sales order line's promised date can't be met, and suggests the earliest date that can.`,
+    href: "/docs/reference/sales-orders#delivery-date-check"
+  },
   "planning-action": {
     term: msg`Planning action`,
     definition: msg`A suggestion MRP writes after each run: Order or Make new supply, or Expedite, Defer, Increase, Decrease or Cancel an open purchase order line, job or planned order. Apply it from the planning page, dismiss it, or assign it.`,

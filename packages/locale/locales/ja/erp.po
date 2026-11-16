@@ -274,6 +274,10 @@ msgstr "{0, plural, one {このパスを削除すると、#件の接続も切断
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {ファイルに {columns} 列がありません。} other {ファイルに {columns} 列がありません。}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr ""
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {プランナーはこのコンポーネントを1つの剛体—指示書内の1つのステップとして扱います。プランを再実行して適用してください。} other {プランナーはこれら # 個のコンポーネントを1つの剛体—指示書内の1つのステップとして扱います。プランを再実行して適用してください。}}"
@@ -1054,6 +1058,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {#個のオープン製造指図に
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, other {# 件の値を取得しました。}}"
+
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} がこの納期を維持しました。最短納期は {earliest} です。"
 
 msgid "{kpiLabel} by day"
 msgstr "日別の{kpiLabel}"
@@ -2469,6 +2476,12 @@ msgstr "個は初めて作業、廃棄、受取される時に番号を引き出
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "以下のいずれかが当てはまる場合、個は売上として処理され、そうでない場合はレンタルとして処理されます。"
+
+msgid "a user"
+msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "ユーザーが満たせない受注の納期を維持しました"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "ユーザーは商品受取時に各バッチまたはシリアルの使用期限を記録します。仕入先が異なる使用期限のロットを出荷する場合に使用します。"
@@ -4149,6 +4162,9 @@ msgstr "任意のアイテムグループ"
 
 msgid "Any item type"
 msgstr "任意の品目タイプ"
+
+msgid "Any promised date saves without a warning."
+msgstr "約束日はすべて警告なしで保存されます。"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "上記の範囲に明示的にリストされていないもの"
@@ -6903,6 +6919,9 @@ msgstr "勘定科目表"
 msgid "Chat"
 msgstr "チャット"
 
+msgid "Check"
+msgstr "チェック"
+
 msgid "Check operations on the left to build the batch."
 msgstr "左側の工程をチェックしてバッチを構築してください。"
 
@@ -6924,6 +6943,15 @@ msgstr "この得意先の Stripe を確認中…"
 msgid "Checking the batch's jobs..."
 msgstr "バッチの製造指図を確認しています..."
 
+msgid "Checking the delivery date"
+msgstr ""
+
+msgid "Checking the delivery date…"
+msgstr "納期を確認中…"
+
+msgid "Checking the shop's schedule…"
+msgstr ""
+
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe顧客リンクを確認中…"
 
@@ -6932,6 +6960,12 @@ msgstr "チェックポイント ·"
 
 msgid "Checkpoints"
 msgstr "チェックポイント"
+
+msgid "Checks free stock week by week, then the lead time."
+msgstr "空き在庫を週ごとに確認し、次にリードタイムを確認します。"
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "空き在庫を確認し、製造品目は工場のスケジュールも確認します。"
 
 msgid "Children"
 msgstr "子要素"
@@ -7514,6 +7548,9 @@ msgstr "比較対象を選択"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "提出された週を従業員のタイムカードと比較します。"
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "日付を品目のリードタイム（部品表を含む）と比較します。"
 
 msgid "Compatibility rules"
 msgstr "互換性ルール"
@@ -8651,6 +8688,9 @@ msgstr "{0}をリリースできませんでした: {1}"
 msgid "Could not save"
 msgstr "保存できませんでした"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr ""
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "{appName} が接続されているか確認できませんでした。"
 
@@ -9658,6 +9698,15 @@ msgstr "発行日"
 msgid "Date Issued"
 msgstr "発行日"
 
+msgid "Date kept"
+msgstr "納期維持"
+
+msgid "Date not confirmed"
+msgstr "納期未確定"
+
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "納期未確定。最短納期は {earliest} です。"
+
 msgid "Date paid"
 msgstr "支払日"
 
@@ -10530,6 +10579,12 @@ msgstr "配送先の国"
 
 msgid "Delivery Date"
 msgstr "納期"
+
+msgid "Delivery Date Check"
+msgstr "納期チェック"
+
+msgid "Delivery date check updated"
+msgstr "納期チェックを更新しました"
 
 msgid "Delivery Location"
 msgstr "配送先"
@@ -13986,6 +14041,9 @@ msgstr "フォーアイズチェックが無効化されました"
 msgid "Four-eyes enforcement enabled"
 msgstr "四眼チェック制御を有効化"
 
+msgid "Free stock by {promised} is only {free}."
+msgstr "{promised} までの空き在庫は {free} のみです。"
+
 msgid "Freeze the old system, no new transactions"
 msgstr "古いシステムをフリーズし、新しいトランザクションを禁止"
 
@@ -14749,6 +14807,9 @@ msgstr "修正が必要な警告として仕訳を保留"
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "ホールド、リリース、償却、または品目を再価格設定 <0>プロジェクト → 承認</0>の請求タブで。"
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "祝日"
 
@@ -14936,9 +14997,6 @@ msgstr "実際にはいくつ選ばれましたか？"
 
 msgid "How many, and the rate each one bills."
 msgstr "数量と請求料率"
-
-msgid "How MRP sizes new supply for this item at this location."
-msgstr "MRPが、この拠点でこの品目の新規供給量をどのように算出するかを設定します。"
 
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "得意先がどのくらいの頻度で請求されるか、いつから。以下の請求書が続きます。"
@@ -16532,6 +16590,9 @@ msgstr "レコード種別"
 msgid "Kit"
 msgstr "キット"
 
+msgid "Kit rack"
+msgstr ""
+
 msgid "label"
 msgstr "ラベル"
 
@@ -16902,6 +16963,9 @@ msgstr "空欄のままにすると、名前から色が選ばれます"
 
 msgid "Leave empty to use the account default"
 msgstr "空白のままにしてアカウントデフォルトを使用します"
+
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "空欄のままにすると、設定 → 販売のチェックが使用されます。"
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "空のままにするか、0を入力して、MRPが計画するすべてを表示します。"
@@ -22710,6 +22774,9 @@ msgstr "計画"
 msgid "Planning action"
 msgstr "計画提案"
 
+msgid "Planning and Sales"
+msgstr "計画と販売"
+
 msgid "Planning group"
 msgstr "計画グループ"
 
@@ -22763,9 +22830,6 @@ msgstr "計画タイムフェンス（日数）"
 
 msgid "Planning time fence days"
 msgstr "計画タイムフェンス（日数）"
-
-msgid "Planning window"
-msgstr "計画期間"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "計画の発注提案数量の下限。仕入先部品レコードにある仕入先のMOQとは別。"
@@ -25246,9 +25310,6 @@ msgstr "発注点"
 msgid "Reorder Point:"
 msgstr "発注点:"
 
-msgid "Reorder policy"
-msgstr "発注ポリシー"
-
 msgid "Reorder Policy"
 msgstr "再注文ポリシー"
 
@@ -25263,6 +25324,9 @@ msgstr "再注文数量"
 
 msgid "Reorder Quantity:"
 msgstr "リオーダー数量:"
+
+msgid "Reordering"
+msgstr "再発注"
 
 msgid "Reordering policy"
 msgstr "発注方針"
@@ -30561,6 +30625,9 @@ msgstr "文書をダウンロードできませんでした。"
 msgid "The document could not be opened."
 msgstr "文書を開けませんでした。"
 
+msgid "The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
 
@@ -31343,6 +31410,9 @@ msgstr "このコントラクトが請求する外注サービス：1回限り�
 msgid "The shelves and bins where stock physically sits"
 msgstr "在庫が物理的に置かれている棚とビン。"
 
+msgid "The shop cannot finish this by {promised}."
+msgstr ""
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "手元に保管する店舗用品と消耗品"
 
@@ -31812,6 +31882,9 @@ msgstr "この得意先タイプのレート"
 
 msgid "This customer's rate"
 msgstr "この得意先のレート"
+
+msgid "This date cannot be met"
+msgstr "この納期は満たせません"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "この部門は{locationName}に作業区がありません。別の部門または拠点を選択してください。"
@@ -33525,6 +33598,9 @@ msgstr "正常に更新されました"
 msgid "Updated task status"
 msgstr "タスクステータスが更新されました"
 
+msgid "Updating…"
+msgstr ""
+
 msgid "Upgrade"
 msgstr "アップグレード"
 
@@ -33656,6 +33732,9 @@ msgstr "「...」を使用して次のパートIDを取得します"
 
 msgid "Use ... to get the next tool ID"
 msgstr "「...」を使用して次のツールIDを取得します"
+
+msgid "Use {earliest}"
+msgstr "{earliest}を使用"
 
 msgid "Use a different account"
 msgstr "別のアカウントを使用"
@@ -34288,11 +34367,17 @@ msgstr "警告するが許可する"
 msgid "Warn this many days before expiry"
 msgstr "使用期限の何日前に警告"
 
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "受注明細の約束日に間に合わない場合に警告します。特定の品目で別のチェックを使うには、その品目の「計画」タブで設定します。"
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "受け取った人と同じ人が受け入れ品を検査する場合に警告します。"
 
 msgid "Warning"
 msgstr "警告"
+
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "受注明細の約束日に間に合わない場合に警告し、間に合う最も早い日付を提案します。"
 
 msgid "Warranty"
 msgstr "保証"
@@ -34669,7 +34754,7 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "仕入先の回答が返信予定の日付。仕入先は見積依頼ポータルでこの日付を確認できます。Carbonはこの日付後の遅い回答の受け入れを中止します（設定可能）。"
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "購買担当者が品物を依頼した日です。仕入先は入荷回答納期に別の日付を回答し、納期には別の日付を転記することがあります。"
+msgstr "購買担当者が品を希望した日です。仕入先は入荷回答納期に別の日を回答することがあり、その後、納期に別の日を登録することもあります。"
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "購買担当者がこの明細の品物を受入場所に必要とする日です。新しい明細は、発注の入荷希望納期から始まります。計画では、この日付を在庫の利用可能性と外注工程のスケジュールに使用します。"
@@ -34880,9 +34965,6 @@ msgstr "どの製造イベントが保存期間時計を開始するか — た�
 
 msgid "Which operation was this?"
 msgstr "これはどの工程でしたか?"
-
-msgid "Which suggestions the planning pages show, and which planned orders MRP holds still."
-msgstr "計画画面に表示する提案と、MRPが固定しておく計画オーダーを指定します。"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "このディスパッチがオープンの間、作業区はスケジュールに対して利用できません（計画終了時刻まで、またはディスパッチが完了するまで）。"

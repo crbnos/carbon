@@ -9,6 +9,7 @@ import { zfd } from "zod-form-data";
 import { nonConformancePriority } from "../quality/quality.models";
 import type { DiffEntry, DiffStatus } from "../shared/diff";
 import {
+  deliveryDateControlTypes,
   methodItemType,
   methodOperationOrders,
   methodType,
@@ -748,6 +749,9 @@ export const itemPlanningValidator = z
     // orders inside it still. Empty = inherit the location's fence; 0 = no
     // fence for this item even when the location has one.
     planningTimeFenceDays: zfd.numeric(z.number().int().min(0).optional()),
+    // The delivery date check level of this item at this location. Empty =
+    // the company's level (Settings → Sales).
+    deliveryDateControl: zfd.text(z.enum(deliveryDateControlTypes).optional()),
     // the ownership ladder's leaf override (spec §P1.3): this item at this
     // location; empty = inherit item group → location → company default
     responsibleEmployee: zfd.text(z.string().optional()),

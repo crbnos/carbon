@@ -274,6 +274,10 @@ msgstr "{0, plural, one {Remover este caminho também desconectará # conexão.}
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {O arquivo não tem a coluna {columns}.} other {O arquivo não tem as colunas {columns}.}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr ""
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {O planejador trata este componente como um corpo rígido — uma etapa nas instruções. Execute o planejamento novamente para aplicar.} other {O planejador trata estes # componentes como um corpo rígido — uma etapa nas instruções. Execute o planejamento novamente para aplicar.}}"
@@ -1054,6 +1058,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# ordem de produção aberta tem m
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {# valor obtido.} other {# valores obtidos.}}"
+
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} manteve esta data. A data de entrega mais próxima é {earliest}."
 
 msgid "{kpiLabel} by day"
 msgstr "{kpiLabel} por dia"
@@ -2469,6 +2476,12 @@ msgstr "Uma unidade recebe seu número na primeira vez que é trabalhada, descar
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "Uma unidade é tratada como venda quando qualquer uma destas for verdadeira e como aluguel caso contrário."
+
+msgid "a user"
+msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "Um usuário mantém uma data de pedido de venda que não pode ser cumprida"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Um usuário registra a validade em cada lote de produção ou serial quando as mercadorias são recebidas. Use quando fornecedores enviam lotes com datas de validade diferentes."
@@ -4149,6 +4162,9 @@ msgstr "Qualquer grupo de itens"
 
 msgid "Any item type"
 msgstr "Qualquer tipo de item"
+
+msgid "Any promised date saves without a warning."
+msgstr "Qualquer data prometida é salva sem aviso."
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Qualquer coisa não explicitamente listada no escopo acima"
@@ -6903,6 +6919,9 @@ msgstr "Plano de Contas"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check"
+msgstr "Verificação"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Verifique as operações à esquerda para construir o lote."
 
@@ -6924,6 +6943,15 @@ msgstr "Verificando Stripe para este cliente…"
 msgid "Checking the batch's jobs..."
 msgstr "Verificando as ordens de produção do lote de produção..."
 
+msgid "Checking the delivery date"
+msgstr ""
+
+msgid "Checking the delivery date…"
+msgstr "Verificando a data de entrega…"
+
+msgid "Checking the shop's schedule…"
+msgstr ""
+
 msgid "Checking the Stripe customer link…"
 msgstr "Verificando a conexão do cliente no Stripe…"
 
@@ -6932,6 +6960,12 @@ msgstr "Checkpoint ·"
 
 msgid "Checkpoints"
 msgstr "Pontos de Verificação"
+
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Verifica o estoque livre semana a semana e depois o lead time."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "Verifica o estoque livre e depois a programação da fábrica para itens fabricados."
 
 msgid "Children"
 msgstr "Filhos"
@@ -7514,6 +7548,9 @@ msgstr "Comparar com…"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "Compara uma semana enviada com os apontamentos do funcionário."
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "Compara a data com o lead time do item, incluindo a lista de materiais."
 
 msgid "Compatibility rules"
 msgstr "Regras de compatibilidade"
@@ -8651,6 +8688,9 @@ msgstr "Não foi possível liberar {0}: {1}"
 msgid "Could not save"
 msgstr "Não foi possível salvar"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr ""
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "Não foi possível verificar se {appName} está conectado."
 
@@ -9658,6 +9698,15 @@ msgstr "Data de emissão"
 msgid "Date Issued"
 msgstr "Data de Emissão"
 
+msgid "Date kept"
+msgstr "Data mantida"
+
+msgid "Date not confirmed"
+msgstr "Data não confirmada"
+
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "Data não confirmada. A data de entrega mais próxima é {earliest}."
+
 msgid "Date paid"
 msgstr "Data de pagamento"
 
@@ -10530,6 +10579,12 @@ msgstr "País de Entrega"
 
 msgid "Delivery Date"
 msgstr "Data de Entrega"
+
+msgid "Delivery Date Check"
+msgstr "Verificação da data de entrega"
+
+msgid "Delivery date check updated"
+msgstr "Verificação da data de entrega atualizada"
 
 msgid "Delivery Location"
 msgstr "Local de Entrega"
@@ -13986,6 +14041,9 @@ msgstr "Verificação de Quatro Olhos desativada"
 msgid "Four-eyes enforcement enabled"
 msgstr "Aplicação de quatro olhos habilitada"
 
+msgid "Free stock by {promised} is only {free}."
+msgstr "O estoque livre até {promised} é de apenas {free}."
+
 msgid "Freeze the old system, no new transactions"
 msgstr "Congele o sistema antigo, sem novas transações"
 
@@ -14749,6 +14807,9 @@ msgstr "Manter o diário como aviso para correção."
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "Reter, liberar, baixar ou reproçar itens em <0>Projetos → Aprovações</0>, na aba Faturamento."
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "Feriado"
 
@@ -14936,9 +14997,6 @@ msgstr "Quantos foram realmente apanhados?"
 
 msgid "How many, and the rate each one bills."
 msgstr "Quantos, e a taxa que cada um cobra."
-
-msgid "How MRP sizes new supply for this item at this location."
-msgstr "Como o MRP dimensiona o novo suprimento deste item neste local."
 
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "Com que frequência o cliente é faturado e a partir de quando. As faturas abaixo seguem."
@@ -16532,6 +16590,9 @@ msgstr "Tipo de registro"
 msgid "Kit"
 msgstr "Kit"
 
+msgid "Kit rack"
+msgstr ""
+
 msgid "label"
 msgstr "rótulo"
 
@@ -16902,6 +16963,9 @@ msgstr "Deixe em branco para escolher uma cor pelo nome"
 
 msgid "Leave empty to use the account default"
 msgstr "Deixe vazio para usar o padrão da conta"
+
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "Deixe vazio para usar a verificação em Configurações → Vendas."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Deixe vazio ou digite 0 para mostrar tudo que o MRP planeja."
@@ -22710,6 +22774,9 @@ msgstr "Planejamento"
 msgid "Planning action"
 msgstr "Ação de planejamento"
 
+msgid "Planning and Sales"
+msgstr "Planejamento e vendas"
+
 msgid "Planning group"
 msgstr "Grupo de Planejamento"
 
@@ -22763,9 +22830,6 @@ msgstr "Horizonte de congelamento do planejamento (dias)"
 
 msgid "Planning time fence days"
 msgstr "Horizonte de congelamento do planejamento (dias)"
-
-msgid "Planning window"
-msgstr "Janela de planejamento"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Limite inferior de planejamento em uma quantidade de reabastecimento sugerida; distinto do MOQ de um fornecedor, que vive no registro de parte do fornecedor."
@@ -25246,9 +25310,6 @@ msgstr "Ponto de ressuprimento"
 msgid "Reorder Point:"
 msgstr "Ponto de ressuprimento:"
 
-msgid "Reorder policy"
-msgstr "Política de reposição"
-
 msgid "Reorder Policy"
 msgstr "Política de Reordenação"
 
@@ -25263,6 +25324,9 @@ msgstr "Quantidade de Reabastecimento"
 
 msgid "Reorder Quantity:"
 msgstr "Quantidade de Recompra:"
+
+msgid "Reordering"
+msgstr "Reposição"
 
 msgid "Reordering policy"
 msgstr "Política de ressuprimento"
@@ -30561,6 +30625,9 @@ msgstr "Não foi possível baixar o documento."
 msgid "The document could not be opened."
 msgstr "Não foi possível abrir o documento."
 
+msgid "The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "As primeiras horas, {name}."
 
@@ -31343,6 +31410,9 @@ msgstr "Os serviços que este contrato fatura: taxas únicas e cobranças recorr
 msgid "The shelves and bins where stock physically sits"
 msgstr "As prateleiras e compartimentos onde o estoque fica fisicamente"
 
+msgid "The shop cannot finish this by {promised}."
+msgstr ""
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Os suprimentos de loja e consumíveis que você mantém à mão"
 
@@ -31812,6 +31882,9 @@ msgstr "A taxa deste tipo de cliente"
 
 msgid "This customer's rate"
 msgstr "A taxa deste cliente"
+
+msgid "This date cannot be met"
+msgstr "Esta data não pode ser cumprida"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "Este departamento não tem centros de trabalho em {locationName}. Escolha outro departamento ou local."
@@ -33525,6 +33598,9 @@ msgstr "Atualizado com sucesso"
 msgid "Updated task status"
 msgstr "Status da tarefa atualizado"
 
+msgid "Updating…"
+msgstr ""
+
 msgid "Upgrade"
 msgstr "Atualizar"
 
@@ -33656,6 +33732,9 @@ msgstr "Use ... to get the next part ID"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
+
+msgid "Use {earliest}"
+msgstr "Usar {earliest}"
 
 msgid "Use a different account"
 msgstr "Use uma conta diferente"
@@ -34288,11 +34367,17 @@ msgstr "Avisar mas permitir"
 msgid "Warn this many days before expiry"
 msgstr "Avisar este número de dias antes da validade"
 
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "Avisa quando a data prometida de uma linha de pedido de venda não pode ser cumprida. Para usar outra verificação em um item, defina-a na aba Planejamento do item."
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Avisar quando a pessoa que inspeciona um item de entrada é a mesma pessoa que o recebeu."
 
 msgid "Warning"
 msgstr "Aviso"
+
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "Avisa quando a data prometida de uma linha de pedido de venda não pode ser cumprida e sugere a data mais próxima que pode ser cumprida."
 
 msgid "Warranty"
 msgstr "Garantia"
@@ -34669,7 +34754,7 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "Quando se espera que os fornecedores respondam; os fornecedores veem esta data no portal RFQ e a Carbon para de aceitar respostas tardias depois dela (configurável)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "Quando o comprador solicitou as mercadorias; o fornecedor pode prometer outra data na Data prometida de recebimento e registrar outra data depois, na Data de entrega."
+msgstr "Quando o comprador pediu as mercadorias; o fornecedor pode prometer outra data na Data prometida de recebimento e, depois, registrar outra data na Data de entrega."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "Quando o comprador precisa das mercadorias desta linha na doca. Uma nova linha começa com a Data solicitada de recebimento do pedido; o planejamento usa esta data para a disponibilidade de estoque e o agendamento de processamento externo."
@@ -34880,9 +34965,6 @@ msgstr "Qual evento de manufatura inicia o relógio de vida de prateleira — po
 
 msgid "Which operation was this?"
 msgstr "Qual operação foi esta?"
-
-msgid "Which suggestions the planning pages show, and which planned orders MRP holds still."
-msgstr "Quais sugestões as páginas de planejamento exibem e quais ordens planejadas o MRP mantém paradas."
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Enquanto este despacho estiver aberto, o centro de trabalho estará indisponível para o cronograma (até a hora de término planejada ou até que o despacho seja concluído)."

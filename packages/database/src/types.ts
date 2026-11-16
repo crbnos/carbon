@@ -8465,6 +8465,7 @@ export type Database = {
           defaultPlanningHorizonDays: number | null
           defaultResponsibleEmployee: string | null
           defaultSupplierCc: string[] | null
+          deliveryDateControl: Database["public"]["Enums"]["deliveryDateControl"]
           digitalQuoteEnabled: boolean
           digitalQuoteIncludesPurchaseOrders: boolean
           digitalQuoteNotificationGroup: string[]
@@ -8564,6 +8565,7 @@ export type Database = {
           defaultPlanningHorizonDays?: number | null
           defaultResponsibleEmployee?: string | null
           defaultSupplierCc?: string[] | null
+          deliveryDateControl?: Database["public"]["Enums"]["deliveryDateControl"]
           digitalQuoteEnabled?: boolean
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
@@ -8663,6 +8665,7 @@ export type Database = {
           defaultPlanningHorizonDays?: number | null
           defaultResponsibleEmployee?: string | null
           defaultSupplierCc?: string[] | null
+          deliveryDateControl?: Database["public"]["Enums"]["deliveryDateControl"]
           digitalQuoteEnabled?: boolean
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
@@ -29357,6 +29360,9 @@ export type Database = {
           createdBy: string
           critical: boolean
           customFields: Json | null
+          deliveryDateControl:
+            | Database["public"]["Enums"]["deliveryDateControl"]
+            | null
           demandAccumulationIncludesInventory: boolean
           demandAccumulationPeriod: number
           demandAccumulationSafetyStock: number
@@ -29384,6 +29390,9 @@ export type Database = {
           createdBy: string
           critical?: boolean
           customFields?: Json | null
+          deliveryDateControl?:
+            | Database["public"]["Enums"]["deliveryDateControl"]
+            | null
           demandAccumulationIncludesInventory?: boolean
           demandAccumulationPeriod?: number
           demandAccumulationSafetyStock?: number
@@ -29411,6 +29420,9 @@ export type Database = {
           createdBy?: string
           critical?: boolean
           customFields?: Json | null
+          deliveryDateControl?:
+            | Database["public"]["Enums"]["deliveryDateControl"]
+            | null
           demandAccumulationIncludesInventory?: boolean
           demandAccumulationPeriod?: number
           demandAccumulationSafetyStock?: number
@@ -72128,7 +72140,17 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
+          deliveryDateCheckedAt: string | null
+          deliveryDateConstraint:
+            | Database["public"]["Enums"]["deliveryDateConstraint"]
+            | null
+          deliveryDateOverriddenAt: string | null
+          deliveryDateOverriddenBy: string | null
+          deliveryDateStatus:
+            | Database["public"]["Enums"]["deliveryDateStatus"]
+            | null
           description: string | null
+          earliestDeliveryDate: string | null
           exchangeRate: number | null
           externalNotes: Json | null
           id: string
@@ -72146,6 +72168,7 @@ export type Database = {
           quantitySent: number | null
           quantityToInvoice: number | null
           quantityToSend: number | null
+          requestedDate: string | null
           saleQuantity: number | null
           salesOrderId: string
           salesOrderLineType: Database["public"]["Enums"]["salesOrderLineType"]
@@ -72178,7 +72201,17 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          deliveryDateCheckedAt?: string | null
+          deliveryDateConstraint?:
+            | Database["public"]["Enums"]["deliveryDateConstraint"]
+            | null
+          deliveryDateOverriddenAt?: string | null
+          deliveryDateOverriddenBy?: string | null
+          deliveryDateStatus?:
+            | Database["public"]["Enums"]["deliveryDateStatus"]
+            | null
           description?: string | null
+          earliestDeliveryDate?: string | null
           exchangeRate?: number | null
           externalNotes?: Json | null
           id?: string
@@ -72196,6 +72229,7 @@ export type Database = {
           quantitySent?: number | null
           quantityToInvoice?: number | null
           quantityToSend?: number | null
+          requestedDate?: string | null
           saleQuantity?: number | null
           salesOrderId: string
           salesOrderLineType: Database["public"]["Enums"]["salesOrderLineType"]
@@ -72228,7 +72262,17 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          deliveryDateCheckedAt?: string | null
+          deliveryDateConstraint?:
+            | Database["public"]["Enums"]["deliveryDateConstraint"]
+            | null
+          deliveryDateOverriddenAt?: string | null
+          deliveryDateOverriddenBy?: string | null
+          deliveryDateStatus?:
+            | Database["public"]["Enums"]["deliveryDateStatus"]
+            | null
           description?: string | null
+          earliestDeliveryDate?: string | null
           exchangeRate?: number | null
           externalNotes?: Json | null
           id?: string
@@ -72246,6 +72290,7 @@ export type Database = {
           quantitySent?: number | null
           quantityToInvoice?: number | null
           quantityToSend?: number | null
+          requestedDate?: string | null
           saleQuantity?: number | null
           salesOrderId?: string
           salesOrderLineType?: Database["public"]["Enums"]["salesOrderLineType"]
@@ -72325,6 +72370,41 @@ export type Database = {
           {
             foreignKeyName: "salesOrderLine_createdBy_fkey"
             columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_deliveryDateOverriddenBy_fkey"
+            columns: ["deliveryDateOverriddenBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_deliveryDateOverriddenBy_fkey"
+            columns: ["deliveryDateOverriddenBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_deliveryDateOverriddenBy_fkey"
+            columns: ["deliveryDateOverriddenBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_deliveryDateOverriddenBy_fkey"
+            columns: ["deliveryDateOverriddenBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_deliveryDateOverriddenBy_fkey"
+            columns: ["deliveryDateOverriddenBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -78528,6 +78608,7 @@ export type Database = {
           effectiveNettable: boolean
           id: string
           isWorkCenterDefault: boolean
+          kitRack: boolean
           locationId: string
           name: string
           nettable: boolean
@@ -78548,6 +78629,7 @@ export type Database = {
           effectiveNettable?: boolean
           id?: string
           isWorkCenterDefault?: boolean
+          kitRack?: boolean
           locationId: string
           name: string
           nettable?: boolean
@@ -78568,6 +78650,7 @@ export type Database = {
           effectiveNettable?: boolean
           id?: string
           isWorkCenterDefault?: boolean
+          kitRack?: boolean
           locationId?: string
           name?: string
           nettable?: boolean
@@ -103554,7 +103637,17 @@ export type Database = {
           customerPartId: string | null
           customerPartRevision: string | null
           customFields: Json | null
+          deliveryDateCheckedAt: string | null
+          deliveryDateConstraint:
+            | Database["public"]["Enums"]["deliveryDateConstraint"]
+            | null
+          deliveryDateOverriddenAt: string | null
+          deliveryDateOverriddenBy: string | null
+          deliveryDateStatus:
+            | Database["public"]["Enums"]["deliveryDateStatus"]
+            | null
           description: string | null
+          earliestDeliveryDate: string | null
           exchangeRate: number | null
           externalNotes: Json | null
           id: string | null
@@ -103578,12 +103671,14 @@ export type Database = {
           quantitySent: number | null
           quantityToInvoice: number | null
           quantityToSend: number | null
+          requestedDate: string | null
           saleQuantity: number | null
           salesOrderId: string | null
           salesOrderLineType:
             | Database["public"]["Enums"]["salesOrderLineType"]
             | null
           salesOrderReadableId: string | null
+          salesReturnOrderLineId: string | null
           sentComplete: boolean | null
           sentDate: string | null
           serviceEndDate: string | null
@@ -103666,6 +103761,41 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "salesOrderLine_deliveryDateOverriddenBy_fkey"
+            columns: ["deliveryDateOverriddenBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_deliveryDateOverriddenBy_fkey"
+            columns: ["deliveryDateOverriddenBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_deliveryDateOverriddenBy_fkey"
+            columns: ["deliveryDateOverriddenBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_deliveryDateOverriddenBy_fkey"
+            columns: ["deliveryDateOverriddenBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_deliveryDateOverriddenBy_fkey"
+            columns: ["deliveryDateOverriddenBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
             foreignKeyName: "salesOrderLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
@@ -103734,6 +103864,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_salesReturnOrderLineId_fkey"
+            columns: ["salesReturnOrderLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "salesReturnOrderLine"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesOrderLine_storageUnitId_fkey"
@@ -108855,6 +108992,25 @@ export type Database = {
           replenishmentLevel: number
         }[]
       }
+      get_line_feed_lanes: {
+        Args: { p_company_id: string; p_location_id: string }
+        Returns: {
+          itemId: string
+          jobId: string
+          kanbanId: string
+          need: number
+          parentKitItemId: string
+          quantity: number
+          readableId: string
+          replenishing: boolean
+          state: string
+          storageUnitId: string
+          target: number
+          tier: string
+          trackedEntityId: string
+          workCenterId: string
+        }[]
+      }
       get_line_feed_shortages: {
         Args: { p_company_id: string; p_location_id: string }
         Returns: {
@@ -110276,6 +110432,14 @@ export type Database = {
         }
         Returns: number
       }
+      inspection_use_as_is: {
+        Args: { p_company_id: string; p_inspection_ids: string[] }
+        Returns: {
+          inspectionId: string
+          quantity: number
+          trackedEntityId: string
+        }[]
+      }
       interpolate_serial_segment: {
         Args: { p_location: string; p_now: string; p_value: string }
         Returns: string
@@ -111695,6 +111859,9 @@ export type Database = {
         | "Reactivation"
         | "Contraction"
       deadlineType: "No Deadline" | "ASAP" | "Soft Deadline" | "Hard Deadline"
+      deliveryDateConstraint: "Lead Time" | "Stock" | "Capacity"
+      deliveryDateControl: "None" | "Lead Time" | "Stock" | "Capacity"
+      deliveryDateStatus: "Met" | "Missed" | "Pending"
       demandForecastSourceType:
         | "Job Material"
         | "Sales Order"
