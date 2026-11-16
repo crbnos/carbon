@@ -66,7 +66,7 @@ msgstr "{0} hat keine Chargennummer. Stellen Sie sie für das Los oder den Ferti
 #. placeholder {0}: result.unit.readableId
 #. placeholder {1}: result.unit.status
 msgid "{0} is {1}"
-msgstr ""
+msgstr "{0} ist {1}"
 
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
@@ -175,7 +175,7 @@ msgid "{hours} h"
 msgstr "{hours} h"
 
 msgid "{issued} of {required}"
-msgstr ""
+msgstr "{issued} von {required}"
 
 msgid "{label}, overdue"
 msgstr "{label}, überfällig"
@@ -352,7 +352,7 @@ msgid "Adjustment Type"
 msgstr "Korrekturtyp"
 
 msgid "Age"
-msgstr ""
+msgstr "Alter"
 
 msgid "All"
 msgstr "Alle"
@@ -386,7 +386,7 @@ msgid "Allocate units"
 msgstr "Einheiten zuordnen"
 
 msgid "Any part"
-msgstr ""
+msgstr "Beliebiges Teil"
 
 msgid "Appearance"
 msgstr "Darstellung"
@@ -637,10 +637,10 @@ msgstr "Wählen Sie, wie Carbon Sie erreicht."
 
 #. placeholder {0}: unit.readableId
 msgid "Choose the operation to issue {0} into"
-msgstr ""
+msgstr "Arbeitsgang für die Materialentnahme von {0} wählen"
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "Arbeitsgang für diese Einheit zum Öffnen wählen"
 
 msgid "Clear"
 msgstr "Löschen"
@@ -811,10 +811,10 @@ msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Kosten der ungeplanten Instandhaltung der letzten {0} Tage"
 
 msgid "Could not load the line feed"
-msgstr ""
+msgstr "Linienzufuhr konnte nicht geladen werden"
 
 msgid "Could not look up this label. Try again."
-msgstr ""
+msgstr "Dieses Etikett konnte nicht gefunden werden. Bitte erneut versuchen."
 
 msgid "Country code"
 msgstr "Ländervorwahl"
@@ -1130,7 +1130,7 @@ msgid "Failed to register passkey"
 msgstr "Fehler beim Registrieren des Passkey"
 
 msgid "Failed to resolve request"
-msgstr ""
+msgstr "Anfrage konnte nicht verarbeitet werden"
 
 msgid "Failed to save measurement"
 msgstr "Messung konnte nicht gespeichert werden"
@@ -1316,7 +1316,7 @@ msgid "In Progress"
 msgstr "In Bearbeitung"
 
 msgid "In stock: {available}. Still needed: {needed}."
-msgstr ""
+msgstr "Auf Lager: {available}. Noch benötigt: {needed}."
 
 msgid "In warranty"
 msgstr "Unter Garantie"
@@ -1386,7 +1386,7 @@ msgstr "Material ausgeben"
 
 #. placeholder {0}: selected.operation.jobReadableId
 msgid "Issue to {0}"
-msgstr ""
+msgstr "Materialentnahme für {0}"
 
 msgid "Issue Type"
 msgstr "Problemtyp"
@@ -1506,7 +1506,7 @@ msgid "Line"
 msgstr "Position"
 
 msgid "Line feed"
-msgstr ""
+msgstr "Linienzufuhr"
 
 msgid "lines"
 msgstr "Zeilen"
@@ -1639,7 +1639,7 @@ msgid "matches"
 msgstr "entspricht"
 
 msgid "Material requested"
-msgstr ""
+msgstr "Material angefordert"
 
 msgid "Materials"
 msgstr "Materialien"
@@ -1710,7 +1710,7 @@ msgid "Navigation"
 msgstr "Navigation"
 
 msgid "Need material"
-msgstr ""
+msgstr "Material benötigt"
 
 msgid "New"
 msgstr "Neu"
@@ -1861,7 +1861,7 @@ msgid "No photos yet"
 msgstr "Noch keine Fotos"
 
 msgid "No picking lists"
-msgstr ""
+msgstr "Keine Kommissionierlisten"
 
 msgid "No printer configured"
 msgstr "Kein Drucker konfiguriert"
@@ -1912,7 +1912,7 @@ msgid "No spare parts added yet"
 msgstr "Noch keine Ersatzteile hinzugefügt"
 
 msgid "No station"
-msgstr ""
+msgstr "Keine Station"
 
 msgid "No stock"
 msgstr "Kein Bestand"
@@ -1960,7 +1960,7 @@ msgid "Not usable stock. MRP and planning do not count it, and picking does not 
 msgstr "Kein verwendbarer Bestand. MRP und Planung zählen ihn nicht, und die Kommissionierung entnimmt nichts daraus."
 
 msgid "Note"
-msgstr ""
+msgstr "Notiz"
 
 msgid "Notes"
 msgstr "Notizen"
@@ -1982,7 +1982,7 @@ msgid "Nothing scheduled at this work center"
 msgstr "Nichts an diesem Arbeitsplatz geplant"
 
 msgid "Nothing to feed"
-msgstr ""
+msgstr "Nichts zuzuführen"
 
 msgid "Nothing to scrap"
 msgstr "Nichts zum Ausschuss"
@@ -2096,7 +2096,7 @@ msgid "Out of calibration"
 msgstr "Außerhalb der Kalibrierung"
 
 msgid "Out of stock"
-msgstr ""
+msgstr "Nicht auf Lager"
 
 msgid "Output lot"
 msgstr "Ausgabe-Charge"
@@ -2298,7 +2298,7 @@ msgid "Print batch list"
 msgstr "Los-Liste drucken"
 
 msgid "Print travelers"
-msgstr ""
+msgstr "Laufkarten drucken"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "Wird auf den Bestellungen gedruckt, die Sie genehmigen."
@@ -2504,10 +2504,10 @@ msgid "Repairable"
 msgstr "Reparierbar"
 
 msgid "Request"
-msgstr ""
+msgstr "Anfrage"
 
 msgid "Request material"
-msgstr ""
+msgstr "Material anfordern"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Einen 6-stelligen Code aus einer Authentifizierungs-App bei der Anmeldung erforderlich."
@@ -2525,7 +2525,7 @@ msgid "Resolution"
 msgstr "Lösung"
 
 msgid "Resolve"
-msgstr ""
+msgstr "Klären"
 
 msgid "Result"
 msgstr "Ergebnis"
@@ -2603,7 +2603,7 @@ msgid "Scan a tracked entity to add the first sample column."
 msgstr "Scannen Sie eine Verfolgte Einheit, um die erste Probenspalte hinzuzufügen."
 
 msgid "Scan in these parts first"
-msgstr ""
+msgstr "Diese Teile zuerst scannen"
 
 msgid "Scan or enter a serial"
 msgstr "Scannen oder Seriennummer eingeben"
@@ -2856,10 +2856,10 @@ msgid "Short pick {itemName}"
 msgstr "Kurzkommissionierung {itemName}"
 
 msgid "Short: {available} of {needed}"
-msgstr ""
+msgstr "Fehlmenge: {available} von {needed}"
 
 msgid "Shortage"
-msgstr ""
+msgstr "Fehlmenge"
 
 msgid "Show description"
 msgstr "Beschreibung anzeigen"
@@ -3021,10 +3021,10 @@ msgid "Stock at:"
 msgstr "Bestand in:"
 
 msgid "Stock transfer"
-msgstr ""
+msgstr "Umlagerung"
 
 msgid "Storage unit"
-msgstr ""
+msgstr "Lagereinheit"
 
 msgid "Storage Unit"
 msgstr "Lagereinheit"
@@ -3150,7 +3150,7 @@ msgid "The timer and completion are shared by all {0} jobs. Steps, materials and
 msgstr "Der Timer und die Fertigstellung werden von allen {0} Fertigungsaufträgen geteilt. Die Schritte, Materialien und Dateien hier gehören diesem Fertigungsauftrag."
 
 msgid "The unit changed. Scan again."
-msgstr ""
+msgstr "Die Einheit hat sich geändert. Erneut scannen."
 
 msgid "The values break a rule on this record."
 msgstr "Die Werte verstoßen gegen eine Regel für diesen Datensatz."
@@ -3186,7 +3186,7 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "Diese Artikel haben noch Material zum Picken. Ein Abschluss jetzt markiert die Liste als Teilweise."
 
 msgid "This barcode matches more than one unit"
-msgstr ""
+msgstr "Dieser Barcode passt zu mehr als einer Einheit"
 
 msgid "This batch has no work instructions."
 msgstr "Dieses Los hat keine Arbeitsanweisung."
@@ -3204,13 +3204,13 @@ msgid "This is a pass / fail check. Press P or F."
 msgstr "Dies ist eine Gut/Schlecht-Prüfung. Drücken Sie P oder F."
 
 msgid "This job does not use that part"
-msgstr ""
+msgstr "Dieser Fertigungsauftrag verwendet dieses Teil nicht"
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Dieser Fertigungsauftrag hat keinen Stundensatz. Bitten Sie das Büro, ihn festzulegen, bevor die Zeit abgerechnet wird."
 
 msgid "This label does not belong to a unit in this company"
-msgstr ""
+msgstr "Dieses Etikett gehört zu keiner Einheit in diesem Unternehmen"
 
 msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
@@ -3346,13 +3346,13 @@ msgid "Training"
 msgstr "Schulung"
 
 msgid "Transfer"
-msgstr ""
+msgstr "Umlagerung"
 
 msgid "Traveler"
-msgstr ""
+msgstr "Laufkarte"
 
 msgid "Try again"
-msgstr ""
+msgstr "Erneut versuchen"
 
 msgid "Two-factor authentication"
 msgstr "Zwei-Faktor-Authentifizierung"
@@ -3508,7 +3508,7 @@ msgid "View or open"
 msgstr "Anzeigen oder Öffnen"
 
 msgid "View Traceability"
-msgstr ""
+msgstr "Rückverfolgbarkeit anzeigen"
 
 msgid "Warranty"
 msgstr "Garantie"
@@ -3517,7 +3517,7 @@ msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or 
 msgstr "Wir haben Ihnen einen Anmeldungslink und einen 6-stelligen Code per E-Mail gesendet. Folgen Sie dem Link, oder geben Sie den Code hier ein."
 
 msgid "What do you need?"
-msgstr ""
+msgstr "Was benötigen Sie?"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} ist was?"
