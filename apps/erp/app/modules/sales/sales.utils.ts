@@ -1117,7 +1117,6 @@ export const DELIVERY_CHECKED_LINE_TYPES: ReadonlySet<SalesOrderLineType> =
 type DeliveryDateConstraint =
   Database["public"]["Enums"]["deliveryDateConstraint"];
 
-/** What a sales order line holds from its last delivery date check. */
 export type StoredDeliveryDate = {
   deliveryDateStatus: DeliveryDateStatus | null;
   deliveryDateOverriddenBy: string | null;

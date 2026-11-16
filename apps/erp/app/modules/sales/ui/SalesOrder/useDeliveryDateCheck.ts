@@ -18,7 +18,6 @@ export type DeliveryDateControl = Enums["deliveryDateControl"];
 const LINE_METHODS: ReadonlySet<string> = new Set(
   Constants.public.Enums.methodType
 );
-// The check is sent once the user stops editing for this long.
 const CHECK_DEBOUNCE_MS = 400;
 // The spinner shows only for a check still running after this long, as the
 // tables do (`useSpinDelay`), so a fast answer never flashes one.

@@ -11,8 +11,6 @@ type DeliveryDateControlValue = (typeof deliveryDateControlTypes)[number];
 
 type Check = { label: string; description: string };
 
-/** The label's ⓘ panel: each check and what it does, like the planning
- *  chart's help. */
 function DeliveryDateCheckHelp({ checks }: { checks: Check[] }) {
   return (
     <div className="flex flex-col gap-2.5">

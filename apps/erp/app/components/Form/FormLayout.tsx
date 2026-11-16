@@ -64,7 +64,7 @@ export function FormGroup({
 }
 
 /** A boxed group of a form: a label, then its fields in a three-column
- *  grid. The purchase order line form's sections. */
+ *  grid. */
 export function FormSection({
   title,
   children

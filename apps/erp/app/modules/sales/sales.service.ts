@@ -15008,7 +15008,6 @@ export async function runDeliveryDateCheck(
   return { results, controls };
 }
 
-/** Which lines carry an open job, by line id. */
 export async function salesOrderLinesWithOpenJobs(
   ctx: ServiceContext,
   lineIds: string[]

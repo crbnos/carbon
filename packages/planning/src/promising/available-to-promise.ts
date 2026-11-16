@@ -119,7 +119,6 @@ export function lastArrivalByWeek(
   return arrivals;
 }
 
-/** The first week whose free stock covers the quantity, or null if none does. */
 export function earliestWeekWithStock(
   freeStock: number[],
   quantity: number
