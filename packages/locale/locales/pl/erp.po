@@ -8721,6 +8721,9 @@ msgstr "Nie można było zwolnić {0}: {1}"
 msgid "Could not save"
 msgstr "Nie można było zapisać"
 
+msgid "Couldn't calculate the buildable quantity"
+msgstr ""
+
 msgid "Couldn't check the delivery date. You can still save."
 msgstr ""
 
@@ -30347,6 +30350,9 @@ msgstr "Partia produkcyjna to {0}, nie Zaplanowana"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Partia biegnie według najpilniejszego elementu — pozostałe są przyspieszane"
 
+msgid "The bill of materials contains itself"
+msgstr ""
+
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "Stawka rozliczeniowa jest zablokowana: kosztorys został wysłany do klienta."
 
@@ -31787,6 +31793,9 @@ msgstr "Nie mają numeru partii, więc przesunięcie nie może ich pobrać. Nada
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "Te zapasy nie mają numeru seryjnego, więc przesunięcie nie może ich pobrać. Nadaj każdej sztuce numer seryjny, aby ją przenieść."
 
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Te elementy mają jeszcze materiał do pobrania. Zakończenie teraz oznaczy listę jako Częściowa."
 
@@ -32339,7 +32348,7 @@ msgstr "Uzgodnienie trójstronne"
 msgid "Through {0}"
 msgstr "Do {0}"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
 msgstr ""
 
 msgid "Thumbnail"

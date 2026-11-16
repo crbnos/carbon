@@ -6,6 +6,7 @@ import type { DB } from "@carbon/database/client";
 import { computeLowLevelCodes } from "@carbon/database/mrp-engine";
 import { scrapAllowance } from "@carbon/database/precision";
 import { type Kysely, sql } from "kysely";
+import { loadActiveBomLines } from "./active-bom.ts";
 
 // Float slack: 0.1 × 30 must not read as short of 3.
 const EPSILON = 1e-9;
@@ -17,9 +18,11 @@ export type BuildableLine = {
   /** per one parent, in `unitOfMeasureCode` */
   quantity: number;
   unitOfMeasureCode: string;
+  /** a Make to Order line: the job builds the child itself, it draws none from stock */
+  makeToOrder: boolean;
 };
 
-/** Each made item's BOM lines, one per child item. */
+/** Each made item's BOM lines, as they are on its method (not merged). */
 export type BuildableBom = Map<string, BuildableLine[]>;
 
 export type BuildableNeed = {
@@ -34,25 +37,28 @@ export type BuildableNeed = {
 type Plan = {
   rootItemId: string;
   bom: BuildableBom;
+  /** parents before children */
   order: string[];
-  cycleItemIds: Set<string>;
   /** fraction, as itemReplenishment.scrapPercentage stores it */
   scrapRate: (itemId: string) => number;
 };
 
+const isMade = (bom: BuildableBom, itemId: string) =>
+  (bom.get(itemId)?.length ?? 0) > 0;
+
 /**
- * The parent-before-child order to net in: low-level code, so a shared item
- * collects every parent's requirement before it is netted once. An item on a
- * cycle comes last and is not exploded, as MRP plans it.
+ * Low-level codes of the tree under the root: each item's deepest level, and
+ * the parent-before-child order to net in, so a shared item collects every
+ * parent's requirement before it is netted once.
  */
-export function netOrder(rootItemId: string, bom: BuildableBom) {
+export function netOrder(bom: BuildableBom) {
   const { llc, cycleItemIds } = computeLowLevelCodes(
     new Map(
-      Array.from(bom, ([itemId, children]) => [
+      Array.from(bom, ([itemId, lines]) => [
         itemId,
-        children.map((c) => ({
-          itemId: c.itemId,
-          quantity: c.quantity,
+        lines.map((line) => ({
+          itemId: line.itemId,
+          quantity: line.quantity,
           methodType: "Pull from Inventory" as const
         }))
       ])
@@ -61,49 +67,60 @@ export function netOrder(rootItemId: string, bom: BuildableBom) {
   const order = Array.from(llc.keys()).sort(
     (a, b) => (llc.get(a) ?? 0) - (llc.get(b) ?? 0)
   );
-  if (!llc.has(rootItemId)) order.unshift(rootItemId);
-  return { order: [...order, ...cycleItemIds], cycleItemIds };
+  return { order, llc, cycleItemIds };
 }
 
 /**
  * Explode `quantity` of the root through the BOM, netting every item below
- * the root against its available stock once, in low-level-code order. Each
- * item's requirement carries its scrap allowance as a job does
- * (`computeJobQuantities`): whole units up, and a made item's children are
- * exploded from the total with scrap. A made item builds what stock does not
- * cover; a bought item is short of it. The root's own stock is not used: the
- * question is how many more can be made.
+ * the root against its available stock once, in low-level-code order.
+ *
+ * Scrap is added as a job adds it (`computeJobQuantities`): on each line, in
+ * whole units up, and a made item's children are exploded from its total with
+ * scrap. A Make to Order line's quantity is built, never drawn from stock, as
+ * a job builds that child itself; every other line draws stock first. A made
+ * item builds what stock does not cover; a bought item is short of it. The
+ * root's own stock is not used: the question is how many more can be made.
  */
 export function explodeBuildable(
   args: Plan & { available: (itemId: string) => number; quantity: number }
 ): Map<string, BuildableNeed> {
-  const { rootItemId, bom, order, cycleItemIds, available, scrapRate } = args;
-  const required = new Map<string, number>([[rootItemId, args.quantity]]);
-  const needs = new Map<string, BuildableNeed>();
+  const { rootItemId, bom, order, available, scrapRate } = args;
+  // What each item's lines ask for, with scrap: drawable from stock, or built.
+  const fromStockable = new Map<string, number>();
+  const toMake = new Map<string, number>();
+  const scraps = new Map<string, number>();
+  const add = (map: Map<string, number>, itemId: string, value: number) =>
+    map.set(itemId, (map.get(itemId) ?? 0) + value);
 
+  const rootScrap = scrapAllowance(args.quantity, scrapRate(rootItemId));
+  add(toMake, rootItemId, args.quantity + rootScrap);
+  add(scraps, rootItemId, rootScrap);
+
+  const needs = new Map<string, BuildableNeed>();
   for (const itemId of order) {
-    const target = required.get(itemId) ?? 0;
-    if (target <= EPSILON) continue;
-    const scrap = scrapAllowance(target, scrapRate(itemId));
-    const total = target + scrap;
-    const stock = itemId === rootItemId ? 0 : Math.max(available(itemId), 0);
-    const fromStock = Math.min(total, stock);
+    const stockable = fromStockable.get(itemId) ?? 0;
+    const total = stockable + (toMake.get(itemId) ?? 0);
+    if (total <= EPSILON) continue;
+    const fromStock = Math.min(stockable, Math.max(available(itemId), 0));
     const net = total - fromStock;
-    const children = cycleItemIds.has(itemId) ? undefined : bom.get(itemId);
-    const makes = !!children && children.length > 0;
+    const makes = isMade(bom, itemId);
     needs.set(itemId, {
       required: total,
-      scrap,
+      scrap: scraps.get(itemId) ?? 0,
       fromStock,
       toBuild: makes ? net : 0,
       short: makes || net <= EPSILON ? 0 : net
     });
     if (!makes || net <= EPSILON) continue;
-    for (const child of children) {
-      required.set(
-        child.itemId,
-        (required.get(child.itemId) ?? 0) + child.quantity * net
+    for (const line of bom.get(itemId) ?? []) {
+      const target = line.quantity * net;
+      const scrap = scrapAllowance(target, scrapRate(line.itemId));
+      add(
+        line.makeToOrder && isMade(bom, line.itemId) ? toMake : fromStockable,
+        line.itemId,
+        target + scrap
       );
+      add(scraps, line.itemId, scrap);
     }
   }
   return needs;
@@ -118,17 +135,22 @@ const hasShortage = (needs: Map<string, BuildableNeed>) => {
  * The most whole units of the root the available stock can make, through
  * every level. Feasibility only gets harder as the quantity grows (scrap
  * rounds up, never down), so a doubling search then a binary search finds it
- * in O(log n) explosions.
+ * in O(log n) explosions. `atLeast` is a quantity already known to be
+ * feasible, so a search with looser stock starts from it.
  */
 export function maxBuildable(
-  args: Plan & { available: (itemId: string) => number }
+  args: Plan & { available: (itemId: string) => number },
+  atLeast = 0
 ): number {
-  if (!(args.bom.get(args.rootItemId)?.length ?? 0)) return 0;
+  if (!isMade(args.bom, args.rootItemId)) return 0;
   const feasible = (quantity: number) =>
     !hasShortage(explodeBuildable({ ...args, quantity }));
-  if (!feasible(1)) return 0;
-  let low = 1;
-  let high = 2;
+  let low = atLeast;
+  if (low < 1) {
+    if (!feasible(1)) return 0;
+    low = 1;
+  }
+  let high = low * 2;
   while (high <= MAX_QUANTITY && feasible(high)) {
     low = high;
     high *= 2;
@@ -203,18 +225,18 @@ export type Buildable = {
   quantityOnHand: number;
   quantityCommitted: number;
   quantityAvailable: number;
-  /** from available stock: committed stock stays with its jobs and orders. Null while a unit mismatch makes it unknowable */
+  /** from available stock: committed stock stays with its jobs and orders. Null while the BOM cannot be calculated */
   quantityBuildable: number | null;
   /** if committed stock could be used too */
   quantityBuildableFromOnHand: number | null;
   /** the quantity `components` is exploded at: the asked quantity, else one more than can be made */
   targetQuantity: number;
   hasMakeMethod: boolean;
-  /** items on a BOM cycle, counted as bought items */
-  cycleItemIds: string[];
   /** lines to correct before the quantities can be calculated */
   unitMismatches: BuildableUnitMismatch[];
-  /** every item below the root, the most limiting bought item first; empty while there are unit mismatches */
+  /** items on, or below, a cycle in the BOM: it has to be corrected before the quantities can be calculated */
+  cycleItems: { itemId: string; readableId: string }[];
+  /** every item below the root, the most limiting bought item first; empty while the BOM cannot be calculated */
   components: BuildableItem[];
 };
 
@@ -228,19 +250,19 @@ export function computeBuildable(args: {
 }): Buildable {
   const { itemId: rootItemId, bom, items } = args;
   const info = (itemId: string) => items.get(itemId);
+  const readableId = (itemId: string) => info(itemId)?.readableId ?? itemId;
   const freeOf = (itemId: string) => {
     const s = info(itemId);
     return s ? Math.max(s.quantityOnHand - s.quantityCommitted, 0) : 0;
   };
   const root = info(rootItemId);
-  const hasMakeMethod = (bom.get(rootItemId)?.length ?? 0) > 0;
-  const result = {
+  const base = {
     itemId: rootItemId,
     locationId: args.locationId,
     quantityOnHand: root?.quantityOnHand ?? 0,
     quantityCommitted: root?.quantityCommitted ?? 0,
     quantityAvailable: freeOf(rootItemId),
-    hasMakeMethod
+    hasMakeMethod: isMade(bom, rootItemId)
   };
 
   const unitMismatches: BuildableUnitMismatch[] = [];
@@ -250,40 +272,44 @@ export function computeBuildable(args: {
       if (line.unitOfMeasureCode === stockUnit) continue;
       unitMismatches.push({
         parentItemId,
-        parentReadableId: info(parentItemId)?.readableId ?? parentItemId,
+        parentReadableId: readableId(parentItemId),
         itemId: line.itemId,
-        readableId: info(line.itemId)?.readableId ?? line.itemId,
+        readableId: readableId(line.itemId),
         lineUnitOfMeasureCode: line.unitOfMeasureCode,
         stockUnitOfMeasureCode: stockUnit
       });
     }
   }
-  if (unitMismatches.length > 0) {
+  const { order, llc, cycleItemIds } = netOrder(bom);
+  const cycleItems = Array.from(cycleItemIds, (itemId) => ({
+    itemId,
+    readableId: readableId(itemId)
+  }));
+  if (unitMismatches.length > 0 || cycleItems.length > 0) {
     return {
-      ...result,
+      ...base,
       quantityBuildable: null,
       quantityBuildableFromOnHand: null,
       targetQuantity: args.targetQuantity ?? 1,
-      cycleItemIds: [],
       unitMismatches,
+      cycleItems,
       components: []
     };
   }
+  if (order.length === 0) order.push(rootItemId);
 
-  const { order, cycleItemIds } = netOrder(rootItemId, bom);
   const plan: Plan = {
     rootItemId,
     bom,
     order,
-    cycleItemIds,
     scrapRate: (itemId) => info(itemId)?.scrapPercentage ?? 0
   };
-
   const quantityBuildable = maxBuildable({ ...plan, available: freeOf });
-  const quantityBuildableFromOnHand = maxBuildable({
-    ...plan,
-    available: (itemId) => info(itemId)?.quantityOnHand ?? 0
-  });
+  // Looser stock than `freeOf`, so `quantityBuildable` is a feasible start.
+  const quantityBuildableFromOnHand = maxBuildable(
+    { ...plan, available: (itemId) => info(itemId)?.quantityOnHand ?? 0 },
+    quantityBuildable
+  );
   const targetQuantity =
     args.targetQuantity && args.targetQuantity > 0
       ? args.targetQuantity
@@ -301,29 +327,19 @@ export function computeBuildable(args: {
     quantity: 1
   });
 
-  // Levels for display: the longest path from the root.
-  const level = new Map<string, number>([[rootItemId, 0]]);
-  for (const id of order) {
-    if (cycleItemIds.has(id)) continue;
-    for (const child of bom.get(id) ?? []) {
-      const next = (level.get(id) ?? 0) + 1;
-      if (next > (level.get(child.itemId) ?? -1)) level.set(child.itemId, next);
-    }
-  }
-
   const components: BuildableItem[] = [];
   for (const id of order) {
     if (id === rootItemId) continue;
     const item = info(id);
     const need = atTarget.get(id);
-    const isMade = !cycleItemIds.has(id) && (bom.get(id)?.length ?? 0) > 0;
+    const made = isMade(bom, id);
     components.push({
       itemId: id,
-      readableId: item?.readableId ?? id,
+      readableId: readableId(id),
       name: item?.name ?? "",
       unitOfMeasureCode: item?.unitOfMeasureCode ?? null,
-      isMade,
-      level: level.get(id) ?? 1,
+      isMade: made,
+      level: llc.get(id) ?? 1,
       quantityPerAssembly: perAssembly.get(id)?.required ?? 0,
       scrapPercentage: item?.scrapPercentage ?? 0,
       quantityOnHand: item?.quantityOnHand ?? 0,
@@ -335,32 +351,36 @@ export function computeBuildable(args: {
       quantityFromStock: need?.fromStock ?? 0,
       quantityToBuild: need?.toBuild ?? 0,
       quantityShort: need?.short ?? 0,
-      // Every other bought item unlimited; made items keep their stock.
-      quantityBuildableAlone: isMade
+      // Every other bought item unlimited, made items keep their stock: looser
+      // than `freeOf`, so `quantityBuildable` is a feasible start.
+      quantityBuildableAlone: made
         ? null
-        : maxBuildable({
-            ...plan,
-            available: (other) =>
-              other === id || bom.has(other) ? freeOf(other) : Infinity
-          })
+        : maxBuildable(
+            {
+              ...plan,
+              available: (other) =>
+                other === id || bom.has(other) ? freeOf(other) : Infinity
+            },
+            quantityBuildable
+          )
     });
   }
 
-  components.sort(
-    (a, b) =>
-      (a.quantityBuildableAlone ?? Infinity) -
-        (b.quantityBuildableAlone ?? Infinity) ||
-      b.quantityShort - a.quantityShort ||
-      a.level - b.level
-  );
+  // Bought items by their limit, lowest first; made items after them.
+  const limit = (item: BuildableItem) =>
+    item.quantityBuildableAlone ?? Number.POSITIVE_INFINITY;
+  components.sort((a, b) => {
+    if (limit(a) !== limit(b)) return limit(a) < limit(b) ? -1 : 1;
+    return b.quantityShort - a.quantityShort || a.level - b.level;
+  });
 
   return {
-    ...result,
+    ...base,
     quantityBuildable,
     quantityBuildableFromOnHand,
     targetQuantity,
-    cycleItemIds: Array.from(cycleItemIds),
     unitMismatches,
+    cycleItems,
     components
   };
 }
@@ -368,15 +388,14 @@ export function computeBuildable(args: {
 /**
  * How many of an item its location can make now, through every level of the
  * active make methods, and what limits it. Two reads: the BOM lines under the
- * item (one recursive query), then each tree item's stock, scrap rate,
+ * item (`loadActiveBomLines`), then each tree item's stock, scrap rate,
  * commitments and open supply at the location (one query). Writes nothing.
  *
- * The BOM is the one MRP explodes: active make methods, no quantity-0 line, no
- * correction material; an item whose replenishment is Buy is not exploded.
- * Stock is common stock (not a project's or planning group's), less
- * non-nettable storage, in the item's unit; purchase order lines are already
- * converted to it (`openPurchaseOrderLines`). Committed is the common-segment
- * open demand MRP nets. Null when the item is not the company's.
+ * Stock is common stock (not a project's or planning group's segment, as MRP
+ * nets it), less non-nettable storage, in the item's unit; purchase order
+ * lines are already converted to it (`openPurchaseOrderLines`). Committed is
+ * the common-segment open demand MRP nets. Null when the item is not the
+ * company's; the caller checks the location.
  */
 export async function loadBuildable(
   db: Kysely<DB>,
@@ -389,58 +408,19 @@ export async function loadBuildable(
 ): Promise<Buildable | null> {
   const { companyId, locationId, itemId } = args;
 
-  // UNION on the line id: a shared subassembly's lines come back once, and a
-  // cycle stops when it reaches lines it already has.
-  const lines = await sql<{
-    parentItemId: string;
-    childItemId: string;
-    quantity: string | number;
-    unitOfMeasureCode: string;
-  }>`
-    WITH RECURSIVE "line" AS (
-      SELECT mm."id", am."itemId" AS "parentItemId", mm."itemId" AS "childItemId",
-        mm."quantity", mm."unitOfMeasureCode"
-      FROM "activeMakeMethods" am
-      JOIN "methodMaterial" mm
-        ON mm."makeMethodId" = am."id" AND mm."companyId" = am."companyId"
-        AND mm."quantity" > 0 AND mm."methodCorrectionId" IS NULL
-      WHERE am."companyId" = ${companyId} AND am."itemId" = ${itemId}
-      UNION
-      SELECT mm."id", am."itemId", mm."itemId", mm."quantity", mm."unitOfMeasureCode"
-      FROM "line" l
-      JOIN "item" i
-        ON i."id" = l."childItemId" AND i."companyId" = ${companyId}
-        AND i."replenishmentSystem" <> 'Buy'
-      JOIN "activeMakeMethods" am
-        ON am."itemId" = l."childItemId" AND am."companyId" = ${companyId}
-      JOIN "methodMaterial" mm
-        ON mm."makeMethodId" = am."id" AND mm."companyId" = am."companyId"
-        AND mm."quantity" > 0 AND mm."methodCorrectionId" IS NULL
-    )
-    SELECT "parentItemId", "childItemId", "quantity", "unitOfMeasureCode" FROM "line"
-  `.execute(db);
-
-  // Two lines of one child on one method in the same unit count once, summed;
-  // a second unit stays its own line, so the unit check sees it.
+  const lines = await loadActiveBomLines(db, companyId, [itemId]);
   const bom: BuildableBom = new Map();
   const itemIds = new Set([itemId]);
-  for (const line of lines.rows) {
+  for (const line of lines) {
     itemIds.add(line.parentItemId);
     itemIds.add(line.childItemId);
     const children = bom.get(line.parentItemId) ?? [];
-    const existing = children.find(
-      (c) =>
-        c.itemId === line.childItemId &&
-        c.unitOfMeasureCode === line.unitOfMeasureCode
-    );
-    if (existing) existing.quantity += Number(line.quantity);
-    else {
-      children.push({
-        itemId: line.childItemId,
-        quantity: Number(line.quantity),
-        unitOfMeasureCode: line.unitOfMeasureCode
-      });
-    }
+    children.push({
+      itemId: line.childItemId,
+      quantity: line.quantity,
+      unitOfMeasureCode: line.unitOfMeasureCode,
+      makeToOrder: line.methodType === "Make to Order"
+    });
     bom.set(line.parentItemId, children);
   }
 

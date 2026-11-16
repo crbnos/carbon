@@ -8721,6 +8721,9 @@ msgstr "无法下达{0}：{1}"
 msgid "Could not save"
 msgstr "无法保存"
 
+msgid "Couldn't calculate the buildable quantity"
+msgstr ""
+
 msgid "Couldn't check the delivery date. You can still save."
 msgstr ""
 
@@ -30347,6 +30350,9 @@ msgstr "生产批次为 {0}，不是已计划"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
 
+msgid "The bill of materials contains itself"
+msgstr ""
+
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "账单费率已锁定：估价已发送给客户。"
 
@@ -31787,6 +31793,9 @@ msgstr "这些物料没有生产批次号，因此调拨无法拣货。为其分
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "这些物料没有序列号，因此调拨无法拣货。为每件物料分配序列号后即可移动。"
 
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
 
@@ -32339,7 +32348,7 @@ msgstr "三单匹配"
 msgid "Through {0}"
 msgstr "至 {0}"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
 msgstr ""
 
 msgid "Thumbnail"

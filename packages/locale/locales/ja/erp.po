@@ -8721,6 +8721,9 @@ msgstr "{0}をリリースできませんでした: {1}"
 msgid "Could not save"
 msgstr "保存できませんでした"
 
+msgid "Couldn't calculate the buildable quantity"
+msgstr ""
+
 msgid "Couldn't check the delivery date. You can still save."
 msgstr ""
 
@@ -30347,6 +30350,9 @@ msgstr "バッチは{0}です、計画済ではありません"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "バッチは最も急ぎのメンバーに合わせて実行され、他は前倒しになります"
 
+msgid "The bill of materials contains itself"
+msgstr ""
+
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "請求単価がロック中です：見積が顧客に送信されました。"
 
@@ -31787,6 +31793,9 @@ msgstr "これらにはバッチ番号がないため、転送でピッキング
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "これらにはシリアル番号がないため、転送でピッキングできません。移動するには、それぞれにシリアル番号を割り当ててください。"
 
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "これらの品目にはまだピッキングする材料があります。今完成にマークすると、リストを「一部」に設定します。"
 
@@ -32339,7 +32348,7 @@ msgstr "三点照合"
 msgid "Through {0}"
 msgstr "{0}まで"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
 msgstr ""
 
 msgid "Thumbnail"

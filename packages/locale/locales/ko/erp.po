@@ -8721,6 +8721,9 @@ msgstr "{0}을 릴리스할 수 없음: {1}"
 msgid "Could not save"
 msgstr "저장할 수 없습니다"
 
+msgid "Couldn't calculate the buildable quantity"
+msgstr ""
+
 msgid "Couldn't check the delivery date. You can still save."
 msgstr ""
 
@@ -30347,6 +30350,9 @@ msgstr "배치는 {0}이며, 계획됨이 아닙니다"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "배치는 가장 급한 항목의 일정에 맞춰 실행되며 나머지는 앞당겨집니다"
 
+msgid "The bill of materials contains itself"
+msgstr ""
+
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "청구 요금이 잠겨 있습니다: 견적이 고객에게 전송되었습니다."
 
@@ -31787,6 +31793,9 @@ msgstr "이 항목들은 배치 번호가 없어 이송에서 피킹할 수 없�
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "이 항목들은 시리얼 번호가 없어 이송 시 피킹할 수 없습니다. 이동하려면 각 항목에 시리얼 번호를 지정하세요."
 
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr ""
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "이 항목들은 여전히 선택할 자재가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
@@ -32339,7 +32348,7 @@ msgstr "3자 대사"
 msgid "Through {0}"
 msgstr "{0}까지"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
 msgstr ""
 
 msgid "Thumbnail"

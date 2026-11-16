@@ -9,14 +9,24 @@ import {
   computeBuildable
 } from "./buildable.ts";
 
-type Line = [parent: string, child: string, quantity: number, unit?: string];
+type Line = [
+  parent: string,
+  child: string,
+  quantity: number,
+  options?: { unit?: string; makeToOrder?: boolean }
+];
 
 const bomOf = (lines: Line[]): BuildableBom => {
   const bom: BuildableBom = new Map();
-  for (const [parent, child, quantity, unit = "EA"] of lines) {
+  for (const [parent, child, quantity, options] of lines) {
     bom.set(parent, [
       ...(bom.get(parent) ?? []),
-      { itemId: child, quantity, unitOfMeasureCode: unit }
+      {
+        itemId: child,
+        quantity,
+        unitOfMeasureCode: options?.unit ?? "EA",
+        makeToOrder: options?.makeToOrder ?? false
+      }
     ]);
   }
   return bom;
@@ -151,17 +161,95 @@ describe("computeBuildable", () => {
     });
   });
 
-  it("stops on a cycle", () => {
+  it("refuses a BOM that contains itself, and names the items", () => {
     const result = run(
       [
         ["FG", "S", 1],
         ["S", "T", 1],
-        ["T", "S", 1]
+        ["T", "S", 1],
+        ["T", "RAW", 1]
       ],
-      { S: 2, T: 1 }
+      { S: 2, T: 1, RAW: 5 }
     );
-    expect(result.cycleItemIds.length).toBeGreaterThan(0);
-    expect(result.quantityBuildable).toBe(2);
+    expect(result.quantityBuildable).toBeNull();
+    expect(result.components).toEqual([]);
+    expect(result.cycleItems.map((c) => c.itemId).sort()).toEqual([
+      "RAW",
+      "S",
+      "T"
+    ]);
+  });
+
+  it("refuses a BOM whose root is on the cycle", () => {
+    const result = run(
+      [
+        ["FG", "S", 1],
+        ["S", "FG", 1]
+      ],
+      { S: 5 }
+    );
+    expect(result.quantityBuildable).toBeNull();
+    expect(result.cycleItems.map((c) => c.itemId).sort()).toEqual(["FG", "S"]);
+  });
+
+  it("rounds scrap on each line, as each job material line rounds it", () => {
+    // C (10% scrap) on S1 and on S2. At 5: each line 5 + ceil(0.5) = 6, so
+    // 12 C, not 10 + ceil(1) = 11 from one rounding of the sum.
+    const lines: Line[] = [
+      ["FG", "S1", 1],
+      ["FG", "S2", 1],
+      ["S1", "C", 1],
+      ["S2", "C", 1]
+    ];
+    expect(run(lines, { C: 11 }, undefined, { C: 0.1 }).quantityBuildable).toBe(
+      4
+    );
+    const at5 = run(lines, { C: 12 }, undefined, { C: 0.1 });
+    expect(at5.quantityBuildable).toBe(5);
+    expect(at5.components.find((c) => c.itemId === "C")).toMatchObject({
+      quantityRequired: 14,
+      quantityScrap: 2
+    });
+  });
+
+  it("builds a Make to Order subassembly instead of drawing its stock", () => {
+    const lines = (makeToOrder: boolean): Line[] => [
+      ["FG", "SUB", 1, { makeToOrder }],
+      ["SUB", "RAW", 1]
+    ];
+    const stock = { SUB: 10, RAW: 3 };
+    expect(run(lines(false), stock).quantityBuildable).toBe(13);
+    const mto = run(lines(true), stock);
+    expect(mto.quantityBuildable).toBe(3);
+    expect(mto.components.find((c) => c.itemId === "SUB")).toMatchObject({
+      quantityFromStock: 0,
+      quantityToBuild: 4
+    });
+  });
+
+  it("draws a Make to Order line's stock when the child is not made", () => {
+    const result = run([["FG", "A", 1, { makeToOrder: true }]], { A: 4 });
+    expect(result.quantityBuildable).toBe(4);
+  });
+
+  it("gives each bought item its own limit, the most limiting first", () => {
+    // A alone allows 10 (B unlimited); B alone allows 4 + 2 from SUB stock = 6.
+    const result = run(
+      [
+        ["FG", "A", 1],
+        ["FG", "SUB", 1],
+        ["SUB", "B", 1]
+      ],
+      { A: 10, SUB: 2, B: 4 }
+    );
+    expect(result.quantityBuildable).toBe(6);
+    expect(
+      result.components.map((c) => [c.itemId, c.quantityBuildableAlone])
+    ).toEqual([
+      ["B", 6],
+      ["A", 10],
+      ["SUB", null]
+    ]);
   });
 
   it("adds scrap as a job does: whole units up, children exploded from the total", () => {
@@ -199,7 +287,7 @@ describe("computeBuildable", () => {
     const result = run(
       [
         ["FG", "A", 1],
-        ["FG", "B", 2, "LB"]
+        ["FG", "B", 2, { unit: "LB" }]
       ],
       { A: 10, B: 100 }
     );

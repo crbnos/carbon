@@ -7169,9 +7169,11 @@ export const updateItemThumbnail = defineServiceFn({
  * using committed stock too would allow. `components` lists every item
  * below, the most limiting first: `quantityBuildableAlone` is how many that
  * component alone allows, and `quantityShort` what is missing at
- * `targetQuantity`. When `unitMismatches` is not empty, a BOM line's unit
- * differs from its item's stock unit, the quantities are null, and those
- * lines must be corrected first. Writes nothing.
+ * `targetQuantity`. A Make to Order line's subassembly is built, not drawn
+ * from stock, as a job builds it. When `unitMismatches` (a BOM line's unit
+ * differs from its item's stock unit) or `cycleItems` (the BOM contains
+ * itself) is not empty, the quantities are null and the BOM must be corrected
+ * first. Writes nothing.
  *
  * @param itemId - The item to make.
  * @param locationId - The location whose stock is counted.
@@ -7189,12 +7191,23 @@ export const getBuildableQuantity = defineServiceFn({
 
   async run(ctx, { itemId, locationId, targetQuantity }) {
     try {
-      const result = await loadBuildable(ctx.asSystem.pg, {
-        companyId: ctx.company.id,
-        itemId,
-        locationId,
-        targetQuantity
-      });
+      // The calculation reads by company, so another company's location (or
+      // a mistyped one) would answer with no stock rather than refuse.
+      const [location, result] = await Promise.all([
+        ctx.asSystem.pg
+          .selectFrom("location")
+          .select("id")
+          .where("id", "=", locationId)
+          .where("companyId", "=", ctx.company.id)
+          .executeTakeFirst(),
+        loadBuildable(ctx.asSystem.pg, {
+          companyId: ctx.company.id,
+          itemId,
+          locationId,
+          targetQuantity
+        })
+      ]);
+      if (!location) return ctx.error("notFound", "Location not found");
       return result ?? ctx.error("notFound", "Item not found");
     } catch (error) {
       return ctx.error(

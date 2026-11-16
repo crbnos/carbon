@@ -9,13 +9,14 @@ import { data, type LoaderFunctionArgs } from "react-router";
 // make now, through every BOM level, and what limits it.
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
-  const target = Number(search.get("targetQuantity"));
+  const target = search.get("targetQuantity");
 
   const api = await carbon(request);
   const result = await api.items.getBuildableQuantity({
     itemId: params.itemId ?? "",
     locationId: search.get("locationId") ?? "",
-    targetQuantity: Number.isInteger(target) && target > 0 ? target : undefined
+    // The service validates it: a bad value is a 400, not the default.
+    targetQuantity: target === null ? undefined : Number(target)
   });
   if (result.error) {
     throw data(

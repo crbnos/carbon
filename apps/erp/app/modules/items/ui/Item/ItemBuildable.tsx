@@ -52,8 +52,9 @@ export default function ItemBuildable({
     { keepPreviousData: true }
   );
 
-  if (error) return null;
   if (data && !data.hasMakeMethod) return null;
+  const blocked =
+    !!data && (data.unitMismatches.length > 0 || data.cycleItems.length > 0);
 
   const short = data?.components.filter((c) => c.quantityShort > 0) ?? [];
   const tiles = [
@@ -83,8 +84,9 @@ export default function ItemBuildable({
         <CardDescription>
           <Trans>
             Through every level of the bill of materials at this location.
-            Subassemblies in stock are used before they are built, and required
-            quantities include each item's scrap.
+            Subassemblies in stock are used before they are built, except on
+            Make to Order lines, and required quantities include each item's
+            scrap.
           </Trans>
         </CardDescription>
       </CardHeader>
@@ -106,6 +108,35 @@ export default function ItemBuildable({
             </div>
           ))}
         </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertTitle>
+              <Trans>Couldn't calculate the buildable quantity</Trans>
+            </AlertTitle>
+            <AlertDescription>{error.message}</AlertDescription>
+          </Alert>
+        )}
+
+        {data && data.cycleItems.length > 0 && (
+          <Alert variant="warning">
+            <AlertTitle>
+              <Trans>The bill of materials contains itself</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <Trans>
+                These items are on, or below, a loop in the bill of materials,
+                so it can't be exploded. Remove the line that makes an item a
+                component of itself.
+              </Trans>
+              <ul className="mt-2 list-disc pl-4">
+                {data.cycleItems.map((c) => (
+                  <li key={c.itemId}>{c.readableId}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {data && data.unitMismatches.length > 0 && (
           <Alert variant="warning">
@@ -135,7 +166,7 @@ export default function ItemBuildable({
           </Alert>
         )}
 
-        {data?.unitMismatches.length === 0 && (
+        {data && !blocked && (
           <form
             className="flex flex-wrap items-center gap-2"
             onSubmit={(event) => {

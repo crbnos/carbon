@@ -8721,6 +8721,9 @@ msgstr "Could not release {0}: {1}"
 msgid "Could not save"
 msgstr "Could not save"
 
+msgid "Couldn't calculate the buildable quantity"
+msgstr "Couldn't calculate the buildable quantity"
+
 msgid "Couldn't check the delivery date. You can still save."
 msgstr "Couldn't check the delivery date. You can still save."
 
@@ -30347,6 +30350,9 @@ msgstr "The batch is {0}, not Planned"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "The batch runs at its most urgent member's time — the others are pulled early"
 
+msgid "The bill of materials contains itself"
+msgstr "The bill of materials contains itself"
+
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "The bill rate is locked: the estimate was sent to the customer."
 
@@ -31787,6 +31793,9 @@ msgstr "These have no batch number, so a transfer can't pick them. Give them a b
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "These items still have material to pick. Finishing now marks the list Partial."
 
@@ -32339,8 +32348,8 @@ msgstr "Three-way match"
 msgid "Through {0}"
 msgstr "Through {0}"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
-msgstr "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
+msgstr "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
 
 msgid "Thumbnail"
 msgstr "Thumbnail"
