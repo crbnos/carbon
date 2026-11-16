@@ -400,6 +400,9 @@ msgstr "Wszystkie braki"
 msgid "All steps"
 msgstr "Wszystkie kroki"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "Przydziel jednostki z błędami"
 
@@ -1221,6 +1224,9 @@ msgstr "Filtr"
 
 msgid "Filter by location"
 msgstr "Filtruj według lokalizacji"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "Filtruj kroki"

@@ -400,6 +400,9 @@ msgstr "All scrap"
 msgid "All steps"
 msgstr "All steps"
 
+msgid "All work centers"
+msgstr "All work centers"
+
 msgid "Allocate failed units"
 msgstr "Allocate failed units"
 
@@ -1221,6 +1224,9 @@ msgstr "Filter"
 
 msgid "Filter by location"
 msgstr "Filter by location"
+
+msgid "Filter by work center"
+msgstr "Filter by work center"
 
 msgid "Filter steps"
 msgstr "Filter steps"

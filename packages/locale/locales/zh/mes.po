@@ -400,6 +400,9 @@ msgstr "全部报废"
 msgid "All steps"
 msgstr "所有步骤"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "分配不合格单位"
 
@@ -1221,6 +1224,9 @@ msgstr "筛选"
 
 msgid "Filter by location"
 msgstr "按位置筛选"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "筛选步骤"

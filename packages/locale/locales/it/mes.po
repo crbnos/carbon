@@ -400,6 +400,9 @@ msgstr "Tutto scarto"
 msgid "All steps"
 msgstr "Tutti i passi"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "Allocare unità non conformi"
 
@@ -1221,6 +1224,9 @@ msgstr "Filtro"
 
 msgid "Filter by location"
 msgstr "Filtra per ubicazione"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "Filtra passi"

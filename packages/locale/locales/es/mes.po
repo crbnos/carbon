@@ -400,6 +400,9 @@ msgstr "Todo desperdicio"
 msgid "All steps"
 msgstr "Todos los pasos"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "Asignar unidades fallidas"
 
@@ -1221,6 +1224,9 @@ msgstr "Filtrar"
 
 msgid "Filter by location"
 msgstr "Filtrar por ubicación"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "Filtrar pasos"
