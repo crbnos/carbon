@@ -14,6 +14,10 @@ import { parseTravelerCode } from "~/utils/traveler";
 
 // Resolves a raw tracked entity id or readable id (an old label) to the unit
 // it names, so the layout's wedge can open its traveler.
+// The answer to one scan. The router would otherwise load it again after
+// every action on the page, for a result nothing is waiting for.
+export const shouldRevalidate = () => false;
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
 

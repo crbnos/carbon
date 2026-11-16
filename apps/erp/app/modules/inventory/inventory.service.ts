@@ -31378,7 +31378,8 @@ export async function issueMaterial(
         quantity,
         materialId,
         jobOperationStepId,
-        adjustmentType
+        adjustmentType,
+        refuseOverIssue
       } = validatedPayload;
 
       // Written into jobMaterialStep for an unplanned part (no companyId there).
@@ -31674,6 +31675,29 @@ export async function issueMaterial(
             throw new InvalidInputError(
               "Cannot unissue more than the material's issued quantity"
             );
+          }
+          // An item scan counts pieces against the requirement it read
+          // before this lock. Another device, or the completion backflush,
+          // may have filled the material since: refuse rather than over-issue.
+          if (refuseOverIssue && adjustmentType === "Negative Adjmt.") {
+            const stillNeeded = round(
+              (material.estimatedQuantity ?? material.quantity ?? 0) -
+                previouslyIssued
+            );
+            const name =
+              item?.readableIdWithRevision ??
+              material.description ??
+              "material";
+            if (stillNeeded <= EPSILON) {
+              throw new InvalidInputError(
+                `This job already has all its ${name}`
+              );
+            }
+            if (round(quantity) - stillNeeded > EPSILON) {
+              throw new InvalidInputError(
+                `This job needs only ${stillNeeded} more ${name}`
+              );
+            }
           }
           const quantityToIssue = round(
             adjustmentType === "Positive Adjmt."

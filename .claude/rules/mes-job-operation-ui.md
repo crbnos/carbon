@@ -272,27 +272,39 @@ of a paused URL, which is itself a valid link.
   `parseItemCode`, `~/utils/itemScan`) scanned on the operation page is issued
   to the job, and the operator stays on the page (`useItemScan` →
   `x+/issue-scan.tsx` → `issueScannedItem`, `services/issue.server.ts`). The
-  server decides (`planItemScanIssue`, tested): ONE scan issues ONE piece (the
-  rest, when less than one is short), so the operator scans once for each piece
-  taken off the shelf. An untracked material takes it as a `Negative Adjmt.`, a
-  batch material from the lot `getSuggestedAllocationForMaterial` suggests at
-  the job's location. The toast counts ("Issued 1 X (3 of 5)"); a scan after
-  the job has all it requires issues nothing ("This job already has all its X").
-  `useItemScan` queues a scan made while an issue is in flight and sends it
-  next, so no piece is lost; its wedge callback returns no promise, because a
-  pending scan makes the wedge drop every other scan. A refusal empties the
-  queue. A
+  server decides (`planItemScanIssue`, tested). A part or tool is counted: ONE
+  scan is ONE piece (the rest, when less than one is short), so the operator
+  scans once for each piece taken off the shelf. A material or consumable
+  (`jobMaterial.itemType`) is issued by measure: one scan issues all the job
+  still needs. An untracked material takes it as a `Negative Adjmt.` with
+  `refuseOverIssue`: the ERP `partToOperation` posting refuses, under the
+  material's lock, an issue above the requirement ("This job already has all
+  its X", "This job needs only N more X"), so a second device or the
+  completion backflush cannot push it over. The Issue dialog does not send the
+  flag. A batch part takes the lots `getSuggestedAllocationForMaterial`
+  suggests at the job's location. The action returns numbers (`quantity`,
+  `issued`, `required` over every line of the item a scan can fill,
+  `itemScanTotals`), and the hook words the toast with `formatQuantity`.
+- **The scan queue** (`useItemScan`, `~/utils/itemScanQueue`, tested). No scan
+  may be lost, so a scan made while an issue is in flight waits; scans of one
+  item are sent together as `pieces`. A loading toast shows how many wait.
+  The wedge callback returns no promise and sets `whilePending`
+  (`useKeyboardWedge`): a pending scan otherwise makes the wedge drop every
+  other scan. A refusal drops the waiting scans of that item only; one the
+  Issue dialog must settle (`materialId`) empties the queue. Only a scan made
+  with the dialog open closes it. Leaving the screen with scans waiting shows
+  how many pieces were not issued. A
   serial part, a part the job makes, a short lot or a work-center rule opens
   the Issue dialog on the material. The scan also issues while the Issue
   dialog is open, and the dialog then closes. On the assembly page an item
   scan opens the Issue dialog on the part (each unit takes its own scan). The
   layout never opens an item link on either page.
-- The layout's raw-id lookup (`resolveFetcher`, `x+/traveler.resolve.tsx`) is a
-  fetcher load, so the router loads it again after EVERY action on the page.
-  The layout acts on a result only for a scan that is waiting for it
-  (`awaitingResolve`). Without that, each issue after one bare unit-number
-  scan reopened that unit's traveler page. `useTravelerScan` guards the same
-  way with `scanContext`. Any new scan lookup needs the same guard.
+- The raw-id lookup (`x+/traveler.resolve.tsx`) answers one scan, so the route
+  exports `shouldRevalidate = () => false`. A fetcher load is otherwise loaded
+  again after EVERY action on the page, and the layout acted on each reload:
+  after one bare unit-number scan, each issue reopened that unit's traveler
+  page. The layout also acts only on a result a scan waits for
+  (`awaitingResolve`), as `useTravelerScan` does with `scanContext`.
 - A kanban Complete scan on a serial part completes the unit ON SCREEN:
   `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
   `?trackedEntityId` to `end.$operationId` when that unit is still open at the

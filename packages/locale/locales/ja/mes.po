@@ -180,6 +180,9 @@ msgstr ""
 msgid "{label}, overdue"
 msgstr "{label}、期限超過"
 
+msgid "{lost} scanned pieces were not issued. Scan them again."
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB の制限"
 
@@ -1402,6 +1405,18 @@ msgstr "{lotLabel} から {issuedQuantity} を発行しました"
 
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "{lotLabel} から {issuedQuantity} を発行しました — {remainingQuantity} が残っています"
+
+msgid "Issued {quantity} {name} ({issued} of {required})"
+msgstr ""
+
+msgid "Issued {quantity} {name} from {batches} ({issued} of {required})"
+msgstr ""
+
+msgid "Issuing"
+msgstr ""
+
+msgid "Issuing. {waiting} more scanned."
+msgstr ""
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "まだ「{table}」レコードで使用されています。最初にそれを除去してください。"
