@@ -16,7 +16,10 @@ import { itemPlanningValidator } from "~/modules/items/items.models";
 import { getItemPlanning } from "~/modules/items/items.service";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { getLocationsList } from "~/modules/resources/resources.service";
+import {
+  getLocationPlanningTimeFence,
+  getLocationsList
+} from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -63,12 +66,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let consumablePlanning = await getItemPlanning(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  const [consumablePlanning, locationFence] = await Promise.all([
+    getItemPlanning(client, itemId, companyId, locationId),
+    getLocationPlanningTimeFence(client, locationId, companyId)
+  ]);
 
   if (consumablePlanning.error || !consumablePlanning.data) {
     throw redirect(
@@ -82,6 +83,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     consumablePlanning: consumablePlanning.data,
+    // the placeholder of the item's empty fence; a failed read shows none
+    locationTimeFenceDays: locationFence.data?.planningTimeFenceDays,
     locationId
   };
 }
@@ -117,7 +120,8 @@ export default function ConsumablePlanningRoute() {
     locations: ListItem[];
   }>(path.to.consumableRoot);
 
-  const { consumablePlanning, locationId } = useLoaderData<typeof loader>();
+  const { consumablePlanning, locationTimeFenceDays, locationId } =
+    useLoaderData<typeof loader>();
 
   if (!sharedConsumablesData)
     throw new Error("Could not load shared consumables data");
@@ -130,6 +134,7 @@ export default function ConsumablePlanningRoute() {
           ...consumablePlanning,
           ...getCustomFields(consumablePlanning.customFields)
         }}
+        locationTimeFenceDays={locationTimeFenceDays}
         locations={sharedConsumablesData.locations ?? []}
         type="Consumable"
       />

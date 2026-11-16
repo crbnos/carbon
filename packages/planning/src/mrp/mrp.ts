@@ -19,8 +19,25 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { z } from "zod";
 import { toIsoDate } from "../scheduling/date-utils.ts";
+import { buildOpenSupplyOrders } from "./open-supply-orders.ts";
 import { activeMethodIdByItem, planCompany } from "./plan-company.ts";
-import { generatePlanningActions } from "./planning-actions.ts";
+import {
+  PLANNED_ORDER_UPDATED_AT,
+  type PlannedOrderSnapshot,
+  PlannedOrdersChangedError,
+  readPlannedOrderSnapshot,
+  retryOnPlannedOrderChange,
+  writePlannedOrderDiff
+} from "./planned-order-write.ts";
+import {
+  type ExistingPlannedOrder,
+  type PlannedOrderInputs,
+  withPlannedOrderIds
+} from "./planned-orders.ts";
+import {
+  generatePlanningActions,
+  loadOpenSupplyDetails
+} from "./planning-actions.ts";
 
 const logger = getLogger("planning", "mrp");
 
@@ -111,6 +128,22 @@ export async function runMrp(
   deps?: MrpDeps
 ): Promise<MrpResult> {
   const parsedPayload = payloadValidator.parse(payload);
+
+  // No lock spans the whole run: a run holds no connection it does not use,
+  // so it works on any pool size (a lock held on one connection while the
+  // run works on another hung a run on a one-connection pool). Its two writes
+  // take the planning lock and first check the planned orders against what
+  // the run read (or wrote); an overlapping run or a person's change makes
+  // the attempt plan again (`retryOnPlannedOrderChange`), never overwrite.
+  return runMrpLocked(client, db, parsedPayload, deps);
+}
+
+async function runMrpLocked(
+  client: SupabaseClient<Database>,
+  db: Kysely<DB>,
+  parsedPayload: MrpPayload,
+  deps: MrpDeps | undefined
+): Promise<MrpResult> {
   const { type, companyId, userId } = parsedPayload;
 
   logger.info("run started", { type, companyId, userId });
@@ -126,569 +159,715 @@ export async function runMrp(
   if (locations.error) throw locations.error;
 
   try {
-    // ──────────────────────────────────────────────────────────────
-    // PHASE 1: Bulk data pre-loading
-    //
-    // Every PostgREST read is paginated via fetchAll: production caps
-    // responses at max_rows = 1000, and tenants exceed that on these views
-    // (2,497 open job material lines observed) — an uncapped read plans on
-    // silently truncated demand. The `.order("id")` keeps pages stable.
-    // ──────────────────────────────────────────────────────────────
-
-    const [
-      salesOrderLines,
-      jobMaterialLines,
-      productionLines,
-      purchaseOrderLines,
-      demandProjections,
-      projectMaterialLines,
-      projectBorrows
-    ] = await Promise.all([
-      fetchAll<Database["public"]["Views"]["openSalesOrderLines"]["Row"]>(() =>
-        client
-          .from("openSalesOrderLines")
-          .select("*")
-          .eq("companyId", companyId)
-          .order("id")
-      ),
-      fetchAll<Database["public"]["Views"]["openJobMaterialLines"]["Row"]>(() =>
-        client
-          .from("openJobMaterialLines")
-          .select("*")
-          .eq("companyId", companyId)
-          .order("id")
-      ),
-      fetchAll<Database["public"]["Views"]["openProductionOrders"]["Row"]>(() =>
-        client
-          .from("openProductionOrders")
-          .select("*")
-          .eq("companyId", companyId)
-          .order("id")
-      ),
-      fetchAll<Database["public"]["Views"]["openPurchaseOrderLines"]["Row"]>(
-        () =>
-          client
-            .from("openPurchaseOrderLines")
-            .select("*")
-            .eq("companyId", companyId)
-            .order("id")
-      ),
-      fetchAll<Database["public"]["Tables"]["demandProjection"]["Row"]>(() =>
-        client
-          .from("demandProjection")
-          .select("*")
-          .eq("companyId", companyId)
-          .in(
-            "periodId",
-            periods.map((p: DemandPeriod) => p.id ?? "").filter(Boolean)
-          )
-          .order("id")
-      ),
-      fetchAll<Database["public"]["Views"]["openProjectMaterialLines"]["Row"]>(
-        () =>
-          client
-            .from("openProjectMaterialLines")
-            .select("*")
-            .eq("companyId", companyId)
-            .order("id")
-      ),
-      fetchAll<Database["public"]["Views"]["openProjectBorrows"]["Row"]>(() =>
-        client
-          .from("openProjectBorrows")
-          .select("*")
-          .eq("companyId", companyId)
-          .order("id")
-      )
-    ]);
-
-    if (salesOrderLines.error)
-      throw new Error("Failed to load sales order lines");
-    if (jobMaterialLines.error)
-      throw new Error("Failed to load job material lines");
-    if (productionLines.error)
-      throw new Error("Failed to load production orders");
-    if (purchaseOrderLines.error)
-      throw new Error("Failed to load purchase order lines");
-    if (demandProjections.error)
-      throw new Error("Failed to load demand projections");
-    if (projectMaterialLines.error)
-      throw new Error("Failed to load project material lines");
-    if (projectBorrows.error) throw new Error("Failed to load project borrows");
-
-    // Forecast-consumption window (weekly periods): how far an actual reaches
-    // to consume forecast beyond its own week — backward first, then forward.
-    const consumptionSettings = await client
-      .from("companySettings")
-      .select(
-        "forecastConsumptionBackwardPeriods, forecastConsumptionForwardPeriods"
-      )
-      .eq("id", companyId)
-      .maybeSingle();
-    // No fallback to the defaults on a failed read: the window decides how much
-    // forecast is consumed, and that result is persisted for every read path.
-    if (consumptionSettings.error) throw consumptionSettings.error;
-    const consumptionWindow = {
-      backwardPeriods:
-        consumptionSettings.data?.forecastConsumptionBackwardPeriods ?? 4,
-      forwardPeriods:
-        consumptionSettings.data?.forecastConsumptionForwardPeriods ?? 1
-    };
-
-    // Bulk-load item metadata
-    const [allItems, allReplenishments] = await Promise.all([
-      db
-        .selectFrom("item")
-        .select(["id", "replenishmentSystem"])
-        .where("companyId", "=", companyId)
-        .execute(),
-      db
-        .selectFrom("itemReplenishment")
-        .select(["itemId", "leadTime"])
-        .where("companyId", "=", companyId)
-        .execute()
-    ]);
-
-    // Supersession config per discontinued item (drives demand redirection).
-    // Loaded via the supabase client (like the other demand inputs) so DATE
-    // columns come back as "YYYY-MM-DD" strings — Kysely/node-pg would hand back
-    // JS Date objects, which parseDate() can't take.
-    const supersessions = await fetchAll<{
-      itemId: string;
-      supersessionMode: Database["public"]["Enums"]["supersessionMode"];
-      successorItemId: string | null;
-      successorEffectivityDate: string | null;
-      conversionFactor: number | null;
-    }>(() =>
-      client
-        .from("itemSupersession")
-        .select(
-          "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor"
-        )
-        .eq("companyId", companyId)
-        .order("itemId")
-    );
-    if (supersessions.error) throw new Error("Failed to load supersessions");
-
-    // Bulk-load inventory by location+item from the trigger-maintained
-    // aggregate: transactionally current and an indexed read of a few hundred
-    // rows, where the previous full-ledger GROUP BY grew with total history
-    // (~6-8s of an 8M-row tenant's run). Semantics deliberately follow the
-    // aggregate: Rejected tracked stock is NOT available to plan against,
-    // matching get_inventory_quantities — the raw ledger sum counted it. The
-    // nettable figure also leaves out stock in non-nettable storage units.
-    //
-    // Every stripe is read: planCompany sums each into its netting segment
-    // (a project with project stock, else common), the rule of the SQL
-    // project_planning_segment. The projects with project stock are read
-    // once for that mapping.
-    const [
-      inventoryRows,
-      stockedProjects,
-      commonSupplyBlocked,
-      planningGroupRows,
-      groupMemberRows
-    ] = await Promise.all([
-      db
-        .selectFrom("itemStockQuantities")
-        .select((eb) => [
-          "itemId",
-          "locationId",
-          "projectId",
-          // the nettable on-hand, under the name planCompany's onHand reads
-          eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
-            "quantityOnHand"
-          )
-        ])
-        .where("companyId", "=", companyId)
-        .execute(),
-      db
-        .selectFrom("project")
-        .select(["id"])
-        .where("companyId", "=", companyId)
-        .where("projectStock", "=", true)
-        .execute(),
-      // Items whose project segments may not draw common stock.
-      db
-        .selectFrom("itemPlanning")
-        .select(["itemId", "locationId"])
-        .where("companyId", "=", companyId)
-        .where("allowCommonSupplyForProjects", "=", false)
-        .execute(),
-      // Projects Phase 3: the planning groups and their members. A member
-      // has project stock (project_planningGroup_stock_check).
-      db
-        .selectFrom("planningGroup")
-        .select(["id", "active", "priorityRule"])
-        .where("companyId", "=", companyId)
-        .execute(),
-      db
-        .selectFrom("project")
-        .select(["id", "planningGroupId", "planningPriority"])
-        .where("companyId", "=", companyId)
-        .where("planningGroupId", "is not", null)
-        .where("projectStock", "=", true)
-        .execute()
-    ]);
-
-    // Planning groups are commercial (PLANNING_GROUPS). Without the feature
-    // the run degrades: members net in their own segments and no group
-    // segment exists. The plan is read only when the company has a group.
-    const planningGroupsEnabled =
-      planningGroupRows.length > 0 &&
-      (await companyHasPlanningGroups(deps, client, companyId));
-    const activeGroupIds = new Set(
-      planningGroupRows.filter((group) => group.active).map((group) => group.id)
-    );
-    const planningGroups = planningGroupsEnabled
-      ? [...activeGroupIds].map((id) => ({
-          id,
-          memberProjectIds: groupMemberRows
-            .filter((project) => project.planningGroupId === id)
-            .map((project) => project.id)
-        }))
-      : [];
-    const ungroupedPlanningGroupIds = planningGroupsEnabled
-      ? []
-      : planningGroupRows.map((group) => group.id);
-
-    // Bulk-load all BOMs: use activeMakeMethods view (returns one method per item,
-    // prioritizing 'Active' status then highest version — same logic as get_method_tree)
-    const activeMethodsResult = await fetchAll<{
-      id: string | null;
-      itemId: string | null;
-    }>(() =>
-      client
-        .from("activeMakeMethods")
-        .select("id, itemId")
-        .eq("companyId", companyId)
-        .order("id")
-    );
-    if (activeMethodsResult.error) throw activeMethodsResult.error;
-
-    const allMethodIds = Array.from(
-      activeMethodIdByItem(activeMethodsResult.data ?? []).values()
-    );
-    let allMaterials: {
-      id: string;
-      makeMethodId: string;
-      materialMakeMethodId: string | null;
-      itemId: string;
-      quantity: number;
-      methodType: MethodType;
-    }[] = [];
-
-    if (allMethodIds.length > 0) {
-      allMaterials = (await db
-        .selectFrom("methodMaterial")
-        .select([
-          "id",
-          "makeMethodId",
-          "materialMakeMethodId",
-          "itemId",
-          "quantity",
-          "methodType"
-        ])
-        .where("companyId", "=", companyId)
-        .where("makeMethodId", "in", allMethodIds)
-        // Correction materials are drawn only when a correction is used.
-        .where("methodCorrectionId", "is", null)
-        .execute()) as typeof allMaterials;
-    }
-
-    // Paginated: a single tenant's actuals exceed the production max_rows cap
-    // (9,391 rows observed), and a truncated read here leaves stale actuals
-    // un-zeroed. Ordering by the primary key keeps pages stable.
-    const [
-      { data: existingDemandActuals, error: demandActualsError },
-      { data: existingSupplyActuals, error: supplyActualsError }
-    ] = await Promise.all([
-      fetchAll<Database["public"]["Tables"]["demandActual"]["Row"]>(() =>
-        client
-          .from("demandActual")
-          .select("*")
-          .eq("companyId", companyId)
-          .in(
-            "periodId",
-            periods.map((p) => p.id ?? "")
-          )
-          .order("itemId")
-          .order("locationId")
-          .order("periodId")
-          .order("sourceType")
-          .order("planningSegmentId")
-      ),
-      fetchAll<Database["public"]["Tables"]["supplyActual"]["Row"]>(() =>
-        client
-          .from("supplyActual")
-          .select("*")
-          .eq("companyId", companyId)
-          .in(
-            "periodId",
-            periods.map((p: DemandPeriod) => p.id ?? "").filter(Boolean)
-          )
-          .order("itemId")
-          .order("locationId")
-          .order("periodId")
-          .order("sourceType")
-          .order("planningSegmentId")
-      )
-    ]);
-
-    if (demandActualsError) throw demandActualsError;
-    if (supplyActualsError) throw supplyActualsError;
-
-    // ──────────────────────────────────────────────────────────────
-    // PHASES 3–6: the pure planning core (plan-company.ts)
-    // ──────────────────────────────────────────────────────────────
-
-    const {
-      demandForecastUpserts,
-      demandForecastSourceInserts,
-      demandActualUpserts,
-      supplyActualUpserts,
-      consumptionUpdates,
-      cycleItemIds,
-      commonSurplusDraws,
-      groupPegInputs
-    } = planCompany({
-      companyId,
-      userId,
-      today: today.toString(),
-      periods: periods.map((p: DemandPeriod) => ({
-        id: p.id ?? "",
-        startDate: p.startDate.toString(),
-        endDate: p.endDate.toString()
-      })),
-      locationIds: locations.data.map((l) => l.id),
-      consumptionWindow,
-      salesOrderLines: salesOrderLines.data ?? [],
-      jobMaterialLines: jobMaterialLines.data ?? [],
-      productionLines: productionLines.data ?? [],
-      purchaseOrderLines: purchaseOrderLines.data ?? [],
-      demandProjections: demandProjections.data ?? [],
-      projectMaterialLines: projectMaterialLines.data ?? [],
-      projectBorrows: projectBorrows.data ?? [],
-      stockedProjectIds: stockedProjects.map((project) => project.id),
-      planningGroups,
-      ungroupedPlanningGroupIds,
-      projectPriorities: groupMemberRows.map((project) => ({
-        projectId: project.id,
-        priority: project.planningPriority
-      })),
-      commonSupplyBlocked,
-      items: allItems,
-      replenishments: allReplenishments,
-      supersessions: supersessions.data ?? [],
-      onHand: inventoryRows,
-      activeMethods: activeMethodsResult.data ?? [],
-      materials: allMaterials,
-      existingDemandActuals: existingDemandActuals ?? [],
-      existingSupplyActuals: existingSupplyActuals ?? []
-    });
-
-    if (cycleItemIds.length > 0) {
-      logger.warning(
-        "BOM cycle detected — cycle items were planned as leaf items (no explosion through them)",
-        { companyId, itemIds: cycleItemIds }
-      );
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // PHASE 7: Persist results (chunked batch writes)
-    // ──────────────────────────────────────────────────────────────
-
-    const BATCH_SIZE = 500;
-
-    try {
-      // One transaction for the whole delete-and-rewrite: these statements
-      // previously ran independently, so a crash mid-sequence (or a reader
-      // between the delete and the inserts) saw planning data half-written —
-      // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
-      // everything back on any throw.
-      await db.transaction().execute(async (trx) => {
-        // Delete existing MRP forecasts
-        await trx
-          .deleteFrom("demandForecast")
-          .where("companyId", "=", companyId)
-          .where("forecastMethod", "=", "mrp")
-          .execute();
-
-        // Delete existing MRP forecast source rows. The demandForecast delete
-        // above removes the parent rows; this removes their attribution rows.
-        // demandForecastSource only ever holds MRP-derived rows.
-        await trx
-          .deleteFrom("demandForecastSource")
-          .where("companyId", "=", companyId)
-          .execute();
-
-        // Guarded: an empty array renders as `IN ()`, which is a syntax error
-        // (42601), so a company with no locations configured crashed the whole
-        // run. Nothing to clear in that case anyway.
-        if (locations.data.length > 0) {
-          await trx
-            .deleteFrom("supplyForecast")
-            .where(
-              "locationId",
-              "in",
-              locations.data.map((l) => l.id)
-            )
-            .where("companyId", "=", companyId)
-            .execute();
-        }
-
-        // Insert demand forecasts in batches
-        for (let i = 0; i < demandForecastUpserts.length; i += BATCH_SIZE) {
-          const batch = demandForecastUpserts.slice(i, i + BATCH_SIZE);
-          await trx
-            .insertInto("demandForecast")
-            .values(batch)
-            .onConflict((oc) =>
-              oc
-                .columns([
-                  "itemId",
-                  "locationId",
-                  "periodId",
-                  "planningSegmentId"
-                ])
-                .doUpdateSet({
-                  forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
-                  forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId
-                })
-            )
-            .execute();
-        }
-
-        // Insert demand forecast source rows in batches. No onConflict — the
-        // upstream delete guarantees no key collisions.
-        for (
-          let i = 0;
-          i < demandForecastSourceInserts.length;
-          i += BATCH_SIZE
-        ) {
-          const batch = demandForecastSourceInserts.slice(i, i + BATCH_SIZE);
-          await trx.insertInto("demandForecastSource").values(batch).execute();
-        }
-
-        // Insert demand actuals in batches
-        for (let i = 0; i < demandActualUpserts.length; i += BATCH_SIZE) {
-          const batch = demandActualUpserts.slice(i, i + BATCH_SIZE);
-          await trx
-            .insertInto("demandActual")
-            .values(batch)
-            .onConflict((oc) =>
-              oc
-                .columns([
-                  "itemId",
-                  "locationId",
-                  "periodId",
-                  "sourceType",
-                  "planningSegmentId"
-                ])
-                .doUpdateSet({
-                  actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId
-                })
-            )
-            .execute();
-        }
-
-        // Insert supply actuals in batches
-        for (let i = 0; i < supplyActualUpserts.length; i += BATCH_SIZE) {
-          const batch = supplyActualUpserts.slice(i, i + BATCH_SIZE);
-          await trx
-            .insertInto("supplyActual")
-            .values(batch)
-            .onConflict((oc) =>
-              oc
-                .columns([
-                  "itemId",
-                  "locationId",
-                  "periodId",
-                  "sourceType",
-                  "planningSegmentId"
-                ])
-                .doUpdateSet({
-                  actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId
-                })
-            )
-            .execute();
-        }
-
-        // Persist forecast consumption in batches — an UPDATE, not an upsert,
-        // so a projection deleted mid-run can never be resurrected by the
-        // write phase. Every loaded projection has a row here (0 included),
-        // so stale consumption from a prior run is always overwritten.
-        // Consumption is derived data, not an edit: the row's updatedAt /
-        // updatedBy stay with the planner who entered the forecast, and a row
-        // whose consumption did not change is not written at all.
-        for (let i = 0; i < consumptionUpdates.length; i += BATCH_SIZE) {
-          const batch = consumptionUpdates.slice(i, i + BATCH_SIZE);
-          await sql`
-            UPDATE "demandProjection" AS dp
-            SET "consumedQuantity" = v."consumedQuantity"::numeric
-            FROM (VALUES ${sql.join(
-              batch.map(
-                (r) =>
-                  sql`(${r.itemId}, ${r.locationId}, ${r.periodId}, ${r.consumedQuantity})`
-              )
-            )}) AS v("itemId", "locationId", "periodId", "consumedQuantity")
-            WHERE dp."itemId" = v."itemId"
-              AND dp."locationId" = v."locationId"
-              AND dp."periodId" = v."periodId"
-              AND dp."companyId" = ${companyId}
-              AND dp."consumedQuantity" IS DISTINCT FROM v."consumedQuantity"::numeric
-          `.execute(trx);
-        }
-      });
-
-      // Persist the planning action messages (spec §P1) in their own atomic
-      // transaction AFTER the forecast/actual write commits — the planning
-      // RPCs it reads see only committed data. Errors PROPAGATE: the run must
-      // not report success with stale actions (forecasts are committed and
-      // correct; actions self-heal on the next successful run).
-      // The common stock each project segment draws becomes a Transfer.
-      // With PLANNING_GROUPS the planning-action transaction also
-      // diff-writes the pegs. It runs even with no active group, so the Soft
-      // pegs of a group that turned inactive are superseded.
-      await generatePlanningActions(client, db, {
+    // A convert, firm, edit or cancel that commits between the run's reads
+    // and its writes would be overwritten: a converted week planned again is
+    // a second Make. Each write checks, under the planning lock, that the
+    // planned orders are still as the run read (Phase 7) or wrote them (the
+    // worklist); if not, it rolls back and the run reads and plans again.
+    await retryOnPlannedOrderChange(async (attempt) => {
+      const {
+        plannedOrderIdByKey,
+        plannedOrderSnapshot,
+        commonSurplusDraws,
+        groupPegInputs,
+        heldPlannedOrderIds,
+        plannedOrderSignals,
+        plannedOrderChangeActions,
+        newSupplyByRow: plannedSupplyByRow,
+        documentChangeActionsByRow,
+        planningGroups,
+        planningGroupsEnabled,
+        planningGroupRows,
+        groupMemberRows
+      } = await loadPlanAndWrite(client, db, {
         companyId,
         userId,
-        commonSurplusDraws,
-        planningGroups,
-        pegging:
-          planningGroupsEnabled && deps
-            ? {
-                writeGroupPegs: deps.writeGroupPegs,
-                runId: randomUUID(),
-                inputs: groupPegInputs,
-                priorityRuleByGroup: Object.fromEntries(
-                  planningGroupRows.map((group) => [
-                    group.id,
-                    group.priorityRule
-                  ])
-                ),
-                priorityByProject: Object.fromEntries(
-                  groupMemberRows.map((project) => [
-                    project.id,
-                    project.planningPriority
-                  ])
-                )
-              }
-            : undefined
+        today,
+        periods,
+        locations: locations.data,
+        deps,
+        attempt
       });
+      // Each new Order / Make names its planned order's id once it has one.
+      const newSupplyByRow = withPlannedOrderIds(
+        plannedSupplyByRow,
+        plannedOrderIdByKey
+      );
 
-      return { success: true };
-    } catch (err) {
-      logger.error("write phase failed", { companyId, error: err });
-      throw err;
-    }
+      try {
+        // Persist the planning action messages (spec §P1) in their own atomic
+        // transaction AFTER the forecast/actual write commits — the planning
+        // RPCs it reads see only committed data. Errors PROPAGATE: the run must
+        // not report success with stale actions (forecasts are committed and
+        // correct; actions self-heal on the next successful run).
+        // The common stock each project segment draws becomes a Transfer.
+        // With PLANNING_GROUPS the planning-action transaction also
+        // diff-writes the pegs. It runs even with no active group, so the Soft
+        // pegs of a group that turned inactive are superseded.
+        await generatePlanningActions(client, db, {
+          companyId,
+          userId,
+          commonSurplusDraws,
+          newSupplyByRow,
+          documentChangeActionsByRow,
+          plannedOrderChangeActions,
+          plannedOrderSignals,
+          plannedOrderIdByKey,
+          heldPlannedOrderIds,
+          plannedOrderSnapshot,
+          planningGroups,
+          pegging:
+            planningGroupsEnabled && deps
+              ? {
+                  writeGroupPegs: deps.writeGroupPegs,
+                  runId: randomUUID(),
+                  inputs: groupPegInputs,
+                  priorityRuleByGroup: Object.fromEntries(
+                    planningGroupRows.map((group) => [
+                      group.id,
+                      group.priorityRule
+                    ])
+                  ),
+                  priorityByProject: Object.fromEntries(
+                    groupMemberRows.map((project) => [
+                      project.id,
+                      project.planningPriority
+                    ])
+                  )
+                }
+              : undefined
+        });
+      } catch (err) {
+        if (err instanceof PlannedOrdersChangedError) {
+          logger.info(
+            "planned orders changed before the worklist write; planning again",
+            { companyId, attempt }
+          );
+        } else {
+          logger.error("write phase failed", { companyId, error: err });
+        }
+        throw err;
+      }
+    });
+
+    return { success: true };
   } catch (err) {
     logger.error("run failed", { companyId, error: err });
+    throw err;
+  }
+}
+
+/**
+ * One attempt of the run: read every input, plan, and write the plan in one
+ * transaction. The planned orders are read first, with the database's clock,
+ * so the write can tell whether anyone changed them since
+ * (`writePlannedOrderDiff`'s `snapshot`); then it throws
+ * `PlannedOrdersChangedError` and writes nothing.
+ */
+async function loadPlanAndWrite(
+  client: SupabaseClient<Database>,
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    today: CalendarDate;
+    periods: DemandPeriod[];
+    locations: Database["public"]["Tables"]["location"]["Row"][];
+    deps: MrpDeps | undefined;
+    attempt: number;
+  }
+) {
+  const { companyId, userId, today, periods, locations, deps, attempt } = args;
+
+  // FIRST: the planned orders and the database's clock, before any other
+  // input, so every change after this read is one the write can see.
+  const plannedOrderSnapshot = await loadPlannedOrderSnapshot(db, companyId);
+
+  // ──────────────────────────────────────────────────────────────
+  // PHASE 1: Bulk data pre-loading
+  //
+  // Every PostgREST read is paginated via fetchAll: production caps
+  // responses at max_rows = 1000, and tenants exceed that on these views
+  // (2,497 open job material lines observed) — an uncapped read plans on
+  // silently truncated demand. The `.order("id")` keeps pages stable.
+  // ──────────────────────────────────────────────────────────────
+
+  const [
+    salesOrderLines,
+    jobMaterialLines,
+    productionLines,
+    purchaseOrderLines,
+    demandProjections,
+    projectMaterialLines,
+    projectBorrows
+  ] = await Promise.all([
+    fetchAll<Database["public"]["Views"]["openSalesOrderLines"]["Row"]>(() =>
+      client
+        .from("openSalesOrderLines")
+        .select("*")
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAll<Database["public"]["Views"]["openJobMaterialLines"]["Row"]>(() =>
+      client
+        .from("openJobMaterialLines")
+        .select("*")
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAll<Database["public"]["Views"]["openProductionOrders"]["Row"]>(() =>
+      client
+        .from("openProductionOrders")
+        .select("*")
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAll<Database["public"]["Views"]["openPurchaseOrderLines"]["Row"]>(() =>
+      client
+        .from("openPurchaseOrderLines")
+        .select("*")
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAll<Database["public"]["Tables"]["demandProjection"]["Row"]>(() =>
+      client
+        .from("demandProjection")
+        .select("*")
+        .eq("companyId", companyId)
+        .in(
+          "periodId",
+          periods.map((p: DemandPeriod) => p.id ?? "").filter(Boolean)
+        )
+        .order("id")
+    ),
+    fetchAll<Database["public"]["Views"]["openProjectMaterialLines"]["Row"]>(
+      () =>
+        client
+          .from("openProjectMaterialLines")
+          .select("*")
+          .eq("companyId", companyId)
+          .order("id")
+    ),
+    fetchAll<Database["public"]["Views"]["openProjectBorrows"]["Row"]>(() =>
+      client
+        .from("openProjectBorrows")
+        .select("*")
+        .eq("companyId", companyId)
+        .order("id")
+    )
+  ]);
+
+  if (salesOrderLines.error)
+    throw new Error("Failed to load sales order lines");
+  if (jobMaterialLines.error)
+    throw new Error("Failed to load job material lines");
+  if (productionLines.error)
+    throw new Error("Failed to load production orders");
+  if (purchaseOrderLines.error)
+    throw new Error("Failed to load purchase order lines");
+  if (demandProjections.error)
+    throw new Error("Failed to load demand projections");
+  if (projectMaterialLines.error)
+    throw new Error("Failed to load project material lines");
+  if (projectBorrows.error) throw new Error("Failed to load project borrows");
+
+  // Forecast-consumption window (weekly periods): how far an actual reaches
+  // to consume forecast beyond its own week — backward first, then forward.
+  const consumptionSettings = await client
+    .from("companySettings")
+    .select(
+      "forecastConsumptionBackwardPeriods, forecastConsumptionForwardPeriods"
+    )
+    .eq("id", companyId)
+    .maybeSingle();
+  // No fallback to the defaults on a failed read: the window decides how much
+  // forecast is consumed, and that result is persisted for every read path.
+  if (consumptionSettings.error) throw consumptionSettings.error;
+  const consumptionWindow = {
+    backwardPeriods:
+      consumptionSettings.data?.forecastConsumptionBackwardPeriods ?? 4,
+    forwardPeriods:
+      consumptionSettings.data?.forecastConsumptionForwardPeriods ?? 1
+  };
+
+  // Bulk-load item metadata
+  const [allItems, allReplenishments] = await Promise.all([
+    db
+      .selectFrom("item")
+      .select(["id", "replenishmentSystem"])
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("itemReplenishment")
+      .select(["itemId", "leadTime"])
+      .where("companyId", "=", companyId)
+      .execute()
+  ]);
+
+  // Supersession config per discontinued item (drives demand redirection).
+  // Loaded via the supabase client (like the other demand inputs) so DATE
+  // columns come back as "YYYY-MM-DD" strings — Kysely/node-pg would hand back
+  // JS Date objects, which parseDate() can't take.
+  const supersessions = await fetchAll<{
+    itemId: string;
+    supersessionMode: Database["public"]["Enums"]["supersessionMode"];
+    successorItemId: string | null;
+    successorEffectivityDate: string | null;
+    conversionFactor: number | null;
+  }>(() =>
+    client
+      .from("itemSupersession")
+      .select(
+        "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor"
+      )
+      .eq("companyId", companyId)
+      .order("itemId")
+  );
+  if (supersessions.error) throw new Error("Failed to load supersessions");
+
+  // Bulk-load inventory by location+item from the trigger-maintained
+  // aggregate: transactionally current and an indexed read of a few hundred
+  // rows, where the previous full-ledger GROUP BY grew with total history
+  // (~6-8s of an 8M-row tenant's run). Semantics deliberately follow the
+  // aggregate: Rejected tracked stock is NOT available to plan against,
+  // matching get_inventory_quantities — the raw ledger sum counted it. The
+  // nettable figure also leaves out stock in non-nettable storage units.
+  //
+  // Every stripe is read: planCompany sums each into its netting segment
+  // (a project with project stock, else common), the rule of the SQL
+  // project_planning_segment. The projects with project stock are read
+  // once for that mapping.
+  const [
+    inventoryRows,
+    stockedProjects,
+    commonSupplyBlocked,
+    planningGroupRows,
+    groupMemberRows
+  ] = await Promise.all([
+    db
+      .selectFrom("itemStockQuantities")
+      .select((eb) => [
+        "itemId",
+        "locationId",
+        "projectId",
+        // the nettable on-hand, under the name planCompany's onHand reads
+        eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+          "quantityOnHand"
+        )
+      ])
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("project")
+      .select(["id"])
+      .where("companyId", "=", companyId)
+      .where("projectStock", "=", true)
+      .execute(),
+    // Items whose project segments may not draw common stock.
+    db
+      .selectFrom("itemPlanning")
+      .select(["itemId", "locationId"])
+      .where("companyId", "=", companyId)
+      .where("allowCommonSupplyForProjects", "=", false)
+      .execute(),
+    // Projects Phase 3: the planning groups and their members. A member
+    // has project stock (project_planningGroup_stock_check).
+    db
+      .selectFrom("planningGroup")
+      .select(["id", "active", "priorityRule"])
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("project")
+      .select(["id", "planningGroupId", "planningPriority"])
+      .where("companyId", "=", companyId)
+      .where("planningGroupId", "is not", null)
+      .where("projectStock", "=", true)
+      .execute()
+  ]);
+
+  // Planning groups are commercial (PLANNING_GROUPS). Without the feature
+  // the run degrades: members net in their own segments and no group
+  // segment exists. The plan is read only when the company has a group.
+  const planningGroupsEnabled =
+    planningGroupRows.length > 0 &&
+    (await companyHasPlanningGroups(deps, client, companyId));
+  const activeGroupIds = new Set(
+    planningGroupRows.filter((group) => group.active).map((group) => group.id)
+  );
+  const planningGroups = planningGroupsEnabled
+    ? [...activeGroupIds].map((id) => ({
+        id,
+        memberProjectIds: groupMemberRows
+          .filter((project) => project.planningGroupId === id)
+          .map((project) => project.id)
+      }))
+    : [];
+  const ungroupedPlanningGroupIds = planningGroupsEnabled
+    ? []
+    : planningGroupRows.map((group) => group.id);
+
+  // Bulk-load all BOMs: use activeMakeMethods view (returns one method per item,
+  // prioritizing 'Active' status then highest version — same logic as get_method_tree)
+  const activeMethodsResult = await fetchAll<{
+    id: string | null;
+    itemId: string | null;
+  }>(() =>
+    client
+      .from("activeMakeMethods")
+      .select("id, itemId")
+      .eq("companyId", companyId)
+      .order("id")
+  );
+  if (activeMethodsResult.error) throw activeMethodsResult.error;
+
+  const allMethodIds = Array.from(
+    activeMethodIdByItem(activeMethodsResult.data ?? []).values()
+  );
+  let allMaterials: {
+    id: string;
+    makeMethodId: string;
+    materialMakeMethodId: string | null;
+    itemId: string;
+    quantity: number;
+    methodType: MethodType;
+  }[] = [];
+
+  if (allMethodIds.length > 0) {
+    allMaterials = (await db
+      .selectFrom("methodMaterial")
+      .select([
+        "id",
+        "makeMethodId",
+        "materialMakeMethodId",
+        "itemId",
+        "quantity",
+        "methodType"
+      ])
+      .where("companyId", "=", companyId)
+      .where("makeMethodId", "in", allMethodIds)
+      // Correction materials are drawn only when a correction is used.
+      .where("methodCorrectionId", "is", null)
+      .execute()) as typeof allMaterials;
+  }
+
+  // Paginated: a single tenant's actuals exceed the production max_rows cap
+  // (9,391 rows observed), and a truncated read here leaves stale actuals
+  // un-zeroed. Ordering by the primary key keeps pages stable.
+  const [
+    { data: existingDemandActuals, error: demandActualsError },
+    { data: existingSupplyActuals, error: supplyActualsError }
+  ] = await Promise.all([
+    fetchAll<Database["public"]["Tables"]["demandActual"]["Row"]>(() =>
+      client
+        .from("demandActual")
+        .select("*")
+        .eq("companyId", companyId)
+        .in(
+          "periodId",
+          periods.map((p) => p.id ?? "")
+        )
+        .order("itemId")
+        .order("locationId")
+        .order("periodId")
+        .order("sourceType")
+        .order("planningSegmentId")
+    ),
+    fetchAll<Database["public"]["Tables"]["supplyActual"]["Row"]>(() =>
+      client
+        .from("supplyActual")
+        .select("*")
+        .eq("companyId", companyId)
+        .in(
+          "periodId",
+          periods.map((p: DemandPeriod) => p.id ?? "").filter(Boolean)
+        )
+        .order("itemId")
+        .order("locationId")
+        .order("periodId")
+        .order("sourceType")
+        .order("planningSegmentId")
+    )
+  ]);
+
+  if (demandActualsError) throw demandActualsError;
+  if (supplyActualsError) throw supplyActualsError;
+
+  // ──────────────────────────────────────────────────────────────
+  // MRP v2: the inputs of planned orders (spec §2a). Every read is
+  // company-wide, like every other read of the run: `runMrp` plans the
+  // whole company whatever the payload's `type`, so the plannedOrder diff
+  // in Phase 7 covers every location of the company.
+  // ──────────────────────────────────────────────────────────────
+  const plannedOrderInputs = await loadPlannedOrderInputs(db, {
+    companyId,
+    todayDate: today.toString(),
+    locations,
+    plannedOrderRows: plannedOrderSnapshot.orders,
+    productionLines: productionLines.data ?? [],
+    purchaseOrderLines: purchaseOrderLines.data ?? []
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // PHASES 3–6: the pure planning core (plan-company.ts)
+  // ──────────────────────────────────────────────────────────────
+
+  const {
+    demandForecastUpserts,
+    demandForecastSourceInserts,
+    demandActualUpserts,
+    supplyActualUpserts,
+    consumptionUpdates,
+    cycleItemIds,
+    commonSurplusDraws,
+    groupPegInputs,
+    plannedOrders,
+    heldPlannedOrderIds,
+    plannedOrderSignals,
+    plannedOrderChangeActions,
+    newSupplyByRow,
+    documentChangeActionsByRow
+  } = planCompany({
+    companyId,
+    userId,
+    today: today.toString(),
+    periods: periods.map((p: DemandPeriod) => ({
+      id: p.id ?? "",
+      startDate: p.startDate.toString(),
+      endDate: p.endDate.toString()
+    })),
+    locationIds: locations.map((l) => l.id),
+    consumptionWindow,
+    salesOrderLines: salesOrderLines.data ?? [],
+    jobMaterialLines: jobMaterialLines.data ?? [],
+    productionLines: productionLines.data ?? [],
+    purchaseOrderLines: purchaseOrderLines.data ?? [],
+    demandProjections: demandProjections.data ?? [],
+    projectMaterialLines: projectMaterialLines.data ?? [],
+    projectBorrows: projectBorrows.data ?? [],
+    stockedProjectIds: stockedProjects.map((project) => project.id),
+    planningGroups,
+    ungroupedPlanningGroupIds,
+    projectPriorities: groupMemberRows.map((project) => ({
+      projectId: project.id,
+      priority: project.planningPriority
+    })),
+    commonSupplyBlocked,
+    items: allItems,
+    replenishments: allReplenishments,
+    supersessions: supersessions.data ?? [],
+    onHand: inventoryRows,
+    activeMethods: activeMethodsResult.data ?? [],
+    materials: allMaterials,
+    existingDemandActuals: existingDemandActuals ?? [],
+    existingSupplyActuals: existingSupplyActuals ?? [],
+    plannedOrderInputs
+  });
+
+  if (cycleItemIds.length > 0) {
+    logger.warning(
+      "BOM cycle detected — cycle items were planned as leaf items (no explosion through them)",
+      { companyId, itemIds: cycleItemIds }
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // PHASE 7: Persist results (chunked batch writes)
+  // ──────────────────────────────────────────────────────────────
+
+  const BATCH_SIZE = 500;
+
+  try {
+    // One transaction for the whole delete-and-rewrite: these statements
+    // previously ran independently, so a crash mid-sequence (or a reader
+    // between the delete and the inserts) saw planning data half-written —
+    // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
+    // everything back on any throw.
+    const written = await db.transaction().execute(async (trx) => {
+      // FIRST: the planned orders. `writePlannedOrderDiff` takes the
+      // company's planning lock before any other statement of this
+      // transaction, so the ERP's convert (which takes it too) never
+      // interleaves with the run, and no row lock is held while waiting
+      // for it. Under the lock it compares the planned orders with the
+      // run's snapshot and throws `PlannedOrdersChangedError` when someone
+      // changed them, which rolls this transaction back before any write.
+      // `generatePlanningActions` takes the same lock in its own
+      // transaction, after this one commits and releases it.
+      const idByKey = await writePlannedOrderDiff(trx, {
+        companyId,
+        userId,
+        locationIds: locations.map((l) => l.id),
+        generated: plannedOrders,
+        heldPlannedOrderIds,
+        updatedAt: datetime.timestamp(),
+        snapshot: plannedOrderSnapshot
+      });
+      // Delete existing MRP forecasts
+      await trx
+        .deleteFrom("demandForecast")
+        .where("companyId", "=", companyId)
+        .where("forecastMethod", "=", "mrp")
+        .execute();
+
+      // Delete existing MRP forecast source rows. The demandForecast delete
+      // above removes the parent rows; this removes their attribution rows.
+      // demandForecastSource only ever holds MRP-derived rows.
+      await trx
+        .deleteFrom("demandForecastSource")
+        .where("companyId", "=", companyId)
+        .execute();
+
+      // Guarded: an empty array renders as `IN ()`, which is a syntax error
+      // (42601), so a company with no locations configured crashed the whole
+      // run. Nothing to clear in that case anyway.
+      if (locations.length > 0) {
+        await trx
+          .deleteFrom("supplyForecast")
+          .where(
+            "locationId",
+            "in",
+            locations.map((l) => l.id)
+          )
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      // Insert demand forecasts in batches
+      for (let i = 0; i < demandForecastUpserts.length; i += BATCH_SIZE) {
+        const batch = demandForecastUpserts.slice(i, i + BATCH_SIZE);
+        await trx
+          .insertInto("demandForecast")
+          .values(batch)
+          .onConflict((oc) =>
+            oc
+              .columns([
+                "itemId",
+                "locationId",
+                "periodId",
+                "planningSegmentId"
+              ])
+              .doUpdateSet({
+                forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
+                forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
+                updatedAt: datetime.timestamp(),
+                updatedBy: userId
+              })
+          )
+          .execute();
+      }
+
+      // Insert demand forecast source rows in batches. No onConflict — the
+      // upstream delete guarantees no key collisions.
+      for (let i = 0; i < demandForecastSourceInserts.length; i += BATCH_SIZE) {
+        const batch = demandForecastSourceInserts.slice(i, i + BATCH_SIZE);
+        await trx.insertInto("demandForecastSource").values(batch).execute();
+      }
+
+      // Insert demand actuals in batches
+      for (let i = 0; i < demandActualUpserts.length; i += BATCH_SIZE) {
+        const batch = demandActualUpserts.slice(i, i + BATCH_SIZE);
+        await trx
+          .insertInto("demandActual")
+          .values(batch)
+          .onConflict((oc) =>
+            oc
+              .columns([
+                "itemId",
+                "locationId",
+                "periodId",
+                "sourceType",
+                "planningSegmentId"
+              ])
+              .doUpdateSet({
+                actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+                updatedAt: datetime.timestamp(),
+                updatedBy: userId
+              })
+          )
+          .execute();
+      }
+
+      // Insert supply actuals in batches
+      for (let i = 0; i < supplyActualUpserts.length; i += BATCH_SIZE) {
+        const batch = supplyActualUpserts.slice(i, i + BATCH_SIZE);
+        await trx
+          .insertInto("supplyActual")
+          .values(batch)
+          .onConflict((oc) =>
+            oc
+              .columns([
+                "itemId",
+                "locationId",
+                "periodId",
+                "sourceType",
+                "planningSegmentId"
+              ])
+              .doUpdateSet({
+                actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+                updatedAt: datetime.timestamp(),
+                updatedBy: userId
+              })
+          )
+          .execute();
+      }
+
+      // Persist forecast consumption in batches — an UPDATE, not an upsert,
+      // so a projection deleted mid-run can never be resurrected by the
+      // write phase. Every loaded projection has a row here (0 included),
+      // so stale consumption from a prior run is always overwritten.
+      // Consumption is derived data, not an edit: the row's updatedAt /
+      // updatedBy stay with the planner who entered the forecast, and a row
+      // whose consumption did not change is not written at all.
+      for (let i = 0; i < consumptionUpdates.length; i += BATCH_SIZE) {
+        const batch = consumptionUpdates.slice(i, i + BATCH_SIZE);
+        await sql`
+          UPDATE "demandProjection" AS dp
+          SET "consumedQuantity" = v."consumedQuantity"::numeric
+          FROM (VALUES ${sql.join(
+            batch.map(
+              (r) =>
+                sql`(${r.itemId}, ${r.locationId}, ${r.periodId}, ${r.consumedQuantity})`
+            )
+          )}) AS v("itemId", "locationId", "periodId", "consumedQuantity")
+          WHERE dp."itemId" = v."itemId"
+            AND dp."locationId" = v."locationId"
+            AND dp."periodId" = v."periodId"
+            AND dp."companyId" = ${companyId}
+            AND dp."consumedQuantity" IS DISTINCT FROM v."consumedQuantity"::numeric
+        `.execute(trx);
+      }
+
+      // LAST: the planned orders as this transaction leaves them, for the
+      // worklist write to check against after the commit.
+      const committedSnapshot = await readPlannedOrderSnapshot(trx, companyId);
+
+      return { idByKey, committedSnapshot };
+    });
+
+    return {
+      plannedOrderIdByKey: written.idByKey,
+      plannedOrderSnapshot: written.committedSnapshot,
+      commonSurplusDraws,
+      groupPegInputs,
+      heldPlannedOrderIds,
+      plannedOrderSignals,
+      plannedOrderChangeActions,
+      newSupplyByRow,
+      documentChangeActionsByRow,
+      planningGroups,
+      planningGroupsEnabled,
+      planningGroupRows,
+      groupMemberRows
+    };
+  } catch (err) {
+    if (err instanceof PlannedOrdersChangedError) {
+      logger.info("planned orders changed during the run; planning again", {
+        companyId,
+        attempt
+      });
+    } else {
+      logger.error("write phase failed", { companyId, error: err });
+    }
     throw err;
   }
 }
@@ -696,6 +875,197 @@ export async function runMrp(
 // ──────────────────────────────────────────────────────────────
 // Helper functions
 // ──────────────────────────────────────────────────────────────
+
+/**
+ * MRP v2: what `planCompany` needs to plan the common segment with planned
+ * orders (`PlannedOrderInputs`). Kysely reads, so no PostgREST row cap.
+ *
+ * - The policy rows join `itemPlanning`, `item` and `itemReplenishment` with
+ *   INNER JOINs, as the planning RPCs do: an item with no `itemPlanning` row
+ *   at a location has no planning row there and gets no planned order.
+ * - The open jobs and PO lines are the views `runMrp` already read, built
+ *   into orders by `buildOpenSupplyOrders` as the planning actions build them.
+ * - The existing planned orders are the run's snapshot
+ *   (`loadPlannedOrderSnapshot`), read before every other input.
+ */
+async function loadPlannedOrderInputs(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    todayDate: string;
+    locations: { id: string; planningTimeFenceDays: number | null }[];
+    plannedOrderRows: ExistingPlannedOrder[];
+    productionLines: Parameters<typeof buildOpenSupplyOrders>[0]["jobRows"];
+    purchaseOrderLines: Parameters<
+      typeof buildOpenSupplyOrders
+    >[0]["poLineRows"];
+  }
+): Promise<PlannedOrderInputs> {
+  const { companyId } = args;
+  const [policyRows, settings, openSupplyDetails] = await Promise.all([
+    db
+      .selectFrom("itemPlanning as ip")
+      .innerJoin("item as i", (join) =>
+        join.onRef("i.id", "=", "ip.itemId").on("i.companyId", "=", companyId)
+      )
+      .innerJoin("itemReplenishment as ir", (join) =>
+        join
+          .onRef("ir.itemId", "=", "ip.itemId")
+          .on("ir.companyId", "=", companyId)
+      )
+      .select([
+        "ip.itemId",
+        "ip.locationId",
+        "i.active",
+        "i.itemTrackingType",
+        "i.replenishmentSystem",
+        "ip.reorderingPolicy",
+        "ip.reorderPoint",
+        "ip.reorderQuantity",
+        "ip.minimumOrderQuantity",
+        "ip.maximumOrderQuantity",
+        "ip.orderMultiple",
+        "ip.maximumInventoryQuantity",
+        "ip.demandAccumulationPeriod",
+        "ip.demandAccumulationSafetyStock",
+        "ip.planningTimeFenceDays",
+        "ir.lotSize",
+        "ir.leadTime",
+        "ir.scrapPercentage",
+        "ir.preferredSupplierId"
+      ])
+      .where("ip.companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("companySettings")
+      .select(["rescheduleToleranceDays"])
+      .where("id", "=", companyId)
+      .executeTakeFirst(),
+    loadOpenSupplyDetails(db, companyId)
+  ]);
+
+  const toNumber = (value: unknown): number | null =>
+    value === null || value === undefined ? null : Number(value);
+
+  const scrapRateByItem = new Map<string, number>();
+  const preferredSupplierByItem = new Map<string, string | null>();
+  for (const row of policyRows) {
+    scrapRateByItem.set(row.itemId, Number(row.scrapPercentage) || 0);
+    preferredSupplierByItem.set(row.itemId, row.preferredSupplierId ?? null);
+  }
+
+  return {
+    planningPolicies: policyRows.map((row) => ({
+      itemId: row.itemId,
+      locationId: row.locationId,
+      active: row.active,
+      itemTrackingType: row.itemTrackingType,
+      replenishmentSystem: row.replenishmentSystem,
+      reorderingPolicy: row.reorderingPolicy,
+      reorderPoint: toNumber(row.reorderPoint),
+      reorderQuantity: toNumber(row.reorderQuantity),
+      minimumOrderQuantity: toNumber(row.minimumOrderQuantity),
+      maximumOrderQuantity: toNumber(row.maximumOrderQuantity),
+      orderMultiple: toNumber(row.orderMultiple),
+      lotSize: toNumber(row.lotSize),
+      maximumInventoryQuantity: toNumber(row.maximumInventoryQuantity),
+      demandAccumulationPeriod: toNumber(row.demandAccumulationPeriod),
+      demandAccumulationSafetyStock: toNumber(
+        row.demandAccumulationSafetyStock
+      ),
+      leadTime: toNumber(row.leadTime),
+      planningTimeFenceDays: toNumber(row.planningTimeFenceDays)
+    })),
+    locationTimeFenceDays: new Map(
+      args.locations.map((location) => [
+        location.id,
+        Number(location.planningTimeFenceDays) || 0
+      ])
+    ),
+    scrapRateByItem,
+    preferredSupplierByItem,
+    openSupplyOrders: buildOpenSupplyOrders({
+      poLineRows: args.purchaseOrderLines,
+      jobRows: args.productionLines,
+      jobDetailsById: openSupplyDetails.jobDetailsById,
+      conversionFactorByLineId: openSupplyDetails.conversionFactorByLineId,
+      todayDate: args.todayDate
+    }),
+    existingPlannedOrders: args.plannedOrderRows,
+    toleranceDays: Number(settings?.rescheduleToleranceDays ?? 7)
+  };
+}
+
+/**
+ * The run's snapshot of the company's planned orders, read before any other
+ * input: the database's `now()`, then every Planned and Firm row. The rows
+ * are the plan's existing planned orders; their id, status and `updatedAt`
+ * let the write see any change made since (`plannedOrdersChangedSince`).
+ */
+async function loadPlannedOrderSnapshot(
+  db: Kysely<DB>,
+  companyId: string
+): Promise<PlannedOrderSnapshot & { orders: ExistingPlannedOrder[] }> {
+  const clock = await sql<{
+    now: string;
+  }>`SELECT now()::text AS "now"`.execute(db);
+  const readStart = clock.rows[0]?.now;
+  if (!readStart) throw new Error("Failed to read the database clock");
+
+  const rows = await db
+    .selectFrom("plannedOrder")
+    .select([
+      "id",
+      "itemId",
+      "locationId",
+      "planningSegmentId",
+      "orderType",
+      "status",
+      "quantity",
+      "scrapQuantity",
+      "dueDate",
+      "releaseDate",
+      "periodId",
+      "splitIndex",
+      "supplierId",
+      "quantityTrace",
+      PLANNED_ORDER_UPDATED_AT
+    ])
+    .where("companyId", "=", companyId)
+    .where("status", "in", ["Planned", "Firm"])
+    .execute();
+
+  const orders: ExistingPlannedOrder[] = [];
+  for (const row of rows) {
+    if (row.status !== "Planned" && row.status !== "Firm") continue;
+    orders.push({
+      id: row.id,
+      itemId: row.itemId,
+      locationId: row.locationId,
+      planningSegmentId: row.planningSegmentId,
+      orderType: row.orderType,
+      status: row.status,
+      quantity: Number(row.quantity),
+      scrapQuantity: Number(row.scrapQuantity),
+      dueDate: toIsoDate(row.dueDate)!,
+      releaseDate: toIsoDate(row.releaseDate)!,
+      periodId: row.periodId,
+      splitIndex: row.splitIndex,
+      supplierId: row.supplierId,
+      quantityTrace:
+        (row.quantityTrace as ExistingPlannedOrder["quantityTrace"]) ?? null
+    });
+  }
+  return {
+    readStart,
+    rows: rows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      updatedAt: row.updatedAt
+    })),
+    orders
+  };
+}
 
 /**
  * Whether the company has the commercial PLANNING_GROUPS feature. The check
@@ -764,6 +1134,7 @@ async function getOrCreateDemandPeriods(
       periods.map((p) => p.startDate)
     )
     .where("periodType", "=", periodType)
+    .orderBy("startDate")
     .execute();
 
   if (existingPeriods.length === periods.length) {
@@ -800,12 +1171,16 @@ async function getOrCreateDemandPeriods(
       .execute();
   });
 
-  return [...existingPeriods, ...created].map((p) => ({
-    id: p.id,
-    // pg returns DATE columns as JS Date objects; normalize to "YYYY-MM-DD"
-    startDate: parseDate(toIsoDate(p.startDate)!),
-    endDate: parseDate(toIsoDate(p.endDate)!),
-    periodType: p.periodType,
-    createdAt: p.createdAt
-  }));
+  // The engine indexes periods by position, so a partial create (existing
+  // weeks plus new ones) is put back in date order.
+  return [...existingPeriods, ...created]
+    .map((p) => ({
+      id: p.id,
+      // pg returns DATE columns as JS Date objects; normalize to "YYYY-MM-DD"
+      startDate: parseDate(toIsoDate(p.startDate)!),
+      endDate: parseDate(toIsoDate(p.endDate)!),
+      periodType: p.periodType,
+      createdAt: p.createdAt
+    }))
+    .sort((a, b) => a.startDate.compare(b.startDate));
 }

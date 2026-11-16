@@ -243,6 +243,7 @@ export const createLocation = defineServiceFn({
   permission: { create: "resources" },
 
   async run(ctx, { id: _id, ...location }) {
+    // a location created with no time fence has none (0)
     const insert = await service.upsertLocation(ctx.asCaller.supabase, {
       ...location,
       companyId: ctx.company.id,
@@ -286,6 +287,7 @@ export const updateLocation = defineServiceFn({
         previous.error
       );
     }
+    // A caller that sends no time fence (the API, MCP) leaves it as it is.
     const update = await service.upsertLocation(ctx.asCaller.supabase, {
       id,
       ...location,

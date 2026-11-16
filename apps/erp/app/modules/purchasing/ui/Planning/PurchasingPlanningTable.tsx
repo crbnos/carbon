@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCarbon } from "@carbon/auth";
 import { useAction } from "@carbon/query";
 import {
   Button,
@@ -61,6 +62,10 @@ import {
   PLANNING_DRAWER_PARAM,
   type RefusedPlanningOrder
 } from "~/modules/production/production.models";
+import {
+  type DrawerPlannedOrder,
+  getRowPlannedOrders
+} from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import {
   isApplyablePlanningAction,
@@ -169,8 +174,11 @@ const PlanningTable = memo(
 
     const mrpFetcher = useAction<typeof mrpAction>({
       onSettled: (data) => {
-        // the drawer re-seeds from the new run's actions
-        if (data) setOrdersMap({});
+        // the drawer re-seeds from the new run's actions and planned orders
+        if (data) {
+          setOrdersMap({});
+          setPlannedOrdersByRowKey({});
+        }
       }
     });
     const mrpScheduleDescription = useMrpScheduleDescription();
@@ -211,6 +219,12 @@ const PlanningTable = memo(
     const canUpdateActions = permissions.can("update", "purchasing");
     const actionTypeOptions = usePlanningActionTypeOptions("Buy");
     const [people] = usePeople();
+    // Set below, once the drafts exist: an Apply on a planned order re-plans
+    // its rows, whose drafts are then stale.
+    const dropRowDraftsRef = useRef<
+      | ((rows: { id: string; planningSegmentId: string | null }[]) => void)
+      | null
+    >(null);
     const {
       actionHandlers: changeActionHandlers,
       isActionsBusy,
@@ -226,7 +240,8 @@ const PlanningTable = memo(
       locationId,
       updatePath: path.to.bulkUpdatePurchasingPlanning,
       currentUserId: user.id,
-      canUpdate: canUpdateActions
+      canUpdate: canUpdateActions,
+      onRowsReplanned: (rows) => dropRowDraftsRef.current?.(rows)
     });
 
     // The purchase order's own commands (Reopen, Finalize) join each row's ⋯.
@@ -282,6 +297,8 @@ const PlanningTable = memo(
         setOrdersMap(
           draftsOfRefusedOrders(submittedRows.current, refusedOrders)
         );
+        // the PO lines converted planned orders: read them again
+        setPlannedOrdersByRowKey({});
         const problems = [...warnings, ...errors];
         if (problems.length > 0) toast.error(problems.join(" · "));
         if (refusedOrders.length > 0) {
@@ -358,19 +375,38 @@ const PlanningTable = memo(
 
     const [items] = useItems();
 
+    // The Buy planned orders of the rows whose drawer read them (common
+    // segment only), by row. A suggested order stands for each.
+    const [plannedOrdersByRowKey, setPlannedOrdersByRowKey] = useState<
+      Record<string, DrawerPlannedOrder[]>
+    >({});
+    const onPlannedOrdersLoaded = useCallback(
+      (item: PurchasingPlanningItem, orders: DrawerPlannedOrder[]) => {
+        if (item.id) {
+          setPlannedOrdersByRowKey((prev) => ({
+            ...prev,
+            [planningRowKey(item)]: orders
+          }));
+        }
+      },
+      []
+    );
+
     // A row's suggested orders are its open Order actions: what MRP wrote
     // after it moved expedited supply, folded a shortfall into an open order
-    // as an Increase, and summed each week. They seed the drawer, size the
+    // as an Increase, and summed each week — one order per planned order of
+    // the action's week when it has any. They seed the drawer, size the
     // Order button, and are what a bulk order submits for rows never opened.
     const plannedOrdersFor = useCallback(
-      (row: PurchasingPlanningItem): PlannedOrder[] => {
+      (
+        row: PurchasingPlanningItem,
+        plannedOrders?: DrawerPlannedOrder[]
+      ): PlannedOrder[] => {
         const supplierId = suppliersMap[row.id];
         const item = items.find((item) => item.id === row.id);
+        const rowActions = actionsByRowKey.get(planningRowKey(row));
         return plannedOrdersFromActions(
-          openNewSupplyActions(
-            actionsByRowKey.get(planningRowKey(row)),
-            "Order"
-          ),
+          openNewSupplyActions(rowActions, "Order"),
           {
             conversionFactor: supplierConversionFactor(
               row.suppliers,
@@ -380,20 +416,32 @@ const PlanningTable = memo(
             item: row,
             itemReadableId: item?.readableIdWithRevision,
             description: item?.name,
-            unitOfMeasureCode: item?.unitOfMeasureCode
+            unitOfMeasureCode: item?.unitOfMeasureCode,
+            plannedOrders,
+            rowActions,
+            weeks: periods,
+            todayDate: locationToday
           }
         );
       },
-      [actionsByRowKey, items, suppliersMap]
+      [actionsByRowKey, items, suppliersMap, periods, locationToday]
     );
 
     const ordersByRowKey = useMemo(
       () =>
         new Map(
-          rows.map((row) => [planningRowKey(row), plannedOrdersFor(row)])
+          rows.map((row) => [
+            planningRowKey(row),
+            plannedOrdersFor(row, plannedOrdersByRowKey[planningRowKey(row)])
+          ])
         ),
-      [rows, plannedOrdersFor]
+      [rows, plannedOrdersFor, plannedOrdersByRowKey]
     );
+
+    const { carbon } = useCarbon();
+    // A bulk Order reads the planned orders of the rows it sizes itself, so a
+    // bulk PO line converts by id as the drawer's does. One read at a time.
+    const isReadingPlannedOrders = useRef(false);
 
     // Store orders in a map keyed by item id - calculate on-demand instead of eagerly
     const [ordersMap, setOrdersMap] = useState<Record<string, PlannedOrder[]>>(
@@ -420,7 +468,8 @@ const PlanningTable = memo(
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const onBulkUpdate = useCallback(
-      (selectedRows: PurchasingPlanningItem[], action: "order") => {
+      async (selectedRows: PurchasingPlanningItem[], action: "order") => {
+        if (isReadingPlannedOrders.current) return;
         // Filter out rows without suppliers and track them for error reporting
         const rowsWithoutSuppliers = selectedRows.filter(
           (row) => row.id && !suppliersMap[row.id]
@@ -442,6 +491,42 @@ const PlanningTable = memo(
           return;
         }
 
+        // Rows never opened in the drawer are sized here; only the common
+        // segment has planned orders.
+        const sizedHere = rowsWithSuppliers.filter(
+          (row) =>
+            row.id &&
+            !row.planningSegmentId &&
+            !(planningRowKey(row) in ordersMap)
+        );
+        let plannedOrdersByItem: Map<string, DrawerPlannedOrder[]> | null =
+          null;
+        if (sizedHere.length > 0 && carbon) {
+          isReadingPlannedOrders.current = true;
+          const read = await getRowPlannedOrders(carbon, {
+            companyId: user.company.id,
+            locationId,
+            orderType: "Buy",
+            itemIds: sizedHere.map((row) => row.id!)
+          }).finally(() => {
+            isReadingPlannedOrders.current = false;
+          });
+          // a failed read sizes from the actions alone; Order then converts
+          // the week's planned orders by quantity
+          if (read.data) {
+            plannedOrdersByItem = new Map();
+            for (const order of read.data) {
+              const list = plannedOrdersByItem.get(order.itemId);
+              if (list) list.push(order);
+              else plannedOrdersByItem.set(order.itemId, [order]);
+            }
+          }
+        }
+        const suggestedOrders = (row: PurchasingPlanningItem) =>
+          plannedOrdersByItem && !row.planningSegmentId
+            ? plannedOrdersFor(row, plannedOrdersByItem.get(row.id!) ?? [])
+            : (ordersByRowKey.get(planningRowKey(row)) ?? []);
+
         const payload = {
           locationId,
           items: rowsWithSuppliers
@@ -459,7 +544,7 @@ const PlanningTable = memo(
                 planningRowKey(row) in ordersMap
                   ? ordersMap[planningRowKey(row)]!
                   : splitOrdersByFence(
-                      ordersByRowKey.get(planningRowKey(row)) ?? [],
+                      suggestedOrders(row),
                       timeFence.fenceDateFor(row)
                     ).inside;
               const ordersWithPeriods = sourceOrders.map((order) => {
@@ -507,12 +592,15 @@ const PlanningTable = memo(
 
       [
         bulkUpdateFetcher,
+        carbon,
         locationId,
         ordersMap,
         ordersByRowKey,
+        plannedOrdersFor,
         suppliersMap,
         t,
-        timeFence
+        timeFence,
+        user.company.id
       ]
     );
 
@@ -561,10 +649,23 @@ const PlanningTable = memo(
       []
     );
 
-    // After an order the row's draft is stale: drop it so the drawer re-seeds.
-    const dropOrders = useCallback((item: PurchasingPlanningItem) => {
-      if (item.id) setOrdersMap((prev) => withoutRowDraft(prev, item));
-    }, []);
+    // After an order, or a planned order changed (MRP re-runs), the row's
+    // draft is stale: drop it so the drawer re-seeds.
+    const [draftVersion, setDraftVersion] = useState(0);
+    const dropOrders = useCallback(
+      (item: { id: string; planningSegmentId?: string | null }) => {
+        if (!item.id) return;
+        setOrdersMap((prev) => withoutRowDraft(prev, item));
+        // an order placed converted planned orders: the drawer reads them again
+        setPlannedOrdersByRowKey((prev) => withoutRowDraft(prev, item));
+        // closes a suggested-order cell editor left open in the drawer
+        setDraftVersion((version) => version + 1);
+      },
+      []
+    );
+    dropRowDraftsRef.current = (rows) => {
+      for (const row of rows) dropOrders(row);
+    };
 
     // The drawer's own Planning Horizon control: the same on-screen override
     // as the grid cell, for the row the drawer is open on.
@@ -583,10 +684,13 @@ const PlanningTable = memo(
     const selectedOrders = useMemo(() => {
       if (!selectedItem?.id) return { inside: [], beyond: [] };
       return splitOrdersByFence(
-        plannedOrdersFor(selectedItem),
+        plannedOrdersFor(
+          selectedItem,
+          plannedOrdersByRowKey[planningRowKey(selectedItem)]
+        ),
         timeFence.fenceDateFor(selectedItem)
       );
-    }, [selectedItem, plannedOrdersFor, timeFence]);
+    }, [selectedItem, plannedOrdersFor, plannedOrdersByRowKey, timeFence]);
 
     // The drawer's Open Orders table shows the selected row's change actions on existing
     // orders (Expedite, Defer, Increase, …). Order / Make actions are left
@@ -1044,6 +1148,8 @@ const PlanningTable = memo(
             ordersVersion={ordersVersion}
             setOrders={setOrders}
             onSuggestionsStale={dropOrders}
+            draftVersion={draftVersion}
+            onPlannedOrdersLoaded={onPlannedOrdersLoaded}
             periods={periods}
             isOpen={isDrawerOpen}
             onClose={closeDrawer}

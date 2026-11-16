@@ -16,7 +16,10 @@ import { itemPlanningValidator } from "~/modules/items/items.models";
 import { getItemPlanning } from "~/modules/items/items.service";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { getLocationsList } from "~/modules/resources/resources.service";
+import {
+  getLocationPlanningTimeFence,
+  getLocationsList
+} from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -63,12 +66,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let toolPlanning = await getItemPlanning(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  const [toolPlanning, locationFence] = await Promise.all([
+    getItemPlanning(client, itemId, companyId, locationId),
+    getLocationPlanningTimeFence(client, locationId, companyId)
+  ]);
 
   if (toolPlanning.error || !toolPlanning.data) {
     throw redirect(
@@ -82,6 +83,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     toolPlanning: toolPlanning.data,
+    // the placeholder of the item's empty fence; a failed read shows none
+    locationTimeFenceDays: locationFence.data?.planningTimeFenceDays,
     locationId
   };
 }
@@ -114,7 +117,8 @@ export default function ToolPlanningRoute() {
     locations: ListItem[];
   }>(path.to.toolRoot);
 
-  const { toolPlanning, locationId } = useLoaderData<typeof loader>();
+  const { toolPlanning, locationTimeFenceDays, locationId } =
+    useLoaderData<typeof loader>();
 
   if (!sharedToolsData) throw new Error("Could not load shared tools data");
 
@@ -126,6 +130,7 @@ export default function ToolPlanningRoute() {
           ...toolPlanning,
           ...getCustomFields(toolPlanning.customFields)
         }}
+        locationTimeFenceDays={locationTimeFenceDays}
         locations={sharedToolsData.locations ?? []}
         type="Tool"
       />

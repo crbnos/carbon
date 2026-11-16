@@ -82,7 +82,8 @@ const PRESERVED_TABLES = new Set([
  * FK-nulling pass because their CHECKs cannot survive it. The first four are
  * also TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts; planningAction
  * is NOT (a backup keeps it: Dismissed and assigneeOverridden are the planner's
- * own state), it is only transient for a dataset apply.
+ * own state), it is only transient for a dataset apply. plannedOrder is the
+ * same: a backup keeps it (a Firm row is the planner's), a dataset apply drops it.
  */
 const TRANSIENT_MRP_TABLES = [
   "demandForecastSource",
@@ -91,7 +92,9 @@ const TRANSIENT_MRP_TABLES = [
   "supplyActual",
   // planningAction_change_target_chk: a change action must keep its job or
   // PO line, and the FK-nulling pass would clear jobId while jobs still exist.
-  "planningAction"
+  "planningAction",
+  // plannedOrder_converted_chk: a Converted row must keep its job or PO line.
+  "plannedOrder"
 ];
 
 // Their content CHECK (imagePath OR modelUploadId) cannot survive the FK-nulling

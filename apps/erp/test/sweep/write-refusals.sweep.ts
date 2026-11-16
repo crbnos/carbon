@@ -57,6 +57,7 @@ const REGENERATED = new Set([
   "demandActual",
   "demandForecast",
   "demandForecastSource",
+  "plannedOrder",
   "planningAction",
   "supplyActual",
   "supplyForecast"

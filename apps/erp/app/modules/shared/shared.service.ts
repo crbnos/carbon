@@ -1362,10 +1362,16 @@ export async function getOrCreatePeriods(
       ranges.map((r) => r.startDate)
     )
     .where("periodType", "=", "Week")
+    .orderBy("startDate")
     .execute();
 
+  // Callers index the weeks by position (week 1 is the current week), so
+  // they are always returned in date order.
+  const inDateOrder = (periods: ReturnType<typeof toPlainPeriod>[]) =>
+    periods.sort((a, b) => a.startDate.localeCompare(b.startDate));
+
   if (existingPeriods.length === ranges.length) {
-    return existingPeriods.map(toPlainPeriod);
+    return inDateOrder(existingPeriods.map(toPlainPeriod));
   }
 
   // Find missing periods
@@ -1393,7 +1399,7 @@ export async function getOrCreatePeriods(
       .execute();
   });
 
-  return [...existingPeriods, ...created].map(toPlainPeriod);
+  return inDateOrder([...existingPeriods, ...created].map(toPlainPeriod));
 }
 
 /** Convert a pg DATE value (Date object or string) to an ISO date string. */

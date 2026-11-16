@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261117063413",
+  "schemaVersion": "20261117063504",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-16T18:44:29.359Z",
+  "exportedAt": "2026-11-16T19:06:09.098Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -515,11 +515,11 @@
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
         "includeSupplierPartFiles",
-        "deliveryDateControl",
         "requirePromisedDateToFinalizePurchaseOrder",
         "travelerLabels",
         "requireTrackedMaterialsIssued",
-        "autoPickingListOnRelease"
+        "autoPickingListOnRelease",
+        "deliveryDateControl"
       ]
     },
     {
@@ -3937,6 +3937,7 @@
         "responsibleEmployee",
         "planningHorizonDays",
         "allowCommonSupplyForProjects",
+        "planningTimeFenceDays",
         "deliveryDateControl"
       ]
     },
@@ -4108,7 +4109,8 @@
         "requiresStaffing",
         "responsibleEmployee",
         "inspectionStorageUnitId",
-        "rejectedStorageUnitId"
+        "rejectedStorageUnitId",
+        "planningTimeFenceDays"
       ]
     },
     {
@@ -5631,10 +5633,10 @@
         "sourceDocumentId",
         "sourceDocumentLineId",
         "sourceDocumentReadableId",
-        "storageUnitId",
-        "acceptedQuantity",
         "workCenterId",
-        "assignee"
+        "assignee",
+        "storageUnitId",
+        "acceptedQuantity"
       ]
     },
     {
@@ -7543,6 +7545,36 @@
       ]
     },
     {
+      "name": "plannedOrder",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "itemId",
+        "locationId",
+        "planningSegmentId",
+        "orderType",
+        "status",
+        "quantity",
+        "scrapQuantity",
+        "quantityTrace",
+        "dueDate",
+        "releaseDate",
+        "periodId",
+        "splitIndex",
+        "lowLevelCode",
+        "supplierId",
+        "firmedBy",
+        "firmedAt",
+        "jobId",
+        "purchaseOrderLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "planningAction",
       "rows": 0,
       "columns": [
@@ -7575,7 +7607,8 @@
         "fromProjectId",
         "toProjectId",
         "projectStockTransferId",
-        "projectBorrowId"
+        "projectBorrowId",
+        "plannedOrderId"
       ]
     },
     {

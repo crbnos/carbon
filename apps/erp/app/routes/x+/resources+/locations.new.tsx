@@ -40,7 +40,8 @@ export default function NewLocationRoute() {
     city: "",
     stateProvince: "",
     postalCode: "",
-    countryCode: company?.countryCode ?? ""
+    countryCode: company?.countryCode ?? "",
+    planningTimeFenceDays: 0
   };
 
   return (

@@ -879,6 +879,20 @@ export async function getLocation(
   return client.from("location").select("*").eq("id", locationId).single();
 }
 
+/** The location's planning time fence, which an item's empty fence inherits. */
+export async function getLocationPlanningTimeFence(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  companyId: string
+) {
+  return client
+    .from("location")
+    .select("planningTimeFenceDays")
+    .eq("id", locationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
 export const LOCATIONS_PAGING: Paging = {
   defaultSorts: [{ column: "name", ascending: true }]
 };
@@ -1994,12 +2008,30 @@ export async function upsertLocation(
       })
 ) {
   if ("id" in location) {
+    // The time fence is NOT NULL, and `sanitize` turns a missing field into
+    // null: an update that sends no fence leaves the stored one alone.
+    const { planningTimeFenceDays, ...rest } = location;
     return client
       .from("location")
-      .update(sanitize(location))
+      .update({
+        ...sanitize(rest),
+        ...(planningTimeFenceDays === undefined
+          ? {}
+          : { planningTimeFenceDays })
+      })
       .eq("id", location.id);
   }
-  return client.from("location").insert([location]).select("*").single();
+  return client
+    .from("location")
+    .insert([
+      {
+        ...location,
+        // a new location with no fence has none (0)
+        planningTimeFenceDays: location.planningTimeFenceDays ?? 0
+      }
+    ])
+    .select("*")
+    .single();
 }
 
 /** The bare insert under `resources.maintenanceDispatch.create`, which also tells the scheduler. */

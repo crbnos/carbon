@@ -65,6 +65,7 @@ import {
   traverseQuoteMethod
 } from "@carbon/database/methods";
 import { effectiveReplenishment } from "@carbon/database/mrp-engine";
+import { lockCompanyPlanning } from "@carbon/database/planning-lock";
 import type * as rows from "@carbon/database/rows";
 import {
   inOrder,
@@ -147,6 +148,7 @@ import {
   mustViolations,
   nameSimilarity,
   planBatchCompletion,
+  plannedOrderWeekIndex,
   requireAffected,
   resolveBatchRules,
   round,
@@ -174,6 +176,7 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import {
   type ExpressionBuilder,
   type QueryCreator,
+  type RawBuilder,
   sql,
   type Transaction
 } from "kysely";
@@ -247,6 +250,7 @@ import {
   getAssemblyModelState,
   isJobLocked,
   isJobOrderStatusHidden,
+  isPlannedOrderEditable,
   JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
@@ -264,6 +268,7 @@ import {
   makeToAssetReleaseError,
   motionSchema,
   type orientationSchema,
+  PLANNED_ORDER_EDITABLE_STATUSES,
   PLANNING_EDITABLE_JOB_STATUSES,
   PO_STATUS_PRIORITY,
   type procedureParameterValidator,
@@ -3553,6 +3558,54 @@ export async function runMRP(
       data: null,
       error: err instanceof Error ? err : new Error("Failed to run MRP")
     };
+  }
+}
+
+/**
+ * Re-plan after a person changes what MRP plans from: an item's planning
+ * settings, or a planned order (firm, unfirm, edit, an applied action). The
+ * planning pages list MRP's stored suggestions, so without a run they kept
+ * the old ones until the next scheduled run. Every run is company-wide.
+ * `reason` (what changed) is only logged. A failed run is logged and never
+ * fails the change.
+ */
+export async function replanAfterChange(ctx: ServiceContext, reason?: string) {
+  const mrp = await runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
+    type: "company",
+    id: ctx.company.id,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId
+  });
+  if (mrp.error) {
+    logger.error("MRP failed after a planning input changed", {
+      companyId: ctx.company.id,
+      reason,
+      error: mrp.error
+    });
+  }
+}
+
+/**
+ * Run an Apply and re-plan once afterwards when it changed a planned order.
+ * `apply` adds the ids of the planned orders it changed (edited or deleted)
+ * to `changed`. The run follows whatever `apply` returns or throws, so no
+ * early return in it can skip the re-plan, and it comes before the answer so
+ * the page reads the new actions.
+ */
+export async function replanAfterPlannedOrderChanges<T>(
+  ctx: ServiceContext,
+  apply: (changed: Set<string>) => Promise<T>
+): Promise<T> {
+  const changed = new Set<string>();
+  try {
+    return await apply(changed);
+  } finally {
+    if (changed.size > 0) {
+      await replanAfterChange(
+        ctx,
+        `planning actions applied to ${changed.size} planned order(s)`
+      );
+    }
   }
 }
 
@@ -12167,7 +12220,7 @@ export async function getPlanningActions(
         const query = client
           .from("planningAction")
           .select(
-            "*, item!planningAction_itemId_fkey(readableIdWithRevision, name), purchaseOrderLine!planningAction_purchaseOrderLineId_fkey(purchaseOrderId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job!planningAction_jobId_fkey(jobId, status)"
+            "*, item!planningAction_itemId_fkey(readableIdWithRevision, name), purchaseOrderLine!planningAction_purchaseOrderLineId_fkey(purchaseOrderId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job!planningAction_jobId_fkey(jobId, status), plannedOrder!planningAction_plannedOrderId_fkey(orderType, status)"
           )
           .eq("companyId", companyId)
           .eq("locationId", locationId)
@@ -12178,12 +12231,16 @@ export async function getPlanningActions(
         // Make worklist = new job suggestions + change actions on jobs.
         // Transfer and Borrow move stock between owners; each page lists
         // only its own kind's items, so they show on the item's own page.
+        // A change on a planned order is read here and kept below only when
+        // the planned order is of this kind (`orderType`).
         return (
           kind === "Buy"
             ? query.or(
-                "type.in.(Order,Transfer,Borrow),purchaseOrderLineId.not.is.null"
+                "type.in.(Order,Transfer,Borrow),purchaseOrderLineId.not.is.null,plannedOrderId.not.is.null"
               )
-            : query.or("type.in.(Make,Transfer,Borrow),jobId.not.is.null")
+            : query.or(
+                "type.in.(Make,Transfer,Borrow),jobId.not.is.null,plannedOrderId.not.is.null"
+              )
         )
           .order("suggestedDate", { ascending: true })
           .order("id", { ascending: true });
@@ -12200,7 +12257,11 @@ export async function getPlanningActions(
 
   const enriched = chunks
     .flatMap((chunk) => chunk.data ?? [])
-    .map(({ item, purchaseOrderLine, job, ...row }) => ({
+    // a change on the other worklist's planned order
+    .filter(
+      (row) => !row.plannedOrderId || row.plannedOrder?.orderType === kind
+    )
+    .map(({ item, purchaseOrderLine, job, plannedOrder, ...row }) => ({
       ...row,
       itemReadableId: item?.readableIdWithRevision ?? null,
       itemName: item?.name ?? null,
@@ -12224,7 +12285,8 @@ export async function getPlanningActions(
           ?.receiptPromisedDate ??
         null,
       jobReadableId: job?.jobId ?? null,
-      jobStatus: job?.status ?? null
+      jobStatus: job?.status ?? null,
+      plannedOrderStatus: plannedOrder?.status ?? null
     }))
     // the chunks are each in order; the page as a whole is not
     .sort(
@@ -12269,21 +12331,36 @@ async function planningActionIdList<Row>(
 /**
  * The worklist a page may write, the same split `getPlanningActions` reads:
  * Buy = new purchase suggestions and changes on PO lines, Make = new job
- * suggestions and changes on jobs. The writes below go through Kysely, past
+ * suggestions and changes on jobs. A change on a planned order belongs to the
+ * worklist of its `orderType`. The writes below go through Kysely, past
  * row-level security, so without it a user with purchasing rights could
  * dismiss or reassign production's actions by posting their ids.
  */
 function inPlanningWorklist(kind: PlanningActionKind) {
-  return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) =>
-    kind === "Buy"
+  return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) => {
+    const onPlannedOrderOfKind = eb.and([
+      eb("planningAction.plannedOrderId", "is not", null),
+      eb.exists(
+        eb
+          .selectFrom("plannedOrder")
+          .select("plannedOrder.id")
+          .whereRef("plannedOrder.id", "=", "planningAction.plannedOrderId")
+          .whereRef("plannedOrder.companyId", "=", "planningAction.companyId")
+          .where("plannedOrder.orderType", "=", kind)
+      )
+    ]);
+    return kind === "Buy"
       ? eb.or([
           eb("type", "in", ["Order", "Transfer", "Borrow"]),
-          eb("purchaseOrderLineId", "is not", null)
+          eb("purchaseOrderLineId", "is not", null),
+          onPlannedOrderOfKind
         ])
       : eb.or([
           eb("type", "in", ["Make", "Transfer", "Borrow"]),
-          eb("jobId", "is not", null)
+          eb("jobId", "is not", null),
+          onPlannedOrderOfKind
         ]);
+  };
 }
 
 export async function dismissPlanningActions(
@@ -12358,6 +12435,11 @@ export async function markPlanningActionsActioned(
  * type, location and company match. Runs under MRP's advisory lock
  * (`planning-actions:<companyId>`) and returns the rows it changed, each with
  * the indexes (in `ordered`) of the orders that answered it.
+ *
+ * In the same transaction, under the same lock, it converts the planned
+ * orders the new jobs (Make) or PO lines (Order) stand for
+ * (`convertPlannedOrdersForActions`): an order's own `plannedOrderId`, else a
+ * planned order of the week of the action it settled.
  */
 export async function settleNewSupplyPlanningActions(
   db: Kysely<KyselyDatabase>,
@@ -12366,14 +12448,23 @@ export async function settleNewSupplyPlanningActions(
     locationId: string;
     userId: string;
     type: "Order" | "Make";
+    /** Today on the location's calendar: the current week's action also
+     *  converts the overdue planned orders, as MRP sizes them there
+     *  (`plannedOrderWeekIndex`). */
+    asOf?: string;
     /** One per order placed, in the action's units (inventory units for an
-     *  Order); the segment defaults to common (''). */
+     *  Order); the segment defaults to common (''). `jobId` (Make) or
+     *  `purchaseOrderLineId` (Order) is the document the order created. */
     ordered: {
       itemId: string;
       periodId: string;
       planningSegmentId?: string;
       quantity: number;
       planningActionId?: string | null;
+      /** The planned order this order was suggested from, which it converts. */
+      plannedOrderId?: string | null;
+      jobId?: string | null;
+      purchaseOrderLineId?: string | null;
     }[];
   }
 ) {
@@ -12385,9 +12476,7 @@ export async function settleNewSupplyPlanningActions(
     ordered.map((order) => order.itemId),
     () =>
       withTransaction(db, async (trx) => {
-        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`planning-actions:${args.companyId}`}, 0))`.execute(
-          trx
-        );
+        await lockCompanyPlanning(trx, args.companyId);
         const values = sql.join(
           ordered.map(
             (order) =>
@@ -12462,12 +12551,1208 @@ export async function settleNewSupplyPlanningActions(
           RETURNING pa.id, pa."itemId", pa."periodId", pa."planningSegmentId",
             pa."status", pa."suggestedQuantity", a."orderIndexes"
         `.execute(trx);
+
+        // The planned orders the documents stand for. An order that names
+        // its planned order converts that one, whatever it settled; one that
+        // names none converts a planned order of the week it settled.
+        const orderType = args.type === "Make" ? "Make" : "Buy";
+        const settledWeekByIndex = new Map(
+          result.rows.flatMap((row) =>
+            row.orderIndexes.map((index) => [index, row.periodId] as const)
+          )
+        );
+        await convertPlannedOrdersForActions(trx, {
+          companyId: args.companyId,
+          userId: args.userId,
+          asOf: args.asOf,
+          documents: ordered.flatMap((order) => {
+            const documentId =
+              args.type === "Make" ? order.jobId : order.purchaseOrderLineId;
+            const periodId = settledWeekByIndex.get(order.index);
+            if (!documentId || (!order.plannedOrderId && !periodId)) return [];
+            return [
+              {
+                documentId,
+                quantity: order.quantity,
+                plannedOrderId: order.plannedOrderId ?? null,
+                itemId: order.itemId,
+                locationId: args.locationId,
+                planningSegmentId: order.planningSegmentId ?? "",
+                periodId: periodId ?? order.periodId,
+                orderType
+              }
+            ];
+          })
+        });
+
         return result.rows.map((row) => ({
           ...row,
           suggestedQuantity: Number(row.suggestedQuantity)
         }));
       })
   );
+}
+
+/** A job or PO line placed from planning, as it converts a planned order. */
+export type PlannedOrderConversion = {
+  /** The job (Make) or PO line (Buy). */
+  documentId: string;
+  /** In inventory units, as the planned order counts. */
+  quantity: number;
+  /** The planned order the order was suggested from, when it names one. */
+  plannedOrderId: string | null;
+  itemId: string;
+  locationId: string;
+  planningSegmentId: string;
+  /** The week of the action the order settled. */
+  periodId: string;
+  orderType: "Make" | "Buy";
+};
+
+/** A Planned or Firm planned order a document may convert. */
+export type ConvertiblePlannedOrder = {
+  id: string;
+  itemId: string;
+  locationId: string;
+  planningSegmentId: string;
+  periodId: string;
+  orderType: "Make" | "Buy" | "Transfer";
+  status: "Planned" | "Firm";
+  quantity: number;
+  splitIndex: number;
+  dueDate: string;
+};
+
+const conversionKey = (
+  row: Pick<
+    PlannedOrderConversion,
+    "itemId" | "locationId" | "planningSegmentId" | "periodId" | "orderType"
+  >
+) =>
+  [
+    row.itemId,
+    row.locationId,
+    row.planningSegmentId,
+    row.periodId,
+    row.orderType
+  ].join("\u001f");
+
+/** The order MRP split a week's planned orders in, and the suggestions list
+ *  them in (`plannedOrdersFromActions`): due date, then `splitIndex`, then
+ *  id. An overdue order of an earlier week comes first. */
+const bySplit = (a: ConvertiblePlannedOrder, b: ConvertiblePlannedOrder) =>
+  // ISO dates order as strings
+  a.dueDate.localeCompare(b.dueDate) ||
+  a.splitIndex - b.splitIndex ||
+  a.id.localeCompare(b.id);
+
+/** The planning row a planned order or document belongs to. */
+type ConversionRow = Pick<
+  PlannedOrderConversion,
+  "itemId" | "locationId" | "planningSegmentId" | "orderType"
+>;
+
+const conversionRowKey = (row: ConversionRow) =>
+  [row.itemId, row.locationId, row.planningSegmentId, row.orderType].join(
+    "\u001f"
+  );
+
+/** One weekly period, as the convert reads it. */
+export type ConversionWeek = { id: string; startDate: string; endDate: string };
+
+/**
+ * The weeks a convert sorts planned orders into: the first holds `today`
+ * when there is one. Without `today` no planned order is overdue.
+ */
+export type ConversionCalendar = {
+  weeks: ConversionWeek[];
+  today: string | null;
+  /** Settled actions' weeks before the current one: an action MRP has not
+   *  rolled forward since the week turned. Its documents convert in the
+   *  current week, which now holds what it counted as overdue. */
+  earlierWeekIds: string[];
+  /** Rows with an Open or Dismissed Order / Make of a week before the
+   *  current one. That action counted the overdue planned orders, so the
+   *  current week's documents of the row take only the current week's. */
+  pastWeekActionRows?: ConversionRow[];
+};
+
+/**
+ * The (item, location, segment, week, type) a document converts in: the week
+ * of the action it settled, or the current week when that action's week is
+ * already past.
+ */
+function documentConversionKey(
+  document: PlannedOrderConversion,
+  calendar: ConversionCalendar | null | undefined
+) {
+  return conversionKey({
+    ...document,
+    periodId: conversionWeekOfDocument(document.periodId, calendar)
+  });
+}
+
+/**
+ * The week holding today, which also holds every overdue planned order. None
+ * without today: then no planned order is overdue.
+ */
+function currentWeekOf(
+  calendar: ConversionCalendar | null | undefined
+): ConversionWeek | undefined {
+  return calendar?.today ? calendar.weeks[0] : undefined;
+}
+
+function conversionWeekOfDocument(
+  periodId: string,
+  calendar: ConversionCalendar | null | undefined
+): string {
+  const current = currentWeekOf(calendar)?.id;
+  return current && calendar?.earlierWeekIds.includes(periodId)
+    ? current
+    : periodId;
+}
+
+/**
+ * The week a planned order counts in for the convert: MRP's own rule,
+ * `plannedOrderWeekIndex` — an overdue order in the current week, else the
+ * week holding its due date. Null when no week of the calendar holds it.
+ */
+function conversionWeekOf(
+  dueDate: string,
+  calendar: ConversionCalendar
+): string | null {
+  // without today, judge it on its own due date: never overdue
+  const index = plannedOrderWeekIndex(
+    dueDate,
+    calendar.weeks,
+    calendar.today ?? dueDate
+  );
+  return index === null ? null : (calendar.weeks[index]?.id ?? null);
+}
+
+/**
+ * Which planned order each document converts, which it only reduces, and
+ * which it covers whole. Pure; no planned order is converted twice.
+ *
+ * 1. A document that names its planned order converts that one, while it is
+ *    still Planned or Firm, of the same item, location, segment and type. A
+ *    document SMALLER than the order it names converts nothing: it takes its
+ *    quantity off the order (`reductions`, the quantity left), which keeps
+ *    its status. Several documents naming one order count together; the one
+ *    that reaches its quantity converts it; one LARGER than what is left of
+ *    it also takes the excess off its week's next Planned orders, as in 2. A
+ *    document whose id is stale (the order is gone, no longer Planned or
+ *    Firm, or of another item, location, segment or type) or names an order
+ *    an earlier document of the batch converted goes on as one that names
+ *    none.
+ * 2. The other documents convert the planned orders of their week left over,
+ *    per (item, location, segment, week, type): first each to one of equal
+ *    quantity (Planned before Firm, then `splitIndex`), then each one left to
+ *    the next Planned order by `splitIndex` — by the rule of 1: a document
+ *    smaller than what is left of that order only reduces it. One LARGER
+ *    than it converts it and takes the excess off the week's next Planned
+ *    orders by `splitIndex`: each drops by what is left of the excess, and
+ *    one the excess covers whole is deleted (`deletions`). A Firm order is
+ *    the planner's number, so only its id or its quantity converts it, and an
+ *    excess never touches it. A planned order counts in the week
+ *    `conversionWeekOf` gives it, so the current week also holds every
+ *    overdue one: MRP sizes it, and sums it into the action, there. Without a
+ *    calendar, its stored week. A document whose action's week is already
+ *    past (`earlierWeekIds`) counts in the current week, and takes only the
+ *    overdue orders (due before the current week's start): that action
+ *    counted them. A document of the current week then takes only the
+ *    current week's orders, as it does when the row has an Open or
+ *    Dismissed action of a past week (`pastWeekActionRows`). Orders are
+ *    taken by due date, then `splitIndex`, as the suggestions list them.
+ */
+export function matchPlannedOrdersToDocuments(
+  documents: PlannedOrderConversion[],
+  candidates: ConvertiblePlannedOrder[],
+  calendar?: ConversionCalendar | null
+): {
+  conversions: { plannedOrderId: string; documentId: string }[];
+  reductions: { plannedOrderId: string; quantity: number }[];
+  deletions: string[];
+} {
+  const byId = new Map(candidates.map((row) => [row.id, row]));
+  // converted or deleted: no later document takes it
+  const claimed = new Set<string>();
+  const conversions: { plannedOrderId: string; documentId: string }[] = [];
+  const deletions: string[] = [];
+  const claim = (row: ConvertiblePlannedOrder, documentId: string) => {
+    claimed.add(row.id);
+    conversions.push({ plannedOrderId: row.id, documentId });
+  };
+
+  // the quantity of a planned order its documents have not covered
+  const left = new Map<string, number>();
+
+  const candidatesByKey = new Map<string, ConvertiblePlannedOrder[]>();
+  for (const row of candidates) {
+    if (row.orderType === "Transfer") continue;
+    const periodId = calendar
+      ? conversionWeekOf(row.dueDate, calendar)
+      : row.periodId;
+    if (!periodId) continue;
+    const key = conversionKey({ ...row, periodId, orderType: row.orderType });
+    const list = candidatesByKey.get(key);
+    if (list) list.push(row);
+    else candidatesByKey.set(key, [row]);
+  }
+  // The planned orders a document may draw on, as the suggestions offer
+  // them: a document of a past week's action only the overdue ones; one of
+  // the current week only the current week's when its row has a past week's
+  // action (that action counted the overdue ones), else both.
+  const currentWeek = currentWeekOf(calendar);
+  const isPastWeekDocument = (document: PlannedOrderConversion) =>
+    !!currentWeek && !!calendar?.earlierWeekIds.includes(document.periodId);
+  const rowsWithPastWeekAction = new Set(
+    [
+      ...(calendar?.pastWeekActionRows ?? []),
+      ...documents.filter(isPastWeekDocument)
+    ].map(conversionRowKey)
+  );
+  // ISO dates order as strings
+  const isOverdue = (row: ConvertiblePlannedOrder) =>
+    !!currentWeek && row.dueDate < currentWeek.startDate;
+  const weekOf = (document: PlannedOrderConversion) => {
+    const rows =
+      candidatesByKey.get(documentConversionKey(document, calendar)) ?? [];
+    if (!currentWeek) return rows;
+    if (isPastWeekDocument(document)) return rows.filter(isOverdue);
+    return document.periodId === currentWeek.id &&
+      rowsWithPastWeekAction.has(conversionRowKey(document))
+      ? rows.filter((row) => !isOverdue(row))
+      : rows;
+  };
+  // the document's week's Planned orders not yet converted, in split order
+  const plannedOfWeek = (document: PlannedOrderConversion) =>
+    weekOf(document)
+      .filter((row) => !claimed.has(row.id) && row.status === "Planned")
+      .sort(bySplit);
+  // A document larger than the order it converts is also the supply of the
+  // week's next Planned orders: MRP would count it there, so they shrink or
+  // go. Only Planned rows are passed: a Firm order is the planner's number.
+  const takeExcess = (excess: number, rows: ConvertiblePlannedOrder[]) => {
+    for (const row of rows) {
+      if (excess <= 0) break;
+      const quantity = left.get(row.id) ?? row.quantity;
+      const rest = round(quantity - excess);
+      if (rest > 0) {
+        left.set(row.id, rest);
+        break;
+      }
+      left.delete(row.id);
+      claimed.add(row.id);
+      deletions.push(row.id);
+      excess = round(excess - quantity);
+    }
+  };
+
+  // named documents whose planned order they cannot convert
+  const unconvertible = new Set<PlannedOrderConversion>();
+  for (const document of documents) {
+    if (!document.plannedOrderId) continue;
+    const row = byId.get(document.plannedOrderId);
+    if (
+      !row ||
+      claimed.has(row.id) ||
+      row.orderType !== document.orderType ||
+      row.itemId !== document.itemId ||
+      row.locationId !== document.locationId ||
+      row.planningSegmentId !== document.planningSegmentId
+    ) {
+      unconvertible.add(document);
+      continue;
+    }
+    const remainder = round(
+      (left.get(row.id) ?? row.quantity) - document.quantity
+    );
+    if (remainder > 0) {
+      left.set(row.id, remainder);
+      continue;
+    }
+    left.delete(row.id);
+    claim(row, document.documentId);
+    takeExcess(-remainder, plannedOfWeek(document));
+  }
+  const isTaken = (row: ConvertiblePlannedOrder) =>
+    claimed.has(row.id) || left.has(row.id);
+
+  const unnamed = documents.filter(
+    (document) => !document.plannedOrderId || unconvertible.has(document)
+  );
+  const unmatched: PlannedOrderConversion[] = [];
+  for (const document of unnamed) {
+    const equal = weekOf(document)
+      .filter((row) => !isTaken(row) && equals(row.quantity, document.quantity))
+      .sort(
+        (a, b) =>
+          Number(a.status === "Firm") - Number(b.status === "Firm") ||
+          bySplit(a, b)
+      )[0];
+    if (equal) claim(equal, document.documentId);
+    else unmatched.push(document);
+  }
+  // The fallback holds the named documents' rule: a document smaller than
+  // what is left of the order takes its quantity off and leaves the order as
+  // it is; one that reaches it converts it. Later documents count against
+  // what the earlier ones left.
+  for (const document of unmatched) {
+    const [next, ...following] = plannedOfWeek(document);
+    if (!next) continue;
+    const remainder = round(
+      (left.get(next.id) ?? next.quantity) - document.quantity
+    );
+    if (remainder > 0) {
+      left.set(next.id, remainder);
+      continue;
+    }
+    left.delete(next.id);
+    claim(next, document.documentId);
+    takeExcess(-remainder, following);
+  }
+  return {
+    conversions,
+    reductions: [...left].map(([plannedOrderId, quantity]) => ({
+      plannedOrderId,
+      quantity
+    })),
+    deletions
+  };
+}
+
+/**
+ * The scrap of a Make planned order at a new quantity, from the item's scrap
+ * rate, as `insertJob` derives a job's; a Buy order carries none. `quantity`
+ * is the SQL of the new quantity.
+ */
+function restatedPlannedOrderScrap(quantity: RawBuilder<unknown>) {
+  return sql`CASE
+    WHEN po."orderType" = 'Make' THEN CEIL(${quantity} * COALESCE((
+      SELECT ir."scrapPercentage" FROM "itemReplenishment" ir
+      WHERE ir."itemId" = po."itemId" AND ir."companyId" = po."companyId"
+    ), 0))
+    ELSE 0
+  END`;
+}
+
+/**
+ * Converts the planned orders that the jobs (Make) or PO lines (Buy) placed
+ * from planning stand for (`matchPlannedOrdersToDocuments`). A converted row
+ * becomes Converted with its `jobId` or `purchaseOrderLineId`, and loses
+ * `firmedBy` / `firmedAt` (the `plannedOrder_firm_chk` CHECK ties them to
+ * Firm). Its Open and Dismissed change actions are deleted: the job or PO
+ * line is the order now, and MRP raises its actions on that.
+ *
+ * A document smaller than the planned order it names, or (naming none) the
+ * Planned order it falls back to, does not convert it: the order keeps its
+ * status (a Firm one stays Firm) and drops to the quantity left, its Make
+ * scrap restated as `updatePlannedOrders` does. Its Open and Dismissed change
+ * actions are deleted too: they were sized for the old quantity, and an
+ * Increase applied later would put back what the document already covers.
+ * A document larger than the planned order it names or falls back to
+ * reduces the week's next Planned orders the same way, and deletes one it
+ * covers whole (its actions cascade).
+ *
+ * A planned order no document stands for stays as it is, and the next MRP run
+ * sizes it again. Two orders merged into one PO line are two documents, so
+ * both planned orders point at that line.
+ *
+ * One read of the weeks, one read (`FOR UPDATE`), one statement per kind of
+ * change and one delete of actions for the batch. Throws on failure; call it
+ * inside the transaction that settles the actions (`withTransaction` joins
+ * one), under the planning lock.
+ */
+export async function convertPlannedOrdersForActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    /** Today on the location's calendar: the week holding it also holds
+     *  every overdue planned order. */
+    asOf?: string;
+    documents: PlannedOrderConversion[];
+  }
+): Promise<
+  { id: string; jobId: string | null; purchaseOrderLineId: string | null }[]
+> {
+  if (args.documents.length === 0) return [];
+  const namedIds = [
+    ...new Set(
+      args.documents.flatMap((document) =>
+        document.plannedOrderId ? [document.plannedOrderId] : []
+      )
+    )
+  ];
+  // every document's week: one whose planned order is stale converts there
+  const keys = [
+    ...new Map(
+      args.documents.map((document) => [conversionKey(document), document])
+    ).values()
+  ];
+
+  return withTransaction(db, async (trx) => {
+    const calendar = await readConversionCalendar(trx, {
+      periodIds: [...new Set(keys.map((key) => key.periodId))],
+      asOf: args.asOf
+    });
+    const weekById = new Map(calendar.weeks.map((week) => [week.id, week]));
+    const currentWeek = currentWeekOf(calendar);
+    const currentWeekId = currentWeek?.id;
+    // The rows with an Open or Dismissed Order / Make of a week already past
+    // (the week turned before MRP ran again): that action counted the
+    // overdue planned orders, not the current week's.
+    const orderTypes = [...new Set(keys.map((key) => key.orderType))];
+    const pastWeekActions = currentWeek
+      ? await trx
+          .selectFrom("planningAction as pa")
+          .innerJoin("period as p", "p.id", "pa.periodId")
+          .select([
+            "pa.itemId",
+            "pa.locationId",
+            "pa.planningSegmentId",
+            "pa.type"
+          ])
+          .distinct()
+          .where("pa.companyId", "=", args.companyId)
+          .where("pa.status", "in", ["Open", "Dismissed"])
+          .where(
+            "pa.type",
+            "in",
+            orderTypes.map((type) =>
+              type === "Make" ? ("Make" as const) : ("Order" as const)
+            )
+          )
+          .where("pa.itemId", "in", [...new Set(keys.map((k) => k.itemId))])
+          .where("pa.locationId", "in", [
+            ...new Set(keys.map((k) => k.locationId))
+          ])
+          .where("p.startDate", "<", currentWeek.startDate)
+          .execute()
+      : [];
+    calendar.pastWeekActionRows = pastWeekActions.map(
+      (row): ConversionRow => ({
+        itemId: row.itemId,
+        locationId: row.locationId,
+        planningSegmentId: row.planningSegmentId,
+        orderType: row.type === "Make" ? "Make" : "Buy"
+      })
+    );
+    // each key's week, by due date: the current one from the first day of
+    // time, as it holds every overdue planned order; a past action week
+    // reads as the current one
+    const keyFilters = keys.flatMap((key) => {
+      const week = weekById.get(
+        conversionWeekOfDocument(key.periodId, calendar)
+      );
+      return week ? [{ key, week }] : [];
+    });
+
+    const candidates =
+      namedIds.length === 0 && keyFilters.length === 0
+        ? []
+        : await trx
+            .selectFrom("plannedOrder")
+            .select([
+              "id",
+              "itemId",
+              "locationId",
+              "planningSegmentId",
+              "periodId",
+              "orderType",
+              "status",
+              "quantity",
+              "splitIndex",
+              "dueDate"
+            ])
+            .where("companyId", "=", args.companyId)
+            .where("status", "in", ["Planned", "Firm"])
+            .where((eb) =>
+              eb.or([
+                ...(namedIds.length > 0 ? [eb("id", "in", namedIds)] : []),
+                ...keyFilters.map(({ key, week }) =>
+                  eb.and([
+                    eb("itemId", "=", key.itemId),
+                    eb("locationId", "=", key.locationId),
+                    eb("planningSegmentId", "=", key.planningSegmentId),
+                    eb("orderType", "=", key.orderType),
+                    eb("dueDate", "<=", week.endDate),
+                    ...(week.id === currentWeekId
+                      ? []
+                      : [eb("dueDate", ">=", week.startDate)])
+                  ])
+                )
+              ])
+            )
+            .forUpdate()
+            .execute();
+
+    const { conversions, reductions, deletions } =
+      matchPlannedOrdersToDocuments(
+        args.documents,
+        candidates.map((row) => ({
+          ...row,
+          status: row.status as ConvertiblePlannedOrder["status"],
+          quantity: Number(row.quantity),
+          splitIndex: Number(row.splitIndex),
+          dueDate: String(row.dueDate)
+        })),
+        calendar
+      );
+    const now = datetime.timestamp();
+    // the planned orders whose change actions no longer hold
+    const changedIds: string[] = [];
+
+    if (reductions.length > 0) {
+      const values = sql.join(
+        reductions.map(
+          (reduction) =>
+            sql`(${reduction.plannedOrderId}::text, ${reduction.quantity}::numeric)`
+        )
+      );
+      const reduced = await sql<{ id: string }>`
+        UPDATE "plannedOrder" po
+        SET
+          "quantity" = v."quantity",
+          "scrapQuantity" = ${restatedPlannedOrderScrap(sql`v."quantity"`)},
+          "updatedBy" = ${args.userId},
+          "updatedAt" = ${now}
+        FROM (VALUES ${values}) v ("id", "quantity")
+        WHERE po.id = v.id
+          AND po."companyId" = ${args.companyId}
+          AND po."status" IN ('Planned', 'Firm')
+        RETURNING po.id
+      `.execute(trx);
+      changedIds.push(...reduced.rows.map((row) => row.id));
+    }
+
+    if (deletions.length > 0) {
+      // a document covers these whole; their actions cascade
+      await trx
+        .deleteFrom("plannedOrder")
+        .where("companyId", "=", args.companyId)
+        .where("id", "in", deletions)
+        .where("status", "=", "Planned")
+        .execute();
+    }
+
+    let converted: {
+      id: string;
+      jobId: string | null;
+      purchaseOrderLineId: string | null;
+    }[] = [];
+    if (conversions.length > 0) {
+      const values = sql.join(
+        conversions.map(
+          (match) =>
+            sql`(${match.plannedOrderId}::text, ${match.documentId}::text)`
+        )
+      );
+      const result = await sql<{
+        id: string;
+        jobId: string | null;
+        purchaseOrderLineId: string | null;
+      }>`
+        UPDATE "plannedOrder" po
+        SET
+          "status" = 'Converted',
+          "jobId" = CASE WHEN po."orderType" = 'Make' THEN v."documentId" END,
+          "purchaseOrderLineId" = CASE WHEN po."orderType" = 'Buy' THEN v."documentId" END,
+          "firmedBy" = NULL,
+          "firmedAt" = NULL,
+          "updatedBy" = ${args.userId},
+          "updatedAt" = ${now}
+        FROM (VALUES ${values}) v ("id", "documentId")
+        WHERE po.id = v.id
+          AND po."companyId" = ${args.companyId}
+          AND po."status" IN ('Planned', 'Firm')
+        RETURNING po.id, po."jobId", po."purchaseOrderLineId"
+      `.execute(trx);
+      converted = result.rows;
+      changedIds.push(...converted.map((row) => row.id));
+    }
+
+    if (changedIds.length > 0) {
+      await trx
+        .deleteFrom("planningAction")
+        .where("companyId", "=", args.companyId)
+        .where("plannedOrderId", "in", changedIds)
+        .where("status", "in", ["Open", "Dismissed"])
+        .execute();
+    }
+    return converted;
+  });
+}
+
+/**
+ * The weeks a convert sorts planned orders into, in date order: given
+ * `asOf`, the weekly period holding it first (it holds every overdue planned
+ * order), then the settled actions' later weeks. A settled action's week
+ * before it is named in `earlierWeekIds`, so its documents convert in the
+ * current week. Without a period holding `asOf`, the settled actions' weeks
+ * and no planned order is overdue.
+ */
+async function readConversionCalendar(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  args: { periodIds: string[]; asOf?: string }
+): Promise<ConversionCalendar> {
+  if (args.periodIds.length === 0) {
+    return { weeks: [], today: null, earlierWeekIds: [] };
+  }
+  const asOf = args.asOf;
+  const rows = await db
+    .selectFrom("period")
+    .select(["id", "startDate", "endDate"])
+    .where("periodType", "=", "Week")
+    .where((eb) =>
+      eb.or([
+        eb("id", "in", args.periodIds),
+        ...(asOf
+          ? [eb.and([eb("startDate", "<=", asOf), eb("endDate", ">=", asOf)])]
+          : [])
+      ])
+    )
+    .orderBy("startDate")
+    .orderBy("id")
+    .execute();
+  const all = rows.map((row) => ({
+    id: row.id,
+    startDate: String(row.startDate),
+    endDate: String(row.endDate)
+  }));
+  const holdsToday = (week: ConversionWeek) =>
+    !!asOf && week.startDate <= asOf && week.endDate >= asOf;
+  // one current week: a settled action's own if it holds today
+  const current =
+    all.find((week) => holdsToday(week) && args.periodIds.includes(week.id)) ??
+    all.find(holdsToday);
+  if (!current) {
+    return {
+      weeks: all.filter((week) => args.periodIds.includes(week.id)),
+      today: null,
+      earlierWeekIds: []
+    };
+  }
+  // a week before the current one holds nothing: what was due then is
+  // overdue, and counts in the current week. A settled action still on
+  // such a week (the week turned before MRP ran again) converts there too.
+  const settled = all.filter(
+    (week) => week !== current && args.periodIds.includes(week.id)
+  );
+  return {
+    // ISO dates order as strings
+    weeks: [
+      current,
+      ...settled.filter((week) => week.startDate > current.startDate)
+    ],
+    today: asOf ?? null,
+    earlierWeekIds: settled
+      .filter((week) => week.startDate < current.startDate)
+      .map((week) => week.id)
+  };
+}
+
+/** A planned order as a person's change reads it. */
+export type PlannedOrderForChange = {
+  id: string;
+  locationId: string;
+  orderType: "Make" | "Buy" | "Transfer";
+  status: "Planned" | "Firm" | "Converted";
+};
+
+/**
+ * Read one planned order of this company at `locationId` for a person's
+ * change (firm, unfirm, edit) and check that the caller may change it. An
+ * order at another location is a conflict, as `readPlanningJob`. The order type
+ * decides the permission: a Make planned order needs `update: production`, a
+ * Buy planned order `update: purchasing`. A Converted row is refused, because
+ * its job or PO line is the order now.
+ */
+export async function readPlannedOrderForChange(
+  ctx: ServiceContext,
+  id: string,
+  locationId: string
+): Promise<PlannedOrderForChange | CarbonError> {
+  let row: PlannedOrderForChange | undefined;
+  try {
+    row = await ctx.asSystem.pg
+      .selectFrom("plannedOrder")
+      .select(["id", "locationId", "orderType", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", ctx.company.id)
+      .executeTakeFirst();
+  } catch (err) {
+    return ctx.error("internal", "Failed to read the planned order", err);
+  }
+  if (!row) return ctx.error("notFound", "Planned order not found");
+  // The drawer lists one location's planned orders.
+  if (row.locationId !== locationId) {
+    return ctx.error("conflict", "This planned order is for another location.");
+  }
+  if (row.orderType === "Transfer") {
+    return ctx.error("rule", "A Transfer planned order cannot be changed");
+  }
+  const module = row.orderType === "Make" ? "production" : "purchasing";
+  if (!ctx.can({ update: module })) {
+    return ctx.error(
+      "forbidden",
+      `Changing a ${row.orderType} planned order needs update permission on ${module}`
+    );
+  }
+  if (!isPlannedOrderEditable(row.status)) {
+    return ctx.error(
+      "rule",
+      `This planned order is ${row.status}: change its ${
+        row.orderType === "Make" ? "job" : "purchase order line"
+      } instead`
+    );
+  }
+  return row;
+}
+
+const editablePlannedOrderStatuses = sql.join(
+  PLANNED_ORDER_EDITABLE_STATUSES.map(
+    (status) => sql`${status}::"plannedOrderStatus"`
+  )
+);
+
+/**
+ * Firm a Planned order: a person now holds it, and MRP no longer changes its
+ * quantity or dates. Only a Planned row changes; returns whether it did.
+ */
+export async function firmPlannedOrder(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<boolean> {
+  const now = datetime.timestamp();
+  return withTransaction(db, async (trx) => {
+    await lockCompanyPlanning(trx, args.companyId);
+    const rows = await trx
+      .updateTable("plannedOrder")
+      .set({
+        status: "Firm",
+        firmedBy: args.userId,
+        firmedAt: now,
+        updatedBy: args.userId,
+        updatedAt: now
+      })
+      .where("id", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .where("status", "=", "Planned")
+      .returning("id")
+      .execute();
+    return rows.length > 0;
+  });
+}
+
+/**
+ * Give a Firm order back to MRP: Planned, with no firm stamp. Only a Firm row
+ * changes; returns whether it did.
+ *
+ * A Planned row is unique on its natural key (item, location, segment, type,
+ * week, `splitIndex`). MRP may have planned another order on the same key
+ * while this one was Firm, so the row then takes the next free `splitIndex`
+ * of its week. The next run matches it to no order it plans, and deletes it
+ * unless the time fence holds it.
+ */
+export async function unfirmPlannedOrder(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<boolean> {
+  const now = datetime.timestamp();
+  const sameKey = sql`
+    o."companyId" = po."companyId"
+    AND o."itemId" = po."itemId"
+    AND o."locationId" = po."locationId"
+    AND o."planningSegmentId" = po."planningSegmentId"
+    AND o."orderType" = po."orderType"
+    AND o."periodId" = po."periodId"
+    AND o."status" = 'Planned'
+  `;
+  const query = sql<{ id: string }>`
+    UPDATE "plannedOrder" po
+    SET "status" = 'Planned',
+        "firmedBy" = NULL,
+        "firmedAt" = NULL,
+        "splitIndex" = CASE
+          WHEN EXISTS (
+            SELECT 1 FROM "plannedOrder" o
+            WHERE ${sameKey} AND o."splitIndex" = po."splitIndex"
+          )
+          THEN (SELECT MAX(o."splitIndex") + 1 FROM "plannedOrder" o WHERE ${sameKey})
+          ELSE po."splitIndex"
+        END,
+        "updatedBy" = ${args.userId},
+        "updatedAt" = ${now}
+    WHERE po."id" = ${args.id}
+      AND po."companyId" = ${args.companyId}
+      AND po."status" = 'Firm'
+    RETURNING po."id"
+  `;
+  return withTransaction(db, async (trx) => {
+    await lockCompanyPlanning(trx, args.companyId);
+    const result = await query.execute(trx);
+    return result.rows.length > 0;
+  });
+}
+
+/** A person's edit of one planned order: a new quantity, a new due date, or both. */
+export type PlannedOrderEdit = {
+  id: string;
+  quantity?: number | null;
+  dueDate?: string | null;
+};
+
+/** The refusal of a planned order due date no planning week holds. */
+export const PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE =
+  "Pick a due date inside the planning horizon";
+
+/** A planned order edit to a due date no weekly period holds. */
+export class PlannedOrderOutsideHorizonError extends Error {
+  constructor(readonly dueDates: string[]) {
+    super(PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE);
+    this.name = "PlannedOrderOutsideHorizonError";
+  }
+}
+
+/**
+ * The due dates no weekly `period` holds. A planned order belongs to the week
+ * of its due date, so it cannot move to one of these.
+ */
+export async function plannedOrderDueDatesWithoutWeek(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  dueDates: string[]
+): Promise<string[]> {
+  const dates = [...new Set(dueDates)];
+  if (dates.length === 0) return [];
+  const result = await sql<{ dueDate: string }>`
+    SELECT d::text AS "dueDate"
+    FROM unnest(${dates}::date[]) AS d
+    WHERE NOT EXISTS (
+      SELECT 1 FROM "period" p
+      WHERE p."periodType" = 'Week'
+        AND p."startDate" <= d
+        AND p."endDate" >= d
+    )
+  `.execute(db);
+  return result.rows.map((row) => String(row.dueDate));
+}
+
+/**
+ * Edit planned orders in ONE statement. Each edit firms its row (a person now
+ * holds it); a row already Firm keeps who firmed it. A moved due date moves
+ * the release date by the same number of days, so the lead time between them
+ * stays, and moves the row to the weekly period that holds the new due date;
+ * a due date no weekly period holds is refused
+ * (`PlannedOrderOutsideHorizonError`) and nothing changes. A new quantity of
+ * a Make order restates `scrapQuantity` from the item's scrap rate, as
+ * `updatePlanningJob` does for a job; a Buy order carries no scrap. Only
+ * Planned and Firm rows change. Returns the ids it changed. Throws on
+ * failure; call it inside the caller's transaction.
+ */
+export async function updatePlannedOrders(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  args: { companyId: string; userId: string; edits: PlannedOrderEdit[] }
+): Promise<string[]> {
+  if (args.edits.length === 0) return [];
+  const now = datetime.timestamp();
+  const values = sql.join(
+    args.edits.map(
+      (edit) =>
+        sql`(${edit.id}::text, ${edit.quantity ?? null}::numeric, ${edit.dueDate ?? null}::date)`
+    )
+  );
+  const query = sql<{ id: string }>`
+    UPDATE "plannedOrder" po
+    SET "quantity" = COALESCE(v."quantity", po."quantity"),
+        "scrapQuantity" = CASE
+          WHEN v."quantity" IS NULL THEN po."scrapQuantity"
+          ELSE ${restatedPlannedOrderScrap(sql`v."quantity"`)}
+        END,
+        "dueDate" = COALESCE(v."dueDate", po."dueDate"),
+        -- the week of the new due date (checked to exist before the write)
+        "periodId" = CASE
+          WHEN v."dueDate" IS NULL THEN po."periodId"
+          ELSE (
+            SELECT p."id" FROM "period" p
+            WHERE p."periodType" = 'Week'
+              AND p."startDate" <= v."dueDate"
+              AND p."endDate" >= v."dueDate"
+            ORDER BY p."startDate" DESC, p."id"
+            LIMIT 1
+          )
+        END,
+        "releaseDate" = po."releaseDate"
+          + (COALESCE(v."dueDate", po."dueDate") - po."dueDate"),
+        "status" = 'Firm',
+        "firmedBy" = COALESCE(po."firmedBy", ${args.userId}),
+        "firmedAt" = COALESCE(po."firmedAt", ${now}::timestamptz),
+        "updatedBy" = ${args.userId},
+        "updatedAt" = ${now}
+    FROM (VALUES ${values}) AS v("id", "quantity", "dueDate")
+    WHERE po."id" = v."id"
+      AND po."companyId" = ${args.companyId}
+      AND po."status" IN (${editablePlannedOrderStatuses})
+    RETURNING po."id"
+  `;
+  // joins the caller's transaction when there is one (the apply path)
+  return withTransaction(db, async (trx) => {
+    await lockCompanyPlanning(trx, args.companyId);
+    const outside = await plannedOrderDueDatesWithoutWeek(
+      trx,
+      args.edits.flatMap((edit) => (edit.dueDate ? [edit.dueDate] : []))
+    );
+    if (outside.length > 0) throw new PlannedOrderOutsideHorizonError(outside);
+    const result = await query.execute(trx);
+    return result.rows.map((row) => row.id);
+  });
+}
+
+/** A change action on a planned order, as Apply reads it. */
+export type PlannedOrderPlanningAction = {
+  planningActionId: string;
+  plannedOrderId: string;
+  type: "Expedite" | "Defer" | "Increase" | "Decrease" | "Cancel";
+  suggestedDate: string | null;
+  suggestedQuantity: number | null;
+};
+
+export type PlannedOrderPlanningApplyResult = {
+  /** changed (or deleted, for a Cancel) and marked Actioned */
+  applied: string[];
+  /** marked Actioned by another apply since the page loaded; nothing changed */
+  alreadyApplied: string[];
+  /** not applied, and left Open: the reason is for the planner */
+  refused: { id: string; message: string }[];
+  /** the planned orders an applied action edited or deleted */
+  changedPlannedOrderIds: string[];
+};
+
+/**
+ * Apply a batch of change actions to their planned orders in ONE transaction,
+ * set-based, as `applyPurchasingPlanningActions` does for PO lines:
+ *   1. lock the planned orders, and refuse an action whose order is of the
+ *      other worklist (`orderType`), Converted, or gone;
+ *   2. claim the rest (`claimPlanningActions`, the lock against a second apply);
+ *   3. one UPDATE for every Expedite / Defer / Increase / Decrease
+ *      (`updatePlannedOrders`: the due date or the quantity, and the row is
+ *      firmed), then one DELETE for every Cancel;
+ *   4. give the claim of a refused action back.
+ *
+ * A Cancel deletes the planned order. The FK from `planningAction` cascades,
+ * so the Cancel action and every other action on that order go with it. The
+ * claim comes first all the same: it is what stops two applies from both
+ * acting, and the action is reported in `applied`.
+ *
+ * Two actions on one order that set the same field (an Expedite and a Defer)
+ * cannot both apply: the first is applied, the second refused.
+ */
+export async function applyPlannedOrderPlanningActions(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    orderType: "Make" | "Buy";
+    actions: PlannedOrderPlanningAction[];
+  }
+): Promise<PlannedOrderPlanningApplyResult> {
+  const { companyId, userId, orderType, actions } = args;
+  const result: PlannedOrderPlanningApplyResult = {
+    applied: [],
+    alreadyApplied: [],
+    refused: [],
+    changedPlannedOrderIds: []
+  };
+  if (actions.length === 0) return result;
+  const now = datetime.timestamp();
+
+  await db.transaction().execute(async (trx) => {
+    // 1. lock the targets: a convert or an MRP run waits for this apply, and
+    // the reverse
+    await lockCompanyPlanning(trx, companyId);
+    const orders = await trx
+      .selectFrom("plannedOrder")
+      .select(["id", "orderType", "status"])
+      .where("id", "in", [...new Set(actions.map((a) => a.plannedOrderId))])
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    const orderById = new Map(orders.map((order) => [order.id, order]));
+    const eligible: PlannedOrderPlanningAction[] = [];
+    for (const action of actions) {
+      const order = orderById.get(action.plannedOrderId);
+      if (!order) {
+        result.refused.push({
+          id: action.planningActionId,
+          message: "Its planned order no longer exists"
+        });
+      } else if (order.orderType !== orderType) {
+        result.refused.push({
+          id: action.planningActionId,
+          message: `It targets a ${order.orderType} planned order`
+        });
+      } else if (!isPlannedOrderEditable(order.status)) {
+        result.refused.push({
+          id: action.planningActionId,
+          message: `Its planned order is ${order.status}: review its ${
+            orderType === "Make" ? "job" : "purchase order line"
+          }`
+        });
+      } else {
+        eligible.push(action);
+      }
+    }
+
+    // 2. claim
+    const claimed = await claimPlanningActions(trx, {
+      ids: eligible.map((a) => a.planningActionId),
+      companyId,
+      userId,
+      now
+    });
+    const toRelease: string[] = [];
+    const edits = new Map<
+      string,
+      PlannedOrderEdit & { actionIds: string[]; dateActionId?: string }
+    >();
+    const cancels = new Map<string, string[]>();
+    for (const action of eligible) {
+      const claim = claimed.get(action.planningActionId);
+      if (!claim) {
+        result.alreadyApplied.push(action.planningActionId);
+        continue;
+      }
+      // The suggestion comes from the claim (see claimPlanningActions).
+      const suggestedDate = claim.suggestedDate ?? action.suggestedDate;
+      const suggestedQuantity =
+        claim.suggestedQuantity ?? action.suggestedQuantity;
+      const refuse = (message: string) => {
+        toRelease.push(action.planningActionId);
+        result.refused.push({ id: action.planningActionId, message });
+      };
+
+      if (action.type === "Cancel") {
+        const ids = cancels.get(action.plannedOrderId) ?? [];
+        ids.push(action.planningActionId);
+        cancels.set(action.plannedOrderId, ids);
+        continue;
+      }
+      const edit = edits.get(action.plannedOrderId) ?? {
+        id: action.plannedOrderId,
+        actionIds: []
+      };
+      if (action.type === "Expedite" || action.type === "Defer") {
+        if (!suggestedDate) {
+          refuse("It suggests no date");
+          continue;
+        }
+        if (edit.dueDate) {
+          refuse("Another action in this batch already moves its date");
+          continue;
+        }
+        edit.dueDate = suggestedDate;
+        edit.dateActionId = action.planningActionId;
+      } else {
+        if (suggestedQuantity === null || !(suggestedQuantity > 0)) {
+          refuse("It suggests no quantity");
+          continue;
+        }
+        if (edit.quantity !== undefined && edit.quantity !== null) {
+          refuse("Another action in this batch already changes its quantity");
+          continue;
+        }
+        edit.quantity = suggestedQuantity;
+      }
+      edit.actionIds.push(action.planningActionId);
+      edits.set(action.plannedOrderId, edit);
+    }
+
+    // a date no planning week holds is refused, the order's other edit stays
+    const outside = new Set(
+      await plannedOrderDueDatesWithoutWeek(
+        trx,
+        [...edits.values()].flatMap((edit) =>
+          edit.dueDate ? [edit.dueDate] : []
+        )
+      )
+    );
+    for (const [plannedOrderId, edit] of edits) {
+      if (!edit.dueDate || !outside.has(edit.dueDate) || !edit.dateActionId) {
+        continue;
+      }
+      const actionId = edit.dateActionId;
+      toRelease.push(actionId);
+      result.refused.push({
+        id: actionId,
+        message: PLANNED_ORDER_OUTSIDE_HORIZON_MESSAGE
+      });
+      edit.dueDate = undefined;
+      edit.actionIds = edit.actionIds.filter((id) => id !== actionId);
+      if (edit.actionIds.length === 0) edits.delete(plannedOrderId);
+    }
+
+    // 3. write: the edits, then the cancels (a Cancel wins over an edit of
+    // the same order in the batch: the order is gone either way)
+    const changed = new Set(
+      await updatePlannedOrders(trx, {
+        companyId,
+        userId,
+        edits: [...edits.values()].map(({ id, quantity, dueDate }) => ({
+          id,
+          quantity,
+          dueDate
+        }))
+      })
+    );
+    const deleted = new Set<string>();
+    if (cancels.size > 0) {
+      const rows = await trx
+        .deleteFrom("plannedOrder")
+        .where("id", "in", [...cancels.keys()])
+        .where("companyId", "=", companyId)
+        .where("status", "in", [...PLANNED_ORDER_EDITABLE_STATUSES])
+        .returning("id")
+        .execute();
+      for (const row of rows) deleted.add(row.id);
+    }
+    result.changedPlannedOrderIds = [...new Set([...changed, ...deleted])];
+
+    for (const [plannedOrderId, edit] of edits) {
+      for (const id of edit.actionIds) {
+        if (changed.has(plannedOrderId)) result.applied.push(id);
+        else {
+          toRelease.push(id);
+          result.refused.push({
+            id,
+            message: "Its planned order changed since it was read"
+          });
+        }
+      }
+    }
+    for (const [plannedOrderId, ids] of cancels) {
+      for (const id of ids) {
+        if (deleted.has(plannedOrderId)) result.applied.push(id);
+        else {
+          toRelease.push(id);
+          result.refused.push({
+            id,
+            message: "Its planned order changed since it was read"
+          });
+        }
+      }
+    }
+
+    // 4. give the refused claims back (a cancelled order's actions are gone)
+    await releasePlanningActionClaims(trx, {
+      ids: toRelease,
+      companyId,
+      userId,
+      now
+    });
+  });
+
+  return result;
 }
 
 /** Compensation for a failed apply: release a claimed (Actioned) row back to Open. */

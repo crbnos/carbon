@@ -39,24 +39,32 @@ import { ItemReorderPolicy } from "./ItemReorderPolicy";
 
 type ItemPlanningFormProps = {
   // the DB row carries responsibleEmployee / planningHorizonDays /
-  // deliveryDateControl as nullable; the validator treats them as optional —
-  // accept both
+  // planningTimeFenceDays / deliveryDateControl as nullable; the validator
+  // treats them as optional — accept both
   initialValues: Omit<
     z.infer<typeof itemPlanningValidator>,
-    "responsibleEmployee" | "planningHorizonDays" | "deliveryDateControl"
+    | "responsibleEmployee"
+    | "planningHorizonDays"
+    | "planningTimeFenceDays"
+    | "deliveryDateControl"
   > & {
     responsibleEmployee?: string | null;
     planningHorizonDays?: number | null;
+    planningTimeFenceDays?: number | null;
     deliveryDateControl?:
       | z.infer<typeof itemPlanningValidator>["deliveryDateControl"]
       | null;
   };
+  // the location's planning time fence, which an empty item value inherits;
+  // undefined when it could not be read
+  locationTimeFenceDays?: number;
   locations: ListItem[];
   type: "Part" | "Material" | "Tool" | "Consumable";
 };
 
 const ItemPlanningForm = ({
   initialValues,
+  locationTimeFenceDays,
   locations,
   type
 }: ItemPlanningFormProps) => {
@@ -69,9 +77,15 @@ const ItemPlanningForm = ({
   }));
 
   const [policy, setPolicy] = useState(initialValues.reorderingPolicy);
-  // A Select shows its placeholder only for an empty value, not null.
+  // A Select shows its placeholder only for an empty value, not null. An
+  // empty override means "inherit" (the location's fence, the company's
+  // horizon); a null default renders as 0 in a number field and saves 0,
+  // which overrides the default with "none".
   const defaultValues: ItemPlanningFormProps["initialValues"] = {
     ...initialValues,
+    planningHorizonDays: initialValues.planningHorizonDays ?? undefined,
+    planningTimeFenceDays: initialValues.planningTimeFenceDays ?? undefined,
+    responsibleEmployee: initialValues.responsibleEmployee ?? undefined,
     deliveryDateControl: initialValues.deliveryDateControl ?? undefined
   };
 
@@ -203,6 +217,18 @@ const ItemPlanningForm = ({
                 label={t`Planning Horizon (Days)`}
                 termId="item-planning-horizon"
                 minValue={0}
+              />
+
+              <Number
+                name="planningTimeFenceDays"
+                label={t`Planning time fence (days)`}
+                termId="planning-time-fence"
+                minValue={0}
+                placeholder={
+                  locationTimeFenceDays === undefined
+                    ? t`Location default`
+                    : t`Location default: ${locationTimeFenceDays}`
+                }
               />
 
               <DeliveryDateControl

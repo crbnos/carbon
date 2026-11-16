@@ -7,9 +7,13 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+import {
+  plannedOrderIdValidator,
+  updatePlannedOrderValidator
+} from "~/modules/production/production.models";
 
 // Production planning: the grid's Make button and bulk actions, the order
-// drawer and the worklist lines post JSON here. One operation per `action`;
+// drawer, the worklist lines and the planned orders post JSON here. One operation per `action`;
 // each validates the rest of its body.
 const locationId = z.string();
 const planningActionIds = z.array(z.string());
@@ -43,6 +47,12 @@ const planningForm = z.discriminatedUnion("action", [
     locationId,
     planningActionIds,
     assignee: z.string().nullish()
+  }),
+  plannedOrderIdValidator.extend({
+    action: z.enum(["firmPlannedOrder", "unfirmPlannedOrder"])
+  }),
+  updatePlannedOrderValidator.extend({
+    action: z.literal("updatePlannedOrder")
   })
 ]);
 
@@ -92,6 +102,23 @@ export async function action(args: ActionFunctionArgs) {
       return planning.assignProductionPlanningActions({
         planningActionIds: form.planningActionIds,
         assignee: form.assignee ?? undefined
+      });
+    case "firmPlannedOrder":
+      return planning.firmPlannedOrder({
+        id: form.id,
+        locationId: form.locationId
+      });
+    case "unfirmPlannedOrder":
+      return planning.unfirmPlannedOrder({
+        id: form.id,
+        locationId: form.locationId
+      });
+    case "updatePlannedOrder":
+      return planning.updatePlannedOrder({
+        id: form.id,
+        locationId: form.locationId,
+        quantity: form.quantity,
+        dueDate: form.dueDate
       });
     default:
       return planning.applyPlanningActions({

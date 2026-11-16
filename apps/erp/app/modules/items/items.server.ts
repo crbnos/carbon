@@ -712,11 +712,12 @@ export const updateItemManufacturing = defineServiceFn({
  * Save an item's planning settings at a location, then re-plan it.
  *
  * @remarks
- * The reordering policy and its sizing parameters, the planning horizon and
- * the responsible employee. A full replace: an optional field left out is
- * cleared. The responsible employee must be an active employee of the
- * company. MRP then re-plans the item, so the planning pages' suggestions
- * follow the new settings now; a failed run does not fail the save.
+ * The reordering policy and its sizing parameters, the planning horizon, the
+ * planning time fence (empty inherits the location's) and the responsible
+ * employee. A full replace: an optional field left out is cleared. The
+ * responsible employee must be an active employee of the company. MRP then
+ * re-plans the item, so the planning pages' suggestions follow the new
+ * settings now; a failed run does not fail the save.
  *
  * @mcp
  */

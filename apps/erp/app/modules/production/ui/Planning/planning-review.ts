@@ -31,6 +31,8 @@ export type ReviewableAction = {
   purchaseOrderLinePromisedDate: string | null;
   jobId: string | null;
   jobStatus: Database["public"]["Enums"]["jobStatus"] | null;
+  /** A change on a planned order: Apply edits it, so it is never reviewed. */
+  plannedOrderId?: string | null;
 };
 
 /**
@@ -40,6 +42,9 @@ export type ReviewableAction = {
  * outranks. The same rules the planning.update routes apply.
  */
 export function planningActionNeedsReview(action: ReviewableAction): boolean {
+  // a planned order has no document to review: Apply edits it (and firms
+  // it), or deletes it for a Cancel
+  if (action.plannedOrderId) return false;
   if (action.purchaseOrderLineId) {
     if (!action.purchaseOrderStatus) return action.requiresManualAction;
     if (!isPurchaseOrderEditableFromPlanning(action.purchaseOrderStatus)) {

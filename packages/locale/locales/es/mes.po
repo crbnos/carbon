@@ -78,7 +78,7 @@ msgstr "{0} no tiene número de lote. Configúralo en el lote de producción u o
 #. placeholder {0}: result.unit.readableId
 #. placeholder {1}: result.unit.status
 msgid "{0} is {1}"
-msgstr ""
+msgstr "{0} está {1}"
 
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
@@ -193,7 +193,7 @@ msgid "{hours} h"
 msgstr "{hours} h"
 
 msgid "{issued} of {required}"
-msgstr ""
+msgstr "{issued} de {required}"
 
 msgid "{label}, overdue"
 msgstr "{label}, atrasado"
@@ -407,7 +407,7 @@ msgid "Allocate units"
 msgstr "Asignar unidades"
 
 msgid "Any part"
-msgstr ""
+msgstr "Cualquier pieza"
 
 msgid "Appearance"
 msgstr "Apariencia"
@@ -670,10 +670,10 @@ msgstr "Elija cómo Carbon se comunica con usted."
 
 #. placeholder {0}: unit.readableId
 msgid "Choose the operation to issue {0} into"
-msgstr ""
+msgstr "Elija la operación para dar salida de material a {0}"
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "Elija la operación a abrir para esta unidad"
 
 msgid "Clear"
 msgstr "Limpiar"
@@ -844,10 +844,10 @@ msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Costo del mantenimiento no planificado, últimos {0} días"
 
 msgid "Could not load the line feed"
-msgstr ""
+msgstr "No se pudo cargar la alimentación de línea"
 
 msgid "Could not look up this label. Try again."
-msgstr ""
+msgstr "No se pudo buscar esta etiqueta. Intente de nuevo."
 
 msgid "Country code"
 msgstr "Código de país"
@@ -1169,7 +1169,7 @@ msgid "Failed to register passkey"
 msgstr "Error al registrar llave de acceso"
 
 msgid "Failed to resolve request"
-msgstr ""
+msgstr "No se pudo resolver la solicitud"
 
 msgid "Failed to save measurement"
 msgstr "Error al guardar la medición"
@@ -1364,7 +1364,7 @@ msgid "In Progress"
 msgstr "En curso"
 
 msgid "In stock: {available}. Still needed: {needed}."
-msgstr ""
+msgstr "En existencias: {available}. Aún se necesita: {needed}."
 
 msgid "In warranty"
 msgstr "En garantía"
@@ -1437,7 +1437,7 @@ msgstr "Emitir material"
 
 #. placeholder {0}: selected.operation.jobReadableId
 msgid "Issue to {0}"
-msgstr ""
+msgstr "Salida de material a {0}"
 
 msgid "Issue Type"
 msgstr "Tipo de Problema"
@@ -1572,7 +1572,7 @@ msgid "Line"
 msgstr "Línea"
 
 msgid "Line feed"
-msgstr ""
+msgstr "Alimentación de línea"
 
 msgid "lines"
 msgstr "líneas"
@@ -1711,7 +1711,7 @@ msgid "matches"
 msgstr "coincide con"
 
 msgid "Material requested"
-msgstr ""
+msgstr "Material solicitado"
 
 msgid "Materials"
 msgstr "Materiales"
@@ -1791,7 +1791,7 @@ msgid "Navigation"
 msgstr "Navegación"
 
 msgid "Need material"
-msgstr ""
+msgstr "Se necesita material"
 
 msgid "New"
 msgstr "Nuevo"
@@ -1951,7 +1951,7 @@ msgid "No photos yet"
 msgstr "Sin fotos aún"
 
 msgid "No picking lists"
-msgstr ""
+msgstr "No hay listas de picking"
 
 msgid "No printer configured"
 msgstr "Sin impresora configurada"
@@ -2002,7 +2002,7 @@ msgid "No spare parts added yet"
 msgstr "Aún no se han agregado repuestos"
 
 msgid "No station"
-msgstr ""
+msgstr "Sin estación"
 
 msgid "No stations at this location"
 msgstr ""
@@ -2056,7 +2056,7 @@ msgid "Not usable stock. MRP and planning do not count it, and picking does not 
 msgstr "Stock no utilizable. El MRP y la planificación no lo cuentan, y el picking no lo toma."
 
 msgid "Note"
-msgstr ""
+msgstr "Nota"
 
 msgid "Notes"
 msgstr "Notas"
@@ -2198,7 +2198,7 @@ msgid "Out of calibration"
 msgstr "Fuera de calibración"
 
 msgid "Out of stock"
-msgstr ""
+msgstr "Sin existencias"
 
 msgid "Output lot"
 msgstr "Lote de salida"
@@ -2404,7 +2404,7 @@ msgid "Print batch list"
 msgstr "Imprimir lista de lotes de producción"
 
 msgid "Print travelers"
-msgstr ""
+msgstr "Imprimir hojas viajeras"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "Se imprime en las órdenes de compra que aprueba."
@@ -2619,7 +2619,7 @@ msgid "Repairable"
 msgstr "Reparable"
 
 msgid "Request material"
-msgstr ""
+msgstr "Solicitar material"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Requiere un código de 6 dígitos de una aplicación autenticadora al iniciar sesión."
@@ -2637,7 +2637,7 @@ msgid "Resolution"
 msgstr "Resolución"
 
 msgid "Resolve"
-msgstr ""
+msgstr "Resolver"
 
 msgid "Result"
 msgstr "Resultado"
@@ -2718,7 +2718,7 @@ msgid "Scan a tracked entity to add the first sample column."
 msgstr "Escanee una entidad rastreada para agregar la primera columna de muestra."
 
 msgid "Scan in these parts first"
-msgstr ""
+msgstr "Escanee primero estas piezas"
 
 msgid "Scan or enter a serial"
 msgstr "Escanear o ingrese un número de serie"
@@ -2974,7 +2974,7 @@ msgid "Short pick {itemName}"
 msgstr "Picking corto {itemName}"
 
 msgid "Short: {available} of {needed}"
-msgstr ""
+msgstr "Faltante: {available} de {needed}"
 
 msgid "Show description"
 msgstr "Mostrar descripción"
@@ -3274,7 +3274,7 @@ msgid "The timer and completion are shared by all {0} jobs. Steps, materials and
 msgstr "El temporizador y la finalización se comparten entre todas las {0} órdenes de trabajo. Los pasos, materiales y archivos aquí son propios de esta orden de trabajo."
 
 msgid "The unit changed. Scan again."
-msgstr ""
+msgstr "La unidad cambió. Vuelva a escanear."
 
 msgid "The values break a rule on this record."
 msgstr "Los valores rompen una regla en este registro."
@@ -3310,7 +3310,7 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "Estos elementos aún tienen material para recoger. Finalizar ahora marca la lista como Parcial."
 
 msgid "This barcode matches more than one unit"
-msgstr ""
+msgstr "Este código de barras coincide con más de una unidad"
 
 msgid "This batch has no work instructions."
 msgstr "Este lote de producción no tiene instrucciones de trabajo."
@@ -3328,13 +3328,13 @@ msgid "This is a pass / fail check. Press P or F."
 msgstr "Esta es una comprobación de pasa / falla. Pulse P o F."
 
 msgid "This job does not use that part"
-msgstr ""
+msgstr "Esta orden de trabajo no usa esa pieza"
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Esta orden de trabajo no tiene una tarifa de facturación. Pida a la oficina que la establezca antes de que se facture el tiempo."
 
 msgid "This label does not belong to a unit in this company"
-msgstr ""
+msgstr "Esta etiqueta no pertenece a una unidad de esta empresa"
 
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote está vencido y no puede ser preparado."
@@ -3470,10 +3470,10 @@ msgid "Training"
 msgstr "Capacitación"
 
 msgid "Traveler"
-msgstr ""
+msgstr "Hoja viajera"
 
 msgid "Try again"
-msgstr ""
+msgstr "Intente de nuevo"
 
 msgid "Two-factor authentication"
 msgstr "Autenticación de dos factores"
@@ -3632,7 +3632,7 @@ msgid "View or open"
 msgstr "Ver o abrir"
 
 msgid "View Traceability"
-msgstr ""
+msgstr "Ver trazabilidad"
 
 msgid "Warranty"
 msgstr "Garantía"
@@ -3647,7 +3647,7 @@ msgid "Wet"
 msgstr ""
 
 msgid "What do you need?"
-msgstr ""
+msgstr "¿Qué necesita?"
 
 msgid "What is {translatedTerm}?"
 msgstr "¿Qué es {translatedTerm}?"

@@ -483,3 +483,39 @@ describe("a location's timezone", () => {
     expect(scheduleNotices()).toEqual([]);
   });
 });
+
+describe("a location's planning time fence", () => {
+  const location = {
+    id: "loc-1",
+    name: "Plant",
+    addressLine1: "1 Main St",
+    city: "Chicago",
+    postalCode: "60601",
+    countryCode: "US",
+    timezone: "America/New_York"
+  };
+  const updated = (writes: { op: string; table: string; payload?: unknown }[]) =>
+    writes.find((write) => write.op === "update" && write.table === "location")
+      ?.payload as Record<string, unknown>;
+
+  // An API or MCP caller that never heard of the fence must not wipe it.
+  it("leaves the fence alone when an update does not send it", async () => {
+    const { ctx, writes } = contextWith({
+      location: { timezone: "America/New_York" }
+    });
+
+    await updateLocation(ctx, location);
+
+    expect(updated(writes)).not.toHaveProperty("planningTimeFenceDays");
+  });
+
+  it("writes the fence an update sends, 0 included", async () => {
+    const { ctx, writes } = contextWith({
+      location: { timezone: "America/New_York" }
+    });
+
+    await updateLocation(ctx, { ...location, planningTimeFenceDays: 0 });
+
+    expect(updated(writes)).toMatchObject({ planningTimeFenceDays: 0 });
+  });
+});

@@ -3,11 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { kindOf, recordingDatabase } from "./__fixtures__/recording-driver";
+import { PlannedOrdersChangedError } from "./planned-order-write";
 import {
   diffPlanningActions,
   type ExistingPlanningAction,
   groupPatchUpdates,
-  type PlanningActionCandidate
+  type PlanningActionCandidate,
+  writePlanningActions
 } from "./planning-actions";
 
 describe("groupPatchUpdates", () => {
@@ -88,6 +91,7 @@ describe("diffPlanningActions on a re-run", () => {
       isASAP: false,
       purchaseOrderLineId: null,
       jobId: null,
+      plannedOrderId: null,
       requiresManualAction: false,
       supplierId: null,
       policyName: "Lot-for-Lot",
@@ -128,5 +132,69 @@ describe("diffPlanningActions on a re-run", () => {
       periods: [{ id: "p1" }]
     });
     expect(diff).toEqual({ inserts: [], updates: [], deleteIds: [] });
+  });
+});
+
+describe("writePlanningActions after the run's planned-order write", () => {
+  // The Phase-7 write committed plo-1; the worklist names it.
+  const snapshot = {
+    readStart: "2026-11-14 10:00:00+00",
+    rows: [{ id: "plo-1", status: "Planned", updatedAt: null }]
+  };
+  const cancel: PlanningActionCandidate = {
+    itemId: "i1",
+    locationId: "l1",
+    planningSegmentId: "",
+    periodId: "p1",
+    type: "Cancel",
+    suggestedQuantity: 5,
+    suggestedDate: "2026-11-20",
+    horizonDate: "2026-11-20",
+    latestOrderDate: null,
+    isASAP: false,
+    purchaseOrderLineId: null,
+    jobId: null,
+    plannedOrderId: "plo-1",
+    requiresManualAction: false,
+    supplierId: null,
+    policyName: null,
+    reason: "No remaining requirement for this order",
+    triggerValues: null,
+    assignee: null
+  };
+  const write = (rows: { id: string; status: string }[]) => {
+    const { db, driver } = recordingDatabase(rows);
+    const result = writePlanningActions(db, {
+      companyId: "co-1",
+      userId: "user-1",
+      candidates: [cancel],
+      periods: [{ id: "p1", startDate: "2026-11-15" }],
+      toleranceDays: 7,
+      plannedOrderSnapshot: snapshot
+    });
+    return { result, steps: () => driver.log.map(kindOf) };
+  };
+
+  // A person cancelled plo-1 between the two writes: the action's insert
+  // would fail on its foreign key, so the run plans again instead.
+  it("writes nothing when a planned order changed after the planned-order write", async () => {
+    const { result, steps } = write([]);
+    await expect(result).rejects.toBeInstanceOf(PlannedOrdersChangedError);
+    expect(steps()).toEqual(["begin", "lock", "check", "rollback"]);
+  });
+
+  it("writes the worklist when the planned orders are as the run wrote them", async () => {
+    const { result, steps } = write([{ id: "plo-1", status: "Planned" }]);
+    await expect(result).resolves.toMatchObject({
+      inserts: [expect.objectContaining({ plannedOrderId: "plo-1" })]
+    });
+    expect(steps()).toEqual([
+      "begin",
+      "lock",
+      "check",
+      "select",
+      "insert",
+      "commit"
+    ]);
   });
 });

@@ -57,6 +57,7 @@ export * from "./object";
 export * from "./payment-funding";
 export * from "./pick-guards";
 export * from "./planning-sizing";
+export * from "./planning-time-fence";
 export * from "./prefetch";
 export * from "./project-billing";
 export * from "./purchase-cost-adjustment";

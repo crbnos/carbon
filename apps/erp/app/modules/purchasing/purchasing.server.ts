@@ -70,10 +70,13 @@ import {
   type RefusedPlanningOrder
 } from "~/modules/production/production.models";
 import {
+  applyPlannedOrderPlanningActions,
   assignPlanningActions,
   dismissPlanningActions,
   getPlanningActionsByIds,
+  type PlannedOrderPlanningAction,
   reopenDismissedPlanningActions,
+  replanAfterPlannedOrderChanges,
   runMRP,
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
@@ -3938,6 +3941,7 @@ export const orderPlannedPurchases = defineServiceFn({
       quantity: number;
       dueDate: string | null;
       planningActionId?: string;
+      plannedOrderId?: string;
     }[] = [];
 
     // Weeks are counted from the location's today, as the planning grid's are.
@@ -4404,7 +4408,8 @@ export const orderPlannedPurchases = defineServiceFn({
             purchaseOrderLineId: purchaseOrderLineId!,
             quantity: adjustedQuantity * conversionFactor,
             dueDate: order.dueDate ?? null,
-            planningActionId: order.planningActionId
+            planningActionId: order.planningActionId,
+            plannedOrderId: order.plannedOrderId
           });
           allSupplyForecasts.push({
             itemId,
@@ -4422,13 +4427,16 @@ export const orderPlannedPurchases = defineServiceFn({
     }
 
     // Settled as soon as the lines exist, to keep short the window in which an
-    // MRP run could net a line and the settle then take it off again.
+    // MRP run could net a line and the settle then take it off again. The same
+    // transaction converts the settled actions' planned orders to these lines
+    // (`purchaseOrderLineId` in `ordered`).
     const warnings: string[] = [];
     const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
       companyId,
       locationId,
       userId,
       type: "Order",
+      asOf: today,
       ordered
     });
     if (settled.error) {
@@ -4674,7 +4682,11 @@ type PlanningLine = {
  * quantity and date come from the stored action, never the caller):
  * Expedite and Defer move the line's required date, Increase and Decrease
  * its quantity, Cancel deletes the line (needs `delete: purchasing`). `type`
- * `apply` takes any of them; the others only their own. An action whose
+ * `apply` takes any of them; the others only their own. An action on a Buy
+ * planned order edits that order instead: Expedite / Defer set its due date
+ * (the release date moves by the same days), Increase / Decrease its
+ * quantity, and the order becomes Firm; Cancel deletes it; when any such
+ * action applied, MRP runs once the batch is written. An action whose
  * order is in approval or sent, or whose date the supplier promised, is
  * listed in `requiresManualAction` to review on the order. With `apply`, an
  * Open Transfer or Borrow creates a Draft project stock transfer
@@ -4698,236 +4710,290 @@ export const applyPlanningActions = defineServiceFn({
   }),
   permission: { update: "purchasing" },
 
-  async run(ctx, { planningActionIds: ids, type }) {
-    const db = ctx.asSystem.pg;
-    const companyId = ctx.company.id;
-    const applied: string[] = [];
-    const requiresManualAction: {
-      id: string;
-      purchaseOrderId: string | null;
-    }[] = [];
-    const errors: string[] = [];
+  run: (ctx, { planningActionIds: ids, type }) =>
+    replanAfterPlannedOrderChanges(ctx, async (changedPlannedOrderIds) => {
+      const db = ctx.asSystem.pg;
+      const companyId = ctx.company.id;
+      const applied: string[] = [];
+      const requiresManualAction: {
+        id: string;
+        purchaseOrderId: string | null;
+      }[] = [];
+      const errors: string[] = [];
 
-    // Two reads for the whole batch decide what is eligible, then ONE
-    // transaction applies all of it.
-    const actionRows = await getPlanningActionsByIds(db, { ids, companyId });
-    if (actionRows.error) {
-      return ctx.error(
-        "internal",
-        "Failed to read planning actions",
-        actionRows.error
-      );
-    }
-    const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
-
-    // A Transfer or a Borrow creates a Draft project stock transfer
-    // (approved and posted on the transfer pages); it is never one of the
-    // change actions below.
-    const transferIds =
-      type === "apply"
-        ? ids.filter((id) => {
-            const row = rowById.get(id);
-            return (
-              (row?.type === "Transfer" || row?.type === "Borrow") &&
-              row.status === "Open"
-            );
-          })
-        : [];
-    const transferOutcome = await applyTransferPlanningActions({
-      db: ctx.asSystem.pg,
-      companyId,
-      userId: ctx.auditUserId,
-      planningActionIds: transferIds
-    });
-    applied.push(...transferOutcome.applied);
-    errors.push(...transferOutcome.errors);
-    const transferIdSet = new Set(transferIds);
-
-    const eligible: {
-      planningActionId: string;
-      row: (typeof actionRows.data)[number];
-    }[] = [];
-    for (const planningActionId of ids) {
-      if (transferIdSet.has(planningActionId)) continue;
-      const row = rowById.get(planningActionId);
-      if (!row) {
-        errors.push(`Planning action ${planningActionId} not found`);
-        continue;
+      // Two reads for the whole batch decide what is eligible, then ONE
+      // transaction applies all of it.
+      const actionRows = await getPlanningActionsByIds(db, { ids, companyId });
+      if (actionRows.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read planning actions",
+          actionRows.error
+        );
       }
-      if (row.status !== "Open") {
-        errors.push(`Planning action ${planningActionId} is not open`);
-        continue;
-      }
-      if (
+      const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
+
+      // A Transfer or a Borrow creates a Draft project stock transfer
+      // (approved and posted on the transfer pages); it is never one of the
+      // change actions below.
+      const transferIds =
         type === "apply"
-          ? !PLANNING_CHANGE_TYPES.has(row.type)
-          : PLANNING_ACTION_TYPE_OF[type] !== row.type
-      ) {
-        errors.push(
-          type === "apply"
-            ? `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
-            : `Planning action ${planningActionId} is a ${row.type}, not ${PLANNING_ACTION_TYPE_OF[type]}`
-        );
-        continue;
-      }
-      if (!row.purchaseOrderLineId) {
-        errors.push(
-          `Planning action ${planningActionId} does not target a purchase order line`
-        );
-        continue;
-      }
-      eligible.push({ planningActionId, row });
-    }
-
-    // One statement: the id list goes to Postgres as a parameter, never into
-    // a PostgREST URL.
-    const lineIds = [
-      ...new Set(eligible.map(({ row }) => row.purchaseOrderLineId!))
-    ];
-    let lineById: Map<string, PlanningLine>;
-    try {
-      const lines =
-        lineIds.length > 0
-          ? await db
-              .selectFrom("purchaseOrderLine as pol")
-              .innerJoin("purchaseOrder as po", (join) =>
-                join
-                  .onRef("po.id", "=", "pol.purchaseOrderId")
-                  .on("po.companyId", "=", companyId)
-              )
-              .leftJoin("purchaseOrderDelivery as pod", "pod.id", "po.id")
-              .select([
-                "pol.id",
-                "pol.purchaseOrderId",
-                "pol.conversionFactor",
-                "pol.promisedDate",
-                "po.status as purchaseOrderStatus",
-                "pod.receiptPromisedDate"
-              ])
-              .where("pol.id", "in", lineIds)
-              .where("pol.companyId", "=", companyId)
-              .execute()
+          ? ids.filter((id) => {
+              const row = rowById.get(id);
+              return (
+                (row?.type === "Transfer" || row?.type === "Borrow") &&
+                row.status === "Open"
+              );
+            })
           : [];
-      lineById = new Map(lines.map((line) => [line.id, line]));
-    } catch (err) {
-      return ctx.error(
-        "internal",
-        "Failed to read the planning actions' purchase order lines",
-        err
-      );
-    }
-
-    const mayDeleteLines = ctx.can({ delete: "purchasing" });
-    const toClaim: {
-      planningActionId: string;
-      row: (typeof eligible)[number]["row"];
-      line: PlanningLine;
-    }[] = [];
-    for (const { planningActionId, row } of eligible) {
-      const line = lineById.get(row.purchaseOrderLineId!);
-      if (!line) {
-        errors.push(
-          `Purchase order line for planning action ${planningActionId} not found`
-        );
-        continue;
-      }
-      const datePromised =
-        (row.type === "Expedite" || row.type === "Defer") &&
-        promisedDateOf(line) !== null;
-      if (
-        !isPurchaseOrderEditableFromPlanning(line.purchaseOrderStatus) ||
-        datePromised
-      ) {
-        // In approval or sent, or a date the supplier promised (which the
-        // required date cannot move): review on the order instead.
-        requiresManualAction.push({
-          id: planningActionId,
-          purchaseOrderId: line.purchaseOrderId
-        });
-        continue;
-      }
-      if (row.type === "Cancel" && !mayDeleteLines) {
-        errors.push(
-          `Planning action ${planningActionId} deletes a purchase order line, which needs delete permission`
-        );
-        continue;
-      }
-      toClaim.push({ planningActionId, row, line });
-    }
-
-    let outcome: Awaited<
-      ReturnType<typeof service.applyPurchasingPlanningActions>
-    >;
-    try {
-      outcome = await service.applyPurchasingPlanningActions(db, {
+      const transferOutcome = await applyTransferPlanningActions({
+        db: ctx.asSystem.pg,
         companyId,
-        companyGroupId: ctx.company.groupId,
         userId: ctx.auditUserId,
-        actions: toClaim.map(({ planningActionId, row, line }) => ({
-          planningActionId,
-          type: row.type as
-            | "Expedite"
-            | "Defer"
-            | "Increase"
-            | "Decrease"
-            | "Cancel",
-          lineId: line.id,
-          purchaseOrderId: line.purchaseOrderId,
-          suggestedDate: row.suggestedDate ?? null,
-          suggestedQuantity:
-            row.suggestedQuantity === null ||
-            row.suggestedQuantity === undefined
-              ? null
-              : Number(row.suggestedQuantity)
-        }))
+        planningActionIds: transferIds
       });
-    } catch (err) {
-      return ctx.error(
-        "internal",
-        `Failed to apply planning actions: ${
-          err instanceof Error ? err.message : "unknown error"
-        }`,
-        err
-      );
-    }
-    applied.push(...outcome.applied);
-    requiresManualAction.push(...outcome.refused);
-    for (const id of outcome.alreadyApplied) {
-      errors.push(`Planning action ${id} was already applied`);
-    }
-    for (const failure of outcome.failed) {
-      errors.push(`Planning action ${failure.id}: ${failure.message}`);
-    }
+      applied.push(...transferOutcome.applied);
+      errors.push(...transferOutcome.errors);
+      const transferIdSet = new Set(transferIds);
 
-    // Committed targets are not failures, but "Applied 0" as a success is a
-    // lie: name the manual-review count, and report success only when
-    // something was applied (or nothing needed review).
-    const manualCount = requiresManualAction.length;
-    const messageParts = [
-      `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
-    ];
-    const transferCount = transferOutcome.transfers.length;
-    if (transferCount > 0) {
-      messageParts.push(
-        `created ${transferCount} Draft project stock transfer${transferCount === 1 ? "" : "s"}`
-      );
-    }
-    if (manualCount > 0) {
-      messageParts.push(
-        `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
-      );
-    }
-    if (errors.length > 0) messageParts.push(`${errors.length} failed`);
-    return {
-      success:
-        errors.length === 0 && !(applied.length === 0 && manualCount > 0),
-      message: messageParts.join("; "),
-      applied,
-      transfers: transferOutcome.transfers,
-      requiresManualAction,
-      errors: errors.length > 0 ? errors : undefined
-    };
-  }
+      const eligible: {
+        planningActionId: string;
+        row: (typeof actionRows.data)[number];
+      }[] = [];
+      const plannedOrderTargets: PlannedOrderPlanningAction[] = [];
+      for (const planningActionId of ids) {
+        if (transferIdSet.has(planningActionId)) continue;
+        const row = rowById.get(planningActionId);
+        if (!row) {
+          errors.push(`Planning action ${planningActionId} not found`);
+          continue;
+        }
+        if (row.status !== "Open") {
+          errors.push(`Planning action ${planningActionId} is not open`);
+          continue;
+        }
+        if (
+          type === "apply"
+            ? !PLANNING_CHANGE_TYPES.has(row.type)
+            : PLANNING_ACTION_TYPE_OF[type] !== row.type
+        ) {
+          errors.push(
+            type === "apply"
+              ? `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
+              : `Planning action ${planningActionId} is a ${row.type}, not ${PLANNING_ACTION_TYPE_OF[type]}`
+          );
+          continue;
+        }
+        if (row.plannedOrderId) {
+          // A Buy planned order: edited (and firmed) or deleted below.
+          plannedOrderTargets.push({
+            planningActionId,
+            plannedOrderId: row.plannedOrderId,
+            type: row.type as PlannedOrderPlanningAction["type"],
+            suggestedDate: row.suggestedDate ?? null,
+            suggestedQuantity:
+              row.suggestedQuantity === null ||
+              row.suggestedQuantity === undefined
+                ? null
+                : Number(row.suggestedQuantity)
+          });
+          continue;
+        }
+        if (!row.purchaseOrderLineId) {
+          errors.push(
+            `Planning action ${planningActionId} does not target a purchase order line`
+          );
+          continue;
+        }
+        eligible.push({ planningActionId, row });
+      }
+
+      // Planned orders: one transaction for the whole batch. Deleting a planned
+      // order for a Cancel needs no delete permission: it is a suggestion, not
+      // a document.
+      if (plannedOrderTargets.length > 0) {
+        let plannedOutcome: Awaited<
+          ReturnType<typeof applyPlannedOrderPlanningActions>
+        >;
+        try {
+          plannedOutcome = await applyPlannedOrderPlanningActions(db, {
+            companyId,
+            userId: ctx.auditUserId,
+            orderType: "Buy",
+            actions: plannedOrderTargets
+          });
+        } catch (err) {
+          return ctx.error(
+            "internal",
+            `Failed to apply planning actions to planned orders: ${
+              err instanceof Error ? err.message : "unknown error"
+            }`,
+            err
+          );
+        }
+        applied.push(...plannedOutcome.applied);
+        // MRP re-plans once the whole batch is written, as after a firm or an
+        // edit (`replanAfterPlannedOrderChanges`).
+        for (const id of plannedOutcome.changedPlannedOrderIds) {
+          changedPlannedOrderIds.add(id);
+        }
+        for (const id of plannedOutcome.alreadyApplied) {
+          errors.push(`Planning action ${id} was already applied`);
+        }
+        for (const refusal of plannedOutcome.refused) {
+          errors.push(`Planning action ${refusal.id}: ${refusal.message}`);
+        }
+      }
+
+      // One statement: the id list goes to Postgres as a parameter, never into
+      // a PostgREST URL.
+      const lineIds = [
+        ...new Set(eligible.map(({ row }) => row.purchaseOrderLineId!))
+      ];
+      let lineById: Map<string, PlanningLine>;
+      try {
+        const lines =
+          lineIds.length > 0
+            ? await db
+                .selectFrom("purchaseOrderLine as pol")
+                .innerJoin("purchaseOrder as po", (join) =>
+                  join
+                    .onRef("po.id", "=", "pol.purchaseOrderId")
+                    .on("po.companyId", "=", companyId)
+                )
+                .leftJoin("purchaseOrderDelivery as pod", "pod.id", "po.id")
+                .select([
+                  "pol.id",
+                  "pol.purchaseOrderId",
+                  "pol.conversionFactor",
+                  "pol.promisedDate",
+                  "po.status as purchaseOrderStatus",
+                  "pod.receiptPromisedDate"
+                ])
+                .where("pol.id", "in", lineIds)
+                .where("pol.companyId", "=", companyId)
+                .execute()
+            : [];
+        lineById = new Map(lines.map((line) => [line.id, line]));
+      } catch (err) {
+        return ctx.error(
+          "internal",
+          "Failed to read the planning actions' purchase order lines",
+          err
+        );
+      }
+
+      const mayDeleteLines = ctx.can({ delete: "purchasing" });
+      const toClaim: {
+        planningActionId: string;
+        row: (typeof eligible)[number]["row"];
+        line: PlanningLine;
+      }[] = [];
+      for (const { planningActionId, row } of eligible) {
+        const line = lineById.get(row.purchaseOrderLineId!);
+        if (!line) {
+          errors.push(
+            `Purchase order line for planning action ${planningActionId} not found`
+          );
+          continue;
+        }
+        const datePromised =
+          (row.type === "Expedite" || row.type === "Defer") &&
+          promisedDateOf(line) !== null;
+        if (
+          !isPurchaseOrderEditableFromPlanning(line.purchaseOrderStatus) ||
+          datePromised
+        ) {
+          // In approval or sent, or a date the supplier promised (which the
+          // required date cannot move): review on the order instead.
+          requiresManualAction.push({
+            id: planningActionId,
+            purchaseOrderId: line.purchaseOrderId
+          });
+          continue;
+        }
+        if (row.type === "Cancel" && !mayDeleteLines) {
+          errors.push(
+            `Planning action ${planningActionId} deletes a purchase order line, which needs delete permission`
+          );
+          continue;
+        }
+        toClaim.push({ planningActionId, row, line });
+      }
+
+      let outcome: Awaited<
+        ReturnType<typeof service.applyPurchasingPlanningActions>
+      >;
+      try {
+        outcome = await service.applyPurchasingPlanningActions(db, {
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          userId: ctx.auditUserId,
+          actions: toClaim.map(({ planningActionId, row, line }) => ({
+            planningActionId,
+            type: row.type as
+              | "Expedite"
+              | "Defer"
+              | "Increase"
+              | "Decrease"
+              | "Cancel",
+            lineId: line.id,
+            purchaseOrderId: line.purchaseOrderId,
+            suggestedDate: row.suggestedDate ?? null,
+            suggestedQuantity:
+              row.suggestedQuantity === null ||
+              row.suggestedQuantity === undefined
+                ? null
+                : Number(row.suggestedQuantity)
+          }))
+        });
+      } catch (err) {
+        return ctx.error(
+          "internal",
+          `Failed to apply planning actions: ${
+            err instanceof Error ? err.message : "unknown error"
+          }`,
+          err
+        );
+      }
+      applied.push(...outcome.applied);
+      requiresManualAction.push(...outcome.refused);
+      for (const id of outcome.alreadyApplied) {
+        errors.push(`Planning action ${id} was already applied`);
+      }
+      for (const failure of outcome.failed) {
+        errors.push(`Planning action ${failure.id}: ${failure.message}`);
+      }
+
+      // Committed targets are not failures, but "Applied 0" as a success is a
+      // lie: name the manual-review count, and report success only when
+      // something was applied (or nothing needed review).
+      const manualCount = requiresManualAction.length;
+      const messageParts = [
+        `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
+      ];
+      const transferCount = transferOutcome.transfers.length;
+      if (transferCount > 0) {
+        messageParts.push(
+          `created ${transferCount} Draft project stock transfer${transferCount === 1 ? "" : "s"}`
+        );
+      }
+      if (manualCount > 0) {
+        messageParts.push(
+          `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
+        );
+      }
+      if (errors.length > 0) messageParts.push(`${errors.length} failed`);
+      return {
+        success:
+          errors.length === 0 && !(applied.length === 0 && manualCount > 0),
+        message: messageParts.join("; "),
+        applied,
+        transfers: transferOutcome.transfers,
+        requiresManualAction,
+        errors: errors.length > 0 ? errors : undefined
+      };
+    })
 });
 /**
  * Dismiss purchasing suggestions.

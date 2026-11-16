@@ -5012,6 +5012,27 @@ redirects (purchase orders, and the other records with a `/details` index).
 
 **Applies to:** `pnpm db:seed:dev`, and any `tsx` script that calls `SUPABASE_URL` on a portless stack.
 
+## A lock held across a whole run hangs on a one-connection pool
+
+- **Context:** An MRP run held a transaction advisory lock for its whole length, on one connection, so two runs of a company could not overlap.
+- **Problem:** The run did its reads and writes on other connections while that one stayed checked out. On a pool of one connection (a database test), the run waited for a connection that its own lock held, and hung.
+- **Rule:** Do not hold a lock across work that runs on other connections. Take the lock in the transaction that writes. Read a snapshot first, check it under the lock before the first write, and on a change roll back and try again (a bounded number of attempts, with a short random pause).
+- **Applies to:** `runMrp` (`loadPlanAndWrite`, `retryOnPlannedOrderChange`), `lockCompanyPlanning`, and any job that coordinates through `pg_advisory_xact_lock`.
+
+## A period list must come back sorted
+
+- **Context:** MRP and the planning pages read the weekly `period` rows for the window and create the missing ones.
+- **Problem:** The read had no ORDER BY, and the weeks created were appended after the weeks read. Callers take week 1 by position, so a gap in the period table put a later week first.
+- **Rule:** A function that returns a period list returns it sorted by start date, after any create. Never rely on the order a read or an insert happens to give.
+- **Applies to:** `getOrCreatePeriods` (`shared.service.ts`), `getOrCreateDemandPeriods` (`packages/planning/src/mrp/mrp.ts`), any list a caller indexes by position.
+
+## An update must omit a NOT NULL field it was not sent
+
+- **Context:** `upsertLocation` updates a location through `sanitize(...)`. `updateLocation` from the API or MCP may not send `planningTimeFenceDays`, which is NOT NULL.
+- **Problem:** `sanitize` turns a field that is present but `undefined` into null. Sent as null, the UPDATE fails on the NOT NULL column.
+- **Rule:** In an update path, leave an omitted NOT NULL field out of the payload, so the stored value stays. Give the default only on insert.
+- **Applies to:** `upsertLocation` (`resources.service.ts`), any `upsert*` that passes an optional field of a NOT NULL column through `sanitize`.
+
 ## Measure completed typechecks before claiming a speedup
 
 **Context:** The ERP typecheck speed investigation first produced an incremental

@@ -11,7 +11,9 @@ import type { Database } from "@carbon/database";
 import {
   type BomChild,
   COMMON_SEGMENT,
+  computeLowLevelCodes,
   type DemandContributor,
+  effectiveReplenishment,
   explodeBom,
   KEY_SEP,
   type MethodType,
@@ -41,6 +43,11 @@ import {
   actualConsumesForecast,
   consumeForecast
 } from "./forecast-consumption.ts";
+import {
+  createPlanSupply,
+  type PlannedOrderInputs,
+  type PlanSupplyResult
+} from "./planned-orders.ts";
 import {
   jobCompletionDate,
   purchaseOrderLineArrivalDate
@@ -212,6 +219,12 @@ export type PlanCompanyInputs = {
     "itemId" | "locationId" | "periodId" | "sourceType"
   > &
     Segmented)[];
+  /**
+   * MRP v2: what planned orders need. With it, the common segment of each
+   * eligible item is sized with planned orders and the lot-sized quantity
+   * explodes (`planned-orders.ts`). Absent: MRP plans exactly as in Phase 1.
+   */
+  plannedOrderInputs?: PlannedOrderInputs;
 };
 
 /** The netting segment of a demand or supply row; absent is common (''). */
@@ -290,7 +303,7 @@ export type PlanCompanyOutputs = {
    * add the planned Order and Make supply. Empty when no group segment exists.
    */
   groupPegInputs: GroupPegInput[];
-};
+} & PlanSupplyResult;
 
 export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
   const { companyId, userId, consumptionWindow } = input;
@@ -1032,6 +1045,21 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     onHandForExplosion.set(locationItemKey, remaining);
   }
 
+  // MRP v2: planned orders in the common segment, through the engine's hook.
+  const plannedSupply = input.plannedOrderInputs
+    ? createPlanSupply({
+        ...input.plannedOrderInputs,
+        todayDate: today.toString(),
+        periods: input.periods,
+        supersededItemIds: new Set(input.supersessions.map((s) => s.itemId)),
+        inlineProductionItemIds: inlineProductionItemIds(
+          bomByItem,
+          replenishmentSystemByItem
+        ),
+        lowLevelCodeByItem: computeLowLevelCodes(bomByItem).llc
+      })
+    : null;
+
   const {
     bomDerivedDemand,
     demandContributors,
@@ -1055,7 +1083,14 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     // A surplus looks over the whole MRP window.
     horizonPeriods: periods.length,
     segmentBomByItem,
-    groupSegments
+    groupSegments,
+    ...(plannedSupply
+      ? {
+          planSupply: plannedSupply.planSupply,
+          extraPlanningKeys: plannedSupply.extraPlanningKeys,
+          scrapRateByItem: new Map(input.plannedOrderInputs?.scrapRateByItem)
+        }
+      : {})
   });
 
   const groupPegInputs =
@@ -1323,8 +1358,40 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
       const [locationId, periodId, itemId, planningSegmentId] = splitKey(key);
       return { itemId, locationId, periodId, planningSegmentId, quantity };
     }),
-    groupPegInputs
+    groupPegInputs,
+    ...(plannedSupply?.result() ?? {
+      plannedOrders: [],
+      heldPlannedOrderIds: [],
+      plannedOrderSignals: [],
+      plannedOrderChangeActions: [],
+      newSupplyByRow: new Map(),
+      documentChangeActionsByRow: new Map()
+    })
   };
+}
+
+/**
+ * Made items some BOM line builds as Make to Order: the parent's job spawns
+ * their subjob, so the engine passes their demand through (`explodeBom`'s
+ * inline production) and they get no planned order.
+ */
+function inlineProductionItemIds(
+  bomByItem: Map<string, BomChild[]>,
+  replenishmentSystemByItem: Map<string, ReplenishmentSystem>
+): Set<string> {
+  const itemIds = new Set<string>();
+  for (const children of bomByItem.values()) {
+    for (const child of children) {
+      if (
+        child.methodType === "Make to Order" &&
+        effectiveReplenishment(replenishmentSystemByItem.get(child.itemId)) ===
+          "Make"
+      ) {
+        itemIds.add(child.itemId);
+      }
+    }
+  }
+  return itemIds;
 }
 
 /** The peg demand source of a contributor; a projection is never pegged. */
