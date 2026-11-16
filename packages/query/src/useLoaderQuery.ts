@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { loaderQuery, loaderRetry } from "./cache";
 
 /**
@@ -32,6 +32,8 @@ type Unwrapped<R> = R extends {
  * Pass `null` to wait (a picker that is still closed, an id not chosen yet).
  * `invalidate: false` is for data no save or realtime change touches: it keeps
  * the entry out of what those mark stale, and `refetchInterval` refreshes it.
+ * `keepPreviousData` shows the last URL's answer while a new URL loads, so a
+ * read that follows the user's edits does not empty and refill on each one.
  */
 export function useLoaderQuery<T>(
   url: string | null,
@@ -39,11 +41,13 @@ export function useLoaderQuery<T>(
     staleTime?: number;
     invalidate?: boolean;
     refetchInterval?: number;
+    keepPreviousData?: boolean;
   }
 ) {
   return useQuery<LoaderData<T>>({
     ...loaderQuery<LoaderData<T>>(url ?? "", options),
     refetchInterval: options?.refetchInterval,
+    placeholderData: options?.keepPreviousData ? keepPreviousData : undefined,
     enabled: url !== null,
     retry: loaderRetry
   });

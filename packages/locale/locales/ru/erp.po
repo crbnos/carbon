@@ -274,6 +274,10 @@ msgstr "{0, plural, one {Удаление этого пути также раз�
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {Файл не содержит {columns} столбца.} other {Файл не содержит {columns} столбцов.}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr ""
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Планировщик рассматривает этот компонент как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.} other {Планировщик рассматривает эти # компонентов как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.}}"
@@ -1054,6 +1058,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# открытый произво�
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {Взято # значение.} few {Взято # значения.} many {Взято # значений.} other {Взято # значения.}}"
+
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} сохранил(а) эту дату. Ближайшая дата поставки: {earliest}."
 
 msgid "{kpiLabel} by day"
 msgstr "{kpiLabel} по дням"
@@ -2466,6 +2473,12 @@ msgstr "Единица получает свой номер в первый ра
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "Единица рассматривается как продажа, если выполнено одно из этих условий, в противном случае — как аренда."
+
+msgid "a user"
+msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "Пользователь сохраняет дату заказа покупателя, которую невозможно выдержать"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Пользователь записывает срок годности для каждой серии при получении товара. Используется, когда поставщики отправляют партии с разными датами окончания срока годности."
@@ -4146,6 +4159,9 @@ msgstr "Любая группа товаров"
 
 msgid "Any item type"
 msgstr "Любой тип номенклатуры"
+
+msgid "Any promised date saves without a warning."
+msgstr "Любая обещанная дата сохраняется без предупреждения."
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Все, что не указано явно в области действия выше"
@@ -6897,6 +6913,9 @@ msgstr "План счетов"
 msgid "Chat"
 msgstr "Чат"
 
+msgid "Check"
+msgstr "Проверка"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Отметьте операции слева, чтобы создать пакет."
 
@@ -6918,6 +6937,15 @@ msgstr "Проверка Stripe для этого покупателя…"
 msgid "Checking the batch's jobs..."
 msgstr "Проверка производственных заказов серии..."
 
+msgid "Checking the delivery date"
+msgstr ""
+
+msgid "Checking the delivery date…"
+msgstr "Проверяем дату поставки…"
+
+msgid "Checking the shop's schedule…"
+msgstr ""
+
 msgid "Checking the Stripe customer link…"
 msgstr "Проверка связи с клиентом Stripe…"
 
@@ -6926,6 +6954,12 @@ msgstr "Контрольная точка ·"
 
 msgid "Checkpoints"
 msgstr "Контрольные точки"
+
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Проверяет свободный запас по неделям, затем срок поставки."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "Проверяет свободный запас, затем график цеха для производимых позиций."
 
 msgid "Children"
 msgstr "Подчинённые"
@@ -7508,6 +7542,9 @@ msgstr "Сравнить с…"
 
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "Сравнивает отправленную неделю с табелями сотрудника."
+
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "Сравнивает дату со сроком поставки позиции с учётом спецификации материалов."
 
 msgid "Compatibility rules"
 msgstr "Правила совместимости"
@@ -8645,6 +8682,9 @@ msgstr "Не удалось запустить в работу {0}: {1}"
 msgid "Could not save"
 msgstr "Не удалось сохранить"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr ""
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "Не удалось проверить, подключено ли приложение {appName}."
 
@@ -9652,6 +9692,15 @@ msgstr "Дата выдачи"
 msgid "Date Issued"
 msgstr "Дата выпуска"
 
+msgid "Date kept"
+msgstr "Дата соблюдена"
+
+msgid "Date not confirmed"
+msgstr "Дата не подтверждена"
+
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "Дата не подтверждена. Ближайшая дата поставки: {earliest}."
+
 msgid "Date paid"
 msgstr "Дата оплаты"
 
@@ -10518,6 +10567,12 @@ msgstr "Страна поставки"
 
 msgid "Delivery Date"
 msgstr "Дата поставки"
+
+msgid "Delivery Date Check"
+msgstr "Проверка даты поставки"
+
+msgid "Delivery date check updated"
+msgstr "Проверка даты поставки обновлена"
 
 msgid "Delivery Location"
 msgstr "Место доставки"
@@ -13959,6 +14014,9 @@ msgstr "Контроль четырех глаз отключен"
 msgid "Four-eyes enforcement enabled"
 msgstr "Контроль четырех глаз включен"
 
+msgid "Free stock by {promised} is only {free}."
+msgstr "Свободный запас на {promised} составляет всего {free}."
+
 msgid "Freeze the old system, no new transactions"
 msgstr "Заморозить старую систему, новых транзакций нет"
 
@@ -16869,6 +16927,9 @@ msgstr "Оставьте пустым, чтобы выбрать цвет по �
 
 msgid "Leave empty to use the account default"
 msgstr "Оставьте пустым, чтобы использовать значение по умолчанию учетной записи"
+
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "Оставьте пустым, чтобы использовать проверку из Настройки → Продажи."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Оставьте пусто или введите 0, чтобы показать все, что планирует MRP."
@@ -22662,6 +22723,9 @@ msgstr "Планирование"
 msgid "Planning action"
 msgstr "Действие планирования"
 
+msgid "Planning and Sales"
+msgstr "Планирование и продажи"
+
 msgid "Planning group"
 msgstr "Группа планирования"
 
@@ -25191,6 +25255,9 @@ msgstr "Количество переупорядочивания"
 
 msgid "Reorder Quantity:"
 msgstr "Количество переупорядочивания:"
+
+msgid "Reordering"
+msgstr "Пополнение"
 
 msgid "Reordering policy"
 msgstr "Политика пополнения"
@@ -30480,6 +30547,9 @@ msgstr "Не удалось скачать документ."
 msgid "The document could not be opened."
 msgstr "Не удалось открыть документ."
 
+msgid "The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
 
@@ -31259,6 +31329,9 @@ msgstr "Услуги, которые выставляет этот контра�
 msgid "The shelves and bins where stock physically sits"
 msgstr "Полки и ячейки, где физически располагается запас."
 
+msgid "The shop cannot finish this by {promised}."
+msgstr ""
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Расходные материалы и товары, которые вы держите под рукой"
 
@@ -31728,6 +31801,9 @@ msgstr "Ставка этого типа покупателя"
 
 msgid "This customer's rate"
 msgstr "Ставка этого покупателя"
+
+msgid "This date cannot be met"
+msgstr "Эта дата не может быть выдержана"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "Этот отдел не имеет рабочих центров на {locationName}. Выберите другой отдел или площадку."
@@ -33435,6 +33511,9 @@ msgstr "Успешно обновлено"
 msgid "Updated task status"
 msgstr "Обновлен статус задачи"
 
+msgid "Updating…"
+msgstr ""
+
 msgid "Upgrade"
 msgstr "Обновить"
 
@@ -33566,6 +33645,9 @@ msgstr "Используйте ... для получения следующег�
 
 msgid "Use ... to get the next tool ID"
 msgstr "Используйте ... для получения следующего ID инструмента"
+
+msgid "Use {earliest}"
+msgstr "Использовать {earliest}"
 
 msgid "Use a different account"
 msgstr "Использовать другую учетную запись"
@@ -34198,11 +34280,17 @@ msgstr "Предупредить, но разрешить"
 msgid "Warn this many days before expiry"
 msgstr "Предупредить за столько дней до срока годности"
 
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "Предупреждает, если обещанную дату строки заказа на продажу нельзя выдержать. Чтобы задать другую проверку для одной номенклатуры, укажите её на вкладке «Планирование» этой номенклатуры."
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Предупреждать, когда лицо, проверяющее входящий товар, является тем же лицом, которое его получило."
 
 msgid "Warning"
 msgstr "Предупреждение"
+
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "Предупреждает, если обещанную дату строки заказа на продажу нельзя выдержать, и предлагает самую раннюю дату, которую можно выдержать."
 
 msgid "Warranty"
 msgstr "Гарантия"
@@ -34579,7 +34667,7 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "Когда закупщик запросил товары; поставщик может подтвердить другую дату в поле «Подтвержденная дата поступления», а затем указать еще одну дату в поле «Дата поставки»."
+msgstr "Когда покупатель запросил товар; поставщик может подтвердить другую дату в поле «Подтвержденная дата поступления», а затем указать другую дату в поле «Дата поставки»."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "Дата, к которой закупщику нужны товары этой строки на складе приемки. Новая строка получает дату из поля «Запрошенная дата поступления» заказа; планирование использует эту дату для проверки доступности запасов и планирования внешней обработки."

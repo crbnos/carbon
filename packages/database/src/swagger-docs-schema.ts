@@ -78745,6 +78745,30 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.serviceEndDate"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.requestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateConstraint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.earliestDeliveryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateCheckedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateOverriddenBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateOverriddenAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId"
           },
           {
@@ -91348,16 +91372,16 @@ export default {
             $ref: "#/parameters/rowFilter.inspection.sourceDocumentReadableId"
           },
           {
-            $ref: "#/parameters/rowFilter.inspection.workCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inspection.assignee"
-          },
-          {
             $ref: "#/parameters/rowFilter.inspection.storageUnitId"
           },
           {
             $ref: "#/parameters/rowFilter.inspection.acceptedQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.assignee"
           },
           {
             $ref: "#/parameters/select"
@@ -91506,16 +91530,16 @@ export default {
             $ref: "#/parameters/rowFilter.inspection.sourceDocumentReadableId"
           },
           {
-            $ref: "#/parameters/rowFilter.inspection.workCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inspection.assignee"
-          },
-          {
             $ref: "#/parameters/rowFilter.inspection.storageUnitId"
           },
           {
             $ref: "#/parameters/rowFilter.inspection.acceptedQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.assignee"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -91618,16 +91642,16 @@ export default {
             $ref: "#/parameters/rowFilter.inspection.sourceDocumentReadableId"
           },
           {
-            $ref: "#/parameters/rowFilter.inspection.workCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inspection.assignee"
-          },
-          {
             $ref: "#/parameters/rowFilter.inspection.storageUnitId"
           },
           {
             $ref: "#/parameters/rowFilter.inspection.acceptedQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.assignee"
           },
           {
             $ref: "#/parameters/body.inspection"
@@ -92896,6 +92920,27 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.salesReturnOrderLineId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.requestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateConstraint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.earliestDeliveryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateCheckedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -93099,6 +93144,27 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.salesReturnOrderLineId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.requestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateConstraint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.earliestDeliveryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateCheckedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -93254,6 +93320,27 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.requestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateConstraint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.earliestDeliveryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateCheckedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
           },
           {
             $ref: "#/parameters/body.salesOrderLine"
@@ -97912,6 +97999,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -98043,6 +98133,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -98126,6 +98219,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
           },
           {
             $ref: "#/parameters/body.itemPlanning"
@@ -119296,6 +119392,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.deliveryDateControl"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
           },
           {
@@ -119646,6 +119745,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.deliveryDateControl"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
           },
           {
@@ -119948,6 +120050,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.deliveryDateControl"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
@@ -176811,6 +176916,42 @@ export default {
           format: "date",
           type: "string"
         },
+        salesReturnOrderLineId: {
+          format: "text",
+          type: "string"
+        },
+        requestedDate: {
+          format: "date",
+          type: "string"
+        },
+        deliveryDateStatus: {
+          enum: ["Met", "Missed", "Pending"],
+          format: 'public."deliveryDateStatus"',
+          type: "string"
+        },
+        deliveryDateConstraint: {
+          enum: ["Lead Time", "Stock", "Capacity"],
+          format: 'public."deliveryDateConstraint"',
+          type: "string"
+        },
+        earliestDeliveryDate: {
+          format: "date",
+          type: "string"
+        },
+        deliveryDateCheckedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        deliveryDateOverriddenBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        deliveryDateOverriddenAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -183015,16 +183156,6 @@ export default {
           format: "text",
           type: "string"
         },
-        workCenterId: {
-          format: "text",
-          type: "string"
-        },
-        assignee: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         storageUnitId: {
           description:
             "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
@@ -183034,6 +183165,16 @@ export default {
         acceptedQuantity: {
           format: "numeric",
           type: "number"
+        },
+        workCenterId: {
+          format: "text",
+          type: "string"
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -183987,6 +184128,38 @@ export default {
         },
         salesReturnOrderLineId: {
           format: "text",
+          type: "string"
+        },
+        requestedDate: {
+          format: "date",
+          type: "string"
+        },
+        deliveryDateStatus: {
+          enum: ["Met", "Missed", "Pending"],
+          format: 'public."deliveryDateStatus"',
+          type: "string"
+        },
+        deliveryDateConstraint: {
+          enum: ["Lead Time", "Stock", "Capacity"],
+          format: 'public."deliveryDateConstraint"',
+          type: "string"
+        },
+        earliestDeliveryDate: {
+          format: "date",
+          type: "string"
+        },
+        deliveryDateCheckedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        deliveryDateOverriddenBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        deliveryDateOverriddenAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -186138,6 +186311,11 @@ export default {
           default: true,
           format: "boolean",
           type: "boolean"
+        },
+        deliveryDateControl: {
+          enum: ["None", "Lead Time", "Stock", "Capacity"],
+          format: 'public."deliveryDateControl"',
+          type: "string"
         }
       },
       type: "object"
@@ -196539,6 +196717,7 @@ export default {
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
         "includeSupplierPartFiles",
+        "deliveryDateControl",
         "requirePromisedDateToFinalizePurchaseOrder",
         "travelerLabels",
         "requireTrackedMaterialsIssued",
@@ -197039,6 +197218,12 @@ export default {
           default: true,
           format: "boolean",
           type: "boolean"
+        },
+        deliveryDateControl: {
+          default: "None",
+          enum: ["None", "Lead Time", "Stock", "Capacity"],
+          format: 'public."deliveryDateControl"',
+          type: "string"
         },
         requirePromisedDateToFinalizePurchaseOrder: {
           default: false,
@@ -238968,6 +239153,54 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderLines.salesReturnOrderLineId": {
+      name: "salesReturnOrderLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.requestedDate": {
+      name: "requestedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateStatus": {
+      name: "deliveryDateStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateConstraint": {
+      name: "deliveryDateConstraint",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.earliestDeliveryDate": {
+      name: "earliestDeliveryDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateCheckedAt": {
+      name: "deliveryDateCheckedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateOverriddenBy": {
+      name: "deliveryDateOverriddenBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateOverriddenAt": {
+      name: "deliveryDateOverriddenAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesOrderLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -245798,18 +246031,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.inspection.workCenterId": {
-      name: "workCenterId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inspection.assignee": {
-      name: "assignee",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.inspection.storageUnitId": {
       name: "storageUnitId",
       required: false,
@@ -245818,6 +246039,18 @@ export default {
     },
     "rowFilter.inspection.acceptedQuantity": {
       name: "acceptedQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.assignee": {
+      name: "assignee",
       required: false,
       in: "query",
       type: "string"
@@ -246906,6 +247139,48 @@ export default {
     },
     "rowFilter.salesOrderLine.salesReturnOrderLineId": {
       name: "salesReturnOrderLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.requestedDate": {
+      name: "requestedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateStatus": {
+      name: "deliveryDateStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateConstraint": {
+      name: "deliveryDateConstraint",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.earliestDeliveryDate": {
+      name: "earliestDeliveryDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateCheckedAt": {
+      name: "deliveryDateCheckedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateOverriddenBy": {
+      name: "deliveryDateOverriddenBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateOverriddenAt": {
+      name: "deliveryDateOverriddenAt",
       required: false,
       in: "query",
       type: "string"
@@ -249327,6 +249602,12 @@ export default {
     },
     "rowFilter.itemPlanning.allowCommonSupplyForProjects": {
       name: "allowCommonSupplyForProjects",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPlanning.deliveryDateControl": {
+      name: "deliveryDateControl",
       required: false,
       in: "query",
       type: "string"
@@ -261456,6 +261737,12 @@ export default {
     },
     "rowFilter.companySettings.includeSupplierPartFiles": {
       name: "includeSupplierPartFiles",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.deliveryDateControl": {
+      name: "deliveryDateControl",
       required: false,
       in: "query",
       type: "string"

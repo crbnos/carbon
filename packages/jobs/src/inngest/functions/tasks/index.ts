@@ -29,6 +29,7 @@ export { postTransactionFunction } from "./post-transaction";
 export { printJobFunction } from "./print-job";
 export { printJobDeliverFunction } from "./print-job-deliver";
 export { recalculateFunction } from "./recalculate";
+export { salesOrderDeliveryDateCheckFunction } from "./sales-order-delivery-date-check";
 export { tableBulkActionFunction } from "./table-bulk-action";
 export { tableExportFunction } from "./table-export";
 export { updatePermissionsFunction } from "./update-permissions";

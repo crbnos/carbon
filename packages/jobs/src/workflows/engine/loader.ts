@@ -12,6 +12,7 @@ import {
   type WorkflowCatalog
 } from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { selectInCompany, withoutMembership } from "../company-scope";
 
 export type EntityCache = Map<string, Record<string, unknown> | null>;
 
@@ -38,15 +39,24 @@ export function createEntityLoader(params: {
 
       // The entity is only known at run time; typing it costs a 350-way instantiation.
       const untyped = client as unknown as SupabaseClient;
-      const { data, error } = await untyped
-        .from(table)
-        .select("*")
+      const { data, error } = await selectInCompany(
+        untyped,
+        table,
+        "*",
+        companyId
+      )
         .eq("id", id)
-        .eq("companyId", companyId)
         .maybeSingle();
 
       // Denied by row-level security and genuinely absent are the same answer here.
-      const row = error || !data ? null : (data as Record<string, unknown>);
+      // A run-time column list makes PostgREST's return type unresolvable.
+      const row =
+        error || !data
+          ? null
+          : withoutMembership(
+              table,
+              data as unknown as Record<string, unknown>
+            );
       cache.set(key, row);
       return row;
     }
