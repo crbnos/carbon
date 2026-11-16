@@ -1315,6 +1315,9 @@ msgstr "In einem offenen Menü"
 msgid "In Progress"
 msgstr "In Bearbeitung"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "Unter Garantie"
 
@@ -2092,6 +2095,9 @@ msgstr "Oder geben Sie dieses Geheimnis manuell ein:"
 msgid "Out of calibration"
 msgstr "Außerhalb der Kalibrierung"
 
+msgid "Out of stock"
+msgstr ""
+
 msgid "Output lot"
 msgstr "Ausgabe-Charge"
 
@@ -2849,6 +2855,9 @@ msgstr "Fehlbestand"
 msgid "Short pick {itemName}"
 msgstr "Kurzkommissionierung {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3193,6 +3202,9 @@ msgstr "Dieser Prüfplan hat keine Arbeitsanweisungen."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Dies ist eine Gut/Schlecht-Prüfung. Drücken Sie P oder F."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Dieser Fertigungsauftrag hat keinen Stundensatz. Bitten Sie das Büro, ihn festzulegen, bevor die Zeit abgerechnet wird."

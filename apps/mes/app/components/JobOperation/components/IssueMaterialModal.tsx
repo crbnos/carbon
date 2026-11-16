@@ -77,6 +77,7 @@ import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { parseTravelerCode } from "~/utils/traveler";
+import { ShortStockBadge } from "./Materials";
 import { ScrapEntityModal } from "./ScrapEntityModal";
 import type { ScrappableEntity } from "./ScrapTab";
 import { ScrapTab } from "./ScrapTab";
@@ -149,7 +150,12 @@ export function IssueMaterialModal({
   return (
     <Modal open={open} onOpenChange={onClose}>
       <ModalContent>
-        <IssueMaterialBody onClose={onClose} {...props} />
+        {/* A scan can open another part while the dialog is open: start over. */}
+        <IssueMaterialBody
+          key={props.material?.id}
+          onClose={onClose}
+          {...props}
+        />
       </ModalContent>
     </Modal>
   );
@@ -1450,6 +1456,11 @@ function IssueMaterialBody({
               {headerItem?.readableIdWithRevision ??
                 "Select an item and specify the quantity to issue"}
             </ModalDescription>
+            {material && (
+              <div className="mt-1">
+                <ShortStockBadge material={material} />
+              </div>
+            )}
           </div>
         </HStack>
       </ModalHeader>

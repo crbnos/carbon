@@ -34,6 +34,7 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { erpPosting } from "~/services/erp";
+import { materialStockShortages } from "~/utils/materialStock";
 import { sanitize } from "~/utils/supabase";
 import {
   batchRequiredScanMessage,
@@ -1774,11 +1775,21 @@ export async function getJobMaterialsByOperationId(
       });
       binsByItem.set(bin.itemId, bins);
     }
+    const availableByItem = new Map(
+      [...binsByItem].map(([itemId, bins]) => [
+        itemId,
+        bins.reduce((total, bin) => total + bin.quantity, 0)
+      ])
+    );
+    // Before quantityIssued is narrowed to one unit below: a shortage is
+    // job-wide.
+    const shortages = materialStockShortages(materials.data, availableByItem);
     materials.data = materials.data.map((material) => ({
       ...material,
       liveStorageUnits: material.itemId
         ? (binsByItem.get(material.itemId) ?? [])
-        : []
+        : [],
+      stockShortage: (material.id && shortages.get(material.id)) || null
     }));
   }
 

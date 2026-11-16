@@ -100,7 +100,8 @@ import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMa
 import { MaintenanceDispatch } from "~/components/JobOperation/components/MaintenanceDispatch";
 import {
   compareMaterialsByLocation,
-  MaterialSource
+  MaterialSource,
+  ShortStockBadge
 } from "~/components/JobOperation/components/Materials";
 import { NeedMaterialModal } from "~/components/JobOperation/components/NeedMaterialModal";
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
@@ -124,6 +125,7 @@ import type {
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
+import { parseItemCode } from "~/utils/itemScan";
 import {
   isKanbanCompleteScan,
   kanbanCompleteTarget,
@@ -1975,6 +1977,24 @@ export function AssemblyView({
     active: !issueModal.isOpen && !abilityBlocked
   });
 
+  // An item sticker names a part, not a unit to fit: the operator stays here
+  // and the Issue dialog opens on the part. Each unit takes its own scan.
+  useKeyboardWedge({
+    test: (input) => !!parseItemCode(input),
+    callback: (input) => {
+      const itemId = parseItemCode(input);
+      const material = allMaterials.find((m) => m.itemId === itemId);
+      if (!material) {
+        toast.error(t`This job does not use that part`);
+        return;
+      }
+      setSelectedMaterial(material);
+      issueModal.onOpen();
+    },
+    inTextFields: true,
+    active: !abilityBlocked
+  });
+
   // The header's actions; the md+ header and the phone app bar share them.
   const headerActions = (
     <>
@@ -3502,6 +3522,7 @@ function MaterialRow({
         </span>
         {/* Where to pull it from, or that it is made on this job. */}
         <MaterialSource material={material} />
+        <ShortStockBadge material={material} />
       </div>
       {/* Count hard-right, with the tracking badges tucked beneath it. */}
       <div className="flex shrink-0 flex-col items-end gap-1">

@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
+import type { StockShortage } from "~/utils/materialStock";
 import type {
   getJob,
   getJobMakeMethod,
@@ -60,6 +61,8 @@ export type JobMaterial = NonNullable<
 >["materials"][number] & {
   isKitComponent?: boolean;
   kitParentId?: string;
+  /** Set when the stock the job can draw does not cover what it still needs. */
+  stockShortage?: StockShortage | null;
 };
 
 export type Kanban = Awaited<ReturnType<typeof getKanbanByJobId>>["data"];

@@ -18,16 +18,19 @@ export function useItemScan({
   operationId,
   parentTrackedEntityId,
   active,
+  onIssued,
   onChoose
 }: {
   operationId: string;
   parentTrackedEntityId: string | undefined;
   active: boolean;
+  onIssued?: () => void;
   onChoose: (materialId: string) => void;
 }) {
   const issue = useAction<typeof action>({
     onSuccess: (result) => {
       if ("message" in result) toast.success(result.message);
+      onIssued?.();
     },
     onError: (result) => {
       if (!("message" in result)) return;

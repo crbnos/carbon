@@ -1315,6 +1315,9 @@ msgstr "Açık bir menüde"
 msgid "In Progress"
 msgstr "Devam Ediyor"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "Garanti Altında"
 
@@ -2092,6 +2095,9 @@ msgstr "Ya da bu sırrı manuel olarak girin:"
 msgid "Out of calibration"
 msgstr "Kalibrasyon dışı"
 
+msgid "Out of stock"
+msgstr ""
+
 msgid "Output lot"
 msgstr "Çıktı Lotu"
 
@@ -2849,6 +2855,9 @@ msgstr "Azalt"
 msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3193,6 +3202,9 @@ msgstr "Bu kontrol planında iş talimatı yok."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Bu bir geçti / kaldı kontrolüdür. P veya F tuşuna basın."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Bu iş emrinin fatura oranı yoktur. Zaman faturalandırılmadan önce ofis tarafından ayarlanmasını isteyin."

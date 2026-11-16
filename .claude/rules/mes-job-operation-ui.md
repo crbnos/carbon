@@ -277,7 +277,10 @@ of a paused URL, which is itself a valid link.
   lots `getSuggestedAllocationForMaterial` suggests at the job's location for
   what is still short. Both are safe to repeat: a second scan issues nothing. A
   serial part, a part the job makes, a short lot or a work-center rule opens
-  the Issue dialog on the material. The assembly page does not take item scans.
+  the Issue dialog on the material. The scan also issues while the Issue
+  dialog is open, and the dialog then closes. On the assembly page an item
+  scan opens the Issue dialog on the part (each unit takes its own scan). The
+  layout never opens an item link on either page.
 - A kanban Complete scan on a serial part completes the unit ON SCREEN:
   `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
   `?trackedEntityId` to `end.$operationId` when that unit is still open at the
@@ -511,6 +514,13 @@ while its serial or batch materials are not scanned in.
   location, with each lot's bin (`get_issue_tracked_entity_stock`). The location and stripes are
   read from the operation's job on the server (`getJobOperationIssueScope`), never taken from
   the browser; the suggested allocation reads the same scope.
+- **Short stock.** `getJobMaterialsByOperationId` sets `stockShortage`
+  (`{ available, needed }`) on a Pull from Inventory material when the stock in
+  its `liveStorageUnits` is less than what the job's materials of that item still
+  need (`materialStockShortages`, `~/utils/materialStock`, tested; job-wide, set
+  before `quantityIssued` is narrowed to one unit). `ShortStockBadge` shows it in
+  the materials table and list, the assembly parts list and the Issue dialog
+  header. No shortage is shown when the bin read failed.
 - Modals/sections: `IssueMaterialModal`, `QuantityModal` (type `scrap`/`finish`),
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.

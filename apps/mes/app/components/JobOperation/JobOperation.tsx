@@ -778,11 +778,13 @@ export const JobOperation = ({
 
   // An item sticker scan issues what the job still needs of that item. When
   // the operator must choose (a serial part, a short lot), the Issue dialog
-  // opens on the material.
+  // opens on the material. With the dialog already open the scan still
+  // issues, and the dialog closes: its item link is no lot number.
   useItemScan({
     operationId: operation.id,
     parentTrackedEntityId: trackedEntityId,
-    active: !issueModal.isOpen && !isBatched && !abilityBlocked,
+    active: !isBatched && !abilityBlocked,
+    onIssued: issueModal.onClose,
     onChoose: (materialId) =>
       materials.then((resolved) =>
         openIssueModal(

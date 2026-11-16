@@ -1315,6 +1315,9 @@ msgstr "В открытом меню"
 msgid "In Progress"
 msgstr "В работе"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "В гарантии"
 
@@ -2092,6 +2095,9 @@ msgstr "Или введите этот секрет вручную:"
 msgid "Out of calibration"
 msgstr "Вне калибровки"
 
+msgid "Out of stock"
+msgstr ""
+
 msgid "Output lot"
 msgstr "Партия выпуска"
 
@@ -2849,6 +2855,9 @@ msgstr "Недостача"
 msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3193,6 +3202,9 @@ msgstr "В этом плане контроля нет рабочих инстр
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Это проверка «годен / не годен». Нажмите P или F."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "У этого производственного заказа нет ставки расчетов. Попросите офис установить её перед тем, как время будет рассчитано."

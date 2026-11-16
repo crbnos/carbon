@@ -1315,6 +1315,9 @@ msgstr "En un menú abierto"
 msgid "In Progress"
 msgstr "En curso"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "En garantía"
 
@@ -2092,6 +2095,9 @@ msgstr "O ingrese este secreto manualmente:"
 msgid "Out of calibration"
 msgstr "Fuera de calibración"
 
+msgid "Out of stock"
+msgstr ""
+
 msgid "Output lot"
 msgstr "Lote de salida"
 
@@ -2849,6 +2855,9 @@ msgstr "Faltante"
 msgid "Short pick {itemName}"
 msgstr "Picking corto {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3193,6 +3202,9 @@ msgstr "Este plan de inspección no tiene instrucciones de trabajo."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Esta es una comprobación de pasa / falla. Pulse P o F."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Esta orden de trabajo no tiene una tarifa de facturación. Pida a la oficina que la establezca antes de que se facture el tiempo."
