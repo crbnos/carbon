@@ -274,7 +274,7 @@ export function ShortStockBadge({ material }: { material: JobMaterial }) {
   return (
     <Badge
       variant="red"
-      className="gap-1 shrink-0 tabular-nums"
+      className="w-fit gap-1 shrink-0 tabular-nums"
       title={t`In stock: ${available}. Still needed: ${needed}.`}
     >
       <LuTriangleAlert className="size-3" />
@@ -483,12 +483,12 @@ function MaterialsTable({
                           <span className="text-muted-foreground text-sm truncate max-w-full">
                             {material.description}
                           </span>
+                          <ShortStockBadge material={material} />
                           <PickedBreakdown
                             materialItemId={material.itemId}
                             pickedByItem={material.pickedByItem}
                           />
                         </VStack>
-                        <ShortStockBadge material={material} />
                         <TrackingBadge material={material} />
                         <ExpiredConsumedBadge material={material} />
                         <PickedBadge
@@ -544,12 +544,12 @@ function MaterialsTable({
                             <span className="text-muted-foreground text-xs truncate max-w-full">
                               {child.material.description}
                             </span>
+                            <ShortStockBadge material={child.material} />
                             <PickedBreakdown
                               materialItemId={child.material.itemId}
                               pickedByItem={child.material.pickedByItem}
                             />
                           </VStack>
-                          <ShortStockBadge material={child.material} />
                           <TrackingBadge material={child.material} />
                           <PickedBadge
                             quantityPicked={child.material.quantityPicked}
