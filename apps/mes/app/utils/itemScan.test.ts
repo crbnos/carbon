@@ -44,21 +44,29 @@ describe("planItemScanIssue", () => {
     ...overrides
   });
 
-  it("sets an untracked material to everything the job requires", () => {
+  it("issues one piece of an untracked material for each scan", () => {
     const material = base({ quantityIssued: 2 });
     expect(planItemScanIssue([material], "op1")).toEqual({
       kind: "untracked",
       material,
-      required: 5
+      quantity: 1
     });
   });
 
-  it("issues what a batch material still needs", () => {
+  it("issues one piece of a batch material for each scan", () => {
     const material = base({ requiresBatchTracking: true, quantityIssued: 2 });
     expect(planItemScanIssue([material], "op1")).toEqual({
       kind: "batch",
       material,
-      quantity: 3
+      quantity: 1
+    });
+  });
+
+  it("issues only the rest when less than one piece is short", () => {
+    const material = base({ estimatedQuantity: 2.5, quantityIssued: 2 });
+    expect(planItemScanIssue([material], "op1")).toMatchObject({
+      kind: "untracked",
+      quantity: 0.5
     });
   });
 

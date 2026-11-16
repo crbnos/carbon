@@ -2,11 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  jobMaterialShortfall,
-  pickTravelerMaterial,
-  type TravelerMaterial
-} from "./traveler";
+import { pickTravelerMaterial, type TravelerMaterial } from "./traveler";
 
 /**
  * The item id in a scanned ERP item link (`/x/part/<id>`, and the same for a
@@ -39,9 +35,10 @@ export type ItemScanMaterial = TravelerMaterial & {
 };
 
 /**
- * What a scanned item sticker does at an operation. It issues everything the
- * job still needs of the item into the first material that is short (this
- * operation's, then one with no operation). A sticker names no unit, so a
+ * What a scanned item sticker does at an operation. One scan issues one piece
+ * (or the rest, when less than one is still short) into the first material
+ * that is short (this operation's, then one with no operation): the operator
+ * scans once for each piece taken off the shelf. A sticker names no unit, so a
  * serial part, or a part the job makes, opens the Issue dialog instead.
  */
 export function planItemScanIssue<T extends ItemScanMaterial>(
@@ -51,7 +48,7 @@ export function planItemScanIssue<T extends ItemScanMaterial>(
   | { kind: "notUsed" }
   | { kind: "full" }
   | { kind: "dialog"; material: T }
-  | { kind: "untracked"; material: T; required: number }
+  | { kind: "untracked"; material: T; quantity: number }
   | { kind: "batch"; material: T; quantity: number } {
   const picked = pickTravelerMaterial({
     materials,
@@ -62,6 +59,7 @@ export function planItemScanIssue<T extends ItemScanMaterial>(
   if (picked.kind !== "issue") return picked;
 
   const { material } = picked;
+  const quantity = Math.min(1, picked.needed);
   if (
     material.requiresSerialTracking ||
     material.methodType === "Make to Order"
@@ -69,15 +67,7 @@ export function planItemScanIssue<T extends ItemScanMaterial>(
     return { kind: "dialog", material };
   }
   if (material.requiresBatchTracking) {
-    return {
-      kind: "batch",
-      material,
-      quantity: jobMaterialShortfall(material)
-    };
+    return { kind: "batch", material, quantity };
   }
-  return {
-    kind: "untracked",
-    material,
-    required: material.estimatedQuantity ?? material.quantity ?? 0
-  };
+  return { kind: "untracked", material, quantity };
 }

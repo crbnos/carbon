@@ -272,10 +272,12 @@ of a paused URL, which is itself a valid link.
   `parseItemCode`, `~/utils/itemScan`) scanned on the operation page is issued
   to the job, and the operator stays on the page (`useItemScan` →
   `x+/issue-scan.tsx` → `issueScannedItem`, `services/issue.server.ts`). The
-  server decides (`planItemScanIssue`, tested): an untracked material is set to
-  the quantity the job requires (`Set Quantity`), a batch material takes the
-  lots `getSuggestedAllocationForMaterial` suggests at the job's location for
-  what is still short. Both are safe to repeat: a second scan issues nothing. A
+  server decides (`planItemScanIssue`, tested): ONE scan issues ONE piece (the
+  rest, when less than one is short), so the operator scans once for each piece
+  taken off the shelf. An untracked material takes it as a `Negative Adjmt.`, a
+  batch material from the lot `getSuggestedAllocationForMaterial` suggests at
+  the job's location. The toast counts ("Issued 1 X (3 of 5)"); a scan after
+  the job has all it requires issues nothing ("This job already has all its X"). A
   serial part, a part the job makes, a short lot or a work-center rule opens
   the Issue dialog on the material. The scan also issues while the Issue
   dialog is open, and the dialog then closes. On the assembly page an item

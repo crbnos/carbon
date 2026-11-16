@@ -5,7 +5,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
-import { EPSILON } from "@carbon/utils";
+import { EPSILON, round } from "@carbon/utils";
 import { planItemScanIssue } from "~/utils/itemScan";
 import { erpPosting } from "./erp";
 import {
@@ -163,11 +163,10 @@ export async function issueMaterialToOperation(
 }
 
 /**
- * A scanned item sticker on an operation screen: issues everything the job
- * still needs of that item. A batch part takes the lots the picking order
- * suggests at the job's location. Safe to repeat: the untracked issue sets
- * the issued quantity to what is required, and the posting refuses a batch
- * issue above the requirement, so a second scan issues nothing.
+ * A scanned item sticker on an operation screen: issues one piece of that
+ * item, so the operator scans once for each piece taken off the shelf. A
+ * batch part takes it from the lot the picking order suggests at the job's
+ * location. A scan after the job has all it requires issues nothing.
  *
  * A refusal with `materialId` is one the Issue dialog can settle (the
  * operator chooses the unit, the lot, or acknowledges a rule).
@@ -222,6 +221,10 @@ export async function issueScannedItem(
     return refuse(`This job already has all its ${name}`);
 
   const materialId = plan.material.id;
+  const required =
+    plan.material.estimatedQuantity ?? plan.material.quantity ?? 0;
+  const issuedMessage = (quantity: number) =>
+    `Issued ${quantity} ${name} (${round((plan.material.quantityIssued ?? 0) + quantity)} of ${required})`;
   if (plan.kind === "dialog") {
     return { ...refuse(`Choose the ${name} to issue`), materialId };
   }
@@ -231,8 +234,8 @@ export async function issueScannedItem(
       jobOperationId,
       itemId,
       materialId,
-      quantity: plan.required,
-      adjustmentType: "Set Quantity"
+      quantity: plan.quantity,
+      adjustmentType: "Negative Adjmt."
     });
     if ("violations" in issued) {
       return {
@@ -241,7 +244,7 @@ export async function issueScannedItem(
       };
     }
     return issued.success
-      ? { success: true, message: `Issued ${name}` }
+      ? { success: true, message: issuedMessage(plan.quantity) }
       : issued;
   }
 
@@ -317,6 +320,8 @@ export async function issueScannedItem(
     .join(", ");
   return {
     success: true,
-    message: batches ? `Issued ${name} from ${batches}` : `Issued ${name}`
+    message: batches
+      ? `${issuedMessage(plan.quantity)} from ${batches}`
+      : issuedMessage(plan.quantity)
   };
 }
