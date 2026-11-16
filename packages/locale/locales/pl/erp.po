@@ -34271,8 +34271,8 @@ msgstr "Ostrzegaj, gdy osoba sprawdzająca przychodzący towar jest tą samą os
 msgid "Warning"
 msgstr "Ostrzeżenie"
 
-msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
-msgstr "Ostrzega, gdy obiecanej daty pozycji zamówienia sprzedaży nie da się dotrzymać: Czas realizacji porównuje datę z całkowitym czasem realizacji pozycji przez jej BOM, Zapas sprawdza też wolny zapas tydzień po tygodniu, a Pojemność dla pozycji produkowanej symuluje też harmonogram warsztatu."
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "Ostrzega, gdy obiecana data pozycji zamówienia sprzedaży nie może zostać dotrzymana, i proponuje najwcześniejszą datę, którą można dotrzymać."
 
 msgid "Warranty"
 msgstr "Gwarancja"

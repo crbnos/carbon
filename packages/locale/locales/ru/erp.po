@@ -34271,8 +34271,8 @@ msgstr "Предупреждать, когда лицо, проверяющее 
 msgid "Warning"
 msgstr "Предупреждение"
 
-msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
-msgstr "Предупреждает, когда обещанную дату строки заказа на продажу нельзя выдержать: Срок поставки сравнивает дату с общим сроком поставки позиции с учётом её спецификации, Запас также проверяет свободный запас по неделям, а Емкость для производимой позиции также моделирует график цеха."
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "Предупреждает, если обещанную дату строки заказа на продажу нельзя выдержать, и предлагает самую раннюю дату, которую можно выдержать."
 
 msgid "Warranty"
 msgstr "Гарантия"

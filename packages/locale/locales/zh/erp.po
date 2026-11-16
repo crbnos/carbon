@@ -34271,8 +34271,8 @@ msgstr "当检验入库物料的人与收货人相同时发出警告。"
 msgid "Warning"
 msgstr "警告"
 
-msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
-msgstr "当销售订单行的承诺日期无法满足时发出警告：提前期将该日期与物料含物料清单在内的总提前期比较，库存还会逐周检查可用库存，产能还会为自制物料模拟车间排程。"
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "当销售订单行的承诺日期无法满足时发出警告，并建议可以满足的最早日期。"
 
 msgid "Warranty"
 msgstr "保修"

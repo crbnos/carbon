@@ -34271,8 +34271,8 @@ msgstr "Avertir lorsque la personne inspectant un article entrant est la même p
 msgid "Warning"
 msgstr "Avertissement"
 
-msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
-msgstr "Avertit lorsque la date promise d'une ligne de commande client ne peut pas être tenue : Délai d'approvisionnement compare la date au délai total de l'article à travers sa nomenclature, Stock vérifie aussi le stock libre semaine par semaine, et Capacité simule aussi le planning de l'atelier pour un article fabriqué."
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "Avertit lorsque la date promise d'une ligne de commande client ne peut pas être tenue et propose la date la plus proche qui peut l'être."
 
 msgid "Warranty"
 msgstr "Garantie"

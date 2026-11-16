@@ -34271,8 +34271,8 @@ msgstr "चेतावनी दें जब आने वाली वस्�
 msgid "Warning"
 msgstr "चेतावनी"
 
-msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
-msgstr "जब किसी बिक्री ऑर्डर लाइन की वादा की गई तिथि पूरी नहीं हो सकती, तब चेतावनी देता है: लीड टाइम तिथि की तुलना BOM सहित आइटम के कुल लीड टाइम से करता है, स्टॉक हफ़्ते-दर-हफ़्ते मुक्त स्टॉक भी जाँचता है, और क्षमता बनाए जाने वाले आइटम के लिए शॉप के शेड्यूल का सिमुलेशन भी करती है।"
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "जब किसी बिक्री ऑर्डर लाइन की वादा की गई तारीख पूरी नहीं हो सकती, तो चेतावनी देता है और सबसे पहली ऐसी तारीख सुझाता है जो पूरी हो सकती है।"
 
 msgid "Warranty"
 msgstr "वारंटी"

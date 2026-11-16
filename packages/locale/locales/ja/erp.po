@@ -34271,8 +34271,8 @@ msgstr "受け取った人と同じ人が受け入れ品を検査する場合に
 msgid "Warning"
 msgstr "警告"
 
-msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
-msgstr "受注明細の約束日に間に合わない場合に警告します。リードタイムは日付を部品表を含む品目の総リードタイムと比較し、在庫は週ごとの空き在庫も確認し、容量は製造品目について工場のスケジュールもシミュレーションします。"
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "受注明細の約束日に間に合わない場合に警告し、間に合う最も早い日付を提案します。"
 
 msgid "Warranty"
 msgstr "保証"

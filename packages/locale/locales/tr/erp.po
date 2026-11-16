@@ -34271,8 +34271,8 @@ msgstr "Gelen bir ürünü kontrol eden kişinin, onu alan kişiyle aynı olmas�
 msgid "Warning"
 msgstr "Uyarı"
 
-msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
-msgstr "Bir satış siparişi satırının söz verilen tarihi karşılanamadığında uyarır: Tedarik süresi tarihi kalemin ürün ağacı dahil toplam tedarik süresiyle karşılaştırır, Stok ayrıca serbest stoku hafta hafta kontrol eder ve Kapasite üretilen bir kalem için atölye planını da simüle eder."
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "Bir satış siparişi satırının taahhüt edilen tarihi karşılanamadığında uyarır ve karşılanabilecek en erken tarihi önerir."
 
 msgid "Warranty"
 msgstr "Garantı"

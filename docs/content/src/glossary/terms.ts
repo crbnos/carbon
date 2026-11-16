@@ -1333,7 +1333,7 @@ export const terms = {
   },
   "delivery-date-check": {
     term: msg`Delivery Date Check`,
-    definition: msg`Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item.`,
+    definition: msg`Warns when a sales order line's promised date can't be met, and suggests the earliest date that can.`,
     href: "/docs/reference/sales-orders#delivery-date-check"
   },
   "planning-action": {

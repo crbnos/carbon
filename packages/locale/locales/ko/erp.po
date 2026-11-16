@@ -34271,8 +34271,8 @@ msgstr "입고 품목을 검사하는 사람이 해당 품목을 입고 처리�
 msgid "Warning"
 msgstr "경고"
 
-msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
-msgstr "수주 라인의 약속일을 지킬 수 없을 때 경고합니다. 리드타임은 날짜를 BOM을 포함한 품목의 총 리드타임과 비교하고, 재고는 주별 가용 재고도 확인하며, 용량은 제조 품목에 대해 작업장 일정도 시뮬레이션합니다."
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "판매 주문 라인의 약속 날짜를 맞출 수 없을 때 경고하고, 맞출 수 있는 가장 빠른 날짜를 제안합니다."
 
 msgid "Warranty"
 msgstr "보증"
