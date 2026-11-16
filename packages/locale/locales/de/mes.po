@@ -12,6 +12,18 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · Kit job open"
+msgstr ""
+
+msgid " · No kit job open"
+msgstr ""
+
+msgid " · Nothing ordered"
+msgstr ""
+
+msgid " · On order"
+msgstr ""
+
 msgid ", not running"
 msgstr ", läuft nicht"
 
@@ -147,6 +159,12 @@ msgstr "{columns} entspricht keinem vorhandenen Datensatz."
 msgid "{companyName} logo"
 msgstr "{companyName}-Logo"
 
+msgid "{complete} complete"
+msgstr ""
+
+msgid "{complete} complete · target {target}"
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} von {quantity}"
 
@@ -192,6 +210,12 @@ msgstr "{name}: {value}"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} von {denominator}"
+
+msgid "{onHand} of {need}"
+msgstr ""
+
+msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -549,6 +573,12 @@ msgstr "Fett"
 msgid "Bring {quantity}"
 msgstr "{quantity} bringen"
 
+msgid "Bring kit"
+msgstr ""
+
+msgid "Build kit"
+msgstr ""
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Aber machen Sie sich keine Sorgen. Sie können den Passwort-Zurücksetzen-Ablauf verwenden, um einen neuen Magic Link anzufordern."
 
@@ -892,6 +922,9 @@ msgstr "Schritt löschen"
 msgid "Delete Timecard (<0/>)"
 msgstr "Zeitkarte löschen (<0/>)"
 
+msgid "Deliver"
+msgstr ""
+
 msgid "Density"
 msgstr "Dichte"
 
@@ -1039,6 +1072,9 @@ msgstr "Emoji: {emoji}"
 msgid "Employee"
 msgstr "Mitarbeiter"
 
+msgid "Empty"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "Leere Arbeitsplätze"
 
@@ -1165,6 +1201,9 @@ msgstr "Fehler beim Hochladen der Signatur"
 msgid "Failure Mode"
 msgstr "Fehlermodus"
 
+msgid "Fed directly"
+msgstr ""
+
 msgid "File"
 msgstr "Datei"
 
@@ -1191,6 +1230,9 @@ msgstr "Befunde"
 
 msgid "Finish"
 msgstr "Fertig"
+
+msgid "Finish kit"
+msgstr ""
 
 msgid "Finish setting up your account"
 msgstr "Beenden Sie die Einrichtung Ihres Kontos"
@@ -1247,6 +1289,9 @@ msgstr "Zu Schritt {0} gehen: {1}"
 #. placeholder {1}: s.name ?? ""
 msgid "Go to step {0}: {1} (done)"
 msgstr "Zu Schritt {0} gehen: {1} (erledigt)"
+
+msgid "Grab from {source} · {onHand} there"
+msgstr ""
 
 msgid "Gradient"
 msgstr "Verlauf"
@@ -1332,6 +1377,9 @@ msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche T
 
 msgid "Inactive"
 msgstr "Inaktiv"
+
+msgid "Incomplete"
+msgstr ""
 
 msgid "Increase {fieldLabel}"
 msgstr "{fieldLabel} erhöhen"
@@ -1447,6 +1495,21 @@ msgstr "Tastaturkürzel"
 
 msgid "Kit"
 msgstr "Set"
+
+msgid "Kit rack"
+msgstr ""
+
+msgid "kits to build"
+msgstr ""
+
+msgid "kits to deliver"
+msgstr ""
+
+msgid "kits to finish"
+msgstr ""
+
+msgid "Kitter"
+msgstr ""
 
 msgid "Labor"
 msgstr "Personal"
@@ -1574,6 +1637,9 @@ msgstr "Ausschuss erfassen für {0}"
 msgid "Login"
 msgstr "Anmelden"
 
+msgid "Loose parts"
+msgstr ""
+
 msgid "Lot"
 msgstr "Charge"
 
@@ -1662,6 +1728,9 @@ msgstr "Nachricht"
 msgid "Metric"
 msgstr "Metrisch"
 
+msgid "Missing"
+msgstr ""
+
 msgid "Mode"
 msgstr "Modus"
 
@@ -1689,6 +1758,12 @@ msgstr "Weitere Optionen für {0}"
 
 msgid "More than one unit has this serial. Choose one."
 msgstr "Mehr als eine Einheit hat diese Seriennummer. Wählen Sie eine aus."
+
+msgid "Move {quantity}"
+msgstr ""
+
+msgid "Move {quantity} from {from}"
+msgstr ""
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1788,6 +1863,9 @@ msgstr "Kein Land gefunden."
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "Keine Kundenanlage mit der Seriennummer {0}. Wählen Sie den Kunden."
 
+msgid "No default bin"
+msgstr ""
+
 msgid "No dispatches assigned to you"
 msgstr "Keine Instandhaltungsaufträge an Sie zugewiesen"
 
@@ -1811,6 +1889,9 @@ msgstr "Keine Prüfungen für Sie zugeordnet"
 
 msgid "No issue types configured"
 msgstr "Keine Problemtypen konfiguriert"
+
+msgid "No kit"
+msgstr ""
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Es ist noch kein Urlaub eingerichtet. Bitten Sie Ihren Manager, einen in der ERP einzurichten."
@@ -1956,6 +2037,9 @@ msgstr "Nicht disponierbar"
 msgid "None"
 msgstr "Keine"
 
+msgid "None on the shelf"
+msgstr ""
+
 msgid "Normal"
 msgstr "Normal"
 
@@ -2011,6 +2095,9 @@ msgstr "von {0}"
 
 msgid "Offline"
 msgstr "Offline"
+
+msgid "OK"
+msgstr ""
 
 msgid "Oldest first"
 msgstr "Älteste zuerst"
@@ -2136,6 +2223,10 @@ msgstr "Teilweise Verwendungsentscheid"
 
 msgid "Parts"
 msgstr "Teile"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "Bestanden"
@@ -2393,6 +2484,15 @@ msgstr "Angebote"
 
 msgid "Raise quality issue"
 msgstr "Qualitätsvorfall anlegen"
+
+msgid "raw bins short"
+msgstr ""
+
+msgid "Raw shelf"
+msgstr ""
+
+msgid "Raw short: {shortParts}"
+msgstr ""
 
 msgid "Re"
 msgstr "Rück."
@@ -2957,6 +3057,12 @@ msgstr "Weiche Frist"
 msgid "Solid"
 msgstr "Einfarbig"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "Quelle"
 
@@ -3004,11 +3110,17 @@ msgstr "Arbeitsgang starten oder unterbrechen"
 msgid "Start work"
 msgstr "Arbeit beginnen"
 
+msgid "Station"
+msgstr ""
+
 msgid "Station User"
 msgstr "Stationsbenutzer"
 
 msgid "Station: {stationName}"
 msgstr "Station: {stationName}"
+
+msgid "stations out"
+msgstr ""
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
@@ -3147,6 +3259,9 @@ msgstr "Die Fertigungsaufträge und Teile, die diesen Durchlauf ausmachen."
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "Die Fertigungsaufträge stellen verschiedene Artikel her – halten Sie die Teile jedes Fertigungsauftrags getrennt."
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Das Los wird als Bestanden markiert und {remaining} verbleibende Einheit(en) werden bei diesem Arbeitsgang abgeschlossen."
@@ -3521,6 +3636,9 @@ msgstr "Rückverfolgbarkeit anzeigen"
 
 msgid "Warranty"
 msgstr "Garantie"
+
+msgid "Water spider"
+msgstr ""
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Wir haben Ihnen einen Anmeldungslink und einen 6-stelligen Code per E-Mail gesendet. Folgen Sie dem Link, oder geben Sie den Code hier ein."

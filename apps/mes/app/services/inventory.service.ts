@@ -19,7 +19,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { erpPosting } from "~/services/erp";
-import { buildLineFeedRows, buildStationBoard } from "~/services/line-feed";
+import {
+  buildLaneBoard,
+  buildLineFeedRows,
+  buildStationBoard,
+  summarizeLanes
+} from "~/services/line-feed";
 import type { SuggestedAllocationLot } from "./allocation";
 import { greedyFillAllocation, sortLotsByPickMethod } from "./allocation";
 
@@ -685,19 +690,19 @@ export async function insertManualInventoryAdjustment(
 }
 
 /**
- * The line feeder's station board for one location: a card per work center
- * (`buildStationBoard`) with its open material requests, lineside shortages
- * and outstanding transfer lines to its storage units, plus the names the
- * cards show. Every source is paged with a stable order, so a location past
- * the row cap is still read in full.
+ * The line feed for one location: a lane per work center (`buildLaneBoard`)
+ * with its raw shelf, kit rack and station card (open material requests,
+ * lineside shortages and outstanding transfer lines), the board's summary, and
+ * the names the lanes show. Every source is paged with a stable order, so a
+ * location past the row cap is still read in full.
  */
 export async function getLineFeed(
   client: SupabaseClient<Database>,
-  args: { companyId: string; locationId: string }
+  args: { companyId: string; locationId: string; sort?: "line" | "worst" }
 ) {
-  const { companyId, locationId } = args;
+  const { companyId, locationId, sort } = args;
 
-  const [requests, shortages, transfers, stations, stationBins] =
+  const [requests, shortages, transfers, stations, stationBins, lanes] =
     await Promise.all([
       fetchAllRecords(() =>
         client
@@ -752,6 +757,21 @@ export async function getLineFeed(
           .eq("active", true)
           .not("workCenterId", "is", null)
           .order("id")
+      ),
+      fetchAllRecords(() =>
+        client
+          .rpc("get_line_feed_lanes", {
+            p_location_id: locationId,
+            p_company_id: companyId
+          })
+          .order("workCenterId")
+          .order("tier")
+          .order("state")
+          .order("itemId")
+          .order("parentKitItemId")
+          .order("storageUnitId")
+          .order("jobId")
+          .order("trackedEntityId")
       )
     ]);
 
@@ -760,16 +780,23 @@ export async function getLineFeed(
     shortages.error ??
     transfers.error ??
     stations.error ??
-    stationBins.error;
+    stationBins.error ??
+    lanes.error;
   if (error) return { data: null, error };
 
   const requestRows = requests.data ?? [];
   const shortageRows = shortages.data ?? [];
   const transferRows = transfers.data ?? [];
+  const laneRows = lanes.data ?? [];
 
   // One read each for the names the shortages and transfers do not carry.
   const storageUnitIds = [
-    ...new Set(shortageRows.map((shortage) => shortage.storageUnitId))
+    ...new Set(
+      [
+        ...shortageRows.map((shortage) => shortage.storageUnitId),
+        ...laneRows.map((row) => row.storageUnitId)
+      ].filter((id): id is string => Boolean(id))
+    )
   ];
   const workCenterIds = [
     ...new Set(
@@ -784,7 +811,8 @@ export async function getLineFeed(
     ...new Set(
       [
         ...shortageRows.map((shortage) => shortage.itemId),
-        ...transferRows.map((transfer) => transfer.itemId)
+        ...transferRows.map((transfer) => transfer.itemId),
+        ...laneRows.map((row) => row.itemId)
       ].filter((id): id is string => Boolean(id))
     )
   ];
@@ -809,7 +837,7 @@ export async function getLineFeed(
     fetchAllByIds(itemIds, (batch) =>
       client
         .from("item")
-        .select("id, readableIdWithRevision")
+        .select("id, readableIdWithRevision, thumbnailPath")
         .in("id", batch)
         .eq("companyId", companyId)
         .order("id")
@@ -842,10 +870,12 @@ export async function getLineFeed(
   // The readable ids a card shows: each line's part, the job a request came
   // from, and the stock transfer a transfer line belongs to.
   const itemReadableIds: Record<string, string> = {};
+  const itemThumbnailPaths: Record<string, string> = {};
   for (const item of items.data ?? []) {
     if (item.readableIdWithRevision) {
       itemReadableIds[item.id] = item.readableIdWithRevision;
     }
+    if (item.thumbnailPath) itemThumbnailPaths[item.id] = item.thumbnailPath;
   }
   for (const request of requestRows) {
     if (request.itemId && request.item?.readableIdWithRevision) {
@@ -863,21 +893,29 @@ export async function getLineFeed(
       transfer.stockTransfer.stockTransferId;
   }
 
+  const board = buildLaneBoard({
+    stations: buildStationBoard({
+      workCenters: stations.data ?? [],
+      stationWorkCenterIds: (stationBins.data ?? [])
+        .map((bin) => bin.workCenterId)
+        .filter((id): id is string => Boolean(id)),
+      workCenterNames,
+      rows: buildLineFeedRows({
+        requests: requestRows,
+        shortages: shortageRows,
+        transfers: transferRows
+      })
+    }),
+    laneRows,
+    sort
+  });
+
   return {
     data: {
-      stations: buildStationBoard({
-        workCenters: stations.data ?? [],
-        stationWorkCenterIds: (stationBins.data ?? [])
-          .map((bin) => bin.workCenterId)
-          .filter((id): id is string => Boolean(id)),
-        workCenterNames,
-        rows: buildLineFeedRows({
-          requests: requestRows,
-          shortages: shortageRows,
-          transfers: transferRows
-        })
-      }),
+      lanes: board,
+      summary: summarizeLanes(board),
       itemReadableIds,
+      itemThumbnailPaths,
       storageUnitNames,
       jobReadableIds,
       stockTransferReadableIds
