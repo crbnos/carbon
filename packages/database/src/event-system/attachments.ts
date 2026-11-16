@@ -51,7 +51,7 @@ export const attachments = {
   contact: { before: ["sync_contact_to_parent"], events: true },
   customField: { statement: ["broadcast_table_changes"] },
   customer: {
-    before: ["sync_update_customer_type_group"],
+    before: ["check_row_identity_change", "sync_update_customer_type_group"],
     after: [
       "sync_create_customer_entries",
       "sync_create_customer_org_group",
@@ -77,7 +77,10 @@ export const attachments = {
   customerShipping: { events: true },
   customerTax: { events: true },
   customerType: {
-    before: ["sync_update_customer_type_group_name"],
+    before: [
+      "check_row_identity_change",
+      "sync_update_customer_type_group_name"
+    ],
     after: ["sync_create_customer_type_group"],
     events: true,
     statement: ["broadcast_reference_changes"]
@@ -112,6 +115,7 @@ export const attachments = {
   fixedAsset: { after: ["sync_advance_document_sequence"], events: true },
   gauge: { after: ["sync_advance_document_sequence"], events: true },
   gaugeCalibrationRecord: { events: true },
+  group: { before: ["check_group_system_flags"] },
   implementationCheckState: { statement: ["broadcast_table_changes"] },
   implementationFieldValue: { statement: ["broadcast_table_changes"] },
   implementationHub: { statement: ["broadcast_table_changes"] },
@@ -249,6 +253,7 @@ export const attachments = {
   materialRequest: { statement: ["broadcast_table_changes"] },
   materialSubstance: { statement: ["broadcast_table_changes"] },
   materialType: { statement: ["broadcast_reference_changes"] },
+  membership: { before: ["check_membership_system_group"] },
   memo: { after: ["sync_advance_document_sequence"], events: true },
   methodMaterial: {
     before: ["sync_check_method_material_self_reference"],
@@ -460,7 +465,7 @@ export const attachments = {
     statement: ["broadcast_reference_changes"]
   },
   supplier: {
-    before: ["sync_update_supplier_type_group"],
+    before: ["check_row_identity_change", "sync_update_supplier_type_group"],
     after: [
       "sync_create_supplier_entries",
       "sync_create_supplier_org_group",
@@ -490,7 +495,10 @@ export const attachments = {
   supplierShipping: { events: true },
   supplierTax: { events: true },
   supplierType: {
-    before: ["sync_update_supplier_type_group_name"],
+    before: [
+      "check_row_identity_change",
+      "sync_update_supplier_type_group_name"
+    ],
     after: ["sync_create_supplier_type_group"],
     events: true,
     statement: ["broadcast_reference_changes"]
@@ -513,6 +521,7 @@ export const attachments = {
     ],
     statement: ["log_user_changes"]
   },
+  userToCompany: { before: ["check_user_to_company_admin"] },
   warehouseTransfer: {
     after: ["sync_advance_document_sequence"],
     events: true,

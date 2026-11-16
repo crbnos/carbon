@@ -36,7 +36,9 @@ vi.mock("@carbon/env", async (importOriginal) => ({
   ...(redisUrl ? { REDIS_URL: redisUrl } : {})
 }));
 
-const { writeAccessGrants } = await import("@carbon/ee/permissions.server");
+const { adminRemovalRefusal, writeAccessGrants } = await import(
+  "@carbon/ee/permissions.server"
+);
 const { companyHasFeature } = await import("@carbon/ee/plan.server");
 const { createApiKey } = await import(
   "../../../app/modules/settings/settings.server"
@@ -484,5 +486,36 @@ describe("a move onto or off the Admin type", () => {
       ).error
     ).toBeNull();
     expect(await typeOf(ids.mover)).toBe(ids.ourType);
+  });
+
+  databaseTest("lets only an Admin or the system remove an Admin", async () => {
+    const setMoverType = (employeeTypeId: string) =>
+      db
+        .updateTable("employee")
+        .set({ employeeTypeId })
+        .where("id", "=", ids.mover)
+        .where("companyId", "=", ids.ours)
+        .execute();
+    const remove = (actor: Parameters<typeof adminRemovalRefusal>[1]["actor"]) =>
+      adminRemovalRefusal(db, {
+        companyId: ids.ours,
+        actor,
+        userIds: [ids.mover]
+      });
+    await setMoverType(ids.adminType);
+    try {
+      expect((await remove(writer))?.code).toBe("forbidden");
+      expect(await remove({ type: "system", onBehalfOf: ids.user })).toBeNull();
+      await setWriterType(ids.adminType);
+      try {
+        expect(await remove(writer)).toBeNull();
+      } finally {
+        await setWriterType(ids.ourType);
+      }
+    } finally {
+      await setMoverType(ids.ourType);
+    }
+    // Removing someone who is not an Admin needs no Admin.
+    expect(await remove(writer)).toBeNull();
   });
 });

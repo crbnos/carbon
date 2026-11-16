@@ -16,6 +16,7 @@ import {
   subjectGates
 } from "@carbon/ee/permission-grants";
 import {
+  adminRemovalRefusal,
   adminTypeChangeRefusal,
   grantWriteRefusal,
   deleteEmployeeType as removeEmployeeType,
@@ -72,8 +73,8 @@ const requestOrigin = {
  *
  * @remarks
  * Without role authoring (the PERMISSIONS feature), the invite always gets
- * the Admin employee type, whatever was asked for; with it, only an Admin may
- * invite someone as Admin. In a controlled
+ * the Admin employee type, whatever was asked for. Only an Admin may invite
+ * someone as Admin. In a controlled
  * environment the inviter must attest the person is a U.S. person (a
  * `validation` error otherwise). Once SSO is on, an email outside its
  * domains is refused (a `rule` error, its only one). A deactivated or
@@ -106,14 +107,21 @@ export const inviteEmployee = defineServiceFn({
         .eq("systemType", "Admin")
         .maybeSingle();
       if (adminType.data?.id) employeeType = adminType.data.id;
-    } else {
-      const refused = await adminTypeChangeRefusal(ctx.asSystem.pg, {
-        companyId,
-        actor: ctx.actor,
-        typeIds: [employeeType]
-      });
-      if (refused) return grantWriteRefusal(ctx, refused);
     }
+    // A re-add of a deactivated person moves them off the type they had.
+    const existing = await ctx.asSystem.pg
+      .selectFrom("employee")
+      .innerJoin("user", "user.id", "employee.id")
+      .select("employee.employeeTypeId")
+      .where("employee.companyId", "=", companyId)
+      .where("user.email", "=", input.email.toLowerCase())
+      .executeTakeFirst();
+    const adminRefused = await adminTypeChangeRefusal(ctx.asSystem.pg, {
+      companyId,
+      actor: ctx.actor,
+      typeIds: [employeeType, existing?.employeeTypeId]
+    });
+    if (adminRefused) return grantWriteRefusal(ctx, adminRefused);
 
     // 22 CFR 120.62: the inviter attests the invitee is a U.S. person.
     if (CONTROLLED_ENVIRONMENT && !input.usPersonAttestation) {
@@ -232,7 +240,8 @@ export const inviteSupplierContact = defineServiceFn({
  * One user is re-invited at once: the invite gets a new code (the old link
  * stops working), its acceptance and revocation are cleared, and its
  * `createdAt` restarts the controlled-environment expiry. Several are queued
- * as a job (`queued: true`). Refused when the user has no invite here.
+ * as a job (`queued: true`). Refused when the user has no invite here, and
+ * for someone on the Admin type unless the caller is an Admin.
  */
 export const resendInvites = defineServiceFn({
   input: z.object({
@@ -242,6 +251,13 @@ export const resendInvites = defineServiceFn({
   permission: { "users.accounts": "Create" },
   async run(ctx, { userIds, ip, city }) {
     const companyId = ctx.company.id;
+    // Accepting brings a deactivated person back on the type they kept: an Admin's is an Admin's call.
+    const adminRefused = await adminRemovalRefusal(ctx.asSystem.pg, {
+      companyId,
+      actor: ctx.actor,
+      userIds
+    });
+    if (adminRefused) return grantWriteRefusal(ctx, adminRefused);
     if (userIds.length > 1) {
       try {
         await batchTrigger(
@@ -332,8 +348,9 @@ export const resendInvites = defineServiceFn({
  * Revoke pending invites, and take the users' access to the company away.
  *
  * @remarks
- * One user is deactivated at once (and, on Cloud, the subscription's seat
- * count updated); several are deactivated by a job. Then every open invite
+ * Refuses an employee who already joined (that is a deactivate). One user is
+ * deactivated at once (and, on Cloud, the subscription's seat count
+ * updated); several are deactivated by a job. Then every open invite
  * of theirs here is marked revoked, and each revocation is written to the
  * audit log when the company keeps one.
  */
@@ -348,6 +365,21 @@ export const revokeInvites = defineServiceFn({
     const companyId = ctx.company.id;
     const actorId = ctx.auditUserId;
     const serviceRole = ctx.asSystem.supabase;
+
+    // A revoke ends an invite; removing someone who joined is a deactivate, which needs Full.
+    const joined = await ctx.asSystem.pg
+      .selectFrom("employee")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("id", "in", userIds)
+      .where("active", "=", true)
+      .execute();
+    if (joined.length) {
+      return ctx.error(
+        "rule",
+        "This person has already joined. Deactivate them instead of revoking the invite"
+      );
+    }
 
     const users = await serviceRole
       .from("user")
@@ -431,7 +463,8 @@ export const revokeInvites = defineServiceFn({
  * here.
  *
  * @remarks
- * Refuses the caller's own account. One user is deactivated at once, and
+ * Refuses the caller's own account, and an Admin's unless the caller is an
+ * Admin. One user is deactivated at once, and
  * `message` says how it went; several are deactivated by a job
  * (`queued: true`).
  */
@@ -447,6 +480,12 @@ export const deactivateUsers = defineServiceFn({
     if (userIds.includes(actorId)) {
       return ctx.error("rule", "You cannot deactivate yourself");
     }
+    const adminRefused = await adminRemovalRefusal(ctx.asSystem.pg, {
+      companyId,
+      actor: ctx.actor,
+      userIds
+    });
+    if (adminRefused) return grantWriteRefusal(ctx, adminRefused);
 
     if (userIds.length === 1) {
       // The service role: "userPermission" has no UPDATE policy, so under the

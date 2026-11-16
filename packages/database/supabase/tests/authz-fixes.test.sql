@@ -47,6 +47,10 @@ DECLARE
   workflow_id text; live_version text; draft_version text; own_workflow text; own_version text;
   adm text := gen_random_uuid()::text;  -- employee of A on its Admin type
   admin_type text;
+  hr text := gen_random_uuid()::text;   -- employee of A with Users at Full, not an Admin
+  newbie text := gen_random_uuid()::text;
+  admin_pick text := gen_random_uuid()::text;
+  loc_a text; request_id text; admin_type_b text; plain_type_b text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Authz A ' || id(), 'system') RETURNING id INTO group_a;
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Authz B ' || id(), 'system') RETURNING id INTO group_b;
@@ -446,6 +450,157 @@ BEGIN
   GET DIAGNOSTICS n = ROW_COUNT;
   ASSERT n = 1, 'the server edits a published version';
   RAISE NOTICE 'PASS a workflow is published by its owner or the server, and unpublished by its owner, an Admin or the server';
+
+  -- ── employee on the Admin type: only an Admin adds or removes one, even by delete and re-insert ──
+  -- An employee type joins its company's all-employees group, which company_b has no row for yet.
+  INSERT INTO "group" (id, name, "companyId") VALUES
+    ('00000000-0000-' || substring(company_b, 1, 4) || '-' || substring(company_b, 5, 4) || '-' || substring(company_b, 9, 12), 'Authz B all', company_b)
+  ON CONFLICT (id) DO NOTHING;
+  INSERT INTO "employeeType" (name, "companyId", "systemType") VALUES ('Authz B admin', company_b, 'Admin')
+    RETURNING id INTO admin_type_b;
+  INSERT INTO "employeeType" (name, "companyId") VALUES ('Authz B plain', company_b) RETURNING id INTO plain_type_b;
+  INSERT INTO "user" (id, email) VALUES (hr, hr || '@authz.invalid'), (newbie, newbie || '@authz.invalid');
+  -- hr edits Users in both companies, so RLS alone would let a row move between them.
+  INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES (hr, company_a, 'employee'), (hr, company_b, 'employee');
+  INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES
+    (hr, plain_type, company_a, true), (hr, plain_type_b, company_b, true);
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, hr, 'Users', 'Full', 'system'), (company_b, hr, 'Users', 'Full', 'system');
+
+  PERFORM pg_temp.act_as(hr);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES (newbie, admin_type, company_a, false);
+    RAISE EXCEPTION 'a Users editor added someone on the Admin type through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    DELETE FROM employee WHERE id = adm AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Users editor removed an Admin through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    UPDATE employee SET id = newbie WHERE id = hr AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Users editor re-pointed an employee row at another person through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    UPDATE employee SET "companyId" = company_b WHERE id = hr AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Users editor moved an employee row to another company through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES (newbie, admin_type_b, company_a, false);
+    RAISE EXCEPTION 'a Users editor added someone on another company''s type through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES (newbie, plain_type, company_a, false);
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'a Users editor still adds someone on another type';
+  RESET ROLE;
+
+  -- A delete and re-insert would move a person to any type with no audit, so the API deletes no one.
+  PERFORM pg_temp.act_as(hr);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    DELETE FROM employee WHERE id = newbie AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Users editor removed an employee row through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  -- Moving a type to another company would strip its people; moving the Admin type, every Admin.
+  BEGIN
+    UPDATE "employeeType" SET "companyId" = company_b WHERE id = plain_type AND "companyId" = company_a;
+    RAISE EXCEPTION 'an employee type was moved to another company through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    DELETE FROM "employeeType" WHERE id = admin_type AND "companyId" = company_a;
+    RAISE EXCEPTION 'a system employee type was deleted through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  -- The Admin type's group reads Admin-only documents: neither it nor its members are API writes.
+  BEGIN
+    INSERT INTO membership ("groupId", "memberUserId") VALUES (admin_type, hr);
+    RAISE EXCEPTION 'a Users editor joined the Admin type''s group through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    UPDATE "group" SET "isEmployeeTypeGroup" = false WHERE id = admin_type;
+    RAISE EXCEPTION 'a Users editor cleared the Admin type group''s flag through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    UPDATE "group" SET id = gen_random_uuid()::text WHERE id = admin_type;
+    RAISE EXCEPTION 'a Users editor changed the Admin type group''s id through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    DELETE FROM "group" WHERE id = admin_type;
+    RAISE EXCEPTION 'a Users editor deleted the Admin type''s group through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  -- A party's or type's id names the group interceptors put members in: re-pointed at the
+  -- Admin type's id, a portal account on it would join the Admin type's group.
+  RESET ROLE;
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, hr, 'Sales', 'Full', 'system');
+  PERFORM pg_temp.act_as(hr);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    UPDATE customer SET id = admin_type WHERE id = customer_a AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Sales editor re-pointed a customer at the Admin type''s id through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  -- Deactivation runs as the server; an inactive Admin could be re-added on another type.
+  BEGIN
+    UPDATE employee SET active = false WHERE id = adm AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Users editor deactivated an employee row through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    DELETE FROM "userToCompany" WHERE "userId" = adm AND "companyId" = company_a;
+    RAISE EXCEPTION 'a Users editor removed an Admin from the company through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  RESET ROLE;
+
+  INSERT INTO "user" (id, email) VALUES (admin_pick, admin_pick || '@authz.invalid');
+  PERFORM pg_temp.act_as(adm);
+  SET LOCAL ROLE authenticated;
+  INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES (admin_pick, admin_type, company_a, false);
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'an Admin still adds someone on the Admin type';
+  RESET ROLE;
+  RAISE NOTICE 'PASS only an Admin makes or removes an Admin, by any row, type, group or membership write';
+
+  -- ── materialRequest: any employee raises one and resolves their own; a line feeder resolves any ──
+  -- w is a plain employee with no Inventory page; hr has Users only.
+  INSERT INTO location (name, "addressLine1", city, "postalCode", "companyId", "createdBy", timezone)
+    VALUES ('Authz plant', '1 Main', 'Town', '00000', company_a, 'system', 'UTC') RETURNING id INTO loc_a;
+  PERFORM pg_temp.act_as(hr);
+  SET LOCAL ROLE authenticated;
+  INSERT INTO "materialRequest" ("companyId", "locationId", "createdBy")
+    VALUES (company_a, loc_a, hr) RETURNING id INTO request_id;
+  ASSERT request_id IS NOT NULL, 'an employee with no Inventory page raises a request and reads it back';
+  BEGIN
+    INSERT INTO "materialRequest" ("companyId", "locationId", "createdBy") VALUES (company_a, loc_a, adm);
+    RAISE EXCEPTION 'an employee raised a request in another user''s name';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  RESET ROLE;
+  PERFORM pg_temp.act_as(x);
+  SET LOCAL ROLE authenticated;
+  UPDATE "materialRequest" SET status = 'Resolved', "resolvedAt" = now() WHERE id = request_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 0, 'another employee resolved a request they did not raise';
+  RESET ROLE;
+  PERFORM pg_temp.act_as(hr);
+  SET LOCAL ROLE authenticated;
+  UPDATE "materialRequest" SET status = 'Resolved', "resolvedAt" = now() WHERE id = request_id AND "companyId" = company_a;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 1, 'the author resolves their own request';
+  RESET ROLE;
+  RAISE NOTICE 'PASS any employee raises a material request and resolves their own';
 
   -- ── workflow.nextRunAt: it fires the published version as the owner, so only the owner or the server moves it ──
   -- workflow_id is g's and published; own_workflow is x's.

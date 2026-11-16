@@ -12,6 +12,7 @@ import {
 } from "@carbon/auth/client.server";
 import type { Gate } from "@carbon/database/access";
 import { SUBJECT_RULES } from "@carbon/ee/permission-grants";
+import { adminsAmong, isCompanyAdmin } from "@carbon/ee/permissions.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { trigger } from "@carbon/jobs";
 import {
@@ -49,6 +50,7 @@ import {
   queueUserDeactivations,
   selectUsersForBulkAction
 } from "~/modules/users/users.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { decodeCursor } from "./cursor";
 import {
   exportListRows,
@@ -457,12 +459,17 @@ const BULK_ACTIONS = {
     gate: gateOf(deactivateUsers),
     params: z.object({ ip: z.string().optional() }),
     run: async (ids, { ip }, { companyId, userId }) => {
-      const { allowed, skipped } = await selectUsersForBulkAction({
+      const selected = await selectUsersForBulkAction({
         action: "deactivate",
         userIds: ids,
         companyId,
         actorId: userId
       });
+      const { allowed, skipped } = await skipAdminsUnlessAdmin(
+        selected,
+        companyId,
+        userId
+      );
       if (allowed.length > 0) {
         await queueUserDeactivations({
           userIds: allowed,
@@ -481,12 +488,17 @@ const BULK_ACTIONS = {
     gate: gateOf(resendInvites),
     params: z.object({ location: z.string(), ip: z.string() }),
     run: async (ids, { location, ip }, { companyId, userId }) => {
-      const { allowed, skipped } = await selectUsersForBulkAction({
+      const selected = await selectUsersForBulkAction({
         action: "invite",
         userIds: ids,
         companyId,
         actorId: userId
       });
+      const { allowed, skipped } = await skipAdminsUnlessAdmin(
+        selected,
+        companyId,
+        userId
+      );
       if (allowed.length > 0) {
         await queueInviteResends({
           userIds: allowed,
@@ -540,6 +552,22 @@ type BulkActionParams<K extends TableBulkActionKey> = z.input<
 function getBulkAction(key: string): BulkActionDefinition<unknown> | undefined {
   const actions: Record<string, BulkActionDefinition<unknown>> = BULK_ACTIONS;
   return Object.hasOwn(actions, key) ? actions[key] : undefined;
+}
+
+/** Drops the company's Admins from a user bulk action unless the requester is one. */
+async function skipAdminsUnlessAdmin(
+  selected: { allowed: string[]; skipped: number },
+  companyId: string,
+  userId: string
+) {
+  const db = getDatabaseClient();
+  const admins = (await isCompanyAdmin(db, companyId, userId))
+    ? new Set<string>()
+    : await adminsAmong(db, companyId, selected.allowed);
+  return {
+    allowed: selected.allowed.filter((id) => !admins.has(id)),
+    skipped: selected.skipped + admins.size
+  };
 }
 
 /**
@@ -770,7 +798,15 @@ export async function startBackgroundBulkAction<K extends TableBulkActionKey>(
       refusal: { code: "not-supported" }
     });
   }
-  const { companyId, userId } = await authorize(request, gate);
+  const { companyId, userId, caller } = await authorize(request, gate);
+  // The job acts as a person (an API key's would be its creator, with the creator's rights).
+  if (caller === "apiKey") {
+    return bulkStartFormResponse({
+      success: false,
+      message: "An API key cannot start a background bulk action",
+      refusal: { code: "not-supported" }
+    });
+  }
   return bulkStartFormResponse(
     await startBulkRun({ companyId, userId, actionKey, params, ...run })
   );

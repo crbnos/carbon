@@ -25,12 +25,16 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 - **`userToCompany`** — the membership join table. PK `(userId, companyId)`.
   `role "role"` where `CREATE TYPE "role" AS ENUM ('customer','employee','supplier')`.
   This is how a user belongs to multiple companies (one row per company, role can differ per company).
-- **`employee`** — per-company employee record. PK `(id, companyId)`; `id → user.id`.
+- **`employee`** — per-company employee record. PK `(id, companyId)`; `id` is the user's id (no FK to `user`).
   `employeeTypeId → employeeType.id` (RESTRICT), `companyId → company.id`,
   `active BOOLEAN DEFAULT FALSE`, `pin` (console mode). Added in `20241208004151_invites.sql`.
   An API-role change to `employeeTypeId` is refused (BEFORE interceptor
   `check_employee_type_change`): a person moves to another type through `writeAccessGrants`
-  (`convertConsoleOperatorToUser` too, with `{ keep: true }`).
+  (`convertConsoleOperatorToUser` too, with `{ keep: true }`). The same interceptor refuses an
+  API-role INSERT or DELETE of a row on the company's Admin type unless the caller is an Admin,
+  so a delete and re-insert cannot make an Admin. It also refuses an API-role change to a row's
+  `id` or `companyId`, and an INSERT naming another company's type; `writeAccessGrants` and `inviteEmployee`
+  apply the same rule in the app (`adminTypeChangeRefusal`, `@carbon/ee/permissions.server`).
 - **`employeeJob`** — job title / org placement. PK `(id, companyId)`; `id → user.id`.
   `title`, `startDate DATE`, `locationId → location.id`, `departmentId → department.id`,
   `shiftId → shift.id`, `managerId → user.id`, `tags TEXT[]`, `customFields` JSONB,

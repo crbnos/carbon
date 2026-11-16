@@ -234,9 +234,55 @@ export async function isCompanyAdmin(
   return !!row;
 }
 
+/** The users among `userIds` who are on the company's Admin type. */
+export async function adminsAmong(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string,
+  userIds: readonly string[]
+): Promise<Set<string>> {
+  if (!userIds.length) return new Set();
+  const rows = await db
+    .selectFrom("employee")
+    .innerJoin("employeeType", "employeeType.id", "employee.employeeTypeId")
+    .select("employee.id")
+    .where("employee.companyId", "=", companyId)
+    .where("employee.id", "in", userIds)
+    .where("employeeType.companyId", "=", companyId)
+    .where("employeeType.systemType", "=", "Admin")
+    .execute();
+  return new Set(rows.map((row) => row.id));
+}
+
 /**
- * Refuses putting a person on, or taking them off, the company's Admin type
- * unless `actor` is an Admin there or the system. An API key never may.
+ * Refuses acting on an Admin of the company (deactivate, revoke, re-invite)
+ * unless `actor` is an Admin there or the system, as making one is.
+ */
+export async function adminRemovalRefusal(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    actor,
+    userIds
+  }: { companyId: string; actor?: Actor; userIds: readonly string[] }
+): Promise<AccessWriteError | null> {
+  if (actor?.type === "system") return null;
+  if (!(await adminsAmong(db, companyId, userIds)).size) return null;
+  if (
+    actor?.type === "user" &&
+    (await isCompanyAdmin(db, companyId, actor.userId))
+  ) {
+    return null;
+  }
+  return {
+    code: "forbidden",
+    message: "Only an Admin can make, remove or move an Admin"
+  };
+}
+
+/**
+ * Refuses putting a person on, taking them off, or removing them while on the
+ * company's Admin type unless `actor` is an Admin there or the system. An API
+ * key never may.
  */
 export async function adminTypeChangeRefusal(
   db: Kysely<KyselyDatabase> | KyselyTx,
@@ -269,7 +315,7 @@ export async function adminTypeChangeRefusal(
   }
   return {
     code: "forbidden",
-    message: "Only an Admin can give or take away the Admin employee type"
+    message: "Only an Admin can make, remove or move an Admin"
   };
 }
 

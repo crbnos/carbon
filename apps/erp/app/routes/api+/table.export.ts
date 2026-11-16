@@ -65,7 +65,20 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const { companyId, userId } = await authorize(request, definition.gate);
+  const { companyId, userId, caller } = await authorize(
+    request,
+    definition.gate
+  );
+  // The job reads as a person (an API key's would be its creator, with the creator's rights).
+  if (caller === "apiKey") {
+    return data(
+      {
+        error: "An API key cannot start a background export",
+        refusal: { code: "not-supported" } satisfies TableJobRefusal
+      },
+      { status: 403 }
+    );
+  }
 
   const exportId = newTableExportId(listKey);
   const refused = await startTableJob(

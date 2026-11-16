@@ -1047,6 +1047,7 @@ export const manifest = {
   // the CHECK, so an update never moves a row to another company, nor points
   // it at another company's operation or item.
   materialRequest: company({
+    read: "employee",
     create: and(
       owner("createdBy"),
       inCompany("companyId", "employee"),
