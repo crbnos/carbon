@@ -1427,7 +1427,13 @@ export const savePrinterRoute = defineServiceFn({
       );
     }
 
-    const apiKey = route.removeApiKey ? null : route.apiKey;
+    // The route row is saved even if the key below fails, so drop the cache now.
+    await invalidatePrinterCache(ctx.company.id);
+
+    // A key of only whitespace is a blank field: it keeps the saved key.
+    const apiKey = route.removeApiKey
+      ? null
+      : route.apiKey?.trim() || undefined;
     if (apiKey !== undefined) {
       const saved = await setPrinterApiKey(
         ctx.asSystem.supabase,
@@ -1437,11 +1443,18 @@ export const savePrinterRoute = defineServiceFn({
       );
       if (saved.error) {
         if (created) {
-          await deletePrinterRoute(
-            ctx.asCaller.supabase,
+          // System client: a caller who may create routes may not delete them.
+          const undone = await deletePrinterRoute(
+            ctx.asSystem.supabase,
             result.data.id,
             ctx.company.id
           );
+          if (undone.error) {
+            logger.warning("Failed to delete a printer route after its key", {
+              printerRouteId: result.data.id,
+              error: undone.error
+            });
+          }
         }
         return ctx.error(
           "internal",
@@ -1451,7 +1464,6 @@ export const savePrinterRoute = defineServiceFn({
       }
     }
 
-    await invalidatePrinterCache(ctx.company.id);
     return { created };
   }
 });
@@ -1556,17 +1568,21 @@ export const removePrinterRoute = defineServiceFn({
     }
 
     // The key of a deleted route can no longer be read; this only tidies it.
-    const cleared = await setPrinterApiKey(
-      ctx.asSystem.supabase,
-      ctx.company.id,
-      id,
-      null
-    );
-    if (cleared.error) {
-      logger.warning("Failed to delete a printer API key", {
-        printerRouteId: id,
-        error: cleared.error
-      });
+    // Only when a row went: RLS can leave the route in place without an error,
+    // and its key must stay with it.
+    if (result.data?.length) {
+      const cleared = await setPrinterApiKey(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        id,
+        null
+      );
+      if (cleared.error) {
+        logger.warning("Failed to delete a printer API key", {
+          printerRouteId: id,
+          error: cleared.error
+        });
+      }
     }
 
     const { data: existing } = await getPrintingSettings(

@@ -35,9 +35,12 @@ BEGIN
     RETURN;
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1 FROM "printerRoute" WHERE "id" = p_printer_route_id AND "companyId" = p_company_id
-  ) THEN
+  -- Locking the route serializes two first saves of a key, which would
+  -- otherwise both create the secret and collide on its unique name.
+  PERFORM 1 FROM "printerRoute"
+    WHERE "id" = p_printer_route_id AND "companyId" = p_company_id
+    FOR UPDATE;
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'Printer route % not found', p_printer_route_id
       USING ERRCODE = 'no_data_found';
   END IF;

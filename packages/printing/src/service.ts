@@ -295,7 +295,8 @@ export async function deletePrinterRoute(
     .from("printerRoute")
     .delete()
     .eq("id", routeId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id");
 }
 
 // -- Printing Settings --

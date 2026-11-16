@@ -41,6 +41,8 @@ export const printJobDeliverFunction = inngest.createFunction(
       .select("id, hasApiKey")
       .eq("printerUrl", job.printerUrl)
       .eq("companyId", companyId)
+      // Routes can share a URL; prefer the one with a key over an arbitrary one.
+      .order("hasApiKey", { ascending: false })
       .limit(1)
       .maybeSingle();
 

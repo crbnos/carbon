@@ -275,6 +275,9 @@ describe("security settings", () => {
   });
 });
 
+const sent = (writes: Write[]) =>
+  writes.map((write) => `${write.method}:${write.table}`);
+
 describe("saving a printer route", () => {
   const route = {
     name: "Zebra 2x1",
@@ -282,8 +285,6 @@ describe("saving a printer route", () => {
     mediaSizeId: "label2x1",
     printerUrl: "https://pbx.example/print"
   };
-  const sent = (writes: { method: string; table: string }[]) =>
-    writes.map((write) => `${write.method}:${write.table}`);
 
   it("keeps the saved API key when the field is blank", async () => {
     const { ctx, writes } = contextWith({ printerRoute: { id: "route-1" } });
@@ -291,6 +292,14 @@ describe("saving a printer route", () => {
     const result = await savePrinterRoute(ctx, { ...route, id: "route-1" });
 
     expect(result.error).toBeNull();
+    expect(sent(writes)).toEqual(["update:printerRoute"]);
+  });
+
+  it("treats a key of only whitespace as a blank field", async () => {
+    const { ctx, writes } = contextWith({ printerRoute: { id: "route-1" } });
+
+    await savePrinterRoute(ctx, { ...route, id: "route-1", apiKey: "   " });
+
     expect(sent(writes)).toEqual(["update:printerRoute"]);
   });
 
@@ -349,6 +358,7 @@ describe("saving a printer route", () => {
 describe("deleting a printer route", () => {
   it("clears every assignment that named it and keeps the others", async () => {
     const { ctx, writes } = contextWith({
+      printerRoute: [{ id: "route-1" }],
       companySettings: {
         printing: {
           assignments: {
@@ -401,6 +411,7 @@ describe("deleting a printer route", () => {
 
   it("leaves the settings alone when no assignment named it", async () => {
     const { ctx, writes } = contextWith({
+      printerRoute: [{ id: "route-1" }],
       companySettings: {
         printing: { assignments: { "loc-1": { defaultPrinterRouteId: "x" } } }
       }
@@ -408,10 +419,19 @@ describe("deleting a printer route", () => {
 
     await removePrinterRoute(ctx, { id: "route-1" });
 
-    expect(writes.map((write) => `${write.method}:${write.table}`)).toEqual([
+    expect(sent(writes)).toEqual([
       "delete:printerRoute",
       "rpc:set_printer_api_key"
     ]);
+  });
+
+  it("keeps the API key when no route row was deleted", async () => {
+    // RLS can refuse the delete without an error; the route and its key stay.
+    const { ctx, writes } = contextWith({ printerRoute: [] });
+
+    await removePrinterRoute(ctx, { id: "route-1" });
+
+    expect(sent(writes)).toEqual(["delete:printerRoute"]);
   });
 });
 

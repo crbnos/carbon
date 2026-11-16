@@ -5,6 +5,7 @@
 import {
   Boolean as BooleanField,
   Input,
+  Password,
   Select,
   Submit,
   ValidatedForm
@@ -291,7 +292,7 @@ export function PrintersCard({
                     label={t`Printer URL`}
                     placeholder="https://pbx-XXXX.pbxz.cloud/api/v1/print/..."
                   />
-                  <Input
+                  <Password
                     name="apiKey"
                     label={t`API Key`}
                     placeholder={
@@ -299,7 +300,7 @@ export function PrintersCard({
                         ? t`Saved. Leave blank to keep it`
                         : t`Optional`
                     }
-                    autoComplete="off"
+                    autoComplete="new-password"
                   />
                   {printerToEdit?.hasApiKey && (
                     <BooleanField
