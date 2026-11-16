@@ -14,11 +14,11 @@ import {
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Hidden, Select, Submit } from "~/components/Form";
+import { DeliveryDateControl, Hidden, Submit } from "~/components/Form";
 import { deliveryDateCheckSettingsValidator } from "~/modules/settings/settings.models";
-import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
+import type { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 
-type DeliveryDateControl = (typeof deliveryDateControlTypes)[number];
+type DeliveryDateLevel = (typeof deliveryDateControlTypes)[number];
 
 // One settings card = one saved concern (archetype F): the company's delivery
 // date check level. An item's own level on its Planning tab wins.
@@ -26,24 +26,12 @@ type DeliveryDateControl = (typeof deliveryDateControlTypes)[number];
 export function DeliveryDateCheckCard({
   deliveryDateControl
 }: {
-  deliveryDateControl: DeliveryDateControl;
+  deliveryDateControl: DeliveryDateLevel;
 }) {
   const { t } = useLingui();
   const fetcher = useAction({
     onSuccess: () => toast.success(t`Delivery date check updated`)
   });
-
-  // A Record, so a level added to the enum fails the typecheck until labelled.
-  const labels: Record<DeliveryDateControl, string> = {
-    None: t`None — no check`,
-    "Lead Time": t`Lead Time — the lead time through the BOM`,
-    Stock: t`Stock — free stock, then the lead time`,
-    Capacity: t`Capacity — free stock, then the shop's schedule`
-  };
-  const options = deliveryDateControlTypes.map((value) => ({
-    value,
-    label: labels[value]
-  }));
 
   return (
     <Card>
@@ -60,21 +48,14 @@ export function DeliveryDateCheckCard({
           </CardTitle>
           <CardDescription>
             <Trans>
-              When someone adds or changes a sales order line, check that the
-              promised date can be met. The check runs only when the date is
-              closer than the item's lead time through its BOM. It warns and
-              shows the earliest date; it never stops the save. An item's
-              Planning tab can set its own level.
+              Warn when a sales order line's promised date can't be met. An
+              item's Planning tab can override this.
             </Trans>
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-8 max-w-[400px]">
-            <Select
-              name="deliveryDateControl"
-              label={t`Check`}
-              options={options}
-            />
+            <DeliveryDateControl name="deliveryDateControl" label={t`Check`} />
           </div>
         </CardContent>
         <CardFooter>

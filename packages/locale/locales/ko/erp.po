@@ -6486,9 +6486,6 @@ msgstr "코스트 플러스 라인이 청구하는 간접비율을 한정하고,
 msgid "Capacity"
 msgstr "용량"
 
-msgid "Capacity — free stock, then the shop's schedule"
-msgstr "생산 능력 — 가용 재고, 다음은 현장 일정"
-
 msgid "Capacity reservation"
 msgstr "용량 예약"
 
@@ -6951,6 +6948,12 @@ msgstr "체크포인트 ·"
 
 msgid "Checkpoints"
 msgstr "체크포인트"
+
+msgid "Checks free stock by week, then the lead time."
+msgstr "주별 가용 재고를 확인한 다음 리드 타임을 확인합니다."
+
+msgid "Checks free stock, then simulates the shop's schedule for a made item."
+msgstr "가용 재고를 확인한 다음 제조 품목에 대해 작업장 일정을 시뮬레이션합니다."
 
 msgid "Children"
 msgstr "하위 항목"
@@ -11416,6 +11419,9 @@ msgstr "아래의 각 자산 지불 라인은 각 자산의 지불에서 이 약
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "각 셀은 그 날 일에 필요한 인원 대비 할당된 인원입니다."
 
+msgid "Each check adds to the one above it."
+msgstr "각 검사는 위의 검사에 더해집니다."
+
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "이 라인에 자금을 제공하는 각 계약 수정사항(ACRN별)"
 
@@ -14971,9 +14977,6 @@ msgstr "이 계측기를 재교정해야 하는 빈도입니다. 마지막 교�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "이 유지보수가 반복되는 빈도입니다 — 매일, 매주, 매월, 순환 실사 시; 매일을 선택하면 요일 선택 옵션이 표시되고 나머지는 더 간단한 간격 계산을 사용합니다."
 
-msgid "How planning sizes the orders that replenish this item here."
-msgstr "여기서 이 품목을 보충하는 주문의 규모를 계획이 어떻게 산정하는지."
-
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "이 공정에서 공정이 배치를 공유하기 위해 각 자재 속성이 얼마나 엄격하게 일치해야 하는지"
 
@@ -16786,9 +16789,6 @@ msgstr "리드타임"
 msgid "Lead Time"
 msgstr "리드타임"
 
-msgid "Lead Time — the lead time through the BOM"
-msgstr "리드타임 — BOM을 통한 리드타임"
-
 msgid "Lead time (days)"
 msgstr "리드타임(일)"
 
@@ -16919,8 +16919,8 @@ msgstr "비워 두면 이름에서 색상을 자동으로 고릅니다"
 msgid "Leave empty to use the account default"
 msgstr "계정 기본값을 사용하려면 비워두세요."
 
-msgid "Leave empty to use the level in Settings → Sales."
-msgstr "비워 두면 설정 → 영업의 수준을 사용합니다."
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "설정 → 판매의 검사를 사용하려면 비워 두세요."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "MRP가 계획한 모든 것을 표시하려면 공란으로 두거나 0을 입력하세요."
@@ -19563,6 +19563,9 @@ msgstr "필터와 일치하는 요금이 없습니다."
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "요금이 없습니다. 주행 거리, 손상, 배송 또는 청소 요금은 다음 송장에 포함됩니다."
 
+msgid "No check. Any promised date saves without a warning."
+msgstr "검사하지 않습니다. 약속 날짜는 경고 없이 저장됩니다."
+
 msgid "No child elements"
 msgstr "자식 요소 없음"
 
@@ -20533,9 +20536,6 @@ msgstr "일정 및 용량 계산에 반영되는 비근무일"
 
 msgid "None"
 msgstr "없음"
-
-msgid "None — no check"
-msgstr "없음 — 점검 안 함"
 
 msgid "None available"
 msgstr "사용 가능한 항목 없음"
@@ -28915,9 +28915,6 @@ msgstr "여전히 대금이 남음"
 msgid "Stock"
 msgstr "재고"
 
-msgid "Stock — free stock, then the lead time"
-msgstr "재고 — 가용 재고, 다음은 리드타임"
-
 msgid "Stock and planning"
 msgstr "재고 및 계획"
 
@@ -34280,11 +34277,17 @@ msgstr "경고 후 허용"
 msgid "Warn this many days before expiry"
 msgstr "유통기한 {0}일 전에 경고"
 
+msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
+msgstr "판매 주문 라인의 약속 날짜를 맞출 수 없을 때 경고합니다. 품목의 계획 탭에서 이를 재정의할 수 있습니다."
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "입고 품목을 검사하는 사람이 해당 품목을 입고 처리한 사람과 동일할 경우 경고합니다."
 
 msgid "Warning"
 msgstr "경고"
+
+msgid "Warns when the date is sooner than the item's lead time through its BOM."
+msgstr "날짜가 BOM을 통한 품목의 리드 타임보다 이를 때 경고합니다."
 
 msgid "Warranty"
 msgstr "보증"
@@ -34657,9 +34660,6 @@ msgstr "스레드에 회신할 때 채널의 모든 사람이 메시지를 볼 �
 msgid "When serial numbers are assigned"
 msgstr "시리얼 번호가 할당될 때"
 
-msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
-msgstr "누군가 수주 라인을 추가하거나 변경하면, 약속일을 맞출 수 있는지 점검합니다. 점검은 날짜가 품목의 BOM을 통한 리드타임보다 가까울 때만 실행됩니다. 경고를 표시하고 가장 빠른 날짜를 보여주며, 저장을 막지는 않습니다. 품목의 계획 탭에서 자체 수준을 설정할 수 있습니다."
-
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다. 공급업체는 RFQ 포털에서 이 날짜를 확인하며, Carbon은 이 날짜 이후의 지연 응답을 받지 않습니다(설정 가능)."
 
@@ -34902,9 +34902,6 @@ msgstr "MRP 계획 조치를 누가 소유하는가. 사업장은 회사 기본�
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "여기서 리스를 소유한 사람: 그들은 송장 요약과 날짜 알림을 받습니다."
-
-msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
-msgstr "여기서 이 품목의 조치 담당자, 계획이 얼마나 앞을 내다보는지, 그리고 수주가 약속일을 어떻게 확인하는지."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "송장을 수령하는 대상, 수령처 및 결제 조건"

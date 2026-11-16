@@ -6486,9 +6486,6 @@ msgstr "Ограничить косвенные ставки, которые в�
 msgid "Capacity"
 msgstr "Емкость"
 
-msgid "Capacity — free stock, then the shop's schedule"
-msgstr "Мощность — свободный запас, затем график цеха"
-
 msgid "Capacity reservation"
 msgstr "Резервирование мощности"
 
@@ -6951,6 +6948,12 @@ msgstr "Контрольная точка ·"
 
 msgid "Checkpoints"
 msgstr "Контрольные точки"
+
+msgid "Checks free stock by week, then the lead time."
+msgstr "Проверяет свободный запас по неделям, затем срок поставки."
+
+msgid "Checks free stock, then simulates the shop's schedule for a made item."
+msgstr "Проверяет свободный запас, затем моделирует график цеха для производимой номенклатуры."
 
 msgid "Children"
 msgstr "Подчинённые"
@@ -11416,6 +11419,9 @@ msgstr "Строки платежей каждого актива ниже ра�
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Каждая ячейка — это назначенные сотрудники в сравнении с необходимыми для работы в день сотрудниками."
 
+msgid "Each check adds to the one above it."
+msgstr "Каждая проверка дополняет предыдущую."
+
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Каждое изменение контракта, финансирующее эту строку, по ACRN."
 
@@ -14971,9 +14977,6 @@ msgstr "Как часто это средство измерения должн�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Как часто это техобслуживание повторяется — Ежедневно, Еженедельно, Ежемесячно, На циклический пересчет; выбор «Ежедневно» показывает селектор дня недели, остальные используют более простую математику интервалов."
 
-msgid "How planning sizes the orders that replenish this item here."
-msgstr "Как планирование определяет размер заказов на пополнение этой номенклатуры здесь."
-
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Насколько строго должны совпадать свойства материала для размещения операций в одной серии на этом процессе."
 
@@ -16786,9 +16789,6 @@ msgstr "Срок поставки"
 msgid "Lead Time"
 msgstr "Срок поставки"
 
-msgid "Lead Time — the lead time through the BOM"
-msgstr "Срок поставки — суммарный срок по BOM"
-
 msgid "Lead time (days)"
 msgstr "Срок поставки (дни)"
 
@@ -16919,8 +16919,8 @@ msgstr "Оставьте пустым, чтобы выбрать цвет по �
 msgid "Leave empty to use the account default"
 msgstr "Оставьте пустым, чтобы использовать значение по умолчанию учетной записи"
 
-msgid "Leave empty to use the level in Settings → Sales."
-msgstr "Оставьте поле пустым, чтобы использовать уровень из Настройки → Продажи."
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "Оставьте пустым, чтобы использовать проверку из Настройки → Продажи."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Оставьте пусто или введите 0, чтобы показать все, что планирует MRP."
@@ -19563,6 +19563,9 @@ msgstr "Нет начислений, соответствующих фильтр
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Нет начислений. Плата за пробег, повреждения, доставку или уборку будет перенесена на следующий счет-фактуру."
 
+msgid "No check. Any promised date saves without a warning."
+msgstr "Без проверки. Любая обещанная дата сохраняется без предупреждения."
+
 msgid "No child elements"
 msgstr "Нет дочерних элементов"
 
@@ -20533,9 +20536,6 @@ msgstr "Нерабочие дни, которые учитываются при 
 
 msgid "None"
 msgstr "Нет"
-
-msgid "None — no check"
-msgstr "Нет — без проверки"
 
 msgid "None available"
 msgstr "Нет доступных"
@@ -28915,9 +28915,6 @@ msgstr "Все еще задолжено"
 msgid "Stock"
 msgstr "Запас"
 
-msgid "Stock — free stock, then the lead time"
-msgstr "Запас — свободный запас, затем срок поставки"
-
 msgid "Stock and planning"
 msgstr "Запас и планирование"
 
@@ -34280,11 +34277,17 @@ msgstr "Предупредить, но разрешить"
 msgid "Warn this many days before expiry"
 msgstr "Предупредить за столько дней до срока годности"
 
+msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
+msgstr "Предупреждает, если обещанную дату строки заказа на продажу нельзя выдержать. На вкладке «Планирование» номенклатуры это можно переопределить."
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Предупреждать, когда лицо, проверяющее входящий товар, является тем же лицом, которое его получило."
 
 msgid "Warning"
 msgstr "Предупреждение"
+
+msgid "Warns when the date is sooner than the item's lead time through its BOM."
+msgstr "Предупреждает, если дата раньше срока поставки номенклатуры с учётом её спецификации."
 
 msgid "Warranty"
 msgstr "Гарантия"
@@ -34657,9 +34660,6 @@ msgstr "При ответе в теме сделайте сообщение ви
 msgid "When serial numbers are assigned"
 msgstr "Когда назначаются серийные номера"
 
-msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
-msgstr "Когда кто-то добавляет или меняет строку заказа покупателя, проверяется, можно ли выдержать подтвержденную дату. Проверка выполняется, только если дата ближе, чем срок поставки номенклатуры по BOM. Она предупреждает и показывает ближайшую дату; сохранение она никогда не останавливает. На вкладке «Планирование» номенклатуры можно задать собственный уровень."
-
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
 
@@ -34902,9 +34902,6 @@ msgstr "Кто владеет действиями планирования MRP.
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Кто владеет арендой здесь: они получают краткое изложение счета-фактуры и напоминания по датам."
-
-msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
-msgstr "Кто отвечает за действия по этой номенклатуре здесь, на какой срок вперёд смотрит планирование и как заказ покупателя проверяет подтвержденную дату."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Кто получает счета-фактуры, где и на каких условиях."

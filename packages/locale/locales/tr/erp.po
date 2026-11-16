@@ -6486,9 +6486,6 @@ msgstr "Bir Maliyet Artı satırının faturalandırdığı dolaylı oranları s
 msgid "Capacity"
 msgstr "Kapasite"
 
-msgid "Capacity — free stock, then the shop's schedule"
-msgstr "Kapasite — serbest stok, ardından atölyenin çizelgesi"
-
 msgid "Capacity reservation"
 msgstr "Kapasite Rezervasyonu"
 
@@ -6951,6 +6948,12 @@ msgstr "Kontrol Noktası ·"
 
 msgid "Checkpoints"
 msgstr "Kontrol Noktaları"
+
+msgid "Checks free stock by week, then the lead time."
+msgstr "Haftalık serbest stoku, ardından teslim süresini kontrol eder."
+
+msgid "Checks free stock, then simulates the shop's schedule for a made item."
+msgstr "Serbest stoku kontrol eder, ardından üretilen bir kalem için atölye planını simüle eder."
 
 msgid "Children"
 msgstr "Alt öğeler"
@@ -11416,6 +11419,9 @@ msgstr "Her varlığın aşağıdaki ödeme satırları, bu koşullardan kendi �
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği personeli gösterir."
 
+msgid "Each check adds to the one above it."
+msgstr "Her kontrol, bir üstündekine eklenir."
+
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Bu satırı finanse eden her sözleşme değişikliği, ACRN'ye göre."
 
@@ -14971,9 +14977,6 @@ msgstr "Bu ölçüm aletinin ne sıklıkla kalibre edilmesi gerektiği; Son Kali
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Bu bakım ne sıklıkla tekrarlanır — Günlük, Haftalık, Aylık, Periyodik Sayımında; Günlük seçim haftanın günü seçicisini gösterir, diğerleri daha basit aralık matematiğini kullanır."
 
-msgid "How planning sizes the orders that replenish this item here."
-msgstr "Planlama, bu stok kartını burada yenileyen siparişlerin boyutunu nasıl belirler."
-
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Bu operasyon üzerinde bir partide paylaşmak için her malzeme özelliğinin ne kadar katı eşleşmesi gerekir."
 
@@ -16786,9 +16789,6 @@ msgstr "tedarik süresi"
 msgid "Lead Time"
 msgstr "Tedarik süresi"
 
-msgid "Lead Time — the lead time through the BOM"
-msgstr "Tedarik süresi — BOM üzerinden tedarik süresi"
-
 msgid "Lead time (days)"
 msgstr "tedarik süresi (gün)"
 
@@ -16919,8 +16919,8 @@ msgstr "Boş bırakırsanız renk addan seçilir"
 msgid "Leave empty to use the account default"
 msgstr "Hesap varsayılanını kullanmak için boş bırakın"
 
-msgid "Leave empty to use the level in Settings → Sales."
-msgstr "Ayarlar → Satış bölümündeki düzeyi kullanmak için boş bırakın."
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "Ayarlar → Satış'taki kontrolü kullanmak için boş bırakın."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Tüm MRP planlarını görmek için boş bırakın veya 0 girin."
@@ -19563,6 +19563,9 @@ msgstr "Filtrelerle eşleşen ücretler yok."
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Herhangi bir ücret yok. Kilometre, hasar, teslimat veya temizlik ücretleri sonraki faturaya dahil edilir."
 
+msgid "No check. Any promised date saves without a warning."
+msgstr "Kontrol yok. Taahhüt edilen her tarih uyarı olmadan kaydedilir."
+
 msgid "No child elements"
 msgstr "Alt öğe yok"
 
@@ -20533,9 +20536,6 @@ msgstr "Planlama ve kapasite tarafından dikkate alınan çalışılmayan günle
 
 msgid "None"
 msgstr "Yok"
-
-msgid "None — no check"
-msgstr "Hiçbiri — kontrol yok"
 
 msgid "None available"
 msgstr "Kullanılabilir yok"
@@ -28915,9 +28915,6 @@ msgstr "Henüz Ödenmemiş"
 msgid "Stock"
 msgstr "Stok"
 
-msgid "Stock — free stock, then the lead time"
-msgstr "Stok — serbest stok, ardından tedarik süresi"
-
 msgid "Stock and planning"
 msgstr "Stok ve Planlama"
 
@@ -34280,11 +34277,17 @@ msgstr "Uyarı ver ama izin ver"
 msgid "Warn this many days before expiry"
 msgstr "Son kullanma tarihinden önce bu kadar gün uyar"
 
+msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
+msgstr "Bir satış siparişi satırının taahhüt edilen tarihi karşılanamadığında uyarır. Bir kalemin Planlama sekmesi bunu geçersiz kılabilir."
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Gelen bir ürünü kontrol eden kişinin, onu alan kişiyle aynı olması durumunda uyarı ver."
 
 msgid "Warning"
 msgstr "Uyarı"
+
+msgid "Warns when the date is sooner than the item's lead time through its BOM."
+msgstr "Tarih, kalemin ürün ağacı boyunca teslim süresinden önceyse uyarır."
 
 msgid "Warranty"
 msgstr "Garantı"
@@ -34657,9 +34660,6 @@ msgstr "Bir iş akışına yanıt verirken, iletiyi kanalda herkese de görünü
 msgid "When serial numbers are assigned"
 msgstr "Seri numaraları atandığında"
 
-msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
-msgstr "Bir satış siparişi satırı eklendiğinde veya değiştirildiğinde taahhüt tarihinin karşılanabilirliği kontrol edilir. Kontrol yalnızca tarih, bir stok kartının BOM üzerinden tedarik süresinden daha yakınsa çalışır. Uyarır ve en erken tarihi gösterir; kaydetmeyi asla engellemez. Bir stok kartının Planlama sekmesi kendi düzeyini ayarlayabilir."
-
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."
 
@@ -34902,9 +34902,6 @@ msgstr "MRP planlama eylemlerinin sahibi kimdir. Lokasyonlar şirket varsayılan
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Kiralama burada kime ait: kiralama özetini ve tarih hatırlatıcılarını alırlar."
-
-msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
-msgstr "Bu stok kartındaki işlemlerin kime ait olduğunu, planlamanın ne kadar ileriyi gördüğünü ve bir satış siparişinin taahhüt tarihini nasıl kontrol ettiğini."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Faturaları kim alır, nereye ve hangi koşullarda."

@@ -8,7 +8,8 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  cn
+  cn,
+  Label
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -59,6 +60,25 @@ export function FormGroup({
         {children}
       </div>
     </section>
+  );
+}
+
+/** A boxed group of a form: a label, then its fields in a three-column
+ *  grid. The purchase order line form's sections. */
+export function FormSection({
+  title,
+  children
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+      <Label>{title}</Label>
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+        {children}
+      </div>
+    </div>
   );
 }
 

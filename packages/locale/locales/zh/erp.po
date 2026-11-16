@@ -6486,9 +6486,6 @@ msgstr "限制成本加成行计费的间接费率，并以暂定费率计费负
 msgid "Capacity"
 msgstr "产能"
 
-msgid "Capacity — free stock, then the shop's schedule"
-msgstr "产能 — 先看可用库存，再看车间排程"
-
 msgid "Capacity reservation"
 msgstr "产能预留"
 
@@ -6951,6 +6948,12 @@ msgstr "检查点 ·"
 
 msgid "Checkpoints"
 msgstr "检查点"
+
+msgid "Checks free stock by week, then the lead time."
+msgstr "按周检查可用库存，然后检查提前期。"
+
+msgid "Checks free stock, then simulates the shop's schedule for a made item."
+msgstr "检查可用库存，然后为自制物料模拟车间排程。"
 
 msgid "Children"
 msgstr "子项"
@@ -11416,6 +11419,9 @@ msgstr "下方每项资产的付款行从这些条款在其付款处生成。更
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
 
+msgid "Each check adds to the one above it."
+msgstr "每项检查都在上一项的基础上增加。"
+
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "每个为此行提供资金的合同修改（按 ACRN）。"
 
@@ -14971,9 +14977,6 @@ msgstr "此量具必须多久重新校准一次；与上次校准日期结合自
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "此维护的重复频率——每日、每周、每月、循环盘点；每日会显示星期选择器，其他则使用更简单的间隔计算。"
 
-msgid "How planning sizes the orders that replenish this item here."
-msgstr "计划如何确定此处补货该物料的订单量。"
-
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "在此工序上，为使多个操作能够共享一个生产批次，每个原材料属性必须匹配的严格程度。"
 
@@ -16786,9 +16789,6 @@ msgstr "提前期"
 msgid "Lead Time"
 msgstr "提前期"
 
-msgid "Lead Time — the lead time through the BOM"
-msgstr "提前期 — 通过 BOM 计算的提前期"
-
 msgid "Lead time (days)"
 msgstr "提前期（天）"
 
@@ -16919,8 +16919,8 @@ msgstr "留空则根据名称自动选择颜色"
 msgid "Leave empty to use the account default"
 msgstr "留空以使用帐户默认值"
 
-msgid "Leave empty to use the level in Settings → Sales."
-msgstr "留空则使用“设置 → 销售”中的级别。"
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "留空以使用 设置 → 销售 中的检查。"
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "留空或输入 0 以显示 MRP 计划的所有内容。"
@@ -19563,6 +19563,9 @@ msgstr "没有费用与筛选条件匹配。"
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "无费用。里程、损毁、交付或清洁费用计入下一张发票。"
 
+msgid "No check. Any promised date saves without a warning."
+msgstr "不检查。任何承诺日期都会直接保存，不发出警告。"
+
 msgid "No child elements"
 msgstr "没有子元素"
 
@@ -20533,9 +20536,6 @@ msgstr "不工作日，排班和产能规划会考虑这些日期"
 
 msgid "None"
 msgstr "无"
-
-msgid "None — no check"
-msgstr "无 — 不检查"
 
 msgid "None available"
 msgstr "无可用项"
@@ -28915,9 +28915,6 @@ msgstr "仍欠"
 msgid "Stock"
 msgstr "库存"
 
-msgid "Stock — free stock, then the lead time"
-msgstr "库存 — 先看可用库存，再看提前期"
-
 msgid "Stock and planning"
 msgstr "库存和计划"
 
@@ -34280,11 +34277,17 @@ msgstr "警告但允许"
 msgid "Warn this many days before expiry"
 msgstr "在有效期前提醒多少天"
 
+msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
+msgstr "当销售订单行的承诺日期无法满足时发出警告。物料的“计划”选项卡可以覆盖此设置。"
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "当检验入库物料的人与收货人相同时发出警告。"
 
 msgid "Warning"
 msgstr "警告"
+
+msgid "Warns when the date is sooner than the item's lead time through its BOM."
+msgstr "当日期早于物料按其物料清单计算的提前期时发出警告。"
 
 msgid "Warranty"
 msgstr "保修"
@@ -34657,9 +34660,6 @@ msgstr "回复线程时，还应使消息对频道中的所有人可见（仅在
 msgid "When serial numbers are assigned"
 msgstr "分配序列号时"
 
-msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
-msgstr "添加或修改销售订单行时，检查承诺日期能否满足。仅当日期早于物料通过 BOM 计算的提前期时才会运行检查。检查会发出警告并显示最早日期，但绝不会阻止保存。物料的计划选项卡可以设置其自身的级别。"
-
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carbon在之后停止接受迟到的回复(可配置)。"
 
@@ -34902,9 +34902,6 @@ msgstr "MRP计划行动的所有者。地点继承公司默认值；物料组继
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "谁拥有此租赁：他们获得发票摘要和日期提醒。"
-
-msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
-msgstr "谁负责此处该物料的操作、计划向前看的时间范围，以及销售订单如何检查其承诺日期。"
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "谁接收发票、在哪里以及按什么条款。"

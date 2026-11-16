@@ -6486,9 +6486,6 @@ msgstr "Cap the indirect rates a Cost Plus line bills, and bill burden at provis
 msgid "Capacity"
 msgstr "Capacity"
 
-msgid "Capacity — free stock, then the shop's schedule"
-msgstr "Capacity — free stock, then the shop's schedule"
-
 msgid "Capacity reservation"
 msgstr "Capacity reservation"
 
@@ -6951,6 +6948,12 @@ msgstr "Checkpoint ·"
 
 msgid "Checkpoints"
 msgstr "Checkpoints"
+
+msgid "Checks free stock by week, then the lead time."
+msgstr "Checks free stock by week, then the lead time."
+
+msgid "Checks free stock, then simulates the shop's schedule for a made item."
+msgstr "Checks free stock, then simulates the shop's schedule for a made item."
 
 msgid "Children"
 msgstr "Children"
@@ -11416,6 +11419,9 @@ msgstr "Each asset's payment rows below are cut from these terms at its own paym
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
 
+msgid "Each check adds to the one above it."
+msgstr "Each check adds to the one above it."
+
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Each contract modification that funds this line, by ACRN."
 
@@ -14971,9 +14977,6 @@ msgstr "How often this gauge must be recalibrated; combined with Last Calibratio
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 
-msgid "How planning sizes the orders that replenish this item here."
-msgstr "How planning sizes the orders that replenish this item here."
-
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "How strictly each material property must match for operations to share a batch on this process."
 
@@ -16786,9 +16789,6 @@ msgstr "Lead time"
 msgid "Lead Time"
 msgstr "Lead Time"
 
-msgid "Lead Time — the lead time through the BOM"
-msgstr "Lead Time — the lead time through the BOM"
-
 msgid "Lead time (days)"
 msgstr "Lead time (days)"
 
@@ -16919,8 +16919,8 @@ msgstr "Leave empty to pick a color from the name"
 msgid "Leave empty to use the account default"
 msgstr "Leave empty to use the account default"
 
-msgid "Leave empty to use the level in Settings → Sales."
-msgstr "Leave empty to use the level in Settings → Sales."
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "Leave empty to use the check in Settings → Sales."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Leave empty, or enter 0, to show everything MRP plans."
@@ -19563,6 +19563,9 @@ msgstr "No charges match the filters."
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 
+msgid "No check. Any promised date saves without a warning."
+msgstr "No check. Any promised date saves without a warning."
+
 msgid "No child elements"
 msgstr "No child elements"
 
@@ -20533,9 +20536,6 @@ msgstr "Non-working days that scheduling and capacity respect"
 
 msgid "None"
 msgstr "None"
-
-msgid "None — no check"
-msgstr "None — no check"
 
 msgid "None available"
 msgstr "None available"
@@ -28915,9 +28915,6 @@ msgstr "Still Owed"
 msgid "Stock"
 msgstr "Stock"
 
-msgid "Stock — free stock, then the lead time"
-msgstr "Stock — free stock, then the lead time"
-
 msgid "Stock and planning"
 msgstr "Stock and planning"
 
@@ -34280,11 +34277,17 @@ msgstr "Warn but allow"
 msgid "Warn this many days before expiry"
 msgstr "Warn this many days before expiry"
 
+msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
+msgstr "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Warn when the person inspecting an inbound item is the same person who received it."
 
 msgid "Warning"
 msgstr "Warning"
+
+msgid "Warns when the date is sooner than the item's lead time through its BOM."
+msgstr "Warns when the date is sooner than the item's lead time through its BOM."
 
 msgid "Warranty"
 msgstr "Warranty"
@@ -34657,9 +34660,6 @@ msgstr "When replying to a thread, also make the message visible to everyone in 
 msgid "When serial numbers are assigned"
 msgstr "When serial numbers are assigned"
 
-msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
-msgstr "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
-
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 
@@ -34902,9 +34902,6 @@ msgstr "Who owns MRP planning actions. Locations inherit the company default; it
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Who owns the lease here: they get the invoice digest and the date reminders."
-
-msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
-msgstr "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Who receives the invoices, where, and on what terms."

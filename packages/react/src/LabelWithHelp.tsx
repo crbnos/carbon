@@ -15,9 +15,10 @@ import { cn } from "./utils/cn";
 
 type LabelWithHelpProps = {
   termId: TermId | undefined;
-  /** Free-text fallback for the ⓘ hover when no glossary term exists — e.g. a
-   * third-party vendor's own field description. Ignored when `termId` is set. */
-  text?: string;
+  /** The ⓘ hover when no glossary term exists — e.g. a third-party vendor's
+   * own field description, or a short list of the field's choices. Ignored
+   * when `termId` is set. */
+  text?: ReactNode;
   children: ReactNode;
   className?: string;
   /** Delay (ms) before the help popup opens on hover. */

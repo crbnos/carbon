@@ -6486,9 +6486,6 @@ msgstr "Limitar las tasas indirectas que factura una línea de Costo Plus, y fac
 msgid "Capacity"
 msgstr "Capacidad"
 
-msgid "Capacity — free stock, then the shop's schedule"
-msgstr "Capacidad — existencias libres, luego el programa del taller"
-
 msgid "Capacity reservation"
 msgstr "Reserva de capacidad"
 
@@ -6951,6 +6948,12 @@ msgstr "Punto de control ·"
 
 msgid "Checkpoints"
 msgstr "Puntos de control"
+
+msgid "Checks free stock by week, then the lead time."
+msgstr "Comprueba el stock libre por semana y luego el plazo de entrega."
+
+msgid "Checks free stock, then simulates the shop's schedule for a made item."
+msgstr "Comprueba el stock libre y luego simula la programación del taller para un artículo fabricado."
 
 msgid "Children"
 msgstr "Elementos secundarios"
@@ -11416,6 +11419,9 @@ msgstr "Las filas de pago de cada activo a continuación se cortan de estos tér
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Cada celda muestra las personas asignadas frente a las personas que el trabajo del día necesita."
 
+msgid "Each check adds to the one above it."
+msgstr "Cada comprobación se suma a la anterior."
+
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Cada modificación del contrato que financie esta línea, por ACRN."
 
@@ -14971,9 +14977,6 @@ msgstr "Con qué frecuencia debe recalibrarse este Instrumento de medición; com
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Con qué frecuencia se repite este Mantenimiento — Diario, Semanal, Mensual, En Conteo cíclico; Diario revela el selector de día de la semana, los otros usan matemática de intervalo más simple."
 
-msgid "How planning sizes the orders that replenish this item here."
-msgstr "Cómo la planificación dimensiona los pedidos de reposición de este artículo aquí."
-
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Qué tan estrictamente cada propiedad del material debe coincidir para que las operaciones compartan un lote de producción en este proceso."
 
@@ -16786,9 +16789,6 @@ msgstr "Plazo de entrega"
 msgid "Lead Time"
 msgstr "Plazo de entrega"
 
-msgid "Lead Time — the lead time through the BOM"
-msgstr "Plazo de entrega — el plazo de entrega a través de la BOM"
-
 msgid "Lead time (days)"
 msgstr "Plazo de entrega (días)"
 
@@ -16919,8 +16919,8 @@ msgstr "Déjelo vacío para elegir un color a partir del nombre"
 msgid "Leave empty to use the account default"
 msgstr "Dejar en blanco para usar el valor predeterminado de la cuenta"
 
-msgid "Leave empty to use the level in Settings → Sales."
-msgstr "Déjelo vacío para usar el nivel de Configuración → Ventas."
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "Déjelo vacío para usar la comprobación de Configuración → Ventas."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Dejar vacío o ingrese 0 para mostrar todo lo que MRP planifica."
@@ -19563,6 +19563,9 @@ msgstr "Ningún cargo coincide con los filtros."
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Sin cargos. Los cargos por kilometraje, daños, entrega o limpieza se incluyen en la siguiente factura."
 
+msgid "No check. Any promised date saves without a warning."
+msgstr "Sin comprobación. Cualquier fecha prometida se guarda sin aviso."
+
 msgid "No child elements"
 msgstr "Sin elementos secundarios"
 
@@ -20533,9 +20536,6 @@ msgstr "Días no laborales que la programación y la capacidad respetan"
 
 msgid "None"
 msgstr "Ninguno"
-
-msgid "None — no check"
-msgstr "Ninguna — sin verificación"
 
 msgid "None available"
 msgstr "Ninguna disponible"
@@ -28915,9 +28915,6 @@ msgstr "Aún adeudado"
 msgid "Stock"
 msgstr "Existencias"
 
-msgid "Stock — free stock, then the lead time"
-msgstr "Existencias — existencias libres, luego el plazo de entrega"
-
 msgid "Stock and planning"
 msgstr "Existencias y planificación"
 
@@ -34280,11 +34277,17 @@ msgstr "Advertir pero permitir"
 msgid "Warn this many days before expiry"
 msgstr "Avisar esta cantidad de días antes de la caducidad"
 
+msgid "Warn when a sales order line's promised date can't be met. An item's Planning tab can override this."
+msgstr "Avisa cuando no se puede cumplir la fecha prometida de una línea de pedido de venta. La pestaña Planificación de un artículo puede anular esto."
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Advertir cuando la persona que inspecciona un artículo entrante es la misma persona que lo recibió."
 
 msgid "Warning"
 msgstr "Advertencia"
+
+msgid "Warns when the date is sooner than the item's lead time through its BOM."
+msgstr "Avisa cuando la fecha es anterior al plazo de entrega del artículo a través de su lista de materiales."
 
 msgid "Warranty"
 msgstr "Garantía"
@@ -34657,9 +34660,6 @@ msgstr "Al responder a un hilo, también haga visible el mensaje a todos en el c
 msgid "When serial numbers are assigned"
 msgstr "Cuando se asignen números de serie"
 
-msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
-msgstr "Cuando alguien agrega o modifica una línea de pedido de venta, verifica que pueda cumplirse la fecha prometida. La verificación solo se ejecuta cuando la fecha está más cerca que el plazo de entrega del artículo a través de la BOM. Muestra una advertencia y la fecha más temprana; nunca impide guardar. La pestaña Planificación de un artículo puede definir su propio nivel."
-
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Cuándo se espera que respondan los proveedores; los proveedores ven esta fecha en el portal RFQ y Carbon deja de aceptar respuestas tardías después de ella (configurable)."
 
@@ -34902,9 +34902,6 @@ msgstr "Quién posee las acciones de planificación de MRP. Las ubicaciones here
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Quién es el propietario del arrendamiento aquí: reciben el resumen de facturas y los recordatorios de fecha."
-
-msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
-msgstr "Quién es responsable de las acciones de este artículo aquí, con cuánta antelación mira la planificación y cómo un pedido de venta verifica su fecha prometida."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Quién recibe las facturas, dónde y bajo qué términos."

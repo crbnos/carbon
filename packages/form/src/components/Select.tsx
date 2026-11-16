@@ -32,6 +32,8 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
   name: string;
   label?: string;
   termId?: TermId;
+  /** The label's ⓘ hover when no glossary term fits; see `LabelWithHelp`. */
+  helpText?: ReactNode;
   helperText?: string;
   isConfigured?: boolean;
   isOptional?: boolean;
@@ -51,6 +53,7 @@ const Select = ({
   name,
   label,
   termId,
+  helpText,
   helperText,
   isConfigured = false,
   isOptional,
@@ -96,7 +99,9 @@ const Select = ({
           isConfigured={isConfigured}
           onConfigure={onConfigure}
         >
-          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
+          <LabelWithHelp termId={termId} text={helpText}>
+            {label}
+          </LabelWithHelp>
         </FormLabel>
       )}
 
