@@ -832,12 +832,7 @@ export const updateReceiptLines = defineServiceFn({
                 companyId: ctx.company.id,
                 lines: lines.flatMap((l) =>
                   l.requiresBatchTracking
-                    ? [
-                        {
-                          id: l.id,
-                          receivedQuantity: Number(l.receivedQuantity)
-                        }
-                      ]
+                    ? [{ id: l.id, receivedQuantity: l.receivedQuantity }]
                     : []
                 )
               });

@@ -12586,8 +12586,9 @@ export async function createDocument(
               sourceDocument: "Purchase Order",
               sourceDocumentId: purchaseOrder.data.id,
               sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
-              // Batches copy the receipt's supplier: a new purchase order
-              // may be another supplier's.
+              // The draft may be switching to a PO from a different supplier.
+              // Generated batches take their Supplier attribute from the
+              // receipt, so it has to follow the new PO.
               supplierId: purchaseOrder.data.supplierId,
               supplierInteractionId: purchaseOrder.data.supplierInteractionId,
               locationId: locationId,
