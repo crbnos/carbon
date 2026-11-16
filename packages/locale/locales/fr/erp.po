@@ -22761,6 +22761,9 @@ msgstr "Horizon de figement de la planification"
 msgid "Planning time fence (days)"
 msgstr "Horizon de figement de la planification (jours)"
 
+msgid "Planning time fence days"
+msgstr "Horizon de figement de la planification (jours)"
+
 msgid "Planning window"
 msgstr "Fenêtre de planification"
 

@@ -1066,7 +1066,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     requiresStaffing: { kind: "primitive", of: "boolean" },
     responsibleEmployee: { kind: "entity", of: "user" },
     inspectionStorageUnitId: { kind: "primitive", of: "string" },
-    rejectedStorageUnitId: { kind: "primitive", of: "string" }
+    rejectedStorageUnitId: { kind: "primitive", of: "string" },
+    planningTimeFenceDays: { kind: "primitive", of: "number" }
   },
   nonConformance: {
     id: { kind: "primitive", of: "string" },

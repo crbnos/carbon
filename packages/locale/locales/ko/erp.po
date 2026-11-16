@@ -22761,6 +22761,9 @@ msgstr "계획 타임 펜스"
 msgid "Planning time fence (days)"
 msgstr "계획 타임 펜스 (일)"
 
+msgid "Planning time fence days"
+msgstr "계획 타임 펜스 (일)"
+
 msgid "Planning window"
 msgstr "계획 기간"
 

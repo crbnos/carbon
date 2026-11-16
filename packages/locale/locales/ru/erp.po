@@ -22761,6 +22761,9 @@ msgstr "Временная граница планирования"
 msgid "Planning time fence (days)"
 msgstr "Временная граница планирования (дни)"
 
+msgid "Planning time fence days"
+msgstr "Временная граница планирования (дни)"
+
 msgid "Planning window"
 msgstr "Окно планирования"
 

@@ -22761,6 +22761,9 @@ msgstr "Planlama zaman sınırı"
 msgid "Planning time fence (days)"
 msgstr "Planlama zaman sınırı (gün)"
 
+msgid "Planning time fence days"
+msgstr "Planlama zaman sınırı (gün)"
+
 msgid "Planning window"
 msgstr "Planlama penceresi"
 

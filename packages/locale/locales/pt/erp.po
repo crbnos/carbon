@@ -22761,6 +22761,9 @@ msgstr "Horizonte de congelamento do planejamento"
 msgid "Planning time fence (days)"
 msgstr "Horizonte de congelamento do planejamento (dias)"
 
+msgid "Planning time fence days"
+msgstr "Horizonte de congelamento do planejamento (dias)"
+
 msgid "Planning window"
 msgstr "Janela de planejamento"
 

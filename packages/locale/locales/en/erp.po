@@ -22761,6 +22761,9 @@ msgstr "Planning time fence"
 msgid "Planning time fence (days)"
 msgstr "Planning time fence (days)"
 
+msgid "Planning time fence days"
+msgstr "Planning time fence days"
+
 msgid "Planning window"
 msgstr "Planning window"
 

@@ -22761,6 +22761,9 @@ msgstr "Orizzonte di blocco della pianificazione"
 msgid "Planning time fence (days)"
 msgstr "Orizzonte di blocco della pianificazione (giorni)"
 
+msgid "Planning time fence days"
+msgstr "Orizzonte di blocco della pianificazione (giorni)"
+
 msgid "Planning window"
 msgstr "Finestra di pianificazione"
 
