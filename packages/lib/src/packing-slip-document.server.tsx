@@ -68,7 +68,7 @@ function must<R extends { data: unknown; error: unknown }>(
   what: string
 ): NonNullable<R["data"]> {
   if (result.error || result.data == null) {
-    logger.error(`Failed to load ${what}`, { error: result.error });
+    logger.error("Failed to load {what}", { what, error: result.error });
     throw new Error(`Failed to load ${what}`);
   }
   return result.data as NonNullable<R["data"]>;

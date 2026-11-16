@@ -1698,7 +1698,7 @@
     {"name":"service_upsertServiceJobCharge","classification":"WRITE","schema":"9fde602106ba","response":"3797626bd17e","permission":"service:update","paginates":false},
     {"name":"service_upsertServiceJobEstimateLine","classification":"WRITE","schema":"85134d14982e","response":"3797626bd17e","permission":"service:update","paginates":false},
     {"name":"service_upsertServiceJobTime","classification":"WRITE","schema":"d5b680981157","response":"0f492623b13f","permission":"service:update","paginates":false},
-    {"name":"settings_assignPrinter","classification":"WRITE","schema":"f4b4d0692336","response":"de371a276a58","permission":"settings:update","paginates":false},
+    {"name":"settings_assignPrinter","classification":"WRITE","schema":"94c9fbd82671","response":"de371a276a58","permission":"settings:update","paginates":false},
     {"name":"settings_createItemSerialSequence","classification":"WRITE","schema":"ceac30761cc2","response":"3797626bd17e","permission":"settings:create","paginates":false},
     {"name":"settings_deactivateCompanyIntegration","classification":"DESTRUCTIVE","schema":"3797626bd17e","response":"f06d2d858884","permission":"settings:update","paginates":false},
     {"name":"settings_deleteItemSerialSequence","classification":"DESTRUCTIVE","schema":"6009206fca74","response":"8394fbabd845","permission":"settings:delete","paginates":false},
