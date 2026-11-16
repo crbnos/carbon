@@ -6952,12 +6952,6 @@ msgstr "Kontrol Noktası ·"
 msgid "Checkpoints"
 msgstr "Kontrol Noktaları"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "Serbest stoku hafta hafta, ardından teslim süresini kontrol eder."
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "Serbest stoku kontrol eder. Üretilen bir kalem için atölye planını da simüle eder."
-
 msgid "Children"
 msgstr "Alt öğeler"
 
@@ -11418,9 +11412,6 @@ msgstr "Her varlığın aşağıdaki ödeme satırları, bu koşullardan kendi �
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği personeli gösterir."
-
-msgid "Each check also runs the ones above it."
-msgstr "Her kontrol, üstündekileri de çalıştırır."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Bu satırı finanse eden her sözleşme değişikliği, ACRN'ye göre."
@@ -19562,9 +19553,6 @@ msgstr "Filtrelerle eşleşen ücretler yok."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Herhangi bir ücret yok. Kilometre, hasar, teslimat veya temizlik ücretleri sonraki faturaya dahil edilir."
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "Kontrol yok. Taahhüt edilen her tarih uyarı olmadan kaydedilir."
 
 msgid "No child elements"
 msgstr "Alt öğe yok"
@@ -34286,8 +34274,8 @@ msgstr "Gelen bir ürünü kontrol eden kişinin, onu alan kişiyle aynı olmas�
 msgid "Warning"
 msgstr "Uyarı"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "Tarih, kalemin ürün ağacı dahil toplam teslim süresinden önceyse uyarır."
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "Bir satış siparişi satırının söz verilen tarihi karşılanamadığında uyarır: Tedarik süresi tarihi kalemin ürün ağacı dahil toplam tedarik süresiyle karşılaştırır, Stok ayrıca serbest stoku hafta hafta kontrol eder ve Kapasite üretilen bir kalem için atölye planını da simüle eder."
 
 msgid "Warranty"
 msgstr "Garantı"

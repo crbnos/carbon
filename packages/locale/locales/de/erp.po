@@ -6952,12 +6952,6 @@ msgstr "Checkpoint ·"
 msgid "Checkpoints"
 msgstr "Kontrollpunkte"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "Prüft den freien Bestand Woche für Woche, dann die Lieferzeit."
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "Prüft den freien Bestand. Für einen gefertigten Artikel simuliert sie außerdem den Fertigungsplan."
-
 msgid "Children"
 msgstr "Unterelemente"
 
@@ -11418,9 +11412,6 @@ msgstr "Die nachfolgenden Zahlungspositionen jeder Anlage werden aus diesen Bedi
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Jede Zelle zeigt die zugewiesenen Personen gegen die Personen, die die Tagesarbeit benötigt."
-
-msgid "Each check also runs the ones above it."
-msgstr "Jede Prüfung führt auch die darüberliegenden aus."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Jede Vertragsänderung, die diese Position finanziert, nach ACRN."
@@ -19562,9 +19553,6 @@ msgstr "Keine Gebühren entsprechen den Filtern."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Keine Gebühren. Kilometer-, Schaden-, Liefer- und Reinigungsgebühren werden der nächsten Rechnung hinzugefügt."
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "Keine Prüfung. Jedes zugesagte Datum wird ohne Warnung gespeichert."
 
 msgid "No child elements"
 msgstr "Keine untergeordneten Elemente"
@@ -34286,8 +34274,8 @@ msgstr "Warnen Sie, wenn die Person, die einen eingegangenen Artikel prüft, die
 msgid "Warning"
 msgstr "Warnung"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "Warnt, wenn das Datum vor der gesamten Lieferzeit des Artikels einschließlich seiner Stückliste liegt."
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "Warnt, wenn das zugesagte Datum einer Auftragsposition nicht eingehalten werden kann: Beschaffungszeit vergleicht das Datum mit der gesamten Beschaffungszeit des Artikels über seine Stückliste, Bestand prüft zusätzlich den freien Bestand Woche für Woche, und Kapazität simuliert für einen gefertigten Artikel zusätzlich den Fertigungsplan."
 
 msgid "Warranty"
 msgstr "Gewährleistung"

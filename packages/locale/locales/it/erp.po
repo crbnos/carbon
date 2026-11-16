@@ -6952,12 +6952,6 @@ msgstr "Checkpoint ·"
 msgid "Checkpoints"
 msgstr "Checkpoint"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "Controlla la giacenza libera settimana per settimana, poi il lead time."
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "Controlla la giacenza libera. Per un articolo prodotto, simula anche il programma dell'officina."
-
 msgid "Children"
 msgstr "Figli"
 
@@ -11418,9 +11412,6 @@ msgstr "Le righe di pagamento di ogni bene qui sotto vengono estratte da questi 
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Ogni cella mostra le persone assegnate rispetto alle persone di cui il lavoro del giorno ha bisogno."
-
-msgid "Each check also runs the ones above it."
-msgstr "Ogni controllo esegue anche quelli sopra."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Ogni modifica del contratto che finanzia questa riga, per ACRN."
@@ -19562,9 +19553,6 @@ msgstr "Nessun addebito corrisponde ai filtri."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Nessun addebito. Gli addebiti per chilometraggio, danni, consegna o pulizia verranno addebitati sulla fattura successiva."
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "Nessun controllo. Qualsiasi data promessa viene salvata senza avviso."
 
 msgid "No child elements"
 msgstr "Nessun elemento figlio"
@@ -34286,8 +34274,8 @@ msgstr "Avvisa quando la persona che ispeziona un articolo in entrata è la stes
 msgid "Warning"
 msgstr "Avvertenza"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "Avvisa quando la data è anteriore al lead time totale dell'articolo, distinta base inclusa."
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "Avvisa quando la data promessa di una riga d'ordine di vendita non può essere rispettata: Lead time confronta la data con il lead time totale dell'articolo attraverso la sua distinta base, Giacenza controlla anche la giacenza libera settimana per settimana, e Capacità simula anche la pianificazione dell'officina per un articolo prodotto."
 
 msgid "Warranty"
 msgstr "Garanzia"

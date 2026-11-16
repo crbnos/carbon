@@ -4,69 +4,27 @@
 
 import type { SelectProps } from "@carbon/form";
 import { Select } from "@carbon/form";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 
 type DeliveryDateControlValue = (typeof deliveryDateControlTypes)[number];
-
-type Check = { label: string; description: string };
-
-function DeliveryDateCheckHelp({ checks }: { checks: Check[] }) {
-  return (
-    <div className="flex flex-col gap-2.5">
-      <p>
-        <Trans>Each check also runs the ones above it.</Trans>
-      </p>
-      <div className="flex flex-col gap-1.5">
-        {checks.map((check) => (
-          <div key={check.label} className="flex flex-col leading-tight">
-            <span className="font-medium text-foreground">{check.label}</span>
-            <span>{check.description}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /** The delivery date check: Settings → Sales and an item's Planning tab. */
 const DeliveryDateControl = (props: Omit<SelectProps, "options">) => {
   const { t } = useLingui();
   // A Record, so a check added to the enum fails the typecheck until labelled.
-  const checks: Record<DeliveryDateControlValue, Check> = {
-    None: {
-      label: t`None`,
-      description: t`No check. Any promised date saves without a warning.`
-    },
-    "Lead Time": {
-      label: t`Lead Time`,
-      description: t`Warns when the date is sooner than the item's total lead time, including its BOM.`
-    },
-    Stock: {
-      label: t`Stock`,
-      description: t`Checks free stock week by week, then the lead time.`
-    },
-    Capacity: {
-      label: t`Capacity`,
-      description: t`Checks free stock. For a made item, also simulates the shop's schedule.`
-    }
+  const labels: Record<DeliveryDateControlValue, string> = {
+    None: t`None`,
+    "Lead Time": t`Lead Time`,
+    Stock: t`Stock`,
+    Capacity: t`Capacity`
   };
   const options = deliveryDateControlTypes.map((value) => ({
     value,
-    label: checks[value].label
+    label: labels[value]
   }));
 
-  return (
-    <Select
-      helpText={
-        <DeliveryDateCheckHelp
-          checks={deliveryDateControlTypes.map((value) => checks[value])}
-        />
-      }
-      {...props}
-      options={options}
-    />
-  );
+  return <Select termId="delivery-date-check" {...props} options={options} />;
 };
 
 export default DeliveryDateControl;

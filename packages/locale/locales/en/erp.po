@@ -6952,12 +6952,6 @@ msgstr "Checkpoint ·"
 msgid "Checkpoints"
 msgstr "Checkpoints"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "Checks free stock week by week, then the lead time."
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "Checks free stock. For a made item, also simulates the shop's schedule."
-
 msgid "Children"
 msgstr "Children"
 
@@ -11418,9 +11412,6 @@ msgstr "Each asset's payment rows below are cut from these terms at its own paym
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
-
-msgid "Each check also runs the ones above it."
-msgstr "Each check also runs the ones above it."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Each contract modification that funds this line, by ACRN."
@@ -19562,9 +19553,6 @@ msgstr "No charges match the filters."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "No check. Any promised date saves without a warning."
 
 msgid "No child elements"
 msgstr "No child elements"
@@ -34286,8 +34274,8 @@ msgstr "Warn when the person inspecting an inbound item is the same person who r
 msgid "Warning"
 msgstr "Warning"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "Warns when the date is sooner than the item's total lead time, including its BOM."
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
 
 msgid "Warranty"
 msgstr "Warranty"

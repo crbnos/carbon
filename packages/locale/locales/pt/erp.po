@@ -6952,12 +6952,6 @@ msgstr "Checkpoint ·"
 msgid "Checkpoints"
 msgstr "Pontos de Verificação"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "Verifica o estoque livre semana a semana e depois o prazo de entrega."
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "Verifica o estoque livre. Para um item fabricado, também simula a programação da fábrica."
-
 msgid "Children"
 msgstr "Filhos"
 
@@ -11418,9 +11412,6 @@ msgstr "As linhas de pagamento de cada ativo abaixo são cortadas a partir desse
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Cada célula mostra as pessoas atribuídas em comparação com as pessoas que o trabalho do dia precisa."
-
-msgid "Each check also runs the ones above it."
-msgstr "Cada verificação também executa as de cima."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Cada modificação de contrato que financia esta linha, por ACRN."
@@ -19562,9 +19553,6 @@ msgstr "Nenhuma cobrança corresponde aos filtros."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Sem cobranças. Cobranças de quilometragem, dano, entrega ou limpeza serão incluídas na próxima fatura."
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "Sem verificação. Qualquer data prometida é salva sem aviso."
 
 msgid "No child elements"
 msgstr "Nenhum elemento filho"
@@ -34286,8 +34274,8 @@ msgstr "Avisar quando a pessoa que inspeciona um item de entrada é a mesma pess
 msgid "Warning"
 msgstr "Aviso"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "Avisa quando a data é anterior ao prazo de entrega total do item, incluindo sua lista de materiais."
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "Avisa quando a data prometida de uma linha de pedido de venda não pode ser cumprida: Lead Time compara a data com o lead time total do item pela sua lista de materiais, Estoque também verifica o estoque livre semana a semana, e Capacidade também simula a programação da fábrica para um item fabricado."
 
 msgid "Warranty"
 msgstr "Garantia"

@@ -6952,12 +6952,6 @@ msgstr "चेकपॉइंट ·"
 msgid "Checkpoints"
 msgstr "चेकपॉइंट्स"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "हफ़्ते-दर-हफ़्ते मुक्त स्टॉक जाँचता है, फिर लीड टाइम।"
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "मुक्त स्टॉक जाँचता है। बनाए जाने वाले आइटम के लिए शॉप के शेड्यूल का सिमुलेशन भी करता है।"
-
 msgid "Children"
 msgstr "संतानें"
 
@@ -11418,9 +11412,6 @@ msgstr "प्रत्येक संपत्ति की भुगतान
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "प्रत्येक सेल उन लोगों को दर्शाता है जो दिन के काम के लिए आवश्यक लोगों के खिलाफ असाइन किए गए हैं।"
-
-msgid "Each check also runs the ones above it."
-msgstr "हर जाँच अपने ऊपर वाली जाँचें भी चलाती है।"
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "प्रत्येक अनुबंध संशोधन जो इस पंक्ति को निधि देता है, ACRN द्वारा।"
@@ -19562,9 +19553,6 @@ msgstr "कोई भी शुल्क फ़िल्टर से मेल 
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "कोई शुल्क नहीं। माइलेज, क्षति, डिलीवरी या सफाई शुल्क अगले चालान में शामिल होंगे।"
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "कोई जाँच नहीं। कोई भी वादा की गई तारीख बिना चेतावनी के सहेजी जाती है।"
 
 msgid "No child elements"
 msgstr "कोई बाल तत्व नहीं"
@@ -34286,8 +34274,8 @@ msgstr "चेतावनी दें जब आने वाली वस्�
 msgid "Warning"
 msgstr "चेतावनी"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "जब तारीख आइटम के कुल लीड टाइम से पहले हो, जिसमें उसका BOM शामिल है, तो चेतावनी देता है।"
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "जब किसी बिक्री ऑर्डर लाइन की वादा की गई तिथि पूरी नहीं हो सकती, तब चेतावनी देता है: लीड टाइम तिथि की तुलना BOM सहित आइटम के कुल लीड टाइम से करता है, स्टॉक हफ़्ते-दर-हफ़्ते मुक्त स्टॉक भी जाँचता है, और क्षमता बनाए जाने वाले आइटम के लिए शॉप के शेड्यूल का सिमुलेशन भी करती है।"
 
 msgid "Warranty"
 msgstr "वारंटी"

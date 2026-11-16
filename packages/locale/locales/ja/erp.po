@@ -6952,12 +6952,6 @@ msgstr "チェックポイント ·"
 msgid "Checkpoints"
 msgstr "チェックポイント"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "週ごとに空き在庫を確認し、その後リードタイムを確認します。"
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "空き在庫を確認します。製造品の場合は、工場のスケジュールもシミュレーションします。"
-
 msgid "Children"
 msgstr "子要素"
 
@@ -11418,9 +11412,6 @@ msgstr "以下の各資産の支払明細は、その支払でこれらの条件
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "各セルは、その日の作業に必要な人員に対して配置された人員です"
-
-msgid "Each check also runs the ones above it."
-msgstr "各チェックは、その上のチェックもあわせて実行します。"
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "この明細に資金を提供する契約変更書（ACRN 別）。"
@@ -19562,9 +19553,6 @@ msgstr "絞り込み条件に一致する請求がありません"
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "請求がありません。走行距離、損傷、配送、クリーニング料金は次の請求書に含まれます。"
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "チェックなし。約束日は警告なしで保存されます。"
 
 msgid "No child elements"
 msgstr "子要素なし"
@@ -34286,8 +34274,8 @@ msgstr "受け取った人と同じ人が受け入れ品を検査する場合に
 msgid "Warning"
 msgstr "警告"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "日付が、部品表を含む品目の合計リードタイムより早い場合に警告します。"
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "受注明細の約束日に間に合わない場合に警告します。リードタイムは日付を部品表を含む品目の総リードタイムと比較し、在庫は週ごとの空き在庫も確認し、容量は製造品目について工場のスケジュールもシミュレーションします。"
 
 msgid "Warranty"
 msgstr "保証"

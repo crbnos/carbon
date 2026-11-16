@@ -6952,12 +6952,6 @@ msgstr "Контрольная точка ·"
 msgid "Checkpoints"
 msgstr "Контрольные точки"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "Проверяет свободный запас неделя за неделей, затем срок поставки."
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "Проверяет свободный запас. Для производимой номенклатуры также моделирует график цеха."
-
 msgid "Children"
 msgstr "Подчинённые"
 
@@ -11418,9 +11412,6 @@ msgstr "Строки платежей каждого актива ниже ра�
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Каждая ячейка — это назначенные сотрудники в сравнении с необходимыми для работы в день сотрудниками."
-
-msgid "Each check also runs the ones above it."
-msgstr "Каждая проверка выполняет и те, что выше."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Каждое изменение контракта, финансирующее эту строку, по ACRN."
@@ -19562,9 +19553,6 @@ msgstr "Нет начислений, соответствующих фильтр
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Нет начислений. Плата за пробег, повреждения, доставку или уборку будет перенесена на следующий счет-фактуру."
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "Без проверки. Любая обещанная дата сохраняется без предупреждения."
 
 msgid "No child elements"
 msgstr "Нет дочерних элементов"
@@ -34286,8 +34274,8 @@ msgstr "Предупреждать, когда лицо, проверяющее 
 msgid "Warning"
 msgstr "Предупреждение"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "Предупреждает, если дата раньше общего срока поставки номенклатуры с учётом её спецификации."
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "Предупреждает, когда обещанную дату строки заказа на продажу нельзя выдержать: Срок поставки сравнивает дату с общим сроком поставки позиции с учётом её спецификации, Запас также проверяет свободный запас по неделям, а Емкость для производимой позиции также моделирует график цеха."
 
 msgid "Warranty"
 msgstr "Гарантия"

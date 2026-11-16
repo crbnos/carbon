@@ -6952,12 +6952,6 @@ msgstr "检查点 ·"
 msgid "Checkpoints"
 msgstr "检查点"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "逐周检查可用库存，然后检查提前期。"
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "检查可用库存。对于自制物料，还会模拟车间排程。"
-
 msgid "Children"
 msgstr "子项"
 
@@ -11418,9 +11412,6 @@ msgstr "下方每项资产的付款行从这些条款在其付款处生成。更
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
-
-msgid "Each check also runs the ones above it."
-msgstr "每项检查也会运行其上方的检查。"
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "每个为此行提供资金的合同修改（按 ACRN）。"
@@ -19562,9 +19553,6 @@ msgstr "没有费用与筛选条件匹配。"
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "无费用。里程、损毁、交付或清洁费用计入下一张发票。"
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "不检查。任何承诺日期都会直接保存，不发出警告。"
 
 msgid "No child elements"
 msgstr "没有子元素"
@@ -34286,8 +34274,8 @@ msgstr "当检验入库物料的人与收货人相同时发出警告。"
 msgid "Warning"
 msgstr "警告"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "当日期早于物料的总提前期（含其物料清单）时发出警告。"
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "当销售订单行的承诺日期无法满足时发出警告：提前期将该日期与物料含物料清单在内的总提前期比较，库存还会逐周检查可用库存，产能还会为自制物料模拟车间排程。"
 
 msgid "Warranty"
 msgstr "保修"

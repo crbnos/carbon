@@ -6952,12 +6952,6 @@ msgstr "Punkt kontrolny ·"
 msgid "Checkpoints"
 msgstr "Punkty kontrolne"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "Sprawdza wolny zapas tydzień po tygodniu, a następnie czas realizacji."
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "Sprawdza wolny zapas. Dla wytwarzanej pozycji symuluje też harmonogram produkcji."
-
 msgid "Children"
 msgstr "Elementy podrzędne"
 
@@ -11418,9 +11412,6 @@ msgstr "Wiersze płatności każdego aktywa poniżej są obliczane na podstawie 
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "W każdej komórce znajdują się przydzieleni pracownicy w stosunku do pracowników potrzebnych do pracy tego dnia."
-
-msgid "Each check also runs the ones above it."
-msgstr "Każde sprawdzenie wykonuje też te powyżej."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Każda modyfikacja umowy, która finansuje tę pozycję, wg ACRN."
@@ -19562,9 +19553,6 @@ msgstr "Żadne opłaty nie pasują do filtrów."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Brak opłat. Opłaty za przebieg, uszkodzenie, dostawę lub czyszczenie pojawią się na następnej fakturze."
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "Brak sprawdzania. Każda obiecana data zapisuje się bez ostrzeżenia."
 
 msgid "No child elements"
 msgstr "Brak elementów podrzędnych"
@@ -34286,8 +34274,8 @@ msgstr "Ostrzegaj, gdy osoba sprawdzająca przychodzący towar jest tą samą os
 msgid "Warning"
 msgstr "Ostrzeżenie"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "Ostrzega, gdy data jest wcześniejsza niż łączny czas realizacji pozycji, wliczając jej zestawienie materiałów."
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "Ostrzega, gdy obiecanej daty pozycji zamówienia sprzedaży nie da się dotrzymać: Czas realizacji porównuje datę z całkowitym czasem realizacji pozycji przez jej BOM, Zapas sprawdza też wolny zapas tydzień po tygodniu, a Pojemność dla pozycji produkowanej symuluje też harmonogram warsztatu."
 
 msgid "Warranty"
 msgstr "Gwarancja"

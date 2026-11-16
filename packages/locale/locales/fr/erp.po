@@ -6952,12 +6952,6 @@ msgstr "Point de contrôle ·"
 msgid "Checkpoints"
 msgstr "Points de contrôle"
 
-msgid "Checks free stock week by week, then the lead time."
-msgstr "Vérifie le stock disponible semaine par semaine, puis le délai."
-
-msgid "Checks free stock. For a made item, also simulates the shop's schedule."
-msgstr "Vérifie le stock disponible. Pour un article fabriqué, simule aussi le planning de l'atelier."
-
 msgid "Children"
 msgstr "Enfants"
 
@@ -11418,9 +11412,6 @@ msgstr "Les lignes de paiement de chaque actif ci-dessous sont générées à pa
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Chaque cellule affiche les personnes assignées par rapport aux personnes que le travail du jour nécessite."
-
-msgid "Each check also runs the ones above it."
-msgstr "Chaque vérification exécute aussi celles du dessus."
 
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Chaque modification de contrat qui finance cette ligne, par ACRN."
@@ -19562,9 +19553,6 @@ msgstr "Aucune charge ne correspond aux filtres."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Aucun frais. Les frais de kilométrage, dommages, livraison ou nettoyage seront reportés sur la facture suivante."
-
-msgid "No check. Any promised date saves without a warning."
-msgstr "Aucune vérification. Toute date promise est enregistrée sans avertissement."
 
 msgid "No child elements"
 msgstr "Aucun élément enfant"
@@ -34286,8 +34274,8 @@ msgstr "Avertir lorsque la personne inspectant un article entrant est la même p
 msgid "Warning"
 msgstr "Avertissement"
 
-msgid "Warns when the date is sooner than the item's total lead time, including its BOM."
-msgstr "Avertit lorsque la date est antérieure au délai total de l'article, nomenclature comprise."
+msgid "Warns when a sales order line's promised date can't be met: Lead Time compares the date with the item's total lead time through its BOM, Stock also checks free stock week by week, and Capacity also simulates the shop's schedule for a made item."
+msgstr "Avertit lorsque la date promise d'une ligne de commande client ne peut pas être tenue : Délai d'approvisionnement compare la date au délai total de l'article à travers sa nomenclature, Stock vérifie aussi le stock libre semaine par semaine, et Capacité simule aussi le planning de l'atelier pour un article fabriqué."
 
 msgid "Warranty"
 msgstr "Garantie"
