@@ -24980,6 +24980,9 @@ msgstr "Retirer {label}"
 msgid "Remove {name}"
 msgstr "Retirer {name}"
 
+msgid "Remove API key"
+msgstr ""
+
 msgid "Remove Asset"
 msgstr "Retirer l'immobilisation"
 
@@ -26632,6 +26635,9 @@ msgstr "Affichages enregistrés"
 
 msgid "Saved Views"
 msgstr "Vues enregistrées"
+
+msgid "Saved. Leave blank to keep it"
+msgstr ""
 
 #. placeholder {0}: bulkProgress.done
 #. placeholder {1}: bulkProgress.total

@@ -48,6 +48,7 @@ import { createServiceContext } from "@carbon/api/service-fn.server";
 
 import {
   removePrinterRoute,
+  savePrinterRoute,
   setIntegrationSyncEnabled,
   transitionSyncOperations,
   updateInventorySettings,
@@ -77,7 +78,10 @@ type Write = { table: string; method: string; values: unknown };
  * filters, so a company or id scope is tested against the database instead
  * (`test/database/settings-scoping.test.ts`).
  */
-function client(rows: Record<string, unknown>) {
+function client(
+  rows: Record<string, unknown>,
+  { rpcError = null }: { rpcError?: { message: string } | null } = {}
+) {
   const writes: Write[] = [];
   const from = (table: string) => {
     const result = { data: rows[table] ?? null, error: null };
@@ -96,11 +100,18 @@ function client(rows: Record<string, unknown>) {
       Promise.resolve(result).then(resolve);
     return chain;
   };
-  return { from, writes };
+  const rpc = (fn: string, args: unknown) => {
+    writes.push({ table: fn, method: "rpc", values: args });
+    return Promise.resolve({ data: null, error: rpcError });
+  };
+  return { from, rpc, writes };
 }
 
-function contextWith(rows: Record<string, unknown> = {}) {
-  const db = client(rows);
+function contextWith(
+  rows: Record<string, unknown> = {},
+  options: Parameters<typeof client>[1] = {}
+) {
+  const db = client(rows, options);
   const ctx = createServiceContext({
     actor: { type: "user", userId: "user-1", permissions: settings },
     company: { id: "company-1", groupId: "group-1" },
@@ -264,6 +275,77 @@ describe("security settings", () => {
   });
 });
 
+describe("saving a printer route", () => {
+  const route = {
+    name: "Zebra 2x1",
+    format: "zpl" as const,
+    mediaSizeId: "label2x1",
+    printerUrl: "https://pbx.example/print"
+  };
+  const sent = (writes: { method: string; table: string }[]) =>
+    writes.map((write) => `${write.method}:${write.table}`);
+
+  it("keeps the saved API key when the field is blank", async () => {
+    const { ctx, writes } = contextWith({ printerRoute: { id: "route-1" } });
+
+    const result = await savePrinterRoute(ctx, { ...route, id: "route-1" });
+
+    expect(result.error).toBeNull();
+    expect(sent(writes)).toEqual(["update:printerRoute"]);
+  });
+
+  it("stores a new key in the vault, never on the route row", async () => {
+    const { ctx, writes } = contextWith({ printerRoute: { id: "route-1" } });
+
+    const result = await savePrinterRoute(ctx, {
+      ...route,
+      id: "route-1",
+      apiKey: "secret"
+    });
+
+    expect(result.error).toBeNull();
+    expect(JSON.stringify(writes[0]?.values)).not.toContain("secret");
+    expect(writes[1]).toEqual({
+      table: "set_printer_api_key",
+      method: "rpc",
+      values: {
+        p_company_id: "company-1",
+        p_printer_route_id: "route-1",
+        p_api_key: "secret"
+      }
+    });
+  });
+
+  it("removes the key when asked, whatever the field holds", async () => {
+    const { ctx, writes } = contextWith({ printerRoute: { id: "route-1" } });
+
+    await savePrinterRoute(ctx, {
+      ...route,
+      id: "route-1",
+      apiKey: "typed by mistake",
+      removeApiKey: "on"
+    });
+
+    expect(writes[1]?.values).toMatchObject({ p_api_key: "" });
+  });
+
+  it("deletes a route it created when the key cannot be stored", async () => {
+    const { ctx, writes } = contextWith(
+      { printerRoute: { id: "route-new" } },
+      { rpcError: { message: "vault unavailable" } }
+    );
+
+    const result = await savePrinterRoute(ctx, { ...route, apiKey: "secret" });
+
+    expect(result.error).not.toBeNull();
+    expect(sent(writes)).toEqual([
+      "insert:printerRoute",
+      "rpc:set_printer_api_key",
+      "delete:printerRoute"
+    ]);
+  });
+});
+
 describe("deleting a printer route", () => {
   it("clears every assignment that named it and keeps the others", async () => {
     const { ctx, writes } = contextWith({
@@ -287,6 +369,16 @@ describe("deleting a printer route", () => {
     const result = await removePrinterRoute(ctx, { id: "route-1" });
 
     expect(result.error).toBeNull();
+    // Its API key leaves Supabase Vault with it.
+    expect(writes).toContainEqual({
+      table: "set_printer_api_key",
+      method: "rpc",
+      values: {
+        p_company_id: "company-1",
+        p_printer_route_id: "route-1",
+        p_api_key: ""
+      }
+    });
     const saved = writes.find(
       (write) => write.table === "companySettings" && write.method === "update"
     );
@@ -317,7 +409,8 @@ describe("deleting a printer route", () => {
     await removePrinterRoute(ctx, { id: "route-1" });
 
     expect(writes.map((write) => `${write.method}:${write.table}`)).toEqual([
-      "delete:printerRoute"
+      "delete:printerRoute",
+      "rpc:set_printer_api_key"
     ]);
   });
 });

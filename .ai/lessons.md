@@ -5056,3 +5056,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** Walk the timeline read → slow work → write with a second save in the middle. Make the write conditional on the inputs that were read (`WHERE col IS NOT DISTINCT FROM v.col … RETURNING id`), and raise side effects only for the rows written. Put in the event what the triggering save wrote, so the job can tell when a later save has replaced it.
 
 **Applies to:** Every deferred check or recalculation that writes a result computed from a row a user can still edit.
+
+## Regenerated DB types carry whatever the local database holds
+
+**Context:** A worktree's local database is shared by every branch checked out in it. `pnpm db:migrate` regenerates `packages/database/src/types.ts` from that database, not from the branch's migrations.
+
+**Problem:** The regenerated types picked up another branch's table and columns on two SQL functions that no migration defines. CI's "Database types" job regenerates from migrations alone, so the committed types failed it. Applying the wanted hunks with `git apply --unidiff-zero` then put new function types inside an unrelated type, because zero-context hunks do not anchor in a 100k-line file.
+
+**Rule:** After regenerating, diff `types.ts` against the base branch and keep only the lines your migration explains; restore the rest. Move them by matching text (the table's `Row` / `Insert` / `Update` blocks, the function's alphabetical neighbour), never by zero-context patches. The typecheck and CI's "Database types" job are the proof.
+
+**Applies to:** Any branch with a migration, in a worktree whose database has run other branches' migrations.

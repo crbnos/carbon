@@ -105,7 +105,7 @@ async function resolvePrinterConfig(
 
   const { data: route } = await client
     .from("printerRoute")
-    .select("id, format, mediaSizeId, printerUrl, apiKey, templateId")
+    .select("id, format, mediaSizeId, printerUrl, templateId")
     .eq("id", printerRouteId)
     .eq("companyId", companyId)
     .single();

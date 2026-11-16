@@ -24980,6 +24980,9 @@ msgstr "निकालें {label}"
 msgid "Remove {name}"
 msgstr "{name} को निकालें"
 
+msgid "Remove API key"
+msgstr ""
+
 msgid "Remove Asset"
 msgstr "अचल संपत्ति निकालें"
 
@@ -26632,6 +26635,9 @@ msgstr "सहेजे गए दृश्य"
 
 msgid "Saved Views"
 msgstr "सहेजे गए दृश्य"
+
+msgid "Saved. Leave blank to keep it"
+msgstr ""
 
 #. placeholder {0}: bulkProgress.done
 #. placeholder {1}: bulkProgress.total

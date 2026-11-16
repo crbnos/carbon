@@ -88,9 +88,7 @@ export const printJobFunction = inngest.createFunction(
         if (explicitPrinterRouteId) {
           const { data: route } = await client
             .from("printerRoute")
-            .select(
-              "id, name, format, mediaSizeId, printerUrl, apiKey, templateId"
-            )
+            .select("id, name, format, mediaSizeId, printerUrl, templateId")
             .eq("id", explicitPrinterRouteId)
             .eq("companyId", companyId)
             .single();

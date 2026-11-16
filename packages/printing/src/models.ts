@@ -21,7 +21,9 @@ export const printerRouteValidator = z.object({
   format: z.enum(["zpl", "pdf"]),
   mediaSizeId: z.string().min(1, { message: "Media size is required" }),
   printerUrl: z.string().url({ message: "Must be a valid URL" }),
+  // Write-only: blank keeps the saved key, `removeApiKey` clears it.
   apiKey: zfd.text(z.string().optional()),
+  removeApiKey: zfd.checkbox(),
   templateId: zfd.text(z.string().optional())
 });
 

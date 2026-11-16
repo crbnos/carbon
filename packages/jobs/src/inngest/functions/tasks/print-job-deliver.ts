@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { updatePrintJobStatus } from "@carbon/printing";
+import { getPrinterApiKey, updatePrintJobStatus } from "@carbon/printing";
 import { sendToProxyBox } from "@carbon/printing/printing.server";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
@@ -38,13 +38,29 @@ export const printJobDeliverFunction = inngest.createFunction(
 
     const { data: route } = await client
       .from("printerRoute")
-      .select("apiKey")
+      .select("id, hasApiKey")
       .eq("printerUrl", job.printerUrl)
       .eq("companyId", companyId)
       .limit(1)
       .maybeSingle();
 
-    const apiKey = route?.apiKey;
+    let apiKey: string | null = null;
+    if (route?.hasApiKey) {
+      const { data, error } = await getPrinterApiKey(
+        client,
+        companyId,
+        route.id
+      );
+      if (error) {
+        await updatePrintJobStatus(client, printJobId, companyId, "failed", {
+          error: "Could not read the printer API key"
+        });
+        throw new NonRetriableError(
+          `Could not read the API key of printer route ${route.id}: ${error.message}`
+        );
+      }
+      apiKey = data;
+    }
 
     await client
       .from("printJob")
