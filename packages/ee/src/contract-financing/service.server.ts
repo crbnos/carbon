@@ -26,7 +26,7 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
-import { requireEntitlement } from "../entitlements.server";
+import { EntitlementError, requireEntitlement } from "../entitlements.server";
 import { companyHasFeature } from "../plan.server";
 import {
   buildPbpRequest,
@@ -58,6 +58,18 @@ export class FinancingError extends Error {
     super(message);
     this.name = "FinancingError";
   }
+}
+
+/**
+ * What to tell the person when `error` is a refusal (a financing rule or a
+ * missing plan), or null for a failure. A refusal is not logged as an error.
+ */
+export function financingRefusal(error: unknown): string | null {
+  if (error instanceof FinancingError) return error.message;
+  if (error instanceof EntitlementError) {
+    return "Your plan does not include contract financing";
+  }
+  return null;
 }
 
 type Actor = { companyId: string; userId: string; customerContractId: string };

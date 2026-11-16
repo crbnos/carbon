@@ -697,7 +697,7 @@ export async function startTableJob(
     };
   }
   if (lock.status === "full") {
-    logger.warn("Refused a table job: every table-job slot is taken", {
+    logger.warning("Refused a table job: every table-job slot is taken", {
       kind,
       companyId,
       ...log
@@ -709,7 +709,7 @@ export async function startTableJob(
     };
   }
   if (lock.status === "unavailable") {
-    logger.warn("Starting a table job without the Redis lock", {
+    logger.warning("Starting a table job without the Redis lock", {
       kind,
       companyId,
       ...log

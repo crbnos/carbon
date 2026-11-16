@@ -20,7 +20,7 @@ import { gatePages } from "@carbon/ee/workflows";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const log = getLogger("workflows");
+const log = getLogger("jobs", "workflows");
 
 /**
  * A connection as the owner. Call inside every step, never once per run.
@@ -120,7 +120,7 @@ export async function readOwnerPermissions(
 
   const permissions = ownerPermissionsOf(claims, companyId);
   if (permissions === null) {
-    log.warn("Workflow owner is not an employee of the company", {
+    log.warning("Workflow owner is not an employee of the company", {
       ownerId,
       companyId,
       role: claims.role

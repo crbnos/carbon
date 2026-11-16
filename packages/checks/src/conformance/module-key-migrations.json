@@ -1427,5 +1427,9 @@
   "20261110050010_module-keys-to-pages.sql",
   "20261110161530_method-corrections-policies.sql",
   "20261110175143_job-corrections-policies.sql",
-  "20261111120202_supplier-stage-policies.sql"
+  "20261111120202_supplier-stage-policies.sql",
+  "20261112182502_serial-traveler-authz.sql",
+  "20261113015550_material-request-insert-scope.sql",
+  "20261113122609_material-request-update-scope.sql",
+  "20261113135751_api-key-writes-server-only.sql"
 ]

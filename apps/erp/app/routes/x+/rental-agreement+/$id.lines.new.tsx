@@ -63,10 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (insert.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
-      await flash(
-        request,
-        error(insert.error, insert.error.message || "Failed to add unit")
-      )
+      await flash(request, error(insert.error, "Failed to add unit"))
     );
   }
 

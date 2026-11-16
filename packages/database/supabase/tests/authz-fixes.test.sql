@@ -323,9 +323,15 @@ BEGIN
   UPDATE "employeeType" SET name = 'Authz admin renamed' WHERE id = role_type AND "companyId" = company_a;
   GET DIAGNOSTICS n = ROW_COUNT;
   ASSERT n = 1, 'an unchanged systemType does not block a rename';
+  -- A key acts as its createdBy with its grants, so only the server writes it.
+  ASSERT NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'apiKey' AND cmd <> 'SELECT'
+  ), 'apiKey has a write policy';
+  ASSERT EXISTS (SELECT 1 FROM "apiKey" WHERE id = key_id), 'an API Keys viewer still lists keys';
   DELETE FROM "apiKey" WHERE id = key_id AND "companyId" = company_a;
   GET DIAGNOSTICS n = ROW_COUNT;
-  ASSERT n = 1, 'an API Keys editor still deletes a key through the API';
+  ASSERT n = 0, 'an API Keys editor deleted a key through the API';
   RESET ROLE;
   RAISE NOTICE 'PASS an API key and a systemType are written by the server only';
 

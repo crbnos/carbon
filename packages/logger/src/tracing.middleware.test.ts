@@ -74,29 +74,9 @@ it("records each middleware's own time on the request span, not what runs after 
   expect(attributes["carbon.middleware.quick.ms"]).toBe(0);
 });
 
-it("wraps a call in a span and marks it failed when the call throws", async () => {
-  const { withSpan } = await import("./tracing.server");
-
-  const attributes = { "carbon.operation": "sales_getCustomers" };
-  await expect(
-    withSpan("operation sales_getCustomers", attributes, async () => 1)
-  ).resolves.toBe(1);
-  await expect(
-    withSpan("operation sales_getCustomers", attributes, async () => {
-      throw new Error("denied");
-    })
-  ).rejects.toThrow("denied");
-
-  const [ok, failed] = exporter.getFinishedSpans();
-  expect(ok?.name).toBe("operation sales_getCustomers");
-  expect(ok?.attributes).toEqual(attributes);
-  expect(failed?.status).toEqual({ code: 2, message: "denied" });
-});
-
 it("names the request span after what a shared route served", async () => {
-  const { nameRequestSpan, routerInstrumentation } = await import(
-    "./tracing.server"
-  );
+  const { routerInstrumentation } = await import("./tracing.server");
+  const { nameRequestSpan } = await import("./span");
 
   type Handle = () => Promise<{ error?: Error }>;
   let wrap: (handle: Handle, info: never) => Promise<void> = async () =>

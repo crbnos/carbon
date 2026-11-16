@@ -147,10 +147,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         path.to.accounting,
         await flash(
           request,
-          error(
-            adjusted.error,
-            adjusted.error?.message ?? "Failed to apply currency translation"
-          )
+          error(adjusted.error, "Failed to apply currency translation")
         )
       );
     }
@@ -217,10 +214,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         path.to.accounting,
         await flash(
           request,
-          error(
-            adjusted.error,
-            adjusted.error?.message ?? "Failed to apply currency translation"
-          )
+          error(adjusted.error, "Failed to apply currency translation")
         )
       );
     }

@@ -27,7 +27,7 @@ const logger = getLogger("erp", "oauth-authorize");
 async function authorizeConsent(request: Request) {
   const auth = await authorize(request, { "settings.apiKeys": "Edit" });
   if (auth.caller === "apiKey") {
-    logger.warn("Refused an API key on the OAuth consent screen", {
+    logger.warning("Refused an API key on the OAuth consent screen", {
       companyId: auth.companyId
     });
     throw new Response("Only a signed-in person can authorize an app", {

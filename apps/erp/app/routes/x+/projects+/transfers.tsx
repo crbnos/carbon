@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -16,15 +15,13 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
-const logger = getLogger("erp", "project-stock-transfers");
-
 export const handle: Handle = {
   breadcrumb: msg`Transfers`,
   to: path.to.projectStockTransfers
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api, companyId } = await authorize(request, {
+  const { api } = await authorize(request, {
     "projects.projects": "View"
   });
 
@@ -42,10 +39,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (transfers.error) {
-    logger.error("Failed to load project stock transfers", {
-      companyId,
-      error: transfers.error
-    });
     throw redirect(
       path.to.projects,
       await flash(

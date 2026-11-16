@@ -78,7 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .where("companyId", "=", companyId)
       .executeTakeFirst();
     if (!entity) {
-      logger.warn("Tracked entity not found for company", {
+      logger.warning("Tracked entity not found for company", {
         companyId,
         inspectionId: id,
         trackedEntityId

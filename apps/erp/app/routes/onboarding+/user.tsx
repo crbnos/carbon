@@ -85,7 +85,9 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (updateAccount.error) {
-    logger.error(updateAccount.error);
+    logger.error("Failed to update the account", {
+      error: updateAccount.error
+    });
     throw new Error("Fatal: failed to update account");
   }
 

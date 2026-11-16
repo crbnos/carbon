@@ -31,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       nextSequence,
       await flash(
         request,
-        error(nextSequence.error, `Failed to get next sequence for ${table}`)
+        error(nextSequence.error, "Failed to get the next sequence", { table })
       )
     );
   }

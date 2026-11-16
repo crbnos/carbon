@@ -62,7 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (result.error) {
     return data(
       { error: result.error },
-      await flash(request, error(result.error, result.error.message))
+      await flash(request, error(result.error, "Failed to split the item"))
     );
   }
 

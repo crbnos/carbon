@@ -606,7 +606,7 @@ export const startStripeConnectOnboarding = defineServiceFn({
         );
       } catch (linkError) {
         if (!isStaleConnectAccountError(linkError)) throw linkError;
-        logger.warn(
+        logger.warning(
           "Stripe Connect account link failed against the stored account; creating a new account",
           { companyId, stripeAccountId, error: linkError }
         );

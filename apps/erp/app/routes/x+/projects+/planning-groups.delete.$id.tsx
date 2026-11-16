@@ -5,7 +5,6 @@
 import { error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -14,10 +13,8 @@ import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "planning-group-delete");
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api, companyId } = await authorize(request, {
+  const { api } = await authorize(request, {
     "projects.planningGroups": "Full"
   });
 
@@ -26,16 +23,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const group = await api.projects.getPlanningGroup({ planningGroupId: id });
   if (group.error) {
-    logger.error("Failed to load a planning group", {
-      companyId,
-      id,
-      error: group.error
-    });
     throw redirect(
       path.to.planningGroups,
       await flash(
         request,
-        error(group.error, "Failed to load the planning group")
+        error(group.error, "Failed to load the planning group", { id })
       )
     );
   }

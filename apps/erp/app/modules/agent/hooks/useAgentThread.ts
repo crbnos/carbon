@@ -3,12 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useChat } from "@ai-sdk/react";
+import { getLogger } from "@carbon/logger";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import posthog from "posthog-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAgentStore } from "~/stores/agent";
 import { path } from "~/utils/path";
 import { useBrowsingContext } from "./useBrowsingContext";
+
+const logger = getLogger("erp", "agent", "thread");
 
 /** The text of the newest user message — the only thing a send puts on the wire. */
 function lastUserText(messages: UIMessage[]): string | undefined {
@@ -113,7 +116,10 @@ export function useAgentThread() {
           }
           return threadIdRef.current ?? id;
         })
-        .catch(() => null)
+        .catch((error) => {
+          logger.warning("Failed to create an agent thread", { error });
+          return null;
+        })
         .finally(() => {
           createInFlight.current = null;
         });

@@ -11,6 +11,7 @@ import {
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import { anyOf, type PageId, writersOf } from "@carbon/database/access";
+import * as materialRequests from "@carbon/database/material-request";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   dedupeViolations,
@@ -3093,8 +3094,9 @@ export const pickStockTransferLine = defineServiceFn({
  *
  * @remarks
  * Moves the line's picked stock back to its source storage unit. A serial-
- * or batch-tracked line needs its `trackedEntityId`. A Completed transfer is
- * refused.
+ * or batch-tracked line needs its `trackedEntityId`. Unpicking a line of a
+ * Completed transfer reopens the transfer (In Progress, or Released when no
+ * other line is picked).
  *
  * @mcp
  */
@@ -3969,7 +3971,96 @@ export const setPickingListStatus = defineServiceFn({
         { discriminator: finalStatus }
       );
     }
+
+    // After the status write, so a print failure never blocks the change.
+    await service.printTravelersOnStart(ctx, pickingListId);
+
     return { pickingListId, status: finalStatus };
+  }
+});
+
+/**
+ * Ask for material at a job operation.
+ *
+ * @remarks
+ * Opens a material request at the operation's work center, at that work
+ * center's location. The item and note are optional. The MES "Need material"
+ * button writes through the same building block for any operator.
+ *
+ * @param jobOperationId - The job operation that needs the material.
+ * @param itemId - The item it needs, when known.
+ * @param note - What is needed, in the requester's words.
+ *
+ * @returns The new request's `materialRequestId`.
+ *
+ * @mcp
+ */
+export const createMaterialRequest = defineServiceFn({
+  input: z.object({
+    jobOperationId: z.string().min(1),
+    itemId: z.string().optional(),
+    note: z.string().optional()
+  }),
+  permission: { "inventory.pickingLists": "Create" },
+  async run(ctx, { jobOperationId, itemId, note }) {
+    const created = await materialRequests.createMaterialRequest(
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        jobOperationId,
+        itemId: itemId ?? null,
+        note: note ?? null
+      }
+    );
+    if (created.error || !created.data) {
+      return ctx.error(
+        "rule",
+        created.error ?? "The material request could not be created"
+      );
+    }
+    return { materialRequestId: created.data.id };
+  }
+});
+
+/**
+ * Resolve an open material request.
+ *
+ * @remarks
+ * Marks the request Resolved. A request that is already resolved is refused.
+ * The MES line feeder screen resolves through the same building block.
+ *
+ * @param materialRequestId - The request to resolve.
+ *
+ * @mcp
+ */
+export const resolveMaterialRequest = defineServiceFn({
+  input: z.object({ materialRequestId: z.string().min(1) }),
+  permission: { "inventory.pickingLists": "Edit" },
+  async run(ctx, { materialRequestId }) {
+    const resolved = await materialRequests.resolveMaterialRequest(
+      ctx.asCaller.supabase,
+      {
+        id: materialRequestId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        at: datetime.timestamp()
+      }
+    );
+    if (resolved.error?.code === "CARBON_NOT_APPLIED") {
+      return ctx.error(
+        "forbidden",
+        "Only the requester or an inventory editor can resolve this request"
+      );
+    }
+    if (resolved.error) {
+      return ctx.error(
+        "internal",
+        "Failed to resolve the material request",
+        resolved.error
+      );
+    }
+    return { materialRequestId };
   }
 });
 
@@ -4067,6 +4158,11 @@ export const pickPickingListLineChecked = defineServiceFn({
       }
     );
     if (result.error) return service.pickRefusal(ctx, result.error);
+
+    // The pick can move the list out of Draft (the status trigger), which
+    // starts it. After the pick, so a print failure never blocks it.
+    await service.printTravelersOnStart(ctx, pickingListId);
+
     return result.data;
   }
 });
@@ -4122,6 +4218,11 @@ export const pickPickingListLineEntity = defineServiceFn({
       }
     );
     if (result.error) return service.pickRefusal(ctx, result.error);
+
+    // The pick can move the list out of Draft (the status trigger), which
+    // starts it. After the pick, so a print failure never blocks it.
+    await service.printTravelersOnStart(ctx, pickingListId);
+
     return result.data;
   }
 });
@@ -4262,7 +4363,7 @@ export const scanKanban = defineServiceFn({
         });
       }
       for (const warning of result.data?.warnings ?? []) {
-        logger.warn("A kanban job was released with a warning", {
+        logger.warning("A kanban job was released with a warning", {
           companyId,
           jobId,
           warning: warning.message
@@ -7749,6 +7850,7 @@ export const generatePickingList = defineServiceFn({
       ctx,
       await service.generatePickingList(
         ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         payload(ctx, input).forUpsert() as never
       )
     );

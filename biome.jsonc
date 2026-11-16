@@ -96,9 +96,11 @@
       "suspicious": {
         "noCatchAssign": "warn",
         "noCommentText": "warn",
-        // Use @carbon/logging (getLogger) instead of console.*. Warn for now;
-        // ratchet to error per-area as call sites migrate.
-        "noConsole": "warn",
+        // Use @carbon/logger (getLogger), never console.*: a console.error with an
+        // Error prints a multi-line stack, and the log collector stores each line
+        // as its own entry with no level. The logger writes one JSON record per
+        // line, error and stack inside. Terminal tools are exempt (overrides).
+        "noConsole": "error",
         "noControlCharactersInRegex": "warn",
         "noDuplicateCase": "warn",
         "noDuplicateClassMembers": "warn",
@@ -163,14 +165,26 @@
     },
     {
       "includes": [
-        "*.spec.ts",
-        "*.test.ts",
+        "**/*.spec.ts",
+        "**/*.test.ts",
         "**/tests/**/*.ts",
         "**/__tests__/**/*.ts"
       ],
       "javascript": {
         "globals": []
       },
+      "linter": {
+        "rules": {
+          "suspicious": { "noConsole": "off" }
+        }
+      }
+    },
+    {
+      // Terminal tools, whose output IS the console: repo scripts, every
+      // package's src/scripts, and the example apps under contrib/. The
+      // package CLIs are exempted in packages/biome.jsonc, whose paths are
+      // relative to packages/.
+      "includes": ["scripts/**", "**/src/scripts/**", "contrib/**"],
       "linter": {
         "rules": {
           "suspicious": { "noConsole": "off" }

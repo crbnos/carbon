@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -18,8 +17,6 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
-const logger = getLogger("erp", "planning-groups");
-
 export const handle: Handle = {
   breadcrumb: msg`Planning Groups`,
   to: path.to.planningGroups
@@ -28,7 +25,7 @@ export const handle: Handle = {
 // The list loads without a plan check: a gated company sees the upgrade
 // overlay. The write routes and `upsertPlanningGroup` enforce the plan.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api, companyId } = await authorize(request, {
+  const { api } = await authorize(request, {
     "projects.planningGroups": "View"
   });
 
@@ -46,10 +43,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (groups.error) {
-    logger.error("Failed to load planning groups", {
-      companyId,
-      error: groups.error
-    });
     throw redirect(
       path.to.projects,
       await flash(

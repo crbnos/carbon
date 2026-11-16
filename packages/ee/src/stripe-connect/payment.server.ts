@@ -330,7 +330,7 @@ export async function recordStripeConnectPayment({
       // fixable-by-retry problem, so it warns and leaves it to manual
       // reconciliation rather than throwing.
       if (feeDetails.feeCurrency && feeDetails.feeCurrency !== currencyCode) {
-        logger.warn(
+        logger.warning(
           "Skipping Stripe fee journal line — no exchange rate was available to convert the fee into the invoice currency",
           {
             companyId,
@@ -524,7 +524,7 @@ export async function recordStripeConnectPayment({
       return { status: "recorded", paymentId };
     }
   } else {
-    logger.warn(
+    logger.warning(
       "Stripe payment has no open invoice balance to settle; recording it as on-account credit",
       { companyId, carbonInvoiceId, paymentId }
     );

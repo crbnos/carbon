@@ -75,7 +75,7 @@ export async function action({ context, request }: ActionFunctionArgs) {
     !customer.data ||
     (asset && (!asset.data || asset.data.customerId !== input.customerId))
   ) {
-    log.warn("Service job references records outside the company", {
+    log.warning("Service job references records outside the company", {
       companyId,
       customerId: input.customerId,
       customerAssetId: input.customerAssetId,
@@ -146,11 +146,6 @@ export async function action({ context, request }: ActionFunctionArgs) {
     createdBy: userId
   });
   if (clock.error) {
-    log.error("Failed to start the clock on a new service job", {
-      companyId,
-      serviceJobId: job.data.id,
-      error: clock.error
-    });
     throw redirect(
       path.to.serviceJob(job.data.id),
       await flash(
@@ -159,7 +154,8 @@ export async function action({ context, request }: ActionFunctionArgs) {
           clock.error,
           isRunningClockConflict(clock.error)
             ? CLOCK_ALREADY_RUNNING
-            : `${job.data.serviceJobId} created, but the clock did not start`
+            : `${job.data.serviceJobId} created, but the clock did not start`,
+          { serviceJobId: job.data.id }
         )
       )
     );

@@ -4,16 +4,10 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import { erpPosting } from "~/services/erp";
+import { issueMaterialToOperation } from "~/services/issue.server";
 import { issueValidator } from "~/services/models";
-import { abilityBlockRefusal } from "~/services/operations.service";
-
-const logger = getLogger("mes", "issue");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -21,117 +15,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const validation = await validator(issueValidator).validate(formData);
-
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const {
-    jobOperationId,
-    materialId,
-    jobOperationStepId,
-    itemId,
-    quantity,
-    adjustmentType
-  } = validation.data;
-
-  const serviceRole = await getCarbonServiceRole();
-  const acknowledged = formData.get("acknowledged") === "true";
-
-  // Resolve workCenter context off the operation so workCenter-scoped rules
-  // can evaluate against this materialIssue.
-  // `workInstructionId` is in the runtime row but absent from the generated
-  // DB types (stale until next regen). Select * and let the manual cast
-  // below resolve the field; type only `workCenterId` directly off the row.
-  const { data: jobOpRow } = await serviceRole
-    .from("jobOperation")
-    .select("workCenterId")
-    .eq("id", jobOperationId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  if (!jobOpRow) {
-    logger.warn("Job operation not found for company", {
-      companyId,
-      jobOperationId
-    });
-    return { success: false, message: "Job operation not found" };
-  }
-
-  const refusal = await abilityBlockRefusal(serviceRole, {
-    operationId: jobOperationId,
-    employeeId: userId,
-    companyId
-  });
-  if (refusal) {
-    logger.info("Material issue refused by operation ability", {
-      companyId,
-      jobOperationId,
-      userId
-    });
-    return { success: false, message: refusal };
-  }
-
-  if (jobOpRow.workCenterId) {
-    const ruleEval = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "workCenter",
-      surface: "materialIssue",
-      lines: [
-        {
-          lineId: jobOperationId,
-          itemId,
-          workCenterId: jobOpRow.workCenterId,
-          operation: {
-            id: jobOperationId,
-            itemId,
-            quantity,
-            workInstructionId:
-              (jobOpRow as { workInstructionId?: string | null })
-                .workInstructionId ?? null
-          },
-          quantity
-        }
-      ]
-    });
-    if (
-      ruleEval.violations.length > 0 &&
-      isBlocked(ruleEval.violations, acknowledged)
-    ) {
-      return {
-        error: null,
-        data: null,
-        violations: ruleEval.violations,
-        ruleNames: ruleEval.ruleNames
-      };
-    }
-  }
-
-  const issued = await erpPosting(
-    "issue",
+  return issueMaterialToOperation(
     { companyId, userId },
     {
-      id: jobOperationId,
-      type: "partToOperation",
-      itemId,
-      materialId,
-      jobOperationStepId,
-      quantity,
-      adjustmentType
+      ...validation.data,
+      acknowledged: formData.get("acknowledged") === "true"
     }
   );
-
-  if (issued.error) {
-    const context = { companyId, jobOperationId, itemId, error: issued.error };
-    if (issued.error.status < 500) {
-      logger.warn("Material issue refused", context);
-      return { success: false, message: issued.error.message };
-    }
-    logger.error("Failed to issue material", context);
-    return { success: false, message: "Failed to issue material" };
-  }
-
-  return { success: true };
 }

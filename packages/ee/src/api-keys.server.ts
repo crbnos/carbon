@@ -34,6 +34,10 @@ import {
  * stripped from open-licensed app code: `writeAccessGrants` holds it for
  * `saveApiKey`, and `deleteApiKey` checks it itself (`subjectEntitlement`).
  * Both return a company without the plan an `entitlement` error.
+ *
+ * Both write over `db` (no RLS): `apiKey` has no write policy, because a key
+ * acts as its `createdBy` with its grants, and a caller writing the row
+ * directly would choose both. Every statement is scoped by `companyId`.
  */
 
 /**

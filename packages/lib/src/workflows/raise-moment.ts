@@ -35,7 +35,7 @@ export async function raiseMoment<K extends MomentKey>(
     log.error("Failed to raise workflow moment", {
       moment: key,
       momentId,
-      err
+      error: err
     });
   }
 }

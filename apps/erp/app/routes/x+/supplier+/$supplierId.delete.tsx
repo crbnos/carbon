@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.suppliers,
       await flash(
         request,
-        error(supplierDelete.error, supplierDelete.error.message)
+        error(supplierDelete.error, "Failed to delete the supplier")
       )
     );
   }

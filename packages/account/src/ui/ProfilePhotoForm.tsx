@@ -23,7 +23,7 @@ import type { Account } from "../types";
 import AccountAvatar from "./AccountAvatar";
 import GeneratedAvatarPicker from "./GeneratedAvatarPicker";
 
-const logger = getLogger("erp", "profilephotoform");
+const logger = getLogger("account", "profile-photo");
 
 const maxSizeMB = 10;
 

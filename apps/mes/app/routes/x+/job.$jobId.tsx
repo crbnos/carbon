@@ -49,7 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .eq("companyId", companyId)
     .maybeSingle();
   if (!job.data) {
-    logger.warn("Job not found in company", {
+    logger.warning("Job not found in company", {
       companyId,
       jobId,
       error: job.error

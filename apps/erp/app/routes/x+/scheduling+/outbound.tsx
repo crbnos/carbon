@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -28,8 +27,6 @@ export const handle: Handle = {
   breadcrumb: msg`Outbound`,
   to: path.to.scheduleOutbound
 };
-
-const logger = getLogger("erp", "scheduling", "outbound");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId, api } = await authorize(request, {
@@ -65,14 +62,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (jobs.error) {
-    logger.error("Failed to load outbound jobs", {
-      companyId,
-      locationId,
-      error: jobs.error
-    });
     throw redirect(
       path.to.production,
-      await flash(request, error(jobs.error, "Failed to load outbound jobs"))
+      await flash(
+        request,
+        error(jobs.error, "Failed to load outbound jobs", { locationId })
+      )
     );
   }
 

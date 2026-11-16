@@ -147,7 +147,8 @@ export const modelOptimizeFunction = inngest.createFunction(
         name: "carbon/model-compact",
         data: { modelUploadId, companyId }
       });
-      logger.info(`model optimise skipped — ${queued.kind}`, {
+      logger.info("Model optimise skipped", {
+        reason: queued.kind,
         modelUploadId
       });
       return {

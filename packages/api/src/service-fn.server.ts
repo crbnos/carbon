@@ -364,7 +364,7 @@ export async function readRowRequirement(
 }
 
 function forbidden(ctx: ServiceContext, required: unknown) {
-  logger.warn("Service function refused: {actor}", {
+  logger.warning("Service function refused: {actor}", {
     actor: ctx.actor.type,
     companyId: ctx.company.id,
     required
@@ -516,7 +516,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
       }
       if (out.category === "internal") {
         const refused = refusalFromDatabase(out.message, out.cause);
-        logger[refused ? "warn" : "error"](
+        logger[refused ? "warning" : "error"](
           "Service function failed: {message}: {error}",
           {
             message: out.message,
@@ -530,7 +530,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
       return failed(out);
     } catch (err) {
       const refused = refusalFromDatabase(undefined, err);
-      logger[refused ? "warn" : "error"]("Service function threw: {error}", {
+      logger[refused ? "warning" : "error"]("Service function threw: {error}", {
         companyId: ctx.company.id,
         inputKeys: keysOf(input),
         error: err

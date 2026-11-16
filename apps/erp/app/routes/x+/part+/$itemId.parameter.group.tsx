@@ -40,7 +40,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (upsert.error) {
-    logger.error(upsert.error);
+    logger.error("Failed to save the configuration parameter group", {
+      itemId,
+      error: upsert.error
+    });
     return {
       success: false,
       error: upsert.error.message

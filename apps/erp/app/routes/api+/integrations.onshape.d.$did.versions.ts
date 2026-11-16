@@ -64,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       error: null
     };
   } catch (error) {
-    logger.error(error);
+    logger.error("Failed to get versions from Onshape", { did, error });
     return {
       data: null,
       error:

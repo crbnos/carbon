@@ -12,6 +12,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { getPickingListLiveBins } from "~/modules/inventory/inventory.service";
 import {
   PickingListDocuments,
   PickingListHeader
@@ -28,6 +29,19 @@ export const handle: Handle = {
       table: "pickingListLine",
       column: "pickingListId",
       param: "pickingListId"
+    },
+    {
+      table: "itemLedger",
+      filter: ({ data }) => {
+        const itemIds = [
+          ...new Set(
+            (data?.pickingListLines ?? [])
+              .map((line: { itemId?: string | null }) => line.itemId)
+              .filter((id: string | null | undefined): id is string => !!id)
+          )
+        ];
+        return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
+      }
     }
   ],
   breadcrumb: detailBreadcrumb(
@@ -40,19 +54,17 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.pickingList?.pickingListId, "Picking List");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, {
+  const { api, client, companyId } = await authorize(request, {
     "inventory.pickingLists": "View"
   });
 
   const { pickingListId } = params;
   if (!pickingListId) throw new Response("Not found", { status: 404 });
 
-  const [pickingList, pickingListLines, availability] = await Promise.all([
+  const [pickingList, pickingListLines, liveBins] = await Promise.all([
     api.inventory.getPickingList({ pickingListId }),
     api.inventory.getPickingListLines({ pickingListId }),
-    api.inventory
-      .getPickingListAvailability({ pickingListId })
-      .then(dataOrThrow)
+    getPickingListLiveBins(client, pickingListId, companyId)
   ]);
 
   if (pickingList.error) {
@@ -75,11 +87,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  if (liveBins.error) {
+    throw redirect(
+      path.to.pickingLists,
+      await flash(request, error(liveBins.error, "Failed to load current bins"))
+    );
+  }
+
   return {
     pickingList: pickingList.data,
     pickingListLines: (pickingListLines.data ?? []).map((line) => ({
       ...line,
-      availableQuantity: availability.get(line.id) ?? 0
+      liveStorageUnits: liveBins.data.get(line.id) ?? []
     })),
     // Deferred (not awaited): recommended serial/batch lots per line, streamed in
     // after the list paints so the at-a-glance subtext never blocks first render.

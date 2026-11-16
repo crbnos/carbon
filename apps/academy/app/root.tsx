@@ -15,7 +15,7 @@ import { maintenanceMiddleware } from "@carbon/auth/middleware/maintenance.serve
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
 import { LocaleProvider } from "@carbon/locale";
-import { requestIdMiddleware } from "@carbon/logger/middleware.server";
+import { requestMiddleware } from "@carbon/logger/middleware.server";
 import {
   OperatingSystemContextProvider,
   Toaster,
@@ -63,7 +63,7 @@ const { messages: catalog } = Object.values(
 )[0];
 
 export const middleware = [
-  requestIdMiddleware,
+  requestMiddleware,
   securityMiddleware,
   maintenanceMiddleware,
   formBodyMiddleware,

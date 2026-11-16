@@ -11,10 +11,13 @@ import type { Database } from "@carbon/database";
 import { AccountingAuthError } from "@carbon/ee/accounting";
 import { redis } from "@carbon/kv";
 import { trigger } from "@carbon/lib/trigger";
+import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GetStepTools } from "inngest";
 import type { inngest } from "../../client";
+
+const logger = getLogger("jobs", "accounting-auth-failure");
 
 const AUTH_FAILURE_NOTIFY_TTL_SECONDS = 24 * 60 * 60;
 const AUTH_FAILURE_COUNTER_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -49,10 +52,11 @@ async function notifyIntegration(args: {
       recipient: { type: "user", userId: recipientId }
     });
   } catch (notifyError) {
-    console.error(
-      `[ACCOUNTING SYNC] ${companyId}/${providerId}: failed to send notification`,
-      notifyError
-    );
+    logger.error("Failed to send the auth-failure notification", {
+      companyId,
+      providerId,
+      error: notifyError
+    });
   }
 }
 
@@ -117,10 +121,11 @@ export async function recordIntegrationAuthFailure(
     });
     return "notified";
   } catch (error) {
-    console.error(
-      `[ACCOUNTING SYNC] ${companyId}/${providerId}: failed to record auth failure`,
+    logger.error("Failed to record the auth failure", {
+      companyId,
+      providerId,
       error
-    );
+    });
     return "muted";
   }
 }
@@ -162,7 +167,13 @@ export async function runIsolatedCompanyStep<T>(args: {
         // A successful pass proves the grant is alive again
         await redis
           .del(authFailureCounterKey(target.companyId, target.providerId))
-          .catch(() => {});
+          .catch((error) =>
+            logger.warning("Failed to clear the auth failure counter", {
+              companyId: target.companyId,
+              providerId: target.providerId,
+              error
+            })
+          );
         return result;
       } catch (error) {
         if (error instanceof AccountingAuthError) {
@@ -178,9 +189,12 @@ export async function runIsolatedCompanyStep<T>(args: {
     })) as IsolatedStepOutcome<T>;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(
-      `[ACCOUNTING SYNC] ${target.companyId}/${target.providerId}: ${id} failed after retries: ${message}`
-    );
+    logger.error("Accounting sync step failed after retries", {
+      companyId: target.companyId,
+      providerId: target.providerId,
+      stepId: id,
+      error
+    });
     return { error: message };
   }
 }

@@ -7,6 +7,13 @@ import type { Accounting } from "../../../../core/types";
 import type { Xero } from "../../models";
 import { ItemSyncer } from "../item";
 
+// The still-tracked warning is the only thing that tells an operator to
+// untrack the item in Xero, so the test reads what the logger was given.
+const { loggerWarning } = vi.hoisted(() => ({ loggerWarning: vi.fn() }));
+vi.mock("@carbon/logger", () => ({
+  getLogger: () => ({ warning: loggerWarning })
+}));
+
 /**
  * Xero items are pushed NON-TRACKED so the provider never books inventory
  * (bills) or COGS (invoices) — per-SKU valuation stays in Carbon. On create
@@ -69,9 +76,7 @@ describe("Xero ItemSyncer.mapToRemote (non-tracked representation)", () => {
   });
 
   it("warns (and still omits the field) when the remote item is still tracked", async () => {
-    const warnSpy = vi
-      .spyOn(console, "warn")
-      .mockImplementation(() => undefined);
+    loggerWarning.mockClear();
 
     const payload = await makeItemSyncer("xero-item-1", {
       ItemID: "xero-item-1",
@@ -79,9 +84,9 @@ describe("Xero ItemSyncer.mapToRemote (non-tracked representation)", () => {
     }).mapToRemote(item());
 
     expect("IsTrackedAsInventory" in payload).toBe(false);
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("still tracked as inventory")
+    expect(loggerWarning).toHaveBeenCalledWith(
+      expect.stringContaining("still tracked as inventory"),
+      expect.anything()
     );
-    warnSpy.mockRestore();
   });
 });

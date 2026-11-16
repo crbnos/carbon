@@ -10,8 +10,8 @@ import {
 } from "@carbon/database/ratelimit";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { oncePerRequest } from "@carbon/logger/middleware.server";
-import { annotateRequestSpan } from "@carbon/logger/tracing.server";
+import { addLogContext, oncePerRequest } from "@carbon/logger/context.server";
+import { annotateRequestSpan } from "@carbon/logger/span";
 import { Edition, getClientIp, Plan, redirect, safePath } from "@carbon/utils";
 import {
   isAuthRetryableFetchError,
@@ -324,6 +324,7 @@ export async function authorizeApiKey(
   // Lets traces tell a script from a person at the keyboard.
   annotateRequestSpan({ "carbon.caller": "apiKey" });
   const { companyId, companyGroupId, createdBy: userId } = key;
+  addLogContext({ companyId, userId });
 
   if (
     !admits({ type: "apiKey", permissions: key.permissions }, companyId, gate)
@@ -357,6 +358,7 @@ async function requirePermissions(
 
   const authSession = await requireAuthSession(request);
   const { accessToken, companyId, companyGroupId, email, userId } = authSession;
+  addLogContext({ companyId, userId });
   const consoleMode = authSession.console === companyId;
 
   const [sessionClaims, effectiveUserId] = await Promise.all([

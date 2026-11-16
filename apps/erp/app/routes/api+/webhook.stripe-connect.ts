@@ -109,7 +109,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Platform-account events belong on /api/webhook/stripe. Acknowledge rather
   // than error so a misrouted event doesn't retry forever.
   if (!event.account) {
-    logger.warn("Ignoring Stripe Connect event with no connected account", {
+    logger.warning("Ignoring Stripe Connect event with no connected account", {
       type: event.type,
       eventId: event.id
     });
@@ -128,7 +128,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const company = lookup.company;
   if (!company) {
-    logger.warn("No company is connected to this Stripe account", {
+    logger.warning("No company is connected to this Stripe account", {
       type: event.type,
       eventId: event.id,
       stripeAccountId: event.account
@@ -137,7 +137,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (!company.active) {
-    logger.warn("Stripe Connect integration is inactive for this company", {
+    logger.warning("Stripe Connect integration is inactive for this company", {
       type: event.type,
       companyId: company.companyId
     });
@@ -190,7 +190,7 @@ export async function action({ request }: ActionFunctionArgs) {
       case "invoice.payment_failed":
       case "invoice.marked_uncollectible": {
         const invoice = event.data.object as ConnectInvoice;
-        logger.warn("Stripe Connect invoice was not collected", {
+        logger.warning("Stripe Connect invoice was not collected", {
           type: event.type,
           companyId: company.companyId,
           stripeInvoiceId: invoice.id,
@@ -225,7 +225,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
 
         if (!stripeInvoiceId) {
-          logger.warn("Refunded charge has no invoice to trace", {
+          logger.warning("Refunded charge has no invoice to trace", {
             eventId: event.id,
             companyId: company.companyId,
             chargeId: charge.id
@@ -238,7 +238,7 @@ export async function action({ request }: ActionFunctionArgs) {
           // charge amount has been returned. There is no partial-reversal
           // journal capability, so this is surfaced for manual handling
           // rather than voiding the whole payment.
-          logger.warn(
+          logger.warning(
             "Partial Stripe Connect refund — no automated GL reversal, needs manual handling",
             {
               eventId: event.id,
@@ -289,7 +289,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
 
         if (!stripeInvoiceId) {
-          logger.warn("Lost dispute has no traceable invoice", {
+          logger.warning("Lost dispute has no traceable invoice", {
             eventId: event.id,
             companyId: company.companyId,
             disputeId: dispute.id,

@@ -91,10 +91,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
   if (!companySettings.data) {
-    logger.error("Failed to load company settings", {
-      companyId,
-      error: companySettings.error
-    });
     throw redirect(
       path.to.settings,
       await flash(

@@ -45,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!cursor || typeof createdAt !== "string") {
     // A failed page, not a thrown response: the tab shows its own retry
     // row, where a thrown response would replace the page.
-    logger.warn("Sync activity page cursor is not valid", { companyId });
+    logger.warning("Sync activity page cursor is not valid", { companyId });
     return listErrorPage("operations");
   }
 

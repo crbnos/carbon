@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
+
+const logger = getLogger("erp", "sales-return-order");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { api } = await authorize(request, { "sales.returns": "View" });
@@ -28,7 +31,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   if (result.error) {
-    console.error("Failed to load returnable sales lines:", result.error);
+    logger.error("Failed to load returnable sales lines", {
+      error: result.error
+    });
     return { lines: [], totalCount: 0 };
   }
 

@@ -94,7 +94,8 @@ export default function EditSerialNumberRoute() {
     step: itemSerialSequence.step ?? 1,
     serialNumberTiming:
       (itemSerialSequence.serialNumberTiming as SerialNumberTiming | null) ??
-      undefined
+      undefined,
+    printLabelOnCompletion: itemSerialSequence.printLabelOnCompletion ?? false
   };
 
   return (

@@ -18,7 +18,7 @@ export const updatePermissionsFunction = inngest.createFunction(
     const payload = event.data;
 
     const result = await step.run("update-permissions", async () => {
-      logger.info(`Permission Update for ${payload.id}`);
+      logger.info("Updating permissions", { id: payload.id });
       if (!payload.actorId) {
         logger.error("Permission Update for {payloadId} has no actor", {
           payloadId: payload.id
@@ -47,11 +47,11 @@ export const updatePermissionsFunction = inngest.createFunction(
         }
       );
       if (success) {
-        logger.info(`Permission Update for ${payload.id} succeeded`);
+        logger.info("Updated permissions", { id: payload.id });
       } else {
         logger.error("Permission Update for {payloadId} failed", {
           payloadId: payload.id,
-          message
+          reason: message
         });
       }
       return { success, message };

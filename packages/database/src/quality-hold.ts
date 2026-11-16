@@ -5,10 +5,13 @@
 // The goods-in inspection hold: the release flag, the claim of a lot on an
 // untracked unit, the locks the hold guard and the ledger handler take, and the
 // project stripes held stock sits on. Public through `./quality.ts`.
+import { getLogger } from "@carbon/logger";
 import type { Transaction } from "kysely";
 import { sql } from "kysely";
 import type { Kysely, KyselyDatabase } from "./client.ts";
 import { EPSILON, round } from "./precision.ts";
+
+const logger = getLogger("database");
 
 /**
  * Lets this transaction move stock the goods-in inspection hold guards
@@ -42,7 +45,9 @@ export async function withInspectionRelease<T>(
   } catch (error) {
     await restore().catch((restoreError: unknown) => {
       if ((restoreError as { code?: unknown } | null)?.code !== "25P02") {
-        console.error("inspection release: restore failed", restoreError);
+        logger.error("Inspection release restore failed", {
+          error: restoreError
+        });
       }
     });
     throw error;

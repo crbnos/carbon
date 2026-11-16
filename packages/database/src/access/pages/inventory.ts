@@ -65,7 +65,12 @@ export const PAGES = [
     id: "inventory.pickingLists",
     label: "Picking Lists",
     maxLevel: "Full",
-    tables: ["pickingList", "pickingListLine", "pickingListLineTrackedEntity"],
+    tables: [
+      "pickingList",
+      "pickingListLine",
+      "pickingListLineTrackedEntity",
+      "materialRequest"
+    ],
     paths: ["/x/inventory/picking-lists", "/x/picking-list/"]
   },
   {

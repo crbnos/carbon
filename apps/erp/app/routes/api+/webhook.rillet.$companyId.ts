@@ -21,7 +21,7 @@ import { getIntegration } from "~/modules/settings/settings.service";
 // Needs node:crypto for constant-time HMAC comparison
 export const config = { runtime: "nodejs" };
 
-const logger = getLogger("erp", "webhook-rillet");
+const logger = getLogger("erp", "webhook", "rillet");
 
 /**
  * Rillet invoice-payment payload. Lenient: only the ids the sync needs are

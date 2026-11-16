@@ -8,14 +8,13 @@ import {
   POSTHOG_PROJECT_PUBLIC_KEY
 } from "@carbon/auth";
 import { getLogger } from "@carbon/logger";
-import { ensureLoggingConfigured } from "@carbon/logger/config.client";
 import posthog from "posthog-js";
 import { startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
 import { preloadCatalog } from "~/services/lingui";
 
-ensureLoggingConfigured();
+const logger = getLogger("mes", "service-worker");
 
 // Initialized at module scope, before hydration, rather than from an effect:
 // the authenticated layout calls identify()/register()/group() from its own
@@ -66,9 +65,7 @@ if ("serviceWorker" in navigator) {
   const register = () => {
     navigator.serviceWorker
       .register("/service-worker.js", { scope: "/" })
-      .catch((error) =>
-        getLogger("mes", "service-worker").warn("not registered", { error })
-      );
+      .catch((error) => logger.warning("not registered", { error }));
   };
   if (document.readyState === "complete") register();
   else window.addEventListener("load", register, { once: true });

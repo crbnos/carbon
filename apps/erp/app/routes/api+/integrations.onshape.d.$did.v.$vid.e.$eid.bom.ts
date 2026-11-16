@@ -197,7 +197,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       error: "No BOM data found"
     };
   } catch (error) {
-    logger.error(error);
+    logger.error("Failed to load the BOM from Onshape", {
+      did,
+      vid,
+      eid,
+      error
+    });
     return {
       data: [],
       error: error instanceof Error ? error.message : String(error)

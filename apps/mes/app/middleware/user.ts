@@ -43,7 +43,7 @@ export const userMiddleware: MiddlewareFunction = async (
     : false;
 
   if (consoleMode && consoleEnabled === null) {
-    log.warn("Console mode state unknown; keeping the console session", {
+    log.warning("Console mode state unknown; keeping the console session", {
       companyId
     });
   }

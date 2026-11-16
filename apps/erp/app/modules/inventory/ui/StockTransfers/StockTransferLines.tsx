@@ -22,6 +22,8 @@ import {
   IconButton,
   MENU_ITEM_SHORTCUTS,
   NonNettableBadge,
+  NumberField,
+  NumberInput,
   toast,
   useDisclosure,
   VStack
@@ -62,6 +64,8 @@ interface StockTransferLineProps {
   locationId?: string;
   pickedQuantity: number;
   isPickable: boolean;
+  /** A picked line can be taken back on a Completed transfer too. */
+  canUnpick: boolean;
   isEditable: boolean;
   isPending: boolean;
   onDelete: (line: StockTransferLine) => void;
@@ -75,6 +79,7 @@ function StockTransferLineComponent({
   locationId,
   pickedQuantity,
   isPickable,
+  canUnpick,
   isEditable,
   isPending,
   onDelete,
@@ -106,6 +111,8 @@ function StockTransferLineComponent({
   const pick = useAction<typeof quantityAction>({
     key: `stockTransferLine:${line.id}`,
     onSuccess: ({ data }) => {
+      // The next pick starts from what is left, not the last typed quantity.
+      setEnteredQuantity(null);
       if (!data) return;
       toast.success(
         data.quantity === 0
@@ -142,6 +149,20 @@ function StockTransferLineComponent({
   const outstanding = Math.max(0, round(quantity - pickedQuantity));
   // At the same precision as `outstanding`, so the two never disagree.
   const isPicked = quantity > 0 && pickedQuantity > 0 && outstanding === 0;
+  // The From bin is where the stock was when the transfer was made. When it
+  // no longer holds what is left to pick, the line says where the stock is now.
+  const liveBins = line.liveStorageUnits;
+  const fromHolds =
+    liveBins?.find((bin) => bin.id === (line.fromStorageUnitId ?? null))
+      ?.quantity ?? 0;
+  // What the picker typed; until then the Pick takes all that is left.
+  const [enteredQuantity, setEnteredQuantity] = useState<number | null>(null);
+  const pickQuantity = Math.min(
+    outstanding,
+    Math.max(0, round(enteredQuantity ?? outstanding))
+  );
+  const stockElsewhere =
+    liveBins && outstanding > 0 && fromHolds < outstanding ? liveBins : null;
 
   return (
     <div
@@ -220,6 +241,23 @@ function StockTransferLineComponent({
             >
               {toLabel}
             </span>
+            {stockElsewhere && (
+              <span className="col-span-3 text-sm text-muted-foreground">
+                {stockElsewhere.length > 0 ? (
+                  <>
+                    <Trans>Stock at:</Trans>{" "}
+                    {stockElsewhere
+                      .map(
+                        (bin) =>
+                          `${bin.name ?? t`No storage unit`} (${formatQuantity(bin.quantity)})`
+                      )
+                      .join(", ")}
+                  </>
+                ) : (
+                  <Trans>Location not known</Trans>
+                )}
+              </span>
+            )}
             {(fromNonNettable || toNonNettable) && (
               <>
                 <span>{fromNonNettable && <NonNettableBadge />}</span>
@@ -241,25 +279,48 @@ function StockTransferLineComponent({
                 }}
               />
             )}
-            {isPicked ? (
+            {pickedQuantity > 0 && (
               <Button
                 variant="secondary"
-                isDisabled={!isPickable || isPending}
-                isLoading={isPending}
+                isDisabled={!canUnpick || isPending}
+                isLoading={isPending && isPicked}
                 leftIcon={<LuUndo2 />}
                 onClick={() => submitPick(0)}
               >
                 <Trans>Unpick</Trans>
               </Button>
-            ) : (
+            )}
+            {!isPicked && !isTracked && isPickable && outstanding > 0 && (
+              <NumberField
+                aria-label={t`Quantity to pick of ${item?.name ?? ""}`}
+                value={pickQuantity}
+                minValue={0}
+                maxValue={outstanding}
+                onChange={(value) =>
+                  setEnteredQuantity(Number.isNaN(value) ? null : value)
+                }
+              >
+                <NumberInput
+                  size="sm"
+                  className="w-24"
+                  isDisabled={isPending}
+                />
+              </NumberField>
+            )}
+            {!isPicked && (
               <Button
-                isDisabled={!isPickable || isPending || outstanding <= 0}
+                isDisabled={
+                  !isPickable ||
+                  isPending ||
+                  outstanding <= 0 ||
+                  (!isTracked && pickQuantity <= 0)
+                }
                 isLoading={isPending}
                 leftIcon={isTracked ? <LuQrCode /> : <LuCirclePlus />}
                 onClick={
                   isTracked
                     ? () => navigate(path.to.stockTransferScan(id, line.id!))
-                    : () => submitPick(outstanding)
+                    : () => submitPick(pickQuantity)
                 }
               >
                 <Trans>Pick</Trans>
@@ -346,8 +407,11 @@ export default function StockTransferLines() {
 
   const lines = (routeData?.stockTransferLines ?? []).sort((a, b) => {
     // First sort by itemReadableId
+    // Numbers as numbers ("P-2" before "P-10"), as the picking list does.
     const itemComparison = (a.itemReadableId ?? "").localeCompare(
-      b.itemReadableId ?? ""
+      b.itemReadableId ?? "",
+      undefined,
+      { numeric: true }
     );
     if (itemComparison !== 0) return itemComparison;
 
@@ -427,6 +491,10 @@ export default function StockTransferLines() {
                   locationId={routeData?.stockTransfer?.locationId ?? undefined}
                   pickedQuantity={pickedQuantitiesById.get(line.id ?? "") ?? 0}
                   isPickable={isPickable}
+                  canUnpick={
+                    isPickable ||
+                    routeData?.stockTransfer?.status === "Completed"
+                  }
                   isEditable={isEditable}
                   isPending={
                     pendingQuantities?.some((q) => q.id === line.id) ?? false

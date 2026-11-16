@@ -40,7 +40,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     if (result.error) {
-      logger.error(result.error);
+      logger.error("Failed to save the view", { error: result.error });
       return {
         success: false,
         id: null,

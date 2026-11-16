@@ -6,6 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { purchaseReturnOrderCreditValidator } from "~/modules/purchasing/purchasing.models";
@@ -13,6 +14,8 @@ import { createPurchaseReturnOrderCredit } from "~/modules/purchasing/purchasing
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "purchase-return-order");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, { "purchasing.returns": "View" });
@@ -25,7 +28,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 
   if (result.error) {
-    console.error("Failed to load creditable quantities:", result.error);
+    logger.error("Failed to load creditable quantities", {
+      error: result.error
+    });
     return { lines: [] };
   }
 

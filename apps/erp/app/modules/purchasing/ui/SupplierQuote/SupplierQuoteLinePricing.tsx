@@ -149,7 +149,11 @@ const SupplierQuoteLinePricing = ({
           .eq("quantity", quantity);
 
         if (update?.error) {
-          logger.error(update.error);
+          logger.error("Failed to update a supplier quote line price", {
+            lineId,
+            quantity,
+            error: update.error
+          });
           toastError(t`Failed to update supplier quote line`, update.error);
           setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
         }
@@ -161,7 +165,11 @@ const SupplierQuoteLinePricing = ({
         });
 
         if (insert?.error) {
-          logger.error(insert.error);
+          logger.error("Failed to insert a supplier quote line price", {
+            lineId,
+            quantity,
+            error: insert.error
+          });
           toastError(t`Failed to insert supplier quote line`, insert.error);
           setEditableFields((prev) => ({ ...prev, prices: oldPrices }));
         }

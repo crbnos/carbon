@@ -8,7 +8,7 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CatalogSearch } from "./catalog-search";
 
-const logger = getLogger("erp", "mcp");
+const logger = getLogger("ee", "mcp");
 
 /** The minimum an MCP request context must carry for the engine — the caller
  *  (the app route) passes its full `AuthedContext`, which is a superset. The

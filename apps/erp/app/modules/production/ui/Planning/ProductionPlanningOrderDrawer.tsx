@@ -48,6 +48,7 @@ import {
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
 import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
+import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { path } from "~/utils/path";
@@ -374,22 +375,71 @@ export const ProductionPlanningOrderDrawer = memo(
       [locationId, reseedSuggestions, revalidate, t]
     );
 
+    // Release: a Planned job goes to the floor from here, without waiting for
+    // MRP's Release suggestion (raised only the day before the job must
+    // start). It runs the jobs table's release, so the job page's checks, the
+    // schedule run and the release picking list all apply.
+    const [releasingJobId, setReleasingJobId] = useState<string | null>(null);
+    const { onReleaseJob, isReleasing } = useJobPlanningRelease({
+      onReleased: () => {
+        // MRP ran in the release: the suggestions and this list moved
+        reseedSuggestions();
+        setOpenJobsVersion((version) => version + 1);
+      }
+    });
+    const releaseJob = useCallback(
+      (jobId: string) => {
+        setReleasingJobId(jobId);
+        onReleaseJob(jobId);
+      },
+      [onReleaseJob]
+    );
+
+    // Left-aligned: the Suggestion column runs past the drawer's width, so a
+    // button at its right end sits off screen.
     const renderPlanCommand = useCallback(
-      (openRow: OpenOrderRow) =>
-        openRow.status === "Draft" && actionHandlers.canUpdate ? (
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              variant="secondary"
-              isLoading={planningJobId === openRow.id}
-              isDisabled={planningJobId !== null}
-              onClick={() => onPlanDraftJob(openRow.id)}
-            >
-              <Trans>Plan</Trans>
-            </Button>
-          </div>
-        ) : null,
-      [actionHandlers.canUpdate, onPlanDraftJob, planningJobId]
+      (openRow: OpenOrderRow) => {
+        if (!actionHandlers.canUpdate) return null;
+        if (openRow.status === "Draft") {
+          return (
+            <div className="flex">
+              <Button
+                size="sm"
+                variant="secondary"
+                isLoading={planningJobId === openRow.id}
+                isDisabled={planningJobId !== null || isReleasing}
+                onClick={() => onPlanDraftJob(openRow.id)}
+              >
+                <Trans>Plan</Trans>
+              </Button>
+            </div>
+          );
+        }
+        if (openRow.status === "Planned") {
+          return (
+            <div className="flex">
+              <Button
+                size="sm"
+                variant="secondary"
+                isLoading={isReleasing && releasingJobId === openRow.id}
+                isDisabled={isReleasing || planningJobId !== null}
+                onClick={() => releaseJob(openRow.id)}
+              >
+                <Trans>Release</Trans>
+              </Button>
+            </div>
+          );
+        }
+        return null;
+      },
+      [
+        actionHandlers.canUpdate,
+        onPlanDraftJob,
+        planningJobId,
+        isReleasing,
+        releasingJobId,
+        releaseJob
+      ]
     );
 
     const renderOpenJobStatus = useCallback(

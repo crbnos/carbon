@@ -77,10 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (add.error || !add.data) {
       return data(
         { success: false },
-        await flash(
-          request,
-          error(add.error, add.error?.message ?? "Failed to add new part")
-        )
+        await flash(request, error(add.error, "Failed to add new part"))
       );
     }
     return { success: true, id: add.data.id };
@@ -116,10 +113,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (add.error || !add.data) {
     return data(
       { success: false },
-      await flash(
-        request,
-        error(add.error, add.error?.message ?? "Failed to add affected item")
-      )
+      await flash(request, error(add.error, "Failed to add affected item"))
     );
   }
 

@@ -8,7 +8,6 @@ import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { elementEarnedValueValidator } from "@carbon/ee/project-control";
 import { validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import {
   type ActionFunctionArgs,
@@ -30,8 +29,6 @@ import { getRecordIssueLinks } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "project-element");
 
 export const handle: Handle = {
   breadcrumb: (
@@ -62,15 +59,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   );
   if (page.error || !page.data) {
-    logger.error("Failed to load project element", {
-      companyId,
-      projectId,
-      elementId,
-      error: page.error
-    });
     throw redirect(
       path.to.projectElements(projectId),
-      await flash(request, error(page.error, "Failed to load the element"))
+      await flash(
+        request,
+        error(page.error, "Failed to load the element", {
+          projectId,
+          elementId
+        })
+      )
     );
   }
 

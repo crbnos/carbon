@@ -424,9 +424,12 @@ export async function deleteJitSsoUser(
       .executeTakeFirst();
 
     if (membership) {
-      logger.warn("Refused to delete JIT SSO user with a company membership", {
-        userId
-      });
+      logger.warning(
+        "Refused to delete JIT SSO user with a company membership",
+        {
+          userId
+        }
+      );
       return { data: { deleted: false }, error: null };
     }
 
@@ -449,7 +452,7 @@ export async function deleteJitSsoUser(
         nowMs: Date.now()
       })
     ) {
-      logger.warn(
+      logger.warning(
         "Refused to delete an account this SSO sign-in did not create",
         {
           userId

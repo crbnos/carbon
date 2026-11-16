@@ -987,7 +987,7 @@ export const lockPeriod = defineServiceFn({
         });
       }
     } catch (e) {
-      periodCloseLogger.warn("Failed to send the indirect rate run", {
+      periodCloseLogger.warning("Failed to send the indirect rate run", {
         companyId,
         periodId,
         error: e

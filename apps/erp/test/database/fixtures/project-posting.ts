@@ -122,6 +122,10 @@ export async function projectPostingFixture(
       })
       .execute();
     await trx
+      .insertInto("unitOfMeasure")
+      .values({ code: "EA", name: "Each", companyId, createdBy: USER })
+      .execute();
+    await trx
       .insertInto("currency")
       .values({
         code: "USD",
@@ -553,11 +557,6 @@ export async function projectPostingFixture(
       const finishedItemId = `${prefix}-fg-${key}`;
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
-        await trx
-          .insertInto("unitOfMeasure")
-          .values({ code: "EA", name: "Each", companyId, createdBy: USER })
-          .onConflict((oc) => oc.doNothing())
-          .execute();
         await trx
           .insertInto("item")
           .values({

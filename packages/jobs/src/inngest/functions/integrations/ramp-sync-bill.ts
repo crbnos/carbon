@@ -11,6 +11,7 @@ import {
   resolveRampSupplier
 } from "@carbon/ee/ramp.server";
 import { storage } from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import { round } from "@carbon/utils";
 import {
   isPostedRampBill,
@@ -39,6 +40,8 @@ import {
   verifyCostCenters,
   verifyProjects
 } from "./ramp-sync-shared";
+
+const logger = getLogger("jobs", "ramp-sync");
 
 /** Ramp bill status that means the bill has been fully paid. */
 const BILL_PAID_STATUS = "PAID";
@@ -243,9 +246,10 @@ async function attachBillDocuments(
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        console.error(
-          `[RAMP SYNC] ${ctx.companyId}: bill document download failed (${response.status})`
-        );
+        logger.error("Ramp bill document download failed", {
+          companyId: ctx.companyId,
+          status: response.status
+        });
         continue;
       }
       const bytes = new Uint8Array(await response.arrayBuffer());
@@ -258,10 +262,10 @@ async function attachBillDocuments(
         .company(ctx.companyId)
         .upload(path, bytes, { upsert: true });
       if (uploaded.error) {
-        console.error(
-          `[RAMP SYNC] ${ctx.companyId}: bill document upload failed`,
-          uploaded.error
-        );
+        logger.error("Ramp bill document upload failed", {
+          companyId: ctx.companyId,
+          error: uploaded.error
+        });
         continue;
       }
 
@@ -277,16 +281,16 @@ async function attachBillDocuments(
         writeGroups: companyGroups
       });
       if (inserted.error) {
-        console.error(
-          `[RAMP SYNC] ${ctx.companyId}: bill document insert failed`,
-          inserted.error
-        );
+        logger.error("Ramp bill document insert failed", {
+          companyId: ctx.companyId,
+          error: inserted.error
+        });
       }
     } catch (documentError) {
-      console.error(
-        `[RAMP SYNC] ${ctx.companyId}: bill document attach threw`,
-        documentError
-      );
+      logger.error("Ramp bill document attach threw", {
+        companyId: ctx.companyId,
+        error: documentError
+      });
     }
   }
 }
@@ -474,7 +478,7 @@ export async function syncRampBills(
       }
     }
   } catch (familyError) {
-    console.error(`[RAMP SYNC] ${companyId}: bills drain failed`, familyError);
+    logger.error("Ramp bills drain failed", { companyId, error: familyError });
     recordRampFamilyError(result, familyError);
   }
 
@@ -485,10 +489,11 @@ export async function syncRampBills(
       failed
     });
   } catch (confirmError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: BILL_SYNC confirm failed`,
-      confirmError
-    );
+    logger.error("Ramp bill sync confirm failed", {
+      companyId,
+      syncType: "BILL_SYNC",
+      error: confirmError
+    });
     result.confirmError =
       confirmError instanceof Error
         ? confirmError.message
@@ -524,8 +529,9 @@ export async function syncRampBillPayments(
     return result;
   }
   if (!metadata.statementBankAccountId) {
-    console.warn(
-      `[RAMP SYNC] ${companyId}: no statementBankAccountId configured — skipping bill payments`
+    logger.warning(
+      "No statement bank account configured; skipping Ramp bill payments",
+      { companyId }
     );
     return result;
   }
@@ -576,10 +582,10 @@ export async function syncRampBillPayments(
       }
     }
   } catch (familyError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: bill payments drain failed`,
-      familyError
-    );
+    logger.error("Ramp bill payments drain failed", {
+      companyId,
+      error: familyError
+    });
     recordRampFamilyError(result, familyError);
   }
 
@@ -590,10 +596,11 @@ export async function syncRampBillPayments(
       failed
     });
   } catch (confirmError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: BILL_PAYMENT_SYNC confirm failed`,
-      confirmError
-    );
+    logger.error("Ramp bill payment sync confirm failed", {
+      companyId,
+      syncType: "BILL_PAYMENT_SYNC",
+      error: confirmError
+    });
     result.confirmError =
       confirmError instanceof Error
         ? confirmError.message

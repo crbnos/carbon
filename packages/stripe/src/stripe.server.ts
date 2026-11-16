@@ -136,7 +136,6 @@ export async function getStripeCustomerByCompanyId(
     return null;
   }
 
-  // Check if this company is in the bypass list
   if (STRIPE_BYPASS_COMPANY_IDS) {
     const bypassList = STRIPE_BYPASS_COMPANY_IDS.split(",").map((id: string) =>
       id.trim()
@@ -394,7 +393,8 @@ export async function processStripeEvent({
 
   if (!isAllowedEventType(event)) {
     log.warning(
-      `Received untracked event: ${event.type}. Configure webhook event types in your Stripe dashboard.`
+      "Received an untracked event. Configure webhook event types in your Stripe dashboard.",
+      { type: event.type }
     );
     return;
   }

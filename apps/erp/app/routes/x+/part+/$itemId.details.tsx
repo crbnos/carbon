@@ -4,6 +4,7 @@
 
 import { dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
+import { getOnshapePanelOrigin } from "@carbon/ee/onshape";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { Menubar, VStack } from "@carbon/react";
@@ -68,15 +69,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // everything that needs only the chosen method's id goes in the next. Read
   // one after another, this loader took the sum of its queries (about half a
   // second) instead of the slowest of them.
-  const [makeMethods, revisionLock, changeNoticeData, tags, partManufacturing] =
-    await Promise.all([
-      getMakeMethodsOnce(client, itemId, companyId),
-      getRevisionLock(client, { itemId, companyId }),
-      // Part → CO traceability (4b): CO history for this part + type labels.
-      getItemChangeNoticeDataOnce(client, itemId, companyId),
-      api.shared.getTagsList({ table: "operation" }),
-      api.items.getItemManufacturing({ id: itemId })
-    ]);
+  const [
+    makeMethods,
+    revisionLock,
+    changeNoticeData,
+    tags,
+    partManufacturing,
+    onshapeOrigin
+  ] = await Promise.all([
+    getMakeMethodsOnce(client, itemId, companyId),
+    getRevisionLock(client, { itemId, companyId }),
+    // Part → CO traceability (4b): CO history for this part + type labels.
+    getItemChangeNoticeDataOnce(client, itemId, companyId),
+    api.shared.getTagsList({ table: "operation" }),
+    api.items.getItemManufacturing({ id: itemId }),
+    getOnshapePanelOrigin(client, companyId)
+  ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
 
@@ -97,6 +105,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tags: [],
       revisionStatus,
       releaseControl,
+      onshapeOrigin,
       ...changeNoticeData
     };
   }
@@ -127,6 +136,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tags: [],
       revisionStatus,
       releaseControl,
+      onshapeOrigin,
       ...changeNoticeData
     };
   }
@@ -155,6 +165,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     revisionStatus,
     releaseControl,
+    onshapeOrigin,
     ...changeNoticeData
   };
 }
@@ -211,6 +222,7 @@ export default function PartDetailsRoute() {
     tags,
     revisionStatus,
     releaseControl,
+    onshapeOrigin,
     changeNotices,
     changeNoticeTypes
   } = useLoaderData<typeof loader>();
@@ -376,6 +388,7 @@ export default function PartDetailsRoute() {
           <ExternalSourceCard
             itemId={itemId}
             canDetach={permissions.has({ "parts.parts": "Edit" })}
+            onshapeOrigin={onshapeOrigin}
           />
           <ItemRiskRegister itemId={itemId} />
           <ItemChangeNotices

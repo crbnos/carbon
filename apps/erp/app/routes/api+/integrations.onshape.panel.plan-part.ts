@@ -118,7 +118,7 @@ export async function action({ request }: ActionFunctionArgs) {
         await onshape.client.getWorkspaceSourceStates(documentId, wvId)
       ).parts;
     } catch (error) {
-      logger.warn("Onshape source state read failed; every part exports", {
+      logger.warning("Onshape source state read failed; every part exports", {
         companyId,
         documentId,
         error

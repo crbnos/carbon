@@ -278,7 +278,7 @@ export async function ensureRampConnection(
     // catch made "the strong check was skipped" unobservable.
     logger.warning(
       "Could not read Ramp accounting connections — creating without the seat-conflict check",
-      { companyId, error: err instanceof Error ? err.message : String(err) }
+      { companyId, error: err }
     );
   }
 

@@ -107,10 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         // The trigger's refusal names the referencing tables — show it.
-        error(
-          deleteTypeError,
-          deleteTypeError.message || "Failed to delete unit of measure"
-        )
+        error(deleteTypeError, "Failed to delete unit of measure")
       )
     );
   }
