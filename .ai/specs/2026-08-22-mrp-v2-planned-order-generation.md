@@ -864,8 +864,10 @@ Step 2 finds these changes with no clock compare in TypeScript:
 | An insert by another run | A row created after the snapshot `now()` |
 
 The error rolls back the Phase 7 transaction. `retryOnPlannedOrderChange` then reads,
-plans and writes again. After 3 attempts (`MAX_PLAN_ATTEMPTS`) the run fails with the
-message "Run MRP again". It retries no other error. Without the check, a convert that
+plans and writes again, after a random pause of up to 250 ms. After 5 attempts
+(`MAX_PLAN_ATTEMPTS`) the run fails with the message "Run MRP again". It retries no
+other error. No lock spans a whole run: a lock held on one connection while the run
+worked on another hung a run on a one-connection pool. Without the check, a convert that
 committed between the read and the write of a run was lost. The run planned the
 converted week again, which gave a second Make.
 
@@ -910,8 +912,9 @@ are in due-date order, then in `splitIndex` order. A week with no planned order 
 its action by its policy, as in Phase 1.
 
 - The action of the current week (the first period of the page) also takes each
-  overdue planned order (`isPlannedOrderOfWeek`). MRP sizes an overdue order in the
-  current week and sums it into that action. The planned order keeps the week of its
+  overdue planned order (`plannedOrderWeekIndex`, `@carbon/utils`). MRP sizes an overdue
+  order in the current week and sums it into that action. If an Open or Dismissed action
+  of a past week is still on the row, that action keeps the overdue orders instead. The planned order keeps the week of its
   due date (`periodId`).
 - The drawers get the planned orders from `DrawerPlannedOrders` (`onOrdersLoaded`). The
   drawer reads them again after an order is placed (`refreshKey`).
@@ -1694,7 +1697,7 @@ changed action. The criteria that moved to 2b are under Phase 2b.
       (`planned-order-write.database.test.ts` "leaves the previous planned orders
       unchanged when a later statement fails")
 - [x] A run whose planned orders changed after its read writes nothing and plans again,
-      up to 3 attempts. (`planned-order-write.write.test.ts` "the planned-order check
+      up to 5 attempts. (`planned-order-write.write.test.ts` "the planned-order check
       before the write", "plannedOrdersChangedSince" and "retryOnPlannedOrderChange")
 
 ### Phase 2b
@@ -1763,7 +1766,7 @@ changed action. The criteria that moved to 2b are under Phase 2b.
 | The engine plans 72 weeks, the worklist reads 48 (2a) | Low | A planned order due after week 48 gets no action and no Order or Make on the worklist. It stays in `plannedOrder` until a run moves it inside 48 weeks. |
 | Scrap is not tested on demo data (2a) | Low | No item in the demo datasets has a scrap percentage, so the baseline compare showed no scrap. Unit tests cover the parent scrap, the child scrap and the parity with job creation (`computeJobQuantities`). |
 | Calendar-day dates in 2a | Low | A release date or a fence end can fall on a closed day. §2b.7 moves both to working days. |
-| People change planned orders during each attempt of a run (2a) | Low | The run plans again after each change, up to 3 attempts. Then it fails with "Run MRP again", and the next run picks up the changes. |
+| People change planned orders during each attempt of a run (2a) | Low | The run plans again after each change, up to 5 attempts with a random pause. Then it fails with "Run MRP again", and the next run picks up the changes. |
 | The plan and the converted job disagree | Med | Scrap uses the job rule. Convert shows the make-method difference. |
 | Row count grows (every level of every item) | Med | Default filters, paging, and the natural key reuses rows. |
 | MRP and the scheduler fight over job dates (2b) | Med-High | MRP recommends only. Job date changes go through `updateJob` and `notifyScheduleInputsChanged`. A loop test covers it. |
