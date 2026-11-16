@@ -667,6 +667,11 @@ msgstr "{0} 폐기됨"
 msgid "{0} selected"
 msgstr "{0}개 선택됨"
 
+#. placeholder {0}: short.length
+#. placeholder {1}: formatQuantity(data.targetQuantity)
+msgid "{0} short for {1}"
+msgstr ""
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "제안된 배치 {0}개"
@@ -6135,6 +6140,9 @@ msgstr "역할 기반 교육 자료 제작"
 msgid "Build tailored, role-based training materials"
 msgstr "맞춤형 역할 기반 교육 자료 제작"
 
+msgid "Buildable Quantity"
+msgstr ""
+
 msgid "Builds"
 msgstr "빌드"
 
@@ -6343,6 +6351,9 @@ msgstr "Carbon에서는 이를 방법(method)이라고 부릅니다 — 품목�
 
 msgid "Camera"
 msgstr "카메라"
+
+msgid "Can Make Now"
+msgstr ""
 
 msgid "Can't be restored"
 msgstr "복원할 수 없습니다"
@@ -6933,6 +6944,9 @@ msgstr "점검"
 
 msgid "Check operations on the left to build the batch."
 msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
+
+msgid "Check Quantity"
+msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "기간 종료 기준 음수 현재고 수량이 있는 품목에 대해 품목 장부를 확인하십시오 — 일반적으로 입고 누락 또는 순서 없는 전기로 인해 재고 관리 가치 및 매출원가가 왜곡됩니다. 검토 후 완료로 표시하거나 사유를 포함하여 건너뜁니다."
@@ -7645,6 +7659,9 @@ msgstr "완료 시간"
 
 msgid "Completion time by job"
 msgstr "작업 지시별 완료 시간"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -13769,6 +13786,9 @@ msgstr "완제품"
 msgid "Finished Goods (default)"
 msgstr "완제품 (기본)"
 
+msgid "Finished Goods Available"
+msgstr ""
+
 msgid "finishes"
 msgstr "마감"
 
@@ -14098,6 +14118,9 @@ msgstr "출발과 도착이 같은 보관 단위입니다"
 
 msgid "From and To can't be the same storage unit"
 msgstr "출발지와 도착지는 같은 보관 단위일 수 없습니다"
+
+msgid "From available component stock"
+msgstr ""
 
 msgid "From customer"
 msgstr "고객으로부터"
@@ -15182,6 +15205,9 @@ msgstr "주문할 경우, 향후 48주간 재고 부족이 예상되지 않습�
 
 msgid "If something is off track"
 msgstr "일정에서 벗어난 경우"
+
+msgid "If stock committed to open orders were used"
+msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "부품 번호를 변경하려면 취소를 클릭하고 변환 전에 각 라인의 부품을 수동으로 할당하세요."
@@ -17111,6 +17137,9 @@ msgstr "조명 꺼짐 (24/7)"
 msgid "Likelihood"
 msgstr "발생 가능성"
 
+msgid "Limits To"
+msgstr ""
+
 msgid "Line"
 msgstr "라인"
 
@@ -17634,6 +17663,9 @@ msgstr "MACRS 컨벤션"
 
 msgid "MACRS Property Class"
 msgstr "MACRS 자산 분류"
+
+msgid "Made"
+msgstr ""
 
 msgid "Magic link"
 msgstr "매직 링크"
@@ -20762,6 +20794,10 @@ msgstr "아직 삭제되지 않았습니다. 요청은 다른 관리자의 승�
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "기한이 없습니다. 송장은 기간이 도래하면 자동으로 생성됩니다."
 
+#. placeholder {0}: formatQuantity(data.targetQuantity)
+msgid "Nothing is short for {0}"
+msgstr ""
+
 msgid "Nothing is synced until you turn sync on."
 msgstr "동기화를 활성화할 때까지 아무것도 동기화되지 않습니다."
 
@@ -20967,6 +21003,11 @@ msgstr "보유수량"
 msgid "On Hand"
 msgstr "보유수량"
 
+#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "On hand {0}, committed {1}"
+msgstr ""
+
 msgid "On hand {before} to {after}"
 msgstr "보유수량: {before}에서 {after}(으)로"
 
@@ -20988,6 +21029,9 @@ msgstr "작업 지시에"
 
 msgid "On order"
 msgstr "주문중"
+
+msgid "On Order"
+msgstr ""
 
 msgid "On Production Demand"
 msgstr "생산 소요량에"
@@ -24069,6 +24113,9 @@ msgstr "폐기 수량"
 
 msgid "Quantity shipped"
 msgstr "출하 수량"
+
+msgid "Quantity to check"
+msgstr ""
 
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "{lineNumber} 라인 대변 수량"
@@ -32282,6 +32329,9 @@ msgstr "3자 대사"
 msgid "Through {0}"
 msgstr "{0}까지"
 
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built."
+msgstr ""
+
 msgid "Thumbnail"
 msgstr "썸네일"
 
@@ -33824,6 +33874,9 @@ msgstr "이 작업 지시에서 사용"
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "부분 조립품 {0} · {1} 사용"
+
+msgid "Using All On Hand"
+msgstr ""
 
 msgid "VAC"
 msgstr "VAC"

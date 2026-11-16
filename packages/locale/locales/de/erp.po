@@ -667,6 +667,11 @@ msgstr "{0} verschrottet"
 msgid "{0} selected"
 msgstr "{0} ausgewählt"
 
+#. placeholder {0}: short.length
+#. placeholder {1}: formatQuantity(data.targetQuantity)
+msgid "{0} short for {1}"
+msgstr ""
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "{0} empfohlene Lose"
@@ -6135,6 +6140,9 @@ msgstr "Erstellen Sie rollenbasierte Schulungsmaterialien"
 msgid "Build tailored, role-based training materials"
 msgstr "Erstellen Sie maßgeschneiderte, rollenbasierte Schulungsmaterialien"
 
+msgid "Buildable Quantity"
+msgstr ""
+
 msgid "Builds"
 msgstr "Stückzahl"
 
@@ -6343,6 +6351,9 @@ msgstr "Eine Methode in Carbon genannt — die Komponenten plus Arbeitsgänge, d
 
 msgid "Camera"
 msgstr "Kamera"
+
+msgid "Can Make Now"
+msgstr ""
 
 msgid "Can't be restored"
 msgstr "Kann nicht wiederhergestellt werden"
@@ -6933,6 +6944,9 @@ msgstr "Prüfung"
 
 msgid "Check operations on the left to build the batch."
 msgstr "Wählen Sie Arbeitsgänge auf der linken Seite, um das Los zu erstellen."
+
+msgid "Check Quantity"
+msgstr ""
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Überprüfen Sie das Artikelledger auf Artikel mit negativer Bestandsmenge am Periodenende – normalerweise ein fehlender Wareneingang oder eine fehlerhafte Buchung, die den Bestandswert und die Umsatzkosten verzerrt. Markieren Sie es als erledigt, nachdem es überprüft wurde, oder überspringen Sie es mit einem Grund."
@@ -7645,6 +7659,9 @@ msgstr "Abschlusszeit"
 
 msgid "Completion time by job"
 msgstr "Durchlaufzeit je Fertigungsauftrag"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -13769,6 +13786,9 @@ msgstr "Fertigwaren"
 msgid "Finished Goods (default)"
 msgstr "Fertigwaren (Standard)"
 
+msgid "Finished Goods Available"
+msgstr ""
+
 msgid "finishes"
 msgstr "Zusätzlicher Abzug im ersten Jahr, bevor der reguläre MACRS-Plan beginnt."
 
@@ -14098,6 +14118,9 @@ msgstr "Von und Nach sind dieselbe Lagereinheit"
 
 msgid "From and To can't be the same storage unit"
 msgstr "Von und Nach dürfen nicht dieselbe Lagereinheit sein"
+
+msgid "From available component stock"
+msgstr ""
 
 msgid "From customer"
 msgstr "Vom Kunden"
@@ -15182,6 +15205,9 @@ msgstr "Falls bestellt, ist kein Fehlbestand in den nächsten 48 Wochen geplant"
 
 msgid "If something is off track"
 msgstr "Wenn etwas aus dem Ruder läuft"
+
+msgid "If stock committed to open orders were used"
+msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Wenn Sie die Teilenummern ändern möchten, klicken Sie bitte auf Abbrechen und weisen Sie manuell die Teile für jede Position vor dem Umwandeln zu."
@@ -17111,6 +17137,9 @@ msgstr "Lichter aus (24/7)"
 msgid "Likelihood"
 msgstr "Wahrscheinlichkeit"
 
+msgid "Limits To"
+msgstr ""
+
 msgid "Line"
 msgstr "Zeile"
 
@@ -17634,6 +17663,9 @@ msgstr "MACRS-Konvention"
 
 msgid "MACRS Property Class"
 msgstr "MACRS-Eigenschaftsklasse"
+
+msgid "Made"
+msgstr ""
 
 msgid "Magic link"
 msgstr "Magic Link"
@@ -20762,6 +20794,10 @@ msgstr "Noch nichts gelöscht. Die Anfrage geht an die Genehmigung durch die and
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Nichts ist fällig. Rechnungen werden automatisch erstellt, wenn ein Zeitraum fällig wird."
 
+#. placeholder {0}: formatQuantity(data.targetQuantity)
+msgid "Nothing is short for {0}"
+msgstr ""
+
 msgid "Nothing is synced until you turn sync on."
 msgstr "Nichts ist synchronisiert, bis Sie die Synchronisierung einschalten."
 
@@ -20967,6 +21003,11 @@ msgstr "Verfügbar"
 msgid "On Hand"
 msgstr "Verfügbar"
 
+#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "On hand {0}, committed {1}"
+msgstr ""
+
 msgid "On hand {before} to {after}"
 msgstr "Verfügbar: {before} auf {after}"
 
@@ -20988,6 +21029,9 @@ msgstr "Auf Fertigungsaufträgen"
 
 msgid "On order"
 msgstr "Bestellt"
+
+msgid "On Order"
+msgstr ""
 
 msgid "On Production Demand"
 msgstr "Im Produktionsbedarf"
@@ -24069,6 +24113,9 @@ msgstr "Ausschussmenge"
 
 msgid "Quantity shipped"
 msgstr "Versendete Menge"
+
+msgid "Quantity to check"
+msgstr ""
 
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "Gutzuschreibende Menge für Position {lineNumber}"
@@ -32282,6 +32329,9 @@ msgstr "Dreiwege-Abgleich"
 msgid "Through {0}"
 msgstr "Bis {0}"
 
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built."
+msgstr ""
+
 msgid "Thumbnail"
 msgstr "Vorschaubild"
 
@@ -33824,6 +33874,9 @@ msgstr "Verwendungen in diesem Fertigungsauftrag"
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Verwendet Baugruppe {0} · {1}"
+
+msgid "Using All On Hand"
+msgstr ""
 
 msgid "VAC"
 msgstr "VAC"

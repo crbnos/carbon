@@ -667,6 +667,11 @@ msgstr "{0} scrapped"
 msgid "{0} selected"
 msgstr "{0} selected"
 
+#. placeholder {0}: short.length
+#. placeholder {1}: formatQuantity(data.targetQuantity)
+msgid "{0} short for {1}"
+msgstr "{0} short for {1}"
+
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
 msgstr "{0} suggested batches"
@@ -6135,6 +6140,9 @@ msgstr "Build role-based training materials"
 msgid "Build tailored, role-based training materials"
 msgstr "Build tailored, role-based training materials"
 
+msgid "Buildable Quantity"
+msgstr "Buildable Quantity"
+
 msgid "Builds"
 msgstr "Builds"
 
@@ -6343,6 +6351,9 @@ msgstr "Called a method in Carbon — the components plus operations that produc
 
 msgid "Camera"
 msgstr "Camera"
+
+msgid "Can Make Now"
+msgstr "Can Make Now"
 
 msgid "Can't be restored"
 msgstr "Can't be restored"
@@ -6933,6 +6944,9 @@ msgstr "Check"
 
 msgid "Check operations on the left to build the batch."
 msgstr "Check operations on the left to build the batch."
+
+msgid "Check Quantity"
+msgstr "Check Quantity"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
@@ -7645,6 +7659,9 @@ msgstr "Completion Time"
 
 msgid "Completion time by job"
 msgstr "Completion time by job"
+
+msgid "Component"
+msgstr "Component"
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -13769,6 +13786,9 @@ msgstr "Finished Goods"
 msgid "Finished Goods (default)"
 msgstr "Finished Goods (default)"
 
+msgid "Finished Goods Available"
+msgstr "Finished Goods Available"
+
 msgid "finishes"
 msgstr "finishes"
 
@@ -14098,6 +14118,9 @@ msgstr "From and To are the same storage unit"
 
 msgid "From and To can't be the same storage unit"
 msgstr "From and To can't be the same storage unit"
+
+msgid "From available component stock"
+msgstr "From available component stock"
 
 msgid "From customer"
 msgstr "From customer"
@@ -15182,6 +15205,9 @@ msgstr "If ordered, no stockout projected in the next 48 weeks"
 
 msgid "If something is off track"
 msgstr "If something is off track"
+
+msgid "If stock committed to open orders were used"
+msgstr "If stock committed to open orders were used"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
@@ -17111,6 +17137,9 @@ msgstr "Lights-out (24/7)"
 msgid "Likelihood"
 msgstr "Likelihood"
 
+msgid "Limits To"
+msgstr "Limits To"
+
 msgid "Line"
 msgstr "Line"
 
@@ -17634,6 +17663,9 @@ msgstr "MACRS Convention"
 
 msgid "MACRS Property Class"
 msgstr "MACRS Property Class"
+
+msgid "Made"
+msgstr "Made"
 
 msgid "Magic link"
 msgstr "Magic link"
@@ -20762,6 +20794,10 @@ msgstr "Nothing is deleted yet. The request goes to the other Admins' approvals,
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Nothing is due. Invoices are created automatically when a period comes due."
 
+#. placeholder {0}: formatQuantity(data.targetQuantity)
+msgid "Nothing is short for {0}"
+msgstr "Nothing is short for {0}"
+
 msgid "Nothing is synced until you turn sync on."
 msgstr "Nothing is synced until you turn sync on."
 
@@ -20967,6 +21003,11 @@ msgstr "On hand"
 msgid "On Hand"
 msgstr "On Hand"
 
+#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "On hand {0}, committed {1}"
+msgstr "On hand {0}, committed {1}"
+
 msgid "On hand {before} to {after}"
 msgstr "On hand {before} to {after}"
 
@@ -20988,6 +21029,9 @@ msgstr "On Jobs"
 
 msgid "On order"
 msgstr "On order"
+
+msgid "On Order"
+msgstr "On Order"
 
 msgid "On Production Demand"
 msgstr "On Production Demand"
@@ -24069,6 +24113,9 @@ msgstr "Quantity scrapped"
 
 msgid "Quantity shipped"
 msgstr "Quantity shipped"
+
+msgid "Quantity to check"
+msgstr "Quantity to check"
 
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "Quantity to credit for line {lineNumber}"
@@ -32282,6 +32329,9 @@ msgstr "Three-way match"
 msgid "Through {0}"
 msgstr "Through {0}"
 
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built."
+msgstr "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built."
+
 msgid "Thumbnail"
 msgstr "Thumbnail"
 
@@ -33824,6 +33874,9 @@ msgstr "Uses on this job"
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Uses sub-assembly {0} · {1}"
+
+msgid "Using All On Hand"
+msgstr "Using All On Hand"
 
 msgid "VAC"
 msgstr "VAC"

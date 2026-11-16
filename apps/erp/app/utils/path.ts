@@ -209,6 +209,19 @@ export const path = {
         )}`,
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
+      itemBuildable: (
+        itemId: string,
+        locationId: string,
+        targetQuantity?: number
+      ) =>
+        `${generatePath(`${api}/items/${itemId}/buildable`)}?${new URLSearchParams(
+          {
+            locationId,
+            ...(targetQuantity
+              ? { targetQuantity: String(targetQuantity) }
+              : {})
+          }
+        )}`,
       itemConfigurable: `${api}/items/configurable`,
       itemCostRecalculate: (itemId: string) =>
         generatePath(`${api}/items/${itemId}/recalculate-cost`),

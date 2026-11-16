@@ -20,6 +20,7 @@ import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { loadBuildable } from "@carbon/planning";
 import {
   chunkArray,
   datetime,
@@ -7151,5 +7152,42 @@ export const updateItemThumbnail = defineServiceFn({
         updatedBy: ctx.auditUserId
       })
     );
+  }
+});
+
+/**
+ * How many of an item a location can make now from available stock, through
+ * every level of its active make methods, and which components limit it.
+ * Available is on hand less what open jobs, sales orders and projects have
+ * committed; the result also says how many on hand alone would make.
+ * `targetQuantity` explodes the BOM at that quantity to show what is short
+ * (default: one more than can be made).
+ *
+ * @mcp read
+ */
+export const getBuildableQuantity = defineServiceFn({
+  input: z.object({
+    itemId: z.string().min(1),
+    locationId: z.string().min(1),
+    targetQuantity: z.number().int().positive().optional()
+  }),
+  permission: { view: "parts" },
+
+  async run(ctx, { itemId, locationId, targetQuantity }) {
+    try {
+      const result = await loadBuildable(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        itemId,
+        locationId,
+        targetQuantity
+      });
+      return result ?? ctx.error("notFound", "Item not found");
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        "Failed to calculate buildable quantity",
+        error
+      );
+    }
   }
 });
