@@ -285,9 +285,6 @@ msgstr "Aktionsmenü"
 msgid "Active"
 msgstr "Aktiv"
 
-msgid "Actual"
-msgstr "Ist"
-
 msgid "Add"
 msgstr "Hinzufügen"
 
@@ -874,9 +871,6 @@ msgstr "{fieldLabel} verringern"
 msgid "Default"
 msgstr "Standard"
 
-msgid "Default Storage Unit"
-msgstr "Standardlagereinheit"
-
 msgid "Delete"
 msgstr "Löschen"
 
@@ -1063,9 +1057,6 @@ msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein, um fortz
 
 msgid "Error"
 msgstr "Fehler"
-
-msgid "Estimated"
-msgstr "Soll"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Jeder Fertigungsauftrag im Los folgt diesen Schritten. Zeichnen Sie einen Schritt für alle auf einmal auf."
@@ -1324,6 +1315,9 @@ msgstr "In einem offenen Menü"
 msgid "In Progress"
 msgstr "In Bearbeitung"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "Unter Garantie"
 
@@ -1356,6 +1350,9 @@ msgstr "Unzureichende Menge"
 
 msgid "Inventory"
 msgstr "Bestände"
+
+msgid "Inventory action"
+msgstr "Bestandsaktion"
 
 msgid "Inventory adjustment completed"
 msgstr "Bestandskorrektur abgeschlossen"
@@ -1540,6 +1537,9 @@ msgstr "Lokal"
 
 msgid "Location"
 msgstr "Standort"
+
+msgid "Location not known"
+msgstr "Lagerplatz unbekannt"
 
 msgid "Locations"
 msgstr "Standorte"
@@ -2094,6 +2094,9 @@ msgstr "Oder geben Sie dieses Geheimnis manuell ein:"
 
 msgid "Out of calibration"
 msgstr "Außerhalb der Kalibrierung"
+
+msgid "Out of stock"
+msgstr ""
 
 msgid "Output lot"
 msgstr "Ausgabe-Charge"
@@ -2852,6 +2855,9 @@ msgstr "Fehlbestand"
 msgid "Short pick {itemName}"
 msgstr "Kurzkommissionierung {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3011,6 +3017,9 @@ msgstr "Schritte"
 msgid "Steps are missing"
 msgstr "Schritte fehlen"
 
+msgid "Stock at:"
+msgstr "Bestand in:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3052,9 @@ msgstr "Untergruppe {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Untergruppe {0} · {1} — isoliert angezeigt"
+
+msgid "Subassembly"
+msgstr "Baugruppe"
 
 msgid "Submit anonymously"
 msgstr "Anonym einreichen"
@@ -3190,6 +3202,9 @@ msgstr "Dieser Prüfplan hat keine Arbeitsanweisungen."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Dies ist eine Gut/Schlecht-Prüfung. Drücken Sie P oder F."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Dieser Fertigungsauftrag hat keinen Stundensatz. Bitten Sie das Büro, ihn festzulegen, bevor die Zeit abgerechnet wird."
@@ -3369,6 +3384,9 @@ msgstr "Unterstrichen"
 msgid "Undo"
 msgstr "Rückgängig machen"
 
+msgid "Unissue"
+msgstr "Ausgabe rückgängig machen"
+
 msgid "Unissued serial/batch materials"
 msgstr "Nicht ausgegebene Serien-/Chargenmaterialien"
 
@@ -3509,6 +3527,9 @@ msgstr "Wann"
 
 msgid "Whole batch"
 msgstr "Ganzes Los"
+
+msgid "Winding"
+msgstr "Schlangenförmig"
 
 msgid "WIP"
 msgstr "WIP"

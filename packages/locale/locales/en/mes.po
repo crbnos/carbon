@@ -285,9 +285,6 @@ msgstr "Action Menu"
 msgid "Active"
 msgstr "Active"
 
-msgid "Actual"
-msgstr "Actual"
-
 msgid "Add"
 msgstr "Add"
 
@@ -874,9 +871,6 @@ msgstr "Decrease {fieldLabel}"
 msgid "Default"
 msgstr "Default"
 
-msgid "Default Storage Unit"
-msgstr "Default Storage Unit"
-
 msgid "Delete"
 msgstr "Delete"
 
@@ -1063,9 +1057,6 @@ msgstr "Enter the 6-digit code from your authenticator app to resume."
 
 msgid "Error"
 msgstr "Error"
-
-msgid "Estimated"
-msgstr "Estimated"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Every job in the batch follows these steps. Record a step for all of them at once."
@@ -1324,6 +1315,9 @@ msgstr "In an open menu"
 msgid "In Progress"
 msgstr "In Progress"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr "In stock: {available}. Still needed: {needed}."
+
 msgid "In warranty"
 msgstr "In warranty"
 
@@ -1356,6 +1350,9 @@ msgstr "Insufficient quantity"
 
 msgid "Inventory"
 msgstr "Inventory"
+
+msgid "Inventory action"
+msgstr "Inventory action"
 
 msgid "Inventory adjustment completed"
 msgstr "Inventory adjustment completed"
@@ -1540,6 +1537,9 @@ msgstr "Local"
 
 msgid "Location"
 msgstr "Location"
+
+msgid "Location not known"
+msgstr "Location not known"
 
 msgid "Locations"
 msgstr "Locations"
@@ -2094,6 +2094,9 @@ msgstr "Or enter this secret manually:"
 
 msgid "Out of calibration"
 msgstr "Out of calibration"
+
+msgid "Out of stock"
+msgstr "Out of stock"
 
 msgid "Output lot"
 msgstr "Output lot"
@@ -2852,6 +2855,9 @@ msgstr "Short"
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr "Short: {available} of {needed}"
+
 msgid "Shortage"
 msgstr "Shortage"
 
@@ -3011,6 +3017,9 @@ msgstr "Steps"
 msgid "Steps are missing"
 msgstr "Steps are missing"
 
+msgid "Stock at:"
+msgstr "Stock at:"
+
 msgid "Stock transfer"
 msgstr "Stock transfer"
 
@@ -3043,6 +3052,9 @@ msgstr "Sub-Assembly {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Sub-Assembly {0} · {1} — shown on its own"
+
+msgid "Subassembly"
+msgstr "Subassembly"
 
 msgid "Submit anonymously"
 msgstr "Submit anonymously"
@@ -3190,6 +3202,9 @@ msgstr "This inspection plan has no work instructions."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "This is a pass / fail check. Press P or F."
+
+msgid "This job does not use that part"
+msgstr "This job does not use that part"
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "This job has no bill rate. Ask the office to set it before the time is billed."
@@ -3369,6 +3384,9 @@ msgstr "Underline"
 msgid "Undo"
 msgstr "Undo"
 
+msgid "Unissue"
+msgstr "Unissue"
+
 msgid "Unissued serial/batch materials"
 msgstr "Unissued serial/batch materials"
 
@@ -3509,6 +3527,9 @@ msgstr "When"
 
 msgid "Whole batch"
 msgstr "Whole batch"
+
+msgid "Winding"
+msgstr "Winding"
 
 msgid "WIP"
 msgstr "WIP"

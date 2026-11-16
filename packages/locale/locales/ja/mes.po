@@ -285,9 +285,6 @@ msgstr "アクションメニュー"
 msgid "Active"
 msgstr "アクティブ"
 
-msgid "Actual"
-msgstr "実績"
-
 msgid "Add"
 msgstr "追加"
 
@@ -874,9 +871,6 @@ msgstr "{fieldLabel}を減らす"
 msgid "Default"
 msgstr "デフォルト"
 
-msgid "Default Storage Unit"
-msgstr "デフォルト保管ユニット"
-
 msgid "Delete"
 msgstr "削除"
 
@@ -1063,9 +1057,6 @@ msgstr "認証アプリから6桁のコードを入力して再開してくだ�
 
 msgid "Error"
 msgstr "エラー"
-
-msgid "Estimated"
-msgstr "見積"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "バッチ内のすべての製造指図がこれらのステップに従います。すべてのステップを一度に記録します。"
@@ -1324,6 +1315,9 @@ msgstr "開いているメニュー内"
 msgid "In Progress"
 msgstr "進行中"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "保証期間内"
 
@@ -1356,6 +1350,9 @@ msgstr "数量が不足しています"
 
 msgid "Inventory"
 msgstr "在庫管理"
+
+msgid "Inventory action"
+msgstr "在庫操作"
 
 msgid "Inventory adjustment completed"
 msgstr "在庫調整が完了しました"
@@ -1540,6 +1537,9 @@ msgstr "ローカル"
 
 msgid "Location"
 msgstr "ロケーション"
+
+msgid "Location not known"
+msgstr "保管場所が不明です"
 
 msgid "Locations"
 msgstr "拠点"
@@ -2094,6 +2094,9 @@ msgstr "またはこのシークレットを手動で入力してください：
 
 msgid "Out of calibration"
 msgstr "校正対象外"
+
+msgid "Out of stock"
+msgstr ""
 
 msgid "Output lot"
 msgstr "出力ロット"
@@ -2852,6 +2855,9 @@ msgstr "不足"
 msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3011,6 +3017,9 @@ msgstr "ステップ"
 msgid "Steps are missing"
 msgstr "ステップが未記録です"
 
+msgid "Stock at:"
+msgstr "在庫場所："
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3052,9 @@ msgstr "サブアセンブリ {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "サブアセンブリ {0} · {1} — 単独で表示"
+
+msgid "Subassembly"
+msgstr "サブアセンブリ"
 
 msgid "Submit anonymously"
 msgstr "匿名で提出"
@@ -3190,6 +3202,9 @@ msgstr "この検査計画には作業手順書がありません。"
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "これは合否判定の項目です。P または F を押してください。"
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "この製造指図には請求レートがありません。時間が請求される前にオフィスに設定するよう依頼してください。"
@@ -3369,6 +3384,9 @@ msgstr "下線"
 msgid "Undo"
 msgstr "元に戻す"
 
+msgid "Unissue"
+msgstr "払出を取り消す"
+
 msgid "Unissued serial/batch materials"
 msgstr "未払出のシリアル/バッチ材料"
 
@@ -3509,6 +3527,9 @@ msgstr "いつ"
 
 msgid "Whole batch"
 msgstr "バッチ全体"
+
+msgid "Winding"
+msgstr "蛇行"
 
 msgid "WIP"
 msgstr "仕掛品"

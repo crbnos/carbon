@@ -285,9 +285,6 @@ msgstr "작업 메뉴"
 msgid "Active"
 msgstr "활성"
 
-msgid "Actual"
-msgstr "실제"
-
 msgid "Add"
 msgstr "추가"
 
@@ -874,9 +871,6 @@ msgstr "{fieldLabel} 감소"
 msgid "Default"
 msgstr "기본값"
 
-msgid "Default Storage Unit"
-msgstr "기본 보관 단위"
-
 msgid "Delete"
 msgstr "삭제"
 
@@ -1063,9 +1057,6 @@ msgstr "인증 앱에서 6자리 코드를 입력하여 계속하세요."
 
 msgid "Error"
 msgstr "오류"
-
-msgid "Estimated"
-msgstr "예상"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "배치의 모든 작업 지시는 이러한 단계를 따릅니다. 모두에 대해 한 번에 단계를 기록하세요."
@@ -1324,6 +1315,9 @@ msgstr "열린 메뉴에서"
 msgid "In Progress"
 msgstr "진행 중"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "보증 기간 내"
 
@@ -1356,6 +1350,9 @@ msgstr "수량 부족"
 
 msgid "Inventory"
 msgstr "재고 관리"
+
+msgid "Inventory action"
+msgstr "재고 작업"
 
 msgid "Inventory adjustment completed"
 msgstr "재고 조정이 완료되었습니다"
@@ -1540,6 +1537,9 @@ msgstr "로컬"
 
 msgid "Location"
 msgstr "위치"
+
+msgid "Location not known"
+msgstr "보관 위치를 알 수 없습니다"
 
 msgid "Locations"
 msgstr "사업장"
@@ -2094,6 +2094,9 @@ msgstr "또는 이 비밀을 수동으로 입력하세요:"
 
 msgid "Out of calibration"
 msgstr "교정 기한 만료"
+
+msgid "Out of stock"
+msgstr ""
 
 msgid "Output lot"
 msgstr "출력 로트"
@@ -2852,6 +2855,9 @@ msgstr "짧게"
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3011,6 +3017,9 @@ msgstr "단계"
 msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
 
+msgid "Stock at:"
+msgstr "재고 위치:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3052,9 @@ msgstr "하위 조립체 {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "하위 조립체 {0} · {1} — 단독으로 표시됨"
+
+msgid "Subassembly"
+msgstr "서브어셈블리"
 
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
@@ -3190,6 +3202,9 @@ msgstr "이 검사 계획에는 작업 표준서가 없습니다."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "합격 / 불합격 검사입니다. P 또는 F를 누르세요."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "이 작업 지시에는 청구 요금이 없습니다. 시간이 청구되기 전에 사무실에서 설정하도록 요청하십시오."
@@ -3369,6 +3384,9 @@ msgstr "밑줄"
 msgid "Undo"
 msgstr "실행 취소"
 
+msgid "Unissue"
+msgstr "출고 취소"
+
 msgid "Unissued serial/batch materials"
 msgstr "출고되지 않은 일련번호/배치 자재"
 
@@ -3509,6 +3527,9 @@ msgstr "언제"
 
 msgid "Whole batch"
 msgstr "전체 배치"
+
+msgid "Winding"
+msgstr "지그재그"
 
 msgid "WIP"
 msgstr "재공품"

@@ -285,9 +285,6 @@ msgstr "Menu azioni"
 msgid "Active"
 msgstr "Attivo"
 
-msgid "Actual"
-msgstr "Effettivo"
-
 msgid "Add"
 msgstr "Aggiungi"
 
@@ -874,9 +871,6 @@ msgstr "Diminuisci {fieldLabel}"
 msgid "Default"
 msgstr "Predefinito"
 
-msgid "Default Storage Unit"
-msgstr "Unità di stoccaggio predefinita"
-
 msgid "Delete"
 msgstr "Elimina"
 
@@ -1063,9 +1057,6 @@ msgstr "Inserisci il codice a 6 cifre dalla tua app di autenticazione per ripren
 
 msgid "Error"
 msgstr "Errore"
-
-msgid "Estimated"
-msgstr "Stimato"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Ogni ordine di produzione nel lotto di produzione segue questi passi. Registra un passo per tutti loro contemporaneamente."
@@ -1324,6 +1315,9 @@ msgstr "In un menu aperto"
 msgid "In Progress"
 msgstr "In Corso"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "In garanzia"
 
@@ -1356,6 +1350,9 @@ msgstr "Quantità insufficiente"
 
 msgid "Inventory"
 msgstr "Magazzino"
+
+msgid "Inventory action"
+msgstr "Azione di magazzino"
 
 msgid "Inventory adjustment completed"
 msgstr "Rettifica di magazzino completata"
@@ -1540,6 +1537,9 @@ msgstr "Locale"
 
 msgid "Location"
 msgstr "Ubicazione"
+
+msgid "Location not known"
+msgstr "Ubicazione sconosciuta"
 
 msgid "Locations"
 msgstr "Ubicazioni"
@@ -2094,6 +2094,9 @@ msgstr "O inserisci questo segreto manualmente:"
 
 msgid "Out of calibration"
 msgstr "Fuori dalla taratura"
+
+msgid "Out of stock"
+msgstr ""
 
 msgid "Output lot"
 msgstr "Lotto di output"
@@ -2852,6 +2855,9 @@ msgstr "Carente"
 msgid "Short pick {itemName}"
 msgstr "Prelievo breve {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3011,6 +3017,9 @@ msgstr "Passi"
 msgid "Steps are missing"
 msgstr "Passi mancanti"
 
+msgid "Stock at:"
+msgstr "Disponibile in:"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3052,9 @@ msgstr "Sottoassieme {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Sottoassieme {0} · {1} — mostrato da solo"
+
+msgid "Subassembly"
+msgstr "Sottoassieme"
 
 msgid "Submit anonymously"
 msgstr "Invia in forma anonima"
@@ -3190,6 +3202,9 @@ msgstr "Questo piano di controllo non ha istruzioni di lavoro."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Questo è un controllo passa / non passa. Premi P o F."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Questo ordine di produzione non ha una tariffa di fatturazione. Chiedi all'ufficio di impostarla prima che il tempo sia fatturato."
@@ -3369,6 +3384,9 @@ msgstr "Sottolineato"
 msgid "Undo"
 msgstr "Annulla"
 
+msgid "Unissue"
+msgstr "Annulla scarico"
+
 msgid "Unissued serial/batch materials"
 msgstr "Materiali seriali/lotto non prelevati"
 
@@ -3509,6 +3527,9 @@ msgstr "Quando"
 
 msgid "Whole batch"
 msgstr "Intero Lotto di produzione"
+
+msgid "Winding"
+msgstr "Serpeggiante"
 
 msgid "WIP"
 msgstr "WIP"

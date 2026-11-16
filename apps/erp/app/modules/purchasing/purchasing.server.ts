@@ -3280,6 +3280,20 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
       return ctx.error("notFound", "Purchase order not found");
     }
 
+    const line = await ctx.asSystem.pg
+      .selectFrom("purchaseOrderLine")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .limit(1)
+      .executeTakeFirst();
+    if (!line) {
+      return ctx.error(
+        "rule",
+        "Add at least one line before you finalize this purchase order."
+      );
+    }
+
     if (notification === "Email" && !supplierContact) {
       return ctx.error("validation", "Supplier contact is required for email");
     }

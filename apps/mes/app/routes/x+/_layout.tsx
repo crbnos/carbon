@@ -109,6 +109,7 @@ import {
   CONSOLE_PIN_PAUSE_EVENTS,
   CONSOLE_PIN_SOURCE_ID
 } from "~/utils/console-pin-activity";
+import { parseItemCode } from "~/utils/itemScan";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 import { parseTravelerCode } from "~/utils/traveler";
 
@@ -451,7 +452,10 @@ export default function AuthenticatedRoute() {
     test: (input) =>
       (input.startsWith(MES_URL) || input.startsWith(ERP_URL)) &&
       !input.includes("/kanban/complete/") && // we handle this more gracefully in JobOperation
-      !(onOperationPage && parseTravelerCode(input)),
+      !(onOperationPage && parseTravelerCode(input)) &&
+      // Both pages take a scanned item sticker themselves: the operator
+      // stays on the job.
+      !(onOperationPage && parseItemCode(input)),
     inTextFields: true,
     onUnrecognized: (input) => {
       const travelerId = parseTravelerCode(input);

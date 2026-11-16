@@ -285,9 +285,6 @@ msgstr "Menu d'actions"
 msgid "Active"
 msgstr "Actif"
 
-msgid "Actual"
-msgstr "Réel"
-
 msgid "Add"
 msgstr "Ajouter"
 
@@ -874,9 +871,6 @@ msgstr "Diminuer {fieldLabel}"
 msgid "Default"
 msgstr "Par défaut"
 
-msgid "Default Storage Unit"
-msgstr "Unité de stockage par défaut"
-
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -1063,9 +1057,6 @@ msgstr "Entrez le code à 6 chiffres de votre application d'authentification pou
 
 msgid "Error"
 msgstr "Erreur"
-
-msgid "Estimated"
-msgstr "Estimé"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Chaque ordre de fabrication du lot de production suit ces étapes. Enregistrez une étape pour tous à la fois."
@@ -1324,6 +1315,9 @@ msgstr "Dans un menu déroulant"
 msgid "In Progress"
 msgstr "En cours"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "Sous garantie"
 
@@ -1356,6 +1350,9 @@ msgstr "Quantité insuffisante"
 
 msgid "Inventory"
 msgstr "Stocks"
+
+msgid "Inventory action"
+msgstr "Action sur le stock"
 
 msgid "Inventory adjustment completed"
 msgstr "Ajustement de stock terminé"
@@ -1540,6 +1537,9 @@ msgstr "Local"
 
 msgid "Location"
 msgstr "Emplacement"
+
+msgid "Location not known"
+msgstr "Emplacement inconnu"
 
 msgid "Locations"
 msgstr "Sites"
@@ -2094,6 +2094,9 @@ msgstr "Ou entrez ce secret manuellement :"
 
 msgid "Out of calibration"
 msgstr "Hors d'étalonnage"
+
+msgid "Out of stock"
+msgstr ""
 
 msgid "Output lot"
 msgstr "Lot de sortie"
@@ -2852,6 +2855,9 @@ msgstr "Manquant"
 msgid "Short pick {itemName}"
 msgstr "Prélèvement court {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3011,6 +3017,9 @@ msgstr "Étapes"
 msgid "Steps are missing"
 msgstr "Des étapes sont manquantes"
 
+msgid "Stock at:"
+msgstr "Stock à :"
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3052,9 @@ msgstr "Sous-ensemble {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Sous-ensemble {0} · {1} — affiché seul"
+
+msgid "Subassembly"
+msgstr "Sous-ensemble"
 
 msgid "Submit anonymously"
 msgstr "Soumettre anonymement"
@@ -3190,6 +3202,9 @@ msgstr "Ce plan de contrôle ne comporte aucun mode opératoire."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Ceci est un contrôle conforme / non conforme. Appuyez sur P ou F."
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Cet ordre de fabrication n'a pas de taux horaire. Demandez au bureau de le définir avant que le temps soit facturé."
@@ -3369,6 +3384,9 @@ msgstr "Souligné"
 msgid "Undo"
 msgstr "Annuler"
 
+msgid "Unissue"
+msgstr "Annuler la sortie"
+
 msgid "Unissued serial/batch materials"
 msgstr "Matériaux série/lot non distribués"
 
@@ -3509,6 +3527,9 @@ msgstr "Quand"
 
 msgid "Whole batch"
 msgstr "Tout le lot de production"
+
+msgid "Winding"
+msgstr "En serpentin"
 
 msgid "WIP"
 msgstr "En-cours"

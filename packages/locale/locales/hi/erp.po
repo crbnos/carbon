@@ -1684,6 +1684,12 @@ msgstr "एक बंद परियोजना अब कोई और शु
 msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 msgstr "एक रंग एक्सेंट तय करता है। ग्रेडिएंट और ठोस थीम नेविगेशन, साइडबार और पेज को भी रंगती हैं।"
 
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+msgstr "एक कंपनी एक बार में एक Onshape पैनल से जुड़ती है। Onshape V2 Government को अनइंस्टॉल करें, फिर Onshape V2 को कनेक्ट करें।"
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
+msgstr "एक कंपनी एक बार में एक Onshape पैनल से जुड़ती है। Onshape V2 को अनइंस्टॉल करें, फिर Onshape V2 Government को कनेक्ट करें।"
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "एक कंपनी एक बार में एक Onshape से जुड़ती है। Onshape Government को अनइंस्टॉल करें, फिर Onshape को कनेक्ट करें।"
 
@@ -8657,6 +8663,9 @@ msgstr "Onshape कनेक्शन पूरा नहीं हो सका
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government कनेक्शन को पूर्ण नहीं किया जा सका"
 
+msgid "Couldn't complete the Onshape V2 Government connection"
+msgstr "Onshape V2 Government कनेक्शन को पूर्ण नहीं किया जा सका"
+
 msgid "Couldn't confirm the account"
 msgstr "खाते की पुष्टि नहीं कर सके"
 
@@ -8689,6 +8698,9 @@ msgstr "Onshape कनेक्शन सहेजा नहीं जा सक
 
 msgid "Couldn't save the Onshape Government connection"
 msgstr "Onshape Government कनेक्शन को सहेजा नहीं जा सका"
+
+msgid "Couldn't save the Onshape V2 Government connection"
+msgstr "Onshape V2 Government कनेक्शन को सहेजा नहीं जा सका"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp कनेक्शन को सहेजा नहीं जा सका"
@@ -17354,6 +17366,9 @@ msgstr ""
 msgid "Location Name"
 msgstr "स्थान का नाम"
 
+msgid "Location not known"
+msgstr "स्थान ज्ञात नहीं है"
+
 msgid "Location ownership updated"
 msgstr "स्थान स्वामित्व अपडेट किया गया"
 
@@ -18790,6 +18805,14 @@ msgstr "पट्टों में शुद्ध निवेश"
 
 msgid "Net Investment in Leases (default)"
 msgstr "पट्टों में शुद्ध निवेश (डिफ़ॉल्ट)"
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "अग्रिम भुगतान के रूप में पहले से चुकाए गए {0} को घटाकर।"
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "जमा राशि के रूप में पहले से प्राप्त {0} को घटाकर।"
 
 msgid "Net right-of-use asset"
 msgstr "शुद्ध उपयोग का अधिकार संपत्ति"
@@ -21143,6 +21166,24 @@ msgstr "Onshape ने प्राधिकरण अस्वीकार क�
 msgid "Onshape Status"
 msgstr "Onshape स्थिति"
 
+msgid "Onshape V2 Government denied the connection"
+msgstr "Onshape V2 Government ने कनेक्शन को अस्वीकार किया"
+
+msgid "Onshape V2 Government didn't return an authorization code"
+msgstr "Onshape V2 Government ने प्राधिकरण कोड नहीं लौटाया"
+
+msgid "Onshape V2 Government is already connected"
+msgstr "Onshape V2 Government पहले से कनेक्ट है"
+
+msgid "Onshape V2 Government isn't configured"
+msgstr "Onshape V2 Government कॉन्फ़िगर नहीं है"
+
+msgid "Onshape V2 Government rejected the authorization"
+msgstr "Onshape V2 Government ने प्राधिकरण को अस्वीकार किया"
+
+msgid "Onshape V2 is already connected"
+msgstr "Onshape V2 पहले से कनेक्ट है"
+
 msgid "Onshape version"
 msgstr "Onshape संस्करण"
 
@@ -21329,6 +21370,9 @@ msgstr "कटऑवर तारीख पर खाता बहियाँ �
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government एकीकरण को खोलें और फिर से कनेक्ट करने के लिए इसकी सेटिंग्स को सहेजें।"
+
+msgid "Open the Onshape V2 Government integration and save its settings to connect again."
+msgstr "Onshape V2 Government एकीकरण को खोलें और फिर से कनेक्ट करने के लिए इसकी सेटिंग्स को सहेजें।"
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Ramp एकीकरण खोलें और कॉन्फ़िगरेशन पूरा करने के लिए दोबारा कनेक्ट करने का प्रयास करें।"
@@ -23986,6 +24030,10 @@ msgstr "भेजी गई मात्रा"
 
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "पंक्ति {lineNumber} के लिए जमा की जाने वाली मात्रा"
+
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} के लिए लौटाई जाने वाली मात्रा"
@@ -28881,6 +28929,9 @@ msgstr "स्टॉक"
 msgid "Stock and planning"
 msgstr "स्टॉक और योजना"
 
+msgid "Stock at:"
+msgstr ""
+
 msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"
 
@@ -30976,6 +31027,9 @@ msgstr "Onshape कनेक्शन समाप्त हो गया"
 
 msgid "The Onshape Government connection expired"
 msgstr "Onshape Government कनेक्शन समाप्त हो गया"
+
+msgid "The Onshape V2 Government connection expired"
+msgstr "Onshape V2 Government कनेक्शन समाप्त हो गया"
 
 #. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."

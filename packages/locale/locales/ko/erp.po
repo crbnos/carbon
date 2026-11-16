@@ -1684,6 +1684,12 @@ msgstr "마감된 프로젝트는 더 이상 비용이 추가되지 않으며 �
 msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 msgstr "색상은 강조 색을 정합니다. 그라데이션과 단색 테마는 탐색 영역, 사이드바, 페이지에도 색을 입힙니다."
 
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+msgstr "한 회사는 한 번에 하나의 Onshape 패널에만 연동할 수 있습니다. Onshape V2 Government를 제거하고 Onshape V2를 연동하세요."
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
+msgstr "한 회사는 한 번에 하나의 Onshape 패널에만 연동할 수 있습니다. Onshape V2를 제거하고 Onshape V2 Government를 연동하세요."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "한 회사는 한 번에 하나의 Onshape에만 연동할 수 있습니다. Onshape Government를 제거하고 Onshape를 연동하세요."
 
@@ -8657,6 +8663,9 @@ msgstr "Onshape 연결을 완료할 수 없습니다"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government 연동을 완료 처리할 수 없습니다."
 
+msgid "Couldn't complete the Onshape V2 Government connection"
+msgstr "Onshape V2 Government 연동을 완료 처리할 수 없습니다."
+
 msgid "Couldn't confirm the account"
 msgstr "계정을 확인할 수 없습니다"
 
@@ -8689,6 +8698,9 @@ msgstr "Onshape 연결을 저장할 수 없습니다"
 
 msgid "Couldn't save the Onshape Government connection"
 msgstr "Onshape Government 연동을 저장할 수 없습니다."
+
+msgid "Couldn't save the Onshape V2 Government connection"
+msgstr "Onshape V2 Government 연동을 저장할 수 없습니다."
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp 연결을 저장할 수 없습니다"
@@ -17354,6 +17366,9 @@ msgstr ""
 msgid "Location Name"
 msgstr "위치 이름"
 
+msgid "Location not known"
+msgstr "보관 위치를 알 수 없습니다"
+
 msgid "Location ownership updated"
 msgstr "사업장 소유권 업데이트"
 
@@ -18790,6 +18805,14 @@ msgstr "리스 순투자"
 
 msgid "Net Investment in Leases (default)"
 msgstr "리스 순투자(기본값)"
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "선급금으로 이미 지급한 {0}을(를) 차감한 금액입니다."
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "보증금으로 이미 받은 {0}을(를) 차감한 금액입니다."
 
 msgid "Net right-of-use asset"
 msgstr "순 사용권 자산"
@@ -21143,6 +21166,24 @@ msgstr "Onshape가 인증을 거부했습니다"
 msgid "Onshape Status"
 msgstr "Onshape 상태"
 
+msgid "Onshape V2 Government denied the connection"
+msgstr "Onshape V2 Government가 연동을 거부했습니다."
+
+msgid "Onshape V2 Government didn't return an authorization code"
+msgstr "Onshape V2 Government가 인증 코드를 반환하지 않았습니다."
+
+msgid "Onshape V2 Government is already connected"
+msgstr "Onshape V2 Government가 이미 연동되었습니다."
+
+msgid "Onshape V2 Government isn't configured"
+msgstr "Onshape V2 Government가 구성되지 않았습니다."
+
+msgid "Onshape V2 Government rejected the authorization"
+msgstr "Onshape V2 Government가 인증을 거부했습니다."
+
+msgid "Onshape V2 is already connected"
+msgstr "Onshape V2가 이미 연동되었습니다."
+
 msgid "Onshape version"
 msgstr "Onshape 버전"
 
@@ -21329,6 +21370,9 @@ msgstr "정산일에 장부를 개설하십시오. 회계 활성화는 일방향
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government 연동을 열고 설정을 저장하여 다시 연동하세요."
+
+msgid "Open the Onshape V2 Government integration and save its settings to connect again."
+msgstr "Onshape V2 Government 연동을 열고 설정을 저장하여 다시 연동하세요."
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Ramp 연동을 열고 다시 연결하여 설정을 완료해 보세요."
@@ -23986,6 +24030,10 @@ msgstr "출하 수량"
 
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "{lineNumber} 라인 대변 수량"
+
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId} 반품 수량"
@@ -28881,6 +28929,9 @@ msgstr "재고"
 msgid "Stock and planning"
 msgstr "재고 및 계획"
 
+msgid "Stock at:"
+msgstr ""
+
 msgid "Stock Availability"
 msgstr "재고 가용성"
 
@@ -30976,6 +31027,9 @@ msgstr "Onshape 연동이 만료되었습니다"
 
 msgid "The Onshape Government connection expired"
 msgstr "Onshape Government 연동이 만료되었습니다."
+
+msgid "The Onshape V2 Government connection expired"
+msgstr "Onshape V2 Government 연동이 만료되었습니다."
 
 #. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."

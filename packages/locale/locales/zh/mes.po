@@ -285,9 +285,6 @@ msgstr "操作菜单"
 msgid "Active"
 msgstr "启用"
 
-msgid "Actual"
-msgstr "实际"
-
 msgid "Add"
 msgstr "添加"
 
@@ -874,9 +871,6 @@ msgstr "减少{fieldLabel}"
 msgid "Default"
 msgstr "默认"
 
-msgid "Default Storage Unit"
-msgstr "默认存储单元"
-
 msgid "Delete"
 msgstr "删除"
 
@@ -1063,9 +1057,6 @@ msgstr "请输入身份验证器应用中的 6 位代码以继续。"
 
 msgid "Error"
 msgstr "错误"
-
-msgid "Estimated"
-msgstr "估计"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "生产批次中的每个工单都遵循这些步骤。同时为所有工单记录一个步骤。"
@@ -1324,6 +1315,9 @@ msgstr "在打开的菜单中"
 msgid "In Progress"
 msgstr "进行中"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "保修期内"
 
@@ -1356,6 +1350,9 @@ msgstr "数量不足"
 
 msgid "Inventory"
 msgstr "库存管理"
+
+msgid "Inventory action"
+msgstr "库存操作"
 
 msgid "Inventory adjustment completed"
 msgstr "库存调整已完成"
@@ -1540,6 +1537,9 @@ msgstr "本地"
 
 msgid "Location"
 msgstr "位置"
+
+msgid "Location not known"
+msgstr "库位未知"
 
 msgid "Locations"
 msgstr "地点"
@@ -2094,6 +2094,9 @@ msgstr "或手动输入此密钥:"
 
 msgid "Out of calibration"
 msgstr "需要校准"
+
+msgid "Out of stock"
+msgstr ""
 
 msgid "Output lot"
 msgstr "输出批次"
@@ -2852,6 +2855,9 @@ msgstr "缺货"
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
 msgid "Shortage"
 msgstr ""
 
@@ -3011,6 +3017,9 @@ msgstr "步骤"
 msgid "Steps are missing"
 msgstr "缺少步骤"
 
+msgid "Stock at:"
+msgstr "库存位置："
+
 msgid "Stock transfer"
 msgstr ""
 
@@ -3043,6 +3052,9 @@ msgstr "子装配体 {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "子装配体 {0} · {1} — 单独显示"
+
+msgid "Subassembly"
+msgstr "子装配件"
 
 msgid "Submit anonymously"
 msgstr "匿名提交"
@@ -3190,6 +3202,9 @@ msgstr "此检验计划没有作业指导书。"
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "这是合格 / 不合格检查。请按 P 或 F。"
+
+msgid "This job does not use that part"
+msgstr ""
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "此工单没有账单费率。请要求办公室在时间被账单处理之前设置它。"
@@ -3369,6 +3384,9 @@ msgstr "下划线"
 msgid "Undo"
 msgstr "撤销"
 
+msgid "Unissue"
+msgstr "撤销领料"
+
 msgid "Unissued serial/batch materials"
 msgstr "未领料的序列号/生产批次物料"
 
@@ -3509,6 +3527,9 @@ msgstr "何时"
 
 msgid "Whole batch"
 msgstr "整个生产批次"
+
+msgid "Winding"
+msgstr "蛇形"
 
 msgid "WIP"
 msgstr "在制品"

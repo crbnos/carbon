@@ -268,6 +268,19 @@ of a paused URL, which is itself a valid link.
   complete the kanban (`isKanbanCompleteScan`, `~/utils/kanban`). That check
   compares the label's PATH, because a label holds the origin it was printed
   from. It accepts the completed barcode override and the printed label.
+- An ERP item link (`/x/part/<id>`, also material, tool, consumable;
+  `parseItemCode`, `~/utils/itemScan`) scanned on the operation page is issued
+  to the job, and the operator stays on the page (`useItemScan` →
+  `x+/issue-scan.tsx` → `issueScannedItem`, `services/issue.server.ts`). The
+  server decides (`planItemScanIssue`, tested): an untracked material is set to
+  the quantity the job requires (`Set Quantity`), a batch material takes the
+  lots `getSuggestedAllocationForMaterial` suggests at the job's location for
+  what is still short. Both are safe to repeat: a second scan issues nothing. A
+  serial part, a part the job makes, a short lot or a work-center rule opens
+  the Issue dialog on the material. The scan also issues while the Issue
+  dialog is open, and the dialog then closes. On the assembly page an item
+  scan opens the Issue dialog on the part (each unit takes its own scan). The
+  layout never opens an item link on either page.
 - A kanban Complete scan on a serial part completes the unit ON SCREEN:
   `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
   `?trackedEntityId` to `end.$operationId` when that unit is still open at the
@@ -351,9 +364,19 @@ was printed from.
   `parentTrackedEntityId` and exactly one child. `resolveTravelerMaterial`
   (`services/traveler.server.ts`) sets the material and quantity from the
   scanned unit. It refuses a unit that is not `Available`, an item the make
-  method does not use ("This job does not use …"), an item no material still
-  needs, and a batch-tracked material (batch lots issue from the Issue dialog).
+  method does not use ("This job does not use …") and an item no material still
+  needs. A scanned batch lot issues what the material still needs
+  (`pickTravelerMaterial`'s `needed`: the job's shortfall, or what a serial
+  unit does not hold yet), up to what the lot holds where the job can draw it
+  (`batchScanQuantity`, tested, over `get_issue_tracked_entity_stock`: the
+  job's location, nettable bins, its stripes), so one scan of a received lot's
+  label issues it. A quarantined lot, or one at another location, is refused.
   It is the gate; the chooser's filter only mirrors it.
+- **The Issue dialog's Scan tab starts empty.** Only the Select tab is filled
+  in (the picked or suggested lots, or a sole lot); switching to Scan clears
+  the rows, and switching back fills Select again. A scanned lot takes the
+  quantity needed, up to what it holds, and the scanner's Enter submits it.
+  The header shows the part's photo and number.
 - **What still needs the item** (`pickTravelerMaterial`, `~/utils/traveler`,
   tested). Only a material on this operation, then one with no operation, can
   take the unit (each group in id order). A serial parent
@@ -479,6 +502,25 @@ while its serial or batch materials are not scanned in.
   shape is a contract with `parseJobFilePath`
   (`apps/erp/app/utils/supabase.ts`), which gates the customer-portal file route.
 - **`components/Parameter.tsx`** — exports `ParametersListItem`.
+- **Material source and unissue.** `MaterialSource` (`components/Materials.tsx`) shows a
+  material's method and where its stock is now: `liveStorageUnits` from
+  `getJobMaterialsByOperationId` (RPC `get_job_issue_bins`, one read per job), "WIP" for a
+  made part, "Location not known" when no bin holds stock. A failed bin read is logged and the
+  material shows the bin it names. For an untracked material with a quantity issued,
+  `IssueMaterialModal` has an Issue / Unissue toggle: Unissue posts `Positive Adjmt.` up to
+  the issued quantity, and the ERP returns the stock to the bins it was drawn from. In Issue
+  mode the modal lists the bins with stock ("Stock at:", `api+/issue-inventory-bins.ts`). The
+  serial and batch lists (`getIssueLotsForItem`) offer only the lots in stock at the job's own
+  location, with each lot's bin (`get_issue_tracked_entity_stock`). The location and stripes are
+  read from the operation's job on the server (`getJobOperationIssueScope`), never taken from
+  the browser; the suggested allocation reads the same scope.
+- **Short stock.** `getJobMaterialsByOperationId` sets `stockShortage`
+  (`{ available, needed }`) on a Pull from Inventory material when the stock in
+  its `liveStorageUnits` is less than what the job's materials of that item still
+  need (`materialStockShortages`, `~/utils/materialStock`, tested; job-wide, set
+  before `quantityIssued` is narrowed to one unit). `ShortStockBadge` shows it in
+  the materials table and list, the assembly parts list and the Issue dialog
+  header. No shortage is shown when the bin read failed.
 - Modals/sections: `IssueMaterialModal`, `QuantityModal` (type `scrap`/`finish`),
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.

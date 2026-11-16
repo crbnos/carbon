@@ -971,7 +971,7 @@ The grid SQL functions keep their quantities. `get_production_planning`,
 already show the Order / Make quantity as the sum of the open Order and Make actions
 (`orderQuantity`). Those actions now come from the planned orders (§2a.5).
 
-Migration `20261114172553_planning-grid-planned-order-actions.sql` makes the one SQL
+Migration `20261116093528_planning-grid-planned-order-actions.sql` makes the one SQL
 change. It redefines `get_production_planning_grid` and `get_purchasing_planning_grid`.
 Their Actions filter, their Assignee filter and their `latestOrderDate` now also count
 an action on a planned order of the page's type. That type is Make for production and
@@ -1277,7 +1277,7 @@ SQL twin, because the grid SQL reads planned orders from 2b (§2b.7).
 
 ### Phase 2a
 
-Migration `20261114162557_planned-order.sql`, as built:
+Migration `20261116093524_planned-order.sql`, as built:
 
 ```sql
 CREATE TYPE "plannedOrderType" AS ENUM ('Make', 'Buy', 'Transfer');   -- Transfer: reserved, not generated
@@ -1340,7 +1340,7 @@ Other Phase 2a changes:
    `periodId`.
 5. The authz manifest rule `plannedOrder: company("production", { read:
    anyOf("production_view", "purchasing_view"), create: false, update: false, delete:
-   false })`, shipped in `20261114162753_planned-order-authz.sql`. The API can only read
+   false })`, shipped in `20261116093526_planned-order-authz.sql`. The API can only read
    the table. MRP writes it through Kysely, and the ERP writes it with the service role
    after its own checks.
 6. A company backup keeps `plannedOrder`, because a Firm row is planner state. A dataset
@@ -1348,7 +1348,7 @@ Other Phase 2a changes:
    `datasets/wipe.ts`). The demo datasets seed no planned orders. MRP fills the table.
 7. The MRP cron also plans a company that has a Firm planned order
    (`companiesWithPlanningWork`, `mrp-companies.ts`).
-8. Migration `20261114172553_planning-grid-planned-order-actions.sql` redefines the two
+8. Migration `20261116093528_planning-grid-planned-order-actions.sql` redefines the two
    grid RPCs for the Actions filter (§2a.8).
 
 The `projectPeg` changes moved to 2b (§2b.7).
