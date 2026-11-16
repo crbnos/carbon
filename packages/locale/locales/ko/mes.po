@@ -78,7 +78,7 @@ msgstr "{0}에 로트 번호가 없습니다. Carbon에서 배치 또는 작업 
 #. placeholder {0}: result.unit.readableId
 #. placeholder {1}: result.unit.status
 msgid "{0} is {1}"
-msgstr ""
+msgstr "{0} 상태: {1}"
 
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
@@ -193,7 +193,7 @@ msgid "{hours} h"
 msgstr "{hours} 시간"
 
 msgid "{issued} of {required}"
-msgstr ""
+msgstr "{required} 중 {issued}"
 
 msgid "{label}, overdue"
 msgstr "{label}, 기한 초과"
@@ -400,6 +400,9 @@ msgstr "모든 스크랩"
 msgid "All steps"
 msgstr "모든 단계"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "실패한 단위 할당"
 
@@ -407,7 +410,7 @@ msgid "Allocate units"
 msgstr "단위 할당"
 
 msgid "Any part"
-msgstr ""
+msgstr "모든 부품"
 
 msgid "Appearance"
 msgstr "모양"
@@ -446,7 +449,7 @@ msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "감독자에게 프로필에 {processName} 역량을 추가하도록 요청하세요."
 
 msgid "Asked"
-msgstr ""
+msgstr "요청됨"
 
 msgid "Assembly steps"
 msgstr "조립 단계"
@@ -571,7 +574,7 @@ msgid "Bold"
 msgstr "굵게"
 
 msgid "Bring {quantity}"
-msgstr ""
+msgstr "{quantity} 가져오기"
 
 msgid "Bring kit"
 msgstr ""
@@ -670,10 +673,10 @@ msgstr "Carbon과의 소통 방식을 선택하세요."
 
 #. placeholder {0}: unit.readableId
 msgid "Choose the operation to issue {0} into"
-msgstr ""
+msgstr "{0}을(를) 불출할 공정을 선택하세요"
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "이 유닛에 대해 열 공정을 선택하세요"
 
 msgid "Clear"
 msgstr "지우기"
@@ -844,10 +847,10 @@ msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
 
 msgid "Could not load the line feed"
-msgstr ""
+msgstr "라인 피드를 불러올 수 없습니다"
 
 msgid "Could not look up this label. Try again."
-msgstr ""
+msgstr "이 라벨을 조회할 수 없습니다. 다시 시도하세요."
 
 msgid "Country code"
 msgstr "국가 코드"
@@ -1169,7 +1172,7 @@ msgid "Failed to register passkey"
 msgstr "패스키 등록에 실패했습니다."
 
 msgid "Failed to resolve request"
-msgstr ""
+msgstr "요청을 처리하지 못했습니다"
 
 msgid "Failed to save measurement"
 msgstr "측정값 저장 실패"
@@ -1221,6 +1224,9 @@ msgstr "필터"
 
 msgid "Filter by location"
 msgstr "위치별 필터"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "단계 필터"
@@ -1364,7 +1370,7 @@ msgid "In Progress"
 msgstr "진행 중"
 
 msgid "In stock: {available}. Still needed: {needed}."
-msgstr ""
+msgstr "재고: {available}. 여전히 필요: {needed}."
 
 msgid "In warranty"
 msgstr "보증 기간 내"
@@ -1437,7 +1443,7 @@ msgstr "자재 출고"
 
 #. placeholder {0}: selected.operation.jobReadableId
 msgid "Issue to {0}"
-msgstr ""
+msgstr "{0}(으)로 불출"
 
 msgid "Issue Type"
 msgstr "이슈 유형"
@@ -1572,7 +1578,7 @@ msgid "Line"
 msgstr "라인"
 
 msgid "Line feed"
-msgstr ""
+msgstr "라인 피드"
 
 msgid "lines"
 msgstr "라인"
@@ -1650,7 +1656,7 @@ msgid "Lot tracked"
 msgstr "로트 추적됨"
 
 msgid "Low"
-msgstr ""
+msgstr "낮음"
 
 msgid "Machine"
 msgstr "기계"
@@ -1711,7 +1717,7 @@ msgid "matches"
 msgstr "일치"
 
 msgid "Material requested"
-msgstr ""
+msgstr "자재 요청됨"
 
 msgid "Materials"
 msgstr "자재"
@@ -1791,7 +1797,7 @@ msgid "Navigation"
 msgstr "탐색"
 
 msgid "Need material"
-msgstr ""
+msgstr "자재 필요"
 
 msgid "New"
 msgstr "신규"
@@ -1897,7 +1903,7 @@ msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "아직 휴가가 설정되지 않았습니다. 관리자에게 ERP에서 설정하도록 요청하세요."
 
 msgid "No lineside storage"
-msgstr ""
+msgstr "라인사이드 보관 위치 없음"
 
 msgid "No maintenance scheduled for today"
 msgstr "오늘 예정된 유지보수가 없습니다"
@@ -1951,7 +1957,7 @@ msgid "No photos yet"
 msgstr "아직 사진이 없습니다"
 
 msgid "No picking lists"
-msgstr ""
+msgstr "피킹 리스트 없음"
 
 msgid "No printer configured"
 msgstr "설정된 프린터가 없습니다"
@@ -2002,10 +2008,10 @@ msgid "No spare parts added yet"
 msgstr "아직 추가된 예비 부품이 없습니다"
 
 msgid "No station"
-msgstr ""
+msgstr "스테이션 없음"
 
 msgid "No stations at this location"
-msgstr ""
+msgstr "이 사업장에는 스테이션이 없습니다"
 
 msgid "No stock"
 msgstr "재고 없음"
@@ -2056,7 +2062,7 @@ msgid "Not usable stock. MRP and planning do not count it, and picking does not 
 msgstr "사용 가능한 재고가 아닙니다. MRP와 계획에서 계산하지 않으며 피킹에서도 가져가지 않습니다."
 
 msgid "Note"
-msgstr ""
+msgstr "메모"
 
 msgid "Notes"
 msgstr "메모"
@@ -2106,7 +2112,7 @@ msgid "On Hold"
 msgstr "보류"
 
 msgid "On its way"
-msgstr ""
+msgstr "이동 중"
 
 msgid "one combined lot · planned"
 msgstr "결합된 로트 하나 · 계획됨"
@@ -2192,13 +2198,13 @@ msgid "Or enter this secret manually:"
 msgstr "또는 이 비밀을 수동으로 입력하세요:"
 
 msgid "Out"
-msgstr ""
+msgstr "소진"
 
 msgid "Out of calibration"
 msgstr "교정 기한 만료"
 
 msgid "Out of stock"
-msgstr ""
+msgstr "재고 없음"
 
 msgid "Output lot"
 msgstr "출력 로트"
@@ -2404,7 +2410,7 @@ msgid "Print batch list"
 msgstr "배치 목록 인쇄"
 
 msgid "Print travelers"
-msgstr ""
+msgstr "작업 이동표 인쇄"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "승인하는 발주서에 인쇄됩니다."
@@ -2619,7 +2625,7 @@ msgid "Repairable"
 msgstr "수리 가능"
 
 msgid "Request material"
-msgstr ""
+msgstr "자재 요청"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인할 때 인증 앱에서 6자리 코드를 요구합니다."
@@ -2637,7 +2643,7 @@ msgid "Resolution"
 msgstr "해결"
 
 msgid "Resolve"
-msgstr ""
+msgstr "해결"
 
 msgid "Result"
 msgstr "결과"
@@ -2670,7 +2676,7 @@ msgid "Running"
 msgstr "실행 중"
 
 msgid "Running low"
-msgstr ""
+msgstr "재고 부족 임박"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2718,7 +2724,7 @@ msgid "Scan a tracked entity to add the first sample column."
 msgstr "첫 번째 샘플 열을 추가하려면 추적 대상을 스캔하세요."
 
 msgid "Scan in these parts first"
-msgstr ""
+msgstr "먼저 이 부품들을 스캔해 투입하세요"
 
 msgid "Scan or enter a serial"
 msgstr "일련번호를 스캔하거나 입력하세요"
@@ -2844,7 +2850,7 @@ msgid "Select a customer"
 msgstr "고객 선택"
 
 msgid "Select a location to see its stations"
-msgstr ""
+msgstr "사업장을 선택하면 스테이션을 볼 수 있습니다"
 
 msgid "Select a rework quantity"
 msgstr "재작업 수량을 선택하세요"
@@ -2974,7 +2980,7 @@ msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
 msgid "Short: {available} of {needed}"
-msgstr ""
+msgstr "부족: {needed} 중 {available}"
 
 msgid "Show description"
 msgstr "설명 표시"
@@ -3274,7 +3280,7 @@ msgid "The timer and completion are shared by all {0} jobs. Steps, materials and
 msgstr "타이머와 완료는 모든 {0} 작업 지시에 공유됩니다. 여기의 단계, 자재 및 파일은 이 작업 지시의 것입니다."
 
 msgid "The unit changed. Scan again."
-msgstr ""
+msgstr "유닛이 변경되었습니다. 다시 스캔하세요."
 
 msgid "The values break a rule on this record."
 msgstr "값이 이 기록의 규칙을 위반합니다."
@@ -3310,7 +3316,7 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
 msgid "This barcode matches more than one unit"
-msgstr ""
+msgstr "이 바코드는 둘 이상의 유닛과 일치합니다"
 
 msgid "This batch has no work instructions."
 msgstr "이 배치는 작업 표준서가 없습니다."
@@ -3328,13 +3334,13 @@ msgid "This is a pass / fail check. Press P or F."
 msgstr "합격 / 불합격 검사입니다. P 또는 F를 누르세요."
 
 msgid "This job does not use that part"
-msgstr ""
+msgstr "이 작업 지시에서는 해당 부품을 사용하지 않습니다"
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "이 작업 지시에는 청구 요금이 없습니다. 시간이 청구되기 전에 사무실에서 설정하도록 요청하십시오."
 
 msgid "This label does not belong to a unit in this company"
-msgstr ""
+msgstr "이 라벨은 이 회사의 유닛에 속하지 않습니다"
 
 msgid "This lot is expired and can't be picked."
 msgstr "로트가 만료되었으며 피킹할 수 없습니다."
@@ -3470,10 +3476,10 @@ msgid "Training"
 msgstr "교육"
 
 msgid "Traveler"
-msgstr ""
+msgstr "작업 이동표"
 
 msgid "Try again"
-msgstr ""
+msgstr "다시 시도"
 
 msgid "Two-factor authentication"
 msgstr "2단계 인증"
@@ -3521,7 +3527,7 @@ msgid "Unknown gauge"
 msgstr "알 수 없는 계측기"
 
 msgid "Unknown part"
-msgstr ""
+msgstr "알 수 없는 부품"
 
 msgid "Unlock"
 msgstr "잠금 해제"
@@ -3632,7 +3638,7 @@ msgid "View or open"
 msgstr "보기 또는 열기"
 
 msgid "View Traceability"
-msgstr ""
+msgstr "추적성 보기"
 
 msgid "Warranty"
 msgstr "보증"
@@ -3644,10 +3650,10 @@ msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or 
 msgstr "로그인 링크와 6자리 코드를 이메일로 보냈습니다. 링크를 따르거나 여기에 코드를 입력하세요."
 
 msgid "Wet"
-msgstr ""
+msgstr "습식"
 
 msgid "What do you need?"
-msgstr ""
+msgstr "무엇이 필요하신가요?"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"

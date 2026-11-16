@@ -11,6 +11,7 @@ export {
   setContextAssignment
 } from "./assignments";
 export {
+  labelTemplateValidator,
   manualPrintValidator,
   printerRouteValidator,
   reprintValidator,
@@ -19,18 +20,24 @@ export {
 export type {
   DocumentTypeDefinition,
   DocumentTypeId,
+  LabelTemplateType,
   SourceDocument
 } from "./registry";
 export {
   documentTypeRegistry,
   getDocumentType,
   getDocumentTypeOptions,
-  getDocumentTypesForSource
+  getDocumentTypesForSource,
+  getLabelTemplateType,
+  labelTemplateTypes
 } from "./registry";
 
 export {
   createPrintJob,
+  deleteLabelTemplate,
   deletePrinterRoute,
+  getLabelTemplates,
+  getLabelTemplatesForMediaSize,
   getPrinterApiKey,
   getPrinterRoute,
   getPrinterRoutes,
@@ -42,6 +49,7 @@ export {
   updatePrintingSettings,
   updatePrintJobContent,
   updatePrintJobStatus,
+  upsertLabelTemplate,
   upsertPrinterRoute
 } from "./service";
 export type {

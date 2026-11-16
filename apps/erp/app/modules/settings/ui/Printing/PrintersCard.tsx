@@ -52,7 +52,7 @@ import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { path } from "~/utils/path";
 
-function getMediaSizeLabel(mediaSizeId: string): string {
+export function getMediaSizeLabel(mediaSizeId: string): string {
   const size = labelSizes.find((s) => s.id === mediaSizeId);
   return size ? getLabelSizeLabel(size) : mediaSizeId;
 }
@@ -230,8 +230,7 @@ export function PrintersCard({
                     name: printerToEdit.name,
                     format: printerToEdit.format,
                     mediaSizeId: printerToEdit.mediaSizeId ?? undefined,
-                    printerUrl: printerToEdit.printerUrl,
-                    templateId: printerToEdit.templateId ?? undefined
+                    printerUrl: printerToEdit.printerUrl
                   }
                 : { format: "zpl" }
             }
@@ -281,12 +280,6 @@ export function PrintersCard({
                     label={t`Media Size`}
                     options={mediaSizeOptions}
                   />
-                  <Input
-                    name="templateId"
-                    label={t`Template ID`}
-                    placeholder={t`Leave blank for built-in`}
-                  />
-
                   <Input
                     name="printerUrl"
                     label={t`Printer URL`}

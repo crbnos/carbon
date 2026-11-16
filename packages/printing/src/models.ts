@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { labelSizes } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { printerContexts } from "./assignments";
+import { labelTemplateTypes } from "./registry";
 
 export const manualPrintValidator = z.object({
   sourceDocument: z.string().min(1),
@@ -23,8 +25,16 @@ export const printerRouteValidator = z.object({
   printerUrl: z.string().url({ message: "Must be a valid URL" }),
   // Write-only: blank keeps the saved key, `removeApiKey` clears it.
   apiKey: zfd.text(z.string().optional()),
-  removeApiKey: zfd.checkbox(),
-  templateId: zfd.text(z.string().optional())
+  removeApiKey: zfd.checkbox()
+});
+
+export const labelTemplateValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  labelType: z.enum(labelTemplateTypes),
+  mediaSizeId: z.enum(
+    labelSizes.map((size) => size.id) as [string, ...string[]]
+  ),
+  templateId: z.string().trim().min(1, { message: "Template ID is required" })
 });
 
 export const updateAssignmentValidator = z

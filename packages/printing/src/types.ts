@@ -31,7 +31,6 @@ export type PrinterRoute = {
   printerUrl: string;
   /** The API key itself is in Supabase Vault and never leaves the server. */
   hasApiKey: boolean;
-  templateId: string | null;
 };
 
 export type PrintJobStatus =

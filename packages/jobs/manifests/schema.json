@@ -1387,6 +1387,21 @@
       ]
     },
     {
+      "name": "labelTemplate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "labelType",
+        "mediaSizeId",
+        "templateId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "laborCategory",
       "rows": 0,
       "columns": [
@@ -4274,7 +4289,6 @@
         "printerUrl",
         "createdAt",
         "updatedAt",
-        "templateId",
         "hasApiKey"
       ]
     },

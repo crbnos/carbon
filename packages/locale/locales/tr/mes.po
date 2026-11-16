@@ -78,7 +78,7 @@ msgstr "{0} Lot numarasına sahip değil. Bunu Carbon'da Partide veya İş emrin
 #. placeholder {0}: result.unit.readableId
 #. placeholder {1}: result.unit.status
 msgid "{0} is {1}"
-msgstr ""
+msgstr "{0}: {1}"
 
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
@@ -193,7 +193,7 @@ msgid "{hours} h"
 msgstr "{hours} s"
 
 msgid "{issued} of {required}"
-msgstr ""
+msgstr "{issued} / {required}"
 
 msgid "{label}, overdue"
 msgstr "{label}, gecikmiş"
@@ -400,6 +400,9 @@ msgstr "Hepsi fire"
 msgid "All steps"
 msgstr "Tüm adımlar"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "Başarısız birimleri tahsis et"
 
@@ -407,7 +410,7 @@ msgid "Allocate units"
 msgstr "Birimleri tahsis et"
 
 msgid "Any part"
-msgstr ""
+msgstr "Herhangi bir parça"
 
 msgid "Appearance"
 msgstr "Görünüm"
@@ -446,7 +449,7 @@ msgid "Ask a supervisor to add the {processName} ability to your profile."
 msgstr "Yöneticinizden profilinize {processName} yetkinliğini eklemesini isteyin."
 
 msgid "Asked"
-msgstr ""
+msgstr "Talep edildi"
 
 msgid "Assembly steps"
 msgstr "Montaj adımları"
@@ -571,7 +574,7 @@ msgid "Bold"
 msgstr "Kalın"
 
 msgid "Bring {quantity}"
-msgstr ""
+msgstr "{quantity} getir"
 
 msgid "Bring kit"
 msgstr ""
@@ -670,10 +673,10 @@ msgstr "Carbon'un sizi nasıl ulaştığını seçin."
 
 #. placeholder {0}: unit.readableId
 msgid "Choose the operation to issue {0} into"
-msgstr ""
+msgstr "{0} birimi için malzeme çıkışı yapılacak operasyonu seçin"
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "Bu birim için açılacak operasyonu seçin"
 
 msgid "Clear"
 msgstr "Temizle"
@@ -844,10 +847,10 @@ msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
 
 msgid "Could not load the line feed"
-msgstr ""
+msgstr "Hat beslemesi yüklenemedi"
 
 msgid "Could not look up this label. Try again."
-msgstr ""
+msgstr "Bu etiket aranamadı. Tekrar deneyin."
 
 msgid "Country code"
 msgstr "Ülke kodu"
@@ -1169,7 +1172,7 @@ msgid "Failed to register passkey"
 msgstr "Geçiş anahtarı kaydedilemedi"
 
 msgid "Failed to resolve request"
-msgstr ""
+msgstr "İstek çözümlenemedi"
 
 msgid "Failed to save measurement"
 msgstr "Ölçüm kaydedilemedi"
@@ -1221,6 +1224,9 @@ msgstr "Filtrele"
 
 msgid "Filter by location"
 msgstr "Konuma göre filtrele"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "Adımları filtrele"
@@ -1364,7 +1370,7 @@ msgid "In Progress"
 msgstr "Devam Ediyor"
 
 msgid "In stock: {available}. Still needed: {needed}."
-msgstr ""
+msgstr "Stokta: {available}. Hâlâ gereken: {needed}."
 
 msgid "In warranty"
 msgstr "Garanti Altında"
@@ -1437,7 +1443,7 @@ msgstr "Malzeme Çıkart"
 
 #. placeholder {0}: selected.operation.jobReadableId
 msgid "Issue to {0}"
-msgstr ""
+msgstr "{0} için malzeme çıkışı"
 
 msgid "Issue Type"
 msgstr "Sorun Türü"
@@ -1572,7 +1578,7 @@ msgid "Line"
 msgstr "Satır"
 
 msgid "Line feed"
-msgstr ""
+msgstr "Hat beslemesi"
 
 msgid "lines"
 msgstr "satırlar"
@@ -1650,7 +1656,7 @@ msgid "Lot tracked"
 msgstr "Lot izlendi"
 
 msgid "Low"
-msgstr ""
+msgstr "Düşük"
 
 msgid "Machine"
 msgstr "Makine"
@@ -1711,7 +1717,7 @@ msgid "matches"
 msgstr "eşleşir"
 
 msgid "Material requested"
-msgstr ""
+msgstr "Malzeme talep edildi"
 
 msgid "Materials"
 msgstr "Malzemeler"
@@ -1791,7 +1797,7 @@ msgid "Navigation"
 msgstr "Gezinti"
 
 msgid "Need material"
-msgstr ""
+msgstr "Malzeme gerekli"
 
 msgid "New"
 msgstr "Yeni"
@@ -1897,7 +1903,7 @@ msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Henüz izin ayarlanmadı. Yöneticinizden ERP'de bir tane ayarlamasını isteyin."
 
 msgid "No lineside storage"
-msgstr ""
+msgstr "Hat yanı depolama yok"
 
 msgid "No maintenance scheduled for today"
 msgstr "Bugün planlanmış bakım yok"
@@ -1951,7 +1957,7 @@ msgid "No photos yet"
 msgstr "Henüz fotoğraf yok"
 
 msgid "No picking lists"
-msgstr ""
+msgstr "Toplama listesi yok"
 
 msgid "No printer configured"
 msgstr "Yazıcı yapılandırılmadı"
@@ -2002,10 +2008,10 @@ msgid "No spare parts added yet"
 msgstr "Henüz yedek parça eklenmedi"
 
 msgid "No station"
-msgstr ""
+msgstr "İstasyon yok"
 
 msgid "No stations at this location"
-msgstr ""
+msgstr "Bu lokasyonda istasyon yok"
 
 msgid "No stock"
 msgstr "Stok yok"
@@ -2056,7 +2062,7 @@ msgid "Not usable stock. MRP and planning do not count it, and picking does not 
 msgstr "Kullanılabilir stok değil. MRP ve planlama bunu saymaz, toplama da buradan almaz."
 
 msgid "Note"
-msgstr ""
+msgstr "Not"
 
 msgid "Notes"
 msgstr "Notlar"
@@ -2106,7 +2112,7 @@ msgid "On Hold"
 msgstr "Askıda"
 
 msgid "On its way"
-msgstr ""
+msgstr "Yolda"
 
 msgid "one combined lot · planned"
 msgstr "bir birleştirilmiş Lot · planlandı"
@@ -2192,13 +2198,13 @@ msgid "Or enter this secret manually:"
 msgstr "Ya da bu sırrı manuel olarak girin:"
 
 msgid "Out"
-msgstr ""
+msgstr "Dışarıda"
 
 msgid "Out of calibration"
 msgstr "Kalibrasyon dışı"
 
 msgid "Out of stock"
-msgstr ""
+msgstr "Stok tükendi"
 
 msgid "Output lot"
 msgstr "Çıktı Lotu"
@@ -2404,7 +2410,7 @@ msgid "Print batch list"
 msgstr "Yazdır parti listesini"
 
 msgid "Print travelers"
-msgstr ""
+msgstr "İş takip kartlarını yazdır"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "Onayladığınız satın alma siparişlerine yazdırılır."
@@ -2619,7 +2625,7 @@ msgid "Repairable"
 msgstr "Onarılabilir"
 
 msgid "Request material"
-msgstr ""
+msgstr "Malzeme talep et"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan 6 haneli bir kod iste."
@@ -2637,7 +2643,7 @@ msgid "Resolution"
 msgstr "Çözüm"
 
 msgid "Resolve"
-msgstr ""
+msgstr "Çöz"
 
 msgid "Result"
 msgstr "Sonuç"
@@ -2670,7 +2676,7 @@ msgid "Running"
 msgstr "Çalışıyor"
 
 msgid "Running low"
-msgstr ""
+msgstr "Azalıyor"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2718,7 +2724,7 @@ msgid "Scan a tracked entity to add the first sample column."
 msgstr "İlk örnek sütununu eklemek için izlenen bir varlığı tarayın."
 
 msgid "Scan in these parts first"
-msgstr ""
+msgstr "Önce bu parçaları tara"
 
 msgid "Scan or enter a serial"
 msgstr "Seri numarasını tara veya gir"
@@ -2844,7 +2850,7 @@ msgid "Select a customer"
 msgstr "Müşteri seçin"
 
 msgid "Select a location to see its stations"
-msgstr ""
+msgstr "İstasyonları görmek için bir lokasyon seçin"
 
 msgid "Select a rework quantity"
 msgstr "Bir yeniden işleme miktarı seçin"
@@ -2974,7 +2980,7 @@ msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
 
 msgid "Short: {available} of {needed}"
-msgstr ""
+msgstr "Eksik: {available} / {needed}"
 
 msgid "Show description"
 msgstr "Açıklamayı göster"
@@ -3274,7 +3280,7 @@ msgid "The timer and completion are shared by all {0} jobs. Steps, materials and
 msgstr "Zamanlayıcı ve tamamlama tüm {0} iş emirleri tarafından paylaşılır. Buradaki adımlar, malzemeler ve dosyalar bu iş emrinin kendisinindir."
 
 msgid "The unit changed. Scan again."
-msgstr ""
+msgstr "Birim değişti. Yeniden tara."
 
 msgid "The values break a rule on this record."
 msgstr "Değerler bu kayıt üzerinde bir kuralı ihlal ediyor."
@@ -3310,7 +3316,7 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "Bu öğelerin hala seçilecek malzemesi var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 
 msgid "This barcode matches more than one unit"
-msgstr ""
+msgstr "Bu barkod birden fazla birimle eşleşiyor"
 
 msgid "This batch has no work instructions."
 msgstr "Bu partinin iş talimatı yok."
@@ -3328,13 +3334,13 @@ msgid "This is a pass / fail check. Press P or F."
 msgstr "Bu bir geçti / kaldı kontrolüdür. P veya F tuşuna basın."
 
 msgid "This job does not use that part"
-msgstr ""
+msgstr "Bu iş emri o parçayı kullanmıyor"
 
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Bu iş emrinin fatura oranı yoktur. Zaman faturalandırılmadan önce ofis tarafından ayarlanmasını isteyin."
 
 msgid "This label does not belong to a unit in this company"
-msgstr ""
+msgstr "Bu etiket bu şirketteki bir birime ait değil"
 
 msgid "This lot is expired and can't be picked."
 msgstr "Bu lot'un süresi doldu ve toplanamaz."
@@ -3470,10 +3476,10 @@ msgid "Training"
 msgstr "Eğitim"
 
 msgid "Traveler"
-msgstr ""
+msgstr "İş takip kartı"
 
 msgid "Try again"
-msgstr ""
+msgstr "Tekrar deneyin"
 
 msgid "Two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulama"
@@ -3521,7 +3527,7 @@ msgid "Unknown gauge"
 msgstr "Bilinmeyen ölçüm aleti"
 
 msgid "Unknown part"
-msgstr ""
+msgstr "Bilinmeyen parça"
 
 msgid "Unlock"
 msgstr "Kilit aç"
@@ -3632,7 +3638,7 @@ msgid "View or open"
 msgstr "Görüntüle veya aç"
 
 msgid "View Traceability"
-msgstr ""
+msgstr "İzlenebilirliği görüntüle"
 
 msgid "Warranty"
 msgstr "Garanti"
@@ -3644,10 +3650,10 @@ msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or 
 msgstr "Size oturum açma bağlantısı ve 6 haneli bir kod gönderdik. Bağlantıyı takip edin veya kodu buraya girin."
 
 msgid "Wet"
-msgstr ""
+msgstr "Islak"
 
 msgid "What do you need?"
-msgstr ""
+msgstr "Neye ihtiyacınız var?"
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"
