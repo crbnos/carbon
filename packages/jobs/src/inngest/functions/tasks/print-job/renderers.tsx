@@ -3,8 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // This module is .tsx because the built-in renderers render React PDF
-// components (ProductLabelPDF, StorageUnitLabelPDF, KanbanLabelPDF) via
-// renderToStream.
+// components (ProductLabelPDF, StorageUnitLabelPDF, KanbanLabelPDF).
 
 import type { Database } from "@carbon/database";
 import { resolveLabelLogo } from "@carbon/documents/labels";
@@ -23,6 +22,7 @@ import {
 } from "@carbon/documents/zpl";
 import { ERP_URL, SUPABASE_INTERNAL_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
+import { renderPdfToBuffer } from "@carbon/lib/document-data.server";
 import {
   type PackingSlipPDFProps,
   renderPackingSlipPdf
@@ -34,7 +34,6 @@ import {
 import { renderWithBinderyPress } from "@carbon/printing/printing.server";
 import type { LabelSize, ProductLabelItem } from "@carbon/utils";
 import { labelSizes } from "@carbon/utils";
-import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ReactElement } from "react";
 import type { KanbanCardItem, StorageUnitItem } from "./resolvers";
@@ -216,22 +215,7 @@ function requireZplCapable(mediaSize: LabelSize): void {
 async function renderPdfContent(
   element: ReactElement
 ): Promise<GeneratedContent> {
-  const stream = await renderToStream(element);
-  const body = await streamToBuffer(stream);
-
-  return {
-    content: body.toString("base64"),
-    contentType: "pdf"
-  };
-}
-
-function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const buffers: Uint8Array[] = [];
-    stream.on("data", (d: Uint8Array) => buffers.push(d));
-    stream.on("end", () => resolve(Buffer.concat(buffers)));
-    stream.on("error", reject);
-  });
+  return pdfContent(await renderPdfToBuffer(element));
 }
 
 /**

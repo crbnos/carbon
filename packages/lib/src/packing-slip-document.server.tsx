@@ -10,11 +10,12 @@ import {
   templateShowsThumbnails
 } from "@carbon/documents/template";
 import { getLogger } from "@carbon/logger";
-import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  DocumentNotFoundError,
   getBase64Image,
   getCompanyWithPublicLogos,
+  renderPdfToBuffer,
   resolveSections
 } from "./document-data.server";
 import { getPrintedTemplate } from "./document-edit.server";
@@ -24,6 +25,7 @@ const logger = getLogger("lib", "packing-slip-document");
 type Client = SupabaseClient<Database>;
 
 export type PackingSlipPDFProps = Parameters<typeof PackingSlipPDF>[0];
+export { DocumentNotFoundError } from "./document-data.server";
 
 /**
  * Everything needed to render a shipment's packing slip (a rental's delivery
@@ -50,10 +52,7 @@ type SourceProps = Pick<
   | "rentalUnits"
   | "documentType"
   | "meta"
-> & {
-  /** The client that reads line thumbnails; null when the slip shows none. */
-  thumbnailClient: Client | null;
-};
+>;
 
 type Shipment = Database["public"]["Tables"]["shipment"]["Row"];
 
@@ -98,7 +97,7 @@ export async function loadPackingSlipDocument(args: {
   const { client, serviceRole, companyId, shipmentId, locale, storageUrl } =
     args;
 
-  const [companyResult, shipmentResult, linesResult, termsResult] =
+  const [companyResult, shipmentResult, linesResult, termsResult, template] =
     await Promise.all([
       getCompanyWithPublicLogos(client, companyId, storageUrl),
       // RLS admits a shipment from any company the user belongs to, but the
@@ -114,38 +113,39 @@ export async function loadPackingSlipDocument(args: {
         .from("terms")
         .select("salesTerms")
         .eq("id", companyId)
-        .single()
+        .single(),
+      getPrintedTemplate(
+        client,
+        { companyId, documentType: "packingSlip", documentId: shipmentId },
+        args.edit
+      )
     ]);
 
-  const company = must(companyResult, "company");
+  // No row: the shipment is gone or belongs to another company.
+  if (shipmentResult.error?.code === "PGRST116") {
+    throw new DocumentNotFoundError(`Shipment ${shipmentId} not found`);
+  }
   const shipment = must(shipmentResult, "shipment");
+  const company = must(companyResult, "company");
   const shipmentLines = must(linesResult, "shipment lines");
   const terms = must(termsResult, "terms");
   if (!shipment.sourceDocumentId) {
     throw new Error("Shipment has no source document");
   }
 
-  const template = await getPrintedTemplate(
-    client,
-    { companyId, documentType: "packingSlip", documentId: shipmentId },
-    args.edit
-  );
-  const [sections, source] = await Promise.all([
+  const thumbnailClient = templateShowsThumbnails(template, "packingSlip")
+    ? thumbnailClientFor(shipment, client, serviceRole)
+    : null;
+  const [sections, source, thumbnails] = await Promise.all([
     resolveSections(client, companyId, collectSectionIds(template)),
     loadSource(client, serviceRole, companyId, shipment),
+    thumbnailClient ? loadThumbnails(thumbnailClient, shipmentLines) : {},
     ensureFont(template.settings.fontFamily)
   ]);
 
-  const thumbnails =
-    source.thumbnailClient && templateShowsThumbnails(template, "packingSlip")
-      ? await loadThumbnails(source.thumbnailClient, shipmentLines)
-      : {};
-
-  const { thumbnailClient: _, ...sourceProps } = source;
-
   return {
     pdfProps: {
-      ...sourceProps,
+      ...source,
       company: company as unknown as PackingSlipPDFProps["company"],
       locale,
       shipment,
@@ -161,17 +161,33 @@ export async function loadPackingSlipDocument(args: {
 }
 
 /** Render a packing slip PDF into a Buffer. */
-export async function renderPackingSlipPdf(
+export function renderPackingSlipPdf(
   props: PackingSlipPDFProps
 ): Promise<Buffer> {
   // Called as a function (it uses no hooks), so this package needs no JSX.
-  const stream = await renderToStream(PackingSlipPDF(props));
-  return new Promise((resolve, reject) => {
-    const buffers: Uint8Array[] = [];
-    stream.on("data", (data) => buffers.push(data));
-    stream.on("end", () => resolve(Buffer.concat(buffers)));
-    stream.on("error", reject);
-  });
+  return renderPdfToBuffer(PackingSlipPDF(props));
+}
+
+/**
+ * Who reads line thumbnails: the source's customer-facing reads use the
+ * service role, a purchase order or transfer reads as the caller, and a
+ * rental or contract slip shows none.
+ */
+function thumbnailClientFor(
+  shipment: Shipment,
+  client: Client,
+  serviceRole: Client
+): Client | null {
+  switch (shipment.sourceDocument) {
+    case "Sales Order":
+    case "Sales Invoice":
+      return serviceRole;
+    case "Purchase Order":
+    case "Outbound Transfer":
+      return client;
+    default:
+      return null;
+  }
 }
 
 async function loadThumbnails(
@@ -275,8 +291,7 @@ async function loadSource(
         paymentTerm: paymentTerm.data ?? NO_TERM,
         shippingMethod: shippingMethod.data ?? NO_TERM,
         trackedEntities: tracking.data ?? [],
-        meta: PACKING_SLIP_META,
-        thumbnailClient: serviceRole
+        meta: PACKING_SLIP_META
       };
     }
     case "Sales Invoice": {
@@ -309,8 +324,7 @@ async function loadSource(
         paymentTerm: paymentTerm.data ?? NO_TERM,
         shippingMethod: shippingMethod.data ?? NO_TERM,
         trackedEntities: tracking.data ?? [],
-        meta: PACKING_SLIP_META,
-        thumbnailClient: serviceRole
+        meta: PACKING_SLIP_META
       };
     }
     case "Purchase Order": {
@@ -350,8 +364,7 @@ async function loadSource(
         paymentTerm: paymentTerm.data ?? NO_TERM,
         shippingMethod: shippingMethod.data ?? NO_TERM,
         trackedEntities: tracking.data ?? [],
-        meta: PACKING_SLIP_META,
-        thumbnailClient: client
+        meta: PACKING_SLIP_META
       };
     }
     case "Outbound Transfer": {
@@ -386,8 +399,7 @@ async function loadSource(
         paymentTerm: NO_TERM,
         shippingMethod: shippingMethod.data ?? NO_TERM,
         trackedEntities: tracking.data ?? [],
-        meta: PACKING_SLIP_META,
-        thumbnailClient: client
+        meta: PACKING_SLIP_META
       };
     }
     case "Rental Agreement": {
@@ -450,8 +462,7 @@ async function loadSource(
           author: "Carbon",
           keywords: "delivery ticket",
           subject: "Delivery Ticket"
-        },
-        thumbnailClient: null
+        }
       };
     }
     case "Customer Contract": {
@@ -534,8 +545,7 @@ async function loadSource(
           author: "Carbon",
           keywords: "receiving report",
           subject: "Receiving Report"
-        },
-        thumbnailClient: null
+        }
       };
     }
     default:

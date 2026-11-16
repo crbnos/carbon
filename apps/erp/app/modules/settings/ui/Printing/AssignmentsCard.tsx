@@ -2,12 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type {
-  ContextAssignment,
-  LocationAssignment,
-  PrinterContext,
-  PrinterRoute,
-  PrintingSettings
+import {
+  type ContextAssignment,
+  defaultAutoPrint,
+  type LocationAssignment,
+  type PrinterContext,
+  type PrinterRoute,
+  type PrintingSettings
 } from "@carbon/printing";
 import { useAction } from "@carbon/query";
 import {
@@ -239,7 +240,7 @@ function LocationSection({
           isIndented={!row.isDefault}
           printerRouteId={row.explicit?.printerRouteId ?? null}
           inheritedName={row.isDefault ? null : defaultPrinterName}
-          autoPrint={row.explicit?.autoPrint ?? row.context !== "documents"}
+          autoPrint={row.explicit?.autoPrint ?? defaultAutoPrint(row.context)}
           printerRouteOptions={printerRouteOptions}
           onPrinterChange={(printerRouteId) =>
             onUpdate({

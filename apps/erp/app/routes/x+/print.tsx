@@ -5,15 +5,8 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { trigger } from "@carbon/jobs";
-import { manualPrintValidator } from "@carbon/printing";
+import { getPrintPermissions, manualPrintValidator } from "@carbon/printing";
 import type { ActionFunctionArgs } from "react-router";
-
-// The print task reads as the service role, so a document that is not a label
-// needs its own module's view permission before it can be printed.
-const sourceDocumentPermissions: Record<string, string> = {
-  PackingSlip: "inventory",
-  SalesInvoice: "invoicing"
-};
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -26,10 +19,11 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: false, message: "Invalid print request" };
   }
 
-  const view = sourceDocumentPermissions[validation.data.sourceDocument];
+  // The task reads as the service role: check the document's own module.
+  const view = getPrintPermissions(validation.data.sourceDocument);
   const { companyId, userId } = await requirePermissions(
     request,
-    view ? { view } : {}
+    view.length > 0 ? { view } : {}
   );
 
   const {

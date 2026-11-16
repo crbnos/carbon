@@ -72,6 +72,7 @@ import {
   getPrintJob,
   getPrintJobContent,
   labelTemplateValidator,
+  locationPrinterContexts,
   type PrintingSettings,
   printerRouteValidator,
   reprintValidator,
@@ -1613,8 +1614,8 @@ export const removeLabelTemplate = defineServiceFn({
  *
  * @remarks
  * Deletes the company's printer route and its API key, then clears it from
- * every printer assignment that named it (a location's default, its shipping and receiving
- * printers, and its work centers), so no assignment points at a printer that
+ * every printer assignment that named it (a location's default, each of its
+ * context printers, and its work centers), so no assignment points at a printer that
  * is gone. The cached printer routing is dropped.
  *
  * @mcp destructive
@@ -1666,12 +1667,7 @@ export const removePrinterRoute = defineServiceFn({
           next.defaultPrinterRouteId = null;
           dirty = true;
         }
-        for (const context of [
-          "shipping",
-          "receiving",
-          "inventory",
-          "kanban"
-        ] as const) {
+        for (const context of locationPrinterContexts) {
           const assigned = next[context];
           if (assigned?.printerRouteId === id) {
             next[context] = { ...assigned, printerRouteId: null };

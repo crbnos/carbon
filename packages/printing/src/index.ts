@@ -4,8 +4,10 @@
 
 export type { PrinterContext } from "./assignments";
 export {
+  defaultAutoPrint,
   emptyLocationAssignment,
   getPrinterContextForSource,
+  locationPrinterContexts,
   printerContexts,
   resolveContextAssignment,
   setContextAssignment
@@ -29,6 +31,7 @@ export {
   getDocumentTypeOptions,
   getDocumentTypesForSource,
   getLabelTemplateType,
+  getPrintPermissions,
   labelTemplateTypes
 } from "./registry";
 

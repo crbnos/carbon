@@ -8,12 +8,29 @@ import {
   type ResolvedSection
 } from "@carbon/documents/template";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
+import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Reads shared by the document loaders (sales invoice, packing slip). No app
 // imports, so the ERP and Inngest jobs render the same documents.
 
 type Client = SupabaseClient<Database>;
+
+/** The document a loader was asked for does not exist in this company. */
+export class DocumentNotFoundError extends Error {}
+
+/** Render a React PDF document into a Buffer. */
+export async function renderPdfToBuffer(
+  element: Parameters<typeof renderToStream>[0]
+): Promise<Buffer> {
+  const stream = await renderToStream(element);
+  return new Promise((resolve, reject) => {
+    const buffers: Uint8Array[] = [];
+    stream.on("data", (data: Uint8Array) => buffers.push(data));
+    stream.on("end", () => resolve(Buffer.concat(buffers)));
+    stream.on("error", reject);
+  });
+}
 
 const LOGO_FIELDS = [
   "logoLight",

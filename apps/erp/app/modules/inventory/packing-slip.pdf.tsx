@@ -6,6 +6,7 @@ import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import type { DocumentEdit, ValueCollector } from "@carbon/documents/template";
 import {
+  DocumentNotFoundError,
   loadPackingSlipDocument,
   renderPackingSlipPdf
 } from "@carbon/lib/packing-slip-document.server";
@@ -42,6 +43,11 @@ export async function renderPackingSlip({
     locale,
     storageUrl: SUPABASE_URL ?? "",
     edit
+  }).catch((error: unknown) => {
+    if (error instanceof DocumentNotFoundError) {
+      throw new Response("Not found", { status: 404 });
+    }
+    throw error;
   });
   const body = await renderPackingSlipPdf({ ...pdfProps, valueCollector });
 

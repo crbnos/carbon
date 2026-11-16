@@ -9,6 +9,8 @@ export type DocumentTypeDefinition = {
   builtInRenderer: "zpl" | "pdf" | null;
   defaultFormat: "zpl" | "pdf";
   description: string;
+  /** The module a user must be able to view to print it. Labels need none. */
+  viewPermission?: string;
 };
 
 export const documentTypeRegistry = [
@@ -51,7 +53,8 @@ export const documentTypeRegistry = [
     sourceDocuments: ["PackingSlip"],
     builtInRenderer: "pdf" as const,
     defaultFormat: "pdf" as const,
-    description: "Full-page packing slip for a shipment"
+    description: "Full-page packing slip for a shipment",
+    viewPermission: "inventory"
   },
   {
     id: "salesInvoice",
@@ -59,7 +62,8 @@ export const documentTypeRegistry = [
     sourceDocuments: ["SalesInvoice"],
     builtInRenderer: "pdf" as const,
     defaultFormat: "pdf" as const,
-    description: "Full-page invoice for a document printer"
+    description: "Full-page invoice for a document printer",
+    viewPermission: "invoicing"
   }
 ] as const satisfies readonly DocumentTypeDefinition[];
 
@@ -102,6 +106,20 @@ export function getDocumentTypesForSource(
       (dt.sourceDocuments as readonly string[]).includes(sourceDocument)
     )
     .map((dt) => dt.id) as DocumentTypeId[];
+}
+
+/**
+ * The view permissions a user needs to print a source document. The print
+ * task reads as the service role, so the route that queues it checks these.
+ */
+export function getPrintPermissions(sourceDocument: string): string[] {
+  const permissions = new Set<string>();
+  for (const dt of documentTypeRegistry as readonly DocumentTypeDefinition[]) {
+    if (dt.viewPermission && dt.sourceDocuments.includes(sourceDocument)) {
+      permissions.add(dt.viewPermission);
+    }
+  }
+  return [...permissions];
 }
 
 export function getDocumentType(

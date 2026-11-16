@@ -34,6 +34,7 @@
   },
   "exports": {
     "./async": "./src/async.ts",
+    "./document-data.server": "./src/document-data.server.ts",
     "./document-edit.server": "./src/document-edit.server.ts",
     "./email.server": "./src/email.server.ts",
     "./events": "./src/events.ts",

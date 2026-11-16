@@ -12,11 +12,11 @@ import {
   templateShowsThumbnails
 } from "@carbon/documents/template";
 import { getLogger } from "@carbon/logger";
-import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getBase64Image,
   getCompanyWithPublicLogos,
+  renderPdfToBuffer,
   resolveSections
 } from "./document-data.server";
 import { getPrintedTemplate } from "./document-edit.server";
@@ -325,16 +325,5 @@ export async function renderSalesInvoicePdf(
 
   // Called as a function (it uses no hooks), as the post route calls
   // SalesInvoiceEmail, so this package needs no React/JSX toolchain of its own.
-  const stream = await renderToStream(SalesInvoicePDF(props));
-
-  return new Promise((resolve, reject) => {
-    const buffers: Uint8Array[] = [];
-    stream.on("data", (data) => {
-      buffers.push(data);
-    });
-    stream.on("end", () => {
-      resolve(Buffer.concat(buffers));
-    });
-    stream.on("error", reject);
-  });
+  return renderPdfToBuffer(SalesInvoicePDF(props));
 }

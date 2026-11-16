@@ -118,6 +118,7 @@ import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { defaultAutoPrint } from "@carbon/printing";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
@@ -8620,8 +8621,7 @@ export async function salesOrderShipmentLocationOf(
 
 /**
  * Print a document's labels (a new kanban's cards, a shipment's packing slip)
- * when its location's printer auto-prints. A full-page document prints only to
- * a printer chosen for it, never to a label printer it would inherit.
+ * when its location's printer auto-prints.
  */
 export async function autoPrint(
   ctx: ServiceContext,
@@ -8650,11 +8650,7 @@ export async function autoPrint(
       locationId,
       context
     );
-    const shouldPrint =
-      context === "documents"
-        ? config?.autoPrint === true && config.format === "pdf"
-        : (config?.autoPrint ?? true);
-    if (shouldPrint) {
+    if (config?.autoPrint ?? defaultAutoPrint(context)) {
       await trigger("print-job", {
         sourceDocument,
         sourceDocumentId,
