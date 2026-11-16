@@ -23,13 +23,13 @@ export const userAdminFunction = inngest.createFunction(
     const payload = event.data;
 
     const result = await step.run("user-admin-action", async () => {
-      logger.info(`User admin update ${payload.type} for ${payload.id}`);
+      logger.info("User admin update", { type: payload.type, id: payload.id });
 
       let result: Result = { success: false, message: "Unknown action" };
 
       switch (payload.type) {
         case "deactivate":
-          logger.info(`Deactivating ${payload.id}`);
+          logger.info("Deactivating a user", { id: payload.id });
           result = await deactivateUser(
             serviceRole,
             payload.id,
@@ -43,7 +43,7 @@ export const userAdminFunction = inngest.createFunction(
           break;
         case "resend":
           const { id: userId, companyId, location, ip } = payload;
-          logger.info(`Resending invite for ${payload.id}`);
+          logger.info("Resending an invite", { id: payload.id });
           const [company, user] = await Promise.all([
             serviceRole
               .from("company")
@@ -133,12 +133,12 @@ export const userAdminFunction = inngest.createFunction(
       }
 
       if (result.success) {
-        logger.info(`Success ${payload.id}`);
+        logger.info("User admin action succeeded", { id: payload.id });
       } else {
         logger.error("Admin action {payloadType} failed for {payloadId}", {
           payloadType: payload.type,
           payloadId: payload.id,
-          message: result.message
+          reason: result.message
         });
       }
 

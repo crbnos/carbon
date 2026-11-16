@@ -16,6 +16,7 @@ import {
   scaleLinesToTotal
 } from "@carbon/ee/ramp.server";
 import { storage } from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import { stageOrResumeRampCharge } from "./ramp-sync-card-stage";
 import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
@@ -40,6 +41,8 @@ import {
   verifyCostCenters,
   verifyProjects
 } from "./ramp-sync-shared";
+
+const logger = getLogger("jobs", "ramp-sync");
 
 /**
  * Download and attach a charge's Ramp receipts to the private bucket
@@ -69,9 +72,11 @@ async function attachReceipts(
 
       const response = await fetch(url);
       if (!response.ok) {
-        console.error(
-          `[RAMP SYNC] ${ctx.companyId}: receipt ${receiptId} download failed (${response.status})`
-        );
+        logger.error("Ramp receipt download failed", {
+          companyId: ctx.companyId,
+          receiptId,
+          status: response.status
+        });
         continue;
       }
       const bytes = new Uint8Array(await response.arrayBuffer());
@@ -84,10 +89,11 @@ async function attachReceipts(
         .company(ctx.companyId)
         .upload(path, bytes, { upsert: true });
       if (uploaded.error) {
-        console.error(
-          `[RAMP SYNC] ${ctx.companyId}: receipt ${receiptId} upload failed`,
-          uploaded.error
-        );
+        logger.error("Ramp receipt upload failed", {
+          companyId: ctx.companyId,
+          receiptId,
+          error: uploaded.error
+        });
         continue;
       }
 
@@ -103,16 +109,18 @@ async function attachReceipts(
         writeGroups: companyGroups
       });
       if (inserted.error) {
-        console.error(
-          `[RAMP SYNC] ${ctx.companyId}: receipt ${receiptId} document insert failed`,
-          inserted.error
-        );
+        logger.error("Ramp receipt document insert failed", {
+          companyId: ctx.companyId,
+          receiptId,
+          error: inserted.error
+        });
       }
     } catch (receiptError) {
-      console.error(
-        `[RAMP SYNC] ${ctx.companyId}: receipt ${receiptId} attach threw`,
-        receiptError
-      );
+      logger.error("Ramp receipt attach threw", {
+        companyId: ctx.companyId,
+        receiptId,
+        error: receiptError
+      });
     }
   }
 }
@@ -506,10 +514,11 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
       }
     }
   } catch (familyError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: ${config.label} drain failed`,
-      familyError
-    );
+    logger.error("Ramp drain failed", {
+      companyId,
+      family: config.label,
+      error: familyError
+    });
     recordRampFamilyError(result, familyError);
   }
 
@@ -524,10 +533,11 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
       failed
     });
   } catch (confirmError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: ${config.syncType} confirm failed`,
-      confirmError
-    );
+    logger.error("Ramp sync confirm failed", {
+      companyId,
+      syncType: config.syncType,
+      error: confirmError
+    });
     result.confirmError =
       confirmError instanceof Error
         ? confirmError.message
@@ -743,8 +753,9 @@ export async function syncRampCharges(
       syncType: "TRANSACTION_SYNC",
       gate: (ctx, cardLiabilityAccountId) => {
         if (!cardLiabilityAccountId) {
-          console.warn(
-            `[RAMP SYNC] ${ctx.companyId}: no cardLiabilityAccountId configured — skipping charges`
+          logger.warning(
+            "No card liability account configured; skipping Ramp charges",
+            { companyId: ctx.companyId }
           );
           return { proceed: false };
         }

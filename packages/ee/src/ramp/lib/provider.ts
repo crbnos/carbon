@@ -16,6 +16,7 @@
  * engine actually needs.
  */
 
+import { getLogger } from "@carbon/logger";
 import { SpendProviderID } from "../../accounting/core/models";
 import type {
   GlobalSyncConfig,
@@ -28,6 +29,8 @@ import type { SpendCapabilities } from "../../sync/capabilities";
 import type { RampClient } from "./client";
 import type { RampIntegrationMetadata } from "./models";
 import { resolveRampMode, resolveRampModeProfile } from "./modes";
+
+const logger = getLogger("ee", "ramp");
 
 export class RampProvider implements SyncProvider {
   static id = SpendProviderID.RAMP;
@@ -108,7 +111,13 @@ export class RampProvider implements SyncProvider {
     this.entityIdPromise ??= this.client
       .getEntities<{ data?: Array<{ id?: string }> }>()
       .then((response) => response.data?.[0]?.id)
-      .catch(() => undefined);
+      .catch((error) => {
+        logger.warning(
+          "Could not read the Ramp entities; creating without an entity id",
+          { companyId: this.companyId, error }
+        );
+        return undefined;
+      });
     return this.entityIdPromise;
   }
 

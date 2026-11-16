@@ -34,6 +34,7 @@ import {
   applyLedgerDelegation,
   type IntegrationTopology
 } from "@carbon/ee/sync";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
@@ -54,6 +55,8 @@ import {
   type ReconcileLatestOperation,
   type ReconcileRef
 } from "./reconcile";
+
+const logger = getLogger("jobs", "reconcile-executor");
 
 const SNAPSHOT_TABLES: Record<
   ReconcileEntityType,
@@ -584,9 +587,12 @@ export async function reconcileEntities(args: {
     });
     if (transitioned.error) {
       summary.errors++;
-      console.warn(
-        `[RECONCILE] ${args.companyId}/${args.providerId}: failed to re-drive op ${operationId}: ${transitioned.error}`
-      );
+      logger.warning("Failed to re-drive a sync operation", {
+        companyId: args.companyId,
+        providerId: args.providerId,
+        operationId,
+        error: transitioned.error
+      });
     } else {
       summary.redriven++;
     }

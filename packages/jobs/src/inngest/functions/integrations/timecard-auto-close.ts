@@ -33,7 +33,7 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
     const serviceRole = getCarbonServiceRole();
 
     await step.run("auto-close-timecards", async () => {
-      logger.info(`Starting timecard auto-close: ${new Date().toISOString()}`);
+      logger.info("Starting timecard auto-close");
 
       try {
         // 1. Get all companies with time clock enabled
@@ -49,9 +49,9 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
           return;
         }
 
-        logger.info(
-          `Found ${companies?.length || 0} companies with time clock enabled`
-        );
+        logger.info("Found companies with time clock enabled", {
+          count: companies?.length || 0
+        });
 
         let totalClosed = 0;
 
@@ -73,9 +73,10 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
 
           if (!openEntries || openEntries.length === 0) continue;
 
-          logger.info(
-            `Company ${company.id}: ${openEntries.length} open entries`
-          );
+          logger.info("Found open timecard entries", {
+            companyId: company.id,
+            count: openEntries.length
+          });
 
           // 3. The employees' assigned shifts, read once for the company.
           const employeeJobs = await readByIds(
@@ -167,16 +168,16 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
               });
             } else {
               totalClosed++;
-              logger.info(
-                `Auto-closed entry ${entry.id} for employee ${entry.employeeId}`
-              );
+              logger.info("Auto-closed a timecard entry", {
+                entryId: entry.id,
+                employeeId: entry.employeeId,
+                companyId: company.id
+              });
             }
           }
         }
 
-        logger.info(
-          `Timecard auto-close completed: ${totalClosed} entries closed`
-        );
+        logger.info("Timecard auto-close completed", { closed: totalClosed });
       } catch (err) {
         logger.error("Unexpected error in timecard auto-close", {
           error: err

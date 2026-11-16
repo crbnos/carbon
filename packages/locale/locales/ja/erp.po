@@ -947,6 +947,9 @@ msgstr "{counted} がカウント済"
 msgid "{created} created, {updated} updated."
 msgstr "{created} 件作成、{updated} 件更新されました。"
 
+msgid "{created} created."
+msgstr "{created} 件作成しました。"
+
 msgid "{days}d"
 msgstr "{days}日"
 
@@ -1239,6 +1242,9 @@ msgstr "{ordered} 中 {received}"
 
 msgid "{ref} not found"
 msgstr "{ref}が見つかりません"
+
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, other {# 件の注文は開始日が今日より前のため作成されませんでした。今日から再スケジュールしてください。}}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
 msgstr "{rejectedQuantity} は却下として保留されます。"
@@ -1680,6 +1686,12 @@ msgstr "クローズ済のプロジェクトはそれ以上の請求を受け取
 
 msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 msgstr "カラーはアクセントを設定します。グラデーションと単色のテーマは、ナビゲーション、サイドバー、ページにも色を付けます。"
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+msgstr "1つの会社は一度に1つのOnshapeパネルにしか接続できません。Onshape V2 Governmentをアンインストールしてから、Onshape V2を接続してください。"
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
+msgstr "1つの会社は一度に1つのOnshapeパネルにしか接続できません。Onshape V2をアンインストールしてから、Onshape V2 Governmentを接続してください。"
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "1つの会社は一度に1つのOnshapeにしか接続できません。Onshape Governmentをアンインストールしてから、Onshapeを接続してください。"
@@ -4045,6 +4057,9 @@ msgstr "期限を定めないリースは予告で終了できるため、短期
 
 msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
 msgstr "期限を定めないリースは短期です。これを有効化すると、仕訳が転記されず、各請求書は費用計上されます。"
+
+msgid "An operation cannot complete until every serial and batch part on it is issued."
+msgstr ""
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "社内作業区ではなく外部仕入先が実行する工程で、外注発注書でカバーされます。"
@@ -7647,6 +7662,9 @@ msgstr "{0}の固定資産クラスとして完了します"
 msgid "Completing"
 msgstr "完了中"
 
+msgid "Completing a job's first operation prints its unit labels."
+msgstr ""
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "この教育訓練を完了すると、選択されたスキルが付与または更新されます。"
 
@@ -8153,6 +8171,9 @@ msgstr "設計変更をリビジョン/ECOで管理"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "作業者が製造現場で材料をピッキングし時間を追跡する方法を制御します。"
+
+msgid "Control how parts and labels move from the pick to the finished unit."
+msgstr ""
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "アイテムID（部品、材料、消耗品、工具、およびサービス）に小文字を含めることができるかどうかを制御します。"
@@ -8740,6 +8761,9 @@ msgstr "Onshape 接続を完了できませんでした"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government接続を完了できませんでした"
 
+msgid "Couldn't complete the Onshape V2 Government connection"
+msgstr "Onshape V2 Government接続を完了できませんでした"
+
 msgid "Couldn't confirm the account"
 msgstr "アカウントを確認できませんでした"
 
@@ -8772,6 +8796,9 @@ msgstr "Onshape 接続を保存できませんでした"
 
 msgid "Couldn't save the Onshape Government connection"
 msgstr "Onshape Government接続を保存できませんでした"
+
+msgid "Couldn't save the Onshape V2 Government connection"
+msgstr "Onshape V2 Government接続を保存できませんでした"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp 接続を保存できませんでした"
@@ -8957,6 +8984,9 @@ msgstr "新しいルールを作成"
 
 msgid "Create Operator"
 msgstr "作業者を作成"
+
+msgid "Create picking lists on release"
+msgstr ""
 
 msgid "Create PO Line"
 msgstr "発注書明細を作成"
@@ -11562,6 +11592,9 @@ msgstr "各期間は1ヶ月で、月額レートが適用されます。"
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
 
+msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
+msgstr ""
+
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "各レンタル契約または契約の営業担当者（またはその作成者）は、毎日その請求書のサマリーを受け取ります。"
 
@@ -12144,7 +12177,7 @@ msgid "Email notifications not configured"
 msgstr "メール通知が設定されていません"
 
 msgid "Email order on acceptance"
-msgstr "承認時に注文をメール送信"
+msgstr ""
 
 msgid "Email recipients"
 msgstr "メール受信者"
@@ -16740,6 +16773,9 @@ msgstr "このかんばんの次の工程を開始するためのラベル"
 msgid "Labels"
 msgstr "ラベル"
 
+msgid "Labels print at the first operation"
+msgstr ""
+
 msgid "Labor"
 msgstr "労務"
 
@@ -17295,6 +17331,9 @@ msgstr "行の詳細"
 msgid "Line Details"
 msgstr "明細詳細"
 
+msgid "Line Flow"
+msgstr ""
+
 msgid "Line Item"
 msgstr "行アイテム"
 
@@ -17535,6 +17574,9 @@ msgstr "拠点変更"
 
 msgid "Location Name"
 msgstr "ロケーション名"
+
+msgid "Location not known"
+msgstr "保管場所が不明です"
 
 msgid "Location ownership updated"
 msgstr "拠点の所有者が更新されました"
@@ -19008,6 +19050,14 @@ msgstr "リース投資純額"
 
 msgid "Net Investment in Leases (default)"
 msgstr "リース投資純額（デフォルト）"
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "前払金として支払済みの {0} を差し引いた金額です。"
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "前受金として受領済みの {0} を差し引いた金額です。"
 
 msgid "Net right-of-use asset"
 msgstr "純使用権資産"
@@ -21391,6 +21441,24 @@ msgstr "Onshape が認可を拒否しました"
 msgid "Onshape Status"
 msgstr "Onshape ステータス"
 
+msgid "Onshape V2 Government denied the connection"
+msgstr "Onshape V2 Governmentが接続を拒否しました"
+
+msgid "Onshape V2 Government didn't return an authorization code"
+msgstr "Onshape V2 Governmentが認可コードを返しませんでした"
+
+msgid "Onshape V2 Government is already connected"
+msgstr "Onshape V2 Governmentは既に接続されています"
+
+msgid "Onshape V2 Government isn't configured"
+msgstr "Onshape V2 Governmentは構成されていません"
+
+msgid "Onshape V2 Government rejected the authorization"
+msgstr "Onshape V2 Governmentが認可を却下しました"
+
+msgid "Onshape V2 is already connected"
+msgstr "Onshape V2は既に接続されています"
+
 msgid "Onshape version"
 msgstr "Onshape バージョン"
 
@@ -21578,6 +21646,9 @@ msgstr "カットオーバー日で帳簿をオープンします。会計の有
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government連携を開いて、その設定を保存して再度接続してください。"
 
+msgid "Open the Onshape V2 Government integration and save its settings to connect again."
+msgstr "Onshape V2 Government連携を開いて、その設定を保存して再度接続してください。"
+
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Ramp 連携を開き、設定を完了するためにもう一度接続してください。"
 
@@ -21740,6 +21811,9 @@ msgstr "作業者"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "作業者は PIN 認証で共有ワークステーションを使用できます。"
+
+msgid "Operators see a warning about unissued serial and batch parts and can still complete."
+msgstr ""
 
 msgid "Operators start on the Scan tab"
 msgstr "作業者はスキャンタブで開始します。"
@@ -22773,6 +22847,15 @@ msgstr "ピッキングリストのメモ"
 msgid "Picking Lists"
 msgstr "ピッキングリスト"
 
+msgid "Picking lists are created by hand"
+msgstr ""
+
+msgid "Picking lists on release disabled"
+msgstr ""
+
+msgid "Picking lists on release enabled"
+msgstr ""
+
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "ピッキングは追跡対象品目を使用期限が最も近い順に提供するため、期限切れが最も近い在庫がデフォルトで最初に出荷されます。"
 
@@ -23353,6 +23436,9 @@ msgstr "ラベル印刷"
 msgid "Print Label"
 msgstr "ラベルを印刷"
 
+msgid "Print label on completion"
+msgstr ""
+
 msgid "Print Labels"
 msgstr "ラベルを印刷"
 
@@ -23363,6 +23449,12 @@ msgstr "ラベルを印刷 ({0})"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "印刷出力 ({0})"
+
+msgid "Print this item's serial label when its job's last operation completes."
+msgstr ""
+
+msgid "Print travelers at the pick"
+msgstr ""
 
 msgid "Printed on every Certificate of Conformance"
 msgstr "すべての適合証明書に印刷されます"
@@ -24222,6 +24314,10 @@ msgstr "出荷数量"
 
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "明細 {lineNumber} の取消数量"
+
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr ""
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId}の返品数量"
@@ -25117,6 +25213,9 @@ msgstr "リリース済（警告あり）: {0}"
 msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
 msgstr "製造指図をリリースすると、承認済の初回試作品がない、または2年間製造されていないすべての部品に対して初回試作品検査が作成されます。"
 
+msgid "Releasing a job creates its picking list"
+msgstr ""
+
 msgid "Releasing a job for this customer creates first article inspections for parts that need one."
 msgstr "この顧客の製造指図をリリースすると、初回試作品検査が必要な部品に対して初回試作品検査が作成されます。"
 
@@ -25683,6 +25782,9 @@ msgstr "{0} で人員配置が必要"
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "金額しきい値と承認者グループに基づき、発注書、品質ドキュメント、仕入先、変更通知に多段階の承認を必須にします。"
 
+msgid "Require tracked parts before completion"
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "二要素認証が必要です"
 
@@ -25709,6 +25811,12 @@ msgstr "所要日"
 
 msgid "Required in a controlled environment — audit logging cannot be turned off."
 msgstr "管理された環境では必須です。監査ログはオフにできません。"
+
+msgid "Required tracked parts disabled"
+msgstr ""
+
+msgid "Required tracked parts enabled"
+msgstr ""
 
 msgid "Requirement"
 msgstr "要求事項"
@@ -25745,6 +25853,12 @@ msgstr "修理が必要"
 
 msgid "Requires staffing"
 msgstr "スタッフが必要"
+
+msgid "Reschedule from today"
+msgstr "今日から再スケジュール"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "今日から再スケジュール（期日 {rescheduledDue}）"
 
 msgid "Reschedule tolerance"
 msgstr "再スケジュール許容日数"
@@ -29031,6 +29145,9 @@ msgstr "開始"
 msgid "Starting"
 msgstr "開始中"
 
+msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
+msgstr ""
+
 msgid "Starting…"
 msgstr "開始中…"
 
@@ -29164,6 +29281,9 @@ msgstr "在庫"
 
 msgid "Stock and planning"
 msgstr "在庫と計画"
+
+msgid "Stock at:"
+msgstr ""
 
 msgid "Stock Availability"
 msgstr "在庫可用性"
@@ -31279,6 +31399,9 @@ msgstr "Onshape の接続が期限切れです"
 msgid "The Onshape Government connection expired"
 msgstr "Onshape Government接続が期限切れになりました"
 
+msgid "The Onshape V2 Government connection expired"
+msgstr "Onshape V2 Government接続が期限切れになりました"
+
 #. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."
 msgstr "期首残高は{0}の末日現在です。"
@@ -32979,6 +33102,12 @@ msgstr "追跡対象の ID、シリアル番号、またはバッチ"
 msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 msgstr "追跡される材料は、ピッキングリストがない場合でも、ピック順（FEFO）によって事前に選択されます。"
 
+msgid "Tracked parts are not required"
+msgstr ""
+
+msgid "Tracked parts must be scanned in"
+msgstr ""
+
 msgid "Tracking"
 msgstr "追跡"
 
@@ -33102,6 +33231,15 @@ msgstr "ゴミ箱"
 msgid "Travel"
 msgstr "旅行"
 
+msgid "Traveler labels disabled"
+msgstr ""
+
+msgid "Traveler labels enabled"
+msgstr ""
+
+msgid "Traveler Link"
+msgstr ""
+
 msgid "Traveler materials disabled"
 msgstr "現品票の材料が無効になりました"
 
@@ -33113,6 +33251,9 @@ msgstr "現品票工程が無効化されました"
 
 msgid "Traveler operations enabled"
 msgstr "現品票工程が有効化されました"
+
+msgid "Travelers print at the pick"
+msgstr ""
 
 msgid "Treatment"
 msgstr "会計処理"
@@ -33167,6 +33308,9 @@ msgstr "Government Contractingをオンにする"
 
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
+
+msgid "Turn on to create one picking list for each job when it is released."
+msgstr ""
 
 msgid "Turned off sync"
 msgstr "同期をオフにしました"

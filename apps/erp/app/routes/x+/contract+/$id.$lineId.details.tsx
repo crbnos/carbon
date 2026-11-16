@@ -151,10 +151,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (update.error) {
     throw redirect(
       back,
-      await flash(
-        request,
-        error(update.error, update.error.message || "Failed to update line")
-      )
+      await flash(request, error(update.error, "Failed to update line"))
     );
   }
 

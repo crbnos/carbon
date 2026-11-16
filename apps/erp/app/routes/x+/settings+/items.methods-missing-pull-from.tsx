@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import {
   Drawer,
   DrawerBody,
@@ -23,8 +22,6 @@ import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import { pageInMemory } from "~/utils/query";
 
-const logger = getLogger("erp", "settings-items");
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
     view: "settings"
@@ -35,10 +32,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companyId
   );
   if (methods.error) {
-    logger.error("Failed to read methods missing a Pull From", {
-      companyId,
-      error: methods.error
-    });
     // An empty table would read as "nothing to fix".
     throw redirect(
       path.to.itemsSettings,

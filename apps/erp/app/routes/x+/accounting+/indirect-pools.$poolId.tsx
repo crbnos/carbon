@@ -47,14 +47,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (pool.error || !pool.data) {
-    logger.error("Failed to load an indirect pool", {
-      companyId,
-      poolId,
-      error: pool.error
-    });
     throw redirect(
       path.to.indirectPools,
-      await flash(request, error(pool.error, "Failed to load the pool"))
+      await flash(
+        request,
+        error(pool.error, "Failed to load the pool", { poolId })
+      )
     );
   }
   if (dimensions.error) {

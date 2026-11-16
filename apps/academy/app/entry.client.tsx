@@ -2,12 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ensureLoggingConfigured } from "@carbon/logger/config.client";
 import { Fragment, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
-
-ensureLoggingConfigured();
 
 // function PosthogInit() {
 //   useEffect(() => {

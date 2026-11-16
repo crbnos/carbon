@@ -81,7 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           salesReturnOrderDelete.error,
-          salesReturnOrderDelete.error.message
+          "Failed to delete the sales return order"
         )
       )
     );

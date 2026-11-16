@@ -89,7 +89,7 @@ export async function sendViaGmail(
       companyId,
       connectionId,
       reason: auth.reason,
-      cause: "cause" in auth ? auth.cause : undefined
+      error: "cause" in auth ? auth.cause : undefined
     });
     return {
       data: null,

@@ -13,6 +13,7 @@ import {
 import type {
   AuthenticationResponseJSON,
   AuthenticatorTransportFuture,
+  CredentialDeviceType,
   RegistrationResponseJSON
 } from "@simplewebauthn/types";
 import { DOMAIN, ERP_URL, MES_URL, VERCEL_URL } from "../config/env";
@@ -124,8 +125,10 @@ export async function getAndDeleteAuthChallenge(
  *
  * Key decisions:
  * - attestationType "none": we don't need device attestation (reduces friction).
- * - authenticatorAttachment "platform": device-bound authenticators only
- *   (Touch ID, Face ID, Windows Hello). Excludes USB security keys.
+ * - authenticatorAttachment omitted: any authenticator — platform (Touch ID,
+ *   Face ID, Windows Hello), synced, or a roaming security key (YubiKey).
+ *   Registration only happens from account settings, the case where the
+ *   WebAuthn guidance is to leave it unset.
  * - requireResidentKey true: the passkey is stored on the device (discoverable),
  *   so the user doesn't need to type their email before using it.
  * - excludeCredentials: prevents the same device registering twice for this user.
@@ -134,7 +137,10 @@ export async function getPasskeyRegistrationOptions(
   userId: string,
   userEmail: string,
   userDisplayName: string,
-  existingCredentialIds: string[]
+  existingCredentials: {
+    id: string;
+    transports: AuthenticatorTransportFuture[] | null;
+  }[]
 ) {
   const options = await generateRegistrationOptions({
     rpName: "Carbon",
@@ -145,12 +151,11 @@ export async function getPasskeyRegistrationOptions(
       new TextEncoder().encode(userId)
     ) as unknown as Uint8Array<ArrayBuffer>,
     attestationType: "none",
-    excludeCredentials: existingCredentialIds.map((id) => ({
+    excludeCredentials: existingCredentials.map(({ id, transports }) => ({
       id,
-      type: "public-key"
+      transports: transports ?? undefined
     })),
     authenticatorSelection: {
-      authenticatorAttachment: "platform",
       requireResidentKey: true,
       residentKey: "required",
       userVerification: "required"
@@ -197,16 +202,18 @@ export async function verifyPasskeyRegistration(
     "base64url"
   );
 
+  const transports =
+    (response.response.transports as AuthenticatorTransportFuture[]) || null;
+
   return {
     id: credential.id,
     publicKey: credential.publicKey,
     counter: credential.counter,
-    transports:
-      (response.response.transports as AuthenticatorTransportFuture[]) || null,
+    transports,
     deviceType: credentialDeviceType,
     backedUp: credentialBackedUp,
     aaguid: aaguid || "",
-    credentialName: getCredentialName(aaguid),
+    credentialName: getCredentialName(aaguid, credentialDeviceType, transports),
     userHandle,
     rpId: RP_ID
   };
@@ -292,7 +299,20 @@ const AAGUID_NAMES: Record<string, string> = {
   // "f8a011f3-8c0a-4d15-8006-17111f9edc7d": "Security Key"
 };
 
-export function getCredentialName(aaguid?: string): string {
-  if (!aaguid) return "Passkey";
-  return AAGUID_NAMES[aaguid] || "Passkey";
+export function getCredentialName(
+  aaguid?: string,
+  deviceType?: CredentialDeviceType,
+  transports?: AuthenticatorTransportFuture[] | null
+): string {
+  const known = aaguid ? AAGUID_NAMES[aaguid] : undefined;
+  if (known) return known;
+  // Hardware keys (YubiKey, Titan, …) are device-bound and reached over USB/NFC.
+  // Read from the response, so it holds under attestation "none" and for any brand.
+  if (
+    deviceType === "singleDevice" &&
+    transports?.some((t) => t === "usb" || t === "nfc")
+  ) {
+    return "Security key";
+  }
+  return "Passkey";
 }

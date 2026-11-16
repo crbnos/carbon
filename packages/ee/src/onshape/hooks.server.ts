@@ -66,10 +66,10 @@ async function resolveAndStoreOnshapeCompanyId(
   } catch (error) {
     // Non-fatal: we can still register with the resolved id; the jobs just fall
     // back to their own getCompanies() resolve if the store didn't stick.
-    console.error(
-      "onshape: failed to persist resolved Onshape company id",
+    logger.error("Failed to persist resolved Onshape company id", {
+      companyId,
       error
-    );
+    });
   }
   return resolved;
 }
@@ -111,9 +111,9 @@ export async function registerOnshapeWebhook(
 ): Promise<OnshapeWebhookResult> {
   const onshape = await onshapeClientForCompany(companyId);
   if (onshape.error || !onshape.client) {
-    console.error(
-      "onshape: could not build client; skipping webhook registration",
-      onshape.error
+    logger.error(
+      "Could not build Onshape client; skipping webhook registration",
+      { companyId, error: onshape.error }
     );
     return { ok: false, error: onshape.error ?? "no client" };
   }
@@ -135,8 +135,9 @@ export async function registerOnshapeWebhook(
       onshape.client
     );
     if (!onshapeCompanyId) {
-      console.error(
-        "onshape: could not resolve Onshape company id; skipping webhook registration"
+      logger.error(
+        "Could not resolve Onshape company id; skipping webhook registration",
+        { companyId }
       );
       return { ok: false, error: "could not resolve Onshape company id" };
     }
@@ -145,10 +146,10 @@ export async function registerOnshapeWebhook(
       events: ["onshape.revision.created"],
       companyId: onshapeCompanyId
     });
-    console.log(`onshape: registered release webhook for company ${companyId}`);
+    logger.info("Registered Onshape release webhook", { companyId });
     return { ok: true };
   } catch (error) {
-    console.error("onshape: webhook registration failed", error);
+    logger.error("Onshape webhook registration failed", { companyId, error });
     return webhookFailure(error);
   }
 }
@@ -159,10 +160,10 @@ export async function deregisterOnshapeWebhooks(
 ): Promise<OnshapeWebhookResult> {
   const onshape = await onshapeClientForCompany(companyId);
   if (onshape.error || !onshape.client) {
-    console.error(
-      "onshape: could not build client; skipping webhook cleanup",
-      onshape.error
-    );
+    logger.error("Could not build Onshape client; skipping webhook cleanup", {
+      companyId,
+      error: onshape.error
+    });
     return { ok: false, error: onshape.error ?? "no client" };
   }
   const path = callbackPath(companyId);
@@ -174,12 +175,13 @@ export async function deregisterOnshapeWebhooks(
     for (const webhook of ours) {
       await onshape.client.deleteWebhook(webhook.id);
     }
-    console.log(
-      `onshape: deregistered ${ours.length} webhook(s) for company ${companyId}`
-    );
+    logger.info("Deregistered Onshape webhooks", {
+      companyId,
+      count: ours.length
+    });
     return { ok: true };
   } catch (error) {
-    console.error("onshape: webhook deregistration failed", error);
+    logger.error("Onshape webhook deregistration failed", { companyId, error });
     return webhookFailure(error);
   }
 }
@@ -221,7 +223,7 @@ export function onshapeHealthcheck(integrationId: OnshapeOAuthIntegrationId) {
         integrationId
       );
       if (!onshape.client) {
-        logger.warn("Onshape healthcheck: no client", {
+        logger.warning("Onshape healthcheck: no client", {
           companyId,
           integrationId,
           error: onshape.error
@@ -231,7 +233,7 @@ export function onshapeHealthcheck(integrationId: OnshapeOAuthIntegrationId) {
       await onshape.client.getCompanies();
       return true;
     } catch (error) {
-      logger.warn("Onshape healthcheck: request failed", {
+      logger.warning("Onshape healthcheck: request failed", {
         companyId,
         integrationId,
         error

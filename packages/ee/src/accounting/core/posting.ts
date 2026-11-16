@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { getLogger } from "@carbon/logger";
 import type z from "zod";
 import {
   asCarbonOwnedSettings,
@@ -16,6 +17,8 @@ import {
   PostingSyncSettingsSchema
 } from "./models";
 import type { Accounting } from "./types";
+
+const logger = getLogger("ee", "accounting");
 
 export type JournalLineDimensionRef = z.infer<
   typeof JournalEntryLineDimensionSchema
@@ -63,10 +66,9 @@ export function resolvePostingSyncSettings(
 
   const parsed = PostingSyncSettingsSchema.safeParse(fragment);
   if (!parsed.success) {
-    console.warn(
-      "Ignoring invalid stored postingSync settings:",
-      parsed.error.issues
-    );
+    logger.warning("Ignoring invalid stored postingSync settings", {
+      issues: parsed.error.issues
+    });
     return { ...DEFAULT_POSTING_SYNC_SETTINGS };
   }
 

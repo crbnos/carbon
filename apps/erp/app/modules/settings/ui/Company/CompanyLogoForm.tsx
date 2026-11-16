@@ -10,18 +10,12 @@ import {
   prepareImageUpload
 } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
-import {
-  Avatar,
-  Button,
-  cn,
-  File as FileUpload,
-  HStack,
-  toast,
-  VStack
-} from "@carbon/react";
+import { Button, cn, HStack, toast, VStack } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import type { ChangeEvent } from "react";
+import { useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { LuUpload } from "react-icons/lu";
 import { useSubmit } from "react-router";
 import type { Company } from "~/modules/settings/types";
 import { path } from "~/utils/path";
@@ -62,6 +56,7 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
   const { t } = useLingui();
   const { carbon } = useCarbon();
   const submit = useSubmit();
+  const [isUploading, setIsUploading] = useState(false);
 
   const isIcon = target === "logoLightIcon" || target === "logoDarkIcon";
   const isDark = target === "logoDark" || target === "logoDarkIcon";
@@ -79,89 +74,107 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
 
   const currentLogoPath = company[target] ?? null;
 
-  const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && carbon) {
-      let logo = e.target.files[0];
+  const uploadImage = async (file: File) => {
+    if (!carbon) return;
+    let logo = file;
 
-      // Windows often reports no MIME type for .heic, so also match by name.
+    // Windows often reports no MIME type for .heic, so also match by name.
+    if (
+      !IMAGE_UPLOAD_MIME_TYPES.includes(logo.type) &&
+      !isHeic(logo.name, logo.type)
+    ) {
+      toast.error(
+        t`File type not supported. Please use JPG, PNG, WebP, GIF, or HEIC.`
+      );
+      return;
+    }
+
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    if (logo.size > maxSizeBytes) {
+      toast.error(
+        t`File size exceeds ${maxSizeMB}MB limit. Current size: ${(
+          logo.size / 1024 / 1024
+        ).toFixed(2)}MB`
+      );
+      return;
+    }
+
+    try {
+      const processed = await prepareImageUpload(carbon, {
+        bucket: getCompanyPrivateBucket(company.id ?? ""),
+        directory: `${company.id}/tmp`,
+        file: logo,
+        height: resizeHeight
+      });
+      logo = new File([processed], `logo.${processed.name.split(".").pop()}`, {
+        type: processed.type
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      logger.error("Image resize error", { error });
+      toast.error(t`Failed to resize image: ${errorMessage}`);
+      return;
+    }
+
+    const previousStoragePath = toStoragePath(currentLogoPath);
+    const logoPath = getLogoPath(logo);
+
+    const imageUpload = await carbon.storage
+      .from("public")
+      .upload(logoPath, logo, {
+        cacheControl: "0",
+        upsert: true
+      });
+
+    if (imageUpload.error) {
+      const errorMessage = imageUpload.error.message || "Unknown error";
+      logger.error("Upload error", { error: imageUpload.error });
+      toast.error(t`Failed to upload logo: ${errorMessage}`);
+      return;
+    }
+
+    if (imageUpload.data?.path) {
       if (
-        !IMAGE_UPLOAD_MIME_TYPES.includes(logo.type) &&
-        !isHeic(logo.name, logo.type)
+        previousStoragePath &&
+        previousStoragePath !== imageUpload.data.path
       ) {
-        toast.error(
-          t`File type not supported. Please use JPG, PNG, WebP, GIF, or HEIC.`
-        );
-        return;
-      }
-
-      const maxSizeBytes = maxSizeMB * 1024 * 1024;
-      if (logo.size > maxSizeBytes) {
-        toast.error(
-          t`File size exceeds ${maxSizeMB}MB limit. Current size: ${(
-            logo.size / 1024 / 1024
-          ).toFixed(2)}MB`
-        );
-        return;
-      }
-
-      try {
-        const processed = await prepareImageUpload(carbon, {
-          bucket: getCompanyPrivateBucket(company.id ?? ""),
-          directory: `${company.id}/tmp`,
-          file: logo,
-          height: resizeHeight
-        });
-        logo = new File(
-          [processed],
-          `logo.${processed.name.split(".").pop()}`,
-          {
-            type: processed.type
-          }
-        );
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        logger.error("Image resize error", { error });
-        toast.error(t`Failed to resize image: ${errorMessage}`);
-        return;
-      }
-
-      const previousStoragePath = toStoragePath(currentLogoPath);
-      const logoPath = getLogoPath(logo);
-
-      const imageUpload = await carbon.storage
-        .from("public")
-        .upload(logoPath, logo, {
-          cacheControl: "0",
-          upsert: true
-        });
-
-      if (imageUpload.error) {
-        const errorMessage = imageUpload.error.message || "Unknown error";
-        logger.error("Upload error", { error: imageUpload.error });
-        toast.error(t`Failed to upload logo: ${errorMessage}`);
-        return;
-      }
-
-      if (imageUpload.data?.path) {
-        if (
-          previousStoragePath &&
-          previousStoragePath !== imageUpload.data.path
-        ) {
-          await carbon.storage
-            .from("public")
-            .remove([previousStoragePath])
-            .catch((cleanupError) => {
-              logger.warning("Old logo cleanup failed", {
-                error: cleanupError
-              });
+        await carbon.storage
+          .from("public")
+          .remove([previousStoragePath])
+          .catch((cleanupError) => {
+            logger.warning("Old logo cleanup failed", {
+              error: cleanupError
             });
-        }
-        toast.success(t`Logo uploaded successfully`);
-        submitLogoUrl(imageUpload.data.path);
+          });
       }
+      toast.success(t`Logo uploaded successfully`);
+      submitLogoUrl(imageUpload.data.path);
     }
   };
+
+  const onDrop = async (files: File[]) => {
+    const [file] = files;
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      await uploadImage(file);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // No `accept` option: it would also filter drops, and Windows reports no
+  // MIME type for HEIC, so uploadImage checks the type itself. The picker
+  // still gets `accept="image/*"` through getInputProps. The preview is a
+  // pointer-only target (no tab stop); the Upload button is the keyboard path
+  // to the same picker.
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+    onDrop,
+    multiple: false,
+    noKeyboard: true,
+    disabled: isUploading
+  });
 
   const deleteImage = async () => {
     if (carbon && currentLogoPath) {
@@ -195,14 +208,23 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
 
   const altText = `${company.name} Logo`;
 
-  return isIcon ? (
+  return (
     <VStack className="items-center py-4" spacing={4}>
       <div
+        {...getRootProps()}
         className={cn(
-          "flex items-center justify-center h-[156px] w-[156px] rounded-lg overflow-hidden",
-          isDark ? "bg-black text-white" : "bg-zinc-200/90 text-black"
+          "flex items-center justify-center h-[156px] rounded-lg overflow-hidden transition-[box-shadow,opacity]",
+          isIcon ? "w-[156px]" : "w-full border border-input",
+          isDark
+            ? cn(isIcon ? "bg-black" : "bg-black/90", "text-white")
+            : "bg-zinc-200/90 text-black",
+          isUploading
+            ? "cursor-wait opacity-60"
+            : "cursor-pointer hover:ring-2 hover:ring-primary/40",
+          isDragActive && "ring-2 ring-primary"
         )}
       >
+        <input {...getInputProps({ accept: "image/*" })} />
         {currentLogoPath ? (
           <img
             alt={altText}
@@ -210,49 +232,28 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
             className="max-h-full max-w-full object-contain rounded-lg"
           />
         ) : (
-          <Avatar name={company?.name ?? undefined} size="2xl" />
-        )}
-      </div>
-
-      <HStack spacing={2}>
-        <FileUpload accept="image/*" onChange={uploadImage}>
-          {currentLogoPath ? <Trans>Change</Trans> : <Trans>Upload</Trans>}
-        </FileUpload>
-
-        {currentLogoPath && (
-          <Button variant="secondary" onClick={deleteImage}>
-            <Trans>Remove</Trans>
-          </Button>
-        )}
-      </HStack>
-    </VStack>
-  ) : (
-    <VStack className="items-center py-4" spacing={4}>
-      <div
-        className={cn(
-          "flex items-center justify-center w-full h-[156px] rounded-lg border border-input overflow-hidden",
-          isDark ? "bg-black/90 text-white" : "bg-zinc-200/90 text-black"
-        )}
-      >
-        {currentLogoPath ? (
-          <img
-            alt={altText}
-            src={currentLogoPath}
-            className="max-h-full max-w-full object-contain rounded-lg"
-          />
-        ) : (
-          <p className="font-mono uppercase text-sm">
+          <p className="font-mono uppercase text-sm text-center px-2">
             <Trans>No logo uploaded</Trans>
           </p>
         )}
       </div>
+
       <HStack spacing={2}>
-        <FileUpload accept="image/*" onChange={uploadImage}>
+        <Button
+          variant={currentLogoPath ? "secondary" : "primary"}
+          leftIcon={<LuUpload />}
+          isLoading={isUploading}
+          onClick={open}
+        >
           {currentLogoPath ? <Trans>Change</Trans> : <Trans>Upload</Trans>}
-        </FileUpload>
+        </Button>
 
         {currentLogoPath && (
-          <Button variant="secondary" onClick={deleteImage}>
+          <Button
+            variant="secondary"
+            isDisabled={isUploading}
+            onClick={deleteImage}
+          >
             <Trans>Remove</Trans>
           </Button>
         )}

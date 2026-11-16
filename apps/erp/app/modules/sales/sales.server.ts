@@ -1627,7 +1627,7 @@ export const acceptDigitalQuote = defineServiceFn({
       );
     }
     if (gate.check.violations.length > 0) {
-      logger.warn("Digital quote accepted with sales rule warnings", {
+      logger.warning("Digital quote accepted with sales rule warnings", {
         quoteId,
         companyId,
         violations: gate.check.violations
@@ -5411,7 +5411,7 @@ export const classifyRentalUnit = defineServiceFn({
         }
       ]);
     } catch (err) {
-      logger.warn("audit write skipped for a classification override", {
+      logger.warning("audit write skipped for a classification override", {
         error: err
       });
     }

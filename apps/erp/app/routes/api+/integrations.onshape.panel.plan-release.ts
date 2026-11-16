@@ -275,7 +275,7 @@ export async function action({ request }: ActionFunctionArgs) {
           bom: describeBomPayload(bom)
         };
         unreadBoms.push(unread);
-        logger.warn("Onshape BOM is missing required columns", {
+        logger.warning("Onshape BOM is missing required columns", {
           companyId,
           releaseId,
           onshapeApi: onshape.client.apiOrigin,
@@ -453,11 +453,14 @@ export async function action({ request }: ActionFunctionArgs) {
     )
   );
   if (locks.error !== null) {
-    logger.warn("Couldn't read the change notices holding reused revisions", {
-      companyId,
-      releaseId,
-      error: locks.error
-    });
+    logger.warning(
+      "Couldn't read the change notices holding reused revisions",
+      {
+        companyId,
+        releaseId,
+        error: locks.error
+      }
+    );
   }
   const plan = {
     ...built,

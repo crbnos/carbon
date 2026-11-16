@@ -21,6 +21,8 @@ import { loadListPage } from "~/utils/list-registry/load.server";
 import { employeeAccountsList } from "~/utils/list-registry/users.server";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "users");
+
 export const handle: Handle = {
   breadcrumb: msg`Employees`,
   to: path.to.employeeAccounts
@@ -39,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ]);
 
       if (mfaUsers.error) {
-        getLogger("users").error("Failed to load MFA status for employees", {
+        logger.error("Failed to load MFA status for employees", {
           error: mfaUsers.error,
           companyId
         });

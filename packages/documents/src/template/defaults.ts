@@ -478,7 +478,7 @@ function labelBlocks(): DocumentBlock[] {
       type: "labelBarcode",
       visible: true,
       symbology: "qrcode",
-      value: "{label.trackedEntityId}",
+      value: "{label.travelerUrl}",
       placement: "right"
     },
     {

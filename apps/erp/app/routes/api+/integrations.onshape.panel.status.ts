@@ -158,7 +158,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         missingColumns,
         bom: describeBomPayload(bom)
       };
-      logger.warn("Onshape BOM is missing required columns", {
+      logger.warning("Onshape BOM is missing required columns", {
         companyId,
         ...diagnostics
       });

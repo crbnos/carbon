@@ -947,6 +947,9 @@ msgstr "{counted} counted"
 msgid "{created} created, {updated} updated."
 msgstr "{created} created, {updated} updated."
 
+msgid "{created} created."
+msgstr "{created} created."
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -1239,6 +1242,9 @@ msgstr "{received} of {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} not found"
+
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
 msgstr "{rejectedQuantity} will stay held as rejected."
@@ -1680,6 +1686,12 @@ msgstr "A closed project takes no more charges and cannot be reopened. Close it 
 
 msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 msgstr "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+msgstr "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
+msgstr "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
@@ -4045,6 +4057,9 @@ msgstr "An open-ended lease can be ended on notice, so it is a short-term lease.
 
 msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
 msgstr "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
+
+msgid "An operation cannot complete until every serial and batch part on it is issued."
+msgstr "An operation cannot complete until every serial and batch part on it is issued."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
@@ -7647,6 +7662,9 @@ msgstr "Completes to fixed asset class {0}"
 msgid "Completing"
 msgstr "Completing"
 
+msgid "Completing a job's first operation prints its unit labels."
+msgstr "Completing a job's first operation prints its unit labels."
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "Completing this training grants or renews the selected ability."
 
@@ -8153,6 +8171,9 @@ msgstr "Control design changes with revisions / ECOs"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Control how operators pick material and track time on the shop floor."
+
+msgid "Control how parts and labels move from the pick to the finished unit."
+msgstr "Control how parts and labels move from the pick to the finished unit."
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
@@ -8740,6 +8761,9 @@ msgstr "Couldn't complete the Onshape connection"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Couldn't complete the Onshape Government connection"
 
+msgid "Couldn't complete the Onshape V2 Government connection"
+msgstr "Couldn't complete the Onshape V2 Government connection"
+
 msgid "Couldn't confirm the account"
 msgstr "Couldn't confirm the account"
 
@@ -8772,6 +8796,9 @@ msgstr "Couldn't save the Onshape connection"
 
 msgid "Couldn't save the Onshape Government connection"
 msgstr "Couldn't save the Onshape Government connection"
+
+msgid "Couldn't save the Onshape V2 Government connection"
+msgstr "Couldn't save the Onshape V2 Government connection"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Couldn't save the Ramp connection"
@@ -8957,6 +8984,9 @@ msgstr "Create new rule"
 
 msgid "Create Operator"
 msgstr "Create Operator"
+
+msgid "Create picking lists on release"
+msgstr "Create picking lists on release"
 
 msgid "Create PO Line"
 msgstr "Create PO Line"
@@ -11561,6 +11591,9 @@ msgstr "Each period is one month, for the month rate."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
+
+msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
+msgstr "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
@@ -16740,6 +16773,9 @@ msgstr "Label to start the next operation for this kanban"
 msgid "Labels"
 msgstr "Labels"
 
+msgid "Labels print at the first operation"
+msgstr "Labels print at the first operation"
+
 msgid "Labor"
 msgstr "Labor"
 
@@ -17295,6 +17331,9 @@ msgstr "Line detail"
 msgid "Line Details"
 msgstr "Line Details"
 
+msgid "Line Flow"
+msgstr "Line Flow"
+
 msgid "Line Item"
 msgstr "Line Item"
 
@@ -17535,6 +17574,9 @@ msgstr "Location Change"
 
 msgid "Location Name"
 msgstr "Location Name"
+
+msgid "Location not known"
+msgstr "Location not known"
 
 msgid "Location ownership updated"
 msgstr "Location ownership updated"
@@ -19008,6 +19050,14 @@ msgstr "Net Investment in Leases"
 
 msgid "Net Investment in Leases (default)"
 msgstr "Net Investment in Leases (default)"
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already paid as a prepayment."
+msgstr "Net of {0} already paid as a prepayment."
+
+#. placeholder {0}: currencyFormatter.format(heldAdvance)
+msgid "Net of {0} already received as a deposit."
+msgstr "Net of {0} already received as a deposit."
 
 msgid "Net right-of-use asset"
 msgstr "Net right-of-use asset"
@@ -21391,6 +21441,24 @@ msgstr "Onshape rejected the authorization"
 msgid "Onshape Status"
 msgstr "Onshape Status"
 
+msgid "Onshape V2 Government denied the connection"
+msgstr "Onshape V2 Government denied the connection"
+
+msgid "Onshape V2 Government didn't return an authorization code"
+msgstr "Onshape V2 Government didn't return an authorization code"
+
+msgid "Onshape V2 Government is already connected"
+msgstr "Onshape V2 Government is already connected"
+
+msgid "Onshape V2 Government isn't configured"
+msgstr "Onshape V2 Government isn't configured"
+
+msgid "Onshape V2 Government rejected the authorization"
+msgstr "Onshape V2 Government rejected the authorization"
+
+msgid "Onshape V2 is already connected"
+msgstr "Onshape V2 is already connected"
+
 msgid "Onshape version"
 msgstr "Onshape version"
 
@@ -21578,6 +21646,9 @@ msgstr "Open the books at a cutover date. Enabling accounting is one-way."
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Open the Onshape Government integration and save its settings to connect again."
 
+msgid "Open the Onshape V2 Government integration and save its settings to connect again."
+msgstr "Open the Onshape V2 Government integration and save its settings to connect again."
+
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Open the Ramp integration and try connecting again to finish setup."
 
@@ -21740,6 +21811,9 @@ msgstr "Operators"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Operators can use shared workstations with PIN authentication."
+
+msgid "Operators see a warning about unissued serial and batch parts and can still complete."
+msgstr "Operators see a warning about unissued serial and batch parts and can still complete."
 
 msgid "Operators start on the Scan tab"
 msgstr "Operators start on the Scan tab"
@@ -22773,6 +22847,15 @@ msgstr "Picking List Notes"
 msgid "Picking Lists"
 msgstr "Picking Lists"
 
+msgid "Picking lists are created by hand"
+msgstr "Picking lists are created by hand"
+
+msgid "Picking lists on release disabled"
+msgstr "Picking lists on release disabled"
+
+msgid "Picking lists on release enabled"
+msgstr "Picking lists on release enabled"
+
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 
@@ -23353,6 +23436,9 @@ msgstr "Print label"
 msgid "Print Label"
 msgstr "Print Label"
 
+msgid "Print label on completion"
+msgstr "Print label on completion"
+
 msgid "Print Labels"
 msgstr "Print Labels"
 
@@ -23363,6 +23449,12 @@ msgstr "Print Labels ({0})"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Print Output ({0})"
+
+msgid "Print this item's serial label when its job's last operation completes."
+msgstr "Print this item's serial label when its job's last operation completes."
+
+msgid "Print travelers at the pick"
+msgstr "Print travelers at the pick"
 
 msgid "Printed on every Certificate of Conformance"
 msgstr "Printed on every Certificate of Conformance"
@@ -24222,6 +24314,10 @@ msgstr "Quantity shipped"
 
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "Quantity to credit for line {lineNumber}"
+
+#. placeholder {0}: item?.name ?? ""
+msgid "Quantity to pick of {0}"
+msgstr "Quantity to pick of {0}"
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "Quantity to return for {itemReadableId}"
@@ -25117,6 +25213,9 @@ msgstr "Released with problems: {0}"
 msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
 msgstr "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
 
+msgid "Releasing a job creates its picking list"
+msgstr "Releasing a job creates its picking list"
+
 msgid "Releasing a job for this customer creates first article inspections for parts that need one."
 msgstr "Releasing a job for this customer creates first article inspections for parts that need one."
 
@@ -25683,6 +25782,9 @@ msgstr "Require staffing at {0}"
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 
+msgid "Require tracked parts before completion"
+msgstr "Require tracked parts before completion"
+
 msgid "Require two-factor authentication"
 msgstr "Require two-factor authentication"
 
@@ -25709,6 +25811,12 @@ msgstr "Required Date"
 
 msgid "Required in a controlled environment — audit logging cannot be turned off."
 msgstr "Required in a controlled environment — audit logging cannot be turned off."
+
+msgid "Required tracked parts disabled"
+msgstr "Required tracked parts disabled"
+
+msgid "Required tracked parts enabled"
+msgstr "Required tracked parts enabled"
 
 msgid "Requirement"
 msgstr "Requirement"
@@ -25745,6 +25853,12 @@ msgstr "Requires Repair"
 
 msgid "Requires staffing"
 msgstr "Requires staffing"
+
+msgid "Reschedule from today"
+msgstr "Reschedule from today"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "Reschedule from today, due {rescheduledDue}"
 
 msgid "Reschedule tolerance"
 msgstr "Reschedule tolerance"
@@ -29031,6 +29145,9 @@ msgstr "Started"
 msgid "Starting"
 msgstr "Starting"
 
+msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
+msgstr "Starting a picking list prints one traveler per unit. The first operation prints no label."
+
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -29164,6 +29281,9 @@ msgstr "Stock"
 
 msgid "Stock and planning"
 msgstr "Stock and planning"
+
+msgid "Stock at:"
+msgstr "Stock at:"
 
 msgid "Stock Availability"
 msgstr "Stock Availability"
@@ -31279,6 +31399,9 @@ msgstr "The Onshape connection expired"
 msgid "The Onshape Government connection expired"
 msgstr "The Onshape Government connection expired"
 
+msgid "The Onshape V2 Government connection expired"
+msgstr "The Onshape V2 Government connection expired"
+
 #. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."
 msgstr "The opening balances are as of the end of {0}."
@@ -32979,6 +33102,12 @@ msgstr "Tracked entity ID, serial, or batch"
 msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 msgstr "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 
+msgid "Tracked parts are not required"
+msgstr "Tracked parts are not required"
+
+msgid "Tracked parts must be scanned in"
+msgstr "Tracked parts must be scanned in"
+
 msgid "Tracking"
 msgstr "Tracking"
 
@@ -33102,6 +33231,15 @@ msgstr "Trash"
 msgid "Travel"
 msgstr "Travel"
 
+msgid "Traveler labels disabled"
+msgstr "Traveler labels disabled"
+
+msgid "Traveler labels enabled"
+msgstr "Traveler labels enabled"
+
+msgid "Traveler Link"
+msgstr "Traveler Link"
+
 msgid "Traveler materials disabled"
 msgstr "Traveler materials disabled"
 
@@ -33113,6 +33251,9 @@ msgstr "Traveler operations disabled"
 
 msgid "Traveler operations enabled"
 msgstr "Traveler operations enabled"
+
+msgid "Travelers print at the pick"
+msgstr "Travelers print at the pick"
 
 msgid "Treatment"
 msgstr "Treatment"
@@ -33167,6 +33308,9 @@ msgstr "Turn on government contracting"
 
 msgid "Turn on the built-in pieces"
 msgstr "Turn on the built-in pieces"
+
+msgid "Turn on to create one picking list for each job when it is released."
+msgstr "Turn on to create one picking list for each job when it is released."
 
 msgid "Turned off sync"
 msgstr "Turned off sync"

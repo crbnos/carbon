@@ -26,7 +26,8 @@ import type {
   getStockTransfers,
   getTrackedEntities,
   getWarehouseTransferLines,
-  getWarehouseTransfers
+  getWarehouseTransfers,
+  PickingListLiveBin
 } from "./inventory.service";
 import type {
   getReceiptTracking,
@@ -157,7 +158,10 @@ export type StockTransfer = NonNullable<
 
 export type StockTransferLine = NonNullable<
   Awaited<ReturnType<typeof getStockTransferLines>>["data"]
->[number];
+>[number] & {
+  /** The bins that hold the line's stock now (the transfer page loads them). */
+  liveStorageUnits?: PickingListLiveBin[];
+};
 
 export type TrackedEntity = NonNullable<
   Awaited<ReturnType<typeof getTrackedEntities>>["data"]

@@ -35,6 +35,7 @@ import {
   getThumbnailPathByItemId,
   getTrackedEntitiesForOperation,
   getWorkCenter,
+  isFirstOpenOperationOfMakeMethod,
   isFirstOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
@@ -92,6 +93,15 @@ export const handle: Handle = {
       table: "pickingListLine",
       filter: ({ data }) =>
         data?.batch || !data?.job?.id ? undefined : `jobId=eq.${data?.job?.id}`
+    },
+    {
+      // Stock of the job's parts placed in, or taken from, a bin while the
+      // operation is open: the Source column shows where it is now.
+      table: "itemLedger",
+      filter: ({ data }) => {
+        const itemIds: string[] = data?.materialItemIds ?? [];
+        return itemIds.length ? `itemId=in.(${itemIds.join(",")})` : false;
+      }
     }
   ]
 };
@@ -132,7 +142,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null
   ]);
   if (!ownedOperation.data || (ownedEntity && !ownedEntity.data)) {
-    logger.warn("Operation or tracked entity not found in company", {
+    logger.warning("Operation or tracked entity not found in company", {
       companyId,
       operationId,
       trackedEntityId,
@@ -199,7 +209,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     abilityWarning,
     isFirstOperation,
     openFirstArticles,
-    firstArticlePlansMissingForJob
+    firstArticlePlansMissingForJob,
+    isFirstOpenOperation,
+    materialItems
   ] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
       operationId,
@@ -248,7 +260,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
       : false,
     getOpenFirstArticleInspectionsForJob(serviceRole, jobId, companyId),
-    getFirstArticlePlansMissingForJob(serviceRole, { jobId, companyId })
+    getFirstArticlePlansMissingForJob(serviceRole, { jobId, companyId }),
+    jobMakeMethodId
+      ? isFirstOpenOperationOfMakeMethod(
+          serviceRole,
+          companyId,
+          operationId,
+          jobMakeMethodId
+        )
+      : false,
+    // Only the ids: the realtime filter above needs them before the deferred
+    // materials read resolves.
+    serviceRole
+      .from("jobMaterial")
+      .select("itemId")
+      .eq("jobId", jobId)
+      .eq("companyId", companyId)
   ]);
 
   if (job.error) {
@@ -274,7 +301,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const op = operation.data?.[0];
   if (!op) {
-    logger.warn("Operation not found after the ownership check", {
+    logger.warning("Operation not found after the ownership check", {
       companyId,
       operationId
     });
@@ -316,17 +343,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // A partial read (members or planned lots missing) refuses too: the
     // completion form must not run on lots it could not read.
     if (!batchResult.data || batchResult.error) {
-      logger.error("Failed to read the operation's batch", {
-        companyId,
-        operationId,
-        batchId,
-        error: batchResult.error
-      });
       throw redirect(
         path.to.operations,
         await flash(
           request,
-          error(batchResult.error, "Failed to load the operation's batch")
+          error(batchResult.error, "Failed to load the operation's batch", {
+            operationId,
+            batchId
+          })
         )
       );
     }
@@ -390,6 +414,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     inventoryShelfLife?.expiredEntityPolicy ?? "Block";
   const autoSelectMaterialWithoutPickingList =
     companySettings.data?.autoSelectMaterialWithoutPickingList ?? false;
+  const requireTrackedMaterialsIssued =
+    companySettings.data?.requireTrackedMaterialsIssued ?? false;
 
   // Is this the first operation in the routing? A serial unit only earns a
   // printed label when it is completed at its first operation, so:
@@ -436,6 +462,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       { scrap: 0, production: 0, rework: 0 }
     ),
     job: job.data,
+    materialItemIds: [
+      ...new Set((materialItems.data ?? []).map((row) => row.itemId))
+    ],
     jobMakeMethod: jobMakeMethod?.data ?? null,
     kanban: kanban.data,
     files: getJobFiles(serviceRole, companyId, job.data, operation.data),
@@ -460,6 +489,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
     trackedEntities: trackedEntities?.data ?? [],
     isFirstOperation,
+    isFirstOpenOperation,
+    requireTrackedMaterialsIssued,
     nonConformanceActions: getNonConformanceActions(serviceRole, {
       itemId: operation.data?.[0].itemId,
       processId: operation.data?.[0].processId,
@@ -514,6 +545,8 @@ export default function OperationRoute() {
     correctionName,
     trackedEntities,
     isFirstOperation,
+    isFirstOpenOperation,
+    requireTrackedMaterialsIssued,
     workCenter,
     nonConformanceActions
   } = useLoaderData<typeof loader>();
@@ -538,6 +571,8 @@ export default function OperationRoute() {
       method={jobMakeMethod}
       trackedEntities={trackedEntities}
       isFirstOperation={isFirstOperation}
+      isFirstOpenOperation={isFirstOpenOperation}
+      requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
       nonConformanceActions={nonConformanceActions}
       operation={operation}
       procedure={procedure}

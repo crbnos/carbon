@@ -10,6 +10,7 @@ import {
   valuateMeasurement
 } from "@carbon/database/inspection-verdict";
 import type { RevaluatedDependentMeasurement } from "@carbon/database/quality";
+import { getLogger } from "@carbon/logger";
 import type {
   InspectionParameter,
   InspectionPlanTab,
@@ -76,6 +77,8 @@ import type {
 } from "~/services/types";
 import { path } from "~/utils/path";
 import InspectionGaugePicker from "./InspectionGaugePicker";
+
+const logger = getLogger("mes", "inspection");
 
 // A cell save's response payload (the measurement action returns it so the
 // matrix can update without a revalidation roundtrip). Same contract as the
@@ -532,7 +535,13 @@ const InspectionMeasurementMatrix = ({
       const response = await fetch(
         path.to.inspectionMeasurement(inspectionId),
         { method: "post", body: formData }
-      ).catch(() => null);
+      ).catch((error) => {
+        logger.warning("Failed to send the measurement", {
+          inspectionId,
+          error
+        });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         data?: {
           sampleId: string;
@@ -595,7 +604,10 @@ const InspectionMeasurementMatrix = ({
       const response = await fetch(path.to.inspectionSample(inspectionId), {
         method: "post",
         body: formData
-      }).catch(() => null);
+      }).catch((error) => {
+        logger.warning("Failed to send the sample", { inspectionId, error });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         sampleId?: string;
         error?: { message: string } | null;
@@ -1162,7 +1174,14 @@ const InspectionMeasurementMatrix = ({
           const response = await fetch(path.to.inspectionGauge(inspectionId), {
             method: "post",
             body: formData
-          }).catch(() => null);
+          }).catch((error) => {
+            logger.warning("Failed to send the gauge", {
+              inspectionId,
+              featureId,
+              error
+            });
+            return null;
+          });
           const body = (await response?.json().catch(() => null)) as {
             error?: { message: string } | null;
           } | null;

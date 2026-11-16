@@ -104,12 +104,13 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (updateIssueWorkflow.error) {
-    logger.error(updateIssueWorkflow.error);
     return data(
       {},
       await flash(
         request,
-        error(updateIssueWorkflow.error, "Failed to update issue workflow")
+        error(updateIssueWorkflow.error, "Failed to update issue workflow", {
+          id
+        })
       )
     );
   }

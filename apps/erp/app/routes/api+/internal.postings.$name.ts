@@ -35,12 +35,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Checked before the body is read, so a request with no signature never
   // has its body buffered.
   if (!readInternalCallHeaders(name, request.headers)) {
-    logger.warn("Refused an internal call with no valid signature", { name });
+    logger.warning("Refused an internal call with no valid signature", {
+      name
+    });
     return refuse(401, "Unauthorized");
   }
   const body = await readInternalCallBody(request);
   if (body === null) {
-    logger.warn("Refused an internal call with a body too large", { name });
+    logger.warning("Refused an internal call with a body too large", { name });
     return refuse(413, "The body is too large");
   }
 
@@ -51,7 +53,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     body
   );
   if (!call) {
-    logger.warn("Refused an internal call with no valid signature", { name });
+    logger.warning("Refused an internal call with no valid signature", {
+      name
+    });
     return refuse(401, "Unauthorized");
   }
 
@@ -62,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return refuse(400, "The body is not JSON");
   }
   if (!isMesPosting(name, input)) {
-    logger.warn("Refused an internal call MES does not make", {
+    logger.warning("Refused an internal call MES does not make", {
       name,
       companyId: call.companyId
     });
@@ -86,14 +90,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (fresh !== "OK") {
     const holder = await redis.get(nonceKey);
     if (holder !== null && holder !== claim) {
-      logger.warn("Refused a repeated internal call", {
+      logger.warning("Refused a repeated internal call", {
         name,
         companyId: call.companyId
       });
       return refuse(409, "This call was already made");
     }
     if (holder === null) {
-      logger.warn("Accepted an internal call without a replay check", {
+      logger.warning("Accepted an internal call without a replay check", {
         name,
         companyId: call.companyId
       });

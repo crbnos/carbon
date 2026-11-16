@@ -68,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
     failureModes.error ||
     (failureModes.data ?? []).length !== failureModeIds.length
   ) {
-    log.warn("Dispatch references records outside the company", {
+    log.warning("Dispatch references records outside the company", {
       companyId,
       workCenterId: validation.data.workCenterId,
       failureModeIds,

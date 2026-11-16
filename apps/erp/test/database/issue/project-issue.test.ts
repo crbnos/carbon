@@ -85,6 +85,26 @@ databaseTest(
       });
       expect(returned.error).toBeNull();
 
+      const excessReturn = await issue(f.ctx, {
+        type: "partToOperation",
+        id: job.operationId,
+        itemId,
+        materialId: job.materialId,
+        quantity: 3,
+        adjustmentType: "Positive Adjmt."
+      });
+      // A refusal the operator can act on: the MES shows only errors below 500.
+      expect(excessReturn.error?.status).toBeLessThan(500);
+      expect(excessReturn.error?.message).toBe(
+        "Cannot unissue more than the material's issued quantity"
+      );
+      const materialAfterRefusal = await f.db
+        .selectFrom("jobMaterial")
+        .select("quantityIssued")
+        .where("id", "=", job.materialId)
+        .executeTakeFirstOrThrow();
+      expect(materialAfterRefusal.quantityIssued).toBe(2);
+
       const ledger = await f.db
         .selectFrom("projectLedger")
         .select([
@@ -890,6 +910,71 @@ databaseTest(
       expect(relief.map((row) => [Number(row.cost), row.projectId])).toEqual([
         [-48, f.projectId],
         [-20, null]
+      ]);
+
+      // The job-completion backflush writes its draws with no operation. An
+      // unissue still returns them to the bins and stripes they came from.
+      await f.db
+        .updateTable("itemLedger")
+        .set({ documentLineId: null })
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .execute();
+
+      const returned = await issue(f.ctx, {
+        type: "partToOperation",
+        id: job.operationId,
+        itemId,
+        materialId: job.materialId,
+        quantity: 3,
+        adjustmentType: "Positive Adjmt."
+      });
+      expect(returned.error).toBeNull();
+      const returns = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .where("quantity", ">", 0)
+        .orderBy("quantity")
+        .execute();
+      expect(
+        returns.map((row) => [Number(row.quantity), row.projectId])
+      ).toEqual([
+        [1, f.projectId],
+        [2, null]
+      ]);
+
+      expect(
+        (await issue(f.ctx, {
+          type: "partToOperation",
+          id: job.operationId,
+          itemId,
+          materialId: job.materialId,
+          quantity: 1,
+          adjustmentType: "Positive Adjmt."
+        })).error
+      ).toBeNull();
+      const netIssues = await f.db
+        .selectFrom("itemLedger")
+        .select([
+          "projectId",
+          (eb) => eb.fn.sum<number>("quantity").as("quantity")
+        ])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .groupBy("projectId")
+        .execute();
+      expect(
+        netIssues
+          .map((row) => [row.projectId, Number(row.quantity)] as const)
+          .sort((a, b) => a[1] - b[1])
+      ).toEqual([
+        [f.projectId, -2],
+        [null, 0]
       ]);
     } finally {
       await f.cleanup();

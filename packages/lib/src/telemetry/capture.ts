@@ -185,7 +185,7 @@ export async function captureWorkEvent<E extends WorkEventName>(
     }
   } catch (err) {
     // Includes the abort. A lost measurement beats a failed action.
-    log.error("work event failed", { event, err });
+    log.error("work event failed", { event, error: err });
     return { sent: false, reason: "failed" };
   }
 }

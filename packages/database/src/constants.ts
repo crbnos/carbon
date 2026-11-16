@@ -679,6 +679,7 @@ export const Constants = {
       maintenanceSource: ["Scheduled", "Reactive", "Non-Conformance"],
       makeMethodStatus: ["Draft", "Active", "Archived"],
       materialCondition: ["RFS", "MMC", "LMC"],
+      materialRequestStatus: ["Open", "Resolved"],
       memoDirection: ["Credit", "Debit"],
       memoStatus: ["Draft", "Posted", "Voided"],
       methodOperationOrder: ["After Previous", "With Previous"],

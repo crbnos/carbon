@@ -21,8 +21,11 @@ interface UseKeyboardWedgeOptions {
    * removed from the field; an unmatched one stays in it.
    */
   inTextFields?: boolean;
-  /** A scan no wedge on the page accepted, made outside a text field. */
-  onUnrecognized?: (input: string) => void;
+  /**
+   * A scan no wedge on the page accepted, made outside a text field. A
+   * returned promise keeps the scan pending, as `callback` does.
+   */
+  onUnrecognized?: (input: string) => unknown;
 }
 
 /** A scanner types faster than this per key on average; a person never does. */
@@ -130,7 +133,7 @@ type Handler = Required<
   Pick<UseKeyboardWedgeOptions, "test" | "inTextFields">
 > & {
   callback: (input: string) => unknown;
-  onUnrecognized?: (input: string) => void;
+  onUnrecognized?: (input: string) => unknown;
 };
 
 // One reader for the page, however many wedges are mounted: the layout's and a
@@ -175,8 +178,8 @@ function swallow(event: KeyboardEvent | null) {
   event?.stopImmediatePropagation();
 }
 
-function run(handler: Handler, input: string) {
-  const result = handler.callback(input);
+/** Keeps the scan pending while a handler's returned promise runs. */
+function track(result: unknown) {
   if (!(result instanceof Promise)) return;
   setPending(true);
   const timeout = setTimeout(() => setPending(false), PENDING_TIMEOUT_MS);
@@ -212,7 +215,7 @@ function finish(event: KeyboardEvent | null) {
     if (!handler) continue;
     swallow(event);
     if (from?.field) restoreField(from.field, from.value);
-    run(handler, input);
+    track(handler.callback(input));
     return;
   }
 
@@ -221,7 +224,9 @@ function finish(event: KeyboardEvent | null) {
   if (!isScan || from?.inField) return;
   swallow(event);
   const [input] = candidates;
-  if (input) eligible.find((h) => h.onUnrecognized)?.onUnrecognized?.(input);
+  if (input) {
+    track(eligible.find((h) => h.onUnrecognized)?.onUnrecognized?.(input));
+  }
 }
 
 function handleKeyDown(event: KeyboardEvent) {

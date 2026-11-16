@@ -15007,7 +15007,7 @@ export async function previewAssetCapitalization(
   }
   throw new Error("Capitalization preview did not roll back");
 }
-const logger = getLogger("server-functions", "apply-account-import");
+const logger = getLogger("erp", "accounting", "apply-account-import");
 
 /** A trimmed, non-empty text value. */
 const text = () => z.string().trim().min(1);
@@ -21027,7 +21027,7 @@ export async function buildLegacyReturnShipmentJournals(
     )
   ];
 }
-const legacyJournalsLogger = getLogger("server-functions", "legacy-journals");
+const legacyJournalsLogger = getLogger("erp", "accounting", "legacy-journals");
 
 type Enums = Database["public"]["Enums"];
 
@@ -21163,7 +21163,7 @@ async function assertPeriodsOpen(
   if (!blocked) return;
   const name = formatPeriodLabel(blocked.startDate);
   const locked = blocked.closeStatus === "Locked" && blocked.closedAt === null;
-  legacyJournalsLogger.warn("Refused legacy journals in a closed period", {
+  legacyJournalsLogger.warning("Refused legacy journals in a closed period", {
     companyId,
     period: blocked.startDate,
     closeStatus: blocked.closeStatus
@@ -22471,7 +22471,8 @@ async function postRecostJournals(
   return posted;
 }
 const activateAccountingLogger = getLogger(
-  "server-functions",
+  "erp",
+  "accounting",
   "activate-accounting"
 );
 
@@ -22508,7 +22509,7 @@ export async function activateAccounting(
     .transaction()
     .execute(async (trx): Promise<ActivateAccountingResult> => {
       const refuse = (reason: string): never => {
-        activateAccountingLogger.warn("Refused the accounting enable", {
+        activateAccountingLogger.warning("Refused the accounting enable", {
           companyId,
           cutoverDate,
           reason
@@ -22847,7 +22848,8 @@ async function markIgnoredInvoicesPaid(
 }
 
 const journalLegacyDocumentsLogger = getLogger(
-  "server-functions",
+  "erp",
+  "accounting",
   "journal-legacy-documents"
 );
 
@@ -22886,14 +22888,19 @@ export async function repairLegacyJournals(
         .forUpdate("companySettings")
         .executeTakeFirst();
       if (!settings?.companyGroupId) {
-        journalLegacyDocumentsLogger.warn("Company not found", { companyId });
+        journalLegacyDocumentsLogger.warning("Company not found", {
+          companyId
+        });
         throw new NotFoundError("Company not found");
       }
       const cutoverDate = settings.cutover;
       if (!cutoverDate) {
-        journalLegacyDocumentsLogger.warn("Refused: accounting is not set up", {
-          companyId
-        });
+        journalLegacyDocumentsLogger.warning(
+          "Refused: accounting is not set up",
+          {
+            companyId
+          }
+        );
         throw new InvalidInputError(ACCOUNTING_NOT_STARTED);
       }
       const defaults = await trx

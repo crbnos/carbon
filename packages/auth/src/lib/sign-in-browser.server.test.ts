@@ -48,12 +48,12 @@ describe("sign-in browser without a shared DOMAIN", () => {
       DOMAIN: undefined,
       SESSION_SECRET: "test-session-secret"
     }));
-    const warn = vi.fn();
-    vi.doMock("@carbon/logger", () => ({ getLogger: () => ({ warn }) }));
+    const warning = vi.fn();
+    vi.doMock("@carbon/logger", () => ({ getLogger: () => ({ warning }) }));
     const unbound = await import("./sign-in-browser.server");
     expect(await unbound.isSignInBrowser(requestWith())).toBe(true);
     expect(await unbound.isSignInBrowser(requestWith())).toBe(true);
-    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warning).toHaveBeenCalledTimes(1);
     vi.doUnmock("../config/env");
     vi.doUnmock("@carbon/logger");
   });

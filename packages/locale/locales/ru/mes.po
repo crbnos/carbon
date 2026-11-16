@@ -63,6 +63,11 @@ msgstr "{0} ч"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} не имеет номера партии. Установите его в серии или производственном заказе в Carbon, затем завершите."
 
+#. placeholder {0}: result.unit.readableId
+#. placeholder {1}: result.unit.status
+msgid "{0} is {1}"
+msgstr ""
+
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} закрыто. Его время не может быть изменено."
@@ -168,6 +173,9 @@ msgstr "{hour} ч"
 
 msgid "{hours} h"
 msgstr "{hours} ч"
+
+msgid "{issued} of {required}"
+msgstr ""
 
 msgid "{label}, overdue"
 msgstr "{label}, просрочено"
@@ -280,9 +288,6 @@ msgstr "Меню действий"
 msgid "Active"
 msgstr "Активные"
 
-msgid "Actual"
-msgstr "Факт"
-
 msgid "Add"
 msgstr "Добавить"
 
@@ -355,6 +360,9 @@ msgstr "Добавлено"
 msgid "Adjustment Type"
 msgstr "Тип корректировки"
 
+msgid "Age"
+msgstr ""
+
 msgid "All"
 msgstr "Все"
 
@@ -388,6 +396,9 @@ msgstr "Распределить единицы"
 
 msgid "allowable {allowableLabel} (bonus {bonusLabel})"
 msgstr "допустимое {allowableLabel} (бонус {bonusLabel})"
+
+msgid "Any part"
+msgstr ""
 
 msgid "Appearance"
 msgstr "Внешний вид"
@@ -636,6 +647,13 @@ msgstr "Выбрать аватар"
 msgid "Choose how Carbon reaches you."
 msgstr "Выберите, как Carbon будет вас уведомлять."
 
+#. placeholder {0}: unit.readableId
+msgid "Choose the operation to issue {0} into"
+msgstr ""
+
+msgid "Choose the operation to open for this unit"
+msgstr ""
+
 msgid "Clear"
 msgstr "Очистить"
 
@@ -804,6 +822,12 @@ msgstr "Доработка: {correctionName}"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Себестоимость внепланового техобслуживания за последние {0} дней"
 
+msgid "Could not load the line feed"
+msgstr ""
+
+msgid "Could not look up this label. Try again."
+msgstr ""
+
 msgid "Country code"
 msgstr "Код страны"
 
@@ -858,9 +882,6 @@ msgstr "Уменьшить {fieldLabel}"
 
 msgid "Default"
 msgstr "По умолчанию"
-
-msgid "Default Storage Unit"
-msgstr "Единица хранения по умолчанию"
 
 msgid "Delete"
 msgstr "Удалить"
@@ -968,7 +989,7 @@ msgstr "Срок"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Срок {0}"
 
@@ -1052,9 +1073,6 @@ msgstr "Введите 6-значный код из приложения аут�
 msgid "Error"
 msgstr "Ошибка"
 
-msgid "Estimated"
-msgstr "План"
-
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "Каждый производственный заказ в серии следует этим шагам. Запишите шаг для всех одновременно."
 
@@ -1128,6 +1146,9 @@ msgstr "Не удалось записать средство измерения
 
 msgid "Failed to register passkey"
 msgstr "Не удалось зарегистрировать ключ доступа"
+
+msgid "Failed to resolve request"
+msgstr ""
 
 msgid "Failed to save measurement"
 msgstr "Не удалось сохранить измерение"
@@ -1325,6 +1346,9 @@ msgstr "В открытом меню"
 msgid "In Progress"
 msgstr "В работе"
 
+msgid "In stock: {available}. Still needed: {needed}."
+msgstr ""
+
 msgid "In warranty"
 msgstr "В гарантии"
 
@@ -1364,6 +1388,9 @@ msgstr "Недостаточное количество"
 msgid "Inventory"
 msgstr "Запасы"
 
+msgid "Inventory action"
+msgstr "Действие с запасами"
+
 msgid "Inventory adjustment completed"
 msgstr "Корректировка запасов выполнена"
 
@@ -1393,6 +1420,10 @@ msgstr "Списать в производство другой материал
 
 msgid "Issue Material"
 msgstr "Выдать материал"
+
+#. placeholder {0}: selected.operation.jobReadableId
+msgid "Issue to {0}"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "Тип проблемы"
@@ -1511,6 +1542,9 @@ msgstr "Светлая, тёмная или согласно параметра�
 msgid "Line"
 msgstr "Строка"
 
+msgid "Line feed"
+msgstr ""
+
 msgid "lines"
 msgstr "строки"
 
@@ -1540,6 +1574,9 @@ msgstr "Локально"
 
 msgid "Location"
 msgstr "Расположение"
+
+msgid "Location not known"
+msgstr "Неизвестное местоположение"
 
 msgid "Locations"
 msgstr "Площадки"
@@ -1638,6 +1675,9 @@ msgstr "Найдено совпадение: {matchedId}"
 msgid "matches"
 msgstr "соответствует"
 
+msgid "Material requested"
+msgstr ""
+
 msgid "Materials"
 msgstr "Материалы"
 
@@ -1705,6 +1745,9 @@ msgstr "Имя"
 
 msgid "Navigation"
 msgstr "Навигация"
+
+msgid "Need material"
+msgstr ""
 
 msgid "New"
 msgstr "Новое"
@@ -1854,8 +1897,8 @@ msgstr "Пока нет зарегистрированных ключей дос
 msgid "No photos yet"
 msgstr "Нет фото"
 
-msgid "No picking lists assigned"
-msgstr "Листы отбора не назначены"
+msgid "No picking lists"
+msgstr ""
 
 msgid "No printer configured"
 msgstr "Принтер не настроен"
@@ -1905,6 +1948,9 @@ msgstr "На этой странице нет доступных сокраще�
 msgid "No spare parts added yet"
 msgstr "Запасные части ещё не добавлены"
 
+msgid "No station"
+msgstr ""
+
 msgid "No stock"
 msgstr "Нет запасов"
 
@@ -1951,7 +1997,7 @@ msgid "Not usable stock. MRP and planning do not count it, and picking does not 
 msgstr "Непригодный к использованию запас. MRP и планирование его не учитывают, а комплектация из него не берёт."
 
 msgid "Note"
-msgstr "Примечание"
+msgstr ""
 
 msgid "Notes"
 msgstr "Примечания"
@@ -1971,6 +2017,9 @@ msgstr "Ничего не работает"
 
 msgid "Nothing scheduled at this work center"
 msgstr "Ничего не запланировано на этом рабочем центре"
+
+msgid "Nothing to feed"
+msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "Нечего браковать"
@@ -2082,6 +2131,9 @@ msgstr "Или введите этот секрет вручную:"
 
 msgid "Out of calibration"
 msgstr "Вне калибровки"
+
+msgid "Out of stock"
+msgstr ""
 
 msgid "Output lot"
 msgstr "Партия выпуска"
@@ -2281,6 +2333,9 @@ msgstr "Печать"
 
 msgid "Print batch list"
 msgstr "Печать списка серий"
+
+msgid "Print travelers"
+msgstr ""
 
 msgid "Printed on the purchase orders you approve."
 msgstr "Напечатано на заказах поставщику, которые вы утверждаете."
@@ -2488,6 +2543,12 @@ msgstr "Открыть заново узел и создать единицу д
 msgid "Repairable"
 msgstr "Подлежит ремонту"
 
+msgid "Request"
+msgstr ""
+
+msgid "Request material"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требуется 6-значный код из приложения аутентификации при входе."
 
@@ -2502,6 +2563,9 @@ msgstr "Требуется: {quantityToPick}{unitSuffix}, отобрано: {qua
 
 msgid "Resolution"
 msgstr "Решение"
+
+msgid "Resolve"
+msgstr ""
 
 msgid "Result"
 msgstr "Результат"
@@ -2577,6 +2641,9 @@ msgstr "Сканировать {partName}"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Сканировать отслеживаемый объект, чтобы добавить первый столбец образца."
+
+msgid "Scan in these parts first"
+msgstr ""
 
 msgid "Scan or enter a serial"
 msgstr "Сканировать или ввести серийный номер"
@@ -2828,6 +2895,12 @@ msgstr "Недостача"
 msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
 
+msgid "Short: {available} of {needed}"
+msgstr ""
+
+msgid "Shortage"
+msgstr ""
+
 msgid "Show description"
 msgstr "Показать описание"
 
@@ -2984,6 +3057,15 @@ msgstr "Шаги"
 msgid "Steps are missing"
 msgstr "Шаги не заполнены"
 
+msgid "Stock at:"
+msgstr "Запасы в:"
+
+msgid "Stock transfer"
+msgstr ""
+
+msgid "Storage unit"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "Единица хранения"
 
@@ -3010,6 +3092,9 @@ msgstr "Под-узел {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Под-узел {0} · {1} — показывается отдельно"
+
+msgid "Subassembly"
+msgstr "Узел"
 
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"
@@ -3113,6 +3198,9 @@ msgstr "Партия все еще будет распределена, но NCR
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Таймер и завершение общие для всех {0} производственных заказов. Шаги, материалы и файлы здесь — собственность этого производственного заказа."
 
+msgid "The unit changed. Scan again."
+msgstr ""
+
 msgid "The values break a rule on this record."
 msgstr "Значения нарушают правило для этой записи."
 
@@ -3146,6 +3234,9 @@ msgstr "В спецификации есть материалы с серийн�
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Эти позиции еще содержат материал для отбора. Завершение сейчас отметит список как частичный."
 
+msgid "This barcode matches more than one unit"
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "Эта серия не имеет рабочих инструкций."
 
@@ -3161,8 +3252,14 @@ msgstr "В этом плане контроля нет рабочих инстр
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Это проверка «годен / не годен». Нажмите P или F."
 
+msgid "This job does not use that part"
+msgstr ""
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "У этого производственного заказа нет ставки расчетов. Попросите офис установить её перед тем, как время будет рассчитано."
+
+msgid "This label does not belong to a unit in this company"
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "Срок этой партии истек, и она не может быть отобрана."
@@ -3297,6 +3394,15 @@ msgstr "Номер отслеживания"
 msgid "Training"
 msgstr "Обучение"
 
+msgid "Transfer"
+msgstr ""
+
+msgid "Traveler"
+msgstr ""
+
+msgid "Try again"
+msgstr ""
+
 msgid "Two-factor authentication"
 msgstr "Двухфакторная аутентификация"
 
@@ -3326,6 +3432,9 @@ msgstr "Подчёркнутый"
 
 msgid "Undo"
 msgstr "Отменить"
+
+msgid "Unissue"
+msgstr "Отменить выдачу"
 
 msgid "Unissued serial/batch materials"
 msgstr "Невыданные серийные/партионные материалы"
@@ -3447,11 +3556,17 @@ msgstr "Просмотреть заявку на техобслуживание"
 msgid "View or open"
 msgstr "Просмотр или открытие"
 
+msgid "View Traceability"
+msgstr ""
+
 msgid "Warranty"
 msgstr "Гарантия"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Мы отправили вам по электронной почте ссылку для входа и 6-значный код. Перейдите по ссылке или введите код здесь."
+
+msgid "What do you need?"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"
@@ -3461,6 +3576,9 @@ msgstr "Когда"
 
 msgid "Whole batch"
 msgstr "Вся серия"
+
+msgid "Winding"
+msgstr "Змейкой"
 
 msgid "WIP"
 msgstr "Незавершенное производство"

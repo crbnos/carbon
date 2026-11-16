@@ -53,7 +53,10 @@ export async function action({ request }: ActionFunctionArgs) {
     .maybeSingle();
 
   if (!matRow) {
-    log.warn("Job material not found for company", { companyId, materialId });
+    log.warning("Job material not found for company", {
+      companyId,
+      materialId
+    });
     return data(
       { success: false, message: "Material not found" },
       { status: 404 }

@@ -67,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (employeeId === userId) throw redirect(path.to.timesheet);
 
   if (!(await canManageTimesheet(client, { companyId, userId, employeeId }))) {
-    logger.warn("Refused another employee's timesheet", {
+    logger.warning("Refused another employee's timesheet", {
       companyId,
       employeeId
     });

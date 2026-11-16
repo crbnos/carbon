@@ -2,14 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { trackedEntityStripe } from "@carbon/api/stock-stripes";
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import {
-  getLocationTimeZone,
-  getNonNettableTrackedEntityIds
+  fetchAllByIds,
+  fetchAllRecords,
+  getLocationTimeZone
 } from "@carbon/database";
-import { fetchAll } from "@carbon/database/fetch-all";
 import type {
   DocumentTemplate,
   DocumentTemplateType
@@ -20,12 +19,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { erpPosting } from "~/services/erp";
+import { buildLineFeedRows } from "~/services/line-feed";
 import type { SuggestedAllocationLot } from "./allocation";
-import {
-  greedyFillAllocation,
-  keepEntitiesInStripes,
-  sortLotsByPickMethod
-} from "./allocation";
+import { greedyFillAllocation, sortLotsByPickMethod } from "./allocation";
 
 export type { SuggestedAllocationLot };
 export { greedyFillAllocation, sortLotsByPickMethod };
@@ -57,80 +53,213 @@ export const inventoryAdjustmentValidator = z.object({
   quantity: zfd.numeric(z.number().min(1, { message: "Quantity is required" }))
 });
 
-export async function getBatchNumbersForItem(
+/**
+ * Where a job operation draws stock: its job's location and stock stripes, in
+ * draw order (its project's stock first when the project has project stock,
+ * then common stock). One read, plus one for a job charged to a project.
+ */
+export async function getJobOperationIssueScope(
   client: SupabaseClient<Database>,
-  args: {
-    itemId: string;
-    companyId: string;
-    isReadOnly?: boolean;
-    // The job's stock stripes, in draw order (getJobOperationStockStripes).
-    // Every lot when omitted.
-    stripes?: (string | null)[];
-  }
-) {
-  let itemIds = [args.itemId];
+  args: { jobOperationId: string; companyId: string }
+): Promise<{ locationId: string | null; stripes: (string | null)[] }> {
+  const operation = await client
+    .from("jobOperation")
+    .select("job(locationId, projectId)")
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  const job = operation.data?.job;
+  const project = job?.projectId
+    ? await client
+        .from("project")
+        .select("projectStock")
+        .eq("id", job.projectId)
+        .eq("companyId", args.companyId)
+        .maybeSingle()
+    : null;
+  return {
+    locationId: job?.locationId ?? null,
+    stripes: project?.data?.projectStock ? [job!.projectId, null] : [null]
+  };
+}
+
+/** An item's id, plus every revision of it when it is a Material. */
+async function getIssueItemIds(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; companyId: string }
+): Promise<string[]> {
   const item = await client
     .from("item")
-    .select("*")
+    .select("type, readableId")
     .eq("id", args.itemId)
     .eq("companyId", args.companyId)
     .single();
-  if (item.data?.type === "Material") {
-    const items = await client
-      .from("item")
-      .select("id")
-      .eq("readableId", item.data.readableId)
-      .eq("companyId", args.companyId);
-    if (items.data?.length) {
-      itemIds = items.data.map((item) => item.id);
-    }
+  if (item.data?.type !== "Material") return [args.itemId];
+  const revisions = await client
+    .from("item")
+    .select("id")
+    .eq("readableId", item.data.readableId)
+    .eq("companyId", args.companyId);
+  return revisions.data?.length
+    ? revisions.data.map((revision) => revision.id)
+    : [args.itemId];
+}
+
+/**
+ * The Available stock of an item's lots a job can draw at a location: nettable
+ * bins, the job's stripes. One row per lot and stripe, read in ordered pages
+ * so an item with more lots than one page holds loses none. `trackedEntityId`
+ * narrows the read to one lot (a label scan).
+ */
+export async function getIssueLotStock(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    itemIds: string[];
+    stripes: (string | null)[];
+    trackedEntityId?: string;
   }
-
-  // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
-  // first (FIFO).
-  const entities = await withoutNonNettableLots(
-    client,
-    args.companyId,
-    await client
-      .from("trackedEntity")
-      .select("*")
-      .eq("sourceDocument", "Item")
-      .in("sourceDocumentId", itemIds)
-      .eq("companyId", args.companyId)
-      .gt("quantity", 0)
-      .order("expirationDate", { ascending: true, nullsFirst: false })
-      .order("createdAt", { ascending: true })
-  );
-
-  return keepEntitiesOfStripes(client, {
-    companyId: args.companyId,
-    itemIds,
-    entities,
-    stripes: args.stripes
+) {
+  return fetchAllRecords<{
+    trackedEntityId: string;
+    storageUnitName: string | null;
+    availableQuantity: number;
+  }>(() => {
+    const query = client.rpc("get_issue_tracked_entity_stock", {
+      p_company_id: args.companyId,
+      p_location_id: args.locationId,
+      p_item_ids: args.itemIds,
+      // A null element is common stock; the generated type cannot say so.
+      p_project_ids: args.stripes as string[]
+    });
+    return (
+      args.trackedEntityId
+        ? query.eq("trackedEntityId", args.trackedEntityId)
+        : query
+    )
+      .order("trackedEntityId")
+      .order("availableQuantity");
   });
 }
 
-/** Issue pickers never offer a lot held in a non-nettable (quarantine) unit. */
-async function withoutNonNettableLots<
-  T extends { id: string },
-  E extends { message: string } | null
->(
+type IssueLot = {
+  id: string;
+  readableId: string | null;
+  quantity: number;
+  status: Database["public"]["Enums"]["trackedEntityStatus"];
+  expirationDate: string | null;
+  createdAt: string;
+};
+
+/**
+ * The serial or batch lots of an item a job operation can issue: Available
+ * stock in nettable bins at the job's own location, in the job's stripes
+ * (`issue` refuses any other lot). The operator cannot pick what is at another
+ * location, so those lots are never offered. Ordered expiring soonest first
+ * (FEFO, no expiry last), then oldest first (FIFO).
+ */
+export async function getIssueLotsForItem(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; companyId: string; jobOperationId: string }
+): Promise<{
+  data: Array<IssueLot & { storageUnitName: string | null }> | null;
+  error: unknown;
+}> {
+  const [scope, itemIds] = await Promise.all([
+    getJobOperationIssueScope(client, args),
+    getIssueItemIds(client, args)
+  ]);
+  if (!scope.locationId) return { data: [], error: null };
+
+  const stock = await getIssueLotStock(client, {
+    companyId: args.companyId,
+    locationId: scope.locationId,
+    itemIds,
+    stripes: scope.stripes
+  });
+  if (stock.error) return { data: null, error: stock.error };
+
+  const stockByLot = new Map<string, { quantity: number; bins: Set<string> }>();
+  for (const row of stock.data ?? []) {
+    const current = stockByLot.get(row.trackedEntityId) ?? {
+      quantity: 0,
+      bins: new Set<string>()
+    };
+    current.quantity += row.availableQuantity ?? 0;
+    if (row.storageUnitName) current.bins.add(row.storageUnitName);
+    stockByLot.set(row.trackedEntityId, current);
+  }
+
+  const lots = await fetchAllByIds<IssueLot>([...stockByLot.keys()], (batch) =>
+    client
+      .from("trackedEntity")
+      .select("id, readableId, quantity, status, expirationDate, createdAt")
+      .in("id", batch)
+      .eq("companyId", args.companyId)
+      .gt("quantity", 0)
+      .order("id")
+  );
+  if (lots.error) return { data: null, error: lots.error };
+
+  return {
+    error: null,
+    data: lots.data
+      .sort(
+        (a, b) =>
+          (a.expirationDate ?? "9999").localeCompare(
+            b.expirationDate ?? "9999"
+          ) || a.createdAt.localeCompare(b.createdAt)
+      )
+      .map((lot) => {
+        const held = stockByLot.get(lot.id)!;
+        return {
+          ...lot,
+          quantity: Math.min(lot.quantity, held.quantity),
+          storageUnitName: [...held.bins].join(", ") || null
+        };
+      })
+  };
+}
+
+/**
+ * The tracking type a traveler label prints for each unit, from its item's
+ * tracking type (Serial or Batch) — never from the unit's quantity, since a
+ * batch lot can hold 1 or 0.5. A unit's item is `itemId`, else its
+ * `sourceDocumentId` (as the print job resolves it). One paged read.
+ */
+export async function getLabelTrackingTypes(
   client: SupabaseClient<Database>,
   companyId: string,
-  lots: { data: T[] | null; error: E }
-) {
-  if (lots.error || !lots.data) return lots;
-  const quarantined = await getNonNettableTrackedEntityIds(
-    client,
-    companyId,
-    lots.data.map((lot) => lot.id)
+  units: { id: string; itemId: string | null; sourceDocumentId: string }[]
+): Promise<
+  | { data: Map<string, "Serial" | "Batch">; error: null }
+  | { data: null; error: unknown }
+> {
+  const itemIdOf = (unit: (typeof units)[number]) =>
+    unit.itemId ?? unit.sourceDocumentId;
+  const items = await fetchAllByIds(
+    [...new Set(units.map(itemIdOf))],
+    (batch) =>
+      client
+        .from("item")
+        .select("id, itemTrackingType")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
   );
-  if (quarantined.error) {
-    return { ...lots, data: null, error: quarantined.error as unknown as E };
-  }
+  if (items.error) return { data: null, error: items.error };
+  const typeByItem = new Map(
+    items.data.map((item) => [item.id, item.itemTrackingType])
+  );
   return {
-    ...lots,
-    data: lots.data.filter((lot) => !quarantined.data?.has(lot.id))
+    data: new Map(
+      units.map((unit) => [
+        unit.id,
+        typeByItem.get(itemIdOf(unit)) === "Batch" ? "Batch" : "Serial"
+      ])
+    ),
+    error: null
   };
 }
 
@@ -170,147 +299,6 @@ export async function getCompany(
       logoDarkIcon: url(company.data.logoDarkIcon)
     },
     error: null
-  };
-}
-
-export async function getSerialNumbersForItem(
-  client: SupabaseClient<Database>,
-  args: {
-    itemId: string;
-    companyId: string;
-    // The job's stock stripes, in draw order (getJobOperationStockStripes).
-    // Every serial when omitted.
-    stripes?: (string | null)[];
-  }
-) {
-  let itemIds = [args.itemId];
-  const item = await client
-    .from("item")
-    .select("*")
-    .eq("id", args.itemId)
-    .eq("companyId", args.companyId)
-    .single();
-  if (item.data?.type === "Material") {
-    const items = await client
-      .from("item")
-      .select("id")
-      .eq("readableId", item.data.readableId)
-      .eq("companyId", args.companyId);
-    if (items.data?.length) {
-      itemIds = items.data.map((item) => item.id);
-    }
-  }
-
-  // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
-  // first (FIFO).
-  const entities = await withoutNonNettableLots(
-    client,
-    args.companyId,
-    await client
-      .from("trackedEntity")
-      .select("*")
-      .eq("sourceDocument", "Item")
-      .in("sourceDocumentId", itemIds)
-      .eq("companyId", args.companyId)
-      .eq("status", "Available")
-      .gt("quantity", 0)
-      .order("expirationDate", { ascending: true, nullsFirst: false })
-      .order("createdAt", { ascending: true })
-  );
-
-  return keepEntitiesOfStripes(client, {
-    companyId: args.companyId,
-    itemIds,
-    entities,
-    stripes: args.stripes
-  });
-}
-
-/**
- * Keeps the tracked entities in the stock stripes a job may draw (Projects
- * Phase 2a), project stock first, then common stock. `issue` refuses a lot
- * outside the job's stripes, so the picker does not offer one. Every entity
- * is kept when `stripes` is omitted.
- *
- * An entity's stripe is the stripe of its rows with the most net on-hand, as
- * `issue` decides it (`trackedEntityStripe`). Two reads: the item's ledger
- * rows in project stock, then every row of the entities they name. With no
- * project stock of the item, the first read finds nothing and every entity
- * is common stock.
- */
-async function keepEntitiesOfStripes<
-  T extends { id: string },
-  R extends { data: T[] | null; error: unknown }
->(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    itemIds: string[];
-    entities: R;
-    stripes?: (string | null)[];
-  }
-): Promise<R> {
-  const { entities, stripes } = args;
-  if (!stripes || entities.error || !entities.data?.length) return entities;
-
-  const striped = await fetchAll<{ trackedEntityId: string | null }>(() =>
-    client
-      .from("itemLedger")
-      .select("trackedEntityId")
-      .in("itemId", args.itemIds)
-      .eq("companyId", args.companyId)
-      .not("trackedEntityId", "is", null)
-      .not("projectId", "is", null)
-      .order("id")
-  );
-  if (striped.error) return { ...entities, data: null, error: striped.error };
-
-  const stripedEntityIds = [
-    ...new Set(
-      (striped.data ?? [])
-        .map((row) => row.trackedEntityId)
-        .filter((id): id is string => !!id)
-    )
-  ];
-
-  const stripeById = new Map<string, string | null>();
-  if (stripedEntityIds.length > 0) {
-    const rows = await fetchAll<{
-      trackedEntityId: string | null;
-      projectId: string | null;
-      quantity: number | null;
-    }>(() =>
-      client
-        .from("itemLedger")
-        .select("trackedEntityId, projectId, quantity")
-        .in("trackedEntityId", stripedEntityIds)
-        .eq("companyId", args.companyId)
-        .order("id")
-    );
-    if (rows.error) return { ...entities, data: null, error: rows.error };
-
-    const rowsByEntity = new Map<string, NonNullable<typeof rows.data>>();
-    for (const row of rows.data ?? []) {
-      if (!row.trackedEntityId) continue;
-      const list = rowsByEntity.get(row.trackedEntityId) ?? [];
-      list.push(row);
-      rowsByEntity.set(row.trackedEntityId, list);
-    }
-    for (const [trackedEntityId, entityRows] of rowsByEntity) {
-      stripeById.set(
-        trackedEntityId,
-        trackedEntityStripe(entityRows, trackedEntityId)
-      );
-    }
-  }
-
-  return {
-    ...entities,
-    data: keepEntitiesInStripes(
-      entities.data,
-      (trackedEntityId) => stripeById.get(trackedEntityId) ?? null,
-      stripes
-    )
   };
 }
 
@@ -454,39 +442,6 @@ export async function getPickingListRecommendations(
 }
 
 /**
- * The stock stripes a job operation's demand may draw, in order (Projects
- * Phase 2a): its job's project stock first when the project has project
- * stock, then common stock (null). Common stock only otherwise.
- */
-export async function getJobOperationStockStripes(
-  client: SupabaseClient<Database>,
-  args: { jobOperationId: string; companyId: string }
-): Promise<(string | null)[]> {
-  const operation = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (!operation.data?.jobId) return [null];
-  const job = await client
-    .from("job")
-    .select("projectId")
-    .eq("id", operation.data.jobId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  const projectId = job.data?.projectId;
-  if (!projectId) return [null];
-  const project = await client
-    .from("project")
-    .select("projectStock")
-    .eq("id", projectId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  return project.data?.projectStock ? [projectId, null] : [null];
-}
-
-/**
  * On-the-fly batch/lot suggestion for issuing a single tracked material when no
  * picking list has allocated it — the same allocation the picking list would make,
  * computed per material. Sources the ordered, allocation-netted, warehouse-only
@@ -501,7 +456,7 @@ export async function getSuggestedAllocationForMaterial(
     companyId: string;
     locationId: string;
     quantity: number;
-    // The job's stock stripes, in draw order (getJobOperationStockStripes).
+    // The job's stock stripes, in draw order (getJobOperationIssueScope).
     // Common stock only when omitted.
     projectIds?: (string | null)[];
   }
@@ -727,4 +682,145 @@ export async function insertManualInventoryAdjustment(
   }
 
   return { data: result.data?.itemLedger ?? null, error: null };
+}
+
+/**
+ * The line feeder's queue for one location: open material requests, lineside
+ * shortages and outstanding transfer lines to a work center's storage unit,
+ * plus the names the cards show. Every source is paged with a stable order,
+ * so a location past the row cap still gets its oldest requests and largest
+ * shortages first from `buildLineFeedRows`.
+ */
+export async function getLineFeed(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; locationId: string }
+) {
+  const { companyId, locationId } = args;
+
+  const [requests, shortages, transfers] = await Promise.all([
+    fetchAllRecords(() =>
+      client
+        .from("materialRequest")
+        .select(
+          "*, item(readableIdWithRevision), workCenter(name), jobOperation(job(jobId))"
+        )
+        .eq("status", "Open")
+        .eq("locationId", locationId)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllRecords(() =>
+      client
+        .rpc("get_line_feed_shortages", {
+          p_location_id: locationId,
+          p_company_id: companyId
+        })
+        .order("workCenterId")
+        .order("storageUnitId")
+        .order("itemId")
+    ),
+    fetchAllRecords(() =>
+      client
+        .from("stockTransferLine")
+        .select(
+          "id, itemId, outstandingQuantity, createdAt, toStorageUnitId, stockTransfer!inner(id, stockTransferId, status, locationId), toStorageUnit:storageUnit!stockTransferLine_toStorageUnitId_fkey!inner(name, workCenterId)"
+        )
+        .eq("companyId", companyId)
+        .eq("stockTransfer.locationId", locationId)
+        .in("stockTransfer.status", ["Released", "In Progress"])
+        .gt("outstandingQuantity", 0)
+        .not("toStorageUnit.workCenterId", "is", null)
+        .order("id")
+    )
+  ]);
+
+  const error = requests.error ?? shortages.error ?? transfers.error;
+  if (error) return { data: null, error };
+
+  const requestRows = requests.data ?? [];
+  const shortageRows = shortages.data ?? [];
+  const transferRows = transfers.data ?? [];
+
+  // One read each for the names the shortages and transfers do not carry.
+  const storageUnitIds = [
+    ...new Set(shortageRows.map((shortage) => shortage.storageUnitId))
+  ];
+  const workCenterIds = [
+    ...new Set(
+      [
+        ...shortageRows.map((shortage) => shortage.workCenterId),
+        ...transferRows.map((transfer) => transfer.toStorageUnit?.workCenterId)
+      ].filter((id): id is string => Boolean(id))
+    )
+  ];
+
+  const [storageUnits, workCenters] = await Promise.all([
+    fetchAllByIds(storageUnitIds, (batch) =>
+      client
+        .from("storageUnit")
+        .select("id, name")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(workCenterIds, (batch) =>
+      client
+        .from("workCenter")
+        .select("id, name")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    )
+  ]);
+
+  const nameError = storageUnits.error ?? workCenters.error;
+  if (nameError) return { data: null, error: nameError };
+
+  const workCenterNames: Record<string, string> = {};
+  for (const workCenter of workCenters.data ?? []) {
+    workCenterNames[workCenter.id] = workCenter.name;
+  }
+  for (const request of requestRows) {
+    if (request.workCenterId && request.workCenter?.name) {
+      workCenterNames[request.workCenterId] = request.workCenter.name;
+    }
+  }
+
+  const storageUnitNames: Record<string, string> = {};
+  for (const storageUnit of storageUnits.data ?? []) {
+    storageUnitNames[storageUnit.id] = storageUnit.name;
+  }
+  for (const transfer of transferRows) {
+    if (transfer.toStorageUnitId && transfer.toStorageUnit?.name) {
+      storageUnitNames[transfer.toStorageUnitId] = transfer.toStorageUnit.name;
+    }
+  }
+
+  // The readable ids a card shows: the job a request came from, and the
+  // stock transfer a transfer line belongs to.
+  const jobReadableIds: Record<string, string> = {};
+  for (const request of requestRows) {
+    const jobId = request.jobOperation?.job?.jobId;
+    if (jobId) jobReadableIds[request.id] = jobId;
+  }
+  const stockTransferReadableIds: Record<string, string> = {};
+  for (const transfer of transferRows) {
+    stockTransferReadableIds[transfer.stockTransfer.id] =
+      transfer.stockTransfer.stockTransferId;
+  }
+
+  return {
+    data: {
+      rows: buildLineFeedRows({
+        requests: requestRows,
+        shortages: shortageRows,
+        transfers: transferRows
+      }),
+      workCenterNames,
+      storageUnitNames,
+      jobReadableIds,
+      stockTransferReadableIds
+    },
+    error: null
+  };
 }

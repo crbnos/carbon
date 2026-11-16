@@ -10,6 +10,7 @@ import {
   valuateMeasurement
 } from "@carbon/database/inspection-verdict";
 import type { RevaluatedDependentMeasurement } from "@carbon/database/quality";
+import { getLogger } from "@carbon/logger";
 import type {
   InspectionParameter,
   InspectionPlanTab,
@@ -179,6 +180,8 @@ type InspectionMeasurementGridProps = {
   // True while any save or bulk run is in flight.
   onBusyChange?: (busy: boolean) => void;
 };
+
+const logger = getLogger("erp", "quality", "inspection-measurement-grid");
 
 const sampleKey = (sampleIndex: number) => `sample-${sampleIndex}`;
 const featureKey = (characteristicIndex: number) =>
@@ -591,7 +594,13 @@ const InspectionMeasurementGrid = ({
       const response = await fetch(
         path.to.inspectionMeasurement(inspectionId),
         { method: "post", body: formData }
-      ).catch(() => null);
+      ).catch((error) => {
+        logger.warning("Failed to save an inspection measurement", {
+          inspectionId,
+          error
+        });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         data?: {
           sampleId: string;
@@ -654,7 +663,13 @@ const InspectionMeasurementGrid = ({
       const response = await fetch(
         `${path.to.inspection(inspectionId)}/sample`,
         { method: "post", body: formData }
-      ).catch(() => null);
+      ).catch((error) => {
+        logger.warning("Failed to save an inspection sample result", {
+          inspectionId,
+          error
+        });
+        return null;
+      });
       const body = (await response?.json().catch(() => null)) as {
         sampleId?: string;
         error?: { message: string } | null;
@@ -1241,7 +1256,14 @@ const InspectionMeasurementGrid = ({
           const response = await fetch(path.to.inspectionGauge(inspectionId), {
             method: "post",
             body: formData
-          }).catch(() => null);
+          }).catch((error) => {
+            logger.warning("Failed to save an inspection gauge", {
+              inspectionId,
+              featureId,
+              error
+            });
+            return null;
+          });
           const body = (await response?.json().catch(() => null)) as {
             error?: { message: string } | null;
           } | null;

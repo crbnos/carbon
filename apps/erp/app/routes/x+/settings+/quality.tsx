@@ -16,7 +16,6 @@ import {
   ValidatedForm,
   validator
 } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
   Card,
@@ -51,8 +50,6 @@ import { getCompanySettings } from "~/modules/settings/settings.service";
 import { GoodsInStorageCard } from "~/modules/settings/ui/Quality";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "settings", "quality");
 
 export const handle: Handle = {
   breadcrumb: msg`Quality`,
@@ -118,10 +115,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // reads as a clean company: refuse the page instead.
   const failedRead = locations.error ?? storageUnits.error;
   if (failedRead) {
-    logger.error("Failed to load goods-in storage settings", {
-      companyId,
-      error: failedRead
-    });
     throw redirect(
       path.to.settings,
       await flash(

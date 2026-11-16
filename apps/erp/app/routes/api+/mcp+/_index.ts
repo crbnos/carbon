@@ -8,7 +8,7 @@ import { createCatalogSearch, type McpServerDeps } from "@carbon/ee/mcp";
 import { serveMcpRequest } from "@carbon/ee/mcp.server";
 import { getAppUrl } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
-import { withLogContext } from "@carbon/logger/middleware.server";
+import { addLogContext } from "@carbon/logger/context.server";
 import { datetime, getRequestOrigin } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
@@ -185,28 +185,26 @@ async function resolveAuth(request: Request): Promise<{
 
 export async function action({ request }: ActionFunctionArgs) {
   const { ctx, request: authedRequest } = await resolveAuth(request);
+  addLogContext({
+    companyId: ctx.companyId,
+    userId: ctx.userId,
+    authKind: ctx.authKind
+  });
 
-  // Stamp the authenticated identity into the logging context so every log
-  // line in this request carries it alongside the middleware's requestId.
   let response: Response;
   try {
-    response = await withLogContext(
-      { companyId: ctx.companyId, userId: ctx.userId, authKind: ctx.authKind },
-      async () => {
-        // The agent is told what "today" is; it has to be the company's day, not
-        // the server's, or every relative-date tool call it makes lands a day off.
-        // `serveMcpRequest` embeds the MCP entitlement LOCK (Business+), covering
-        // every auth path since both resolve to an authed context first — it
-        // throws `EntitlementError` for community/starter, caught below as 402.
-        return serveMcpRequest(
-          authedRequest,
-          ctx,
-          datetime
-            .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
-            .toString(),
-          await loadMcpDeps()
-        );
-      }
+    // The agent is told what "today" is; it has to be the company's day, not
+    // the server's, or every relative-date tool call it makes lands a day off.
+    // `serveMcpRequest` embeds the MCP entitlement LOCK (Business+), covering
+    // every auth path since both resolve to an authed context first — it
+    // throws `EntitlementError` for community/starter, caught below as 402.
+    response = await serveMcpRequest(
+      authedRequest,
+      ctx,
+      datetime
+        .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
+        .toString(),
+      await loadMcpDeps()
     );
   } catch (err) {
     if (err instanceof EntitlementError) {

@@ -6,6 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -17,6 +18,8 @@ import {
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "sales-return-order");
 
 // Feeds the Issue Credit modal: per-line creditable pool (received − already
 // credited over non-voided memos) with the pricing needed for the preview.
@@ -30,7 +33,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const creditable = await getCreditableQuantities(client, id, companyId);
   if (creditable.error) {
-    console.error("Failed to load creditable quantities:", creditable.error);
+    logger.error("Failed to load creditable quantities", {
+      error: creditable.error
+    });
   }
 
   return { lines: creditable.data ?? [] };

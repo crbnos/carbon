@@ -24,7 +24,12 @@ import {
   Supplier,
   TextArea
 } from "~/components/Form";
-import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import {
   type DepositDocument,
   isPaymentLocked,
@@ -103,6 +108,9 @@ type PaymentFormProps = {
   // their open balances server-side). Drives the workbench "pay N invoices"
   // hand-off as well as the single-invoice "Pay Invoice" link.
   seedInvoiceIds?: string[];
+  // The deposit or prepayment already held for the seed invoices' orders, which
+  // the seeded total leaves out. In the seeded currency.
+  heldAdvance?: number;
   // Documents the "Deposit for" picker offers. Omitted = no picker (the saved
   // ids still round-trip through the hidden fields).
   depositDocuments?: DepositDocument[];
@@ -118,6 +126,7 @@ type PaymentFormProps = {
 const PaymentForm = ({
   initialValues,
   seedInvoiceIds,
+  heldAdvance = 0,
   depositDocuments,
   financingRequestId
 }: PaymentFormProps) => {
@@ -130,6 +139,7 @@ const PaymentForm = ({
     )
   );
   const currencyDecimals = useCurrencyDecimals(currencyCode);
+  const currencyFormatter = useCurrencyFormatter({ currency: currencyCode });
   const permissions = usePermissions();
   const isEditing = Boolean(initialValues.id);
   const isLocked = isPaymentLocked(initialValues.status);
@@ -149,6 +159,14 @@ const PaymentForm = ({
   const [customerId, setCustomerId] = useState(initialValues.customerId ?? "");
   const [supplierId, setSupplierId] = useState(initialValues.supplierId ?? "");
   const partyId = isCustomer ? customerId : isSupplier ? supplierId : "";
+  // The advance was netted for the payment as it was seeded: it says nothing
+  // about another party, type or currency.
+  const netsHeldAdvance =
+    heldAdvance > 0 &&
+    paymentKind === initialKind &&
+    currencyCode === initialValues.currencyCode &&
+    partyId ===
+      (isSupplier ? initialValues.supplierId : initialValues.customerId);
   const initialDeposit = initialValues.rentalAgreementId
     ? depositValue({
         kind: "rentalAgreement",
@@ -362,6 +380,13 @@ const PaymentForm = ({
           name="totalAmount"
           label={t`Total Amount`}
           formatOptions={INPUT_FORMAT.money(currencyCode, currencyDecimals)}
+          helperText={
+            netsHeldAdvance
+              ? isSupplier
+                ? t`Net of ${currencyFormatter.format(heldAdvance)} already paid as a prepayment.`
+                : t`Net of ${currencyFormatter.format(heldAdvance)} already received as a deposit.`
+              : undefined
+          }
         />
         <Account
           name="bankAccount"

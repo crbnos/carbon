@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { createHash } from "node:crypto";
+import { getLogger } from "@carbon/logger";
 import { z } from "zod";
 import { RAMP_SCOPES } from "../scopes";
 import type { RampCredentials } from "./models";
@@ -15,6 +16,8 @@ import {
   RampTransferSchema,
   RampVendorSchema
 } from "./models";
+
+const logger = getLogger("ee", "ramp");
 
 export const RAMP_HOST = "https://api.ramp.com";
 
@@ -343,11 +346,11 @@ export class RampClient {
             row && typeof row === "object" && "id" in row
               ? (row as { id?: unknown }).id
               : undefined;
-          console.warn(
-            `Ramp listPaginated: skipping malformed row from ${path}` +
-              (rowId !== undefined ? ` (id=${String(rowId)})` : ""),
-            parsed.error.issues
-          );
+          logger.warning("Ramp listPaginated skipping a malformed row", {
+            path,
+            rowId: rowId !== undefined ? String(rowId) : undefined,
+            issues: parsed.error.issues
+          });
         }
       }
       yield rows;

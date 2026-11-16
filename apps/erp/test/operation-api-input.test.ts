@@ -12,9 +12,6 @@ vi.mock("@carbon/env", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/env")>()),
   ASSEMBLER_SERVICE_URL: ""
 }));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() })
-}));
 vi.mock("@carbon/jobs", () => ({ trigger: vi.fn(), batchTrigger: vi.fn() }));
 vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
 
