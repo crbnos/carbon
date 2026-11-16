@@ -672,17 +672,11 @@ msgid "Choose how Carbon reaches you."
 msgstr "Carbon があなたに連絡する方法を選択します。"
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "このユニットを開く工程を選択してください"
 
 #. placeholder {0}: unit.readableId
 msgid "Choose where {0} goes"
 msgstr ""
-#. placeholder {0}: unit.readableId
-msgid "Choose the operation to issue {0} into"
-msgstr "{0}を出庫する工程を選択してください"
-
-msgid "Choose the operation to open for this unit"
-msgstr "このユニットを開く工程を選択してください"
 
 msgid "Clear"
 msgstr "クリア"
@@ -1449,10 +1443,6 @@ msgstr "別の材料を出庫"
 
 msgid "Issue Material"
 msgstr "材料払出"
-
-#. placeholder {0}: selected.operation.jobReadableId
-msgid "Issue to {0}"
-msgstr "{0}へ出庫"
 
 msgid "Issue Type"
 msgstr "問題タイプ"
@@ -3302,9 +3292,6 @@ msgstr "ロットは引き続き処分されますが、少なくとも1つの�
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "タイマーと完了はすべての{0}製造指図で共有されます。ステップ、材料、ファイルはこの製造指図専用です。"
 
-msgid "The unit changed. Scan again."
-msgstr "ユニットが変更されました。再度スキャンしてください。"
-
 msgid "The values break a rule on this record."
 msgstr "値はこのレコードのルールを破っています。"
 
@@ -3337,9 +3324,6 @@ msgstr "部品表にシリアルまたはバッチ追跡対象の材料が完全
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "これらの品目にはまだピッキングする材料があります。今、完了するとリストが一部としてマークされます。"
-
-msgid "This barcode matches more than one unit"
-msgstr "このバーコードは複数のユニットに一致します"
 
 msgid "This batch has no work instructions."
 msgstr "このバッチには作業手順書がありません。"

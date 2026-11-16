@@ -672,17 +672,11 @@ msgid "Choose how Carbon reaches you."
 msgstr "选择 Carbon 如何与您联系。"
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "为此单件选择要打开的工序"
 
 #. placeholder {0}: unit.readableId
 msgid "Choose where {0} goes"
 msgstr ""
-#. placeholder {0}: unit.readableId
-msgid "Choose the operation to issue {0} into"
-msgstr "选择要将 {0} 领入的工序"
-
-msgid "Choose the operation to open for this unit"
-msgstr "为此单件选择要打开的工序"
 
 msgid "Clear"
 msgstr "清除"
@@ -1449,10 +1443,6 @@ msgstr "再领取一种物料"
 
 msgid "Issue Material"
 msgstr "领料"
-
-#. placeholder {0}: selected.operation.jobReadableId
-msgid "Issue to {0}"
-msgstr "领料至 {0}"
 
 msgid "Issue Type"
 msgstr "问题类型"
@@ -3302,9 +3292,6 @@ msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "计时器和完成状态由所有 {0} 个工单共享。此处的步骤、物料和文件属于此工单。"
 
-msgid "The unit changed. Scan again."
-msgstr "单件已变更，请重新扫码。"
-
 msgid "The values break a rule on this record."
 msgstr "这些值违反了此记录上的规则。"
 
@@ -3337,9 +3324,6 @@ msgstr "物料清单中有序列号或生产批次追踪的物料尚未完全领
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
-
-msgid "This barcode matches more than one unit"
-msgstr "此条码对应多个单件"
 
 msgid "This batch has no work instructions."
 msgstr "此生产批次没有作业指导书。"

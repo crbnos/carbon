@@ -672,17 +672,11 @@ msgid "Choose how Carbon reaches you."
 msgstr "Wählen Sie, wie Carbon Sie erreicht."
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "Wählen Sie den Arbeitsgang, der für diese Einheit geöffnet werden soll"
 
 #. placeholder {0}: unit.readableId
 msgid "Choose where {0} goes"
 msgstr ""
-#. placeholder {0}: unit.readableId
-msgid "Choose the operation to issue {0} into"
-msgstr "Wählen Sie den Arbeitsgang für die Materialentnahme von {0}"
-
-msgid "Choose the operation to open for this unit"
-msgstr "Wählen Sie den Arbeitsgang, der für diese Einheit geöffnet werden soll"
 
 msgid "Clear"
 msgstr "Löschen"
@@ -1449,10 +1443,6 @@ msgstr "Weiteres Material entnehmen"
 
 msgid "Issue Material"
 msgstr "Material ausgeben"
-
-#. placeholder {0}: selected.operation.jobReadableId
-msgid "Issue to {0}"
-msgstr "Materialentnahme für {0}"
 
 msgid "Issue Type"
 msgstr "Problemtyp"
@@ -3302,9 +3292,6 @@ msgstr "Das Los wird weiterhin dispositioniert, aber ein NCR kann nicht erstellt
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Der Timer und die Fertigstellung werden von allen {0} Fertigungsaufträgen geteilt. Die Schritte, Materialien und Dateien hier gehören diesem Fertigungsauftrag."
 
-msgid "The unit changed. Scan again."
-msgstr "Die Einheit hat sich geändert. Bitte erneut scannen."
-
 msgid "The values break a rule on this record."
 msgstr "Die Werte verstoßen gegen eine Regel für diesen Datensatz."
 
@@ -3337,9 +3324,6 @@ msgstr "Es gibt serien- oder chargenverfolgte Materialien in der Stückliste, di
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Diese Artikel haben noch Material zum Picken. Ein Abschluss jetzt markiert die Liste als Teilweise."
-
-msgid "This barcode matches more than one unit"
-msgstr "Dieser Barcode passt zu mehr als einer Einheit"
 
 msgid "This batch has no work instructions."
 msgstr "Dieses Los hat keine Arbeitsanweisung."

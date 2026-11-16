@@ -672,17 +672,11 @@ msgid "Choose how Carbon reaches you."
 msgstr "Carbon과의 소통 방식을 선택하세요."
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "이 유닛에 대해 열 공정을 선택하세요"
 
 #. placeholder {0}: unit.readableId
 msgid "Choose where {0} goes"
 msgstr ""
-#. placeholder {0}: unit.readableId
-msgid "Choose the operation to issue {0} into"
-msgstr "{0}을(를) 불출할 공정을 선택하세요"
-
-msgid "Choose the operation to open for this unit"
-msgstr "이 유닛에 대해 열 공정을 선택하세요"
 
 msgid "Clear"
 msgstr "지우기"
@@ -1449,10 +1443,6 @@ msgstr "다른 자재 불출"
 
 msgid "Issue Material"
 msgstr "자재 출고"
-
-#. placeholder {0}: selected.operation.jobReadableId
-msgid "Issue to {0}"
-msgstr "{0}(으)로 불출"
 
 msgid "Issue Type"
 msgstr "이슈 유형"
@@ -3302,9 +3292,6 @@ msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 �
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "타이머와 완료는 모든 {0} 작업 지시에 공유됩니다. 여기의 단계, 자재 및 파일은 이 작업 지시의 것입니다."
 
-msgid "The unit changed. Scan again."
-msgstr "유닛이 변경되었습니다. 다시 스캔하세요."
-
 msgid "The values break a rule on this record."
 msgstr "값이 이 기록의 규칙을 위반합니다."
 
@@ -3337,9 +3324,6 @@ msgstr "부품표(BOM)에 완전히 발행되지 않은 시리얼 또는 배치 
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
-
-msgid "This barcode matches more than one unit"
-msgstr "이 바코드는 둘 이상의 유닛과 일치합니다"
 
 msgid "This batch has no work instructions."
 msgstr "이 배치는 작업 표준서가 없습니다."

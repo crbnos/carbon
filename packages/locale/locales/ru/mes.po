@@ -672,17 +672,11 @@ msgid "Choose how Carbon reaches you."
 msgstr "Выберите, как Carbon будет вас уведомлять."
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "Выберите операцию для открытия этой единицы"
 
 #. placeholder {0}: unit.readableId
 msgid "Choose where {0} goes"
 msgstr ""
-#. placeholder {0}: unit.readableId
-msgid "Choose the operation to issue {0} into"
-msgstr "Выберите операцию для списания {0}"
-
-msgid "Choose the operation to open for this unit"
-msgstr "Выберите операцию для открытия этой единицы"
 
 msgid "Clear"
 msgstr "Очистить"
@@ -1449,10 +1443,6 @@ msgstr "Списать в производство другой материал
 
 msgid "Issue Material"
 msgstr "Выдать материал"
-
-#. placeholder {0}: selected.operation.jobReadableId
-msgid "Issue to {0}"
-msgstr "Списание в {0}"
 
 msgid "Issue Type"
 msgstr "Тип проблемы"
@@ -3302,9 +3292,6 @@ msgstr "Партия все еще будет распределена, но NCR
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Таймер и завершение общие для всех {0} производственных заказов. Шаги, материалы и файлы здесь — собственность этого производственного заказа."
 
-msgid "The unit changed. Scan again."
-msgstr "Единица изменилась. Сканируйте снова."
-
 msgid "The values break a rule on this record."
 msgstr "Значения нарушают правило для этой записи."
 
@@ -3337,9 +3324,6 @@ msgstr "В спецификации есть материалы с серийн�
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Эти позиции еще содержат материал для отбора. Завершение сейчас отметит список как частичный."
-
-msgid "This barcode matches more than one unit"
-msgstr "Этот штрихкод соответствует нескольким единицам"
 
 msgid "This batch has no work instructions."
 msgstr "Эта серия не имеет рабочих инструкций."

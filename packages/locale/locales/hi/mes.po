@@ -672,17 +672,11 @@ msgid "Choose how Carbon reaches you."
 msgstr "चुनें कि Carbon आपको कैसे पहुंचता है।"
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "इस इकाई के लिए खोलने का ऑपरेशन चुनें"
 
 #. placeholder {0}: unit.readableId
 msgid "Choose where {0} goes"
 msgstr ""
-#. placeholder {0}: unit.readableId
-msgid "Choose the operation to issue {0} into"
-msgstr "{0} को निर्गम करने के लिए ऑपरेशन चुनें"
-
-msgid "Choose the operation to open for this unit"
-msgstr "इस इकाई के लिए खोलने का ऑपरेशन चुनें"
 
 msgid "Clear"
 msgstr "साफ़ करें"
@@ -1449,10 +1443,6 @@ msgstr "एक और सामग्री निर्गत करें"
 
 msgid "Issue Material"
 msgstr "सामग्री जारी करें"
-
-#. placeholder {0}: selected.operation.jobReadableId
-msgid "Issue to {0}"
-msgstr "{0} को निर्गम करें"
 
 msgid "Issue Type"
 msgstr "समस्या प्रकार"
@@ -3302,9 +3292,6 @@ msgstr "लॉट को अभी भी डिस्पोज़ किया 
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "टाइमर और पूर्णता सभी {0} जॉब्स द्वारा साझा की जाती है। यहां चरण, सामग्री और फाइलें इस जॉब की अपनी हैं।"
 
-msgid "The unit changed. Scan again."
-msgstr "इकाई बदल गई है। फिर से स्कैन करें।"
-
 msgid "The values break a rule on this record."
 msgstr "मान इस रिकॉर्ड पर एक नियम को तोड़ते हैं।"
 
@@ -3337,9 +3324,6 @@ msgstr "बिल ऑफ मेटेरियल पर सीरियल य�
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "इन आइटम के पास अभी भी चुनने के लिए सामग्री है। अभी समाप्त करने से सूची को आंशिक के रूप में चिह्नित किया जाता है।"
-
-msgid "This barcode matches more than one unit"
-msgstr "यह बारकोड एक से अधिक इकाइयों से मेल खाता है"
 
 msgid "This batch has no work instructions."
 msgstr "इस बैच के पास कोई कार्य निर्देश नहीं है।"

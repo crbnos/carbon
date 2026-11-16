@@ -672,17 +672,11 @@ msgid "Choose how Carbon reaches you."
 msgstr "Carbon'un sizi nasıl ulaştığını seçin."
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "Bu birim için açılacak operasyonu seçin"
 
 #. placeholder {0}: unit.readableId
 msgid "Choose where {0} goes"
 msgstr ""
-#. placeholder {0}: unit.readableId
-msgid "Choose the operation to issue {0} into"
-msgstr "{0} birimi için malzeme çıkışı yapılacak operasyonu seçin"
-
-msgid "Choose the operation to open for this unit"
-msgstr "Bu birim için açılacak operasyonu seçin"
 
 msgid "Clear"
 msgstr "Temizle"
@@ -1449,10 +1443,6 @@ msgstr "Başka malzeme çıkışı yap"
 
 msgid "Issue Material"
 msgstr "Malzeme Çıkart"
-
-#. placeholder {0}: selected.operation.jobReadableId
-msgid "Issue to {0}"
-msgstr "{0} için malzeme çıkışı"
 
 msgid "Issue Type"
 msgstr "Sorun Türü"
@@ -3302,9 +3292,6 @@ msgstr "Lot yine de işleme tabi tutulacak, ancak en az bir Sorun Türü yapıla
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Zamanlayıcı ve tamamlama tüm {0} iş emirleri tarafından paylaşılır. Buradaki adımlar, malzemeler ve dosyalar bu iş emrinin kendisinindir."
 
-msgid "The unit changed. Scan again."
-msgstr "Birim değişti. Yeniden tara."
-
 msgid "The values break a rule on this record."
 msgstr "Değerler bu kayıt üzerinde bir kuralı ihlal ediyor."
 
@@ -3337,9 +3324,6 @@ msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak veril
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Bu öğelerin hala seçilecek malzemesi var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
-
-msgid "This barcode matches more than one unit"
-msgstr "Bu barkod birden fazla birimle eşleşiyor"
 
 msgid "This batch has no work instructions."
 msgstr "Bu partinin iş talimatı yok."

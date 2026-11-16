@@ -672,17 +672,11 @@ msgid "Choose how Carbon reaches you."
 msgstr "Elija cómo Carbon se comunica con usted."
 
 msgid "Choose the operation to open for this unit"
-msgstr ""
+msgstr "Elija la operación a abrir para esta unidad"
 
 #. placeholder {0}: unit.readableId
 msgid "Choose where {0} goes"
 msgstr ""
-#. placeholder {0}: unit.readableId
-msgid "Choose the operation to issue {0} into"
-msgstr "Elija la operación para la salida de material de {0}"
-
-msgid "Choose the operation to open for this unit"
-msgstr "Elija la operación a abrir para esta unidad"
 
 msgid "Clear"
 msgstr "Limpiar"
@@ -1449,10 +1443,6 @@ msgstr "Registrar otra salida de material"
 
 msgid "Issue Material"
 msgstr "Emitir material"
-
-#. placeholder {0}: selected.operation.jobReadableId
-msgid "Issue to {0}"
-msgstr "Salida de material a {0}"
 
 msgid "Issue Type"
 msgstr "Tipo de Problema"
@@ -3302,9 +3292,6 @@ msgstr "El lote seguirá siendo disposicionado, pero no se puede crear un NCR ha
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "El temporizador y la finalización se comparten entre todas las {0} órdenes de trabajo. Los pasos, materiales y archivos aquí son propios de esta orden de trabajo."
 
-msgid "The unit changed. Scan again."
-msgstr "La unidad cambió. Escanee de nuevo."
-
 msgid "The values break a rule on this record."
 msgstr "Los valores rompen una regla en este registro."
 
@@ -3337,9 +3324,6 @@ msgstr "Hay materiales con seguimiento de serie o lote en la lista de materiales
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Estos elementos aún tienen material para recoger. Finalizar ahora marca la lista como Parcial."
-
-msgid "This barcode matches more than one unit"
-msgstr "Este código de barras corresponde a más de una unidad"
 
 msgid "This batch has no work instructions."
 msgstr "Este lote de producción no tiene instrucciones de trabajo."
