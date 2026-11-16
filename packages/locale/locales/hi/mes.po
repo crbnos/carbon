@@ -400,6 +400,9 @@ msgstr "सभी स्क्रैप"
 msgid "All steps"
 msgstr "सभी चरण"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "विफल इकाइयों को आवंटित करें"
 
@@ -1221,6 +1224,9 @@ msgstr "फ़िल्टर करें"
 
 msgid "Filter by location"
 msgstr "स्थान के अनुसार फ़िल्टर करें"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "चरण फ़िल्टर करें"

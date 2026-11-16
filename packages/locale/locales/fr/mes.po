@@ -400,6 +400,9 @@ msgstr "Tout rebut"
 msgid "All steps"
 msgstr "Toutes les étapes"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "Allouer les unités défaillantes"
 
@@ -1221,6 +1224,9 @@ msgstr "Filtre"
 
 msgid "Filter by location"
 msgstr "Filtrer par emplacement"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "Filtrer les étapes"

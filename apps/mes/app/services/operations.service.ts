@@ -178,6 +178,52 @@ export async function getOpenJobs(
   return query.order("jobId", { ascending: true });
 }
 
+/**
+ * The work centers each job still has work at: a job is pertinent to a station
+ * while one of its operations there is not Done or Canceled.
+ */
+export async function getOpenWorkCenterIdsByJob(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; jobIds: string[] }
+): Promise<Record<string, string[]>> {
+  if (args.jobIds.length === 0) return {};
+
+  const operations = await client
+    .from("jobOperation")
+    .select("jobId, workCenterId")
+    .eq("companyId", args.companyId)
+    .in("jobId", args.jobIds)
+    .not("status", "in", "(Done,Canceled)")
+    .not("workCenterId", "is", null);
+
+  if (operations.error) {
+    log.error("getOpenWorkCenterIdsByJob error", { error: operations.error });
+    return {};
+  }
+
+  const byJob: Record<string, Set<string>> = {};
+  for (const { jobId, workCenterId } of operations.data) {
+    if (!workCenterId) continue;
+    (byJob[jobId] ??= new Set()).add(workCenterId);
+  }
+  return Object.fromEntries(
+    Object.entries(byJob).map(([jobId, ids]) => [jobId, [...ids]])
+  );
+}
+
+export async function getWorkCenterOptionsByLocation(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; locationId: string }
+) {
+  return client
+    .from("workCenter")
+    .select("id, name")
+    .eq("companyId", args.companyId)
+    .eq("locationId", args.locationId)
+    .eq("active", true)
+    .order("name", { ascending: true });
+}
+
 export async function getJobOperationBatch(
   client: SupabaseClient<Database>,
   batchId: string,

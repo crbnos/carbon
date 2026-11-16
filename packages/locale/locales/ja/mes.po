@@ -400,6 +400,9 @@ msgstr "すべてスクラップ"
 msgid "All steps"
 msgstr "全ステップ"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "不合格ユニットを割り当てる"
 
@@ -1221,6 +1224,9 @@ msgstr "絞り込み"
 
 msgid "Filter by location"
 msgstr "拠点で絞り込み"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "ステップを絞り込み"

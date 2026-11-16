@@ -400,6 +400,9 @@ msgstr "Весь брак"
 msgid "All steps"
 msgstr "Все шаги"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "Распределить неудачные единицы"
 
@@ -1221,6 +1224,9 @@ msgstr "Фильтровать"
 
 msgid "Filter by location"
 msgstr "Фильтровать по площадке"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "Фильтровать шаги"

@@ -400,6 +400,9 @@ msgstr "Hepsi fire"
 msgid "All steps"
 msgstr "Tüm adımlar"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "Başarısız birimleri tahsis et"
 
@@ -1221,6 +1224,9 @@ msgstr "Filtrele"
 
 msgid "Filter by location"
 msgstr "Konuma göre filtrele"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "Adımları filtrele"

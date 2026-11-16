@@ -400,6 +400,9 @@ msgstr "Alles Ausschuss"
 msgid "All steps"
 msgstr "Alle Schritte"
 
+msgid "All work centers"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "Fehlerhafte Einheiten zuordnen"
 
@@ -1221,6 +1224,9 @@ msgstr "Filter"
 
 msgid "Filter by location"
 msgstr "Nach Standort filtern"
+
+msgid "Filter by work center"
+msgstr ""
 
 msgid "Filter steps"
 msgstr "Schritte filtern"
