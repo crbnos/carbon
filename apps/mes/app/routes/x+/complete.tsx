@@ -74,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // An Inspection operation completes only through its inspection, never a
   // quantity posted here.
   if (jobOperation.data.operationType === "Inspection") {
-    log.warn("Refused to complete an Inspection operation directly", {
+    log.warning("Refused to complete an Inspection operation directly", {
       jobOperationId: jobOperation.data.id,
       companyId
     });
