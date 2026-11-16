@@ -22,24 +22,20 @@ import { Hyperlink } from "~/components";
 import { Hidden, InspectionDocument, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import {
-  type InspectionDocumentStatus,
   inspectionDocumentUsages,
   itemInspectionDocumentAssignmentValidator
 } from "~/modules/quality/quality.models";
-import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
+import type {
+  ItemInspectionDocument,
+  ItemInspectionDocumentAssignment
+} from "~/modules/quality/types";
 import InspectionDocumentForm from "~/modules/quality/ui/InspectionDocument/InspectionDocumentForm";
 import { path } from "~/utils/path";
 
 type ItemQualityViewProps = {
   itemId: string;
   actionPath: string;
-  documents: {
-    id: string;
-    fileName: string | null;
-    name: string | null;
-    version: number;
-    status: InspectionDocumentStatus;
-  }[];
+  documents: ItemInspectionDocument[];
   assignments: ItemInspectionDocumentAssignment[];
 };
 

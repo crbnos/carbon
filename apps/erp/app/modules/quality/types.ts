@@ -10,6 +10,7 @@ import type {
   getGauges,
   getGaugeTypes,
   getInspection,
+  getInspectionDocumentsForItem,
   getInspectionGauges,
   getInspectionIssues,
   getInspectionMeasurements,
@@ -183,6 +184,10 @@ export type InspectionTrackedEntity = Pick<
 export type InspectionSample = InspectionSampleRow & {
   trackedEntity: InspectionTrackedEntity | null;
 };
+
+export type ItemInspectionDocument = NonNullable<
+  Awaited<ReturnType<typeof getInspectionDocumentsForItem>>["data"]
+>[number];
 
 export type ItemInspectionDocumentAssignment =
   Database["public"]["Tables"]["itemInspectionDocumentAssignment"]["Row"];
