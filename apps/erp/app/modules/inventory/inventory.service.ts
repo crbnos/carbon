@@ -4554,6 +4554,39 @@ export async function upsertBatchProperty(
 }
 
 /**
+ * A kit rack holds built kits off the line, so it cannot be lineside: by its
+ * own work center, or by the one it inherits from its parent.
+ */
+export async function refuseLinesideKitRack(
+  ctx: ServiceContext,
+  unit: {
+    kitRack?: boolean;
+    workCenterId?: string | null;
+    parentId?: string | null;
+  }
+): Promise<CarbonError | null> {
+  if (!unit.kitRack) return null;
+  let lineside = Boolean(unit.workCenterId);
+  if (!lineside && unit.parentId) {
+    const inherited = await getEffectiveWorkCenterId(
+      ctx.asCaller.supabase,
+      unit.parentId
+    );
+    if (inherited.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save storage unit",
+        inherited.error
+      );
+    }
+    lineside = Boolean(inherited.data);
+  }
+  return lineside
+    ? ctx.error("rule", "A kit rack cannot be assigned to a work center")
+    : null;
+}
+
+/**
  * Refuses a kanban whose To or From storage unit is non-nettable. Stock there is
  * not supply: replenishing into it builds stock nothing may use, and a Transfer
  * from it would release quarantined stock to production on every scan.

@@ -6,8 +6,7 @@ import { NotFoundError, raisedMessage } from "@carbon/api/errors";
 import {
   CarbonError,
   createServiceContext,
-  defineServiceFn,
-  type ServiceContext
+  defineServiceFn
 } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
@@ -7053,39 +7052,6 @@ export const updateKanban = defineServiceFn({
 });
 
 /**
- * A kit rack holds built kits off the line, so it cannot be lineside: by its
- * own work center, or by the one it inherits from its parent.
- */
-async function refuseLinesideKitRack(
-  ctx: ServiceContext,
-  unit: {
-    kitRack?: boolean;
-    workCenterId?: string | null;
-    parentId?: string | null;
-  }
-) {
-  if (!unit.kitRack) return null;
-  let lineside = Boolean(unit.workCenterId);
-  if (!lineside && unit.parentId) {
-    const inherited = await service.getEffectiveWorkCenterId(
-      ctx.asCaller.supabase,
-      unit.parentId
-    );
-    if (inherited.error) {
-      return ctx.error(
-        "internal",
-        "Failed to save storage unit",
-        inherited.error
-      );
-    }
-    lineside = Boolean(inherited.data);
-  }
-  return lineside
-    ? ctx.error("rule", "A kit rack cannot be assigned to a work center")
-    : null;
-}
-
-/**
  * Create a storage unit
  *
  * @remarks
@@ -7117,7 +7083,7 @@ export const createStorageUnit = defineServiceFn({
   }),
   permission: { create: "inventory" },
   async run(ctx, { id: _id, ...input }) {
-    const refused = await refuseLinesideKitRack(ctx, input);
+    const refused = await service.refuseLinesideKitRack(ctx, input);
     if (refused) return refused;
     return unwrap(
       ctx,
@@ -7174,7 +7140,7 @@ export const updateStorageUnit = defineServiceFn({
       .maybeSingle();
     if (!current.data) return ctx.error("notFound", NOT_FOUND, current.error);
     // A key sent without a value clears the column; a key left out keeps it.
-    const refused = await refuseLinesideKitRack(ctx, {
+    const refused = await service.refuseLinesideKitRack(ctx, {
       ...current.data,
       ...input,
       kitRack: input.kitRack ?? current.data.kitRack
