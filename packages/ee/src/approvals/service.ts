@@ -1052,6 +1052,38 @@ export async function isApprovalRequired(
 }
 
 /**
+ * `isApprovalRequired`, reading the rule through `db`: a posting asks it
+ * inside its transaction, which an API read cannot see. The plan check stays
+ * on `client`; it reads the company's plan, and only on Carbon Cloud. The
+ * tier is the one `getApprovalRuleByAmount` picks.
+ */
+export async function isApprovalRequiredIn(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  documentType: (typeof approvalDocumentType)[number],
+  companyId: string,
+  amount?: number
+): Promise<boolean> {
+  if (
+    !(await companyHasFeature(client, companyId, { feature: "APPROVAL_RULES" }))
+  ) {
+    return false;
+  }
+  let query = db
+    .selectFrom("approvalRule")
+    .select("id")
+    .where("documentType", "=", documentType)
+    .where("companyId", "=", companyId)
+    .where("enabled", "=", true);
+  query =
+    amount !== undefined && amount !== null
+      ? query.where("lowerBoundAmount", "<=", amount)
+      : query.where("lowerBoundAmount", "=", 0);
+  const rule = await query.limit(1).executeTakeFirst();
+  return rule !== undefined;
+}
+
+/**
  * Rejects a pending request and sets its document's rejected status. Joins
  * the transaction `db` already is, so a caller can undo what the request was
  * for in the same commit.

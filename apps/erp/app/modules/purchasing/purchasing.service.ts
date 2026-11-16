@@ -66,6 +66,7 @@ import {
   getApproverUserIdsForRule,
   getDocumentApproval,
   isApprovalRequired,
+  isApprovalRequiredIn,
   rejectRequest
 } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
@@ -2421,47 +2422,55 @@ export type PurchaseOrderApprovalState = {
 };
 
 /**
- * Each order's status, total and approved amount, in two queries. Pass the
- * service role: `approvalRequest` has no API read policy.
+ * Each order's status, total and approved amount, in two queries. Read
+ * through `db`, so a posting asks it inside its transaction and sees the
+ * orders it locked (`approvalRequest` has no API read policy either).
  */
 export async function getPurchaseOrderApprovalStates(
-  system: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   purchaseOrderIds: string[]
 ): Promise<
   | { data: Map<string, PurchaseOrderApprovalState>; error: null }
-  | { data: null; error: PostgrestError }
+  | { data: null; error: unknown }
 > {
   const ids = [...new Set(purchaseOrderIds.filter(Boolean))];
   const states = new Map<string, PurchaseOrderApprovalState>();
   if (ids.length === 0) return { data: states, error: null };
 
-  const [orders, approved] = await Promise.all([
-    system
-      .from("purchaseOrders")
-      .select("id, purchaseOrderId, status, orderTotal, receivedQuantity")
-      .eq("companyId", companyId)
-      .in("id", ids),
-    // Paged: many orders at once (an invoice's) can hold more approved
-    // requests than one response returns, and a cut tail would read as
-    // "no approved amount".
-    fetchAllRecords(() =>
-      system
-        .from("approvalRequest")
-        .select("id, documentId, amount, decisionAt")
-        .eq("companyId", companyId)
-        .eq("documentType", "purchaseOrder")
-        .eq("status", "Approved")
-        .in("documentId", ids)
-        .order("decisionAt", { ascending: false })
-        .order("id")
-    )
-  ]);
-  if (orders.error) return { data: null, error: orders.error };
-  if (approved.error) return { data: null, error: approved.error };
+  let orders;
+  let approved;
+  try {
+    [orders, approved] = await Promise.all([
+      db
+        .selectFrom("purchaseOrders")
+        .select([
+          "id",
+          "purchaseOrderId",
+          "status",
+          "orderTotal",
+          "receivedQuantity"
+        ])
+        .where("companyId", "=", companyId)
+        .where("id", "in", ids)
+        .execute(),
+      db
+        .selectFrom("approvalRequest")
+        .select(["id", "documentId", "amount", "decisionAt"])
+        .where("companyId", "=", companyId)
+        .where("documentType", "=", "purchaseOrder")
+        .where("status", "=", "Approved")
+        .where("documentId", "in", ids)
+        .orderBy("decisionAt", "desc")
+        .orderBy("id")
+        .execute()
+    ]);
+  } catch (error) {
+    return { data: null, error };
+  }
 
   const approvedAmountById = new Map<string, number | null>();
-  for (const request of approved.data ?? []) {
+  for (const request of approved) {
     // Newest first: the first row per order is its latest approval. A latest
     // approval with no amount approved no amount to hold the order to: null,
     // never $0 (which would hold every such order) and never an older
@@ -2473,7 +2482,7 @@ export async function getPurchaseOrderApprovalStates(
     );
   }
 
-  for (const order of orders.data ?? []) {
+  for (const order of orders) {
     if (!order.id) continue;
     states.set(order.id, {
       id: order.id,
@@ -2491,34 +2500,42 @@ export async function getPurchaseOrderApprovalStates(
  * Why goods may not be received or invoiced against these orders, or null
  * when every one is released (for an invoice, released or Closed) and within
  * its approved amount. An id with no order is left to the caller's own
- * not-found check.
+ * not-found check. The orders, requests and rules are read through `db`;
+ * `system` serves only the plan check.
  */
 export async function getPurchaseOrderFundsRefusal(
+  db: Kysely<KyselyDatabase>,
   system: SupabaseClient<Database>,
   companyId: string,
   purchaseOrderIds: string[],
   intent: PurchaseOrderFundsIntent
 ): Promise<
-  { data: string | null; error: null } | { data: null; error: PostgrestError }
+  { data: string | null; error: null } | { data: null; error: unknown }
 > {
   const states = await getPurchaseOrderApprovalStates(
-    system,
+    db,
     companyId,
     purchaseOrderIds
   );
-  if (states.error) return states;
+  if (states.data === null) return { data: null, error: states.error };
   for (const order of states.data.values()) {
     // An order above its approved amount with no rule covering the new
     // total is not waiting for anyone (`settlePurchaseOrderAmendment` raised
     // no request), so nothing holds it.
-    const held =
-      exceedsApprovedAmount(order.total, order.approvedAmount) &&
-      (await isApprovalRequired(
-        system,
-        "purchaseOrder",
-        companyId,
-        order.total
-      ));
+    let held: boolean;
+    try {
+      held =
+        exceedsApprovedAmount(order.total, order.approvedAmount) &&
+        (await isApprovalRequiredIn(
+          db,
+          system,
+          "purchaseOrder",
+          companyId,
+          order.total
+        ));
+    } catch (error) {
+      return { data: null, error };
+    }
     const refusal = purchaseOrderFundsRefusal(
       held ? order : { ...order, approvedAmount: null },
       intent
@@ -2533,17 +2550,20 @@ export async function getPurchaseOrderFundsRefusal(
  * not be received or invoiced against these orders, else null. Every caller
  * that moves goods or money against a purchase order runs it (receipts,
  * invoices from an order, invoice posting), so the API and MCP get the same
- * answer as the page.
+ * answer as the page. `db` is the caller's transaction when it holds the
+ * orders' locks (the invoice posting), else the system connection.
  */
 export async function purchaseOrderFundsGate(
   ctx: ServiceContext,
   purchaseOrderIds: string | null | undefined | (string | null | undefined)[],
   {
     intent,
-    purchaseOrderLineIds = []
+    purchaseOrderLineIds = [],
+    db = ctx.asSystem.pg
   }: {
     intent: PurchaseOrderFundsIntent;
     purchaseOrderLineIds?: (string | null | undefined)[];
+    db?: Kysely<KyselyDatabase>;
   }
 ): Promise<CarbonError | null> {
   const ids = (
@@ -2553,22 +2573,25 @@ export async function purchaseOrderFundsGate(
     Boolean(id)
   );
   if (lineIds.length > 0) {
-    const lines = await ctx.asSystem.supabase
-      .from("purchaseOrderLine")
-      .select("purchaseOrderId")
-      .eq("companyId", ctx.company.id)
-      .in("id", lineIds);
-    if (lines.error) {
+    try {
+      const lines = await db
+        .selectFrom("purchaseOrderLine")
+        .select("purchaseOrderId")
+        .where("companyId", "=", ctx.company.id)
+        .where("id", "in", lineIds)
+        .execute();
+      for (const line of lines) ids.push(line.purchaseOrderId);
+    } catch (error) {
       return ctx.error(
         "internal",
         "Failed to read the purchase order lines",
-        lines.error
+        error
       );
     }
-    for (const line of lines.data ?? []) ids.push(line.purchaseOrderId);
   }
   if (ids.length === 0) return null;
   const funds = await getPurchaseOrderFundsRefusal(
+    db,
     ctx.asSystem.supabase,
     ctx.company.id,
     ids,
@@ -2961,10 +2984,10 @@ export async function settlePurchaseOrderAmendment(
     priorVersion?: PurchaseOrderVersion;
   }
 ): Promise<{ resubmitted: boolean; amount: number }> {
-  const states = await getPurchaseOrderApprovalStates(system, companyId, [
+  const states = await getPurchaseOrderApprovalStates(db, companyId, [
     purchaseOrderId
   ]);
-  if (states.error) throw states.error;
+  if (states.data === null) throw states.error;
   const order = states.data.get(purchaseOrderId);
   if (!order || !isPurchaseOrderAmendable(order.status)) {
     return { resubmitted: false, amount: order?.total ?? 0 };

@@ -450,6 +450,7 @@ test("rejecting an edit puts back the approved version and keeps the order live"
 
     // The approved version may be received again.
     const funds = await purchasingService.getPurchaseOrderFundsRefusal(
+      f.db,
       client!,
       f.companyId,
       [f.ids.order],
@@ -531,6 +532,7 @@ test("an increase stays released, and receivable, when no rule covers the new to
     expect((await f.order()).status).toBe("To Receive and Invoice");
     expect((await f.requests()).map((r) => r.status)).toEqual(["Approved"]);
     const funds = await purchasingService.getPurchaseOrderFundsRefusal(
+      f.db,
       client!,
       f.companyId,
       [f.ids.order],
