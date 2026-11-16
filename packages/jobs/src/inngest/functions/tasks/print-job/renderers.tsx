@@ -23,6 +23,10 @@ import {
 } from "@carbon/documents/zpl";
 import { ERP_URL, SUPABASE_INTERNAL_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
+import {
+  renderSalesInvoicePdf,
+  type SalesInvoicePDFProps
+} from "@carbon/lib/sales-invoice-document.server";
 import { renderWithBinderyPress } from "@carbon/printing/printing.server";
 import type { LabelSize, ProductLabelItem } from "@carbon/utils";
 import { labelSizes } from "@carbon/utils";
@@ -40,7 +44,8 @@ export type GeneratedContent = {
 export type PrintableDocumentItem =
   | { type: "productLabel"; item: ProductLabelItem }
   | { type: "kanbanCard"; item: KanbanCardItem }
-  | { type: "storageUnitLabel"; item: StorageUnitItem };
+  | { type: "storageUnitLabel"; item: StorageUnitItem }
+  | { type: "salesInvoice"; item: SalesInvoicePDFProps };
 
 export async function renderItemWithTemplate(
   doc: PrintableDocumentItem,
@@ -116,6 +121,15 @@ export async function renderItemBuiltIn(
         content: generateStorageUnitLabelZPL(doc.item, mediaSize),
         contentType: "zpl"
       };
+    }
+    case "salesInvoice": {
+      if (format !== "pdf") {
+        throw new Error(
+          "A sales invoice prints on a PDF printer; this printer takes ZPL."
+        );
+      }
+      const body = await renderSalesInvoicePdf(doc.item);
+      return { content: body.toString("base64"), contentType: "pdf" };
     }
   }
 }

@@ -5,7 +5,11 @@
 import type { Database } from "@carbon/database";
 import { getPickingListTravelerEntities } from "@carbon/database/travelers";
 import { type KanbanLabelAction, kanbanLabelCode } from "@carbon/documents/zpl";
-import { ERP_URL } from "@carbon/env";
+import { ERP_URL, SUPABASE_INTERNAL_URL } from "@carbon/env";
+import {
+  loadSalesInvoiceDocument,
+  type SalesInvoicePDFProps
+} from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
 import type { ProductLabelItem } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -332,4 +336,38 @@ async function enrichTrackedEntities(
       trackingType: item.itemTrackingType
     };
   });
+}
+
+/**
+ * A sales invoice's PDF props, read once with the same loader as the ERP's
+ * PDF route, so the printed page matches the preview. The PDF is rendered in
+ * this worker, so logos come from the internal storage URL.
+ */
+export async function resolveSalesInvoiceData(
+  client: SupabaseClient<Database>,
+  invoiceId: string,
+  companyId: string
+): Promise<{ pdfProps: SalesInvoicePDFProps; readableId: string }> {
+  const company = await client
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", companyId)
+    .single();
+  if (company.error || !company.data.companyGroupId) {
+    throw new Error(`Failed to load company ${companyId}`);
+  }
+
+  const document = await loadSalesInvoiceDocument({
+    client,
+    companyId,
+    companyGroupId: company.data.companyGroupId,
+    invoiceId,
+    locale: "en-US",
+    storageUrl: SUPABASE_INTERNAL_URL ?? ""
+  });
+
+  return {
+    pdfProps: document.pdfProps,
+    readableId: document.invoiceReadableId
+  };
 }

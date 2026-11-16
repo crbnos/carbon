@@ -44,6 +44,14 @@ export const documentTypeRegistry = [
     builtInRenderer: "zpl" as const,
     defaultFormat: "zpl" as const,
     description: "Labels for shelves, bins, and storage locations"
+  },
+  {
+    id: "salesInvoice",
+    displayName: "Sales Invoice",
+    sourceDocuments: ["SalesInvoice"],
+    builtInRenderer: "pdf" as const,
+    defaultFormat: "pdf" as const,
+    description: "Full-page invoice for a document printer"
   }
 ] as const satisfies readonly DocumentTypeDefinition[];
 
@@ -54,7 +62,8 @@ export type SourceDocument =
 /**
  * The slots a company sets a BinderyPress template for, one per label type and
  * media size. A product label fills the serial or the batch slot by the item's
- * tracking type; every other document type is its own slot.
+ * tracking type; every other label type is its own slot. Full-page documents
+ * (invoices) have no slot.
  */
 export const labelTemplateTypes = [
   "serialLabel",
@@ -68,11 +77,13 @@ export type LabelTemplateType = (typeof labelTemplateTypes)[number];
 export function getLabelTemplateType(
   documentTypeId: DocumentTypeId,
   trackingType?: string | null
-): LabelTemplateType {
+): LabelTemplateType | null {
   if (documentTypeId === "productLabel") {
     return trackingType === "Serial" ? "serialLabel" : "batchLabel";
   }
-  return documentTypeId;
+  return (labelTemplateTypes as readonly string[]).includes(documentTypeId)
+    ? (documentTypeId as LabelTemplateType)
+    : null;
 }
 
 export function getDocumentTypesForSource(

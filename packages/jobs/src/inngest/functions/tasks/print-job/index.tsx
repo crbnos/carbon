@@ -30,6 +30,7 @@ import { renderItemBuiltIn, renderItemWithTemplate } from "./renderers";
 import {
   type KanbanCardItem,
   resolveKanbanData,
+  resolveSalesInvoiceData,
   resolveStorageUnitData,
   resolveTrackedEntityData
 } from "./resolvers";
@@ -213,6 +214,17 @@ async function resolveDocumentItems(
         readableId: resolved?.readableId ?? null
       };
     }
+    case "salesInvoice": {
+      const resolved = await resolveSalesInvoiceData(
+        client,
+        sourceDocumentId,
+        companyId
+      );
+      return {
+        docs: [{ type: "salesInvoice" as const, item: resolved.pdfProps }],
+        readableId: resolved.readableId
+      };
+    }
   }
 }
 
@@ -239,6 +251,7 @@ function describeDocument(
       parts.push(KANBAN_CARD_NAMES[doc.item.action]);
       break;
     case "storageUnitLabel":
+    case "salesInvoice":
       break;
   }
 
@@ -311,7 +324,7 @@ async function processDocumentType(
       documentTypeId,
       doc.type === "productLabel" ? doc.item.trackingType : null
     );
-    const templateId = templates.get(labelType);
+    const templateId = labelType ? templates.get(labelType) : undefined;
 
     try {
       let content: GeneratedContent;

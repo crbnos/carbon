@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
+import { usePrinting } from "@carbon/printing/ui";
 import { useAction } from "@carbon/query";
 import {
   Button,
@@ -38,6 +39,7 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
 import { Link, useParams } from "react-router";
+import { PrintButton } from "~/components";
 import { useAuditLog } from "~/components/AuditLog";
 import {
   EditDocumentMenuItem,
@@ -118,6 +120,9 @@ const SalesInvoiceHeader = () => {
   if (!routeData?.salesInvoice) throw new Error("salesInvoice not found");
   const { salesInvoice } = routeData;
   const { toggleExplorer, toggleProperties } = usePanels();
+  const hasPdfPrinter = usePrinting().printerRoutes.some(
+    (route) => route.format === "pdf"
+  );
   const isPosted = salesInvoice.postingDate !== null;
   const isVoided = salesInvoice.status === "Voided";
 
@@ -461,6 +466,17 @@ const SalesInvoiceHeader = () => {
                 >
                   <Trans>Send</Trans>
                 </Button>
+              </RecordAction>
+            )}
+            {hasPdfPrinter && (
+              <RecordAction slot="overflow">
+                <PrintButton
+                  sourceDocument="SalesInvoice"
+                  sourceDocumentId={invoiceId}
+                  locationId={salesInvoice.locationId ?? undefined}
+                  context="default"
+                  format="pdf"
+                />
               </RecordAction>
             )}
             <RecordAction slot="overflow">
