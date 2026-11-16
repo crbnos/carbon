@@ -41,7 +41,7 @@ export { setWorkflowDispatch } from "../workflows/actions/dispatcher.ts";
 export type { ManualRunResult } from "../workflows/engine/index.ts";
 export {
   executeManualWorkflowRun,
-  noAccess
+  ownerRefusal
 } from "../workflows/engine/index.ts";
 export { inngest } from "./client.ts";
 

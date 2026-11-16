@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
 import { RecordOutlet } from "@carbon/react";
@@ -18,11 +18,10 @@ import { ExplorerSkeleton } from "~/components/Skeletons";
 import { flattenTree } from "~/components/TreeView";
 import { getConfigurationParameters } from "~/modules/items/items.utils";
 import {
-  getJob,
+  type getJob,
   getJobMaterialsWithQuantityOnHand,
   getJobOrderStatusMap,
-  getJobProjectCharge,
-  getTrackedEntitiesByJobId
+  getJobProjectCharge
 } from "~/modules/production/production.service";
 import type { JobMethodTreeItem } from "~/modules/production/production.utils";
 import { getJobMethodTree } from "~/modules/production/production.utils";
@@ -32,10 +31,7 @@ import {
   JobProperties
 } from "~/modules/production/ui/Jobs";
 import type { JobOrderStatusData } from "~/modules/production/ui/Jobs/JobBoMExplorer";
-import {
-  getLocationTimeZone,
-  getTagsList
-} from "~/modules/shared/shared.service";
+import { getLocationTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -78,7 +74,6 @@ export const handle: Handle = {
     { breadcrumb: msg`Jobs`, to: path.to.jobs },
     (data) => data?.job?.jobId
   ),
-  module: "production",
   // Everything the job's pages show: an operation finished on the shop floor,
   // a pick, a step record — all reach this page without a reload.
   realtime: [
@@ -104,17 +99,18 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.job?.jobId, "Job");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "production.jobs": "View" },
+    { bypassRls: true }
+  );
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
   const [job, tags, projectCharge] = await Promise.all([
-    getJob(client, jobId),
-    getTagsList(client, companyId, "job"),
+    api.production.getJob({ id: jobId }),
+    api.shared.getTagsList({ table: "job" }),
     getJobProjectCharge(client, jobId, companyId)
   ]);
 
@@ -154,7 +150,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     projectCharge: projectCharge.data ?? null,
     unbatchedBatchableOperations,
     tags: tags.data ?? [],
-    trackedEntities: getTrackedEntitiesByJobId(client, jobId),
+    trackedEntities: api.production.getTrackedEntitiesByJobId({ jobId }),
     method: getJobMethodTree(client, jobId), // returns a promise
     orderStatus: getJobOrderStatus(
       client,

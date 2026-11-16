@@ -1,0 +1,493 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { type Action, type Level, lowerLevel } from "./levels";
+import * as accounting from "./pages/accounting";
+import * as documents from "./pages/documents";
+import * as inventory from "./pages/inventory";
+import * as invoicing from "./pages/invoicing";
+import * as parts from "./pages/parts";
+import * as people from "./pages/people";
+import * as production from "./pages/production";
+import * as projects from "./pages/projects";
+import * as purchasing from "./pages/purchasing";
+import * as quality from "./pages/quality";
+import * as resources from "./pages/resources";
+import * as sales from "./pages/sales";
+import * as service from "./pages/service";
+import * as settings from "./pages/settings";
+import * as users from "./pages/users";
+import * as workflows from "./pages/workflows";
+import type { AnyOfGate, PageGate } from "./resolve";
+
+/**
+ * Two or more pages share a table: the column and value that pick this page's
+ * rows. Without a value, the page's rows are the ones where the column is set
+ * (a memo's `supplierId`, a grant's `apiKeyId`).
+ */
+export type SharedTable = {
+  table: string;
+  column: string;
+  value?: string | boolean;
+};
+
+/** `[fk, table]`: the next table's row whose `id` is this row's `fk`. */
+export type Hop = readonly [fk: string, table: string];
+
+/**
+ * A table that hangs off a shared table. `via` is the column that points at
+ * the shared row; `path` is the hops to it through other tables, ending at the
+ * shared table (`methodMaterial` → `makeMethod` → `item`).
+ */
+export type Child =
+  | { table: string; via: string }
+  | { table: string; path: readonly Hop[] };
+
+/** A permission subject: a screen, usually one sidebar entry (`use<Module>Submodules.tsx`). */
+export type Page = {
+  /** `<module>.<page>`, or the module key for a module that has one page. */
+  id: string;
+  label: string;
+  /** The highest level the page supports. */
+  maxLevel: Level;
+  /** The tables the page owns: writes to them need the page's levels. */
+  tables: readonly string[];
+  where?: SharedTable;
+  /** Tables of the shared table's pages that check `where` through it. */
+  children?: readonly Child[];
+  /** Restricted tables of other modules' pages that this page reads. */
+  readers?: readonly string[];
+  /**
+   * Tables this page owns that other pages also write at the same action, each
+   * with those pages: a table that moved to this page from another module keeps
+   * a page of the old module, which also lists it in `readers` when its read is
+   * restricted (@carbon/checks `moved-tables-covered`), and a table another
+   * page writes its own rows of (a supplier's addresses). RLS renders it.
+   */
+  alsoWrittenBy?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * Tables holding secrets (key hashes, webhook URLs, connection details): a read
+   * needs View on this page itself, never just any page of its module.
+   */
+  privateReads?: readonly string[];
+  /** Route path prefixes, used to map route files to pages. */
+  paths: readonly string[];
+};
+
+/** The page files, one per permission module, in sidebar order. */
+const MODULE_FILES = [
+  accounting,
+  documents,
+  inventory,
+  invoicing,
+  parts,
+  people,
+  production,
+  projects,
+  purchasing,
+  quality,
+  resources,
+  sales,
+  service,
+  settings,
+  users,
+  workflows
+] as const satisfies readonly { LABEL: string; PAGES: readonly Page[] }[];
+
+type RegistryPage = (typeof MODULE_FILES)[number]["PAGES"][number];
+
+/** Every page, module by module in sidebar order. */
+export const PAGES: readonly RegistryPage[] = MODULE_FILES.flatMap(
+  (file) => file.PAGES as readonly RegistryPage[]
+);
+
+export type PageId = (typeof PAGES)[number]["id"];
+export type PermissionKey = `${PageId}_${Action}`;
+
+/** A permission module's id: a page id up to its first `.` (`inventory`, `documents`). */
+export type ModuleId = PageId extends infer P
+  ? P extends `${infer M}.${string}`
+    ? M
+    : P
+  : never;
+
+/** The `module` enum label of a permission module: `Inventory`, and `Parts` for Items. */
+export type ModuleEnum = Capitalize<ModuleId>;
+
+/** The permission modules, in sidebar order: `label` is the sidebar name, `enum` the `module` enum label. */
+export const MODULES: readonly {
+  id: ModuleId;
+  label: string;
+  enum: ModuleEnum;
+}[] = MODULE_FILES.map((file) => {
+  const id = moduleOf(file.PAGES[0].id) as ModuleId;
+  return { id, label: file.LABEL, enum: moduleEnum(id) };
+});
+
+const MODULE_IDS = new Set<string>(MODULES.map((module) => module.id));
+
+const PAGE_BY_ID = new Map<string, Page>(PAGES.map((page) => [page.id, page]));
+
+export function pageById(pageId: string): Page | undefined {
+  return PAGE_BY_ID.get(pageId);
+}
+
+export function moduleOf(pageId: string): string {
+  const dot = pageId.indexOf(".");
+  return dot === -1 ? pageId : pageId.slice(0, dot);
+}
+
+/** The `module` enum label of a module id: `inventory` → `Inventory`. */
+export function moduleEnum(id: ModuleId): ModuleEnum {
+  return (id.charAt(0).toUpperCase() + id.slice(1)) as ModuleEnum;
+}
+
+/** The module id of a `module` enum label; undefined for a label with no pages (`Items`). */
+export function moduleId(label: string): ModuleId | undefined {
+  const id = label.charAt(0).toLowerCase() + label.slice(1);
+  return MODULE_IDS.has(id) && moduleEnum(id as ModuleId) === label
+    ? (id as ModuleId)
+    : undefined;
+}
+
+/** Whether a `module` enum label names a module with pages: a grant can hold it. */
+export function isPageModule(label: string): label is ModuleEnum {
+  return moduleId(label) !== undefined;
+}
+
+/** The pages of a module, in sidebar order. */
+export function pagesOf(module: string): PageId[] {
+  return PAGES.filter((page) => moduleOf(page.id) === module).map(
+    (page) => page.id
+  );
+}
+
+/** The page of each item type, which picks its rows of `item`: `{ Part: "parts.parts", … }`. */
+export const ITEM_TYPE_PAGES: Readonly<Record<string, PageId>> =
+  Object.fromEntries(
+    PAGES.flatMap((page) =>
+      "where" in page && page.where.table === "item"
+        ? [[page.where.value, page.id]]
+        : []
+    )
+  );
+
+/** The five item type pages: Parts, Materials, Tools, Consumables and Services. */
+export const ITEM_PAGES: readonly PageId[] = parts.ITEM_PAGE_IDS;
+
+/** One page's rows of a shared table: the column, and the value that picks them. */
+export type Branch = {
+  page: string;
+  column: string;
+  value?: string | boolean;
+};
+
+/**
+ * Where a table sits in the registry, which decides what a module key in its
+ * RLS rule resolves to: the page that owns it, one branch per page of a shared
+ * table, or the branches of the shared table it hangs off.
+ */
+export type TablePlace =
+  | { kind: "page"; page: string }
+  | { kind: "shared"; branches: Branch[] }
+  | { kind: "child"; parent: string; path: readonly Hop[]; branches: Branch[] };
+
+/** A child's hops to its shared table: `via` is a path of one hop. */
+export const childPath = (child: Child, parent: string): readonly Hop[] =>
+  "path" in child ? child.path : [[child.via, parent]];
+
+function buildIndex() {
+  // Page files cannot import the registry, so parts.ts lists the item pages
+  // by hand; they must be the pages that pick their rows of `item`.
+  if (
+    [...Object.values(ITEM_TYPE_PAGES)].sort().join() !==
+    [...parts.ITEM_PAGE_IDS].sort().join()
+  )
+    throw new Error(
+      "registry: parts.ITEM_PAGE_IDS must be the pages whose where is on item"
+    );
+  const places = new Map<string, TablePlace>();
+  const readers = new Map<string, string[]>();
+  const writers = new Map<string, string[]>();
+  const privates = new Set<string>();
+  const put = (table: string, next: TablePlace) => {
+    const prev = places.get(table);
+    if (!prev) {
+      places.set(table, next);
+      return;
+    }
+    if (
+      prev.kind === "page" ||
+      next.kind === "page" ||
+      prev.kind !== next.kind ||
+      (prev.kind === "child" &&
+        next.kind === "child" &&
+        (prev.parent !== next.parent ||
+          JSON.stringify(prev.path) !== JSON.stringify(next.path)))
+    )
+      throw new Error(`registry: ${table} sits on more than one page`);
+    prev.branches.push(...next.branches);
+  };
+  for (const page of PAGES as readonly Page[]) {
+    const where = page.where;
+    const branch = where && {
+      page: page.id,
+      column: where.column,
+      value: where.value
+    };
+    for (const table of page.tables)
+      put(
+        table,
+        branch && where?.table === table
+          ? { kind: "shared", branches: [branch] }
+          : { kind: "page", page: page.id }
+      );
+    for (const child of page.children ?? []) {
+      if (!branch || !where)
+        throw new Error(`registry: ${page.id} has children but no where`);
+      put(child.table, {
+        kind: "child",
+        parent: where.table,
+        path: childPath(child, where.table),
+        branches: [branch]
+      });
+    }
+    for (const table of page.readers ?? [])
+      readers.set(table, [...(readers.get(table) ?? []), page.id]);
+  }
+  for (const page of PAGES as readonly Page[])
+    for (const [table, pages] of Object.entries(page.alsoWrittenBy ?? {})) {
+      if (!(ownersIn(places.get(table)) as string[]).includes(page.id))
+        throw new Error(
+          `registry: ${page.id} lists ${table} in alsoWrittenBy but does not own it`
+        );
+      for (const writer of pages)
+        if (!PAGE_BY_ID.has(writer) || writer === page.id)
+          throw new Error(
+            `registry: ${table} is also written by ${writer}, which is no other page`
+          );
+      writers.set(table, [
+        ...new Set([...(writers.get(table) ?? []), ...pages])
+      ]);
+    }
+  // A shared table's read is per branch (rules.ts), so a private one is a page's own table.
+  for (const page of PAGES as readonly Page[])
+    for (const table of page.privateReads ?? []) {
+      const place = places.get(table);
+      if (place?.kind !== "page" || place.page !== page.id)
+        throw new Error(
+          `registry: ${page.id} lists ${table} in privateReads but is not its only page`
+        );
+      privates.add(table);
+    }
+  return { places, readers, writers, privates };
+}
+
+const ownersIn = (place: TablePlace | undefined): PageId[] =>
+  (!place
+    ? []
+    : place.kind === "page"
+      ? [place.page]
+      : place.branches.map((branch) => branch.page)) as PageId[];
+
+const INDEX = buildIndex();
+
+/** The table's place in the registry; undefined when no page lists it. */
+export function placeOf(table: string): TablePlace | undefined {
+  return INDEX.places.get(table);
+}
+
+/** The table's page, or every branch's page for a shared table or a child; empty when no page lists it. */
+export function ownersOf(table: string): PageId[] {
+  return ownersIn(placeOf(table));
+}
+
+/** The pages that list the table in `readers`. */
+export function readersOf(table: string): readonly string[] {
+  return INDEX.readers.get(table) ?? [];
+}
+
+/** Whether a read of the table needs View on its own page (`Page.privateReads`). */
+export function isPrivateRead(table: string): boolean {
+  return INDEX.privates.has(table);
+}
+
+/** The pages that list the table in `alsoWrittenBy`, besides the page that owns it. */
+export function writersOf(table: string): readonly string[] {
+  return INDEX.writers.get(table) ?? [];
+}
+
+/**
+ * What RLS admits a read of the table on: View on any page of `modules`, or on
+ * one of `readers`. rules.ts `belongsTo` renders its SELECT from this.
+ */
+export function readAccessOf(table: string): {
+  modules: ModuleId[];
+  readers: PageId[];
+} {
+  const owners = ownersOf(table);
+  const readers = readersOf(table) as PageId[];
+  if (isPrivateRead(table))
+    return { modules: [], readers: [...new Set([...owners, ...readers])] };
+  return {
+    modules: [...new Set(owners.map((page) => moduleOf(page) as ModuleId))],
+    readers
+  };
+}
+
+/**
+ * A read of the table as RLS answers it. A service-role read on a person's behalf
+ * checks this, not `widenReads`, which widens by page and admits more than RLS.
+ */
+export function tableReadGate(table: string): AnyOfGate {
+  const { modules, readers } = readAccessOf(table);
+  const pages = new Set<PageId>([...modules.flatMap(pagesOf), ...readers]);
+  return { anyOf: [...pages].map((page) => ({ [page]: "View" }) as PageGate) };
+}
+
+/**
+ * The pages whose View admits a read of what a page owns: every page of its
+ * module (only the page itself when it has `privateReads`), then the pages of
+ * other modules that list one of its tables in `readers`. Writes stay per page.
+ * `holdsGate`'s read mode (`widenReads`) uses it. It is per page, so wider
+ * than RLS, which is per table (`readAccessOf`).
+ */
+export function readPages(pageId: string): PageId[] {
+  const module = moduleOf(pageId);
+  const others = new Set<string>();
+  for (const table of pageById(pageId)?.tables ?? [])
+    for (const reader of readersOf(table))
+      if (moduleOf(reader) !== module) others.add(reader);
+  return [
+    ...(pageById(pageId)?.privateReads?.length
+      ? [pageId as PageId]
+      : pagesOf(module)),
+    ...(PAGES as readonly Page[])
+      .map((page) => page.id as PageId)
+      .filter((id) => others.has(id))
+  ];
+}
+
+/** A level at most the page's `maxLevel`; an unknown page leaves it as it is. */
+export function clampLevel(pageId: string, level: Level): Level {
+  const page = PAGE_BY_ID.get(pageId);
+  return page ? lowerLevel(level, page.maxLevel) : level;
+}
+
+/** A URL's path segments, without its query or hash. */
+export const urlSegments = (url: string): string[] =>
+  (url.split(/[?#]/)[0] ?? "").split("/").filter(Boolean);
+
+/**
+ * The URL a flat-routes file under `routes/x+/` serves:
+ * `receipt+/$receiptId.details.tsx` → `/x/receipt/$receiptId/details`.
+ * A `_` segment is pathless; a trailing `_` opts out of the parent layout.
+ */
+export function routeUrl(file: string): string {
+  const segments = file
+    .replace(/\.(tsx?|jsx?)$/, "")
+    .split("/")
+    .flatMap((part) => part.replace(/\+$/, "").split("."))
+    .filter((segment) => !segment.startsWith("_"))
+    .map((segment) => segment.replace(/_$/, ""));
+  return ["/x", ...segments].join("/");
+}
+
+/**
+ * How many segments of a path cover the URL; 0 when it does not. A path
+ * covers its own URL and every URL below it. A `$param` segment of the path
+ * matches any one segment, so a pathname (`/x/customer/c1/assets`) and a route
+ * pattern (`/x/customer/$customerId/assets`) both match.
+ */
+export function urlCoverage(path: string, url: readonly string[]): number {
+  const want = urlSegments(path);
+  if (want.length > url.length) return 0;
+  for (const [i, part] of want.entries())
+    if (!part.startsWith("$") && part !== url[i]) return 0;
+  return want.length;
+}
+
+/**
+ * Every page whose longest covering `paths` entry is the longest for the URL,
+ * in registry order: one page for a URL the registry places, several for a
+ * tie (which @carbon/checks' `route-maps-to-page` refuses), none for a URL no
+ * page covers.
+ */
+export function pagesOfUrl<P extends { id: string; paths: readonly string[] }>(
+  pathname: string,
+  pages: readonly P[]
+): P["id"][] {
+  const url = urlSegments(pathname);
+  let best = 0;
+  let found: P["id"][] = [];
+  for (const page of pages)
+    for (const path of page.paths) {
+      const length = urlCoverage(path, url);
+      if (length === 0 || length < best) continue;
+      if (length > best) found = [];
+      best = length;
+      if (!found.includes(page.id)) found.push(page.id);
+    }
+  return found;
+}
+
+/**
+ * The page a URL belongs to: the page with the longest `paths` entry that
+ * covers it. Undefined for a URL no page covers (the dashboard, a settings
+ * index, a route listed in @carbon/checks' `UNPAGED_ROUTES`).
+ */
+export function pageOfUrl(pathname: string): PageId | undefined {
+  return pagesOfUrl(pathname, PAGES)[0];
+}
+
+/**
+ * The page that owns a row of `table`: the page that owns the table, or for a
+ * table several pages share, the page whose `where` the row matches (an item
+ * by its `type`, a memo by which party it carries, a run by its `type`). The
+ * row needs the `where` column. Undefined for a table no page owns, a shared
+ * row no `where` matches, and a child table (its row does not carry the
+ * shared column: ask about the shared row it hangs off).
+ */
+export function pageOfRow(
+  table: string,
+  row: Readonly<Record<string, unknown>>
+): PageId | undefined {
+  const place = placeOf(table);
+  if (place?.kind === "page") return place.page as PageId;
+  if (place?.kind !== "shared") return undefined;
+  const branch = place.branches.find(({ column, value }) => {
+    const cell = row[column];
+    if (cell === null || cell === undefined) return false;
+    return value === undefined || String(cell) === String(value);
+  });
+  return branch?.page as PageId | undefined;
+}
+
+/** `pageOfRow`, for a table (and row) some page must own: throws when none does. */
+export function pageOfTable(
+  table: string,
+  row: Readonly<Record<string, unknown>> = {}
+): PageId {
+  const page = pageOfRow(table, row);
+  if (!page) throw new Error(`No page owns ${table}`);
+  return page;
+}
+
+// FNV-1a, not node:crypto: the claims cache key is built in browser code too.
+function fnv1a(text: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
+}
+
+/**
+ * Part of the claims cache key. Cached claims hold a level per page id, at
+ * most its `maxLevel`, so only those retire them: a label or path edit does not.
+ */
+export const REGISTRY_HASH = fnv1a(
+  JSON.stringify(PAGES.map((page) => [page.id, page.maxLevel]))
+);

@@ -60,7 +60,7 @@ export function ChangeNoticeContentSection({
   );
 
   const body =
-    permissions.can("update", "parts") && !isDisabled ? (
+    permissions.has({ "parts.changeNotices": "Edit" }) && !isDisabled ? (
       <Editor
         label={title}
         className="[&_.ProseMirror]:text-sm"

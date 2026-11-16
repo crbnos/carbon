@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { claimsFor } from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 import {
-  canAuthorizeForCompany,
+  companiesToAuthorize,
   isAllowedRedirectUri,
   isRefreshTokenIdle,
   isRegisteredRedirectUri,
@@ -99,37 +100,46 @@ describe("supportedScope", () => {
   });
 });
 
-describe("canAuthorizeForCompany", () => {
-  const settingsAdminIn = (...companyIds: string[]) => ({
-    settings: { view: companyIds, create: [], update: companyIds, delete: [] }
-  });
+describe("companiesToAuthorize", () => {
+  // What `get_claims` returns for each company: claims hold ONE company, so
+  // each membership must be checked with the claims read for it.
+  const getClaimsJson: Record<string, unknown> = {
+    c1: { role: "employee", admin: true, grants: [] },
+    c2: { role: "employee", admin: true, grants: [] },
+    c3: { role: "employee", admin: false, grants: [] }
+  };
+  const claimsOf = async (companyId: string) =>
+    claimsFor(getClaimsJson[companyId], companyId);
 
-  it("allows an employee holding settings_update in the selected company", () => {
-    expect(
-      canAuthorizeForCompany(
+  it("allows every company where the user holds API Keys Edit, not only the active one", async () => {
+    const allowed = await companiesToAuthorize(
+      [
         { companyId: "c1", role: "employee" },
-        settingsAdminIn("c1")
-      )
-    ).toBe(true);
-  });
-
-  // The session's active company is not the token's company: an admin of one
-  // company could otherwise mint a connector for another where they are not.
-  it("refuses when settings_update is held only in another company", () => {
-    expect(
-      canAuthorizeForCompany(
         { companyId: "c2", role: "employee" },
-        settingsAdminIn("c1")
-      )
-    ).toBe(false);
+        { companyId: "c3", role: "employee" }
+      ],
+      claimsOf
+    );
+    expect(allowed.map((m) => m.companyId)).toEqual(["c1", "c2"]);
   });
 
-  it("refuses a customer or supplier portal account", () => {
+  // An admin of one company could otherwise mint a connector for another
+  // where they are not.
+  it("refuses a company where API Keys Edit is held only elsewhere", async () => {
     expect(
-      canAuthorizeForCompany(
-        { companyId: "c1", role: "customer" },
-        settingsAdminIn("c1")
+      await companiesToAuthorize(
+        [{ companyId: "c3", role: "employee" }],
+        claimsOf
       )
-    ).toBe(false);
+    ).toEqual([]);
+  });
+
+  it("refuses a customer or supplier portal account", async () => {
+    expect(
+      await companiesToAuthorize(
+        [{ companyId: "c1", role: "customer" }],
+        claimsOf
+      )
+    ).toEqual([]);
   });
 });

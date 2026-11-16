@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { ITEM_PAGES } from "@carbon/database/access";
 import { RecordOutlet, useRouteData } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -13,14 +15,7 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
-import {
-  getConsumable,
-  getItemFiles,
-  getMaterialUsedIn,
-  getPickMethods,
-  getSupplierParts,
-  streamItemSupersession
-} from "~/modules/items/items.service";
+import { streamItemSupersession } from "~/modules/items/items.service";
 import type { ConsumableSummary, ItemFile } from "~/modules/items/types";
 import {
   ConsumableHeader,
@@ -28,7 +23,6 @@ import {
 } from "~/modules/items/ui/Consumables";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -37,18 +31,18 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Consumables`, to: path.to.consumables },
     (data) => data?.consumableSummary?.readableIdWithRevision
-  ),
-  module: "items"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.consumableSummary?.readableIdWithRevision, "Consumable");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "parts.consumables": "View" },
+    { bypassRls: true }
+  );
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -61,10 +55,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [consumableSummary, supplierParts, pickMethods, tags] =
     await Promise.all([
-      getConsumable(client, itemId, companyId),
-      getSupplierParts(client, itemId, companyId),
-      getPickMethods(client, itemId, companyId),
-      getTagsList(client, companyId, "consumable")
+      api.items.getConsumable({ itemId }),
+      api.items.getSupplierParts({ id: itemId }),
+      api.items.getPickMethods({ itemId }),
+      api.shared.getTagsList({ table: "consumable" })
     ]);
 
   if (consumableSummary.error) {
@@ -81,11 +75,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     consumableSummary: consumableSummary.data,
     supersession,
     supersededBy,
-    files: getItemFiles(client, itemId, companyId),
+    files: api.items.getItemFiles({ itemId }).then(dataOrThrow),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
     tags: tags.data ?? [],
-    usedIn: getMaterialUsedIn(client, itemId, companyId)
+    usedIn: api.items.getMaterialUsedIn({ itemId }).then(dataOrThrow)
   };
 }
 
@@ -135,32 +129,32 @@ export default function ConsumableRoute() {
                           {
                             key: "issues",
                             name: "Issues",
-                            module: "quality",
+                            pages: ["quality.issues"],
                             children: issues
                           },
                           {
                             key: "jobMaterials",
                             name: "Job Materials",
-                            module: "production",
+                            pages: ["production.jobs"],
                             children: jobMaterials
                           },
                           {
                             key: "maintenanceDispatchItems",
                             name: "Maintenance",
-                            module: "resources",
+                            pages: ["resources.dispatches"],
                             children: maintenanceDispatchItems
                           },
                           {
                             key: "methodMaterials",
                             name: "Method Materials",
-                            module: "parts",
+                            pages: ITEM_PAGES,
                             // @ts-expect-error
                             children: methodMaterials
                           },
                           {
                             key: "purchaseOrderLines",
                             name: "Purchase Orders",
-                            module: "purchasing",
+                            pages: ["purchasing.purchaseOrders"],
                             children: purchaseOrderLines.map((po) => ({
                               ...po,
                               methodType: "Purchase to Order"
@@ -169,7 +163,7 @@ export default function ConsumableRoute() {
                           {
                             key: "receiptLines",
                             name: "Receipts",
-                            module: "inventory",
+                            pages: ["inventory.receipts"],
                             children: receiptLines.map((receipt) => ({
                               ...receipt,
                               methodType: "Pull from Inventory"
@@ -179,7 +173,7 @@ export default function ConsumableRoute() {
                           {
                             key: "quoteMaterials",
                             name: "Quote Materials",
-                            module: "sales",
+                            pages: ["sales.quotes"],
                             children: quoteMaterials?.map((qm) => ({
                               ...qm,
                               documentReadableId: qm.documentReadableId ?? ""
@@ -188,13 +182,13 @@ export default function ConsumableRoute() {
                           {
                             key: "salesOrderLines",
                             name: "Sales Orders",
-                            module: "sales",
+                            pages: ["sales.salesOrders"],
                             children: salesOrderLines
                           },
                           {
                             key: "shipmentLines",
                             name: "Shipments",
-                            module: "inventory",
+                            pages: ["inventory.shipments"],
                             children: shipmentLines.map((shipment) => ({
                               ...shipment,
                               methodType: "Shipment"
@@ -203,7 +197,7 @@ export default function ConsumableRoute() {
                           {
                             key: "supplierQuotes",
                             name: "Supplier Quotes",
-                            module: "purchasing",
+                            pages: ["purchasing.supplierQuotes"],
                             children: supplierQuotes
                           }
                         ];
@@ -211,7 +205,7 @@ export default function ConsumableRoute() {
                         tree.push({
                           key: "inspections",
                           name: "Inspections",
-                          module: "quality",
+                          pages: ["quality.inspections"],
                           children: inspections
                         });
 

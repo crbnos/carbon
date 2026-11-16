@@ -145,7 +145,8 @@ export default function ManualPegForm({
             <Submit
               withBlocker={false}
               isDisabled={
-                options.length === 0 || !permissions.can("update", "projects")
+                options.length === 0 ||
+                !permissions.has({ "projects.projects": "Edit" })
               }
             >
               <Trans>Save</Trans>

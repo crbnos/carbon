@@ -15,6 +15,22 @@ import {
   type SqlBool,
   sql
 } from "kysely";
+import {
+  ACTIONS,
+  type Action,
+  type PortalKey,
+  permissionKey
+} from "../access/levels";
+import {
+  type ModuleId,
+  moduleOf,
+  type PermissionKey,
+  placeOf,
+  readAccessOf,
+  readersOf,
+  type TablePlace,
+  writersOf
+} from "../access/registry";
 import type { KyselyDatabase } from "../client";
 import type { Database } from "../types";
 
@@ -22,82 +38,250 @@ type Public = Database["public"];
 
 export type Table = keyof Public["Tables"] & keyof KyselyDatabase;
 type Column<T extends Table> = keyof Public["Tables"][T]["Row"] & string;
-export type Module = Lowercase<Public["Enums"]["module"]>;
-export type Permission = `${Module}_${"view" | "create" | "update" | "delete"}`;
-
-// ─── Who: the companies a caller belongs to ──────────────────────────────────
+/**
+ * A page key (`purchasing.suppliers_create`), written as is, or a bare action
+ * (`"update"`): the key of the page that owns the table the rule is on. A read
+ * admits View on any page of that page's module, and the pages that list the
+ * table in `readers`; a write needs the owning page, or a page that lists the
+ * table in `alsoWrittenBy`.
+ */
+export type Permission = Action | PermissionKey;
 
 /**
  * - `"employee"`: get_companies_with_employee_role() — any employee of the company, and
- *   any API key of it regardless of the key's scopes.
+ *   any API key that holds a grant there (util.request_api_key).
  * - `"member"`: get_companies_with_any_role() — employees, customers and suppliers.
- * - a Permission: get_companies_with_employee_permission() — scope-checked for API keys.
- * - `anyOf(...)`: holds at least one of the permissions.
+ * - a Permission: checked against the key's grants for API keys.
+ * - `anyOf(...)`: holds at least one of the permissions, or View on any page of `modules`.
  */
-export type Who = "employee" | "member" | Permission | { anyOf: Permission[] };
+export type Who =
+  | "employee"
+  | "member"
+  | Permission
+  | { anyOf: readonly Permission[]; modules?: readonly ModuleId[] };
 
 export const anyOf = (...permissions: Permission[]): Who => ({
   anyOf: permissions
 });
 
-// ─── Predicates ──────────────────────────────────────────────────────────────
+/** View on any page of the modules, whichever table the rule is on. */
+export const anyPageOf = (...modules: ModuleId[]): Who => ({
+  anyOf: [],
+  modules
+});
 
-/** A policy expression, compiled against the table it guards. */
-export type Pred = { readonly sql: (table: string) => RawBuilder<unknown> };
+/**
+ * The row a predicate is about: `table` is its table in the registry, `ref` the
+ * name SQL gives it there (the table, or `p` inside an `exists`).
+ */
+export type Row = { table: string; ref: string };
 
-const pred = (build: (table: string) => RawBuilder<unknown>): Pred => ({
+/** A policy expression, compiled against the row it guards. */
+export type Pred = { readonly sql: (row: Row) => RawBuilder<unknown> };
+
+const pred = (build: (row: Row) => RawBuilder<unknown>): Pred => ({
   sql: build
 });
 
 const isPred = (value: unknown): value is Pred =>
   typeof value === "object" && value !== null && "sql" in value;
 
-const companySet = (who: Exclude<Who, { anyOf: Permission[] }>) => {
-  if (who === "employee") return sql`get_companies_with_employee_role()`;
-  if (who === "member") return sql`get_companies_with_any_role()`;
-  return sql`get_companies_with_employee_permission(${sql.lit(who)})`;
+const isAction = (permission: string): permission is Action =>
+  (ACTIONS as readonly string[]).includes(permission);
+
+/** `subject` is one of the companies where the caller holds `key`. */
+const holds = (subject: RawBuilder<unknown>, key: string) =>
+  sql`${subject} = ANY ((SELECT get_companies_with_employee_permission(${sql.lit(key)}))::text[])`;
+
+const textArray = (items: readonly string[]) =>
+  items.length
+    ? sql`ARRAY[${sql.join(items.map((item) => sql.lit(item)))}]::text[]`
+    : sql`'{}'::text[]`;
+
+/**
+ * `subject` is one of the companies where the caller holds any of `keys`, or
+ * View on any page of `modules`. One call for the whole list. The module's
+ * pages are resolved in SQL (util.module_pages), so a policy never lists them
+ * and a new page changes no policy.
+ */
+const holdsAny = (
+  subject: RawBuilder<unknown>,
+  keys: readonly string[],
+  modules: readonly string[] = []
+) =>
+  modules.length
+    ? sql`${subject} = ANY ((SELECT get_companies_with_module_view(${textArray(modules)}, ${textArray(keys)}))::text[])`
+    : keys.length === 1
+      ? holds(subject, keys[0] as string)
+      : sql`${subject} = ANY ((SELECT get_companies_with_any_employee_permission(${textArray(keys)}))::text[])`;
+
+const either = (terms: RawBuilder<unknown>[]) =>
+  terms.length === 1 && terms[0]
+    ? terms[0]
+    : sql`(${sql.join(terms, sql` OR `)})`;
+
+/** What admits `action` on what `page` owns: View on any page of its module, or the page's key. */
+const admits = (
+  page: string,
+  action: Action
+): { keys: string[]; modules: string[] } =>
+  action === "view"
+    ? { keys: [], modules: [moduleOf(page)] }
+    : { keys: [permissionKey(page, action)], modules: [] };
+
+/**
+ * A shared table's rows, one branch per page: the page's rows and the page's
+ * key. A child table reaches its parent row through its path, one `EXISTS`
+ * per hop, and checks the parent's branches. Every hop is in the company of
+ * the hop before it; the first is in `company`, the row's own company.
+ */
+const branches = (
+  subject: RawBuilder<unknown>,
+  company: RawBuilder<unknown>,
+  row: Row,
+  place: Exclude<TablePlace, { kind: "page" }>,
+  action: Action
+) => {
+  const owner = place.kind === "child" ? place.parent : row.ref;
+  const arms = either(
+    place.branches.map((branch) => {
+      const column = sql.ref(`${owner}.${branch.column}`);
+      const admit = admits(branch.page, action);
+      return sql`(${
+        branch.value === undefined
+          ? sql`${column} IS NOT NULL`
+          : sql`${column} = ${sql.lit(branch.value)}`
+      } AND ${holdsAny(subject, admit.keys, admit.modules)})`;
+    })
+  );
+  if (place.kind === "shared") return arms;
+  const hop = (
+    i: number,
+    from: string,
+    inCompany: RawBuilder<unknown>
+  ): RawBuilder<unknown> => {
+    const [fk, to] = place.path[i] as readonly [string, string];
+    const rest =
+      i + 1 < place.path.length
+        ? hop(i + 1, to, sql.ref(`${to}.companyId`))
+        : arms;
+    return sql`EXISTS (SELECT 1 FROM ${sql.id("public", to)} WHERE ${sql.ref(`${to}.id`)} = ${sql.ref(`${from}.${fk}`)} AND ${sql.ref(`${to}.companyId`)} = ${inCompany} AND ${rest})`;
+  };
+  return hop(0, row.ref, company);
 };
 
-/** `subject` is one of the caller's companies (or, for anyOf, satisfies any of them). */
+/**
+ * `subject` is one of the caller's companies (or, for anyOf, satisfies any of
+ * them). A bare action checks the page that owns `row.table`: a view admits
+ * View on any page of that page's module (a child's: its parent's), and every
+ * page that lists the table in `readers`; a write needs the page, or one that
+ * lists the table in `alsoWrittenBy`. `company` is the row's own company, for
+ * a child's first hop: the row's `companyId` unless the rule says otherwise.
+ */
 const belongsTo = (
   subject: RawBuilder<unknown>,
-  who: Who
-): RawBuilder<unknown> =>
-  typeof who === "object" && "anyOf" in who
-    ? sql`(${sql.join(
-        who.anyOf.map((p) => belongsTo(subject, p)),
-        sql` OR `
-      )})`
-    : sql`${subject} = ANY ((SELECT ${companySet(who)})::text[])`;
+  who: Who,
+  row: Row,
+  company?: RawBuilder<unknown>
+): RawBuilder<unknown> => {
+  if (who === "employee")
+    return sql`${subject} = ANY ((SELECT get_companies_with_employee_role())::text[])`;
+  if (who === "member")
+    return sql`${subject} = ANY ((SELECT get_companies_with_any_role())::text[])`;
+  // Plain keys and module views go into one `holdsAny` call; branch checks
+  // stay their own terms.
+  const keys = new Set<string>();
+  const modules = new Set<string>(typeof who === "object" ? who.modules : []);
+  const terms = new Map<string, RawBuilder<unknown>>();
+  for (const permission of typeof who === "object" ? who.anyOf : [who]) {
+    if (!isAction(permission)) {
+      keys.add(permission);
+      continue;
+    }
+    const action = permission;
+    const place = placeOf(row.table);
+    if (!place)
+      throw new Error(
+        `authz: a rule on ${row.table} names the owner's ${action}, but no page owns ${row.table}; name a page key`
+      );
+    // A read is `readAccessOf`, which `tableReadGate` checks too. A child's
+    // read never goes through its parent: the parent's SELECT reads its
+    // children (item's portal branches read supplierPart), so a lookup back
+    // would make Postgres refuse both tables as recursive.
+    const read = action === "view" ? readAccessOf(row.table) : undefined;
+    if (read && place.kind !== "shared")
+      for (const module of read.modules) modules.add(module);
+    else if (place.kind === "page")
+      for (const k of admits(place.page, action).keys) keys.add(k);
+    else if (!terms.has(action))
+      terms.set(
+        action,
+        branches(
+          subject,
+          company ?? sql.ref(`${row.ref}.companyId`),
+          row,
+          place,
+          action
+        )
+      );
+    for (const page of read ? read.readers : writersOf(row.table))
+      keys.add(permissionKey(page, action));
+  }
+  return either(
+    keys.size || modules.size
+      ? [holdsAny(subject, [...keys], [...modules]), ...terms.values()]
+      : [...terms.values()]
+  );
+};
 
 /** The row's own company column is one of the caller's companies. */
 export const inCompany = (column: string, who: Who): Pred =>
-  pred(() => belongsTo(sql.ref(column), who));
+  pred((row) => belongsTo(sql.ref(column), who, row));
 
 /** The row's company group is one the caller belongs to (group-shared tables). */
 export const inGroup = (column: string, who: "employee" | Permission): Pred =>
   pred(
-    () =>
+    (row) =>
       sql`${sql.ref(column)} = ANY ((SELECT ${
         who === "employee"
           ? sql`get_company_groups_for_employee()`
-          : sql`get_company_groups_for_root_permission(${sql.lit(who)})`
+          : sql`get_company_groups_for_root_permission(${sql.lit(groupKey(who, row.table))})`
       })::text[])`
   );
 
-/** The company of the parent row `fk` points at, resolved by get_company_id_from_foreign_key. */
+// A group helper takes one key: a group table sits on one page, with no
+// readers, so the owner's action is that page's key.
+const groupKey = (permission: Permission, table: string) => {
+  if (!isAction(permission)) return permission;
+  const place = placeOf(table);
+  if (
+    place?.kind !== "page" ||
+    (permission === "view" && readersOf(table).length) ||
+    writersOf(table).length
+  )
+    throw new Error(`authz: group table ${table} needs one page`);
+  return permissionKey(place.page, permission);
+};
+
+/**
+ * The company of the parent row `fk` points at, resolved by
+ * get_company_id_from_foreign_key. The parent row is not in the query, so a
+ * bare action is the guarded table's.
+ */
 export const viaParent = (fk: string, parentTable: Table, who: Who): Pred =>
-  pred(() =>
+  pred((row) =>
     belongsTo(
       sql`get_company_id_from_foreign_key(${sql.ref(fk)}, ${sql.lit(parentTable)})`,
-      who
+      who,
+      row
     )
   );
 
 /**
  * The parent row `fk` points at exists and satisfies `condition`: a Who (the parent's
- * company is one of the caller's) or any predicate, whose bare columns are the parent's.
- * `sameCompany` also requires the parent to be in the row's own company.
+ * company is one of the caller's, a bare action the parent table's) or any predicate,
+ * whose bare columns are the parent's. `sameCompany` also requires the parent to be in
+ * the row's own company.
  */
 export const exists = (
   parentTable: Table,
@@ -105,52 +289,47 @@ export const exists = (
   condition: Who | Pred,
   { sameCompany = false }: { sameCompany?: boolean } = {}
 ): Pred =>
-  pred((table) => {
-    const parts = [sql`${sql.ref("p.id")} = ${sql.ref(`${table}.${fk}`)}`];
+  pred((row) => {
+    const parentRow: Row = { table: parentTable, ref: "p" };
+    const parts = [sql`${sql.ref("p.id")} = ${sql.ref(`${row.ref}.${fk}`)}`];
     if (sameCompany) {
       parts.push(
-        sql`${sql.ref("p.companyId")} = ${sql.ref(`${table}.companyId`)}`
+        sql`${sql.ref("p.companyId")} = ${sql.ref(`${row.ref}.companyId`)}`
       );
     }
     parts.push(
       isPred(condition)
-        ? condition.sql(parentTable)
-        : belongsTo(sql.ref("p.companyId"), condition)
+        ? condition.sql(parentRow)
+        : belongsTo(sql.ref("p.companyId"), condition, parentRow)
     );
     return sql`EXISTS (SELECT 1 FROM ${sql.id("public", parentTable)} p WHERE ${sql.join(parts, sql` AND `)})`;
   });
 
 /**
- * The rule that governs a project row: `projects_<action>` (or `standard`, for a read
- * open to any employee) in the project's company. `column` names the row's project; on
- * `project` itself the row's own company decides (`column` is "id"), so the policy never
- * queries the table it guards. With `via: "projectElement"`, `column` names an element
- * and its project decides. The project (and element) must be in the row's own company.
+ * The rule that governs a project row: the owner's `action` (or `standard`, for a read
+ * open to any employee) in the project's company. `column` names the row's project; with
+ * `via: "projectElement"`, an element, and its project decides. The project (and
+ * element) must be in the row's own company.
  */
 export const projectModule = (
   column: string,
-  action: "view" | "create" | "update" | "delete",
-  {
-    standard = `projects_${action}`,
-    via
-  }: { standard?: Who; via?: "projectElement" } = {}
+  action: Action,
+  { standard = action, via }: { standard?: Who; via?: "projectElement" } = {}
 ): Pred =>
-  pred((table) => {
-    const governs = (alias: string | null) => {
-      const ref = (name: string) => sql.ref(alias ? `${alias}.${name}` : name);
-      return belongsTo(ref("companyId"), standard);
-    };
-    if (table === "project") return governs(null);
-    const row = (name: string) => sql.ref(`${table}.${name}`);
+  pred((row) => {
+    const governs = (alias: string) =>
+      belongsTo(sql.ref(`${alias}.companyId`), standard, row);
+    const own = (name: string) => sql.ref(`${row.ref}.${name}`);
     if (via === "projectElement") {
-      return sql`EXISTS (SELECT 1 FROM ${sql.id("public", "projectElement")} e JOIN ${sql.id("public", "project")} p ON ${sql.ref("p.id")} = ${sql.ref("e.projectId")} AND ${sql.ref("p.companyId")} = ${sql.ref("e.companyId")} WHERE ${sql.ref("e.id")} = ${row(column)} AND ${sql.ref("e.companyId")} = ${row("companyId")} AND ${governs("p")})`;
+      return sql`EXISTS (SELECT 1 FROM ${sql.id("public", "projectElement")} e JOIN ${sql.id("public", "project")} p ON ${sql.ref("p.id")} = ${sql.ref("e.projectId")} AND ${sql.ref("p.companyId")} = ${sql.ref("e.companyId")} WHERE ${sql.ref("e.id")} = ${own(column)} AND ${sql.ref("e.companyId")} = ${own("companyId")} AND ${governs("p")})`;
     }
-    return sql`EXISTS (SELECT 1 FROM ${sql.id("public", "project")} p WHERE ${sql.ref("p.id")} = ${row(column)} AND ${sql.ref("p.companyId")} = ${row("companyId")} AND ${governs("p")})`;
+    return sql`EXISTS (SELECT 1 FROM ${sql.id("public", "project")} p WHERE ${sql.ref("p.id")} = ${own(column)} AND ${sql.ref("p.companyId")} = ${own("companyId")} AND ${governs("p")})`;
   });
 
 /**
  * `local` is reachable through a link table: it is one of `linkTable.linkColumn` over the
- * link rows satisfying `condition`, whose bare columns are the link table's.
+ * link rows satisfying `condition`, whose bare columns (and bare actions) are the link
+ * table's.
  */
 export const through = (
   local: string,
@@ -160,7 +339,7 @@ export const through = (
 ): Pred =>
   pred(
     () =>
-      sql`${sql.ref(local)} IN (SELECT ${sql.ref(`${linkTable}.${linkColumn}`)} FROM ${sql.id("public", linkTable)} WHERE ${condition.sql(linkTable)})`
+      sql`${sql.ref(local)} IN (SELECT ${sql.ref(`${linkTable}.${linkColumn}`)} FROM ${sql.id("public", linkTable)} WHERE ${condition.sql({ table: linkTable, ref: linkTable })})`
   );
 
 /**
@@ -179,7 +358,7 @@ export const throughIndexed = (
 ): Pred =>
   pred(
     () =>
-      sql`${sql.ref(local)} = ANY (COALESCE((SELECT array_agg(${sql.ref(`${linkTable}.${linkColumn}`)}) FROM ${sql.id("public", linkTable)} WHERE ${condition.sql(linkTable)}), '{}'))`
+      sql`${sql.ref(local)} = ANY (COALESCE((SELECT array_agg(${sql.ref(`${linkTable}.${linkColumn}`)}) FROM ${sql.id("public", linkTable)} WHERE ${condition.sql({ table: linkTable, ref: linkTable })}), '{}'))`
   );
 
 /**
@@ -195,12 +374,12 @@ export const owner = (column: string): Pred =>
 
 /** The row belongs to a customer or supplier the portal user acts for. */
 export const portal = {
-  customer: (column: string, permission: Permission): Pred =>
+  customer: (column: string, permission: PortalKey): Pred =>
     pred(
       () =>
         sql`${sql.ref(column)} = ANY ((SELECT get_customer_ids_with_customer_permission(${sql.lit(permission)}))::text[])`
     ),
-  supplier: (column: string, permission: Permission): Pred =>
+  supplier: (column: string, permission: PortalKey): Pred =>
     pred(
       () =>
         sql`${sql.ref(column)} = ANY ((SELECT get_supplier_ids_with_supplier_permission(${sql.lit(permission)}))::text[])`
@@ -224,9 +403,9 @@ const combine = (operator: RawBuilder<unknown>, preds: Pred[]): Pred =>
   preds.length === 1 && preds[0]
     ? preds[0]
     : pred(
-        (table) =>
+        (row) =>
           sql`(${sql.join(
-            preds.map((p) => p.sql(table)),
+            preds.map((p) => p.sql(row)),
             operator
           )})`
       );
@@ -244,8 +423,6 @@ const eb = expressionBuilder<KyselyDatabase, Table>();
 /** Any other condition, written with Kysely against table T's real columns. */
 export const where = <T extends Table>(predicate: Predicate<T>): Pred =>
   pred(() => sql`${(predicate as Predicate<Table>)(eb)}`);
-
-// ─── Rules ───────────────────────────────────────────────────────────────────
 
 /** One predicate per command. A missing command has no policy, so it is denied. */
 export type Commands = {
@@ -320,27 +497,24 @@ export type Where<T extends Table> = Partial<
   Record<"insert" | "update" | "delete", Predicate<T>>
 >;
 
-const actors = (module: Module, overrides: Partial<Actors>): Actors => ({
-  read: "employee",
-  create: `${module}_create`,
-  update: `${module}_update`,
-  delete: `${module}_delete`,
+const actors = (overrides: Partial<Actors>): Actors => ({
+  read: "view",
+  create: "create",
+  update: "update",
+  delete: "delete",
   ...overrides
 });
 
 /**
- * Rows owned by a company: any employee reads, each write needs `<module>_<action>`.
+ * Rows owned by a company: each action needs the owning page's (see `Permission`).
  * Override any action with a Who, a predicate, or `false`.
  */
-export const company = <T extends Table>(
-  module: Module,
-  {
-    where: extra = {},
-    column = "companyId",
-    ...overrides
-  }: Partial<Actors> & { where?: Where<T>; column?: string } = {}
-): Rule<T> => {
-  const all = actors(module, overrides);
+export const company = <T extends Table>({
+  where: extra = {},
+  column = "companyId",
+  ...overrides
+}: Partial<Actors> & { where?: Where<T>; column?: string } = {}): Rule<T> => {
+  const all = actors(overrides);
   const scope = (actor: Actor) =>
     actor === false
       ? undefined
@@ -369,10 +543,9 @@ export const company = <T extends Table>(
 
 /** Rows shared by a company group (chart of accounts, currencies, dimensions). */
 export const group = <T extends Table>(
-  module: Module,
   overrides: Partial<Record<keyof Actors, "employee" | Permission | false>> = {}
 ): Rule<T> => {
-  const all = actors(module, overrides) as Record<
+  const all = actors(overrides) as Record<
     keyof Actors,
     "employee" | Permission | false
   >;
@@ -389,18 +562,18 @@ export const group = <T extends Table>(
 
 // The FK stays a literal type so assigning the rule to its table's manifest entry is
 // what checks it: a column that table lacks does not compile, with no table repeated.
+// Each action is the parent table's.
 export const parent = <const F extends string>(
   table: Table,
   fk: F,
-  module: Module,
   options: { read?: Who } = {}
 ): Extract<AnyRule, { kind: "policies" }> & { fk: F } => ({
   kind: "policies",
   fk,
   select: exists(table, fk, options.read ?? "employee"),
-  insert: exists(table, fk, `${module}_create`),
-  update: exists(table, fk, `${module}_update`),
-  delete: exists(table, fk, `${module}_delete`)
+  insert: exists(table, fk, "create"),
+  update: exists(table, fk, "update"),
+  delete: exists(table, fk, "delete")
 });
 
 export const serviceOnly = <T extends Table>(): Rule<T> => ({
@@ -418,8 +591,6 @@ export const external = (
   reason: string,
   sql: (target: string) => string
 ): CustomRule => ({ kind: "custom", reason, sql });
-
-// ─── Rendering ───────────────────────────────────────────────────────────────
 
 /** Policies cannot take bind parameters, so every value is written inline as a literal. */
 class InlineValueCompiler extends PostgresQueryCompiler {
@@ -461,8 +632,9 @@ export function render(
       const to = rule.to ? sql` TO ${sql.raw(rule.to)}` : sql``;
       const policy = (command: string, clause: RawBuilder<unknown>) =>
         `${toSql(sql`CREATE POLICY ${sql.id(command)} ON ${target} FOR ${sql.raw(command)}${to} ${clause}`)};`;
-      const using = (p: Pred) => sql`USING (${p.sql(table)})`;
-      const check = (p: Pred) => sql`WITH CHECK (${p.sql(table)})`;
+      const row: Row = { table, ref: table };
+      const using = (p: Pred) => sql`USING (${p.sql(row)})`;
+      const check = (p: Pred) => sql`WITH CHECK (${p.sql(row)})`;
       const { select, insert, update, delete: remove } = rule;
       return [
         select && policy("SELECT", using(select)),

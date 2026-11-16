@@ -447,7 +447,7 @@ const SuppliersTable = memo(function SuppliersTable({
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
-          disabled={!permissions.can("delete", "purchasing")}
+          disabled={!permissions.has({ "purchasing.suppliers": "Full" })}
           onClick={() => {
             setSelectedSupplier(row);
             deleteModal.onOpen();
@@ -504,7 +504,7 @@ const SuppliersTable = memo(function SuppliersTable({
           }
         ]}
         primaryAction={
-          permissions.can("create", "purchasing") && (
+          permissions.has({ "purchasing.suppliers": "Create" }) && (
             <div className="flex items-center gap-2">
               <Button
                 className="max-md:hidden"

@@ -2,17 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { renderServiceJobEstimatePdf } from "~/modules/service/service.pdf";
 
 /** A service job's estimate as a PDF (`renderServiceJobEstimatePdf`). */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    { view: "service" }
-  );
+  const { client, companyId, companyGroupId } = await authorize(request, {
+    "service.jobs": "View"
+  });
   const { id } = params;
   if (!id) throw new Error("Could not find service job id");
 

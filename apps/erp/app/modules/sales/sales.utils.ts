@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
+import type { PageGate } from "@carbon/database/access";
 import { getFileExtension } from "@carbon/files";
 import type {
   DefaultRentalRates,
@@ -1107,3 +1108,9 @@ export function customerPortalEarliestExpiry(
   const stored = parseDate(storedExpiresOn);
   return (stored.compare(tomorrow) < 0 ? stored : tomorrow).toString();
 }
+
+/** `sales.createContractFromSalesOrder`: it marks the order's lines invoiced and makes a contract. */
+export const createContractFromSalesOrderPermission = {
+  "sales.salesOrders": "Edit",
+  "sales.serviceContracts": "Create"
+} satisfies PageGate;

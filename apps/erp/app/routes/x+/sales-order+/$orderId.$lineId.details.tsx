@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
@@ -50,10 +49,11 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "sales-order-line-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "sales",
-    bypassRls: true
-  });
+  const { companyId } = await authorize(
+    request,
+    { "sales.salesOrders": "View" },
+    { bypassRls: true }
+  );
 
   const { orderId, lineId } = params;
   if (!orderId) throw notFound("orderId not found");
@@ -108,7 +108,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { orderId, lineId } = input.params;
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.updateSalesOrderLine({
     ...input.data,
     id: lineId,
@@ -249,7 +249,9 @@ export default function EditSalesOrderLineRoute() {
         )}
       </DeferredFiles>
       <CadModel
-        isReadOnly={isReadOnly || !permissions.can("update", "sales")}
+        isReadOnly={
+          isReadOnly || !permissions.has({ "sales.salesOrders": "Edit" })
+        }
         metadata={{
           salesOrderLineId: line?.id ?? undefined,
           itemId: line?.itemId ?? undefined

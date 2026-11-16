@@ -2,23 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { employeeJobValidator } from "~/modules/people/people.models";
-import { getEmployeeJob } from "~/modules/people/people.service";
 import { PersonJob } from "~/modules/people/ui/Person";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "people"
+  const { api, client, companyId } = await authorize(request, {
+    "people.employees": "View"
   });
 
   const { personId } = params;
@@ -27,16 +26,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Project time adds fields to a job, shown only once the company uses it:
   // it has a labor category.
   const [job, laborCategories] = await Promise.all([
-    getEmployeeJob(client, personId, companyId),
+    api.people.getEmployeeJob({ employeeId: personId }),
     client
       .from("laborCategory")
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
   ]);
   if (job.error) {
-    // PGRST116 = no rows: the person has no job record in this company.
+    // notFound (PGRST116 through unwrap): the person has no job record in this company.
     const message =
-      job.error.code === "PGRST116"
+      job.error.category === "notFound"
         ? "This person has no job record in this company"
         : `Failed to load job: ${job.error.message}`;
     throw redirect(
@@ -57,7 +56,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { personId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.people.updatePersonJob({
     ...input.data,
     // This form always renders both switches, and an unchecked switch posts

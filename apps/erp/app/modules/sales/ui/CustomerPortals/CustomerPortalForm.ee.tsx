@@ -70,8 +70,8 @@ const CustomerPortalForm = ({
   );
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.portals": "Edit" })
+    : !permissions.has({ "sales.portals": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

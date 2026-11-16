@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -21,7 +21,6 @@ import {
   purchaseInvoiceValidator
 } from "~/modules/invoicing/invoicing.models";
 import {
-  getInvoiceSettlementsForInvoice,
   getPurchaseInvoice,
   updatePurchaseInvoice
 } from "~/modules/invoicing/invoicing.service";
@@ -46,16 +45,19 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
+  const { api } = await authorize(request, {
+    "invoicing.purchaseInvoices": "View"
   });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const [invoice, applications] = await Promise.all([
-    getPurchaseInvoice(client, invoiceId),
-    getInvoiceSettlementsForInvoice(client, companyId, "purchase", invoiceId)
+    api.invoicing.getPurchaseInvoice({ purchaseInvoiceId: invoiceId }),
+    api.invoicing.getInvoiceSettlementsForInvoice({
+      side: "purchase",
+      invoiceId
+    })
   ]);
   if (invoice.error) {
     throw redirect(
@@ -80,8 +82,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find invoiceId");
 
   // Check if PI is locked
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "invoicing"
+  const { client: viewClient } = await authorize(request, {
+    "invoicing.purchaseInvoices": "View"
   });
 
   const purchaseInvoice = await getPurchaseInvoice(viewClient, id);
@@ -102,8 +104,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
-    update: "invoicing"
+  const { client, userId } = await authorize(request, {
+    "invoicing.purchaseInvoices": "Edit"
   });
 
   const formData = await request.formData();

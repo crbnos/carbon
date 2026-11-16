@@ -62,23 +62,23 @@ Kysely has neither: it is bounded by the process pool below.
 
 ### Getting a client in a route
 
-Loaders/actions never construct a client directly. They call `requirePermissions`
+Loaders/actions never construct a client directly. They call `authorize`
 (`packages/auth/src/services/auth.server.ts`), which authenticates the request and returns the
-right client plus context:
+right client plus context, and in the ERP `api`, the service functions bound to the caller:
 
 ```typescript
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 
-const { client, companyId, userId } = await requirePermissions(request, {
-  view: "sales",          // permission_action, e.g. "sales_view" is checked internally
+const { client, companyId, userId } = await authorize(request, {
+  "sales.customers": "View" // a page and the lowest level it needs
 });
 ```
 
-- It checks the user's claims for the required `<module>_<action>` permission and **redirects on
-  denial**. It also handles the `carbon-key` API-key path (rate limiting, scope checks).
+- It checks the user's claims for each page at its level (`<page>_<action>`, here
+  `sales.customers_view`) and **redirects on denial**. It also handles the `carbon-key` API-key path (rate limiting, scope checks).
 - Pass `bypassRls: true` to get `getCarbonServiceRole()` instead (only honored for `employee` role).
 - `userId` is the effective user (respects console/impersonation); `sessionUserId` is the raw session user.
-- A migrated action calls `carbon(request)` (`@carbon/api/carbon.server`) instead. It runs
+- A migrated action calls `authorize(request)` with no gate. It runs
   `requirePermissions(request, {})` and the service function gets its clients from its context
   (`ctx.asCaller.supabase`, `ctx.asSystem.supabase`, `ctx.asSystem.pg`).
 
@@ -247,14 +247,14 @@ document id is an ordinary input field.
 
 `x+/purchase-order+/$orderId.line-order.tsx` still calls the building block directly (the
 legacy shape). A migrated action calls the service function instead:
-`(await carbon(request)).purchasing.updatePurchaseOrderLineOrder({ purchaseOrderId, updates })`.
+`(await authorize(request)).api.purchasing.updatePurchaseOrderLineOrder({ purchaseOrderId, updates })`.
 
 ```typescript
 import { getDatabaseClient } from "~/services/database.server";
 import { updatePurchaseOrderLineOrder } from "~/modules/purchasing/purchasing.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, { update: "purchasing" });
+  const { companyId, userId } = await authorize(request, { "purchasing.purchaseOrders": "Edit" });
   if (!params.orderId) throw new Error("Could not find orderId");
   // ... build `updates` from formData ...
   try {
@@ -302,9 +302,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 - Multi-tenant: nearly every table has `companyId` (composite PK `("id", "companyId")`).
 - Standardized policy names `SELECT` / `INSERT` / `UPDATE` / `DELETE`, gated by SQL helpers
-  `get_companies_with_employee_role()` (read) and `get_companies_with_employee_permission('<module>_<action>')`
+  `get_companies_with_employee_role()` (read) and `get_companies_with_employee_permission('<page>_<action>')`
   (write). Policies and those helpers are authored in `packages/database/src/authz/`, not in
-  migrations — see `authz-manifest.md`.
+  migrations — see `authz-manifest.md`. An API key counts in those helpers only while it
+  holds a grant (a `permission` row above None) in its company (`util.request_api_key`),
+  the same rule as `admits`: a key with none reads nothing.
 - RLS is the real authorization boundary for supabase-js clients; `requirePermissions` is the app-layer gate
   (and the only gate for service-role / Kysely paths). See `conventions-database.md` for the table+RLS template.
 

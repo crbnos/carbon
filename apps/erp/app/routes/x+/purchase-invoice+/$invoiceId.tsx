@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -18,20 +19,13 @@ import { useLoaderData, useParams } from "react-router";
 import { DocumentForceDeleteBanner } from "~/components/ForceDelete/DocumentForceDelete";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
-import {
-  getCompanyHasOpenCredits,
-  getDocumentForceDeleteData,
-  getPurchaseInvoice,
-  getPurchaseInvoiceDelivery,
-  getPurchaseInvoiceLines
-} from "~/modules/invoicing/invoicing.service";
+import { getDocumentForceDeleteData } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoiceHeader } from "~/modules/invoicing/ui";
 import PurchaseInvoiceExplorer from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceExplorer";
 import PurchaseInvoiceProperties from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties";
 import {
   getSupplier,
-  getSupplierInteraction,
-  getSupplierInteractionDocuments
+  getSupplierInteraction
 } from "~/modules/purchasing/purchasing.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -54,27 +48,26 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Purchasing Invoices`, to: path.to.invoicingPurchasing },
     (data) => data?.purchaseInvoice?.invoiceId
-  ),
-  module: "invoicing"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.purchaseInvoice?.invoiceId, "Purchase Invoice");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      view: "invoicing"
-    });
+  const { client, companyId, companyGroupId, userId, api } = await authorize(
+    request,
+    { "invoicing.purchaseInvoices": "View" }
+  );
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const [purchaseInvoice, purchaseInvoiceLines, purchaseInvoiceDelivery] =
     await Promise.all([
-      getPurchaseInvoice(client, invoiceId),
-      getPurchaseInvoiceLines(client, invoiceId),
-      getPurchaseInvoiceDelivery(client, invoiceId)
+      api.invoicing.getPurchaseInvoice({ purchaseInvoiceId: invoiceId }),
+      api.invoicing.getPurchaseInvoiceLines({ purchaseInvoiceId: invoiceId }),
+      api.invoicing.getPurchaseInvoiceDelivery({ purchaseInvoiceId: invoiceId })
     ]);
 
   if (purchaseInvoice.error) {
@@ -99,7 +92,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? getSupplier(client, purchaseInvoice.data.supplierId)
       : null,
     getSupplierInteraction(client, purchaseInvoice.data.supplierInteractionId!),
-    getCompanyHasOpenCredits(client, companyId, "purchase"),
+    api.invoicing
+      .getCompanyHasOpenCredits({ side: "purchase" })
+      .then(dataOrThrow),
     purchaseInvoice.data?.currencyCode
       ? getCurrencyByCode(
           client,
@@ -131,11 +126,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     currency: currency?.data ?? null,
     purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
     purchaseInvoiceDelivery: purchaseInvoiceDelivery.data,
-    files: getSupplierInteractionDocuments(
-      client,
-      companyId,
-      purchaseInvoice.data.supplierInteractionId!
-    ),
+    files: api.purchasing
+      .getSupplierInteractionDocuments({
+        interactionId: purchaseInvoice.data.supplierInteractionId!
+      })
+      .then(dataOrThrow),
     interaction: interaction.data,
     supplier: supplier?.data ?? null,
     orgHasCredits,

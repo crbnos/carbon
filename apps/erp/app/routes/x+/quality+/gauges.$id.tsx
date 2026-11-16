@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -33,9 +33,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "quality"
-  });
+  const { companyId } = await authorize(request, { "quality.gauges": "View" });
 
   const serviceRole = await getCarbonServiceRole();
 
@@ -63,8 +61,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
+  const { client, companyId, userId } = await authorize(request, {
+    "quality.gauges": "Edit"
   });
 
   const { id } = params;

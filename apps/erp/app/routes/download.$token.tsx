@@ -37,7 +37,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   try {
     // Permission + availability in one shot: read the document AS the encoded
-    // user via RLS. No row => the user lacks documents_view / readGroups access,
+    // user via RLS. No row => the user lacks View on Documents / readGroups access,
     // or the document was deleted. companyId is enforced to prevent any
     // cross-tenant access even if document ids were to collide.
     const userClient = await getUserScopedClient(userId);

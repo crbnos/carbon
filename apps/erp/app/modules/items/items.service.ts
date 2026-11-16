@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { NotFoundError, ServerFnError } from "@carbon/api/errors";
-import type { PermissionRule } from "@carbon/api/permissions";
+import {
+  type GateLevel,
+  type PermissionRule,
+  type RowHop,
+  rowRule
+} from "@carbon/api/permissions";
 import {
   CarbonError,
   type ServiceContext
@@ -18,6 +23,7 @@ import {
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
+import { type Action, ITEM_TYPE_PAGES } from "@carbon/database/access";
 import {
   type ExpressionBuilder,
   type Kysely,
@@ -181,6 +187,12 @@ const SERVICES_LIST_COLUMNS =
 
 const logger = getLogger("erp", "items");
 
+/** Activating a method version is an edit of its item, on the item type's page. */
+export const activateMethodVersionPermission = itemRule("Edit", {
+  id: "id",
+  from: "makeMethod"
+});
+
 export async function activateMethodVersion(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -199,7 +211,7 @@ export async function activateMethodVersion(
       id
     },
     sharedPostings.convertDocument,
-    { as: sharedPostings.convertDocumentPermission }
+    { as: activateMethodVersionPermission }
   );
 }
 
@@ -299,6 +311,39 @@ async function requireCompanyPermission(
     p_permission: permission
   });
   return { error: gate.error };
+}
+
+/**
+ * The item policies key on the page of each item's type, so a write that
+ * skips RLS asks that page's key for every type the items have: one read of
+ * the types, then one check per page (at most five). A type no page owns
+ * (Fixture) is refused, as its policy refuses it.
+ */
+async function requireItemPagePermission(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[],
+  action: Action
+): Promise<{ error: ServiceError | null }> {
+  if (itemIds.length === 0) return { error: null };
+  const items = await client
+    .from("item")
+    .select("type")
+    .in("id", [...new Set(itemIds)])
+    .eq("companyId", companyId);
+  if (items.error) return { error: items.error };
+  const pages = new Set<string>();
+  for (const { type } of items.data) {
+    const page = ITEM_TYPE_PAGES[type];
+    if (!page) return { error: { message: `${type} items cannot be changed` } };
+    pages.add(page);
+  }
+  const checks = await Promise.all(
+    [...pages].map((page) =>
+      requireCompanyPermission(client, companyId, `${page}_${action}`)
+    )
+  );
+  return { error: checks.find((check) => check.error)?.error ?? null };
 }
 
 // What a new revision inherits from the revision it was copied from, beyond the
@@ -515,11 +560,18 @@ export async function createRevision(
   }
 
   // The revision is written with Kysely: the item INSERT policy asks for
-  // parts_create in the item's company.
+  // create on the page of the item's type.
+  const page = ITEM_TYPE_PAGES[item.type];
+  if (!page) {
+    return {
+      data: null,
+      error: { message: `${item.type} items cannot have revisions` }
+    };
+  }
   const permitted = await requireCompanyPermission(
     client,
     companyId,
-    "parts_create"
+    `${page}_create`
   );
   if (permitted.error) return { data: null, error: permitted.error };
 
@@ -727,11 +779,12 @@ export async function deleteItem(
   id: string,
   companyId: string
 ): Promise<{ data: null; error: ServiceError | null }> {
-  // The item DELETE policy asks for parts_delete in the item's company.
-  const permitted = await requireCompanyPermission(
+  // The item DELETE policy asks for delete on the page of the item's type.
+  const permitted = await requireItemPagePermission(
     client,
     companyId,
-    "parts_delete"
+    [id],
+    "delete"
   );
   if (permitted.error) return { data: null, error: permitted.error };
 
@@ -4438,7 +4491,7 @@ export async function upsertItemUnitSalePrice(
  * leaves no empty version and no source set Active. Kysely bypasses RLS, so the
  * caller's client is checked for what the makeMethod policies ask; the copy then
  * runs as the system, since the method line policies ask for no more than
- * parts_create, while get-method's own gate asks for production update.
+ * create on the item's page, while get-method's own gate asks for production update.
  */
 export async function createMakeMethodVersion(
   client: SupabaseClient<Database>,
@@ -4474,20 +4527,22 @@ export async function createMakeMethodVersion(
     .single();
   if (source.error) return { data: null, error: source.error };
 
-  // The makeMethod policies ask for parts_create to insert and parts_update to
-  // set a version Active.
+  // The makeMethod policies ask for create on the page of the item's type to
+  // insert, and update to set a version Active.
   const activate = args.activate === true && source.data.status === "Draft";
-  const permitted = await requireCompanyPermission(
+  const permitted = await requireItemPagePermission(
     client,
     companyId,
-    "parts_create"
+    [source.data.itemId],
+    "create"
   );
   if (permitted.error) return { data: null, error: permitted.error };
   if (activate) {
-    const canActivate = await requireCompanyPermission(
+    const canActivate = await requireItemPagePermission(
       client,
       companyId,
-      "parts_update"
+      [source.data.itemId],
+      "update"
     );
     if (canActivate.error) return { data: null, error: canActivate.error };
   }
@@ -5650,7 +5705,8 @@ async function materialIdIsTaken(
 }
 
 // Kysely bypasses RLS, so the caller's client must be able to update the
-// material row first. Its policy (parts_update) also covers item and itemCost.
+// material row first. Its policy (Materials Edit) also covers the material's
+// item and itemCost rows.
 async function requireMaterialUpdatable(
   client: SupabaseClient<Database>,
   args: { readableId: string; companyId: string; updatedBy: string }
@@ -7688,11 +7744,21 @@ async function discardChangeNoticeDrafts(
     return { error: null };
   }
 
-  // The item and makeMethod DELETE policies both ask for parts_delete.
-  const permitted = await requireCompanyPermission(
+  // The item and makeMethod DELETE policies both ask for delete on the page
+  // of the item's type; a Version draft is a method of its item.
+  const methods = makeMethodIds.length
+    ? await client
+        .from("makeMethod")
+        .select("itemId")
+        .in("id", makeMethodIds)
+        .eq("companyId", companyId)
+    : { data: [], error: null };
+  if (methods.error) return { error: methods.error };
+  const permitted = await requireItemPagePermission(
     client,
     companyId,
-    "parts_delete"
+    [...itemIds, ...methods.data.map((method) => method.itemId)],
+    "delete"
   );
   if (permitted.error) return permitted;
 
@@ -7922,12 +7988,14 @@ export async function updateChangeNoticeAffectedItemChangeType(
     return { data: { id }, error: null };
   }
 
-  // The current Draft is deleted at the end, which takes parts_delete. Refuse
-  // now rather than after the swap, when the old draft could only be orphaned.
-  const canDiscard = await requireCompanyPermission(
+  // The current Draft is deleted at the end, which takes delete on the page of
+  // its item's type (a draft item has its source's type). Refuse now rather
+  // than after the swap, when the old draft could only be orphaned.
+  const canDiscard = await requireItemPagePermission(
     client,
     companyId,
-    "parts_delete"
+    [affected.data.newItemId ?? affected.data.itemId],
+    "delete"
   );
   if (canDiscard.error) return { data: null, error: canDiscard.error };
 
@@ -9747,7 +9815,7 @@ const methodLockQueries = {
 
 // Every base query is scoped by companyId (defense-in-depth; the id is a global
 // UUID but tenant scoping is a golden rule). The lock is advisory — RLS +
-// requirePermissions are the real boundary — so a null/unresolvable status
+// authorize are the real boundary — so a null/unresolvable status
 // leaves the gate open by design (see checkRevisionLock).
 async function resolveMethodLock(
   client: SupabaseClient<Database>,
@@ -10517,8 +10585,8 @@ function normalizeSupersessionMode(
 // Release IS the Implementation -> Done transition, so every other status means
 // the item is still a draft.
 //
-// Pass a service-role client: reading `changeOrder` requires `parts_view`, which
-// the caller need not have.
+// Pass a service-role client: reading `changeOrder` requires View on Change
+// Notices, which the caller need not have.
 // -----------------------------------------------------------------------------
 const RELEASED_CHANGE_ORDER_STATUS = "Done";
 
@@ -10714,6 +10782,38 @@ export function priceBreakRows(
 
 export const isMakeMethodId = (id: string) => id.startsWith("make_");
 
+/**
+ * The gate of an operation on one item's data: the page of the item's type
+ * (Parts, Materials, Tools, Consumables or Services) at `level`. `id` names
+ * the item, or a row that leads to it through `from` and `path`
+ * (`[fk, table]` hops ending at `item`). An item type no page owns, a
+ * Fixture, is refused.
+ */
+export function itemRule<const L extends GateLevel, const K extends string>(
+  level: L,
+  at: { id: K; from?: string; path?: readonly RowHop[] }
+) {
+  return rowRule("item", level, at);
+}
+
+/**
+ * `itemRule` for an input field that holds an item id or a make method id
+ * (`copyMethod`'s source and target), which no single row rule can name:
+ * `run` checks it with `refusalOf`.
+ */
+export function itemOrMethodRule<
+  const L extends GateLevel,
+  const K extends string
+>(level: L, field: K, id: string) {
+  return isMakeMethodId(id)
+    ? itemRule(level, {
+        id: field,
+        from: "makeMethod",
+        path: [["itemId", "item"]]
+      })
+    : itemRule(level, { id: field });
+}
+
 // ── Change notices ──────────────────────────────────────────────────────────
 
 const onShapeDataValidator = z.object({
@@ -10891,9 +10991,11 @@ async function copyMakeMethodOperations(
   });
 }
 
-export const syncMakeMethodPermission = {
-  update: "resources"
-} satisfies PermissionRule<z.output<typeof syncInput>>;
+export const syncMakeMethodPermission = itemRule("Edit", {
+  id: "makeMethodId",
+  from: "makeMethod",
+  path: [["itemId", "item"]]
+}) satisfies PermissionRule<z.output<typeof syncInput>>;
 
 /**
  * What the Onshape sync does with a make method. An Active one is never

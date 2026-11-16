@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -16,17 +16,15 @@ import MaterialGradeForm from "~/modules/items/ui/MaterialGrades/MaterialGradeFo
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    create: "parts"
-  });
+  await authorize(request, { "parts.grades": "Create" });
 
   return null;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    create: "parts"
+  const { client, companyId } = await authorize(request, {
+    "parts.grades": "Create"
   });
 
   const formData = await request.formData();

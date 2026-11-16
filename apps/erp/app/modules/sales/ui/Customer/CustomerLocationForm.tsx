@@ -50,8 +50,8 @@ const CustomerLocationForm = ({
   const permissions = usePermissions();
   const isEditing = !!initialValues?.id;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.customers": "Edit" })
+    : !permissions.has({ "sales.customers": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

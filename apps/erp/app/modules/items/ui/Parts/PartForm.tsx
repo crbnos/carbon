@@ -450,8 +450,8 @@ const PartForm = ({
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={
                   isEditing
-                    ? !permissions.can("update", "parts")
-                    : !permissions.can("create", "parts")
+                    ? !permissions.has({ "parts.parts": "Edit" })
+                    : !permissions.has({ "parts.parts": "Create" })
                 }
               >
                 <Trans>Save</Trans>

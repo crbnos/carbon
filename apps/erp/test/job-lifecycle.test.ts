@@ -23,9 +23,11 @@ import {
   createProductionQuantity,
   pauseJob,
   reopenJob,
-  resumeJob
+  resumeJob,
+  syncAssemblyToOperation
 } from "../app/modules/production/production.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 /** Every status the job was moved to, with the statuses the move allowed. */
 let statusWrites: { status: unknown; fromStatuses?: unknown }[] = [];
@@ -68,14 +70,18 @@ function callerWith(
   };
 }
 
-const contextWith = (caller: unknown) =>
+const contextWith = (
+  caller: unknown,
+  permissions = pageClaims({
+    production: { view: [], create: ["c1"], update: ["c1"], delete: [] }
+  })
+) =>
   createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "u1",
-      permissions: {
-        production: { view: [], create: ["c1"], update: ["c1"], delete: [] }
-      }
+      permissions
     },
     company: { id: "c1", groupId: "g1" },
     caller: caller as never,
@@ -90,6 +96,29 @@ beforeEach(() => {
   vi.clearAllMocks();
   statusWrites = [];
   quantityInserts = [];
+});
+
+describe("syncAssemblyToOperation", () => {
+  const edit = { view: ["c1"], create: ["c1"], update: ["c1"], delete: [] };
+  const sync = (jobs: typeof edit) =>
+    syncAssemblyToOperation(
+      contextWith(
+        {},
+        { "production.assemblies": edit, "production.jobs": jobs }
+      ),
+      { id: "ai1", operationId: "op1" }
+    );
+
+  // The sync rewrites the job operation's steps as the system.
+  it("refuses a role with Assemblies but not Jobs Edit, before reading anything", async () => {
+    const result = await sync({ ...edit, update: [] });
+    expect(result.error).toMatchObject({ category: "forbidden" });
+  });
+
+  it("admits a role with Edit on both", async () => {
+    const result = await sync(edit);
+    expect(result.error?.category).not.toBe("forbidden");
+  });
 });
 
 describe("pauseJob", () => {

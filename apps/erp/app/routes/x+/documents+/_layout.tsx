@@ -23,7 +23,6 @@ function DocumentsSidebar() {
 export const handle: Handle = {
   breadcrumb: msg`Documents`,
   to: path.to.documents,
-  module: "documents",
   sidebar: DocumentsSidebar
 };
 

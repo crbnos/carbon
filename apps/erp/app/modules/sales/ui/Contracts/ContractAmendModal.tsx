@@ -1000,7 +1000,7 @@ const ContractAmendBody = ({
               !isValid ||
               isRefused ||
               needsUpgrade ||
-              !permissions.can("update", "sales")
+              !permissions.has({ "sales.serviceContracts": "Edit" })
             }
           >
             <Trans>Amend</Trans>

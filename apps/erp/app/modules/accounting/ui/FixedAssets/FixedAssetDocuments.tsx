@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentProps, ReactNode } from "react";
 import { Suspense } from "react";
@@ -121,13 +122,17 @@ function FixedAssetDocumentList({
   const [suppliers] = useSuppliers();
   const [customers] = useCustomers();
 
-  const canViewPurchasing = permissions.can("view", "purchasing");
-  const canViewSales = permissions.can("view", "sales");
-  const canViewInvoicing = permissions.can("view", "invoicing");
-  const canViewInventory = permissions.can("view", "inventory");
-  const canViewProduction = permissions.can("view", "production");
-  const canViewParts = permissions.can("view", "parts");
-  const canViewAccounting = permissions.can("view", "accounting");
+  const canViewPurchasing = permissions.has({
+    "purchasing.purchaseOrders": "View"
+  });
+  const canViewSales = permissions.has({ "sales.salesOrders": "View" });
+  const canViewInvoicing = permissions.has({
+    "invoicing.purchaseInvoices": "View"
+  });
+  const canViewInventory = permissions.has({ "inventory.receipts": "View" });
+  const canViewProduction = permissions.has({ "production.jobs": "View" });
+  const canViewParts = permissions.has(anyOf(ITEM_PAGES, "View"));
+  const canViewAccounting = permissions.has({ "accounting.assets": "View" });
 
   const purchaseOrders = canViewPurchasing
     ? (related?.purchaseOrders ?? [])

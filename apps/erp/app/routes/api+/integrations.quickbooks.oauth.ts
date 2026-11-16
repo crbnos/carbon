@@ -7,7 +7,7 @@ import {
   QUICKBOOKS_CLIENT_ID,
   QUICKBOOKS_CLIENT_SECRET
 } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { QuickBooks } from "@carbon/ee";
 import {
@@ -21,10 +21,7 @@ import { getLogger } from "@carbon/logger";
 import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  getIntegration,
-  upsertCompanyIntegration
-} from "~/modules/settings/settings.service";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
@@ -35,9 +32,8 @@ export const config = {
 const logger = getLogger("erp", "quickbooks", "oauth");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+  const caller = await authorize(request, { "settings.integrations": "Edit" });
+  const { client, userId, companyId } = caller;
 
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
@@ -111,7 +107,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     // Sync starts off on a new connection so accounts can be mapped first; a
     // reconnect to the same organization keeps the switch where it was.
-    const existing = await getIntegration(client, QuickBooks.id, companyId);
+    const existing = await caller.api.settings.getIntegration({
+      id: QuickBooks.id
+    });
     const syncEnabled = syncEnabledOnConnect(existing.data?.metadata, realmId);
 
     const createdQuickBooksIntegration = await upsertCompanyIntegration(

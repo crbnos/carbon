@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -11,10 +11,7 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { salesReturnOrderCreditValidator } from "~/modules/sales/sales.models";
-import {
-  createSalesReturnOrderCredit,
-  getCreditableQuantities
-} from "~/modules/sales/sales.service";
+import { createSalesReturnOrderCredit } from "~/modules/sales/sales.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -24,14 +21,14 @@ const logger = getLogger("erp", "sales-return-order");
 // Feeds the Issue Credit modal: per-line creditable pool (received − already
 // credited over non-voided memos) with the pricing needed for the preview.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.returns": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const creditable = await getCreditableQuantities(client, id, companyId);
+  const creditable = await api.sales.getCreditableQuantities({
+    salesReturnOrderId: id
+  });
   if (creditable.error) {
     logger.error("Failed to load creditable quantities", {
       error: creditable.error
@@ -43,11 +40,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "invoicing",
-      view: "sales"
-    });
+  const { client, companyId, companyGroupId, userId } = await authorize(
+    request,
+    { "invoicing.creditMemos": "Create", "sales.returns": "View" }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

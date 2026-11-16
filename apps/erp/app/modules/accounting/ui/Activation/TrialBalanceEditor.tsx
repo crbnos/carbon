@@ -43,6 +43,7 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
+import { accountingActivationGate } from "../../accounting.models";
 import type { TrialBalanceCsvError } from "../../trial-balance-csv";
 import type { AccountListItem } from "../../types";
 import { activationStepPath, useAccountsById } from "./ActivationSteps";
@@ -92,7 +93,7 @@ export default function TrialBalanceEditor({
   const currencyDecimals = useCurrencyDecimals(company.baseCurrencyCode);
   const accountsById = useAccountsById();
   const action = activationStepPath("trial-balance", cutoverDate);
-  const canEdit = permissions.can("update", "accounting");
+  const canEdit = permissions.has(accountingActivationGate("Edit"));
 
   const [search, setSearch] = useState("");
   // Only what the user typed since the last save. The saved lines come from

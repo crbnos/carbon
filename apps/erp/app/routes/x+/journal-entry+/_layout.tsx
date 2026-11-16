@@ -15,8 +15,7 @@ export const meta = moduleMeta("Journal Entry");
 
 export const handle: Handle = {
   breadcrumb: msg`Accounting`,
-  to: path.to.accountingJournals,
-  module: "accounting"
+  to: path.to.accountingJournals
 };
 
 export default function JournalEntryLayout() {

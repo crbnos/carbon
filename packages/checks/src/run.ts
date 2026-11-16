@@ -4,6 +4,7 @@
 
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
+import { renderRegistryHelpers } from "@carbon/database/authz-registry-sql";
 import { validateEnv } from "@carbon/env/validate";
 import { keyOf, loadBaseline } from "./baseline";
 import type {
@@ -38,7 +39,16 @@ import {
   findUnselectedListColumns,
   LIST_SELECT_COVERS_COLUMNS
 } from "./conformance/list-select-covers-columns";
+import {
+  loaderReadsThroughApi,
+  wrappedBuildingBlocks
+} from "./conformance/loader-reads-through-api";
 import { moduleShape } from "./conformance/module-shape";
+import {
+  findMovedTableGaps,
+  livePolicies,
+  MOVED_TABLES_COVERED
+} from "./conformance/moved-tables-covered";
 import {
   MANAGED_FUNCTION_SETS,
   type ManagedFunction,
@@ -60,6 +70,10 @@ import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log"
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
+import {
+  MODULE_KEY_ROOTS,
+  noModulePermissionKey
+} from "./conformance/no-module-permission-key";
 import { noNoopOpenChange } from "./conformance/no-noop-open-change";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noPostgresChanges } from "./conformance/no-postgres-changes";
@@ -81,7 +95,20 @@ import {
   findProviderRoleDrift,
   PROVIDER_ROLE_BACKFILLED
 } from "./conformance/provider-role-backfilled";
+import {
+  findStaleRegistryHelpers,
+  REGISTRY_HELPERS_FRESH
+} from "./conformance/registry-helpers-fresh";
 import { routeActionShape } from "./conformance/route-action-shape";
+import {
+  gateConstants,
+  listGates,
+  routeGateNamesPage
+} from "./conformance/route-gate-names-page";
+import {
+  findRoutePageGaps,
+  ROUTE_MAPS_TO_PAGE
+} from "./conformance/route-maps-to-page";
 import {
   findScheduledSqlDrift,
   SCHEDULED_SQL_CONSTANTS
@@ -98,6 +125,10 @@ import {
 } from "./conformance/stamp-matches-columns";
 import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 import { testReadsSource } from "./conformance/test-reads-source";
+import {
+  loadErpRouteFiles,
+  loadRegistryHelperFiles
+} from "./sources/authz-registry";
 import {
   loadDeploymentEnvSources,
   loadEventFunctionSources,
@@ -220,11 +251,22 @@ export function loadManagedFunctions(root: string): ManagedFunction[] {
   );
 }
 
+/** The managed function files, read with their repo paths. */
+function loadManagedFunctionFiles(root: string): SourceFile[] {
+  return MANAGED_FUNCTION_SETS.flatMap(({ dir }) =>
+    loadSqlFiles(join(root, dir)).map(({ file, contents }) => ({
+      file: `${dir}/${file}`,
+      contents
+    }))
+  );
+}
+
 /** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions + license headers under `root`. */
 export function collectFindings(root: string = repoRoot()): Finding[] {
   const migrations = loadSqlFiles(migrationsDir(root));
   const listSources = loadListSources(root);
   const eventSources = loadEventFunctionSources(root);
+  const registryHelpers = renderRegistryHelpers();
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
@@ -254,8 +296,25 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       formFieldBudget
     ]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
-      indexRedirectBeforeLoaders
+      indexRedirectBeforeLoaders,
+      loaderReadsThroughApi(
+        wrappedBuildingBlocks(loadModuleServerFiles(root).map((f) => f.server))
+      ),
+      routeGateNamesPage(
+        gateConstants(loadTypescriptFiles(root, ["apps/erp/app/modules"])),
+        listGates(
+          loadTypescriptFiles(root, ["apps/erp/app/utils/list-registry"])
+        )
+      )
     ]),
+    ...scanAll(
+      [
+        ...loadSqlFiles(migrationsDir(root)),
+        ...loadManagedFunctionFiles(root),
+        ...loadTypescriptFiles(root, MODULE_KEY_ROOTS)
+      ],
+      [noModulePermissionKey]
+    ),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
     ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),
     ...findDuplicatedAppFiles(loadTypescriptFiles(root, SHARED_APP_DIRS)).map(
@@ -264,6 +323,21 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
       (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
     ),
+    ...findStaleRegistryHelpers(
+      registryHelpers,
+      loadRegistryHelperFiles(
+        root,
+        registryHelpers.map((helper) => helper.name)
+      )
+    ).map((violation) => ({ checkId: REGISTRY_HELPERS_FRESH, violation })),
+    ...findMovedTableGaps(livePolicies(migrations)).map((violation) => ({
+      checkId: MOVED_TABLES_COVERED,
+      violation
+    })),
+    ...findRoutePageGaps(loadErpRouteFiles(root)).map((violation) => ({
+      checkId: ROUTE_MAPS_TO_PAGE,
+      violation
+    })),
     ...findDroppedFunctionChanges(migrations).map((violation) => ({
       checkId: FUNCTION_REDEFINITION_KEEPS_CHANGES,
       violation

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { upsertCustomerPortal } from "@carbon/ee/customer-portals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
@@ -21,17 +21,15 @@ import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    create: "sales"
-  });
+  await authorize(request, { "sales.portals": "Create" });
 
   return null;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    create: "sales"
+  const { client, companyId } = await authorize(request, {
+    "sales.portals": "Create"
   });
 
   await requireFeature({

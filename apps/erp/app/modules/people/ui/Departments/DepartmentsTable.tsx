@@ -86,7 +86,7 @@ const DepartmentsTable = memo(({ data, count }: DepartmentsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "people")}
+            disabled={!permissions.has({ "people.departments": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteDepartment(row.id)}?${params.toString()}`
@@ -108,7 +108,7 @@ const DepartmentsTable = memo(({ data, count }: DepartmentsTableProps) => {
       count={count}
       columns={columns}
       primaryAction={
-        permissions.can("create", "people") && (
+        permissions.has({ "people.departments": "Create" }) && (
           <New label={t`Department`} to={`new?${params.toString()}`} />
         )
       }

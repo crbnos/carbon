@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { round } from "@carbon/utils";
@@ -60,8 +60,8 @@ const isLineField = (field: string): field is LineField =>
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, companyId, userId } = await authorize(request, {
+    "sales.serviceContracts": "Edit"
   });
 
   const { id, lineId } = params;

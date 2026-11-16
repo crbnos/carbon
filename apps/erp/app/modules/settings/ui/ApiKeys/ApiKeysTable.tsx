@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { subjectGates } from "@carbon/ee/permission-grants";
 import {
   Badge,
   Button,
@@ -24,7 +25,7 @@ import {
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -41,18 +42,9 @@ type ApiKeysTableProps = {
   infinite: InfiniteOptions;
 };
 
-// `apiKey.scopes` is a `Json` column; narrow it to the scope map shape once so
-// the cell and the CSV export read it the same way without an `as any` cast.
-function getScopes(apiKey: ApiKeyRow): Record<string, string[]> | null {
-  const { scopes } = apiKey;
-  return scopes && typeof scopes === "object" && !Array.isArray(scopes)
-    ? (scopes as Record<string, string[]>)
-    : null;
-}
-
-function getScopeCount(scopes: Record<string, string[]> | null): number {
-  if (!scopes) return 0;
-  return Object.keys(scopes).length;
+/** The key's grants that give access (a None grant gives none). */
+function grantCount(apiKey: ApiKeyRow): number {
+  return (apiKey.permission ?? []).filter((g) => g.level !== "None").length;
 }
 
 function formatRateLimit(limit: number, window: string): string {
@@ -102,22 +94,20 @@ const ApiKeysTable = memo((props: ApiKeysTableProps) => {
       },
       {
         id: "scopes",
-        header: t`Scopes`,
+        header: t`Access`,
         cell: ({ row }) => {
-          const scopeCount = getScopeCount(getScopes(row.original));
+          const count = grantCount(row.original);
           return (
             <Badge variant="secondary">
-              {scopeCount === 0 ? t`No Access` : t`${scopeCount} permissions`}
+              {count === 0 ? t`No Access` : t`${count} grants`}
             </Badge>
           );
         },
         meta: {
           icon: <LuShield />,
           exportValue: (row) => {
-            const scopeCount = getScopeCount(getScopes(row));
-            return scopeCount === 0
-              ? t`No Access`
-              : t`${scopeCount} permissions`;
+            const count = grantCount(row);
+            return count === 0 ? t`No Access` : t`${count} grants`;
           }
         }
       },
@@ -229,32 +219,29 @@ const ApiKeysTable = memo((props: ApiKeysTableProps) => {
   );
 
   return (
-    <>
-      <Table<ApiKeyRow>
-        data={data}
-        infinite={infinite}
-        columns={columns}
-        count={count ?? 0}
-        primaryAction={
-          <HStack>
-            {permissions.can("update", "users") && (
-              <New
-                label={t`API Key`}
-                to={`${path.to.newApiKey}?${params.toString()}`}
-              />
-            )}
-            <Button leftIcon={<LuCode />} variant="secondary" asChild>
-              <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
-                <Trans>API Docs</Trans>
-              </a>
-            </Button>
-          </HStack>
-        }
-        renderContextMenu={renderContextMenu}
-        title={t`API Keys`}
-      />
-      <Outlet />
-    </>
+    <Table<ApiKeyRow>
+      data={data}
+      infinite={infinite}
+      columns={columns}
+      count={count ?? 0}
+      primaryAction={
+        <HStack>
+          {permissions.has(subjectGates("Edit").key) && (
+            <New
+              label={t`API Key`}
+              to={`${path.to.newApiKey}?${params.toString()}`}
+            />
+          )}
+          <Button leftIcon={<LuCode />} variant="secondary" asChild>
+            <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
+              <Trans>API Docs</Trans>
+            </a>
+          </Button>
+        </HStack>
+      }
+      renderContextMenu={renderContextMenu}
+      title={t`API Keys`}
+    />
   );
 });
 

@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -20,16 +21,7 @@ import { usePermissions } from "~/hooks";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { isQuoteLocked } from "~/modules/sales/sales.models";
-import {
-  getCustomer,
-  getOpportunity,
-  getOpportunityDocuments,
-  getQuote,
-  getQuoteMethodTrees,
-  getQuotePayment,
-  getQuoteShipment,
-  getSalesOrderLines
-} from "~/modules/sales/sales.service";
+import { getSalesOrderLines } from "~/modules/sales/sales.service";
 import {
   getQuoteLinePricesByQuoteId,
   getQuoteLines
@@ -42,7 +34,6 @@ import {
   QuoteProperties
 } from "~/modules/sales/ui/Quotes";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/Quotes/QuoteExplorer";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -60,18 +51,18 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Quotes`, to: path.to.quotes },
     (data) => data?.quote?.quoteId
-  ),
-  module: "sales"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(getQuoteDisplayId(data?.quote), "Quote");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "sales.quotes": "View" },
+    { bypassRls: true }
+  );
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -83,13 +74,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // to be this company's.
   const [quote, shipment, payment, lines, prices, methods, companySettings] =
     await Promise.all([
-      getQuote(client, quoteId),
-      getQuoteShipment(client, quoteId),
-      getQuotePayment(client, quoteId),
+      api.sales.getQuote({ quoteId }),
+      api.sales.getQuoteShipment({ quoteId }),
+      api.sales.getQuotePayment({ quoteId }),
       getQuoteLines(client, quoteId),
       getQuoteLinePricesByQuoteId(client, quoteId),
-      getQuoteMethodTrees(client, quoteId),
-      getCompanySettings(client, companyId)
+      api.sales.getQuoteMethodTrees({ quoteId }),
+      api.settings.getCompanySettings({})
     ]);
 
   if (quote.error) {
@@ -122,8 +113,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [customer, opportunity, presentationExchangeRate, supplierPriceMap] =
     await Promise.all([
-      getCustomer(client, quote.data?.customerId ?? ""),
-      getOpportunity(client, quote.data?.opportunityId),
+      api.sales.getCustomer({ customerId: quote.data?.customerId ?? "" }),
+      api.sales.getOpportunity({ opportunityId: quote.data?.opportunityId }),
       quote.data?.currencyCode
         ? getExchangeRate(client, companyId, quote.data.currencyCode)
         : null,
@@ -199,7 +190,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     customer: customer.data,
     lines: lines.data ?? [],
     methods: methodTrees,
-    files: getOpportunityDocuments(client, companyId, quote.data.opportunityId),
+    files: api.sales
+      .getOpportunityDocuments({ opportunityId: quote.data.opportunityId })
+      .then(dataOrThrow),
     prices: prices.data ?? [],
     shipment: shipment.data,
     payment: payment.data,
@@ -222,8 +215,8 @@ export default function QuoteRoute() {
   // add-line controls take: an unlocked quote and sales edit rights.
   const canDropDocuments =
     !isQuoteLocked(quote.status) &&
-    permissions.can("update", "sales") &&
-    permissions.can("create", "sales");
+    permissions.has({ "sales.quotes": "Edit" }) &&
+    permissions.has({ "sales.quotes": "Create" });
   const pendingItems = useOptimisticDocumentDrag();
 
   const handleDrop = (

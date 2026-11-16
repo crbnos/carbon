@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -27,14 +27,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "~/modules/accounting/accounting.models";
-import {
-  getAssetDepreciationHistory,
-  getFixedAsset,
-  getFixedAssetCipCosts,
-  getFixedAssetDisposal,
-  getFixedAssetRelatedItems,
-  getFixedAssetTransfers
-} from "~/modules/accounting/accounting.service";
+import { getFixedAssetRelatedItems } from "~/modules/accounting/accounting.service";
 import {
   DepreciationRunStatus,
   FixedAssetCipCosts,
@@ -51,16 +44,15 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Fixed Assets`, to: path.to.fixedAssets },
     (data) => data?.asset?.fixedAssetId
-  ),
-  module: "accounting"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.asset?.fixedAssetId, "Fixed Asset");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.assets": "View"
   });
 
   const { fixedAssetId } = params;
@@ -68,11 +60,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [asset, depreciationHistory, disposal, transfers, cipCosts] =
     await Promise.all([
-      getFixedAsset(client, fixedAssetId, companyId),
-      getAssetDepreciationHistory(client, fixedAssetId),
-      getFixedAssetDisposal(client, fixedAssetId),
-      getFixedAssetTransfers(client, fixedAssetId, companyId),
-      getFixedAssetCipCosts(client, fixedAssetId, companyId)
+      api.accounting.getFixedAsset({ id: fixedAssetId }),
+      api.accounting.getAssetDepreciationHistory({ fixedAssetId }),
+      api.accounting.getFixedAssetDisposal({ fixedAssetId }),
+      api.accounting.getFixedAssetTransfers({ fixedAssetId }),
+      api.accounting.getFixedAssetCipCosts({ fixedAssetId })
     ]);
 
   if (asset.error) {

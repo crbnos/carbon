@@ -10226,7 +10226,7 @@ export type SerialUnitCosts = {
 };
 
 export const previewSerialUnitCostsPermission = {
-  view: "accounting"
+  "accounting.reporting": "View"
 } satisfies PermissionRule<z.output<typeof previewSerialUnitCostsInput>>;
 
 export async function previewSerialUnitCosts(
@@ -10381,7 +10381,7 @@ export type RecostResult = {
 };
 
 export const recostSerialUnitPermission = {
-  update: "accounting"
+  "accounting.reporting": "Edit"
 } satisfies PermissionRule<z.output<typeof recostSerialUnitInput>>;
 
 export async function recostSerialUnit(
@@ -10767,7 +10767,7 @@ export const postInventoryCountInput = z.object({
 });
 
 export const postInventoryCountPermission = {
-  update: "inventory"
+  "inventory.inventoryCount": "Edit"
 } satisfies PermissionRule<z.output<typeof postInventoryCountInput>>;
 
 /** Posts a Pending inventory count: one adjustment per counted variance, atomically. */
@@ -12908,7 +12908,7 @@ export const correctStockMovementInput = z.object({
 const MAX_CORRECTION_CHAIN_DEPTH = 100;
 
 export const postStockMovementCorrectionPermission = {
-  update: "inventory"
+  "inventory.movements": "Edit"
 } satisfies PermissionRule<z.output<typeof correctStockMovementInput>>;
 
 export async function postStockMovementCorrection(
@@ -13300,7 +13300,7 @@ export type KanbanReplenishResult = { results: KanbanReplenishOutcome[] };
 
 export const replenishKanbanPermission = {
   by: "mode",
-  rules: { scan: { create: "inventory" }, level: "system" }
+  rules: { scan: { "inventory.kanbans": "Create" }, level: "system" }
 } satisfies PermissionRule<z.output<typeof kanbanReplenishInput>>;
 
 /**
@@ -14540,7 +14540,7 @@ export const postReceiptInput = z.object({
 });
 
 export const postReceiptPermission = {
-  update: "inventory"
+  "inventory.receipts": "Edit"
 } satisfies PermissionRule<z.output<typeof postReceiptInput>>;
 
 /** Posts or voids a receipt: stock, tracked entities, cost layers and journal. */
@@ -19367,7 +19367,7 @@ export const postShipmentInput = z.object({
 });
 
 export const postShipmentPermission = {
-  update: "inventory"
+  "inventory.shipments": "Edit"
 } satisfies PermissionRule<z.output<typeof postShipmentInput>>;
 
 /** Posts or voids a shipment: stock, tracked entities, COGS and journal rows. */
@@ -24245,7 +24245,7 @@ async function currentEntityStatus(
 // outages surface in monitoring.
 
 export const postInventoryAdjustmentPermission = {
-  update: "inventory"
+  "inventory.quantities": "Edit"
 } satisfies PermissionRule<z.output<typeof postInventoryAdjustmentInput>>;
 
 /** The single write path for manual inventory adjustments; see the note above. */
@@ -30225,27 +30225,27 @@ async function produceBatchOutput(
 export const issueMaterialPermission = {
   by: "type",
   rules: {
-    convertEntity: { update: "inventory" },
+    convertEntity: { "inventory.trackedEntities": "Edit" },
     jobCompleteMakeToOrder: {},
-    jobOperation: { update: "production" },
-    jobOperationBatchComplete: { update: "production" },
-    jobOperationDryRun: { update: "production" },
-    jobOperationBatchOutput: { update: "production" },
-    jobOperationSerialComplete: { update: "production" },
-    jobOperationScrap: { update: "production" },
-    partToOperation: { update: "production" },
-    scrapTrackedEntity: { update: "production" },
-    mergeTrackedEntities: { update: "inventory" },
-    trackedEntitiesToBatch: { update: "production" },
-    trackedEntitiesToOperation: { update: "production" },
-    unconsumeTrackedEntities: { update: "production" },
-    maintenanceDispatchInventory: { update: "resources" },
-    maintenanceDispatchTrackedEntities: { update: "resources" },
-    maintenanceDispatchUnconsume: { update: "resources" },
-    maintenanceDispatchUnissue: { update: "resources" },
-    serviceJobInventory: { update: "service" },
-    serviceJobTrackedEntities: { update: "service" },
-    serviceJobUnconsume: { update: "service" }
+    jobOperation: { "production.jobs": "Edit" },
+    jobOperationBatchComplete: { "production.batches": "Edit" },
+    jobOperationDryRun: { "production.jobs": "Edit" },
+    jobOperationBatchOutput: { "production.batches": "Edit" },
+    jobOperationSerialComplete: { "production.jobs": "Edit" },
+    jobOperationScrap: { "production.jobs": "Edit" },
+    partToOperation: { "production.jobs": "Edit" },
+    scrapTrackedEntity: { "production.jobs": "Edit" },
+    mergeTrackedEntities: { "inventory.trackedEntities": "Edit" },
+    trackedEntitiesToBatch: { "production.batches": "Edit" },
+    trackedEntitiesToOperation: { "production.jobs": "Edit" },
+    unconsumeTrackedEntities: { "production.jobs": "Edit" },
+    maintenanceDispatchInventory: { "resources.dispatches": "Edit" },
+    maintenanceDispatchTrackedEntities: { "resources.dispatches": "Edit" },
+    maintenanceDispatchUnconsume: { "resources.dispatches": "Edit" },
+    maintenanceDispatchUnissue: { "resources.dispatches": "Edit" },
+    serviceJobInventory: { "service.jobs": "Edit" },
+    serviceJobTrackedEntities: { "service.jobs": "Edit" },
+    serviceJobUnconsume: { "service.jobs": "Edit" }
   }
 } satisfies PermissionRule<z.output<typeof issueInput>>;
 

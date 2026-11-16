@@ -152,7 +152,8 @@ export default function ProjectOverview({
   if (!project) return null;
 
   const isDisabled =
-    !permissions.can("update", "projects") || project.status === "Closed";
+    !permissions.has({ "projects.projects": "Edit" }) ||
+    project.status === "Closed";
   const isContract = project.costTreatment === "Contract";
 
   return (

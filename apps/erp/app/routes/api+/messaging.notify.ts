@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
@@ -19,7 +19,7 @@ export const messagingNotifySchema = z.discriminatedUnion("type", [
 ]);
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request);
 
   const payload = messagingNotifySchema.safeParse(await request.json());
 

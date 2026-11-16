@@ -1966,7 +1966,7 @@ export async function deleteServiceJobAssignment(
 // --- Service jobs: postings ---------------------------------------------------
 
 export const postServiceJobPermission = {
-  update: "service"
+  "service.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof postServiceJobInput>>;
 
 /**
@@ -2864,8 +2864,8 @@ export type CreateServiceInvoiceResult = {
 };
 
 export const createServiceInvoicePermission = {
-  update: "service",
-  create: "invoicing"
+  "service.jobs": "Edit",
+  "invoicing.salesInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createServiceInvoiceInput>>;
 
 /**

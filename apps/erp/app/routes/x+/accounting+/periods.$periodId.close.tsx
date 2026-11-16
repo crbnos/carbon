@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
@@ -57,7 +57,6 @@ import { useCurrencyFormatter } from "~/hooks";
 import type { PeriodCloseTaskView } from "~/modules/accounting/accounting.service";
 import {
   existingDraftRunId,
-  getAccountingPeriods,
   getPeriodCloseChecklist
 } from "~/modules/accounting/accounting.service";
 import { LOCK_PERIOD_TASK_NAME } from "~/modules/accounting/accounting.utils";
@@ -73,11 +72,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      view: "accounting",
-      role: "employee"
-    });
+  const { client, companyId, companyGroupId, userId, api } = await authorize(
+    request,
+    { "accounting.accountingPeriods": "View" }
+  );
 
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
@@ -89,7 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       userId,
       periodId
     }),
-    getAccountingPeriods(client, companyId)
+    api.accounting.getAccountingPeriods({})
   ]);
 
   if (checklist.error || !checklist.data) {
@@ -138,7 +136,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { periodId } = input.params;
   const { intent, taskId = "", notes, skippedReason = "" } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
 
   switch (intent) {
     case "completeTask":

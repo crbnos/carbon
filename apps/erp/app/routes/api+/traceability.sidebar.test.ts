@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { expect, it, vi } from "vitest";
 import { loader } from "./traceability.sidebar";
 
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize: vi.fn() }));
 
 type Row = Record<string, unknown>;
 
@@ -51,10 +51,10 @@ const tables = {
 };
 
 async function stepRecordIds(activityId: string) {
-  vi.mocked(requirePermissions).mockResolvedValue({
+  vi.mocked(authorize).mockResolvedValue({
     client: serviceRole(tables),
     companyId: "company-1"
-  } as unknown as Awaited<ReturnType<typeof requirePermissions>>);
+  } as unknown as Awaited<ReturnType<typeof authorize>>);
   const response = await loader({
     request: new Request(
       `http://localhost/api/traceability/sidebar?activityId=${activityId}`

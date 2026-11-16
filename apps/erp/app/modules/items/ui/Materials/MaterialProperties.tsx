@@ -470,7 +470,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
           id={itemId}
           table="item"
           value={assignee ?? ""}
-          isReadOnly={!permissions.can("update", "parts")}
+          isReadOnly={!permissions.has({ "parts.materials": "Edit" })}
         />
       </VStack> */}
 

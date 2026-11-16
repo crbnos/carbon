@@ -15,8 +15,7 @@ import { path } from "~/utils/path";
 // supplier-credits.tsx; both read the same `memo` table, scoped by party.
 export const handle: Handle = {
   breadcrumb: msg`Credit Memos`,
-  to: path.to.creditMemos,
-  module: "invoicing"
+  to: path.to.creditMemos
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

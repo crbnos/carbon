@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { journalReference } from "@carbon/database";
+import type { PageGate } from "@carbon/database/access";
 import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
 import {
   credit,
@@ -1388,3 +1389,10 @@ export function fiscalYearPeriodDates(
   }
   return rows;
 }
+
+/** `accounting.importChartOfAccounts`: the import also re-points the default accounts and the asset classes. */
+export const importChartOfAccountsPermission = {
+  "accounting.chartOfAccounts": "Edit",
+  "accounting.defaultAccounts": "Edit",
+  "accounting.assetClasses": "Edit"
+} satisfies PageGate;

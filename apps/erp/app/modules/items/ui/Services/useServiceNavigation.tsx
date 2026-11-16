@@ -13,9 +13,10 @@ import {
 import { useParams } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
 import { DETAIL_TAB_SHORTCUTS } from "~/shortcuts";
-import type { Role } from "~/types";
+import { visibleRoutes } from "~/utils/nav";
 import { path } from "~/utils/path";
 import type { ServiceSummary } from "../../types";
+import { ITEM_TAB_GATES } from "../itemTabGates";
 
 export function useServiceNavigation() {
   const { t } = useLingui();
@@ -31,7 +32,7 @@ export function useServiceNavigation() {
 
   const replenishment = routeData.serviceSummary.replenishmentSystem;
 
-  return [
+  const tabs = [
     {
       name: t`Details`,
       to: path.to.serviceDetails(itemId),
@@ -42,40 +43,30 @@ export function useServiceNavigation() {
       name: t`Purchasing`,
       to: path.to.servicePurchasing(itemId),
       isDisabled: replenishment === "Make",
-      role: ["employee", "supplier"],
-      permission: "purchasing",
+      gate: ITEM_TAB_GATES.purchasing,
       icon: LuShoppingCart,
       shortcut: DETAIL_TAB_SHORTCUTS.purchasing
     },
     {
       name: t`Sales`,
       to: path.to.serviceSales(itemId),
-      role: ["employee", "customer"],
       icon: LuReceipt,
       shortcut: DETAIL_TAB_SHORTCUTS.sales
     },
     {
       name: t`Accounting`,
       to: path.to.serviceCosting(itemId),
-      role: ["employee"],
-      permission: "purchasing",
+      gate: ITEM_TAB_GATES.accounting,
       icon: LuTags,
       shortcut: DETAIL_TAB_SHORTCUTS.accounting
     },
     {
       name: t`Quality`,
       to: path.to.serviceQuality(itemId),
-      role: ["employee"],
-      permission: "quality",
+      gate: ITEM_TAB_GATES.quality,
       icon: LuClipboardCheck,
       shortcut: DETAIL_TAB_SHORTCUTS.quality
     }
-  ].filter(
-    (item) =>
-      !item.isDisabled &&
-      (item.role === undefined ||
-        item.role.some((role) => permissions.is(role as Role))) &&
-      (item.permission === undefined ||
-        permissions.can("view", item.permission))
-  );
+  ];
+  return visibleRoutes(tabs, permissions, (tab) => !tab.isDisabled);
 }

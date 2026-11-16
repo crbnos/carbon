@@ -41,7 +41,10 @@ export function CreateSupplierReturn({
   const [suppliers] = useSuppliers();
   const [supplierId, setSupplierId] = useState("");
 
-  if (!hasReturnToSupplier || !permissions.can("create", "purchasing")) {
+  if (
+    !hasReturnToSupplier ||
+    !permissions.has({ "purchasing.returns": "Create" })
+  ) {
     return null;
   }
 

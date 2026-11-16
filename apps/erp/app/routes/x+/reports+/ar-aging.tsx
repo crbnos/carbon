@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -15,7 +15,6 @@ import {
   getArTieOut
 } from "~/modules/invoicing/invoicing.service";
 import { ARAPWorkbench } from "~/modules/invoicing/ui";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -34,9 +33,8 @@ function parseBuckets(raw: string | null): [number, number, number] {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.reporting": "View"
   });
 
   const url = new URL(request.url);
@@ -52,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // GL tie-outs only mean something once journals count — skip them
   // entirely before the accounting cutover (result: null hides the
   // tie-out panel and the adjusting-entry form in ARAPWorkbench).
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   const accountingSetUp = hasAccountingCutover(companySettings.data);
 
   const [tieOut, aging, open] = await Promise.all([

@@ -47,6 +47,7 @@ import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import {
   isProjectPlanLocked,
+  PROJECT_ISSUE_GATE,
   projectPlanLockedMessage
 } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.service";
@@ -163,9 +164,22 @@ export function ElementView({
   const purchaseOrderModal = useDisclosure();
 
   const isClosed = project?.status === "Closed";
-  const canUpdate = permissions.can("update", routes.module) && !isClosed;
-  const canCreate = permissions.can("create", routes.module) && !isClosed;
-  const canDelete = permissions.can("delete", routes.module) && !isClosed;
+  // A project's elements are the Projects page's; a service job's, the
+  // Service Jobs page's.
+  const canUpdate =
+    permissions.has(
+      isProject ? { "projects.projects": "Edit" } : { "service.jobs": "Edit" }
+    ) && !isClosed;
+  const canCreate =
+    permissions.has(
+      isProject
+        ? { "projects.projects": "Create" }
+        : { "service.jobs": "Create" }
+    ) && !isClosed;
+  const canDelete =
+    permissions.has(
+      isProject ? { "projects.projects": "Full" } : { "service.jobs": "Full" }
+    ) && !isClosed;
   // Charges need a chargeable element of an open project; the posting
   // functions refuse anything else with the reason.
   const canCharge = element.isChargeable && !isClosed;
@@ -174,12 +188,11 @@ export function ElementView({
   const canLogTime =
     usesProjectCharges && canCharge && permissions.is("employee");
   const canIssue =
+    usesProjectCharges && canCharge && permissions.has(PROJECT_ISSUE_GATE);
+  const canChargeCost =
     usesProjectCharges &&
     canCharge &&
-    permissions.can("update", "inventory") &&
-    permissions.can("update", "projects");
-  const canChargeCost =
-    usesProjectCharges && canCharge && permissions.can("update", "projects");
+    permissions.has({ "projects.projects": "Edit" });
   const canAddChild = canCreate && element.type !== "Parameter";
   // Add Job: the job form in a modal, charged to this element. A project's,
   // not a service order's.
@@ -187,14 +200,14 @@ export function ElementView({
     isProject &&
     element.type !== "Parameter" &&
     canCharge &&
-    permissions.can("create", "production");
+    permissions.has({ "production.jobs": "Create" });
   // Add Purchase Order: a line charged to this element, on a Draft order of
   // the supplier or a new one. A project's, not a service order's.
   const canAddPurchaseOrder =
     isProject &&
     element.type !== "Parameter" &&
     canCharge &&
-    permissions.can("create", "purchasing");
+    permissions.has({ "purchasing.purchaseOrders": "Create" });
   // After the lock milestone completes, the plan changes only through a
   // Draft change request: "Add line" is off, with the Plan page's reason.
   const lockMilestone = milestones.find(
@@ -824,13 +837,14 @@ function ElementActivity({
   comments
 }: Pick<ProjectElementPage, "element" | "comments"> & { projectId: string }) {
   const { company } = useUser();
-  const { can } = usePermissions();
+  const { has } = usePermissions();
   const { isGated } = usePlanGate({ feature: "AUDIT_LOG" });
   const rootRouteData = useRouteData<{ auditLogEnabled: Promise<boolean> }>(
     path.to.authenticatedRoot
   );
   const auditLogEnabled = useResolved(rootRouteData?.auditLogEnabled, false);
-  const showHistory = auditLogEnabled && !isGated && can("view", "settings");
+  const showHistory =
+    auditLogEnabled && !isGated && has({ "settings.auditLogs": "View" });
   return (
     <div className="flex w-full flex-col gap-4">
       <ElementComments

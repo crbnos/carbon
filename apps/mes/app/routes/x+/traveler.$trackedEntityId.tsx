@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { fetchAllRecords, getLocationTimeZone } from "@carbon/database";
@@ -51,7 +51,7 @@ const MAX_ISSUE_CANDIDATES = 10;
 const log = getLogger("mes", "traveler");
 
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
   const { locationId, effectiveUserId } = context.get(userContext) ?? {};
   const serviceRole = getCarbonServiceRole();
 

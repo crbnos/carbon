@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
@@ -100,10 +99,7 @@ import { useSettings } from "~/hooks";
 // Deep service import (not the ~/modules/accounting barrel) to keep this
 // route's type graph light — see the TS2589 note in
 // ~/modules/settings/ui/Integrations/index.ts.
-import {
-  getAccountsList,
-  getActiveDimensionsWithValues
-} from "~/modules/accounting/accounting.service";
+import { getActiveDimensionsWithValues } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   accountMappingAiSuggestValidator,
@@ -279,7 +275,7 @@ function unfoldRampCredentials(
  * The @carbon/ee account-mapping services are Kysely-based (DISTINCT +
  * unbounded reads that supabase-js can't express), so they get the app's
  * Kysely client. Kysely bypasses RLS — safe here because the route has
- * already passed requirePermissions and every query is companyId-scoped.
+ * already passed authorize and every query is companyId-scoped.
  */
 async function getAccountMappingTabData(
   client: SupabaseClient<Database>,
@@ -491,12 +487,9 @@ async function getDimensionSyncTabData(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      update: "settings"
-    }
-  );
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
+    "settings.integrations": "Edit"
+  });
 
   const { id: integrationId } = params;
   if (!integrationId) throw new Error("Integration ID not found");
@@ -518,7 +511,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // partitioned by account class. Options over CHOICE_CARD_MAX_OPTIONS render
   // as a Select automatically.
   if (integrationId === "ramp") {
-    const accountsResult = await getAccountsList(client, companyGroupId, {
+    const accountsResult = await api.accounting.getAccountsList({
       isGroup: false
     });
     const accounts = accountsResult.data ?? [];
@@ -633,7 +626,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     /**
      * Tie-out summary: latest computedAt + how many (period × account)
      * cells carry a nonzero internal or external delta. Null when no
-     * tie-out rows exist (or the viewer lacks accounting_view — the
+     * tie-out rows exist (or the viewer lacks View on Sync Tie-Out — the
      * table's RLS SELECT — in which case the rows read back empty).
      */
     tieOut: {
@@ -1113,7 +1106,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.transitionSyncOperations(input.data);
     }
     case "ai-suggest-account-mappings": {
@@ -1122,7 +1115,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.suggestAccountMappings(input.data);
     }
     case "bulk-upsert-account-mappings": {
@@ -1131,7 +1124,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.saveAccountMappings({
         integrationId: input.params.id,
         mappings: input.data.mappings
@@ -1143,7 +1136,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.updateDimensionSync({
         ...input.data,
         integrationId: input.params.id
@@ -1155,7 +1148,7 @@ export async function action(args: ActionFunctionArgs) {
       ).request(args, params);
       if ("invalid" in input) return input.invalid;
       const { intent: _, ...mapping } = input.data;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.saveDimensionValueMappings({
         integrationId: input.params.id,
         mappings: [mapping]
@@ -1166,7 +1159,7 @@ export async function action(args: ActionFunctionArgs) {
         dimensionValueMappingBulkUpsertValidator
       ).request(args, params);
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.saveDimensionValueMappings({
         integrationId: input.params.id,
         mappings: input.data.mappings
@@ -1175,7 +1168,7 @@ export async function action(args: ActionFunctionArgs) {
     case "update-sync-enabled": {
       const input = await validator(syncEnabledValidator).request(args, params);
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.setIntegrationSyncEnabled({
         integrationId: input.params.id,
         syncEnabled: input.data.syncEnabled
@@ -1187,7 +1180,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.updatePostingSync({
         ...input.data,
         integrationId: input.params.id
@@ -1199,7 +1192,7 @@ export async function action(args: ActionFunctionArgs) {
         params
       );
       if ("invalid" in input) return input.invalid;
-      const api = await carbon(args.request);
+      const { api } = await authorize(args.request);
       return api.settings.saveOeeDeviceMapping({
         integrationId: input.params.id,
         externalDeviceId: input.data.externalDeviceId,
@@ -1219,12 +1212,9 @@ export async function action(args: ActionFunctionArgs) {
  */
 async function installIntegration({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {
-      update: "settings"
-    }
-  );
+  const { client, companyId, userId, email } = await authorize(request, {
+    "settings.integrations": "Edit"
+  });
 
   const { id: integrationId } = params;
   if (!integrationId) throw new Error("Integration ID not found");

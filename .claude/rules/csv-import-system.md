@@ -55,7 +55,7 @@ Three exported maps, all keyed by table name:
     };
   }
   ```
-- `importPermissions` — table → permission module. The one map: `importCsvFile`'s gate reads it.
+- `importPermissions` — table → the page that owns it in the access registry. The one map: `importCsvFile`'s gate reads it.
 - `importSchemas` — `Record<keyof fieldMappings, z.ZodObject>` for per-table validation.
 
 Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
@@ -70,21 +70,26 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 
 ### Tables & permissions
 
-`customer`, `customerContact` → `sales`; `supplier`, `supplierContact` → `purchasing`;
-`part`, `material`, `tool`, `fixture`, `consumable`, `service`, `bom`,
-`operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
-`materialGrade`, `materialType`, `materialDimension`, `unitOfMeasure`,
-`storageType` → `parts`;
-`workCenter`, `process`, `scrapReason` → `production`; `storageUnit`,
-`inventoryQuantity`, `batchQuantity`, `serialQuantity` → `inventory`;
-`department`, `payrollPeriodTotal` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
+Each table names the page that owns it in the access registry
+(`packages/database/src/access/pages/`), and the import needs Edit there:
+`customer`, `customerContact` → `sales.customers`; `supplier`, `supplierContact` →
+`purchasing.suppliers`; `part`, `bom`, `operations`, `partWithMethod` → `parts.parts`;
+`material` → `parts.materials`; `tool`, `fixture` → `parts.tools`; `consumable` →
+`parts.consumables`; `service` → `parts.services`; the material lookups → their
+`parts.*` page (`materialForm` → `parts.shapes`); `unitOfMeasure` → `parts.units`;
+`itemPostingGroup` → `parts.itemGroups`; `storageType` → `inventory.storageTypes`;
+`storageUnit` → `inventory.storageUnits`; `inventoryQuantity`, `batchQuantity`,
+`serialQuantity` → `inventory.quantities`; `workCenter` → `resources.workCenters`;
+`process` → `resources.processes`; `scrapReason` → `production.scrapReasons`;
+`department` → `people.departments`; `payrollPeriodTotal` → `people.timecards`;
+`fixedAsset` → `accounting.assets`; the quote tables → `sales.quotes`.
 
 An import's permission is the one its table's **RLS INSERT policy** requires, not
 the one that opens its list page. `importCsvTable` writes through a service-role
 Kysely connection that bypasses RLS, so `importPermissions` is the only
 authorization on a bulk import — taking it from the page gate would let a user
-create rows the database itself would refuse. `itemPostingGroup` is where the two
-disagree: its page is parts-gated, its policies are `accounting_*`.
+create rows the database itself would refuse. Both read the registry: a table's RLS
+rules name the page that owns it, and so does `importPermissions`.
 
 The import's own `table` enum (`importCsvInput`, `shared.service.ts`) accepts: `consumable`,
 `customer`, `customerContact`, `fixture`, `material`, `bom`, `operations`,
@@ -269,7 +274,10 @@ parent is an `errors` row. New rows get a DB-generated `xid()` id.
 (`parentId` + `parentRevision`). The import groups rows by parent part, validates
 each group (`validateGroup`, pure), then writes each part in its own Kysely
 transaction (`writeGroup`): a part with any error writes nothing, other parts
-continue.
+continue. The import's gate is `parts.parts` Edit, but a parent may be a Tool:
+an existing parent's group also needs Edit on its type's page
+(`ITEM_TYPE_PAGES`, checked with the `can` argument, `ctx.can`), or the group
+is refused with an error on its first row.
 
 - **Target version** (`pickMethodImportTarget`): a blank Make Method Version
   targets the highest non-archived version that existed before the import; an
@@ -364,10 +372,12 @@ Action only (no loader). It validates the form (`filePath`, `enumMappings` as JS
 every other field is a column mapping) and calls `importCsvFile` (`shared.server.ts`)
 (`importCsvFile` in `apps/erp/app/modules/shared/shared.server.ts`), which:
 1. Refuses a `table` that is not a key of `importPermissions`.
-2. Gates on `{ by: "table" }`: `update` on `importPermissions[table]`, plus `create` on
-   the same module for tables in `importRequiresCreate` (the three stock imports, matching
-   the single-record adjustment's `create: inventory` route gate and `update: inventory`
-   Save button).
+2. Gates on `{ by: "table" }`: Edit on the page `importPermissions[table]` names. Edit
+   holds create, so the three stock imports need what the single-record adjustment
+   needs (Inventory → Quantities at Edit). Two moved tables also admit the page that
+   keeps writing them (`alsoWrittenBy`), as their screens do: `storageType` takes
+   Parts too, `itemPostingGroup` Accounting → Default Accounts. A keyed rule holds one
+   page, so these two are `"employee"` there and `run` checks `importAnyOf` first.
 3. Validates `columnMappings` against `importSchemas[table]` (required fields mapped).
 4. Calls `importCsv(ctx, { table, filePath, columnMappings, enumMappings })`
    (quote tables go through `importQuotes` instead).
@@ -376,7 +386,8 @@ every other field is a column mapping) and calls `importCsvFile` (`shared.server
    from the result's `data`.
 
 The lookup values an import creates on the fly (`api+/csv+/create-lookup.tsx`) are
-`createImportLookups` (`shared.server.ts`), gated on `create` of the lookup's module.
+`createImportLookups` (`shared.server.ts`), gated on Create on the lookup's page
+(`purchasing.types`, `sales.types`, `sales.statuses`).
 
 `importCsv` lives in `apps/erp/app/modules/shared/shared.service.ts` and is a thin wrapper:
 it calls `invokePosting(ctx, "import-csv", args, importCsvTable)`, so the import runs

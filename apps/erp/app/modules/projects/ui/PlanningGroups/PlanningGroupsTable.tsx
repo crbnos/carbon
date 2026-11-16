@@ -152,7 +152,7 @@ const PlanningGroupsTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "projects")}
+            disabled={!permissions.has({ "projects.planningGroups": "Edit" })}
             onClick={() => navigate(path.to.planningGroup(row.id))}
           >
             <MenuIcon icon={<LuPencil />} />
@@ -161,7 +161,7 @@ const PlanningGroupsTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "projects")}
+            disabled={!permissions.has({ "projects.planningGroups": "Full" })}
             onClick={() => navigate(path.to.deletePlanningGroup(row.id))}
           >
             <MenuIcon icon={<LuTrash />} />
@@ -178,7 +178,7 @@ const PlanningGroupsTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "projects") && (
+          permissions.has({ "projects.planningGroups": "Create" }) && (
             <New label={t`Planning Group`} to={path.to.newPlanningGroup} />
           )
         }

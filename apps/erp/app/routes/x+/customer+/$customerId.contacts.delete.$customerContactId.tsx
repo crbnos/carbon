@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -11,9 +11,7 @@ import { deleteCustomerContact } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "sales"
-  });
+  const { client } = await authorize(request, { "sales.customers": "Full" });
 
   const { customerId, customerContactId } = params;
   if (!customerId || !customerContactId) {

@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
@@ -53,16 +52,13 @@ import {
 import QuoteLinePricingHistory from "~/modules/sales/ui/Quotes/QuoteLinePricingHistory";
 import QuoteLineRiskRegister from "~/modules/sales/ui/Quotes/QuoteLineRiskRegister";
 import type { SupplierPriceMap } from "~/modules/shared/shared.models";
-import {
-  getTagsList,
-  requireCompanyRecord
-} from "~/modules/shared/shared.service";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
+  const { companyId, api } = await authorize(request, {
+    "sales.quotes": "View"
   });
 
   const { quoteId, lineId } = params;
@@ -99,7 +95,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         const [materials, methodOperations, tags] = await Promise.all([
           getQuoteMaterialsByMethodId(serviceRole, methodId),
           getQuoteOperationsByMethodId(serviceRole, methodId),
-          getTagsList(client, companyId, "operation")
+          api.shared.getTagsList({ table: "operation" })
         ]);
 
         return {
@@ -166,7 +162,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { quoteId, lineId } = input.params;
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.updateQuoteLine({
     ...input.data,
     id: lineId,
@@ -342,7 +338,7 @@ export default function QuoteLine() {
             {(model) => (
               <CadModel
                 key={`cad:${model?.itemId}`}
-                isReadOnly={!permissions.can("update", "sales")}
+                isReadOnly={!permissions.has({ "sales.quotes": "Edit" })}
                 metadata={{
                   quoteLineId: lineId ?? undefined,
                   itemId: model?.itemId ?? undefined
@@ -357,7 +353,7 @@ export default function QuoteLine() {
         </Suspense>
       ) : (
         <CadModel
-          isReadOnly={!permissions.can("update", "sales")}
+          isReadOnly={!permissions.has({ "sales.quotes": "Edit" })}
           metadata={{
             quoteLineId: line.id ?? undefined,
             itemId: line.itemId ?? undefined

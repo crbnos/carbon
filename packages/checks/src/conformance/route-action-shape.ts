@@ -23,7 +23,7 @@ export const routeActionShape: ConformanceCheck = {
   provenance: {
     deprecates: "a route action that composes writes itself",
     replacedBy:
-      "one `defineServiceFn` per operation, called through `carbon(request)`",
+      "one `defineServiceFn` per operation, called through `authorize(request)`",
     since: "2026-10-15"
   },
   scan(file: string, contents: string): Violation[] {

@@ -49,7 +49,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getItemById, INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "motion/react";
@@ -129,12 +129,7 @@ import {
 } from "~/components/SortableList";
 import { StepLinkEditor } from "~/components/StepLinkEditor";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
-import {
-  useCurrencyDecimals,
-  useImageUpload,
-  usePermissions,
-  useUser
-} from "~/hooks";
+import { useCurrencyDecimals, useImageUpload, useUser } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type {
   SlideAnnotation,
@@ -171,6 +166,7 @@ import type {
 import { OperationRowDetails, OperationRowTitle } from "./MethodRow";
 import type { ReleaseLockProps } from "./ReleaseLockAlert";
 import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
+import { useMethodEditable } from "./useMethodEditable";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -273,18 +269,16 @@ const BillOfProcess = ({
   methodCorrectionId,
   title
 }: BillOfProcessProps) => {
-  const permissions = usePermissions();
   const { t } = useLingui();
   const { isProductionRevision, isReleaseLocked } = getReleaseLockFlags({
     revisionStatus,
     releaseControl
   });
   const { isPhone } = useViewport();
-  const isReadOnly =
-    permissions.can("update", "parts") === false ||
-    makeMethod.status !== "Draft" ||
-    isReleaseLocked ||
-    isDisabled;
+  const [allItems] = useItems();
+  const { methodItem, isEditable } = useMethodEditable(makeMethod);
+  const itemName = methodItem?.name;
+  const isReadOnly = !isEditable || isReleaseLocked || isDisabled;
 
   const makeMethodId = makeMethod.id;
 
@@ -292,9 +286,6 @@ const BillOfProcess = ({
   const sortOrderFetcher = useFetcher<{}>();
   const deleteOperationFetcher = useAction();
   const { id: userId } = useUser();
-
-  const [allItems] = useItems();
-  const itemName = getItemById(allItems, makeMethod.itemId)?.name;
 
   const materialItemIds = useMemo(
     () => new Set((materials ?? []).map((m) => m.itemId)),

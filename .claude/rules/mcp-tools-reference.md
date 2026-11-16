@@ -115,13 +115,26 @@ any other value export in a server file fails generation.
   The description is the summary sentence, then `@remarks`, then `@returns`.
   `@param name - text` becomes that input field's `description`, and naming a
   field the input does not have fails generation.
-- **Permission**: read off the literal `permission` and published in the
-  manifest. One module → `{ module, actions }`; several modules, or `{}`
-  (company membership) → `{ module: null, actions: [] }`. The function's own
-  gate is the only check. `"system"` and a keyed permission (`{ by, rules }`)
-  cannot be published.
+- **Permission**: read off the literal `permission` (pages and levels,
+  `{ "inventory.receipts": "Edit" }`) and published in the manifest as the
+  pages' module and every action their levels hold (Edit → view, create,
+  update). Pages of one module → `{ module, actions }`, plus `page` when the
+  gate names one page (`describe_tool` prints `<page>_<action>`, the digest
+  `<page>:<actions>`). One gate over pages of several modules (every entry
+  needed) → `{ module: null, actions, allOf: [{ page, level }, …] }` in
+  registry order, `actions` those of its highest level; the digest writes
+  it `all of <page>:<Level>+…`. `"employee"` (any employee of the company),
+  or a keyed rule over several modules → `{ module: null, actions: [] }`.
+  A keyed permission (`{ by, rules }`) publishes every page its rules name. An `anyOf` or row rule (`rowRule`,
+  `itemRule`) is read off its TYPE, so a helper call publishes like a
+  literal: its pages also go out as `oneOf: { pages, level, by }` (`by` is
+  the row column that picks, `item.type`), which `describe_tool` prints as
+  "one of … at <Level>" and the digest appends to its permission. A page
+  the registry does not have, or a level that is not View, Create, Edit or
+  Full, fails generation. The
+  function's own gate is the only check. `"system"` cannot be published.
 - **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
-  WRITE. `@mcp read` forces READ, for a read gated on membership alone (`{}`);
+  WRITE. `@mcp read` forces READ, for a read gated on membership alone (`"employee"`);
   on a permission that names `create`, `update` or `delete` it fails
   generation, since a READ is offered as safe to run unasked. `@mcp destructive`
   forces DESTRUCTIVE.
@@ -216,10 +229,10 @@ instance advertises its own endpoint. Never hard-code `app.carbon.ms`.
 
 1. **OAuth bearer**: `Authorization: Bearer <token>` not prefixed `crbn_`.
    `findOAuthToken` (hash lookup + expiry), the per-user rate limit, then
-   `oauthContext` (membership, company group, claims, user client), in
+   `oauthContext` (company group, claims, user client), in
    `api+/v1+/lib/authenticate.server.ts`.
 2. **API key**: `Bearer crbn_…` is rewritten to the `carbon-key` header, or the
-   header is sent directly (`authenticateApiKey`).
+   header is sent directly (`apiKeyContext`, `authorizeApiKey`).
 3. **No auth** → 401 with `WWW-Authenticate: Bearer resource_metadata=…`.
 
 `companyId` / `userId` always come from the credential, never from arguments.
@@ -404,7 +417,7 @@ bytes never pass through the model or the dispatch.
 signed into the `temp-staging` bucket, 2.5 GB) and `items_insertModelUpload`
 (`{ modelId, path, name, size, itemId?, jobId?, salesRfqLineId?, quoteLineId?,
 salesOrderLineId?, convert? }`). The `temp-staging` storage policies read the key's
-scopes (`parts_create` / `parts_update`), so an API key with those scopes can mint
+scopes (Create / Edit on any item page, `parts.parts_create` … `parts.services_update`), so an API key with those scopes can mint
 the URL and upload — unlike the document pair above, which signs into a company bucket.
 
 ## Rich text is Markdown
@@ -433,8 +446,9 @@ Markdown markers.
   not a customer's saved workflow.
 - Publish a function only when it is safe with nothing but its input. The API
   runs the gate and `run`; nothing a route does around the call.
-- A function gated on several modules publishes `module: null` in the
-  manifest; its own gate decides, as for every function.
+- A function gated on several modules publishes `module: null` and its pages
+  as `allOf` (or `oneOf`) in the manifest; its own gate decides, as for every
+  function.
 - A write gated on `{}` admits an API key with any scope, even a read-only one.
   It starts with `refuseKeyWithout(ctx, required)` (`shared.service.ts`), and its
   `@remarks` name what a key needs: the manifest shows no permission.

@@ -6,9 +6,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCustomerStatuses } from "~/modules/sales/sales.service";
 import { CustomersTable } from "~/modules/sales/ui/Customers";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { customersList } from "~/utils/list-registry/sales.server";
@@ -24,13 +22,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, customersList, {
     dataKey: "customers",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => {
+    firstPage: async ({ api }) => {
       const [customerStatuses, tags] = await Promise.all([
-        getCustomerStatuses(client, companyId),
-        getTagsList(client, companyId, "customer")
+        api.sales.getCustomerStatuses({}),
+        api.shared.getTagsList({ table: "customer" })
       ]);
       return {
-        customerStatuses: customerStatuses.data ?? [],
+        customerStatuses: customerStatuses.data?.rows ?? [],
         tags: tags.data ?? []
       };
     },

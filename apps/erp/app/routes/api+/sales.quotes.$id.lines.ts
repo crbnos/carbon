@@ -2,17 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getQuoteLinesList } from "~/modules/sales/sales.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.quotes": "View" });
 
   const { id } = params;
   if (!id) return { data: [], error: null };
 
-  return await getQuoteLinesList(client, id);
+  return await api.sales.getQuoteLinesList({ quoteId: id });
 }

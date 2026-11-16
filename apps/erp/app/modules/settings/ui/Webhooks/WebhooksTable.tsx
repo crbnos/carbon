@@ -220,7 +220,7 @@ const WebhooksTable = memo((props: WebhooksTableProps) => {
         }}
         primaryAction={
           <HStack>
-            {permissions.can("update", "users") && (
+            {permissions.has({ "settings.webhooks": "Edit" }) && (
               <New
                 label={t`Webhook`}
                 to={`${path.to.newWebhook}?${params.toString()}`}

@@ -227,7 +227,8 @@ export async function methodImportFixture() {
         mappedRecords,
         companyId,
         userId: USER,
-        summary
+        summary,
+        can: () => true
       });
       return summary;
     },

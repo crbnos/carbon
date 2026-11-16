@@ -25,9 +25,14 @@ import {
 import { GroupedContentSidebar } from "~/components/Layout";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
+import { PROJECT_ISSUE_GATE } from "~/modules/projects/projects.models";
 import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
-import type { receiptInspectionStatusType } from "../inventory.models";
+import {
+  type receiptInspectionStatusType,
+  storageTypesGate
+} from "../inventory.models";
 
 const receiptsByInspectionStatus = (
   statuses: (typeof receiptInspectionStatusType)[number][]
@@ -48,14 +53,12 @@ export default function useInventorySubmodules() {
         {
           name: t`Quantities`,
           to: path.to.inventory,
-          role: "employee",
           icon: <LuTally5 />,
           table: "inventory"
         },
         {
           name: t`Movements`,
           to: path.to.stockMovements,
-          role: "employee",
           icon: <LuArrowDownUp />,
           table: "itemLedger"
         },
@@ -68,12 +71,12 @@ export default function useInventorySubmodules() {
         {
           name: t`Issue to Project`,
           to: path.to.projectIssue,
+          gate: PROJECT_ISSUE_GATE,
           icon: <LuPackageMinus />
         },
         {
           name: t`Kanbans`,
           to: path.to.kanbans,
-          role: "employee",
           icon: <LuScanQrCode />
         }
       ]
@@ -144,13 +147,11 @@ export default function useInventorySubmodules() {
         {
           name: t`Tracked Entities`,
           to: path.to.trackedEntities,
-          role: "employee",
           icon: <LuQrCode />
         },
         {
           name: t`Traceability`,
           to: path.to.traceability,
-          role: "employee",
           icon: <LuNetwork />
         }
       ]
@@ -161,46 +162,35 @@ export default function useInventorySubmodules() {
         {
           name: t`Storage Units`,
           to: path.to.storageUnits,
-          role: "employee",
           icon: <LuWarehouse />,
           table: "storageUnit"
         },
         {
           name: t`Storage Types`,
           to: path.to.storageTypes,
-          role: "employee",
+          gate: storageTypesGate("View"),
           icon: <LuTag />,
           table: "storageType"
         },
         {
           name: t`Storage Rules`,
           to: path.to.storageRules,
-          role: "employee",
           icon: <LuShieldCheck />
         },
         {
           name: t`Shipping Methods`,
           to: path.to.shippingMethods,
-          role: "employee",
           icon: <LuTruck />
         }
       ]
     }
   ];
 
-  const isVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
-    if (route.role) return permissions.is(route.role);
-    if (route.permission) return permissions.can("view", route.permission);
-    return true;
-  };
-
   return {
-    groups: inventoryRoutes
-      .map((group) => ({
-        ...group,
-        routes: group.routes.filter(isVisible).map(addSavedViewsToRoutes)
-      }))
-      .filter((group) => group.routes.length > 0)
+    groups: visibleGroups(inventoryRoutes, permissions).map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes)
+    }))
   };
 }
 

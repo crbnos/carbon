@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { PrintingSettings } from "@carbon/printing";
@@ -18,12 +17,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
-import {
-  getLocationsList,
-  getWorkCentersList
-} from "~/modules/resources/resources.service";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { printerRouteValidator } from "~/modules/settings/settings.models";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { AssignmentsCard, PrintersCard } from "~/modules/settings/ui/Printing";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
@@ -35,16 +30,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "settings.printing": "View"
   });
 
   const [companySettings, printerRoutes, workCenters, locations, userDefaults] =
     await Promise.all([
-      getCompanySettings(client, companyId),
+      api.settings.getCompanySettings({}),
       getPrinterRoutes(client, companyId),
       getWorkCentersList(client, companyId),
-      getLocationsList(client, companyId),
+      api.resources.getLocationsList({}),
       getUserDefaults(client, userId, companyId)
     ]);
 
@@ -83,7 +78,7 @@ const printingForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(printingForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   switch (input.data.intent) {
     case "upsertRoute":
       return api.settings.savePrinterRoute(input.data);

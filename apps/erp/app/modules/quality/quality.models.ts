@@ -400,14 +400,39 @@ export const requiredActionValidator = z.object({
   active: zfd.checkbox()
 });
 
+// Each KPI names the pages it reads, so the dashboard shows only what the person may see.
 export const QualityKPIs = [
-  { key: "weeklyTracking", label: "Issue Trend" },
-  { key: "statusDistribution", label: "Status Distribution" },
-  { key: "paretoByType", label: "Pareto by Type" },
-  { key: "ncrsByType", label: "NCRs by Type" },
-  { key: "sourceAnalysis", label: "Source Analysis" },
-  { key: "supplierQuality", label: "Supplier Quality" },
-  { key: "weeksOpen", label: "Weeks Open" }
+  {
+    key: "weeklyTracking",
+    label: "Issue Trend",
+    gate: { "quality.issues": "View" }
+  },
+  {
+    key: "statusDistribution",
+    label: "Status Distribution",
+    gate: { "quality.issues": "View" }
+  },
+  {
+    key: "paretoByType",
+    label: "Pareto by Type",
+    gate: { "quality.issues": "View" }
+  },
+  {
+    key: "ncrsByType",
+    label: "NCRs by Type",
+    gate: { "quality.issues": "View" }
+  },
+  {
+    key: "sourceAnalysis",
+    label: "Source Analysis",
+    gate: { "quality.issues": "View" }
+  },
+  {
+    key: "supplierQuality",
+    label: "Supplier Quality",
+    gate: { "quality.issues": "View" }
+  },
+  { key: "weeksOpen", label: "Weeks Open", gate: { "quality.issues": "View" } }
 ] as const;
 
 export const riskRegisterValidator = z.object({

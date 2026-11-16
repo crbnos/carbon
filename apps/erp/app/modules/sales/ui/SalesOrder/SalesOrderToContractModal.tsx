@@ -45,6 +45,7 @@ import {
   contractTermFromServicePeriods,
   createContractFromSalesOrderValidator
 } from "../../sales.models";
+import { createContractFromSalesOrderPermission } from "../../sales.utils";
 import type { SalesOrder, SalesOrderLine } from "../../types";
 import ContractMoney from "../Contracts/ContractMoney";
 import { useContractLabels } from "../Contracts/useContractLabels";
@@ -402,7 +403,8 @@ const SalesOrderToContractBody = ({
         </Button>
         <Submit
           isDisabled={
-            selectedCount === 0 || !permissions.can("create", "sales")
+            selectedCount === 0 ||
+            !permissions.has(createContractFromSalesOrderPermission)
           }
         >
           <Trans>Create Contract</Trans>

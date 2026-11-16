@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { hasPermission } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { OPTIONS_PROVIDERS } from "~/modules/workflows/workflows.service";
@@ -55,12 +55,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ? OPTIONS_PROVIDERS[providerId]
       : undefined;
 
-  // `workflows_view` is the weakest permission any provider uses, and anyone who
-  // can open the builder holds it. The provider's own permission is checked below
-  // rather than here: `requirePermissions` answers a denial with a redirect, and a
+  // Viewing the Workflows page is the weakest permission any provider uses, and
+  // anyone who can open the builder holds it. The provider's own gate is checked
+  // below rather than here: `authorize` answers a denial with a redirect, and a
   // fetcher follows it as a navigation — a viewer opening a node was sent home.
-  const { companyId, permissions } = await requirePermissions(request, {
-    view: "workflows"
+  const { companyId, permissions } = await authorize(request, {
+    "workflows.workflows": "View"
   });
 
   if (provider === undefined) {
@@ -68,11 +68,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { options: [], errorCode: FAILED };
   }
 
-  const allowed = (
-    Object.keys(provider.permission) as (keyof typeof provider.permission)[]
-  ).every((action) =>
-    hasPermission(permissions, provider.permission[action]!, action, companyId)
-  );
+  const allowed = holdsGate(permissions, provider.permission, companyId);
   if (!allowed) return { options: [], errorCode: FORBIDDEN };
 
   try {

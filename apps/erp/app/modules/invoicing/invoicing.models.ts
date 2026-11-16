@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { type PageId, pageOfTable } from "@carbon/database/access";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
@@ -818,6 +819,20 @@ export function isInvoicePayable(
     Number.isFinite(Number(balance)) &&
     Number(balance ?? 0) > 0
   );
+}
+
+/** Who a memo is with: a supplier (a Supplier Credit) or a customer (a Credit Memo). */
+export type MemoParty = "supplier" | "customer";
+
+/**
+ * The page that owns a memo, by its party (the registry's `where` on `memo`):
+ * Supplier Credits with a supplier, Credit Memos with a customer.
+ */
+export function memoPage(
+  memo: { supplierId?: string | null; customerId?: string | null } | MemoParty
+): PageId {
+  const row = typeof memo === "string" ? { [`${memo}Id`]: memo } : memo;
+  return pageOfTable("memo", row);
 }
 
 /**

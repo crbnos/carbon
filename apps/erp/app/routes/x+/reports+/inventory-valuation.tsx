@@ -2,31 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import {
-  getInventoryValuation,
-  getInventoryValuationTieOut
-} from "~/modules/inventory/inventory.service";
 import { InventoryValuationWorkbench } from "~/modules/inventory/ui";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Inventory Valuation`,
-  to: path.to.inventoryValuation,
-  module: "accounting"
+  to: path.to.inventoryValuation
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.reporting": "View"
   });
 
   const url = new URL(request.url);
@@ -39,13 +33,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // The tie-out only means something once journals count — skip it entirely
   // before the accounting cutover (tieOut: null hides the panel).
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   const accountingSetUp = hasAccountingCutover(companySettings.data);
 
   const [valuation, tieOut, locations] = await Promise.all([
-    getInventoryValuation(client, companyId, { asOfDate, locationId }),
+    api.inventory.getInventoryValuation({ asOfDate, locationId }),
     accountingSetUp
-      ? getInventoryValuationTieOut(client, companyId, asOfDate)
+      ? api.inventory.getInventoryValuationTieOut({ asOfDate })
       : Promise.resolve({ data: null, error: null }),
     client
       .from("location")

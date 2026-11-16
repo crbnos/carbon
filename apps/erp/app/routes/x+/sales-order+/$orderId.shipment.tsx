@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -25,8 +25,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+  const { client: viewClient } = await authorize(request, {
+    "sales.salesOrders": "View"
   });
 
   const salesOrder = await getSalesOrder(viewClient, orderId);
@@ -37,8 +37,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales order. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, userId } = await authorize(request, {
+    "sales.salesOrders": "Edit"
   });
 
   const formData = await request.formData();

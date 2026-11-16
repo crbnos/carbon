@@ -207,7 +207,7 @@ const PurchaseInvoiceHeader = () => {
   // there is no manual Mark as Paid.
   const canMakePayment =
     isInvoicePayable(purchaseInvoice.status, purchaseInvoice.balance) &&
-    permissions.can("create", "invoicing");
+    permissions.has({ "invoicing.purchaseInvoices": "Create" });
   const makePaymentHref = getPayInvoiceHref({
     side: "ap",
     partyId: purchaseInvoice.supplierId,
@@ -222,7 +222,10 @@ const PurchaseInvoiceHeader = () => {
         <>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            disabled={!canVoid || !permissions.can("update", "invoicing")}
+            disabled={
+              !canVoid ||
+              !permissions.has({ "invoicing.purchaseInvoices": "Edit" })
+            }
             destructive
             onClick={voidModal.onOpen}
           >
@@ -236,7 +239,7 @@ const PurchaseInvoiceHeader = () => {
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
           isPurchaseInvoiceLocked(routeData?.purchaseInvoice?.status) ||
-          !permissions.can("delete", "invoicing") ||
+          !permissions.has({ "invoicing.purchaseInvoices": "Full" }) ||
           !permissions.is("employee")
         }
         destructive
@@ -247,7 +250,6 @@ const PurchaseInvoiceHeader = () => {
       </DropdownMenuItem>
       <DocumentForceDeleteMenuItem
         forceDelete={routeData}
-        canDelete={permissions.can("delete", "invoicing")}
         onClick={forceDeleteModal.onOpen}
       />
     </>
@@ -370,7 +372,7 @@ const PurchaseInvoiceHeader = () => {
                 isDisabled={
                   isPosted ||
                   routeData?.purchaseInvoiceLines?.length === 0 ||
-                  !permissions.can("update", "invoicing") ||
+                  !permissions.has({ "invoicing.purchaseInvoices": "Edit" }) ||
                   !isSupplierApproved
                 }
               >

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { LoaderFunctionArgs } from "react-router";
 import {
@@ -15,7 +15,7 @@ import { parseTravelerCode } from "~/utils/traveler";
 // Resolves a raw tracked entity id or readable id (an old label) to the unit
 // it names, so the layout's wedge can open its traveler.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
 
   const code = (new URL(request.url).searchParams.get("code") ?? "").trim();
   if (!code) return { status: "notFound" as const };

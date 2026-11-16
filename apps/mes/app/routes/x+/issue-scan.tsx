@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { holdsGate } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -19,7 +20,7 @@ const issueScanValidator = z.object({
 /** An item sticker scanned on an operation screen: issue it to the job. */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId, companyId, caller, permissions } = await requirePermissions(
+  const { userId, companyId, caller, permissions } = await authorize(
     request,
     {}
   );
@@ -27,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // operator on the floor may issue; an API key needs production update.
   if (
     caller === "apiKey" &&
-    !permissions.production?.update?.includes(companyId)
+    !holdsGate(permissions, { "production.jobs": "Edit" }, companyId)
   ) {
     return {
       success: false as const,

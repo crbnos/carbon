@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { PageGate } from "@carbon/database/access";
 import {
   addDays,
   addMonths,
@@ -49,26 +50,32 @@ import {
   taxExemptionReasons
 } from "../shared/shared.models";
 
+// Each KPI names the pages it reads, so the dashboard shows only what the person may see.
 export const KPIs = [
   {
     key: "supplierQuoteCount",
-    label: "Supplier Quotes"
+    label: "Supplier Quotes",
+    gate: { "purchasing.supplierQuotes": "View" }
   },
   {
     key: "purchaseOrderCount",
-    label: "Purchase Orders"
+    label: "Purchase Orders",
+    gate: { "purchasing.purchaseOrders": "View" }
   },
   {
     key: "purchaseInvoiceCount",
-    label: "Purchase Invoices"
+    label: "Purchase Invoices",
+    gate: { "invoicing.purchaseInvoices": "View" }
   },
   {
     key: "purchaseOrderAmount",
-    label: "Purchase Order Amount"
+    label: "Purchase Order Amount",
+    gate: { "purchasing.purchaseOrders": "View" }
   },
   {
     key: "purchaseInvoiceAmount",
-    label: "Purchase Invoice Amount"
+    label: "Purchase Invoice Amount",
+    gate: { "invoicing.purchaseInvoices": "View" }
   }
   // {
   //   key: "turnaroundTime",
@@ -2722,3 +2729,9 @@ export function purchaseOrderStatusAfterReversal(
   if (allReceived) return "To Invoice";
   return "To Receive and Invoice";
 }
+
+/** `purchasing.finalizePurchasingRfqAndNotify`: the posting writes the supplier quotes as the system. */
+export const finalizePurchasingRfqAndNotifyPermission = {
+  "purchasing.rfqs": "Edit",
+  "purchasing.supplierQuotes": "Create"
+} satisfies PageGate;

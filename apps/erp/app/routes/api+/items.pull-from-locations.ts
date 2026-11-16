@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getPullFromLocations } from "@carbon/database/strict-backflush";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
@@ -12,7 +12,7 @@ import { getDatabaseClient } from "~/services/database.server";
 const logger = getLogger("erp", "items-pull-from-locations");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request);
   try {
     const locations = await getPullFromLocations(
       getDatabaseClient(),

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { isAccountingSyncEnabled, ProviderID } from "@carbon/ee/accounting";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -51,8 +51,8 @@ const EntitySettingsSchema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId } = await authorize(request, {
+    "settings.integrations": "Edit"
   });
 
   const query = QuerySchema.safeParse(

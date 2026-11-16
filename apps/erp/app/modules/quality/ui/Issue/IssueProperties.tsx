@@ -155,7 +155,7 @@ const IssueProperties = () => {
   );
 
   const disableStructureUpdate =
-    !permissions.can("delete", "quality") || isStarted || isLocked;
+    !permissions.has({ "quality.issues": "Full" }) || isStarted || isLocked;
 
   return (
     <VStack
@@ -259,7 +259,7 @@ const IssueProperties = () => {
           table="nonConformance"
           size="sm"
           value={assignee ?? ""}
-          isReadOnly={!permissions.can("update", "quality")}
+          isReadOnly={!permissions.has({ "quality.issues": "Edit" })}
         />
       </VStack>
 
@@ -445,7 +445,9 @@ const IssueProperties = () => {
           name="openDate"
           label={t`Open Date`}
           inline
-          isDisabled={!permissions.can("update", "quality") || isLocked}
+          isDisabled={
+            !permissions.has({ "quality.issues": "Edit" }) || isLocked
+          }
           onChange={(date) => {
             onUpdate("openDate", date);
           }}
@@ -475,7 +477,9 @@ const IssueProperties = () => {
           name="dueDate"
           label={t`Due Date`}
           inline
-          isDisabled={!permissions.can("update", "quality") || isLocked}
+          isDisabled={
+            !permissions.has({ "quality.issues": "Edit" }) || isLocked
+          }
           onChange={(date) => {
             onUpdate("dueDate", date);
           }}
@@ -495,7 +499,9 @@ const IssueProperties = () => {
           name="closeDate"
           label={t`Close Date`}
           inline
-          isDisabled={!permissions.can("update", "quality") || isLocked}
+          isDisabled={
+            !permissions.has({ "quality.issues": "Edit" }) || isLocked
+          }
           onChange={(date) => {
             onUpdate("closeDate", date);
           }}

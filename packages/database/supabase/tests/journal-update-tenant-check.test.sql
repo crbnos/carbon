@@ -31,10 +31,9 @@ BEGIN
   -- see B was never able to move a journal there; this user can see B.
   INSERT INTO "userToCompany" ("userId","companyId",role)
     VALUES (user_id,company_a,'employee'),(user_id,company_b,'employee');
-  INSERT INTO "userPermission" (id,permissions)
-    VALUES (user_id,jsonb_build_object(
-      'accounting_view',jsonb_build_array(company_a,company_b),
-      'accounting_update',jsonb_build_array(company_a)));
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, user_id, 'Accounting', 'Edit', 'system'),
+    (company_b, user_id, 'Accounting', 'View', 'system');
 
   INSERT INTO journal ("journalEntryId","companyId","postingDate",status,"sourceType","createdBy")
     VALUES ('TENANT-DRAFT-'||id(),company_a,'2026-07-15','Draft','Manual','system') RETURNING id INTO draft_id;

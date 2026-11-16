@@ -400,7 +400,7 @@ const QuoteLineForm = ({
                     )}
                   </ModalCardDescription>
                 </ModalCardHeader>
-                {isEditing && permissions.can("update", "sales") && (
+                {isEditing && permissions.has({ "sales.quotes": "Edit" }) && (
                   <CardAction className="pr-12">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -598,8 +598,8 @@ const QuoteLineForm = ({
                     isDisabled={
                       !isEditable ||
                       (isEditing
-                        ? !permissions.can("update", "sales")
-                        : !permissions.can("create", "sales"))
+                        ? !permissions.has({ "sales.quotes": "Edit" })
+                        : !permissions.has({ "sales.quotes": "Create" }))
                     }
                     onClick={() => {
                       configurationDisclosure.onOpen();
@@ -615,8 +615,8 @@ const QuoteLineForm = ({
                     (requiresConfiguration && !isConfigured) ||
                     !isEditable ||
                     (isEditing
-                      ? !permissions.can("update", "sales")
-                      : !permissions.can("create", "sales"))
+                      ? !permissions.has({ "sales.quotes": "Edit" })
+                      : !permissions.has({ "sales.quotes": "Create" }))
                   }
                 >
                   <Trans>Save</Trans>

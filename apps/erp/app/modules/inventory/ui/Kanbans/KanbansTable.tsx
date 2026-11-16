@@ -340,7 +340,7 @@ const KanbansTable = memo(
             />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {permissions.can("update", "inventory") && (
+            {permissions.has({ "inventory.kanbans": "Edit" }) && (
               <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
                 <Link to={`${path.to.kanban(kanban.id)}?${params}`}>
                   <DropdownMenuIcon icon={<LuPencil />} />
@@ -352,7 +352,7 @@ const KanbansTable = memo(
               <DropdownMenuIcon icon={<LuPrinter />} />
               <Trans>Print Label</Trans>
             </DropdownMenuItem>
-            {permissions.can("delete", "inventory") && (
+            {permissions.has({ "inventory.kanbans": "Full" }) && (
               <DropdownMenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
@@ -466,7 +466,7 @@ const KanbansTable = memo(
         const itemType = item?.type;
         // Only show link for supported types (Service and Fixture not yet supported)
         const canViewItem =
-          permissions.can("view", "inventory") &&
+          permissions.has({ "inventory.kanbans": "View" }) &&
           !!row.itemId &&
           !!itemType &&
           itemType !== "Service" &&
@@ -548,7 +548,7 @@ const KanbansTable = memo(
               <Button variant="secondary" asChild leftIcon={<LuSettings />}>
                 <Link to={path.to.inventorySettings}>Settings</Link>
               </Button>
-              {permissions.can("create", "inventory") && (
+              {permissions.has({ "inventory.kanbans": "Create" }) && (
                 <New label={t`Kanban`} to={path.to.newKanban} />
               )}
             </div>

@@ -22,6 +22,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
 import { DataType } from "~/modules/shared/types";
+import { grantsField } from "~/modules/users/users.models";
 
 export const modulesType = [
   "Accounting",
@@ -57,39 +58,10 @@ export const purchasePriceUpdateTimingTypes = [
   "Purchase Order Finalize"
 ] as const;
 
-/** All permission modules with their available CRUD actions */
-export const apiKeyPermissionModules = {
-  accounting: ["view", "create", "update", "delete"],
-  documents: ["view", "create", "update", "delete"],
-  inventory: ["view", "create", "update", "delete"],
-  invoicing: ["view", "create", "update", "delete"],
-  parts: ["view", "create", "update", "delete"],
-  people: ["view", "create", "update", "delete"],
-  production: ["view", "create", "update", "delete"],
-  projects: ["view", "create", "update", "delete"],
-  purchasing: ["view", "create", "update", "delete"],
-  quality: ["view", "create", "update", "delete"],
-  resources: ["view", "create", "update", "delete"],
-  sales: ["view", "create", "update", "delete"],
-  service: ["view", "create", "update", "delete"],
-  settings: ["view", "create", "update", "delete"],
-  users: ["view", "create", "update", "delete"]
-} as const;
-
-export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
-
-/**
- * Permission keys (`${module}_${action}`) that are opt-in only: they must be
- * enabled by clicking their own cell and are never turned on by the "all
- * modules" or per-row select-all checkboxes. Deleting accounting data via the
- * API is high-risk, so it stays deselected unless explicitly chosen.
- */
-export const apiKeyOptInPermissionKeys = ["accounting_delete"] as const;
-
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
-  scopes: zfd.text(z.string().optional()),
+  grants: grantsField,
   /** Requests per minute. Saved on a single-tenant deployment only. */
   rateLimit: zfd.numeric(
     z
@@ -108,17 +80,6 @@ export const apiKeyValidator = z.object({
       })
   )
 });
-
-/** An API key form's fields as saved: the form posts its scopes as one JSON string. */
-export function apiKeyFields({
-  scopes,
-  ...form
-}: z.output<typeof apiKeyValidator>) {
-  return {
-    ...form,
-    scopes: (scopes ? JSON.parse(scopes) : {}) as Record<string, string[]>
-  };
-}
 
 export const integrationConnectionActionValidator = z.discriminatedUnion(
   "intent",

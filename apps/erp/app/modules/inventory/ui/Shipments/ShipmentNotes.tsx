@@ -102,7 +102,7 @@ const ShipmentNotes = ({
           </HStack>
           <CardContent>
             <TabsContent value="internal">
-              {permissions.can("update", "inventory") ? (
+              {permissions.has({ "inventory.shipments": "Edit" }) ? (
                 <Editor
                   label={t`Internal notes`}
                   initialValue={(internalNotes ?? {}) as JSONContent}
@@ -120,7 +120,7 @@ const ShipmentNotes = ({
               )}
             </TabsContent>
             <TabsContent value="external">
-              {permissions.can("update", "inventory") ? (
+              {permissions.has({ "inventory.shipments": "Edit" }) ? (
                 <Editor
                   label={t`External notes`}
                   initialValue={(externalNotes ?? {}) as JSONContent}

@@ -99,7 +99,7 @@ const ContractProductsGrid = ({
   const { currencyCode } = contract;
   const contractEndDate = contract.endDate;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.serviceContracts": "Edit" });
 
   const addProducts = useDisclosure();
   const editing = useDrawerItem<ContractLine>();
@@ -354,7 +354,7 @@ const ContractProductsGrid = ({
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "sales")}
+            disabled={!permissions.has({ "sales.serviceContracts": "Full" })}
             onClick={() => openDelete(line)}
           >
             <MenuIcon icon={<LuTrash />} />
@@ -382,7 +382,9 @@ const ContractProductsGrid = ({
           </p>
           <Button
             leftIcon={<LuPlus />}
-            isDisabled={!permissions.can("create", "sales")}
+            isDisabled={
+              !permissions.has({ "sales.serviceContracts": "Create" })
+            }
             onClick={addProducts.onOpen}
           >
             <Trans>Add Services</Trans>
@@ -424,7 +426,9 @@ const ContractProductsGrid = ({
             <Button
               variant="secondary"
               leftIcon={<LuPlus />}
-              isDisabled={!permissions.can("create", "sales")}
+              isDisabled={
+                !permissions.has({ "sales.serviceContracts": "Create" })
+              }
               onClick={addProducts.onOpen}
             >
               <Trans>Add Services</Trans>

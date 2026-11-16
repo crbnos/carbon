@@ -288,8 +288,8 @@ const PurchaseReturnOrderLineForm = ({
     }));
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "purchasing")
-    : !permissions.can("create", "purchasing");
+    ? !permissions.has({ "purchasing.returns": "Edit" })
+    : !permissions.has({ "purchasing.returns": "Create" });
 
   const isSerial = itemData.trackingType === "Serial";
 
@@ -451,7 +451,7 @@ const PurchaseReturnOrderLineForm = ({
                 isLoading={shippingFetcher.state !== "idle"}
                 isDisabled={
                   shippingFetcher.state !== "idle" ||
-                  !permissions.can("update", "purchasing")
+                  !permissions.has({ "purchasing.returns": "Edit" })
                 }
                 onClick={onToggleShipping}
               >

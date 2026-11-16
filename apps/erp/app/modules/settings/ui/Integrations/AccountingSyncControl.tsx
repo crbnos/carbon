@@ -101,7 +101,9 @@ export function AccountingSyncControl({
       <Switch
         checked={checked}
         disabled={
-          !permissions.can("update", "settings") || isSubmitting || isBlocked
+          !permissions.has({ "settings.integrations": "Edit" }) ||
+          isSubmitting ||
+          isBlocked
         }
         aria-label={t`Sync`}
         onCheckedChange={(next) =>

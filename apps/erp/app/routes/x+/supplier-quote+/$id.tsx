@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -43,16 +43,15 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Supplier Quotes`, to: path.to.supplierQuotes },
     (data) => data?.quote?.supplierQuoteId
-  ),
-  module: "purchasing"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.quote?.supplierQuoteId, "Supplier Quote");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, companyGroupId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { companyId, companyGroupId } = await authorize(request, {
+    "purchasing.supplierQuotes": "View"
   });
 
   const { id } = params;

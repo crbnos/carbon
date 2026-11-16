@@ -19,6 +19,35 @@ import { databaseTest } from "../fixtures/local-database";
 import { paymentFixture } from "../fixtures/payment";
 import { localApiKeyClient, postgrestTest } from "../fixtures/local-supabase";
 
+/** An API key of the company whose one grant is View on Invoicing. */
+async function invoicingViewKey(
+  f: { db: Awaited<ReturnType<typeof paymentFixture>>["db"]; companyId: string },
+  name: string,
+  rawKey: string
+) {
+  const key = await f.db
+    .insertInto("apiKey")
+    .values({
+      name,
+      companyId: f.companyId,
+      createdBy: "system",
+      keyHash: createHash("sha256").update(rawKey).digest("hex"),
+      scopes: JSON.stringify({})
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  await f.db
+    .insertInto("permission")
+    .values({
+      companyId: f.companyId,
+      apiKeyId: key.id,
+      module: "Invoicing",
+      level: "View",
+      createdBy: "system"
+    } as never)
+    .execute();
+}
+
 async function prepaymentFixture() {
   const f = await paymentFixture();
   const supplier = await f.db
@@ -1226,8 +1255,7 @@ postgrestTest("invoicing-only callers can calculate historical funding without j
   try {
     const advance = await f.payment(110); await f.post(advance); await f.historicalRefund(44);
     const rawKey = `crbn_review_${crypto.randomUUID()}`;
-    await f.db.insertInto("apiKey").values({name:"Invoicing only",companyId:f.companyId,createdBy:"system",
-      keyHash:createHash("sha256").update(rawKey).digest("hex"),scopes:JSON.stringify({invoicing_view:[f.companyId]})}).execute();
+    await invoicingViewKey(f, "Invoicing only", rawKey);
     const caller = localApiKeyClient(rawKey)!;
     expect(caller).not.toBeNull();
     const visible = await caller.from("payment").select("id").eq("companyId",f.companyId).eq("id",advance);
@@ -1319,8 +1347,7 @@ postgrestTest("supplier refund choices aggregate currencies for closed orders an
     await f.post(refund,"void");
     expect(await currencies()).toEqual(["EUR","USD"]);
     const rawKey = `crbn_refund_currencies_${crypto.randomUUID()}`;
-    await f.db.insertInto("apiKey").values({name:"Refund currency test",companyId:f.companyId,createdBy:"system",
-      keyHash:createHash("sha256").update(rawKey).digest("hex"),scopes:JSON.stringify({invoicing_view:[f.companyId]})}).execute();
+    await invoicingViewKey(f, "Refund currency test", rawKey);
     const caller = localApiKeyClient(rawKey)!;
     const own = await caller.rpc("get_supplier_prepayment_refund_currencies",{_company_id:f.companyId});
     expect(own.error).toBeNull();

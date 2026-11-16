@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -19,7 +19,6 @@ import {
   RentalAgreementDetailsForm,
   RentalSetupSteps
 } from "~/modules/sales/ui/Rentals";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { newRecordMeta } from "~/utils/meta";
@@ -33,11 +32,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "sales"
+  const { api } = await authorize(request, {
+    "sales.rentalAgreements": "Create"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
 
   return {
     // Annual %, the rate lease classification discounts payments at.
@@ -51,7 +50,7 @@ export async function action(args: ActionFunctionArgs) {
   const formData = input.formData ?? new FormData();
   // The fleet register's Rent action opens this form with the unit to rent.
   const fixedAssetId = formData.get("fixedAssetId");
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.createRentalAgreement({
     ...input.data,
     fixedAssetId:

@@ -1175,8 +1175,8 @@ const SalesOrderLineForm = ({
                       isDisabled={
                         !isEditable ||
                         (isEditing
-                          ? !permissions.can("update", "sales")
-                          : !permissions.can("create", "sales"))
+                          ? !permissions.has({ "sales.salesOrders": "Edit" })
+                          : !permissions.has({ "sales.salesOrders": "Create" }))
                       }
                       onConfigured={onConfigured}
                     />
@@ -1190,8 +1190,8 @@ const SalesOrderLineForm = ({
                         !configuration) ||
                       !isEditable ||
                       (isEditing
-                        ? !permissions.can("update", "sales")
-                        : !permissions.can("create", "sales"))
+                        ? !permissions.has({ "sales.salesOrders": "Edit" })
+                        : !permissions.has({ "sales.salesOrders": "Create" }))
                     }
                   >
                     <Trans>Save</Trans>

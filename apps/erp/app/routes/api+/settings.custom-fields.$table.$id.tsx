@@ -3,13 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request);
 
   const { table, id } = params;
 

@@ -3,16 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getPayrollPeriodTotals } from "~/modules/people/people.service";
 import PayrollTotalsTable from "~/modules/people/ui/PayrollTotals/PayrollTotalsTable";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -23,13 +21,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "people"
+  const { api } = await authorize(request, {
+    "people.payrollTotals": "View"
   });
 
   // Payroll Totals feed the DCAA labor distribution: only with DCAA
   // timekeeping on.
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await api.settings.getCompanySettings({});
   if (settings.data?.timekeepingControls !== "DCAA") {
     throw redirect(
       path.to.people,
@@ -41,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const totals = await getPayrollPeriodTotals(client, companyId, {
+  const totals = await api.people.getPayrollPeriodTotals({
     limit,
     offset,
     sorts,
@@ -54,7 +52,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  return { totals: totals.data ?? [], count: totals.count ?? 0 };
+  return {
+    totals: totals.data?.rows ?? [],
+    count: totals.data?.count ?? 0
+  };
 }
 
 export default function PayrollTotalsRoute() {
