@@ -474,7 +474,7 @@ const SalesInvoiceHeader = () => {
                   sourceDocument="SalesInvoice"
                   sourceDocumentId={invoiceId}
                   locationId={salesInvoice.locationId ?? undefined}
-                  context="default"
+                  context="documents"
                   format="pdf"
                 />
               </RecordAction>

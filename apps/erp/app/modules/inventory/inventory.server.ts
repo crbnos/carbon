@@ -1993,6 +1993,12 @@ export const postShipment = defineServiceFn({
         locationId: shipment.data.locationId,
         context: "shipping"
       });
+      await service.autoPrint(ctx, {
+        sourceDocument: "PackingSlip",
+        sourceDocumentId: shipmentId,
+        locationId: shipment.data.locationId,
+        context: "documents"
+      });
       // The RETAINED shelf lots of a batch split are reprinted: their
       // quantity changed. The shipped child left Consumed and gets no label.
       await service.printEntityLabels(ctx, splitEntityIds);

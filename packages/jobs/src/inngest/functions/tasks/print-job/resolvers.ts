@@ -7,6 +7,10 @@ import { getPickingListTravelerEntities } from "@carbon/database/travelers";
 import { type KanbanLabelAction, kanbanLabelCode } from "@carbon/documents/zpl";
 import { ERP_URL, SUPABASE_INTERNAL_URL } from "@carbon/env";
 import {
+  loadPackingSlipDocument,
+  type PackingSlipPDFProps
+} from "@carbon/lib/packing-slip-document.server";
+import {
   loadSalesInvoiceDocument,
   type SalesInvoicePDFProps
 } from "@carbon/lib/sales-invoice-document.server";
@@ -369,5 +373,26 @@ export async function resolveSalesInvoiceData(
   return {
     pdfProps: document.pdfProps,
     readableId: document.invoiceReadableId
+  };
+}
+
+/** A shipment's packing slip props, read as the ERP's PDF route reads them. */
+export async function resolvePackingSlipData(
+  client: SupabaseClient<Database>,
+  shipmentId: string,
+  companyId: string
+): Promise<{ pdfProps: PackingSlipPDFProps; readableId: string }> {
+  const document = await loadPackingSlipDocument({
+    client,
+    serviceRole: client,
+    companyId,
+    shipmentId,
+    locale: "en-US",
+    storageUrl: SUPABASE_INTERNAL_URL ?? ""
+  });
+
+  return {
+    pdfProps: document.pdfProps,
+    readableId: document.shipmentReadableId
   };
 }

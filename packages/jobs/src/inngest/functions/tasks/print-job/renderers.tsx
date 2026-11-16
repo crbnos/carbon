@@ -24,6 +24,10 @@ import {
 import { ERP_URL, SUPABASE_INTERNAL_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
 import {
+  type PackingSlipPDFProps,
+  renderPackingSlipPdf
+} from "@carbon/lib/packing-slip-document.server";
+import {
   renderSalesInvoicePdf,
   type SalesInvoicePDFProps
 } from "@carbon/lib/sales-invoice-document.server";
@@ -45,6 +49,7 @@ export type PrintableDocumentItem =
   | { type: "productLabel"; item: ProductLabelItem }
   | { type: "kanbanCard"; item: KanbanCardItem }
   | { type: "storageUnitLabel"; item: StorageUnitItem }
+  | { type: "packingSlip"; item: PackingSlipPDFProps }
   | { type: "salesInvoice"; item: SalesInvoicePDFProps };
 
 export async function renderItemWithTemplate(
@@ -122,16 +127,25 @@ export async function renderItemBuiltIn(
         contentType: "zpl"
       };
     }
-    case "salesInvoice": {
-      if (format !== "pdf") {
-        throw new Error(
-          "A sales invoice prints on a PDF printer; this printer takes ZPL."
-        );
-      }
-      const body = await renderSalesInvoicePdf(doc.item);
-      return { content: body.toString("base64"), contentType: "pdf" };
-    }
+    case "packingSlip":
+      requirePdf(format, "packing slip");
+      return pdfContent(await renderPackingSlipPdf(doc.item));
+    case "salesInvoice":
+      requirePdf(format, "sales invoice");
+      return pdfContent(await renderSalesInvoicePdf(doc.item));
   }
+}
+
+function requirePdf(format: "zpl" | "pdf", documentName: string): void {
+  if (format !== "pdf") {
+    throw new Error(
+      `A ${documentName} prints on a PDF printer; this printer takes ZPL.`
+    );
+  }
+}
+
+function pdfContent(body: Buffer): GeneratedContent {
+  return { content: body.toString("base64"), contentType: "pdf" };
 }
 
 function requireMediaSize(mediaSizeId: string): LabelSize {

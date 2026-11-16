@@ -14,6 +14,7 @@ export const printerContexts = [
   "receiving",
   "inventory",
   "kanban",
+  "documents",
   "workCenter"
 ] as const;
 
@@ -25,7 +26,9 @@ const sourceDocumentContexts: Record<string, PrinterContext> = {
   StockTransfer: "inventory",
   PickingList: "inventory",
   StorageUnit: "inventory",
-  Kanban: "kanban"
+  Kanban: "kanban",
+  PackingSlip: "documents",
+  SalesInvoice: "documents"
 };
 
 /**
@@ -73,7 +76,9 @@ export function resolveContextAssignment(
 
   return {
     printerRouteId: explicit?.printerRouteId ?? fallback.printerRouteId,
-    autoPrint: explicit?.autoPrint ?? true
+    // Full-page documents auto-print only once a company turns it on, so the
+    // documents printer appearing does not start printing slips on its own.
+    autoPrint: explicit?.autoPrint ?? context !== "documents"
   };
 }
 
@@ -85,6 +90,7 @@ export function emptyLocationAssignment(): LocationAssignment {
     receiving: { printerRouteId: null, autoPrint: true },
     inventory: { printerRouteId: null, autoPrint: true },
     kanban: { printerRouteId: null, autoPrint: true },
+    documents: { printerRouteId: null, autoPrint: false },
     workCenters: {}
   };
 }

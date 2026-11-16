@@ -11,6 +11,7 @@ import type { ActionFunctionArgs } from "react-router";
 // The print task reads as the service role, so a document that is not a label
 // needs its own module's view permission before it can be printed.
 const sourceDocumentPermissions: Record<string, string> = {
+  PackingSlip: "inventory",
   SalesInvoice: "invoicing"
 };
 

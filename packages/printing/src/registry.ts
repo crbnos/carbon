@@ -46,6 +46,14 @@ export const documentTypeRegistry = [
     description: "Labels for shelves, bins, and storage locations"
   },
   {
+    id: "packingSlip",
+    displayName: "Packing Slip",
+    sourceDocuments: ["PackingSlip"],
+    builtInRenderer: "pdf" as const,
+    defaultFormat: "pdf" as const,
+    description: "Full-page packing slip for a shipment"
+  },
+  {
     id: "salesInvoice",
     displayName: "Sales Invoice",
     sourceDocuments: ["SalesInvoice"],

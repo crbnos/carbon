@@ -30,6 +30,7 @@ import { renderItemBuiltIn, renderItemWithTemplate } from "./renderers";
 import {
   type KanbanCardItem,
   resolveKanbanData,
+  resolvePackingSlipData,
   resolveSalesInvoiceData,
   resolveStorageUnitData,
   resolveTrackedEntityData
@@ -75,6 +76,7 @@ export const printJobFunction = inngest.createFunction(
         const { count: recentJobCount } = await client
           .from("printJob")
           .select("id", { count: "exact", head: true })
+          .eq("sourceDocument", sourceDocument)
           .eq("sourceDocumentId", sourceDocumentId)
           .eq("companyId", companyId)
           .eq("origin", "auto")
@@ -214,6 +216,17 @@ async function resolveDocumentItems(
         readableId: resolved?.readableId ?? null
       };
     }
+    case "packingSlip": {
+      const resolved = await resolvePackingSlipData(
+        client,
+        sourceDocumentId,
+        companyId
+      );
+      return {
+        docs: [{ type: "packingSlip" as const, item: resolved.pdfProps }],
+        readableId: resolved.readableId
+      };
+    }
     case "salesInvoice": {
       const resolved = await resolveSalesInvoiceData(
         client,
@@ -251,6 +264,7 @@ function describeDocument(
       parts.push(KANBAN_CARD_NAMES[doc.item.action]);
       break;
     case "storageUnitLabel":
+    case "packingSlip":
     case "salesInvoice":
       break;
   }

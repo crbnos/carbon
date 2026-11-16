@@ -26,6 +26,7 @@ import type { ReactNode } from "react";
 import { useCallback, useMemo } from "react";
 import {
   LuBlocks,
+  LuFileText,
   LuHandCoins,
   LuLocateFixed,
   LuMapPin,
@@ -212,6 +213,12 @@ function LocationSection({
       icon: <LuSquareKanban />,
       explicit: assignment?.kanban ?? null
     },
+    {
+      context: "documents",
+      label: "Documents",
+      icon: <LuFileText />,
+      explicit: assignment?.documents ?? null
+    },
     ...workCenters.map<AssignmentRowModel>((wc) => ({
       context: "workCenter",
       contextId: wc.id,
@@ -232,7 +239,7 @@ function LocationSection({
           isIndented={!row.isDefault}
           printerRouteId={row.explicit?.printerRouteId ?? null}
           inheritedName={row.isDefault ? null : defaultPrinterName}
-          autoPrint={row.explicit?.autoPrint ?? true}
+          autoPrint={row.explicit?.autoPrint ?? row.context !== "documents"}
           printerRouteOptions={printerRouteOptions}
           onPrinterChange={(printerRouteId) =>
             onUpdate({
