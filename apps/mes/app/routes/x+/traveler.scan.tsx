@@ -45,7 +45,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {});
   const { locationId, effectiveUserId } = context.get(userContext) ?? {};
 
-  const parsed = scanValidator.safeParse(await request.json());
+  const parsed = scanValidator.safeParse(
+    await request.json().catch(() => null)
+  );
   if (!parsed.success) {
     return reply(400, null, "Invalid scan");
   }

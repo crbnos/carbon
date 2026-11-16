@@ -445,32 +445,42 @@ export default function AuthenticatedRoute() {
   const navigate = useNavigate();
   const onOperationPage =
     pathname.startsWith("/x/operation/") || pathname.startsWith("/x/assembly/");
+  // A traveler label goes to the scan endpoint, from any origin and also from
+  // a focused text field. The operation and assembly pages take it themselves.
+  const sendScan = async (code: string) => {
+    const result = await postTravelerScan({ code });
+    if (result.href) {
+      if (result.message) toast.success(result.message);
+      return navigate(result.href);
+    }
+    toast.error(
+      !parseTravelerCode(code) && result.status === 404
+        ? t`Nothing on this page uses that barcode`
+        : (result.message ?? t`Could not look up this label. Try again.`)
+    );
+  };
+  useKeyboardWedge({
+    test: (input) => !!parseTravelerCode(input),
+    callback: sendScan,
+    inTextFields: true,
+    active: !onOperationPage
+  });
   useKeyboardWedge({
     test: (input) =>
       (input.startsWith(MES_URL) || input.startsWith(ERP_URL)) &&
       !input.includes("/kanban/complete/") && // we handle this more gracefully in JobOperation
-      // A traveler goes to the scan endpoint below, from any origin.
       !parseTravelerCode(input) &&
       // Both pages take a scanned item sticker themselves: the operator
       // stays on the job.
       !(onOperationPage && parseItemCode(input)),
     inTextFields: true,
-    onUnrecognized: async (input) => {
-      const isTraveler = !!parseTravelerCode(input);
-      // The operation and assembly pages read a traveler themselves; one
-      // that reaches here came while their scan was off (a dialog is open).
-      if (isTraveler && onOperationPage) return;
-      // A traveler link or a raw id from an old label: the server decides.
-      const result = await postTravelerScan({ code: input });
-      if (result.href) {
-        if (result.message) toast.success(result.message);
-        return navigate(result.href);
-      }
-      toast.error(
-        !isTraveler && result.status === 404
-          ? t`Nothing on this page uses that barcode`
-          : (result.message ?? t`Could not look up this label. Try again.`)
-      );
+    onUnrecognized: (input) => {
+      const travelerId = parseTravelerCode(input);
+      // An operation page whose own scan is off (a batched operation): show
+      // the label's traveler page, which only reads.
+      if (travelerId) return navigate(path.to.traveler(travelerId));
+      // A raw id from an old label: the server decides.
+      return sendScan(input);
     }
   });
   const scanPending = useScanPending();

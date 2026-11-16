@@ -358,3 +358,31 @@ export function pickTravelerClaims<
   }
   return claims;
 }
+
+/**
+ * Whether a scan may issue a free unit into its best claim without asking.
+ * On an operation page the claim stays inside that operation, so it may. On
+ * any other page only a serial unit (one part, one label) goes in unasked: a
+ * batch lot would issue stock, so it asks. An operator with a station takes
+ * the best claim only at that station; one with none takes it only when it is
+ * the one place at the location that needs the part.
+ */
+export function isTravelerClaimAuto({
+  onOperationPage,
+  isSerial,
+  workCenterId,
+  optionWorkCenterIds
+}: {
+  onOperationPage: boolean;
+  isSerial: boolean;
+  /** The operator's station today. */
+  workCenterId: string | null;
+  /** The work center of each claim, best first. */
+  optionWorkCenterIds: (string | null)[];
+}): boolean {
+  if (onOperationPage) return true;
+  if (!isSerial || optionWorkCenterIds.length === 0) return false;
+  return workCenterId === null
+    ? optionWorkCenterIds.length === 1
+    : optionWorkCenterIds[0] === workCenterId;
+}

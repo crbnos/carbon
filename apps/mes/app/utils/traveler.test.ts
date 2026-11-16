@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   batchScanQuantity,
+  isTravelerClaimAuto,
   isUnitInOperationScope,
   parseTravelerCode,
   pickTravelerClaims,
@@ -297,6 +298,51 @@ describe("pickTravelerClaims", () => {
       ]
     });
     expect(claims.map((c) => c.parentTrackedEntityId)).toEqual(["v1", "u1"]);
+  });
+});
+
+describe("isTravelerClaimAuto", () => {
+  const base = {
+    onOperationPage: false,
+    isSerial: true,
+    workCenterId: "wc_a3",
+    optionWorkCenterIds: ["wc_a3", "wc_m"]
+  };
+
+  it("claims a kit at the operator's station", () => {
+    expect(isTravelerClaimAuto(base)).toBe(true);
+  });
+
+  it("asks when the best claim is at another station", () => {
+    expect(
+      isTravelerClaimAuto({ ...base, optionWorkCenterIds: ["wc_m"] })
+    ).toBe(false);
+  });
+
+  it("claims the one place that needs it for an operator with no station", () => {
+    expect(
+      isTravelerClaimAuto({
+        ...base,
+        workCenterId: null,
+        optionWorkCenterIds: ["wc_m"]
+      })
+    ).toBe(true);
+    expect(isTravelerClaimAuto({ ...base, workCenterId: null })).toBe(false);
+  });
+
+  it("asks before issuing a batch lot from the board", () => {
+    expect(isTravelerClaimAuto({ ...base, isSerial: false })).toBe(false);
+  });
+
+  it("claims on an operation page, inside that operation", () => {
+    expect(
+      isTravelerClaimAuto({
+        ...base,
+        onOperationPage: true,
+        isSerial: false,
+        optionWorkCenterIds: ["wc_m"]
+      })
+    ).toBe(true);
   });
 });
 

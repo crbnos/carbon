@@ -201,8 +201,9 @@ function ClaimChooser({
       operationId: selected.operationId,
       trackedEntityId: selected.parentTrackedEntityId
     });
+    // The answer may be this same page (the unit now needs a choice).
+    setPending(false);
     if (!result.href) {
-      setPending(false);
       toast.error(result.message ?? t`Could not issue this unit`);
       return;
     }

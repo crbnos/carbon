@@ -25,6 +25,7 @@ import {
 import { makeDurations } from "~/utils/durations";
 import {
   batchScanQuantity,
+  isTravelerClaimAuto,
   isUnitInOperationScope,
   pickTravelerClaims,
   pickTravelerMaterial,
@@ -539,22 +540,40 @@ export async function resolveTravelerScan(
       companyId
     }),
     getOperatorWorkCenter(client, { companyId, locationId, employeeId }),
-    locationId
-      ? getActiveJobOperationsByLocation(client, locationId, [])
-      : Promise.resolve(null)
+    (async () => {
+      // An operation page reads its own job's location, which need not be
+      // the operator's.
+      const jobLocationId = at
+        ? ((
+            await client
+              .from("jobOperation")
+              .select("job(locationId)")
+              .eq("id", at.operationId)
+              .eq("companyId", companyId)
+              .maybeSingle()
+          ).data?.job?.locationId ?? null)
+        : locationId;
+      return jobLocationId
+        ? getActiveJobOperationsByLocation(client, jobLocationId, [])
+        : null;
+    })()
   ]);
   if (!target) return { kind: "notFound" };
 
   const { data: row } = await client
     .from("trackedEntity")
     .select(
-      "id, readableId, status, itemId, quantity, attributes, item(readableIdWithRevision, name)"
+      "id, readableId, status, itemId, sourceDocument, sourceDocumentId, attributes, item(readableIdWithRevision, name, itemTrackingType)"
     )
     .eq("id", target.trackedEntityId)
     .eq("companyId", companyId)
     .maybeSingle();
   if (!row) return { kind: "notFound" };
   const { item, ...entity } = row;
+  // A received unit may name its item as its source document only.
+  const itemId =
+    entity.itemId ??
+    (entity.sourceDocument === "Item" ? entity.sourceDocumentId : null);
   const unit: TravelerUnit = {
     id: entity.id,
     readableId: entity.readableId ?? entity.id,
@@ -626,23 +645,30 @@ export async function resolveTravelerScan(
   // A free unit. On an operation page only that operation may take it, so a
   // wrong scan is refused instead of landing in another job.
   const scope = at ? rows.filter((r) => r.id === at.operationId) : rows;
-  const options = await getClaimOptions(client, {
+  const claims = await getClaimOptions(client, {
     companyId,
     operations: scope,
     workCenterId,
-    itemId: entity.itemId,
+    itemId,
     appliesTo,
     preferredUnitId: at?.trackedEntityId ?? null
   });
+  if (claims.error) {
+    return { kind: "refuse", unit, message: LOOKUP_FAILED };
+  }
+  const { options } = claims;
 
   if (options.length === 0) {
     if (at) {
+      const name = unit.itemReadableId ?? unit.readableId;
       return {
         kind: "refuse",
         unit,
-        message: unit.itemReadableId
-          ? `Nothing open here still needs ${unit.itemReadableId}`
-          : "Nothing open here needs this unit"
+        message: !claims.usesItem
+          ? `This job does not use ${name}`
+          : claims.serial
+            ? `Every unit here already has its ${name}`
+            : `This job already has all its ${name}`
       };
     }
     return {
@@ -655,11 +681,12 @@ export async function resolveTravelerScan(
     };
   }
 
-  const best = options[0]!.operation;
-  const auto =
-    !!at ||
-    options.length === 1 ||
-    (workCenterId !== null && best.workCenterId === workCenterId);
+  const auto = isTravelerClaimAuto({
+    onOperationPage: !!at,
+    isSerial: item?.itemTrackingType === "Serial",
+    workCenterId,
+    optionWorkCenterIds: options.map((o) => o.operation.workCenterId)
+  });
   return { kind: "claim", unit, options, auto };
 }
 
@@ -819,10 +846,21 @@ async function getClaimOptions(
     appliesTo: (operationId: string, unitId: string) => boolean;
     preferredUnitId: string | null;
   }
-): Promise<TravelerClaimOption[]> {
+): Promise<
+  | {
+      options: TravelerClaimOption[];
+      /** Some job among `operations` uses the item at all. */
+      usesItem: boolean;
+      /** Some of those jobs build serial units. */
+      serial: boolean;
+      error: false;
+    }
+  | { error: true }
+> {
   const { companyId, operations, itemId } = args;
+  const none = { options: [], usesItem: false, serial: false, error: false };
   const makeMethodIds = [...new Set(operations.map((r) => r.jobMakeMethodId))];
-  if (!itemId || makeMethodIds.length === 0) return [];
+  if (!itemId || makeMethodIds.length === 0) return none;
 
   const [materialsRead, makeMethodsRead] = await Promise.all([
     client
@@ -845,7 +883,7 @@ async function getClaimOptions(
       itemId,
       error: materialsRead.error ?? makeMethodsRead.error
     });
-    return [];
+    return { error: true };
   }
   const materials = materialsRead.data.flatMap((m) =>
     m.jobMakeMethodId ? [{ ...m, jobMakeMethodId: m.jobMakeMethodId }] : []
@@ -856,13 +894,18 @@ async function getClaimOptions(
       .map((m) => m.id)
   );
 
+  const found = {
+    ...none,
+    usesItem: materials.length > 0,
+    serial: materials.some((m) => serialMakeMethodIds.has(m.jobMakeMethodId))
+  };
   const candidateIds = travelerIssueCandidates({
     operations,
     materials,
     workCenterId: args.workCenterId,
     perUnitMakeMethodIds: serialMakeMethodIds
   });
-  if (candidateIds.length === 0) return [];
+  if (candidateIds.length === 0) return found;
   const byId = new Map(operations.map((r) => [r.id, r]));
   const candidates = candidateIds.map((id) => byId.get(id)!);
   const candidateMakeMethodIds = [
@@ -886,7 +929,7 @@ async function getClaimOptions(
       companyId,
       error: units.error
     });
-    return [];
+    return { error: true };
   }
   const unitById = new Map(units.data.map((u) => [u.id, u]));
   const unitIds = new Map<string, string[]>();
@@ -895,17 +938,16 @@ async function getClaimOptions(
       "Job Make Method"
     ];
     if (typeof makeMethodId !== "string") continue;
-    unitIds.set(makeMethodId, [...(unitIds.get(makeMethodId) ?? []), u.id]);
+    const group = unitIds.get(makeMethodId);
+    if (group) group.push(u.id);
+    else unitIds.set(makeMethodId, [u.id]);
   }
   const isOpenAt = (unitId: string, operationId: string) => {
     const u = unitById.get(unitId);
     return (
       !!u &&
       isSerialEntityIncompleteForOperation(
-        {
-          ...u,
-          inOperationScope: args.appliesTo(operationId, unitId)
-        } as never,
+        { ...u, inOperationScope: args.appliesTo(operationId, unitId) },
         operationId
       )
     );
@@ -920,9 +962,9 @@ async function getClaimOptions(
     companyId,
     unitIds: serialUnitIds
   });
-  if (!consumption.data) return [];
+  if (!consumption.data) return { error: true };
 
-  return pickTravelerClaims({
+  const options = pickTravelerClaims({
     operations: candidates,
     unitIds,
     isOpenAt,
@@ -940,6 +982,7 @@ async function getClaimOptions(
         unitById.get(claim.parentTrackedEntityId)?.readableId ??
         claim.parentTrackedEntityId
     }));
+  return { ...found, options };
 }
 
 /** The storage unit a unit sits in, for the "nothing needs it" card. */
