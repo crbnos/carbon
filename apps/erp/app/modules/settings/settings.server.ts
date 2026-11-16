@@ -65,28 +65,37 @@ import {
 import { getLogger } from "@carbon/logger";
 import {
   createPrintJob,
+  deleteLabelTemplate,
   deletePrinterRoute,
   getPrintingSettings,
   getPrintJob,
   getPrintJobContent,
+  labelTemplateValidator,
   type PrintingSettings,
   printerRouteValidator,
   reprintValidator,
   setContextAssignment,
   updateAssignmentValidator,
   updatePrintingSettings,
+  upsertLabelTemplate,
   upsertPrinterRoute
 } from "@carbon/printing";
 import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import type { JSONContent } from "@carbon/react";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
-import { datetime, requireAffected, unchecked } from "@carbon/utils";
+import {
+  datetime,
+  isUniqueViolation,
+  requireAffected,
+  unchecked
+} from "@carbon/utils";
 import { parseTime } from "@internationalized/date";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { plmReleaseControl } from "~/modules/items/items.models";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
+import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import {
   invalidateCompanyTimeZone,
   invokePosting,
@@ -722,7 +731,9 @@ export const updateResourcesSettings = defineServiceFn({
  * contact and location, whether every customer contact needs an email, whether customer readable ids show, the digital quote
  * (on or off, who is notified, and whether accepting one asks for a purchase
  * order), who is notified when an RFQ is ready and when a sales rule is
- * broken, and the default markup per cost category on a quote line.
+ * broken, the default markup per cost category on a quote line, and the
+ * level of the delivery date check a sales order line runs (an item's
+ * Planning tab can override it per location).
  *
  * @mcp
  */
@@ -736,6 +747,7 @@ export const updateSalesSettings = defineServiceFn({
     digitalQuoteIncludesPurchaseOrders: z.boolean().optional(),
     rfqReadyNotificationGroup: notificationGroup.optional(),
     salesRuleNotificationGroup: notificationGroup.optional(),
+    deliveryDateControl: z.enum(deliveryDateControlTypes).optional(),
     quoteLineCategoryMarkups: z
       .object({
         materialCost: z.number().min(0),
@@ -1389,8 +1401,8 @@ export const updateSubsidiaryDetails = defineServiceFn({
  *
  * @remarks
  * A printer route is a printer the company prints to: its name, format (ZPL
- * labels or PDF documents), media size, URL and optional API key, location
- * and template. With an `id` the company's route is updated, without one a
+ * labels or PDF documents), media size, URL and optional API key, and
+ * location. With an `id` the company's route is updated, without one a
  * route is created. The cached printer routing is dropped, so the change
  * applies to the next print. Not published: the server POSTs to the URL it
  * saves, so an API caller could aim it at any address.
@@ -1407,8 +1419,7 @@ export const savePrinterRoute = defineServiceFn({
       mediaSizeId: route.mediaSizeId || null,
       printerUrl: route.printerUrl,
       apiKey: route.apiKey || null,
-      locationId: route.locationId || null,
-      templateId: route.templateId || null
+      locationId: route.locationId || null
     });
     if (result.error) {
       return ctx.error(
@@ -1479,6 +1490,65 @@ export const testPrinterRoute = defineServiceFn({
       );
     }
     return { routeId };
+  }
+});
+
+/**
+ * Create or update a label template.
+ *
+ * @remarks
+ * Sets the BinderyPress template a label type prints with on one media size
+ * (a 4x2 kanban card, a 2x1 serial label). Every printer loaded with that
+ * media size uses it; a label with no template renders built-in. One template
+ * per label type and media size: a second is refused as a conflict.
+ */
+export const saveLabelTemplate = defineServiceFn({
+  input: labelTemplateValidator,
+  permission: { update: "settings" },
+  async run(ctx, { id, ...template }) {
+    const result = await upsertLabelTemplate(ctx.asCaller.supabase, {
+      ...template,
+      id: id || undefined,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (isUniqueViolation(result.error)) {
+      return ctx.error(
+        "conflict",
+        "A template for this label type and media size already exists"
+      );
+    }
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save label template",
+        result.error
+      );
+    }
+    return { created: !id };
+  }
+});
+
+/**
+ * Delete a label template. Labels of its type and media size render built-in.
+ */
+export const removeLabelTemplate = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id }) {
+    const result = await deleteLabelTemplate(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete label template",
+        result.error
+      );
+    }
+    return { deleted: true };
   }
 });
 
