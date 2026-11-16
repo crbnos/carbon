@@ -110039,6 +110039,14 @@ export type Database = {
         }
         Returns: number
       }
+      inspection_use_as_is: {
+        Args: { p_company_id: string; p_inspection_ids: string[] }
+        Returns: {
+          inspectionId: string
+          quantity: number
+          trackedEntityId: string
+        }[]
+      }
       interpolate_serial_segment: {
         Args: { p_location: string; p_now: string; p_value: string }
         Returns: string
