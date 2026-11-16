@@ -19,7 +19,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { erpPosting } from "~/services/erp";
-import { buildLineFeedRows, buildStationStatuses } from "~/services/line-feed";
+import { buildLineFeedRows, buildStationBoard } from "~/services/line-feed";
 import type { SuggestedAllocationLot } from "./allocation";
 import { greedyFillAllocation, sortLotsByPickMethod } from "./allocation";
 
@@ -685,11 +685,11 @@ export async function insertManualInventoryAdjustment(
 }
 
 /**
- * The line feeder's queue for one location: open material requests, lineside
- * shortages and outstanding transfer lines to a work center's storage unit,
- * plus the names the cards show. Every source is paged with a stable order,
- * so a location past the row cap still gets its oldest requests and largest
- * shortages first from `buildLineFeedRows`.
+ * The line feeder's station board for one location: a card per work center
+ * (`buildStationBoard`) with its open material requests, lineside shortages
+ * and outstanding transfer lines to its storage units, plus the names the
+ * cards show. Every source is paged with a stable order, so a location past
+ * the row cap is still read in full.
  */
 export async function getLineFeed(
   client: SupabaseClient<Database>,
@@ -780,7 +780,16 @@ export async function getLineFeed(
     )
   ];
 
-  const [storageUnits, workCenters] = await Promise.all([
+  const itemIds = [
+    ...new Set(
+      [
+        ...shortageRows.map((shortage) => shortage.itemId),
+        ...transferRows.map((transfer) => transfer.itemId)
+      ].filter((id): id is string => Boolean(id))
+    )
+  ];
+
+  const [storageUnits, workCenters, items] = await Promise.all([
     fetchAllByIds(storageUnitIds, (batch) =>
       client
         .from("storageUnit")
@@ -796,10 +805,18 @@ export async function getLineFeed(
         .in("id", batch)
         .eq("companyId", companyId)
         .order("id")
+    ),
+    fetchAllByIds(itemIds, (batch) =>
+      client
+        .from("item")
+        .select("id, readableIdWithRevision")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
     )
   ]);
 
-  const nameError = storageUnits.error ?? workCenters.error;
+  const nameError = storageUnits.error ?? workCenters.error ?? items.error;
   if (nameError) return { data: null, error: nameError };
 
   const workCenterNames: Record<string, string> = {};
@@ -822,8 +839,19 @@ export async function getLineFeed(
     }
   }
 
-  // The readable ids a card shows: the job a request came from, and the
-  // stock transfer a transfer line belongs to.
+  // The readable ids a card shows: each line's part, the job a request came
+  // from, and the stock transfer a transfer line belongs to.
+  const itemReadableIds: Record<string, string> = {};
+  for (const item of items.data ?? []) {
+    if (item.readableIdWithRevision) {
+      itemReadableIds[item.id] = item.readableIdWithRevision;
+    }
+  }
+  for (const request of requestRows) {
+    if (request.itemId && request.item?.readableIdWithRevision) {
+      itemReadableIds[request.itemId] = request.item.readableIdWithRevision;
+    }
+  }
   const jobReadableIds: Record<string, string> = {};
   for (const request of requestRows) {
     const jobId = request.jobOperation?.job?.jobId;
@@ -837,20 +865,19 @@ export async function getLineFeed(
 
   return {
     data: {
-      rows: buildLineFeedRows({
-        requests: requestRows,
-        shortages: shortageRows,
-        transfers: transferRows
-      }),
-      stations: buildStationStatuses({
+      stations: buildStationBoard({
         workCenters: stations.data ?? [],
         stationWorkCenterIds: (stationBins.data ?? [])
           .map((bin) => bin.workCenterId)
           .filter((id): id is string => Boolean(id)),
-        shortages: shortageRows,
-        requests: requestRows
+        workCenterNames,
+        rows: buildLineFeedRows({
+          requests: requestRows,
+          shortages: shortageRows,
+          transfers: transferRows
+        })
       }),
-      workCenterNames,
+      itemReadableIds,
       storageUnitNames,
       jobReadableIds,
       stockTransferReadableIds

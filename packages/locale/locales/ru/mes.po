@@ -2743,6 +2743,9 @@ msgstr "Выберите количество готовой продукции"
 msgid "Select a customer"
 msgstr "Выберите покупателя"
 
+msgid "Select a location to see its stations"
+msgstr ""
+
 msgid "Select a rework quantity"
 msgstr "Выберите количество для доработки"
 
@@ -3401,6 +3404,9 @@ msgstr "Неизвестно"
 
 msgid "Unknown gauge"
 msgstr "Неизвестное средство измерения"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlock"
 msgstr "Разблокировать"

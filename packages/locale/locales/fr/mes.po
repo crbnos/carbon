@@ -2743,6 +2743,9 @@ msgstr "Sélectionner une quantité de production"
 msgid "Select a customer"
 msgstr "Sélectionner un client"
 
+msgid "Select a location to see its stations"
+msgstr ""
+
 msgid "Select a rework quantity"
 msgstr "Sélectionnez une quantité de retouche"
 
@@ -3401,6 +3404,9 @@ msgstr "Inconnu"
 
 msgid "Unknown gauge"
 msgstr "Instrument de mesure inconnu"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlock"
 msgstr "Déverrouiller"

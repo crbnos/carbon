@@ -2743,6 +2743,9 @@ msgstr "完了数量を選択"
 msgid "Select a customer"
 msgstr "得意先を選択"
 
+msgid "Select a location to see its stations"
+msgstr ""
+
 msgid "Select a rework quantity"
 msgstr "手直し数量を選択"
 
@@ -3401,6 +3404,9 @@ msgstr "不明"
 
 msgid "Unknown gauge"
 msgstr "不明な測定器"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlock"
 msgstr "ロック解除"

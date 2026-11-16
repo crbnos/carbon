@@ -2743,6 +2743,9 @@ msgstr "选择完成数量"
 msgid "Select a customer"
 msgstr "选择客户"
 
+msgid "Select a location to see its stations"
+msgstr ""
+
 msgid "Select a rework quantity"
 msgstr "选择返工数量"
 
@@ -3401,6 +3404,9 @@ msgstr "未知"
 
 msgid "Unknown gauge"
 msgstr "未知量具"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlock"
 msgstr "解锁"

@@ -2743,6 +2743,9 @@ msgstr "Select a completion quantity"
 msgid "Select a customer"
 msgstr "Select a customer"
 
+msgid "Select a location to see its stations"
+msgstr "Select a location to see its stations"
+
 msgid "Select a rework quantity"
 msgstr "Select a rework quantity"
 
@@ -3401,6 +3404,9 @@ msgstr "Unknown"
 
 msgid "Unknown gauge"
 msgstr "Unknown gauge"
+
+msgid "Unknown part"
+msgstr "Unknown part"
 
 msgid "Unlock"
 msgstr "Unlock"

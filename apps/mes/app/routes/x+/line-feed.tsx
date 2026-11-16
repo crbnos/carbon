@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { useRevalidator } from "@carbon/query";
+import { useRevalidator, useTopic } from "@carbon/query";
 import { Badge, Button, cn, toast } from "@carbon/react";
 import { formatQuantity } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -17,13 +17,13 @@ import { DateTime } from "~/components";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { MesEmptyState } from "~/components/MesEmptyState";
 import { userContext } from "~/context";
+import { useRealtimeRevalidator, useUser } from "~/hooks";
 import { getLineFeed } from "~/services/inventory.service";
 import type {
   LineFeedRow,
-  StationStatus,
+  StationCard as StationCardData,
   StationStockStatus
 } from "~/services/line-feed";
-import { useItems } from "~/stores";
 import type { Handle } from "~/utils/handle";
 import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -43,14 +43,14 @@ export const handle: Handle = {
 export const meta: MetaFunction = () => pageMeta("Line feed");
 
 const emptyLineFeed = {
-  rows: [] as LineFeedRow[],
-  stations: [] as StationStatus[],
-  workCenterNames: {} as Record<string, string>,
+  stations: [] as StationCardData[],
+  itemReadableIds: {} as Record<string, string>,
   storageUnitNames: {} as Record<string, string>,
   jobReadableIds: {} as Record<string, string>,
   stockTransferReadableIds: {} as Record<string, string>,
   // A failed read is not an empty queue: the screen says so and offers a retry.
-  loadFailed: false
+  loadFailed: false,
+  noLocation: false
 };
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
@@ -58,7 +58,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     view: "inventory"
   });
   const locationId = context.get(userContext)?.locationId;
-  if (!locationId) return emptyLineFeed;
+  if (!locationId) return { ...emptyLineFeed, noLocation: true };
 
   const lineFeed = await getLineFeed(client, { companyId, locationId });
   if (lineFeed.error || !lineFeed.data) {
@@ -70,35 +70,36 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     return { ...emptyLineFeed, loadFailed: true };
   }
 
-  return { ...lineFeed.data, loadFailed: false };
+  return { ...lineFeed.data, loadFailed: false, noLocation: false };
 }
 
 export default function LineFeedRoute() {
   const {
-    rows,
     stations,
-    workCenterNames,
+    itemReadableIds,
     storageUnitNames,
     jobReadableIds,
     stockTransferReadableIds,
-    loadFailed
+    loadFailed,
+    noLocation
   } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
   const { t } = useLingui();
 
-  const rowsByStation = new Map<string | null, LineFeedRow[]>();
-  for (const row of rows) {
-    const list = rowsByStation.get(row.workCenterId);
-    if (list) list.push(row);
-    else rowsByStation.set(row.workCenterId, [row]);
-  }
-
-  // Work for a station that is not on the board (no work center, or one that
-  // is inactive or at another location) still shows, after the stations.
-  const onBoard = new Set(stations.map((station) => station.workCenterId));
-  const offBoard = [...rowsByStation.keys()].filter(
-    (workCenterId) => workCenterId === null || !onBoard.has(workCenterId)
-  );
+  // Work centers and storage units broadcast on the shared reference topic,
+  // which `handle.realtime` cannot name: a new station or lineside storage
+  // unit shows without waiting for a stock change.
+  const { company } = useUser();
+  const revalidate = useRealtimeRevalidator();
+  useTopic(`company:${company.id}:reference`, (change) => {
+    if (
+      !change ||
+      change.table === "workCenter" ||
+      change.table === "storageUnit"
+    ) {
+      revalidate();
+    }
+  });
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -120,28 +121,15 @@ export default function LineFeedRoute() {
               </Button>
             }
           />
-        ) : stations.length > 0 || offBoard.length > 0 ? (
+        ) : stations.length > 0 ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] items-start p-4 gap-4">
             {stations.map((station) => (
               <StationCard
-                key={station.workCenterId}
-                name={station.name}
+                key={station.workCenterId ?? "none"}
+                name={station.name ?? t`No station`}
                 status={station.status}
-                rows={rowsByStation.get(station.workCenterId) ?? []}
-                storageUnitNames={storageUnitNames}
-                jobReadableIds={jobReadableIds}
-                stockTransferReadableIds={stockTransferReadableIds}
-              />
-            ))}
-            {offBoard.map((workCenterId) => (
-              <StationCard
-                key={workCenterId ?? "none"}
-                name={
-                  (workCenterId && workCenterNames[workCenterId]) ||
-                  t`No station`
-                }
-                status="unknown"
-                rows={rowsByStation.get(workCenterId) ?? []}
+                rows={station.rows}
+                itemReadableIds={itemReadableIds}
                 storageUnitNames={storageUnitNames}
                 jobReadableIds={jobReadableIds}
                 stockTransferReadableIds={stockTransferReadableIds}
@@ -151,7 +139,13 @@ export default function LineFeedRoute() {
         ) : (
           <MesEmptyState
             className="flex-1 w-full h-[calc(100%-var(--header-height))]"
-            title={<Trans>No stations at this location</Trans>}
+            title={
+              noLocation ? (
+                <Trans>Select a location to see its stations</Trans>
+              ) : (
+                <Trans>No stations at this location</Trans>
+              )
+            }
           />
         )}
       </div>
@@ -178,6 +172,7 @@ function StationCard({
   name,
   status,
   rows,
+  itemReadableIds,
   storageUnitNames,
   jobReadableIds,
   stockTransferReadableIds
@@ -185,6 +180,7 @@ function StationCard({
   name: string;
   status: StationStockStatus;
   rows: LineFeedRow[];
+  itemReadableIds: Record<string, string>;
   storageUnitNames: Record<string, string>;
   jobReadableIds: Record<string, string>;
   stockTransferReadableIds: Record<string, string>;
@@ -198,15 +194,9 @@ function StationCard({
     unknown: t`No lineside storage`
   };
 
-  const isOut = (row: LineFeedRow) => (row.onHand ?? 0) <= 0;
-  const shortages = rows.filter((row) => row.kind === "shortage");
-  const ordered = [
-    ...shortages.filter(isOut),
-    ...shortages.filter((row) => !isOut(row)),
-    ...rows.filter((row) => row.kind === "request"),
-    ...rows.filter((row) => row.kind === "transfer")
-  ];
-  const storageUnitId = shortages[0]?.storageUnitId;
+  const storageUnitId = rows.find(
+    (row) => row.kind === "shortage"
+  )?.storageUnitId;
   const storageUnit = storageUnitId ? storageUnitNames[storageUnitId] : null;
 
   return (
@@ -228,13 +218,18 @@ function StationCard({
           {statusLabel[status]}
         </span>
       </div>
-      {ordered.length > 0 && (
+      {rows.length > 0 && (
         <ul className="divide-y divide-border border-t border-border rounded-b-lg bg-card">
-          {ordered.map((row) => (
+          {rows.map((row) => (
             <StationLine
               key={row.key}
               row={row}
-              isOut={isOut(row)}
+              part={row.itemId ? (itemReadableIds[row.itemId] ?? null) : null}
+              storageUnit={
+                row.storageUnitId
+                  ? (storageUnitNames[row.storageUnitId] ?? null)
+                  : null
+              }
               reference={
                 row.materialRequestId
                   ? (jobReadableIds[row.materialRequestId] ?? null)
@@ -252,30 +247,31 @@ function StationCard({
 
 function StationLine({
   row,
-  isOut,
+  part,
+  storageUnit,
   reference
 }: {
   row: LineFeedRow;
-  isOut: boolean;
+  part: string | null;
+  /** Where a transfer is going: a station can have several storage units. */
+  storageUnit: string | null;
   reference: string | null;
 }) {
   const { locale } = useLocale();
-  const [items] = useItems();
-  const part = row.itemId
-    ? (items.find((item) => item.id === row.itemId)?.readableIdWithRevision ??
-      null)
-    : null;
   const quantity =
     row.quantity === null ? null : formatQuantity(row.quantity, locale);
 
   if (row.kind === "shortage") {
     return (
       <li className="flex items-center gap-3 px-4 py-3">
-        <Badge variant={isOut ? "orange" : "yellow"} className="shrink-0">
-          {isOut ? <Trans>Out</Trans> : <Trans>Low</Trans>}
+        <Badge
+          variant={row.stockStatus === "out" ? "orange" : "yellow"}
+          className="shrink-0"
+        >
+          {row.stockStatus === "out" ? <Trans>Out</Trans> : <Trans>Low</Trans>}
         </Badge>
         <span className="min-w-0 flex-1 truncate text-sm font-medium">
-          {part}
+          {part ?? <Trans>Unknown part</Trans>}
         </span>
         <span className="shrink-0 text-sm tabular-nums">
           <Trans>Bring {quantity}</Trans>
@@ -299,10 +295,11 @@ function StationLine({
             <Trans>On its way</Trans>
           </Badge>
           <span className="min-w-0 flex-1 truncate text-sm">
-            {part}{" "}
+            {part ?? <Trans>Unknown part</Trans>}{" "}
             {quantity && <span className="tabular-nums">× {quantity}</span>}
           </span>
           <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+            {storageUnit && <span>{storageUnit} ·</span>}
             {reference}
             <LuExternalLink className="size-3" aria-hidden />
           </span>

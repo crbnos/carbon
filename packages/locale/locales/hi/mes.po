@@ -2743,6 +2743,9 @@ msgstr "पूर्ण मात्रा का चयन करें"
 msgid "Select a customer"
 msgstr "एक ग्राहक चुनें"
 
+msgid "Select a location to see its stations"
+msgstr ""
+
 msgid "Select a rework quantity"
 msgstr "पुनः कार्य की मात्रा चुनें"
 
@@ -3401,6 +3404,9 @@ msgstr "अज्ञात"
 
 msgid "Unknown gauge"
 msgstr "अज्ञात गेज"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlock"
 msgstr "अनलॉक"

@@ -2743,6 +2743,9 @@ msgstr "Fertigstellungsmenge auswählen"
 msgid "Select a customer"
 msgstr "Kunde auswählen"
 
+msgid "Select a location to see its stations"
+msgstr ""
+
 msgid "Select a rework quantity"
 msgstr "Nacharbeitsmenge auswählen"
 
@@ -3401,6 +3404,9 @@ msgstr "Unbekannt"
 
 msgid "Unknown gauge"
 msgstr "Unbekanntes Prüfmittel"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlock"
 msgstr "Entsperren"
