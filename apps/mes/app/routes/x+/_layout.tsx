@@ -65,7 +65,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type {
   LoaderFunctionArgs,
   MiddlewareFunction,
@@ -77,7 +77,6 @@ import {
   data,
   Form,
   Outlet,
-  useFetcher,
   useLoaderData,
   useLocation,
   useNavigate
@@ -95,7 +94,6 @@ import { userContext } from "~/context";
 import { useIdle } from "~/hooks";
 import { userMiddleware } from "~/middleware/user";
 import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
-import type { loader as resolveLoader } from "~/routes/x+/traveler.resolve";
 import { getItarCertificationStatus } from "~/services/itar.service";
 import { getActiveMaintenanceEventsCount } from "~/services/maintenance.service";
 import {
@@ -112,6 +110,7 @@ import {
 import { parseItemCode } from "~/utils/itemScan";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 import { parseTravelerCode } from "~/utils/traveler";
+import { postTravelerScan } from "~/utils/travelerScan";
 
 const log = getLogger("mes", "auth");
 const CONSOLE_PIN_PEER_TIMEOUT_MS = 30_000;
@@ -444,49 +443,36 @@ export default function AuthenticatedRoute() {
   const userId = user?.id;
   const { t } = useLingui();
   const navigate = useNavigate();
-  // The operation and assembly pages read a traveler scan themselves.
   const onOperationPage =
     pathname.startsWith("/x/operation/") || pathname.startsWith("/x/assembly/");
-  const resolveFetcher = useFetcher<typeof resolveLoader>();
   useKeyboardWedge({
     test: (input) =>
       (input.startsWith(MES_URL) || input.startsWith(ERP_URL)) &&
       !input.includes("/kanban/complete/") && // we handle this more gracefully in JobOperation
-      !(onOperationPage && parseTravelerCode(input)) &&
+      // A traveler goes to the scan endpoint below, from any origin.
+      !parseTravelerCode(input) &&
       // Both pages take a scanned item sticker themselves: the operator
       // stays on the job.
       !(onOperationPage && parseItemCode(input)),
     inTextFields: true,
-    onUnrecognized: (input) => {
-      const travelerId = parseTravelerCode(input);
-      if (travelerId) return navigate(path.to.traveler(travelerId));
-      // A raw id from an old label: the server finds the unit it names.
-      return resolveFetcher.load(
-        `${path.to.travelerResolve}?code=${encodeURIComponent(input)}`
+    onUnrecognized: async (input) => {
+      const isTraveler = !!parseTravelerCode(input);
+      // The operation and assembly pages read a traveler themselves; one
+      // that reaches here came while their scan was off (a dialog is open).
+      if (isTraveler && onOperationPage) return;
+      // A traveler link or a raw id from an old label: the server decides.
+      const result = await postTravelerScan({ code: input });
+      if (result.href) {
+        if (result.message) toast.success(result.message);
+        return navigate(result.href);
+      }
+      toast.error(
+        !isTraveler && result.status === 404
+          ? t`Nothing on this page uses that barcode`
+          : (result.message ?? t`Could not look up this label. Try again.`)
       );
     }
   });
-  const processedResolveData = useRef<typeof resolveFetcher.data | null>(null);
-  useEffect(() => {
-    const result = resolveFetcher.data;
-    if (
-      resolveFetcher.state !== "idle" ||
-      !result ||
-      result === processedResolveData.current
-    ) {
-      return;
-    }
-    processedResolveData.current = result;
-    if (result.status === "found") {
-      navigate(path.to.traveler(result.trackedEntityId));
-    } else if (result.status === "ambiguous") {
-      toast.error(t`This barcode matches more than one unit`);
-    } else if (result.status === "error") {
-      toast.error(t`Could not look up this label. Try again.`);
-    } else {
-      toast.error(t`Nothing on this page uses that barcode`);
-    }
-  }, [resolveFetcher.state, resolveFetcher.data, navigate, t]);
   const scanPending = useScanPending();
   // Not data a save or a realtime change touches, so it refreshes on its own.
   const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
