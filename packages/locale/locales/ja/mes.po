@@ -2819,6 +2819,9 @@ msgstr "サービスジョブ詳細"
 msgid "Session locked"
 msgstr "セッションはロック中です。"
 
+msgid "Set by your identity provider"
+msgstr "ID プロバイダーによって設定されます"
+
 msgid "Set Clock Out"
 msgstr "作業終了を設定"
 

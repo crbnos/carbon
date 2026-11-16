@@ -47,8 +47,8 @@ Everything lives on **Settings → Security**, under **"Provisioning"**.
 
 A deactivation removes the person from your company only. Their Carbon account, and everything they created, stays.
 
-<Callout type="note" title="Changes made in Carbon can be overwritten">
-Your identity provider owns each provisioned member's name, active state and, once you map groups, employee type. A change you make in Carbon lasts until the identity provider's next update. A member you deactivate by hand in Carbon stays deactivated until the identity provider itself deactivates and reactivates them.
+<Callout type="note" title="Change these in your identity provider">
+Your identity provider owns each provisioned member's name and, once you map groups, their employee type. Carbon shows those fields read-only and refuses a change to them, so a change made in Carbon is never silently undone by the next update. The name stays editable for a member who also belongs to another Carbon company: SCIM does not change it then. You can still deactivate a provisioned member in Carbon in an emergency. They stay deactivated until the identity provider itself deactivates and reactivates them.
 </Callout>
 
 On **Users → Accounts**, a provisioned member has a **"SCIM"** badge next to their status, and their account shows a note that your identity provider manages them.
@@ -71,7 +71,11 @@ A type change replaces the person's permissions in your company with the type's 
 
 ## Audit
 
-When the audit log is on, each SCIM change (a member added, deactivated, reactivated, or given a new type) is recorded on the employee, with **"SCIM"** as the actor.
+When the audit log is on, each SCIM change (a member added, deactivated, reactivated, or given a new type) is recorded once on the employee, with **"SCIM"** as the actor.
+
+## Backups
+
+A restore from a backup brings SCIM back turned off: a token from the backup might have been regenerated or turned off since, so Carbon never brings it back. The members, groups and group mappings are kept. Generate a new token and enter it in your identity provider, and it carries on with the people it already knows. Restoring another company's backup brings no SCIM setup with it.
 
 ## Limits
 

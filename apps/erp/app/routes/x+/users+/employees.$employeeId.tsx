@@ -12,7 +12,10 @@ import {
   makeCompanyPermissionsFromClaims,
   makeCompanyPermissionsFromEmployeeType
 } from "@carbon/ee/permissions.server";
-import { getScimManagedUserIds } from "@carbon/ee/scim.server";
+import {
+  getScimManagedUserIds,
+  getScimOwnedFields
+} from "@carbon/ee/scim.server";
 import { validator } from "@carbon/form";
 import {
   Modal,
@@ -93,12 +96,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const client = getCarbonServiceRole();
 
-  const [rawClaims, employee, employeeTypes, scimManaged] = await Promise.all([
-    getClaims(client, employeeId, companyId),
-    getEmployee(client, employeeId, companyId),
-    getEmployeeTypes(client, companyId),
-    getScimManagedUserIds(client, companyId, [employeeId])
-  ]);
+  const [rawClaims, employee, employeeTypes, scimManaged, scimOwned] =
+    await Promise.all([
+      getClaims(client, employeeId, companyId),
+      getEmployee(client, employeeId, companyId),
+      getEmployeeTypes(client, companyId),
+      getScimManagedUserIds(client, companyId, [employeeId]),
+      getScimOwnedFields(client, companyId, employeeId)
+    ]);
 
   if (rawClaims.error || employee.error || rawClaims.data === null) {
     redirect(
@@ -148,7 +153,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     employeeTypes: types,
     employeeTypePermissions,
     // A failed read only hides the note; the drawer still works.
-    isScimManaged: scimManaged.data.includes(employeeId)
+    isScimManaged: scimManaged.data.includes(employeeId),
+    // The save refuses a type change too; this only shows it.
+    isTypeSetByScim: scimOwned.data.employeeType
   };
 }
 
@@ -174,7 +181,8 @@ export default function UsersEmployeeRoute() {
     employee,
     employeeTypes,
     employeeTypePermissions,
-    isScimManaged
+    isScimManaged,
+    isTypeSetByScim
   } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "PERMISSIONS" });
 
@@ -195,6 +203,7 @@ export default function UsersEmployeeRoute() {
       employeeTypes={employeeTypes}
       employeeTypePermissions={employeeTypePermissions}
       isScimManaged={isScimManaged}
+      isTypeSetByScim={isTypeSetByScim}
       // @ts-expect-error
       initialValues={initialValues}
     />

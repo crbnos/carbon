@@ -26708,8 +26708,8 @@ msgstr "SCIM 连接"
 msgid "SCIM Provisioning"
 msgstr "SCIM 预配"
 
-msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
-msgstr "SCIM 会设置此员工的姓名和启用状态，并在分组映射完成后设置其员工类型。在此处所做的更改可能会在下次更新时被覆盖。"
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM 会设置此人员的姓名和启用状态，并在分组映射后设置其员工类型。请在身份提供商中修改这些信息。"
 
 msgid "Scope"
 msgstr "范围"
@@ -27622,6 +27622,12 @@ msgstr "设置目标"
 
 msgid "Set at activation"
 msgstr "在激活时设置"
+
+msgid "Set by your identity provider"
+msgstr "由身份提供商设置"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "由身份提供商的分组映射设置"
 
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "根据公司运营方式设置 Carbon：地点、零件、BOM、工序清单和您使用的流程。"

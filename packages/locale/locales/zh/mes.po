@@ -2819,6 +2819,9 @@ msgstr "服务工单详情"
 msgid "Session locked"
 msgstr "会话已锁定"
 
+msgid "Set by your identity provider"
+msgstr "由身份提供商设置"
+
 msgid "Set Clock Out"
 msgstr "设置收工"
 

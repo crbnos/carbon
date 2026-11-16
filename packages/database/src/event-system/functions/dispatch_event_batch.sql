@@ -11,6 +11,8 @@ DECLARE
   has_subs BOOLEAN;
   current_actor_id TEXT;
   current_workflow_run_id TEXT;
+  current_actor_label TEXT;
+  handler_config JSONB;
   pk_columns TEXT[];
   pk_join TEXT;
   record_id_expr TEXT;
@@ -21,6 +23,19 @@ BEGIN
   current_actor_id := auth.uid()::TEXT;
   current_workflow_run_id :=
     (nullif(current_setting('request.jwt.claims', true), '')::jsonb)->>'workflow_run_id';
+  -- Who made a change that has no user behind it ("SCIM"), for the audit log.
+  -- A server transaction sets app.actor_label; a service-role API request
+  -- sends the x-carbon-actor header. Only the service role is trusted with the
+  -- header, so a user or API key cannot relabel their own changes.
+  current_actor_label := nullif(current_setting('app.actor_label', true), '');
+  IF current_actor_label IS NULL
+     AND (nullif(current_setting('request.jwt.claims', true), '')::jsonb)->>'role'
+         = 'service_role' THEN
+    current_actor_label := nullif(
+      (nullif(current_setting('request.headers', true), '')::jsonb)->>'x-carbon-actor',
+      ''
+    );
+  END IF;
   IF TG_OP = 'DELETE' THEN
     SELECT t."companyId" INTO rec_company_id FROM batched_old t LIMIT 1;
   ELSIF TG_OP = 'INSERT' THEN
@@ -81,6 +96,17 @@ BEGIN
            OR current_setting('app.sync_in_progress', true) IS DISTINCT FROM 'true')
   LOOP
 
+    -- The audit handler reads handlerConfig.metadata into the audit row.
+    handler_config := sub."config";
+    IF sub."handlerType" = 'AUDIT' AND current_actor_label IS NOT NULL THEN
+      handler_config := coalesce(handler_config, '{}'::jsonb)
+        || jsonb_build_object(
+          'metadata',
+          coalesce(handler_config->'metadata', '{}'::jsonb)
+            || jsonb_build_object('actorLabel', current_actor_label)
+        );
+    END IF;
+
     IF TG_OP = 'INSERT' THEN
         query_text := format('
             SELECT array_agg(
@@ -108,7 +134,7 @@ BEGIN
         ', format(record_id_expr, 't'));
 
         EXECUTE query_text INTO msg_batch
-        USING sub.id, TG_LEVEL, sub."handlerType", sub."config", rec_company_id,
+        USING sub.id, TG_LEVEL, sub."handlerType", handler_config, rec_company_id,
               current_actor_id, TG_TABLE_NAME, TG_OP, sub.filter,
               current_workflow_run_id;
 
@@ -139,7 +165,7 @@ BEGIN
         ', format(record_id_expr, 't'));
 
         EXECUTE query_text INTO msg_batch
-        USING sub.id, TG_LEVEL, sub."handlerType", sub."config", rec_company_id,
+        USING sub.id, TG_LEVEL, sub."handlerType", handler_config, rec_company_id,
               current_actor_id, TG_TABLE_NAME, TG_OP, sub.filter,
               current_workflow_run_id;
 
@@ -172,7 +198,7 @@ BEGIN
         ', format(record_id_expr, 'n'), pk_join);
 
         EXECUTE query_text INTO msg_batch
-        USING sub.id, TG_LEVEL, sub."handlerType", sub."config", rec_company_id,
+        USING sub.id, TG_LEVEL, sub."handlerType", handler_config, rec_company_id,
               current_actor_id, TG_TABLE_NAME, TG_OP, sub.filter,
               current_workflow_run_id,
               sub."handlerType" IN ('AUDIT', 'SEARCH', 'EMBEDDING'),

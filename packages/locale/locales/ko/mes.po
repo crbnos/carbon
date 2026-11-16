@@ -2819,6 +2819,9 @@ msgstr "서비스 작업 지시 세부사항"
 msgid "Session locked"
 msgstr "세션 잠김"
 
+msgid "Set by your identity provider"
+msgstr "ID 공급자에서 설정됨"
+
 msgid "Set Clock Out"
 msgstr "작업 종료 설정"
 

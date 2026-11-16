@@ -63,6 +63,51 @@ export const SECRET_TABLES = [
  * row's `id` IS the company id via an `id -> company` FK), no `companyId`
  * column. `companyPlan` is deliberately absent — billing identity never travels.
  */
+/**
+ * An identity provider's SCIM state: the connection (its token hash is unique
+ * across ALL companies), the people and groups it provisioned, and their
+ * links. Loaded into another company it would collide on the token hash and
+ * point at the source company's people and employee types, so a foreign
+ * restore and an import leave these tables empty (SCIM is set up again).
+ */
+export const FOREIGN_SKIPPED_TABLES = [
+  "scimConnection",
+  "scimUser",
+  "scimGroup",
+  "scimGroupMember"
+];
+
+/**
+ * Columns a restore of a company's own backup leaves out, so they land on
+ * their default. A SCIM token in an old backup may have been regenerated or
+ * turned off since: restoring it would make a revoked token work again. The
+ * company comes back with SCIM off, its people and groups kept, and an admin
+ * generates a new token. Reverting a restore keeps them: its snapshot is
+ * minutes old and holds the current token.
+ */
+export const RESTORE_STRIPPED_COLUMNS: Record<string, readonly string[]> = {
+  scimConnection: ["tokenHash", "tokenPreview"]
+};
+
+/** Whether a restore loads a table's rows from the backup. */
+export function restoreLoadsTable(
+  tableName: string,
+  { foreign }: { foreign: boolean }
+): boolean {
+  return !(foreign && FOREIGN_SKIPPED_TABLES.includes(tableName));
+}
+
+/** Whether a restore loads a column's values (else the column's default). */
+export function restoreLoadsColumn(
+  tableName: string,
+  columnName: string,
+  { stripSecrets }: { stripSecrets: boolean }
+): boolean {
+  return !(
+    stripSecrets && RESTORE_STRIPPED_COLUMNS[tableName]?.includes(columnName)
+  );
+}
+
 export const COMPANY_SINGLETON_TABLES = [
   "companySettings",
   "terms",

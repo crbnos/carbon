@@ -26708,8 +26708,8 @@ msgstr "Подключение SCIM"
 msgid "SCIM Provisioning"
 msgstr "Автоматическое создание учётных записей SCIM"
 
-msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
-msgstr "SCIM задаёт имя этого сотрудника и признак «Активный», а также его тип сотрудника после сопоставления групп. Изменение, внесённое здесь, может быть перезаписано при следующем обновлении."
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM задаёт имя этого человека и статус активности, а также тип сотрудника после сопоставления групп. Измените эти данные у своего провайдера удостоверений."
 
 msgid "Scope"
 msgstr "Область действия"
@@ -27622,6 +27622,12 @@ msgstr "Установить цель"
 
 msgid "Set at activation"
 msgstr "Установлено при активации"
+
+msgid "Set by your identity provider"
+msgstr "Задаётся вашим провайдером удостоверений"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "Задаётся сопоставлениями групп вашего провайдера удостоверений"
 
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Настройте Carbon в соответствии с тем, как работает ваша организация: участки, детали, BOM, Перечень операций и используемые вами процессы."

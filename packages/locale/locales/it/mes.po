@@ -2819,6 +2819,9 @@ msgstr "Dettagli dell'ordine di servizio"
 msgid "Session locked"
 msgstr "Sessione bloccata"
 
+msgid "Set by your identity provider"
+msgstr "Impostato dal tuo provider di identità"
+
 msgid "Set Clock Out"
 msgstr "Registra timbra fine"
 

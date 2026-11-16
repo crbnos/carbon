@@ -2819,6 +2819,9 @@ msgstr "Hizmet İş Emri Ayrıntıları"
 msgid "Session locked"
 msgstr "Oturum kilitlendi"
 
+msgid "Set by your identity provider"
+msgstr "Kimlik sağlayıcınız tarafından ayarlanır"
+
 msgid "Set Clock Out"
 msgstr "İş bitişini ayarla"
 

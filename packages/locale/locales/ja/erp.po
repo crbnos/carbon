@@ -26708,8 +26708,8 @@ msgstr "SCIM 接続"
 msgid "SCIM Provisioning"
 msgstr "SCIM プロビジョニング"
 
-msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
-msgstr "SCIM は、グループが対応付けられた後、この従業員の氏名、有効状態、従業員タイプを設定します。ここで行った変更は、次回の更新で上書きされる場合があります。"
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM は、この人物の氏名と有効状態を設定し、グループのマッピング後は従業員タイプも設定します。これらは ID プロバイダーで変更してください。"
 
 msgid "Scope"
 msgstr "スコープ"
@@ -27622,6 +27622,12 @@ msgstr "ターゲットを設定"
 
 msgid "Set at activation"
 msgstr "有効化時に設定"
+
+msgid "Set by your identity provider"
+msgstr "ID プロバイダーによって設定されます"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "ID プロバイダーのグループマッピングによって設定されます"
 
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Carbonを会社の運営方法に合わせてセットアップします：サイト、部品、BOM、工程表、および使用するワークフロー。"

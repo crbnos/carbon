@@ -2819,6 +2819,9 @@ msgstr "Detalhes do Trabalho de Serviço"
 msgid "Session locked"
 msgstr "Sessão bloqueada"
 
+msgid "Set by your identity provider"
+msgstr "Definido pelo seu provedor de identidade"
+
 msgid "Set Clock Out"
 msgstr "Definir apontar fim"
 

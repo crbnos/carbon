@@ -12,8 +12,9 @@
  * hands the request over.
  *
  * Offboarding is the point: `active: false` and DELETE run the existing
- * per-company `deactivateUser`, delete the person's API keys in the company
- * (a key authenticates as its creator with no membership check), and — when
+ * per-company `deactivateUser` (which also deletes the person's API keys in
+ * the company: a key authenticates as its creator with no membership check),
+ * and — when
  * the person has no company left — revoke every GoTrue session. The global
  * `user` row and the person's records stay.
  *
@@ -23,11 +24,13 @@
  */
 
 import { CONTROLLED_ENVIRONMENT, getPermissionCacheKey } from "@carbon/auth";
-import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
-import { signUserAccessToken } from "@carbon/auth/client.server";
+import { hashApiKey } from "@carbon/auth/auth.server";
+import {
+  getCarbonServiceRoleAs,
+  signUserAccessToken
+} from "@carbon/auth/client.server";
 import { deactivateUser } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
-import type { CreateAuditLogEntry } from "@carbon/database/audit.types";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getAppUrl } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
@@ -36,7 +39,6 @@ import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.serv
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely, Transaction } from "kysely";
 import { sql } from "kysely";
-import { insertAuditLogEntries, isAuditLogEnabled } from "../audit/audit";
 import { EntitlementError, requireEntitlement } from "../entitlements.server";
 import {
   getSsoConnection,
@@ -597,43 +599,15 @@ async function syncSeats(companyId: string): Promise<void> {
   }
 }
 
-type EmployeeAudit = {
-  userId: string;
-  operation: CreateAuditLogEntry["operation"];
-  diff: NonNullable<CreateAuditLogEntry["diff"]>;
-};
-
-async function auditEmployees(
-  serviceRole: SupabaseClient<Database>,
-  connection: ScimConnectionRow,
-  entries: EmployeeAudit[]
-): Promise<void> {
-  if (entries.length === 0) return;
-  try {
-    if (!(await isAuditLogEnabled(serviceRole, connection.companyId))) return;
-    await insertAuditLogEntries(
-      serviceRole,
-      connection.companyId,
-      entries.map((entry) => ({
-        tableName: "employee",
-        entityType: "employee",
-        entityId: entry.userId,
-        recordId: entry.userId,
-        operation: entry.operation,
-        actorId: null,
-        diff: entry.diff,
-        metadata: {
-          origin: "scim",
-          actorLabel: SCIM_ACTOR_LABEL
-        }
-      }))
-    );
-  } catch (err) {
-    logger.error("Failed to write the SCIM audit entry", {
-      error: err,
-      companyId: connection.companyId
-    });
-  }
+/**
+ * Credit every change this transaction makes to SCIM in the audit log. The
+ * event dispatcher (`dispatch_event_batch`) reads the label into each audit
+ * row, so the log shows "SCIM", not "System", and only once per change.
+ */
+async function labelAsScim(trx: Transaction<KyselyDatabase>): Promise<void> {
+  await sql`SELECT set_config('app.actor_label', ${SCIM_ACTOR_LABEL}, true)`.execute(
+    trx
+  );
 }
 
 async function hasOtherCompany(
@@ -778,6 +752,7 @@ async function createUser(ctx: Ctx, body: unknown): Promise<Response> {
   let outcome: { scimUserId: string; joined: boolean; employeeTypeId: string };
   try {
     outcome = await ctx.db.transaction().execute(async (trx) => {
+      await labelAsScim(trx);
       const membership = await trx
         .selectFrom("userToCompany")
         .select("role")
@@ -929,16 +904,6 @@ async function createUser(ctx: Ctx, body: unknown): Promise<Response> {
   await clearPermissionCaches([userId]);
   if (outcome.joined) {
     await syncSeats(ctx.companyId);
-    await auditEmployees(ctx.serviceRole, ctx.connection, [
-      {
-        userId,
-        operation: "INSERT",
-        diff: {
-          active: { new: true },
-          employeeTypeId: { new: outcome.employeeTypeId }
-        }
-      }
-    ]);
   }
 
   const row = await readScimUser(ctx, outcome.scimUserId);
@@ -1070,56 +1035,19 @@ async function deactivateScimUser(
 ): Promise<boolean> {
   const { userId } = row;
 
+  // The labelled client makes the audit log show these changes as "SCIM".
   const deactivated = await deactivateUser(
-    ctx.serviceRole,
+    getCarbonServiceRoleAs(SCIM_ACTOR_LABEL),
     userId,
     ctx.companyId
   );
   if (!deactivated.success) {
-    logger.error("SCIM deactivation failed to remove the membership", {
+    logger.error("SCIM deactivation failed", {
       userId,
       companyId: ctx.companyId,
       message: deactivated.message
     });
     return false;
-  }
-
-  // A key authenticates as its creator and nothing re-checks membership, so a
-  // key that outlives the membership keeps the person's access open.
-  const keys = await ctx.serviceRole
-    .from("apiKey")
-    .select("id, keyHash")
-    .eq("createdBy", userId)
-    .eq("companyId", ctx.companyId);
-  if (keys.error) {
-    logger.error("Failed to read the API keys of a deactivated SCIM user", {
-      userId,
-      error: keys.error
-    });
-    return false;
-  }
-  if (keys.data.length > 0) {
-    const removed = await ctx.serviceRole
-      .from("apiKey")
-      .delete()
-      .eq("companyId", ctx.companyId)
-      .in(
-        "id",
-        keys.data.map((key) => key.id)
-      );
-    if (removed.error) {
-      logger.error("Failed to delete the API keys of a deactivated SCIM user", {
-        userId,
-        error: removed.error
-      });
-      return false;
-    }
-    await Promise.all(
-      keys.data
-        .map((key) => key.keyHash)
-        .filter((hash): hash is string => Boolean(hash))
-        .map(bustApiKeyCache)
-    );
   }
 
   // Another company still trusts this session; leave it. With none left,
@@ -1150,9 +1078,6 @@ async function deactivateScimUser(
   }
 
   await syncSeats(ctx.companyId);
-  await auditEmployees(ctx.serviceRole, ctx.connection, [
-    { userId, operation: "UPDATE", diff: { active: { old: true, new: false } } }
-  ]);
   return true;
 }
 
@@ -1183,9 +1108,9 @@ async function reactivateScimUser(
 ): Promise<Response | null> {
   if (CONTROLLED_ENVIRONMENT) return scimError(403, CONTROLLED_REFUSAL);
   const { userId } = row;
-  let employeeTypeId: string;
   try {
-    employeeTypeId = await ctx.db.transaction().execute(async (trx) => {
+    await ctx.db.transaction().execute(async (trx) => {
+      await labelAsScim(trx);
       const membership = await trx
         .selectFrom("userToCompany")
         .select("role")
@@ -1249,7 +1174,6 @@ async function reactivateScimUser(
         ctx.companyId,
         new Map([[userId, grants.get(typeId) ?? []]])
       );
-      return typeId;
     });
   } catch (err) {
     if (err instanceof ScimRefusal) {
@@ -1261,16 +1185,6 @@ async function reactivateScimUser(
 
   await clearPermissionCaches([userId]);
   await syncSeats(ctx.companyId);
-  await auditEmployees(ctx.serviceRole, ctx.connection, [
-    {
-      userId,
-      operation: "UPDATE",
-      diff: {
-        active: { old: false, new: true },
-        employeeTypeId: { new: employeeTypeId }
-      }
-    }
-  ]);
   return null;
 }
 
@@ -1552,7 +1466,7 @@ async function createGroup(ctx: Ctx, body: unknown): Promise<Response> {
     throw err;
   }
 
-  await reconcileEmployeeTypes(ctx.db, ctx.serviceRole, {
+  await reconcileEmployeeTypes(ctx.db, {
     connection: ctx.connection,
     scimUserIds: changed
   });
@@ -1590,7 +1504,7 @@ async function saveGroup(
 ): Promise<Response | null> {
   try {
     const changed = await writeGroup(ctx, groupId, state);
-    await reconcileEmployeeTypes(ctx.db, ctx.serviceRole, {
+    await reconcileEmployeeTypes(ctx.db, {
       connection: ctx.connection,
       scimUserIds: changed
     });
@@ -1651,7 +1565,7 @@ async function deleteGroup(ctx: Ctx, id: string): Promise<Response> {
     .where("companyId", "=", ctx.companyId)
     .returning("employeeTypeId")
     .executeTakeFirst();
-  await reconcileEmployeeTypes(ctx.db, ctx.serviceRole, {
+  await reconcileEmployeeTypes(ctx.db, {
     connection: ctx.connection,
     scimUserIds: memberIds,
     mappingRemoved: Boolean(deleted?.employeeTypeId)
@@ -1694,7 +1608,6 @@ async function hasMappedGroup(
  */
 export async function reconcileEmployeeTypes(
   db: Kysely<KyselyDatabase>,
-  serviceRole: SupabaseClient<Database>,
   {
     connection,
     scimUserIds,
@@ -1764,6 +1677,7 @@ export async function reconcileEmployeeTypes(
   if (changes.length === 0) return { changed: 0 };
 
   const applied = await db.transaction().execute(async (trx) => {
+    await labelAsScim(trx);
     const typeIds = [...new Set(changes.map((change) => change.to))];
     const grants = await readTypeGrants(trx, companyId, typeIds);
 
@@ -1808,14 +1722,5 @@ export async function reconcileEmployeeTypes(
   if (applied.length === 0) return { changed: 0 };
 
   await clearPermissionCaches(applied.map((change) => change.userId));
-  await auditEmployees(
-    serviceRole,
-    connection,
-    applied.map((change) => ({
-      userId: change.userId,
-      operation: "UPDATE" as const,
-      diff: { employeeTypeId: { old: change.from, new: change.to } }
-    }))
-  );
   return { changed: applied.length };
 }

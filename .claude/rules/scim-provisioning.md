@@ -21,13 +21,13 @@ licences, test tools): `.ai/research/scim-provisioning.md`. User docs:
 | `packages/ee/src/scim/protocol.ts` | Pure wire format: `parseScimFilter`, `applyUserPatch`, `applyGroupPatch`, `readUserResource`, `matchScimRoute`, resource bodies, discovery documents |
 | `packages/ee/src/scim/mapping.ts` | Pure access decisions: `pickEmployeeType`, `typeGrantsFor`, `replaceCompanyGrants` |
 | `packages/ee/src/scim/engine.server.ts` | `handleScimRequest` (token → `scimConnection`, `requireEntitlement(…, "SCIM")`, rate limit, routing), the Users and Groups handlers, `reconcileEmployeeTypes` |
-| `packages/ee/src/scim/connections.server.ts` | The settings card's reads and writes; every write but `turnOffScimConnection` embeds `requireEntitlement`. Also `getScimManagedUserIds` (the Users screen's "SCIM" badge and the employee drawer's note) and `getEmployeeTypesWithoutPermissions` (the no-permissions warning; reads `employeeTypePermission` with the service role, since its RLS needs `users_update`) |
+| `packages/ee/src/scim/connections.server.ts` | The settings card's reads and writes; every write but `turnOffScimConnection` embeds `requireEntitlement`. Also `getScimOwnedFields` (the fields an admin cannot change, below), `getScimManagedUserIds` (the Users screen's "SCIM" badge and the employee drawer's note) and `getEmployeeTypesWithoutPermissions` (the no-permissions warning; reads `employeeTypePermission` with the service role, since its RLS needs `users_update`) |
 | `@carbon/ee/scim.server` | `scim/index.server.ts`, the export of the two files above |
 | `apps/erp/app/routes/scim+/v2+/$.ts` | Loader and action both hand the request to `handleScimRequest` |
 | `apps/erp/app/routes/x+/settings+/scim.tsx` | Action-only, like `sso.tsx`: intents `create`, `update`, `regenerate`, `saveGroupMappings`, `delete` |
 | `ScimProvisioning.ee.tsx` | The Provisioning section of Settings → Security |
 
-Tables (migration `20261114175215_scim-provisioning.sql`): `scimConnection`
+Tables (migration `20261115172215_scim-provisioning.sql`): `scimConnection`
 (one per company, `UNIQUE ("companyId")`, `tokenHash` + `tokenPreview`, the
 default employee type and location), `scimUser` (the IdP's view of one person,
 `id` is the SCIM resource id, unique `lower("userName")` per company),
@@ -61,10 +61,10 @@ with the service role and stamps `createdBy` / `updatedBy` with
   quarantines Entra's job.
 - **Deactivation** (`active` true → false, or DELETE):
   1. `deactivateUser` (`@carbon/auth/users.server`), the same per-company
-     deactivation as the Users screen.
-  2. Delete the person's `apiKey` rows in the company and `bustApiKeyCache`
-     each hash: a key authenticates as its creator with no membership check.
-  3. If the person has no `userToCompany` row left,
+     deactivation as the Users screen. It deletes the person's `apiKey` rows
+     in the company first (`deleteUserApiKeys`, which busts each key's cache):
+     a key authenticates as its creator with no membership check.
+  2. If the person has no `userToCompany` row left,
      `auth.admin.signOut(signUserAccessToken(userId), "global")`. A token with
      no `session_id` makes GoTrue revoke every refresh token. A person with
      another company keeps the session.
@@ -98,17 +98,33 @@ with the service role and stamps `createdBy` / `updatedBy` with
   seeds the SSO identity when SAML is on. In `CONTROLLED_ENVIRONMENT` it
   refuses every join that is not an adopt, and every reactivation (403): an
   invite records the attestation.
-- **`active` is stored after Carbon acts on it.** If `deactivateUser` or the
-  API-key delete fails, the row stays active and the request answers 500, so
+- **`active` is stored after Carbon acts on it.** If `deactivateUser`
+  (including its API-key delete) fails, the row stays active and the request answers 500, so
   the IdP sends the change again. A failed sign-out is only logged.
 - **Match `userName` / `displayName` with `lower() = lower()` over Kysely**
   (`idsMatchingWithoutCase`), never PostgREST `ilike`: it reads `*` as a
   wildcard.
-- **Audit.** Each create, deactivate, reactivate and type change writes an
-  `employee` entry with `actorId: null` and `metadata.actorLabel`
-  (`SCIM_ACTOR_LABEL`, "SCIM"), shown by the audit renderers through `nonUserActorLabel`.
-  The event-system trigger also writes its own "System" row for the same
-  `employee` change.
+- **Audit: one row per change, labelled "SCIM".** The engine writes no audit
+  entry of its own. Its create, reactivate and type-change transactions call
+  `labelAsScim` (`set_config('app.actor_label', 'SCIM', true)`), and
+  deactivation runs `deactivateUser` on `getCarbonServiceRoleAs("SCIM")`, which
+  sends the `x-carbon-actor` header. `dispatch_event_batch` puts the label into
+  the audit row's `metadata.actorLabel`, which the audit renderers show through
+  `nonUserActorLabel` (see `audit-log-system.md`).
+- **The admin cannot fight the identity provider.** `getScimOwnedFields` says
+  what SCIM owns for a person in a company: the name, while the person belongs
+  to no other company (SCIM writes the global name only then), and the
+  employee type, once a group is mapped. The person profile and the account
+  settings show an owned name read-only, and the employee drawer an owned type.
+  `scimOwnedChangeRefusal` (ERP `users.service.ts`) refuses a change to an owned
+  field in `updateEmployeePermissions`, `updateOwnProfile`,
+  `updatePublicAccount` and the person route's save; an unchanged value passes,
+  and a failed read lets the change through (it is not an access check).
+  Deactivate stays available: a manual deactivation is the emergency stop.
+- **Backups.** A restore from a backup brings SCIM back turned off (the token
+  columns are not loaded), so a revoked token never works again. A restore of
+  another company's backup and an import load no SCIM rows. See
+  `company-backup-restore.md`.
 - **One log line per request.** `handleScimRequest` logs "SCIM request" with
   `companyId`, method, path (no query string: an IdP filters by an email) and
   status for every request it can tie to a company. Nothing is stored.
@@ -120,7 +136,10 @@ with the service role and stamps `createdBy` / `updatedBy` with
 ## Testing
 
 `scim/protocol.test.ts` and `scim/mapping.test.ts` pin the parsers and the
-decisions. The live flows (Okta and Entra sequences, sessions, API keys, a
+decisions. `supabase/tests/event-actor-label.test.sql` pins the audit label,
+`backups/restore-scope.test.ts` (jobs) the restore rules, and
+`deactivate-employee.test.ts` (auth) the API-key cleanup. The live flows (Okta and Entra sequences, sessions, API keys, a
 second company) were run against a local stack with curl; the steps and
 results are in the run log `.ai/runs/2026-10-30-scim-provisioning.md`. Okta's SCIM 2.0 Spec
-Test and Microsoft's SCIM Validator need a public URL.
+Test passed (12 of 12) through a public tunnel. Microsoft's SCIM Validator needs a
+Microsoft sign-in.

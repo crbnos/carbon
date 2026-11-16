@@ -26708,8 +26708,8 @@ msgstr "Connexion SCIM"
 msgid "SCIM Provisioning"
 msgstr "Provisionnement SCIM"
 
-msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
-msgstr "SCIM définit le nom et le statut actif de cette personne, ainsi que son type d'employé une fois les groupes associés. Une modification apportée ici peut être écrasée lors de sa prochaine mise à jour."
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM définit le nom et l'état actif de cette personne, ainsi que son type d'employé une fois les groupes associés. Modifiez ces éléments dans votre fournisseur d'identité."
 
 msgid "Scope"
 msgstr "Portée"
@@ -27622,6 +27622,12 @@ msgstr "Définir un objectif"
 
 msgid "Set at activation"
 msgstr "Défini à l'activation"
+
+msgid "Set by your identity provider"
+msgstr "Défini par votre fournisseur d'identité"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "Défini par les correspondances de groupes de votre fournisseur d'identité"
 
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Configurez Carbon en fonction du fonctionnement de votre société : sites, pièces, BOM, liste des opérations, et les flux que vous utilisez."

@@ -2819,6 +2819,9 @@ msgstr "Подробности работы по услуге"
 msgid "Session locked"
 msgstr "Сеанс заблокирован"
 
+msgid "Set by your identity provider"
+msgstr "Задаётся вашим провайдером удостоверений"
+
 msgid "Set Clock Out"
 msgstr "Установить окончание работы"
 

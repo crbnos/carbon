@@ -10,6 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { Permission, Result } from "../types";
 import { error, success } from "../utils/result";
+import { bustApiKeyCache } from "./api-key.server";
 import { logRoleChange } from "./auth-events.server";
 import {
   getClaims,
@@ -312,6 +313,53 @@ export async function deactivateEmployee(
   return success("Sucessfully deactivated employee");
 }
 
+/**
+ * Delete a person's API keys in one company. A key authenticates as its
+ * creator and nothing re-checks the membership, so a key that outlives the
+ * membership keeps the person's access open.
+ */
+export async function deleteUserApiKeys(
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+): Promise<Result> {
+  const keys = await serviceRole
+    .from("apiKey")
+    .select("id, keyHash")
+    .eq("createdBy", userId)
+    .eq("companyId", companyId);
+  if (keys.error) {
+    return error(keys.error, "Failed to read the user's API keys", {
+      userId,
+      companyId
+    });
+  }
+  if (keys.data.length === 0) return success("No API keys to delete");
+
+  const removed = await serviceRole
+    .from("apiKey")
+    .delete()
+    .eq("companyId", companyId)
+    .in(
+      "id",
+      keys.data.map((key) => key.id)
+    );
+  if (removed.error) {
+    return error(removed.error, "Failed to delete the user's API keys", {
+      userId,
+      companyId
+    });
+  }
+  // The key lookup is cached for 30 seconds; drop it so the key stops now.
+  await Promise.all(
+    keys.data
+      .map((key) => key.keyHash)
+      .filter((hash): hash is string => Boolean(hash))
+      .map(bustApiKeyCache)
+  );
+  return success("Deleted the user's API keys");
+}
+
 export async function deactivateUser(
   serviceRole: SupabaseClient<Database>,
   userId: string,
@@ -319,6 +367,12 @@ export async function deactivateUser(
   actorId?: string,
   ip?: string
 ) {
+  // Keys first: if this fails nothing has changed yet, so a retry runs the
+  // whole deactivation again. After the membership is gone a retry finds the
+  // person "already deactivated" and would never reach the keys.
+  const keys = await deleteUserApiKeys(serviceRole, userId, companyId);
+  if (!keys.success) return keys;
+
   const userToCompany = await serviceRole
     .from("userToCompany")
     .select("role")

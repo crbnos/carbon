@@ -2819,6 +2819,9 @@ msgstr "Details des Dienstleistungsauftrags"
 msgid "Session locked"
 msgstr "Sitzung gesperrt"
 
+msgid "Set by your identity provider"
+msgstr "Vom Identitätsanbieter festgelegt"
+
 msgid "Set Clock Out"
 msgstr "Ausstempelzeit setzen"
 

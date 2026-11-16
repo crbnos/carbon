@@ -2819,6 +2819,9 @@ msgstr "Szczegóły zlecenia serwisowego"
 msgid "Session locked"
 msgstr "Sesja zablokowana"
 
+msgid "Set by your identity provider"
+msgstr "Ustawiane przez dostawcę tożsamości"
+
 msgid "Set Clock Out"
 msgstr "Ustaw zakończenie pracy"
 

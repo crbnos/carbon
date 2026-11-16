@@ -28,6 +28,7 @@ import { InviteEmail } from "@carbon/documents/email";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
+import { getScimOwnedFields } from "@carbon/ee/scim.server";
 import {
   emailDomain,
   getSsoAwareInviteLink,
@@ -2851,6 +2852,69 @@ export async function updateSignature(
     });
   }
   return saved;
+}
+
+/**
+ * Why a change to a person must be refused because their identity provider
+ * owns the field over SCIM and would undo it on its next update, or null
+ * when the change may go ahead. Only a field that actually changes is
+ * refused, so a profile save that keeps the name still saves the phone.
+ * A failed read lets the change through: this keeps the fields in step with
+ * the identity provider, it is not an access check.
+ */
+export async function scimOwnedChangeRefusal(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  change: { employeeTypeId?: string; firstName?: string; lastName?: string }
+): Promise<string | null> {
+  const owned = await getScimOwnedFields(serviceRole, companyId, userId);
+  if (owned.error) {
+    logger.error("Failed to read the fields SCIM owns", {
+      companyId,
+      userId,
+      error: owned.error
+    });
+    return null;
+  }
+
+  if (owned.data.employeeType && change.employeeTypeId !== undefined) {
+    const employee = await serviceRole
+      .from("employee")
+      .select("employeeTypeId")
+      .eq("id", userId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (
+      !employee.error &&
+      employee.data &&
+      employee.data.employeeTypeId !== change.employeeTypeId
+    ) {
+      return "Your identity provider sets this person's employee type from their groups. Change their groups there.";
+    }
+  }
+
+  const changesName =
+    change.firstName !== undefined || change.lastName !== undefined;
+  if (owned.data.name && changesName) {
+    const user = await serviceRole
+      .from("user")
+      .select("firstName, lastName")
+      .eq("id", userId)
+      .maybeSingle();
+    if (
+      !user.error &&
+      user.data &&
+      ((change.firstName !== undefined &&
+        change.firstName !== user.data.firstName) ||
+        (change.lastName !== undefined &&
+          change.lastName !== user.data.lastName))
+    ) {
+      return "Your identity provider manages this person's name. Change it there.";
+    }
+  }
+
+  return null;
 }
 
 export async function updatePublicAccount(

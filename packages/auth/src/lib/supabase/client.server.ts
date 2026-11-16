@@ -96,6 +96,22 @@ export const getCarbonServiceRole = (): SupabaseClient<Database> => {
 };
 
 /**
+ * A service-role client whose changes the audit log shows as made by
+ * `actorLabel` ("SCIM") rather than "System". `dispatch_event_batch` reads
+ * the `x-carbon-actor` header from service-role requests only.
+ */
+export const getCarbonServiceRoleAs = (
+  actorLabel: string
+): SupabaseClient<Database> => {
+  return getCarbonClient(
+    SUPABASE_SERVICE_ROLE_KEY!,
+    undefined,
+    requestFetch(),
+    { "x-carbon-actor": actorLabel }
+  );
+};
+
+/**
  * A 5-minute access token for `userId`, signed with the project's JWT secret.
  * It carries no `session_id`: GoTrue's `/logout?scope=global` reads that as
  * "every session of this user" and revokes all their refresh tokens.

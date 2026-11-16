@@ -33,13 +33,19 @@ type ProfileFormProps = {
   photo: Omit<ProfilePhotoFormProps, "user">;
   /** `plain` drops the card, for a container that already frames the form. */
   variant?: "card" | "plain";
+  /**
+   * The person's identity provider sets their name (SCIM), so it is read-only
+   * here; the save refuses a change too.
+   */
+  isNameSetByIdentityProvider?: boolean;
 };
 
 const ProfileForm = ({
   user,
   action,
   photo,
-  variant = "card"
+  variant = "card",
+  isNameSetByIdentityProvider = false
 }: ProfileFormProps) => {
   const { t } = useLingui();
   const fetcher = useFetcher<{}>();
@@ -49,8 +55,21 @@ const ProfileForm = ({
       <VStack spacing={4}>
         <Input name="email" label={t`Email`} isDisabled />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-          <Input name="firstName" label={t`First Name`} />
-          <Input name="lastName" label={t`Last Name`} />
+          <Input
+            name="firstName"
+            label={t`First Name`}
+            isReadOnly={isNameSetByIdentityProvider}
+            helperText={
+              isNameSetByIdentityProvider
+                ? t`Set by your identity provider`
+                : undefined
+            }
+          />
+          <Input
+            name="lastName"
+            label={t`Last Name`}
+            isReadOnly={isNameSetByIdentityProvider}
+          />
         </div>
         <PhoneInput name="phone" label={t`Phone`} />
         <TextArea

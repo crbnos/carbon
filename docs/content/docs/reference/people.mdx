@@ -27,7 +27,7 @@ The **Job** section is the employee master data you edit here:
 "Job" here means a job *title*, not a production job. The `employeeJob` table is org placement — completely separate from the `job` table that holds work orders on the floor. And a person's title is separate again from what they can *do*: access is granted by their **employee type**, covered in [permissions](/docs/reference/permissions).
 </Callout>
 
-Adding and removing people (invites, deactivation) is part of the identity and access flow, not this master data. Deactivating a person tears down their membership — it removes them from the company, deletes their job placement, and revokes their access — so treat it as an access action, not an edit here.
+Adding and removing people (invites, deactivation) is part of the identity and access flow, not this master data. Deactivating a person tears down their membership — it removes them from the company, revokes their access, and deletes the API keys they made in it — so treat it as an access action, not an edit here. Their job placement stays: title, start date, department, shift and manager come back if they are invited again.
 
 ## Departments
 

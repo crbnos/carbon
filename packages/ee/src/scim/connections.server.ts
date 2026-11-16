@@ -107,6 +107,65 @@ export async function getScimConnection(
 }
 
 /**
+ * What the identity provider owns for one person in this company, so Carbon
+ * neither shows those fields as editable nor saves a change to them: the
+ * next update from the identity provider would silently undo it.
+ *
+ * - `name`: SCIM writes the name only while the person belongs to no other
+ *   company (it is global), so it is owned only then.
+ * - `employeeType`: SCIM sets the type once a group is mapped; before that the
+ *   admin owns it.
+ *
+ * Both are false unless SCIM is on and provisioned the person. Read with the
+ * service role: the person's own profile has no `settings_view`.
+ */
+export async function getScimOwnedFields(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  userId: string
+): Promise<{ data: { name: boolean; employeeType: boolean }; error: unknown }> {
+  const none = { name: false, employeeType: false };
+  const [managed, connection] = await Promise.all([
+    serviceRole
+      .from("scimUser")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("userId", userId),
+    serviceRole
+      .from("scimConnection")
+      .select("id")
+      .eq("companyId", companyId)
+      .not("tokenHash", "is", null)
+      .maybeSingle()
+  ]);
+  if (managed.error) return { data: none, error: managed.error };
+  if (connection.error) return { data: none, error: connection.error };
+  if (!managed.count || !connection.data) return { data: none, error: null };
+
+  const [companies, mappedGroups] = await Promise.all([
+    serviceRole
+      .from("userToCompany")
+      .select("companyId", { count: "exact", head: true })
+      .eq("userId", userId),
+    serviceRole
+      .from("scimGroup")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .not("employeeTypeId", "is", null)
+  ]);
+  if (companies.error) return { data: none, error: companies.error };
+  if (mappedGroups.error) return { data: none, error: mappedGroups.error };
+
+  return {
+    data: {
+      name: (companies.count ?? 0) <= 1,
+      employeeType: (mappedGroups.count ?? 0) > 0
+    },
+    error: null
+  };
+}
+
+/**
  * Of `typeIds`, the employee types that grant no permission in this company.
  * A member SCIM gives such a type can sign in and see nothing, so the
  * settings card warns before it is chosen. Read with the service role:
@@ -243,7 +302,7 @@ export async function createScimConnection(
   }
   if (resumed.data) {
     // The default type may have changed while SCIM was off.
-    await reconcileEmployeeTypes(db, serviceRole, {
+    await reconcileEmployeeTypes(db, {
       connection: resumed.data
     });
     return { data: { token }, error: null };
@@ -307,7 +366,7 @@ export async function updateScimConnection(
   }
 
   // A new default type moves everyone in no mapped group.
-  const reconciled = await reconcileEmployeeTypes(db, serviceRole, {
+  const reconciled = await reconcileEmployeeTypes(db, {
     connection: updated.data
   });
   return { data: reconciled, error: null };
@@ -475,7 +534,6 @@ export async function saveScimGroupMappings(
   // they move to the default. Otherwise any change can move anyone.
   const reconciled = await reconcileEmployeeTypes(
     db,
-    serviceRole,
     saved.removedMembers
       ? {
           connection: connection.data,

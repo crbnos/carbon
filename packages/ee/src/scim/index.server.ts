@@ -8,6 +8,7 @@ export {
   getEmployeeTypesWithoutPermissions,
   getScimConnection,
   getScimManagedUserIds,
+  getScimOwnedFields,
   regenerateScimToken,
   saveScimGroupMappings,
   turnOffScimConnection,

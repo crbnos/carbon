@@ -26708,8 +26708,8 @@ msgstr "SCIM Bağlantısı"
 msgid "SCIM Provisioning"
 msgstr "SCIM Kullanıcı Sağlama"
 
-msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. A change made here can be overwritten on its next update."
-msgstr "SCIM, gruplar eşlendikten sonra bu çalışanın adını, aktif durumunu ve çalışan türünü ayarlar. Buradan yapılan bir değişiklik, bir sonraki güncellemede üzerine yazılabilir."
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM, bu kişinin adını ve aktif durumunu, grup eşlemeleri yapıldığında da çalışan türünü ayarlar. Bunları kimlik sağlayıcınızda değiştirin."
 
 msgid "Scope"
 msgstr "Kapsam"
@@ -27622,6 +27622,12 @@ msgstr "Hedef belirle"
 
 msgid "Set at activation"
 msgstr "Etkinleştirmede ayarlanır"
+
+msgid "Set by your identity provider"
+msgstr "Kimlik sağlayıcınız tarafından ayarlanır"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "Kimlik sağlayıcınızın grup eşlemeleri tarafından ayarlanır"
 
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Carbon'u şirketinizin nasıl çalıştığına göre kurun: lokasyonlar, parçalar, BOM'lar, Operasyon listesi ve kullandığınız iş akışları."

@@ -457,18 +457,14 @@ Audit log: the table, the drawer and the CSV export show
 
 ## Out of scope (v1)
 
-- A UI lock on IdP-owned fields, and a "Managed by SCIM" badge on the people list.
 - Mapping groups to locations, departments or shifts.
 - Bulk operations (`/Bulk`), sorting, ETags.
 - SCIM for customer and supplier portal accounts.
 - An OAuth client-credentials token. Okta and Entra both take a bearer token.
-- Revoking API keys on a manual deactivation in Carbon. The same hole exists
-  there, and the fix belongs to the users module.
 
 ## Known gaps (found in the test phase)
 
-- **Two audit rows per change.** The event-system audit trigger also records each `employee` write, with no actor ("System"). So the audit log shows the SCIM row (actor "SCIM") and a "System" row for the same change. A fix needs the trigger path to carry the label, or the explicit entry to be dropped in favor of it.
-- **Not run live:** the `403` for a company without the plan (this stack is Enterprise edition), the `CONTROLLED_ENVIRONMENT` refusal, the rate limit, and the global logout against hosted Supabase (it ran against local GoTrue). Okta's Spec Test and Microsoft's SCIM Validator need a public URL.
+- **Not run live:** the `403` for a company without the plan (this stack is Enterprise edition), the `CONTROLLED_ENVIRONMENT` refusal, the rate limit, and the global logout against hosted Supabase (it ran against local GoTrue). Microsoft's SCIM Validator needs a Microsoft sign-in.
 
 ## Changelog
 
@@ -480,3 +476,4 @@ Audit log: the table, the drawer and the CSV export show
 - 2026-11-14 (turn off): "Turn off" no longer deletes the connection. It clears the token (`tokenHash` and `tokenPreview` are nullable), so every `/scim/v2` request is refused, and keeps the SCIM people, groups and mappings. A new setup resumes the same row with a new token and new defaults (`createScimConnection`). Before, a turn-off deleted the SCIM ids the IdP had stored, so after a new setup Okta's updates answered 404 and its group pushes dropped every member.
 - 2026-11-14 (layout): The engine moved from `packages/ee/src/sso/scim*.ts` to its own folder, `packages/ee/src/scim/` (`protocol.ts`, `mapping.ts`, `engine.server.ts`, `connections.server.ts`, `index.server.ts`). SCIM is its own feature with its own plan gate; it runs with SSO off.
 - 2026-11-15 (admin aids): (1) The Users screen shows a "SCIM" badge on each provisioned member, and the employee drawer shows that the identity provider manages them (`getScimManagedUserIds`). (2) The settings card warns when the default employee type, or a group's type, has no permissions in the company (`getEmployeeTypesWithoutPermissions`). (3) The engine logs one line per request it can tie to a company: method, path and status. It does not log the query string. No table stores the requests. (4) `/Schemas` marks User `displayName` read-only, because Carbon builds it from the name. Okta's SCIM 2.0 spec test passed 12 of 12 against the local stack. The Entra request shapes passed, except the `displayName` round trip that (4) answers. Microsoft's SCIM Validator needs a Microsoft sign-in and did not run.
+- 2026-11-15 (follow-ups): (1) The identity provider's fields are read-only. `getScimOwnedFields` says what SCIM owns: the name while the person belongs to no other company, and the employee type once a group is mapped. The person profile, the account settings and the employee drawer show those fields read-only. `scimOwnedChangeRefusal` refuses a change to them on every save path. Deactivate stays available as the emergency stop. (2) `deactivateUser` deletes the person's API keys in the company before it removes the membership, so the Users screen, the bulk job and SCIM all do it. SCIM no longer deletes them itself. (3) A restore from a backup brings SCIM back turned off: the token columns are not loaded (`RESTORE_STRIPPED_COLUMNS`). Before, a restore made a regenerated or turned-off token work again. A restore of another company's backup and an import load no SCIM rows (`FOREIGN_SKIPPED_TABLES`). Before, the token hash collided and the rows pointed at the source company. (4) Each SCIM change is one audit row labelled "SCIM". `dispatch_event_batch` reads an actor label from `app.actor_label` or, on a service-role request, the `x-carbon-actor` header, and puts it into the audit row's metadata. The engine no longer writes its own entry.

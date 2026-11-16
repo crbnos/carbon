@@ -91,6 +91,10 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 - `userToCompany.role` (membership type) is distinct from `employeeType` (which permission set);
   don't conflate "role" the enum with "role" the job title (`employeeJob.title`).
 - Permission company-ID array `"0"` means "all companies" — don't string-match a literal company id only.
+- `deactivateUser` first deletes the person's API keys in the company (`deleteUserApiKeys`,
+  which also drops each key's 30-second cache entry): a key authenticates as its creator
+  with no membership check. It runs before the membership changes, so a failure leaves
+  everything as it was and a retry runs the whole deactivation again.
 - Deactivating an employee (`deactivateEmployee` in `packages/auth/src/services/users.server.ts`)
   removes the company from `userPermission.permissions`, deletes the `userToCompany` row and every
   `membership` in groups owned by that company, and sets `employee.active = false`.

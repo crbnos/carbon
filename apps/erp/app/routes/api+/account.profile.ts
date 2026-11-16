@@ -7,7 +7,9 @@ import { accountProfileValidator } from "@carbon/account";
 import { carbon } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getScimOwnedFields } from "@carbon/ee/scim.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { isOwnSignaturePath, SIGNATURES_BUCKET } from "@carbon/utils";
@@ -20,8 +22,17 @@ const logger = getLogger("erp", "account-profile");
 
 // Data and writes for the Profile pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
-  const user = await getAccount(client, userId);
+  const { client, companyId, userId } = await requirePermissions(request, {});
+  const [user, scimOwned] = await Promise.all([
+    getAccount(client, userId),
+    getScimOwnedFields(getCarbonServiceRole(), companyId, userId)
+  ]);
+  if (scimOwned.error) {
+    logger.error("Failed to read the fields SCIM owns", {
+      userId,
+      error: scimOwned.error
+    });
+  }
 
   if (user.error) {
     logger.error("Failed to get user", { userId, error: user.error });
@@ -46,7 +57,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     user: user.data ?? null,
-    signatureUrl
+    signatureUrl,
+    isNameSetByIdentityProvider: scimOwned.data.name
   } satisfies AccountProfileData;
 }
 
