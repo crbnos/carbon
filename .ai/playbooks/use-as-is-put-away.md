@@ -44,6 +44,31 @@ Rule: `.claude/rules/inspection-system.md` → "Use As Is → Put Away"
 - Same as 2b with "Rework": the stock is back in QC-Inspection, no "Put Away"
   button, receipt stays "Inspection Failed".
 
+### 3. Serial: a Put Away line takes only the units it offers
+- Prerequisite: a serial part we buy with a Receipt inspection plan. The
+  satellite seed has none: RW-010 (serial, supplier Deep Space RF, default bin
+  A2-L2) needs an Active `inspectionDocument` and an
+  `itemInspectionDocumentAssignment` (usage Receipt), or assign one on the
+  item's Quality tab.
+- New PO (`/x/purchase-order/new`): Supplier "Deep Space RF", requestSubmit
+  "Save" → "Add Line Item" → Item RW-010, Quantity 3 → Save → "Finalize" →
+  dialog "Finalize" → status Needs Approval → "Approve" → dialog "Approve".
+- "Receive" → three "Serial number N for RW-010" boxes, fill and blur each →
+  Post (acknowledge rules).
+- Inspection: By part grid, row per serial, Pass / Fail buttons. Pass unit 1,
+  Fail units 2 and 3 → "Partial" → keep "Open an NCR…" → "Mark Partial".
+- NCR: "More actions" → "Split line" → tick unit 3 → "Split". First row "Use
+  As Is", second "Rework" → Start → Complete. Units 2 and 3 are now both
+  Available in MRB-Hold.
+- Receipt → Put Away → two lines: MRB-Hold → A2-L2 and QC-Inspection → A2-L2.
+- MRB-Hold line "Pick" → "Select" tab lists only unit 2. Scan tab with unit 3
+  shows the red ×. A direct POST of unit 3 to
+  `/x/stock-transfer/<id>/scan/<lineId>.data` (JSON: itemId, locationId,
+  stockTransferId, trackedEntityId, quantity 1) returns "… is not part of this
+  Put Away …" and picks nothing.
+- Pick unit 2, then unit 1 on the QC line → transfer Completed, receipt
+  "Put Away", unit 3 left in MRB-Hold.
+
 ## Selector Notes
 - The NCR's disposition picker is the combobox labelled "Status" in the
   Disposition card; options Pending / Return to Supplier / Rework / Scrap /
@@ -55,3 +80,6 @@ Rule: `.claude/rules/inspection-system.md` → "Use As Is → Put Away"
 
 ## Common Failures
 - `agent-browser open` right after launching can land on about:blank; open again.
+- Another agent may drive the default agent-browser session (the page jumps to
+  another worktree's app, or to the login page where a stale ref is "Sign in
+  with Google"). Use `AGENT_BROWSER_SESSION=<name>` on every command.
