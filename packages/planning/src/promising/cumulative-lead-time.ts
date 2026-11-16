@@ -22,7 +22,7 @@ export type BomEdge = { parentItemId: string; childItemId: string };
  * time. A Make item adds the longest child path to its own build time — the
  * glossary defines a make item's `leadTime` as its own release-to-completion
  * time, so the components are not in it yet. An item seen again on the path
- * counts 0, so a cycle ends.
+ * counts 0, so a cycle ends; a value cut short by a cycle is not reused.
  */
 export function cumulativeLeadTimes(
   items: Map<string, LeadTimeItem>,
@@ -38,32 +38,37 @@ export function cumulativeLeadTimes(
   const memo = new Map<string, number>();
   const onPath = new Set<string>();
 
-  const visit = (itemId: string): number => {
+  // `cut` is true when a cycle stopped the walk below this item. Such a value
+  // depends on where the walk started, so it is not kept for other roots.
+  const visit = (itemId: string): { total: number; cut: boolean } => {
     const known = memo.get(itemId);
-    if (known !== undefined) return known;
-    if (onPath.has(itemId)) return 0;
+    if (known !== undefined) return { total: known, cut: false };
+    if (onPath.has(itemId)) return { total: 0, cut: true };
 
     const item = items.get(itemId);
     const own = Math.max(item?.leadTime ?? DEFAULT_LEAD_TIME_DAYS, 0);
     if (item?.replenishmentSystem === "Buy") {
       memo.set(itemId, own);
-      return own;
+      return { total: own, cut: false };
     }
 
     onPath.add(itemId);
     let longestChild = 0;
+    let cut = false;
     for (const childId of children.get(itemId) ?? []) {
-      longestChild = Math.max(longestChild, visit(childId));
+      const child = visit(childId);
+      longestChild = Math.max(longestChild, child.total);
+      cut = cut || child.cut;
     }
     onPath.delete(itemId);
 
     const total = own + longestChild;
-    memo.set(itemId, total);
-    return total;
+    if (!cut) memo.set(itemId, total);
+    return { total, cut };
   };
 
   const result = new Map<string, number>();
-  for (const itemId of items.keys()) result.set(itemId, visit(itemId));
+  for (const itemId of items.keys()) result.set(itemId, visit(itemId).total);
   return result;
 }
 
@@ -92,13 +97,19 @@ export async function loadCumulativeLeadTimes(
     WITH RECURSIVE "edge" AS (
       SELECT am."itemId" AS "parentItemId", mm."itemId" AS "childItemId"
       FROM "activeMakeMethods" am
+      JOIN "item" i
+        ON i."id" = am."itemId" AND i."companyId" = am."companyId"
       JOIN "methodMaterial" mm
         ON mm."makeMethodId" = am."id" AND mm."companyId" = am."companyId"
       WHERE am."companyId" = ${companyId}
         AND am."itemId" IN (${sql.join(roots)})
+        AND i."replenishmentSystem" <> 'Buy'
       UNION
       SELECT am."itemId", mm."itemId"
       FROM "edge" e
+      JOIN "item" i
+        ON i."id" = e."childItemId" AND i."companyId" = ${companyId}
+        AND i."replenishmentSystem" <> 'Buy'
       JOIN "activeMakeMethods" am
         ON am."itemId" = e."childItemId" AND am."companyId" = ${companyId}
       JOIN "methodMaterial" mm
@@ -147,7 +158,7 @@ export async function loadCumulativeLeadTimes(
   const result = new Map<string, ItemLeadTimes>();
   for (const root of roots) {
     result.set(root, {
-      own: items.get(root)?.leadTime ?? DEFAULT_LEAD_TIME_DAYS,
+      own: Math.max(items.get(root)?.leadTime ?? DEFAULT_LEAD_TIME_DAYS, 0),
       cumulative: all.get(root) ?? DEFAULT_LEAD_TIME_DAYS
     });
   }

@@ -22,6 +22,7 @@ export {
   purchaseOrderLineArrivalDate
 } from "./mrp/supply-date.ts";
 export {
+  buildDecisionInputs,
   type CapacityAnswer,
   checkDeliveryDates,
   type DeliveryDateConstraint,
@@ -30,7 +31,8 @@ export {
   type DeliveryDateResult,
   type DeliveryDateStatus,
   type DeliveryLineMethod,
-  decideDeliveryDate
+  decideDeliveryDate,
+  type ExtraDemand
 } from "./promising/delivery-date-check.ts";
 // Finite scheduling (formerly reached via @carbon/database/scheduling).
 export {

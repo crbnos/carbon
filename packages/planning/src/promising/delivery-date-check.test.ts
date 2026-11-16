@@ -3,8 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { freeStockByWeek, weekStarts } from "./available-to-promise.ts";
 import {
+  freeStockByWeek,
+  lastArrivalByWeek,
+  type SupplyAndDemand,
+  weekStarts
+} from "./available-to-promise.ts";
+import {
+  buildDecisionInputs,
+  type DeliveryDateLine,
   type DeliveryDecisionInput,
   decideDeliveryDate
 } from "./delivery-date-check.ts";
@@ -199,10 +206,123 @@ describe("decideDeliveryDate", () => {
         base({
           control: "Capacity",
           methodType: "Make to Order",
-          promisedDate: "2026-11-09",
-          capacity: { earliestDate: "2026-11-01", cause: null }
+          promisedDate: "2026-11-20",
+          capacity: { earliestDate: "2026-11-16", cause: null }
         })
       )
     ).toMatchObject({ status: "Met", constraint: "Capacity" });
+  });
+
+  it("never offers a capacity date after the fence, where every date passes", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Capacity",
+          methodType: "Make to Order",
+          capacity: { earliestDate: "2027-01-20", cause: "CNC is busy" }
+        })
+      )
+    ).toMatchObject({
+      status: "Missed",
+      constraint: "Lead Time",
+      earliestDate: FENCE
+    });
+  });
+
+  it("does not pass a promised date that is already gone, even with stock", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          promisedDate: "2026-11-09",
+          quantity: 5,
+          stock: stock(100, [])
+        })
+      )
+    ).toMatchObject({
+      status: "Missed",
+      constraint: "Stock",
+      earliestDate: TODAY
+    });
+  });
+
+  it("offers the day the goods arrive, not the first day of their week", () => {
+    const weeks = weekStarts(TODAY, FENCE);
+    const supply = [{ date: "2026-11-26", quantity: 50 }];
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          quantity: 30,
+          stock: {
+            weeks,
+            free: freeStockByWeek({
+              onHand: 0,
+              supply,
+              demand: [],
+              weeks,
+              todayIso: TODAY
+            }),
+            arrivals: lastArrivalByWeek(weeks, supply, TODAY)
+          }
+        })
+      )
+    ).toMatchObject({ status: "Missed", earliestDate: "2026-11-26" });
+  });
+});
+
+describe("buildDecisionInputs", () => {
+  const LOCATION = "loc";
+  const line = (
+    key: string,
+    promisedDate: string,
+    quantity: number
+  ): DeliveryDateLine => ({
+    key,
+    itemId: "BOLT",
+    locationId: LOCATION,
+    quantity,
+    promisedDate,
+    methodType: "Pull from Inventory",
+    control: "Stock"
+  });
+  const build = (
+    lines: DeliveryDateLine[],
+    flows: SupplyAndDemand,
+    extraDemand: { date: string; quantity: number }[] = []
+  ) =>
+    buildDecisionInputs({
+      lines,
+      todayByLocation: new Map([[LOCATION, TODAY]]),
+      leadTimes: new Map([["BOLT", { own: 26, cumulative: 26 }]]),
+      canMake: new Set(),
+      supplyAndDemand: new Map([[`BOLT:${LOCATION}`, flows]]),
+      extraDemand: extraDemand.map((d) => ({
+        ...d,
+        itemId: "BOLT",
+        locationId: LOCATION
+      }))
+    }).map(({ input }) => decideDeliveryDate(input));
+
+  it("lets the earlier promise take the stock, so two lines of 60 cannot share 100", () => {
+    const decisions = build(
+      [line("later", "2026-11-18", 60), line("sooner", "2026-11-12", 60)],
+      { onHand: 100, supply: [], demand: [] }
+    );
+    expect(decisions).toMatchObject([
+      { key: "sooner", status: "Met" },
+      { key: "later", status: "Missed", freeQuantity: 40 }
+    ]);
+  });
+
+  it("counts the order's other lines the caller passes as demand", () => {
+    const decisions = build(
+      [line("new", "2026-11-12", 30)],
+      { onHand: 50, supply: [], demand: [] },
+      [{ date: "2026-11-11", quantity: 40 }]
+    );
+    expect(decisions).toMatchObject([
+      { key: "new", status: "Missed", freeQuantity: 10 }
+    ]);
   });
 });

@@ -18,6 +18,7 @@ import {
   InputLeftElement,
   MENU_ITEM_SHORTCUTS,
   PrefetchLink,
+  Spinner,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -68,6 +69,7 @@ import { itemType } from "~/modules/shared/shared.models";
 import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores/items";
+import { usePeople } from "~/stores/people";
 import { path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";
 import type {
@@ -329,34 +331,54 @@ type SalesOrderLineItemProps = {
 };
 
 /**
- * A calendar mark on a line whose promised date failed the delivery date
- * check: amber while nobody has confirmed it (a converted line), muted once a
- * user saved the line and kept the date.
+ * A mark on a line's delivery date check. A spinner while the background
+ * capacity check still runs (`Pending`). For a date the check failed: amber
+ * while nobody has confirmed it (a converted line), muted once a user saved
+ * the line and kept the date, naming that user.
  */
 function DeliveryDateFlag({ line }: { line: SalesOrderLine }) {
   const { t } = useLingui();
   const { locale } = useLocale();
+  const [people] = usePeople();
+  if (line.deliveryDateStatus === "Pending") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="shrink-0 text-muted-foreground">
+            <Spinner
+              className="h-3 w-3"
+              aria-label={t`Checking the delivery date`}
+            />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{t`Checking the delivery date…`}</TooltipContent>
+      </Tooltip>
+    );
+  }
   if (line.deliveryDateStatus !== "Missed") return null;
   const earliest = formatDate(line.earliestDeliveryDate, undefined, locale);
-  const kept = Boolean(line.deliveryDateOverriddenBy);
+  const keptBy = line.deliveryDateOverriddenBy
+    ? (people.find((person) => person.id === line.deliveryDateOverriddenBy)
+        ?.name ?? t`a user`)
+    : null;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <span
           className={cn(
             "shrink-0",
-            kept ? "text-muted-foreground" : "text-amber-500"
+            keptBy ? "text-muted-foreground" : "text-amber-500"
           )}
         >
           <LuCalendarX
             className="h-3.5 w-3.5"
-            aria-label={kept ? t`Date kept` : t`Date not confirmed`}
+            aria-label={keptBy ? t`Date kept` : t`Date not confirmed`}
           />
         </span>
       </TooltipTrigger>
       <TooltipContent>
-        {kept
-          ? t`Date kept. Earliest delivery date: ${earliest}.`
+        {keptBy
+          ? t`Date kept by ${keptBy}. Earliest delivery date: ${earliest}.`
           : t`Date not confirmed. Earliest delivery date: ${earliest}.`}
       </TooltipContent>
     </Tooltip>

@@ -274,6 +274,10 @@ msgstr "{0, plural, one {Удаление этого пути также раз�
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {Файл не содержит {columns} столбца.} other {Файл не содержит {columns} столбцов.}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr ""
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Планировщик рассматривает этот компонент как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.} other {Планировщик рассматривает эти # компонентов как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.}}"
@@ -2457,6 +2461,9 @@ msgstr "Единица получает свой номер в первый ра
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "Единица рассматривается как продажа, если выполнено одно из этих условий, в противном случае — как аренда."
+
+msgid "a user"
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Пользователь записывает срок годности для каждой серии при получении товара. Используется, когда поставщики отправляют партии с разными датами окончания срока годности."
@@ -6912,8 +6919,14 @@ msgstr "Проверка Stripe для этого покупателя…"
 msgid "Checking the batch's jobs..."
 msgstr "Проверка производственных заказов серии..."
 
+msgid "Checking the delivery date"
+msgstr ""
+
 msgid "Checking the delivery date…"
 msgstr "Проверяем дату поставки…"
+
+msgid "Checking the shop's schedule…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "Проверка связи с клиентом Stripe…"
@@ -8636,6 +8649,9 @@ msgstr "Не удалось запустить в работу {0}: {1}"
 msgid "Could not save"
 msgstr "Не удалось сохранить"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr ""
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "Не удалось проверить, подключено ли приложение {appName}."
 
@@ -9637,8 +9653,8 @@ msgstr "Дата выпуска"
 msgid "Date kept"
 msgstr "Дата соблюдена"
 
-msgid "Date kept. Earliest delivery date: {earliest}."
-msgstr "Дата соблюдена. Ближайшая дата поставки: {earliest}."
+msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
+msgstr ""
 
 msgid "Date not confirmed"
 msgstr "Дата не подтверждена"
@@ -13955,6 +13971,9 @@ msgstr "Контроль четырех глаз отключен"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "Контроль четырех глаз включен"
+
+msgid "Free stock by {promised}: {free}."
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "Заморозить старую систему, новых транзакций нет"
@@ -21022,9 +21041,6 @@ msgstr "Здесь только {0} {unitOfMeasure}"
 
 msgid "Only {available} available"
 msgstr "Доступно только {available}"
-
-msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
-msgstr "К {promised} свободно только {free}. Ближайшая дата поставки: {earliest}."
 
 msgid "Only {quantity} in batches there"
 msgstr "Там только {quantity} в сериях"
@@ -30414,6 +30430,9 @@ msgstr "Не удалось скачать документ."
 msgid "The document could not be opened."
 msgstr "Не удалось открыть документ."
 
+msgid "The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
 
@@ -30683,9 +30702,6 @@ msgstr "Последний день для подачи уведомления �
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Самая поздняя дата размещения этого заказа поставщику, чтобы он прибыл к нужной дате, с учетом срока поставки поставщика."
-
-msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
-msgstr "Срок поставки составляет {days} дн. Ближайшая дата поставки: {earliest}."
 
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
@@ -31193,8 +31209,8 @@ msgstr "Услуги, которые выставляет этот контра�
 msgid "The shelves and bins where stock physically sits"
 msgstr "Полки и ячейки, где физически располагается запас."
 
-msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
-msgstr "Цех не может выполнить это к {promised}. Ближайшая дата поставки: {earliest}."
+msgid "The shop cannot finish this by {promised}."
+msgstr ""
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Расходные материалы и товары, которые вы держите под рукой"
@@ -33353,6 +33369,9 @@ msgstr "Успешно обновлено"
 
 msgid "Updated task status"
 msgstr "Обновлен статус задачи"
+
+msgid "Updating…"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "Обновить"

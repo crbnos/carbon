@@ -274,6 +274,10 @@ msgstr "{0, plural, one {Das Entfernen dieses Pfads trennt außerdem # Verbindun
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {Die Datei hat keine {columns} Spalte.} other {Die Datei hat keine {columns} Spalten.}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr ""
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Der Planer behandelt diese Komponente als einen starren Körper – einen Schritt in der Anleitung. Führen Sie den Plan erneut aus, um dies anzuwenden.} other {Der Planer behandelt diese # Komponenten als einen starren Körper – einen Schritt in der Anleitung. Führen Sie den Plan erneut aus, um dies anzuwenden.}}"
@@ -2457,6 +2461,9 @@ msgstr "Eine Einheit erhält ihre Nummer beim ersten Mal, wenn sie bearbeitet, v
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "Eine Einheit wird als Verkauf behandelt, wenn eine dieser Bedingungen zutrifft, andernfalls als Leasing."
+
+msgid "a user"
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Ein Benutzer erfasst das Verfallsdatum für jede Charge oder Seriennummer, wenn die Waren eingehen. Verwenden Sie dies, wenn Lieferanten Chargen mit unterschiedlichen Verfallsdaten versenden."
@@ -6912,8 +6919,14 @@ msgstr "Überprüfung von Stripe für diesen Kunden…"
 msgid "Checking the batch's jobs..."
 msgstr "Überprüfung der Aufträge des Loses..."
 
+msgid "Checking the delivery date"
+msgstr ""
+
 msgid "Checking the delivery date…"
 msgstr "Liefertermin wird geprüft…"
+
+msgid "Checking the shop's schedule…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "Überprüfung der Stripe-Kundenverknüpfung…"
@@ -8636,6 +8649,9 @@ msgstr "Konnte {0} nicht freigeben: {1}"
 msgid "Could not save"
 msgstr "Konnte nicht gespeichert werden"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr ""
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "Es konnte nicht geprüft werden, ob {appName} verbunden ist."
 
@@ -9637,8 +9653,8 @@ msgstr "Ausstellungsdatum"
 msgid "Date kept"
 msgstr "Termin beibehalten"
 
-msgid "Date kept. Earliest delivery date: {earliest}."
-msgstr "Termin beibehalten. Frühester Liefertermin: {earliest}."
+msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
+msgstr ""
 
 msgid "Date not confirmed"
 msgstr "Termin nicht bestätigt"
@@ -13955,6 +13971,9 @@ msgstr "Vier-Augen-Prinzip deaktiviert"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "Vier-Augen-Prinzip aktiviert"
+
+msgid "Free stock by {promised}: {free}."
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "Altes System einfrieren, keine neuen Transaktionen"
@@ -21022,9 +21041,6 @@ msgstr "Hier nur {0} {unitOfMeasure}"
 
 msgid "Only {available} available"
 msgstr "Nur {available} verfügbar"
-
-msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
-msgstr "Nur {free} sind bis {promised} frei. Der früheste Liefertermin ist {earliest}."
 
 msgid "Only {quantity} in batches there"
 msgstr "Dort nur {quantity} in Losen"
@@ -30414,6 +30430,9 @@ msgstr "Das Dokument konnte nicht heruntergeladen werden."
 msgid "The document could not be opened."
 msgstr "Das Dokument konnte nicht geöffnet werden."
 
+msgid "The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "Die frühen Stunden, {name}."
 
@@ -30683,9 +30702,6 @@ msgstr "Der letzte Tag, um eine Verlängerungs- oder Kündigungsmitteilung einzu
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Das späteste Datum, um diese Bestellung aufzugeben, damit sie bis zum Bedarfsdatum eintrifft, angesichts der Beschaffungszeit des Lieferanten."
-
-msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
-msgstr "Die Beschaffungszeit beträgt {days} Tage. Der früheste Liefertermin ist {earliest}."
 
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
@@ -31193,8 +31209,8 @@ msgstr "Die Dienstleistungen, die dieser Vertrag abrechnet: Einmalige Gebühren 
 msgid "The shelves and bins where stock physically sits"
 msgstr "Die Regale und Lagerplätze, an denen Bestand physisch sitzt"
 
-msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
-msgstr "Die Werkstatt kann dies bis {promised} nicht fertigstellen. Der früheste Liefertermin ist {earliest}."
+msgid "The shop cannot finish this by {promised}."
+msgstr ""
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Die Werkstattbedarf und Verbrauchsmaterialien, die Sie bereithalten"
@@ -33353,6 +33369,9 @@ msgstr "Erfolgreich aktualisiert"
 
 msgid "Updated task status"
 msgstr "Status der Aufgabe aktualisiert"
+
+msgid "Updating…"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "Upgrade"

@@ -441,3 +441,30 @@ git diff origin/main --stat
 ```
 
 **Out of scope:** pushing or opening a PR — ask the user first.
+
+---
+
+# Follow-up: review fixes and the check loader (2026-11-16)
+
+The user asked for these after a two-reviewer code review. Each item names the finding it fixes.
+
+## Progress
+- [x] F1: Add the `Pending` status (new migration, then `pnpm db:migrate`)
+- [x] F2: Engine — lines in one request share stock in date order; sibling lines of an order that is not To Ship count as demand
+- [x] F3: Engine — cap the capacity date at the fence; a promised date before today never passes; the earliest stock date is not before the supply arrives
+- [x] F4: Engine — stock parity with MRP (stock of projects without project stock, project material demand); one timezone query; the BOM walk skips bought items; one routing load per item; cycle results do not depend on row order; clamp the own lead time
+- [x] F5: Engine — `capacity: "defer"` returns `Pending` instead of running the simulation
+- [x] F6: ERP — a pure `nextDeliveryDateRecord` decides the stored result and the kept-date record (unit-tested)
+- [x] F7: ERP — the line save computes the fast check before the upsert and writes it in the same row write; nothing extra is written when no level applies
+- [x] F8: ERP — capacity and quote conversion run in a background job (`carbon/sales-order.delivery-date-check` → posting `check-sales-order-delivery-dates`)
+- [x] F9: ERP — open jobs match MRP (Planned, Ready, In Progress, Paused); the check route answers 400 to a body that is not JSON
+- [x] F10: UI — a spinner on every check (capacity text at the Capacity level), the old warning dims while it updates, an error message, no request when the level is None, plurals and number format
+- [x] F11: UI — the explorer shows a spinner for a `Pending` line and names who kept a date
+- [x] F12: Gates, the browser check, and the spec update
+
+## Rules for the kept-date record (F6)
+1. No result (the line is not checked): clear the status, the constraint and the earliest date. Keep the kept-date record.
+2. `Pending`: set the status. Keep the kept-date record.
+3. `Met`: clear the kept-date record.
+4. `Missed`, saved by a user: record the user, the time and the reason only if no record exists, or the promised date or the quantity changed. Raise the moment only then. Otherwise keep the record; a new non-empty reason replaces the old one.
+5. A quote conversion never records a kept date.

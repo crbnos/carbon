@@ -274,6 +274,10 @@ msgstr "{0, plural, one {删除此路径还将断开 # 个连接。} other {删�
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {该文件没有 {columns} 列。} other {该文件没有 {columns} 列。}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr ""
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {计划员将此组件视为一个刚体 — 说明中的一个步骤。重新运行计划以应用。} other {计划员将这 # 个组件视为一个刚体 — 说明中的一个步骤。重新运行计划以应用。}}"
@@ -2457,6 +2461,9 @@ msgstr "一个单位在第一次加工、报废或收货时才会获得其编号
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "当以下任何条件为真时，件作为销售处理，否则作为租赁处理。"
+
+msgid "a user"
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "用户在收货时记录每个生产批次或序列号的有效期。当供应商发运具有不同有效期的批次时使用。"
@@ -6912,8 +6919,14 @@ msgstr "正在为此客户检查Stripe…"
 msgid "Checking the batch's jobs..."
 msgstr "正在检查生产批次的工单..."
 
+msgid "Checking the delivery date"
+msgstr ""
+
 msgid "Checking the delivery date…"
 msgstr "正在检查交货日期…"
+
+msgid "Checking the shop's schedule…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "正在检查 Stripe 客户链接…"
@@ -8636,6 +8649,9 @@ msgstr "无法下达{0}：{1}"
 msgid "Could not save"
 msgstr "无法保存"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr ""
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "无法检查 {appName} 是否已连接。"
 
@@ -9637,8 +9653,8 @@ msgstr "签发日期"
 msgid "Date kept"
 msgstr "日期已保留"
 
-msgid "Date kept. Earliest delivery date: {earliest}."
-msgstr "日期已保留。最早交货日期：{earliest}。"
+msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
+msgstr ""
 
 msgid "Date not confirmed"
 msgstr "日期未确认"
@@ -13955,6 +13971,9 @@ msgstr "双人复核已禁用"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "四眼原则强制执行已启用"
+
+msgid "Free stock by {promised}: {free}."
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "冻结旧系统，禁止新交易"
@@ -21022,9 +21041,6 @@ msgstr "此处仅有 {0} {unitOfMeasure}"
 
 msgid "Only {available} available"
 msgstr "仅{available}可用"
-
-msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
-msgstr "截至 {promised}，仅 {free} 可用。最早交货日期为 {earliest}。"
 
 msgid "Only {quantity} in batches there"
 msgstr "该处仅有 {quantity} 属于生产批次"
@@ -30414,6 +30430,9 @@ msgstr "无法下载文档。"
 msgid "The document could not be opened."
 msgstr "无法打开文件。"
 
+msgid "The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
 
@@ -30683,9 +30702,6 @@ msgstr "给出续约或终止通知的最后期限"
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "放置此采购订单的最迟日期，以便在给定供应商提前期的情况下按需要日期到达。"
-
-msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
-msgstr "提前期为 {days} 天。最早交货日期为 {earliest}。"
 
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
@@ -31193,8 +31209,8 @@ msgstr "此合同计费的服务：一次性费用和循环费用。单击单元
 msgid "The shelves and bins where stock physically sits"
 msgstr "库存实际存放的货架和料箱"
 
-msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
-msgstr "车间无法在 {promised} 前完成。最早交货日期为 {earliest}。"
+msgid "The shop cannot finish this by {promised}."
+msgstr ""
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "你随时拥有的耗材和消耗品"
@@ -33353,6 +33369,9 @@ msgstr "更新成功"
 
 msgid "Updated task status"
 msgstr "任务状态已更新"
+
+msgid "Updating…"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "升级"

@@ -8,14 +8,16 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
+  cn,
   Spinner
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuCalendarX } from "react-icons/lu";
 import { Input } from "~/components/Form";
+import { useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "delivery-date-check-alert");
@@ -27,9 +29,13 @@ const LINE_METHODS = new Set([
   "Make to Order",
   "Purchase to Order"
 ]);
+// A fast answer shows no spinner; only a check that takes longer does.
+const SPINNER_DELAY_MS = 250;
+
+type DeliveryDateControl = "None" | "Lead Time" | "Stock" | "Capacity";
 
 type DeliveryDateCheck = {
-  status: "Met" | "Missed";
+  status: "Met" | "Missed" | "Pending";
   constraint: "Lead Time" | "Stock" | "Capacity" | null;
   earliestDate: string | null;
   leadTimeDays: number;
@@ -55,7 +61,8 @@ type DeliveryDateCheckAlertProps = {
  * Checks the line's promised date as the user edits it (spec "UI Changes"
  * item 3). It warns and offers the earliest date; it never blocks the save.
  * Saving with the warning shown keeps the date, and the server records who
- * kept it, with the optional reason below.
+ * kept it, with the optional reason below. A check that takes a moment shows
+ * a spinner; at the Capacity level it says the shop's schedule is checked.
  */
 export function DeliveryDateCheckAlert({
   orderId,
@@ -71,26 +78,38 @@ export function DeliveryDateCheckAlert({
 }: DeliveryDateCheckAlertProps) {
   const { t } = useLingui();
   const { locale } = useLocale();
+  const formatQuantity = useQuantityFormatter();
   const [check, setCheck] = useState<DeliveryDateCheck | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showSpinner, setShowSpinner] = useState(false);
+  const [failed, setFailed] = useState(false);
+  // The level each item has at each location, as the server last answered.
+  // An item at the None level is not asked again.
+  const controls = useRef(new Map<string, DeliveryDateControl>());
+  const controlKey = `${itemId}:${locationId}`;
+  const control = controls.current.get(controlKey);
 
   const checkable =
     CHECKED_LINE_TYPES.has(lineType) &&
     LINE_METHODS.has(methodType) &&
     Boolean(itemId) &&
     Boolean(promisedDate) &&
-    quantity > 0;
+    quantity > 0 &&
+    control !== "None";
 
   useEffect(() => {
     if (!checkable || !promisedDate) {
       setCheck(null);
+      setLoading(false);
+      setFailed(false);
       return;
     }
     // A plain fetch, not a fetcher: a fetcher's action would revalidate every
     // loader of the order page on each change.
     const controller = new AbortController();
+    setLoading(true);
+    setFailed(false);
     const timer = setTimeout(async () => {
-      setLoading(true);
       try {
         const response = await fetch(path.to.salesOrderDeliveryDate(orderId), {
           method: "POST",
@@ -107,16 +126,25 @@ export function DeliveryDateCheckAlert({
           signal: controller.signal
         });
         const body = (await response.json()) as {
-          data?: { result: DeliveryDateCheck | null } | null;
+          data?: {
+            control: DeliveryDateControl;
+            result: DeliveryDateCheck | null;
+          } | null;
           error?: { message?: string } | null;
         };
-        if (body.error) {
+        if (controller.signal.aborted) return;
+        if (body.error || !body.data) {
           logger.error("Delivery date check refused", { error: body.error });
+          setFailed(true);
+          setCheck(null);
+        } else {
+          controls.current.set(controlKey, body.data.control);
+          setCheck(body.data.result);
         }
-        setCheck(body.data?.result ?? null);
       } catch (error) {
         if (controller.signal.aborted) return;
         logger.error("Delivery date check failed", { error });
+        setFailed(true);
         setCheck(null);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -128,6 +156,7 @@ export function DeliveryDateCheckAlert({
     };
   }, [
     checkable,
+    controlKey,
     orderId,
     lineId,
     lineType,
@@ -138,40 +167,83 @@ export function DeliveryDateCheckAlert({
     promisedDate
   ]);
 
+  useEffect(() => {
+    if (!loading) {
+      setShowSpinner(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowSpinner(true), SPINNER_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
   if (!checkable) return null;
-  if (loading && !check) {
-    return (
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Spinner className="h-3 w-3" />
-        <Trans>Checking the delivery date…</Trans>
-      </div>
-    );
+
+  const checkingText =
+    control === "Capacity"
+      ? t`Checking the shop's schedule…`
+      : t`Checking the delivery date…`;
+
+  const missed = check?.status === "Missed" && check.earliestDate;
+  if (!missed) {
+    if (loading && showSpinner) {
+      return (
+        <div
+          role="status"
+          className="flex items-center gap-2 text-xs text-muted-foreground"
+        >
+          <Spinner className="h-3 w-3" />
+          {checkingText}
+        </div>
+      );
+    }
+    if (failed && !loading) {
+      return (
+        <p className="text-xs text-muted-foreground">
+          <Trans>Couldn't check the delivery date. You can still save.</Trans>
+        </p>
+      );
+    }
+    return null;
   }
-  if (check?.status !== "Missed" || !check.earliestDate) return null;
 
   const promised = formatDate(promisedDate, undefined, locale);
   const earliest = formatDate(check.earliestDate, undefined, locale);
-  const days = check.leadTimeDays;
-  const free = check.freeQuantity ?? 0;
-
-  let message: string;
-  if (check.constraint === "Stock") {
-    message = t`Only ${free} are free by ${promised}. The earliest delivery date is ${earliest}.`;
-  } else if (check.constraint === "Capacity") {
-    message = t`The shop cannot finish this by ${promised}. The earliest delivery date is ${earliest}.`;
-  } else {
-    message = t`The lead time is ${days} days. The earliest delivery date is ${earliest}.`;
-  }
+  const free = formatQuantity(check.freeQuantity ?? 0);
+  const updating = loading && showSpinner;
 
   return (
-    <Alert variant="warning" className="w-full">
+    <Alert
+      variant="warning"
+      className={cn("w-full transition-opacity", updating && "opacity-60")}
+    >
       <LuCalendarX className="h-4 w-4" />
-      <AlertTitle>
+      <AlertTitle className="flex items-center gap-2">
         <Trans>This date cannot be met</Trans>
+        {updating && (
+          <span className="flex items-center gap-1 text-xs font-normal text-muted-foreground">
+            <Spinner className="h-3 w-3" />
+            <Trans>Updating…</Trans>
+          </span>
+        )}
       </AlertTitle>
       <AlertDescription>
         <div className="flex flex-col gap-3">
-          <span>{message}</span>
+          <span>
+            {check.constraint === "Stock" ? (
+              <Trans>
+                Free stock by {promised}: {free}.
+              </Trans>
+            ) : check.constraint === "Capacity" ? (
+              <Trans>The shop cannot finish this by {promised}.</Trans>
+            ) : (
+              <Plural
+                value={check.leadTimeDays}
+                one="The lead time is # day."
+                other="The lead time is # days."
+              />
+            )}{" "}
+            <Trans>The earliest delivery date is {earliest}.</Trans>
+          </span>
           {check.constraint === "Capacity" && check.cause && (
             <span className="text-xs text-muted-foreground">{check.cause}</span>
           )}
@@ -179,7 +251,7 @@ export function DeliveryDateCheckAlert({
             <Button
               variant="secondary"
               size="sm"
-              isLoading={loading}
+              isDisabled={updating}
               onClick={() => onUseEarliestDate(check.earliestDate!)}
             >
               <Trans>Use {earliest}</Trans>

@@ -2300,19 +2300,29 @@ export const checkSalesOrderLineDeliveryDate = defineServiceFn({
 
     const key = input.salesOrderLineId ?? "new";
     const locationId = input.locationId || order.data.locationId || null;
-    const { results, controls } = await service.runDeliveryDateCheck(ctx, [
-      {
-        key,
-        salesOrderLineId: input.salesOrderLineId ?? null,
-        salesOrderLineType: input.salesOrderLineType,
-        itemId: input.itemId,
-        locationId,
-        methodType: input.methodType,
-        quantity: input.saleQuantity - quantitySent,
-        promisedDate: input.promisedDate,
-        hasOpenJob
-      }
-    ]);
+    const extraDemand = await service.salesOrderSiblingDemand(ctx, {
+      salesOrderId: input.salesOrderId,
+      orderStatus: order.data.status,
+      orderLocationId: order.data.locationId,
+      excludeLineIds: input.salesOrderLineId ? [input.salesOrderLineId] : []
+    });
+    const { results, controls } = await service.runDeliveryDateCheck(
+      ctx,
+      [
+        {
+          key,
+          salesOrderLineId: input.salesOrderLineId ?? null,
+          salesOrderLineType: input.salesOrderLineType,
+          itemId: input.itemId,
+          locationId,
+          methodType: input.methodType,
+          quantity: input.saleQuantity - quantitySent,
+          promisedDate: input.promisedDate,
+          hasOpenJob
+        }
+      ],
+      { capacity: "run", extraDemand }
+    );
     return {
       control: locationId
         ? (controls.get(`${input.itemId}:${locationId}`) ?? "None")
@@ -2381,8 +2391,15 @@ export const createSalesOrderLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
+    const deliveryDate = await service.deliveryDateForSave(ctx, {
+      salesOrderId: line.salesOrderId,
+      lineId: null,
+      line,
+      overrideReason: deliveryDateOverrideReason
+    });
     const created = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       ...line,
+      ...deliveryDate?.columns,
       companyId,
       createdBy: ctx.auditUserId,
       customFields
@@ -2406,11 +2423,14 @@ export const createSalesOrderLine = defineServiceFn({
       "acknowledged",
       gate.check
     );
-    await service.recordSalesOrderLineDeliveryDate(ctx, {
-      salesOrderId: line.salesOrderId,
-      salesOrderLineId: created.data.id,
-      overrideReason: deliveryDateOverrideReason
-    });
+    if (deliveryDate) {
+      await service.afterDeliveryDateSave(ctx, {
+        salesOrderId: line.salesOrderId,
+        lineId: created.data.id,
+        save: deliveryDate,
+        overrideReason: deliveryDateOverrideReason
+      });
+    }
     return { salesOrderLineId: created.data.id };
   }
 });
@@ -2455,9 +2475,16 @@ export const updateSalesOrderLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
+    const deliveryDate = await service.deliveryDateForSave(ctx, {
+      salesOrderId: line.salesOrderId,
+      lineId: id,
+      line,
+      overrideReason: deliveryDateOverrideReason
+    });
     const updated = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       id,
       ...line,
+      ...deliveryDate?.columns,
       updatedBy: ctx.auditUserId,
       customFields
     });
@@ -2480,11 +2507,14 @@ export const updateSalesOrderLine = defineServiceFn({
       "acknowledged",
       gate.check
     );
-    await service.recordSalesOrderLineDeliveryDate(ctx, {
-      salesOrderId: line.salesOrderId,
-      salesOrderLineId: id,
-      overrideReason: deliveryDateOverrideReason
-    });
+    if (deliveryDate) {
+      await service.afterDeliveryDateSave(ctx, {
+        salesOrderId: line.salesOrderId,
+        lineId: id,
+        save: deliveryDate,
+        overrideReason: deliveryDateOverrideReason
+      });
+    }
     return { salesOrderLineId: id };
   }
 });

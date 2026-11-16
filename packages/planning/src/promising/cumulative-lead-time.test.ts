@@ -88,4 +88,28 @@ describe("cumulativeLeadTimes", () => {
     ]);
     expect(result.get("ASSY")).toBe(12);
   });
+
+  it("gives a cycle the same totals whichever item the walk starts from", () => {
+    const edges = [
+      { parentItemId: "A", childItemId: "B" },
+      { parentItemId: "B", childItemId: "A" }
+    ];
+    const aFirst = cumulativeLeadTimes(
+      new Map([
+        ["A", make(5)],
+        ["B", make(7)]
+      ]),
+      edges
+    );
+    const bFirst = cumulativeLeadTimes(
+      new Map([
+        ["B", make(7)],
+        ["A", make(5)]
+      ]),
+      edges
+    );
+    expect(aFirst).toEqual(bFirst);
+    expect(aFirst.get("A")).toBe(12);
+    expect(aFirst.get("B")).toBe(12);
+  });
 });

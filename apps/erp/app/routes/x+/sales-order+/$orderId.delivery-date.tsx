@@ -12,7 +12,13 @@ import { type ActionFunctionArgs, data } from "react-router";
 export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["orderId"] });
   if ("invalid" in input) return input.invalid;
-  const line = await args.request.json();
+  const line = await args.request.json().catch(() => null);
+  if (!line || typeof line !== "object") {
+    return data(
+      { data: null, error: { message: "The request body is not JSON" } },
+      { status: 400 }
+    );
+  }
   const api = await carbon(args.request);
   return data(
     await api.sales.checkSalesOrderLineDeliveryDate({

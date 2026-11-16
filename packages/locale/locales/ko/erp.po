@@ -274,6 +274,10 @@ msgstr "{0, plural, one {이 경로를 제거하면 연결 #개도 함께 끊깁
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {파일에 {columns} 열이 없습니다.} other {파일에 {columns} 열이 없습니다.}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr ""
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {플래너는 이 부품을 하나의 강체로 취급합니다 — 명령의 한 단계입니다. 적용하려면 계획을 다시 실행하세요.} other {플래너는 이 # 부품을 하나의 강체로 취급합니다 — 명령의 한 단계입니다. 적용하려면 계획을 다시 실행하세요.}}"
@@ -2457,6 +2461,9 @@ msgstr "개는 처음 작업 진행, 폐기 또는 수령될 때 번호를 받�
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "개가 다음 중 하나라도 참인 경우 판매로 취급되고, 그 외의 경우 임차로 취급됩니다."
+
+msgid "a user"
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "사용자는 상품을 수령할 때 각 배치 또는 시리얼의 유통기한을 기록합니다. 공급업체가 다른 유통기한을 가진 로트로 배송할 때 사용합니다."
@@ -6912,8 +6919,14 @@ msgstr "이 고객의 Stripe 확인 중…"
 msgid "Checking the batch's jobs..."
 msgstr "배치의 작업 지시 확인 중..."
 
+msgid "Checking the delivery date"
+msgstr ""
+
 msgid "Checking the delivery date…"
 msgstr "납기일을 점검하는 중…"
+
+msgid "Checking the shop's schedule…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe 고객 연결 확인 중…"
@@ -8636,6 +8649,9 @@ msgstr "{0}을 릴리스할 수 없음: {1}"
 msgid "Could not save"
 msgstr "저장할 수 없습니다"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr ""
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "{appName}이(가) 연결되어 있는지 확인할 수 없습니다."
 
@@ -9637,8 +9653,8 @@ msgstr "발행일"
 msgid "Date kept"
 msgstr "날짜 유지됨"
 
-msgid "Date kept. Earliest delivery date: {earliest}."
-msgstr "날짜 유지됨. 가장 빠른 납기일: {earliest}."
+msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
+msgstr ""
 
 msgid "Date not confirmed"
 msgstr "날짜 미확정"
@@ -13955,6 +13971,9 @@ msgstr "이중 승인 기능이 비활성화되었습니다"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "이중 승인 강제 활성화"
+
+msgid "Free stock by {promised}: {free}."
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "기존 시스템 동결, 신규 거래 없음"
@@ -21022,9 +21041,6 @@ msgstr "여기에는 {0} {unitOfMeasure}만 있습니다."
 
 msgid "Only {available} available"
 msgstr "{available}개만 가용합니다"
-
-msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
-msgstr "{promised}까지 가용 재고는 {free}뿐입니다. 가장 빠른 납기일은 {earliest}입니다."
 
 msgid "Only {quantity} in batches there"
 msgstr "여기에서 배치로 관리되는 수량은 {quantity}뿐입니다."
@@ -30414,6 +30430,9 @@ msgstr "문서를 다운로드할 수 없습니다."
 msgid "The document could not be opened."
 msgstr "문서를 열 수 없습니다."
 
+msgid "The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "이른 시간, {name}."
 
@@ -30683,9 +30702,6 @@ msgstr "갱신 또는 종료 통지를 제공할 마지막 날"
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "공급업체의 리드타임을 고려할 때, 필요일까지 도착하도록 이 PO를 발주해야 하는 최종 일자입니다."
-
-msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
-msgstr "리드타임은 {days}일입니다. 가장 빠른 납기일은 {earliest}입니다."
 
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
@@ -31193,8 +31209,8 @@ msgstr "이 계약이 청구하는 서비스: 일회성 수수료 및 반복 요
 msgid "The shelves and bins where stock physically sits"
 msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
 
-msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
-msgstr "현장에서는 {promised}까지 완료할 수 없습니다. 가장 빠른 납기일은 {earliest}입니다."
+msgid "The shop cannot finish this by {promised}."
+msgstr ""
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "보유하고 있는 공장 소모품 및 소모재"
@@ -33353,6 +33369,9 @@ msgstr "성공적으로 업데이트되었습니다"
 
 msgid "Updated task status"
 msgstr "작업 상태 업데이트됨"
+
+msgid "Updating…"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "업그레이드"

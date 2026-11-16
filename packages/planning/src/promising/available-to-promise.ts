@@ -98,6 +98,27 @@ export function freeStockByWeek(args: {
   return free;
 }
 
+/**
+ * The date the last supply of each week arrives, or null for a week with no
+ * supply. A week whose free stock covers a line because of that supply is
+ * only good from the day the goods come, not from the week's first day.
+ */
+export function lastArrivalByWeek(
+  weeks: string[],
+  supply: DatedQuantity[],
+  todayIso: string
+): (string | null)[] {
+  const arrivals = new Array<string | null>(weeks.length).fill(null);
+  for (const row of supply) {
+    const index = weekIndexOf(weeks, row.date, todayIso);
+    if (index === null) continue;
+    const date = row.date < todayIso ? todayIso : row.date;
+    const current = arrivals[index];
+    if (!current || date > current) arrivals[index] = date;
+  }
+  return arrivals;
+}
+
 /** The first week whose free stock covers the quantity, or null if none does. */
 export function earliestWeekWithStock(
   freeStock: number[],
@@ -145,69 +166,102 @@ export async function loadSupplyAndDemand(args: {
   const entry = (itemId: string | null, locationId: string | null) =>
     itemId && locationId ? result.get(keyOf(itemId, locationId)) : undefined;
 
-  const [stock, purchaseLines, productionOrders, salesLines, jobMaterials] =
-    await Promise.all([
-      fetchAll<{
-        itemId: string;
-        locationId: string;
-        quantityOnHand: number;
-        quantityNonNettable: number;
-      }>(() =>
+  const [
+    stock,
+    purchaseLines,
+    productionOrders,
+    salesLines,
+    jobMaterials,
+    projectMaterials,
+    stockedProjects
+  ] = await Promise.all([
+    fetchAll<{
+      itemId: string;
+      locationId: string;
+      projectId: string;
+      quantityOnHand: number;
+      quantityNonNettable: number;
+    }>(() =>
+      client
+        .from("itemStockQuantities")
+        .select(
+          "itemId, locationId, projectId, quantityOnHand, quantityNonNettable"
+        )
+        .eq("companyId", companyId)
+        .in("itemId", itemIds)
+        .order("itemId")
+        .order("locationId")
+    ),
+    fetchAll<Database["public"]["Views"]["openPurchaseOrderLines"]["Row"]>(() =>
+      client
+        .from("openPurchaseOrderLines")
+        .select("*")
+        .eq("companyId", companyId)
+        .in("itemId", itemIds)
+        .order("id")
+    ),
+    fetchAll<Database["public"]["Views"]["openProductionOrders"]["Row"]>(() =>
+      client
+        .from("openProductionOrders")
+        .select("*")
+        .eq("companyId", companyId)
+        .in("itemId", itemIds)
+        .order("id")
+    ),
+    fetchAll<Database["public"]["Views"]["openSalesOrderLines"]["Row"]>(() =>
+      client
+        .from("openSalesOrderLines")
+        .select("*")
+        .eq("companyId", companyId)
+        .in("itemId", itemIds)
+        .order("id")
+    ),
+    fetchAll<Database["public"]["Views"]["openJobMaterialLines"]["Row"]>(() =>
+      client
+        .from("openJobMaterialLines")
+        .select("*")
+        .eq("companyId", companyId)
+        .in("itemId", itemIds)
+        .order("id")
+    ),
+    fetchAll<Database["public"]["Views"]["openProjectMaterialLines"]["Row"]>(
+      () =>
         client
-          .from("itemStockQuantities")
-          .select("itemId, locationId, quantityOnHand, quantityNonNettable")
-          .eq("companyId", companyId)
-          .eq("projectId", "")
-          .in("itemId", itemIds)
-          .order("itemId")
-          .order("locationId")
-      ),
-      fetchAll<Database["public"]["Views"]["openPurchaseOrderLines"]["Row"]>(
-        () =>
-          client
-            .from("openPurchaseOrderLines")
-            .select("*")
-            .eq("companyId", companyId)
-            .in("itemId", itemIds)
-            .order("id")
-      ),
-      fetchAll<Database["public"]["Views"]["openProductionOrders"]["Row"]>(() =>
-        client
-          .from("openProductionOrders")
+          .from("openProjectMaterialLines")
           .select("*")
           .eq("companyId", companyId)
           .in("itemId", itemIds)
           .order("id")
-      ),
-      fetchAll<Database["public"]["Views"]["openSalesOrderLines"]["Row"]>(() =>
-        client
-          .from("openSalesOrderLines")
-          .select("*")
-          .eq("companyId", companyId)
-          .in("itemId", itemIds)
-          .order("id")
-      ),
-      fetchAll<Database["public"]["Views"]["openJobMaterialLines"]["Row"]>(() =>
-        client
-          .from("openJobMaterialLines")
-          .select("*")
-          .eq("companyId", companyId)
-          .in("itemId", itemIds)
-          .order("id")
-      )
-    ]);
+    ),
+    // A project nets in its own segment only when it keeps project stock
+    // (MRP's planningSegmentOf); any other project's stock is common.
+    fetchAll<{ id: string }>(() =>
+      client
+        .from("project")
+        .select("id")
+        .eq("companyId", companyId)
+        .eq("projectStock", true)
+        .order("id")
+    )
+  ]);
 
   for (const read of [
     stock,
     purchaseLines,
     productionOrders,
     salesLines,
-    jobMaterials
+    jobMaterials,
+    projectMaterials,
+    stockedProjects
   ]) {
     if (read.error) throw read.error;
   }
+  const stockedProjectIds = new Set(
+    (stockedProjects.data ?? []).map((project) => project.id)
+  );
 
   for (const row of stock.data ?? []) {
+    if (row.projectId && stockedProjectIds.has(row.projectId)) continue;
     const target = entry(row.itemId, row.locationId);
     if (target) {
       target.onHand +=
@@ -257,6 +311,16 @@ export async function loadSupplyAndDemand(args: {
         .subtract({ days: line.leadTime ?? DEFAULT_LEAD_TIME_DAYS })
         .toString(),
       quantity: Number(line.quantityToIssue)
+    });
+  }
+
+  for (const line of projectMaterials.data ?? []) {
+    const target = entry(line.itemId, line.locationId);
+    if (!target || !line.quantity || line.quantity <= 0) continue;
+    if (!isCommon(line.planningSegmentId)) continue;
+    target.demand.push({
+      date: line.requiredDate ?? todayAt(line.locationId),
+      quantity: Number(line.quantity)
     });
   }
 

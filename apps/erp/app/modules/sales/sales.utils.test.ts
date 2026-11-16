@@ -18,6 +18,7 @@ import {
   getEffectiveDefaultMarkups,
   leaseCommencementPreview,
   leaseTermMonths,
+  nextDeliveryDateRecord,
   previewLeaseClassification,
   priceListOverrideScopes,
   priceOverrideScopeError,
@@ -949,5 +950,154 @@ describe("customerPortalEarliestExpiry", () => {
     ["2026-11-05", "2026-10-01", "2026-10-01"]
   ])("today %s, stored %s → %s", (today, stored, earliest) => {
     expect(customerPortalEarliestExpiry(today, stored)).toBe(earliest);
+  });
+});
+
+describe("nextDeliveryDateRecord", () => {
+  const NOW = "2026-11-16T10:00:00Z";
+  const kept = {
+    deliveryDateStatus: "Missed" as const,
+    deliveryDateOverriddenBy: "user_a",
+    deliveryDateOverrideReason: "Partial shipment agreed"
+  };
+  const missed = {
+    status: "Missed" as const,
+    constraint: "Lead Time" as const,
+    earliestDate: "2026-12-08"
+  };
+
+  it("writes nothing for a line that was never checked and still is not", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: null,
+        result: null,
+        save: null,
+        now: NOW
+      })
+    ).toEqual({ columns: {}, keptNow: false });
+  });
+
+  it("clears the result but keeps who kept the date when the line stops being checked", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: null,
+        save: { userId: "user_b", changed: false },
+        now: NOW
+      })
+    ).toEqual({
+      columns: {
+        deliveryDateStatus: null,
+        deliveryDateConstraint: null,
+        earliestDeliveryDate: null,
+        deliveryDateCheckedAt: null
+      },
+      keptNow: false
+    });
+  });
+
+  it("records the first user who keeps a failing date", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: null,
+        result: missed,
+        save: { userId: "user_a", reason: " Partial shipment ", changed: true },
+        now: NOW
+      })
+    ).toEqual({
+      columns: {
+        deliveryDateStatus: "Missed",
+        deliveryDateConstraint: "Lead Time",
+        earliestDeliveryDate: "2026-12-08",
+        deliveryDateCheckedAt: NOW,
+        deliveryDateOverriddenBy: "user_a",
+        deliveryDateOverriddenAt: NOW,
+        deliveryDateOverrideReason: "Partial shipment"
+      },
+      keptNow: true
+    });
+  });
+
+  it("keeps the record when another user saves the line without changing date or quantity", () => {
+    const next = nextDeliveryDateRecord({
+      stored: kept,
+      result: missed,
+      save: { userId: "user_b", changed: false },
+      now: NOW
+    });
+    expect(next.keptNow).toBe(false);
+    expect(next.columns).not.toHaveProperty("deliveryDateOverriddenBy");
+    expect(next.columns).not.toHaveProperty("deliveryDateOverrideReason");
+  });
+
+  it("records a new keep when the promised date or quantity changed", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: missed,
+        save: { userId: "user_b", changed: true },
+        now: NOW
+      })
+    ).toMatchObject({
+      columns: { deliveryDateOverriddenBy: "user_b" },
+      keptNow: true
+    });
+  });
+
+  it("replaces only the reason when a user types a new one on a kept line", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: missed,
+        save: { userId: "user_b", reason: "Customer called", changed: false },
+        now: NOW
+      }).columns
+    ).toMatchObject({ deliveryDateOverrideReason: "Customer called" });
+  });
+
+  it("clears who kept the date once a save passes", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: { status: "Met", constraint: null, earliestDate: null },
+        save: { userId: "user_b", changed: true },
+        now: NOW
+      }).columns
+    ).toMatchObject({
+      deliveryDateStatus: "Met",
+      deliveryDateOverriddenBy: null,
+      deliveryDateOverriddenAt: null,
+      deliveryDateOverrideReason: null
+    });
+  });
+
+  it("never records a keep without a user's save, as on a quote conversion", () => {
+    const next = nextDeliveryDateRecord({
+      stored: null,
+      result: missed,
+      save: null,
+      now: NOW
+    });
+    expect(next.keptNow).toBe(false);
+    expect(next.columns).not.toHaveProperty("deliveryDateOverriddenBy");
+  });
+
+  it("marks a line whose capacity check still runs as pending, keeping the record", () => {
+    expect(
+      nextDeliveryDateRecord({
+        stored: kept,
+        result: { status: "Pending", constraint: null, earliestDate: null },
+        save: { userId: "user_b", changed: true },
+        now: NOW
+      })
+    ).toEqual({
+      columns: {
+        deliveryDateStatus: "Pending",
+        deliveryDateConstraint: null,
+        earliestDeliveryDate: null,
+        deliveryDateCheckedAt: null
+      },
+      keptNow: false
+    });
   });
 });

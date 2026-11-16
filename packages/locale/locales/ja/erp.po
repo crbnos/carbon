@@ -274,6 +274,10 @@ msgstr "{0, plural, one {このパスを削除すると、#件の接続も切断
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {ファイルに {columns} 列がありません。} other {ファイルに {columns} 列がありません。}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr ""
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {プランナーはこのコンポーネントを1つの剛体—指示書内の1つのステップとして扱います。プランを再実行して適用してください。} other {プランナーはこれら # 個のコンポーネントを1つの剛体—指示書内の1つのステップとして扱います。プランを再実行して適用してください。}}"
@@ -2457,6 +2461,9 @@ msgstr "個は初めて作業、廃棄、受取される時に番号を引き出
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "以下のいずれかが当てはまる場合、個は売上として処理され、そうでない場合はレンタルとして処理されます。"
+
+msgid "a user"
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "ユーザーは商品受取時に各バッチまたはシリアルの使用期限を記録します。仕入先が異なる使用期限のロットを出荷する場合に使用します。"
@@ -6912,8 +6919,14 @@ msgstr "この得意先の Stripe を確認中…"
 msgid "Checking the batch's jobs..."
 msgstr "バッチの製造指図を確認しています..."
 
+msgid "Checking the delivery date"
+msgstr ""
+
 msgid "Checking the delivery date…"
 msgstr "納期を確認中…"
+
+msgid "Checking the shop's schedule…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe顧客リンクを確認中…"
@@ -8636,6 +8649,9 @@ msgstr "{0}をリリースできませんでした: {1}"
 msgid "Could not save"
 msgstr "保存できませんでした"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr ""
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "{appName} が接続されているか確認できませんでした。"
 
@@ -9637,8 +9653,8 @@ msgstr "発行日"
 msgid "Date kept"
 msgstr "納期維持"
 
-msgid "Date kept. Earliest delivery date: {earliest}."
-msgstr "納期維持。最短納期: {earliest}。"
+msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
+msgstr ""
 
 msgid "Date not confirmed"
 msgstr "納期未確定"
@@ -13955,6 +13971,9 @@ msgstr "フォーアイズチェックが無効化されました"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "四眼チェック制御を有効化"
+
+msgid "Free stock by {promised}: {free}."
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "古いシステムをフリーズし、新しいトランザクションを禁止"
@@ -21022,9 +21041,6 @@ msgstr "ここには {0} {unitOfMeasure} しかありません"
 
 msgid "Only {available} available"
 msgstr "{available}のみ利用可能"
-
-msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
-msgstr "{promised}までに空いているのは{free}のみです。最短納期は{earliest}です。"
 
 msgid "Only {quantity} in batches there"
 msgstr "そこにはバッチ管理の{quantity}のみ"
@@ -30414,6 +30430,9 @@ msgstr "文書をダウンロードできませんでした。"
 msgid "The document could not be opened."
 msgstr "文書を開けませんでした。"
 
+msgid "The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
 
@@ -30683,9 +30702,6 @@ msgstr "更新または終了通知を与える最後の日"
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "仕入先のリードタイムを考慮して、この発注書が必要日までに到着するように発注書を出すべき最後の日付。"
-
-msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
-msgstr "リードタイムは{days}日です。最短納期は{earliest}です。"
 
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
@@ -31193,8 +31209,8 @@ msgstr "このコントラクトが請求する外注サービス：1回限り�
 msgid "The shelves and bins where stock physically sits"
 msgstr "在庫が物理的に置かれている棚とビン。"
 
-msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
-msgstr "工場では{promised}までに完了できません。最短納期は{earliest}です。"
+msgid "The shop cannot finish this by {promised}."
+msgstr ""
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "手元に保管する店舗用品と消耗品"
@@ -33353,6 +33369,9 @@ msgstr "正常に更新されました"
 
 msgid "Updated task status"
 msgstr "タスクステータスが更新されました"
+
+msgid "Updating…"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "アップグレード"

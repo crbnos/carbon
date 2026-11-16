@@ -176061,7 +176061,7 @@ export default {
           type: "string"
         },
         deliveryDateStatus: {
-          enum: ["Met", "Missed"],
+          enum: ["Met", "Missed", "Pending"],
           format: 'public."deliveryDateStatus"',
           type: "string"
         },
@@ -183269,7 +183269,7 @@ export default {
           type: "string"
         },
         deliveryDateStatus: {
-          enum: ["Met", "Missed"],
+          enum: ["Met", "Missed", "Pending"],
           format: 'public."deliveryDateStatus"',
           type: "string"
         },

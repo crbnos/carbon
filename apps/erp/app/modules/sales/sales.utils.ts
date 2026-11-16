@@ -1107,3 +1107,116 @@ export function customerPortalEarliestExpiry(
   const stored = parseDate(storedExpiresOn);
   return (stored.compare(tomorrow) < 0 ? stored : tomorrow).toString();
 }
+
+type DeliveryDateStatus = Database["public"]["Enums"]["deliveryDateStatus"];
+type DeliveryDateConstraint =
+  Database["public"]["Enums"]["deliveryDateConstraint"];
+
+/** What a sales order line holds from its last delivery date check. */
+export type StoredDeliveryDate = {
+  deliveryDateStatus: DeliveryDateStatus | null;
+  deliveryDateOverriddenBy: string | null;
+  deliveryDateOverrideReason: string | null;
+};
+
+/** The columns a delivery date check writes; a missing key keeps its value. */
+export type DeliveryDateColumns = {
+  deliveryDateStatus?: DeliveryDateStatus | null;
+  deliveryDateConstraint?: DeliveryDateConstraint | null;
+  earliestDeliveryDate?: string | null;
+  deliveryDateCheckedAt?: string | null;
+  deliveryDateOverriddenBy?: string | null;
+  deliveryDateOverriddenAt?: string | null;
+  deliveryDateOverrideReason?: string | null;
+};
+
+/**
+ * The columns one delivery date check writes on a sales order line, and
+ * whether the write records a newly kept date (spec section 7):
+ * 1. No result (the line is not checked): clear the result, keep who kept a
+ *    date. Nothing is written when no result was stored either.
+ * 2. Pending: the capacity check still runs; keep who kept a date.
+ * 3. Met, saved by a user: clear who kept a date.
+ * 4. Missed, saved by a user: record the user, the time and the reason only
+ *    when no one kept the date yet, or the promised date or the quantity
+ *    changed. Otherwise keep the record; a new reason replaces the old one.
+ * Without a user's save (a quote conversion), the kept-date record stays.
+ */
+export function nextDeliveryDateRecord(args: {
+  stored: StoredDeliveryDate | null;
+  result: {
+    status: DeliveryDateStatus;
+    constraint: DeliveryDateConstraint | null;
+    earliestDate: string | null;
+  } | null;
+  save: { userId: string; reason?: string | null; changed: boolean } | null;
+  now: string;
+}): { columns: DeliveryDateColumns; keptNow: boolean } {
+  const { stored, result, save, now } = args;
+
+  if (!result) {
+    if (!stored?.deliveryDateStatus) return { columns: {}, keptNow: false };
+    return {
+      columns: {
+        deliveryDateStatus: null,
+        deliveryDateConstraint: null,
+        earliestDeliveryDate: null,
+        deliveryDateCheckedAt: null
+      },
+      keptNow: false
+    };
+  }
+
+  if (result.status === "Pending") {
+    return {
+      columns: {
+        deliveryDateStatus: "Pending",
+        deliveryDateConstraint: null,
+        earliestDeliveryDate: null,
+        deliveryDateCheckedAt: null
+      },
+      keptNow: false
+    };
+  }
+
+  const checked: DeliveryDateColumns = {
+    deliveryDateStatus: result.status,
+    deliveryDateConstraint: result.constraint,
+    earliestDeliveryDate:
+      result.status === "Missed" ? result.earliestDate : null,
+    deliveryDateCheckedAt: now
+  };
+  if (!save) return { columns: checked, keptNow: false };
+
+  if (result.status === "Met") {
+    return {
+      columns: {
+        ...checked,
+        deliveryDateOverriddenBy: null,
+        deliveryDateOverriddenAt: null,
+        deliveryDateOverrideReason: null
+      },
+      keptNow: false
+    };
+  }
+
+  const reason = save.reason?.trim() || null;
+  if (!stored?.deliveryDateOverriddenBy || save.changed) {
+    return {
+      columns: {
+        ...checked,
+        deliveryDateOverriddenBy: save.userId,
+        deliveryDateOverriddenAt: now,
+        deliveryDateOverrideReason: reason
+      },
+      keptNow: true
+    };
+  }
+  if (reason && reason !== stored.deliveryDateOverrideReason) {
+    return {
+      columns: { ...checked, deliveryDateOverrideReason: reason },
+      keptNow: false
+    };
+  }
+  return { columns: checked, keptNow: false };
+}

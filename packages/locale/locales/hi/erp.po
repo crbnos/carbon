@@ -274,6 +274,10 @@ msgstr "{0, plural, one {इस पथ को हटाने से # कने
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {फ़ाइल में कोई {columns} कॉलम नहीं है।} other {फ़ाइल में कोई {columns} कॉलम नहीं हैं।}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr ""
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {योजनाकार इस घटक को एक कठोर शरीर मानता है — निर्देशों में एक चरण। योजना को पुनः चलाएं और लागू करें।} other {योजनाकार इन # घटकों को एक कठोर शरीर मानता है — निर्देशों में एक चरण। योजना को पुनः चलाएं और लागू करें।}}"
@@ -2457,6 +2461,9 @@ msgstr "एक इकाई पहली बार काम करने, र�
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "एक इकाई को बिक्री के रूप में माना जाता है जब इनमें से कोई भी सत्य है, और अन्यथा किराया के रूप में।"
+
+msgid "a user"
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "एक उपयोगकर्ता प्रत्येक बैच या सीरीज पर समाप्ति तिथि दर्ज करता है जब माल प्राप्त होता है। जब आपूर्तिकर्ता विभिन्न समाप्ति तिथियों के साथ लॉट भेजते हैं तो इसका उपयोग करें।"
@@ -6912,8 +6919,14 @@ msgstr "इस ग्राहक के लिए Stripe की जांच �
 msgid "Checking the batch's jobs..."
 msgstr "बैच की जॉब्स को जाँच रहे हैं..."
 
+msgid "Checking the delivery date"
+msgstr ""
+
 msgid "Checking the delivery date…"
 msgstr "डिलीवरी तिथि की जाँच हो रही है…"
+
+msgid "Checking the shop's schedule…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe ग्राहक लिंक की जांच जारी है…"
@@ -8636,6 +8649,9 @@ msgstr "जारी नहीं कर सके {0}: {1}"
 msgid "Could not save"
 msgstr "सहेज नहीं सके"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr ""
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "यह जाँच नहीं की जा सकी कि {appName} कनेक्ट है या नहीं।"
 
@@ -9637,8 +9653,8 @@ msgstr "जारी करने की तारीख"
 msgid "Date kept"
 msgstr "तिथि रखी गई"
 
-msgid "Date kept. Earliest delivery date: {earliest}."
-msgstr "तिथि रखी गई। सबसे जल्दी की डिलीवरी तिथि: {earliest}।"
+msgid "Date kept by {keptBy}. Earliest delivery date: {earliest}."
+msgstr ""
 
 msgid "Date not confirmed"
 msgstr "तिथि की पुष्टि नहीं हुई"
@@ -13955,6 +13971,9 @@ msgstr "चार आँखें प्रवर्तन अक्षम क�
 
 msgid "Four-eyes enforcement enabled"
 msgstr "चार-आंखें प्रवर्तन सक्षम किया गया"
+
+msgid "Free stock by {promised}: {free}."
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "पुरानी प्रणाली को फ्रीज करें, कोई नया लेनदेन नहीं"
@@ -21022,9 +21041,6 @@ msgstr "यहाँ केवल {0} {unitOfMeasure} है"
 
 msgid "Only {available} available"
 msgstr "केवल {available} उपलब्ध"
-
-msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
-msgstr "{promised} तक केवल {free} उपलब्ध हैं। सबसे जल्दी की डिलीवरी तिथि {earliest} है।"
 
 msgid "Only {quantity} in batches there"
 msgstr "वहाँ बैचों में केवल {quantity}"
@@ -30414,6 +30430,9 @@ msgstr "दस्तावेज़ डाउनलोड नहीं किय
 msgid "The document could not be opened."
 msgstr "दस्तावेज़ खोला नहीं जा सका।"
 
+msgid "The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "सुबह के शुरुआती घंटे, {name}।"
 
@@ -30683,9 +30702,6 @@ msgstr "नवीकरण या समाप्ति सूचना दे�
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "इस PO को रखने की सबसे हाल की तिथि ताकि यह प्राप्ति की आवश्यकता तिथि तक पहुँचे, आपूर्तिकर्ता की लीड टाइम दी गई।"
-
-msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
-msgstr "लीड टाइम {days} दिन है। सबसे जल्दी की डिलीवरी तिथि {earliest} है।"
 
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
@@ -31193,8 +31209,8 @@ msgstr "सेवाएँ जो यह अनुबंध बिल करत�
 msgid "The shelves and bins where stock physically sits"
 msgstr "वह शेल्फ और बिन जहां स्टॉक भौतिक रूप से रखा जाता है"
 
-msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
-msgstr "शॉप {promised} तक यह काम पूरा नहीं कर सकती। सबसे जल्दी की डिलीवरी तिथि {earliest} है।"
+msgid "The shop cannot finish this by {promised}."
+msgstr ""
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "दुकान की आपूर्ति और उपभोग्य सामग्री जो आप हाथ में रखते हैं"
@@ -33353,6 +33369,9 @@ msgstr "सफलतापूर्वक अपडेट किया गया
 
 msgid "Updated task status"
 msgstr "कार्य स्थिति अपडेट की गई"
+
+msgid "Updating…"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "अपग्रेड करें"

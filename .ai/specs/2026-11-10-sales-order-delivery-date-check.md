@@ -300,3 +300,13 @@ The page archetypes are the sibling's: the sales order record page (explorer + l
 - 2026-11-10: Implemented. Two changes from the design:
   1. The moment outputs are `salesOrder` and `overriddenBy`. The workflow catalog has no `salesOrderLine` entity, and adding one brings record-change triggers.
   2. The line form calls the check with a plain `fetch`, not a fetcher, so the order page does not revalidate on each change.
+- 2026-11-16: Review fixes (plan follow-up F1–F12):
+  1. The line save decides the fast levels before the upsert and writes them in the same row write. A company at `None` gets no extra write or event.
+  2. The capacity simulation runs in the background job `sales-order-delivery-date-check`. The line is `Pending` (new `deliveryDateStatus` value) until the job writes the result. If the job fails for good, its failure handler answers by the lead time.
+  3. Quote conversion decides the fast levels at once and hands capacity lines to the job.
+  4. The kept-date record follows `nextDeliveryDateRecord` (`sales.utils.ts`). It records a keep and raises the moment only when nobody kept the date yet, or the promised date or the quantity changed.
+  5. Lines in one check claim free stock in promised-date order. The other Pull from Inventory lines of an order that is not To Ship count as demand.
+  6. The earliest date is never after the fence. A promised date before today never passes. A week covered by its own supply offers the day the goods arrive.
+  7. Free stock counts the stock of projects without project stock, and project material demand, as MRP does.
+  8. An open job means Planned, Ready, In Progress or Paused, as MRP counts it.
+
