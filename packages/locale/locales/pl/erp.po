@@ -274,6 +274,10 @@ msgstr "{0, plural, one {Usunięcie tej ścieżki spowoduje też odłączenie # 
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {Plik nie zawiera kolumny {columns}.} other {Plik nie zawiera kolumn {columns}.}}"
 
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr ""
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Planista traktuje ten składnik jako jedno sztywne ciało — jeden krok w instrukcjach. Uruchom ponownie plan, aby zastosować.} other {Planista traktuje te # składniki jako jedno sztywne ciało — jeden krok w instrukcjach. Uruchom ponownie plan, aby zastosować.}}"
@@ -1054,6 +1058,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {# otwarte zlecenie produkcyjne ma 
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, one {Pobrano # wartość.} few {Pobrano # wartości.} many {Pobrano # wartości.} other {Pobrano # wartości.}}"
+
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} zachował(a) tę datę. Najwcześniejsza data dostawy to {earliest}."
 
 msgid "{kpiLabel} by day"
 msgstr "{kpiLabel} wg dnia"
@@ -2467,6 +2474,12 @@ msgstr "Sztuka pobiera swój numer po raz pierwszy, gdy jest pracowana, złomowa
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "Sztuka jest traktowana jako sprzedaż, gdy którykolwiek z tych warunków jest spełniony, a w przeciwnym razie jako wynajem."
 
+msgid "a user"
+msgstr ""
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "Użytkownik zachowuje datę zamówienia sprzedaży, której nie da się dotrzymać"
+
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Użytkownik notuje termin ważności dla każdej partii produkcyjnej lub serii, gdy towary są odbierane. Użyj, gdy dostawcy wysyłają partie z różnymi terminami ważności."
 
@@ -3185,6 +3198,9 @@ msgstr "Dodaj zlecenie produkcyjne"
 msgid "Add Journal Entry"
 msgstr "Dodaj zapis księgowy"
 
+msgid "Add Label Template"
+msgstr "Dodaj szablon etykiety"
+
 msgid "Add labor"
 msgstr "Dodaj robociznę"
 
@@ -3378,6 +3394,9 @@ msgstr "Dodaj kroki, aby wyświetlić podgląd widoku operatora."
 
 msgid "Add Supplier"
 msgstr "Dodaj dostawcę"
+
+msgid "Add Template"
+msgstr "Dodaj szablon"
 
 msgid "Add the charge numbers you worked on this week, then click a day to log time."
 msgstr "Dodaj numery opłat, na których pracowałeś w tym tygodniu, a następnie kliknij dzień, aby zarejestrować czas."
@@ -4023,7 +4042,7 @@ msgid "An open-ended lease is short-term: activating it posts no journal, and ea
 msgstr "Dzierżawa otwarta jest krótkoterminowa: jej aktywacja nie tworzy wpisu w dowodzie księgowym, a każda faktura jest wydatkowana."
 
 msgid "An operation cannot complete until every serial and batch part on it is issued."
-msgstr ""
+msgstr "Operacji nie można zakończyć, dopóki wszystkie części z numerami seryjnymi i partie na niej nie zostaną wydane."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Operacja wykonywana przez dostawcę zewnętrznego zamiast wewnętrznego stanowiska roboczego, pokryta zamówieniem zakupu na kooperację."
@@ -4146,6 +4165,9 @@ msgstr "Dowolna grupa artykułów"
 
 msgid "Any item type"
 msgstr "Dowolny typ artykułu"
+
+msgid "Any promised date saves without a warning."
+msgstr "Każda obiecana data zapisuje się bez ostrzeżenia."
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "Wszystko, co nie jest wyraźnie wymienione w zakresie powyżej"
@@ -4355,10 +4377,10 @@ msgid "Approve all"
 msgstr "Zatwierdź wszystko"
 
 msgid "Approve and delete"
-msgstr ""
+msgstr "Zatwierdź i usuń"
 
 msgid "Approve and Delete"
-msgstr ""
+msgstr "Zatwierdź i usuń"
 
 msgid "Approve Request"
 msgstr "Zatwierdź żądanie"
@@ -4376,19 +4398,19 @@ msgid "Approved On"
 msgstr "Zatwierdzono w dniu"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr ""
+msgstr "Zatwierdzenie spowoduje także wycofanie jego przyjęć {receipts}: zapas, który wprowadziły, zostanie usunięty, a ich księgowania zostaną wystornowane. Operacja zostanie odrzucona, jeśli ten zapas został od tego czasu wykorzystany."
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
-msgstr ""
+msgstr "Zatwierdzenie natychmiast usunie {readableId}. Tej operacji nie można cofnąć."
 
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
-msgstr ""
+msgstr "Zatwierdzenie natychmiast usunie zamówienie zakupu wraz ze wszystkimi jego pozycjami. Tej operacji nie można cofnąć."
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
-msgstr ""
+msgstr "Zatwierdzenie wystornuje {receipts}, a następnie usunie zamówienie zakupu wraz ze wszystkimi jego pozycjami. Tej operacji nie można cofnąć."
 
 msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
-msgstr ""
+msgstr "Zatwierdzenie unieważni {readableId}, co wystornuje jego księgowania, a następnie usunie go. Tej operacji nie można cofnąć."
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Przybliżone — pochodzą z zaplanowanych dat; brak rezerwacji pojemności dla tego wiersza."
@@ -5582,6 +5604,9 @@ msgstr "Partia produkcyjna jest niedostępna"
 msgid "Batch items require a sales order"
 msgstr "Artykuły partii wymagają zamówienia sprzedaży"
 
+msgid "Batch Label"
+msgstr "Etykieta partii produkcyjnej"
+
 msgid "Batch number"
 msgstr "Numer partii"
 
@@ -5678,7 +5703,7 @@ msgid "Beginning"
 msgstr "Początek"
 
 msgid "Being approved now…"
-msgstr ""
+msgstr "Trwa zatwierdzanie…"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -5879,6 +5904,12 @@ msgstr "Fakturuje pracę przypisaną do tego elementu i elementów poniżej nieg
 
 msgid "Bills until it is cancelled"
 msgstr "Faktury do momentu anulowania"
+
+msgid "BinderyPress template ID"
+msgstr "ID szablonu BinderyPress"
+
+msgid "BinderyPress templates by label type and media size. A printer uses the template for its media size; labels without one print with the built-in layout."
+msgstr "Szablony BinderyPress według typu etykiety i rozmiaru nośnika. Drukarka używa szablonu dla swojego rozmiaru nośnika; etykiety bez szablonu drukowane są w układzie wbudowanym."
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Puste = obliczone z okresu ponownej certyfikacji umiejętności"
@@ -6390,7 +6421,7 @@ msgid "Cancel purchase order {target}"
 msgstr "Anuluj zamówienie zakupu {target}"
 
 msgid "Cancel Request"
-msgstr ""
+msgstr "Anuluj żądanie"
 
 msgid "Cancel Return"
 msgstr "Anuluj zwrot"
@@ -6903,6 +6934,9 @@ msgstr "Plan kont"
 msgid "Chat"
 msgstr "Czat"
 
+msgid "Check"
+msgstr "Sprawdzenie"
+
 msgid "Check operations on the left to build the batch."
 msgstr "Zaznacz operacje po lewej stronie, aby zbudować wsad."
 
@@ -6924,6 +6958,15 @@ msgstr "Sprawdzanie Stripe dla tego klienta…"
 msgid "Checking the batch's jobs..."
 msgstr "Sprawdzanie zleceń partii produkcyjnej..."
 
+msgid "Checking the delivery date"
+msgstr ""
+
+msgid "Checking the delivery date…"
+msgstr "Sprawdzanie daty dostawy…"
+
+msgid "Checking the shop's schedule…"
+msgstr ""
+
 msgid "Checking the Stripe customer link…"
 msgstr "Sprawdzanie połączenia klienta Stripe…"
 
@@ -6932,6 +6975,12 @@ msgstr "Punkt kontrolny ·"
 
 msgid "Checkpoints"
 msgstr "Punkty kontrolne"
+
+msgid "Checks free stock week by week, then the lead time."
+msgstr "Sprawdza wolny zapas tydzień po tygodniu, a potem czas realizacji."
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "Sprawdza wolny zapas, a potem harmonogram warsztatu dla pozycji produkowanych."
 
 msgid "Children"
 msgstr "Elementy podrzędne"
@@ -7515,6 +7564,9 @@ msgstr "Porównaj z…"
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "Porównuje przesłany tydzień z kartami pracy pracownika."
 
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "Porównuje datę z czasem realizacji pozycji, łącznie z listą materiałową."
+
 msgid "Compatibility rules"
 msgstr "Reguły Kompatybilności"
 
@@ -7577,7 +7629,7 @@ msgid "Completing"
 msgstr "Dokańczanie"
 
 msgid "Completing a job's first operation prints its unit labels."
-msgstr ""
+msgstr "Zakończenie pierwszej operacji zlecenia produkcyjnego drukuje etykiety sztuk."
 
 msgid "Completing this training grants or renews the selected ability."
 msgstr "Ukończenie tego szkolenia przyznaje lub odnawia wybraną umiejętność."
@@ -8081,7 +8133,7 @@ msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Kontroluj sposób, w jaki operatorzy pobierają materiały i śledzą czas na hali produkcyjnej."
 
 msgid "Control how parts and labels move from the pick to the finished unit."
-msgstr ""
+msgstr "Określa, jak części i etykiety przechodzą od pobrania do gotowej sztuki."
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "Kontroluj, czy identyfikatory pozycji (części, materiały, materiały eksploatacyjne, narzędzia i usługi) mogą zawierać małe litery."
@@ -8651,6 +8703,9 @@ msgstr "Nie można było zwolnić {0}: {1}"
 msgid "Could not save"
 msgstr "Nie można było zapisać"
 
+msgid "Couldn't check the delivery date. You can still save."
+msgstr ""
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "Nie można sprawdzić, czy {appName} jest połączony."
 
@@ -8885,7 +8940,7 @@ msgid "Create Operator"
 msgstr "Utwórz operatora"
 
 msgid "Create picking lists on release"
-msgstr ""
+msgstr "Utwórz listy kompletacyjne po zwolnieniu"
 
 msgid "Create PO Line"
 msgstr "Utwórz pozycję ZZ"
@@ -9658,6 +9713,15 @@ msgstr "Data wydania"
 msgid "Date Issued"
 msgstr "Data wystawienia"
 
+msgid "Date kept"
+msgstr "Data zachowana"
+
+msgid "Date not confirmed"
+msgstr "Data niepotwierdzona"
+
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "Data niepotwierdzona. Najwcześniejsza data dostawy to {earliest}."
+
 msgid "Date paid"
 msgstr "Data płatności"
 
@@ -10409,6 +10473,11 @@ msgstr "Usuń typ dostawcy"
 msgid "Delete the {0} invoice"
 msgstr "Usuń {0} fakturę"
 
+#. placeholder {0}: labelTypeNames[deleting.labelType]
+#. placeholder {1}: getMediaSizeLabel(deleting.mediaSizeId)
+msgid "Delete the {0} template for {1}? These labels will print with the built-in layout."
+msgstr "Usunąć szablon {0} dla {1}? Te etykiety zostaną wydrukowane w wbudowanym układzie."
+
 #. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "Usuń kamień milowy {0}? Jego elementy pozostaną bez kamienia milowego."
@@ -10524,6 +10593,12 @@ msgstr "Dostawa – kraj"
 
 msgid "Delivery Date"
 msgstr "Data dostawy"
+
+msgid "Delivery Date Check"
+msgstr "Sprawdzenie daty dostawy"
+
+msgid "Delivery date check updated"
+msgstr "Zaktualizowano sprawdzenie daty dostawy"
 
 msgid "Delivery Location"
 msgstr "Lokalizacja dostawy"
@@ -11443,7 +11518,7 @@ msgid "Each physical unit gets its own tracked entity and unique number — one 
 msgstr "Każda jednostka fizyczna otrzymuje swoją własną jednostkę śledzenia i unikalny numer — jedna jednostka, jedna jednostka."
 
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
-msgstr ""
+msgstr "Każde zwolnione zlecenie produkcyjne otrzymuje jedną listę kompletacyjną. Jego części trafiają do magazynu przyliniowego każdego stanowiska roboczego, które ich używa."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Każdy sprzedawca umowy najmu lub umowy (lub jej twórca) otrzymuje codzienne podsumowanie swoich faktur."
@@ -11704,6 +11779,9 @@ msgstr "Edytuj zapis księgowy"
 
 msgid "Edit Kanban"
 msgstr "Edytuj Kanban"
+
+msgid "Edit Label Template"
+msgstr "Edytuj szablon etykiety"
 
 msgid "Edit labor"
 msgstr "Edytuj robociznę"
@@ -12012,7 +12090,7 @@ msgid "Email notifications not configured"
 msgstr "Powiadomienia e-mail nie są skonfigurowane"
 
 msgid "Email order on acceptance"
-msgstr ""
+msgstr "Wyślij e-mailem zamówienie sprzedaży po zaakceptowaniu"
 
 msgid "Email recipients"
 msgstr "Odbiorcy e-mail"
@@ -12027,7 +12105,7 @@ msgid "Emails of the attendees (guests)"
 msgstr "Adresy e-mail uczestników (gości)"
 
 msgid "Emails the sales order to the customer when they accept this quote online."
-msgstr ""
+msgstr "Wysyła zamówienie sprzedaży e-mailem do klienta, gdy zaakceptuje on tę ofertę online."
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -13896,22 +13974,22 @@ msgid "For Form 6765 Section E"
 msgstr "Na potrzeby formularza 6765 sekcja E"
 
 msgid "Force delete"
-msgstr ""
+msgstr "Wymuś usunięcie"
 
 msgid "Force Delete"
-msgstr ""
+msgstr "Wymuś usunięcie"
 
 msgid "Force Delete (Admin)"
-msgstr ""
+msgstr "Wymuś usunięcie (administrator)"
 
 msgid "Force delete {purchaseOrderReadableId}"
-msgstr ""
+msgstr "Wymuś usunięcie {purchaseOrderReadableId}"
 
 msgid "Force delete {readableId}"
-msgstr ""
+msgstr "Wymuś usunięcie {readableId}"
 
 msgid "Force delete waiting for another Admin's approval"
-msgstr ""
+msgstr "Wymuszone usunięcie czeka na zatwierdzenie przez innego administratora"
 
 msgid "Forecast"
 msgstr "Prognoza"
@@ -13967,6 +14045,9 @@ msgstr "Kontrola czterech oczu wyłączona"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "Zasada czterech oczu włączona"
+
+msgid "Free stock by {promised} is only {free}."
+msgstr "Wolny zapas na {promised} to tylko {free}."
 
 msgid "Freeze the old system, no new transactions"
 msgstr "Zamroź stary system, brak nowych transakcji"
@@ -15321,7 +15402,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "Nieaktywne kategorie nie mogą być wybrane do nowego czasu"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "Nieaktywne jednostki nie są proponowane przy wyborze jednostki miary"
 
 msgid "Inbound inspection"
 msgstr "Kontrola dostaw"
@@ -16123,7 +16204,7 @@ msgid "It decides what the next step asks for."
 msgstr "To decyduje, o co prosi następny krok."
 
 msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
-msgstr ""
+msgstr "Jest w statusie {status}: zatwierdzenie najpierw je unieważni, co wystornuje jego księgowania. Jeśli unieważnienie zostanie odrzucone, jego księgowania zostaną wystornowane dowodem księgowym."
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Jest zatwierdzone, ale nie może być zastosowane. Otwórz je ponownie, sprawdź te wiersze, a następnie prześlij je ponownie."
@@ -16135,13 +16216,13 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Jest nadal używane przez rekord „{table}\"; usuń je najpierw."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr ""
+msgstr "Nigdy nie zmienia strony dostawcy w księgach. Najpierw unieważnij wysyłki i zaliczki zamówienia oraz usuń jego pozycje z faktur zakupu. Żądanie zostanie odrzucone, dopóki tego nie zrobisz."
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
-msgstr ""
+msgstr "Trwale usuwa {readableId}, niezależnie od jego statusu. Tej operacji nie można cofnąć."
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
-msgstr ""
+msgstr "Trwale usuwa to zamówienie zakupu wraz ze wszystkimi jego pozycjami, niezależnie od statusu i zatwierdzenia. Tej operacji nie można cofnąć."
 
 msgid "It shows with no hours until you add some."
 msgstr "Pokazuje zero godzin, aż dodasz jakieś."
@@ -16282,7 +16363,7 @@ msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Przychody ze sprzedaży powracają do tego, co każda pozycja ma jeszcze do rozpoznania."
 
 msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
-msgstr ""
+msgstr "Jego zapas zostanie wycofany, nawet jeśli został od tego czasu wykorzystany (stan magazynowy może spaść poniżej zera), a przyjęte ilości wracają do jego zamówienia."
 
 msgid "Job"
 msgstr "Zadanie"
@@ -16421,6 +16502,9 @@ msgstr "Tylko jeden"
 msgid "Kanban"
 msgstr "Kanban"
 
+msgid "Kanban Card"
+msgstr "Karta Kanban"
+
 msgid "Kanban for {kanbanName}"
 msgstr "Kanban dla {kanbanName}"
 
@@ -16527,6 +16611,15 @@ msgstr "Rozmiar etykiety"
 msgid "Label Size"
 msgstr "Rozmiar etykiety"
 
+msgid "Label template created"
+msgstr "Szablon etykiety został utworzony"
+
+msgid "Label template updated"
+msgstr "Szablon etykiety został zaktualizowany"
+
+msgid "Label Templates"
+msgstr "Szablony etykiet"
+
 msgid "Label to complete the current operation for this kanban"
 msgstr "Etykieta do ukończenia bieżącej operacji dla tego kanbanu"
 
@@ -16537,11 +16630,14 @@ msgstr "Etykieta do utworzenia {0} dla tego kanbanu"
 msgid "Label to start the next operation for this kanban"
 msgstr "Etykieta do rozpoczęcia następnej operacji dla tego kanbanu"
 
+msgid "Label Type"
+msgstr "Typ etykiety"
+
 msgid "Labels"
 msgstr "Etykiety"
 
 msgid "Labels print at the first operation"
-msgstr ""
+msgstr "Etykiety drukowane są przy pierwszej operacji"
 
 msgid "Labor"
 msgstr "Robocizna"
@@ -16864,9 +16960,6 @@ msgstr "Zostaw komentarz..."
 msgid "Leave any related receipts untouched"
 msgstr "Pozostaw wszelkie powiązane paragony bez zmian"
 
-msgid "Leave blank for built-in"
-msgstr "Pozostaw puste dla wbudowanego"
-
 msgid "Leave blank to use the next revision automatically"
 msgstr "Pozostaw puste, aby automatycznie użyć następnej rewizji"
 
@@ -16881,6 +16974,9 @@ msgstr "Zostaw puste, aby wybrać kolor na podstawie nazwy"
 
 msgid "Leave empty to use the account default"
 msgstr "Pozostaw puste, aby użyć wartości domyślnej konta"
+
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "Pozostaw puste, aby użyć sprawdzania z Ustawienia → Sprzedaż."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Pozostaw puste lub wpisz 0, aby pokazać wszystko, co planuje MRP."
@@ -17099,7 +17195,7 @@ msgid "Line Details"
 msgstr "Szczegóły pozycji"
 
 msgid "Line Flow"
-msgstr ""
+msgstr "Przepływ linii"
 
 msgid "Line Item"
 msgstr "Przedmiot pozycji"
@@ -19838,6 +19934,9 @@ msgstr "Nie utworzono zleceń produkcyjnych"
 msgid "No journal lines in scope for this period"
 msgstr "Brak pozycji dowodu księgowego dla tego okresu"
 
+msgid "No label templates. Every label prints with the built-in layout."
+msgstr "Brak szablonów etykiet. Każda etykieta drukowana jest w wbudowanym układzie."
+
 msgid "No labels"
 msgstr "Brak etykiet"
 
@@ -20670,10 +20769,10 @@ msgid "Nothing in the archive"
 msgstr "Nic w archiwum"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr ""
+msgstr "Nic jeszcze nie zostało usunięte. Żądanie trafia do zatwierdzenia przez pozostałych administratorów i zostanie usunięte, gdy jeden z nich je zatwierdzi."
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
-msgstr ""
+msgstr "Nic jeszcze nie zostało usunięte. Żądanie trafia do zatwierdzenia przez pozostałych administratorów, a zamówienie zostanie usunięte, gdy jeden z nich je zatwierdzi."
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Nic nie jest należne. Faktury są tworzone automatycznie, gdy okres staje się należny."
@@ -21517,7 +21616,7 @@ msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Operatorzy mogą używać wspólnych stanowisk pracy z uwierzytelnianiem PIN."
 
 msgid "Operators see a warning about unissued serial and batch parts and can still complete."
-msgstr ""
+msgstr "Operatorzy widzą ostrzeżenie o częściach z numerami seryjnymi i partiami produkcyjnymi, które nie zostały wydane, i nadal mogą zakończyć operację."
 
 msgid "Operators start on the Scan tab"
 msgstr "Operatorzy zaczynają na karcie Skan"
@@ -21682,7 +21781,7 @@ msgid "Other Income GL account for the monthly interest earned on the net invest
 msgstr "Konto księgowe Pozostałych przychodów dla miesięcznych odsetek uzyskanych z netto inwestycji w leasingi finansowe."
 
 msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
-msgstr ""
+msgstr "Inne płatności, które finansują lub zwracają ten dokument, są najpierw od niego odłączane; pozostają zaksięgowane."
 
 msgid "Other Type"
 msgstr "Inny typ"
@@ -22219,10 +22318,10 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "Płatności i uznania rozliczone z tą fakturą. Kwoty rozliczeń i różnice kursowe są wyrażone w walucie bazowej firmy. Kliknij wiersz, aby otworzyć dokument źródłowy."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr ""
+msgstr "Płatności i noty zastosowane do tego dokumentu są najpierw odłączane: każda płatność pozostaje zaksięgowana jako nierozliczona nadpłata, którą można zastosować gdzie indziej lub wymusić jej usunięcie. Przychody ze sprzedaży już ujęte z tego dokumentu zostaną wystornowane."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
-msgstr ""
+msgstr "Płatności i noty zastosowane do tego dokumentu są najpierw odłączane: każda płatność pozostaje zaksięgowana jako nierozliczona nadpłata, którą można zastosować gdzie indziej lub wymusić jej usunięcie. Wartość, którą dodał do aktywowanego środka trwałego, zostaje cofnięta; amortyzacja już zaksięgowana pozostaje."
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "Płatności należne przed tą datą zostały opłacone poza Carbon"
@@ -22537,13 +22636,13 @@ msgid "Picking Lists"
 msgstr "Listy kompletacyjne"
 
 msgid "Picking lists are created by hand"
-msgstr ""
+msgstr "Listy kompletacyjne tworzy się ręcznie"
 
 msgid "Picking lists on release disabled"
-msgstr ""
+msgstr "Listy kompletacyjne przy zwolnieniu wyłączone"
 
 msgid "Picking lists on release enabled"
-msgstr ""
+msgstr "Listy kompletacyjne przy zwolnieniu włączone"
 
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "Kompletacja oferuje śledzone jednostki, począwszy od tych z najwcześniejszym terminem ważności; zapas zbliżający się do wygaśnięcia jest pobierany jako pierwszy domyślnie."
@@ -22679,6 +22778,9 @@ msgstr "Planowanie"
 
 msgid "Planning action"
 msgstr "Akcja planowania"
+
+msgid "Planning and Sales"
+msgstr "Planowanie i sprzedaż"
 
 msgid "Planning group"
 msgstr "Grupa planowania"
@@ -23123,7 +23225,7 @@ msgid "Print Label"
 msgstr "Drukuj etykietę"
 
 msgid "Print label on completion"
-msgstr ""
+msgstr "Drukuj etykietę po zakończeniu"
 
 msgid "Print Labels"
 msgstr "Drukuj etykiety"
@@ -23137,10 +23239,10 @@ msgid "Print Output ({0})"
 msgstr "Wydruk ({0})"
 
 msgid "Print this item's serial label when its job's last operation completes."
-msgstr ""
+msgstr "Drukuj etykietę numeru seryjnego artykułu, gdy zakończy się ostatnia operacja zlecenia produkcyjnego."
 
 msgid "Print travelers at the pick"
-msgstr ""
+msgstr "Drukuj przewodniki przy pobraniu"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "Drukowane na zamówieniach zakupu, które zatwierdzasz."
@@ -23648,7 +23750,7 @@ msgid "Purchase order for {supplierName}"
 msgstr "Zamówienie zakupu dla {supplierName}"
 
 msgid "Purchase Order Force Delete"
-msgstr ""
+msgstr "Wymuszenie usunięcia zamówienia zakupu"
 
 msgid "Purchase Order ID"
 msgstr "Numer zamówienia zakupu"
@@ -23991,7 +24093,7 @@ msgstr "Ilość do uznania dla pozycji {lineNumber}"
 
 #. placeholder {0}: item?.name ?? ""
 msgid "Quantity to pick of {0}"
-msgstr ""
+msgstr "Ilość do pobrania z {0}"
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "Ilość do zwrotu dla {itemReadableId}"
@@ -24864,7 +24966,7 @@ msgid "Released with problems: {0}"
 msgstr "Zwolniono z problemami: {0}"
 
 msgid "Releasing a job creates its picking list"
-msgstr ""
+msgstr "Zwolnienie zlecenia produkcyjnego tworzy jego listę kompletacyjną"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Zwolnienie partii produkcyjnej zwalnia jej zlecenia produkcyjne, a każde musi być gotowe na halę produkcyjną."
@@ -25216,6 +25318,9 @@ msgstr "Ilość do Zamówienia"
 msgid "Reorder Quantity:"
 msgstr "Ilość do ponownego zamówienia:"
 
+msgid "Reordering"
+msgstr "Ponowne zamawianie"
+
 msgid "Reordering policy"
 msgstr "Zasady zamawiania"
 
@@ -25339,7 +25444,7 @@ msgid "Request date"
 msgstr "Data żądania"
 
 msgid "Request Force Delete"
-msgstr ""
+msgstr "Wymuszenie usunięcia żądania"
 
 msgid "Request Quote"
 msgstr "Zapytaj o ofertę"
@@ -25348,7 +25453,7 @@ msgid "Requested"
 msgstr "Zgłoszone"
 
 msgid "Requested by"
-msgstr ""
+msgstr "Zgłoszone przez"
 
 msgid "Requested By"
 msgstr "Zażądane przez"
@@ -25424,7 +25529,7 @@ msgid "Require tiered sign-off on purchase orders, quality documents, suppliers,
 msgstr "Wymagaj wielopoziomowego zatwierdzenia zamówień zakupu, dokumentów jakości, dostawców i zawiadomień o zmianach na podstawie progów kwot i grup osób zatwierdzających."
 
 msgid "Require tracked parts before completion"
-msgstr ""
+msgstr "Wymagaj części śledzonych przed zakończeniem"
 
 msgid "Require two-factor authentication"
 msgstr "Wymagaj uwierzytelniania dwuskładnikowego"
@@ -25454,10 +25559,10 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "Wymagane w kontrolowanym środowisku — rejestrowanie audytu nie może być wyłączone."
 
 msgid "Required tracked parts disabled"
-msgstr ""
+msgstr "Wymagane części śledzone wyłączone"
 
 msgid "Required tracked parts enabled"
-msgstr ""
+msgstr "Wymagane części śledzone włączone"
 
 msgid "Requirement"
 msgstr "Wymaganie"
@@ -27372,7 +27477,7 @@ msgid "Send Notifications"
 msgstr "Wysyłaj powiadomienia"
 
 msgid "Send order confirmation"
-msgstr ""
+msgstr "Wyślij potwierdzenie zamówienia"
 
 msgid "Send Reminder"
 msgstr "Wyślij przypomnienie"
@@ -27470,6 +27575,9 @@ msgstr "Numer seryjny jest niedostępny"
 
 msgid "Serial number is required"
 msgstr "Numer seryjny jest wymagany"
+
+msgid "Serial Number Label"
+msgstr "Etykieta numeru seryjnego"
 
 msgid "Serial Number:"
 msgstr "Numer seryjny:"
@@ -28742,7 +28850,7 @@ msgid "Starting"
 msgstr "Rozpoczynanie"
 
 msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
-msgstr ""
+msgstr "Rozpoczęcie listy kompletacyjnej drukuje jeden przewodnik na sztukę. Pierwsza operacja nie drukuje etykiety."
 
 msgid "Starting…"
 msgstr "Uruchamianie…"
@@ -28879,7 +28987,7 @@ msgid "Stock and planning"
 msgstr "Zapas i planowanie"
 
 msgid "Stock at:"
-msgstr ""
+msgstr "Zapas w:"
 
 msgid "Stock Availability"
 msgstr "Dostępność zapasu"
@@ -29005,6 +29113,9 @@ msgstr "Jednostka magazynowa (opcjonalnie)"
 
 msgid "Storage unit for {itemName}"
 msgstr "Jednostka magazynowa dla {itemName}"
+
+msgid "Storage Unit Label"
+msgstr "Etykieta jednostki magazynowej"
 
 msgid "storage units"
 msgstr "jednostki magazynowania"
@@ -29536,7 +29647,7 @@ msgid "supplier stage"
 msgstr "etap dostawcy"
 
 msgid "Supplier stage"
-msgstr ""
+msgstr "Etap u dostawcy"
 
 msgid "Supplier Stage"
 msgstr "Etap dostawcy"
@@ -30504,6 +30615,9 @@ msgstr "Nie udało się pobrać dokumentu."
 msgid "The document could not be opened."
 msgstr "Nie udało się otworzyć dokumentu."
 
+msgid "The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "Wczesne godziny, {name}."
 
@@ -31283,6 +31397,9 @@ msgstr "Usługi rozliczane w ramach tej umowy: opłaty jednorazowe i opłaty cyk
 msgid "The shelves and bins where stock physically sits"
 msgstr "Półki i pojemniki, gdzie fizycznie znajduje się zapas"
 
+msgid "The shop cannot finish this by {promised}."
+msgstr ""
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Materiały eksploatacyjne i zużywalne, które masz pod ręką"
 
@@ -31753,6 +31870,9 @@ msgstr "Stawka tego typu klienta"
 msgid "This customer's rate"
 msgstr "Stawka tego klienta"
 
+msgid "This date cannot be met"
+msgstr "Tej daty nie da się dotrzymać"
+
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "Ten dział nie ma stanowisk roboczych w {locationName}. Wybierz inny dział lub lokalizację."
 
@@ -31834,7 +31954,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "To jest unikalny identyfikator dla webhooka"
 
 msgid "This is an Admin override"
-msgstr ""
+msgstr "To jest nadpisanie przez administratora"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "To jest środowisko kontrolowane przez ITAR. Dostęp jest ograniczony do osób ze Stanów Zjednoczonych."
@@ -32666,10 +32786,10 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "Materiał śledzony jest wstępnie wybierany według kolejności poboru (FEFO), nawet bez listy kompletacyjnej."
 
 msgid "Tracked parts are not required"
-msgstr ""
+msgstr "Części śledzone nie są wymagane"
 
 msgid "Tracked parts must be scanned in"
-msgstr ""
+msgstr "Części śledzone trzeba zeskanować"
 
 msgid "Tracking"
 msgstr "Śledzenie"
@@ -32795,13 +32915,13 @@ msgid "Travel"
 msgstr "Podróż"
 
 msgid "Traveler labels disabled"
-msgstr ""
+msgstr "Etykiety przewodników wyłączone"
 
 msgid "Traveler labels enabled"
-msgstr ""
+msgstr "Etykiety przewodników włączone"
 
 msgid "Traveler Link"
-msgstr ""
+msgstr "Łącze do przewodnika"
 
 msgid "Traveler materials disabled"
 msgstr "Materiały Przewodnika wyłączone"
@@ -32816,7 +32936,7 @@ msgid "Traveler operations enabled"
 msgstr "Operacje przewodnika włączone"
 
 msgid "Travelers print at the pick"
-msgstr ""
+msgstr "Przewodniki drukują się przy pobraniu"
 
 msgid "Treatment"
 msgstr "Ujęcie"
@@ -32858,7 +32978,7 @@ msgid "Tuesday"
 msgstr "Wtorek"
 
 msgid "Turn Off"
-msgstr ""
+msgstr "Wyłącz"
 
 msgid "Turn On"
 msgstr "Włącz"
@@ -32873,7 +32993,7 @@ msgid "Turn on the built-in pieces"
 msgstr "Włącz wbudowane komponenty"
 
 msgid "Turn on to create one picking list for each job when it is released."
-msgstr ""
+msgstr "Włącz, aby przy zwolnieniu utworzyć jedną listę kompletacyjną dla każdego zlecenia produkcyjnego."
 
 msgid "Turned off sync"
 msgstr "Wyłączono synchronizację"
@@ -32931,10 +33051,10 @@ msgid "Type {0} to confirm"
 msgstr "Wpisz {0} aby potwierdzić"
 
 msgid "Type {purchaseOrderReadableId} to confirm"
-msgstr ""
+msgstr "Wpisz {purchaseOrderReadableId}, aby potwierdzić"
 
 msgid "Type {readableId} to confirm"
-msgstr ""
+msgstr "Wpisz {readableId}, aby potwierdzić"
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Wpisz {TRIGGER} aby wstawić zmienną"
@@ -33094,7 +33214,7 @@ msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unikalny, wielkie litery, bez spacji (maks. 10 znaków)"
 
 msgid "Unique, without spaces (max 10 characters), such as kg or BX"
-msgstr ""
+msgstr "Unikalny, bez spacji (maks. 10 znaków), np. kg lub BX"
 
 msgid "Unit"
 msgstr "Jednostka"
@@ -33459,6 +33579,9 @@ msgstr "Pomyślnie zaktualizowano"
 msgid "Updated task status"
 msgstr "Zaktualizowany status zadania"
 
+msgid "Updating…"
+msgstr ""
+
 msgid "Upgrade"
 msgstr "Uaktualnij"
 
@@ -33590,6 +33713,9 @@ msgstr "Użyj ... aby uzyskać następny identyfikator części"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Użyj ... aby uzyskać następny identyfikator narzędzia"
+
+msgid "Use {earliest}"
+msgstr "Użyj {earliest}"
 
 msgid "Use a different account"
 msgstr "Użyj innego konta"
@@ -34222,11 +34348,17 @@ msgstr "Ostrzegaj, ale pozwól"
 msgid "Warn this many days before expiry"
 msgstr "Ostrzeż tyle dni przed terminem ważności"
 
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "Ostrzega, gdy obiecana data pozycji zamówienia sprzedaży nie może zostać dotrzymana. Aby użyć innego sprawdzenia dla jednej pozycji, ustaw je na karcie Planowanie tej pozycji."
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "Ostrzegaj, gdy osoba sprawdzająca przychodzący towar jest tą samą osobą, która go odebrała."
 
 msgid "Warning"
 msgstr "Ostrzeżenie"
+
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "Ostrzega, gdy obiecana data pozycji zamówienia sprzedaży nie może zostać dotrzymana, i proponuje najwcześniejszą datę, którą można dotrzymać."
 
 msgid "Warranty"
 msgstr "Gwarancja"
@@ -34516,10 +34648,10 @@ msgid "What to set up"
 msgstr "Co skonfigurować"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr ""
+msgstr "Co zostało wprowadzone błędnie i dlaczego nie można tego zamiast tego poprawić ani unieważnić"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
-msgstr ""
+msgstr "Co zostało wprowadzone błędnie i dlaczego zamówienia nie można zamiast tego poprawić ani zamknąć"
 
 msgid "What we're assuming"
 msgstr "Co zakładamy"
@@ -34603,7 +34735,7 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "Kiedy oczekuje się odpowiedzi dostawców; dostawcy widzą tę datę w portalu RFQ, a Carbon przestaje akceptować spóźnione odpowiedzi po niej (konfigurowanej)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "Kiedy kupiec zażądał towaru; dostawca może w polu Data potwierdzona przyjęcia podać coś innego, a w polu Data dostawy podać jeszcze inną datę."
+msgstr "Kiedy kupiec zażądał towaru; dostawca może obiecać inną datę w polu Data potwierdzona przyjęcia, a potem zaksięgować jeszcze inną w polu Data dostawy."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "Kiedy kupiec potrzebuje towaru z tej pozycji na rampie. Nowa pozycja domyślnie przyjmuje datę żądaną przyjęcia z zamówienia; planowanie wykorzystuje tę datę do sprawdzania dostępności zapasów i harmonogramowania obróbki zewnętrznej."
@@ -35360,7 +35492,7 @@ msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Twoje rzeczywiste dane są załadowane i sprawdziłeś próbkę oraz ją zatwierdziłeś."
 
 msgid "Your reason and the decision are kept in the audit log."
-msgstr ""
+msgstr "Twój powód i decyzja są zapisywane w dzienniku audytu."
 
 msgid "Your session was locked after inactivity."
 msgstr "Twoja sesja została zablokowana z powodu braku aktywności."

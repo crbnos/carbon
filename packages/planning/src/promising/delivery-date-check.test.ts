@@ -1,0 +1,386 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { describe, expect, it } from "vitest";
+import {
+  freeStockBeforeArrivalByWeek,
+  freeStockByWeek,
+  lastArrivalByWeek,
+  type SupplyAndDemand,
+  weekStarts
+} from "./available-to-promise.ts";
+import {
+  buildDecisionInputs,
+  type DeliveryDateLine,
+  type DeliveryDecisionInput,
+  decideDeliveryDate
+} from "./delivery-date-check.ts";
+
+// Today is Tuesday 2026-11-10; a 26-day lead time puts the fence on 2026-12-06.
+const TODAY = "2026-11-10";
+const FENCE = "2026-12-06";
+
+function base(
+  overrides: Partial<DeliveryDecisionInput> = {}
+): DeliveryDecisionInput {
+  return {
+    key: "line",
+    control: "Lead Time",
+    methodType: "Pull from Inventory",
+    todayIso: TODAY,
+    promisedDate: "2026-11-17",
+    quantity: 30,
+    leadTimeDays: 26,
+    canMake: true,
+    ...overrides
+  };
+}
+
+/** Free stock per week up to the fence, from on-hand and dated demand. */
+function stock(onHand: number, demand: { date: string; quantity: number }[]) {
+  const weeks = weekStarts(TODAY, FENCE);
+  return {
+    weeks,
+    free: freeStockByWeek({
+      onHand,
+      supply: [],
+      demand,
+      weeks,
+      todayIso: TODAY
+    })
+  };
+}
+
+/** Free stock per week with dated supply, and when each week's goods come. */
+function stockWithSupply(
+  onHand: number,
+  supply: { date: string; quantity: number }[]
+) {
+  const weeks = weekStarts(TODAY, FENCE);
+  const flows = { onHand, supply, demand: [], weeks, todayIso: TODAY };
+  return {
+    weeks,
+    free: freeStockByWeek(flows),
+    arrivals: lastArrivalByWeek(weeks, supply, TODAY),
+    freeBeforeArrival: freeStockBeforeArrivalByWeek(flows)
+  };
+}
+
+describe("decideDeliveryDate", () => {
+  it("passes a line promised on or after the fence without any check", () => {
+    expect(decideDeliveryDate(base({ promisedDate: FENCE }))).toMatchObject({
+      needsCapacity: false,
+      status: "Met",
+      constraint: null,
+      earliestDate: null
+    });
+  });
+
+  it("gives the fence as the earliest date under Lead Time", () => {
+    expect(decideDeliveryDate(base())).toMatchObject({
+      status: "Missed",
+      constraint: "Lead Time",
+      earliestDate: FENCE,
+      fenceDate: FENCE
+    });
+  });
+
+  it("checks a Purchase to Order line against the fence even under Capacity", () => {
+    expect(
+      decideDeliveryDate(
+        base({ control: "Capacity", methodType: "Purchase to Order" })
+      )
+    ).toMatchObject({ status: "Missed", constraint: "Lead Time" });
+  });
+
+  it("passes a Pull from Inventory line the free stock covers", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          quantity: 20,
+          stock: stock(100, [{ date: "2026-11-18", quantity: 80 }])
+        })
+      )
+    ).toMatchObject({ status: "Met", constraint: "Stock", freeQuantity: 20 });
+  });
+
+  it("falls back to the fence when no week before it has enough free stock", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          quantity: 30,
+          stock: stock(100, [{ date: "2026-11-18", quantity: 80 }])
+        })
+      )
+    ).toMatchObject({
+      status: "Missed",
+      constraint: "Stock",
+      earliestDate: FENCE,
+      freeQuantity: 20
+    });
+  });
+
+  it("does not use finished stock for a Make to Order line under Stock", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          methodType: "Make to Order",
+          stock: stock(1000, [])
+        })
+      )
+    ).toMatchObject({ status: "Missed", constraint: "Lead Time" });
+  });
+
+  it("asks for a capacity run for a Make to Order line under Capacity", () => {
+    expect(
+      decideDeliveryDate(
+        base({ control: "Capacity", methodType: "Make to Order" })
+      )
+    ).toEqual({ needsCapacity: true, shortfall: 30 });
+  });
+
+  it("gives the capacity finish as the earliest date of a Make to Order line", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Capacity",
+          methodType: "Make to Order",
+          capacity: { earliestDate: "2026-11-27", cause: "CNC is busy" }
+        })
+      )
+    ).toMatchObject({
+      status: "Missed",
+      constraint: "Capacity",
+      earliestDate: "2026-11-27",
+      cause: "CNC is busy"
+    });
+  });
+
+  it("falls back to the fence when the item has no routing to schedule", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Capacity",
+          methodType: "Make to Order",
+          capacity: { earliestDate: null, cause: null }
+        })
+      )
+    ).toMatchObject({
+      status: "Missed",
+      constraint: "Lead Time",
+      earliestDate: FENCE
+    });
+  });
+
+  it("runs capacity only for the shortfall the free stock leaves", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Capacity",
+          quantity: 30,
+          stock: stock(100, [{ date: "2026-11-18", quantity: 80 }])
+        })
+      )
+    ).toEqual({ needsCapacity: true, shortfall: 10 });
+  });
+
+  it("passes a Pull from Inventory line when the shop can make the shortfall in time", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Capacity",
+          stock: stock(100, [{ date: "2026-11-18", quantity: 80 }]),
+          capacity: { earliestDate: "2026-11-16", cause: null }
+        })
+      )
+    ).toMatchObject({ status: "Met", constraint: "Capacity" });
+  });
+
+  it("skips capacity for a bought item under Capacity", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Capacity",
+          canMake: false,
+          stock: stock(0, [])
+        })
+      )
+    ).toMatchObject({
+      status: "Missed",
+      constraint: "Stock",
+      earliestDate: FENCE
+    });
+  });
+
+  it("passes a made line whose capacity finish is before its promised date", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Capacity",
+          methodType: "Make to Order",
+          promisedDate: "2026-11-20",
+          capacity: { earliestDate: "2026-11-16", cause: null }
+        })
+      )
+    ).toMatchObject({ status: "Met", constraint: "Capacity" });
+  });
+
+  it("never offers a capacity date after the fence, where every date passes", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Capacity",
+          methodType: "Make to Order",
+          capacity: { earliestDate: "2027-01-20", cause: "CNC is busy" }
+        })
+      )
+    ).toMatchObject({
+      status: "Missed",
+      constraint: "Lead Time",
+      earliestDate: FENCE
+    });
+  });
+
+  it("does not pass a promised date that is already gone, even with stock", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          promisedDate: "2026-11-09",
+          quantity: 5,
+          stock: stock(100, [])
+        })
+      )
+    ).toMatchObject({
+      status: "Missed",
+      constraint: "Stock",
+      earliestDate: TODAY
+    });
+  });
+
+  it("offers the day the goods arrive, not the first day of their week", () => {
+    const weeks = weekStarts(TODAY, FENCE);
+    const supply = [{ date: "2026-11-26", quantity: 50 }];
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          quantity: 30,
+          stock: {
+            weeks,
+            free: freeStockByWeek({
+              onHand: 0,
+              supply,
+              demand: [],
+              weeks,
+              todayIso: TODAY
+            }),
+            arrivals: lastArrivalByWeek(weeks, supply, TODAY)
+          }
+        })
+      )
+    ).toMatchObject({ status: "Missed", earliestDate: "2026-11-26" });
+  });
+
+  // The goods for the week of 22 Nov arrive on Thursday 26 Nov.
+  it("misses a date in the goods' week that comes before they arrive", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          promisedDate: "2026-11-24",
+          stock: stockWithSupply(0, [{ date: "2026-11-26", quantity: 50 }])
+        })
+      )
+    ).toMatchObject({
+      status: "Missed",
+      constraint: "Stock",
+      earliestDate: "2026-11-26",
+      freeQuantity: 0
+    });
+  });
+
+  it("passes a date before the week's goods arrive when stock on hand covers it", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          promisedDate: "2026-11-24",
+          stock: stockWithSupply(40, [{ date: "2026-11-26", quantity: 50 }])
+        })
+      )
+    ).toMatchObject({ status: "Met", constraint: "Stock", freeQuantity: 40 });
+  });
+
+  it("passes a date on the day the goods arrive", () => {
+    expect(
+      decideDeliveryDate(
+        base({
+          control: "Stock",
+          promisedDate: "2026-11-26",
+          stock: stockWithSupply(0, [{ date: "2026-11-26", quantity: 50 }])
+        })
+      )
+    ).toMatchObject({ status: "Met", constraint: "Stock", freeQuantity: 50 });
+  });
+});
+
+describe("buildDecisionInputs", () => {
+  const LOCATION = "loc";
+  const line = (
+    key: string,
+    promisedDate: string,
+    quantity: number
+  ): DeliveryDateLine => ({
+    key,
+    itemId: "BOLT",
+    locationId: LOCATION,
+    quantity,
+    promisedDate,
+    methodType: "Pull from Inventory",
+    control: "Stock"
+  });
+  const build = (
+    lines: DeliveryDateLine[],
+    flows: SupplyAndDemand,
+    extraDemand: { date: string; quantity: number }[] = []
+  ) =>
+    buildDecisionInputs({
+      lines,
+      todayByLocation: new Map([[LOCATION, TODAY]]),
+      leadTimes: new Map([["BOLT", { own: 26, cumulative: 26 }]]),
+      canMake: new Set(),
+      supplyAndDemand: new Map([[`BOLT:${LOCATION}`, flows]]),
+      extraDemand: extraDemand.map((d) => ({
+        ...d,
+        itemId: "BOLT",
+        locationId: LOCATION
+      }))
+    }).map(({ input }) => decideDeliveryDate(input));
+
+  it("lets the earlier promise take the stock, so two lines of 60 cannot share 100", () => {
+    const decisions = build(
+      [line("later", "2026-11-18", 60), line("sooner", "2026-11-12", 60)],
+      { onHand: 100, supply: [], demand: [] }
+    );
+    expect(decisions).toMatchObject([
+      { key: "sooner", status: "Met" },
+      { key: "later", status: "Missed", freeQuantity: 40 }
+    ]);
+  });
+
+  it("counts the order's other lines the caller passes as demand", () => {
+    const decisions = build(
+      [line("new", "2026-11-12", 30)],
+      { onHand: 50, supply: [], demand: [] },
+      [{ date: "2026-11-11", quantity: 40 }]
+    );
+    expect(decisions).toMatchObject([
+      { key: "new", status: "Missed", freeQuantity: 10 }
+    ]);
+  });
+});

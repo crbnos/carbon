@@ -11,7 +11,10 @@ import {
   createPrintJob,
   getDocumentType,
   getDocumentTypesForSource,
+  getLabelTemplatesForMediaSize,
+  getLabelTemplateType,
   getPrinterContextForSource,
+  type LabelTemplateType,
   updatePrintJobContent,
   updatePrintJobStatus
 } from "@carbon/printing";
@@ -88,9 +91,7 @@ export const printJobFunction = inngest.createFunction(
         if (explicitPrinterRouteId) {
           const { data: route } = await client
             .from("printerRoute")
-            .select(
-              "id, name, format, mediaSizeId, printerUrl, apiKey, templateId"
-            )
+            .select("id, name, format, mediaSizeId, printerUrl")
             .eq("id", explicitPrinterRouteId)
             .eq("companyId", companyId)
             .single();
@@ -100,7 +101,6 @@ export const printJobFunction = inngest.createFunction(
               printerUrl: route.printerUrl,
               format: route.format as "zpl" | "pdf",
               mediaSizeId: route.mediaSizeId,
-              templateId: route.templateId,
               autoPrint: true
             };
           }
@@ -113,6 +113,16 @@ export const printJobFunction = inngest.createFunction(
             workCenterId
           );
         }
+
+        // Templates are set per media size, so they apply only to a printer
+        // with one; without it every label renders built-in.
+        const templates = printerConfig?.mediaSizeId
+          ? await getLabelTemplatesForMediaSize(
+              client,
+              companyId,
+              printerConfig.mediaSizeId
+            )
+          : new Map<LabelTemplateType, string>();
 
         const documentTypeIds = getDocumentTypesForSource(sourceDocument);
         const allPrintJobIds: string[] = [];
@@ -132,7 +142,7 @@ export const printJobFunction = inngest.createFunction(
             printerUrl: printerConfig?.printerUrl ?? "",
             format: printerConfig?.format ?? docType.defaultFormat,
             mediaSizeId: printerConfig?.mediaSizeId ?? DEFAULT_MEDIA_SIZE_ID,
-            templateId: printerConfig?.templateId ?? null
+            templates
           });
 
           allPrintJobIds.push(...created.printJobIds);
@@ -249,7 +259,7 @@ async function processDocumentType(
     printerUrl: string;
     format: "zpl" | "pdf";
     mediaSizeId: string;
-    templateId: string | null;
+    templates: Map<LabelTemplateType, string>;
   }
 ): Promise<{ printJobIds: string[]; deliverJobIds: string[] }> {
   const {
@@ -262,7 +272,7 @@ async function processDocumentType(
     printerUrl,
     format,
     mediaSizeId,
-    templateId
+    templates
   } = ctx;
 
   const { docs, readableId } = await resolveDocumentItems(
@@ -297,6 +307,12 @@ async function processDocumentType(
     const jobId = job.data.id;
     printJobIds.push(jobId);
 
+    const labelType = getLabelTemplateType(
+      documentTypeId,
+      doc.type === "productLabel" ? doc.item.trackingType : null
+    );
+    const templateId = templates.get(labelType);
+
     try {
       let content: GeneratedContent;
 
@@ -317,7 +333,7 @@ async function processDocumentType(
         );
       } else {
         await updatePrintJobStatus(client, jobId, companyId, "failed", {
-          error: `Document type "${documentTypeId}" requires a BinderyPress template.`
+          error: `No built-in renderer for "${documentTypeId}". Add a "${labelType}" label template for media size "${mediaSizeId}".`
         });
         continue;
       }

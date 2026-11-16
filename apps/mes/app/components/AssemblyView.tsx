@@ -1970,7 +1970,6 @@ export function AssemblyView({
   // already sits in, or goes to its traveler.
   useTravelerScan({
     operationId,
-    jobMakeMethodId: operation?.jobMakeMethodId,
     parentTrackedEntityId: currentEntity?.id ?? trackedEntities[0]?.id,
     jobOperationStepId: step?.id,
     unitNumber: activeIndex + 1,

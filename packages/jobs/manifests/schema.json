@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261116150000",
+  "schemaVersion": "20261117063413",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-16T17:32:13.470Z",
+  "exportedAt": "2026-11-16T18:44:29.359Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -515,6 +515,7 @@
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
         "includeSupplierPartFiles",
+        "deliveryDateControl",
         "requirePromisedDateToFinalizePurchaseOrder",
         "travelerLabels",
         "requireTrackedMaterialsIssued",
@@ -1383,6 +1384,21 @@
         "valueId",
         "companyId",
         "createdAt"
+      ]
+    },
+    {
+      "name": "labelTemplate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "labelType",
+        "mediaSizeId",
+        "templateId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3935,7 +3951,8 @@
         "minimumReserveQuantity",
         "responsibleEmployee",
         "planningHorizonDays",
-        "allowCommonSupplyForProjects"
+        "allowCommonSupplyForProjects",
+        "deliveryDateControl"
       ]
     },
     {
@@ -4272,8 +4289,7 @@
         "printerUrl",
         "apiKey",
         "createdAt",
-        "updatedAt",
-        "templateId"
+        "updatedAt"
       ]
     },
     {
@@ -5629,10 +5645,10 @@
         "sourceDocumentId",
         "sourceDocumentLineId",
         "sourceDocumentReadableId",
-        "workCenterId",
-        "assignee",
         "storageUnitId",
-        "acceptedQuantity"
+        "acceptedQuantity",
+        "workCenterId",
+        "assignee"
       ]
     },
     {
@@ -8110,7 +8126,14 @@
         "configuration",
         "serviceStartDate",
         "serviceEndDate",
-        "salesReturnOrderLineId"
+        "salesReturnOrderLineId",
+        "requestedDate",
+        "deliveryDateStatus",
+        "deliveryDateConstraint",
+        "earliestDeliveryDate",
+        "deliveryDateCheckedAt",
+        "deliveryDateOverriddenBy",
+        "deliveryDateOverriddenAt"
       ]
     },
     {

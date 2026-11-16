@@ -159,6 +159,15 @@ export type PostingContract = {
     input: { mode: "level"; kanbanIds: string[] };
     output: { results: KanbanReplenishOutcome[] };
   };
+  "check-sales-order-delivery-dates": {
+    input: {
+      salesOrderId: string;
+      lineIds?: string[];
+      capacity: "run" | "defer" | "skip";
+      save?: { changedLineIds: string[] };
+    };
+    output: { pendingLineIds: string[]; keptLineIds: string[] };
+  };
   "create-rental-invoices": {
     input: { asOf: string };
     output: RentalInvoiceGenerationResult;
