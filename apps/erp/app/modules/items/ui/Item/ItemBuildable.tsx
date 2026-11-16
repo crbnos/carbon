@@ -5,6 +5,9 @@
 import type { Buildable } from "@carbon/planning";
 import { useLoaderQuery } from "@carbon/query";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Badge,
   Button,
   Card,
@@ -80,7 +83,8 @@ export default function ItemBuildable({
         <CardDescription>
           <Trans>
             Through every level of the bill of materials at this location.
-            Subassemblies in stock are used before they are built.
+            Subassemblies in stock are used before they are built, and required
+            quantities include each item's scrap.
           </Trans>
         </CardDescription>
       </CardHeader>
@@ -94,48 +98,83 @@ export default function ItemBuildable({
                 {tile.label}
               </span>
               <span className="text-3xl font-medium tracking-tighter tabular-nums">
-                {tile.value === undefined ? "–" : formatQuantity(tile.value)}
+                {tile.value === undefined || tile.value === null
+                  ? "–"
+                  : formatQuantity(tile.value)}
               </span>
               <span className="text-xs text-muted-foreground">{tile.hint}</span>
             </div>
           ))}
         </div>
 
-        <form
-          className="flex flex-wrap items-center gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setTarget(Number.isInteger(draft) && draft > 0 ? draft : undefined);
-          }}
-        >
-          <div className="w-32">
-            <NumberField
-              aria-label={t`Quantity to check`}
-              value={draft}
-              minValue={1}
-              formatOptions={INPUT_FORMAT.quantity}
-              onChange={setDraft}
-            >
-              <NumberInput size="sm" placeholder={t`Quantity`} />
-            </NumberField>
-          </div>
-          <Button type="submit" variant="secondary" isLoading={isFetching}>
-            <Trans>Check Quantity</Trans>
-          </Button>
-          {data && (
-            <span className="text-sm text-muted-foreground">
-              {short.length === 0 ? (
-                <Trans>
-                  Nothing is short for {formatQuantity(data.targetQuantity)}
-                </Trans>
-              ) : (
-                <Trans>
-                  {short.length} short for {formatQuantity(data.targetQuantity)}
-                </Trans>
-              )}
-            </span>
-          )}
-        </form>
+        {data && data.unitMismatches.length > 0 && (
+          <Alert variant="warning">
+            <AlertTitle>
+              <Trans>Units don't match</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <Trans>
+                These bill of materials lines use a different unit than their
+                item is stocked in, so they can't be compared with stock.
+                Correct the line or the item's unit of measure.
+              </Trans>
+              <ul className="mt-2 list-disc pl-4">
+                {data.unitMismatches.map((m) => (
+                  <li
+                    key={`${m.parentItemId}-${m.itemId}-${m.lineUnitOfMeasureCode}`}
+                  >
+                    <Trans>
+                      {m.readableId} on {m.parentReadableId}: line in{" "}
+                      {m.lineUnitOfMeasureCode}, stocked in{" "}
+                      {m.stockUnitOfMeasureCode ?? "–"}
+                    </Trans>
+                  </li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {data?.unitMismatches.length === 0 && (
+          <form
+            className="flex flex-wrap items-center gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setTarget(
+                Number.isInteger(draft) && draft > 0 ? draft : undefined
+              );
+            }}
+          >
+            <div className="w-32">
+              <NumberField
+                aria-label={t`Quantity to check`}
+                value={draft}
+                minValue={1}
+                formatOptions={INPUT_FORMAT.quantity}
+                onChange={setDraft}
+              >
+                <NumberInput size="sm" placeholder={t`Quantity`} />
+              </NumberField>
+            </div>
+            <Button type="submit" variant="secondary" isLoading={isFetching}>
+              <Trans>Check Quantity</Trans>
+            </Button>
+            {data && (
+              <span className="text-sm text-muted-foreground">
+                {short.length === 0 ? (
+                  <Trans>
+                    Nothing is short for {formatQuantity(data.targetQuantity)}
+                  </Trans>
+                ) : (
+                  <Trans>
+                    {short.length} short for{" "}
+                    {formatQuantity(data.targetQuantity)}
+                  </Trans>
+                )}
+              </span>
+            )}
+          </form>
+        )}
 
         {data && data.components.length > 0 && (
           <div className="w-full overflow-x-auto">
@@ -159,6 +198,9 @@ export default function ItemBuildable({
                   </Th>
                   <Th className="text-right">
                     <Trans>Required</Trans>
+                  </Th>
+                  <Th className="text-right">
+                    <Trans>Scrap</Trans>
                   </Th>
                   <Th className="text-right">
                     <Trans>Short</Trans>
@@ -203,6 +245,9 @@ export default function ItemBuildable({
                     </Td>
                     <Td className="text-right tabular-nums">
                       {formatQuantity(c.quantityRequired)}
+                    </Td>
+                    <Td className="text-right tabular-nums">
+                      {formatQuantity(c.quantityScrap)}
                     </Td>
                     <Td
                       className={cn(

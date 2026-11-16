@@ -586,6 +586,13 @@ msgstr "{0} of {memberCount} member jobs are not completed yet — their output 
 msgid "{0} of {whole} done"
 msgstr "{0} of {whole} done"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr "{0} on {1}: line in {2}, stocked in {3}"
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "{0} on your timecards"
@@ -31759,6 +31766,9 @@ msgstr "These accounts need a replacement"
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "These are the record's own notes. Changing them here changes them on the record too."
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "These custom fields will only be available for entities with the same tags"
 
@@ -32329,8 +32339,8 @@ msgstr "Three-way match"
 msgid "Through {0}"
 msgstr "Through {0}"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built."
-msgstr "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built."
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
+msgstr "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
 
 msgid "Thumbnail"
 msgstr "Thumbnail"
@@ -33309,6 +33319,9 @@ msgstr "Unit Sale Price"
 
 msgid "Units"
 msgstr "Units"
+
+msgid "Units don't match"
+msgstr "Units don't match"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Units of base currency per one unit of this currency; used to translate amounts on posting."

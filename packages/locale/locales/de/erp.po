@@ -586,6 +586,13 @@ msgstr "{0} von {memberCount} Fertigungsaufträgen sind noch nicht fertiggestell
 msgid "{0} of {whole} done"
 msgstr "{0} von {whole} erledigt"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr ""
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "{0} in deiner Zeiterfassung"
@@ -31759,6 +31766,9 @@ msgstr "Diese Konten benötigen einen Ersatz."
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "Dies sind die eigenen Notizen des Datensatzes. Wenn Sie sie hier ändern, werden sie auch im Datensatz geändert."
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Diese benutzerdefinierten Felder sind nur für Entitäten mit denselben Tags verfügbar"
 
@@ -32329,7 +32339,7 @@ msgstr "Dreiwege-Abgleich"
 msgid "Through {0}"
 msgstr "Bis {0}"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built."
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
 msgstr ""
 
 msgid "Thumbnail"
@@ -33309,6 +33319,9 @@ msgstr "Einheitlicher Verkaufspreis"
 
 msgid "Units"
 msgstr "Einheiten"
+
+msgid "Units don't match"
+msgstr ""
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Einheiten der Basiswährung pro einer Einheit dieser Währung; wird verwendet, um Beträge bei der Buchung umzuwandeln."

@@ -7156,12 +7156,26 @@ export const updateItemThumbnail = defineServiceFn({
 });
 
 /**
- * How many of an item a location can make now from available stock, through
- * every level of its active make methods, and which components limit it.
- * Available is on hand less what open jobs, sales orders and projects have
- * committed; the result also says how many on hand alone would make.
- * `targetQuantity` explodes the BOM at that quantity to show what is short
- * (default: one more than can be made).
+ * Get how many of an item can be made now and what limits it
+ *
+ * @remarks
+ * Answers "how many can we make?" and "what is short?" for one item at one
+ * location, through every level of its active make methods. Subassemblies in
+ * stock are used before they are built; a component shared by several
+ * subassemblies is counted once; required quantities include each item's
+ * scrap allowance, as a job's do. Available stock is on hand less what open
+ * jobs, sales orders and project materials have committed.
+ * `quantityBuildable` is the answer; `quantityBuildableFromOnHand` is what
+ * using committed stock too would allow. `components` lists every item
+ * below, the most limiting first: `quantityBuildableAlone` is how many that
+ * component alone allows, and `quantityShort` what is missing at
+ * `targetQuantity`. When `unitMismatches` is not empty, a BOM line's unit
+ * differs from its item's stock unit, the quantities are null, and those
+ * lines must be corrected first. Writes nothing.
+ *
+ * @param itemId - The item to make.
+ * @param locationId - The location whose stock is counted.
+ * @param targetQuantity - Explode the BOM at this quantity to list what is short. Default: one more than can be made.
  *
  * @mcp read
  */

@@ -586,6 +586,13 @@ msgstr "{memberCount}個の製造指図のうち{0}件がまだ完了してい�
 msgid "{0} of {whole} done"
 msgstr "{0} / {whole} 完了"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr ""
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "あなたのタイムカードの {0}"
@@ -31759,6 +31766,9 @@ msgstr "これらの勘定には代替が必要です。"
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "これはレコード自体のメモです。ここで変更すると、レコードのメモも変更されます。"
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "これらのカスタムフィールドは、同じタグを持つエンティティでのみ利用可能です"
 
@@ -32329,7 +32339,7 @@ msgstr "三点照合"
 msgid "Through {0}"
 msgstr "{0}まで"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built."
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
 msgstr ""
 
 msgid "Thumbnail"
@@ -33309,6 +33319,9 @@ msgstr "単価販売価格"
 
 msgid "Units"
 msgstr "単位"
+
+msgid "Units don't match"
+msgstr ""
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "この通貨の1単位あたりの基軸通貨の単位数。転記時の金額変換に使用します。"

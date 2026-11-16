@@ -586,6 +586,13 @@ msgstr "{memberCount}个工单中{0}个尚未完成——其产出将一直缺�
 msgid "{0} of {whole} done"
 msgstr "{0} / {whole} 已完成"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr ""
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "工时记录中的 {0}"
@@ -31759,6 +31766,9 @@ msgstr "这些账户需要替换"
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "这些是记录本身的备注。在此处更改也会同时更改记录上的备注。"
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "这些自定义字段仅对具有相同标签的实体可用"
 
@@ -32329,7 +32339,7 @@ msgstr "三单匹配"
 msgid "Through {0}"
 msgstr "至 {0}"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built."
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
 msgstr ""
 
 msgid "Thumbnail"
@@ -33309,6 +33319,9 @@ msgstr "单位销售价格"
 
 msgid "Units"
 msgstr "单位"
+
+msgid "Units don't match"
+msgstr ""
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "基础货币单位对该货币一个单位的比率;用于过账时金额的转换。"

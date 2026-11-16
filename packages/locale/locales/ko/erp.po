@@ -586,6 +586,13 @@ msgstr "{memberCount}개의 작업 지시 중 {0}개가 아직 완료되지 않�
 msgid "{0} of {whole} done"
 msgstr "{0}/{whole} 완료"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr ""
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "타임카드의 {0}"
@@ -31759,6 +31766,9 @@ msgstr "이 계정에는 대체 계정이 필요합니다."
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "레코드 자체의 메모입니다. 여기에서 변경하면 레코드의 메모도 함께 변경됩니다."
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "이러한 사용자 정의 필드는 동일한 태그를 가진 엔터티에만 사용 가능합니다."
 
@@ -32329,7 +32339,7 @@ msgstr "3자 대사"
 msgid "Through {0}"
 msgstr "{0}까지"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built."
+msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, and required quantities include each item's scrap."
 msgstr ""
 
 msgid "Thumbnail"
@@ -33309,6 +33319,9 @@ msgstr "단위 판매가"
 
 msgid "Units"
 msgstr "단위"
+
+msgid "Units don't match"
+msgstr ""
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "이 통화 1단위당 기준 통화 단위 수로, 전기 시 금액 환산에 사용됩니다."
