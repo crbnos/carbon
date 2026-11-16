@@ -27,6 +27,7 @@ import {
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import {
@@ -60,6 +61,16 @@ const ItemPlanningForm = ({
 }: ItemPlanningFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
+  // A Record, so a level added to the enum fails the typecheck until labelled.
+  const deliveryDateControlLabels: Record<
+    (typeof deliveryDateControlTypes)[number],
+    string
+  > = {
+    None: t`None`,
+    "Lead Time": t`Lead Time`,
+    Stock: t`Stock`,
+    Capacity: t`Capacity`
+  };
 
   const locationOptions = locations.map((location) => ({
     label: location.name,
@@ -211,12 +222,10 @@ const ItemPlanningForm = ({
                   name="deliveryDateControl"
                   label={t`Delivery Date Check`}
                   placeholder={t`Company default`}
-                  options={[
-                    { value: "None", label: t`None` },
-                    { value: "Lead Time", label: t`Lead Time` },
-                    { value: "Stock", label: t`Stock` },
-                    { value: "Capacity", label: t`Capacity` }
-                  ]}
+                  options={deliveryDateControlTypes.map((value) => ({
+                    value,
+                    label: deliveryDateControlLabels[value]
+                  }))}
                   helperText={t`Leave empty to use the level in Settings → Sales.`}
                 />
 

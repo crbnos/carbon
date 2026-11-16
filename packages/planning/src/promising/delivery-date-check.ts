@@ -32,10 +32,7 @@ export type DeliveryDateConstraint =
   Database["public"]["Enums"]["deliveryDateConstraint"];
 export type DeliveryDateStatus =
   Database["public"]["Enums"]["deliveryDateStatus"];
-export type DeliveryLineMethod =
-  | "Pull from Inventory"
-  | "Make to Order"
-  | "Purchase to Order";
+export type DeliveryLineMethod = Database["public"]["Enums"]["methodType"];
 
 /** One line to check. `key` comes back on its result. */
 export type DeliveryDateLine = {

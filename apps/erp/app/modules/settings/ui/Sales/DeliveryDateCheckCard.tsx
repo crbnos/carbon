@@ -16,7 +16,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Hidden, Select, Submit } from "~/components/Form";
 import { deliveryDateCheckSettingsValidator } from "~/modules/settings/settings.models";
-import type { deliveryDateControlTypes } from "~/modules/shared/shared.models";
+import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 
 type DeliveryDateControl = (typeof deliveryDateControlTypes)[number];
 
@@ -33,15 +33,17 @@ export function DeliveryDateCheckCard({
     onSuccess: () => toast.success(t`Delivery date check updated`)
   });
 
-  const options: { value: DeliveryDateControl; label: string }[] = [
-    { value: "None", label: t`None — no check` },
-    { value: "Lead Time", label: t`Lead Time — the lead time through the BOM` },
-    { value: "Stock", label: t`Stock — free stock, then the lead time` },
-    {
-      value: "Capacity",
-      label: t`Capacity — free stock, then the shop's schedule`
-    }
-  ];
+  // A Record, so a level added to the enum fails the typecheck until labelled.
+  const labels: Record<DeliveryDateControl, string> = {
+    None: t`None — no check`,
+    "Lead Time": t`Lead Time — the lead time through the BOM`,
+    Stock: t`Stock — free stock, then the lead time`,
+    Capacity: t`Capacity — free stock, then the shop's schedule`
+  };
+  const options = deliveryDateControlTypes.map((value) => ({
+    value,
+    label: labels[value]
+  }));
 
   return (
     <Card>

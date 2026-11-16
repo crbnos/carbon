@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import { Constants, type Database } from "@carbon/database";
 import type {
   BuyPriceBreak,
   CurrencyRate,
@@ -94,12 +94,8 @@ export const methodType = [
 ] as const;
 
 // Delivery date check levels (companySettings / itemPlanning.deliveryDateControl).
-export const deliveryDateControlTypes = [
-  "None",
-  "Lead Time",
-  "Stock",
-  "Capacity"
-] as const;
+export const deliveryDateControlTypes =
+  Constants.public.Enums.deliveryDateControl;
 
 export const sourcingType = [
   "Specified",

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { type Kysely, sql } from "kysely";
 
@@ -11,7 +12,7 @@ export const DEFAULT_LEAD_TIME_DAYS = 7;
 export type LeadTimeItem = {
   /** itemReplenishment.leadTime: a Buy item's purchase time, a Make item's own build time */
   leadTime: number;
-  replenishmentSystem: string;
+  replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"];
 };
 
 export type BomEdge = { parentItemId: string; childItemId: string };

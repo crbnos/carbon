@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Constants, type Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Alert,
@@ -17,25 +18,24 @@ import { useLocale } from "@react-aria/i18n";
 import { useEffect, useRef, useState } from "react";
 import { LuCalendarX } from "react-icons/lu";
 import { useQuantityFormatter } from "~/hooks";
+import { DELIVERY_CHECKED_LINE_TYPES } from "~/modules/sales/sales.utils";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "delivery-date-check-alert");
 
-// The line types the server checks (sales.service DELIVERY_CHECKED_LINE_TYPES).
-const CHECKED_LINE_TYPES = new Set(["Part", "Material", "Tool", "Consumable"]);
-const LINE_METHODS = new Set([
-  "Pull from Inventory",
-  "Make to Order",
-  "Purchase to Order"
-]);
+// The form holds the method as text, empty until an item is chosen.
+const LINE_METHODS: ReadonlySet<string> = new Set(
+  Constants.public.Enums.methodType
+);
 // A fast answer shows no spinner; only a check that takes longer does.
 const SPINNER_DELAY_MS = 250;
 
-type DeliveryDateControl = "None" | "Lead Time" | "Stock" | "Capacity";
+type Enums = Database["public"]["Enums"];
+type DeliveryDateControl = Enums["deliveryDateControl"];
 
 type DeliveryDateCheck = {
-  status: "Met" | "Missed" | "Pending";
-  constraint: "Lead Time" | "Stock" | "Capacity" | null;
+  status: Enums["deliveryDateStatus"];
+  constraint: Enums["deliveryDateConstraint"] | null;
   earliestDate: string | null;
   leadTimeDays: number;
   freeQuantity: number | null;
@@ -45,7 +45,7 @@ type DeliveryDateCheck = {
 type DeliveryDateCheckAlertProps = {
   orderId: string;
   lineId?: string;
-  lineType: string;
+  lineType: Enums["salesOrderLineType"];
   itemId: string;
   methodType: string;
   quantity: number;
@@ -86,7 +86,7 @@ export function DeliveryDateCheckAlert({
   const control = controls.current.get(controlKey);
 
   const checkable =
-    CHECKED_LINE_TYPES.has(lineType) &&
+    DELIVERY_CHECKED_LINE_TYPES.has(lineType) &&
     LINE_METHODS.has(methodType) &&
     Boolean(itemId) &&
     Boolean(promisedDate) &&

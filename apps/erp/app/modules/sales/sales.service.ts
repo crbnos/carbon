@@ -297,6 +297,7 @@ import {
   type CustomerPortalRefusal,
   configuredQuoteBasePrice,
   customerPortalRefusal,
+  DELIVERY_CHECKED_LINE_TYPES,
   type DeliveryDateColumns,
   decideRecalcPricing,
   getDefaultRentalRates,
@@ -14878,14 +14879,6 @@ export async function salesOrderLineGate(
   });
 }
 
-/** The line types a delivery date check applies to: they ship an item. */
-const DELIVERY_CHECKED_LINE_TYPES = new Set([
-  "Part",
-  "Material",
-  "Tool",
-  "Consumable"
-]);
-
 /**
  * A job whose schedule holds its line's date: the statuses MRP counts as open
  * (`openSalesOrderLines`). A Draft job has no schedule yet.
@@ -14898,12 +14891,15 @@ const OPEN_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
 ];
 
 /** Orders whose open lines MRP counts as demand (`openSalesOrderLines`). */
-const DEMAND_ORDER_STATUSES = new Set(["To Ship", "To Ship and Invoice"]);
+const DEMAND_ORDER_STATUSES: ReadonlySet<SalesOrderStatus> =
+  new Set<SalesOrderStatus>(["To Ship", "To Ship and Invoice"]);
 
 /** A line with no promised date is due now, as MRP counts it. */
 const DUE_NOW = "0001-01-01";
 
 type DeliveryDateControl = Database["public"]["Enums"]["deliveryDateControl"];
+type SalesOrderLineType = Database["public"]["Enums"]["salesOrderLineType"];
+type LineMethodType = Database["public"]["Enums"]["methodType"];
 
 /**
  * The delivery date check level of each item at each location: the item's
@@ -14950,10 +14946,10 @@ export async function resolveDeliveryDateControls(
 type DeliveryCheckCandidate = {
   key: string;
   salesOrderLineId: string | null;
-  salesOrderLineType: string;
+  salesOrderLineType: SalesOrderLineType;
   itemId: string | null;
   locationId: string | null;
-  methodType: string | null;
+  methodType: LineMethodType | null;
   quantity: number;
   promisedDate: string | null;
   hasOpenJob: boolean;
@@ -14987,14 +14983,7 @@ export async function runDeliveryDateCheck(
     const control = controls.get(`${c.itemId}:${c.locationId}`) ?? "None";
     if (control === "None") continue;
     if (!DELIVERY_CHECKED_LINE_TYPES.has(c.salesOrderLineType)) continue;
-    if (!c.promisedDate || c.quantity <= 0) continue;
-    if (
-      c.methodType !== "Pull from Inventory" &&
-      c.methodType !== "Make to Order" &&
-      c.methodType !== "Purchase to Order"
-    ) {
-      continue;
-    }
+    if (!c.promisedDate || c.quantity <= 0 || !c.methodType) continue;
     if (c.methodType === "Make to Order" && c.hasOpenJob) continue;
     lines.push({
       key: c.key,
@@ -15054,7 +15043,7 @@ export async function salesOrderSiblingDemand(
   ctx: ServiceContext,
   args: {
     salesOrderId: string;
-    orderStatus: string | null;
+    orderStatus: SalesOrderStatus | null;
     orderLocationId: string | null;
     excludeLineIds: string[];
   }
@@ -15118,10 +15107,10 @@ export async function deliveryDateColumnsForSave(
     salesOrderId: string;
     lineId: string | null;
     line: {
-      salesOrderLineType: string;
+      salesOrderLineType: SalesOrderLineType;
       itemId?: string;
       locationId?: string;
-      methodType?: string;
+      methodType?: LineMethodType;
       saleQuantity?: number;
       promisedDate?: string;
     };

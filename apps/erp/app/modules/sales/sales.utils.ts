@@ -1109,6 +1109,11 @@ export function customerPortalEarliestExpiry(
 }
 
 type DeliveryDateStatus = Database["public"]["Enums"]["deliveryDateStatus"];
+type SalesOrderLineType = Database["public"]["Enums"]["salesOrderLineType"];
+
+/** The sales order line types a delivery date check applies to: they ship an item. */
+export const DELIVERY_CHECKED_LINE_TYPES: ReadonlySet<SalesOrderLineType> =
+  new Set<SalesOrderLineType>(["Part", "Material", "Tool", "Consumable"]);
 type DeliveryDateConstraint =
   Database["public"]["Enums"]["deliveryDateConstraint"];
 
