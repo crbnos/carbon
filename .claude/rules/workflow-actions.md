@@ -209,16 +209,25 @@ workflow point one company's record at another company's row. Its message is
 
 ### The `user` special case
 
-`user` has **no `companyId` column** — membership lives on `userToCompany`. So
-`existsInCompany` consults a small `MEMBERSHIP` map first:
+`user` has **no `companyId` column** — membership lives on `userToCompany`. The
+map is `COMPANY_MEMBERSHIP` in `packages/jobs/src/workflows/company-scope.ts`,
+and every read of a record by the run's company goes through it:
 
-```ts
-const MEMBERSHIP = { user: { table: "userToCompany", column: "userId" } };
-```
+- `existsInCompany` (`update.ts`) checks `userToCompany.userId = id AND
+  companyId = companyId`. Every `assignee` / `salesPersonId` /
+  `accountManagerId` / `estimatorId` write goes through it.
+- `selectInCompany` reads the rows of a table that belong to the company: by
+  `companyId`, or for `user` through `userToCompany!inner(companyId)` filtered
+  to the run's company. The entity loader (`engine/loader.ts`, every field of a
+  record a step reads, and the name a record shows in a message) and the Find
+  step (`search.ts`) use it; `withoutMembership` drops the joined rows, so a
+  user row is the plain row. A plain `.eq("companyId")` on `user` fails, so
+  every user field (a moment's `overriddenBy.fullName`) would read as "could
+  not be read" and a message would name the user by raw id.
 
-which makes the check `userToCompany.userId = id AND companyId = companyId`.
-Every `assignee` / `salesPersonId` / `accountManagerId` / `estimatorId` write goes
-through this path, so getting it wrong would fail every assignment action.
+The company filter is the only thing that keeps out a user of another company
+the owner also belongs to: `user` RLS shows every user who shares any company
+with the reader. Pinned by `company-scope.test.ts`.
 
 ## `notify`
 
