@@ -344,7 +344,7 @@ function DeliveryDateFlag({ line }: { line: SalesOrderLine }) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="shrink-0 text-muted-foreground">
+          <span className="relative z-10 shrink-0 text-muted-foreground">
             <Spinner
               className="h-3 w-3"
               aria-label={t`Checking the delivery date`}
@@ -366,7 +366,7 @@ function DeliveryDateFlag({ line }: { line: SalesOrderLine }) {
       <TooltipTrigger asChild>
         <span
           className={cn(
-            "shrink-0",
+            "relative z-10 shrink-0",
             keptBy ? "text-muted-foreground" : "text-amber-500"
           )}
         >
