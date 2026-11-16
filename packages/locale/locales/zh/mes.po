@@ -12,6 +12,18 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · Kit job open"
+msgstr ""
+
+msgid " · No kit job open"
+msgstr ""
+
+msgid " · Nothing ordered"
+msgstr ""
+
+msgid " · On order"
+msgstr ""
+
 msgid ", not running"
 msgstr ", 未运行"
 
@@ -147,6 +159,12 @@ msgstr "{columns} 与现有记录不匹配。"
 msgid "{companyName} logo"
 msgstr "{companyName} 徽标"
 
+msgid "{complete} complete"
+msgstr ""
+
+msgid "{complete} complete · target {target}"
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} 的 {quantity}"
 
@@ -192,6 +210,12 @@ msgstr "{name}: {value}"
 
 msgid "{numerator} of {denominator}"
 msgstr "{numerator}/{denominator}"
+
+msgid "{onHand} of {need}"
+msgstr ""
+
+msgid "{onHand} on hand · covers {covers} of {demand}"
+msgstr ""
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
@@ -549,6 +573,12 @@ msgstr "粗体"
 msgid "Bring {quantity}"
 msgstr ""
 
+msgid "Bring kit"
+msgstr ""
+
+msgid "Build kit"
+msgstr ""
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链接。"
 
@@ -892,6 +922,9 @@ msgstr "删除步骤"
 msgid "Delete Timecard (<0/>)"
 msgstr "删除工时表 (<0/>)"
 
+msgid "Deliver"
+msgstr ""
+
 msgid "Density"
 msgstr "密度"
 
@@ -1039,6 +1072,9 @@ msgstr "表情: {emoji}"
 msgid "Employee"
 msgstr "员工"
 
+msgid "Empty"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "空的工作中心"
 
@@ -1165,6 +1201,9 @@ msgstr "上传签名失败"
 msgid "Failure Mode"
 msgstr "失效模式"
 
+msgid "Fed directly"
+msgstr ""
+
 msgid "File"
 msgstr "文件"
 
@@ -1191,6 +1230,9 @@ msgstr "发现"
 
 msgid "Finish"
 msgstr "完成"
+
+msgid "Finish kit"
+msgstr ""
 
 msgid "Finish setting up your account"
 msgstr "完成账户设置"
@@ -1247,6 +1289,9 @@ msgstr "前往步骤 {0}：{1}"
 #. placeholder {1}: s.name ?? ""
 msgid "Go to step {0}: {1} (done)"
 msgstr "前往步骤 {0}：{1}（已完成）"
+
+msgid "Grab from {source} · {onHand} there"
+msgstr ""
 
 msgid "Gradient"
 msgstr "渐变"
@@ -1332,6 +1377,9 @@ msgstr "应用内通知始终会发送。选择哪些主题还会通过电子邮
 
 msgid "Inactive"
 msgstr "已停用"
+
+msgid "Incomplete"
+msgstr ""
 
 msgid "Increase {fieldLabel}"
 msgstr "增加{fieldLabel}"
@@ -1447,6 +1495,21 @@ msgstr "键盘快捷键"
 
 msgid "Kit"
 msgstr "套件"
+
+msgid "Kit rack"
+msgstr ""
+
+msgid "kits to build"
+msgstr ""
+
+msgid "kits to deliver"
+msgstr ""
+
+msgid "kits to finish"
+msgstr ""
+
+msgid "Kitter"
+msgstr ""
 
 msgid "Labor"
 msgstr "人工"
@@ -1574,6 +1637,9 @@ msgstr "记录 {0} 的报废"
 msgid "Login"
 msgstr "登录"
 
+msgid "Loose parts"
+msgstr ""
+
 msgid "Lot"
 msgstr "批次"
 
@@ -1662,6 +1728,9 @@ msgstr "消息"
 msgid "Metric"
 msgstr "公制"
 
+msgid "Missing"
+msgstr ""
+
 msgid "Mode"
 msgstr "模式"
 
@@ -1689,6 +1758,12 @@ msgstr "{0} 的更多选项"
 
 msgid "More than one unit has this serial. Choose one."
 msgstr "多个件具有此序列号。选择一个。"
+
+msgid "Move {quantity}"
+msgstr ""
+
+msgid "Move {quantity} from {from}"
+msgstr ""
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1788,6 +1863,9 @@ msgstr "未找到国家。"
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "没有客户资产具有序列号{0}。选择客户。"
 
+msgid "No default bin"
+msgstr ""
+
 msgid "No dispatches assigned to you"
 msgstr "没有分配给您的维护工单"
 
@@ -1811,6 +1889,9 @@ msgstr "没有分配给您的检验"
 
 msgid "No issue types configured"
 msgstr "未配置问题类型"
+
+msgid "No kit"
+msgstr ""
 
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "尚未设置假期。请您的经理在 ERP 中设置。"
@@ -1956,6 +2037,9 @@ msgstr "不计入MRP"
 msgid "None"
 msgstr "无"
 
+msgid "None on the shelf"
+msgstr ""
+
 msgid "Normal"
 msgstr "正常检验"
 
@@ -2011,6 +2095,9 @@ msgstr "/"
 
 msgid "Offline"
 msgstr "离线"
+
+msgid "OK"
+msgstr ""
 
 msgid "Oldest first"
 msgstr "最早优先"
@@ -2136,6 +2223,10 @@ msgstr "部分处置"
 
 msgid "Parts"
 msgstr "零件"
+
+#. placeholder {0}: names.itemReadableIds[kit.itemId] ?? t`the kit`
+msgid "Parts of {0}"
+msgstr ""
 
 msgid "Pass"
 msgstr "合格"
@@ -2393,6 +2484,15 @@ msgstr "报价单"
 
 msgid "Raise quality issue"
 msgstr "发起质量问题"
+
+msgid "raw bins short"
+msgstr ""
+
+msgid "Raw shelf"
+msgstr ""
+
+msgid "Raw short: {shortParts}"
+msgstr ""
 
 msgid "Re"
 msgstr "拒收数"
@@ -2957,6 +3057,12 @@ msgstr "软性截止日期"
 msgid "Solid"
 msgstr "纯色"
 
+msgid "Sort: line order"
+msgstr ""
+
+msgid "Sort: worst first"
+msgstr ""
+
 msgid "Source"
 msgstr "来源"
 
@@ -3004,11 +3110,17 @@ msgstr "开始或暂停工序"
 msgid "Start work"
 msgstr "开工"
 
+msgid "Station"
+msgstr ""
+
 msgid "Station User"
 msgstr "工位用户"
 
 msgid "Station: {stationName}"
 msgstr "工位：{stationName}"
+
+msgid "stations out"
+msgstr ""
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
@@ -3147,6 +3259,9 @@ msgstr "组成此次运行的工单和零件。"
 
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr "各工单生产不同的物料 — 保持每个工单的零件分开。"
+
+msgid "the kit"
+msgstr ""
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "批次将标记为已通过，{remaining} 个剩余件将在此工序完成。"
@@ -3521,6 +3636,9 @@ msgstr ""
 
 msgid "Warranty"
 msgstr "保修"
+
+msgid "Water spider"
+msgstr ""
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "我们已向您发送了登录链接和6位代码。点击该链接或在此处输入代码。"

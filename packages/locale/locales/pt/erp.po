@@ -14722,6 +14722,9 @@ msgstr "Manter o diário como aviso para correção."
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "Reter, liberar, baixar ou reproçar itens em <0>Projetos → Aprovações</0>, na aba Faturamento."
 
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr ""
+
 msgid "Holiday"
 msgstr "Feriado"
 
@@ -16492,6 +16495,9 @@ msgstr "Tipo de registro"
 
 msgid "Kit"
 msgstr "Kit"
+
+msgid "Kit rack"
+msgstr ""
 
 msgid "label"
 msgstr "rótulo"
