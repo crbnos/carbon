@@ -17,6 +17,7 @@ import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useRef, useState } from "react";
 import { LuCalendarX } from "react-icons/lu";
+import { useSpinDelay } from "spin-delay";
 import { useQuantityFormatter } from "~/hooks";
 import { DELIVERY_CHECKED_LINE_TYPES } from "~/modules/sales/sales.utils";
 import { path } from "~/utils/path";
@@ -27,8 +28,11 @@ const logger = getLogger("erp", "delivery-date-check-alert");
 const LINE_METHODS: ReadonlySet<string> = new Set(
   Constants.public.Enums.methodType
 );
-// A fast answer shows no spinner; only a check that takes longer does.
-const SPINNER_DELAY_MS = 250;
+// The check is sent once the user stops editing for this long.
+const CHECK_DEBOUNCE_MS = 400;
+// The spinner shows only for a request still running after this long, as the
+// tables do (`useSpinDelay`), so a fast answer never flashes one.
+const SPINNER_DELAY_MS = 300;
 
 type Enums = Database["public"]["Enums"];
 type DeliveryDateControl = Enums["deliveryDateControl"];
@@ -76,8 +80,10 @@ export function DeliveryDateCheckAlert({
   const { locale } = useLocale();
   const formatQuantity = useQuantityFormatter();
   const [check, setCheck] = useState<DeliveryDateCheck | null>(null);
+  // A request is in flight. It turns on when the debounce sends the request,
+  // never on the edit, so the spinner delay counts from the request.
   const [loading, setLoading] = useState(false);
-  const [showSpinner, setShowSpinner] = useState(false);
+  const showSpinner = useSpinDelay(loading, { delay: SPINNER_DELAY_MS });
   const [failed, setFailed] = useState(false);
   // The level each item has at each location, as the server last answered.
   // An item at the None level is not asked again.
@@ -103,9 +109,9 @@ export function DeliveryDateCheckAlert({
     // A plain fetch, not a fetcher: a fetcher's action would revalidate every
     // loader of the order page on each change.
     const controller = new AbortController();
-    setLoading(true);
     setFailed(false);
     const timer = setTimeout(async () => {
+      setLoading(true);
       try {
         const response = await fetch(path.to.salesOrderDeliveryDate(orderId), {
           method: "POST",
@@ -145,10 +151,11 @@ export function DeliveryDateCheckAlert({
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
-    }, 400);
+    }, CHECK_DEBOUNCE_MS);
     return () => {
       controller.abort();
       clearTimeout(timer);
+      setLoading(false);
     };
   }, [
     checkable,
@@ -163,15 +170,6 @@ export function DeliveryDateCheckAlert({
     promisedDate
   ]);
 
-  useEffect(() => {
-    if (!loading) {
-      setShowSpinner(false);
-      return;
-    }
-    const timer = setTimeout(() => setShowSpinner(true), SPINNER_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [loading]);
-
   if (!checkable) return null;
 
   const checkingText =
@@ -181,7 +179,7 @@ export function DeliveryDateCheckAlert({
 
   const missed = check?.status === "Missed" && check.earliestDate;
   if (!missed) {
-    if (loading && showSpinner) {
+    if (showSpinner) {
       return (
         <div
           role="status"
@@ -192,7 +190,7 @@ export function DeliveryDateCheckAlert({
         </div>
       );
     }
-    if (failed && !loading) {
+    if (failed && !loading && !showSpinner) {
       return (
         <p className="text-xs text-muted-foreground">
           <Trans>Couldn't check the delivery date. You can still save.</Trans>
@@ -205,7 +203,7 @@ export function DeliveryDateCheckAlert({
   const promised = formatDate(promisedDate, undefined, locale);
   const earliest = formatDate(check.earliestDate, undefined, locale);
   const free = formatQuantity(check.freeQuantity ?? 0);
-  const updating = loading && showSpinner;
+  const updating = showSpinner;
 
   return (
     <Alert

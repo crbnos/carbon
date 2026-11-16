@@ -23,14 +23,15 @@ sequenceDiagram
     participant S as "sales.server"
     participant P as "planning promising"
     U->>F: "Enter item, quantity, date"
-    F->>S: "checkSalesOrderLineDeliveryDate"
+    F->>S: "checkSalesOrderLineDeliveryDate (400 ms after the last edit)"
     S->>P: "checkDeliveryDates"
     P-->>F: "status, reason, earliest date"
     U->>F: "Use earliest date or keep date"
     F->>S: "create or update line"
-    S->>P: "checkDeliveryDates again"
-    S-->>S: "write result, record override"
+    S->>P: "checkDeliveryDates (Capacity deferred)"
+    S-->>S: "write the line and the result in one write"
     S-->>S: "raise sales.deliveryDateOverridden"
+    S-->>S: "Pending line: the background job runs Capacity"
 ```
 
 ## Problem Statement
@@ -96,7 +97,7 @@ The check reads live data in 5 queries for all the items of the request:
 1. The balance of week `w` is the on-hand quantity + the supply − the demand of weeks 0 to `w`.
 2. The free stock of week `w` is the smallest balance of weeks `w` to the last week, but not less than 0. This is the "look-ahead": a new order cannot take stock that a later order already has.
 3. If the free stock of the promised week is equal to or more than the quantity of the line, the line passes.
-4. Otherwise, the earliest date is the start of the first week with enough free stock. If no such week exists, the earliest date is the fence date.
+4. Otherwise, the earliest date is in the first week with enough free stock: the day its last supply arrives, else the start of that week. If no such week exists, the earliest date is the fence date.
 
 A date before today and a past-due row go to week 0, as in MRP. The quantity of the line is `saleQuantity − quantitySent`, in the same unit that MRP uses.
 
@@ -114,8 +115,9 @@ The check uses the "end of queue" answer (`queued`), because the promise must ho
 | Moment | What runs | What it writes |
 |---|---|---|
 | The form changes item, quantity, location, method or promised date | `checkSalesOrderLineDeliveryDate` (read only) | nothing |
-| `createSalesOrderLine`, `updateSalesOrderLine` | the check, after the save | the result columns; the override when the date fails |
-| `convertQuote`, `acceptDigitalQuote` | the check for every line of the new order | the result columns, no override |
+| `createSalesOrderLine`, `updateSalesOrderLine` | the fast levels, before the write; a line that needs Capacity is `Pending` | the result columns in the same row write; the override when the date fails |
+| `convertQuote`, `acceptDigitalQuote` | the fast levels for every line of the new order; a line that needs Capacity is `Pending` | the result columns, no override |
+| The background job `sales-order-delivery-date-check` | the Capacity simulation for the `Pending` lines of one order | the result columns of those lines |
 
 These lines get no check, and their result columns are NULL:
 
@@ -167,7 +169,7 @@ If a later save passes the check, the server clears the 2 override columns. A co
 
 ## Data Model Changes
 
-One migration, `delivery-date-check`:
+Two migrations: `delivery-date-check` and `delivery-date-check-pending`. The second adds the value `Pending`, because Postgres cannot use a new enum value in the transaction that adds it.
 
 ```sql
 CREATE TYPE "deliveryDateControl" AS ENUM ('None', 'Lead Time', 'Stock', 'Capacity');
@@ -196,6 +198,9 @@ CREATE INDEX "salesOrderLine_deliveryDateOverriddenBy_idx"
 -- (20261006220201_revenue-recognition-core.sql) so the new columns show.
 DROP VIEW IF EXISTS "salesOrderLines";
 CREATE VIEW "salesOrderLines" WITH(SECURITY_INVOKER=true) AS ( ...same body... );
+
+-- delivery-date-check-pending
+ALTER TYPE "deliveryDateStatus" ADD VALUE IF NOT EXISTS 'Pending';
 ```
 
 - Every new column is nullable, except the company level, which has a default. Every reader treats NULL as "not checked" (lesson "A nullable column added by migration needs a reader that tolerates NULL").
@@ -207,13 +212,15 @@ CREATE VIEW "salesOrderLines" WITH(SECURITY_INVOKER=true) AS ( ...same body... )
 | Where | Change |
 |---|---|
 | `packages/planning/src/promising/cumulative-lead-time.ts` | New. Pure `cumulativeLeadTimes(items, edges)`; loader `loadCumulativeLeadTimes(db, companyId, itemIds)` with one recursive query over `activeMakeMethods` and `methodMaterial` |
-| `packages/planning/src/promising/available-to-promise.ts` | New. Pure `weeklyFreeStock(...)` and `earliestWeekWithStock(...)`; loader `loadSupplyAndDemand(db, companyId, keys)` |
+| `packages/planning/src/promising/available-to-promise.ts` | New. Pure `freeStockByWeek(...)`, `lastArrivalByWeek(...)` and `earliestWeekWithStock(...)`; loader `loadSupplyAndDemand(...)` |
 | `packages/planning/src/promising/item-routing.ts` | New. `loadItemRouting(db, companyId, itemId)` → the quote row types |
-| `packages/planning/src/promising/delivery-date-check.ts` | New. Pure `decideDeliveryDate(...)` (the table in section 3); orchestrator `checkDeliveryDates({ db, client, companyId, userId, lines })` |
+| `packages/planning/src/promising/delivery-date-check.ts` | New. Pure `decideDeliveryDate(...)` (the table in section 3) and `buildDecisionInputs(...)`; orchestrator `checkDeliveryDates({ db, client, companyId, userId, lines, extraDemand?, capacity? })`, where `capacity` is `run`, `defer` (answer `Pending`) or `skip` (answer by the fence) |
 | `packages/planning/src/scheduling/quote-lead-time.ts` | `runQuoteLeadTimeWhatIf` accepts an optional `routing`; export the `QuoteLineRouting` type |
 | `packages/planning/src/index.ts` | Export `checkDeliveryDates` and its types |
-| `sales.service.ts` | New `resolveDeliveryDateControls(ctx, keys)` (company level + `itemPlanning` override); `runDeliveryDateCheck(ctx, candidates)` (skips the lines of section 6, calls `checkDeliveryDates`); `checkSalesOrderDeliveryDates(ctx, { salesOrderId, lineIds?, capacity, save? })` (writes every result in one Kysely `UPDATE … FROM (VALUES …)`, scoped by `companyId`); `recordSalesOrderLineDeliveryDate` (after a save, raises the moment); `checkConvertedSalesOrderDeliveryDates` (after a conversion) |
-| `sales.server.ts` | New `checkSalesOrderLineDeliveryDate` (`{ view: "sales" }`, `@mcp read`); `createSalesOrderLine` / `updateSalesOrderLine` run the check after the save; `convertQuote` / `acceptDigitalQuote` run it after the conversion |
+| `sales.service.ts` | New `resolveDeliveryDateControls(ctx, keys)` (company level + `itemPlanning` override); `runDeliveryDateCheck(ctx, candidates)` (skips the lines of section 6, calls `checkDeliveryDates`); `salesOrderSiblingDemand` (the order's other lines as demand); `deliveryDateForSave` (the fast levels before the write); `afterDeliveryDateSave` (raises the moment, sends the job event); `checkSalesOrderDeliveryDates(ctx, { salesOrderId, lineIds?, capacity, save? })` (the posting `check-sales-order-delivery-dates`; writes every result in one Kysely `UPDATE … FROM (VALUES …)`, scoped by `companyId`); `checkConvertedSalesOrderDeliveryDates` (after a conversion) |
+| `sales.utils.ts` | New pure `nextDeliveryDateRecord` (the columns a check writes, and if the write records a kept date) |
+| `packages/jobs` | New Inngest function `sales-order-delivery-date-check` on the event `carbon/sales-order.delivery-date-check`. It runs the posting with `capacity: "run"`. Its `onFailure` runs it with `capacity: "skip"` |
+| `sales.server.ts` | New `checkSalesOrderLineDeliveryDate` (`{ view: "sales" }`, `@mcp read`); `createSalesOrderLine` / `updateSalesOrderLine` run the fast levels before the write; `convertQuote` / `acceptDigitalQuote` run it after the conversion |
 | `sales.models.ts` | `salesOrderLineValidator` gains `requestedDate`; new `deliveryDateCheckValidator` |
 | `settings.server.ts` | `updateSalesSettings` accepts `deliveryDateControl` |
 | `items.models.ts` / `items.server.ts` | `itemPlanningValidator` and `updateItemPlanning` accept `deliveryDateControl` |
@@ -259,7 +266,7 @@ The page archetypes are the sibling's: the sales order record page (explorer + l
 - [ ] Saving the line with a failing date stores `deliveryDateStatus = Missed`, the earliest date, the user and the time. The server raises the moment `sales.deliveryDateOverridden` once.
 - [ ] Saving the line later with a passing date clears the 2 override columns.
 - [ ] With `Stock`: 100 on hand, another order for 80 due next week, and no supply. A Pull from Inventory line for 30 due this week fails with 20 free. Its earliest date is the fence date. A line for 20 passes.
-- [ ] With `Stock`: a PO for 50 arrives in week 2. A line for 60 due this week (on hand 20, no other demand) gets the start of week 2 as its earliest date.
+- [ ] With `Stock`: a PO for 50 arrives in week 2. A line for 60 due this week (on hand 20, no other demand) gets the day the PO arrives as its earliest date.
 - [ ] With `Capacity`: a Make to Order line for an item with a routing returns the end-of-queue finish of the quote engine as its earliest date. An item with no routing falls back to the fence.
 - [ ] An item override at the line's location wins over the company level.
 - [ ] Converting a quote with 2 lines, one inside its fence, flags that line "Date not confirmed" on the new order. The conversion does not stop.
@@ -310,3 +317,5 @@ The page archetypes are the sibling's: the sales order record page (explorer + l
   7. Free stock counts the stock of projects without project stock, and project material demand, as MRP does.
   8. An open job means Planned, Ready, In Progress or Paused, as MRP counts it.
 - 2026-11-16: Removed the optional reason for a kept date. The form shows a note in its place. The column `deliveryDateOverrideReason` and the `reason` field of the job event are gone. A company that needs a reason asks for it in the workflow of the moment.
+- 2026-11-16: The spinner delay counts from the request, not from the edit. The form sends the check 400 ms after the last edit. Before this change, the 250 ms delay ran out during that wait, so the spinner showed on every edit. Now a check that runs past 300 ms shows the spinner (`useSpinDelay`, as the tables do), and a faster check shows none.
+- 2026-11-16: Brought the spec up to date with the code. The overview diagram, section 6, the data model and the service table now show the background job, the `Pending` migration and the current function names.
