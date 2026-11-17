@@ -20437,14 +20437,9 @@ export async function postShipment(
 
                 acc[trackedEntity.id] = {
                   status: "Consumed",
-                  // Keep the ?? fallback exactly as it was and just round it:
-                  // a null shippedQuantity must still fall through to the
-                  // entity's own quantity, which `!== undefined` would not do.
-                  quantity: round(
-                    Number(
-                      shipmentLine?.shippedQuantity ?? trackedEntity.quantity
-                    )
-                  )
+                  // The whole lot leaves, so it keeps its own quantity: a line
+                  // ships several serials or lots, never one at the line's total.
+                  quantity: entityQuantity
                 };
 
                 return acc;
@@ -21000,14 +20995,9 @@ export async function postShipment(
                 }
 
                 acc[trackedEntity.id] = {
-                  // Keep the ?? fallback exactly as it was and just round it:
-                  // a null shippedQuantity must still fall through to the
-                  // entity's own quantity, which `!== undefined` would not do.
-                  quantity: round(
-                    Number(
-                      shipmentLine?.shippedQuantity ?? trackedEntity.quantity
-                    )
-                  )
+                  // The whole lot leaves, so it keeps its own quantity: a line
+                  // ships several serials or lots, never one at the line's total.
+                  quantity: entityQuantity
                 };
 
                 return acc;
