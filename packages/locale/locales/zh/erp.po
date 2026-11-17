@@ -186,6 +186,10 @@ msgstr "{0, plural, one {# 个已逾期} other {# 个已逾期}}"
 msgid "{0, plural, one {# parameter} other {# parameters}}"
 msgstr "{0, plural, one {# 参数} other {# 参数}}"
 
+#. placeholder {0}: job.shortItems
+msgid "{0, plural, one {# part short} other {# parts short}}"
+msgstr "{0, plural, one {缺 # 个零件} other {缺 # 个零件}}"
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# 条记录需要关注} other {# 条记录需要关注}}"
@@ -352,6 +356,11 @@ msgstr "{0} 可用"
 #. placeholder {0}: formatQuantity(available)
 msgid "{0} available in {owner} here"
 msgstr "{0} 在 {owner} 处可用"
+
+#. placeholder {0}: formatQuantity(data?.quantityAvailable ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "{0} available, {1} committed"
+msgstr "可用 {0}，已承诺 {1}"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
@@ -1262,6 +1271,9 @@ msgstr "{quantity} 无生产批次"
 msgid "{quantity} without a serial number"
 msgstr "{quantity} 无序列号"
 
+msgid "{readyJobs, plural, =0 {No open job has every part} one {In production on # job with every part in stock} other {In production on # jobs with every part in stock}}"
+msgstr "{readyJobs, plural, =0 {没有未结工单具备全部零件} one {正在生产 # 个工单，所有零件均有库存} other {正在生产 # 个工单，所有零件均有库存}}"
+
 msgid "{received} of {ordered}"
 msgstr "已收 {received} / 已订购 {ordered}"
 
@@ -1381,6 +1393,9 @@ msgstr "{value, plural, one {# 天} other {# 天}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {#行与预期数量不同} other {#行与预期数量不同}}"
+
+msgid "{waitingJobs, plural, =0 {No open job is short of parts} one {In production on # job short of parts} other {In production on # jobs short of parts}}"
+msgstr "{waitingJobs, plural, =0 {没有未结工单缺少零件} one {正在生产 # 个缺料工单} other {正在生产 # 个缺料工单}}"
 
 msgid "{warnings} need a follow-up"
 msgstr "{warnings} 项警告需要后续跟进"
@@ -3680,6 +3695,9 @@ msgstr "所有文档"
 
 msgid "All gauges"
 msgstr "所有量具"
+
+msgid "All in stock"
+msgstr "全部有库存"
 
 msgid "All item types"
 msgstr "所有物料类型"
@@ -6383,8 +6401,8 @@ msgstr "在Carbon中称为方法 — 生产一个零件的组成部分和工序�
 msgid "Camera"
 msgstr "摄像头"
 
-msgid "Can Make Now"
-msgstr ""
+msgid "Can Start More"
+msgstr "可再开工"
 
 msgid "Can't be restored"
 msgstr "无法恢复"
@@ -13844,9 +13862,6 @@ msgstr "成品"
 msgid "Finished Goods (default)"
 msgstr "成品（默认）"
 
-msgid "Finished Goods Available"
-msgstr ""
-
 msgid "finishes"
 msgstr "在常规MACRS计划开始之前采取的第一年额外扣除。"
 
@@ -14177,9 +14192,6 @@ msgstr "来源和目标为同一存储单元"
 msgid "From and To can't be the same storage unit"
 msgstr "来源和目标存储单元不能相同"
 
-msgid "From available component stock"
-msgstr ""
-
 msgid "From customer"
 msgstr "来自客户"
 
@@ -14197,6 +14209,13 @@ msgstr "从期间"
 
 msgid "From previous week"
 msgstr "从上周"
+
+msgid "From stock no job or order has claimed"
+msgstr "未被任何工单或订单占用的库存"
+
+#. placeholder {0}: formatQuantity(data.quantityBuildableFromOnHand)
+msgid "From stock no job or order has claimed. {0} if committed stock were used"
+msgstr "未被任何工单或订单占用的库存。若使用已承诺库存，则为 {0}"
 
 msgid "From Storage Unit"
 msgstr "从存储单元"
@@ -15269,9 +15288,6 @@ msgstr "如果已订购，未来48周内无缺货预测"
 
 msgid "If something is off track"
 msgstr "如果有什么偏离轨道"
-
-msgid "If stock committed to open orders were used"
-msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "如果您希望更改零件号，请点击\"取消\"并在转换前为每个行项目手动分配零件。"
@@ -16534,11 +16550,17 @@ msgstr "{orderId} 的工单"
 msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
 msgstr "订单{orderId}的工单: {jobCount}, {jobsStatusLabel}"
 
+msgid "Jobs in Production"
+msgstr "生产中的工单"
+
 msgid "Jobs Required"
 msgstr "所需工单"
 
 msgid "Jobs that have this item on their bill of materials"
 msgstr "物料清单中包含此物料的工单"
+
+msgid "Jobs Waiting"
+msgstr "等待中的工单"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -21079,11 +21101,6 @@ msgstr "现有"
 msgid "On Hand"
 msgstr "现有"
 
-#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
-#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
-msgid "On hand {0}, committed {1}"
-msgstr ""
-
 msgid "On hand {before} to {after}"
 msgstr "现有：从 {before} 到 {after}"
 
@@ -24486,6 +24503,9 @@ msgstr "可上架"
 
 msgid "Ready for Quote"
 msgstr "可报价"
+
+msgid "Ready to Finish"
+msgstr "可完工"
 
 msgid "ready to keep or revert"
 msgstr "就绪保存或恢复"
@@ -28320,6 +28340,9 @@ msgstr "短缺 {0}"
 
 msgid "Short Description"
 msgstr "简短描述"
+
+msgid "Short for Jobs in Production"
+msgstr "生产中工单的缺料"
 
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
@@ -32450,9 +32473,6 @@ msgstr "三单匹配"
 msgid "Through {0}"
 msgstr "至 {0}"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
-msgstr ""
-
 msgid "Thumbnail"
 msgstr "缩略图"
 
@@ -32645,6 +32665,9 @@ msgstr "待发货"
 
 msgid "To Ship and Receive"
 msgstr "待发货和待收货"
+
+msgid "To Start More"
+msgstr "待开工"
 
 msgid "To Storage Unit"
 msgstr "至存储单元"
@@ -33999,9 +34022,6 @@ msgstr "本工单中的使用情况"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "使用子装配体{0} · {1}"
 
-msgid "Using All On Hand"
-msgstr ""
-
 msgid "VAC"
 msgstr "VAC"
 
@@ -34477,6 +34497,9 @@ msgstr "等待中"
 msgid "Waiting for the first sync"
 msgstr "正在等待首次同步"
 
+msgid "Waiting on Parts"
+msgstr "等待零件"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "与您的冠军一起查看每个区域，切换任何超出范围的内容。代码格式为 Module.Area.Number（ACC.GL.01 = 会计、总账、项目 1）。"
 
@@ -34731,6 +34754,9 @@ msgstr "{translatedTerm}是什么?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "租赁的资产是什么，例如叉车 FL-12"
 
+msgid "What is on hand at this location, which open jobs have the parts to finish, and what the others are short of. Starting more is checked through every level of the bill of materials, with each item's scrap."
+msgstr "本地点的现有库存、哪些未结工单的零件已齐备可完工，以及其他工单缺少什么。再开工的检查会逐层穿过物料清单，并计入每个物料的报废量。"
+
 msgid "What is the primary contact?"
 msgstr "主要联系人是谁？"
 
@@ -34751,6 +34777,9 @@ msgstr "这是什么类型的采购订单 — 标准货物、服务、外协或�
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "这是什么类型的报价单 — 标准供应商报价、框架协议定价报价单或合同制造报价单；在转换时驱动采购订单行布局。"
+
+msgid "What limits new jobs, from stock no job or order has claimed."
+msgstr "限制新工单的因素，基于未被任何工单或订单占用的库存。"
 
 msgid "What posting this run will write, by account."
 msgstr "此运行过账将按科目写入的内容。"
@@ -34775,6 +34804,9 @@ msgstr "客户支付的金额，按该行的计费事件进行计费。"
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "到期日期倒计时从何开始(发票日期、月末等)。"
+
+msgid "What the jobs waiting on parts still need after stock. Buy or make these to finish them."
+msgstr "扣除库存后，等待零件的工单仍需的物料。请采购或自制这些物料以完成工单。"
 
 msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
 msgstr "租赁如何付款及何时付款。激活从这些行计算租赁负债价值。点击单元格进行更改。"

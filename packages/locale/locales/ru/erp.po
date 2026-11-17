@@ -186,6 +186,10 @@ msgstr "{0, plural, one {# просрочено} other {# просрочено}}
 msgid "{0, plural, one {# parameter} other {# parameters}}"
 msgstr "{0, plural, one {# параметр} other {# параметры}}"
 
+#. placeholder {0}: job.shortItems
+msgid "{0, plural, one {# part short} other {# parts short}}"
+msgstr "{0, plural, one {# деталь в дефиците} few {# детали в дефиците} many {# деталей в дефиците} other {# детали в дефиците}}"
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# запись требует внимания} other {# записей требуют внимания}}"
@@ -352,6 +356,11 @@ msgstr "{0} доступно"
 #. placeholder {0}: formatQuantity(available)
 msgid "{0} available in {owner} here"
 msgstr "{0} доступно в {owner} здесь"
+
+#. placeholder {0}: formatQuantity(data?.quantityAvailable ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "{0} available, {1} committed"
+msgstr "{0} доступно, {1} зарезервировано"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
@@ -1262,6 +1271,9 @@ msgstr "{quantity} без серии"
 msgid "{quantity} without a serial number"
 msgstr "{quantity} без серийного номера"
 
+msgid "{readyJobs, plural, =0 {No open job has every part} one {In production on # job with every part in stock} other {In production on # jobs with every part in stock}}"
+msgstr "{readyJobs, plural, =0 {Ни у одного открытого производственного заказа нет всех деталей в запасе} one {Запущено в производство: # производственный заказ со всеми деталями в запасе} few {Запущено в производство: # производственных заказа со всеми деталями в запасе} many {Запущено в производство: # производственных заказов со всеми деталями в запасе} other {Запущено в производство: # производственных заказов со всеми деталями в запасе}}"
+
 msgid "{received} of {ordered}"
 msgstr "{received} из {ordered}"
 
@@ -1381,6 +1393,9 @@ msgstr "{value, plural, one {# день} few {# дня} many {# дней} other 
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# строка отличается от ожидаемого количества} other {# строк отличаются от ожидаемого количества}}"
+
+msgid "{waitingJobs, plural, =0 {No open job is short of parts} one {In production on # job short of parts} other {In production on # jobs short of parts}}"
+msgstr "{waitingJobs, plural, =0 {Ни у одного открытого производственного заказа не хватает деталей} one {Запущено в производство: # производственный заказ, у которого не хватает деталей} few {Запущено в производство: # производственных заказа, у которых не хватает деталей} many {Запущено в производство: # производственных заказов, у которых не хватает деталей} other {Запущено в производство: # производственных заказов, у которых не хватает деталей}}"
 
 msgid "{warnings} need a follow-up"
 msgstr "{warnings} требуют доработки"
@@ -3680,6 +3695,9 @@ msgstr "Все документы"
 
 msgid "All gauges"
 msgstr "Все средства измерения"
+
+msgid "All in stock"
+msgstr "Всё есть в запасе"
 
 msgid "All item types"
 msgstr "Все типы номенклатуры"
@@ -6383,8 +6401,8 @@ msgstr "Называется метод в Carbon — компоненты пл�
 msgid "Camera"
 msgstr "Камера"
 
-msgid "Can Make Now"
-msgstr ""
+msgid "Can Start More"
+msgstr "Можно запустить ещё"
 
 msgid "Can't be restored"
 msgstr "Невозможно восстановить"
@@ -13844,9 +13862,6 @@ msgstr "Готовая продукция"
 msgid "Finished Goods (default)"
 msgstr "Готовая продукция (по умолчанию)"
 
-msgid "Finished Goods Available"
-msgstr ""
-
 msgid "finishes"
 msgstr "Дополнительное вычитание в первый год, произведённое до начала обычного графика МАКРС."
 
@@ -14177,9 +14192,6 @@ msgstr "Откуда и куда — одна и та же единица хра
 msgid "From and To can't be the same storage unit"
 msgstr "«Откуда» и «Куда» не могут быть одной и той же единицей хранения."
 
-msgid "From available component stock"
-msgstr ""
-
 msgid "From customer"
 msgstr "От покупателя"
 
@@ -14197,6 +14209,13 @@ msgstr "От периода"
 
 msgid "From previous week"
 msgstr "Из предыдущей недели"
+
+msgid "From stock no job or order has claimed"
+msgstr "Из запаса, не зарезервированного ни под один производственный заказ или заказ"
+
+#. placeholder {0}: formatQuantity(data.quantityBuildableFromOnHand)
+msgid "From stock no job or order has claimed. {0} if committed stock were used"
+msgstr "Из запаса, не зарезервированного ни под один производственный заказ или заказ. {0}, если бы использовали зарезервированный запас"
 
 msgid "From Storage Unit"
 msgstr "Из единицы хранения"
@@ -15269,9 +15288,6 @@ msgstr "Если заказано, дефицит не прогнозирует�
 
 msgid "If something is off track"
 msgstr "Если что-то идет не по плану"
-
-msgid "If stock committed to open orders were used"
-msgstr ""
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "Если вы хотите изменить номера деталей, нажмите Отмена и вручную назначьте детали для каждого элемента строки перед преобразованием."
@@ -16534,11 +16550,17 @@ msgstr "Производственные заказы для {orderId}"
 msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
 msgstr "Производственные заказы для {orderId}: {jobCount}, {jobsStatusLabel}"
 
+msgid "Jobs in Production"
+msgstr "Производственные заказы в работе"
+
 msgid "Jobs Required"
 msgstr "Необходимые производственные заказы"
 
 msgid "Jobs that have this item on their bill of materials"
 msgstr "Производственные заказы, у которых эта номенклатура указана в спецификации"
+
+msgid "Jobs Waiting"
+msgstr "Производственные заказы в ожидании"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -21079,11 +21101,6 @@ msgstr "На складе"
 msgid "On Hand"
 msgstr "На складе"
 
-#. placeholder {0}: formatQuantity(data?.quantityOnHand ?? 0)
-#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
-msgid "On hand {0}, committed {1}"
-msgstr ""
-
 msgid "On hand {before} to {after}"
 msgstr "На складе: с {before} до {after}"
 
@@ -24486,6 +24503,9 @@ msgstr "Готово к размещению"
 
 msgid "Ready for Quote"
 msgstr "Готово к предложению"
+
+msgid "Ready to Finish"
+msgstr "Готовы к завершению"
 
 msgid "ready to keep or revert"
 msgstr "готово к сохранению или восстановлению"
@@ -28320,6 +28340,9 @@ msgstr "нехватка {0}"
 
 msgid "Short Description"
 msgstr "Краткое описание"
+
+msgid "Short for Jobs in Production"
+msgstr "Дефицит по производственным заказам в работе"
 
 msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
@@ -32450,9 +32473,6 @@ msgstr "Трехстороннее сопоставление"
 msgid "Through {0}"
 msgstr "До {0}"
 
-msgid "Through every level of the bill of materials at this location. Subassemblies in stock are used before they are built, except on Make to Order lines, and required quantities include each item's scrap."
-msgstr ""
-
 msgid "Thumbnail"
 msgstr "Миниатюра"
 
@@ -32645,6 +32665,9 @@ msgstr "К отгрузке"
 
 msgid "To Ship and Receive"
 msgstr "К отгрузке и приемке"
+
+msgid "To Start More"
+msgstr "К запуску ещё"
 
 msgid "To Storage Unit"
 msgstr "В единицу хранения"
@@ -33999,9 +34022,6 @@ msgstr "Использование в этом производственном 
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Использует подсборку {0} · {1}"
 
-msgid "Using All On Hand"
-msgstr ""
-
 msgid "VAC"
 msgstr "VAC"
 
@@ -34477,6 +34497,9 @@ msgstr "Ожидание"
 msgid "Waiting for the first sync"
 msgstr "Ожидание первой синхронизации"
 
+msgid "Waiting on Parts"
+msgstr "Ожидают деталей"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Проведите обзор каждой области вместе с вашим лидером и отключите всё, что выходит за границы проекта. Коды читаются как Модуль.Область.Номер (ACC.GL.01 = Бухгалтерия, Главная книга, элемент 1)."
 
@@ -34731,6 +34754,9 @@ msgstr "Что такое {translatedTerm}?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Что арендуется, например Вилочный погрузчик FL-12"
 
+msgid "What is on hand at this location, which open jobs have the parts to finish, and what the others are short of. Starting more is checked through every level of the bill of materials, with each item's scrap."
+msgstr "Что есть в запасе на этой площадке, у каких открытых производственных заказов есть детали для завершения и чего не хватает остальным. Возможность запустить ещё проверяется по всем уровням спецификации с учётом брака по каждой номенклатуре."
+
 msgid "What is the primary contact?"
 msgstr "Кто является основным контактным лицом?"
 
@@ -34751,6 +34777,9 @@ msgstr "Тип этого Заказа поставщику — стандарт
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "Какой это тип предложения — стандартное предложение поставщика, предложение по цене бланкетного соглашения или предложение контрактного производства; определяет макет строки ПО при преобразовании."
+
+msgid "What limits new jobs, from stock no job or order has claimed."
+msgstr "Что ограничивает новые производственные заказы: запас, не зарезервированный ни под один производственный заказ или заказ."
 
 msgid "What posting this run will write, by account."
 msgstr "Что проведение этого запуска запишет, по счетам."
@@ -34775,6 +34804,9 @@ msgstr "Что платит покупатель, выставляется сч�
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "На что начинается обратный отсчет срока (дата счета-фактуры, конец месяца и т. д.)."
+
+msgid "What the jobs waiting on parts still need after stock. Buy or make these to finish them."
+msgstr "Что ещё нужно ожидающим деталей производственным заказам после учёта запаса. Организуйте закупку или производство недостающего, чтобы завершить эти производственные заказы."
 
 msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
 msgstr "Что платит аренда и когда. Активация оценивает обязательство по аренде из этих строк. Нажмите на ячейку, чтобы изменить её."

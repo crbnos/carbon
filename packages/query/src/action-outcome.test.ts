@@ -21,6 +21,14 @@ describe("actionOutcome", () => {
     ).toBeNull();
   });
 
+  it("is nothing for a refused save the form shows itself", () => {
+    expect(
+      actionOutcome({
+        formError: { message: "Failed to insert part", reason: null }
+      })
+    ).toBeNull();
+  });
+
   it("is an error for success: false or an error", () => {
     expect(actionOutcome({ success: false, message: "No" })).toBe("error");
     expect(actionOutcome({ error: { message: "No" } })).toBe("error");
