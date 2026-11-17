@@ -47,7 +47,7 @@ import {
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { type ReactNode, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { LuBox, LuChevronRight, LuLandmark, LuReceipt } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
@@ -58,6 +58,7 @@ import {
   ConversionFactor,
   CostCenter,
   CustomFormFields,
+  FormSection,
   Hidden,
   Item,
   Location,
@@ -1255,23 +1256,6 @@ function JobOperationSelect(initialValues: { jobId?: string }) {
         options={jobOperationOptions}
       />
     </>
-  );
-}
-
-function FormSection({
-  title,
-  children
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
-      <Label>{title}</Label>
-      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-        {children}
-      </div>
-    </div>
   );
 }
 

@@ -33,16 +33,27 @@ A **printer route** is one physical printer (`printerRoute` table, `202603260000
 <Field name="format" type='"zpl" | "pdf"' required>"ZPL (Thermal Label)" or "PDF (Document)". A CHECK constraint enforces the two values.</Field>
 <Field name="mediaSizeId" type="text" required>The label size this printer loads. ZPL printers only offer thermal (ZPL-capable) sizes; PDF printers offer all.</Field>
 <Field name="printerUrl" type="url" required>The ProxyBox HTTP endpoint jobs are delivered to, e.g. `https://pbx-XXXX.pbxz.cloud/api/v1/print/…`.</Field>
-<Field name="apiKey" type="text">Optional key sent as an `X-API-Key` header on delivery.</Field>
-<Field name="templateId" type="text">A BinderyPress template id. "Leave blank for built-in" — leave empty to use Carbon's built-in renderers.</Field>
+<Field name="apiKey" type="text">Optional key sent as an `X-API-Key` header on delivery. Carbon stores it encrypted in Supabase Vault, never in the `printerRoute` row, and never sends it back to the browser: the form shows only whether a key is saved. Leave the field blank to keep the saved key, or tick **Remove API key** to clear it.</Field>
 <Field name="locationId" type="text">The location the printer lives at (optional; a route can be company-wide).</Field>
 </FieldTable>
 
 You manage routes under **Settings → Printing** (`apps/erp/app/routes/x+/settings+/printing.tsx`). Each route has a **Test** action that sends a small ZPL test label straight to its `printerUrl`, so you can prove a printer is reachable before wiring it into a workflow. Test print only works for ZPL printers with a media size, and returns `"Test label sent to printer"` on success.
 
 <Callout type="note">
-Carbon reaches printers through **ProxyBox**, an HTTP endpoint on the shop-floor network. Carbon never talks to a printer's raw port. Delivery is a POST of the rendered bytes to `printerUrl`. If a route also has a `templateId` and the deployment has a BinderyPress key, rendering is delegated to BinderyPress instead of the built-in renderer.
+Carbon reaches printers through **ProxyBox**, an HTTP endpoint on the shop-floor network. Carbon never talks to a printer's raw port. Delivery is a POST of the rendered bytes to `printerUrl`. If a label template matches the label and the printer's media size, and the deployment has a BinderyPress key, rendering is delegated to BinderyPress instead of the built-in renderer.
 </Callout>
+
+## Label templates
+
+A **label template** (`labelTemplate` table, `20261116162754_label-templates.sql`) picks the BinderyPress template for one label type on one media size. Templates are company-wide: every printer loaded with that media size uses them. You manage them under **Settings → Printing → Label Templates**.
+
+<FieldTable>
+<Field name="labelType" type='"serialLabel" | "batchLabel" | "kanbanCard" | "storageUnitLabel"' required>"Serial Number Label", "Batch Label", "Kanban Card" or "Storage Unit Label". A product label is a serial or a batch label by its item's tracking type.</Field>
+<Field name="mediaSizeId" type="text" required>The label size the template is laid out for. It must equal the printer's media size.</Field>
+<Field name="templateId" type="text" required>The BinderyPress template id.</Field>
+</FieldTable>
+
+One template per label type and media size, so a company can keep, for example, a 4" x 2" and a 3" x 2" kanban card. A label with no template for its type and the printer's media size prints with the built-in layout.
 
 ## Assignments: which printer, in which context
 
@@ -144,8 +155,8 @@ The location/context resolved to no printer *and* auto-print was off, or the sou
 ### "Print jobs already exist for … …"
 An automatic print job for the same source document ID was created within 30 seconds, so Carbon dropped this non-retriable duplicate. To print another copy, use **Reprint** from the print-jobs list; reprints are not deduplicated.
 
-### "Document type "…" requires a BinderyPress template."
-The job's document type has no built-in renderer and the route has no `templateId` (or no BinderyPress key is configured). Either assign a route whose format Carbon can render built-in, or set a BinderyPress `templateId` on the printer route.
+### "No built-in renderer for "…". Add a "…" label template for media size "…"."
+The job's document type has no built-in renderer and no label template matches its label type and the printer's media size (or no BinderyPress key is configured). Add that label template under **Settings → Printing → Label Templates**.
 
 ### "Rendering failed: …"
 The job's content couldn't be generated. A common cause: a ZPL label routed to a media size that has no ZPL dimensions (built-in ZPL requires a ZPL-capable label size). Check the printer route's media size, or that a kanban card isn't being sent to a ZPL printer whose media is smaller than 3" x 2".

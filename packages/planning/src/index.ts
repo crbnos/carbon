@@ -21,6 +21,26 @@ export {
   jobCompletionDate,
   purchaseOrderLineArrivalDate
 } from "./mrp/supply-date.ts";
+// How many of an item can be made now, through every BOM level, and what limits it.
+export {
+  type Buildable,
+  type BuildableItem,
+  computeBuildable,
+  loadBuildable
+} from "./promising/buildable.ts";
+export {
+  buildDecisionInputs,
+  type CapacityAnswer,
+  checkDeliveryDates,
+  type DeliveryDateConstraint,
+  type DeliveryDateControl,
+  type DeliveryDateLine,
+  type DeliveryDateResult,
+  type DeliveryDateStatus,
+  type DeliveryLineMethod,
+  decideDeliveryDate,
+  type ExtraDemand
+} from "./promising/delivery-date-check.ts";
 // Finite scheduling (formerly reached via @carbon/database/scheduling).
 export {
   type CalendarWindow,

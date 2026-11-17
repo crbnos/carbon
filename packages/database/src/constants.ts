@@ -137,6 +137,9 @@ export const Constants = {
         "Contraction",
       ],
       deadlineType: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"],
+      deliveryDateConstraint: ["Lead Time", "Stock", "Capacity"],
+      deliveryDateControl: ["None", "Lead Time", "Stock", "Capacity"],
+      deliveryDateStatus: ["Met", "Missed", "Pending"],
       demandForecastSourceType: [
         "Job Material",
         "Sales Order",
@@ -485,6 +488,7 @@ export const Constants = {
         "Consumable",
         "Fixture",
       ],
+      jobMaterialScrapReplacement: ["Shelf", "Water Spider"],
       jobOperationBatchStatus: ["Planned", "Active", "Completing", "Completed"],
       jobOperationStatus: [
         "Canceled",

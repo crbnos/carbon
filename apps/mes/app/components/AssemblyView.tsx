@@ -84,6 +84,7 @@ import {
   LuListChecks,
   LuListFilter,
   LuPackageSearch,
+  LuPackageX,
   LuPause,
   LuPlay,
   LuTimer,
@@ -107,6 +108,7 @@ import { NeedMaterialModal } from "~/components/JobOperation/components/NeedMate
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
+import { useScrapParts } from "~/components/JobOperation/components/ScrapPartsModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
 import { useTravelerScan } from "~/components/JobOperation/hooks/useTravelerScan";
@@ -596,6 +598,7 @@ export function AssemblyView({
   const issueModal = useDisclosure();
   const qualityModal = useDisclosure();
   const needMaterialModal = useDisclosure();
+  const scrapParts = useScrapParts(operationId);
   const completeModal = useDisclosure();
   const scrapModal = useDisclosure();
   const reworkModal = useDisclosure();
@@ -1691,14 +1694,23 @@ export function AssemblyView({
 
   // Later operations: prompt the operator to scan/select the unit on arrival. Every
   // unit already carries a printed label (labels print at the first operation's
-  // completion), so there is nothing to auto-select. Prompt once per mount — even if
-  // the loader seeded a ?trackedEntityId — and only while units remain to build. The
-  // first operation auto-selects instead (loader default + the settle effect above).
+  // completion), so there is nothing to auto-select. Prompt once per mount, only
+  // while units remain to build. A ?trackedEntityId naming a unit still open here
+  // was scanned or selected (a traveler scan redirects with it; the operation
+  // route forwards to this view before it seeds a default), so it needs no prompt.
+  // The first operation auto-selects instead (loader default + the settle effect above).
   const arrivalPromptedRef = useRef(false);
   // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot arrival prompt
   useEffect(() => {
     if (!navigatesByEntity || isFirstOperation) return;
     if (arrivalPromptedRef.current) return;
+    const held = selectedEntityParam
+      ? unitEntities.find((entity) => entity.id === selectedEntityParam)
+      : undefined;
+    if (held && isUnitIncompleteForOperation(held, operationId)) {
+      arrivalPromptedRef.current = true;
+      return;
+    }
     // Cap to the unit axis (see the settle effect): don't prompt for serials the
     // job pre-generated beyond the operation quantity.
     const hasIncomplete = unitEntities.some((entity) =>
@@ -1970,7 +1982,6 @@ export function AssemblyView({
   // already sits in, or goes to its traveler.
   useTravelerScan({
     operationId,
-    jobMakeMethodId: operation?.jobMakeMethodId,
     parentTrackedEntityId: currentEntity?.id ?? trackedEntities[0]?.id,
     jobOperationStepId: step?.id,
     unitNumber: activeIndex + 1,
@@ -2094,6 +2105,17 @@ export function AssemblyView({
             <LuFlag className="size-4" />
             <Trans>Flag issue</Trans>
           </button>
+          {operation ? (
+            <button
+              type="button"
+              disabled={abilityBlocked}
+              onClick={() => scrapParts.open()}
+              className="hidden h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 md:gap-2 md:px-4 lg:flex"
+            >
+              <LuPackageX className="size-4" />
+              <Trans>Scrap parts</Trans>
+            </button>
+          ) : null}
           {headerActions}
         </header>
       )}
@@ -2674,14 +2696,30 @@ export function AssemblyView({
                                 issueModal.onOpen();
                               }
                         }
+                        onScrap={
+                          abilityBlocked ||
+                          m.methodType !== "Pull from Inventory"
+                            ? undefined
+                            : () => scrapParts.open(m.id)
+                        }
                       />
                     )
                   )}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  No materials assigned
-                </p>
+                <div className="flex flex-col items-start gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    No materials assigned
+                  </p>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<LuPackageX />}
+                    isDisabled={abilityBlocked}
+                    onClick={() => scrapParts.open()}
+                  >
+                    <Trans>Scrap parts</Trans>
+                  </Button>
+                </div>
               )}
             </SidebarSection>
 
@@ -2878,6 +2916,7 @@ export function AssemblyView({
         onClose={qualityModal.onClose}
       />
 
+      {scrapParts.modal}
       <NeedMaterialModal
         operationId={operationId}
         materials={allMaterials.flatMap((material) =>
@@ -3036,6 +3075,15 @@ export function AssemblyView({
                 onClick={() => {
                   actionsSheet.onClose();
                   qualityModal.onOpen();
+                }}
+              />
+              <ActionSheetButton
+                icon={<LuPackageX className="size-4 shrink-0" />}
+                label={t`Scrap parts`}
+                disabled={abilityBlocked}
+                onClick={() => {
+                  actionsSheet.onClose();
+                  scrapParts.open();
                 }}
               />
               <ActionSheetButton
@@ -3425,6 +3473,7 @@ function getIssuedForUnit(
 function MaterialRow({
   material,
   onIssue,
+  onScrap,
   stepNumbers = [],
   currentStepNumber,
   unitIndex = 0,
@@ -3433,6 +3482,8 @@ function MaterialRow({
 }: {
   material: any;
   onIssue?: () => void;
+  /** Scrap ruined parts of it and replace them from the shelf. */
+  onScrap?: () => void;
   // 1-based step numbers where this part is used ("where used"); empty = General.
   stepNumbers?: number[];
   currentStepNumber?: number;
@@ -3493,72 +3544,109 @@ function MaterialRow({
   const interactive = !!onIssue && (isTracked || !fullyIssued);
   const Wrapper = interactive ? "button" : "div";
 
+  // One card, two targets: the body opens the scan/issue flow and a trailing
+  // segment scraps. They are siblings because a button can't nest in a button.
+  const compactBadge = "min-h-5 px-2 text-xs";
+  const segmentFocus =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";
   return (
-    <Wrapper
-      {...(interactive
-        ? {
-            type: "button" as const,
-            onClick: onIssue,
-            "aria-label": isTracked ? t`Scan ${partName}` : t`Issue ${partName}`
-          }
-        : {})}
+    <div
       className={cn(
-        "flex w-full items-start gap-2.5 rounded-lg border border-border bg-accent/30 px-3 py-2.5 text-left transition-colors",
-        interactive && "cursor-pointer hover:bg-accent/60 active:scale-[0.99]",
+        "flex w-full items-stretch overflow-hidden rounded-lg border border-border bg-accent/30",
         usedHere && "ring-1 ring-inset ring-foreground/20"
       )}
     >
-      <StatusIcon
-        aria-label={issueStatus.label}
-        className={cn("mt-0.5 size-3.5 shrink-0", issueStatus.className)}
-      />
-      {/* Name + id stacked; each stays on a single line and truncates if long. */}
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-sm font-medium leading-snug text-foreground">
-          {material.description}
-        </span>
-        <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
-          {material.itemReadableId}
-        </span>
-        {/* Where to pull it from, or that it is made on this job. */}
-        <MaterialSource material={material} />
-        <ShortStockBadge material={material} />
-      </div>
-      {/* Count hard-right, with the tracking badges tucked beneath it. */}
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        {fullyIssued || extraIssued ? (
-          <span className="flex items-center gap-1 text-[0.6875rem] font-medium tabular-nums text-emerald-500">
-            {issued}/{required}
-            <LuCheck className="size-3" />
-          </span>
-        ) : partiallyIssued ? (
-          <span className="text-[0.6875rem] tabular-nums text-amber-500">
-            {issued}/{required}
-          </span>
-        ) : (
-          <span className="text-xs tabular-nums text-muted-foreground">
-            ×{required}
-          </span>
+      <Wrapper
+        {...(interactive
+          ? {
+              type: "button" as const,
+              onClick: onIssue,
+              "aria-label": isTracked
+                ? t`Scan ${partName}`
+                : t`Issue ${partName}`
+            }
+          : {})}
+        className={cn(
+          "flex min-w-0 flex-1 items-start gap-2.5 px-3 py-2.5 text-left transition-colors",
+          interactive &&
+            cn(
+              "cursor-pointer hover:bg-accent/60 active:bg-accent",
+              segmentFocus
+            )
         )}
-        {/* Distinguish an unplanned part (issued from the floor, not on the BOM). */}
-        {isExtra && <Badge variant="outline">Added</Badge>}
-        {isTracked && (
-          <div className="flex flex-wrap items-center justify-end gap-1">
+      >
+        <StatusIcon
+          aria-label={issueStatus.label}
+          className={cn("mt-0.5 size-3.5 shrink-0", issueStatus.className)}
+        />
+        {/* Name + id stacked; each stays on a single line and truncates if long. */}
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate text-sm font-medium leading-snug text-foreground">
+            {material.description}
+          </span>
+          <span className="truncate font-mono text-[0.625rem] text-muted-foreground">
+            {material.itemReadableId}
+          </span>
+          {/* Everything else stacks under the name and wraps, so a narrow
+              card never squeezes "Requires Scan" beside the count. */}
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <MaterialSource material={material} compact />
+            <ShortStockBadge material={material} className={compactBadge} />
+            {/* An unplanned part (issued from the floor, not on the BOM). */}
+            {isExtra && (
+              <Badge variant="outline" className={compactBadge}>
+                Added
+              </Badge>
+            )}
             {material.requiresSerialTracking && (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className={compactBadge}>
                 <TrackingTypeIcon type="Serial" className="shrink-0" />
               </Badge>
             )}
             {material.requiresBatchTracking && (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className={compactBadge}>
                 <TrackingTypeIcon type="Batch" className="shrink-0" />
               </Badge>
             )}
-            {!fullyIssued && <Badge variant="orange">Requires Scan</Badge>}
+            {isTracked && !fullyIssued && (
+              <Badge variant="orange" className={compactBadge}>
+                Requires Scan
+              </Badge>
+            )}
           </div>
-        )}
-      </div>
-    </Wrapper>
+        </div>
+        <div className="flex h-5 shrink-0 items-center">
+          {fullyIssued || extraIssued ? (
+            <span className="flex items-center gap-1 text-[0.6875rem] font-medium tabular-nums text-emerald-500">
+              {issued}/{required}
+              <LuCheck className="size-3" />
+            </span>
+          ) : partiallyIssued ? (
+            <span className="text-[0.6875rem] tabular-nums text-amber-500">
+              {issued}/{required}
+            </span>
+          ) : (
+            <span className="text-xs tabular-nums text-muted-foreground">
+              ×{required}
+            </span>
+          )}
+        </div>
+      </Wrapper>
+      {onScrap && (
+        <button
+          type="button"
+          aria-label={t`Scrap parts of ${partName}`}
+          title={t`Scrap parts`}
+          onClick={onScrap}
+          className={cn(
+            "flex w-11 shrink-0 items-center justify-center border-l border-border text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20",
+            segmentFocus
+          )}
+        >
+          <LuPackageX className="size-4" />
+        </button>
+      )}
+    </div>
   );
 }
 

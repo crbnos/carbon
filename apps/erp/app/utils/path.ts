@@ -90,6 +90,8 @@ export const path = {
     analyticsReport: (key: string) =>
       generatePath(`${x}/reports/analytics/${key}`),
     apAging: `${x}/reports/ap-aging`,
+    apAgingCsv: `${x}/reports/ap-aging.csv`,
+    apAgingExcel: `${x}/reports/ap-aging.xlsx`,
     api: {
       abilities: `${api}/resources/abilities`,
       accountNotifications: `${api}/account/notifications`,
@@ -209,6 +211,19 @@ export const path = {
         )}`,
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
+      itemBuildable: (
+        itemId: string,
+        locationId: string,
+        targetQuantity?: number
+      ) =>
+        `${generatePath(`${api}/items/${itemId}/buildable`)}?${new URLSearchParams(
+          {
+            locationId,
+            ...(targetQuantity
+              ? { targetQuantity: String(targetQuantity) }
+              : {})
+          }
+        )}`,
       itemConfigurable: `${api}/items/configurable`,
       itemCostRecalculate: (itemId: string) =>
         generatePath(`${api}/items/${itemId}/recalculate-cost`),
@@ -369,6 +384,10 @@ export const path = {
       root: api,
       salesCustomerOverride: `${api}/sales/customer-override`,
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
+      salesOrderDeliveryDate: (orderId: string, line: Record<string, string>) =>
+        `${generatePath(`${api}/sales-order/${orderId}/delivery-date`)}?${new URLSearchParams(
+          line
+        )}`,
       salesOrders: `${api}/sales/orders`,
       salesResolvePrice: `${api}/sales/resolve-price`,
       salesRfq: (id: string) => generatePath(`${api}/sales-rfq/${id}`),
@@ -487,6 +506,8 @@ export const path = {
       generatePath(`${x}/settings/approval-rules/${id}`),
     approvalRules: `${x}/settings/approval-rules`,
     arAging: `${x}/reports/ar-aging`,
+    arAgingCsv: `${x}/reports/ar-aging.csv`,
+    arAgingExcel: `${x}/reports/ar-aging.xlsx`,
     assemblyInstruction: (id: string) => generatePath(`${x}/assembly/${id}`),
     assemblyInstructionActivate: (id: string) =>
       generatePath(`${x}/assembly/${id}/activate`),
@@ -966,6 +987,8 @@ export const path = {
       generatePath(`${x}/journal-entry/${id}/delete`),
     deleteKanban: (id: string) =>
       generatePath(`${x}/inventory/kanbans/delete/${id}`),
+    deleteLabelTemplate: (id: string) =>
+      generatePath(`${x}/settings/printing/templates/${id}/delete`),
     deleteLease: (id: string) => generatePath(`${x}/lease/${id}/delete`),
     deleteLocation: (id: string) =>
       generatePath(`${x}/resources/locations/delete/${id}`),

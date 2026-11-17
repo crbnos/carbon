@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ComboboxProps } from "@carbon/form";
-import { Combobox } from "@carbon/form";
+import { Combobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { HStack } from "@carbon/react";
 import { useMemo } from "react";
@@ -19,7 +19,11 @@ const InspectionDocument = ({
   itemId,
   ...props
 }: InspectionDocumentSelectProps) => {
-  const { options, loading } = useInspectionDocuments({ itemId });
+  const [selectedId] = useControlField<string | undefined>(props.name);
+  const { options, loading } = useInspectionDocuments({
+    itemId,
+    selectedId: props.value ?? selectedId
+  });
 
   return (
     <Combobox
@@ -36,8 +40,11 @@ InspectionDocument.displayName = "InspectionDocument";
 
 export default InspectionDocument;
 
-export const useInspectionDocuments = (args: { itemId?: string }) => {
-  const { itemId } = args;
+export const useInspectionDocuments = (args: {
+  itemId?: string;
+  selectedId?: string;
+}) => {
+  const { itemId, selectedId } = args;
   const inspectionDocumentFetcher = useLoaderQuery<
     Awaited<ReturnType<typeof getInspectionDocumentsForItem>>
   >(itemId ? path.to.api.inspectionDocuments(itemId) : null);
@@ -47,24 +54,26 @@ export const useInspectionDocuments = (args: { itemId?: string }) => {
   const options = useMemo(
     () =>
       itemId && inspectionDocumentFetcher.data?.data
-        ? inspectionDocumentFetcher.data.data.map((c) => ({
-            value: c.id,
-            label: (
-              <div className="flex justify-between items-center gap-1 w-full">
-                <HStack className="items-end">
-                  <span className="text-sm truncate">
-                    {c.name ?? c.fileName ?? c.id}{" "}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    v{c.version}
-                  </span>
-                </HStack>
-                <QualityDocumentStatus status={c.status} />
-              </div>
-            )
-          }))
+        ? inspectionDocumentFetcher.data.data
+            .filter((c) => c.status !== "Archived" || c.id === selectedId)
+            .map((c) => ({
+              value: c.id,
+              label: (
+                <div className="flex justify-between items-center gap-1 w-full">
+                  <HStack className="items-end">
+                    <span className="text-sm truncate">
+                      {c.name ?? c.fileName ?? c.id}{" "}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      v{c.version}
+                    </span>
+                  </HStack>
+                  <QualityDocumentStatus status={c.status} />
+                </div>
+              )
+            }))
         : [],
-    [inspectionDocumentFetcher.data, itemId]
+    [inspectionDocumentFetcher.data, itemId, selectedId]
   );
 
   return { options, loading };

@@ -16,6 +16,7 @@ import {
   groupConflictClause,
   rebuildDerivedGroups
 } from "../../../backups/derived-groups";
+import { refreshReceiptInspectionStatuses } from "../../../backups/derived-receipts";
 import { applyTableRenames } from "../../../backups/renames";
 import { removeBucketPrefix } from "../../../backups/storage";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
@@ -272,6 +273,7 @@ export async function wipeAndLoad(
       companyId,
       wipedGroups.map((g) => g.id)
     );
+    await refreshReceiptInspectionStatuses(trx, companyId);
 
     // Every list an open client keeps a copy of has just been replaced. With
     // triggers off nothing logged that, so say it here: a null row id tells

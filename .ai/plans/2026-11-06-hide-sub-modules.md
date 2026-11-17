@@ -211,4 +211,3 @@ pnpm exec turbo run typecheck --filter=@carbon/react
 cd apps/erp && npx vitest run app/utils/submodule-visibility.test.ts
 # Expected: 12 tests pass.
 ```
-
