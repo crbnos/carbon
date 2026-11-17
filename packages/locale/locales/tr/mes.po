@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · {elsewhere} in {otherBin}"
+msgstr ""
+
+msgid " · {elsewhere} in no bin"
+msgstr ""
+
 msgid " · Kit job open"
 msgstr ""
 
@@ -200,6 +206,9 @@ msgstr "{hours} s"
 msgid "{issued} of {required}"
 msgstr "{issued} / {required}"
 
+msgid "{kitsReady} ready"
+msgstr ""
+
 msgid "{label} to scrap"
 msgstr ""
 
@@ -219,6 +228,9 @@ msgstr "{name}, {0}, %{percent} tamamlandı"
 msgid "{name}: {value}"
 msgstr "{name}: {value}"
 
+msgid "{namedParts} and {moreParts} more"
+msgstr ""
+
 msgid "{numerator} of {denominator}"
 msgstr "{denominator} içinde {numerator}"
 
@@ -237,6 +249,9 @@ msgstr ""
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} iş emirleri"
+
+msgid "{unbinned} in stock, in no bin"
+msgstr ""
 
 msgid "{workTypeLabel} timer started"
 msgstr "{workTypeLabel} zamanlayıcısı başlatıldı"
@@ -598,6 +613,13 @@ msgstr "Pano görünümü"
 
 msgid "Bold"
 msgstr "Kalın"
+
+msgid "Bring"
+msgstr ""
+
+#. placeholder {0}: lane.toBring
+msgid "Bring {0}"
+msgstr ""
 
 msgid "Bring {quantity}"
 msgstr "{quantity} getir"
@@ -1328,6 +1350,12 @@ msgstr "{0}. adıma git: {1}"
 msgid "Go to step {0}: {1} (done)"
 msgstr "{0}. adıma git: {1} (bitti)"
 
+msgid "goes to {feeds}"
+msgstr ""
+
+msgid "Grab from {source} · {free} of {onHand} left for this station"
+msgstr ""
+
 msgid "Grab from {source} · {onHand} there"
 msgstr ""
 
@@ -1560,6 +1588,9 @@ msgstr ""
 msgid "Kitter"
 msgstr ""
 
+msgid "Kitting and preparation"
+msgstr ""
+
 msgid "Labor"
 msgstr "İşçilik"
 
@@ -1704,6 +1735,9 @@ msgstr "Lot izlendi"
 msgid "Low"
 msgstr "Düşük"
 
+msgid "Low · {kitsReady} ready"
+msgstr ""
+
 msgid "Machine"
 msgstr "Makine"
 
@@ -1712,6 +1746,9 @@ msgstr "Makine şu anda bakım için kapalı mı?"
 
 msgid "Machine, timer running"
 msgstr "Makine, zamanlayıcı çalışıyor"
+
+msgid "Made here"
+msgstr ""
 
 msgid "Main"
 msgstr "Ana"
@@ -1842,6 +1879,9 @@ msgstr "Adı"
 msgid "Navigation"
 msgstr "Gezinti"
 
+msgid "Need {quantity}"
+msgstr ""
+
 msgid "Need material"
 msgstr "Malzeme gerekli"
 
@@ -1951,9 +1991,6 @@ msgstr ""
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "Henüz izin ayarlanmadı. Yöneticinizden ERP'de bir tane ayarlamasını isteyin."
 
-msgid "No lineside storage"
-msgstr "Hat yanı depolama yok"
-
 msgid "No maintenance scheduled for today"
 msgstr "Bugün planlanmış bakım yok"
 
@@ -1986,6 +2023,9 @@ msgstr "Bu lokasyonda açık hizmet işi yok"
 
 msgid "No open units to allocate"
 msgstr "Tahsis edilecek açık birim yok"
+
+msgid "No open work"
+msgstr ""
 
 msgid "No operators"
 msgstr "Operatör bulunamadı"
@@ -2062,6 +2102,9 @@ msgstr "İstasyon yok"
 msgid "No stations at this location"
 msgstr "Bu lokasyonda istasyon yok"
 
+msgid "No stations match"
+msgstr ""
+
 msgid "No stock"
 msgstr "Stok yok"
 
@@ -2091,6 +2134,12 @@ msgstr "MRP dışı"
 
 msgid "None"
 msgstr "Hiçbiri"
+
+msgid "None in stock · Nothing ordered"
+msgstr ""
+
+msgid "None in stock · On order"
+msgstr ""
 
 msgid "None on the shelf"
 msgstr ""
@@ -2260,6 +2309,9 @@ msgstr "Ya da bu sırrı manuel olarak girin:"
 
 #. placeholder {0}: unit.readableId
 msgid "Other operations that need {0}"
+msgstr ""
+
+msgid "Other stations"
 msgstr ""
 
 msgid "Out"
@@ -2544,6 +2596,9 @@ msgstr "Miktar {0}"
 msgid "Quantity must be greater than 0"
 msgstr "Miktar 0'dan büyük olmalıdır"
 
+msgid "Quantity to move"
+msgstr ""
+
 msgid "Quantity:"
 msgstr "Miktar:"
 
@@ -2567,6 +2622,9 @@ msgstr ""
 
 msgid "Re"
 msgstr "Rd"
+
+msgid "Ready"
+msgstr ""
 
 msgid "Reason"
 msgstr "Neden"
@@ -2742,9 +2800,6 @@ msgstr "Zengin metin"
 
 msgid "Running"
 msgstr "Çalışıyor"
-
-msgid "Running low"
-msgstr "Azalıyor"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2926,6 +2981,9 @@ msgstr ""
 msgid "Search recent operations"
 msgstr "Son operasyonlarda ara"
 
+msgid "Search stations"
+msgstr ""
+
 msgid "Search..."
 msgstr "Ara..."
 
@@ -3071,6 +3129,9 @@ msgstr "kısa"
 msgid "Short"
 msgstr "Azalt"
 
+msgid "Short {short}"
+msgstr ""
+
 msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
 
@@ -3158,12 +3219,6 @@ msgstr "Esnek son tarih"
 msgid "Solid"
 msgstr "Düz"
 
-msgid "Sort: line order"
-msgstr ""
-
-msgid "Sort: worst first"
-msgstr ""
-
 msgid "Source"
 msgstr "Kaynak"
 
@@ -3221,7 +3276,7 @@ msgstr "İstasyon Kullanıcısı"
 msgid "Station: {stationName}"
 msgstr "İstasyon: {stationName}"
 
-msgid "stations out"
+msgid "stations short"
 msgstr ""
 
 #. placeholder {0}: inspection.lotSize
@@ -3496,6 +3551,9 @@ msgstr "Süre türü"
 msgid "Time Worked"
 msgstr "Çalışılan Zaman"
 
+msgid "to bring lineside"
+msgstr ""
+
 msgid "To pick"
 msgstr "Toplanacak"
 
@@ -3730,6 +3788,9 @@ msgstr "Görüntüle veya aç"
 msgid "View Traceability"
 msgstr "İzlenebilirliği görüntüle"
 
+msgid "Waiting"
+msgstr ""
+
 msgid "Warranty"
 msgstr "Garanti"
 
@@ -3738,9 +3799,6 @@ msgstr ""
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Size oturum açma bağlantısı ve 6 haneli bir kod gönderdik. Bağlantıyı takip edin veya kodu buraya girin."
-
-msgid "Wet"
-msgstr "Islak"
 
 msgid "What do you need?"
 msgstr "Neye ihtiyacınız var?"

@@ -48,14 +48,35 @@ export type LineFeedRow = {
   note?: string | null;
   /** Where to grab a part the station is short of. Set by `buildLaneBoard`. */
   source?: StockSource;
+  /**
+   * A shortage with no bin to grab from: what the location holds of the part
+   * in no bin, and whether more is on its way. Set by `buildLaneBoard`.
+   */
+  supply?: { unbinned: number; replenishing: boolean };
+  /**
+   * How a shortage can be covered. A station works from its lineside stock,
+   * so every shortage is something to bring or to wait for. Set by
+   * `buildLaneBoard`.
+   * - `site`: the warehouse holds enough: bring it
+   * - `fed`: a Transfer kanban feeds the part to this station, and its source
+   *   holds some: bring it
+   * - `upstream`: not enough on site, and the part is made at this location
+   * - `none`: not enough at this location
+   */
+  cover?: "site" | "fed" | "upstream" | "none";
 };
 
 /** A bin to grab a part from, and how much of what to bring it holds. */
 export type StockSource = {
   storageUnitId: string;
   onHand: number;
-  /** The most one transfer brings: the need, capped at what the bin holds. */
+  /**
+   * The most one transfer brings: the need, capped at what the bin holds
+   * after the stations before this one in line order took theirs.
+   */
   quantity: number;
+  /** What those earlier stations take from the bin. */
+  claimed?: number;
   /** The serial to move, for a kit. */
   trackedEntityId?: string;
 };
@@ -289,6 +310,11 @@ export type RawBin = {
   status: RawBinStatus;
   /** An open purchase order line or job will refill it. */
   replenishing: boolean;
+  /**
+   * Stock of the part outside this bin, when the bin cannot cover its need:
+   * another bin, or no bin (`storageUnitId` null).
+   */
+  elsewhere?: { storageUnitId: string | null; onHand: number };
 };
 
 export type KitUnit = {
@@ -346,20 +372,38 @@ export type LaneWork = {
   finish: number;
   /** Kits the rack is below target by, when the shelf covers one. */
   build: number;
-  /** Shelf bins that cannot cover what is needed from them, and the parts an
-   *  incomplete kit misses that are on no shelf. */
+  /** Shelf bins that cannot cover what is needed from them when no other
+   *  stock can, the parts an incomplete kit misses that are on no shelf, and
+   *  the parts the station is short of that the location holds none of. */
   rawShort: number;
 };
 
 export type LaneVerdict = "deliver" | "finish" | "build" | "rawShort" | "ok";
 export type LaneSeverity = "red" | "amber" | "green" | "unknown";
 
+/**
+ * What a station needs, worst first.
+ * - `short`: this location does not hold a part it needs in the quantity
+ *   needed
+ * - `bring`: a part or a kit is in the warehouse or on the rack and has to be
+ *   brought lineside, or an operator asked
+ * - `waiting`: it waits on a part made at this location, or on a kit
+ * - `ready`: it has open work and its lineside stock covers every part
+ * - `idle`: no open work
+ */
+export type LaneNeed = "short" | "bring" | "waiting" | "ready" | "idle";
+
 export type Lane = {
   workCenterId: string | null;
   name: string | null;
+  need: LaneNeed;
   severity: LaneSeverity;
   verdict: LaneVerdict;
   work: LaneWork;
+  /** An open operation runs at the station. */
+  open: boolean;
+  /** Parts and kits to bring lineside from the warehouse or the rack. */
+  toBring: number;
   /** The parts behind a `rawShort` count. */
   shortItemIds: string[];
   raw: RawBin[];
@@ -378,18 +422,43 @@ export function laneVerdict(work: LaneWork): LaneVerdict {
 }
 
 /**
- * Red when the station is out, amber when it is low or the lane has work.
- * A station with no lineside storage is `unknown`, not green: its stock
- * cannot be read.
+ * What the lane needs, from how each shortage is covered. A shortage with no
+ * cover (no stock read) counts as the station card ranked it: out is short,
+ * low is to bring.
  */
-export function laneSeverity(
-  status: StationStockStatus,
-  verdict: LaneVerdict
-): LaneSeverity {
-  if (status === "out") return "red";
-  if (status === "low" || verdict !== "ok") return "amber";
-  return status === "unknown" ? "unknown" : "green";
+export function laneNeed(lane: Omit<Lane, "need" | "severity">): LaneNeed {
+  const shortages = lane.looseRows.filter((row) => row.kind === "shortage");
+  const isShort = (row: LineFeedRow) =>
+    row.cover === "none" || (!row.cover && row.stockStatus !== "low");
+  if (shortages.some(isShort)) return "short";
+  if (
+    lane.work.deliver > 0 ||
+    lane.looseRows.some((row) => row.kind === "request") ||
+    shortages.some(
+      (row) => row.cover === "site" || row.cover === "fed" || !row.cover
+    )
+  ) {
+    return "bring";
+  }
+  if (
+    lane.verdict !== "ok" ||
+    // A transfer on its way covers the shortage: nothing to bring.
+    lane.station.status === "low" ||
+    shortages.some((row) => row.cover === "upstream") ||
+    lane.kits.some((kit) => kit.stationStatus !== "ok")
+  ) {
+    return "waiting";
+  }
+  return lane.open ? "ready" : "idle";
 }
+
+const needSeverity: Record<LaneNeed, LaneSeverity> = {
+  short: "red",
+  bring: "amber",
+  waiting: "amber",
+  ready: "green",
+  idle: "unknown"
+};
 
 const severityOrder: Record<LaneSeverity, number> = {
   red: 0,
@@ -409,7 +478,11 @@ const kitUnit = (row: LaneRowInput): KitUnit => ({
 const total = (units: { quantity: number }[]) =>
   units.reduce((sum, unit) => sum + unit.quantity, 0);
 
-function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
+function buildLane(
+  station: StationCard,
+  rows: LaneRowInput[],
+  open: boolean
+): Lane {
   const kits = new Map<string, LaneKit>();
   const jobs = new Map<string, IncompleteKit>();
   for (const row of rows) {
@@ -552,9 +625,26 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
           : bin.onHand < Math.max(level, perKit)
             ? "low"
             : "ok";
-    if (bin.need > 0 && (bin.status === "empty" || bin.status === "short")) {
-      work.rawShort += 1;
-      short.add(bin.itemId);
+    if (bin.status === "empty" || bin.status === "short") {
+      // The part's stock in another bin, or in no bin.
+      const other = sources.get(bin.itemId);
+      const held = other?.quantity ?? 0;
+      const sameBin = (other?.storageUnitId ?? null) === bin.storageUnitId;
+      if (held > 0 && !sameBin) {
+        bin.elsewhere = {
+          storageUnitId: other?.storageUnitId ?? null,
+          onHand: held
+        };
+      }
+      // Everything the warehouse holds counts, not only the best other bin.
+      const inWarehouse = Math.max(
+        bin.onHand + (bin.elsewhere?.onHand ?? 0),
+        other?.need ?? 0
+      );
+      if (bin.need > 0 && inWarehouse < bin.need) {
+        work.rawShort += 1;
+        short.add(bin.itemId);
+      }
     }
     raw.push(bin);
   }
@@ -565,24 +655,9 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
     // The water spider brings a kit when the station runs out, not one per
     // open unit: the rack is the buffer.
     const coming = (inTransit.get(kit.itemId) ?? 0) > 0;
+    // `claimStock` turns `out` into `bring` when the rack has a kit left.
     if (kit.demand > 0 && atStation <= 0) {
-      kit.stationStatus = coming
-        ? "coming"
-        : kit.complete.length > 0
-          ? "bring"
-          : "out";
-    }
-    if (kit.stationStatus === "bring") {
-      work.deliver += 1;
-      const [unit] = kit.complete;
-      if (unit.storageUnitId) {
-        kit.source = {
-          storageUnitId: unit.storageUnitId,
-          onHand: unit.quantity,
-          quantity: 1,
-          trackedEntityId: unit.trackedEntityId ?? undefined
-        };
-      }
+      kit.stationStatus = coming ? "coming" : "out";
     }
 
     for (const job of kit.incomplete) {
@@ -598,41 +673,293 @@ function buildLane(station: StationCard, rows: LaneRowInput[]): Lane {
     if (coversOneKit) work.build += kit.rackGap;
   }
 
-  const verdict = laneVerdict(work);
+  const looseRows = station.rows.flatMap((line): LineFeedRow[] => {
+    if (line.kind !== "shortage" || !line.itemId) return [line];
+    if (kits.has(line.itemId)) return [];
+    // The bin the station's own Transfer kanban draws from, while it holds
+    // stock; else the item's default or fullest bin.
+    const direct = directByItem.get(line.itemId);
+    if (direct?.storageUnitId && direct.onHand > 0) {
+      return [
+        {
+          ...line,
+          cover: "fed",
+          source: {
+            storageUnitId: direct.storageUnitId,
+            onHand: direct.onHand,
+            quantity: 0
+          }
+        }
+      ];
+    }
+    const stock = sources.get(line.itemId);
+    if (!stock) return [line];
+    const onHand = stock.quantity ?? 0;
+    // `claimStock` settles the cover from what the site holds.
+    if (stock.storageUnitId && onHand > 0) {
+      return [
+        {
+          ...line,
+          cover: "none",
+          source: { storageUnitId: stock.storageUnitId, onHand, quantity: 0 }
+        }
+      ];
+    }
+    // No bin holds it. With none in no bin either, only a receipt or a job
+    // can feed the station.
+    if (onHand <= 0) {
+      if (!short.has(line.itemId)) work.rawShort += 1;
+      short.add(line.itemId);
+    }
+    return [
+      {
+        ...line,
+        cover: "none",
+        supply: { unbinned: onHand, replenishing: stock.replenishing ?? false }
+      }
+    ];
+  });
+
+  // `claimStock` sets the deliver count, the verdict, the need and the
+  // severity.
   return {
     workCenterId: station.workCenterId,
     name: station.name,
-    severity: laneSeverity(station.status, verdict),
-    verdict,
+    need: "idle",
+    severity: "unknown",
+    verdict: "ok",
+    open,
+    toBring: 0,
     work,
     shortItemIds: [...short],
     raw,
     kits: [...kits.values()],
     station,
-    looseRows: station.rows.flatMap((line) => {
-      if (line.kind !== "shortage" || !line.itemId) return [line];
-      if (kits.has(line.itemId)) return [];
-      // The bin the station's own Transfer kanban draws from, while it holds
-      // stock; else the item's default or fullest bin.
-      const direct = directByItem.get(line.itemId);
-      const from =
-        direct?.storageUnitId && direct.onHand > 0
-          ? { storageUnitId: direct.storageUnitId, onHand: direct.onHand }
-          : sources.get(line.itemId);
-      if (!from?.storageUnitId) return [line];
-      const onHand = "onHand" in from ? from.onHand : (from.quantity ?? 0);
-      return [
-        {
-          ...line,
-          source: {
-            storageUnitId: from.storageUnitId,
-            onHand,
-            quantity: Math.min(line.quantity ?? 0, onHand)
-          }
-        }
-      ];
-    })
+    looseRows
   };
+}
+
+/**
+ * Gives each bin's stock and each rack kit to one station, in line order, so
+ * two stations are never told to grab the same parts. A station later in the
+ * line gets what the earlier ones leave: a smaller move, or none. The stock
+ * of the whole site is given out the same way, and decides how each shortage
+ * is covered. Then each lane's verdict, need and severity follow.
+ */
+function claimStock(
+  lanesInLineOrder: Lane[],
+  site: { onHand: Map<string, number>; made: Set<string> }
+) {
+  const left = new Map<string, number>();
+  const take = (key: string, onHand: number, wanted: number) => {
+    const free = left.get(key) ?? onHand;
+    const taken = Math.min(wanted, free);
+    left.set(key, round(free - taken));
+    return { taken, claimed: round(onHand - free) };
+  };
+
+  const siteKey = (itemId: string) => `site:${itemId}`;
+  const onSite = (itemId: string) => site.onHand.get(itemId) ?? 0;
+
+  for (const lane of lanesInLineOrder) {
+    for (const kit of lane.kits) {
+      if (kit.stationStatus !== "out") continue;
+      for (const unit of kit.complete) {
+        if (!unit.storageUnitId) continue;
+        const key = `kit:${kit.itemId}:${unit.storageUnitId}:${unit.trackedEntityId}`;
+        const { taken, claimed } = take(key, unit.quantity, 1);
+        if (taken <= 0) continue;
+        kit.stationStatus = "bring";
+        kit.source = {
+          storageUnitId: unit.storageUnitId,
+          onHand: unit.quantity,
+          quantity: taken,
+          ...(claimed > 0 && { claimed }),
+          trackedEntityId: unit.trackedEntityId ?? undefined
+        };
+        lane.work.deliver += 1;
+        break;
+      }
+    }
+
+    for (const line of lane.looseRows) {
+      if (line.kind !== "shortage" || !line.itemId || !line.cover) continue;
+      const wanted = line.quantity ?? 0;
+      if (line.source) {
+        const key = `bin:${line.itemId}:${line.source.storageUnitId}`;
+        const { taken, claimed } = take(key, line.source.onHand, wanted);
+        line.source = {
+          ...line.source,
+          quantity: taken,
+          ...(claimed > 0 && { claimed })
+        };
+        // A kanban part is brought from its source bin while that holds some.
+        // The bin is part of the warehouse, so the claim counts there too.
+        if (line.cover === "fed" && taken > 0) {
+          take(siteKey(line.itemId), onSite(line.itemId), taken);
+          continue;
+        }
+      }
+      const covered = take(
+        siteKey(line.itemId),
+        onSite(line.itemId),
+        wanted
+      ).taken;
+      line.cover =
+        covered >= wanted
+          ? "site"
+          : site.made.has(line.itemId)
+            ? "upstream"
+            : "none";
+    }
+
+    lane.toBring =
+      lane.work.deliver +
+      lane.looseRows.filter(
+        (row) => row.cover === "site" || row.cover === "fed"
+      ).length;
+    lane.verdict = laneVerdict(lane.work);
+    lane.need = laneNeed(lane);
+    lane.severity = needSeverity[lane.need];
+  }
+}
+
+/** One row of the flow map. */
+export type FlowRow = {
+  /**
+   * `line`: the stations of one made item's routing, in order. `prep`: the
+   * stations whose routing is a single step (kitting benches). `other`: the
+   * stations of no routing with an open job.
+   */
+  type: "line" | "prep" | "other";
+  /** The item a `line` makes. */
+  itemId: string | null;
+  /** Work center ids. The stations of one step run in parallel. */
+  steps: string[][];
+  /** The station of another row that takes this row's item. */
+  feeds?: { itemId: string; workCenterId: string };
+};
+
+/**
+ * The flow map: the stations in the order of the process. A station can be on
+ * several routings (three engine sizes share a line); it shows once, on the
+ * routing with an open job, then the one with the most stations. A row comes
+ * before the row it feeds.
+ */
+export function buildFlow(
+  stations: { workCenterId: string | null; name: string | null }[],
+  laneRows: LaneRowInput[]
+): FlowRow[] {
+  const steps = laneRows.filter(
+    (row) => row.tier === "flow" && row.state === "step" && row.itemId
+  );
+  const size = new Map<string, number>();
+  for (const step of steps) {
+    size.set(step.itemId ?? "", (size.get(step.itemId ?? "") ?? 0) + 1);
+  }
+  // A routing with an open job first, then the one with the most stations.
+  const outranks = (a: LaneRowInput, b: LaneRowInput) => {
+    const running =
+      Number(Boolean(b.replenishing)) - Number(Boolean(a.replenishing));
+    if (running !== 0) return running < 0;
+    const stations =
+      (size.get(b.itemId ?? "") ?? 0) - (size.get(a.itemId ?? "") ?? 0);
+    if (stations !== 0) return stations < 0;
+    return (a.itemId ?? "") < (b.itemId ?? "");
+  };
+  const chosen = new Map<string, LaneRowInput>();
+  for (const step of steps) {
+    const current = chosen.get(step.workCenterId);
+    if (!current || outranks(step, current)) {
+      chosen.set(step.workCenterId, step);
+    }
+  }
+
+  const names = new Map(
+    stations.map((station) => [station.workCenterId, station.name ?? ""])
+  );
+  const byName = (a: string, b: string) =>
+    (names.get(a) ?? "").localeCompare(names.get(b) ?? "", undefined, {
+      numeric: true
+    });
+
+  const routings = new Map<string, { running: boolean; ids: string[] }>();
+  const loose: string[] = [];
+  for (const station of stations) {
+    const id = station.workCenterId;
+    if (!id) continue;
+    const step = chosen.get(id);
+    if (!step?.itemId) {
+      loose.push(id);
+      continue;
+    }
+    const routing = routings.get(step.itemId) ?? {
+      running: Boolean(step.replenishing),
+      ids: []
+    };
+    routing.ids.push(id);
+    routings.set(step.itemId, routing);
+  }
+
+  const lines = new Map<string, FlowRow>();
+  const prep: string[] = [];
+  for (const [itemId, routing] of routings) {
+    if (!routing.running) {
+      loose.push(...routing.ids);
+      continue;
+    }
+    const byOrder = new Map<number, string[]>();
+    for (const id of routing.ids) {
+      const order = chosen.get(id)?.quantity ?? 0;
+      byOrder.set(order, [...(byOrder.get(order) ?? []), id]);
+    }
+    // One step is not a line, however many benches run it.
+    if (byOrder.size < 2) {
+      prep.push(...routing.ids);
+      continue;
+    }
+    lines.set(itemId, {
+      type: "line",
+      itemId,
+      steps: [...byOrder.entries()]
+        .sort(([a], [b]) => a - b)
+        .map(([, ids]) => ids.sort(byName))
+    });
+  }
+
+  // A line feeds the first line whose routing consumes its item at a station
+  // that line shows.
+  const feeders = new Map<string, FlowRow[]>();
+  for (const row of laneRows) {
+    if (row.tier !== "flow" || row.state !== "feed") continue;
+    const line = row.itemId ? lines.get(row.itemId) : undefined;
+    const parent = row.parentKitItemId ?? "";
+    if (!line || line.feeds || !lines.has(parent)) continue;
+    if (chosen.get(row.workCenterId)?.itemId !== parent) continue;
+    line.feeds = { itemId: parent, workCenterId: row.workCenterId };
+    feeders.set(parent, [...(feeders.get(parent) ?? []), line]);
+  }
+
+  const ordered: FlowRow[] = [];
+  const seen = new Set<FlowRow>();
+  const place = (line: FlowRow) => {
+    if (seen.has(line)) return;
+    seen.add(line);
+    for (const feeder of feeders.get(line.itemId ?? "") ?? []) place(feeder);
+    ordered.push(line);
+  };
+  const count = (line: FlowRow) => line.steps.flat().length;
+  for (const line of [...lines.values()]
+    .filter((row) => !row.feeds)
+    .sort((a, b) => count(b) - count(a))) {
+    place(line);
+  }
+  // A cycle of feeds has no root: its lines still show.
+  for (const line of lines.values()) place(line);
+
+  const group = (type: "prep" | "other", ids: string[]): FlowRow[] =>
+    ids.length > 0 ? [{ type, itemId: null, steps: [ids.sort(byName)] }] : [];
+  return [...group("prep", prep), ...ordered, ...group("other", loose)];
 }
 
 /**
@@ -653,6 +980,7 @@ export function buildLaneBoard({
   const rowsByWorkCenter = new Map<string, LaneRowInput[]>();
   const lineOrder = new Map<string, number>();
   for (const row of laneRows) {
+    if (row.tier === "flow") continue;
     if (row.state === "line") {
       lineOrder.set(row.workCenterId, row.quantity ?? 0);
       continue;
@@ -665,30 +993,60 @@ export function buildLaneBoard({
   const lanes = stations.map((station) =>
     buildLane(
       station,
-      (station.workCenterId && rowsByWorkCenter.get(station.workCenterId)) || []
+      (station.workCenterId && rowsByWorkCenter.get(station.workCenterId)) ||
+        [],
+      Boolean(station.workCenterId && lineOrder.has(station.workCenterId))
     )
   );
-  const order = (lane: Lane) =>
-    (lane.workCenterId ? lineOrder.get(lane.workCenterId) : undefined) ??
-    Infinity;
 
-  return lanes.sort(
-    (a, b) =>
-      (sort === "worst"
-        ? severityOrder[a.severity] - severityOrder[b.severity]
-        : 0) ||
-      order(a) - order(b) ||
-      (a.name === null ? 1 : 0) - (b.name === null ? 1 : 0) ||
-      (a.name ?? "").localeCompare(b.name ?? "", undefined, { numeric: true })
-  );
+  // The order of the process: the flow map's, then the lowest open operation
+  // order for a station on no routing.
+  const flowOrder = new Map<string, number>();
+  for (const row of buildFlow(stations, laneRows)) {
+    if (row.type === "other") continue;
+    for (const id of row.steps.flat()) flowOrder.set(id, flowOrder.size);
+  }
+  const order = (lane: Lane): [number, number] =>
+    lane.workCenterId
+      ? [
+          flowOrder.get(lane.workCenterId) ?? Infinity,
+          lineOrder.get(lane.workCenterId) ?? Infinity
+        ]
+      : [Infinity, Infinity];
+  const compare = (a: number, b: number) => (a === b ? 0 : a < b ? -1 : 1);
+
+  const byLine = (a: Lane, b: Lane) =>
+    compare(order(a)[0], order(b)[0]) ||
+    compare(order(a)[1], order(b)[1]) ||
+    (a.name === null ? 1 : 0) - (b.name === null ? 1 : 0) ||
+    (a.name ?? "").localeCompare(b.name ?? "", undefined, { numeric: true });
+
+  const site = { onHand: new Map<string, number>(), made: new Set<string>() };
+  for (const row of laneRows) {
+    if (!row.itemId) continue;
+    if (row.state === "source") site.onHand.set(row.itemId, row.need ?? 0);
+    else if (row.state === "step") site.made.add(row.itemId);
+  }
+
+  // Stock is claimed in line order whatever order the board shows.
+  lanes.sort(byLine);
+  claimStock(lanes, site);
+  if (sort === "worst") {
+    lanes.sort(
+      (a, b) =>
+        severityOrder[a.severity] - severityOrder[b.severity] || byLine(a, b)
+    );
+  }
+  return lanes;
 }
 
-export type LaneSummary = LaneWork & { out: number };
+export type LaneSummary = LaneWork & { out: number; bring: number };
 
 /** The summary strip: stations out, and the board's work by kind. */
 export function summarizeLanes(lanes: Lane[]): LaneSummary {
   const summary: LaneSummary = {
     out: 0,
+    bring: 0,
     deliver: 0,
     finish: 0,
     build: 0,
@@ -696,6 +1054,7 @@ export function summarizeLanes(lanes: Lane[]): LaneSummary {
   };
   for (const lane of lanes) {
     if (lane.severity === "red") summary.out += 1;
+    summary.bring += lane.toBring;
     for (const kind of verdictOrder) summary[kind] += lane.work[kind];
   }
   return summary;

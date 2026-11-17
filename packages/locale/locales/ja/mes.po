@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid " · {elsewhere} in {otherBin}"
+msgstr ""
+
+msgid " · {elsewhere} in no bin"
+msgstr ""
+
 msgid " · Kit job open"
 msgstr ""
 
@@ -200,6 +206,9 @@ msgstr "{hours} 時間"
 msgid "{issued} of {required}"
 msgstr "{required}のうち{issued}"
 
+msgid "{kitsReady} ready"
+msgstr ""
+
 msgid "{label} to scrap"
 msgstr ""
 
@@ -219,6 +228,9 @@ msgstr "{name}、{0}、{percent}% 完了"
 msgid "{name}: {value}"
 msgstr "{name}: {value}"
 
+msgid "{namedParts} and {moreParts} more"
+msgstr ""
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} / {denominator}"
 
@@ -237,6 +249,9 @@ msgstr ""
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0}件の製造指図"
+
+msgid "{unbinned} in stock, in no bin"
+msgstr ""
 
 msgid "{workTypeLabel} timer started"
 msgstr "{workTypeLabel}タイマーを開始しました"
@@ -598,6 +613,13 @@ msgstr "ボード表示"
 
 msgid "Bold"
 msgstr "太字"
+
+msgid "Bring"
+msgstr ""
+
+#. placeholder {0}: lane.toBring
+msgid "Bring {0}"
+msgstr ""
 
 msgid "Bring {quantity}"
 msgstr "{quantity}を持参"
@@ -1328,6 +1350,12 @@ msgstr "ステップ {0} へ移動: {1}"
 msgid "Go to step {0}: {1} (done)"
 msgstr "ステップ {0} へ移動: {1}（完了）"
 
+msgid "goes to {feeds}"
+msgstr ""
+
+msgid "Grab from {source} · {free} of {onHand} left for this station"
+msgstr ""
+
 msgid "Grab from {source} · {onHand} there"
 msgstr ""
 
@@ -1560,6 +1588,9 @@ msgstr ""
 msgid "Kitter"
 msgstr ""
 
+msgid "Kitting and preparation"
+msgstr ""
+
 msgid "Labor"
 msgstr "労務"
 
@@ -1704,6 +1735,9 @@ msgstr "ロット追跡対象"
 msgid "Low"
 msgstr "低"
 
+msgid "Low · {kitsReady} ready"
+msgstr ""
+
 msgid "Machine"
 msgstr "機械"
 
@@ -1712,6 +1746,9 @@ msgstr "機械が今保全中ですか？"
 
 msgid "Machine, timer running"
 msgstr "機械、タイマー実行中"
+
+msgid "Made here"
+msgstr ""
 
 msgid "Main"
 msgstr "メイン"
@@ -1842,6 +1879,9 @@ msgstr "名前"
 msgid "Navigation"
 msgstr "ナビゲーション"
 
+msgid "Need {quantity}"
+msgstr ""
+
 msgid "Need material"
 msgstr "資材が必要"
 
@@ -1951,9 +1991,6 @@ msgstr ""
 msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
 msgstr "休暇がまだ設定されていません。マネージャーにERPで設定するよう依頼してください。"
 
-msgid "No lineside storage"
-msgstr "ラインサイドの保管場所がありません"
-
 msgid "No maintenance scheduled for today"
 msgstr "本日の保全予定はありません。"
 
@@ -1986,6 +2023,9 @@ msgstr "この拠点にオープンな外注サービスがありません"
 
 msgid "No open units to allocate"
 msgstr "割り当てるオープンユニットがありません"
+
+msgid "No open work"
+msgstr ""
 
 msgid "No operators"
 msgstr "作業者がいません。"
@@ -2062,6 +2102,9 @@ msgstr "ステーションなし"
 msgid "No stations at this location"
 msgstr "この拠点にはステーションがありません"
 
+msgid "No stations match"
+msgstr ""
+
 msgid "No stock"
 msgstr "在庫なし"
 
@@ -2091,6 +2134,12 @@ msgstr "MRP対象外"
 
 msgid "None"
 msgstr "なし"
+
+msgid "None in stock · Nothing ordered"
+msgstr ""
+
+msgid "None in stock · On order"
+msgstr ""
 
 msgid "None on the shelf"
 msgstr ""
@@ -2260,6 +2309,9 @@ msgstr "またはこのシークレットを手動で入力してください：
 
 #. placeholder {0}: unit.readableId
 msgid "Other operations that need {0}"
+msgstr ""
+
+msgid "Other stations"
 msgstr ""
 
 msgid "Out"
@@ -2544,6 +2596,9 @@ msgstr "数量 {0}"
 msgid "Quantity must be greater than 0"
 msgstr "数量は0より大きい値を入力してください"
 
+msgid "Quantity to move"
+msgstr ""
+
 msgid "Quantity:"
 msgstr "数量:"
 
@@ -2567,6 +2622,9 @@ msgstr ""
 
 msgid "Re"
 msgstr "不合格判定"
+
+msgid "Ready"
+msgstr ""
 
 msgid "Reason"
 msgstr "理由"
@@ -2742,9 +2800,6 @@ msgstr "リッチテキスト"
 
 msgid "Running"
 msgstr "実行中"
-
-msgid "Running low"
-msgstr "残りわずか"
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Running on <0>{0}</0>"
@@ -2926,6 +2981,9 @@ msgstr ""
 msgid "Search recent operations"
 msgstr "最近の工程を検索"
 
+msgid "Search stations"
+msgstr ""
+
 msgid "Search..."
 msgstr "検索..."
 
@@ -3071,6 +3129,9 @@ msgstr "短縮"
 msgid "Short"
 msgstr "不足"
 
+msgid "Short {short}"
+msgstr ""
+
 msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
 
@@ -3158,12 +3219,6 @@ msgstr "目安納期"
 msgid "Solid"
 msgstr "単色"
 
-msgid "Sort: line order"
-msgstr ""
-
-msgid "Sort: worst first"
-msgstr ""
-
 msgid "Source"
 msgstr "ソース"
 
@@ -3221,7 +3276,7 @@ msgstr "ステーションユーザー"
 msgid "Station: {stationName}"
 msgstr "ステーション: {stationName}"
 
-msgid "stations out"
+msgid "stations short"
 msgstr ""
 
 #. placeholder {0}: inspection.lotSize
@@ -3496,6 +3551,9 @@ msgstr "時間の種類"
 msgid "Time Worked"
 msgstr "作業時間"
 
+msgid "to bring lineside"
+msgstr ""
+
 msgid "To pick"
 msgstr "ピッキング待ち"
 
@@ -3730,6 +3788,9 @@ msgstr "表示または開く"
 msgid "View Traceability"
 msgstr "トレーサビリティを表示"
 
+msgid "Waiting"
+msgstr ""
+
 msgid "Warranty"
 msgstr "保証"
 
@@ -3738,9 +3799,6 @@ msgstr ""
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "サインインリンクと6桁コードをメールで送信しました。リンクをクリックするか、ここにコードを入力してください。"
-
-msgid "Wet"
-msgstr "湿式"
 
 msgid "What do you need?"
 msgstr "何をお探しですか？"

@@ -512,7 +512,32 @@ while its serial or batch materials are not scanned in.
      its project's stock, then unassigned stock; every other job uses
      unassigned stock only. `onHand` is the stock that can cover the demand.
   3. Outstanding stock transfer lines to a work center's storage unit, oldest first.
-- **Lanes.** The board shows each station card as the bottom tier of a lane
+- **Flow map.** The page is a map of the process, not a row of lanes
+  (`FlowMap`, `buildFlow`, tested). `get_line_feed_lanes` returns `flow`/`step`
+  rows (a work center on a made item's routing: the newest make method's
+  operations, plus the other work centers of an operation's process) and
+  `flow`/`feed` rows (a made item another routing consumes). A row of the map
+  is one routing with an open job, its stations in operation order, parallel
+  stations stacked; a row comes before the row it feeds ("goes to STATION").
+  A station on several routings shows once: on the one with an open job, then
+  the one with the most stations. One-step routings (kit benches) share the
+  "Kitting and preparation" row; stations on no running routing fold into
+  "Other stations". A tile shows the station's name, colour and need, and
+  opens the lane below in a drawer (local state, no read). Work that names no
+  work center (a request, a transfer) is on no routing: it gets a "No station"
+  tile under the map.
+- **Need.** A station works from its lineside stock, and one water spider
+  brings it. A station's colour is its `Lane.need` (`laneNeed`).
+  `claimStock` gives the warehouse's stock out in process order and sets each
+  shortage's `cover`: `site` (the warehouse holds enough: bring it), `fed` (a
+  Transfer kanban's source bin holds some: bring it), `upstream` (made at this location, not built yet), `none` (this location does not hold enough; stock at the company's other locations is never counted or shown). Red `short`: a `none` part. Amber `bring`: a
+  `site` or `fed` part or a rack kit to bring, or an open request. Amber
+  `waiting`: `upstream` or kit work. Green `ready`: open work
+  and lineside covers it. Gray `idle`: no open operation. `Lane.toBring`
+  counts the parts and kits to bring; a tile reads "Short N · Bring N", the
+  summary strip has "to bring lineside", and the drawer lists what to bring
+  first, each with its bin and Move button.
+- **Lanes.** The drawer shows the station card as the bottom tier of a lane
   (`buildLaneBoard`, tested; spec `.ai/specs/2026-11-16-line-feed-lanes.md`):
   raw shelf, kit rack, station. A kit is a Make item whose default storage
   unit (`pickMethod`) is a `storageUnit."kitRack"` unit, its slot on the rack;
@@ -528,19 +553,37 @@ while its serial or batch materials are not scanned in.
   ok, `unknown` (gray) when it has no lineside storage. The shelf and station tiers split kit parts from loose parts
   (`RawBin.kitItemIds`, `Lane.looseRows`); a kit's own shortage shows on its
   kit line (`LaneKit.stationStatus`), not as a part to bring. A lane with no kit reads "Fed directly" and lists the source bins of the
-  Transfer kanbans into its station. The sort (`?sort=worst`) and the lit
-  summary count (`?show=`) live in the URL; the loader sorts. `kanban` does
+  Transfer kanbans into its station. The selected summary count
+  (`?show=`, which shows only its stations) and the station name search
+  (`?search=`) live in the URL; the page filters the map. `kanban` does
   not broadcast, so a new card shows on the next stock, job or PO change.
 - **Grab and move.** A short loose part shows its picture and where to grab
   it (`LineFeedRow.source`): the source bin of the station's Transfer kanban
   while it holds stock, else the function's `raw`/`source` row (the item's
   default bin when it holds stock, else the fullest bin of unassigned,
-  nettable stock off the line). "Move N from BIN" posts to
+  nettable stock off the line). The function returns that row for every part
+  a station consumes (`20261117183412_line-feed-stock-anywhere.sql`): with no
+  storage unit, its quantity is the stock in no bin, and the row reads "N in
+  stock, in no bin" (`LineFeedRow.supply`); with none, "None in stock" and
+  whether a purchase order line or job is open, and the part counts as raw
+  short. A shelf bin that is empty or short names the part's stock in another
+  bin or in no bin (`RawBin.elsewhere`), and is raw short only when that
+  stock does not cover its need either. `claimStock` gives each bin's stock
+  and each rack kit to one station, in line order whatever the board's sort:
+  a later station is offered what the earlier ones leave ("0 of 6 left for
+  this station", no Move button), and a kit the rack no longer has for it
+  reads "No kit". "Move N from BIN" posts to
   `x+/line-feed.transfer.tsx`, which calls `transferToStation`
   (`services/line-feed.server.ts`). It reads the station's shortage again,
   less the transfer lines already on their way, for the destination bin and
-  the most that may move, and checks that a named serial is still in the
-  source bin, so a resend creates nothing. Then it calls the ERP's
+  whether the station still needs the part, and checks that a named serial is
+  still in the source bin, so a resend of a move that covered the need creates
+  nothing. The button has a quantity field for a loose part: it starts at what
+  the station is short of, and the feeder may type more (a whole box), up to
+  what the bin holds; a serial kit moves one at a time. `transferToStation`
+  reads the source bin's stock again (the board's own `raw` row) and refuses
+  more than it holds, because the ERP's transfer pick takes a bin below zero
+  without refusing. A short part with some stock keeps its Move button. Then it calls the ERP's
   `api+/inventory.stock-transfer.move.ts` (`createStockTransfer` with
   `moveNow`). "Bring kit" is the same move for the rack kit's serial. The
   action answers with a flash, because a move that lands unmounts its button.
