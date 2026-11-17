@@ -48,3 +48,18 @@ Routes: /x/inventory/shipping-methods/<id> · /x/customer/<id>/shipping · /x/sa
 ## Common Failures
 - Shipping card dates disabled: the order status locks it.
 - A new shipment with no lines: the order line is Make to Order with no finished job.
+
+## Edge cases verified (2026-11-17, second pass)
+- Clear a delivered date: "Edit Delivery" → "Clear" sets `deliveredDate` and `deliveredSource` to NULL.
+- Void a delivered shipment: the dates stay; the statistics skip it.
+- A duplicate override shows "This ship-to address already has transit days for this shipping method"; edit and delete work.
+- A holiday inside the count is skipped; a Saturday arrive-by counts back from Friday; 0 transit days (Will Call) ships on the arrive-by date; a method with no transit days proposes nothing and shows no prompt.
+- A drop shipment uses the drop-ship location's override.
+- A recalculation POSTed to a locked order returns "… locked sales order. Reopen it first." and moves nothing.
+- Quote → order: arrive-by = the latest line ship date + transit business days.
+- MES: "Ships today" and "Ships tomorrow" are amber; a batch card takes its earliest member's ship-by date.
+
+## More selector notes
+- Use an isolated browser session (`AGENT_BROWSER_SESSION=<worktree>`): other worktrees share the default agent-browser daemon and can redirect the page to their own port.
+- Labels end in "Optional" ("Transit Days Optional"); match on a prefix, not on the closing quote.
+- A demo order with no exchange rate refuses a new line ("has no exchange rate"); set `salesOrder.exchangeRate = 1` in a local test.
